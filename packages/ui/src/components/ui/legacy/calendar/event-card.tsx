@@ -1,5 +1,17 @@
-import type { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
+import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuSeparator,
+  ContextMenuSub,
+  ContextMenuSubContent,
+  ContextMenuSubTrigger,
+  ContextMenuTrigger,
+} from '../../context-menu';
+import { GRID_SNAP, HOUR_HEIGHT, MAX_HOURS, MIN_EVENT_HEIGHT } from './config';
+import { useCalendarSettings } from './settings/settings-context';
 import type { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
+import type { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
 import { useCalendar } from '@tuturuuu/ui/hooks/use-calendar';
 import { getEventStyles } from '@tuturuuu/utils/color-helper';
 import { cn } from '@tuturuuu/utils/format';
@@ -19,18 +31,6 @@ import {
   Unlock,
 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
-import {
-  ContextMenu,
-  ContextMenuContent,
-  ContextMenuItem,
-  ContextMenuSeparator,
-  ContextMenuSub,
-  ContextMenuSubContent,
-  ContextMenuSubTrigger,
-  ContextMenuTrigger,
-} from '../../context-menu';
-import { GRID_SNAP, HOUR_HEIGHT, MAX_HOURS, MIN_EVENT_HEIGHT } from './config';
-import { useCalendarSettings } from './settings/settings-context';
 
 dayjs.extend(timezone);
 
@@ -911,7 +911,7 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
           ref={cardRef}
           id={`event-${id}`}
           className={cn(
-            'pointer-events-auto absolute max-w-none select-none overflow-hidden rounded-r-md rounded-l border-l-2 transition-colors duration-300',
+            'pointer-events-auto absolute max-w-none overflow-hidden rounded-l rounded-r-md border-l-2 transition-colors duration-300 select-none',
             'group transition-all hover:ring-1 focus:outline-none',
             {
               'transform shadow-md': isDragging || isResizing, // Subtle transform during interaction
@@ -953,13 +953,13 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
         >
           {/* Continuation indicators for multi-day events */}
           {showStartIndicator && (
-            <div className="-translate-x-1 -translate-y-1/2 absolute top-1/2 left-2">
+            <div className="absolute top-1/2 left-2 -translate-x-1 -translate-y-1/2">
               <ArrowLeft className={`h-3 w-3 ${text}`} />
             </div>
           )}
 
           {showEndIndicator && (
-            <div className="-translate-y-1/2 absolute top-1/2 right-2 translate-x-1">
+            <div className="absolute top-1/2 right-2 translate-x-1 -translate-y-1/2">
               <ArrowRight className={`h-3 w-3 ${text}`} />
             </div>
           )}
@@ -1011,7 +1011,7 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
           <div
             ref={contentRef}
             className={cn(
-              'flex h-full select-none flex-col text-left',
+              'flex h-full flex-col text-left select-none',
               duration <= 0.25 ? 'px-1 py-0' : 'p-1',
               duration <= 0.5 ? 'text-xs' : 'text-sm',
               _isMultiDay && 'items-start'
@@ -1025,13 +1025,13 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
             >
               <div
                 className={cn(
-                  'space-x-1 font-semibold text-xs',
+                  'space-x-1 text-xs font-semibold',
                   duration <= 0.5 ? 'line-clamp-1' : 'line-clamp-2'
                 )}
               >
                 {locked && (
                   <Lock
-                    className="-translate-y-0.5 mt-0.5 inline-block h-3 w-3 shrink-0 opacity-70"
+                    className="mt-0.5 inline-block h-3 w-3 shrink-0 -translate-y-0.5 opacity-70"
                     aria-label="Event locked"
                   />
                 )}

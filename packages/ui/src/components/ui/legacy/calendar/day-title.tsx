@@ -1,7 +1,7 @@
+import { useCalendarSettings } from './settings/settings-context';
 import { cn } from '@tuturuuu/utils/format';
 import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone';
-import { useCalendarSettings } from './settings/settings-context';
 
 dayjs.extend(timezone);
 

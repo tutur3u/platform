@@ -1,6 +1,6 @@
+import type { SyncLog } from '../../../../../../../../../../packages/ui/src/components/ui/legacy/calendar/settings/types';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { CalendarSyncDashboard } from '@tuturuuu/ui/legacy/calendar/settings/calendar-sync-dashboard';
-import type { SyncLog } from '../../../../../../../../../../packages/ui/src/components/ui/legacy/calendar/settings/types';
 
 export default async function CalendarSyncDashboardPage() {
   const syncLogs = await getSyncLogs();
