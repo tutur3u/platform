@@ -1,5 +1,6 @@
 'use client';
 
+import { isAllDayEvent } from './calendar-utils';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type {
   Workspace,
@@ -18,7 +19,6 @@ import {
   useRef,
   useState,
 } from 'react';
-import { isAllDayEvent } from './calendar-utils';
 
 const CalendarSyncContext = createContext<{
   data: WorkspaceCalendarEvent[] | null;
