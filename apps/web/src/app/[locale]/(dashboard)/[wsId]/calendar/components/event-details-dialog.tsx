@@ -929,7 +929,9 @@ export default function EnhancedEventDetailsDialog({
                       <Button
                         className="flex-1 bg-emerald-600 text-white hover:bg-emerald-700"
                         onClick={() => handleUpdateAttendeeStatus('accepted')}
-                        disabled={isUpdatingStatus || localEvent.status === 'confirmed'}
+                        disabled={
+                          isUpdatingStatus || localEvent.status === 'confirmed'
+                        }
                       >
                         <Check className="mr-2 h-4 w-4" />
                         Going
@@ -937,7 +939,9 @@ export default function EnhancedEventDetailsDialog({
                       <Button
                         className="flex-1 bg-blue-600 text-white hover:bg-blue-700"
                         onClick={() => handleUpdateAttendeeStatus('tentative')}
-                        disabled={isUpdatingStatus || localEvent.status === 'confirmed'}
+                        disabled={
+                          isUpdatingStatus || localEvent.status === 'confirmed'
+                        }
                       >
                         <HelpCircle className="mr-2 h-4 w-4" />
                         Maybe

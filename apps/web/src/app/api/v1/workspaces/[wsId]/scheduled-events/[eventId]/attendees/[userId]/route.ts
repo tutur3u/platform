@@ -1,9 +1,9 @@
+import { DEV_MODE } from '@/constants/common';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
 import { isValidUUID } from '@tuturuuu/utils/uuid-helper';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextRequest, NextResponse } from 'next/server';
-import { DEV_MODE } from '@/constants/common';
 
 interface Params {
   params: Promise<{
@@ -19,9 +19,7 @@ export async function DELETE(req: NextRequest, { params }: Params) {
     const { wsId, eventId, userId } = await params;
 
     if (
-      (!isValidUUID(wsId) ||
-        !isValidUUID(eventId) ||
-        !isValidUUID(userId)) &&
+      (!isValidUUID(wsId) || !isValidUUID(eventId) || !isValidUUID(userId)) &&
       !DEV_MODE
     ) {
       return NextResponse.json({ error: 'Invalid UUID' }, { status: 400 });
