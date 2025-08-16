@@ -116,6 +116,7 @@
     "./hooks/time-blocking-provider": "./src/hooks/time-blocking-provider.tsx",
     "./hooks/use-calendar": "./src/hooks/use-calendar.tsx",
     "./hooks/use-calendar-sync": "./src/hooks/use-calendar-sync.tsx",
+    "./hooks/use-current-user": "./src/hooks/use-current-user.tsx",
     "./calendar-settings": "./src/components/ui/legacy/calendar/settings/index.ts",
     "./resolvers": "./src/resolvers.ts",
     "./gsap": "./src/gsap.ts",

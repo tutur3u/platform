@@ -7,6 +7,7 @@ import type {
   Workspace,
   WorkspaceCalendarGoogleToken,
 } from '@tuturuuu/types/db';
+import type { WorkspaceScheduledEventWithAttendees } from '@tuturuuu/types/primitives/RSVP';
 
 export const SmartCalendar = ({
   t,
@@ -21,6 +22,7 @@ export const SmartCalendar = ({
   onSaveSettings,
   externalState,
   extras,
+  onOpenEventDetails,
 }: {
   t: any;
   locale: string;
@@ -42,6 +44,15 @@ export const SmartCalendar = ({
     availableViews: { value: string; label: string; disabled?: boolean }[];
   };
   extras?: React.ReactNode;
+  /**
+   * Invoked to open the event details UI.
+   * - eventId: the ID to open.
+   * - scheduledEvent: optionally pass a prefetched event payload to avoid an extra fetch.
+   */
+  onOpenEventDetails?: (
+    eventId: string,
+    scheduledEvent?: WorkspaceScheduledEventWithAttendees
+  ) => void;
 }) => {
   return (
     <CalendarProvider
@@ -62,6 +73,7 @@ export const SmartCalendar = ({
         onSaveSettings={onSaveSettings}
         externalState={externalState}
         extras={extras}
+        onOpenEventDetails={onOpenEventDetails}
       />
     </CalendarProvider>
   );
