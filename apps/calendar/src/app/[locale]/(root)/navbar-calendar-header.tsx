@@ -6,7 +6,7 @@ import { useTranslations } from 'next-intl';
 
 export default function NavbarCalendarHeader({}: { locale: string }) {
   const t = useTranslations('calendar');
-  // const { date, setDate, view, setView, availableViews } = useCalendarContext();
+  // const { date, setDate, view, setView, availableViews } = useCalendar();
 
   // const title = dayjs(date)
   //   .locale(locale)

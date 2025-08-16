@@ -1,6 +1,7 @@
-import { useCalendar } from '../../../../hooks/use-calendar';
 import { MIN_COLUMN_WIDTH } from './config';
+import { useCalendarSettings } from './settings/settings-context';
 import type { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
+import { useCalendar } from '@tuturuuu/ui/hooks/use-calendar';
 import { useCalendarSync } from '@tuturuuu/ui/hooks/use-calendar-sync';
 import { getEventStyles } from '@tuturuuu/utils/color-helper';
 import { cn } from '@tuturuuu/utils/format';
@@ -78,8 +79,9 @@ const EventContent = ({ event }: { event: CalendarEvent }) => (
 );
 
 export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
-  const { settings, openModal, updateEvent } = useCalendar();
+  const { openModal, updateEvent } = useCalendar();
   const { allDayEvents } = useCalendarSync();
+  const { settings } = useCalendarSettings();
   const showWeekends = settings.appearance.showWeekends;
   const tz = settings?.timezone?.timezone;
   const [expandedDates, setExpandedDates] = useState<string[]>([]);

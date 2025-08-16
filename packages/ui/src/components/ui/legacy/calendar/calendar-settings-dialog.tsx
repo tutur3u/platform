@@ -7,7 +7,6 @@ import { HoursSettings } from './settings/hour-settings';
 import { NotificationSettings } from './settings/notification-settings';
 import {
   type CalendarSettings,
-  CalendarSettingsProvider,
   useCalendarSettings,
 } from './settings/settings-context';
 import { SmartSchedulingSettings } from './settings/smart-scheduling-settings';
@@ -311,15 +310,11 @@ function SettingsDialogContent({
 export function CalendarSettingsDialog({
   open,
   onOpenChange,
-  initialSettings,
-  onSave,
   wsId,
   experimentalGoogleToken,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  initialSettings?: Partial<CalendarSettings>;
-  onSave?: (settings: CalendarSettings) => Promise<void>;
   wsId: string;
   experimentalGoogleToken?: WorkspaceCalendarGoogleToken | null;
 }) {
@@ -334,16 +329,11 @@ export function CalendarSettingsDialog({
         <DialogDescription className="sr-only">
           Customize your calendar settings here.
         </DialogDescription>
-        <CalendarSettingsProvider
-          initialSettings={initialSettings}
-          onSave={onSave}
-        >
-          <SettingsDialogContent
-            onClose={handleClose}
-            wsId={wsId}
-            experimentalGoogleToken={experimentalGoogleToken}
-          />
-        </CalendarSettingsProvider>
+        <SettingsDialogContent
+          onClose={handleClose}
+          wsId={wsId}
+          experimentalGoogleToken={experimentalGoogleToken}
+        />
       </DialogContent>
     </Dialog>
   );

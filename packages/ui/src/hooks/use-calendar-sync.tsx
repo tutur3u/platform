@@ -116,6 +116,8 @@ export const CalendarSyncProvider = ({
   const [googleData, setGoogleData] = useState<WorkspaceCalendarEvent[] | null>(
     null
   );
+  const [events, setEvents] = useState<CalendarEvent[]>([]);
+
   const [error, setError] = useState<Error | null>(null);
   const [dates, setDates] = useState<Date[]>([]);
   const [currentView, setCurrentView] = useState<
@@ -597,14 +599,19 @@ export const CalendarSyncProvider = ({
     [wsId, queryClient]
   );
 
-  // Process events to remove duplicates, then memoize the result
-  const events = useMemo(() => {
-    // If we have fetched data, process it immediately
-    if (fetchedData) {
-      return fetchedData as CalendarEvent[];
-    }
-    // If we're still loading, return empty array
-    return [];
+  useEffect(() => {
+    const processEvents = async () => {
+      if (fetchedData) {
+        const result = await removeDuplicateEvents(
+          fetchedData as CalendarEvent[]
+        );
+        setEvents(result);
+      } else {
+        setEvents([]);
+      }
+    };
+
+    processEvents();
   }, [fetchedData, removeDuplicateEvents]);
 
   const eventsWithoutAllDays = useMemo(() => {

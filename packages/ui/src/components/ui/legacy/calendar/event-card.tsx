@@ -1,4 +1,3 @@
-import { useCalendar } from '../../../../hooks/use-calendar';
 import {
   ContextMenu,
   ContextMenuContent,
@@ -10,8 +9,10 @@ import {
   ContextMenuTrigger,
 } from '../../context-menu';
 import { GRID_SNAP, HOUR_HEIGHT, MAX_HOURS, MIN_EVENT_HEIGHT } from './config';
+import { useCalendarSettings } from './settings/settings-context';
 import type { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
 import type { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
+import { useCalendar } from '@tuturuuu/ui/hooks/use-calendar';
 import { getEventStyles } from '@tuturuuu/utils/color-helper';
 import { cn } from '@tuturuuu/utils/format';
 import dayjs from 'dayjs';
@@ -72,8 +73,8 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
   const overlapCount = _overlapCount || 1;
   const overlapGroup = _overlapGroup || [id];
 
-  const { updateEvent, hideModal, openModal, deleteEvent, settings } =
-    useCalendar();
+  const { updateEvent, hideModal, openModal, deleteEvent } = useCalendar();
+  const { settings } = useCalendarSettings();
   const tz = settings?.timezone?.timezone;
 
   // Local state for immediate UI updates
@@ -844,7 +845,7 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
 
   // Format time for display
   const formatEventTime = (date: Date | dayjs.Dayjs) => {
-    const { settings } = useCalendar();
+    const { settings } = useCalendarSettings();
     const timeFormat = settings.appearance.timeFormat;
     const d = dayjs.isDayjs(date)
       ? date

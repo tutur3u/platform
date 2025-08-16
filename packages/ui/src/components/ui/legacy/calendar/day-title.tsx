@@ -1,4 +1,4 @@
-import { useCalendar } from '../../../../hooks/use-calendar';
+import { useCalendarSettings } from './settings/settings-context';
 import { cn } from '@tuturuuu/utils/format';
 import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone';
@@ -12,7 +12,7 @@ interface DayTitleProps {
 }
 
 export function DayTitle({ date, weekday }: DayTitleProps) {
-  const { settings } = useCalendar();
+  const { settings } = useCalendarSettings();
   const tz = settings?.timezone?.timezone;
   const today = tz === 'auto' ? dayjs() : dayjs().tz(tz);
   const dayjsDate = tz === 'auto' ? dayjs(date) : dayjs(date).tz(tz);

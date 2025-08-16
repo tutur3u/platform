@@ -13,6 +13,7 @@ import {
   EventToggleSwitch,
   OverlapWarning,
 } from './event-form-components';
+import { useCalendarSettings } from './settings/settings-context';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { calendarEventsSchema } from '@tuturuuu/ai/calendar/events';
 import { useObject } from '@tuturuuu/ai/object/core';
@@ -107,8 +108,8 @@ export function EventModal() {
     updateEvent,
     deleteEvent,
     getEvents,
-    settings,
   } = useCalendar();
+  const { settings } = useCalendarSettings();
 
   const tz = settings?.timezone?.timezone;
 

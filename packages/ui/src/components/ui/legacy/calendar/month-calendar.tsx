@@ -1,13 +1,14 @@
 'use client';
 
-import { isAllDayEvent } from '../../../../hooks/calendar-utils';
-import { useCalendar } from '../../../../hooks/use-calendar';
-import { usePopoverManager } from '../../../../hooks/use-popover-manager';
 import { Popover, PopoverContent, PopoverTrigger } from '../../popover';
 import { getColorHighlight } from './color-highlights';
+import { useCalendarSettings } from './settings/settings-context';
 import type { Workspace } from '@tuturuuu/types/db';
 import type { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
 import { Button } from '@tuturuuu/ui/button';
+import { isAllDayEvent } from '@tuturuuu/ui/hooks/calendar-utils';
+import { useCalendar } from '@tuturuuu/ui/hooks/use-calendar';
+import { usePopoverManager } from '@tuturuuu/ui/hooks/use-popover-manager';
 import {
   HoverCard,
   HoverCardContent,
@@ -97,8 +98,8 @@ export const MonthCalendar = ({
   visibleDates,
   viewedMonth,
 }: MonthCalendarProps) => {
-  const { getCurrentEvents, addEmptyEvent, openModal, settings } =
-    useCalendar();
+  const { getCurrentEvents, addEmptyEvent, openModal } = useCalendar();
+  const { settings } = useCalendarSettings();
   const [currDate, setCurrDate] = useState(date);
   const [hoveredDay, setHoveredDay] = useState<Date | null>(null);
   const tz = settings?.timezone?.timezone;

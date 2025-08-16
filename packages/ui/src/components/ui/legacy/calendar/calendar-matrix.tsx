@@ -1,7 +1,7 @@
-import { useCalendar } from '../../../../hooks/use-calendar';
 import { CalendarColumn } from './calendar-column';
 import { DAY_HEIGHT, MAX_LEVEL } from './config';
 import { EventCard } from './event-card';
+import { useCalendarSettings } from './settings/settings-context';
 import type { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
 import { useCalendarSync } from '@tuturuuu/ui/hooks/use-calendar-sync';
 import dayjs from 'dayjs';
@@ -38,7 +38,7 @@ export const CalendarBaseMatrix = ({ dates }: { dates: Date[] }) => {
 export const CalendarEventMatrix = ({ dates }: { dates: Date[] }) => {
   const params = useParams();
   const wsId = params?.wsId as string;
-  const { settings } = useCalendar();
+  const { settings } = useCalendarSettings();
   const { eventsWithoutAllDays } = useCalendarSync();
   const tz = settings?.timezone?.timezone;
 

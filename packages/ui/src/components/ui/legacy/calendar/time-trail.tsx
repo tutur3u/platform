@@ -1,5 +1,5 @@
-import { useCalendar } from '../../../../hooks/use-calendar';
 import { DAY_HEIGHT, HOUR_HEIGHT } from './config';
+import { useCalendarSettings } from './settings/settings-context';
 import { cn } from '@tuturuuu/utils/format';
 import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone';
@@ -8,7 +8,7 @@ dayjs.extend(timezone);
 
 export const TimeTrail = () => {
   // Get settings from context
-  const { settings } = useCalendar();
+  const { settings } = useCalendarSettings();
   const tz = settings?.timezone?.timezone;
 
   // Only show hours (not every half hour)
