@@ -44,6 +44,11 @@ export const SmartCalendar = ({
     availableViews: { value: string; label: string; disabled?: boolean }[];
   };
   extras?: React.ReactNode;
+  /**
+   * Invoked to open the event details UI.
+   * - eventId: the ID to open.
+   * - scheduledEvent: optionally pass a prefetched event payload to avoid an extra fetch.
+   */
   onOpenEventDetails?: (
     eventId: string,
     scheduledEvent?: WorkspaceScheduledEventWithAttendees

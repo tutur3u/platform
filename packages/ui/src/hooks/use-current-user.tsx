@@ -25,7 +25,7 @@ export function useCurrentUser() {
       }
     };
 
-    const { data: subscription } = supabase.auth.onAuthStateChange(
+    const { data: authListener } = supabase.auth.onAuthStateChange(
       (_event, session) => {
         if (isMounted) setUserId(session?.user?.id ?? null);
       }
@@ -34,7 +34,7 @@ export function useCurrentUser() {
     void init();
     return () => {
       isMounted = false;
-      subscription?.subscription?.unsubscribe();
+      authListener?.subscription?.unsubscribe();
     };
   }, []);
 

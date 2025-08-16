@@ -15,7 +15,7 @@ export async function GET(req: NextRequest, { params }: Params) {
   try {
     const { wsId } = await params;
     const supabase = await createClient();
-    const user = await getCurrentUser();
+    const user = await getCurrentUser(true);
 
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -104,15 +104,20 @@ export async function GET(req: NextRequest, { params }: Params) {
           if (!acc[attendee.event_id]) {
             acc[attendee.event_id] = calculateAttendeeCounts([]);
           }
-
           const eventCounts = acc[attendee.event_id];
           if (eventCounts) {
             eventCounts.total++;
-            if (attendee.status) {
-              eventCounts[attendee.status]++;
+            switch (attendee.status) {
+              case 'accepted':
+              case 'declined':
+              case 'pending':
+              case 'tentative':
+                eventCounts[attendee.status]++;
+                break;
+              default:
+                break; // ignore unknown/null statuses
             }
           }
-
           return acc;
         },
         {} as Record<string, ReturnType<typeof calculateAttendeeCounts>>

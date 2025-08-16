@@ -1,4 +1,5 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
+import { isValidUUID } from '@tuturuuu/utils/uuid-helper';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextRequest, NextResponse } from 'next/server';
@@ -15,6 +16,11 @@ interface Params {
 export async function DELETE(req: NextRequest, { params }: Params) {
   try {
     const { wsId, eventId, userId } = await params;
+
+    if (!isValidUUID(wsId) || !isValidUUID(eventId) || !isValidUUID(userId)) {
+      return NextResponse.json({ error: 'Invalid UUID' }, { status: 400 });
+    }
+
     const supabase = await createClient();
     const user = await getCurrentUser(true);
 

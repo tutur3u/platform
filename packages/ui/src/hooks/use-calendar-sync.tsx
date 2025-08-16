@@ -306,6 +306,7 @@ export const CalendarSyncProvider = ({
           `
           )
           .eq('ws_id', wsId)
+          .not('ws_id', 'is', null)
           .order('start_at', { ascending: true });
 
         if (error) {
@@ -314,8 +315,7 @@ export const CalendarSyncProvider = ({
         }
 
         // Calculate attendee counts for each event and filter out null ws_id
-        const eventsWithCounts = events
-          .filter((event) => event.ws_id !== null) // Filter out events with null ws_id
+        const eventsWithCounts = (events || [])
           .map((event) => ({
             ...event,
             attendee_count: event.attendees?.reduce(

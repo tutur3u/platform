@@ -9669,7 +9669,7 @@ export type Database = {
       };
       workspace_scheduled_events: {
         Insert: {
-          color?: null | string;
+          color?: string;
           created_at?: string;
           creator_id?: null | string;
           description?: null | string;
@@ -9736,7 +9736,7 @@ export type Database = {
           },
         ];
         Row: {
-          color: null | string;
+          color: string;
           created_at: string;
           creator_id: null | string;
           description: null | string;
@@ -9752,7 +9752,7 @@ export type Database = {
           ws_id: null | string;
         };
         Update: {
-          color?: null | string;
+          color?: string;
           created_at?: string;
           creator_id?: null | string;
           description?: null | string;

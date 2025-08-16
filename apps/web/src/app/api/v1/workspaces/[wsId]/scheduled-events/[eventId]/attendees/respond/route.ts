@@ -44,21 +44,6 @@ export async function PUT(req: NextRequest, { params }: Params) {
       );
     }
 
-    // Check if the event exists and the user is an attendee
-    const { data: attendee, error: attendeeError } = await supabase
-      .from('event_attendees')
-      .select('id, event_id')
-      .eq('event_id', eventId)
-      .eq('user_id', user.id)
-      .single();
-
-    if (attendeeError || !attendee) {
-      return NextResponse.json(
-        { error: 'You are not invited to this event' },
-        { status: 403 }
-      );
-    }
-
     // Verify the event belongs to the workspace
     const { data: event, error: eventError } = await supabase
       .from('workspace_scheduled_events')
@@ -66,9 +51,22 @@ export async function PUT(req: NextRequest, { params }: Params) {
       .eq('id', eventId)
       .eq('ws_id', wsId)
       .single();
-
     if (eventError || !event) {
       return NextResponse.json({ error: 'Event not found' }, { status: 404 });
+    }
+
+    // Verify the user is an attendee for this event
+    const { data: attendee, error: attendeeError } = await supabase
+      .from('event_attendees')
+      .select('id, event_id')
+      .eq('event_id', eventId)
+      .eq('user_id', user.id)
+      .single();
+    if (attendeeError || !attendee) {
+      return NextResponse.json(
+        { error: 'You are not invited to this event' },
+        { status: 403 }
+      );
     }
 
     // Update the attendee status

@@ -15,7 +15,7 @@ export async function POST(req: NextRequest, { params }: Params) {
   try {
     const { wsId, eventId } = await params;
     const supabase = await createClient();
-    const user = await getCurrentUser();
+    const user = await getCurrentUser(true);
 
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -32,7 +32,7 @@ export async function POST(req: NextRequest, { params }: Params) {
     // Check if user is the creator of the event
     const { data: existingEvent, error: checkError } = await supabase
       .from('workspace_scheduled_events')
-      .select('creator_id, status, title')
+      .select('creator_id, status')
       .eq('id', eventId)
       .eq('ws_id', wsId)
       .single();
@@ -72,6 +72,7 @@ export async function POST(req: NextRequest, { params }: Params) {
         updated_at: new Date().toISOString(),
       })
       .eq('id', eventId)
+      .eq('status', 'active')
       .select()
       .single();
 
@@ -101,7 +102,7 @@ export async function DELETE(req: NextRequest, { params }: Params) {
   try {
     const { wsId, eventId } = await params;
     const supabase = await createClient();
-    const user = await getCurrentUser();
+    const user = await getCurrentUser(true);
 
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -118,7 +119,7 @@ export async function DELETE(req: NextRequest, { params }: Params) {
     // Check if user is the creator of the event
     const { data: existingEvent, error: checkError } = await supabase
       .from('workspace_scheduled_events')
-      .select('creator_id, status, title')
+      .select('creator_id, status')
       .eq('id', eventId)
       .eq('ws_id', wsId)
       .single();
@@ -150,6 +151,7 @@ export async function DELETE(req: NextRequest, { params }: Params) {
         updated_at: new Date().toISOString(),
       })
       .eq('id', eventId)
+      .eq('status', 'confirmed')
       .select()
       .single();
 

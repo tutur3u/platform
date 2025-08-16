@@ -16,9 +16,13 @@ export default function CreateScheduledEventButton({
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const { refreshScheduledEvents } = useCalendarSync();
 
-  const handleDialogClose = () => {
+  const handleDialogClose = async () => {
     setIsDialogOpen(false);
-    refreshScheduledEvents();
+    try {
+      await refreshScheduledEvents();
+    } catch (error) {
+      console.error('Error refreshing scheduled events:', error);
+    }
   };
 
   return (

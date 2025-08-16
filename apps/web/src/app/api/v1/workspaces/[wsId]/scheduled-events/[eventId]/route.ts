@@ -15,7 +15,7 @@ export async function GET(req: NextRequest, { params }: Params) {
   try {
     const { wsId, eventId } = await params;
     const supabase = await createClient();
-    const user = await getCurrentUser();
+    const user = await getCurrentUser(true);
 
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -92,7 +92,7 @@ export async function PUT(req: NextRequest, { params }: Params) {
   try {
     const { wsId, eventId } = await params;
     const supabase = await createClient();
-    const user = await getCurrentUser();
+    const user = await getCurrentUser(true);
 
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -143,7 +143,15 @@ export async function PUT(req: NextRequest, { params }: Params) {
       color,
       is_all_day,
       status,
+      requires_confirmation,
     } = body;
+
+    if (status === 'confirmed') {
+      return NextResponse.json(
+        { error: 'Use the confirm endpoint to confirm events' },
+        { status: 400 }
+      );
+    }
 
     // Validate required fields
     if (!title || !start_at || !end_at) {
@@ -180,9 +188,12 @@ export async function PUT(req: NextRequest, { params }: Params) {
         color,
         is_all_day,
         status,
+        requires_confirmation,
         updated_at: new Date().toISOString(),
       })
       .eq('id', eventId)
+      .eq('ws_id', wsId)
+      .eq('status', 'active')
       .select()
       .single();
 
@@ -209,7 +220,7 @@ export async function DELETE(req: NextRequest, { params }: Params) {
   try {
     const { wsId, eventId } = await params;
     const supabase = await createClient();
-    const user = await getCurrentUser();
+    const user = await getCurrentUser(true);
 
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -254,7 +265,8 @@ export async function DELETE(req: NextRequest, { params }: Params) {
     const { error: deleteError } = await supabase
       .from('workspace_scheduled_events')
       .delete()
-      .eq('id', eventId);
+      .eq('id', eventId)
+      .eq('ws_id', wsId);
 
     if (deleteError) {
       console.error('Error deleting event:', deleteError);

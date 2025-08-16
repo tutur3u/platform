@@ -5,9 +5,11 @@ import { TimeTrail } from './time-trail';
 import type { WorkspaceScheduledEventWithAttendees } from '@tuturuuu/types/primitives/RSVP';
 import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone';
+import utc from 'dayjs/plugin/utc';
 import { useEffect, useRef, useState } from 'react';
 
 dayjs.extend(timezone);
+dayjs.extend(utc);
 
 export const CalendarViewWithTrail = ({
   dates,

@@ -5,13 +5,17 @@ import { Button } from '@tuturuuu/ui/button';
 import { Check, Clock, HelpCircle, X } from '@tuturuuu/ui/icons';
 import { cn } from '@tuturuuu/utils/format';
 import { useState } from 'react';
+import type { EventAttendeeStatus } from '@tuturuuu/types/primitives/RSVP';
+
+
+type RSVPActionStatus = Exclude<EventAttendeeStatus, 'pending'>;
 
 interface ScheduledEventQuickActionsProps {
   scheduledEvent: WorkspaceScheduledEventWithAttendees;
   userId: string;
   onStatusUpdate: (
     eventId: string,
-    status: 'accepted' | 'declined' | 'tentative'
+    status: RSVPActionStatus
   ) => Promise<void>;
   className?: string;
   compact?: boolean;
@@ -31,7 +35,7 @@ export const ScheduledEventQuickActions = ({
   const currentStatus = userAttendee?.status || 'pending';
 
   const handleStatusUpdate = async (
-    status: 'accepted' | 'declined' | 'tentative'
+    status: RSVPActionStatus
   ) => {
     if (isUpdating) return;
 

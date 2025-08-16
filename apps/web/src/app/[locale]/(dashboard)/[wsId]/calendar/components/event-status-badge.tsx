@@ -9,52 +9,60 @@ interface EventStatusBadgeProps {
   className?: string;
 }
 
+const getStatusConfig = (status: EventStatus) => {
+  switch (status) {
+    case 'confirmed':
+      return {
+        label: 'Confirmed',
+        color: 'bg-green-100 text-green-800 border-green-200 dark:bg-green-900 dark:text-green-300',
+        icon: Check,
+      };
+    case 'active':
+      return {
+        label: 'Active',
+        color: 'bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900 dark:text-blue-300',
+        icon: Clock,
+      };
+    case 'cancelled':
+      return {
+        label: 'Cancelled',
+        color: 'bg-red-100 text-red-800 border-red-200 dark:bg-red-900 dark:text-red-300',
+        icon: X,
+      };
+    case 'completed':
+      return {
+        label: 'Completed',
+        color: 'bg-gray-100 text-gray-800 border-gray-200 dark:bg-gray-900 dark:text-gray-300',
+        icon: Check,
+      };
+    case 'draft':
+      return {
+        label: 'Draft',
+        color: 'bg-yellow-100 text-yellow-800 border-yellow-200 dark:bg-yellow-900 dark:text-yellow-300',
+        icon: FileText,
+      };
+    default:
+      return {
+        label: 'Unknown',
+        color: 'bg-gray-100 text-gray-800 border-gray-200 dark:bg-gray-900 dark:text-gray-300',
+        icon: AlertTriangle,
+      };
+  }
+};
+
+const getTextColor = (colorString: string) => {
+  // Extract text color class (text-*) from the color string
+  const textColorMatch = colorString.match(/text-\S+/);
+  return textColorMatch ? textColorMatch[0] : '';
+};
+
 export function EventStatusBadge({
   status,
   size = 'sm',
   variant = 'default',
   className = '',
 }: EventStatusBadgeProps) {
-  const getStatusConfig = (status: EventStatus) => {
-    switch (status) {
-      case 'confirmed':
-        return {
-          label: 'Confirmed',
-          color: 'bg-green-100 text-green-800 border-green-200 dark:bg-green-900 dark:text-green-300',
-          icon: Check,
-        };
-      case 'active':
-        return {
-          label: 'Active',
-          color: 'bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900 dark:text-blue-300',
-          icon: Clock,
-        };
-      case 'cancelled':
-        return {
-          label: 'Cancelled',
-          color: 'bg-red-100 text-red-800 border-red-200 dark:bg-red-900 dark:text-red-300',
-          icon: X,
-        };
-      case 'completed':
-        return {
-          label: 'Completed',
-          color: 'bg-gray-100 text-gray-800 border-gray-200 dark:bg-gray-900 dark:text-gray-300',
-          icon: Check,
-        };
-      case 'draft':
-        return {
-          label: 'Draft',
-          color: 'bg-yellow-100 text-yellow-800 border-yellow-200 dark:bg-yellow-900 dark:text-yellow-300',
-          icon: FileText,
-        };
-      default:
-        return {
-          label: 'Unknown',
-          color: 'bg-gray-100 text-gray-800 border-gray-200 dark:bg-gray-900 dark:text-gray-300',
-          icon: AlertTriangle,
-        };
-    }
-  };
+
 
   const config = getStatusConfig(status);
   const Icon = config.icon;
@@ -74,9 +82,9 @@ export function EventStatusBadge({
   if (variant === 'minimal') {
     return (
       <div className={`flex items-center space-x-1 ${className}`}>
-        <Icon className={`${iconSizes[size]} ${config.color.split(' ')[1]}`} />
+        <Icon className={`${iconSizes[size]} ${getTextColor(config.color)}`} />
         {size !== 'sm' && (
-          <span className={`${sizeClasses[size]} ${config.color.split(' ')[1]}`}>
+          <span className={`${sizeClasses[size]} ${getTextColor(config.color)}`}>
             {config.label}
           </span>
         )}

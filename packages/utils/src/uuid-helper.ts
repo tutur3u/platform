@@ -1,4 +1,4 @@
-import { v4 as UUIDv4, v5 as UUIDv5 } from 'uuid';
+import { v4 as UUIDv4, v5 as UUIDv5, validate } from 'uuid';
 
 export function generateUUID(...uuids: string[]): string {
   const name = uuids.join('-');
@@ -8,4 +8,8 @@ export function generateUUID(...uuids: string[]): string {
 
 export function generateRandomUUID(): string {
   return UUIDv4();
+}
+
+export function isValidUUID(uuid: string){
+return validate(uuid);
 }

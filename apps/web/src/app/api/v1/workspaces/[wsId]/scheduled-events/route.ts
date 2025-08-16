@@ -117,6 +117,15 @@ export async function POST(req: NextRequest, { params }: Params) {
       attendee_ids,
     } = body;
 
+    const allowedStatuses = ['active', 'cancelled', 'completed', 'draft', 'confirmed'] as const;
+
+    if (status && !allowedStatuses.includes(status)) {
+      return NextResponse.json(
+        { error: `Invalid status. Must be one of: ${allowedStatuses.join(', ')}` },
+        { status: 400 }
+      );
+    }
+
     // Validate required fields
     if (
       !title ||
@@ -134,7 +143,15 @@ export async function POST(req: NextRequest, { params }: Params) {
       );
     }
 
-    if (new Date(start_at).getTime() >= new Date(end_at).getTime()) {
+    const startTime = new Date(start_at);
+    const endTime = new Date(end_at);
+    if (Number.isNaN(startTime.getTime()) || Number.isNaN(endTime.getTime())) {
+      return NextResponse.json(
+        { error: 'Invalid datetime: start_at/end_at must be valid ISO strings' },
+        { status: 400 }
+      );
+    }
+    if (startTime.getTime() >= endTime.getTime()) {
       return NextResponse.json(
         { error: 'start_at must be before end_at' },
         { status: 400 }
@@ -157,7 +174,7 @@ export async function POST(req: NextRequest, { params }: Params) {
         color,
         creator_id: user.id,
         is_all_day: is_all_day || false,
-        requires_confirmation: requires_confirmation !== false,
+        requires_confirmation: requires_confirmation ?? true,
         status: status || 'active',
       })
       .select()

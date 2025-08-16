@@ -34,7 +34,7 @@ create table "public"."workspace_scheduled_events" (
     "start_at" timestamp with time zone,
     "end_at" timestamp with time zone,
     "location" text,
-    "color" text,
+    "color" text not null default 'BLUE'::text,
     "creator_id" uuid,
     "is_all_day" boolean default false,
     "requires_confirmation" boolean default true,

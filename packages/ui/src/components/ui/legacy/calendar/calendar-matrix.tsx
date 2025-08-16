@@ -85,8 +85,7 @@ export const CalendarEventMatrix = ({
       } catch (error) {
         console.error(
           'Error converting scheduled event:',
-          error,
-          scheduledEvent
+          error
         );
       }
     });
@@ -341,7 +340,7 @@ export const CalendarEventMatrix = ({
             event={event}
             dates={dates}
             level={event._level}
-            scheduledEvents={scheduledEvents || []}
+            scheduledEvents={scheduledEvents ?? []}
             currentUserId={currentUserId || ''}
             onOpenEventDetails={onOpenEventDetails}
           />

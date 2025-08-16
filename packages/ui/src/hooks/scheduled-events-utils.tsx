@@ -7,24 +7,14 @@ export const convertScheduledEventToCalendarEvent = (
   scheduledEvent: WorkspaceScheduledEventWithAttendees,
   userId: string
 ): CalendarEvent | null => {
-  const userAttendee = scheduledEvent.attendees?.find(
-    (a) => a.user_id === userId
-  );
-
-  if (!userAttendee && scheduledEvent.creator_id !== userId) {
+  // Use the shouldDisplayScheduledEvent function for consistent filtering logic
+  if (!shouldDisplayScheduledEvent(scheduledEvent, userId)) {
     return null;
   }
 
-  // For declined events, only hide them after the event has started
-  if (userAttendee && userAttendee.status === 'declined') {
-    const eventStartTime = parseISO(scheduledEvent.start_at);
-    const now = new Date();
-
-    // If the event has already started, hide it
-    if (isBefore(eventStartTime, now)) {
-      return null;
-    }
-  }
+  const userAttendee = scheduledEvent.attendees?.find(
+    (a) => a.user_id === userId
+  );
 
   const isPending = userAttendee?.status === 'pending';
   const isTentative = userAttendee?.status === 'tentative';
