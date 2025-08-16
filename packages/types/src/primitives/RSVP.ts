@@ -7,7 +7,12 @@ export type EventAttendeeStatus =
   | 'accepted'
   | 'declined'
   | 'tentative';
-export type EventStatus = 'active' | 'cancelled' | 'completed' | 'draft' | 'confirmed';
+export type EventStatus =
+  | 'active'
+  | 'cancelled'
+  | 'completed'
+  | 'draft'
+  | 'confirmed';
 
 export type WorkspaceScheduledEvent = {
   id: string;

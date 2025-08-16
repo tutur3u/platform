@@ -315,24 +315,23 @@ export const CalendarSyncProvider = ({
         }
 
         // Calculate attendee counts for each event and filter out null ws_id
-        const eventsWithCounts = (events || [])
-          .map((event) => ({
-            ...event,
-            attendee_count: event.attendees?.reduce(
-              (counts, attendee) => {
-                counts.total++;
-                counts[attendee.status as keyof typeof counts]++;
-                return counts;
-              },
-              { total: 0, accepted: 0, declined: 0, pending: 0, tentative: 0 }
-            ) || {
-              total: 0,
-              accepted: 0,
-              declined: 0,
-              pending: 0,
-              tentative: 0,
+        const eventsWithCounts = (events || []).map((event) => ({
+          ...event,
+          attendee_count: event.attendees?.reduce(
+            (counts, attendee) => {
+              counts.total++;
+              counts[attendee.status as keyof typeof counts]++;
+              return counts;
             },
-          }));
+            { total: 0, accepted: 0, declined: 0, pending: 0, tentative: 0 }
+          ) || {
+            total: 0,
+            accepted: 0,
+            declined: 0,
+            pending: 0,
+            tentative: 0,
+          },
+        }));
 
         setScheduledEvents(
           eventsWithCounts as WorkspaceScheduledEventWithAttendees[]

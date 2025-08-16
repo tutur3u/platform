@@ -128,7 +128,10 @@ export async function PUT(req: NextRequest, { params }: Params) {
     // Prevent modifications of confirmed events
     if (existingEvent.status === 'confirmed') {
       return NextResponse.json(
-        { error: 'Cannot modify a confirmed event. Please unconfirm the event first to make changes.' },
+        {
+          error:
+            'Cannot modify a confirmed event. Please unconfirm the event first to make changes.',
+        },
         { status: 400 }
       );
     }
@@ -168,7 +171,13 @@ export async function PUT(req: NextRequest, { params }: Params) {
       );
     }
     // Validate status if provided
-    const validStatuses = ['active', 'cancelled', 'completed', 'draft', 'confirmed'];
+    const validStatuses = [
+      'active',
+      'cancelled',
+      'completed',
+      'draft',
+      'confirmed',
+    ];
     if (status && !validStatuses.includes(status)) {
       return NextResponse.json(
         { error: 'Invalid status value' },
@@ -256,7 +265,10 @@ export async function DELETE(req: NextRequest, { params }: Params) {
     // Prevent deletion of confirmed events
     if (existingEvent.status === 'confirmed') {
       return NextResponse.json(
-        { error: 'Cannot delete a confirmed event. Please unconfirm the event first to delete it.' },
+        {
+          error:
+            'Cannot delete a confirmed event. Please unconfirm the event first to delete it.',
+        },
         { status: 400 }
       );
     }

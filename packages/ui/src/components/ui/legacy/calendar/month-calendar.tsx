@@ -830,17 +830,19 @@ export const MonthCalendar = ({
                                     </div>
                                   )}
 
-                                {isScheduledEvent && scheduledEvent && scheduledEvent.status !== 'confirmed' && (
-                                  <div className="border-t pt-2">
-                                    <ScheduledEventQuickActions
-                                      scheduledEvent={scheduledEvent}
-                                      userId={currentUserId || ''}
-                                      onStatusUpdate={
-                                        handleScheduledEventStatusUpdate
-                                      }
-                                    />
-                                  </div>
-                                )}
+                                {isScheduledEvent &&
+                                  scheduledEvent &&
+                                  scheduledEvent.status !== 'confirmed' && (
+                                    <div className="border-t pt-2">
+                                      <ScheduledEventQuickActions
+                                        scheduledEvent={scheduledEvent}
+                                        userId={currentUserId || ''}
+                                        onStatusUpdate={
+                                          handleScheduledEventStatusUpdate
+                                        }
+                                      />
+                                    </div>
+                                  )}
                               </div>
                             </HoverCardContent>
                           </HoverCard>

@@ -117,11 +117,19 @@ export async function POST(req: NextRequest, { params }: Params) {
       attendee_ids,
     } = body;
 
-    const allowedStatuses = ['active', 'cancelled', 'completed', 'draft', 'confirmed'] as const;
+    const allowedStatuses = [
+      'active',
+      'cancelled',
+      'completed',
+      'draft',
+      'confirmed',
+    ] as const;
 
     if (status && !allowedStatuses.includes(status)) {
       return NextResponse.json(
-        { error: `Invalid status. Must be one of: ${allowedStatuses.join(', ')}` },
+        {
+          error: `Invalid status. Must be one of: ${allowedStatuses.join(', ')}`,
+        },
         { status: 400 }
       );
     }
@@ -147,7 +155,9 @@ export async function POST(req: NextRequest, { params }: Params) {
     const endTime = new Date(end_at);
     if (Number.isNaN(startTime.getTime()) || Number.isNaN(endTime.getTime())) {
       return NextResponse.json(
-        { error: 'Invalid datetime: start_at/end_at must be valid ISO strings' },
+        {
+          error: 'Invalid datetime: start_at/end_at must be valid ISO strings',
+        },
         { status: 400 }
       );
     }
