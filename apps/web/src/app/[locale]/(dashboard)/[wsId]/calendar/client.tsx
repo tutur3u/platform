@@ -77,8 +77,6 @@ export default function CalendarClientPage({
     }
   };
 
-
-
   const extras =
     workspace.id === ROOT_WORKSPACE_ID ? (
       <div className="grid w-full items-center gap-2 md:flex md:w-auto">

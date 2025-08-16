@@ -1,6 +1,6 @@
 import type { EventStatus } from '@tuturuuu/types/primitives/RSVP';
 import { Badge } from '@tuturuuu/ui/badge';
-import { Check, Clock, X, FileText, AlertTriangle } from '@tuturuuu/ui/icons';
+import { AlertTriangle, Check, Clock, FileText, X } from '@tuturuuu/ui/icons';
 
 interface EventStatusBadgeProps {
   status: EventStatus;
@@ -14,37 +14,43 @@ const getStatusConfig = (status: EventStatus) => {
     case 'confirmed':
       return {
         label: 'Confirmed',
-        color: 'bg-green-100 text-green-800 border-green-200 dark:bg-green-900 dark:text-green-300',
+        color:
+          'bg-green-100 text-green-800 border-green-200 dark:bg-green-900 dark:text-green-300',
         icon: Check,
       };
     case 'active':
       return {
         label: 'Active',
-        color: 'bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900 dark:text-blue-300',
+        color:
+          'bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900 dark:text-blue-300',
         icon: Clock,
       };
     case 'cancelled':
       return {
         label: 'Cancelled',
-        color: 'bg-red-100 text-red-800 border-red-200 dark:bg-red-900 dark:text-red-300',
+        color:
+          'bg-red-100 text-red-800 border-red-200 dark:bg-red-900 dark:text-red-300',
         icon: X,
       };
     case 'completed':
       return {
         label: 'Completed',
-        color: 'bg-gray-100 text-gray-800 border-gray-200 dark:bg-gray-900 dark:text-gray-300',
+        color:
+          'bg-gray-100 text-gray-800 border-gray-200 dark:bg-gray-900 dark:text-gray-300',
         icon: Check,
       };
     case 'draft':
       return {
         label: 'Draft',
-        color: 'bg-yellow-100 text-yellow-800 border-yellow-200 dark:bg-yellow-900 dark:text-yellow-300',
+        color:
+          'bg-yellow-100 text-yellow-800 border-yellow-200 dark:bg-yellow-900 dark:text-yellow-300',
         icon: FileText,
       };
     default:
       return {
         label: 'Unknown',
-        color: 'bg-gray-100 text-gray-800 border-gray-200 dark:bg-gray-900 dark:text-gray-300',
+        color:
+          'bg-gray-100 text-gray-800 border-gray-200 dark:bg-gray-900 dark:text-gray-300',
         icon: AlertTriangle,
       };
   }
@@ -62,8 +68,6 @@ export function EventStatusBadge({
   variant = 'default',
   className = '',
 }: EventStatusBadgeProps) {
-
-
   const config = getStatusConfig(status);
   const Icon = config.icon;
 
@@ -84,7 +88,9 @@ export function EventStatusBadge({
       <div className={`flex items-center space-x-1 ${className}`}>
         <Icon className={`${iconSizes[size]} ${getTextColor(config.color)}`} />
         {size !== 'sm' && (
-          <span className={`${sizeClasses[size]} ${getTextColor(config.color)}`}>
+          <span
+            className={`${sizeClasses[size]} ${getTextColor(config.color)}`}
+          >
             {config.label}
           </span>
         )}
@@ -93,8 +99,8 @@ export function EventStatusBadge({
   }
 
   return (
-    <Badge 
-      variant="secondary" 
+    <Badge
+      variant="secondary"
       className={`${config.color} ${sizeClasses[size]} ${className}`}
     >
       <Icon className={`${iconSizes[size]} mr-1`} />

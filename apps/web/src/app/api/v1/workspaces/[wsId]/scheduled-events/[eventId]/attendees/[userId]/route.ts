@@ -1,6 +1,6 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
-import { isValidUUID } from '@tuturuuu/utils/uuid-helper';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
+import { isValidUUID } from '@tuturuuu/utils/uuid-helper';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextRequest, NextResponse } from 'next/server';
 

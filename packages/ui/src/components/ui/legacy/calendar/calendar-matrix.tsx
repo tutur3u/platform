@@ -83,10 +83,7 @@ export const CalendarEventMatrix = ({
           scheduledCalendarEvents.push(calendarEvent);
         }
       } catch (error) {
-        console.error(
-          'Error converting scheduled event:',
-          error
-        );
+        console.error('Error converting scheduled event:', error);
       }
     });
   }

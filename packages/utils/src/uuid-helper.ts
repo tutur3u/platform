@@ -10,6 +10,6 @@ export function generateRandomUUID(): string {
   return UUIDv4();
 }
 
-export function isValidUUID(uuid: string){
-return validate(uuid);
+export function isValidUUID(uuid: string) {
+  return validate(uuid);
 }
