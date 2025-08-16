@@ -1,10 +1,10 @@
+import { DEV_MODE } from '@/constants/common';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { calculateAttendeeCounts } from '@tuturuuu/utils/event-attendees.utils';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
 import { isValidUUID } from '@tuturuuu/utils/uuid-helper';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextRequest, NextResponse } from 'next/server';
-import { DEV_MODE } from '@/constants/common';
 
 interface Params {
   params: Promise<{
@@ -18,7 +18,10 @@ export async function GET(req: NextRequest, { params }: Params) {
     const { wsId } = await params;
 
     if (!isValidUUID(wsId) && !DEV_MODE) {
-      return NextResponse.json({ error: 'Invalid workspace ID' }, { status: 400 });
+      return NextResponse.json(
+        { error: 'Invalid workspace ID' },
+        { status: 400 }
+      );
     }
 
     const supabase = await createClient();

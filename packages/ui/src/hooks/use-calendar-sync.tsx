@@ -308,8 +308,8 @@ export const CalendarSyncProvider = ({
           `
           )
           .eq('ws_id', wsId)
-          .lt('start_at', endDate.add(1, 'day').toISOString())  // starts before visible end
-          .gt('end_at', startDate.toISOString())                // ends after visible start
+          .lt('start_at', endDate.add(1, 'day').toISOString()) // starts before visible end
+          .gt('end_at', startDate.toISOString()) // ends after visible start
           .order('start_at', { ascending: true });
         if (error) {
           console.error('Error fetching scheduled events:', error);

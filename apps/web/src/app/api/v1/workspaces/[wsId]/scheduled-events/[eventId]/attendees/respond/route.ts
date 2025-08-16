@@ -86,7 +86,9 @@ export async function PUT(req: NextRequest, { params }: Params) {
       const code = (updateError as { code?: string })?.code;
       const status = code === '42501' ? 403 : 500; // 42501: permission denied (RLS)
       const msg =
-        status === 403 ? 'Not allowed to update this attendee' : 'Failed to update response';
+        status === 403
+          ? 'Not allowed to update this attendee'
+          : 'Failed to update response';
       return NextResponse.json({ error: msg }, { status });
     }
 

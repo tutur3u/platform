@@ -102,7 +102,9 @@ export const CalendarEventMatrix = ({
   const processedEvents = React.useMemo(() => {
     return combinedEvents.flatMap((event) => {
       // Parse dates with proper timezone handling
-      const startDay = tzId ? dayjs(event.start_at).tz(tzId) : dayjs(event.start_at);
+      const startDay = tzId
+        ? dayjs(event.start_at).tz(tzId)
+        : dayjs(event.start_at);
       const endDay = tzId ? dayjs(event.end_at).tz(tzId) : dayjs(event.end_at);
 
       // Ensure end time is after start time
@@ -169,12 +171,16 @@ export const CalendarEventMatrix = ({
   // Filter events to only include those visible in the current date range - memoized
   const visibleEvents = React.useMemo(() => {
     return processedEvents.filter((event) => {
-      const eventStart = tzId ? dayjs(event.start_at).tz(tzId) : dayjs(event.start_at);
+      const eventStart = tzId
+        ? dayjs(event.start_at).tz(tzId)
+        : dayjs(event.start_at);
       const eventStartDay = eventStart.startOf('day');
 
       // Check if the event falls within any of the visible dates
       return dates.some((date) => {
-        const dateDay = tzId ? dayjs(date).tz(tzId).startOf('day') : dayjs(date).startOf('day');
+        const dateDay = tzId
+          ? dayjs(date).tz(tzId).startOf('day')
+          : dayjs(date).startOf('day');
         return dateDay.isSame(eventStartDay);
       });
     });

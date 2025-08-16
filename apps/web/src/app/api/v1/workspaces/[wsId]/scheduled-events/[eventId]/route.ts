@@ -1,9 +1,9 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
+import type { EventAttendeeStatus } from '@tuturuuu/types/primitives/RSVP';
 import { calculateAttendeeCounts } from '@tuturuuu/utils/event-attendees.utils';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextRequest, NextResponse } from 'next/server';
-import type { EventAttendeeStatus } from '@tuturuuu/types/primitives/RSVP';
 
 interface Params {
   params: Promise<{
@@ -65,7 +65,9 @@ export async function GET(req: NextRequest, { params }: Params) {
     }
 
     const counts = calculateAttendeeCounts(
-      event.attendees?.filter((a) => a.status !== null) as Array<{ status: EventAttendeeStatus }>
+      event.attendees?.filter((a) => a.status !== null) as Array<{
+        status: EventAttendeeStatus;
+      }>
     );
     const eventWithCounts = {
       ...event,
