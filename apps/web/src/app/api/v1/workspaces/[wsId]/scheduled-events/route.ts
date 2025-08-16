@@ -169,7 +169,14 @@ export async function POST(req: NextRequest, { params }: Params) {
     }
 
     // Ensure the creator is always included in the attendee list
-    const finalAttendeeIds = Array.from(new Set([...attendee_ids, user.id]));
+    const finalAttendeeIds = Array.from(
+      new Set([
+        ...(attendee_ids as unknown[]).filter(
+          (id): id is string => typeof id === 'string'
+        ),
+        user.id,
+      ])
+    );
 
     // Create the event
     const { data: event, error: eventError } = await supabase

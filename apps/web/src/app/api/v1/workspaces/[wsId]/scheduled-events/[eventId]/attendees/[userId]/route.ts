@@ -3,6 +3,7 @@ import { getCurrentUser } from '@tuturuuu/utils/user-helper';
 import { isValidUUID } from '@tuturuuu/utils/uuid-helper';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextRequest, NextResponse } from 'next/server';
+import { DEV_MODE } from '@/constants/common';
 
 interface Params {
   params: Promise<{
@@ -17,7 +18,12 @@ export async function DELETE(req: NextRequest, { params }: Params) {
   try {
     const { wsId, eventId, userId } = await params;
 
-    if (!isValidUUID(wsId) || !isValidUUID(eventId) || !isValidUUID(userId)) {
+    if (
+      (!isValidUUID(wsId) ||
+        !isValidUUID(eventId) ||
+        !isValidUUID(userId)) &&
+      !DEV_MODE
+    ) {
       return NextResponse.json({ error: 'Invalid UUID' }, { status: 400 });
     }
 

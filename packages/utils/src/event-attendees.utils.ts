@@ -23,13 +23,13 @@ export function calculateAttendeeCounts(
 
   return attendees.reduce(
     (counts, attendee) => {
-      counts.total++;
       // Guard against unexpected/null statuses and increment safely
       switch (attendee.status) {
         case 'accepted':
         case 'declined':
         case 'pending':
         case 'tentative':
+          counts.total++;
           counts[attendee.status]++;
           break;
         default:

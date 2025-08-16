@@ -69,6 +69,7 @@ export const ScheduledEventQuickActions = ({
     <div className={cn('flex gap-1', className)}>
       {currentStatus !== 'accepted' && (
         <Button
+          type="button"
           size="sm"
           variant="outline"
           className="bg-dynamic-green-50 hover:bg-dynamic-green-100 h-6 border-green-200 px-2 text-xs"
@@ -81,6 +82,7 @@ export const ScheduledEventQuickActions = ({
       )}
       {currentStatus !== 'tentative' && (
         <Button
+          type="button"
           size="sm"
           variant="outline"
           className="bg-dynamic-yellow-50 hover:bg-dynamic-yellow-100 h-6 border-yellow-200 px-2 text-xs"
@@ -93,6 +95,7 @@ export const ScheduledEventQuickActions = ({
       )}
       {currentStatus !== 'declined' && (
         <Button
+          type="button"
           size="sm"
           variant="outline"
           className="bg-dynamic-red-50 hover:bg-dynamic-red-100 h-6 border-red-200 px-2 text-xs"

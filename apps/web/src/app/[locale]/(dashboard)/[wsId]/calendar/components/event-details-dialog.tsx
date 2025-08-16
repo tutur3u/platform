@@ -397,15 +397,35 @@ export default function EnhancedEventDetailsDialog({
       toast.error('Start and end dates are required');
       return;
     }
-
+    // Prevent end before start
+    if (editFormData.is_all_day) {
+      if (editFormData.end_date < editFormData.start_date) {
+        toast.error('End date must be on or after the start date');
+        return;
+      }
+    } else {
+      const userTimezone = getUserTimezone();
+      const startIso = createDateTimeInTimezone(
+        editFormData.start_date,
+        hourToTimeString(editFormData.start_time),
+        userTimezone
+      );
+      const endIso = createDateTimeInTimezone(
+        editFormData.end_date,
+        hourToTimeString(editFormData.end_time),
+        userTimezone
+      );
+      if (new Date(endIso) <= new Date(startIso)) {
+        toast.error('End time must be after the start time');
+        return;
+      }
+    }
     setIsSaving(true);
     try {
       // Get user's timezone
       const userTimezone = getUserTimezone();
-
       let start_at: string;
       let end_at: string;
-
       if (editFormData.is_all_day) {
         // For all-day events, use start of day in user's timezone
         const startOfDay = dayjs
@@ -414,7 +434,6 @@ export default function EnhancedEventDetailsDialog({
         const endOfDay = dayjs
           .tz(editFormData.end_date, userTimezone)
           .endOf('day');
-
         start_at = startOfDay.utc().toISOString();
         end_at = endOfDay.utc().toISOString();
       } else {
@@ -910,7 +929,7 @@ export default function EnhancedEventDetailsDialog({
                       <Button
                         className="flex-1 bg-emerald-600 text-white hover:bg-emerald-700"
                         onClick={() => handleUpdateAttendeeStatus('accepted')}
-                        disabled={isUpdatingStatus}
+                        disabled={isUpdatingStatus || localEvent.status === 'confirmed'}
                       >
                         <Check className="mr-2 h-4 w-4" />
                         Going
@@ -918,7 +937,7 @@ export default function EnhancedEventDetailsDialog({
                       <Button
                         className="flex-1 bg-blue-600 text-white hover:bg-blue-700"
                         onClick={() => handleUpdateAttendeeStatus('tentative')}
-                        disabled={isUpdatingStatus}
+                        disabled={isUpdatingStatus || localEvent.status === 'confirmed'}
                       >
                         <HelpCircle className="mr-2 h-4 w-4" />
                         Maybe
@@ -926,7 +945,9 @@ export default function EnhancedEventDetailsDialog({
                       <Button
                         className="flex-1 bg-red-600 text-white hover:bg-red-700"
                         onClick={() => handleUpdateAttendeeStatus('declined')}
-                        disabled={isUpdatingStatus}
+                        disabled={
+                          isUpdatingStatus || localEvent.status === 'confirmed'
+                        }
                       >
                         <X className="mr-2 h-4 w-4" />
                         Can&apos;t Go
@@ -1375,6 +1396,17 @@ function EnhancedAttendeesList({
           )}
         >
           Maybe ({counts.tentative})
+        </button>
+        <button
+          onClick={() => setActiveTab('declined')}
+          className={cn(
+            'flex-1 rounded-md px-3 py-2 text-sm font-medium transition-colors',
+            activeTab === 'declined'
+              ? 'bg-background text-foreground shadow-sm'
+              : 'text-muted-foreground hover:text-foreground'
+          )}
+        >
+          Can&apos;t Go ({counts.declined})
         </button>
         <button
           onClick={() => setActiveTab('pending')}

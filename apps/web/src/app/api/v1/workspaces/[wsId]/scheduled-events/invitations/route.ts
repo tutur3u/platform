@@ -1,8 +1,10 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { calculateAttendeeCounts } from '@tuturuuu/utils/event-attendees.utils';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
+import { isValidUUID } from '@tuturuuu/utils/uuid-helper';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextRequest, NextResponse } from 'next/server';
+import { DEV_MODE } from '@/constants/common';
 
 interface Params {
   params: Promise<{
@@ -14,6 +16,11 @@ interface Params {
 export async function GET(req: NextRequest, { params }: Params) {
   try {
     const { wsId } = await params;
+
+    if (!isValidUUID(wsId) && !DEV_MODE) {
+      return NextResponse.json({ error: 'Invalid workspace ID' }, { status: 400 });
+    }
+
     const supabase = await createClient();
     const user = await getCurrentUser(true);
 
@@ -78,7 +85,9 @@ export async function GET(req: NextRequest, { params }: Params) {
       ) || [];
 
     // For each event, get attendee counts
-    const eventIds = validInvitations.map((inv) => inv.event.id);
+    const eventIds = Array.from(
+      new Set(validInvitations.map((inv) => inv.event.id))
+    );
 
     if (eventIds.length === 0) {
       return NextResponse.json([]);
@@ -106,12 +115,12 @@ export async function GET(req: NextRequest, { params }: Params) {
           }
           const eventCounts = acc[attendee.event_id];
           if (eventCounts) {
-            eventCounts.total++;
             switch (attendee.status) {
               case 'accepted':
               case 'declined':
               case 'pending':
               case 'tentative':
+                eventCounts.total++;
                 eventCounts[attendee.status]++;
                 break;
               default:

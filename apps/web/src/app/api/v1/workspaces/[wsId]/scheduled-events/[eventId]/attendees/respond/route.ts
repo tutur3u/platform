@@ -83,9 +83,18 @@ export async function PUT(req: NextRequest, { params }: Params) {
 
     if (updateError) {
       console.error('Error updating attendee status:', updateError);
+      const code = (updateError as { code?: string })?.code;
+      const status = code === '42501' ? 403 : 500; // 42501: permission denied (RLS)
+      const msg =
+        status === 403 ? 'Not allowed to update this attendee' : 'Failed to update response';
+      return NextResponse.json({ error: msg }, { status });
+    }
+
+    if (!updatedAttendee) {
+      // Likely concurrent change or no matching row after filters
       return NextResponse.json(
-        { error: 'Failed to update response' },
-        { status: 500 }
+        { error: 'Attendee update conflict; please refresh and retry' },
+        { status: 409 }
       );
     }
 

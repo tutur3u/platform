@@ -72,7 +72,8 @@ export async function POST(req: NextRequest, { params }: Params) {
         updated_at: new Date().toISOString(),
       })
       .eq('id', eventId)
-      .eq('status', 'active')
+      .eq('ws_id', wsId)
+      .in('status', ['active', 'draft'])
       .select()
       .single();
 
@@ -81,6 +82,13 @@ export async function POST(req: NextRequest, { params }: Params) {
       return NextResponse.json(
         { error: 'Failed to confirm event' },
         { status: 500 }
+      );
+    }
+
+    if (!updatedEvent) {
+      return NextResponse.json(
+        { error: 'Event status changed; please refresh and retry' },
+        { status: 409 }
       );
     }
 
@@ -151,6 +159,7 @@ export async function DELETE(req: NextRequest, { params }: Params) {
         updated_at: new Date().toISOString(),
       })
       .eq('id', eventId)
+      .eq('ws_id', wsId)
       .eq('status', 'confirmed')
       .select()
       .single();
@@ -160,6 +169,13 @@ export async function DELETE(req: NextRequest, { params }: Params) {
       return NextResponse.json(
         { error: 'Failed to unconfirm event' },
         { status: 500 }
+      );
+    }
+
+    if (!updatedEvent) {
+      return NextResponse.json(
+        { error: 'Event status changed; please refresh and retry' },
+        { status: 409 }
       );
     }
 

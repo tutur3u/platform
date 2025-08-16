@@ -1,7 +1,9 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
+import { calculateAttendeeCounts } from '@tuturuuu/utils/event-attendees.utils';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextRequest, NextResponse } from 'next/server';
+import type { EventAttendeeStatus } from '@tuturuuu/types/primitives/RSVP';
 
 interface Params {
   params: Promise<{
@@ -62,16 +64,9 @@ export async function GET(req: NextRequest, { params }: Params) {
       return NextResponse.json({ error: 'Access denied' }, { status: 403 });
     }
 
-    const counts = event.attendees?.reduce(
-      (acc, attendee) => {
-        acc.total++;
-        if (attendee.status) {
-          acc[attendee.status as keyof typeof acc]++;
-        }
-        return acc;
-      },
-      { total: 0, accepted: 0, declined: 0, pending: 0, tentative: 0 }
-    ) || { total: 0, accepted: 0, declined: 0, pending: 0, tentative: 0 };
+    const counts = calculateAttendeeCounts(
+      event.attendees?.filter((a) => a.status !== null) as Array<{ status: EventAttendeeStatus }>
+    );
     const eventWithCounts = {
       ...event,
       attendee_count: counts,
@@ -202,7 +197,7 @@ export async function PUT(req: NextRequest, { params }: Params) {
       })
       .eq('id', eventId)
       .eq('ws_id', wsId)
-      .eq('status', 'active')
+      .neq('status', 'confirmed')
       .select()
       .single();
 

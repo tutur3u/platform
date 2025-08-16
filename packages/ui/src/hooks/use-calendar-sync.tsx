@@ -285,11 +285,13 @@ export const CalendarSyncProvider = ({
 
   // Fetch scheduled events
   const { isLoading: isScheduledEventsLoading } = useQuery({
-    queryKey: ['scheduledEvents', wsId],
-    enabled: !!wsId,
+    queryKey: ['scheduledEvents', wsId, getCacheKey(dates)],
+    enabled: !!wsId && dates.length > 0,
     queryFn: async () => {
       try {
         const supabase = createClient();
+        const startDate = dayjs(dates[0]).startOf('day');
+        const endDate = dayjs(dates[dates.length - 1]).endOf('day');
         const { data: events, error } = await supabase
           .from('workspace_scheduled_events')
           .select(
@@ -306,9 +308,9 @@ export const CalendarSyncProvider = ({
           `
           )
           .eq('ws_id', wsId)
-          .not('ws_id', 'is', null)
+          .lt('start_at', endDate.add(1, 'day').toISOString())  // starts before visible end
+          .gt('end_at', startDate.toISOString())                // ends after visible start
           .order('start_at', { ascending: true });
-
         if (error) {
           console.error('Error fetching scheduled events:', error);
           return [];
@@ -320,7 +322,17 @@ export const CalendarSyncProvider = ({
           attendee_count: event.attendees?.reduce(
             (counts, attendee) => {
               counts.total++;
-              counts[attendee.status as keyof typeof counts]++;
+              switch (attendee.status) {
+                case 'accepted':
+                case 'declined':
+                case 'pending':
+                case 'tentative':
+                  counts[attendee.status]++;
+                  break;
+                default:
+                  // ignore unknown/null statuses
+                  break;
+              }
               return counts;
             },
             { total: 0, accepted: 0, declined: 0, pending: 0, tentative: 0 }

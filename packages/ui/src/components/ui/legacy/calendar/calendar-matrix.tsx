@@ -11,6 +11,7 @@ import dayjs from 'dayjs';
 import isSameOrBefore from 'dayjs/plugin/isSameOrBefore';
 import timezone from 'dayjs/plugin/timezone';
 import { useParams } from 'next/navigation';
+import React from 'react';
 
 dayjs.extend(timezone);
 dayjs.extend(isSameOrBefore);
@@ -66,117 +67,121 @@ export const CalendarEventMatrix = ({
   const { eventsWithoutAllDays, scheduledEvents } = useCalendarSync();
   const { userId: currentUserId } = useCurrentUser();
   const tz = settings?.timezone?.timezone;
+  const tzId = tz && tz !== 'auto' ? tz : null;
 
   // Get all events
   const allEvents = eventsWithoutAllDays;
 
-  // Convert scheduled events to calendar events
-  const scheduledCalendarEvents: CalendarEvent[] = [];
-  if (currentUserId && scheduledEvents) {
-    scheduledEvents.forEach((scheduledEvent) => {
-      try {
-        const calendarEvent = convertScheduledEventToCalendarEvent(
-          scheduledEvent,
-          currentUserId
-        );
-        if (calendarEvent) {
-          scheduledCalendarEvents.push(calendarEvent);
+  // Convert scheduled events to calendar events - memoized
+  const scheduledCalendarEvents = React.useMemo(() => {
+    const events: CalendarEvent[] = [];
+    if (currentUserId && scheduledEvents) {
+      scheduledEvents.forEach((scheduledEvent) => {
+        try {
+          const calendarEvent = convertScheduledEventToCalendarEvent(
+            scheduledEvent,
+            currentUserId
+          );
+          if (calendarEvent) {
+            events.push(calendarEvent);
+          }
+        } catch (error) {
+          console.error('Error converting scheduled event:', error);
         }
-      } catch (error) {
-        console.error('Error converting scheduled event:', error);
-      }
-    });
-  }
-
-  // Combine regular events with scheduled events
-  const combinedEvents = [...allEvents, ...scheduledCalendarEvents];
-
-  // Process events to handle multi-day events
-  const processedEvents = combinedEvents.flatMap((event) => {
-    // Parse dates with proper timezone handling
-    const startDay =
-      tz === 'auto' ? dayjs(event.start_at) : dayjs(event.start_at).tz(tz);
-    const endDay =
-      tz === 'auto' ? dayjs(event.end_at) : dayjs(event.end_at).tz(tz);
-
-    // Ensure end time is after start time
-    if (endDay.isBefore(startDay)) {
-      // Fix invalid event by setting end time to 1 hour after start
-      return [{ ...event, end_at: startDay.add(1, 'hour').toISOString() }];
+      });
     }
+    return events;
+  }, [scheduledEvents, currentUserId]);
 
-    // Normalize dates to compare just the date part (ignoring time)
-    const startDayNormalized = startDay.startOf('day');
-    const endDayNormalized = endDay.startOf('day');
+  // Combine regular events with scheduled events - memoized
+  const combinedEvents = React.useMemo(() => {
+    return [...allEvents, ...scheduledCalendarEvents];
+  }, [allEvents, scheduledCalendarEvents]);
 
-    // If start and end are on the same day, return the original event
-    if (startDayNormalized.isSame(endDayNormalized)) {
-      return [
-        {
+  // Process events to handle multi-day events - memoized
+  const processedEvents = React.useMemo(() => {
+    return combinedEvents.flatMap((event) => {
+      // Parse dates with proper timezone handling
+      const startDay = tzId ? dayjs(event.start_at).tz(tzId) : dayjs(event.start_at);
+      const endDay = tzId ? dayjs(event.end_at).tz(tzId) : dayjs(event.end_at);
+
+      // Ensure end time is after start time
+      if (endDay.isBefore(startDay)) {
+        // Fix invalid event by setting end time to 1 hour after start
+        return [{ ...event, end_at: startDay.add(1, 'hour').toISOString() }];
+      }
+
+      // Normalize dates to compare just the date part (ignoring time)
+      const startDayNormalized = startDay.startOf('day');
+      const endDayNormalized = endDay.startOf('day');
+
+      // If start and end are on the same day, return the original event
+      if (startDayNormalized.isSame(endDayNormalized)) {
+        return [
+          {
+            ...event,
+            start_at: startDay.toISOString(),
+            end_at: endDay.toISOString(),
+          },
+        ];
+      }
+
+      // For multi-day events, create a separate instance for each day
+      const splitEvents: CalendarEvent[] = [];
+      let currentDay = startDayNormalized.clone();
+
+      // Iterate through each day of the event
+      while (currentDay.isSameOrBefore(endDayNormalized)) {
+        const dayStart = currentDay.startOf('day');
+        const dayEnd = currentDay.endOf('day');
+
+        const dayEvent: CalendarEvent = {
           ...event,
-          start_at: startDay.toISOString(),
-          end_at: endDay.toISOString(),
-        },
-      ];
-    }
+          _originalId: event.id,
+          id: `${event.id}-${currentDay.format('YYYY-MM-DD')}`,
+          _isMultiDay: true,
+          _dayPosition: currentDay.isSame(startDayNormalized)
+            ? 'start'
+            : currentDay.isSame(endDayNormalized)
+              ? 'end'
+              : 'middle',
+        };
 
-    // For multi-day events, create a separate instance for each day
-    const splitEvents: CalendarEvent[] = [];
-    let currentDay = startDayNormalized.clone();
+        if (currentDay.isSame(startDayNormalized)) {
+          dayEvent.start_at = startDay.toISOString();
+          dayEvent.end_at = dayEnd.toISOString();
+        } else if (currentDay.isSame(endDayNormalized)) {
+          dayEvent.start_at = dayStart.toISOString();
+          dayEvent.end_at = endDay.toISOString();
+        } else {
+          dayEvent.start_at = dayStart.toISOString();
+          dayEvent.end_at = dayEnd.toISOString();
+        }
 
-    // Iterate through each day of the event
-    while (currentDay.isSameOrBefore(endDayNormalized)) {
-      const dayStart = currentDay.startOf('day');
-      const dayEnd = currentDay.endOf('day');
-
-      const dayEvent: CalendarEvent = {
-        ...event,
-        _originalId: event.id,
-        id: `${event.id}-${currentDay.format('YYYY-MM-DD')}`,
-        _isMultiDay: true,
-        _dayPosition: currentDay.isSame(startDayNormalized)
-          ? 'start'
-          : currentDay.isSame(endDayNormalized)
-            ? 'end'
-            : 'middle',
-      };
-
-      if (currentDay.isSame(startDayNormalized)) {
-        dayEvent.start_at = startDay.toISOString();
-        dayEvent.end_at = dayEnd.toISOString();
-      } else if (currentDay.isSame(endDayNormalized)) {
-        dayEvent.start_at = dayStart.toISOString();
-        dayEvent.end_at = endDay.toISOString();
-      } else {
-        dayEvent.start_at = dayStart.toISOString();
-        dayEvent.end_at = dayEnd.toISOString();
+        splitEvents.push(dayEvent);
+        currentDay = currentDay.add(1, 'day');
       }
 
-      splitEvents.push(dayEvent);
-      currentDay = currentDay.add(1, 'day');
-    }
-
-    return splitEvents;
-  });
-
-  // Filter events to only include those visible in the current date range
-  const visibleEvents = processedEvents.filter((event) => {
-    const eventStart =
-      tz === 'auto' ? dayjs(event.start_at) : dayjs(event.start_at).tz(tz);
-    const eventStartDay = eventStart.startOf('day');
-
-    // Check if the event falls within any of the visible dates
-    return dates.some((date) => {
-      const dateDay =
-        tz === 'auto'
-          ? dayjs(date).startOf('day')
-          : dayjs(date).tz(tz).startOf('day');
-      return dateDay.isSame(eventStartDay);
+      return splitEvents;
     });
-  });
+  }, [combinedEvents, tzId]);
 
-  // Simple algorithm to assign levels to events
-  const assignLevels = () => {
+  // Filter events to only include those visible in the current date range - memoized
+  const visibleEvents = React.useMemo(() => {
+    return processedEvents.filter((event) => {
+      const eventStart = tzId ? dayjs(event.start_at).tz(tzId) : dayjs(event.start_at);
+      const eventStartDay = eventStart.startOf('day');
+
+      // Check if the event falls within any of the visible dates
+      return dates.some((date) => {
+        const dateDay = tzId ? dayjs(date).tz(tzId).startOf('day') : dayjs(date).startOf('day');
+        return dateDay.isSame(eventStartDay);
+      });
+    });
+  }, [processedEvents, dates, tzId]);
+
+  // Simple algorithm to assign levels to events - memoized
+  const eventsWithLevels = React.useMemo(() => {
     // Sort events by start time
     const sortedEvents = [...visibleEvents].sort((a, b) => {
       const aStart = new Date(a.start_at).getTime();
@@ -312,10 +317,7 @@ export const CalendarEventMatrix = ({
       _overlapCount: eventOverlapCounts.get(event.id) || 1,
       _overlapGroup: eventOverlapGroups.get(event.id) || [event.id],
     }));
-  };
-
-  // Get events with levels assigned
-  const eventsWithLevels = assignLevels();
+  }, [visibleEvents]);
 
   const columns = dates.length;
 
