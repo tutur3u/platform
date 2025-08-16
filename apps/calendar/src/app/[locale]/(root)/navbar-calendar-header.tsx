@@ -6,7 +6,7 @@ import { useTranslations } from 'next-intl';
 
 export default function NavbarCalendarHeader({}: { locale: string }) {
   const t = useTranslations('calendar');
-  // const { date, setDate, view, setView, availableViews } = useCalendarContext();
+  // const { date, setDate, view, setView, availableViews } = useCalendar();
 
   // const title = dayjs(date)
   //   .locale(locale)
@@ -69,7 +69,7 @@ export default function NavbarCalendarHeader({}: { locale: string }) {
         <Button
           variant="ghost"
           size="sm"
-          className="text-md h-8"
+          className="h-8 text-md"
           // onClick={isToday() || isCurrentMonth() ? undefined : selectToday}
           // disabled={isToday() || isCurrentMonth()}
           disabled

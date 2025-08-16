@@ -1,8 +1,8 @@
-import { useCalendar } from '../../../../hooks/use-calendar';
-import { HOUR_HEIGHT } from './config';
 import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone';
 import { useEffect, useState } from 'react';
+import { HOUR_HEIGHT } from './config';
+import { useCalendarSettings } from './settings/settings-context';
 
 dayjs.extend(timezone);
 
@@ -13,7 +13,7 @@ export const TimeIndicatorLine = ({
   columnIndex: number;
   columnsCount: number;
 }) => {
-  const { settings } = useCalendar();
+  const { settings } = useCalendarSettings();
   const tz = settings?.timezone?.timezone;
   const [now, setNow] = useState(tz === 'auto' ? dayjs() : dayjs().tz(tz));
 
@@ -30,7 +30,7 @@ export const TimeIndicatorLine = ({
     const interval = setInterval(updateTime, 60000);
 
     return () => clearInterval(interval);
-  }, []);
+  }, [tz]);
 
   // Use selected timezone
   const nowTz = tz === 'auto' ? now : now.tz(tz);
@@ -52,7 +52,7 @@ export const TimeIndicatorLine = ({
       }}
     >
       {/* Left dot */}
-      <div className="absolute -top-[4px] -left-[4px] h-[10px] w-[10px] rounded-full bg-red-400 shadow-md" />
+      <div className="-top-[4px] -left-[4px] absolute h-[10px] w-[10px] rounded-full bg-red-400 shadow-md" />
 
       {/* Right dot */}
       {/* <div className="absolute -top-[4px] -right-[4px] h-[10px] w-[10px] rounded-full bg-red-400 shadow-md" /> */}

@@ -1,11 +1,11 @@
-import { AllDayEventBar } from './all-day-event-bar';
-import { MIN_COLUMN_WIDTH } from './config';
-import { DayTitle } from './day-title';
-import { useCalendar } from '@tuturuuu/ui/hooks/use-calendar';
 import { cn } from '@tuturuuu/utils/format';
 import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone';
 import { Clock } from 'lucide-react';
+import { AllDayEventBar } from './all-day-event-bar';
+import { MIN_COLUMN_WIDTH } from './config';
+import { DayTitle } from './day-title';
+import { useCalendarSettings } from './settings/settings-context';
 
 dayjs.extend(timezone);
 
@@ -18,7 +18,7 @@ export const WeekdayBar = ({
   view: 'day' | '4-days' | 'week' | 'month';
   dates: Date[];
 }) => {
-  const { settings } = useCalendar();
+  const { settings } = useCalendarSettings();
   const showWeekends = settings.appearance.showWeekends;
   const tz = settings?.timezone?.timezone;
 

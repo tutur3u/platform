@@ -1,17 +1,6 @@
-import { useCalendar } from '../../../../hooks/use-calendar';
-import {
-  ContextMenu,
-  ContextMenuContent,
-  ContextMenuItem,
-  ContextMenuSeparator,
-  ContextMenuSub,
-  ContextMenuSubContent,
-  ContextMenuSubTrigger,
-  ContextMenuTrigger,
-} from '../../context-menu';
-import { GRID_SNAP, HOUR_HEIGHT, MAX_HOURS, MIN_EVENT_HEIGHT } from './config';
-import type { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
 import type { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
+import type { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
+import { useCalendar } from '@tuturuuu/ui/hooks/use-calendar';
 import { getEventStyles } from '@tuturuuu/utils/color-helper';
 import { cn } from '@tuturuuu/utils/format';
 import dayjs from 'dayjs';
@@ -30,6 +19,18 @@ import {
   Unlock,
 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
+import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuSeparator,
+  ContextMenuSub,
+  ContextMenuSubContent,
+  ContextMenuSubTrigger,
+  ContextMenuTrigger,
+} from '../../context-menu';
+import { GRID_SNAP, HOUR_HEIGHT, MAX_HOURS, MIN_EVENT_HEIGHT } from './config';
+import { useCalendarSettings } from './settings/settings-context';
 
 dayjs.extend(timezone);
 
@@ -72,8 +73,8 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
   const overlapCount = _overlapCount || 1;
   const overlapGroup = _overlapGroup || [id];
 
-  const { updateEvent, hideModal, openModal, deleteEvent, settings } =
-    useCalendar();
+  const { updateEvent, hideModal, openModal, deleteEvent } = useCalendar();
+  const { settings } = useCalendarSettings();
   const tz = settings?.timezone?.timezone;
 
   // Local state for immediate UI updates
@@ -844,7 +845,7 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
 
   // Format time for display
   const formatEventTime = (date: Date | dayjs.Dayjs) => {
-    const { settings } = useCalendar();
+    const { settings } = useCalendarSettings();
     const timeFormat = settings.appearance.timeFormat;
     const d = dayjs.isDayjs(date)
       ? date
@@ -910,7 +911,7 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
           ref={cardRef}
           id={`event-${id}`}
           className={cn(
-            'pointer-events-auto absolute max-w-none overflow-hidden rounded-l rounded-r-md border-l-2 transition-colors duration-300 select-none',
+            'pointer-events-auto absolute max-w-none select-none overflow-hidden rounded-r-md rounded-l border-l-2 transition-colors duration-300',
             'group transition-all hover:ring-1 focus:outline-none',
             {
               'transform shadow-md': isDragging || isResizing, // Subtle transform during interaction
@@ -952,13 +953,13 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
         >
           {/* Continuation indicators for multi-day events */}
           {showStartIndicator && (
-            <div className="absolute top-1/2 left-2 -translate-x-1 -translate-y-1/2">
+            <div className="-translate-x-1 -translate-y-1/2 absolute top-1/2 left-2">
               <ArrowLeft className={`h-3 w-3 ${text}`} />
             </div>
           )}
 
           {showEndIndicator && (
-            <div className="absolute top-1/2 right-2 translate-x-1 -translate-y-1/2">
+            <div className="-translate-y-1/2 absolute top-1/2 right-2 translate-x-1">
               <ArrowRight className={`h-3 w-3 ${text}`} />
             </div>
           )}
@@ -1010,7 +1011,7 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
           <div
             ref={contentRef}
             className={cn(
-              'flex h-full flex-col text-left select-none',
+              'flex h-full select-none flex-col text-left',
               duration <= 0.25 ? 'px-1 py-0' : 'p-1',
               duration <= 0.5 ? 'text-xs' : 'text-sm',
               _isMultiDay && 'items-start'
@@ -1024,13 +1025,13 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
             >
               <div
                 className={cn(
-                  'space-x-1 text-xs font-semibold',
+                  'space-x-1 font-semibold text-xs',
                   duration <= 0.5 ? 'line-clamp-1' : 'line-clamp-2'
                 )}
               >
                 {locked && (
                   <Lock
-                    className="mt-0.5 inline-block h-3 w-3 shrink-0 -translate-y-0.5 opacity-70"
+                    className="-translate-y-0.5 mt-0.5 inline-block h-3 w-3 shrink-0 opacity-70"
                     aria-label="Event locked"
                   />
                 )}
