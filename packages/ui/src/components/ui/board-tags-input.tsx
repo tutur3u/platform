@@ -97,19 +97,25 @@ export function TagsInput({
         >
           <span>{tag}</span>
           {!disabled && (
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              className="h-auto p-0 text-muted-foreground hover:text-foreground"
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                removeTag(index);
-              }}
-            >
-              <X className="h-3 w-3" />
-            </Button>
+                         <Button
+               type="button"
+               variant="ghost"
+               size="sm"
+               className="h-auto p-0 text-muted-foreground hover:text-foreground"
+               aria-label={`Remove ${tag}`}
+               title={`Remove ${tag}`}
+               onMouseDown={(e) => {
+                 // Prevent input blur so onBlur doesn't add a partial tag unintentionally
+                 e.preventDefault();
+               }}
+               onClick={(e) => {
+                 e.preventDefault();
+                 e.stopPropagation();
+                 removeTag(index);
+               }}
+             >
+               <X className="h-3 w-3" />
+             </Button>
           )}
         </Badge>
       ))}

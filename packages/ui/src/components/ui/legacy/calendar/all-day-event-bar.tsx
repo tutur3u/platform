@@ -707,42 +707,46 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
                   !dragState.isDragging && 'hover:bg-muted/20'
                 )}
               >
-                {/* Show/hide expansion button */}
-                {hiddenCount > 0 && (
-                  <div
-                    className="flex cursor-pointer items-center justify-center rounded-sm px-2 py-1 font-medium text-muted-foreground transition-colors hover:bg-muted/40"
-                    onClick={() => toggleDateExpansion(dateKey)}
-                    style={{
-                      position: 'absolute',
-                      top: `${MAX_EVENTS_DISPLAY * 1.7}rem`,
-                      left: `${(dateIndex * 100) / visibleDates.length}%`,
-                      width: `${100 / visibleDates.length}%`,
-                      zIndex: 10,
-                    }}
-                  >
-                    <ChevronDown className="mr-1 h-3 w-3" />
-                    {hiddenCount} more
-                  </div>
-                )}
+                                 {/* Show/hide expansion button */}
+                 {hiddenCount > 0 && (
+                   <button
+                     type="button"
+                     aria-expanded={false}
+                     className="flex items-center justify-center rounded-sm px-2 py-1 font-medium text-muted-foreground transition-colors hover:bg-muted/40"
+                     onClick={() => toggleDateExpansion(dateKey)}
+                     style={{
+                       position: 'absolute',
+                       top: `${MAX_EVENTS_DISPLAY * 1.7}rem`,
+                       left: `${(dateIndex * 100) / visibleDates.length}%`,
+                       width: `${100 / visibleDates.length}%`,
+                       zIndex: 10,
+                     }}
+                   >
+                     <ChevronDown className="mr-1 h-3 w-3" />
+                     {hiddenCount} more
+                   </button>
+                 )}
 
-                {isExpanded &&
-                  !shouldShowAll &&
-                  dateEvents.length > MAX_EVENTS_DISPLAY && (
-                    <div
-                      className="flex cursor-pointer items-center justify-center rounded-sm px-2 py-1 font-medium text-muted-foreground transition-colors hover:bg-muted/40"
-                      onClick={() => toggleDateExpansion(dateKey)}
-                      style={{
-                        position: 'absolute',
-                        top: `${dateEvents.length * 1.7}rem`,
-                        left: `${(dateIndex * 100) / visibleDates.length}%`,
-                        width: `${100 / visibleDates.length}%`,
-                        zIndex: 10,
-                      }}
-                    >
-                      <ChevronUp className="mr-1 h-3 w-3" />
-                      Show less
-                    </div>
-                  )}
+                                 {isExpanded &&
+                   !shouldShowAll &&
+                   dateEvents.length > MAX_EVENTS_DISPLAY && (
+                     <button
+                       type="button"
+                       aria-expanded={true}
+                       className="flex items-center justify-center rounded-sm px-2 py-1 font-medium text-muted-foreground transition-colors hover:bg-muted/40"
+                       onClick={() => toggleDateExpansion(dateKey)}
+                       style={{
+                         position: 'absolute',
+                         top: `${dateEvents.length * 1.7}rem`,
+                         left: `${(dateIndex * 100) / visibleDates.length}%`,
+                         width: `${100 / visibleDates.length}%`,
+                         zIndex: 10,
+                       }}
+                     >
+                       <ChevronUp className="mr-1 h-3 w-3" />
+                       Show less
+                     </button>
+                   )}
               </div>
             );
           })}
@@ -801,61 +805,82 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
             dragState.isDragging && dragState.draggedEvent?.id === event.id;
 
           return (
-            <div
-              key={`spanning-event-${event.id}`}
-              className={cn(
-                'absolute flex items-center rounded-sm border-l-2 px-2 py-1 font-semibold transition-all duration-200',
-                // Cursor changes based on locked state and drag state
-                event.locked
-                  ? 'cursor-not-allowed opacity-60'
-                  : dragState.isDragging
-                    ? 'cursor-grabbing'
-                    : 'cursor-grab hover:cursor-grab',
-                // Visual feedback for dragging
-                isDraggedEvent && 'scale-95 opacity-30',
-                // Normal styling
-                bg,
-                border,
-                text,
-                // Special styling for cut-off events
-                (isCutOffStart || isCutOffEnd) && 'border-dashed'
-              )}
-              style={{
-                left: `calc(${(startIndex * 100) / visibleDates.length}% + ${EVENT_LEFT_OFFSET}px)`,
-                width: `calc(${(span * 100) / visibleDates.length}% - ${EVENT_LEFT_OFFSET * 2}px)`,
-                top: `${eventRow * 1.6 + 0.25}rem`,
-                height: '1.35rem',
-                zIndex: isDraggedEvent ? 10 : 5,
-              }}
-              onClick={() => {
-                // Only open modal if not dragging and not locked
-                if (!dragState.isDragging && !event.locked) {
-                  openModal(event.id, 'all-day');
-                }
-              }}
-              onMouseDown={(e) => handleEventMouseDown(e, eventSpan)}
-              onTouchStart={(e) => handleEventTouchStart(e, eventSpan)}
-            >
-              {/* Cut-off indicator for events that start before visible range */}
-              {isCutOffStart && (
-                <span
-                  className="mr-1 opacity-75"
-                  title="Event continues from previous days"
-                >
-                  ←
-                </span>
-              )}
-              {/* Use shared EventContent component */}
-              <EventContent event={event} />
-              {/* Cut-off indicator for events that end after visible range */}
-              {isCutOffEnd && (
-                <span
-                  className="ml-1 opacity-75"
-                  title="Event continues to next days"
-                >
-                  →
-                </span>
-              )}
+                         <div
+               key={`spanning-event-${event.id}`}
+               className={cn(
+                 'absolute flex items-center rounded-sm border-l-2 px-2 py-1 font-semibold transition-all duration-200',
+                 // Cursor changes based on locked state and drag state
+                 event.locked
+                   ? 'cursor-not-allowed opacity-60'
+                   : dragState.isDragging
+                     ? 'cursor-grabbing'
+                     : 'cursor-grab hover:cursor-grab',
+                 // Visual feedback for dragging
+                 isDraggedEvent && 'scale-95 opacity-30',
+                 // Normal styling
+                 bg,
+                 border,
+                 text,
+                 // Special styling for cut-off events
+                 (isCutOffStart || isCutOffEnd) && 'border-dashed'
+               )}
+               style={{
+                 left: `calc(${(startIndex * 100) / visibleDates.length}% + ${EVENT_LEFT_OFFSET}px)`,
+                 width: `calc(${(span * 100) / visibleDates.length}% - ${EVENT_LEFT_OFFSET * 2}px)`,
+                 top: `${eventRow * 1.6 + 0.25}rem`,
+                 height: '1.35rem',
+                 zIndex: isDraggedEvent ? 10 : 5,
+               }}
+               role="button"
+               tabIndex={0}
+               aria-label={`${event.title} (all-day event)`}
+               onClick={() => {
+                 // Only open modal if not dragging and not locked
+                 if (!dragState.isDragging && !event.locked) {
+                   openModal(event.id, 'all-day');
+                 }
+               }}
+               onKeyDown={(e) => {
+                 if (
+                   !dragState.isDragging &&
+                   !event.locked &&
+                   (e.key === 'Enter' || e.key === ' ')
+                 ) {
+                   e.preventDefault();
+                   openModal(event.id, 'all-day');
+                 }
+               }}
+               onMouseDown={(e) => handleEventMouseDown(e, eventSpan)}
+               onTouchStart={(e) => handleEventTouchStart(e, eventSpan)}
+             >
+                             {/* Cut-off indicator for events that start before visible range */}
+               {isCutOffStart && (
+                 <>
+                   <span
+                     className="mr-1 opacity-75"
+                     aria-hidden="true"
+                     title="Event continues from previous days"
+                   >
+                     ←
+                   </span>
+                   <span className="sr-only">Continues from previous days</span>
+                 </>
+               )}
+               {/* Use shared EventContent component */}
+               <EventContent event={event} />
+               {/* Cut-off indicator for events that end after visible range */}
+               {isCutOffEnd && (
+                 <>
+                   <span
+                     className="ml-1 opacity-75"
+                     aria-hidden="true"
+                     title="Event continues to next days"
+                   >
+                     →
+                   </span>
+                   <span className="sr-only">Continues to next days</span>
+                 </>
+               )}
             </div>
           );
         })}
