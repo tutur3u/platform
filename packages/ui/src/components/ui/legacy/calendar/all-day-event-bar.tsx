@@ -248,9 +248,6 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
       return;
     }
 
-    // Helper for dayjs + timezone
-    const getDayjsDate = (d: string | Date) => toTz(d);
-
     // Reset drag state and cursor
     setDragState({
       isDragging: false,
@@ -274,16 +271,16 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
     }
 
     try {
-      // Use helper for all dayjs conversions
-      const originalStartDate = getDayjsDate(
+      // Use toTz for all conversions
+      const originalStartDate = toTz(
         visibleDates[originalDateIndex] ?? new Date()
       );
-      const targetStartDate = getDayjsDate(
+      const targetStartDate = toTz(
         visibleDates[targetDateIndex] ?? new Date()
       );
       const daysDiff = targetStartDate.diff(originalStartDate, 'day');
-      const currentStart = getDayjsDate(currentDragState.draggedEvent.start_at);
-      const currentEnd = getDayjsDate(currentDragState.draggedEvent.end_at);
+      const currentStart = toTz(currentDragState.draggedEvent.start_at);
+      const currentEnd = toTz(currentDragState.draggedEvent.end_at);
       const newStart = currentStart.add(daysDiff, 'day');
       const newEnd = currentEnd.add(daysDiff, 'day');
 
@@ -911,10 +908,10 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
                 transform: 'rotate(-2deg)',
               }}
             >
-              {/* Accessibility: Live region for screen readers */}
-              <span className="sr-only" aria-live="assertive">
-                Dragging '{dragState.draggedEvent.title}'
-              </span>
+                             {/* Accessibility: Live region for screen readers */}
+               <span className="sr-only" role="status" aria-live="assertive">
+                 Dragging '{dragState.draggedEvent.title}'
+               </span>
 
               {/* Use shared EventContent component */}
               <EventContent event={dragState.draggedEvent} />

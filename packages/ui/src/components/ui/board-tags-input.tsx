@@ -34,6 +34,7 @@ export function TagsInput({
 }: TagsInputProps) {
   const [inputValue, setInputValue] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   const addTag = (tag: string) => {
     const trimmedTag = tag.trim();
@@ -74,21 +75,25 @@ export function TagsInput({
     }
   };
 
-  const handleInputBlur = () => {
+  const handleInputBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+    const next = e.relatedTarget as Node | null;
+    const isInternalFocus = next && containerRef.current?.contains(next);
+    if (isInternalFocus) return; // Don't add a tag when moving focus within the component
     if (inputValue.trim()) {
       addTag(inputValue);
     }
   };
 
   return (
-    <div
-      className={cn(
-        'flex min-h-10 w-full flex-wrap items-center gap-1 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2',
-        disabled && 'cursor-not-allowed opacity-50',
-        className
-      )}
-      onClick={() => inputRef.current?.focus()}
-    >
+         <div
+       ref={containerRef}
+       className={cn(
+         'flex min-h-10 w-full flex-wrap items-center gap-1 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2',
+         disabled && 'cursor-not-allowed opacity-50',
+         className
+       )}
+       onClick={() => inputRef.current?.focus()}
+     >
       {value.map((tag, index) => (
         <Badge
           key={allowDuplicates ? `${tag}-${index}` : tag}
