@@ -843,36 +843,44 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
         })}
       </div>
 
-      {/* Enhanced drag preview with better positioning */}
-      {dragState.isDragging &&
-        dragState.draggedEvent &&
-        (() => {
-          const styles = getEventStyles(dragState.draggedEvent.color || 'BLUE');
-          return (
-            <div
-              ref={dragPreviewRef}
-              className={cn(
-                'pointer-events-none fixed z-50 truncate rounded-sm border-l-2 px-2 py-1 font-semibold shadow-xl',
-                'transform backdrop-blur-sm transition-none',
-                styles.bg,
-                styles.border,
-                styles.text,
-                'opacity-90'
-              )}
-              style={{
-                left: `${dragState.currentX + 15}px`,
-                top: `${dragState.currentY - 20}px`,
-                height: '1.35rem',
-                minWidth: '120px',
-                maxWidth: '250px',
-                transform: 'rotate(-2deg)',
-              }}
-            >
-              {/* Use shared EventContent component */}
-              <EventContent event={dragState.draggedEvent} />
-            </div>
-          );
-        })()}
+             {/* Enhanced drag preview with better positioning */}
+       {dragState.isDragging &&
+         dragState.draggedEvent &&
+         (() => {
+           const styles = getEventStyles(dragState.draggedEvent.color || 'BLUE');
+           return (
+             <div
+               ref={dragPreviewRef}
+               className={cn(
+                 'pointer-events-none fixed z-50 truncate rounded-sm border-l-2 px-2 py-1 font-semibold shadow-xl',
+                 'transform backdrop-blur-sm transition-none',
+                 styles.bg,
+                 styles.border,
+                 styles.text,
+                 'opacity-90'
+               )}
+               style={{
+                 left: `${dragState.currentX + 15}px`,
+                 top: `${dragState.currentY - 20}px`,
+                 height: '1.35rem',
+                 minWidth: '120px',
+                 maxWidth: '250px',
+                 transform: 'rotate(-2deg)',
+               }}
+             >
+               {/* Accessibility: Live region for screen readers */}
+               <span
+                 className="sr-only"
+                 aria-live="assertive"
+               >
+                 Dragging '{dragState.draggedEvent.title}'
+               </span>
+               
+               {/* Use shared EventContent component */}
+               <EventContent event={dragState.draggedEvent} />
+             </div>
+           );
+         })()}
     </div>
   );
 };
