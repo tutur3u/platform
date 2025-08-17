@@ -825,11 +825,11 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
           aria-label="All-day events"
           className="absolute inset-0 pointer-events-none"
         >
-          {/* Absolute positioned spanning events */}
-          {eventLayout.spans.map((eventSpan) => {
-          const { event, startIndex, span, row, isCutOffStart, isCutOffEnd } =
-            eventSpan;
-          const { bg, border, text } = getEventStyles(event.color || 'BLUE');
+                     {/* Absolute positioned spanning events */}
+           {eventLayout.spans.map((eventSpan) => {
+             const { event, startIndex, span, row, isCutOffStart, isCutOffEnd } =
+               eventSpan;
+             const { bg, border, text } = getEventStyles(event.color || 'BLUE');
 
           // Use the assigned row directly instead of calculating it
           const eventRow = row;
