@@ -412,7 +412,6 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
       // Debug logging for multi-day events
       const eventDurationDays = eventEnd.diff(eventStart, 'day');
       if (process.env.NODE_ENV === 'development' && eventDurationDays > 0) {
-        // eslint-disable-next-line no-console
         console.log('Multi-day event processing:', {
           title: event.title,
           eventStart: eventStart.format('YYYY-MM-DD'),
@@ -941,7 +940,7 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
         })}
         </div>
 
-      {/* Enhanced drag preview with better positioning */}
+              {/* Enhanced drag preview with better positioning */}
       {dragState.isDragging &&
         dragState.draggedEvent &&
         (() => {
@@ -968,7 +967,7 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
             >
               {/* Accessibility: Live region for screen readers */}
               <span className="sr-only" role="status" aria-live="assertive">
-                Dragging '{dragState.draggedEvent.title}'
+                Dragging &apos;{dragState.draggedEvent.title}&apos;
               </span>
 
               {/* Use shared EventContent component */}
@@ -976,6 +975,7 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
             </div>
           );
         })()}
+      </div>
     </div>
   );
 };
