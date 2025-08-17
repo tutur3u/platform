@@ -130,6 +130,12 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
 
   // Constants for layout
   const EVENT_LEFT_OFFSET = 4; // 4px offset from left edge
+  const EVENT_HEIGHT_REM = 1.35;
+  const ROW_HEIGHT_REM = 1.6;         // Used for vertical placement of rows
+  const ROW_TOP_OFFSET_REM = 0.25;    // Additional top offset per row
+  const EXPANSION_BTN_ROW_MULTIPLIER = 1.7;
+  const BAR_BASE_HEIGHT_REM = 1.9;
+  const HEIGHT_PER_EVENT_REM = 1.75;
 
   // Filter out weekend days if showWeekends is false
   const visibleDates = showWeekends
@@ -141,15 +147,12 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
 
   // Stable drag event handlers using refs
   const handleDragStart = useCallback(
-    (e: React.MouseEvent, eventSpan: EventSpan) => {
+    (x: number, y: number, eventSpan: EventSpan) => {
       // Don't allow dragging locked events
       if (eventSpan.event.locked) return;
 
       // Don't allow dragging if there are no visible dates or only one date
       if (visibleDates.length <= 1) return;
-
-      e.preventDefault();
-      e.stopPropagation();
 
       const rect = containerRef.current?.getBoundingClientRect();
       if (!rect) return;
@@ -165,10 +168,10 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
         isDragging: true,
         draggedEvent: eventSpan.event,
         draggedEventSpan: eventSpan,
-        startX: e.clientX,
-        startY: e.clientY,
-        currentX: e.clientX,
-        currentY: e.clientY,
+        startX: x,
+        startY: y,
+        currentX: x,
+        currentY: y,
         targetDateIndex: eventSpan.startIndex,
         originalDateIndex: eventSpan.startIndex,
         previewSpan,
@@ -275,9 +278,7 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
       const originalStartDate = toTz(
         visibleDates[originalDateIndex] ?? new Date()
       );
-      const targetStartDate = toTz(
-        visibleDates[targetDateIndex] ?? new Date()
-      );
+      const targetStartDate = toTz(visibleDates[targetDateIndex] ?? new Date());
       const daysDiff = targetStartDate.diff(originalStartDate, 'day');
       const currentStart = toTz(currentDragState.draggedEvent.start_at);
       const currentEnd = toTz(currentDragState.draggedEvent.end_at);
@@ -286,8 +287,9 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
 
       if (typeof updateEvent === 'function') {
         await updateEvent(currentDragState.draggedEvent.id, {
-          start_at: newStart.toISOString(),
-          end_at: newEnd.toISOString(),
+          // Normalize to local midnight for all-day events
+          start_at: newStart.startOf('day').toISOString(),
+          end_at: newEnd.startOf('day').toISOString(),
         });
       } else {
         console.warn('updateEvent function not available');
@@ -555,7 +557,7 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
   };
 
   // Calculate dynamic height based on visible events
-  const barHeight = Math.max(1.9, eventLayout.maxVisibleEventsPerDay * 1.75);
+  const barHeight = Math.max(BAR_BASE_HEIGHT_REM, eventLayout.maxVisibleEventsPerDay * HEIGHT_PER_EVENT_REM);
 
   // Enhanced mouse and touch handlers
   const handleEventMouseDown = (e: React.MouseEvent, eventSpan: EventSpan) => {
@@ -575,7 +577,7 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
         Math.sqrt(dx * dx + dy * dy) > DRAG_THRESHOLD
       ) {
         dragInitiated.current = true;
-        handleDragStart(e, eventSpan);
+        handleDragStart(e.clientX, e.clientY, eventSpan);
       }
       // If drag already started, let handleDragMove do its job
     };
@@ -605,13 +607,8 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
     longPressTimer.current = setTimeout(() => {
       dragInitiated.current = true;
       handleDragStart(
-        {
-          ...e,
-          clientX: touch.clientX,
-          clientY: touch.clientY,
-          preventDefault: () => {},
-          stopPropagation: () => {},
-        } as any,
+        touch.clientX,
+        touch.clientY,
         eventSpan
       );
     }, LONG_PRESS_DURATION);
@@ -704,46 +701,46 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
                   !dragState.isDragging && 'hover:bg-muted/20'
                 )}
               >
-                                 {/* Show/hide expansion button */}
-                 {hiddenCount > 0 && (
-                   <button
-                     type="button"
-                     aria-expanded={false}
-                     className="flex items-center justify-center rounded-sm px-2 py-1 font-medium text-muted-foreground transition-colors hover:bg-muted/40"
-                     onClick={() => toggleDateExpansion(dateKey)}
-                     style={{
-                       position: 'absolute',
-                       top: `${MAX_EVENTS_DISPLAY * 1.7}rem`,
-                       left: `${(dateIndex * 100) / visibleDates.length}%`,
-                       width: `${100 / visibleDates.length}%`,
-                       zIndex: 10,
-                     }}
-                   >
-                     <ChevronDown className="mr-1 h-3 w-3" />
-                     {hiddenCount} more
-                   </button>
-                 )}
+                {/* Show/hide expansion button */}
+                {hiddenCount > 0 && (
+                  <button
+                    type="button"
+                    aria-expanded={false}
+                    className="flex items-center justify-center rounded-sm px-2 py-1 font-medium text-muted-foreground transition-colors hover:bg-muted/40"
+                    onClick={() => toggleDateExpansion(dateKey)}
+                    style={{
+                      position: 'absolute',
+                      top: `${MAX_EVENTS_DISPLAY * EXPANSION_BTN_ROW_MULTIPLIER}rem`,
+                      left: `${(dateIndex * 100) / visibleDates.length}%`,
+                      width: `${100 / visibleDates.length}%`,
+                      zIndex: 10,
+                    }}
+                  >
+                    <ChevronDown className="mr-1 h-3 w-3" />
+                    {hiddenCount} more
+                  </button>
+                )}
 
-                                 {isExpanded &&
-                   !shouldShowAll &&
-                   dateEvents.length > MAX_EVENTS_DISPLAY && (
-                     <button
-                       type="button"
-                       aria-expanded={true}
-                       className="flex items-center justify-center rounded-sm px-2 py-1 font-medium text-muted-foreground transition-colors hover:bg-muted/40"
-                       onClick={() => toggleDateExpansion(dateKey)}
-                       style={{
-                         position: 'absolute',
-                         top: `${dateEvents.length * 1.7}rem`,
-                         left: `${(dateIndex * 100) / visibleDates.length}%`,
-                         width: `${100 / visibleDates.length}%`,
-                         zIndex: 10,
-                       }}
-                     >
-                       <ChevronUp className="mr-1 h-3 w-3" />
-                       Show less
-                     </button>
-                   )}
+                {isExpanded &&
+                  !shouldShowAll &&
+                  dateEvents.length > MAX_EVENTS_DISPLAY && (
+                    <button
+                      type="button"
+                      aria-expanded={true}
+                      className="flex items-center justify-center rounded-sm px-2 py-1 font-medium text-muted-foreground transition-colors hover:bg-muted/40"
+                      onClick={() => toggleDateExpansion(dateKey)}
+                      style={{
+                        position: 'absolute',
+                        top: `${dateEvents.length * EXPANSION_BTN_ROW_MULTIPLIER}rem`,
+                        left: `${(dateIndex * 100) / visibleDates.length}%`,
+                        width: `${100 / visibleDates.length}%`,
+                        zIndex: 10,
+                      }}
+                    >
+                      <ChevronUp className="mr-1 h-3 w-3" />
+                      Show less
+                    </button>
+                  )}
               </div>
             );
           })}
@@ -762,8 +759,8 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
               style={{
                 left: `calc(${(dragState.previewSpan.startIndex * 100) / visibleDates.length}% + ${EVENT_LEFT_OFFSET}px)`,
                 width: `calc(${(dragState.previewSpan.span * 100) / visibleDates.length}% - ${EVENT_LEFT_OFFSET * 2}px)`,
-                top: `${dragState.previewSpan.row * 1.6 + 0.25}rem`,
-                height: '1.35rem',
+                top: `${dragState.previewSpan.row * ROW_HEIGHT_REM + ROW_TOP_OFFSET_REM}rem`,
+                height: `${EVENT_HEIGHT_REM}rem`,
                 zIndex: 8,
               }}
             />
@@ -802,82 +799,82 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
             dragState.isDragging && dragState.draggedEvent?.id === event.id;
 
           return (
-                         <div
-               key={`spanning-event-${event.id}`}
-               className={cn(
-                 'absolute flex items-center rounded-sm border-l-2 px-2 py-1 font-semibold transition-all duration-200',
-                 // Cursor changes based on locked state and drag state
-                 event.locked
-                   ? 'cursor-not-allowed opacity-60'
-                   : dragState.isDragging
-                     ? 'cursor-grabbing'
-                     : 'cursor-grab hover:cursor-grab',
-                 // Visual feedback for dragging
-                 isDraggedEvent && 'scale-95 opacity-30',
-                 // Normal styling
-                 bg,
-                 border,
-                 text,
-                 // Special styling for cut-off events
-                 (isCutOffStart || isCutOffEnd) && 'border-dashed'
-               )}
-               style={{
-                 left: `calc(${(startIndex * 100) / visibleDates.length}% + ${EVENT_LEFT_OFFSET}px)`,
-                 width: `calc(${(span * 100) / visibleDates.length}% - ${EVENT_LEFT_OFFSET * 2}px)`,
-                 top: `${eventRow * 1.6 + 0.25}rem`,
-                 height: '1.35rem',
-                 zIndex: isDraggedEvent ? 10 : 5,
-               }}
-               role="button"
-               tabIndex={0}
-               aria-label={`${event.title} (all-day event)`}
-               onClick={() => {
-                 // Only open modal if not dragging and not locked
-                 if (!dragState.isDragging && !event.locked) {
-                   openModal(event.id, 'all-day');
-                 }
-               }}
-               onKeyDown={(e) => {
-                 if (
-                   !dragState.isDragging &&
-                   !event.locked &&
-                   (e.key === 'Enter' || e.key === ' ')
-                 ) {
-                   e.preventDefault();
-                   openModal(event.id, 'all-day');
-                 }
-               }}
-               onMouseDown={(e) => handleEventMouseDown(e, eventSpan)}
-               onTouchStart={(e) => handleEventTouchStart(e, eventSpan)}
-             >
-                             {/* Cut-off indicator for events that start before visible range */}
-               {isCutOffStart && (
-                 <>
-                   <span
-                     className="mr-1 opacity-75"
-                     aria-hidden="true"
-                     title="Event continues from previous days"
-                   >
-                     ←
-                   </span>
-                   <span className="sr-only">Continues from previous days</span>
-                 </>
-               )}
-               {/* Use shared EventContent component */}
-               <EventContent event={event} />
-               {/* Cut-off indicator for events that end after visible range */}
-               {isCutOffEnd && (
-                 <>
-                   <span
-                     className="ml-1 opacity-75"
-                     aria-hidden="true"
-                     title="Event continues to next days"
-                   >
-                     →
-                   </span>
-                   <span className="sr-only">Continues to next days</span>
-                 </>
-               )}
+            <div
+              key={`spanning-event-${event.id}`}
+              className={cn(
+                'absolute flex items-center rounded-sm border-l-2 px-2 py-1 font-semibold transition-all duration-200',
+                // Cursor changes based on locked state and drag state
+                event.locked
+                  ? 'cursor-not-allowed opacity-60'
+                  : dragState.isDragging
+                    ? 'cursor-grabbing'
+                    : 'cursor-grab hover:cursor-grab',
+                // Visual feedback for dragging
+                isDraggedEvent && 'scale-95 opacity-30',
+                // Normal styling
+                bg,
+                border,
+                text,
+                // Special styling for cut-off events
+                (isCutOffStart || isCutOffEnd) && 'border-dashed'
+              )}
+              style={{
+                left: `calc(${(startIndex * 100) / visibleDates.length}% + ${EVENT_LEFT_OFFSET}px)`,
+                width: `calc(${(span * 100) / visibleDates.length}% - ${EVENT_LEFT_OFFSET * 2}px)`,
+                top: `${eventRow * ROW_HEIGHT_REM + ROW_TOP_OFFSET_REM}rem`,
+                height: `${EVENT_HEIGHT_REM}rem`,
+                zIndex: isDraggedEvent ? 10 : 5,
+              }}
+              role="button"
+              tabIndex={0}
+              aria-label={`${event.title} (all-day event)`}
+              onClick={() => {
+                // Only open modal if not dragging and not locked
+                if (!dragState.isDragging && !event.locked) {
+                  openModal(event.id, 'all-day');
+                }
+              }}
+              onKeyDown={(e) => {
+                if (
+                  !dragState.isDragging &&
+                  !event.locked &&
+                  (e.key === 'Enter' || e.key === ' ')
+                ) {
+                  e.preventDefault();
+                  openModal(event.id, 'all-day');
+                }
+              }}
+              onMouseDown={(e) => handleEventMouseDown(e, eventSpan)}
+              onTouchStart={(e) => handleEventTouchStart(e, eventSpan)}
+            >
+              {/* Cut-off indicator for events that start before visible range */}
+              {isCutOffStart && (
+                <>
+                  <span
+                    className="mr-1 opacity-75"
+                    aria-hidden="true"
+                    title="Event continues from previous days"
+                  >
+                    ←
+                  </span>
+                  <span className="sr-only">Continues from previous days</span>
+                </>
+              )}
+              {/* Use shared EventContent component */}
+              <EventContent event={event} />
+              {/* Cut-off indicator for events that end after visible range */}
+              {isCutOffEnd && (
+                <>
+                  <span
+                    className="ml-1 opacity-75"
+                    aria-hidden="true"
+                    title="Event continues to next days"
+                  >
+                    →
+                  </span>
+                  <span className="sr-only">Continues to next days</span>
+                </>
+              )}
             </div>
           );
         })}
@@ -902,16 +899,16 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
               style={{
                 left: `${dragState.currentX + 15}px`,
                 top: `${dragState.currentY - 20}px`,
-                height: '1.35rem',
+                height: `${EVENT_HEIGHT_REM}rem`,
                 minWidth: '120px',
                 maxWidth: '250px',
                 transform: 'rotate(-2deg)',
               }}
             >
-                             {/* Accessibility: Live region for screen readers */}
-               <span className="sr-only" role="status" aria-live="assertive">
-                 Dragging '{dragState.draggedEvent.title}'
-               </span>
+              {/* Accessibility: Live region for screen readers */}
+              <span className="sr-only" role="status" aria-live="assertive">
+                Dragging '{dragState.draggedEvent.title}'
+              </span>
 
               {/* Use shared EventContent component */}
               <EventContent event={dragState.draggedEvent} />
