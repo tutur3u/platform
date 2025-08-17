@@ -59,6 +59,11 @@ export const TimeIndicatorText = ({ columnIndex }: { columnIndex: number }) => {
 
   // Get time details using helper function
   const { totalHours, formattedTime } = getTimeDetails(nowTz, timeFormat);
+  
+  // Get secondary timezone time if enabled
+  const formattedTimeSecondary = showSecondary && secondaryTz
+    ? getTimeDetails(now.tz(secondaryTz), timeFormat).formattedTime
+    : '';
 
   // Only show the time indicator text for the first column (when columnIndex is 0)
   // This prevents duplicate time indicators when multiple days are visible
@@ -70,18 +75,38 @@ export const TimeIndicatorText = ({ columnIndex }: { columnIndex: number }) => {
     : TIME_INDICATOR_OFFSETS.SINGLE_TIMEZONE;
 
   return (
-    <div
-      className="pointer-events-none absolute top-[-0.075rem] z-100 flex items-center"
-      style={{
-        left: `${leftOffset}px`,
-        transform: `translateY(${totalHours * HOUR_HEIGHT - 10}px)`,
-        transition: 'transform 0.3s ease-out',
-      }}
-    >
-      <div className="rounded-md bg-dynamic-light-red px-2 py-1 font-semibold text-black text-xs">
-        {formattedTime}
+    <>
+      {/* Primary time indicator (red) */}
+      <div
+        className="pointer-events-none absolute top-[-0.075rem] z-100 flex items-center"
+        style={{
+          left: `${leftOffset}px`,
+          transform: `translateY(${totalHours * HOUR_HEIGHT - 10}px)`,
+          transition: 'transform 0.3s ease-out',
+        }}
+      >
+        <div className="rounded-md bg-dynamic-light-red px-2 py-1 text-xs font-semibold text-black">
+          {formattedTime}
+        </div>
+        <div className="h-0 w-0 border-y-[6px] border-y-transparent border-l-[6px] border-l-dynamic-light-red" />
       </div>
-      <div className="h-0 w-0 border-y-[6px] border-y-transparent border-l-[6px] border-l-dynamic-light-red" />
-    </div>
+
+      {/* Secondary time indicator (blue) - when secondary timezone is enabled */}
+      {showSecondary && (
+        <div
+          className="pointer-events-none absolute top-[-0.075rem] z-100 flex items-center"
+          style={{
+            left: `${leftOffset + TIME_INDICATOR_OFFSETS.DUAL_TIMEZONE}px`,
+            transform: `translateY(${totalHours * HOUR_HEIGHT - 10}px)`,
+            transition: 'transform 0.3s ease-out',
+          }}
+        >
+          <div className="rounded-md bg-dynamic-light-blue px-2 py-1 text-xs font-semibold text-white">
+            {formattedTimeSecondary}
+          </div>
+          <div className="h-0 w-0 border-y-[6px] border-y-transparent border-l-[6px] border-l-dynamic-light-blue" />
+        </div>
+      )}
+    </>
   );
 };
