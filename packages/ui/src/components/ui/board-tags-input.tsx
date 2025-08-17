@@ -1,11 +1,11 @@
 'use client';
 
-import { cn } from '@tuturuuu/utils/format';
-import { X } from 'lucide-react';
-import { type KeyboardEvent, useRef, useState } from 'react';
 import { Badge } from './badge';
 import { Button } from './button';
 import { Input } from './input';
+import { cn } from '@tuturuuu/utils/format';
+import { X } from 'lucide-react';
+import { type KeyboardEvent, useRef, useState } from 'react';
 
 interface TagsInputProps {
   value: string[];
@@ -78,7 +78,8 @@ export function TagsInput({
   const handleInputBlur = (e: React.FocusEvent<HTMLInputElement>) => {
     // Safely handle null relatedTarget (Safari/React retargeting)
     const candidate = e.relatedTarget || document.activeElement;
-    const isInternalFocus = candidate && containerRef.current?.contains(candidate as Node);
+    const isInternalFocus =
+      candidate && containerRef.current?.contains(candidate as Node);
     if (isInternalFocus) return; // Don't add a tag when moving focus within the component
     if (inputValue.trim()) {
       addTag(inputValue);

@@ -1,3 +1,7 @@
+import { useCalendar } from '../../../../hooks/use-calendar';
+import { useTimezone } from '../../../../hooks/use-timezone';
+import { MIN_COLUMN_WIDTH } from './config';
+import { TimeColumnHeaders } from './time-column-headers';
 import type { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
 import { useCalendarSync } from '@tuturuuu/ui/hooks/use-calendar-sync';
 import { getEventStyles } from '@tuturuuu/utils/color-helper';
@@ -10,10 +14,6 @@ import timezone from 'dayjs/plugin/timezone';
 import utc from 'dayjs/plugin/utc';
 import { ChevronDown, ChevronUp } from 'lucide-react';
 import React, { useCallback, useMemo, useRef, useState } from 'react';
-import { useCalendar } from '../../../../hooks/use-calendar';
-import { useTimezone } from '../../../../hooks/use-timezone';
-import { MIN_COLUMN_WIDTH } from './config';
-import { TimeColumnHeaders } from './time-column-headers';
 
 dayjs.extend(utc);
 dayjs.extend(isBetween);
