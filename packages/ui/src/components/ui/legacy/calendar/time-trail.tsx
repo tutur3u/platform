@@ -9,29 +9,51 @@ dayjs.extend(timezone);
 // Reusable component for time column
 const TimeColumn = ({
   timezone: tz,
+  primaryTimezone,
   timeFormat,
   className,
   style,
+  muted = false,
 }: {
   timezone: string | undefined;
+  primaryTimezone: string | undefined;
   timeFormat: '24h' | '12h' | undefined;
   className?: string;
   style?: React.CSSProperties;
+  muted?: boolean;
 }) => {
   const hours = Array.from(Array(24).keys());
 
-  // Simplified formatTime function
+  // Format time in the specified timezone
   const formatTime = (hour: number) => {
-    let date = dayjs();
-
     if (tz && tz !== 'auto') {
-      date = date.tz(tz);
+      // For secondary timezone: show what time it is in that timezone
+      // when it's the specified hour in the primary timezone
+      let baseDate;
+
+      if (primaryTimezone === 'auto' || !primaryTimezone) {
+        // If primary is local time, create a local time and convert to secondary
+        baseDate = dayjs().hour(hour).minute(0).second(0).millisecond(0);
+        baseDate = baseDate.tz(tz);
+      } else {
+        // If primary is a specific timezone, create time in that timezone first
+        baseDate = dayjs()
+          .tz(primaryTimezone)
+          .hour(hour)
+          .minute(0)
+          .second(0)
+          .millisecond(0);
+        baseDate = baseDate.tz(tz);
+      }
+
+      const format = timeFormat === '24h' ? 'HH:mm' : 'h a';
+      return baseDate.format(format);
+    } else {
+      // Primary timezone - show the hour as-is
+      const date = dayjs().hour(hour).minute(0).second(0).millisecond(0);
+      const format = timeFormat === '24h' ? 'HH:mm' : 'h a';
+      return date.format(format);
     }
-
-    date = date.hour(hour).minute(0).second(0).millisecond(0);
-
-    const format = timeFormat === '24h' ? 'HH:mm' : 'h a';
-    return date.format(format);
   };
 
   return (
@@ -50,7 +72,8 @@ const TimeColumn = ({
         >
           <span
             className={cn(
-              'font-medium text-muted-foreground text-sm',
+              'font-medium text-sm',
+              muted ? 'text-muted-foreground/60' : 'text-muted-foreground',
               hour === 0 && 'hidden'
             )}
           >
@@ -66,13 +89,29 @@ export const TimeTrail = () => {
   // Get settings from context
   const { settings } = useCalendar();
   const tz = settings?.timezone?.timezone;
+  const secondaryTz = settings?.timezone?.secondaryTimezone;
+  const showSecondary =
+    Boolean(settings?.timezone?.showSecondaryTimezone) && Boolean(secondaryTz);
   const timeFormat = settings?.appearance?.timeFormat;
 
   return (
-    <TimeColumn
-      timezone={tz}
-      timeFormat={timeFormat}
-      style={{ height: DAY_HEIGHT }}
-    />
+    <div className="flex" style={{ height: DAY_HEIGHT }}>
+      {showSecondary && (
+        <TimeColumn
+          timezone={secondaryTz}
+          primaryTimezone={tz}
+          timeFormat={timeFormat}
+          className="border-border/30 border-r dark:border-zinc-700/50"
+          muted={true}
+          style={{ height: DAY_HEIGHT }}
+        />
+      )}
+      <TimeColumn
+        timezone={tz}
+        primaryTimezone={tz}
+        timeFormat={timeFormat}
+        style={{ height: DAY_HEIGHT }}
+      />
+    </div>
   );
 };
