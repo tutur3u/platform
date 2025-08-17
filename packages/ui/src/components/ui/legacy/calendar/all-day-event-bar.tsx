@@ -186,7 +186,7 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
     [visibleDates.length]
   );
 
-  // Stable drag move handler
+  // Stable drag move handler (mouse)
   const handleDragMove = useCallback(
     (e: MouseEvent) => {
       const currentDragState = dragStateRef.current;
@@ -227,6 +227,52 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
         ...prev,
         currentX: e.clientX,
         currentY: e.clientY,
+        targetDateIndex: clampedTargetIndex,
+        previewSpan,
+      }));
+    },
+    [visibleDates.length]
+  );
+
+  // Stable drag move handler (touch)
+  const handleTouchDragMove = useCallback(
+    (e: TouchEvent) => {
+      const currentDragState = dragStateRef.current;
+      if (
+        !currentDragState.isDragging ||
+        !containerRef.current ||
+        !currentDragState.draggedEventSpan
+      ) {
+        return;
+      }
+      const touch = e.touches[0] || e.changedTouches?.[0];
+      if (!touch) return;
+      // Prevent viewport scrolling while dragging
+      e.preventDefault();
+      const rect = containerRef.current.getBoundingClientRect();
+      const relativeX = touch.clientX - rect.left;
+      const columnWidth = rect.width / visibleDates.length;
+      const targetDateIndex = Math.floor(relativeX / columnWidth);
+      const clampedTargetIndex = Math.max(
+        0,
+        Math.min(targetDateIndex, visibleDates.length - 1)
+      );
+      const originalSpan = currentDragState.draggedEventSpan.span;
+      const newStartIndex = clampedTargetIndex;
+      const newEndIndex = Math.min(
+        newStartIndex + originalSpan - 1,
+        visibleDates.length - 1
+      );
+      const adjustedSpan = newEndIndex - newStartIndex + 1;
+      const previewSpan = {
+        startIndex: newStartIndex,
+        span: adjustedSpan,
+        row: currentDragState.draggedEventSpan.row,
+      };
+      setDragState((prev) => ({
+        ...prev,
+        currentX: touch.clientX,
+        currentY: touch.clientY,
         targetDateIndex: clampedTargetIndex,
         previewSpan,
       }));
@@ -303,18 +349,25 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
     }
   }, [visibleDates, toTz, updateEvent]);
 
-  // Set up global mouse event listeners with stable handlers
+  // Set up global mouse and touch event listeners with stable handlers
   React.useEffect(() => {
     if (dragState.isDragging) {
       document.addEventListener('mousemove', handleDragMove);
       document.addEventListener('mouseup', handleDragEnd);
+      // Add touch listeners to support touch dragging after long-press
+      const onTouchMove = (e: TouchEvent) => handleTouchDragMove(e);
+      const onTouchEnd = () => handleDragEnd();
+      document.addEventListener('touchmove', onTouchMove, { passive: false });
+      document.addEventListener('touchend', onTouchEnd);
 
       return () => {
         document.removeEventListener('mousemove', handleDragMove);
         document.removeEventListener('mouseup', handleDragEnd);
+        document.removeEventListener('touchmove', onTouchMove);
+        document.removeEventListener('touchend', onTouchEnd);
       };
     }
-  }, [dragState.isDragging, handleDragMove, handleDragEnd]);
+  }, [dragState.isDragging, handleDragMove, handleTouchDragMove, handleDragEnd]);
 
   // Cleanup any pending long-press timers on unmount
   React.useEffect(() => {
@@ -662,6 +715,7 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
         style={{
           minWidth: `${visibleDates.length * MIN_COLUMN_WIDTH}px`,
           height: `${barHeight}rem`,
+          touchAction: dragState.isDragging ? 'none' : 'auto',
         }}
       >
         {/* Grid background for date columns - this maintains proper borders */}
