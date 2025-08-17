@@ -3,11 +3,11 @@ import { useCalendarSync } from '@tuturuuu/ui/hooks/use-calendar-sync';
 import { getEventStyles } from '@tuturuuu/utils/color-helper';
 import { cn } from '@tuturuuu/utils/format';
 import dayjs from 'dayjs';
-import utc from 'dayjs/plugin/utc';
 import isBetween from 'dayjs/plugin/isBetween';
 import isSameOrAfter from 'dayjs/plugin/isSameOrAfter';
 import isSameOrBefore from 'dayjs/plugin/isSameOrBefore';
 import timezone from 'dayjs/plugin/timezone';
+import utc from 'dayjs/plugin/utc';
 import { ChevronDown, ChevronUp } from 'lucide-react';
 import React, { useCallback, useMemo, useRef, useState } from 'react';
 import { useCalendar } from '../../../../hooks/use-calendar';
@@ -73,7 +73,7 @@ const EventContent = ({ event }: { event: CalendarEvent }) => (
           aria-label="Synced from Google Calendar"
           data-testid="google-calendar-logo"
         >
-          <path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z"/>
+          <path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z" />
         </svg>
       )}
     <span className="truncate">{event.title}</span>
@@ -92,9 +92,12 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
   const [expandedDates, setExpandedDates] = useState<string[]>([]);
 
   // Helper function to safely convert dates to timezone
-  const toTz = useCallback((d: string | Date) => {
-    return !tz || tz === 'auto' ? dayjs(d) : dayjs(d).tz(tz);
-  }, [tz]);
+  const toTz = useCallback(
+    (d: string | Date) => {
+      return !tz || tz === 'auto' ? dayjs(d) : dayjs(d).tz(tz);
+    },
+    [tz]
+  );
 
   // Drag and drop state
   const [dragState, setDragState] = useState<DragState>({
@@ -322,18 +325,18 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
     // First pass: create event spans without row assignment
     const tempSpans: Omit<EventSpan, 'row'>[] = [];
 
-         // Process each all-day event
-     allDayEvents.forEach((event) => {
-       const eventStart = toTz(event.start_at);
-       const eventEnd = toTz(event.end_at);
+    // Process each all-day event
+    allDayEvents.forEach((event) => {
+      const eventStart = toTz(event.start_at);
+      const eventEnd = toTz(event.end_at);
 
       // Find the start and end indices within our visible dates
       let startIndex = -1;
       let endIndex = -1;
 
-                     // First pass: find any overlap with visible dates
-        const firstVisibleDate = toTz(visibleDates[0]!);
-        const lastVisibleDate = toTz(visibleDates[visibleDates.length - 1]!);
+      // First pass: find any overlap with visible dates
+      const firstVisibleDate = toTz(visibleDates[0]!);
+      const lastVisibleDate = toTz(visibleDates[visibleDates.length - 1]!);
 
       // Check if event overlaps with our visible date range at all
       // Event overlaps if: event_start < visible_end AND event_end > visible_start
@@ -373,36 +376,36 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
         // Event starts before or on the first visible date
         startIndex = 0;
       } else {
-                           // Find the first visible date that matches the event start
-          for (let i = 0; i < visibleDates.length; i++) {
-            const currentDate = toTz(visibleDates[i]!);
-           if (
-             currentDate.isSameOrAfter(eventStart, 'day') &&
-             currentDate.isBefore(eventEnd, 'day')
-           ) {
-             startIndex = i;
-             break;
-           }
-         }
+        // Find the first visible date that matches the event start
+        for (let i = 0; i < visibleDates.length; i++) {
+          const currentDate = toTz(visibleDates[i]!);
+          if (
+            currentDate.isSameOrAfter(eventStart, 'day') &&
+            currentDate.isBefore(eventEnd, 'day')
+          ) {
+            startIndex = i;
+            break;
+          }
+        }
       }
 
       // End index: last visible date that overlaps with the event
       if (eventEnd.isAfter(lastVisibleDate.add(1, 'day'), 'day')) {
         // Event ends after the last visible date
         endIndex = visibleDates.length - 1;
-             } else {
-                   // Find the last visible date that the event covers
-          for (let i = visibleDates.length - 1; i >= 0; i--) {
-            const currentDate = toTz(visibleDates[i]!);
-           if (
-             currentDate.isBefore(eventEnd, 'day') &&
-             currentDate.isSameOrAfter(eventStart, 'day')
-           ) {
-             endIndex = i;
-             break;
-           }
-         }
-       }
+      } else {
+        // Find the last visible date that the event covers
+        for (let i = visibleDates.length - 1; i >= 0; i--) {
+          const currentDate = toTz(visibleDates[i]!);
+          if (
+            currentDate.isBefore(eventEnd, 'day') &&
+            currentDate.isSameOrAfter(eventStart, 'day')
+          ) {
+            endIndex = i;
+            break;
+          }
+        }
+      }
 
       // Include events that have at least one day visible in our date range
       if (startIndex !== -1 && endIndex !== -1) {
@@ -506,8 +509,8 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
 
     // Calculate max visible events per day for layout purposes
     let maxVisibleEventsPerDay = 0;
-         eventsByDay.forEach((dayEvents, dayIndex) => {
-               const dateKey = toTz(visibleDates[dayIndex]!).format('YYYY-MM-DD');
+    eventsByDay.forEach((dayEvents, dayIndex) => {
+      const dateKey = toTz(visibleDates[dayIndex]!).format('YYYY-MM-DD');
 
       const shouldShowAll = dayEvents.length === MAX_EVENTS_DISPLAY + 1;
       const isExpanded = expandedDates.includes(dateKey) || shouldShowAll;
@@ -518,8 +521,8 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
       maxVisibleEventsPerDay = Math.max(maxVisibleEventsPerDay, visibleCount);
     });
 
-         return { spans, maxVisibleEventsPerDay, eventsByDay };
-   }, [allDayEvents, visibleDates, toTz, expandedDates]);
+    return { spans, maxVisibleEventsPerDay, eventsByDay };
+  }, [allDayEvents, visibleDates, toTz, expandedDates]);
 
   // Get unique events for a specific date (for expansion logic)
   const getUniqueEventsForDate = (dateIndex: number): EventSpan[] => {
@@ -657,8 +660,8 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
             gridTemplateColumns: `repeat(${visibleDates.length}, minmax(0, 1fr))`,
           }}
         >
-                     {visibleDates.map((date, dateIndex) => {
-             const dateKey = toTz(date).format('YYYY-MM-DD');
+          {visibleDates.map((date, dateIndex) => {
+            const dateKey = toTz(date).format('YYYY-MM-DD');
 
             const dateEvents = getUniqueEventsForDate(dateIndex);
             const shouldShowAll = dateEvents.length === MAX_EVENTS_DISPLAY + 1;
@@ -760,11 +763,11 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
           const eventRow = row;
 
           // Check if this event should be visible based on expansion state
-                     const shouldHideEvent = visibleDates.some((date, dateIndex) => {
-             if (dateIndex < startIndex || dateIndex > startIndex + span - 1)
-               return false;
+          const shouldHideEvent = visibleDates.some((date, dateIndex) => {
+            if (dateIndex < startIndex || dateIndex > startIndex + span - 1)
+              return false;
 
-             const dateKey = toTz(date).format('YYYY-MM-DD');
+            const dateKey = toTz(date).format('YYYY-MM-DD');
 
             const dateEvents = getUniqueEventsForDate(dateIndex);
             const shouldShowAll = dateEvents.length === MAX_EVENTS_DISPLAY + 1;
@@ -843,44 +846,41 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
         })}
       </div>
 
-             {/* Enhanced drag preview with better positioning */}
-       {dragState.isDragging &&
-         dragState.draggedEvent &&
-         (() => {
-           const styles = getEventStyles(dragState.draggedEvent.color || 'BLUE');
-           return (
-             <div
-               ref={dragPreviewRef}
-               className={cn(
-                 'pointer-events-none fixed z-50 truncate rounded-sm border-l-2 px-2 py-1 font-semibold shadow-xl',
-                 'transform backdrop-blur-sm transition-none',
-                 styles.bg,
-                 styles.border,
-                 styles.text,
-                 'opacity-90'
-               )}
-               style={{
-                 left: `${dragState.currentX + 15}px`,
-                 top: `${dragState.currentY - 20}px`,
-                 height: '1.35rem',
-                 minWidth: '120px',
-                 maxWidth: '250px',
-                 transform: 'rotate(-2deg)',
-               }}
-             >
-               {/* Accessibility: Live region for screen readers */}
-               <span
-                 className="sr-only"
-                 aria-live="assertive"
-               >
-                 Dragging '{dragState.draggedEvent.title}'
-               </span>
-               
-               {/* Use shared EventContent component */}
-               <EventContent event={dragState.draggedEvent} />
-             </div>
-           );
-         })()}
+      {/* Enhanced drag preview with better positioning */}
+      {dragState.isDragging &&
+        dragState.draggedEvent &&
+        (() => {
+          const styles = getEventStyles(dragState.draggedEvent.color || 'BLUE');
+          return (
+            <div
+              ref={dragPreviewRef}
+              className={cn(
+                'pointer-events-none fixed z-50 truncate rounded-sm border-l-2 px-2 py-1 font-semibold shadow-xl',
+                'transform backdrop-blur-sm transition-none',
+                styles.bg,
+                styles.border,
+                styles.text,
+                'opacity-90'
+              )}
+              style={{
+                left: `${dragState.currentX + 15}px`,
+                top: `${dragState.currentY - 20}px`,
+                height: '1.35rem',
+                minWidth: '120px',
+                maxWidth: '250px',
+                transform: 'rotate(-2deg)',
+              }}
+            >
+              {/* Accessibility: Live region for screen readers */}
+              <span className="sr-only" aria-live="assertive">
+                Dragging '{dragState.draggedEvent.title}'
+              </span>
+
+              {/* Use shared EventContent component */}
+              <EventContent event={dragState.draggedEvent} />
+            </div>
+          );
+        })()}
     </div>
   );
 };
