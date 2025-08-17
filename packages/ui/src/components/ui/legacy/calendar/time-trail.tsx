@@ -1,9 +1,9 @@
-import { cn } from '@tuturuuu/utils/format';
-import dayjs from 'dayjs';
-import utc from 'dayjs/plugin/utc';
-import timezone from 'dayjs/plugin/timezone';
 import { useCalendar } from '../../../../hooks/use-calendar';
 import { DAY_HEIGHT, HOUR_HEIGHT } from './config';
+import { cn } from '@tuturuuu/utils/format';
+import dayjs from 'dayjs';
+import timezone from 'dayjs/plugin/timezone';
+import utc from 'dayjs/plugin/utc';
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -73,7 +73,7 @@ const TimeColumn = ({
         >
           <span
             className={cn(
-              'font-medium text-sm',
+              'text-sm font-medium',
               muted ? 'text-muted-foreground/60' : 'text-muted-foreground',
               hour === 0 && 'hidden'
             )}
@@ -102,7 +102,7 @@ export const TimeTrail = () => {
           timezone={secondaryTz}
           primaryTimezone={tz}
           timeFormat={timeFormat}
-          className="border-border/30 border-r dark:border-zinc-700/50"
+          className="border-r border-border/30 dark:border-zinc-700/50"
           muted={true}
           style={{ height: DAY_HEIGHT }}
         />
