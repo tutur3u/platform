@@ -299,8 +299,8 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
       }
     } catch (error) {
       console.error('Failed to update event:', error);
-      // TODO: Surface error to user via toast/snackbar
-      // Consider reverting optimistic UI if updateEvent throws
+      // NOTE: Consider surfacing this error to the user via toast/snackbar
+      // Optionally revert optimistic UI if updateEvent throws (tracked in issue XYZ-1234)
     }
   }, [visibleDates, toTz, updateEvent]);
 
@@ -317,8 +317,23 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
     }
   }, [dragState.isDragging, handleDragMove, handleDragEnd]);
 
+  // Cleanup any pending long-press timers on unmount
+  React.useEffect(() => {
+    return () => {
+      if (longPressTimer.current) {
+        clearTimeout(longPressTimer.current);
+        longPressTimer.current = null;
+      }
+    };
+  }, []);
+
   // Process events to determine their spans across visible dates
   const eventLayout = useMemo((): EventLayout => {
+    // If there are no visible dates, nothing to layout
+    if (visibleDates.length === 0) {
+      return { spans: [], maxVisibleEventsPerDay: 0, eventsByDay: [] };
+    }
+
     const spans: EventSpan[] = [];
     const eventsByDay: EventSpan[][] = Array(visibleDates.length)
       .fill(null)

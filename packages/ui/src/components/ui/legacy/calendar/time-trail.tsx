@@ -28,9 +28,10 @@ const TimeColumn = ({
 
   // Format time in the specified timezone
   const formatTime = (hour: number) => {
+    const fmt = timeFormat === '24h' ? 'HH:mm' : 'h a';
     if (tz && tz !== 'auto') {
-      // For secondary timezone: show what time it is in that timezone
-      // when it's the specified hour in the primary timezone
+      // If a specific timezone is provided, show the time in tz that corresponds
+      // to the given hour in the reference (primary) timezone.
       let baseDate: dayjs.Dayjs;
 
       if (primaryTimezone === 'auto' || !primaryTimezone) {
@@ -48,13 +49,11 @@ const TimeColumn = ({
         baseDate = baseDate.tz(tz);
       }
 
-      const format = timeFormat === '24h' ? 'HH:mm' : 'h a';
-      return baseDate.format(format);
+      return baseDate.format(fmt);
     } else {
       // Primary timezone - show the hour as-is
       const date = dayjs().hour(hour).minute(0).second(0).millisecond(0);
-      const format = timeFormat === '24h' ? 'HH:mm' : 'h a';
-      return date.format(format);
+      return date.format(fmt);
     }
   };
 
