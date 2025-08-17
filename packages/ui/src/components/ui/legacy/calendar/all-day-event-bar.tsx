@@ -705,7 +705,7 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
                 {/* Show/hide expansion button */}
                 {hiddenCount > 0 && (
                   <div
-                    className="flex cursor-pointer items-center justify-center rounded-sm px-2 py-1 font-medium text-muted-foreground text-xs transition-colors hover:bg-muted/40"
+                    className="flex cursor-pointer items-center justify-center rounded-sm px-2 py-1 font-medium text-muted-foreground transition-colors hover:bg-muted/40"
                     onClick={() => toggleDateExpansion(dateKey)}
                     style={{
                       position: 'absolute',
@@ -724,7 +724,7 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
                   !shouldShowAll &&
                   dateEvents.length > MAX_EVENTS_DISPLAY && (
                     <div
-                      className="flex cursor-pointer items-center justify-center rounded-sm px-2 py-1 font-medium text-muted-foreground text-xs transition-colors hover:bg-muted/40"
+                      className="flex cursor-pointer items-center justify-center rounded-sm px-2 py-1 font-medium text-muted-foreground transition-colors hover:bg-muted/40"
                       onClick={() => toggleDateExpansion(dateKey)}
                       style={{
                         position: 'absolute',
@@ -802,7 +802,7 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
             <div
               key={`spanning-event-${event.id}`}
               className={cn(
-                'absolute flex items-center rounded-sm border-l-2 px-2 py-1 font-semibold text-xs transition-all duration-200',
+                'absolute flex items-center rounded-sm border-l-2 px-2 py-1 font-semibold transition-all duration-200',
                 // Cursor changes based on locked state and drag state
                 event.locked
                   ? 'cursor-not-allowed opacity-60'
@@ -837,7 +837,7 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
               {/* Cut-off indicator for events that start before visible range */}
               {isCutOffStart && (
                 <span
-                  className="mr-1 text-xs opacity-75"
+                  className="mr-1 opacity-75"
                   title="Event continues from previous days"
                 >
                   ←
@@ -848,7 +848,7 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
               {/* Cut-off indicator for events that end after visible range */}
               {isCutOffEnd && (
                 <span
-                  className="ml-1 text-xs opacity-75"
+                  className="ml-1 opacity-75"
                   title="Event continues to next days"
                 >
                   →
@@ -868,7 +868,7 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
             <div
               ref={dragPreviewRef}
               className={cn(
-                'pointer-events-none fixed z-50 truncate rounded-sm border-l-2 px-2 py-1 font-semibold text-xs shadow-xl',
+                'pointer-events-none fixed z-50 truncate rounded-sm border-l-2 px-2 py-1 font-semibold shadow-xl',
                 'transform backdrop-blur-sm transition-none',
                 styles.bg,
                 styles.border,
