@@ -33,7 +33,8 @@ export const TimeColumnHeaders = ({
               {secondaryTzAbbr}
             </div>
           ) : (
-            <div className="h-4 w-4" />
+            // Spacer to maintain alignment
+            <div className="h-4 w-4" aria-hidden="true" />
           )}
         </div>
       )}
@@ -43,7 +44,10 @@ export const TimeColumnHeaders = ({
         className={cn(
           'flex w-16 items-center justify-center border bg-muted/30',
           isWeekday
-            ? `flex-col border-r-0 p-1 font-medium ${!showSecondary ? 'rounded-tl-lg' : ''}`
+            ? cn(
+                'flex-col border-r-0 p-1 font-medium',
+                !showSecondary && 'rounded-tl-lg'
+              )
             : 'border-b border-l p-2 font-medium'
         )}
       >

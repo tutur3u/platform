@@ -344,7 +344,8 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
 
       // Debug logging for multi-day events
       const eventDurationDays = eventEnd.diff(eventStart, 'day');
-      if (eventDurationDays > 0) {
+      if (process.env.NODE_ENV === 'development' && eventDurationDays > 0) {
+        // eslint-disable-next-line no-console
         console.log('Multi-day event processing:', {
           title: event.title,
           eventStart: eventStart.format('YYYY-MM-DD'),
@@ -859,30 +860,35 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
       </div>
 
       {/* Enhanced drag preview with better positioning */}
-      {dragState.isDragging && dragState.draggedEvent && (
-        <div
-          ref={dragPreviewRef}
-          className={cn(
-            'pointer-events-none fixed z-50 truncate rounded-sm border-l-2 px-2 py-1 font-semibold text-xs shadow-xl',
-            'transform backdrop-blur-sm transition-none',
-            getEventStyles(dragState.draggedEvent.color || 'BLUE').bg,
-            getEventStyles(dragState.draggedEvent.color || 'BLUE').border,
-            getEventStyles(dragState.draggedEvent.color || 'BLUE').text,
-            'opacity-90'
-          )}
-          style={{
-            left: `${dragState.currentX + 15}px`,
-            top: `${dragState.currentY - 20}px`,
-            height: '1.35rem',
-            minWidth: '120px',
-            maxWidth: '250px',
-            transform: 'rotate(-2deg)',
-          }}
-        >
-          {/* Use shared EventContent component */}
-          <EventContent event={dragState.draggedEvent} />
-        </div>
-      )}
+      {dragState.isDragging &&
+        dragState.draggedEvent &&
+        (() => {
+          const styles = getEventStyles(dragState.draggedEvent.color || 'BLUE');
+          return (
+            <div
+              ref={dragPreviewRef}
+              className={cn(
+                'pointer-events-none fixed z-50 truncate rounded-sm border-l-2 px-2 py-1 font-semibold text-xs shadow-xl',
+                'transform backdrop-blur-sm transition-none',
+                styles.bg,
+                styles.border,
+                styles.text,
+                'opacity-90'
+              )}
+              style={{
+                left: `${dragState.currentX + 15}px`,
+                top: `${dragState.currentY - 20}px`,
+                height: '1.35rem',
+                minWidth: '120px',
+                maxWidth: '250px',
+                transform: 'rotate(-2deg)',
+              }}
+            >
+              {/* Use shared EventContent component */}
+              <EventContent event={dragState.draggedEvent} />
+            </div>
+          );
+        })()}
     </div>
   );
 };

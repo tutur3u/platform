@@ -6,3 +6,9 @@ export const GRID_SNAP = 15;
 export const LEVEL_WIDTH_OFFSET = 8;
 export const MIN_EVENT_HEIGHT = 20 - 4;
 export const MIN_COLUMN_WIDTH = 120;
+
+// Time indicator positioning constants
+export const TIME_INDICATOR_OFFSETS = {
+  SINGLE_TIMEZONE: -70,
+  DUAL_TIMEZONE: -134,
+} as const;

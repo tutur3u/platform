@@ -2,15 +2,9 @@ import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone';
 import { useEffect, useState } from 'react';
 import { useCalendar } from '../../../../hooks/use-calendar';
-import { HOUR_HEIGHT } from './config';
+import { HOUR_HEIGHT, TIME_INDICATOR_OFFSETS } from './config';
 
 dayjs.extend(timezone);
-
-// Constants for positioning to avoid magic numbers
-const TIME_INDICATOR_OFFSETS = {
-  SINGLE_TIMEZONE: -70,
-  DUAL_TIMEZONE: -134,
-} as const;
 
 // Helper function to calculate time details
 const getTimeDetails = (
@@ -29,7 +23,8 @@ export const TimeIndicatorText = ({ columnIndex }: { columnIndex: number }) => {
   const { settings } = useCalendar();
   const tz = settings?.timezone?.timezone;
   const secondaryTz = settings?.timezone?.secondaryTimezone;
-  const showSecondary = settings?.timezone?.showSecondaryTimezone && secondaryTz;
+  const showSecondary =
+    settings?.timezone?.showSecondaryTimezone && secondaryTz;
   const [now, setNow] = useState(tz === 'auto' ? dayjs() : dayjs().tz(tz));
 
   // Update the time every minute
@@ -59,7 +54,9 @@ export const TimeIndicatorText = ({ columnIndex }: { columnIndex: number }) => {
   if (columnIndex > 0) return null;
 
   // Calculate positioning based on whether secondary timezone is shown
-  const leftOffset = showSecondary ? TIME_INDICATOR_OFFSETS.DUAL_TIMEZONE : TIME_INDICATOR_OFFSETS.SINGLE_TIMEZONE;
+  const leftOffset = showSecondary
+    ? TIME_INDICATOR_OFFSETS.DUAL_TIMEZONE
+    : TIME_INDICATOR_OFFSETS.SINGLE_TIMEZONE;
 
   return (
     <div
