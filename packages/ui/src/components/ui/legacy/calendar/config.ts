@@ -8,7 +8,12 @@ export const MIN_EVENT_HEIGHT = 20 - 4;
 export const MIN_COLUMN_WIDTH = 120;
 
 // Time indicator positioning constants
+// Derived from time column width (w-16 = 64px) and layout assumptions
+const TIME_COLUMN_WIDTH = 64; // w-16 = 64px
+const BORDER_WIDTH = 1; // border width
+const PADDING_OFFSET = 5; // additional offset for visual alignment
+
 export const TIME_INDICATOR_OFFSETS = {
-  SINGLE_TIMEZONE: -70,
-  DUAL_TIMEZONE: -134,
+  SINGLE_TIMEZONE: -(TIME_COLUMN_WIDTH + BORDER_WIDTH + PADDING_OFFSET),
+  DUAL_TIMEZONE: -(TIME_COLUMN_WIDTH * 2 + BORDER_WIDTH * 2 + PADDING_OFFSET),
 } as const;

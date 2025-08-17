@@ -59,7 +59,7 @@ const TimeColumn = ({
   return (
     <div
       className={cn(
-        'relative w-16 border-border border-r dark:border-zinc-800',
+        'relative w-16 border-r border-border dark:border-zinc-800',
         className
       )}
       style={style}
