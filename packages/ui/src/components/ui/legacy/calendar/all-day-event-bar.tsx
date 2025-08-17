@@ -758,6 +758,7 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
                   <button
                     type="button"
                     aria-expanded={false}
+                    aria-controls="all-day-events-container"
                     className="flex items-center justify-center rounded-sm px-2 py-1 font-medium text-muted-foreground transition-colors hover:bg-muted/40"
                     onClick={() => toggleDateExpansion(dateKey)}
                     style={{
@@ -779,6 +780,7 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
                     <button
                       type="button"
                       aria-expanded={true}
+                      aria-controls="all-day-events-container"
                       className="flex items-center justify-center rounded-sm px-2 py-1 font-medium text-muted-foreground transition-colors hover:bg-muted/40"
                       onClick={() => toggleDateExpansion(dateKey)}
                       style={{
@@ -818,8 +820,15 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
             />
           )}
 
-        {/* Absolute positioned spanning events */}
-        {eventLayout.spans.map((eventSpan) => {
+        {/* Container for all-day events with proper accessibility */}
+        <div
+          id="all-day-events-container"
+          role="region"
+          aria-label="All-day events"
+          className="absolute inset-0 pointer-events-none"
+        >
+          {/* Absolute positioned spanning events */}
+          {eventLayout.spans.map((eventSpan) => {
           const { event, startIndex, span, row, isCutOffStart, isCutOffEnd } =
             eventSpan;
           const { bg, border, text } = getEventStyles(event.color || 'BLUE');
@@ -930,7 +939,7 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
             </div>
           );
         })}
-      </div>
+        </div>
 
       {/* Enhanced drag preview with better positioning */}
       {dragState.isDragging &&
