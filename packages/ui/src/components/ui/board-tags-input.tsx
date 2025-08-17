@@ -76,8 +76,9 @@ export function TagsInput({
   };
 
   const handleInputBlur = (e: React.FocusEvent<HTMLInputElement>) => {
-    const next = e.relatedTarget as Node | null;
-    const isInternalFocus = next && containerRef.current?.contains(next);
+    // Safely handle null relatedTarget (Safari/React retargeting)
+    const candidate = e.relatedTarget || document.activeElement;
+    const isInternalFocus = candidate && containerRef.current?.contains(candidate as Node);
     if (isInternalFocus) return; // Don't add a tag when moving focus within the component
     if (inputValue.trim()) {
       addTag(inputValue);
@@ -108,7 +109,6 @@ export function TagsInput({
               size="sm"
               className="h-auto p-0 text-muted-foreground hover:text-foreground"
               aria-label={`Remove ${tag}`}
-              title={`Remove ${tag}`}
               onPointerDown={(e) => {
                 // Prevent input blur so onBlur doesn't add a partial tag unintentionally
                 e.preventDefault();
