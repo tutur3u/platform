@@ -1,9 +1,11 @@
 import { cn } from '@tuturuuu/utils/format';
 import dayjs from 'dayjs';
+import utc from 'dayjs/plugin/utc';
 import timezone from 'dayjs/plugin/timezone';
 import { useCalendar } from '../../../../hooks/use-calendar';
 import { DAY_HEIGHT, HOUR_HEIGHT } from './config';
 
+dayjs.extend(utc);
 dayjs.extend(timezone);
 
 // Reusable component for time column
@@ -29,7 +31,7 @@ const TimeColumn = ({
     if (tz && tz !== 'auto') {
       // For secondary timezone: show what time it is in that timezone
       // when it's the specified hour in the primary timezone
-      let baseDate;
+      let baseDate: dayjs.Dayjs;
 
       if (primaryTimezone === 'auto' || !primaryTimezone) {
         // If primary is local time, create a local time and convert to secondary

@@ -3,8 +3,8 @@ import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone';
 import utc from 'dayjs/plugin/utc';
 
-dayjs.extend(timezone);
 dayjs.extend(utc);
+dayjs.extend(timezone);
 
 export function isAllDayEvent(
   event: Pick<CalendarEvent, 'start_at' | 'end_at'>

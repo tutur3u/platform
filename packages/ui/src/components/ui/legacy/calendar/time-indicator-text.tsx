@@ -1,9 +1,11 @@
 import dayjs from 'dayjs';
+import utc from 'dayjs/plugin/utc';
 import timezone from 'dayjs/plugin/timezone';
 import { useEffect, useState } from 'react';
 import { useCalendar } from '../../../../hooks/use-calendar';
 import { HOUR_HEIGHT, TIME_INDICATOR_OFFSETS } from './config';
 
+dayjs.extend(utc);
 dayjs.extend(timezone);
 
 // Helper function to calculate time details
