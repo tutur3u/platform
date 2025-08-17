@@ -23,11 +23,12 @@ export const TimeIndicatorText = ({ columnIndex }: { columnIndex: number }) => {
   const { settings } = useCalendar();
   const tz = settings?.timezone?.timezone;
   const secondaryTz = settings?.timezone?.secondaryTimezone;
-  const showSecondary =
-    settings?.timezone?.showSecondaryTimezone && secondaryTz;
+  const showSecondary = Boolean(
+    settings?.timezone?.showSecondaryTimezone && secondaryTz
+  );
   const [now, setNow] = useState(tz === 'auto' ? dayjs() : dayjs().tz(tz));
 
-  // Update the time every minute
+  // Update the time every minute, aligned to minute boundaries
   useEffect(() => {
     const updateTime = () => {
       setNow(tz === 'auto' ? dayjs() : dayjs().tz(tz));
@@ -36,10 +37,18 @@ export const TimeIndicatorText = ({ columnIndex }: { columnIndex: number }) => {
     // Update immediately
     updateTime();
 
-    // Then update every minute
-    const interval = setInterval(updateTime, 60000);
+    // Then align to minute boundary, and update every minute
+    let interval: ReturnType<typeof setInterval> | null = null;
+    const msToNextMinute = 60000 - (dayjs().valueOf() % 60000);
+    const timeout = setTimeout(() => {
+      updateTime();
+      interval = setInterval(updateTime, 60000);
+    }, msToNextMinute);
 
-    return () => clearInterval(interval);
+    return () => {
+      clearTimeout(timeout);
+      if (interval) clearInterval(interval);
+    };
   }, [tz]);
 
   // Use selected timezone
