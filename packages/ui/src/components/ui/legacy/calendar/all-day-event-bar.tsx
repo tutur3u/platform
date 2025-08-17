@@ -331,9 +331,9 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
       let startIndex = -1;
       let endIndex = -1;
 
-             // First pass: find any overlap with visible dates
-       const firstVisibleDate = toTz(visibleDates[0]);
-       const lastVisibleDate = toTz(visibleDates[visibleDates.length - 1]);
+                     // First pass: find any overlap with visible dates
+        const firstVisibleDate = toTz(visibleDates[0]!);
+        const lastVisibleDate = toTz(visibleDates[visibleDates.length - 1]!);
 
       // Check if event overlaps with our visible date range at all
       // Event overlaps if: event_start < visible_end AND event_end > visible_start
@@ -373,9 +373,9 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
         // Event starts before or on the first visible date
         startIndex = 0;
       } else {
-                 // Find the first visible date that matches the event start
-         for (let i = 0; i < visibleDates.length; i++) {
-           const currentDate = toTz(visibleDates[i]);
+                           // Find the first visible date that matches the event start
+          for (let i = 0; i < visibleDates.length; i++) {
+            const currentDate = toTz(visibleDates[i]!);
            if (
              currentDate.isSameOrAfter(eventStart, 'day') &&
              currentDate.isBefore(eventEnd, 'day')
@@ -391,9 +391,9 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
         // Event ends after the last visible date
         endIndex = visibleDates.length - 1;
              } else {
-         // Find the last visible date that the event covers
-         for (let i = visibleDates.length - 1; i >= 0; i--) {
-           const currentDate = toTz(visibleDates[i]);
+                   // Find the last visible date that the event covers
+          for (let i = visibleDates.length - 1; i >= 0; i--) {
+            const currentDate = toTz(visibleDates[i]!);
            if (
              currentDate.isBefore(eventEnd, 'day') &&
              currentDate.isSameOrAfter(eventStart, 'day')
@@ -507,7 +507,7 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
     // Calculate max visible events per day for layout purposes
     let maxVisibleEventsPerDay = 0;
          eventsByDay.forEach((dayEvents, dayIndex) => {
-       const dateKey = toTz(visibleDates[dayIndex]).format('YYYY-MM-DD');
+               const dateKey = toTz(visibleDates[dayIndex]!).format('YYYY-MM-DD');
 
       const shouldShowAll = dayEvents.length === MAX_EVENTS_DISPLAY + 1;
       const isExpanded = expandedDates.includes(dateKey) || shouldShowAll;
