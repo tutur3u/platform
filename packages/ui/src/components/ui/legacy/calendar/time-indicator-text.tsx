@@ -26,12 +26,12 @@ export const TimeIndicatorText = ({ columnIndex }: { columnIndex: number }) => {
   const showSecondary = Boolean(
     settings?.timezone?.showSecondaryTimezone && secondaryTz
   );
-  const [now, setNow] = useState(tz === 'auto' ? dayjs() : dayjs().tz(tz));
+  const [now, setNow] = useState(!tz || tz === 'auto' ? dayjs() : dayjs().tz(tz));
 
   // Update the time every minute, aligned to minute boundaries
   useEffect(() => {
     const updateTime = () => {
-      setNow(tz === 'auto' ? dayjs() : dayjs().tz(tz));
+      setNow(!tz || tz === 'auto' ? dayjs() : dayjs().tz(tz));
     };
 
     // Update immediately
@@ -52,7 +52,7 @@ export const TimeIndicatorText = ({ columnIndex }: { columnIndex: number }) => {
   }, [tz]);
 
   // Use selected timezone
-  const nowTz = tz === 'auto' ? now : now.tz(tz);
+  const nowTz = !tz || tz === 'auto' ? now : now.tz(tz);
   const timeFormat = settings?.appearance?.timeFormat;
 
   // Get time details using helper function

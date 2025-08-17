@@ -64,15 +64,15 @@ const EventContent = ({ event }: { event: CalendarEvent }) => (
   <>
     {typeof event.google_event_id === 'string' &&
       event.google_event_id.trim() !== '' && (
-        <img
-          src="/media/google-calendar-icon.png"
-          alt="Google Calendar"
+        <svg
           className="mr-1 inline-block h-[1.25em] w-[1.25em] align-middle opacity-80 dark:opacity-90"
-          title="Synced from Google Calendar"
+          viewBox="0 0 24 24"
+          fill="currentColor"
+          aria-label="Synced from Google Calendar"
           data-testid="google-calendar-logo"
-          width={18}
-          height={18}
-        />
+        >
+          <path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z"/>
+        </svg>
       )}
     <span className="truncate">{event.title}</span>
   </>
@@ -114,7 +114,7 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
   // Add refs for drag threshold and timer
   const dragStartPos = useRef<{ x: number; y: number } | null>(null);
   const dragInitiated = useRef(false);
-  const longPressTimer = useRef<NodeJS.Timeout | null>(null);
+  const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const DRAG_THRESHOLD = 5; // px
   const LONG_PRESS_DURATION = 250; // ms
 
@@ -126,7 +126,7 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
     ? dates
     : dates.filter((date) => {
         const day =
-          tz === 'auto' ? dayjs(date).day() : dayjs(date).tz(tz).day();
+          !tz || tz === 'auto' ? dayjs(date).day() : dayjs(date).tz(tz).day();
         return day !== 0 && day !== 6; // 0 = Sunday, 6 = Saturday
       });
 
@@ -289,6 +289,8 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
       }
     } catch (error) {
       console.error('Failed to update event:', error);
+      // TODO: Surface error to user via toast/snackbar
+      // Consider reverting optimistic UI if updateEvent throws
     }
   }, [visibleDates, tz, updateEvent]);
 
