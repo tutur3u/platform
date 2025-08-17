@@ -2,6 +2,7 @@ import type { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
 import { useCalendar } from '../../../../hooks/use-calendar';
 import { useCalendarSync } from '../../../../hooks/use-calendar-sync';
 import { useCalendarSettings } from './settings/settings-context';
+import { useTimezone } from '../../../../hooks/use-timezone';
 import { getEventStyles } from '@tuturuuu/utils/color-helper';
 import { cn } from '@tuturuuu/utils/format';
 import dayjs from 'dayjs';
@@ -71,8 +72,8 @@ const EventContent = ({ event }: { event: CalendarEvent }) => (
           className="mr-1 inline-block h-[1.25em] w-[1.25em] align-middle opacity-80 dark:opacity-90"
           viewBox="0 0 24 24"
           fill="currentColor"
-          aria-label="Synced from Google Calendar"
           data-testid="google-calendar-logo"
+          aria-hidden="true"
         >
           <path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z" />
         </svg>
@@ -93,13 +94,8 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
   );
   const [expandedDates, setExpandedDates] = useState<string[]>([]);
 
-  // Helper function to safely convert dates to timezone
-  const toTz = useCallback(
-    (d: string | Date) => {
-      return !tz || tz === 'auto' ? dayjs(d) : dayjs(d).tz(tz);
-    },
-    [tz]
-  );
+  // Use shared timezone utility
+  const { toTz } = useTimezone(tz);
 
   // Drag and drop state
   const [dragState, setDragState] = useState<DragState>({
