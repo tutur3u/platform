@@ -1,8 +1,3 @@
-import NavbarActions from '../../navbar-actions';
-import { UserNav } from '../../user-nav';
-import InvitationCard from './invitation-card';
-import PersonalWorkspacePrompt from './personal-workspace-prompt';
-import { Structure } from './structure';
 import type { NavLink } from '@/components/navigation';
 import {
   DEV_MODE,
@@ -48,8 +43,8 @@ import {
   Send,
   ShieldUser,
   Sparkles,
-  SquareUserRound,
   SquaresIntersect,
+  SquareUserRound,
   Star,
   TextSelect,
   Trash,
@@ -70,6 +65,11 @@ import { getTranslations } from 'next-intl/server';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { type ReactNode, Suspense } from 'react';
+import NavbarActions from '../../navbar-actions';
+import { UserNav } from '../../user-nav';
+import InvitationCard from './invitation-card';
+import PersonalWorkspacePrompt from './personal-workspace-prompt';
+import { Structure } from './structure';
 
 interface LayoutProps {
   params: Promise<{
@@ -80,17 +80,18 @@ interface LayoutProps {
 
 export default async function Layout({ children, params }: LayoutProps) {
   const t = await getTranslations();
-  const { wsId } = await params;
+  const { wsId: id } = await params;
 
-  const workspace = await getWorkspace(wsId);
+  const workspace = await getWorkspace(id);
+  const wsId = workspace.id;
 
   const { withoutPermission } = await getPermissions({
-    wsId: workspace.id,
+    wsId,
   });
 
   const ENABLE_AI_ONLY = await verifySecret({
     forceAdmin: true,
-    wsId: workspace.id,
+    wsId,
     name: 'ENABLE_AI_ONLY',
     value: 'true',
   });
@@ -116,7 +117,7 @@ export default async function Layout({ children, params }: LayoutProps) {
             ENABLE_AI_ONLY ||
             !(await verifySecret({
               forceAdmin: true,
-              wsId: workspace.id,
+              wsId,
               name: 'ENABLE_TASKS',
               value: 'true',
             })) ||
@@ -131,7 +132,7 @@ export default async function Layout({ children, params }: LayoutProps) {
             ENABLE_AI_ONLY ||
             !(await verifySecret({
               forceAdmin: true,
-              wsId: workspace.id,
+              wsId,
               name: 'ENABLE_CHAT',
               value: 'true',
             })) ||
@@ -153,7 +154,7 @@ export default async function Layout({ children, params }: LayoutProps) {
           disabled:
             !(await verifySecret({
               forceAdmin: true,
-              wsId: workspace.id,
+              wsId,
               name: 'ENABLE_AI',
               value: 'true',
             })) || withoutPermission('ai_lab'),
@@ -166,7 +167,7 @@ export default async function Layout({ children, params }: LayoutProps) {
           disabled:
             !(await verifySecret({
               forceAdmin: true,
-              wsId: workspace.id,
+              wsId,
               name: 'ENABLE_AI',
               value: 'true',
             })) || withoutPermission('ai_lab'),
@@ -179,7 +180,7 @@ export default async function Layout({ children, params }: LayoutProps) {
           disabled:
             !(await verifySecret({
               forceAdmin: true,
-              wsId: workspace.id,
+              wsId,
               name: 'ENABLE_AI',
               value: 'true',
             })) || withoutPermission('ai_lab'),
@@ -192,7 +193,7 @@ export default async function Layout({ children, params }: LayoutProps) {
           disabled:
             !(await verifySecret({
               forceAdmin: true,
-              wsId: workspace.id,
+              wsId,
               name: 'ENABLE_AI',
               value: 'true',
             })) || withoutPermission('ai_lab'),
@@ -205,7 +206,7 @@ export default async function Layout({ children, params }: LayoutProps) {
           disabled:
             !(await verifySecret({
               forceAdmin: true,
-              wsId: workspace.id,
+              wsId,
               name: 'ENABLE_AI',
               value: 'true',
             })) || withoutPermission('ai_lab'),
@@ -218,7 +219,7 @@ export default async function Layout({ children, params }: LayoutProps) {
           disabled:
             !(await verifySecret({
               forceAdmin: true,
-              wsId: workspace.id,
+              wsId,
               name: 'ENABLE_AI',
               value: 'true',
             })) || withoutPermission('ai_lab'),
@@ -236,12 +237,14 @@ export default async function Layout({ children, params }: LayoutProps) {
           href: `/${wsId}/calendar`,
           disabled: ENABLE_AI_ONLY || withoutPermission('manage_calendar'),
           experimental: 'alpha',
+          requireRootMember: true,
           children: user?.email?.endsWith('@tuturuuu.com')
             ? [
                 {
                   title: t('calendar-tabs.calendar'),
                   href: `/${wsId}/calendar`,
                   icon: <Calendar className="h-4 w-4" />,
+                  requireRootMember: true,
                   matchExact: true,
                 },
                 {
@@ -249,6 +252,7 @@ export default async function Layout({ children, params }: LayoutProps) {
                   href: `/${wsId}/calendar/history/sync`,
                   icon: <Activity className="h-4 w-4" />,
                   requireRootWorkspace: true,
+                  requireRootMember: true,
                 },
               ]
             : undefined,
@@ -267,6 +271,8 @@ export default async function Layout({ children, params }: LayoutProps) {
               title: t('sidebar_tabs.meetings'),
               href: `/${wsId}/tumeet/meetings`,
               icon: <SquareUserRound className="h-5 w-5" />,
+              requireRootWorkspace: true,
+              requireRootMember: true,
             },
           ],
         },
@@ -275,6 +281,8 @@ export default async function Layout({ children, params }: LayoutProps) {
           href: `/${wsId}/polls`,
           icon: <Vote className="h-5 w-5" />,
           disabled: !DEV_MODE,
+          requireRootWorkspace: true,
+          requireRootMember: true,
         },
         {
           title: t('sidebar_tabs.tasks'),
@@ -324,40 +332,35 @@ export default async function Layout({ children, params }: LayoutProps) {
             (ENABLE_AI_ONLY ||
               !(await verifySecret({
                 forceAdmin: true,
-                wsId: workspace.id,
+                wsId,
                 name: 'ENABLE_EMAIL_SENDING',
                 value: 'true',
               })) ||
               withoutPermission('send_user_group_post_emails')),
           experimental: 'beta',
+          requireRootMember: true,
         },
         {
           title: t('sidebar_tabs.posts'),
           href: `/${wsId}/posts`,
           icon: <GalleryVerticalEnd className="h-5 w-5" />,
           disabled:
-            !DEV_MODE &&
-            (ENABLE_AI_ONLY ||
-              !(await verifySecret({
-                forceAdmin: true,
-                wsId: workspace.id,
-                name: 'ENABLE_EMAIL_SENDING',
-                value: 'true',
-              })) ||
-              withoutPermission('send_user_group_post_emails')),
+            !(await verifySecret({
+              forceAdmin: true,
+              wsId,
+              name: 'ENABLE_EMAIL_SENDING',
+              value: 'true',
+            })) ||
+            (!DEV_MODE &&
+              (ENABLE_AI_ONLY ||
+                withoutPermission('send_user_group_post_emails'))),
           experimental: 'beta',
         },
         {
           title: t('sidebar_tabs.drive'),
           href: `/${wsId}/drive`,
           icon: <HardDrive className="h-5 w-5" />,
-          disabled:
-            !(await verifySecret({
-              forceAdmin: true,
-              wsId: workspace.id,
-              name: 'ENABLE_DRIVE',
-              value: 'true',
-            })) || withoutPermission('manage_drive'),
+          disabled: withoutPermission('manage_drive'),
           experimental: 'beta',
         },
         {
@@ -368,7 +371,7 @@ export default async function Layout({ children, params }: LayoutProps) {
             ENABLE_AI_ONLY ||
             !(await verifySecret({
               forceAdmin: true,
-              wsId: workspace.id,
+              wsId,
               name: 'ENABLE_DOCS',
               value: 'true',
             })) ||
@@ -383,7 +386,7 @@ export default async function Layout({ children, params }: LayoutProps) {
             ENABLE_AI_ONLY ||
             !(await verifySecret({
               forceAdmin: true,
-              wsId: workspace.id,
+              wsId,
               name: 'ENABLE_SLIDES',
               value: 'true',
             })),
@@ -397,7 +400,7 @@ export default async function Layout({ children, params }: LayoutProps) {
             ENABLE_AI_ONLY ||
             !(await verifySecret({
               forceAdmin: true,
-              wsId: workspace.id,
+              wsId,
               name: 'ENABLE_EDUCATION',
               value: 'true',
             })) ||
@@ -412,7 +415,7 @@ export default async function Layout({ children, params }: LayoutProps) {
             ENABLE_AI_ONLY ||
             !(await verifySecret({
               forceAdmin: true,
-              wsId: workspace.id,
+              wsId,
               name: 'ENABLE_WHITEBOARDS',
               value: 'true',
             })) ||
@@ -439,7 +442,7 @@ export default async function Layout({ children, params }: LayoutProps) {
             wsId !== ROOT_WORKSPACE_ID &&
             !(await verifySecret({
               forceAdmin: true,
-              wsId: workspace.id,
+              wsId,
               name: 'ENABLE_LINK_SHORTENER',
               value: 'true',
             })),
@@ -459,7 +462,7 @@ export default async function Layout({ children, params }: LayoutProps) {
             ENABLE_AI_ONLY ||
             !(await verifySecret({
               forceAdmin: true,
-              wsId: workspace.id,
+              wsId,
               name: 'ENABLE_USERS',
               value: 'true',
             })) ||
@@ -474,7 +477,7 @@ export default async function Layout({ children, params }: LayoutProps) {
             ENABLE_AI_ONLY ||
             !(await verifySecret({
               forceAdmin: true,
-              wsId: workspace.id,
+              wsId,
               name: 'ENABLE_FINANCE',
               value: 'true',
             })) ||
@@ -488,7 +491,7 @@ export default async function Layout({ children, params }: LayoutProps) {
             ENABLE_AI_ONLY ||
             !(await verifySecret({
               forceAdmin: true,
-              wsId: workspace.id,
+              wsId,
               name: 'ENABLE_INVENTORY',
               value: 'true',
             })) ||
@@ -543,6 +546,7 @@ export default async function Layout({ children, params }: LayoutProps) {
           icon: <FileText className="h-5 w-5" />,
           disabled:
             ENABLE_AI_ONLY || withoutPermission('manage_user_report_templates'),
+          requireRootMember: true,
         },
         {
           title: t('sidebar_tabs.billing'),
@@ -557,6 +561,8 @@ export default async function Layout({ children, params }: LayoutProps) {
           icon: <KeyRound className="h-5 w-5" />,
           disabled:
             ENABLE_AI_ONLY || withoutPermission('manage_workspace_security'),
+          requireRootWorkspace: true,
+          requireRootMember: true,
         },
         {
           title: t('workspace-settings-layout.secrets'),
@@ -571,6 +577,7 @@ export default async function Layout({ children, params }: LayoutProps) {
           icon: <Blocks className="h-5 w-5" />,
           disabled: withoutPermission('view_infrastructure'),
           requireRootWorkspace: true,
+          requireRootMember: true,
         },
         {
           title: t('workspace-settings-layout.platform_roles'),
@@ -579,6 +586,7 @@ export default async function Layout({ children, params }: LayoutProps) {
           disabled:
             ENABLE_AI_ONLY || withoutPermission('manage_workspace_roles'),
           requireRootWorkspace: true,
+          requireRootMember: true,
         },
         {
           title: t('workspace-settings-layout.migrations'),
@@ -586,6 +594,7 @@ export default async function Layout({ children, params }: LayoutProps) {
           icon: <FolderSync className="h-5 w-5" />,
           disabled: withoutPermission('manage_external_migrations'),
           requireRootWorkspace: true,
+          requireRootMember: true,
         },
         {
           title: t('workspace-settings-layout.activities'),
@@ -593,10 +602,11 @@ export default async function Layout({ children, params }: LayoutProps) {
           icon: <ScrollText className="h-5 w-5" />,
           disabled: withoutPermission('manage_workspace_audit_logs'),
           requireRootWorkspace: true,
+          requireRootMember: true,
         },
       ].filter(Boolean) as NavLink[],
     },
-  ];
+  ] satisfies (NavLink | null)[];
 
   if (!user?.id) redirect('/login');
 

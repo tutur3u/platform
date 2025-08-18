@@ -1,5 +1,5 @@
-import { type NavLink, Navigation } from '@/components/navigation';
-import { getPermissions } from '@tuturuuu/utils/workspace-helper';
+import { Navigation, type NavLink } from '@/components/navigation';
+import { getPermissions, getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import { getTranslations } from 'next-intl/server';
 import { redirect } from 'next/navigation';
 import type React from 'react';
@@ -13,7 +13,11 @@ interface LayoutProps {
 
 export default async function Layout({ children, params }: LayoutProps) {
   const t = await getTranslations('workspace-finance-tabs');
-  const { wsId } = await params;
+  const { wsId: id } = await params;
+
+  const workspace = await getWorkspace(id);
+  const wsId = workspace.id;
+  const correctedWSId = workspace.personal ? 'personal' : wsId;
 
   const { withoutPermission } = await getPermissions({
     wsId,
@@ -24,34 +28,34 @@ export default async function Layout({ children, params }: LayoutProps) {
   const navLinks: NavLink[] = [
     {
       title: t('overview'),
-      href: `/${wsId}/finance`,
+      href: `/${correctedWSId}/finance`,
       matchExact: true,
       disabled: withoutPermission('manage_finance'),
     },
     {
       title: t('transactions'),
-      href: `/${wsId}/finance/transactions`,
+      href: `/${correctedWSId}/finance/transactions`,
       matchExact: true,
       disabled: withoutPermission('manage_finance'),
     },
     {
       title: t('wallets'),
-      href: `/${wsId}/finance/wallets`,
+      href: `/${correctedWSId}/finance/wallets`,
       disabled: withoutPermission('manage_finance'),
     },
     {
       title: t('categories'),
-      href: `/${wsId}/finance/transactions/categories`,
+      href: `/${correctedWSId}/finance/transactions/categories`,
       disabled: withoutPermission('manage_finance'),
     },
     {
       title: t('invoices'),
-      href: `/${wsId}/finance/invoices`,
+      href: `/${correctedWSId}/finance/invoices`,
       disabled: withoutPermission('manage_finance'),
     },
     {
       title: t('settings'),
-      href: `/${wsId}/finance/settings`,
+      href: `/${correctedWSId}/finance/settings`,
       disabled: true,
     },
   ];

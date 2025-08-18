@@ -1,13 +1,13 @@
-import { transactionColumns } from './columns';
-import ExportDialogContent from './export-dialog-content';
-import { TransactionForm } from './form';
 import { CustomDataTable } from '@/components/custom-data-table';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import type { Transaction } from '@tuturuuu/types/primitives/Transaction';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Separator } from '@tuturuuu/ui/separator';
-import { getPermissions } from '@tuturuuu/utils/workspace-helper';
+import { getPermissions, getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import { getTranslations } from 'next-intl/server';
+import { transactionColumns } from './columns';
+import ExportDialogContent from './export-dialog-content';
+import { TransactionForm } from './form';
 
 interface Props {
   params: Promise<{
@@ -24,7 +24,11 @@ export default async function WorkspaceTransactionsPage({
   params,
   searchParams,
 }: Props) {
-  const { wsId } = await params;
+  const { wsId: id } = await params;
+
+  const workspace = await getWorkspace(id);
+  const wsId = workspace.id;
+
   const { data: rawData, count } = await getData(wsId, await searchParams);
   const t = await getTranslations();
 

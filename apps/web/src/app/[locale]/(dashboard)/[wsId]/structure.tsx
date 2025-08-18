@@ -1,6 +1,5 @@
 'use client';
 
-import { Nav } from './nav';
 import type { NavLink } from '@/components/navigation';
 import { PROD_MODE, SIDEBAR_COLLAPSED_COOKIE_NAME } from '@/constants/common';
 import { useSidebar } from '@/context/sidebar-context';
@@ -10,7 +9,7 @@ import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { LogoTitle } from '@tuturuuu/ui/custom/logo-title';
 import { Structure as BaseStructure } from '@tuturuuu/ui/custom/structure';
 import { WorkspaceSelect } from '@tuturuuu/ui/custom/workspace-select';
-import { ArrowLeft, TriangleAlert } from '@tuturuuu/ui/icons';
+import { ArrowLeft } from '@tuturuuu/ui/icons';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { cn } from '@tuturuuu/utils/format';
 import { setCookie } from 'cookies-next';
@@ -25,6 +24,7 @@ import {
   useEffect,
   useState,
 } from 'react';
+import { Nav } from './nav';
 
 interface MailProps {
   wsId: string;
@@ -40,7 +40,6 @@ interface MailProps {
 
 export function Structure({
   wsId,
-  workspace,
   defaultCollapsed = false,
   user,
   links,
@@ -147,11 +146,7 @@ export function Structure({
               (child) => child.href && pathname.startsWith(child.href)
             );
 
-            if (
-              activeChild &&
-              activeChild.children &&
-              activeChild.children.length > 0
-            ) {
+            if (activeChild?.children && activeChild.children.length > 0) {
               return {
                 currentLinks: activeChild.children,
                 history: [...prevState.history, prevState.currentLinks],
@@ -318,20 +313,6 @@ export function Structure({
     </>
   );
 
-  const personalNote = !isCollapsed &&
-    (wsId === 'personal' || workspace?.personal) && (
-      <div className="p-2 pt-0">
-        <div className="rounded-lg border border-foreground/10 bg-foreground/5 p-2 text-xs text-muted-foreground">
-          <div className="flex items-start gap-2">
-            <TriangleAlert className="mt-0.5 h-4 w-4 flex-none" />
-            <p className="leading-relaxed">
-              {t('common.personal_workspace_experimental_note')}
-            </p>
-          </div>
-        </div>
-      </div>
-    );
-
   const sidebarContent = (
     <div className="relative h-full overflow-hidden">
       <div
@@ -339,26 +320,23 @@ export function Structure({
         className={cn(
           'absolute flex h-full w-full flex-col transition-transform duration-300 ease-in-out',
           navState.direction === 'forward'
-            ? 'animate-in slide-in-from-right'
-            : 'animate-in slide-in-from-left'
+            ? 'slide-in-from-right animate-in'
+            : 'slide-in-from-left animate-in'
         )}
       >
         {navState.history.length === 0 ? (
-          <>
-            {personalNote}
-            <Nav
-              key={`${user?.id}-root`}
-              wsId={wsId}
-              isCollapsed={isCollapsed}
-              links={filteredCurrentLinks}
-              onSubMenuClick={handleNavChange}
-              onClick={() => {
-                if (window.innerWidth < 768) {
-                  setIsCollapsed(true);
-                }
-              }}
-            />
-          </>
+          <Nav
+            key={`${user?.id}-root`}
+            wsId={wsId}
+            isCollapsed={isCollapsed}
+            links={filteredCurrentLinks}
+            onSubMenuClick={handleNavChange}
+            onClick={() => {
+              if (window.innerWidth < 768) {
+                setIsCollapsed(true);
+              }
+            }}
+          />
         ) : (
           <>
             <Nav
@@ -373,13 +351,12 @@ export function Structure({
             />
             {!isCollapsed && currentTitle && (
               <div className="p-2 pt-0">
-                <h2 className="line-clamp-1 px-2 text-sm font-semibold tracking-wide text-muted-foreground uppercase">
+                <h2 className="line-clamp-1 px-2 font-semibold text-muted-foreground text-sm uppercase tracking-wide">
                   {currentTitle}
                 </h2>
               </div>
             )}
             {!isCollapsed && <div className="mx-4 my-1 border-b" />}
-            {personalNote}
             {filteredCurrentLinks.length > 0 && (
               <div className="scrollbar-none flex-1 overflow-y-auto">
                 <Nav
@@ -418,7 +395,7 @@ export function Structure({
         </Link>
       </div>
       <div className="mx-2 h-4 w-px flex-none rotate-30 bg-foreground/20" />
-      <div className="flex items-center gap-2 text-lg font-semibold break-all">
+      <div className="flex items-center gap-2 break-all font-semibold text-lg">
         {currentLink?.icon && (
           <div className="flex-none">{currentLink.icon}</div>
         )}

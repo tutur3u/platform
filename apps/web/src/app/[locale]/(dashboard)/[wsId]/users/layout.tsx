@@ -1,5 +1,5 @@
-import { type NavLink, Navigation } from '@/components/navigation';
-import { getPermissions } from '@tuturuuu/utils/workspace-helper';
+import { Navigation, type NavLink } from '@/components/navigation';
+import { getPermissions, getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import { getTranslations } from 'next-intl/server';
 import { redirect } from 'next/navigation';
 import type React from 'react';
@@ -13,7 +13,10 @@ interface LayoutProps {
 
 export default async function Layout({ children, params }: LayoutProps) {
   const t = await getTranslations('workspace-users-tabs');
-  const { wsId } = await params;
+  const { wsId: id } = await params;
+
+  const workspace = await getWorkspace(id);
+  const wsId = workspace.id;
 
   const { withoutPermission } = await getPermissions({
     wsId,

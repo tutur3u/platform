@@ -1,11 +1,12 @@
-import { walletColumns } from './columns';
-import { WalletForm } from './form';
 import { CustomDataTable } from '@/components/custom-data-table';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import type { Wallet } from '@tuturuuu/types/primitives/Wallet';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Separator } from '@tuturuuu/ui/separator';
+import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import { getTranslations } from 'next-intl/server';
+import { walletColumns } from './columns';
+import { WalletForm } from './form';
 
 interface Props {
   params: Promise<{
@@ -23,7 +24,11 @@ export default async function WorkspaceWalletsPage({
   searchParams,
 }: Props) {
   const t = await getTranslations();
-  const { wsId } = await params;
+  const { wsId: id } = await params;
+
+  const workspace = await getWorkspace(id);
+  const wsId = workspace.id;
+
   const { data: rawData, count } = await getData(wsId, await searchParams);
 
   const data = rawData.map((d) => ({

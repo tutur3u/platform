@@ -61,10 +61,8 @@ export function WorkspaceSelect({
   customRedirectSuffix,
   disableCreateNewWorkspace,
 }: {
-  // biome-ignore lint/suspicious/noExplicitAny: <No need to type this>
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   t: any;
-  // biome-ignore lint/suspicious/noExplicitAny: <No need to type this>
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   localUseQuery: any;
   hideLeading?: boolean;
@@ -131,15 +129,8 @@ export function WorkspaceSelect({
     }
   }
 
-  const personalWorkspace = workspaces?.find(
-    // biome-ignore lint/suspicious/noExplicitAny: dynamic shape from DB
-    (ws) => ws?.personal === true
-  );
-  const nonPersonalWorkspaces =
-    workspaces?.filter(
-      // biome-ignore lint/suspicious/noExplicitAny: dynamic shape from DB
-      (ws) => !ws?.personal
-    ) || [];
+  const personalWorkspace = workspaces?.find((ws) => ws?.personal === true);
+  const nonPersonalWorkspaces = workspaces?.filter((ws) => !ws?.personal) || [];
 
   const groups = [
     personalWorkspace && {
@@ -152,7 +143,7 @@ export function WorkspaceSelect({
         },
       ],
     },
-    {
+    nonPersonalWorkspaces.length > 0 && {
       id: 'workspaces',
       label: t('common.workspaces'),
       teams: nonPersonalWorkspaces.map(
@@ -217,7 +208,7 @@ export function WorkspaceSelect({
               aria-label="Select a workspace"
               className={cn(
                 hideLeading ? 'justify-center p-0' : 'justify-start',
-                'w-full text-start whitespace-normal'
+                'w-full whitespace-normal text-start'
               )}
               disabled={!workspaces || workspaces.length === 0}
             >
