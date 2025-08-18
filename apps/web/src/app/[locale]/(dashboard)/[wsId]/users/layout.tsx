@@ -1,4 +1,4 @@
-import { Navigation, type NavLink } from '@/components/navigation';
+import { type NavLink, Navigation } from '@/components/navigation';
 import { getPermissions, getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import { getTranslations } from 'next-intl/server';
 import { redirect } from 'next/navigation';

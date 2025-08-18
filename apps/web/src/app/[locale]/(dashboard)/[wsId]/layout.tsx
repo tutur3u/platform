@@ -1,3 +1,8 @@
+import NavbarActions from '../../navbar-actions';
+import { UserNav } from '../../user-nav';
+import InvitationCard from './invitation-card';
+import PersonalWorkspacePrompt from './personal-workspace-prompt';
+import { Structure } from './structure';
 import type { NavLink } from '@/components/navigation';
 import {
   DEV_MODE,
@@ -43,8 +48,8 @@ import {
   Send,
   ShieldUser,
   Sparkles,
-  SquaresIntersect,
   SquareUserRound,
+  SquaresIntersect,
   Star,
   TextSelect,
   Trash,
@@ -65,11 +70,6 @@ import { getTranslations } from 'next-intl/server';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { type ReactNode, Suspense } from 'react';
-import NavbarActions from '../../navbar-actions';
-import { UserNav } from '../../user-nav';
-import InvitationCard from './invitation-card';
-import PersonalWorkspacePrompt from './personal-workspace-prompt';
-import { Structure } from './structure';
 
 interface LayoutProps {
   params: Promise<{
