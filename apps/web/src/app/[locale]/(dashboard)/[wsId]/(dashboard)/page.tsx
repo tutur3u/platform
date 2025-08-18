@@ -1,4 +1,4 @@
-import type { FinanceDashboardSearchParams } from '../finance/(dashboard)/page';
+import type { FinanceDashboardSearchParams } from '@tuturuuu/ui/finance/shared/metrics';
 import { InventoryCategoryStatistics } from './categories/inventory';
 import { UsersCategoryStatistics } from './categories/users';
 import FinanceStatistics from './finance';
