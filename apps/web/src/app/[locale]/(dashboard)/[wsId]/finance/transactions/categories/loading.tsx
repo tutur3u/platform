@@ -1,5 +1,5 @@
-import { CustomDataTable } from '@/components/custom-data-table';
+import TableSkeletonLoading from '@tuturuuu/ui/finance/shared/loaders/table-skeleton';
 
 export default function Loading() {
-  return <CustomDataTable />;
+  return <TableSkeletonLoading />;
 }

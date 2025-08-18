@@ -1,5 +1,5 @@
-import { walletColumns } from './columns';
-import { WalletForm } from './form';
+import { walletColumns } from '@tuturuuu/ui/finance/wallets/columns';
+import { WalletForm } from '@tuturuuu/ui/finance/wallets/form';
 import { CustomDataTable } from '@/components/custom-data-table';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import type { Wallet } from '@tuturuuu/types/primitives/Wallet';

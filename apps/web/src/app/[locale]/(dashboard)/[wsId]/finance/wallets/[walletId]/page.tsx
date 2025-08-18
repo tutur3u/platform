@@ -1,4 +1,4 @@
-import { transactionColumns } from '../../transactions/columns';
+import { transactionColumns } from '@tuturuuu/ui/finance/transactions/columns';
 import { CustomDataTable } from '@/components/custom-data-table';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import type { Transaction } from '@tuturuuu/types/primitives/Transaction';

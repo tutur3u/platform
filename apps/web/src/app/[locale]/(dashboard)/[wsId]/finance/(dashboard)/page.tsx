@@ -7,20 +7,16 @@ import {
   TransactionsStatistics,
   WalletsStatistics,
 } from '../../(dashboard)/statistics';
-import { transactionColumns } from '../transactions/columns';
-import { Filter } from './filter';
+import { transactionColumns } from '@tuturuuu/ui/finance/transactions/columns';
+import { Filter } from '@tuturuuu/ui/finance/shared/filter';
 import { CustomDataTable } from '@/components/custom-data-table';
 import LoadingStatisticCard from '@/components/loading-statistic-card';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import type { Transaction } from '@tuturuuu/types/primitives/Transaction';
 import { Suspense } from 'react';
+import { FinanceDashboardSearchParams } from '@tuturuuu/ui/finance/shared/metrics'
 
-export interface FinanceDashboardSearchParams {
-  showFinanceStats?: boolean;
-  view?: string;
-  startDate?: string;
-  endDate?: string;
-}
+
 
 interface Props {
   params: Promise<{

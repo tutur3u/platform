@@ -1,6 +1,6 @@
-import { transactionColumns } from './columns';
-import ExportDialogContent from './export-dialog-content';
-import { TransactionForm } from './form';
+import { transactionColumns } from '@tuturuuu/ui/finance/transactions/columns';
+import ExportDialogContent from '@tuturuuu/ui/finance/transactions/export-dialog-content';
+import { TransactionForm } from '@tuturuuu/ui/finance/transactions/form';
 import { CustomDataTable } from '@/components/custom-data-table';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import type { Transaction } from '@tuturuuu/types/primitives/Transaction';
