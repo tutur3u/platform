@@ -29,7 +29,7 @@ export const TimeColumnHeaders = ({
           )}
         >
           {isWeekday ? (
-            <div className="font-medium text-[10px] text-muted-foreground/70">
+            <div className="text-[10px] font-medium text-muted-foreground/70">
               {secondaryTzAbbr}
             </div>
           ) : (
@@ -54,7 +54,7 @@ export const TimeColumnHeaders = ({
         {isWeekday ? (
           <>
             <Clock className="mb-0.5 h-3 w-3 text-muted-foreground" />
-            <div className="font-medium text-[10px] text-muted-foreground">
+            <div className="text-[10px] font-medium text-muted-foreground">
               {primaryTzAbbr}
             </div>
           </>
