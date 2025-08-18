@@ -519,7 +519,7 @@ export default async function Layout({ children, params }: LayoutProps) {
           icon: <Bolt className="h-5 w-5" />,
           matchExact: true,
         },
-        ...(wsId !== 'personal'
+        ...(wsId !== 'personal' && !workspace.personal
           ? [
               {
                 title: t('workspace-settings-layout.members'),
