@@ -1,6 +1,6 @@
-import { useCalendar } from '../../../../hooks/use-calendar';
 import { CalendarView } from './calendar-view';
 import { HOUR_HEIGHT } from './config';
+import { useCalendarSettings } from './settings/settings-context';
 import { TimeTrail } from './time-trail';
 import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone';
@@ -11,7 +11,7 @@ dayjs.extend(timezone);
 export const CalendarViewWithTrail = ({ dates }: { dates: Date[] }) => {
   const [initialized, setInitialized] = useState(false);
   const calendarViewRef = useRef<HTMLDivElement>(null);
-  const { settings } = useCalendar();
+  const { settings } = useCalendarSettings();
   const tz = settings?.timezone?.timezone;
 
   // Scroll to current time on mount and when dates change

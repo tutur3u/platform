@@ -4,13 +4,12 @@ import { CreateEventButton } from './create-event-button';
 import { EventModal } from './event-modal';
 import { MonthCalendar } from './month-calendar';
 import { SettingsButton } from './settings-button';
-import type { CalendarSettings } from './settings/settings-context';
+import { useCalendarSettings } from './settings/settings-context';
 import { WeekdayBar } from './weekday-bar';
 import type {
   Workspace,
   WorkspaceCalendarGoogleToken,
 } from '@tuturuuu/types/db';
-import { useCalendar } from '@tuturuuu/ui/hooks/use-calendar';
 import { useCalendarSync } from '@tuturuuu/ui/hooks/use-calendar-sync';
 import type { CalendarView } from '@tuturuuu/ui/hooks/use-view-transition';
 import { useViewTransition } from '@tuturuuu/ui/hooks/use-view-transition';
@@ -51,10 +50,8 @@ export const CalendarContent = ({
   locale,
   disabled,
   workspace,
-  initialSettings,
   enableHeader = true,
   experimentalGoogleToken,
-  onSaveSettings,
   externalState,
   extras,
 }: {
@@ -62,10 +59,8 @@ export const CalendarContent = ({
   locale: string;
   disabled?: boolean;
   workspace?: Workspace;
-  initialSettings?: Partial<CalendarSettings>;
   enableHeader?: boolean;
   experimentalGoogleToken?: WorkspaceCalendarGoogleToken | null;
-  onSaveSettings?: (settings: CalendarSettings) => Promise<void>;
   externalState?: {
     date: Date;
     setDate: React.Dispatch<React.SetStateAction<Date>>;
@@ -78,7 +73,7 @@ export const CalendarContent = ({
   extras?: React.ReactNode;
 }) => {
   const { transition } = useViewTransition();
-  const { settings } = useCalendar();
+  const { settings } = useCalendarSettings();
   const { dates, setDates } = useCalendarSync();
 
   const [initialized, setInitialized] = useState(false);
@@ -254,12 +249,6 @@ export const CalendarContent = ({
       else if (externalState.view === '4-days') enable4DayView();
       else if (externalState.view === 'week') enableWeekView();
       else if (externalState.view === 'month') enableMonthView();
-    } else if (initialSettings?.appearance?.defaultView) {
-      const defaultView = initialSettings.appearance.defaultView;
-      if (defaultView === 'day') enableDayView();
-      else if (defaultView === '4-days') enable4DayView();
-      else if (defaultView === 'week') enableWeekView();
-      else if (defaultView === 'month') enableMonthView();
     } else {
       // Default to week view if no setting is provided
       enableWeekView();
@@ -267,7 +256,6 @@ export const CalendarContent = ({
   }, [
     t,
     initialized,
-    initialSettings,
     enableDayView,
     enable4DayView,
     enableWeekView,
@@ -358,7 +346,7 @@ export const CalendarContent = ({
       const gridDates = getMonthGridDates(date, firstDayNumber);
       setDates(gridDates);
     }
-  }, [date, view]);
+  }, [date, view, settings, setDates]);
 
   // Set initial view based on screen size
   useEffect(() => {
@@ -464,8 +452,6 @@ export const CalendarContent = ({
             <SettingsButton
               wsId={workspace?.id}
               experimentalGoogleToken={experimentalGoogleToken}
-              initialSettings={initialSettings}
-              onSaveSettings={onSaveSettings}
             />
           )}
         </>
