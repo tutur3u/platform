@@ -18,8 +18,5 @@ export default async function WorkspaceInvoicesPage({
   const { wsId } = await params;
   const sp = await searchParams;
 
-  return (
-    <NewInvoicePage wsId={wsId} searchParams={sp} />
-  );
+  return <NewInvoicePage wsId={wsId} searchParams={sp} />;
 }
-

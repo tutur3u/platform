@@ -1,9 +1,9 @@
 'use client';
 
-import { InvoiceRowActions } from '@tuturuuu/ui/finance/invoices/row-actions';
 import type { ColumnDef } from '@tanstack/react-table';
 import type { Invoice } from '@tuturuuu/types/primitives/Invoice';
 import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
+import { InvoiceRowActions } from '@tuturuuu/ui/finance/invoices/row-actions';
 import {
   Tooltip,
   TooltipContent,

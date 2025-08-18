@@ -11,9 +11,5 @@ interface LayoutProps {
 export default async function Layout({ children, params }: LayoutProps) {
   const { wsId } = await params;
 
-  return (
-    <FinanceLayout wsId={wsId}>
-      {children}
-    </FinanceLayout>
-  );
+  return <FinanceLayout wsId={wsId}>{children}</FinanceLayout>;
 }

@@ -1,6 +1,5 @@
-import { CustomDataTable } from "@tuturuuu/ui/custom/tables/custom-data-table";
+import { CustomDataTable } from '@tuturuuu/ui/custom/tables/custom-data-table';
 
-
-export default function TableSkeletonLoading(){
-    return <CustomDataTable/>;
+export default function TableSkeletonLoading() {
+  return <CustomDataTable />;
 }

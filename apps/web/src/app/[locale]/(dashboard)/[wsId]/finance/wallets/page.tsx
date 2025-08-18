@@ -18,8 +18,5 @@ export default async function WorkspaceWalletsPage({
   const { wsId } = await params;
   const sp = await searchParams;
 
-  return (
-    <WalletsPage wsId={wsId} searchParams={sp} />
-  );
+  return <WalletsPage wsId={wsId} searchParams={sp} />;
 }
-

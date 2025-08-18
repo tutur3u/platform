@@ -21,6 +21,11 @@ export default async function WorkspaceWalletDetailsPage({
   const sp = await searchParams;
 
   return (
-    <WalletDetailsPage wsId={wsId} walletId={walletId} locale={locale} searchParams={sp} />
+    <WalletDetailsPage
+      wsId={wsId}
+      walletId={walletId}
+      locale={locale}
+      searchParams={sp}
+    />
   );
 }
