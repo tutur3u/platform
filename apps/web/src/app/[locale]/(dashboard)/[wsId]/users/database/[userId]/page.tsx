@@ -1,4 +1,4 @@
-import { invoiceColumns } from '../../../finance/invoices/columns';
+import { invoiceColumns } from '@tuturuuu/ui/finance/invoices/columns';
 import UserMonthAttendance from '../../attendance/user-month-attendance';
 import { CustomDataTable } from '@/components/custom-data-table';
 import { createClient } from '@tuturuuu/supabase/next/server';
