@@ -1,53 +1,56 @@
-import { secretColumns } from './columns';
-import SecretForm from './form';
+import { walletColumns } from '@tuturuuu/ui/finance/wallets/columns';
+import { WalletForm } from '@tuturuuu/ui/finance/wallets/form';
 import { CustomDataTable } from '@tuturuuu/ui/custom/tables/custom-data-table';
 import { createClient } from '@tuturuuu/supabase/next/server';
-import type { WorkspaceSecret } from '@tuturuuu/types/primitives/WorkspaceSecret';
+import type { Wallet } from '@tuturuuu/types/primitives/Wallet';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Separator } from '@tuturuuu/ui/separator';
-import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import { getTranslations } from 'next-intl/server';
 
 interface Props {
-  params: Promise<{
-    wsId: string;
-  }>;
-  searchParams: Promise<{
-    q?: string;
-    page?: string;
-    pageSize?: string;
-  }>;
+  wsId: string;
+  searchParams: {
+    q: string;
+    page: string;
+    pageSize: string; 
+  };
 }
 
-export default async function WorkspaceSecretsPage({
-  params,
+export default async function WalletsPage({
+  wsId,
   searchParams,
 }: Props) {
-  const { wsId: id } = await params;
-  const workspace = await getWorkspace(id);
-  const wsId = workspace?.id;
-
-  const { data: secrets, count } = await getSecrets(wsId, await searchParams);
   const t = await getTranslations();
+  const { data: rawData, count } = await getData(wsId, searchParams);
+
+  const data = rawData.map((d) => ({
+    ...d,
+    href: `/${wsId}/finance/wallets/${d.id}`,
+    ws_id: wsId,
+  }));
 
   return (
     <>
       <FeatureSummary
-        pluralTitle={t('ws-secrets.plural')}
-        singularTitle={t('ws-secrets.singular')}
-        description={t('ws-secrets.description')}
-        createTitle={t('ws-secrets.create')}
-        createDescription={t('ws-secrets.create_description')}
-        form={<SecretForm wsId={wsId} />}
+        pluralTitle={t('ws-wallets.plural')}
+        singularTitle={t('ws-wallets.singular')}
+        description={t('ws-wallets.description')}
+        createTitle={t('ws-wallets.create')}
+        createDescription={t('ws-wallets.create_description')}
+        form={<WalletForm wsId={wsId} />}
       />
       <Separator className="my-4" />
       <CustomDataTable
-        columnGenerator={secretColumns}
-        namespace="secret-data-table"
-        data={secrets}
+        data={data}
+        columnGenerator={walletColumns}
+        namespace="wallet-data-table"
         count={count}
         defaultVisibility={{
           id: false,
+          description: false,
+          type: false,
+          currency: false,
+          report_opt_in: false,
           created_at: false,
         }}
       />
@@ -55,7 +58,7 @@ export default async function WorkspaceSecretsPage({
   );
 }
 
-async function getSecrets(
+async function getData(
   wsId: string,
   {
     q,
@@ -66,12 +69,12 @@ async function getSecrets(
   const supabase = await createClient();
 
   const queryBuilder = supabase
-    .from('workspace_secrets')
+    .from('workspace_wallets')
     .select('*', {
       count: 'exact',
     })
     .eq('ws_id', wsId)
-    .order('name', { ascending: false });
+    .order('name', { ascending: true });
 
   if (q) queryBuilder.ilike('name', `%${q}%`);
 
@@ -86,5 +89,5 @@ async function getSecrets(
   const { data, error, count } = await queryBuilder;
   if (error) throw error;
 
-  return { data, count } as { data: WorkspaceSecret[]; count: number };
+  return { data, count } as { data: Wallet[]; count: number };
 }

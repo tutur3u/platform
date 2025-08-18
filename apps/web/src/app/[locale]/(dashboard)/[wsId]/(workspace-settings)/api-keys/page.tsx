@@ -1,6 +1,6 @@
 import { apiKeyColumns } from './columns';
 import ApiKeyEditDialog from './edit-dialog';
-import { CustomDataTable } from '@/components/custom-data-table';
+import { CustomDataTable } from '@tuturuuu/ui/custom/tables/custom-data-table';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import type { WorkspaceApiKey } from '@tuturuuu/types/primitives/WorkspaceApiKey';
 import { Button } from '@tuturuuu/ui/button';
