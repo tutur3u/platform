@@ -1,8 +1,5 @@
 'use client';
 
-import type { NavLink } from '@/components/navigation';
-import { PROD_MODE, SIDEBAR_COLLAPSED_COOKIE_NAME } from '@/constants/common';
-import { useSidebar } from '@/context/sidebar-context';
 import { useQuery } from '@tanstack/react-query';
 import type { Workspace } from '@tuturuuu/types/db';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
@@ -13,10 +10,10 @@ import { ArrowLeft } from '@tuturuuu/ui/icons';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { cn } from '@tuturuuu/utils/format';
 import { setCookie } from 'cookies-next';
-import { useTranslations } from 'next-intl';
 import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import {
   type ReactNode,
   Suspense,
@@ -24,6 +21,9 @@ import {
   useEffect,
   useState,
 } from 'react';
+import type { NavLink } from '@/components/navigation';
+import { PROD_MODE, SIDEBAR_COLLAPSED_COOKIE_NAME } from '@/constants/common';
+import { useSidebar } from '@/context/sidebar-context';
 import { Nav } from './nav';
 
 interface MailProps {
@@ -90,6 +90,26 @@ export function Structure({
     titleHistory: (string | null)[];
     direction: 'forward' | 'backward';
   }>(() => {
+    // Check if we're on a time tracker route
+    const isOnTimeTrackerRoute =
+      pathname.includes('/time-tracker') || pathname.includes('time-tracker');
+
+    // If we're on a time tracker route, set the time tracker panel as active
+    if (isOnTimeTrackerRoute) {
+      const timeTrackerLink = links.find(
+        (link) => link?.title === t('sidebar_tabs.time_tracker')
+      );
+      if (timeTrackerLink?.children) {
+        return {
+          currentLinks: timeTrackerLink.children,
+          history: [links],
+          titleHistory: [timeTrackerLink.title],
+          direction: 'forward' as const,
+        };
+      }
+    }
+
+    // Find if any submenu should be active for the current path.
     for (const link of links) {
       if (link?.children && link.children.length > 0) {
         const isActive = hasActiveChild(link.children);
@@ -103,7 +123,8 @@ export function Structure({
         }
       }
     }
-    // Flatten links with a single child
+
+    // Default to flattened links (main menu)
     const flattenedLinks = links
       .flatMap((link) =>
         link?.children && link.children.length === 1
@@ -121,6 +142,36 @@ export function Structure({
 
   useEffect(() => {
     setNavState((prevState) => {
+      // Check if we're on a time tracker route
+      const isOnTimeTrackerRoute =
+        pathname.includes('/time-tracker') || pathname.includes('time-tracker');
+
+      // If we're already showing the time tracker panel and we're on a time tracker route,
+      // keep the current state (this prevents unnecessary re-renders)
+      if (
+        prevState.titleHistory[prevState.titleHistory.length - 1] ===
+          t('sidebar_tabs.time_tracker') &&
+        isOnTimeTrackerRoute
+      ) {
+        return prevState;
+      }
+
+      // If we're on a time tracker route and we don't have the time tracker panel active,
+      // set it to active
+      if (isOnTimeTrackerRoute) {
+        const timeTrackerLink = links.find(
+          (link) => link?.title === t('sidebar_tabs.time_tracker')
+        );
+        if (timeTrackerLink?.children) {
+          return {
+            currentLinks: timeTrackerLink.children,
+            history: [links],
+            titleHistory: [timeTrackerLink.title],
+            direction: 'forward',
+          };
+        }
+      }
+
       // Find if any submenu should be active for the current path.
       for (const link of links) {
         if (link?.children && link.children.length > 0) {
@@ -183,7 +234,7 @@ export function Structure({
       // We are at the top level and no submenu is active, do nothing.
       return prevState;
     });
-  }, [pathname, links, hasActiveChild]);
+  }, [pathname, links, hasActiveChild, t]);
 
   const handleToggle = () => {
     const newCollapsed = !isCollapsed;
