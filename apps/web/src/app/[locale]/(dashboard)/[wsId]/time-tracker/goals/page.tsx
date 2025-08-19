@@ -3,11 +3,11 @@
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
 import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import { notFound } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
 import { getTimeTrackingData } from '@/lib/time-tracking-helper';
 import { GoalManager } from '../components/goal-manager';
 import type { TimeTrackerData } from '../types';
-import { useTranslations } from 'next-intl';
 
 interface Props {
   params: {
@@ -64,7 +64,9 @@ export default function TimeTrackerGoalsPage({ params }: Props) {
   return (
     <div className="container mx-auto p-6">
       <div className="mb-6">
-        <h1 className="font-bold text-3xl">{t('time_tracker_pages.goals.title')}</h1>
+        <h1 className="font-bold text-3xl">
+          {t('time_tracker_pages.goals.title')}
+        </h1>
         <p className="text-muted-foreground">
           {t('time_tracker_pages.goals.description')}
         </p>
@@ -74,6 +76,22 @@ export default function TimeTrackerGoalsPage({ params }: Props) {
         goals={initialData.goals || []}
         categories={initialData.categories || []}
         timerStats={initialData.stats}
+        onGoalsUpdate={() => {
+          // Refresh data when goals are updated
+          window.location.reload();
+        }}
+        formatDuration={(seconds: number) => {
+          const hours = Math.floor(seconds / 3600);
+          const minutes = Math.floor((seconds % 3600) / 60);
+          return `${hours}h ${minutes}m`;
+        }}
+        apiCall={async (url: string, options?: RequestInit) => {
+          const response = await fetch(url, options);
+          if (!response.ok) {
+            throw new Error('Failed to update goals');
+          }
+          return response.json();
+        }}
       />
     </div>
   );

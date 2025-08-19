@@ -352,7 +352,9 @@ export function GoalManager({
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <TrendingUp className="h-4 w-4 text-green-500" />
-                    <span className="font-medium">This Week&apos;s Progress</span>
+                    <span className="font-medium">
+                      This Week&apos;s Progress
+                    </span>
                   </div>
                   <span className="text-muted-foreground text-sm">
                     {handleFormatDuration(timerStats.weekTime) ||
@@ -491,7 +493,7 @@ export function GoalManager({
                       <Card
                         key={goal.id}
                         className="group relative border-l-4 transition-all hover:shadow-lg"
-                                                style={{
+                        style={{
                           borderLeftColor: goal.category?.color
                             ? `rgb(${
                                 goal.category?.color === 'RED'
@@ -504,15 +506,17 @@ export function GoalManager({
                                         ? '234 179 8'
                                         : goal.category?.color === 'ORANGE'
                                           ? '249 115 22'
-                                        : goal.category?.color === 'PURPLE'
-                                          ? '168 85 247'
-                                        : goal.category?.color === 'PINK'
-                                          ? '236 72 153'
-                                        : goal.category?.color === 'INDIGO'
-                                          ? '99 102 241'
-                                        : goal.category?.color === 'CYAN'
-                                          ? '6 182 212'
-                                        : '107 114 128' // GRAY
+                                          : goal.category?.color === 'PURPLE'
+                                            ? '168 85 247'
+                                            : goal.category?.color === 'PINK'
+                                              ? '236 72 153'
+                                              : goal.category?.color ===
+                                                  'INDIGO'
+                                                ? '99 102 241'
+                                                : goal.category?.color ===
+                                                    'CYAN'
+                                                  ? '6 182 212'
+                                                  : '107 114 128' // GRAY
                               })`
                             : 'rgb(99 102 241)', // Indigo for general goals
                         }}

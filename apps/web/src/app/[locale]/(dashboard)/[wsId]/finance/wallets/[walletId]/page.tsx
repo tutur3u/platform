@@ -5,11 +5,12 @@ import { Calendar, CreditCard, DollarSign, Wallet } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
 import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import { CustomDataTable } from '@/components/custom-data-table';
+import { transactionColumns } from '../../transactions/columns';
 import 'dayjs/locale/vi';
 import moment from 'moment';
+import { notFound } from 'next/navigation';
 
 import { getTranslations } from 'next-intl/server';
-import { transactionColumns } from '../../transactions/columns';
 
 interface Props {
   params: Promise<{

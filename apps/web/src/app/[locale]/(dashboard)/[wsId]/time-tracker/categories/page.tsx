@@ -3,11 +3,11 @@
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
 import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import { notFound } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
 import { getTimeTrackingData } from '@/lib/time-tracking-helper';
 import { CategoryManager } from '../components/category-manager';
 import type { TimeTrackerData } from '../types';
-import { useTranslations } from 'next-intl';
 
 interface Props {
   params: {
@@ -64,7 +64,9 @@ export default function TimeTrackerCategoriesPage({ params }: Props) {
   return (
     <div className="container mx-auto p-6">
       <div className="mb-6">
-        <h1 className="font-bold text-3xl">{t('time_tracker_pages.categories.title')}</h1>
+        <h1 className="font-bold text-3xl">
+          {t('time_tracker_pages.categories.title')}
+        </h1>
         <p className="text-muted-foreground">
           {t('time_tracker_pages.categories.description')}
         </p>
@@ -72,6 +74,17 @@ export default function TimeTrackerCategoriesPage({ params }: Props) {
       <CategoryManager
         wsId={wsId}
         categories={initialData.categories || []}
+        onCategoriesUpdate={() => {
+          // Refresh data when categories are updated
+          window.location.reload();
+        }}
+        apiCall={async (url: string, options?: RequestInit) => {
+          const response = await fetch(url, options);
+          if (!response.ok) {
+            throw new Error('Failed to update categories');
+          }
+          return response.json();
+        }}
       />
     </div>
   );
