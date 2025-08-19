@@ -16,7 +16,7 @@
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.55.0",
-    "@trigger.dev/sdk": "^3.3.17",
+    "@trigger.dev/sdk": "^4.0.0",
     "@tuturuuu/supabase": "workspace:*",
     "@tuturuuu/types": "workspace:*",
     "@tuturuuu/google": "workspace:*",
