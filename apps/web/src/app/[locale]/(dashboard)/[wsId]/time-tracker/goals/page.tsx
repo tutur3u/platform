@@ -69,22 +69,6 @@ export default function TimeTrackerGoalsPage({ params }: Props) {
         goals={initialData.goals || []}
         categories={initialData.categories || []}
         timerStats={initialData.stats}
-        onGoalsUpdate={() => {
-          // Refresh data when goals are updated
-          router.refresh();
-        }}
-        formatDuration={(seconds: number) => {
-          const hours = Math.floor(seconds / 3600);
-          const minutes = Math.floor((seconds % 3600) / 60);
-          return `${hours}h ${minutes}m`;
-        }}
-        apiCall={async (url: string, options?: RequestInit) => {
-          const response = await fetch(url, options);
-          if (!response.ok) {
-            throw new Error('Failed to update goals');
-          }
-          return response.json();
-        }}
       />
     </div>
   );
