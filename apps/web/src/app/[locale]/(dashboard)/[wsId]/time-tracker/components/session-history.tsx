@@ -2030,11 +2030,11 @@ export function SessionHistory({
                             </span>
                             <span>
                               🎯 Focus:{' '}
-                              {periodStats.productivityBreakdown['focused']}
+                              {periodStats.productivityBreakdown.focused}
                             </span>
                             <span>
                               ⚡ Quick:{' '}
-                              {periodStats.productivityBreakdown['interrupted']}
+                              {periodStats.productivityBreakdown.interrupted}
                             </span>
                           </div>
                         </div>
@@ -2099,7 +2099,7 @@ export function SessionHistory({
 
                           // Productivity Type Analysis
                           const interruptedRatio =
-                            periodStats.productivityBreakdown['interrupted'] /
+                            periodStats.productivityBreakdown.interrupted /
                             Math.max(1, periodStats.sessionCount);
                           if (interruptedRatio > 0.3) {
                             insights.push(
@@ -2110,7 +2110,7 @@ export function SessionHistory({
                           const deepWorkCount =
                             periodStats.productivityBreakdown['deep-work'];
                           const focusedCount =
-                            periodStats.productivityBreakdown['focused'];
+                            periodStats.productivityBreakdown.focused;
                           if (
                             deepWorkCount + focusedCount >
                             periodStats.sessionCount * 0.6
