@@ -1,10 +1,10 @@
+import { getUserOnboardingProgress, hasCompletedOnboarding } from './actions';
+import OnboardingFlow from './onboarding-flow';
 import {
   getCurrentUser,
   getUserDefaultWorkspace,
 } from '@tuturuuu/utils/user-helper';
 import { redirect } from 'next/navigation';
-import { getUserOnboardingProgress, hasCompletedOnboarding } from './actions';
-import OnboardingFlow from './onboarding-flow';
 
 export default async function OnboardingPage() {
   const user = await getCurrentUser();

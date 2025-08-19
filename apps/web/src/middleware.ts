@@ -1,3 +1,5 @@
+import { LOCALE_COOKIE_NAME, PORT, PUBLIC_PATHS } from './constants/common';
+import { type Locale, defaultLocale, supportedLocales } from './i18n/routing';
 import { match } from '@formatjs/intl-localematcher';
 import { createCentralizedAuthMiddleware } from '@tuturuuu/auth/middleware';
 import { createClient } from '@tuturuuu/supabase/next/server';
@@ -7,8 +9,6 @@ import Negotiator from 'negotiator';
 import createIntlMiddleware from 'next-intl/middleware';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
-import { LOCALE_COOKIE_NAME, PORT, PUBLIC_PATHS } from './constants/common';
-import { defaultLocale, type Locale, supportedLocales } from './i18n/routing';
 
 const WEB_APP_URL =
   process.env.NODE_ENV === 'production'

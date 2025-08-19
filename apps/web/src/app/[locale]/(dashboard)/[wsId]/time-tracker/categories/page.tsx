@@ -1,9 +1,9 @@
+import { CategoryManager } from '../components/category-manager';
+import type { TimeTrackerData } from '../types';
+import { getTimeTrackingData } from '@/lib/time-tracking-helper';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
 import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import { notFound } from 'next/navigation';
-import { getTimeTrackingData } from '@/lib/time-tracking-helper';
-import { CategoryManager } from '../components/category-manager';
-import type { TimeTrackerData } from '../types';
 
 interface Props {
   params: Promise<{
@@ -31,7 +31,7 @@ export default async function TimeTrackerCategoriesPage({ params }: Props) {
     return (
       <div className="container mx-auto p-6">
         <div className="mb-6">
-          <h1 className="font-bold text-3xl">Time Tracking Categories</h1>
+          <h1 className="text-3xl font-bold">Time Tracking Categories</h1>
           <p className="text-muted-foreground">
             Manage your time tracking categories and tags
           </p>
