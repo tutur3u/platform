@@ -494,23 +494,23 @@ export function GoalManager({
                                                 style={{
                           borderLeftColor: goal.category?.color
                             ? `rgb(${
-                                goal.category.color === 'RED'
+                                goal.category?.color === 'RED'
                                   ? '239 68 68'
-                                  : goal.category.color === 'BLUE'
+                                  : goal.category?.color === 'BLUE'
                                     ? '59 130 246'
-                                    : goal.category.color === 'GREEN'
+                                    : goal.category?.color === 'GREEN'
                                       ? '34 197 94'
-                                      : goal.category.color === 'YELLOW'
+                                      : goal.category?.color === 'YELLOW'
                                         ? '234 179 8'
-                                        : goal.category.color === 'ORANGE'
+                                        : goal.category?.color === 'ORANGE'
                                           ? '249 115 22'
-                                        : goal.category.color === 'PURPLE'
+                                        : goal.category?.color === 'PURPLE'
                                           ? '168 85 247'
-                                        : goal.category.color === 'PINK'
+                                        : goal.category?.color === 'PINK'
                                           ? '236 72 153'
-                                        : goal.category.color === 'INDIGO'
+                                        : goal.category?.color === 'INDIGO'
                                           ? '99 102 241'
-                                        : goal.category.color === 'CYAN'
+                                        : goal.category?.color === 'CYAN'
                                           ? '6 182 212'
                                         : '107 114 128' // GRAY
                               })`
