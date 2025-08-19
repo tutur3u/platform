@@ -65,7 +65,7 @@ interface GoalManagerProps {
   onGoalsUpdate?: () => void;
   readOnly?: boolean;
   formatDuration?: (seconds: number) => string;
-  apiCall?: (url: string, options?: RequestInit) => Promise<any>;
+  apiCall?: (url: string, options?: RequestInit) => Promise<unknown>;
 }
 
 export function GoalManager({
@@ -290,7 +290,7 @@ export function GoalManager({
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <Calendar className="h-4 w-4 text-blue-500" />
-                    <span className="font-medium">Today's Progress</span>
+                    <span className="font-medium">Today&apos;s Progress</span>
                   </div>
                   <span className="text-muted-foreground text-sm">
                     {handleFormatDuration(timerStats.todayTime) ||
@@ -352,7 +352,7 @@ export function GoalManager({
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <TrendingUp className="h-4 w-4 text-green-500" />
-                    <span className="font-medium">This Week's Progress</span>
+                    <span className="font-medium">This Week&apos;s Progress</span>
                   </div>
                   <span className="text-muted-foreground text-sm">
                     {handleFormatDuration(timerStats.weekTime) ||
@@ -367,7 +367,7 @@ export function GoalManager({
                         const goalWeekTime = getTimeForGoal(goal, 'week');
                         const progress = calculateProgress(
                           goalWeekTime,
-                          goal.weekly_goal_minutes!
+                          goal.weekly_goal_minutes || 0
                         );
                         return (
                           <div key={goal.id} className="space-y-1">
@@ -396,7 +396,7 @@ export function GoalManager({
                                   formatMinutes(goalWeekTime)}
                               </span>
                               <span>
-                                {formatMinutes(goal.weekly_goal_minutes!)}
+                                {formatMinutes(goal.weekly_goal_minutes || 0)}
                               </span>
                             </div>
                           </div>
@@ -491,8 +491,8 @@ export function GoalManager({
                       <Card
                         key={goal.id}
                         className="group relative border-l-4 transition-all hover:shadow-lg"
-                        style={{
-                          borderLeftColor: goal.category
+                                                style={{
+                          borderLeftColor: goal.category?.color
                             ? `rgb(${
                                 goal.category.color === 'RED'
                                   ? '239 68 68'
@@ -504,15 +504,15 @@ export function GoalManager({
                                         ? '234 179 8'
                                         : goal.category.color === 'ORANGE'
                                           ? '249 115 22'
-                                          : goal.category.color === 'PURPLE'
-                                            ? '168 85 247'
-                                            : goal.category.color === 'PINK'
-                                              ? '236 72 153'
-                                              : goal.category.color === 'INDIGO'
-                                                ? '99 102 241'
-                                                : goal.category.color === 'CYAN'
-                                                  ? '6 182 212'
-                                                  : '107 114 128' // GRAY
+                                        : goal.category.color === 'PURPLE'
+                                          ? '168 85 247'
+                                        : goal.category.color === 'PINK'
+                                          ? '236 72 153'
+                                        : goal.category.color === 'INDIGO'
+                                          ? '99 102 241'
+                                        : goal.category.color === 'CYAN'
+                                          ? '6 182 212'
+                                        : '107 114 128' // GRAY
                               })`
                             : 'rgb(99 102 241)', // Indigo for general goals
                         }}
