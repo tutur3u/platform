@@ -187,7 +187,7 @@ export function WorkspaceSelect({
   return (
     <>
       {hideLeading || (
-        <div className="mx-1 h-4 w-px flex-none rotate-30 bg-foreground/20" />
+        <div className="mx-1 h-4 w-px flex-none rotate-12 bg-foreground/20" />
       )}
       <Dialog
         open={showNewWorkspaceDialog}

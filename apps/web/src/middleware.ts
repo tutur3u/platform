@@ -199,7 +199,9 @@ const getExistingLocale = (
 
   // Get supported locale from pathname and cookie
   const localeFromPathname = getSupportedLocale(rawLocaleFromPathname);
-  const localeFromCookie = getSupportedLocale(rawLocaleFromCookie);
+  const localeFromCookie = rawLocaleFromCookie
+    ? getSupportedLocale(rawLocaleFromCookie)
+    : null;
 
   // Only return a locale if one of them is valid
   const locale = localeFromPathname || localeFromCookie;
@@ -234,7 +236,7 @@ const getDefaultLocale = (
 const getLocale = (
   req: NextRequest
 ): {
-  locale: string;
+  locale: Locale;
   cookie: string | null;
   pathname: string | null;
   default: boolean;

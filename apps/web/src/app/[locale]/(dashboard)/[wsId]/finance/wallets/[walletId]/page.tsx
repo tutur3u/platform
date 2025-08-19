@@ -7,7 +7,7 @@ import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import { CustomDataTable } from '@/components/custom-data-table';
 import 'dayjs/locale/vi';
 import moment from 'moment';
-import { notFound } from 'next/navigation';
+
 import { getTranslations } from 'next-intl/server';
 import { transactionColumns } from '../../transactions/columns';
 

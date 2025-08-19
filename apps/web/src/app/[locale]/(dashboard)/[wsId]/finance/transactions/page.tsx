@@ -31,9 +31,6 @@ export default async function WorkspaceTransactionsPage({
 
   const searchParamsData = await searchParams;
   const { page = '1', pageSize = '10' } = searchParamsData;
-  const parsedPage = Number.parseInt(page, 10);
-  const parsedSize = Number.parseInt(pageSize, 10);
-  const start = (parsedPage - 1) * parsedSize;
 
   const { data: rawData, count } = await getData(wsId, {
     q: searchParamsData.q,

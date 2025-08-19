@@ -56,7 +56,7 @@ interface CategoryManagerProps {
   categories: TimeTrackingCategory[];
   onCategoriesUpdate?: () => void;
   readOnly?: boolean;
-  apiCall?: (url: string, options?: RequestInit) => Promise<any>;
+  apiCall?: (url: string, options?: RequestInit) => Promise<unknown>;
 }
 
 const CATEGORY_COLORS = [
@@ -492,9 +492,9 @@ export function CategoryManager({
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Category</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete the category "
-              {categoryToDelete?.name}"? This action cannot be undone and will
-              remove the category from all existing time sessions.
+              Are you sure you want to delete the category &quot;
+              {categoryToDelete?.name}&quot;? This action cannot be undone and
+              will remove the category from all existing time sessions.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

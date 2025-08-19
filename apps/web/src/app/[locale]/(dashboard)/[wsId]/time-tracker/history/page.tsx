@@ -2,7 +2,7 @@
 
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
 import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
-import { notFound, useRouter } from 'next/navigation';
+import { notFound } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { getTimeTrackingData } from '@/lib/time-tracking-helper';
 import { SessionHistory } from '../components/session-history';
@@ -16,7 +16,6 @@ interface Props {
 }
 
 export default function TimeTrackerHistoryPage({ params }: Props) {
-  const router = useRouter();
   const [initialData, setInitialData] = useState<TimeTrackerData | null>(null);
   const [wsId, setWsId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
