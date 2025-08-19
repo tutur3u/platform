@@ -7,6 +7,7 @@ import { getCurrentUser } from '@tuturuuu/utils/user-helper';
 import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import { cookies } from 'next/headers';
 import { SIDEBAR_COLLAPSED_COOKIE_NAME } from '@/constants/common';
+import { notFound } from 'next/navigation';
 import MailClientWrapper from '../client';
 
 interface SearchParams {
@@ -24,7 +25,7 @@ interface Props {
 }
 
 export default async function MailPage({ params, searchParams }: Props) {
-  const { wsId: id } = params;
+  const { wsId: id } = await params;
   const workspace = await getWorkspace(id);
   const wsId = workspace.id;
   const user = await getCurrentUser();
@@ -61,133 +62,20 @@ export default async function MailPage({ params, searchParams }: Props) {
     }
   }
 
-  const { page = '1', size = '10' } = await searchParams;
-  const parsedPage = Number.parseInt(page, 10);
-  const parsedSize = Number.parseInt(size, 10);
-  const start = (parsedPage - 1) * parsedSize;
-  const end = start + parsedSize - 1;
+  const searchParamsData = await searchParams;
+  const { data } = await getMailsData(searchParamsData);
+  const credential = await getWorkspaceMailCredential(wsId);
 
-  const getMailsData = async () => {
-    const supabase = await createClient();
-    const { data, error, count } = await supabase
-      .from('mails')
-      .select('*', { count: 'exact' })
-      .eq('workspace_id', wsId)
-      .eq('sender_id', user.id)
-      .eq('type', 'sent')
-      .order('created_at', { ascending: false })
-      .range(start, end);
-
-    if (error) {
-      console.error('Error fetching mails:', error);
-      throw error;
-    }
-
-    return { data: data || [], count: count || 0 };
-  };
-
-  try {
-    const { data, count } = await getMailsData();
-    const totalPages = Math.ceil((count || 0) / parsedSize);
-
-    return (
-      <Layout
-        wsId={wsId}
-        user={user}
-        workspace={workspace}
-        defaultCollapsed={defaultCollapsed}
-        links={[]}
-        actions={null}
-        userPopover={null}
-      >
-        <div className="container mx-auto p-4">
-          <div className="mb-6">
-            <h1 className="font-bold text-2xl">Sent Mails</h1>
-            <p className="text-muted-foreground">
-              View all mails you have sent from this workspace
-            </p>
-          </div>
-
-          {data.length === 0 ? (
-            <div className="py-8 text-center">
-              <p className="text-muted-foreground">No sent mails found</p>
-            </div>
-          ) : (
-            <>
-              <div className="space-y-4">
-                {data.map((mail) => (
-                  <div
-                    key={mail.id}
-                    className="rounded-lg border p-4 transition-colors hover:bg-muted/50"
-                  >
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <h3 className="font-semibold">{mail.subject}</h3>
-                        <p className="text-muted-foreground text-sm">
-                          To: {mail.recipients?.join(', ') || 'No recipients'}
-                        </p>
-                        <p className="text-muted-foreground text-sm">
-                          Sent: {new Date(mail.created_at).toLocaleString()}
-                        </p>
-                      </div>
-                      <div className="text-right">
-                        <span className="inline-flex items-center rounded-full bg-green-100 px-2 py-1 font-medium text-green-800 text-xs">
-                          Sent
-                        </span>
-                      </div>
-                    </div>
-                    {mail.content && (
-                      <div className="mt-3 line-clamp-3 text-muted-foreground text-sm">
-                        {mail.content}
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-
-              {totalPages > 1 && (
-                <div className="mt-6 flex justify-center">
-                  <Pagination
-                    currentPage={parsedPage}
-                    totalPages={totalPages}
-                    baseUrl={`/${wsId}/mail/sent`}
-                  />
-                </div>
-              )}
-            </>
-          )}
-        </div>
-      </Layout>
-    );
-  } catch (error) {
-    console.error('Error in MailSentPage:', error);
-    return (
-      <Layout
-        wsId={wsId}
-        user={user}
-        workspace={workspace}
-        defaultCollapsed={defaultCollapsed}
-        links={[]}
-        actions={null}
-        userPopover={null}
-      >
-        <div className="container mx-auto p-4">
-          <div className="py-8 text-center">
-            <p className="text-red-600">
-              Error loading sent mails. Please try again.
-            </p>
-            <button
-              type="button"
-              onClick={() => window.location.reload()}
-              className="mt-4 rounded bg-primary px-4 py-2 text-primary-foreground hover:bg-primary/90"
-            >
-              Retry
-            </button>
-          </div>
-        </div>
-      </Layout>
-    );
-  }
+  return (
+    <MailClientWrapper
+      wsId={wsId}
+      defaultCollapsed={defaultCollapsed}
+      data={data}
+      searchParams={searchParamsData || {}}
+      hasCredential={!!credential}
+      user={user}
+    />
+  );
 }
 
 async function getMailsData({
@@ -210,8 +98,8 @@ async function getMailsData({
     const parsedPage = Number.parseInt(page, 10);
     const parsedSize = Number.parseInt(pageSize, 10);
     const start = (parsedPage - 1) * parsedSize;
-    const end = parsedPage * parsedSize - 1;
-    queryBuilder = queryBuilder.range(start, end).limit(parsedSize);
+    const end = start + parsedSize - 1;
+    queryBuilder = queryBuilder.range(start, end);
   }
 
   const { data, error, count } = await queryBuilder.order('created_at', {
