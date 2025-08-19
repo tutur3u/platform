@@ -24,11 +24,11 @@ function createCookieHandler(cookieStore: ReadonlyRequestCookies) {
 
 async function createGenericClient(isAdmin: boolean) {
   const { url, key } = checkEnvVariables({ useServiceKey: isAdmin });
-  
+
   // Dynamically import cookies to avoid build-time issues
   const { cookies } = await import('next/headers');
   const cookieStore = await cookies();
-  
+
   return createServerClient<Database>(url, key, {
     cookies: isAdmin
       ? {
@@ -61,11 +61,11 @@ export function createClient() {
 
 export async function createDynamicClient() {
   const { url, key } = checkEnvVariables({ useServiceKey: false });
-  
+
   // Dynamically import cookies to avoid build-time issues
   const { cookies } = await import('next/headers');
   const cookieStore = await cookies();
-  
+
   return createServerClient(url, key, {
     cookies: createCookieHandler(cookieStore),
   });

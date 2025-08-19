@@ -1,14 +1,13 @@
+import { transactionColumns } from '../../transactions/columns';
+import { CustomDataTable } from '@/components/custom-data-table';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import type { Transaction } from '@tuturuuu/types/primitives/Transaction';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Calendar, CreditCard, DollarSign, Wallet } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
 import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
-import { CustomDataTable } from '@/components/custom-data-table';
-import { transactionColumns } from '../../transactions/columns';
 import 'dayjs/locale/vi';
 import moment from 'moment';
-
 import { getTranslations } from 'next-intl/server';
 
 interface Props {
@@ -63,7 +62,7 @@ export default async function WalletDetailsPage({
       <div className="grid h-fit gap-4 md:grid-cols-2">
         <div className="grid gap-4">
           <div className="grid h-fit gap-2 rounded-lg border p-4">
-            <div className="font-semibold text-lg">
+            <div className="text-lg font-semibold">
               {t('invoices.basic-info')}
             </div>
             <Separator />
@@ -102,7 +101,7 @@ export default async function WalletDetailsPage({
         <div className="grid gap-4">
           <div className="h-full rounded-lg border p-4">
             <div className="grid h-full content-start gap-2">
-              <div className="font-semibold text-lg">
+              <div className="text-lg font-semibold">
                 {t('wallet-data-table.description')}
               </div>
               <Separator />
