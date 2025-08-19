@@ -8,9 +8,9 @@ export default function Loading() {
         <Skeleton className="h-5 w-80" />
       </div>
       <div className="space-y-4">
-        {Array.from({ length: 3 }).map((_, idx) => (
-          <Skeleton key={`goal-skeleton-${idx}`} className="h-24 w-full" />
-        ))}
+        <Skeleton key="goal-skeleton-1" className="h-24 w-full" />
+        <Skeleton key="goal-skeleton-2" className="h-24 w-full" />
+        <Skeleton key="goal-skeleton-3" className="h-24 w-full" />
       </div>
     </div>
   );

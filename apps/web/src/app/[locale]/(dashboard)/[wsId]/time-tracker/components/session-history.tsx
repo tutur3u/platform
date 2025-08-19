@@ -266,7 +266,9 @@ const StackedSessionItem: FC<{
   }
 
   // Calculate average focus score for stacked sessions
-  const focusScores = stackedSession.sessions.map((s) => calculateFocusScore(s));
+  const focusScores = stackedSession.sessions.map((s) =>
+    calculateFocusScore(s)
+  );
   const avgFocusScore =
     focusScores.length > 0
       ? focusScores.reduce((sum, score) => sum + score, 0) / focusScores.length
@@ -2288,7 +2290,10 @@ export function SessionHistory({
                                         size="sm"
                                         className="h-7 flex-1 text-xs"
                                         onClick={() => {
-                                          const lastSession = session.sessions[session.sessions.length - 1];
+                                          const lastSession =
+                                            session.sessions[
+                                              session.sessions.length - 1
+                                            ];
                                           if (lastSession) {
                                             openEditDialog(lastSession);
                                           }
@@ -2302,7 +2307,10 @@ export function SessionHistory({
                                         size="sm"
                                         className="h-7 px-2"
                                         onClick={() => {
-                                          const lastSession = session.sessions[session.sessions.length - 1];
+                                          const lastSession =
+                                            session.sessions[
+                                              session.sessions.length - 1
+                                            ];
                                           if (lastSession) {
                                             openEditDialog(lastSession);
                                           }
