@@ -838,20 +838,20 @@
     "meetings": "Các cuộc họp",
     "plans": "Kế hoạch",
     "ai_executions": "Xử lí AI",
-  "time_tracker_pages": {
-    "categories": {
-      "title": "Danh mục theo dõi thời gian",
-      "description": "Quản lý danh mục và thẻ theo dõi thời gian của bạn"
-    },
-    "goals": {
-      "title": "Mục tiêu theo dõi thời gian",
-      "description": "Thiết lập và quản lý mục tiêu theo dõi thời gian của bạn"
-    },
-    "history": {
-      "title": "Lịch sử phiên làm việc",
-      "description": "Xem và phân tích các phiên theo dõi thời gian của bạn"
+    "time_tracker_pages": {
+      "categories": {
+        "title": "Danh mục theo dõi thời gian",
+        "description": "Quản lý danh mục và thẻ theo dõi thời gian của bạn"
+      },
+      "goals": {
+        "title": "Mục tiêu theo dõi thời gian",
+        "description": "Thiết lập và quản lý mục tiêu theo dõi thời gian của bạn"
+      },
+      "history": {
+        "title": "Lịch sử phiên làm việc",
+        "description": "Xem và phân tích các phiên theo dõi thời gian của bạn"
+      }
     }
-  }
   },
   "link-shortener": {
     "title": "Rút ngắn liên kết",

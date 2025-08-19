@@ -1,3 +1,8 @@
+import MailClientWrapper from '../client';
+import {
+  SIDEBAR_BEHAVIOR_COOKIE_NAME,
+  SIDEBAR_COLLAPSED_COOKIE_NAME,
+} from '@/constants/common';
 import {
   createAdminClient,
   createClient,
@@ -7,11 +12,6 @@ import { getCurrentUser } from '@tuturuuu/utils/user-helper';
 import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import { cookies } from 'next/headers';
 import { notFound } from 'next/navigation';
-import {
-  SIDEBAR_BEHAVIOR_COOKIE_NAME,
-  SIDEBAR_COLLAPSED_COOKIE_NAME,
-} from '@/constants/common';
-import MailClientWrapper from '../client';
 
 interface SearchParams {
   page?: string;

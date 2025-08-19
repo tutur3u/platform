@@ -1,13 +1,13 @@
 'use client';
 
-import { getCurrentUser } from '@tuturuuu/utils/user-helper';
-import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
-import { notFound } from 'next/navigation';
-import { useTranslations } from 'next-intl';
-import { useEffect, useState } from 'react';
-import { getTimeTrackingData } from '@/lib/time-tracking-helper';
 import { GoalManager } from '../components/goal-manager';
 import type { TimeTrackerData } from '../types';
+import { getTimeTrackingData } from '@/lib/time-tracking-helper';
+import { getCurrentUser } from '@tuturuuu/utils/user-helper';
+import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
+import { useTranslations } from 'next-intl';
+import { notFound } from 'next/navigation';
+import { useEffect, useState } from 'react';
 
 interface Props {
   params: {
@@ -64,7 +64,7 @@ export default function TimeTrackerGoalsPage({ params }: Props) {
   return (
     <div className="container mx-auto p-6">
       <div className="mb-6">
-        <h1 className="font-bold text-3xl">
+        <h1 className="text-3xl font-bold">
           {t('time_tracker_pages.goals.title')}
         </h1>
         <p className="text-muted-foreground">
