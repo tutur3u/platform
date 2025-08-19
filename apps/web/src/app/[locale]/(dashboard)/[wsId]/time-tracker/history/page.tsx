@@ -1,9 +1,9 @@
+import { SessionHistory } from '../components/session-history';
+import type { TimeTrackerData } from '../types';
+import { getTimeTrackingData } from '@/lib/time-tracking-helper';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
 import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import { notFound } from 'next/navigation';
-import { getTimeTrackingData } from '@/lib/time-tracking-helper';
-import { SessionHistory } from '../components/session-history';
-import type { TimeTrackerData } from '../types';
 
 interface Props {
   params: Promise<{
@@ -31,7 +31,7 @@ export default async function TimeTrackerHistoryPage({ params }: Props) {
     return (
       <div className="container mx-auto p-6">
         <div className="mb-6">
-          <h1 className="font-bold text-3xl">Session History</h1>
+          <h1 className="text-3xl font-bold">Session History</h1>
           <p className="text-muted-foreground">
             View and analyze your time tracking sessions
           </p>

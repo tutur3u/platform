@@ -1,9 +1,9 @@
+import { GoalManager } from '../components/goal-manager';
+import type { TimeTrackerData } from '../types';
+import { getTimeTrackingData } from '@/lib/time-tracking-helper';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
 import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import { notFound } from 'next/navigation';
-import { getTimeTrackingData } from '@/lib/time-tracking-helper';
-import { GoalManager } from '../components/goal-manager';
-import type { TimeTrackerData } from '../types';
 
 interface Props {
   params: Promise<{
@@ -31,7 +31,7 @@ export default async function TimeTrackerGoalsPage({ params }: Props) {
     return (
       <div className="container mx-auto p-6">
         <div className="mb-6">
-          <h1 className="font-bold text-3xl">Time Tracking Goals</h1>
+          <h1 className="text-3xl font-bold">Time Tracking Goals</h1>
           <p className="text-muted-foreground">
             Set and manage your time tracking goals
           </p>
