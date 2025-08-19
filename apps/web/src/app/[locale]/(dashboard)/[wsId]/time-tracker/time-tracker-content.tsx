@@ -65,6 +65,7 @@ import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone';
 import utc from 'dayjs/plugin/utc';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -96,6 +97,7 @@ export default function TimeTrackerContent({
   const { userId: currentUserId, isLoading: isLoadingUser } = useCurrentUser();
   const [activeTab, setActiveTab] = useState('timer');
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
+  const router = useRouter();
 
   // Use React Query for running session to sync with command palette
   const { data: runningSessionFromQuery } = useQuery({
@@ -1322,7 +1324,7 @@ export default function TimeTrackerContent({
                     </button>
                   )}
                   <button
-                    onClick={() => setActiveTab('history')}
+                    onClick={() => router.push(`/${wsId}/time-tracker/history`)}
                     className={cn(
                       'flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition-all',
                       activeTab === 'history'
@@ -1335,7 +1337,7 @@ export default function TimeTrackerContent({
                   </button>
                   {!isViewingOtherUser && (
                     <button
-                      onClick={() => setActiveTab('categories')}
+                      onClick={() => router.push(`/${wsId}/time-tracker/categories`)}
                       className={cn(
                         'flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition-all',
                         activeTab === 'categories'
@@ -1348,7 +1350,7 @@ export default function TimeTrackerContent({
                     </button>
                   )}
                   <button
-                    onClick={() => setActiveTab('goals')}
+                    onClick={() => router.push(`/${wsId}/time-tracker/goals`)}
                     className={cn(
                       'flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition-all',
                       activeTab === 'goals'
@@ -2552,7 +2554,7 @@ export default function TimeTrackerContent({
                         variant="outline"
                         onClick={() => {
                           setShowTaskSelector(false);
-                          window.location.href = `/${wsId}/tasks/boards`;
+                          router.push(`/${wsId}/tasks/boards`);
                         }}
                         className="gap-2"
                       >
@@ -2713,7 +2715,7 @@ export default function TimeTrackerContent({
                     size="sm"
                     onClick={() => {
                       setShowTaskSelector(false);
-                      window.location.href = `/${wsId}/tasks/boards`;
+                      router.push(`/${wsId}/tasks/boards`);
                     }}
                   >
                     View All Tasks
