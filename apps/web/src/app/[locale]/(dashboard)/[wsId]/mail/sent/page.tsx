@@ -6,8 +6,8 @@ import type { InternalEmail } from '@tuturuuu/types/db';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
 import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import { cookies } from 'next/headers';
-import { SIDEBAR_COLLAPSED_COOKIE_NAME } from '@/constants/common';
 import { notFound } from 'next/navigation';
+import { SIDEBAR_COLLAPSED_COOKIE_NAME, SIDEBAR_BEHAVIOR_COOKIE_NAME } from '@/constants/common';
 import MailClientWrapper from '../client';
 
 interface SearchParams {
