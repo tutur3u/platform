@@ -1,8 +1,8 @@
-import { transactionColumns } from '@tuturuuu/ui/finance/transactions/columns';
-import { CustomDataTable } from '@tuturuuu/ui/custom/tables/custom-data-table';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import type { Transaction } from '@tuturuuu/types/primitives/Transaction';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
+import { CustomDataTable } from '@tuturuuu/ui/custom/tables/custom-data-table';
+import { transactionColumns } from '@tuturuuu/ui/finance/transactions/columns';
 import { Calendar, CreditCard, DollarSign, Wallet } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
 import 'dayjs/locale/vi';
@@ -17,7 +17,7 @@ interface Props {
   searchParams: {
     q: string;
     page: string;
-    pageSize: string; 
+    pageSize: string;
   };
 }
 
@@ -30,7 +30,8 @@ export default async function WalletDetailsPage({
   const t = await getTranslations();
   const { wallet } = await getData(walletId);
   const { data: rawData, count } = await getTransactions(
-    walletId, searchParams
+    walletId,
+    searchParams
   );
 
   const transactions = rawData.map((d) => ({

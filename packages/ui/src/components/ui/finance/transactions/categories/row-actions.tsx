@@ -1,6 +1,5 @@
 'use client';
 
-import { TransactionCategoryForm } from '@tuturuuu/ui/finance/transactions/categories/form';
 import type { Row } from '@tanstack/react-table';
 import type { TransactionCategory } from '@tuturuuu/types/primitives/TransactionCategory';
 import { Button } from '@tuturuuu/ui/button';
@@ -12,6 +11,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
+import { TransactionCategoryForm } from '@tuturuuu/ui/finance/transactions/categories/form';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import { Ellipsis } from '@tuturuuu/ui/icons';
 import { useTranslations } from 'next-intl';

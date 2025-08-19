@@ -1,10 +1,10 @@
-import { transactionColumns } from '@tuturuuu/ui/finance/transactions/columns';
-import ExportDialogContent from '@tuturuuu/ui/finance/transactions/export-dialog-content';
-import { TransactionForm } from '@tuturuuu/ui/finance/transactions/form';
-import { CustomDataTable } from '@tuturuuu/ui/custom/tables/custom-data-table';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import type { Transaction } from '@tuturuuu/types/primitives/Transaction';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
+import { CustomDataTable } from '@tuturuuu/ui/custom/tables/custom-data-table';
+import { transactionColumns } from '@tuturuuu/ui/finance/transactions/columns';
+import ExportDialogContent from '@tuturuuu/ui/finance/transactions/export-dialog-content';
+import { TransactionForm } from '@tuturuuu/ui/finance/transactions/form';
 import { Separator } from '@tuturuuu/ui/separator';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { getTranslations } from 'next-intl/server';
@@ -14,7 +14,7 @@ interface Props {
   searchParams: {
     q: string;
     page: string;
-    pageSize: string; 
+    pageSize: string;
   };
 }
 

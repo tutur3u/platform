@@ -1,8 +1,6 @@
-import { FinanceDashboardSearchParams } from '@tuturuuu/ui/finance/shared/metrics'
 import FinancePage from '@tuturuuu/ui/finance/finance-page';
+import { FinanceDashboardSearchParams } from '@tuturuuu/ui/finance/shared/metrics';
 import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
-
-
 
 interface Props {
   params: Promise<{
@@ -21,8 +19,5 @@ export default async function WorkspaceFinancePage({
   const workspace = await getWorkspace(id);
   const wsId = workspace.id;
 
-  return (
-    <FinancePage wsId={wsId} searchParams={sp} />
-  );
+  return <FinancePage wsId={wsId} searchParams={sp} />;
 }
-

@@ -1,9 +1,9 @@
 import { apiKeyColumns } from './columns';
 import ApiKeyEditDialog from './edit-dialog';
-import { CustomDataTable } from '@tuturuuu/ui/custom/tables/custom-data-table';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import type { WorkspaceApiKey } from '@tuturuuu/types/primitives/WorkspaceApiKey';
 import { Button } from '@tuturuuu/ui/button';
+import { CustomDataTable } from '@tuturuuu/ui/custom/tables/custom-data-table';
 import { Plus } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
 import { getPermissions, getWorkspace } from '@tuturuuu/utils/workspace-helper';

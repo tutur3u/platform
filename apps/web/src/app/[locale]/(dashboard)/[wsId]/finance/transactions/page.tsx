@@ -17,13 +17,10 @@ export default async function WorkspaceTransactionsPage({
   searchParams,
 }: Props) {
   const { wsId: id } = await params;
-  
+
   const workspace = await getWorkspace(id);
   const wsId = workspace.id;
   const sp = await searchParams;
-  
 
-  return (
-    <TransactionsPage wsId={wsId} searchParams={sp} />
-  )
+  return <TransactionsPage wsId={wsId} searchParams={sp} />;
 }

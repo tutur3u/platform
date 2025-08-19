@@ -1,14 +1,14 @@
+import { FinanceCategoryStatistics } from './categories/finance';
+import FinanceToggle from './finance-toggle';
+import LoadingStatisticCard from '@tuturuuu/ui/finance/shared/loaders/statistics';
 import { FinanceDashboardSearchParams } from '@tuturuuu/ui/finance/shared/metrics';
 import ExpenseStatistics from '@tuturuuu/ui/finance/statistics/expense';
 import IncomeStatistics from '@tuturuuu/ui/finance/statistics/income';
+import InvoicesStatistics from '@tuturuuu/ui/finance/statistics/invoices';
 import TotalBalanceStatistics from '@tuturuuu/ui/finance/statistics/total-balance';
 import TransactionCategoriesStatistics from '@tuturuuu/ui/finance/statistics/transaction-categories';
 import TransactionsStatistics from '@tuturuuu/ui/finance/statistics/transactions';
 import WalletsStatistics from '@tuturuuu/ui/finance/statistics/wallets';
-import InvoicesStatistics from '@tuturuuu/ui/finance/statistics/invoices';
-import LoadingStatisticCard from '@tuturuuu/ui/finance/shared/loaders/statistics';
-import { FinanceCategoryStatistics } from './categories/finance';
-import FinanceToggle from './finance-toggle';
 import { Suspense } from 'react';
 
 export default async function FinanceStatistics({

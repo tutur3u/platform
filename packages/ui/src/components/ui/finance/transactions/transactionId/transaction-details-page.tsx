@@ -1,10 +1,10 @@
 import { Bill } from './bill';
 import { DetailObjects } from './objects';
-import { joinPath } from '@tuturuuu/utils/path-helper';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { CalendarIcon, DollarSign, Wallet } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
+import { joinPath } from '@tuturuuu/utils/path-helper';
 import 'dayjs/locale/vi';
 import moment from 'moment';
 import { getTranslations } from 'next-intl/server';
@@ -17,7 +17,11 @@ interface Props {
   locale: string;
 }
 
-export default async function TransactionDetailsPage({ wsId, transactionId, locale }: Props) {
+export default async function TransactionDetailsPage({
+  wsId,
+  transactionId,
+  locale,
+}: Props) {
   const t = await getTranslations();
   const { objects, transaction } = await getData(wsId, transactionId);
 

@@ -1,6 +1,6 @@
+import { createClient } from '@tuturuuu/supabase/next/server';
 import type { FinanceDashboardSearchParams } from '@tuturuuu/ui/finance/shared/metrics';
 import StatisticCard from '@tuturuuu/ui/finance/statistics/card';
-import { createClient } from '@tuturuuu/supabase/next/server';  
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { getTranslations } from 'next-intl/server';
 
