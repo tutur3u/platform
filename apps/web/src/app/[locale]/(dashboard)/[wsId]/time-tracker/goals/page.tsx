@@ -9,10 +9,10 @@ import { GoalManager } from '../components/goal-manager';
 import type { TimeTrackerData } from '../types';
 
 interface Props {
-  params: Promise<{
+  params: {
     locale: string;
     wsId: string;
-  }>;
+  };
 }
 
 export default function TimeTrackerGoalsPage({ params }: Props) {
@@ -24,11 +24,10 @@ export default function TimeTrackerGoalsPage({ params }: Props) {
   useEffect(() => {
     const loadData = async () => {
       try {
-        const { wsId: id } = await params;
+        const { wsId: id } = params;
         const workspace = await getWorkspace(id);
-        const currentWsId = workspace?.id;
 
-        if (!currentWsId) {
+        if (!workspace) {
           notFound();
           return;
         }
@@ -39,9 +38,9 @@ export default function TimeTrackerGoalsPage({ params }: Props) {
           return;
         }
 
-        const rawData = await getTimeTrackingData(currentWsId, user.id);
-        setInitialData({ ...rawData });
-        setWsId(currentWsId);
+        const rawData = await getTimeTrackingData(workspace.id, user.id);
+        setInitialData(rawData);
+        setWsId(workspace.id);
       } catch (error) {
         console.error('Error loading time tracker goals:', error);
         notFound();
