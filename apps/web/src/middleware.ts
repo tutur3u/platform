@@ -7,7 +7,7 @@ import Negotiator from 'negotiator';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import createIntlMiddleware from 'next-intl/middleware';
-import { LOCALE_COOKIE_NAME, PORT, PUBLIC_PATHS } from './constants/common';
+import { PORT, PUBLIC_PATHS } from './constants/common';
 import { defaultLocale, type Locale, supportedLocales } from './i18n/routing';
 
 const WEB_APP_URL =
@@ -201,6 +201,7 @@ const getExistingLocale = (
   const localeFromPathname = getSupportedLocale(rawLocaleFromPathname);
   const localeFromCookie = getSupportedLocale(rawLocaleFromCookie);
 
+  // Only return a locale if one of them is valid
   const locale = localeFromPathname || localeFromCookie;
 
   return {
@@ -272,13 +273,34 @@ const handleLocale = ({
   // Get locale from cookie or browser languages
   const { locale, pathname } = getLocale(req);
 
+  // Ensure locale is defined (it should always be from getLocale)
+  if (!locale) {
+    // Fallback to default locale if somehow locale is undefined
+    const { locale: fallbackLocale } = getDefaultLocale(req);
+
+    // Construct nextUrl with fallback locale
+    req.nextUrl.pathname = `/${fallbackLocale}${req.nextUrl.pathname}`;
+
+    NextResponse.rewrite(req.nextUrl, res);
+
+    const nextIntlMiddleware = createIntlMiddleware({
+      locales: supportedLocales,
+      defaultLocale: fallbackLocale,
+      localeDetection: false,
+    });
+
+    return nextIntlMiddleware(req);
+  }
+
   // Construct nextUrl with locale and redirect
-  req.nextUrl.pathname = !pathname
-    ? `/${locale}${req.nextUrl.pathname}`
-    : req.nextUrl.pathname.replace(
-        new RegExp(`^/${pathname}(?=/|$)`),
-        `/${locale}`
-      );
+  if (!pathname) {
+    req.nextUrl.pathname = `/${locale}${req.nextUrl.pathname}`;
+  } else {
+    req.nextUrl.pathname = req.nextUrl.pathname.replace(
+      new RegExp(`^/${pathname}(?=/|$)`),
+      `/${locale}`
+    );
+  }
 
   NextResponse.rewrite(req.nextUrl, res);
 
