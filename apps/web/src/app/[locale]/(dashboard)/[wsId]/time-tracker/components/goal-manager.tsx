@@ -54,6 +54,7 @@ import {
 import { toast } from '@tuturuuu/ui/sonner';
 import { Switch } from '@tuturuuu/ui/switch';
 import { cn } from '@tuturuuu/utils/format';
+import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
 interface GoalManagerProps {
@@ -61,10 +62,10 @@ interface GoalManagerProps {
   goals: TimeTrackingGoal[] | null;
   categories: TimeTrackingCategory[];
   timerStats: TimerStats;
-  onGoalsUpdate: () => void;
+  onGoalsUpdate?: () => void;
   readOnly?: boolean;
-  formatDuration: (seconds: number) => string;
-  apiCall: (url: string, options?: RequestInit) => Promise<any>;
+  formatDuration?: (seconds: number) => string;
+  apiCall?: (url: string, options?: RequestInit) => Promise<any>;
 }
 
 export function GoalManager({
@@ -77,6 +78,35 @@ export function GoalManager({
   formatDuration,
   apiCall,
 }: GoalManagerProps) {
+  const router = useRouter();
+  
+  // Default implementations for optional props
+  const defaultOnGoalsUpdate = () => router.refresh();
+  const defaultFormatDuration = (seconds: number) => {
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    return `${hours}h ${minutes}m`;
+  };
+  const defaultApiCall = async (url: string, options?: RequestInit) => {
+    const response = await fetch(url, options);
+    if (!response.ok) {
+      throw new Error('Failed to update goals');
+    }
+    return response.json();
+  };
+
+  // Use provided props or defaults
+  const handleGoalsUpdate = onGoalsUpdate || defaultOnGoalsUpdate;
+  const handleFormatDuration = formatDuration || defaultFormatDuration;
+  const handleApiCall = apiCall || defaultApiCall;
+
+  // Helper function for formatting minutes
+  const formatMinutes = (minutes: number) => {
+    const hours = Math.floor(minutes / 60);
+    const mins = minutes % 60;
+    return `${hours}h ${mins}m`;
+  };
+
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [goalToDelete, setGoalToDelete] = useState<TimeTrackingGoal | null>(
@@ -117,7 +147,7 @@ export function GoalManager({
     setIsLoading(true);
 
     try {
-      await apiCall(`/api/v1/workspaces/${wsId}/time-tracking/goals`, {
+      await handleApiCall(`/api/v1/workspaces/${wsId}/time-tracking/goals`, {
         method: 'POST',
         body: JSON.stringify({
           categoryId: categoryId === 'general' ? null : categoryId,
@@ -129,7 +159,7 @@ export function GoalManager({
 
       setIsAddDialogOpen(false);
       resetForm();
-      onGoalsUpdate();
+      handleGoalsUpdate();
       toast.success('Goal created successfully');
     } catch (error) {
       console.error('Error creating goal:', error);
@@ -145,7 +175,7 @@ export function GoalManager({
     setIsLoading(true);
 
     try {
-      await apiCall(
+      await handleApiCall(
         `/api/v1/workspaces/${wsId}/time-tracking/goals/${goalToEdit.id}`,
         {
           method: 'PATCH',
@@ -161,7 +191,7 @@ export function GoalManager({
       setIsEditDialogOpen(false);
       setGoalToEdit(null);
       resetForm();
-      onGoalsUpdate();
+      handleGoalsUpdate();
       toast.success('Goal updated successfully');
     } catch (error) {
       console.error('Error updating goal:', error);
@@ -177,7 +207,7 @@ export function GoalManager({
     setIsDeleting(true);
 
     try {
-      await apiCall(
+      await handleApiCall(
         `/api/v1/workspaces/${wsId}/time-tracking/goals/${goalToDelete.id}`,
         {
           method: 'DELETE',
@@ -185,7 +215,7 @@ export function GoalManager({
       );
 
       setGoalToDelete(null);
-      onGoalsUpdate();
+      handleGoalsUpdate();
       toast.success('Goal deleted successfully');
     } catch (error) {
       console.error('Error deleting goal:', error);
@@ -209,15 +239,6 @@ export function GoalManager({
       GRAY: 'bg-gray-500',
     };
     return colorMap[color] || 'bg-blue-500';
-  };
-
-  const formatMinutes = (minutes: number): string => {
-    const hours = Math.floor(minutes / 60);
-    const mins = minutes % 60;
-    if (hours > 0) {
-      return `${hours}h ${mins}m`;
-    }
-    return `${mins}m`;
   };
 
   const calculateProgress = (
@@ -272,7 +293,8 @@ export function GoalManager({
                     <span className="font-medium">Today's Progress</span>
                   </div>
                   <span className="text-sm text-muted-foreground">
-                    {formatDuration(timerStats.todayTime)}
+                    {handleFormatDuration(timerStats.todayTime) ||
+                      formatMinutes(timerStats.todayTime)}
                   </span>
                 </div>
                 {activeGoals && activeGoals.length > 0 ? (
@@ -305,7 +327,7 @@ export function GoalManager({
                           </div>
                           <Progress value={progress} className="h-2" />
                           <div className="flex justify-between text-xs text-muted-foreground">
-                            <span>{formatDuration(goalTodayTime)}</span>
+                            <span>{handleFormatDuration(goalTodayTime) || formatMinutes(goalTodayTime)}</span>
                             <span>
                               {formatMinutes(goal.daily_goal_minutes)}
                             </span>
@@ -330,7 +352,8 @@ export function GoalManager({
                     <span className="font-medium">This Week's Progress</span>
                   </div>
                   <span className="text-sm text-muted-foreground">
-                    {formatDuration(timerStats.weekTime)}
+                    {handleFormatDuration(timerStats.weekTime) ||
+                      formatMinutes(timerStats.weekTime)}
                   </span>
                 </div>
                 {activeGoals && activeGoals.length > 0 ? (
@@ -365,7 +388,7 @@ export function GoalManager({
                             </div>
                             <Progress value={progress} className="h-2" />
                             <div className="flex justify-between text-xs text-muted-foreground">
-                              <span>{formatDuration(goalWeekTime)}</span>
+                              <span>{handleFormatDuration(goalWeekTime) || formatMinutes(goalWeekTime)}</span>
                               <span>
                                 {formatMinutes(goal.weekly_goal_minutes!)}
                               </span>
@@ -544,7 +567,7 @@ export function GoalManager({
                                     className="h-2"
                                   />
                                   <div className="flex justify-between text-xs text-muted-foreground">
-                                    <span>{formatDuration(goalTodayTime)}</span>
+                                    <span>{handleFormatDuration(goalTodayTime) || formatMinutes(goalTodayTime)}</span>
                                     <span>
                                       {formatMinutes(goal.daily_goal_minutes)}
                                     </span>
@@ -569,7 +592,7 @@ export function GoalManager({
                                     />
                                     <div className="flex justify-between text-xs text-muted-foreground">
                                       <span>
-                                        {formatDuration(goalWeekTime)}
+                                        {handleFormatDuration(goalWeekTime) || formatMinutes(goalWeekTime)}
                                       </span>
                                       <span>
                                         {formatMinutes(

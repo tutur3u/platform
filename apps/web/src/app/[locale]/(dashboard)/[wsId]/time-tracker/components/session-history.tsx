@@ -74,6 +74,7 @@ import isoWeek from 'dayjs/plugin/isoWeek';
 import timezone from 'dayjs/plugin/timezone';
 import utc from 'dayjs/plugin/utc';
 import { type FC, useMemo, useState } from 'react';
+import { useRouter } from 'next/navigation';
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -87,10 +88,10 @@ interface SessionHistoryProps {
     board_name?: string;
     list_name?: string;
   })[];
-  onSessionUpdate: () => void;
+  onSessionUpdate?: () => void;
   readOnly?: boolean;
-  formatDuration: (seconds: number) => string;
-  apiCall: (url: string, options?: RequestInit) => Promise<any>;
+  formatDuration?: (seconds: number) => string;
+  apiCall?: (url: string, options?: RequestInit) => Promise<any>;
 }
 
 type ViewMode = 'day' | 'week' | 'month';
@@ -832,7 +833,7 @@ const StackedSessionItem: FC<{
   );
 };
 
-export function SessionHistory({
+export const SessionHistory: FC<SessionHistoryProps> = ({
   wsId,
   sessions,
   categories,
@@ -841,7 +842,29 @@ export function SessionHistory({
   readOnly = false,
   formatDuration,
   apiCall,
-}: SessionHistoryProps) {
+}) => {
+  const router = useRouter();
+  
+  // Default implementations for optional props
+  const defaultOnSessionUpdate = () => router.refresh();
+  const defaultFormatDuration = (seconds: number) => {
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    return `${hours}h ${minutes}m`;
+  };
+  const defaultApiCall = async (url: string, options?: RequestInit) => {
+    const response = await fetch(url, options);
+    if (!response.ok) {
+      throw new Error('Failed to update sessions');
+    }
+    return response.json();
+  };
+
+  // Use provided props or defaults
+  const handleSessionUpdate = onSessionUpdate || defaultOnSessionUpdate;
+  const handleFormatDuration = formatDuration || defaultFormatDuration;
+  const handleApiCall = apiCall || defaultApiCall;
+
   const [searchQuery, setSearchQuery] = useState('');
   const [filterCategoryId, setFilterCategoryId] = useState<string>('all');
   const [filterDuration, setFilterDuration] = useState<string>('all');
@@ -1212,11 +1235,11 @@ export function SessionHistory({
   const resumeSession = async (session: SessionWithRelations) => {
     setActionStates((prev) => ({ ...prev, [`resume-${session.id}`]: true }));
     try {
-      await apiCall(
+      await handleApiCall(
         `/api/v1/workspaces/${wsId}/time-tracking/sessions/${session.id}`,
         { method: 'PATCH', body: JSON.stringify({ action: 'resume' }) }
       );
-      onSessionUpdate();
+      handleSessionUpdate();
       toast.success(`Started new session: "${session.title}"`);
     } catch (error) {
       console.error('Error resuming session:', error);
@@ -1251,7 +1274,7 @@ export function SessionHistory({
     setIsEditing(true);
     try {
       const userTz = dayjs.tz.guess();
-      await apiCall(
+      await handleApiCall(
         `/api/v1/workspaces/${wsId}/time-tracking/sessions/${sessionToEdit.id}`,
         {
           method: 'PATCH',
@@ -1272,7 +1295,7 @@ export function SessionHistory({
         }
       );
       setSessionToEdit(null);
-      onSessionUpdate();
+      handleSessionUpdate();
       toast.success('Session updated successfully');
     } catch (error) {
       console.error('Error updating session:', error);
@@ -1286,12 +1309,12 @@ export function SessionHistory({
     if (!sessionToDelete) return;
     setIsDeleting(true);
     try {
-      await apiCall(
+      await handleApiCall(
         `/api/v1/workspaces/${wsId}/time-tracking/sessions/${sessionToDelete.id}`,
         { method: 'DELETE' }
       );
       setSessionToDelete(null);
-      onSessionUpdate();
+      handleSessionUpdate();
       toast.success('Session deleted successfully');
     } catch (error) {
       console.error('Error deleting session:', error);
@@ -1776,7 +1799,7 @@ export function SessionHistory({
                         <span className="text-sm font-medium">Total Time</span>
                       </div>
                       <p className="mt-1 text-2xl font-bold text-blue-900 dark:text-blue-100">
-                        {formatDuration(periodStats.totalDuration)}
+                        {handleFormatDuration(periodStats.totalDuration)}
                       </p>
                     </div>
 
@@ -1838,7 +1861,7 @@ export function SessionHistory({
                                     {percentage.toFixed(1)}%
                                   </span>
                                   <span className="min-w-[4rem] text-right font-semibold">
-                                    {formatDuration(cat.duration)}
+                                    {handleFormatDuration(cat.duration)}
                                   </span>
                                 </div>
                               </div>
@@ -1950,7 +1973,7 @@ export function SessionHistory({
                               {periodStats.longestSession.title}
                             </div>
                             <div className="text-xs text-muted-foreground">
-                              {formatDuration(
+                              {handleFormatDuration(
                                 periodStats.longestSession.duration_seconds || 0
                               )}{' '}
                               • Focus:{' '}
@@ -2204,7 +2227,7 @@ export function SessionHistory({
                                 <span>{groupSessions.length} activities</span>
                                 <span>•</span>
                                 <span className="font-semibold text-foreground">
-                                  {formatDuration(groupTotalDuration)}
+                                  {handleFormatDuration(groupTotalDuration)}
                                 </span>
                               </div>
                             </div>
@@ -2240,7 +2263,7 @@ export function SessionHistory({
                                     </div>
                                     <div className="text-right">
                                       <div className="text-sm font-semibold">
-                                        {formatDuration(session.totalDuration)}
+                                        {handleFormatDuration(session.totalDuration)}
                                       </div>
                                       {session.isStacked && (
                                         <div className="text-xs text-muted-foreground">
@@ -2307,7 +2330,7 @@ export function SessionHistory({
                         <div className="mb-1 flex justify-between text-sm">
                           <span className="font-medium">Total Time</span>
                           <span className="font-bold">
-                            {formatDuration(periodStats.totalDuration)}
+                            {handleFormatDuration(periodStats.totalDuration)}
                           </span>
                         </div>
                         <Progress value={100} className="h-2" />
@@ -2334,7 +2357,7 @@ export function SessionHistory({
                                   {percentage.toFixed(0)}%
                                 </span>
                                 <span className="font-medium">
-                                  {formatDuration(cat.duration)}
+                                  {handleFormatDuration(cat.duration)}
                                 </span>
                               </div>
                             </div>
@@ -2368,7 +2391,7 @@ export function SessionHistory({
                               </div>
                               {groupSessions.length > 1 && (
                                 <div className="ml-3 text-xs text-muted-foreground">
-                                  {formatDuration(groupTotalDuration)} total
+                                  {handleFormatDuration(groupTotalDuration)} total
                                 </div>
                               )}
                             </div>
@@ -2378,7 +2401,7 @@ export function SessionHistory({
                                   key={session.id}
                                   stackedSession={session}
                                   readOnly={readOnly}
-                                  formatDuration={formatDuration}
+                                  formatDuration={handleFormatDuration}
                                   onResume={resumeSession}
                                   onEdit={openEditDialog}
                                   onDelete={setSessionToDelete}

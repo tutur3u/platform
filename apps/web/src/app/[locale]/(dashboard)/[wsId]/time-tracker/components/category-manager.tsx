@@ -48,14 +48,15 @@ import {
 import { toast } from '@tuturuuu/ui/sonner';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { cn } from '@tuturuuu/utils/format';
+import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
 interface CategoryManagerProps {
   wsId: string;
   categories: TimeTrackingCategory[];
-  onCategoriesUpdate: () => void;
+  onCategoriesUpdate?: () => void;
   readOnly?: boolean;
-  apiCall: (url: string, options?: RequestInit) => Promise<any>;
+  apiCall?: (url: string, options?: RequestInit) => Promise<any>;
 }
 
 const CATEGORY_COLORS = [
@@ -78,6 +79,22 @@ export function CategoryManager({
   readOnly = false,
   apiCall,
 }: CategoryManagerProps) {
+  const router = useRouter();
+  
+  // Default implementations for optional props
+  const defaultOnCategoriesUpdate = () => router.refresh();
+  const defaultApiCall = async (url: string, options?: RequestInit) => {
+    const response = await fetch(url, options);
+    if (!response.ok) {
+      throw new Error('Failed to update categories');
+    }
+    return response.json();
+  };
+
+  // Use provided props or defaults
+  const handleCategoriesUpdate = onCategoriesUpdate || defaultOnCategoriesUpdate;
+  const handleApiCall = apiCall || defaultApiCall;
+
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [categoryToDelete, setCategoryToDelete] =
@@ -120,7 +137,7 @@ export function CategoryManager({
     setIsLoading(true);
 
     try {
-      await apiCall(`/api/v1/workspaces/${wsId}/time-tracking/categories`, {
+      await handleApiCall(`/api/v1/workspaces/${wsId}/time-tracking/categories`, {
         method: 'POST',
         body: JSON.stringify({
           name: name.trim(),
@@ -131,7 +148,7 @@ export function CategoryManager({
 
       setIsAddDialogOpen(false);
       resetForm();
-      onCategoriesUpdate();
+      handleCategoriesUpdate();
       toast.success('Category created successfully');
     } catch (error) {
       console.error('Error creating category:', error);
@@ -150,7 +167,7 @@ export function CategoryManager({
     setIsLoading(true);
 
     try {
-      await apiCall(
+      await handleApiCall(
         `/api/v1/workspaces/${wsId}/time-tracking/categories/${categoryToEdit.id}`,
         {
           method: 'PATCH',
@@ -165,7 +182,7 @@ export function CategoryManager({
       setIsEditDialogOpen(false);
       setCategoryToEdit(null);
       resetForm();
-      onCategoriesUpdate();
+      handleCategoriesUpdate();
       toast.success('Category updated successfully');
     } catch (error) {
       console.error('Error updating category:', error);
@@ -181,7 +198,7 @@ export function CategoryManager({
     setIsDeleting(true);
 
     try {
-      await apiCall(
+      await handleApiCall(
         `/api/v1/workspaces/${wsId}/time-tracking/categories/${categoryToDelete.id}`,
         {
           method: 'DELETE',
@@ -189,7 +206,7 @@ export function CategoryManager({
       );
 
       setCategoryToDelete(null);
-      onCategoriesUpdate();
+      handleCategoriesUpdate();
       toast.success('Category deleted successfully');
     } catch (error) {
       console.error('Error deleting category:', error);
