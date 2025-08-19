@@ -1,10 +1,3 @@
-import type { NavLink } from '@/components/navigation';
-import {
-  DEV_MODE,
-  SIDEBAR_BEHAVIOR_COOKIE_NAME,
-  SIDEBAR_COLLAPSED_COOKIE_NAME,
-} from '@/constants/common';
-import { SidebarProvider } from '@/context/sidebar-context';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import {
   Activity,
@@ -29,6 +22,7 @@ import {
   GalleryVerticalEnd,
   GraduationCap,
   HardDrive,
+  History,
   KeyRound,
   Link,
   Logs,
@@ -46,7 +40,10 @@ import {
   SquaresIntersect,
   SquareUserRound,
   Star,
+  Tag,
+  Target,
   TextSelect,
+  Timer,
   Trash,
   TriangleAlert,
   UserLock,
@@ -61,10 +58,17 @@ import {
   getWorkspace,
   verifySecret,
 } from '@tuturuuu/utils/workspace-helper';
-import { getTranslations } from 'next-intl/server';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
+import { getTranslations } from 'next-intl/server';
 import { type ReactNode, Suspense } from 'react';
+import type { NavLink } from '@/components/navigation';
+import {
+  DEV_MODE,
+  SIDEBAR_BEHAVIOR_COOKIE_NAME,
+  SIDEBAR_COLLAPSED_COOKIE_NAME,
+} from '@/constants/common';
+import { SidebarProvider } from '@/context/sidebar-context';
 import NavbarActions from '../../navbar-actions';
 import { UserNav } from '../../user-nav';
 import InvitationCard from './invitation-card';
@@ -422,10 +426,31 @@ export default async function Layout({ children, params }: LayoutProps) {
         },
         {
           title: t('sidebar_tabs.time_tracker'),
-          href: `/${correctedWSId}/time-tracker`,
           icon: <ClockFading className="h-5 w-5" />,
           disabled: ENABLE_AI_ONLY || withoutPermission('manage_projects'),
           experimental: 'beta',
+          children: [
+            {
+              title: t('sidebar_tabs.timer'),
+              href: `/${correctedWSId}/time-tracker`,
+              icon: <Timer className="h-5 w-5" />,
+            },
+            {
+              title: t('sidebar_tabs.history'),
+              href: `/${correctedWSId}/time-tracker/history`,
+              icon: <History className="h-5 w-5" />,
+            },
+            {
+              title: t('sidebar_tabs.goals'),
+              href: `/${correctedWSId}/time-tracker/goals`,
+              icon: <Target className="h-5 w-5" />,
+            },
+            {
+              title: t('sidebar_tabs.categories'),
+              href: `/${correctedWSId}/time-tracker/categories`,
+              icon: <Tag className="h-5 w-5" />,
+            },
+          ],
         },
         {
           title: t('sidebar_tabs.qr_generator'),
