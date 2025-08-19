@@ -92,7 +92,7 @@ export default function FinanceProductPage() {
         <Badge variant="secondary" className="mb-4">
           Coming Soon
         </Badge>
-        <h1 className="mb-4 font-bold text-4xl">Smart Financial Management</h1>
+        <h1 className="mb-4 text-4xl font-bold">Smart Financial Management</h1>
         <p className="mx-auto max-w-2xl text-lg text-muted-foreground">
           Take control of your finances with our intelligent management system.
           Track expenses, manage budgets, and make informed financial decisions
@@ -113,7 +113,7 @@ export default function FinanceProductPage() {
         <Card className="border-primary bg-primary/5 p-8">
           <div className="mx-auto flex max-w-4xl flex-col items-center gap-4 text-center">
             <ShieldCheck className="h-12 w-12 text-primary" />
-            <h2 className="font-bold text-2xl">Bank-Grade Security</h2>
+            <h2 className="text-2xl font-bold">Bank-Grade Security</h2>
             <p className="text-muted-foreground">
               Your financial data is protected with state-of-the-art encryption
               and security measures, ensuring safe and reliable financial
@@ -125,7 +125,7 @@ export default function FinanceProductPage() {
 
       {/* Features Grid */}
       <section className="mb-24">
-        <h2 className="mb-12 text-center font-bold text-3xl">
+        <h2 className="mb-12 text-center text-3xl font-bold">
           Powerful Features
         </h2>
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
@@ -133,7 +133,7 @@ export default function FinanceProductPage() {
             <Card key={feature.title} className="p-6">
               <div className="mb-4 flex items-center gap-3">
                 <div className="text-primary">{feature.icon}</div>
-                <h3 className="font-semibold text-xl">{feature.title}</h3>
+                <h3 className="text-xl font-semibold">{feature.title}</h3>
               </div>
               <p className="text-muted-foreground">{feature.description}</p>
             </Card>
@@ -143,12 +143,12 @@ export default function FinanceProductPage() {
 
       {/* Use Cases */}
       <section className="mb-24">
-        <h2 className="mb-12 text-center font-bold text-3xl">Use Cases</h2>
+        <h2 className="mb-12 text-center text-3xl font-bold">Use Cases</h2>
         <div className="grid gap-8 md:grid-cols-3">
           {useCases.map((useCase) => (
             <Card key={useCase.title} className="p-6">
               <Wallet2 className="mb-4 h-8 w-8 text-primary" />
-              <h3 className="mb-4 font-semibold text-xl">{useCase.title}</h3>
+              <h3 className="mb-4 text-xl font-semibold">{useCase.title}</h3>
               <ul className="space-y-2 text-muted-foreground">
                 {useCase.items.map((item) => (
                   <li key={item} className="flex items-center gap-2">
@@ -166,9 +166,9 @@ export default function FinanceProductPage() {
       <section className="mb-24">
         <Card className="overflow-hidden">
           <div className="grid md:grid-cols-2">
-            <div className="flex flex-col justify-center gap-4 border-border border-b p-8 md:border-r md:border-b-0">
+            <div className="flex flex-col justify-center gap-4 border-b border-border p-8 md:border-r md:border-b-0">
               <BarChart3 className="h-8 w-8 text-primary" />
-              <h3 className="font-bold text-2xl">Financial Analytics</h3>
+              <h3 className="text-2xl font-bold">Financial Analytics</h3>
               <p className="text-muted-foreground">
                 Gain deep insights into your financial health with comprehensive
                 analytics and customizable dashboards.
@@ -176,7 +176,7 @@ export default function FinanceProductPage() {
             </div>
             <div className="flex flex-col justify-center gap-4 p-8">
               <PieChart className="h-8 w-8 text-primary" />
-              <h3 className="font-bold text-2xl">Expense Insights</h3>
+              <h3 className="text-2xl font-bold">Expense Insights</h3>
               <p className="text-muted-foreground">
                 Visualize spending patterns and identify opportunities for
                 optimization with detailed expense breakdowns.
@@ -188,13 +188,13 @@ export default function FinanceProductPage() {
 
       {/* Additional Features Section */}
       <section className="mb-24">
-        <h2 className="mb-12 text-center font-bold text-3xl">
+        <h2 className="mb-12 text-center text-3xl font-bold">
           Financial Tools
         </h2>
         <div className="grid gap-6 md:grid-cols-2">
           <Card className="p-6">
             <LockKeyhole className="mb-4 h-8 w-8 text-primary" />
-            <h3 className="mb-2 font-bold text-xl">Secure Transactions</h3>
+            <h3 className="mb-2 text-xl font-bold">Secure Transactions</h3>
             <p className="text-muted-foreground">
               Process payments and manage transactions with enterprise-grade
               security and real-time monitoring.
@@ -202,7 +202,7 @@ export default function FinanceProductPage() {
           </Card>
           <Card className="p-6">
             <DollarSign className="mb-4 h-8 w-8 text-primary" />
-            <h3 className="mb-2 font-bold text-xl">Smart Budgeting</h3>
+            <h3 className="mb-2 text-xl font-bold">Smart Budgeting</h3>
             <p className="text-muted-foreground">
               Create and manage budgets with AI-powered recommendations and
               automated tracking.

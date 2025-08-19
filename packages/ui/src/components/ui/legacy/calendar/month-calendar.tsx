@@ -1,12 +1,20 @@
 'use client';
 
+import { convertScheduledEventToCalendarEvent } from '../../../../hooks/scheduled-events-utils';
+import { useCalendar } from '../../../../hooks/use-calendar';
+import { useCalendarSync } from '../../../../hooks/use-calendar-sync';
+import { usePopoverManager } from '../../../../hooks/use-popover-manager';
+import { Popover, PopoverContent, PopoverTrigger } from '../../popover';
+import { getColorHighlight } from './color-highlights';
+import { ScheduledEventQuickActions } from './scheduled-event-quick-actions';
+import { useCalendarSettings } from './settings/settings-context';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { Workspace } from '@tuturuuu/types/db';
-import type { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
 import type {
   EventAttendeeWithUser,
   WorkspaceScheduledEventWithAttendees,
 } from '@tuturuuu/types/primitives/RSVP';
+import type { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
 import { Button } from '@tuturuuu/ui/button';
 import { isAllDayEvent } from '@tuturuuu/ui/hooks/calendar-utils';
 import { useCurrentUser } from '@tuturuuu/ui/hooks/use-current-user';
@@ -32,14 +40,6 @@ import isSameOrAfter from 'dayjs/plugin/isSameOrAfter';
 import timezone from 'dayjs/plugin/timezone';
 import { Check, Clock, HelpCircle, Plus, Users, X } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
-import { convertScheduledEventToCalendarEvent } from '../../../../hooks/scheduled-events-utils';
-import { useCalendar } from '../../../../hooks/use-calendar';
-import { useCalendarSync } from '../../../../hooks/use-calendar-sync';
-import { usePopoverManager } from '../../../../hooks/use-popover-manager';
-import { Popover, PopoverContent, PopoverTrigger } from '../../popover';
-import { getColorHighlight } from './color-highlights';
-import { ScheduledEventQuickActions } from './scheduled-event-quick-actions';
-import { useCalendarSettings } from './settings/settings-context';
 
 dayjs.extend(timezone);
 dayjs.extend(isSameOrAfter);
@@ -534,7 +534,7 @@ export const MonthCalendar = ({
           <div
             key={day}
             className={cn(
-              'py-2 font-medium text-sm',
+              'py-2 text-sm font-medium',
               (day === 'Sun' || day === 'Sat') &&
                 !settings.appearance.showWeekends
                 ? 'text-muted-foreground/50'
@@ -598,7 +598,7 @@ export const MonthCalendar = ({
                           variant="ghost"
                           size="icon"
                           className={cn(
-                            'h-6 w-6 opacity-0 hover:bg-primary/10 hover:opacity-100 focus:opacity-100 group-hover:opacity-100',
+                            'h-6 w-6 opacity-0 group-hover:opacity-100 hover:bg-primary/10 hover:opacity-100 focus:opacity-100',
                             isHidden && 'opacity-0 group-hover:opacity-50'
                           )}
                           onClick={() => handleAddEvent(day)}
@@ -620,7 +620,7 @@ export const MonthCalendar = ({
                           return (
                             <div
                               key={event.id}
-                              className="pointer-events-none px-1.5 py-1 font-medium text-xs opacity-0"
+                              className="pointer-events-none px-1.5 py-1 text-xs font-medium opacity-0"
                               style={{
                                 height: `${LAYOUT_CONSTANTS.EVENT_HEIGHT}px`,
                               }}
@@ -648,7 +648,7 @@ export const MonthCalendar = ({
                             <HoverCardTrigger asChild>
                               <div
                                 className={cn(
-                                  'flex cursor-pointer flex-row items-center gap-1 truncate rounded px-1.5 py-1 font-medium text-xs',
+                                  'flex cursor-pointer flex-row items-center gap-1 truncate rounded px-1.5 py-1 text-xs font-medium',
                                   bg,
                                   text,
                                   !isCurrentMonth && 'opacity-60',
@@ -677,15 +677,15 @@ export const MonthCalendar = ({
                               className="w-80"
                             >
                               <div className="space-y-3">
-                                <h4 className="line-clamp-2 break-words font-medium">
+                                <h4 className="line-clamp-2 font-medium break-words">
                                   {event.title || 'Untitled event'}
                                 </h4>
                                 {event.description && (
-                                  <p className="text-muted-foreground text-sm">
+                                  <p className="text-sm text-muted-foreground">
                                     {event.description}
                                   </p>
                                 )}
-                                <div className="flex items-center text-muted-foreground text-xs">
+                                <div className="flex items-center text-xs text-muted-foreground">
                                   <Clock className="mr-1 h-3 w-3" />
                                   <span>{formatEventTime(event)}</span>
                                 </div>
@@ -696,7 +696,7 @@ export const MonthCalendar = ({
                                   typeof scheduledEvent === 'object' &&
                                   scheduledEvent.attendee_count && (
                                     <div className="space-y-2 border-t pt-2">
-                                      <div className="flex items-center font-medium text-sm">
+                                      <div className="flex items-center text-sm font-medium">
                                         <Users className="mr-1 h-3 w-3" />
                                         <span>
                                           {scheduledEvent.attendee_count.total}{' '}
@@ -768,7 +768,7 @@ export const MonthCalendar = ({
                                       {scheduledEvent.attendees &&
                                         scheduledEvent.attendees.length > 0 && (
                                           <div className="space-y-1">
-                                            <div className="font-medium text-muted-foreground text-xs">
+                                            <div className="text-xs font-medium text-muted-foreground">
                                               Participants:
                                             </div>
                                             <div className="max-h-20 space-y-0.5 overflow-y-auto">
@@ -815,7 +815,7 @@ export const MonthCalendar = ({
                                                 (a: EventAttendeeWithUser) =>
                                                   a.status !== 'declined'
                                               ).length > 8 && (
-                                                <div className="text-muted-foreground text-xs italic">
+                                                <div className="text-xs text-muted-foreground italic">
                                                   +
                                                   {scheduledEvent.attendees.filter(
                                                     (
@@ -864,7 +864,7 @@ export const MonthCalendar = ({
                               moreButtonRefs.current[globalDayIdx] = el;
                             }}
                             className={cn(
-                              'w-full rounded-sm bg-muted px-1 py-0.5 font-medium text-muted-foreground text-xs hover:bg-muted/80',
+                              'w-full rounded-sm bg-muted px-1 py-0.5 text-xs font-medium text-muted-foreground hover:bg-muted/80',
                               !isCurrentMonth && 'opacity-60'
                             )}
                             onClick={() => setOpenPopoverIdx(globalDayIdx)}
@@ -875,7 +875,7 @@ export const MonthCalendar = ({
                         <PopoverContent
                           align="start"
                           className={cn(
-                            '!transition-none relative max-h-60 overflow-y-auto p-2',
+                            'relative max-h-60 overflow-y-auto p-2 !transition-none',
                             getScrollShadowClasses(scrollStates[globalDayIdx])
                           )}
                           style={{
@@ -918,7 +918,7 @@ export const MonthCalendar = ({
                                   <div
                                     key={event.id}
                                     className={cn(
-                                      'cursor-pointer items-center gap-1 truncate rounded px-1.5 py-1 font-medium text-xs',
+                                      'cursor-pointer items-center gap-1 truncate rounded px-1.5 py-1 text-xs font-medium',
                                       bg,
                                       text,
                                       !isCurrentMonth && 'opacity-60'
@@ -1034,7 +1034,7 @@ export const MonthCalendar = ({
               <HoverCardTrigger asChild>
                 <div
                   className={cn(
-                    'absolute z-20 cursor-pointer truncate rounded px-1.5 py-1 font-medium text-xs',
+                    'absolute z-20 cursor-pointer truncate rounded px-1.5 py-1 text-xs font-medium',
                     bg,
                     text,
                     'border-l-2 border-l-current'
@@ -1053,15 +1053,15 @@ export const MonthCalendar = ({
               </HoverCardTrigger>
               <HoverCardContent side="right" align="start" className="w-80">
                 <div className="space-y-3">
-                  <h4 className="line-clamp-2 break-words font-medium">
+                  <h4 className="line-clamp-2 font-medium break-words">
                     {event.title || 'Untitled event'}
                   </h4>
                   {event.description && (
-                    <p className="text-muted-foreground text-sm">
+                    <p className="text-sm text-muted-foreground">
                       {event.description}
                     </p>
                   )}
-                  <div className="flex items-center text-muted-foreground text-xs">
+                  <div className="flex items-center text-xs text-muted-foreground">
                     <Clock className="mr-1 h-3 w-3" />
                     <span>
                       All day • {dayjs(event.start_at).format('MMM D')} -{' '}
@@ -1078,7 +1078,7 @@ export const MonthCalendar = ({
                       );
                       return scheduledEvent?.attendee_count ? (
                         <div className="space-y-2 border-t pt-2">
-                          <div className="flex items-center font-medium text-sm">
+                          <div className="flex items-center text-sm font-medium">
                             <Users className="mr-1 h-3 w-3" />
                             <span>
                               {scheduledEvent.attendee_count.total} participant
@@ -1132,7 +1132,7 @@ export const MonthCalendar = ({
                           {scheduledEvent.attendees &&
                             scheduledEvent.attendees.length > 0 && (
                               <div className="space-y-1">
-                                <div className="font-medium text-muted-foreground text-xs">
+                                <div className="text-xs font-medium text-muted-foreground">
                                   Participants:
                                 </div>
                                 <div className="max-h-20 space-y-0.5 overflow-y-auto">
@@ -1168,7 +1168,7 @@ export const MonthCalendar = ({
                                     (a: EventAttendeeWithUser) =>
                                       a.status !== 'declined'
                                   ).length > 8 && (
-                                    <div className="text-muted-foreground text-xs italic">
+                                    <div className="text-xs text-muted-foreground italic">
                                       +
                                       {scheduledEvent.attendees.filter(
                                         (a: EventAttendeeWithUser) =>

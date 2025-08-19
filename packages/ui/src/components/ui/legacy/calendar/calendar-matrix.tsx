@@ -1,5 +1,10 @@
-import type { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
+import { convertScheduledEventToCalendarEvent } from '../../../../hooks/scheduled-events-utils';
+import { CalendarColumn } from './calendar-column';
+import { DAY_HEIGHT, MAX_LEVEL } from './config';
+import { EventCard } from './event-card';
+import { useCalendarSettings } from './settings/settings-context';
 import type { WorkspaceScheduledEventWithAttendees } from '@tuturuuu/types/primitives/RSVP';
+import type { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
 import { useCalendarSync } from '@tuturuuu/ui/hooks/use-calendar-sync';
 import { useCurrentUser } from '@tuturuuu/ui/hooks/use-current-user';
 import dayjs from 'dayjs';
@@ -7,11 +12,6 @@ import isSameOrBefore from 'dayjs/plugin/isSameOrBefore';
 import timezone from 'dayjs/plugin/timezone';
 import { useParams } from 'next/navigation';
 import React from 'react';
-import { convertScheduledEventToCalendarEvent } from '../../../../hooks/scheduled-events-utils';
-import { CalendarColumn } from './calendar-column';
-import { DAY_HEIGHT, MAX_LEVEL } from './config';
-import { EventCard } from './event-card';
-import { useCalendarSettings } from './settings/settings-context';
 
 dayjs.extend(timezone);
 dayjs.extend(isSameOrBefore);

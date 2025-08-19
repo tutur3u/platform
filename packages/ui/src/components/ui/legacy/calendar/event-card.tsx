@@ -1,9 +1,23 @@
-import type { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
+import { useCalendarSync } from '../../../../hooks/use-calendar-sync';
+import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuSeparator,
+  ContextMenuSub,
+  ContextMenuSubContent,
+  ContextMenuSubTrigger,
+  ContextMenuTrigger,
+} from '../../context-menu';
+import { GRID_SNAP, HOUR_HEIGHT, MAX_HOURS, MIN_EVENT_HEIGHT } from './config';
+import { ScheduledEventQuickActions } from './scheduled-event-quick-actions';
+import { useCalendarSettings } from './settings/settings-context';
 import type {
   EventAttendeeWithUser,
   WorkspaceScheduledEventWithAttendees,
 } from '@tuturuuu/types/primitives/RSVP';
 import type { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
+import type { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
 import { useCalendar } from '@tuturuuu/ui/hooks/use-calendar';
 import {
   HoverCard,
@@ -32,20 +46,6 @@ import {
   X,
 } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useCalendarSync } from '../../../../hooks/use-calendar-sync';
-import {
-  ContextMenu,
-  ContextMenuContent,
-  ContextMenuItem,
-  ContextMenuSeparator,
-  ContextMenuSub,
-  ContextMenuSubContent,
-  ContextMenuSubTrigger,
-  ContextMenuTrigger,
-} from '../../context-menu';
-import { GRID_SNAP, HOUR_HEIGHT, MAX_HOURS, MIN_EVENT_HEIGHT } from './config';
-import { ScheduledEventQuickActions } from './scheduled-event-quick-actions';
-import { useCalendarSettings } from './settings/settings-context';
 
 dayjs.extend(timezone);
 
@@ -992,7 +992,7 @@ export function EventCard({
               ref={cardRef}
               id={`event-${id}`}
               className={cn(
-                'pointer-events-auto absolute max-w-none select-none overflow-hidden rounded-r-md rounded-l border-l-2 transition-colors duration-300',
+                'pointer-events-auto absolute max-w-none overflow-hidden rounded-l rounded-r-md border-l-2 transition-colors duration-300 select-none',
                 'group transition-all hover:ring-1 focus:outline-none',
                 {
                   'transform shadow-md': isDragging || isResizing, // Subtle transform during interaction
@@ -1024,13 +1024,13 @@ export function EventCard({
             >
               {/* Continuation indicators for multi-day events */}
               {showStartIndicator && (
-                <div className="-translate-x-1 -translate-y-1/2 absolute top-1/2 left-2">
+                <div className="absolute top-1/2 left-2 -translate-x-1 -translate-y-1/2">
                   <ArrowLeft className={`h-3 w-3 ${text}`} />
                 </div>
               )}
 
               {showEndIndicator && (
-                <div className="-translate-y-1/2 absolute top-1/2 right-2 translate-x-1">
+                <div className="absolute top-1/2 right-2 translate-x-1 -translate-y-1/2">
                   <ArrowRight className={`h-3 w-3 ${text}`} />
                 </div>
               )}
@@ -1080,7 +1080,7 @@ export function EventCard({
               <div
                 ref={contentRef}
                 className={cn(
-                  'flex h-full select-none flex-col text-left',
+                  'flex h-full flex-col text-left select-none',
                   duration <= 0.25 ? 'px-1 py-0' : 'p-1',
                   duration <= 0.5 ? 'text-xs' : 'text-sm',
                   _isMultiDay && 'items-start'
@@ -1094,13 +1094,13 @@ export function EventCard({
                 >
                   <div
                     className={cn(
-                      'space-x-1 font-semibold text-xs',
+                      'space-x-1 text-xs font-semibold',
                       duration <= 0.5 ? 'line-clamp-1' : 'line-clamp-2'
                     )}
                   >
                     {locked && (
                       <Lock
-                        className="-translate-y-0.5 mt-0.5 inline-block h-3 w-3 shrink-0 opacity-70"
+                        className="mt-0.5 inline-block h-3 w-3 shrink-0 -translate-y-0.5 opacity-70"
                         aria-label="Event locked"
                       />
                     )}
@@ -1360,15 +1360,15 @@ export function EventCard({
           return scheduledEvent ? (
             <HoverCardContent side="right" align="start" className="w-80">
               <div className="space-y-3">
-                <h4 className="line-clamp-2 break-words font-medium">
+                <h4 className="line-clamp-2 font-medium break-words">
                   {event.title || 'Untitled event'}
                 </h4>
                 {event.description && (
-                  <p className="text-muted-foreground text-sm">
+                  <p className="text-sm text-muted-foreground">
                     {event.description}
                   </p>
                 )}
-                <div className="flex items-center text-muted-foreground text-xs">
+                <div className="flex items-center text-xs text-muted-foreground">
                   <Clock className="mr-1 h-3 w-3" />
                   <span>
                     {formatEventTime(startDate)} - {formatEventTime(endDate)}
@@ -1378,7 +1378,7 @@ export function EventCard({
                 {/* Participant Information */}
                 {scheduledEvent.attendee_count && (
                   <div className="space-y-2 border-t pt-2">
-                    <div className="flex items-center font-medium text-sm">
+                    <div className="flex items-center text-sm font-medium">
                       <Users className="mr-1 h-3 w-3" />
                       <span>
                         {scheduledEvent.attendee_count.total} participant
@@ -1426,7 +1426,7 @@ export function EventCard({
                     {scheduledEvent.attendees &&
                       scheduledEvent.attendees.length > 0 && (
                         <div className="space-y-1">
-                          <div className="font-medium text-muted-foreground text-xs">
+                          <div className="text-xs font-medium text-muted-foreground">
                             Participants:
                           </div>
                           <div className="max-h-20 space-y-0.5 overflow-y-auto">
@@ -1462,7 +1462,7 @@ export function EventCard({
                               (a: EventAttendeeWithUser) =>
                                 a.status !== 'declined'
                             ).length > 8 && (
-                              <div className="text-muted-foreground text-xs italic">
+                              <div className="text-xs text-muted-foreground italic">
                                 +
                                 {scheduledEvent.attendees.filter(
                                   (a: EventAttendeeWithUser) =>

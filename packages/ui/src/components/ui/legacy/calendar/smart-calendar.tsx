@@ -9,8 +9,8 @@ import type {
   Workspace,
   WorkspaceCalendarGoogleToken,
 } from '@tuturuuu/types/db';
-import { CalendarProvider } from '@tuturuuu/ui/hooks/use-calendar';
 import type { WorkspaceScheduledEventWithAttendees } from '@tuturuuu/types/primitives/RSVP';
+import { CalendarProvider } from '@tuturuuu/ui/hooks/use-calendar';
 
 export const SmartCalendar = ({
   t,
