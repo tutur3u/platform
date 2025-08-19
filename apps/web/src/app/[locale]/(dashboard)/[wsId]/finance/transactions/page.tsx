@@ -30,17 +30,15 @@ export default async function WorkspaceTransactionsPage({
   const wsId = workspace.id;
 
   const searchParamsData = await searchParams;
-  const { page = '1', size = '10' } = searchParamsData;
+  const { page = '1', pageSize = '10' } = searchParamsData;
   const parsedPage = Number.parseInt(page, 10);
-  const parsedSize = Number.parseInt(size, 10);
+  const parsedSize = Number.parseInt(pageSize, 10);
   const start = (parsedPage - 1) * parsedSize;
-  const end = start + parsedSize - 1;
 
-  const resolvedSearchParams = await searchParams;
   const { data: rawData, count } = await getData(wsId, {
     q: searchParamsData.q,
     page: page,
-    pageSize: size,
+    pageSize: pageSize,
   });
   const t = await getTranslations();
 
@@ -73,7 +71,7 @@ export default async function WorkspaceTransactionsPage({
             <ExportDialogContent
               wsId={wsId}
               exportType="transactions"
-              searchParams={resolvedSearchParams}
+              searchParams={searchParamsData}
             />
           )
         }

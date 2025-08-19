@@ -39,18 +39,13 @@ export default async function WorkspaceUsersPage({
   const wsId = workspace.id;
 
   const sp = await searchParams;
-  const { page = '1', size = '10' } = sp;
+  const { page = '1', pageSize = '10' } = sp;
   const parsedPage = Number.parseInt(page, 10);
-  const parsedSize = Number.parseInt(size, 10);
+  const parsedSize = Number.parseInt(pageSize, 10);
   const start = (parsedPage - 1) * parsedSize;
   const end = start + parsedSize - 1;
 
-  const { data: rawData, count } = await getData(
-    wsId,
-    sp,
-    start,
-    end
-  );
+  const { data: rawData, count } = await getData(wsId, sp, start, end);
   const { data: extraFields } = await getUserFields(wsId);
 
   const { containsPermission } = await getPermissions({
@@ -166,14 +161,19 @@ async function getData(
   if (error) {
     if (!retry) throw error;
     // Preserve pagination and filters on retry
-    return getData(wsId, {
-      q,
-      page,
-      pageSize,
-      includedGroups,
-      excludedGroups,
-      retry: false,
-    }, start, end);
+    return getData(
+      wsId,
+      {
+        q,
+        page,
+        pageSize,
+        includedGroups,
+        excludedGroups,
+        retry: false,
+      },
+      start,
+      end
+    );
   }
 
   return { data, count } as unknown as { data: WorkspaceUser[]; count: number };

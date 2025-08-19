@@ -29,9 +29,9 @@ export default async function WorkspaceWalletsPage({
   const workspace = await getWorkspace(id);
   const wsId = workspace.id;
 
-  const { page = '1', size = '10' } = await searchParams;
+  const { page = '1', pageSize = '10' } = await searchParams;
   const parsedPage = Number.parseInt(page, 10);
-  const parsedSize = Number.parseInt(size, 10);
+  const parsedSize = Number.parseInt(pageSize, 10);
   const start = (parsedPage - 1) * parsedSize;
   const end = start + parsedSize - 1;
 
