@@ -80,7 +80,7 @@ export function CategoryManager({
   apiCall,
 }: CategoryManagerProps) {
   const router = useRouter();
-  
+
   // Default implementations for optional props
   const defaultOnCategoriesUpdate = () => router.refresh();
   const defaultApiCall = async (url: string, options?: RequestInit) => {
@@ -92,7 +92,8 @@ export function CategoryManager({
   };
 
   // Use provided props or defaults
-  const handleCategoriesUpdate = onCategoriesUpdate || defaultOnCategoriesUpdate;
+  const handleCategoriesUpdate =
+    onCategoriesUpdate || defaultOnCategoriesUpdate;
   const handleApiCall = apiCall || defaultApiCall;
 
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
@@ -137,14 +138,17 @@ export function CategoryManager({
     setIsLoading(true);
 
     try {
-      await handleApiCall(`/api/v1/workspaces/${wsId}/time-tracking/categories`, {
-        method: 'POST',
-        body: JSON.stringify({
-          name: name.trim(),
-          description: description.trim() || null,
-          color,
-        }),
-      });
+      await handleApiCall(
+        `/api/v1/workspaces/${wsId}/time-tracking/categories`,
+        {
+          method: 'POST',
+          body: JSON.stringify({
+            name: name.trim(),
+            description: description.trim() || null,
+            color,
+          }),
+        }
+      );
 
       setIsAddDialogOpen(false);
       resetForm();
@@ -249,7 +253,7 @@ export function CategoryManager({
               <p className="text-lg text-muted-foreground">
                 No categories created yet
               </p>
-              <p className="mt-1 text-sm text-muted-foreground">
+              <p className="mt-1 text-muted-foreground text-sm">
                 Create categories to organize your time tracking sessions
               </p>
               {!readOnly && (
@@ -281,7 +285,7 @@ export function CategoryManager({
                             {category.name}
                           </h3>
                           {category.description && (
-                            <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">
+                            <p className="mt-1 line-clamp-2 text-muted-foreground text-sm">
                               {category.description}
                             </p>
                           )}

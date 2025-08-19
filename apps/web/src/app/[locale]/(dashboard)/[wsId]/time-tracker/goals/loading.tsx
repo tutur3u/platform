@@ -8,7 +8,7 @@ export default function Loading() {
         <Skeleton className="h-5 w-80" />
       </div>
       <div className="space-y-4">
-        {Array.from({ length: 4 }).map((_, idx) => (
+        {Array.from({ length: 3 }).map((_, idx) => (
           <Skeleton key={`goal-skeleton-${idx}`} className="h-24 w-full" />
         ))}
       </div>

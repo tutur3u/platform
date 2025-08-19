@@ -46,7 +46,9 @@ export default async function WalletDetailsPage({
     ws_id: wsId,
   }));
 
-  if (!wallet) notFound();
+  if (!wallet) {
+    return null;
+  }
 
   return (
     <div className="flex min-h-full w-full flex-col">
@@ -183,8 +185,8 @@ async function getTransactions(
   if (q) queryBuilder.ilike('description', `%${q}%`);
 
   if (page && pageSize) {
-    const parsedPage = parseInt(page);
-    const parsedSize = parseInt(pageSize);
+    const parsedPage = Number.parseInt(page, 10);
+    const parsedSize = Number.parseInt(pageSize, 10);
     const start = (parsedPage - 1) * parsedSize;
     const end = parsedPage * parsedSize;
     queryBuilder.range(start, end).limit(parsedSize);

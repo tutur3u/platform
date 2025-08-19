@@ -435,6 +435,7 @@ export default async function Layout({ children, params }: LayoutProps) {
               title: t('sidebar_tabs.timer'),
               href: `/${correctedWSId}/time-tracker`,
               icon: <Timer className="h-5 w-5" />,
+              matchExact: true,
             },
             {
               title: t('sidebar_tabs.history'),

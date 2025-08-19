@@ -29,7 +29,14 @@ export default async function WorkspaceTransactionsPage({
   const workspace = await getWorkspace(id);
   const wsId = workspace.id;
 
-  const { data: rawData, count } = await getData(wsId, await searchParams);
+  const searchParamsData = await searchParams;
+  const { page = '1', size = '10' } = searchParamsData;
+  const parsedPage = Number.parseInt(page, 10);
+  const parsedSize = Number.parseInt(size, 10);
+  const start = (parsedPage - 1) * parsedSize;
+  const end = start + parsedSize - 1;
+
+  const { data: rawData, count } = await getData(wsId, { q: searchParamsData.q, page: page, pageSize: size });
   const t = await getTranslations();
 
   const { containsPermission } = await getPermissions({

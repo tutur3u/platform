@@ -38,14 +38,21 @@ export default async function WorkspaceUsersPage({
   const workspace = await getWorkspace(id);
   const wsId = workspace.id;
 
-  const { data, count } = await getData(wsId, await searchParams);
+  const searchParamsData = await searchParams;
+  const { page = '1', size = '10' } = searchParamsData;
+  const parsedPage = Number.parseInt(page, 10);
+  const parsedSize = Number.parseInt(size, 10);
+  const start = (parsedPage - 1) * parsedSize;
+  const end = start + parsedSize - 1;
+
+  const { data: rawData, count } = await getData(wsId, searchParamsData, start, end);
   const { data: extraFields } = await getUserFields(wsId);
 
   const { containsPermission } = await getPermissions({
     wsId,
   });
 
-  const users = data.map((u) => ({
+  const users = rawData.map((u) => ({
     ...u,
     href: `/${wsId}/users/database/${u.id}`,
   }));
@@ -115,7 +122,9 @@ async function getData(
     includedGroups = [],
     excludedGroups = [],
     retry = true,
-  }: SearchParams & { retry?: boolean } = {}
+  }: SearchParams & { retry?: boolean } = {},
+  start: number,
+  end: number
 ) {
   const supabase = await createClient();
 
@@ -140,18 +149,14 @@ async function getData(
     .order('full_name', { ascending: true, nullsFirst: false });
 
   if (page && pageSize) {
-    const parsedPage = parseInt(page, 10);
-    const parsedSize = parseInt(pageSize, 10);
-    const start = (parsedPage - 1) * parsedSize;
-    const end = parsedPage * parsedSize;
-    queryBuilder.range(start, end).limit(parsedSize);
+    queryBuilder.range(start, end).limit(pageSize);
   }
 
   const { data, error, count } = await queryBuilder;
 
   if (error) {
     if (!retry) throw error;
-    return getData(wsId, { q, pageSize, retry: false });
+    return getData(wsId, { q, pageSize, retry: false }, start, end);
   }
 
   return { data, count } as unknown as { data: WorkspaceUser[]; count: number };

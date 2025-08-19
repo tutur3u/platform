@@ -195,11 +195,11 @@ const getExistingLocale = (
 } => {
   // Get raw locale from pathname and cookie
   const rawLocaleFromPathname = req.nextUrl.pathname.split('/')[1] || '';
-  const rawRocaleFromCookie = req.cookies.get(LOCALE_COOKIE_NAME)?.value || '';
+  const rawLocaleFromCookie = req.cookies.get('NEXT_LOCALE')?.value;
 
   // Get supported locale from pathname and cookie
   const localeFromPathname = getSupportedLocale(rawLocaleFromPathname);
-  const localeFromCookie = getSupportedLocale(rawRocaleFromCookie);
+  const localeFromCookie = getSupportedLocale(rawLocaleFromCookie);
 
   const locale = localeFromPathname || localeFromCookie;
 

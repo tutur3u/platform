@@ -29,7 +29,13 @@ export default async function WorkspaceWalletsPage({
   const workspace = await getWorkspace(id);
   const wsId = workspace.id;
 
-  const { data: rawData, count } = await getData(wsId, await searchParams);
+  const { page = '1', size = '10' } = await searchParams;
+  const parsedPage = Number.parseInt(page, 10);
+  const parsedSize = Number.parseInt(size, 10);
+  const start = (parsedPage - 1) * parsedSize;
+  const end = start + parsedSize - 1;
+
+  const { data: rawData, count } = await getData(wsId, start, end);
 
   const data = rawData.map((d) => ({
     ...d,
@@ -68,11 +74,8 @@ export default async function WorkspaceWalletsPage({
 
 async function getData(
   wsId: string,
-  {
-    q,
-    page = '1',
-    pageSize = '10',
-  }: { q?: string; page?: string; pageSize?: string }
+  start: number,
+  end: number
 ) {
   const supabase = await createClient();
 
@@ -84,15 +87,7 @@ async function getData(
     .eq('ws_id', wsId)
     .order('name', { ascending: true });
 
-  if (q) queryBuilder.ilike('name', `%${q}%`);
-
-  if (page && pageSize) {
-    const parsedPage = parseInt(page);
-    const parsedSize = parseInt(pageSize);
-    const start = (parsedPage - 1) * parsedSize;
-    const end = parsedPage * parsedSize;
-    queryBuilder.range(start, end).limit(parsedSize);
-  }
+  queryBuilder.range(start, end);
 
   const { data, error, count } = await queryBuilder;
   if (error) throw error;
