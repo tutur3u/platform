@@ -69,18 +69,7 @@ export default function TimeTrackerGoalsPage({ params }: Props) {
         wsId={wsId}
         goals={initialData.goals || []}
         categories={initialData.categories || []}
-        timerStats={{
-          todayTime: 0,
-          weekTime: 0,
-          monthTime: 0,
-          streak: 0,
-          categoryBreakdown: {
-            today: {},
-            week: {},
-            month: {},
-          },
-          dailyActivity: [],
-        }}
+        timerStats={initialData.stats}
         onGoalsUpdate={() => {
           // Refresh data when goals are updated
           router.refresh();
