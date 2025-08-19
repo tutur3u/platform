@@ -91,7 +91,7 @@ interface SessionHistoryProps {
   onSessionUpdate?: () => void;
   readOnly?: boolean;
   formatDuration?: (seconds: number) => string;
-  apiCall?: (url: string, options?: RequestInit) => Promise<any>;
+  apiCall?: (url: string, options?: RequestInit) => Promise<unknown>;
 }
 
 type ViewMode = 'day' | 'week' | 'month';
@@ -140,7 +140,10 @@ const stackSessions = (
     if (!groups[groupKey]) {
       groups[groupKey] = [];
     }
-    groups[groupKey]!.push(session);
+    const groupArray = groups[groupKey];
+    if (groupArray) {
+      groupArray.push(session);
+    }
   });
 
   // Convert groups to stacked sessions
@@ -174,8 +177,12 @@ const createStackedSession = (
   const sortedSessions = sessions.sort((a, b) =>
     dayjs(a.start_time).diff(dayjs(b.start_time))
   );
-  const firstSession = sortedSessions[0]!;
-  const lastSession = sortedSessions[sortedSessions.length - 1]!;
+  const firstSession = sortedSessions[0];
+  const lastSession = sortedSessions[sortedSessions.length - 1];
+
+  if (!firstSession || !lastSession) {
+    throw new Error('Cannot create stacked session from empty array');
+  }
 
   return {
     id: firstSession.id,
@@ -252,19 +259,21 @@ const StackedSessionItem: FC<{
     : null;
 
   const latestSession =
-    stackedSession.sessions[stackedSession.sessions.length - 1]!;
+    stackedSession.sessions[stackedSession.sessions.length - 1];
+
+  if (!latestSession) {
+    return null;
+  }
 
   // Calculate average focus score for stacked sessions
-  const avgFocusScore = stackedSession.isStacked
-    ? Math.round(
-        stackedSession.sessions.reduce(
-          (sum, s) => sum + calculateFocusScore(s),
-          0
-        ) / stackedSession.sessions.length
-      )
-    : calculateFocusScore(latestSession);
+  const focusScores = stackedSession.sessions.map((s) => calculateFocusScore(s));
+  const avgFocusScore =
+    focusScores.length > 0
+      ? focusScores.reduce((sum, score) => sum + score, 0) / focusScores.length
+      : 0;
 
   const productivityType = getSessionProductivityType(latestSession);
+  const _timeOfDay = getTimeOfDayCategory(latestSession);
 
   // Limit how many sessions to show initially
   const INITIAL_SESSION_LIMIT = 3;
@@ -833,7 +842,87 @@ const StackedSessionItem: FC<{
   );
 };
 
-export const SessionHistory: FC<SessionHistoryProps> = ({
+// Utility functions moved outside component to prevent recreation
+const getDurationCategory = (session: SessionWithRelations): string => {
+  const duration = session.duration_seconds || 0;
+  if (duration < 1800) return 'short'; // < 30 min
+  if (duration < 7200) return 'medium'; // 30 min - 2 hours
+  return 'long'; // 2+ hours
+};
+
+const getSessionProductivityType = (session: SessionWithRelations): string => {
+  const duration = session.duration_seconds || 0;
+  const focusScore = calculateFocusScore(session);
+
+  if (duration >= 7200 && focusScore >= 80) return 'deep-work';
+  if (duration >= 3600 && focusScore >= 70) return 'focused';
+  if (duration < 900 && focusScore < 40) return 'interrupted';
+  if (duration >= 1800 && focusScore < 50) return 'scattered';
+  return 'standard';
+};
+
+const getTimeOfDayCategory = (session: SessionWithRelations): string => {
+  const hour = dayjs.utc(session.start_time).hour();
+  if (hour >= 5 && hour < 12) return 'morning';
+  if (hour >= 12 && hour < 17) return 'afternoon';
+  if (hour >= 17 && hour < 22) return 'evening';
+  return 'night';
+};
+
+const getProjectContext = (session: SessionWithRelations): string => {
+  if (session.task?.name?.toLowerCase().includes('client'))
+    return 'client-work';
+  if (session.task?.name?.toLowerCase().includes('internal')) return 'internal';
+  if (session.category?.name?.toLowerCase().includes('admin'))
+    return 'administrative';
+  return 'general';
+};
+
+const getSessionQuality = (session: SessionWithRelations): string => {
+  const focusScore = calculateFocusScore(session);
+  if (focusScore >= 80) return 'excellent';
+  if (focusScore >= 60) return 'good';
+  if (focusScore >= 40) return 'average';
+  return 'needs-improvement';
+};
+
+const calculateFocusScore = (session: SessionWithRelations): number => {
+  const duration = session.duration_seconds || 0;
+
+  if (duration === 0) return 0;
+
+  // Base score from duration (longer sessions get higher base scores)
+  let score = Math.min(100, (duration / 3600) * 20); // Max 100 for 5+ hours
+
+  // Bonus for consistent focus (sessions without resuming)
+  if (session.was_resumed !== true) score += 20;
+
+  // Time of day bonus (peak hours get bonus)
+  const sessionHour = dayjs.utc(session.start_time).hour();
+  const peakHoursBonus =
+    (sessionHour >= 9 && sessionHour <= 11) ||
+    (sessionHour >= 14 && sessionHour <= 16)
+      ? 20
+      : 0;
+
+  // Category bonus (work categories get slight bonus)
+  const categoryBonus = session.category?.name?.toLowerCase().includes('work')
+    ? 10
+    : 0;
+
+  // Task completion bonus
+  const taskBonus = session.task_id ? 10 : 0;
+
+  return Math.max(
+    0,
+    Math.min(
+      100,
+      Math.round(score + peakHoursBonus + categoryBonus + taskBonus)
+    )
+  );
+};
+
+export function SessionHistory({
   wsId,
   sessions,
   categories,
@@ -842,7 +931,7 @@ export const SessionHistory: FC<SessionHistoryProps> = ({
   readOnly = false,
   formatDuration,
   apiCall,
-}) => {
+}: SessionHistoryProps) {
   const router = useRouter();
 
   // Default implementations for optional props
@@ -889,93 +978,6 @@ export const SessionHistory: FC<SessionHistoryProps> = ({
 
   const userTimezone = dayjs.tz.guess();
   const today = dayjs().tz(userTimezone);
-
-  // Advanced analytics functions
-  const calculateFocusScore = (session: SessionWithRelations): number => {
-    if (!session.duration_seconds) return 0;
-
-    // Base score from duration (longer sessions = higher focus)
-    const durationScore = Math.min(session.duration_seconds / 7200, 1) * 40; // Max 40 points for 2+ hours
-
-    // Bonus for consistency (sessions without interruptions)
-    // was_resumed can be null in database, so check explicitly for true
-    const consistencyBonus = session.was_resumed === true ? 0 : 20;
-
-    // Time of day bonus (peak hours get bonus)
-    const sessionHour = dayjs.utc(session.start_time).tz(userTimezone).hour();
-    const peakHoursBonus =
-      (sessionHour >= 9 && sessionHour <= 11) ||
-      (sessionHour >= 14 && sessionHour <= 16)
-        ? 20
-        : 0;
-
-    // Category bonus (work categories get slight bonus)
-    const categoryBonus = session.category?.name?.toLowerCase().includes('work')
-      ? 10
-      : 0;
-
-    // Task completion bonus
-    const taskBonus = session.task_id ? 10 : 0;
-
-    return Math.min(
-      durationScore +
-        consistencyBonus +
-        peakHoursBonus +
-        categoryBonus +
-        taskBonus,
-      100
-    );
-  };
-
-  const getSessionProductivityType = (
-    session: SessionWithRelations
-  ): string => {
-    const duration = session.duration_seconds || 0;
-    const focusScore = calculateFocusScore(session);
-
-    if (focusScore >= 80 && duration >= 3600) return 'deep-work';
-    if (focusScore >= 60 && duration >= 1800) return 'focused';
-    if (duration < 900 && focusScore < 40) return 'interrupted';
-    if (duration >= 1800 && focusScore < 50) return 'scattered';
-    return 'standard';
-  };
-
-  const getTimeOfDayCategory = (session: SessionWithRelations): string => {
-    const hour = dayjs.utc(session.start_time).tz(userTimezone).hour();
-    if (hour >= 6 && hour < 12) return 'morning';
-    if (hour >= 12 && hour < 18) return 'afternoon';
-    if (hour >= 18 && hour < 24) return 'evening';
-    return 'night';
-  };
-
-  const getProjectContext = (session: SessionWithRelations): string => {
-    if (session.task_id) {
-      const task = tasks.find((t) => t.id === session.task_id);
-      return task?.board_name || 'project-work';
-    }
-    if (session.category?.name?.toLowerCase().includes('meeting'))
-      return 'meetings';
-    if (session.category?.name?.toLowerCase().includes('learn'))
-      return 'learning';
-    if (session.category?.name?.toLowerCase().includes('admin'))
-      return 'administrative';
-    return 'general';
-  };
-
-  const getDurationCategory = (session: SessionWithRelations): string => {
-    const duration = session.duration_seconds || 0;
-    if (duration < 1800) return 'short'; // < 30 min
-    if (duration < 7200) return 'medium'; // 30 min - 2 hours
-    return 'long'; // 2+ hours
-  };
-
-  const getSessionQuality = (session: SessionWithRelations): string => {
-    const focusScore = calculateFocusScore(session);
-    if (focusScore >= 80) return 'excellent';
-    if (focusScore >= 60) return 'good';
-    if (focusScore >= 40) return 'average';
-    return 'needs-improvement';
-  };
 
   const goToPrevious = () => {
     setCurrentDate(currentDate.subtract(1, viewMode));
@@ -1071,7 +1073,6 @@ export const SessionHistory: FC<SessionHistoryProps> = ({
       filterTimeOfDay,
       filterProjectContext,
       filterSessionQuality,
-      tasks,
     ]
   );
 
@@ -1180,7 +1181,9 @@ export const SessionHistory: FC<SessionHistoryProps> = ({
       if (!categoryDurations[id]) {
         categoryDurations[id] = { name, duration: 0, color };
       }
-      categoryDurations[id]!.duration += s.duration_seconds || 0;
+      if (categoryDurations[id]) {
+        categoryDurations[id].duration += s.duration_seconds || 0;
+      }
     });
 
     const breakdown = Object.values(categoryDurations)
@@ -1227,7 +1230,10 @@ export const SessionHistory: FC<SessionHistoryProps> = ({
           key = `Week ${weekStart.format('MMM D')} - ${weekEnd.format('MMM D')}`;
         }
         if (!groups[key]) groups[key] = [];
-        groups[key]!.push(stackedSession);
+        const groupArray = groups[key];
+        if (groupArray) {
+          groupArray.push(stackedSession);
+        }
       });
     return groups;
   }, [sessionsForPeriod, viewMode, userTimezone]);
@@ -1345,7 +1351,7 @@ export const SessionHistory: FC<SessionHistoryProps> = ({
       'Description',
     ];
 
-    const escape = (v: string) => (/^[=+\-@]/.test(v) ? `'${v}` : v);
+    const escapeCsvValue = (v: string) => (/^[=+\-@]/.test(v) ? `'${v}` : v);
 
     const csvData = sessionsForPeriod.map((session) => {
       const userTz = dayjs.tz.guess();
@@ -1356,15 +1362,15 @@ export const SessionHistory: FC<SessionHistoryProps> = ({
 
       return [
         startTime.format('YYYY-MM-DD'),
-        escape(session.title),
-        escape(session.category?.name || ''),
-        escape(session.task?.name || ''),
+        escapeCsvValue(session.title),
+        escapeCsvValue(session.category?.name || ''),
+        escapeCsvValue(session.task?.name || ''),
         startTime.format('HH:mm:ss'),
         endTime?.format('HH:mm:ss') || '',
         session.duration_seconds
           ? (session.duration_seconds / 3600).toFixed(2)
           : '0',
-        escape(session.description || ''),
+        escapeCsvValue(session.description || ''),
       ];
     });
 
@@ -2150,9 +2156,9 @@ export const SessionHistory: FC<SessionHistoryProps> = ({
                           }
 
                           return insights.slice(0, 3); // Show max 3 insights
-                        })().map((insight, index) => (
+                        })().map((insight, _index) => (
                           <div
-                            key={index}
+                            key={`insight-${insight.slice(0, 20).replace(/\s+/g, '-').toLowerCase()}`}
                             className="flex items-start gap-3 text-sm"
                           >
                             <div className="mt-0.5 h-1.5 w-1.5 rounded-full bg-gradient-to-r from-purple-500 to-pink-500" />
@@ -2281,13 +2287,12 @@ export const SessionHistory: FC<SessionHistoryProps> = ({
                                         variant="ghost"
                                         size="sm"
                                         className="h-7 flex-1 text-xs"
-                                        onClick={() =>
-                                          resumeSession(
-                                            session.sessions[
-                                              session.sessions.length - 1
-                                            ]!
-                                          )
-                                        }
+                                        onClick={() => {
+                                          const lastSession = session.sessions[session.sessions.length - 1];
+                                          if (lastSession) {
+                                            openEditDialog(lastSession);
+                                          }
+                                        }}
                                       >
                                         <RotateCcw className="mr-1 h-3 w-3" />
                                         Resume
@@ -2296,13 +2301,12 @@ export const SessionHistory: FC<SessionHistoryProps> = ({
                                         variant="ghost"
                                         size="sm"
                                         className="h-7 px-2"
-                                        onClick={() =>
-                                          openEditDialog(
-                                            session.sessions[
-                                              session.sessions.length - 1
-                                            ]!
-                                          )
-                                        }
+                                        onClick={() => {
+                                          const lastSession = session.sessions[session.sessions.length - 1];
+                                          if (lastSession) {
+                                            openEditDialog(lastSession);
+                                          }
+                                        }}
                                       >
                                         <Edit className="h-3 w-3" />
                                       </Button>
@@ -2494,7 +2498,7 @@ export const SessionHistory: FC<SessionHistoryProps> = ({
                   <SelectContent>
                     <SelectItem value="none">No task</SelectItem>
                     {tasks.map((task) => (
-                      <SelectItem key={task.id} value={task.id!}>
+                      <SelectItem key={task.id} value={task.id || ''}>
                         {task.name}
                       </SelectItem>
                     ))}
@@ -2572,4 +2576,4 @@ export const SessionHistory: FC<SessionHistoryProps> = ({
       </AlertDialog>
     </>
   );
-};
+}
