@@ -30,10 +30,9 @@ import {
 } from '@tuturuuu/ui/dropdown-menu';
 import {
   Edit,
+  LayoutGrid,
   MoreHorizontal,
-  Palette,
   Plus,
-  Settings,
   Trash2,
 } from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
@@ -210,7 +209,7 @@ export function CategoryManager({
         <CardHeader>
           <div className="flex items-center justify-between">
             <CardTitle className="flex items-center gap-2">
-              <Settings className="h-5 w-5" />
+              <LayoutGrid className="h-5 w-5" />
               Category Management
             </CardTitle>
             {!readOnly && (
@@ -228,11 +227,11 @@ export function CategoryManager({
         <CardContent>
           {categories.length === 0 ? (
             <div className="py-12 text-center">
-              <Palette className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
+              <LayoutGrid className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
               <p className="text-lg text-muted-foreground">
                 No categories created yet
               </p>
-              <p className="mt-1 text-sm text-muted-foreground">
+              <p className="mt-1 text-muted-foreground text-sm">
                 Create categories to organize your time tracking sessions
               </p>
               {!readOnly && (
@@ -264,7 +263,7 @@ export function CategoryManager({
                             {category.name}
                           </h3>
                           {category.description && (
-                            <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">
+                            <p className="mt-1 line-clamp-2 text-muted-foreground text-sm">
                               {category.description}
                             </p>
                           )}
