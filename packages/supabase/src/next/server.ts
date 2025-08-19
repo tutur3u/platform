@@ -2,7 +2,6 @@ import { type SupabaseCookie, checkEnvVariables } from './common';
 import { createBrowserClient, createServerClient } from '@supabase/ssr';
 import type { Database } from '@tuturuuu/types/supabase';
 import type { ReadonlyRequestCookies } from 'next/dist/server/web/spec-extension/adapters/request-cookies';
-import { cookies } from 'next/headers';
 
 function createCookieHandler(cookieStore: ReadonlyRequestCookies) {
   return {
@@ -25,7 +24,11 @@ function createCookieHandler(cookieStore: ReadonlyRequestCookies) {
 
 async function createGenericClient(isAdmin: boolean) {
   const { url, key } = checkEnvVariables({ useServiceKey: isAdmin });
+  
+  // Dynamically import cookies to avoid build-time issues
+  const { cookies } = await import('next/headers');
   const cookieStore = await cookies();
+  
   return createServerClient<Database>(url, key, {
     cookies: isAdmin
       ? {
@@ -58,7 +61,11 @@ export function createClient() {
 
 export async function createDynamicClient() {
   const { url, key } = checkEnvVariables({ useServiceKey: false });
+  
+  // Dynamically import cookies to avoid build-time issues
+  const { cookies } = await import('next/headers');
   const cookieStore = await cookies();
+  
   return createServerClient(url, key, {
     cookies: createCookieHandler(cookieStore),
   });

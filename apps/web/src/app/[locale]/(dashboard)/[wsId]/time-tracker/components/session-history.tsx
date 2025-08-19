@@ -275,7 +275,6 @@ const StackedSessionItem: FC<{
       : 0;
 
   const productivityType = getSessionProductivityType(latestSession);
-  const _timeOfDay = getTimeOfDayCategory(latestSession);
 
   // Limit how many sessions to show initially
   const INITIAL_SESSION_LIMIT = 3;

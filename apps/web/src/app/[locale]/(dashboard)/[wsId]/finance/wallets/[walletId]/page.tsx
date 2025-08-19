@@ -8,7 +8,6 @@ import { CustomDataTable } from '@/components/custom-data-table';
 import { transactionColumns } from '../../transactions/columns';
 import 'dayjs/locale/vi';
 import moment from 'moment';
-import { notFound } from 'next/navigation';
 
 import { getTranslations } from 'next-intl/server';
 
