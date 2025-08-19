@@ -4,6 +4,7 @@ import { match } from '@formatjs/intl-localematcher';
 import { createCentralizedAuthMiddleware } from '@tuturuuu/auth/middleware';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { getUserDefaultWorkspace } from '@tuturuuu/utils/user-helper';
+import { isPersonalWorkspace } from '@tuturuuu/utils/workspace-helper';
 import Negotiator from 'negotiator';
 import createIntlMiddleware from 'next-intl/middleware';
 import type { NextRequest } from 'next/server';
@@ -46,6 +47,68 @@ export async function middleware(req: NextRequest): Promise<NextResponse> {
     const redirectUrl = new URL('/', req.nextUrl);
     redirectUrl.searchParams.set('no-redirect', '1');
     return NextResponse.redirect(redirectUrl);
+  }
+
+  // Handle direct navigation to workspace IDs that are personal workspaces
+  // Check if the path matches /[locale]/[wsId] or /[wsId] pattern where wsId is a UUID
+  const uuidRegex =
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+  let potentialWorkspaceId: string | null = null;
+  let hasLocaleInPath = false;
+
+  if (pathSegments.length >= 1) {
+    // Check if first segment is a locale
+    if (
+      pathSegments[0] &&
+      supportedLocales.includes(pathSegments[0] as Locale)
+    ) {
+      hasLocaleInPath = true;
+      // Check if second segment is a workspace ID
+      if (
+        pathSegments.length >= 2 &&
+        pathSegments[1] &&
+        uuidRegex.test(pathSegments[1])
+      ) {
+        potentialWorkspaceId = pathSegments[1];
+      }
+    } else if (pathSegments[0] && uuidRegex.test(pathSegments[0])) {
+      // First segment is a workspace ID (no locale in path)
+      potentialWorkspaceId = pathSegments[0];
+    }
+  }
+
+  // If we found a potential workspace ID, check if it's a personal workspace
+  if (potentialWorkspaceId) {
+    try {
+      const supabase = await createClient();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (user) {
+        const isPersonal = await isPersonalWorkspace(potentialWorkspaceId);
+
+        if (isPersonal) {
+          // Construct the redirect URL replacing the workspace ID with 'personal'
+          const newPathSegments = [...pathSegments];
+          const wsIdIndex = hasLocaleInPath ? 1 : 0;
+          newPathSegments[wsIdIndex] = 'personal';
+
+          const redirectUrl = new URL(
+            `/${newPathSegments.join('/')}`,
+            req.nextUrl
+          );
+          // Preserve query parameters
+          redirectUrl.search = req.nextUrl.search;
+
+          return NextResponse.redirect(redirectUrl);
+        }
+      }
+    } catch (error) {
+      console.error('Error checking personal workspace in middleware:', error);
+      // Continue with normal flow if there's an error
+    }
   }
 
   // Handle authenticated users accessing the root path or root with locale

@@ -10,7 +10,7 @@ import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { LogoTitle } from '@tuturuuu/ui/custom/logo-title';
 import { Structure as BaseStructure } from '@tuturuuu/ui/custom/structure';
 import { WorkspaceSelect } from '@tuturuuu/ui/custom/workspace-select';
-import { ArrowLeft, TriangleAlert } from '@tuturuuu/ui/icons';
+import { ArrowLeft } from '@tuturuuu/ui/icons';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { cn } from '@tuturuuu/utils/format';
 import { setCookie } from 'cookies-next';
@@ -40,7 +40,6 @@ interface MailProps {
 
 export function Structure({
   wsId,
-  workspace,
   defaultCollapsed = false,
   user,
   links,
@@ -147,11 +146,7 @@ export function Structure({
               (child) => child.href && pathname.startsWith(child.href)
             );
 
-            if (
-              activeChild &&
-              activeChild.children &&
-              activeChild.children.length > 0
-            ) {
+            if (activeChild?.children && activeChild.children.length > 0) {
               return {
                 currentLinks: activeChild.children,
                 history: [...prevState.history, prevState.currentLinks],
@@ -318,20 +313,6 @@ export function Structure({
     </>
   );
 
-  const personalNote = !isCollapsed &&
-    (wsId === 'personal' || workspace?.personal) && (
-      <div className="p-2 pt-0">
-        <div className="rounded-lg border border-foreground/10 bg-foreground/5 p-2 text-xs text-muted-foreground">
-          <div className="flex items-start gap-2">
-            <TriangleAlert className="mt-0.5 h-4 w-4 flex-none" />
-            <p className="leading-relaxed">
-              {t('common.personal_workspace_experimental_note')}
-            </p>
-          </div>
-        </div>
-      </div>
-    );
-
   const sidebarContent = (
     <div className="relative h-full overflow-hidden">
       <div
@@ -344,21 +325,18 @@ export function Structure({
         )}
       >
         {navState.history.length === 0 ? (
-          <>
-            {personalNote}
-            <Nav
-              key={`${user?.id}-root`}
-              wsId={wsId}
-              isCollapsed={isCollapsed}
-              links={filteredCurrentLinks}
-              onSubMenuClick={handleNavChange}
-              onClick={() => {
-                if (window.innerWidth < 768) {
-                  setIsCollapsed(true);
-                }
-              }}
-            />
-          </>
+          <Nav
+            key={`${user?.id}-root`}
+            wsId={wsId}
+            isCollapsed={isCollapsed}
+            links={filteredCurrentLinks}
+            onSubMenuClick={handleNavChange}
+            onClick={() => {
+              if (window.innerWidth < 768) {
+                setIsCollapsed(true);
+              }
+            }}
+          />
         ) : (
           <>
             <Nav
@@ -379,7 +357,6 @@ export function Structure({
               </div>
             )}
             {!isCollapsed && <div className="mx-4 my-1 border-b" />}
-            {personalNote}
             {filteredCurrentLinks.length > 0 && (
               <div className="scrollbar-none flex-1 overflow-y-auto">
                 <Nav

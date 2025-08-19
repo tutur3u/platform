@@ -80,17 +80,19 @@ interface LayoutProps {
 
 export default async function Layout({ children, params }: LayoutProps) {
   const t = await getTranslations();
-  const { wsId } = await params;
+  const { wsId: id } = await params;
 
-  const workspace = await getWorkspace(wsId);
+  const workspace = await getWorkspace(id);
+  const wsId = workspace.id;
+  const correctedWSId = workspace.personal ? 'personal' : wsId;
 
   const { withoutPermission } = await getPermissions({
-    wsId: workspace.id,
+    wsId,
   });
 
   const ENABLE_AI_ONLY = await verifySecret({
     forceAdmin: true,
-    wsId: workspace.id,
+    wsId,
     name: 'ENABLE_AI_ONLY',
     value: 'true',
   });
@@ -100,7 +102,7 @@ export default async function Layout({ children, params }: LayoutProps) {
   const navLinks: (NavLink | null)[] = [
     {
       title: t('common.dashboard'),
-      href: `/${wsId}`,
+      href: `/${correctedWSId}`,
       icon: <ChartArea className="h-5 w-5" />,
       matchExact: true,
     },
@@ -110,13 +112,13 @@ export default async function Layout({ children, params }: LayoutProps) {
       children: [
         {
           title: t('sidebar_tabs.spark'),
-          href: `/${wsId}/ai/spark`,
+          href: `/${correctedWSId}/ai/spark`,
           icon: <Sparkles className="h-5 w-5" />,
           disabled:
             ENABLE_AI_ONLY ||
             !(await verifySecret({
               forceAdmin: true,
-              wsId: workspace.id,
+              wsId,
               name: 'ENABLE_TASKS',
               value: 'true',
             })) ||
@@ -125,13 +127,13 @@ export default async function Layout({ children, params }: LayoutProps) {
         },
         {
           title: t('sidebar_tabs.chat_with_ai'),
-          href: `/${wsId}/chat`,
+          href: `/${correctedWSId}/chat`,
           icon: <MessageCircleIcon className="h-5 w-5" />,
           disabled:
             ENABLE_AI_ONLY ||
             !(await verifySecret({
               forceAdmin: true,
-              wsId: workspace.id,
+              wsId,
               name: 'ENABLE_CHAT',
               value: 'true',
             })) ||
@@ -140,7 +142,7 @@ export default async function Layout({ children, params }: LayoutProps) {
         },
         {
           title: t('sidebar_tabs.ai_executions'),
-          href: `/${wsId}/ai/executions`,
+          href: `/${correctedWSId}/ai/executions`,
           icon: <Cctv className="h-5 w-5" />,
           requireRootWorkspace: true,
           requireRootMember: true,
@@ -148,12 +150,12 @@ export default async function Layout({ children, params }: LayoutProps) {
         },
         {
           title: t('sidebar_tabs.models'),
-          href: `/${wsId}/models`,
+          href: `/${correctedWSId}/models`,
           icon: <Box className="h-5 w-5" />,
           disabled:
             !(await verifySecret({
               forceAdmin: true,
-              wsId: workspace.id,
+              wsId,
               name: 'ENABLE_AI',
               value: 'true',
             })) || withoutPermission('ai_lab'),
@@ -161,12 +163,12 @@ export default async function Layout({ children, params }: LayoutProps) {
         },
         {
           title: t('sidebar_tabs.datasets'),
-          href: `/${wsId}/datasets`,
+          href: `/${correctedWSId}/datasets`,
           icon: <Database className="h-5 w-5" />,
           disabled:
             !(await verifySecret({
               forceAdmin: true,
-              wsId: workspace.id,
+              wsId,
               name: 'ENABLE_AI',
               value: 'true',
             })) || withoutPermission('ai_lab'),
@@ -174,12 +176,12 @@ export default async function Layout({ children, params }: LayoutProps) {
         },
         {
           title: t('sidebar_tabs.pipelines'),
-          href: `/${wsId}/pipelines`,
+          href: `/${correctedWSId}/pipelines`,
           icon: <Play className="h-5 w-5" />,
           disabled:
             !(await verifySecret({
               forceAdmin: true,
-              wsId: workspace.id,
+              wsId,
               name: 'ENABLE_AI',
               value: 'true',
             })) || withoutPermission('ai_lab'),
@@ -187,12 +189,12 @@ export default async function Layout({ children, params }: LayoutProps) {
         },
         {
           title: t('sidebar_tabs.crawlers'),
-          href: `/${wsId}/crawlers`,
+          href: `/${correctedWSId}/crawlers`,
           icon: <ScanSearch className="h-5 w-5" />,
           disabled:
             !(await verifySecret({
               forceAdmin: true,
-              wsId: workspace.id,
+              wsId,
               name: 'ENABLE_AI',
               value: 'true',
             })) || withoutPermission('ai_lab'),
@@ -200,12 +202,12 @@ export default async function Layout({ children, params }: LayoutProps) {
         },
         {
           title: t('sidebar_tabs.cron'),
-          href: `/${wsId}/cron`,
+          href: `/${correctedWSId}/cron`,
           icon: <Clock className="h-5 w-5" />,
           disabled:
             !(await verifySecret({
               forceAdmin: true,
-              wsId: workspace.id,
+              wsId,
               name: 'ENABLE_AI',
               value: 'true',
             })) || withoutPermission('ai_lab'),
@@ -213,12 +215,12 @@ export default async function Layout({ children, params }: LayoutProps) {
         },
         {
           title: t('sidebar_tabs.queues'),
-          href: `/${wsId}/queues`,
+          href: `/${correctedWSId}/queues`,
           icon: <Logs className="h-5 w-5" />,
           disabled:
             !(await verifySecret({
               forceAdmin: true,
-              wsId: workspace.id,
+              wsId,
               name: 'ENABLE_AI',
               value: 'true',
             })) || withoutPermission('ai_lab'),
@@ -233,142 +235,141 @@ export default async function Layout({ children, params }: LayoutProps) {
         {
           title: t('sidebar_tabs.calendar'),
           icon: <Calendar className="h-5 w-5" />,
-          href: `/${wsId}/calendar`,
+          href: `/${correctedWSId}/calendar`,
           disabled: ENABLE_AI_ONLY || withoutPermission('manage_calendar'),
           experimental: 'alpha',
+          requireRootMember: true,
           children: user?.email?.endsWith('@tuturuuu.com')
             ? [
                 {
                   title: t('calendar-tabs.calendar'),
-                  href: `/${wsId}/calendar`,
+                  href: `/${correctedWSId}/calendar`,
                   icon: <Calendar className="h-4 w-4" />,
+                  requireRootMember: true,
                   matchExact: true,
                 },
                 {
                   title: t('calendar-tabs.sync-history'),
-                  href: `/${wsId}/calendar/history/sync`,
+                  href: `/${correctedWSId}/calendar/history/sync`,
                   icon: <Activity className="h-4 w-4" />,
                   requireRootWorkspace: true,
+                  requireRootMember: true,
                 },
               ]
             : undefined,
         },
         {
           title: t('sidebar_tabs.tumeet'),
-          href: `/${wsId}/tumeet`,
+          href: `/${correctedWSId}/tumeet`,
           icon: <SquaresIntersect className="h-5 w-5" />,
           children: [
             {
               title: t('sidebar_tabs.plans'),
-              href: `/${wsId}/tumeet/plans`,
+              href: `/${correctedWSId}/tumeet/plans`,
               icon: <VectorSquare className="h-5 w-5" />,
             },
             {
               title: t('sidebar_tabs.meetings'),
-              href: `/${wsId}/tumeet/meetings`,
+              href: `/${correctedWSId}/tumeet/meetings`,
               icon: <SquareUserRound className="h-5 w-5" />,
+              requireRootWorkspace: true,
+              requireRootMember: true,
             },
           ],
         },
         {
           title: t('sidebar_tabs.polls'),
-          href: `/${wsId}/polls`,
+          href: `/${correctedWSId}/polls`,
           icon: <Vote className="h-5 w-5" />,
           disabled: !DEV_MODE,
+          requireRootWorkspace: true,
+          requireRootMember: true,
         },
         {
           title: t('sidebar_tabs.tasks'),
-          href: `/${wsId}/tasks/boards`,
+          href: `/${correctedWSId}/tasks/boards`,
           icon: <CircleCheck className="h-5 w-5" />,
           disabled: ENABLE_AI_ONLY || withoutPermission('manage_projects'),
           experimental: 'beta',
         },
         {
           title: t('sidebar_tabs.mail'),
-          href: `/${wsId}/mail`,
+          href: `/${correctedWSId}/mail`,
           icon: <Mail className="h-5 w-5" />,
           children: [
             {
               title: t('mail.inbox'),
               icon: <Mail className="h-5 w-5" />,
+              disabled: !workspace.personal || id !== 'personal',
               tempDisabled: true,
             },
             {
               title: t('mail.starred'),
               icon: <Star className="h-5 w-5" />,
+              disabled: !workspace.personal || id !== 'personal',
               tempDisabled: true,
             },
             {
               title: t('mail.sent'),
-              href: `/${wsId}/mail/sent`,
+              href: `/${correctedWSId}/mail/sent`,
               icon: <Send className="h-5 w-5" />,
+              disabled: !workspace.personal || id !== 'personal',
             },
             {
               title: t('mail.drafts'),
               icon: <TextSelect className="h-5 w-5" />,
+              disabled: !workspace.personal || id !== 'personal',
               tempDisabled: true,
             },
             {
               title: t('mail.spam'),
               icon: <TriangleAlert className="h-5 w-5" />,
+              disabled: !workspace.personal || id !== 'personal',
               tempDisabled: true,
             },
             {
               title: t('mail.trash'),
               icon: <Trash className="h-5 w-5" />,
+              disabled: !workspace.personal || id !== 'personal',
               tempDisabled: true,
             },
           ],
-          disabled:
-            !DEV_MODE &&
-            (ENABLE_AI_ONLY ||
-              !(await verifySecret({
-                forceAdmin: true,
-                wsId: workspace.id,
-                name: 'ENABLE_EMAIL_SENDING',
-                value: 'true',
-              })) ||
-              withoutPermission('send_user_group_post_emails')),
+          requireRootMember: true,
+          disabled: !workspace.personal || id !== 'personal',
           experimental: 'beta',
         },
         {
           title: t('sidebar_tabs.posts'),
-          href: `/${wsId}/posts`,
+          href: `/${correctedWSId}/posts`,
           icon: <GalleryVerticalEnd className="h-5 w-5" />,
           disabled:
-            !DEV_MODE &&
-            (ENABLE_AI_ONLY ||
-              !(await verifySecret({
-                forceAdmin: true,
-                wsId: workspace.id,
-                name: 'ENABLE_EMAIL_SENDING',
-                value: 'true',
-              })) ||
-              withoutPermission('send_user_group_post_emails')),
+            !(await verifySecret({
+              forceAdmin: true,
+              wsId,
+              name: 'ENABLE_EMAIL_SENDING',
+              value: 'true',
+            })) ||
+            (!DEV_MODE &&
+              (ENABLE_AI_ONLY ||
+                withoutPermission('send_user_group_post_emails'))),
           experimental: 'beta',
         },
         {
           title: t('sidebar_tabs.drive'),
-          href: `/${wsId}/drive`,
+          href: `/${correctedWSId}/drive`,
           icon: <HardDrive className="h-5 w-5" />,
-          disabled:
-            !(await verifySecret({
-              forceAdmin: true,
-              wsId: workspace.id,
-              name: 'ENABLE_DRIVE',
-              value: 'true',
-            })) || withoutPermission('manage_drive'),
+          disabled: withoutPermission('manage_drive'),
           experimental: 'beta',
         },
         {
           title: t('sidebar_tabs.documents'),
-          href: `/${wsId}/documents`,
+          href: `/${correctedWSId}/documents`,
           icon: <FileText className="h-5 w-5" />,
           disabled:
             ENABLE_AI_ONLY ||
             !(await verifySecret({
               forceAdmin: true,
-              wsId: workspace.id,
+              wsId,
               name: 'ENABLE_DOCS',
               value: 'true',
             })) ||
@@ -377,13 +378,13 @@ export default async function Layout({ children, params }: LayoutProps) {
         },
         {
           title: t('sidebar_tabs.slides'),
-          href: `/${wsId}/slides`,
+          href: `/${correctedWSId}/slides`,
           icon: <Presentation className="h-5 w-5" />,
           disabled:
             ENABLE_AI_ONLY ||
             !(await verifySecret({
               forceAdmin: true,
-              wsId: workspace.id,
+              wsId,
               name: 'ENABLE_SLIDES',
               value: 'true',
             })),
@@ -391,13 +392,13 @@ export default async function Layout({ children, params }: LayoutProps) {
         },
         {
           title: t('sidebar_tabs.education'),
-          href: `/${wsId}/education`,
+          href: `/${correctedWSId}/education`,
           icon: <GraduationCap className="h-5 w-5" />,
           disabled:
             ENABLE_AI_ONLY ||
             !(await verifySecret({
               forceAdmin: true,
-              wsId: workspace.id,
+              wsId,
               name: 'ENABLE_EDUCATION',
               value: 'true',
             })) ||
@@ -406,13 +407,13 @@ export default async function Layout({ children, params }: LayoutProps) {
         },
         {
           title: t('sidebar_tabs.whiteboards'),
-          href: `/${wsId}/whiteboards`,
+          href: `/${correctedWSId}/whiteboards`,
           icon: <PencilLine className="h-5 w-5" />,
           disabled:
             ENABLE_AI_ONLY ||
             !(await verifySecret({
               forceAdmin: true,
-              wsId: workspace.id,
+              wsId,
               name: 'ENABLE_WHITEBOARDS',
               value: 'true',
             })) ||
@@ -421,25 +422,25 @@ export default async function Layout({ children, params }: LayoutProps) {
         },
         {
           title: t('sidebar_tabs.time_tracker'),
-          href: `/${wsId}/time-tracker`,
+          href: `/${correctedWSId}/time-tracker`,
           icon: <ClockFading className="h-5 w-5" />,
           disabled: ENABLE_AI_ONLY || withoutPermission('manage_projects'),
           experimental: 'beta',
         },
         {
           title: t('sidebar_tabs.qr_generator'),
-          href: `/${wsId}/qr-generator`,
+          href: `/${correctedWSId}/qr-generator`,
           icon: <QrCodeIcon className="h-5 w-5" />,
         },
         {
           title: t('sidebar_tabs.link_shortener'),
-          href: `/${wsId}/link-shortener`,
+          href: `/${correctedWSId}/link-shortener`,
           icon: <Link className="h-5 w-5" />,
           disabled:
             wsId !== ROOT_WORKSPACE_ID &&
             !(await verifySecret({
               forceAdmin: true,
-              wsId: workspace.id,
+              wsId,
               name: 'ENABLE_LINK_SHORTENER',
               value: 'true',
             })),
@@ -452,14 +453,14 @@ export default async function Layout({ children, params }: LayoutProps) {
       children: [
         {
           title: t('sidebar_tabs.users'),
-          aliases: [`/${wsId}/users`],
-          href: `/${wsId}/users/database`,
+          aliases: [`/${correctedWSId}/users`],
+          href: `/${correctedWSId}/users/database`,
           icon: <Users className="h-5 w-5" />,
           disabled:
             ENABLE_AI_ONLY ||
             !(await verifySecret({
               forceAdmin: true,
-              wsId: workspace.id,
+              wsId,
               name: 'ENABLE_USERS',
               value: 'true',
             })) ||
@@ -467,14 +468,14 @@ export default async function Layout({ children, params }: LayoutProps) {
         },
         {
           title: t('sidebar_tabs.finance'),
-          aliases: [`/${wsId}/finance`],
-          href: `/${wsId}/finance/transactions`,
+          aliases: [`/${correctedWSId}/finance`],
+          href: `/${correctedWSId}/finance/transactions`,
           icon: <Banknote className="h-5 w-5" />,
           disabled:
             ENABLE_AI_ONLY ||
             !(await verifySecret({
               forceAdmin: true,
-              wsId: workspace.id,
+              wsId,
               name: 'ENABLE_FINANCE',
               value: 'true',
             })) ||
@@ -482,13 +483,13 @@ export default async function Layout({ children, params }: LayoutProps) {
         },
         {
           title: t('sidebar_tabs.inventory'),
-          href: `/${wsId}/inventory`,
+          href: `/${correctedWSId}/inventory`,
           icon: <Archive className="h-5 w-5" />,
           disabled:
             ENABLE_AI_ONLY ||
             !(await verifySecret({
               forceAdmin: true,
-              wsId: workspace.id,
+              wsId,
               name: 'ENABLE_INVENTORY',
               value: 'true',
             })) ||
@@ -500,29 +501,29 @@ export default async function Layout({ children, params }: LayoutProps) {
       title: t('common.settings'),
       icon: <Cog className="h-5 w-5" />,
       aliases: [
-        `/${wsId}/members`,
-        `/${wsId}/teams`,
-        `/${wsId}/roles`,
-        `/${wsId}/settings/reports`,
-        `/${wsId}/billing`,
-        `/${wsId}/api-keys`,
-        `/${wsId}/secrets`,
-        `/${wsId}/infrastructure`,
-        `/${wsId}/migrations`,
-        `/${wsId}/activities`,
+        `/${correctedWSId}/members`,
+        `/${correctedWSId}/teams`,
+        `/${correctedWSId}/roles`,
+        `/${correctedWSId}/settings/reports`,
+        `/${correctedWSId}/billing`,
+        `/${correctedWSId}/api-keys`,
+        `/${correctedWSId}/secrets`,
+        `/${correctedWSId}/infrastructure`,
+        `/${correctedWSId}/migrations`,
+        `/${correctedWSId}/activities`,
       ],
       children: [
         {
           title: t('workspace-settings-layout.workspace'),
-          href: `/${wsId}/settings`,
+          href: `/${correctedWSId}/settings`,
           icon: <Bolt className="h-5 w-5" />,
           matchExact: true,
         },
-        ...(wsId !== 'personal'
+        ...(wsId !== 'personal' && !workspace.personal
           ? [
               {
                 title: t('workspace-settings-layout.members'),
-                href: `/${wsId}/members`,
+                href: `/${correctedWSId}/members`,
                 icon: <Users className="h-5 w-5" />,
                 disabled:
                   ENABLE_AI_ONLY ||
@@ -530,7 +531,7 @@ export default async function Layout({ children, params }: LayoutProps) {
               },
               {
                 title: t('workspace-settings-layout.workspace_roles'),
-                href: `/${wsId}/roles`,
+                href: `/${correctedWSId}/roles`,
                 icon: <UserLock className="h-5 w-5" />,
                 disabled:
                   ENABLE_AI_ONLY || withoutPermission('manage_workspace_roles'),
@@ -539,64 +540,71 @@ export default async function Layout({ children, params }: LayoutProps) {
           : []),
         {
           title: t('workspace-settings-layout.reports'),
-          href: `/${wsId}/settings/reports`,
+          href: `/${correctedWSId}/settings/reports`,
           icon: <FileText className="h-5 w-5" />,
           disabled:
             ENABLE_AI_ONLY || withoutPermission('manage_user_report_templates'),
+          requireRootMember: true,
         },
         {
           title: t('sidebar_tabs.billing'),
-          href: `/${wsId}/billing`,
+          href: `/${correctedWSId}/billing`,
           icon: <CircleDollarSign className="h-5 w-5" />,
           requireRootWorkspace: true,
           requireRootMember: true,
         },
         {
           title: t('workspace-settings-layout.api_keys'),
-          href: `/${wsId}/api-keys`,
+          href: `/${correctedWSId}/api-keys`,
           icon: <KeyRound className="h-5 w-5" />,
           disabled:
             ENABLE_AI_ONLY || withoutPermission('manage_workspace_security'),
+          requireRootWorkspace: true,
+          requireRootMember: true,
         },
         {
           title: t('workspace-settings-layout.secrets'),
-          href: `/${wsId}/secrets`,
+          href: `/${correctedWSId}/secrets`,
           icon: <BookKey className="h-5 w-5" />,
           disabled: withoutPermission('manage_workspace_secrets'),
           requireRootMember: true,
         },
         {
           title: t('workspace-settings-layout.infrastructure'),
-          href: `/${wsId}/infrastructure`,
+          href: `/${correctedWSId}/infrastructure`,
           icon: <Blocks className="h-5 w-5" />,
           disabled: withoutPermission('view_infrastructure'),
           requireRootWorkspace: true,
+          requireRootMember: true,
         },
         {
           title: t('workspace-settings-layout.platform_roles'),
-          href: `/${wsId}/platform/roles`,
+          href: `/${correctedWSId}/platform/roles`,
           icon: <ShieldUser className="h-5 w-5" />,
           disabled:
             ENABLE_AI_ONLY || withoutPermission('manage_workspace_roles'),
           requireRootWorkspace: true,
+          requireRootMember: true,
         },
         {
           title: t('workspace-settings-layout.migrations'),
-          href: `/${wsId}/migrations`,
+          href: `/${correctedWSId}/migrations`,
           icon: <FolderSync className="h-5 w-5" />,
           disabled: withoutPermission('manage_external_migrations'),
           requireRootWorkspace: true,
+          requireRootMember: true,
         },
         {
           title: t('workspace-settings-layout.activities'),
-          href: `/${wsId}/activities`,
+          href: `/${correctedWSId}/activities`,
           icon: <ScrollText className="h-5 w-5" />,
           disabled: withoutPermission('manage_workspace_audit_logs'),
           requireRootWorkspace: true,
+          requireRootMember: true,
         },
       ].filter(Boolean) as NavLink[],
     },
-  ];
+  ] satisfies (NavLink | null)[];
 
   if (!user?.id) redirect('/login');
 

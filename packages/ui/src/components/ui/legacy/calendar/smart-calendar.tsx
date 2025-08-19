@@ -1,12 +1,15 @@
 'use client';
 
-import { CalendarProvider } from '../../../../hooks/use-calendar';
 import { CalendarContent } from './calendar-content';
-import type { CalendarSettings } from './settings/settings-context';
+import {
+  CalendarSettings,
+  CalendarSettingsProvider,
+} from './settings/settings-context';
 import type {
   Workspace,
   WorkspaceCalendarGoogleToken,
 } from '@tuturuuu/types/db';
+import { CalendarProvider } from '@tuturuuu/ui/hooks/use-calendar';
 
 export const SmartCalendar = ({
   t,
@@ -15,10 +18,8 @@ export const SmartCalendar = ({
   useQueryClient,
   workspace,
   disabled,
-  initialSettings,
   enableHeader = true,
   experimentalGoogleToken,
-  onSaveSettings,
   externalState,
   extras,
 }: {
@@ -28,10 +29,8 @@ export const SmartCalendar = ({
   useQueryClient: any;
   workspace?: Workspace;
   disabled?: boolean;
-  initialSettings?: Partial<CalendarSettings>;
   enableHeader?: boolean;
   experimentalGoogleToken?: WorkspaceCalendarGoogleToken | null;
-  onSaveSettings?: (settings: CalendarSettings) => Promise<void>;
   externalState?: {
     date: Date;
     setDate: React.Dispatch<React.SetStateAction<Date>>;
@@ -43,26 +42,29 @@ export const SmartCalendar = ({
   };
   extras?: React.ReactNode;
 }) => {
+  const handleSaveSettings = async (newSettings: CalendarSettings) => {
+    console.log('Saving settings:', newSettings);
+  };
+
   return (
     <CalendarProvider
       ws={workspace}
       useQuery={useQuery}
       useQueryClient={useQueryClient}
-      initialSettings={initialSettings}
       experimentalGoogleToken={experimentalGoogleToken}
     >
-      <CalendarContent
-        t={t}
-        locale={locale}
-        disabled={disabled}
-        workspace={workspace}
-        initialSettings={initialSettings}
-        enableHeader={enableHeader}
-        experimentalGoogleToken={experimentalGoogleToken}
-        onSaveSettings={onSaveSettings}
-        externalState={externalState}
-        extras={extras}
-      />
+      <CalendarSettingsProvider onSave={handleSaveSettings}>
+        <CalendarContent
+          t={t}
+          locale={locale}
+          disabled={disabled}
+          workspace={workspace}
+          enableHeader={enableHeader}
+          experimentalGoogleToken={experimentalGoogleToken}
+          externalState={externalState}
+          extras={extras}
+        />
+      </CalendarSettingsProvider>
     </CalendarProvider>
   );
 };

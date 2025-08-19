@@ -1,4 +1,5 @@
 import TransactionsPage from '@tuturuuu/ui/finance/transactions/transactions-page';
+import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
 
 interface Props {
   params: Promise<{
@@ -15,9 +16,13 @@ export default async function WorkspaceTransactionsPage({
   params,
   searchParams,
 }: Props) {
-  const { wsId } = await params;
+  const { wsId: id } = await params;
+  
+  const workspace = await getWorkspace(id);
+  const wsId = workspace.id;
   const sp = await searchParams;
   
+
   return (
     <TransactionsPage wsId={wsId} searchParams={sp} />
   )

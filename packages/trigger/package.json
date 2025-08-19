@@ -16,7 +16,7 @@
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.55.0",
-    "@trigger.dev/sdk": "^3.3.17",
+    "@trigger.dev/sdk": "^4.0.0",
     "@tuturuuu/supabase": "workspace:*",
     "@tuturuuu/types": "workspace:*",
     "@tuturuuu/google": "workspace:*",
@@ -24,7 +24,7 @@
     "dayjs": "^1.11.13"
   },
   "devDependencies": {
-    "@trigger.dev/build": "^3.3.17",
+    "@trigger.dev/build": "^4.0.0",
     "@tuturuuu/eslint-config": "workspace:*",
     "@tuturuuu/typescript-config": "workspace:*"
   },

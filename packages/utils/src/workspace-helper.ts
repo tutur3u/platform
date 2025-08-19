@@ -80,7 +80,7 @@ export async function getWorkspace(
   const queryBuilder = supabase
     .from('workspaces')
     .select(
-      'id, name, avatar_url, logo_url, created_at, workspace_members(role)'
+      'id, name, avatar_url, logo_url, personal, created_at, workspace_members(role)'
     );
 
   if (id.toUpperCase() === 'PERSONAL') queryBuilder.eq('personal', true);
@@ -131,7 +131,7 @@ export async function getWorkspaces() {
   const { data, error } = await supabase
     .from('workspaces')
     .select(
-      'id, name, avatar_url, logo_url, created_at, workspace_members!inner(role)'
+      'id, name, avatar_url, logo_url, personal, created_at, workspace_members!inner(role)'
     )
     .eq('workspace_members.user_id', user.id);
 
@@ -423,4 +423,28 @@ export async function getWorkspaceUser(id: string, userId: string) {
   if (error) notFound();
 
   return data;
+}
+
+/**
+ * Check if a workspace ID corresponds to a personal workspace
+ * @param workspaceId - The workspace ID to check
+ * @returns true if the workspace is personal, false otherwise
+ */
+export async function isPersonalWorkspace(
+  workspaceId: string
+): Promise<boolean> {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from('workspaces')
+    .select('personal')
+    .eq('id', workspaceId)
+    .maybeSingle();
+
+  if (error) {
+    console.error('Error checking if workspace is personal:', error);
+    return false;
+  }
+
+  return data?.personal === true;
 }

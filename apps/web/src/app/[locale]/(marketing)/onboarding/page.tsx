@@ -1,8 +1,4 @@
-import {
-  checkUserWhitelistStatus,
-  getUserOnboardingProgress,
-  hasCompletedOnboarding,
-} from './actions';
+import { getUserOnboardingProgress, hasCompletedOnboarding } from './actions';
 import OnboardingFlow from './onboarding-flow';
 import {
   getCurrentUser,
@@ -16,9 +12,6 @@ export default async function OnboardingPage() {
   if (!user) {
     redirect('/login');
   }
-
-  // Check if user is whitelisted
-  const whitelistStatus = await checkUserWhitelistStatus(user.id);
 
   // Check if user has completed onboarding
   const completedOnboarding = await hasCompletedOnboarding(user.id);
@@ -37,11 +30,5 @@ export default async function OnboardingPage() {
   // Get current onboarding progress
   const progress = await getUserOnboardingProgress(user.id);
 
-  return (
-    <OnboardingFlow
-      user={user}
-      whitelistStatus={whitelistStatus}
-      initialProgress={progress}
-    />
-  );
+  return <OnboardingFlow user={user} initialProgress={progress} />;
 }

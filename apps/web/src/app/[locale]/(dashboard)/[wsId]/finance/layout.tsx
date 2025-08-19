@@ -1,4 +1,5 @@
 import FinanceLayout from '@tuturuuu/ui/finance/finance-layout';
+import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import type React from 'react';
 
 interface LayoutProps {
@@ -9,7 +10,12 @@ interface LayoutProps {
 }
 
 export default async function Layout({ children, params }: LayoutProps) {
-  const { wsId } = await params;
+
+  const { wsId : id } = await params;
+
+
+  const workspace = await getWorkspace(id);
+  const wsId = workspace.id;
 
   return (
     <FinanceLayout wsId={wsId}>

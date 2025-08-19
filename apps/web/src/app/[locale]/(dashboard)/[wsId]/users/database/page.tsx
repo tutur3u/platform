@@ -9,7 +9,7 @@ import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import type { WorkspaceUserField } from '@tuturuuu/types/primitives/WorkspaceUserField';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Separator } from '@tuturuuu/ui/separator';
-import { getPermissions } from '@tuturuuu/utils/workspace-helper';
+import { getPermissions, getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import { getTranslations } from 'next-intl/server';
 
 interface SearchParams {
@@ -33,7 +33,10 @@ export default async function WorkspaceUsersPage({
   searchParams,
 }: Props) {
   const t = await getTranslations();
-  const { locale, wsId } = await params;
+  const { locale, wsId: id } = await params;
+
+  const workspace = await getWorkspace(id);
+  const wsId = workspace.id;
 
   const { data, count } = await getData(wsId, await searchParams);
   const { data: extraFields } = await getUserFields(wsId);
@@ -137,8 +140,8 @@ async function getData(
     .order('full_name', { ascending: true, nullsFirst: false });
 
   if (page && pageSize) {
-    const parsedPage = parseInt(page);
-    const parsedSize = parseInt(pageSize);
+    const parsedPage = parseInt(page, 10);
+    const parsedSize = parseInt(pageSize, 10);
     const start = (parsedPage - 1) * parsedSize;
     const end = parsedPage * parsedSize;
     queryBuilder.range(start, end).limit(parsedSize);

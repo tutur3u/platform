@@ -1,4 +1,5 @@
 import WalletsPage from '@tuturuuu/ui/finance/wallets/wallets-page';
+import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
 
 interface Props {
   params: Promise<{
@@ -15,8 +16,11 @@ export default async function WorkspaceWalletsPage({
   params,
   searchParams,
 }: Props) {
-  const { wsId } = await params;
+
+  const { wsId: id } = await params;
   const sp = await searchParams;
+  const workspace = await getWorkspace(id);
+  const wsId = workspace.id;
 
   return (
     <WalletsPage wsId={wsId} searchParams={sp} />
