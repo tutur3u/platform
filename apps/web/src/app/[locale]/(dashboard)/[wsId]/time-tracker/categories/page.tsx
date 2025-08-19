@@ -7,6 +7,7 @@ import { useEffect, useState } from 'react';
 import { getTimeTrackingData } from '@/lib/time-tracking-helper';
 import { CategoryManager } from '../components/category-manager';
 import type { TimeTrackerData } from '../types';
+import { useTranslations } from 'next-intl';
 
 interface Props {
   params: {
@@ -16,6 +17,7 @@ interface Props {
 }
 
 export default function TimeTrackerCategoriesPage({ params }: Props) {
+  const t = useTranslations();
   const [initialData, setInitialData] = useState<TimeTrackerData | null>(null);
   const [wsId, setWsId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -42,7 +44,11 @@ export default function TimeTrackerCategoriesPage({ params }: Props) {
         setWsId(workspace.id);
       } catch (error) {
         console.error('Error loading time tracker categories:', error);
-        notFound();
+        // Only use notFound for genuine 404s, let other errors bubble up
+        if (error instanceof Error && error.message.includes('not found')) {
+          notFound();
+        }
+        throw error; // Let error boundary handle this
       } finally {
         setLoading(false);
       }
@@ -58,9 +64,9 @@ export default function TimeTrackerCategoriesPage({ params }: Props) {
   return (
     <div className="container mx-auto p-6">
       <div className="mb-6">
-        <h1 className="font-bold text-3xl">Time Tracking Categories</h1>
+        <h1 className="font-bold text-3xl">{t('time_tracker_pages.categories.title')}</h1>
         <p className="text-muted-foreground">
-          Manage your time tracking categories and tags
+          {t('time_tracker_pages.categories.description')}
         </p>
       </div>
       <CategoryManager

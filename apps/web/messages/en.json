@@ -4070,5 +4070,19 @@
     "enable_where_poll": "Enable 'Where to meet' voting",
     "cannot_use_anonymous": "Please login as Guest account or Tuturuuu account to use our feature"
   },
-  "confidential_mode": "Confidential mode"
+  "confidential_mode": "Confidential mode",
+  "time_tracker_pages": {
+    "categories": {
+      "title": "Time Tracking Categories",
+      "description": "Manage your time tracking categories and tags"
+    },
+    "goals": {
+      "title": "Time Tracking Goals", 
+      "description": "Set and manage your time tracking goals"
+    },
+    "history": {
+      "title": "Session History",
+      "description": "View and analyze your time tracking sessions"
+    }
+  }
 }
