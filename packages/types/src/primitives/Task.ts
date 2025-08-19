@@ -25,3 +25,13 @@ export interface TaskAssignee {
   user_id: string;
   created_at: string;
 }
+
+export interface GanttTask extends Task {
+  boardId: string;
+  boardName: string;
+  listName: string;
+  listStatus?: string;
+  updated_at?: string;
+  status?: string;
+  [key: string]: unknown;
+}

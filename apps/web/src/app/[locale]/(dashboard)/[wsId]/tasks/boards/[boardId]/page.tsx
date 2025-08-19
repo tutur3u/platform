@@ -1,7 +1,5 @@
-import { BoardClient } from './_components/board-client';
-import { getTaskBoard, getTaskLists, getTasks } from '@/lib/task-helper';
-import { createClient } from '@tuturuuu/supabase/next/server';
-import { notFound, redirect } from 'next/navigation';
+import TaskBoardPage from '@tuturuuu/ui/tuDo/boards/boardId/task-board-page';
+import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
 
 interface Props {
   params: Promise<{
@@ -10,30 +8,12 @@ interface Props {
   }>;
 }
 
-export default async function TaskBoardPage({ params }: Props) {
-  const { wsId, boardId } = await params;
-  const supabase = await createClient();
-
-  const board = await getTaskBoard(supabase, boardId);
-
-  // If board doesn't exist, redirect to boards list page
-  if (!board) {
-    redirect(`/${wsId}/tasks/boards`);
-  }
-
-  // If board exists but belongs to different workspace, show 404
-  if (board.ws_id !== wsId) {
-    notFound();
-  }
-
-  const tasks = await getTasks(supabase, boardId);
-  const lists = await getTaskLists(supabase, boardId);
+export default async function WorkspaceTaskBoardPage({ params }: Props) {
+  const { wsId : id, boardId } = await params;
+  const workspace = await getWorkspace(id);
+  const wsId = workspace?.id;
 
   return (
-    <BoardClient
-      initialBoard={board}
-      initialTasks={tasks}
-      initialLists={lists}
-    />
-  );
+    <TaskBoardPage wsId={wsId} boardId={boardId} />
+  )
 }
