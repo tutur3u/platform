@@ -2,7 +2,7 @@
 
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
 import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
-import { notFound, useRouter } from 'next/navigation';
+import { notFound } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { getTimeTrackingData } from '@/lib/time-tracking-helper';
 import { CategoryManager } from '../components/category-manager';
@@ -16,7 +16,6 @@ interface Props {
 }
 
 export default function TimeTrackerCategoriesPage({ params }: Props) {
-  const router = useRouter();
   const [initialData, setInitialData] = useState<TimeTrackerData | null>(null);
   const [wsId, setWsId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -67,17 +66,6 @@ export default function TimeTrackerCategoriesPage({ params }: Props) {
       <CategoryManager
         wsId={wsId}
         categories={initialData.categories || []}
-        onCategoriesUpdate={() => {
-          // Refresh data when categories are updated
-          router.refresh();
-        }}
-        apiCall={async (url: string, options?: RequestInit) => {
-          const response = await fetch(url, options);
-          if (!response.ok) {
-            throw new Error('Failed to update categories');
-          }
-          return response.json();
-        }}
       />
     </div>
   );
