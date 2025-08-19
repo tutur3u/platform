@@ -8,10 +8,16 @@ interface Props {
   }>;
 }
 
-export default async function WorkspaceTransactionDetailsPage({ params }: Props) {
+export default async function WorkspaceTransactionDetailsPage({
+  params,
+}: Props) {
   const { wsId, transactionId, locale } = await params;
 
   return (
-    <TransactionDetailsPage wsId={wsId} transactionId={transactionId} locale={locale} />
+    <TransactionDetailsPage
+      wsId={wsId}
+      transactionId={transactionId}
+      locale={locale}
+    />
   );
 }

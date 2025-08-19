@@ -1,4 +1,3 @@
-import { invoiceColumns } from '@tuturuuu/ui/finance/invoices/columns';
 import UserMonthAttendance from '../../attendance/user-month-attendance';
 import { CustomDataTable } from '@/components/custom-data-table';
 import { createClient } from '@tuturuuu/supabase/next/server';
@@ -6,6 +5,7 @@ import type { WorkspaceUserReport } from '@tuturuuu/types/db';
 import type { Invoice } from '@tuturuuu/types/primitives/Invoice';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { Button } from '@tuturuuu/ui/button';
+import { invoiceColumns } from '@tuturuuu/ui/finance/invoices/columns';
 import { TicketCheck, Users } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
 import moment from 'moment';

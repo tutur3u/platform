@@ -16,14 +16,10 @@ export default async function WorkspaceWalletsPage({
   params,
   searchParams,
 }: Props) {
-
   const { wsId: id } = await params;
   const sp = await searchParams;
   const workspace = await getWorkspace(id);
   const wsId = workspace.id;
 
-  return (
-    <WalletsPage wsId={wsId} searchParams={sp} />
-  );
+  return <WalletsPage wsId={wsId} searchParams={sp} />;
 }
-

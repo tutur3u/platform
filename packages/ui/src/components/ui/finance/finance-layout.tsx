@@ -9,9 +9,9 @@ interface FinanceLayoutProps {
   children: React.ReactNode;
 }
 
-export default async function FinanceLayout({ 
-  children, 
-  wsId 
+export default async function FinanceLayout({
+  children,
+  wsId,
 }: FinanceLayoutProps) {
   const t = await getTranslations('workspace-finance-tabs');
 

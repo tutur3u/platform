@@ -1,4 +1,3 @@
-import { Filter } from '@tuturuuu/ui/custom/user-filters';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import type { Invoice } from '@tuturuuu/types/primitives/Invoice';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
@@ -10,6 +9,7 @@ import {
   CardTitle,
 } from '@tuturuuu/ui/card';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
+import { Filter } from '@tuturuuu/ui/custom/user-filters';
 import { Package, TicketPercent, User } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
@@ -20,14 +20,11 @@ interface Props {
   searchParams: {
     q: string;
     page: string;
-    pageSize: string; 
+    pageSize: string;
   };
 }
 
-export default async function NewInvoicePage({
-  wsId,
-  searchParams,
-}: Props) {
+export default async function NewInvoicePage({ wsId, searchParams }: Props) {
   const t = await getTranslations();
   await getData(wsId, searchParams);
 
@@ -56,7 +53,8 @@ export default async function NewInvoicePage({
             <CardHeader>
               <CardTitle>{t('invoice-data-table.customer')}</CardTitle>
               <CardDescription>
-                Make changes to your account here. Click save when you&apos;re done.
+                Make changes to your account here. Click save when you&apos;re
+                done.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-2">
@@ -79,7 +77,8 @@ export default async function NewInvoicePage({
             <CardHeader>
               <CardTitle>{t('invoices.products')}</CardTitle>
               <CardDescription>
-                Make changes to your account here. Click save when you&apos;re done.
+                Make changes to your account here. Click save when you&apos;re
+                done.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-2">
@@ -108,7 +107,8 @@ export default async function NewInvoicePage({
             <CardHeader>
               <CardTitle>{t('invoices.invoices')}</CardTitle>
               <CardDescription>
-                Make changes to your account here. Click save when you&apos;re done.
+                Make changes to your account here. Click save when you&apos;re
+                done.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-2">

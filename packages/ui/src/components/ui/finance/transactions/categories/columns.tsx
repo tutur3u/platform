@@ -1,9 +1,9 @@
 'use client';
 
-import { TransactionCategoryRowActions } from '@tuturuuu/ui/finance/transactions/categories/row-actions';
 import type { ColumnDef } from '@tanstack/react-table';
 import type { TransactionCategory } from '@tuturuuu/types/primitives/TransactionCategory';
 import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
+import { TransactionCategoryRowActions } from '@tuturuuu/ui/finance/transactions/categories/row-actions';
 import moment from 'moment';
 
 export const transactionCategoryColumns = (

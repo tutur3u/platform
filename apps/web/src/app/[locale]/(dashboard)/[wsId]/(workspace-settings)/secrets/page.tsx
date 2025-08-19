@@ -1,9 +1,9 @@
 import { secretColumns } from './columns';
 import SecretForm from './form';
-import { CustomDataTable } from '@tuturuuu/ui/custom/tables/custom-data-table';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import type { WorkspaceSecret } from '@tuturuuu/types/primitives/WorkspaceSecret';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
+import { CustomDataTable } from '@tuturuuu/ui/custom/tables/custom-data-table';
 import { Separator } from '@tuturuuu/ui/separator';
 import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import { getTranslations } from 'next-intl/server';

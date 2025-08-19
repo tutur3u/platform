@@ -1,9 +1,9 @@
-import { walletColumns } from '@tuturuuu/ui/finance/wallets/columns';
-import { WalletForm } from '@tuturuuu/ui/finance/wallets/form';
-import { CustomDataTable } from '@tuturuuu/ui/custom/tables/custom-data-table';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import type { Wallet } from '@tuturuuu/types/primitives/Wallet';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
+import { CustomDataTable } from '@tuturuuu/ui/custom/tables/custom-data-table';
+import { walletColumns } from '@tuturuuu/ui/finance/wallets/columns';
+import { WalletForm } from '@tuturuuu/ui/finance/wallets/form';
 import { Separator } from '@tuturuuu/ui/separator';
 import { getTranslations } from 'next-intl/server';
 
@@ -12,14 +12,11 @@ interface Props {
   searchParams: {
     q: string;
     page: string;
-    pageSize: string; 
+    pageSize: string;
   };
 }
 
-export default async function WalletsPage({
-  wsId,
-  searchParams,
-}: Props) {
+export default async function WalletsPage({ wsId, searchParams }: Props) {
   const t = await getTranslations();
   const { data: rawData, count } = await getData(wsId, searchParams);
 

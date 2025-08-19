@@ -1,30 +1,25 @@
-import { transactionColumns } from '@tuturuuu/ui/finance/transactions/columns';
-import { Filter } from '@tuturuuu/ui/finance/shared/filter';
+import { createClient } from '@tuturuuu/supabase/next/server';
+import type { Transaction } from '@tuturuuu/types/primitives/Transaction';
 import { CustomDataTable } from '@tuturuuu/ui/custom/tables/custom-data-table';
+import { Filter } from '@tuturuuu/ui/finance/shared/filter';
 import LoadingStatisticCard from '@tuturuuu/ui/finance/shared/loaders/statistics';
+import { FinanceDashboardSearchParams } from '@tuturuuu/ui/finance/shared/metrics';
 import ExpenseStatistics from '@tuturuuu/ui/finance/statistics/expense';
 import IncomeStatistics from '@tuturuuu/ui/finance/statistics/income';
+import InvoicesStatistics from '@tuturuuu/ui/finance/statistics/invoices';
 import TotalBalanceStatistics from '@tuturuuu/ui/finance/statistics/total-balance';
 import TransactionCategoriesStatistics from '@tuturuuu/ui/finance/statistics/transaction-categories';
 import TransactionsStatistics from '@tuturuuu/ui/finance/statistics/transactions';
 import WalletsStatistics from '@tuturuuu/ui/finance/statistics/wallets';
-import InvoicesStatistics from '@tuturuuu/ui/finance/statistics/invoices';
-import { createClient } from '@tuturuuu/supabase/next/server';
-import type { Transaction } from '@tuturuuu/types/primitives/Transaction';
+import { transactionColumns } from '@tuturuuu/ui/finance/transactions/columns';
 import { Suspense } from 'react';
-import { FinanceDashboardSearchParams } from '@tuturuuu/ui/finance/shared/metrics'
-
-
 
 interface Props {
   wsId: string;
   searchParams: FinanceDashboardSearchParams;
 }
 
-export default async function FinancePage({
-  wsId,
-  searchParams,
-}: Props) {
+export default async function FinancePage({ wsId, searchParams }: Props) {
   const sp = searchParams;
 
   // const { data: dailyData } = await getDailyData(wsId);
