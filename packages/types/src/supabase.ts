@@ -315,6 +315,12 @@ export type Database = {
           hour: number;
         }[];
       };
+      get_created_workspace_count: {
+        Args: {
+          user_id: string;
+        };
+        Returns: number;
+      };
       get_daily_income_expense: {
         Args: {
           _ws_id: string;
@@ -443,6 +449,12 @@ export type Database = {
       get_inventory_warehouses_count: {
         Args: {
           ws_id: string;
+        };
+        Returns: number;
+      };
+      get_joined_workspace_count: {
+        Args: {
+          user_id: string;
         };
         Returns: number;
       };
