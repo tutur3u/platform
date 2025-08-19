@@ -8,8 +8,8 @@ export default function Loading() {
         <Skeleton className="h-5 w-80" />
       </div>
       <div className="space-y-4">
-        {Array.from({ length: 5 }).map(() => (
-          <Skeleton key={crypto.randomUUID()} className="h-20 w-full" />
+        {Array.from({ length: 6 }).map((_, idx) => (
+          <Skeleton key={`history-skeleton-${idx}`} className="h-20 w-full" />
         ))}
       </div>
     </div>
