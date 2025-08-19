@@ -1,4 +1,3 @@
-import { SIDEBAR_COLLAPSED_COOKIE_NAME } from '@/constants/common';
 import {
   createAdminClient,
   createClient,
@@ -7,6 +6,7 @@ import type { InternalEmail } from '@tuturuuu/types/db';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
 import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import { cookies } from 'next/headers';
+import { SIDEBAR_COLLAPSED_COOKIE_NAME } from '@/constants/common';
 import MailClientWrapper from '../client';
 
 interface SearchParams {
@@ -36,14 +36,14 @@ export default async function MailPage({ params, searchParams }: Props) {
   const rawBehavior = behaviorCookie?.value;
 
   const isValidBehavior = (
-    value: string | undefined,
+    value: string | undefined
   ): value is 'expanded' | 'collapsed' | 'hover' => {
     if (!value) return false;
     return ['expanded', 'collapsed', 'hover'].includes(value);
   };
 
   const sidebarBehavior: 'expanded' | 'collapsed' | 'hover' = isValidBehavior(
-    rawBehavior,
+    rawBehavior
   )
     ? rawBehavior
     : 'expanded';
@@ -102,14 +102,14 @@ export default async function MailPage({ params, searchParams }: Props) {
       >
         <div className="container mx-auto p-4">
           <div className="mb-6">
-            <h1 className="text-2xl font-bold">Sent Mails</h1>
+            <h1 className="font-bold text-2xl">Sent Mails</h1>
             <p className="text-muted-foreground">
               View all mails you have sent from this workspace
             </p>
           </div>
 
           {data.length === 0 ? (
-            <div className="text-center py-8">
+            <div className="py-8 text-center">
               <p className="text-muted-foreground">No sent mails found</p>
             </div>
           ) : (
@@ -118,26 +118,26 @@ export default async function MailPage({ params, searchParams }: Props) {
                 {data.map((mail) => (
                   <div
                     key={mail.id}
-                    className="p-4 border rounded-lg hover:bg-muted/50 transition-colors"
+                    className="rounded-lg border p-4 transition-colors hover:bg-muted/50"
                   >
-                    <div className="flex justify-between items-start">
+                    <div className="flex items-start justify-between">
                       <div>
                         <h3 className="font-semibold">{mail.subject}</h3>
-                        <p className="text-sm text-muted-foreground">
+                        <p className="text-muted-foreground text-sm">
                           To: {mail.recipients?.join(', ') || 'No recipients'}
                         </p>
-                        <p className="text-sm text-muted-foreground">
+                        <p className="text-muted-foreground text-sm">
                           Sent: {new Date(mail.created_at).toLocaleString()}
                         </p>
                       </div>
                       <div className="text-right">
-                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                        <span className="inline-flex items-center rounded-full bg-green-100 px-2 py-1 font-medium text-green-800 text-xs">
                           Sent
                         </span>
                       </div>
                     </div>
                     {mail.content && (
-                      <div className="mt-3 text-sm text-muted-foreground line-clamp-3">
+                      <div className="mt-3 line-clamp-3 text-muted-foreground text-sm">
                         {mail.content}
                       </div>
                     )}
@@ -172,12 +172,14 @@ export default async function MailPage({ params, searchParams }: Props) {
         userPopover={null}
       >
         <div className="container mx-auto p-4">
-          <div className="text-center py-8">
-            <p className="text-red-600">Error loading sent mails. Please try again.</p>
+          <div className="py-8 text-center">
+            <p className="text-red-600">
+              Error loading sent mails. Please try again.
+            </p>
             <button
               type="button"
               onClick={() => window.location.reload()}
-              className="mt-4 px-4 py-2 bg-primary text-primary-foreground rounded hover:bg-primary/90"
+              className="mt-4 rounded bg-primary px-4 py-2 text-primary-foreground hover:bg-primary/90"
             >
               Retry
             </button>

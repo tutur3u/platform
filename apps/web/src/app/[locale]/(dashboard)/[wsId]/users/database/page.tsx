@@ -1,4 +1,3 @@
-import { CustomDataTable } from '@/components/custom-data-table';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import type { WorkspaceUserField } from '@tuturuuu/types/primitives/WorkspaceUserField';
@@ -6,6 +5,7 @@ import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Separator } from '@tuturuuu/ui/separator';
 import { getPermissions, getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import { getTranslations } from 'next-intl/server';
+import { CustomDataTable } from '@/components/custom-data-table';
 import { getUserColumns } from './columns';
 import ExportDialogContent from './export-dialog-content';
 import Filters from './filters';
@@ -38,14 +38,19 @@ export default async function WorkspaceUsersPage({
   const workspace = await getWorkspace(id);
   const wsId = workspace.id;
 
-  const searchParamsData = await searchParams;
-  const { page = '1', size = '10' } = searchParamsData;
+  const sp = await searchParams;
+  const { page = '1', size = '10' } = sp;
   const parsedPage = Number.parseInt(page, 10);
   const parsedSize = Number.parseInt(size, 10);
   const start = (parsedPage - 1) * parsedSize;
   const end = start + parsedSize - 1;
 
-  const { data: rawData, count } = await getData(wsId, searchParamsData, start, end);
+  const { data: rawData, count } = await getData(
+    wsId,
+    sp,
+    start,
+    end
+  );
   const { data: extraFields } = await getUserFields(wsId);
 
   const { containsPermission } = await getPermissions({
@@ -75,7 +80,7 @@ export default async function WorkspaceUsersPage({
         extraColumns={extraFields}
         extraData={{ locale, wsId }}
         count={count}
-        filters={<Filters wsId={wsId} searchParams={await searchParams} />}
+        filters={<Filters wsId={wsId} searchParams={sp} />}
         toolbarImportContent={
           containsPermission('export_users_data') && (
             <ImportDialogContent wsId={wsId} />
@@ -86,7 +91,7 @@ export default async function WorkspaceUsersPage({
             <ExportDialogContent
               wsId={wsId}
               exportType="users"
-              searchParams={await searchParams}
+              searchParams={sp}
             />
           )
         }
@@ -149,14 +154,26 @@ async function getData(
     .order('full_name', { ascending: true, nullsFirst: false });
 
   if (page && pageSize) {
-    queryBuilder.range(start, end).limit(pageSize);
+    const parsedPage = Number.parseInt(page, 10);
+    const parsedSize = Number.parseInt(pageSize, 10);
+    const start = (parsedPage - 1) * parsedSize;
+    const end = start + parsedSize - 1;
+    queryBuilder.range(start, end);
   }
 
   const { data, error, count } = await queryBuilder;
 
   if (error) {
     if (!retry) throw error;
-    return getData(wsId, { q, pageSize, retry: false }, start, end);
+    // Preserve pagination and filters on retry
+    return getData(wsId, {
+      q,
+      page,
+      pageSize,
+      includedGroups,
+      excludedGroups,
+      retry: false,
+    }, start, end);
   }
 
   return { data, count } as unknown as { data: WorkspaceUser[]; count: number };

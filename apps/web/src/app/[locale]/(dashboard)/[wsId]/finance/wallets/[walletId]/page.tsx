@@ -1,14 +1,14 @@
-import { CustomDataTable } from '@/components/custom-data-table';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import type { Transaction } from '@tuturuuu/types/primitives/Transaction';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Calendar, CreditCard, DollarSign, Wallet } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
 import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
+import { CustomDataTable } from '@/components/custom-data-table';
 import 'dayjs/locale/vi';
 import moment from 'moment';
-import { getTranslations } from 'next-intl/server';
 import { notFound } from 'next/navigation';
+import { getTranslations } from 'next-intl/server';
 import { transactionColumns } from '../../transactions/columns';
 
 interface Props {
@@ -137,7 +137,7 @@ function DetailItem({
   label: string;
   value: React.ReactNode;
 }) {
-  if (!value) return undefined;
+  if (!value) return null;
   return (
     <div className="flex items-center gap-1">
       {icon}
@@ -188,8 +188,8 @@ async function getTransactions(
     const parsedPage = Number.parseInt(page, 10);
     const parsedSize = Number.parseInt(pageSize, 10);
     const start = (parsedPage - 1) * parsedSize;
-    const end = parsedPage * parsedSize;
-    queryBuilder.range(start, end).limit(parsedSize);
+    const end = start + parsedSize - 1;
+    queryBuilder.range(start, end);
   }
 
   const { data: rawData, error, count } = await queryBuilder;

@@ -4,9 +4,9 @@ import { createClient } from '@tuturuuu/supabase/next/server';
 import { getUserDefaultWorkspace } from '@tuturuuu/utils/user-helper';
 import { isPersonalWorkspace } from '@tuturuuu/utils/workspace-helper';
 import Negotiator from 'negotiator';
-import createIntlMiddleware from 'next-intl/middleware';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
+import createIntlMiddleware from 'next-intl/middleware';
 import { LOCALE_COOKIE_NAME, PORT, PUBLIC_PATHS } from './constants/common';
 import { defaultLocale, type Locale, supportedLocales } from './i18n/routing';
 
@@ -275,7 +275,10 @@ const handleLocale = ({
   // Construct nextUrl with locale and redirect
   req.nextUrl.pathname = !pathname
     ? `/${locale}${req.nextUrl.pathname}`
-    : req.nextUrl.pathname.replace(pathname, locale);
+    : req.nextUrl.pathname.replace(
+        new RegExp(`^/${pathname}(?=/|$)`),
+        `/${locale}`
+      );
 
   NextResponse.rewrite(req.nextUrl, res);
 

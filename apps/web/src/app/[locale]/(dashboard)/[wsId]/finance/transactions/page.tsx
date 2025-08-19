@@ -1,10 +1,10 @@
-import { CustomDataTable } from '@/components/custom-data-table';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import type { Transaction } from '@tuturuuu/types/primitives/Transaction';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Separator } from '@tuturuuu/ui/separator';
 import { getPermissions, getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import { getTranslations } from 'next-intl/server';
+import { CustomDataTable } from '@/components/custom-data-table';
 import { transactionColumns } from './columns';
 import ExportDialogContent from './export-dialog-content';
 import { TransactionForm } from './form';
@@ -36,7 +36,12 @@ export default async function WorkspaceTransactionsPage({
   const start = (parsedPage - 1) * parsedSize;
   const end = start + parsedSize - 1;
 
-  const { data: rawData, count } = await getData(wsId, { q: searchParamsData.q, page: page, pageSize: size });
+  const resolvedSearchParams = await searchParams;
+  const { data: rawData, count } = await getData(wsId, {
+    q: searchParamsData.q,
+    page: page,
+    pageSize: size,
+  });
   const t = await getTranslations();
 
   const { containsPermission } = await getPermissions({
@@ -68,7 +73,7 @@ export default async function WorkspaceTransactionsPage({
             <ExportDialogContent
               wsId={wsId}
               exportType="transactions"
-              searchParams={await searchParams}
+              searchParams={resolvedSearchParams}
             />
           )
         }
@@ -109,11 +114,11 @@ async function getData(
   if (q) queryBuilder.ilike('description', `%${q}%`);
 
   if (page && pageSize) {
-    const parsedPage = parseInt(page);
-    const parsedSize = parseInt(pageSize);
+    const parsedPage = Number.parseInt(page, 10);
+    const parsedSize = Number.parseInt(pageSize, 10);
     const start = (parsedPage - 1) * parsedSize;
-    const end = parsedPage * parsedSize;
-    queryBuilder.range(start, end).limit(parsedSize);
+    const end = start + parsedSize - 1;
+    queryBuilder.range(start, end);
   }
 
   const { data: rawData, error, count } = await queryBuilder;

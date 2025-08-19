@@ -105,7 +105,7 @@ export function ChatModelSelector({
             <div className="text-sm font-semibold opacity-80">
               {previewModel?.provider}{' '}
             </div>
-            <div className="mx-2 h-4 w-px rotate-30 bg-foreground/20" />
+            <div className="mx-2 h-4 w-px rotate-12 bg-foreground/20" />
             <div className="line-clamp-1 font-mono text-xs">
               {previewModel?.label}
             </div>
@@ -113,7 +113,7 @@ export function ChatModelSelector({
           <Separator className="my-2" />
           <div className="p-2 pt-0">
             <div className="text-sm">{previewModel?.description}</div>
-            {previewModel?.context != undefined && (
+            {previewModel?.context !== undefined && (
               <>
                 <Separator className="my-2" />
                 <div className="rounded bg-foreground px-2 py-0.5 text-center text-sm font-semibold text-background">

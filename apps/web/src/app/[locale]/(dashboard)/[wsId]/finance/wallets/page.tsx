@@ -1,10 +1,10 @@
-import { CustomDataTable } from '@/components/custom-data-table';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import type { Wallet } from '@tuturuuu/types/primitives/Wallet';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Separator } from '@tuturuuu/ui/separator';
 import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import { getTranslations } from 'next-intl/server';
+import { CustomDataTable } from '@/components/custom-data-table';
 import { walletColumns } from './columns';
 import { WalletForm } from './form';
 
@@ -72,11 +72,7 @@ export default async function WorkspaceWalletsPage({
   );
 }
 
-async function getData(
-  wsId: string,
-  start: number,
-  end: number
-) {
+async function getData(wsId: string, start: number, end: number) {
   const supabase = await createClient();
 
   const queryBuilder = supabase
