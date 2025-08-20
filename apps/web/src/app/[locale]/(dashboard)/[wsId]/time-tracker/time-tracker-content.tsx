@@ -885,7 +885,7 @@ export default function TimeTrackerContent({
           // <div className="space-y-3">
           <Accordion
             collapsible
-            className="w-full space-y-3"
+            className="w-full"
             type="single"
           >
             <AccordionItem value="quick-actions">
