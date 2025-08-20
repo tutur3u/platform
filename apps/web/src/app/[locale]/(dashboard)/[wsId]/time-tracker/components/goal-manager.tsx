@@ -29,14 +29,20 @@ import {
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
 import {
+  Activity,
+  AlertCircle,
+  BookOpen,
   Calendar,
   CheckCircle,
   Clock,
   Edit,
   Goal,
+  Info,
   MoreHorizontal,
   Plus,
+  Settings,
   Target,
+  Timer,
   Trash2,
   TrendingUp,
 } from '@tuturuuu/ui/icons';
@@ -258,7 +264,7 @@ export function GoalManager({
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Goal className="h-5 w-5" />
+              <Activity className="h-5 w-5" />
               Daily & Weekly Progress
             </CardTitle>
           </CardHeader>
@@ -268,7 +274,7 @@ export function GoalManager({
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <Calendar className="h-4 w-4 text-blue-500" />
+                    <Timer className="h-4 w-4 text-blue-500" />
                     <span className="font-medium">Today's Progress</span>
                   </div>
                   <span className="text-muted-foreground text-sm">
@@ -316,7 +322,7 @@ export function GoalManager({
                   </div>
                 ) : (
                   <div className="py-4 text-center text-muted-foreground">
-                    <Target className="mx-auto mb-2 h-8 w-8" />
+                    <AlertCircle className="mx-auto mb-2 h-8 w-8" />
                     <p className="text-sm">No daily goals set</p>
                   </div>
                 )}
@@ -376,7 +382,7 @@ export function GoalManager({
                   </div>
                 ) : (
                   <div className="py-4 text-center text-muted-foreground">
-                    <Target className="mx-auto mb-2 h-8 w-8" />
+                    <Info className="mx-auto mb-2 h-8 w-8" />
                     <p className="text-sm">No weekly goals set</p>
                   </div>
                 )}
@@ -390,7 +396,7 @@ export function GoalManager({
           <CardHeader>
             <div className="flex items-center justify-between">
               <CardTitle className="flex items-center gap-2">
-                <Target className="h-5 w-5" />
+                <Goal className="h-5 w-5" />
                 Goal Management
               </CardTitle>
               {!readOnly && (
@@ -433,7 +439,7 @@ export function GoalManager({
                       variant="outline"
                       className="gap-2"
                     >
-                      <Target className="h-4 w-4" />
+                      <BookOpen className="h-4 w-4" />
                       Learn About Goals
                     </Button>
                   </div>
@@ -626,7 +632,7 @@ export function GoalManager({
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <Target className="h-5 w-5" />
+              <Plus className="h-5 w-5" />
               Create New Goal
             </DialogTitle>
           </DialogHeader>

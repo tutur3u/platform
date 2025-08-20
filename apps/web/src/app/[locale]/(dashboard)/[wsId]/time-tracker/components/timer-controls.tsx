@@ -23,6 +23,7 @@ import {
   Pause,
   Play,
   RefreshCw,
+  Settings,
   Settings2,
   Sparkles,
   Square,
@@ -2691,7 +2692,7 @@ export function TimerControls({
                   }
                   disabled={sessionProtection.isActive}
                 >
-                  ⚙️
+                  <Settings className="h-3 w-3 text-muted-foreground" />
                 </Button>
               )}
               {timerMode === 'pomodoro' && (
@@ -2723,7 +2724,7 @@ export function TimerControls({
                   }
                   disabled={sessionProtection.isActive}
                 >
-                  ⚙️
+                  <Settings className="h-3 w-3 text-muted-foreground" />
                 </Button>
               )}
               {timerMode === 'custom' && (
@@ -2755,7 +2756,7 @@ export function TimerControls({
                   }
                   disabled={sessionProtection.isActive}
                 >
-                  ⚙️
+                  <Settings className="h-3 w-3 text-muted-foreground" />
                 </Button>
               )}
             </div>

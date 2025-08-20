@@ -317,7 +317,10 @@ export function CategoryManager({
       <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Create New Category</DialogTitle>
+            <DialogTitle className="flex items-center gap-2">
+              <Plus className="h-5 w-5" />
+              Create New Category
+            </DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <div>
@@ -391,7 +394,10 @@ export function CategoryManager({
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Edit Category</DialogTitle>
+            <DialogTitle className="flex items-center gap-2">
+              <Edit className="h-5 w-5" />
+              Edit Category
+            </DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <div>

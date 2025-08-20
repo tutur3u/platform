@@ -6,12 +6,20 @@ import type { TaskPriority } from '@tuturuuu/types/primitives/Priority';
 import { Alert, AlertDescription } from '@tuturuuu/ui/alert';
 import { Button } from '@tuturuuu/ui/button';
 import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@tuturuuu/ui/card';
+import {
   AlertCircle,
   BarChart2,
   Calendar,
   CheckCircle,
   CheckSquare,
   Clock,
+  Goal,
   History,
   LayoutDashboard,
   LayoutGrid,
@@ -23,7 +31,6 @@ import {
   RotateCcw,
   Settings,
   Tag,
-  Target,
   Timer,
   TrendingUp,
   WifiOff,
@@ -95,9 +102,11 @@ export default function TimeTrackerContent({
   wsId,
   initialData,
 }: TimeTrackerContentProps) {
-  const { userId: currentUserId, isLoading: isLoadingUser } = useCurrentUser();
+  const [sidebarView, setSidebarView] = useState('analytics');
   const [activeTab, setActiveTab] = useState('timer');
+
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
+  const { userId: currentUserId, isLoading: isLoadingUser } = useCurrentUser();
 
   // Use React Query for running session to sync with command palette
   const { data: runningSessionFromQuery } = useQuery({
@@ -705,11 +714,6 @@ export default function TimeTrackerContent({
     fetchData(true, true);
   }, []); // Remove fetchData dependency
 
-  // Sidebar View Switching
-  const [sidebarView, setSidebarView] = useState<
-    'analytics' | 'tasks' | 'reports' | 'settings'
-  >('analytics');
-
   // Drag and drop state for highlighting drop zones
   const [isDraggingTask, setIsDraggingTask] = useState(false);
 
@@ -1303,171 +1307,6 @@ export default function TimeTrackerContent({
 
         {/* New Layout: Analytics sidebar on left, Timer controls and tabs on right */}
         <div className="grid grid-cols-1 gap-6 pb-6 lg:grid-cols-5 lg:items-start">
-          {/* Right Side: Tabs with Timer Controls - First on mobile */}
-          <div className="order-1 lg:order-2 lg:col-span-3">
-            <div className="space-y-6">
-              {/* Tab Navigation - Styled like sidebar switcher */}
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-1 rounded-lg bg-muted/50 p-1">
-                  {!isViewingOtherUser && (
-                    <button
-                      onClick={() => setActiveTab('timer')}
-                      className={cn(
-                        'flex items-center gap-1.5 rounded-md px-2.5 py-1.5 font-medium text-xs transition-all',
-                        activeTab === 'timer'
-                          ? 'bg-background text-foreground shadow-sm'
-                          : 'text-muted-foreground hover:text-foreground'
-                      )}
-                    >
-                      <Clock className="h-3 w-3" />
-                      Timer
-                    </button>
-                  )}
-                  <button
-                    onClick={() => setActiveTab('history')}
-                    className={cn(
-                      'flex items-center gap-1.5 rounded-md px-2.5 py-1.5 font-medium text-xs transition-all',
-                      activeTab === 'history'
-                        ? 'bg-background text-foreground shadow-sm'
-                        : 'text-muted-foreground hover:text-foreground'
-                    )}
-                  >
-                    <History className="h-3 w-3" />
-                    History
-                  </button>
-                  {!isViewingOtherUser && (
-                    <button
-                      onClick={() => setActiveTab('categories')}
-                      className={cn(
-                        'flex items-center gap-1.5 rounded-md px-2.5 py-1.5 font-medium text-xs transition-all',
-                        activeTab === 'categories'
-                          ? 'bg-background text-foreground shadow-sm'
-                          : 'text-muted-foreground hover:text-foreground'
-                      )}
-                    >
-                      <LayoutGrid className="h-3 w-3" />
-                      Categories
-                    </button>
-                  )}
-                  <button
-                    onClick={() => setActiveTab('goals')}
-                    className={cn(
-                      'flex items-center gap-1.5 rounded-md px-2.5 py-1.5 font-medium text-xs transition-all',
-                      activeTab === 'goals'
-                        ? 'bg-background text-foreground shadow-sm'
-                        : 'text-muted-foreground hover:text-foreground'
-                    )}
-                  >
-                    <Target className="h-3 w-3" />
-                    Goals
-                  </button>
-                </div>
-              </div>
-
-              {/* Main Tabs - Timer, History, Categories, Goals */}
-              <Tabs value={activeTab} onValueChange={setActiveTab}>
-                {/* Tab Content */}
-                {!isViewingOtherUser && (
-                  <TabsContent
-                    value="timer"
-                    className="fade-in-50 animate-in duration-300"
-                  >
-                    <div data-timer-controls>
-                      <TimerControls
-                        wsId={wsId}
-                        currentSession={currentSession}
-                        setCurrentSession={setCurrentSession}
-                        elapsedTime={elapsedTime}
-                        setElapsedTime={setElapsedTime}
-                        isRunning={isRunning}
-                        setIsRunning={setIsRunning}
-                        categories={categories}
-                        tasks={tasks}
-                        onSessionUpdate={() => fetchData(false)}
-                        formatTime={formatTime}
-                        formatDuration={formatDuration}
-                        apiCall={apiCall}
-                        isDraggingTask={isDraggingTask}
-                        onGoToTasksTab={() => {
-                          setSidebarView('tasks');
-                          toast.success(
-                            'Switched to Tasks tab - create your first task!'
-                          );
-                        }}
-                        currentUserId={currentUserId}
-                      />
-                    </div>
-                  </TabsContent>
-                )}
-
-                <TabsContent
-                  value="history"
-                  className="fade-in-50 animate-in duration-300"
-                >
-                  {isViewingOtherUser && (
-                    <div className="slide-in-from-top mb-4 animate-in rounded-lg border border-blue-200 bg-blue-50 p-4 duration-300 dark:border-blue-800 dark:bg-blue-950/30">
-                      <p className="flex items-center gap-2 text-blue-700 text-sm dark:text-blue-300">
-                        <Calendar className="h-4 w-4" />
-                        You're viewing another user's session history. You can
-                        see their sessions but cannot edit them.
-                      </p>
-                    </div>
-                  )}
-                  <SessionHistory
-                    wsId={wsId}
-                    sessions={recentSessions}
-                    categories={categories}
-                    tasks={tasks}
-                    onSessionUpdate={() => fetchData(false)}
-                    readOnly={isViewingOtherUser}
-                    formatDuration={formatDuration}
-                    apiCall={apiCall}
-                  />
-                </TabsContent>
-
-                {!isViewingOtherUser && (
-                  <TabsContent
-                    value="categories"
-                    className="fade-in-50 animate-in duration-300"
-                  >
-                    <CategoryManager
-                      wsId={wsId}
-                      categories={categories}
-                      onCategoriesUpdate={() => fetchData(false)}
-                      readOnly={isViewingOtherUser}
-                      apiCall={apiCall}
-                    />
-                  </TabsContent>
-                )}
-
-                <TabsContent
-                  value="goals"
-                  className="fade-in-50 animate-in duration-300"
-                >
-                  {isViewingOtherUser && (
-                    <div className="slide-in-from-top mb-4 animate-in rounded-lg border border-blue-200 bg-blue-50 p-4 duration-300 dark:border-blue-800 dark:bg-blue-950/30">
-                      <p className="flex items-center gap-2 text-blue-700 text-sm dark:text-blue-300">
-                        <TrendingUp className="h-4 w-4" />
-                        You're viewing another user's goals. You can see their
-                        progress but cannot edit their goals.
-                      </p>
-                    </div>
-                  )}
-                  <GoalManager
-                    wsId={wsId}
-                    goals={goals}
-                    categories={categories}
-                    timerStats={timerStats}
-                    onGoalsUpdate={() => fetchData(false)}
-                    readOnly={isViewingOtherUser}
-                    formatDuration={formatDuration}
-                    apiCall={apiCall}
-                  />
-                </TabsContent>
-              </Tabs>
-            </div>
-          </div>
-
           {/* Left Side: Switchable Sidebar Views - Second on mobile */}
           <div className="order-2 lg:order-1 lg:col-span-2">
             <div className="space-y-6">
@@ -1531,24 +1370,25 @@ export default function TimeTrackerContent({
               {sidebarView === 'analytics' && (
                 <>
                   {/* Stats Overview - Enhanced for sidebar */}
-                  <div className="rounded-xl border bg-gradient-to-br from-white to-gray-50/30 p-4 shadow-sm sm:p-6 dark:border-gray-800/60 dark:bg-gray-950/50 dark:from-gray-950/80 dark:to-gray-900/60">
-                    <div className="mb-4">
+                  <Card>
+                    <CardHeader>
                       <div className="flex items-center gap-3">
                         <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-purple-600 shadow-lg">
                           <TrendingUp className="h-5 w-5 text-white" />
                         </div>
                         <div>
-                          <h3 className="font-semibold text-gray-900 text-lg sm:text-xl dark:text-gray-100">
+                          <CardTitle className="text-lg sm:text-xl">
                             Your Progress
-                          </h3>
-                          <p className="text-gray-600 text-sm dark:text-gray-400">
+                          </CardTitle>
+                          <CardDescription>
                             Track your productivity metrics ⚡
-                          </p>
+                          </CardDescription>
                         </div>
                       </div>
-                    </div>
-                    {/* Custom sidebar-optimized stats layout */}
-                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                    </CardHeader>
+                    <CardContent>
+                      {/* Custom sidebar-optimized stats layout */}
+                      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                       {/* Today */}
                       <div className="rounded-lg border border-dynamic-blue/30 bg-background p-3 transition-all duration-300 hover:shadow-md">
                         <div className="flex items-center gap-3">
@@ -1666,22 +1506,23 @@ export default function TimeTrackerContent({
                           </div>
                         </div>
                       </div>
-                    </div>
-                  </div>
+                      </div>
+                    </CardContent>
+                  </Card>
 
                   {/* Activity Heatmap - Enhanced with better header */}
                   {timerStats.dailyActivity && (
-                    <div className="relative overflow-visible rounded-xl border bg-background/50 p-4 shadow-sm sm:p-6 dark:border-gray-800/60 dark:bg-background/80">
-                      <div className="mb-6">
+                    <Card className="relative overflow-visible">
+                      <CardHeader>
                         <div className="flex items-center gap-3">
                           <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 shadow-lg">
                             <Calendar className="h-5 w-5 text-white" />
                           </div>
                           <div>
-                            <h3 className="font-semibold text-gray-900 text-lg sm:text-xl dark:text-gray-100">
+                            <CardTitle className="text-lg sm:text-xl">
                               Activity Heatmap
-                            </h3>
-                            <p className="text-gray-600 text-sm dark:text-gray-400">
+                            </CardTitle>
+                            <CardDescription>
                               {(() => {
                                 const totalDuration =
                                   timerStats.dailyActivity?.reduce(
@@ -1692,19 +1533,21 @@ export default function TimeTrackerContent({
                                   ? `${formatDuration(totalDuration)} tracked this year 🔥`
                                   : 'Start tracking to see your activity pattern 🌱';
                               })()}
-                            </p>
+                            </CardDescription>
                           </div>
                         </div>
-                      </div>
-                      {/* Remove the original header from ActivityHeatmap component and provide overflow space */}
-                      <div className="relative overflow-visible [&>div>div:first-child]:hidden">
-                        <ActivityHeatmap
-                          dailyActivity={timerStats.dailyActivity}
-                          formatDuration={formatDuration}
-                          settings={heatmapSettings}
-                        />
-                      </div>
-                    </div>
+                      </CardHeader>
+                      <CardContent>
+                        {/* Remove the original header from ActivityHeatmap component and provide overflow space */}
+                        <div className="relative overflow-visible [&>div>div:first-child]:hidden">
+                          <ActivityHeatmap
+                            dailyActivity={timerStats.dailyActivity}
+                            formatDuration={formatDuration}
+                            settings={heatmapSettings}
+                          />
+                        </div>
+                      </CardContent>
+                    </Card>
                   )}
                 </>
               )}
@@ -1713,26 +1556,26 @@ export default function TimeTrackerContent({
               {sidebarView === 'tasks' && (
                 <div className="space-y-6">
                   {/* Tasks Header */}
-                  <div className="rounded-xl border bg-gradient-to-br from-white to-gray-50/30 p-6 shadow-sm dark:border-gray-800/60 dark:bg-gray-950/50 dark:from-gray-950/80 dark:to-gray-900/60">
-                    {/* Header Section */}
-                    <div className="mb-6">
-                      <div className="mb-3 flex items-center gap-3">
+                  <Card>
+                    <CardHeader>
+                      {/* Header Section */}
+                      <div className="flex items-center gap-3">
                         <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 shadow-lg">
                           <CheckCircle className="h-5 w-5 text-white" />
                         </div>
                         <div>
-                          <h3 className="font-semibold text-gray-900 text-lg sm:text-xl dark:text-gray-100">
+                          <CardTitle className="text-lg sm:text-xl">
                             Task Workspace
-                          </h3>
-                          <p className="mt-1 text-gray-600 text-sm dark:text-gray-400">
+                          </CardTitle>
+                          <CardDescription>
                             Drag tasks to timer to start tracking 🎯
-                          </p>
+                          </CardDescription>
                         </div>
                       </div>
-                    </div>
-
-                    {/* Enhanced Search and Filter Bar */}
-                    <div className="mb-5 space-y-4">
+                    </CardHeader>
+                    <CardContent>
+                      {/* Enhanced Search and Filter Bar */}
+                      <div className="mb-5 space-y-4">
                       {/* Quick Filter Buttons */}
                       <div className="flex flex-wrap gap-2">
                         <button
@@ -2197,64 +2040,66 @@ export default function TimeTrackerContent({
                           </>
                         );
                       })()}
-                    </div>
-                  </div>
+                      </div>
+                    </CardContent>
+                  </Card>
                 </div>
               )}
 
               {/* Reports View */}
               {sidebarView === 'reports' && (
                 <div className="space-y-6">
-                  <div className="rounded-xl border bg-gradient-to-br from-white to-gray-50/30 p-4 shadow-sm sm:p-6 dark:border-gray-800/60 dark:bg-gray-950/50 dark:from-gray-950/80 dark:to-gray-900/60">
-                    <div className="mb-4">
+                  <Card>
+                    <CardHeader>
                       <div className="flex items-center gap-3">
                         <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-purple-500 to-pink-600 shadow-lg">
                           <History className="h-5 w-5 text-white" />
                         </div>
                         <div>
-                          <h3 className="font-semibold text-gray-900 text-lg sm:text-xl dark:text-gray-100">
+                          <CardTitle className="text-lg sm:text-xl">
                             Reports & Analytics
-                          </h3>
-                          <p className="text-gray-600 text-sm dark:text-gray-400">
+                          </CardTitle>
+                          <CardDescription>
                             Detailed insights coming soon 📊
-                          </p>
+                          </CardDescription>
                         </div>
                       </div>
-                    </div>
-
-                    <div className="rounded-lg border-2 border-muted-foreground/25 border-dashed p-6 text-center">
-                      <History className="mx-auto mb-3 h-8 w-8 text-muted-foreground" />
-                      <p className="text-muted-foreground text-sm">
-                        Advanced reporting features are coming soon. Stay tuned
-                        for detailed analytics, custom reports, and productivity
-                        insights.
-                      </p>
-                    </div>
-                  </div>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="rounded-lg border-2 border-muted-foreground/25 border-dashed p-6 text-center">
+                        <History className="mx-auto mb-3 h-8 w-8 text-muted-foreground" />
+                        <p className="text-muted-foreground text-sm">
+                          Advanced reporting features are coming soon. Stay tuned
+                          for detailed analytics, custom reports, and productivity
+                          insights.
+                        </p>
+                      </div>
+                    </CardContent>
+                  </Card>
                 </div>
               )}
 
               {/* Settings View */}
               {sidebarView === 'settings' && (
                 <div className="space-y-6">
-                  <div className="rounded-xl border bg-gradient-to-br from-white to-gray-50/30 p-4 shadow-sm sm:p-6 dark:border-gray-800/60 dark:bg-gray-950/50 dark:from-gray-950/80 dark:to-gray-900/60">
-                    <div className="mb-4">
+                  <Card>
+                    <CardHeader>
                       <div className="flex items-center gap-3">
                         <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-gray-500 to-gray-700 shadow-lg">
                           <Settings className="h-5 w-5 text-white" />
                         </div>
                         <div>
-                          <h3 className="font-semibold text-gray-900 text-lg sm:text-xl dark:text-gray-100">
+                          <CardTitle className="text-lg sm:text-xl">
                             Timer Settings
-                          </h3>
-                          <p className="text-gray-600 text-sm dark:text-gray-400">
+                          </CardTitle>
+                          <CardDescription>
                             Customize your tracking experience ⚙️
-                          </p>
+                          </CardDescription>
                         </div>
                       </div>
-                    </div>
-
-                    <div className="space-y-6">
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-6">
                       {/* Activity Heatmap Settings */}
                       <div className="space-y-4">
                         <div className="flex items-center gap-2">
@@ -2402,11 +2247,177 @@ export default function TimeTrackerContent({
                           Notifications, default categories, productivity goals,
                           and more customization options.
                         </p>
+                        </div>
                       </div>
-                    </div>
-                  </div>
+                    </CardContent>
+                  </Card>
                 </div>
               )}
+            </div>
+          </div>
+
+          {/* Right Side: Tabs with Timer Controls - First on mobile */}
+          <div className="order-1 lg:order-2 lg:col-span-3">
+            <div className="space-y-6">
+              {/* Tab Navigation - Styled like sidebar switcher */}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-1 rounded-lg bg-muted/50 p-1">
+                  {!isViewingOtherUser && (
+                    <button
+                      onClick={() => setActiveTab('timer')}
+                      className={cn(
+                        'flex items-center gap-1.5 rounded-md px-2.5 py-1.5 font-medium text-xs transition-all',
+                        activeTab === 'timer'
+                          ? 'bg-background text-foreground shadow-sm'
+                          : 'text-muted-foreground hover:text-foreground'
+                      )}
+                    >
+                      <Clock className="h-3 w-3" />
+                      Timer
+                    </button>
+                  )}
+                  <button
+                    onClick={() => setActiveTab('history')}
+                    className={cn(
+                      'flex items-center gap-1.5 rounded-md px-2.5 py-1.5 font-medium text-xs transition-all',
+                      activeTab === 'history'
+                        ? 'bg-background text-foreground shadow-sm'
+                        : 'text-muted-foreground hover:text-foreground'
+                    )}
+                  >
+                    <History className="h-3 w-3" />
+                    History
+                  </button>
+                  {!isViewingOtherUser && (
+                    <button
+                      onClick={() => setActiveTab('categories')}
+                      className={cn(
+                        'flex items-center gap-1.5 rounded-md px-2.5 py-1.5 font-medium text-xs transition-all',
+                        activeTab === 'categories'
+                          ? 'bg-background text-foreground shadow-sm'
+                          : 'text-muted-foreground hover:text-foreground'
+                      )}
+                    >
+                      <LayoutGrid className="h-3 w-3" />
+                      Categories
+                    </button>
+                  )}
+                  <button
+                    onClick={() => setActiveTab('goals')}
+                    className={cn(
+                      'flex items-center gap-1.5 rounded-md px-2.5 py-1.5 font-medium text-xs transition-all',
+                      activeTab === 'goals'
+                        ? 'bg-background text-foreground shadow-sm'
+                        : 'text-muted-foreground hover:text-foreground'
+                    )}
+                  >
+                    <Goal className="h-3 w-3" />
+                    Goals
+                  </button>
+                </div>
+              </div>
+
+              {/* Main Tabs - Timer, History, Categories, Goals */}
+              <Tabs value={activeTab} onValueChange={setActiveTab}>
+                {/* Tab Content */}
+                {!isViewingOtherUser && (
+                  <TabsContent
+                    value="timer"
+                    className="fade-in-50 animate-in duration-300"
+                  >
+                    <div data-timer-controls>
+                      <TimerControls
+                        wsId={wsId}
+                        currentSession={currentSession}
+                        setCurrentSession={setCurrentSession}
+                        elapsedTime={elapsedTime}
+                        setElapsedTime={setElapsedTime}
+                        isRunning={isRunning}
+                        setIsRunning={setIsRunning}
+                        categories={categories}
+                        tasks={tasks}
+                        onSessionUpdate={() => fetchData(false)}
+                        formatTime={formatTime}
+                        formatDuration={formatDuration}
+                        apiCall={apiCall}
+                        isDraggingTask={isDraggingTask}
+                        onGoToTasksTab={() => {
+                          setSidebarView('tasks');
+                          toast.success(
+                            'Switched to Tasks tab - create your first task!'
+                          );
+                        }}
+                        currentUserId={currentUserId}
+                      />
+                    </div>
+                  </TabsContent>
+                )}
+
+                <TabsContent
+                  value="history"
+                  className="fade-in-50 animate-in duration-300"
+                >
+                  {isViewingOtherUser && (
+                    <div className="slide-in-from-top mb-4 animate-in rounded-lg border border-blue-200 bg-blue-50 p-4 duration-300 dark:border-blue-800 dark:bg-blue-950/30">
+                      <p className="flex items-center gap-2 text-blue-700 text-sm dark:text-blue-300">
+                        <Calendar className="h-4 w-4" />
+                        You're viewing another user's session history. You can
+                        see their sessions but cannot edit them.
+                      </p>
+                    </div>
+                  )}
+                  <SessionHistory
+                    wsId={wsId}
+                    sessions={recentSessions}
+                    categories={categories}
+                    tasks={tasks}
+                    onSessionUpdate={() => fetchData(false)}
+                    readOnly={isViewingOtherUser}
+                    formatDuration={formatDuration}
+                    apiCall={apiCall}
+                  />
+                </TabsContent>
+
+                {!isViewingOtherUser && (
+                  <TabsContent
+                    value="categories"
+                    className="fade-in-50 animate-in duration-300"
+                  >
+                    <CategoryManager
+                      wsId={wsId}
+                      categories={categories}
+                      onCategoriesUpdate={() => fetchData(false)}
+                      readOnly={isViewingOtherUser}
+                      apiCall={apiCall}
+                    />
+                  </TabsContent>
+                )}
+
+                <TabsContent
+                  value="goals"
+                  className="fade-in-50 animate-in duration-300"
+                >
+                  {isViewingOtherUser && (
+                    <div className="slide-in-from-top mb-4 animate-in rounded-lg border border-blue-200 bg-blue-50 p-4 duration-300 dark:border-blue-800 dark:bg-blue-950/30">
+                      <p className="flex items-center gap-2 text-blue-700 text-sm dark:text-blue-300">
+                        <TrendingUp className="h-4 w-4" />
+                        You're viewing another user's goals. You can see their
+                        progress but cannot edit their goals.
+                      </p>
+                    </div>
+                  )}
+                  <GoalManager
+                    wsId={wsId}
+                    goals={goals}
+                    categories={categories}
+                    timerStats={timerStats}
+                    onGoalsUpdate={() => fetchData(false)}
+                    readOnly={isViewingOtherUser}
+                    formatDuration={formatDuration}
+                    apiCall={apiCall}
+                  />
+                </TabsContent>
+              </Tabs>
             </div>
           </div>
         </div>
