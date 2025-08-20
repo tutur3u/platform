@@ -3358,63 +3358,6 @@ export function TimerControls({
             </div>
           ) : (
             <div className="space-y-6">
-              <div
-                className={cn(
-                  'rounded-lg border-2 border-dashed p-6 text-center transition-all duration-200',
-                  isDragOver
-                    ? 'border-blue-500 bg-blue-50/50 dark:bg-blue-950/20'
-                    : isDraggingTask
-                      ? 'border-blue-400/60 bg-blue-50/30 dark:bg-blue-950/10'
-                      : 'border-muted-foreground/25'
-                )}
-                onDragEnter={handleDragEnter}
-                onDragOver={handleDragOver}
-                onDragLeave={handleDragLeave}
-                onDrop={handleDrop}
-              >
-                <Clock
-                  className={cn(
-                    'mx-auto mb-3 h-12 w-12 transition-colors duration-200',
-                    isDragOver
-                      ? 'text-blue-500'
-                      : isDraggingTask
-                        ? 'text-blue-400'
-                        : 'text-muted-foreground'
-                  )}
-                />
-                <p
-                  className={cn(
-                    'text-base transition-colors duration-200',
-                    isDragOver
-                      ? 'text-blue-700 dark:text-blue-300'
-                      : isDraggingTask
-                        ? 'text-blue-600 dark:text-blue-400'
-                        : 'text-muted-foreground'
-                  )}
-                >
-                  {isDragOver
-                    ? 'Drop task here to start tracking'
-                    : isDraggingTask
-                      ? 'Drag task here to start tracking'
-                      : 'Ready to start tracking time'}
-                </p>
-                <p
-                  className={cn(
-                    'mt-2 text-xs transition-colors duration-200',
-                    isDragOver
-                      ? 'text-blue-600/70 dark:text-blue-400/70'
-                      : isDraggingTask
-                        ? 'text-blue-500/70 dark:text-blue-400/70'
-                        : 'text-muted-foreground'
-                  )}
-                >
-                  {isDragOver
-                    ? 'Release to select this task'
-                    : isDraggingTask
-                      ? 'Drop zone is ready • Drag outside to cancel'
-                      : 'Drag tasks to the search field or select manually below'}
-                </p>
-              </div>
 
               {/* Session Mode Toggle */}
               <Tabs
@@ -4314,6 +4257,64 @@ export function TimerControls({
                   </Button>
                 </TabsContent>
               </Tabs>
+
+              <div
+                className={cn(
+                  'rounded-lg border-2 border-dashed p-6 text-center transition-all duration-200',
+                  isDragOver
+                    ? 'border-blue-500 bg-blue-50/50 dark:bg-blue-950/20'
+                    : isDraggingTask
+                      ? 'border-blue-400/60 bg-blue-50/30 dark:bg-blue-950/10'
+                      : 'border-muted-foreground/25'
+                )}
+                onDragEnter={handleDragEnter}
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
+              >
+                <Clock
+                  className={cn(
+                    'mx-auto mb-3 h-12 w-12 transition-colors duration-200',
+                    isDragOver
+                      ? 'text-blue-500'
+                      : isDraggingTask
+                        ? 'text-blue-400'
+                        : 'text-muted-foreground'
+                  )}
+                />
+                <p
+                  className={cn(
+                    'text-base transition-colors duration-200',
+                    isDragOver
+                      ? 'text-blue-700 dark:text-blue-300'
+                      : isDraggingTask
+                        ? 'text-blue-600 dark:text-blue-400'
+                        : 'text-muted-foreground'
+                  )}
+                >
+                  {isDragOver
+                    ? 'Drop task here to start tracking'
+                    : isDraggingTask
+                      ? 'Drag task here to start tracking'
+                      : 'Ready to start tracking time'}
+                </p>
+                <p
+                  className={cn(
+                    'mt-2 text-xs transition-colors duration-200',
+                    isDragOver
+                      ? 'text-blue-600/70 dark:text-blue-400/70'
+                      : isDraggingTask
+                        ? 'text-blue-500/70 dark:text-blue-400/70'
+                        : 'text-muted-foreground'
+                  )}
+                >
+                  {isDragOver
+                    ? 'Release to select this task'
+                    : isDraggingTask
+                      ? 'Drop zone is ready • Drag outside to cancel'
+                      : 'Drag tasks to the search field or select manually below'}
+                </p>
+              </div>
 
               {/* Quick Start Templates */}
               {templates.length > 0 && (
