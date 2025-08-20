@@ -514,7 +514,7 @@ export function TimerControls({
                   hasReachedTarget,
                   targetProgress:
                     elapsedTime /
-                    ((customTimerSettings.targetDuration || 60) * 60),
+                    ((customTimerSettings?.targetDuration || 60) * 60),
                 }
               : undefined,
         };
@@ -574,7 +574,7 @@ export function TimerControls({
       getCurrentBreakState,
       countdownState,
       hasReachedTarget,
-      customTimerSettings.targetDuration,
+      customTimerSettings?.targetDuration,
       timerModeSessions,
       setElapsedTime,
       formatDuration,
@@ -978,9 +978,9 @@ export function TimerControls({
         enableMovementBreaks = pomodoroSettings.enableMovementReminder;
         break;
       case 'custom':
-        enableEyeBreaks = customTimerSettings.enableBreakReminders || false;
+        enableEyeBreaks = customTimerSettings?.enableBreakReminders || false;
         enableMovementBreaks =
-          customTimerSettings.enableBreakReminders || false;
+          customTimerSettings?.enableBreakReminders || false;
         break;
     }
 
@@ -1066,7 +1066,7 @@ export function TimerControls({
     if (
       (timerMode === 'pomodoro' ||
         (timerMode === 'custom' &&
-          customTimerSettings.type === 'traditional-countdown')) &&
+          customTimerSettings?.type === 'traditional-countdown')) &&
       isRunning &&
       countdownState.remainingTime > 0
     ) {
@@ -1079,15 +1079,15 @@ export function TimerControls({
               handlePomodoroComplete();
             } else if (
               timerMode === 'custom' &&
-              customTimerSettings.type === 'traditional-countdown'
+              customTimerSettings?.type === 'traditional-countdown'
             ) {
               // Handle traditional countdown completion
               showNotification(
                 'Countdown Complete! ⏰',
-                customTimerSettings.enableMotivationalMessages
+                customTimerSettings?.enableMotivationalMessages
                   ? "Great work! You've completed your custom countdown timer."
                   : 'Your countdown has finished.',
-                customTimerSettings.autoRestart
+                customTimerSettings?.autoRestart
                   ? [
                       {
                         title: 'Auto-restart in 3s...',
@@ -1097,15 +1097,15 @@ export function TimerControls({
                   : undefined
               );
 
-              if (customTimerSettings.playCompletionSound) {
+              if (customTimerSettings?.playCompletionSound) {
                 playNotificationSound();
               }
 
-              if (customTimerSettings.autoRestart) {
+              if (customTimerSettings?.autoRestart) {
                 // Auto-restart after 3 seconds
                 setTimeout(() => {
                   const restartDuration =
-                    (customTimerSettings.countdownDuration || 25) * 60;
+                    (customTimerSettings?.countdownDuration || 25) * 60;
                   setCountdownState((prev) => ({
                     ...prev,
                     targetTime: restartDuration,
@@ -1140,17 +1140,17 @@ export function TimerControls({
   useEffect(() => {
     if (
       timerMode === 'custom' &&
-      customTimerSettings.type === 'enhanced-stopwatch' &&
+      customTimerSettings?.type === 'enhanced-stopwatch' &&
       isRunning
     ) {
       const interval = setInterval(() => {
         const currentTime = Date.now();
         const elapsedMinutes = Math.floor(elapsedTimeRef.current / 60);
-        const targetMinutes = customTimerSettings.targetDuration || 60;
+        const targetMinutes = customTimerSettings?.targetDuration || 60;
 
         // Check for interval breaks
-        if (customTimerSettings.enableIntervalBreaks) {
-          const intervalFreq = customTimerSettings.intervalFrequency || 25;
+        if (customTimerSettings?.enableIntervalBreaks) {
+          const intervalFreq = customTimerSettings?.intervalFrequency || 25;
           const currentBreakState = getCurrentBreakStateRef.current();
           const timeSinceLastBreak = Math.floor(
             (currentTime - currentBreakState.lastIntervalBreakTime) /
@@ -1159,7 +1159,7 @@ export function TimerControls({
 
           if (timeSinceLastBreak >= intervalFreq) {
             const breakDuration =
-              customTimerSettings.intervalBreakDuration || 5;
+              customTimerSettings?.intervalBreakDuration || 5;
             const newBreaksCount = currentBreakState.intervalBreaksCount + 1;
 
             updateCurrentBreakStateRef.current({
@@ -1178,7 +1178,7 @@ export function TimerControls({
               ]
             );
 
-            if (customTimerSettings.playCompletionSound) {
+            if (customTimerSettings?.playCompletionSound) {
               playNotificationSound();
             }
           }
@@ -1188,15 +1188,15 @@ export function TimerControls({
         if (!hasReachedTargetRef.current && elapsedMinutes >= targetMinutes) {
           setHasReachedTarget(true);
 
-          if (customTimerSettings.enableTargetNotification) {
+          if (customTimerSettings?.enableTargetNotification) {
             showNotification(
               `🎯 Target Achieved! (${targetMinutes} min)`,
-              customTimerSettings.enableMotivationalMessages
+              customTimerSettings?.enableMotivationalMessages
                 ? "Congratulations! You've reached your target duration. Keep going or take a well-deserved break!"
                 : `You've completed your ${targetMinutes}-minute goal.`,
               [
                 {
-                  title: customTimerSettings.autoStopAtTarget
+                  title: customTimerSettings?.autoStopAtTarget
                     ? 'Timer Stopped'
                     : 'Keep Going',
                   action: () => {},
@@ -1204,11 +1204,11 @@ export function TimerControls({
               ]
             );
 
-            if (customTimerSettings.playCompletionSound) {
+            if (customTimerSettings?.playCompletionSound) {
               playNotificationSound();
             }
 
-            if (customTimerSettings.autoStopAtTarget) {
+            if (customTimerSettings?.autoStopAtTarget) {
               setIsRunning(false);
               // Optionally stop the session completely
               // stopTimer();
@@ -1217,7 +1217,7 @@ export function TimerControls({
         }
 
         // Check for break reminders (if enabled)
-        if (customTimerSettings.enableBreakReminders) {
+        if (customTimerSettings?.enableBreakReminders) {
           checkBreakReminders();
         }
       }, 1000);
@@ -1340,8 +1340,8 @@ export function TimerControls({
         title.length > 2
     );
 
-    if (matchingTask && title.length > 2) {
-      setSelectedTaskId(matchingTask.id!);
+    if (matchingTask && matchingTask.id && title.length > 2) {
+      setSelectedTaskId(matchingTask.id);
       setShowTaskSuggestion(false);
     } else if (
       title.length > 2 &&
@@ -1457,8 +1457,8 @@ export function TimerControls({
   const startTimer = async () => {
     if (sessionMode === 'task' && selectedTaskId && selectedTaskId !== 'none') {
       const selectedTask = tasks.find((t) => t.id === selectedTaskId);
-      if (selectedTask) {
-        await startTimerWithTask(selectedTaskId, selectedTask.name!);
+      if (selectedTask && selectedTask.name) {
+        await startTimerWithTask(selectedTaskId, selectedTask.name);
         return;
       }
     }
@@ -1506,16 +1506,16 @@ export function TimerControls({
         startPomodoroSession('focus');
       } else if (timerMode === 'custom') {
         // Initialize custom timer based on type
-        if (customTimerSettings.type === 'traditional-countdown') {
+        if (customTimerSettings?.type === 'traditional-countdown') {
           const countdownDuration =
-            (customTimerSettings.countdownDuration || 25) * 60;
+            (customTimerSettings?.countdownDuration || 25) * 60;
           setCountdownState((prev) => ({
             ...prev,
             targetTime: countdownDuration,
             remainingTime: countdownDuration,
             sessionType: 'focus',
           }));
-        } else if (customTimerSettings.type === 'enhanced-stopwatch') {
+        } else if (customTimerSettings?.type === 'enhanced-stopwatch') {
           // Reset enhanced stopwatch tracking
           updateCurrentBreakState({
             lastIntervalBreakTime: Date.now(),
@@ -2064,7 +2064,7 @@ export function TimerControls({
           </DialogHeader>
           <div className="space-y-4">
             {/* Timer Type Specific Settings */}
-            {customTimerSettings.type === 'enhanced-stopwatch' && (
+            {customTimerSettings?.type === 'enhanced-stopwatch' && (
               <div className="space-y-3">
                 <h4 className="font-medium text-sm">
                   Enhanced Stopwatch Settings
@@ -2076,7 +2076,7 @@ export function TimerControls({
                       type="number"
                       min="10"
                       max="480"
-                      value={customTimerSettings.targetDuration}
+                      value={customTimerSettings?.targetDuration}
                       onChange={(e) =>
                         setCustomTimerSettings((prev) => ({
                           ...prev,
@@ -2091,7 +2091,7 @@ export function TimerControls({
                       type="number"
                       min="5"
                       max="120"
-                      value={customTimerSettings.intervalFrequency}
+                      value={customTimerSettings?.intervalFrequency}
                       onChange={(e) =>
                         setCustomTimerSettings((prev) => ({
                           ...prev,
@@ -2107,7 +2107,7 @@ export function TimerControls({
                     type="number"
                     min="1"
                     max="30"
-                    value={customTimerSettings.intervalBreakDuration}
+                    value={customTimerSettings?.intervalBreakDuration}
                     onChange={(e) =>
                       setCustomTimerSettings((prev) => ({
                         ...prev,
@@ -2120,7 +2120,7 @@ export function TimerControls({
                   <Label>Auto-stop at target</Label>
                   <input
                     type="checkbox"
-                    checked={customTimerSettings.autoStopAtTarget}
+                    checked={customTimerSettings?.autoStopAtTarget}
                     onChange={(e) =>
                       setCustomTimerSettings((prev) => ({
                         ...prev,
@@ -2133,7 +2133,7 @@ export function TimerControls({
                   <Label>Target notifications</Label>
                   <input
                     type="checkbox"
-                    checked={customTimerSettings.enableTargetNotification}
+                    checked={customTimerSettings?.enableTargetNotification}
                     onChange={(e) =>
                       setCustomTimerSettings((prev) => ({
                         ...prev,
@@ -2145,7 +2145,7 @@ export function TimerControls({
               </div>
             )}
 
-            {customTimerSettings.type === 'traditional-countdown' && (
+            {customTimerSettings?.type === 'traditional-countdown' && (
               <div className="space-y-3">
                 <h4 className="font-medium text-sm">
                   Traditional Countdown Settings
@@ -2156,7 +2156,7 @@ export function TimerControls({
                     type="number"
                     min="1"
                     max="480"
-                    value={customTimerSettings.countdownDuration}
+                    value={customTimerSettings?.countdownDuration}
                     onChange={(e) =>
                       setCustomTimerSettings((prev) => ({
                         ...prev,
@@ -2169,7 +2169,7 @@ export function TimerControls({
                   <Label>Auto-restart</Label>
                   <input
                     type="checkbox"
-                    checked={customTimerSettings.autoRestart}
+                    checked={customTimerSettings?.autoRestart}
                     onChange={(e) =>
                       setCustomTimerSettings((prev) => ({
                         ...prev,
@@ -2182,7 +2182,7 @@ export function TimerControls({
                   <Label>Show time remaining</Label>
                   <input
                     type="checkbox"
-                    checked={customTimerSettings.showTimeRemaining}
+                    checked={customTimerSettings?.showTimeRemaining}
                     onChange={(e) =>
                       setCustomTimerSettings((prev) => ({
                         ...prev,
@@ -2200,7 +2200,7 @@ export function TimerControls({
                 <Label>Enable break reminders</Label>
                 <input
                   type="checkbox"
-                  checked={customTimerSettings.enableBreakReminders}
+                  checked={customTimerSettings?.enableBreakReminders}
                   onChange={(e) =>
                     setCustomTimerSettings((prev) => ({
                       ...prev,
@@ -2221,7 +2221,7 @@ export function TimerControls({
                 <Label>Play completion sound</Label>
                 <input
                   type="checkbox"
-                  checked={customTimerSettings.playCompletionSound}
+                  checked={customTimerSettings?.playCompletionSound}
                   onChange={(e) =>
                     setCustomTimerSettings((prev) => ({
                       ...prev,
@@ -2234,7 +2234,7 @@ export function TimerControls({
                 <Label>Browser notifications</Label>
                 <input
                   type="checkbox"
-                  checked={customTimerSettings.showNotifications}
+                  checked={customTimerSettings?.showNotifications}
                   onChange={(e) =>
                     setCustomTimerSettings((prev) => ({
                       ...prev,
@@ -2251,7 +2251,7 @@ export function TimerControls({
                 <Label>Motivational messages</Label>
                 <input
                   type="checkbox"
-                  checked={customTimerSettings.enableMotivationalMessages}
+                  checked={customTimerSettings?.enableMotivationalMessages}
                   onChange={(e) =>
                     setCustomTimerSettings((prev) => ({
                       ...prev,
@@ -2770,11 +2770,11 @@ export function TimerControls({
               {timerMode === 'pomodoro' &&
                 `Focus for ${pomodoroSettings.focusTime}min, break for ${pomodoroSettings.shortBreakTime}min`}
               {timerMode === 'custom' &&
-                customTimerSettings.type === 'enhanced-stopwatch' &&
-                `Enhanced stopwatch with ${customTimerSettings.targetDuration}min target${customTimerSettings.enableIntervalBreaks ? `, breaks every ${customTimerSettings.intervalFrequency}min` : ''}`}
+                customTimerSettings?.type === 'enhanced-stopwatch' &&
+                `Enhanced stopwatch with ${customTimerSettings?.targetDuration}min target${customTimerSettings?.enableIntervalBreaks ? `, breaks every ${customTimerSettings?.intervalFrequency}min` : ''}`}
               {timerMode === 'custom' &&
-                customTimerSettings.type === 'traditional-countdown' &&
-                `Traditional countdown for ${customTimerSettings.countdownDuration}min${customTimerSettings.autoRestart ? ' (auto-restart)' : ''}`}
+                customTimerSettings?.type === 'traditional-countdown' &&
+                `Traditional countdown for ${customTimerSettings?.countdownDuration}min${customTimerSettings?.autoRestart ? ' (auto-restart)' : ''}`}
             </span>
             <div className="flex flex-wrap gap-2 text-xs">
               <span className="rounded bg-muted px-1.5 py-0.5">
@@ -2801,18 +2801,18 @@ export function TimerControls({
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-purple-100 dark:bg-purple-900/20">
-                  {customTimerSettings.type === 'enhanced-stopwatch'
+                  {customTimerSettings?.type === 'enhanced-stopwatch'
                     ? '⏱️'
                     : '⏲️'}
                 </div>
                 <div>
                   <h3 className="font-medium text-sm">
-                    {customTimerSettings.type === 'enhanced-stopwatch'
+                    {customTimerSettings?.type === 'enhanced-stopwatch'
                       ? 'Enhanced Stopwatch'
                       : 'Traditional Countdown'}
                   </h3>
                   <p className="text-muted-foreground text-xs">
-                    {customTimerSettings.type === 'enhanced-stopwatch'
+                    {customTimerSettings?.type === 'enhanced-stopwatch'
                       ? 'Target-based with interval breaks'
                       : 'Simple countdown timer'}
                   </p>
@@ -2824,7 +2824,7 @@ export function TimerControls({
             <div className="flex gap-2">
               <Button
                 variant={
-                  customTimerSettings.type === 'enhanced-stopwatch'
+                  customTimerSettings?.type === 'enhanced-stopwatch'
                     ? 'default'
                     : 'outline'
                 }
@@ -2860,7 +2860,7 @@ export function TimerControls({
               </Button>
               <Button
                 variant={
-                  customTimerSettings.type === 'traditional-countdown'
+                  customTimerSettings?.type === 'traditional-countdown'
                     ? 'default'
                     : 'outline'
                 }
@@ -2897,7 +2897,7 @@ export function TimerControls({
             </div>
 
             {/* Essential Settings Only - Interval Breaks for Enhanced Stopwatch */}
-            {customTimerSettings.type === 'enhanced-stopwatch' && (
+            {customTimerSettings?.type === 'enhanced-stopwatch' && (
               <div className="rounded-md bg-muted/30 p-3">
                 <div className="flex items-center justify-between">
                   <span className="text-muted-foreground text-xs">
@@ -2906,7 +2906,7 @@ export function TimerControls({
                   <div className="flex items-center gap-2">
                     <input
                       type="checkbox"
-                      checked={customTimerSettings.enableIntervalBreaks}
+                      checked={customTimerSettings?.enableIntervalBreaks}
                       onChange={(e) => {
                         if (sessionProtection.isActive) {
                           toast.error(
@@ -2936,9 +2936,9 @@ export function TimerControls({
                           : 'Enable interval breaks'
                       }
                     />
-                    {customTimerSettings.enableIntervalBreaks && (
+                    {customTimerSettings?.enableIntervalBreaks && (
                       <span className="text-muted-foreground text-xs">
-                        every {customTimerSettings.intervalFrequency}min
+                        every {customTimerSettings?.intervalFrequency}min
                       </span>
                     )}
                   </div>
@@ -2997,7 +2997,7 @@ export function TimerControls({
                   >
                     {timerMode === 'pomodoro' ||
                     (timerMode === 'custom' &&
-                      customTimerSettings.type === 'traditional-countdown')
+                      customTimerSettings?.type === 'traditional-countdown')
                       ? formatTime(countdownState.remainingTime)
                       : formatTime(elapsedTime)}
                   </div>
@@ -3097,14 +3097,14 @@ export function TimerControls({
                       </span>
                     ) : timerMode === 'custom' ? (
                       <span>
-                        {customTimerSettings.type === 'traditional-countdown'
+                        {customTimerSettings?.type === 'traditional-countdown'
                           ? countdownState.remainingTime > 0
                             ? `⏲️ ${Math.floor(countdownState.remainingTime / 60)}:${(countdownState.remainingTime % 60).toString().padStart(2, '0')} remaining`
                             : 'Countdown complete!'
-                          : customTimerSettings.type === 'enhanced-stopwatch'
+                          : customTimerSettings?.type === 'enhanced-stopwatch'
                             ? hasReachedTarget
-                              ? `🎯 Target achieved! (${customTimerSettings.targetDuration || 60}min)`
-                              : `⏱️ Enhanced Stopwatch ${customTimerSettings.targetDuration ? `(target: ${customTimerSettings.targetDuration}min)` : ''}`
+                              ? `🎯 Target achieved! (${customTimerSettings?.targetDuration || 60}min)`
+                              : `⏱️ Enhanced Stopwatch ${customTimerSettings?.targetDuration ? `(target: ${customTimerSettings?.targetDuration}min)` : ''}`
                             : '⏱️ Custom Timer'}
                       </span>
                     ) : (
