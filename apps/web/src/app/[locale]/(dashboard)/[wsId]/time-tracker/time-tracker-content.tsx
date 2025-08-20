@@ -890,7 +890,7 @@ export default function TimeTrackerContent({
           >
             <AccordionItem value="item-1">
               <AccordionTrigger>
-                <div className="flex items-center justify-between">
+                <div className="flex flex-1 items-center justify-between">
                   <h3 className="text-sm font-medium text-foreground">
                     ⚡ Quick Actions
                   </h3>
