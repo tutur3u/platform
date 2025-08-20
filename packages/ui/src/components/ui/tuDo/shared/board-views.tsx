@@ -1,16 +1,15 @@
 'use client';
 
+import { useQueryClient } from '@tanstack/react-query';
+import type { Task } from '@tuturuuu/types/primitives/Task';
+import type { TaskBoard } from '@tuturuuu/types/primitives/TaskBoard';
+import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import { KanbanBoard } from '@tuturuuu/ui/tuDo/boards/boardId/kanban';
 import { StatusGroupedBoard } from '@tuturuuu/ui/tuDo/boards/boardId/status-grouped-board';
 import { BoardHeader } from '@tuturuuu/ui/tuDo/shared/board-header';
 import { BoardSummary } from '@tuturuuu/ui/tuDo/shared/board-summary';
 import { ListView } from '@tuturuuu/ui/tuDo/shared/list-view';
-import { useQueryClient } from '@tanstack/react-query';
-import type { Task } from '@tuturuuu/types/primitives/Task';
-import type { TaskBoard } from '@tuturuuu/types/primitives/TaskBoard';
-import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import { useMemo, useState } from 'react';
-
 
 export type ViewType = 'kanban' | 'status-grouped' | 'list';
 

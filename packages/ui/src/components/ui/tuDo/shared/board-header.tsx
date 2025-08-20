@@ -1,4 +1,3 @@
-import type { ViewType } from '@tuturuuu/ui/tuDo/shared/board-views';
 import { useQueryClient } from '@tanstack/react-query';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { Task } from '@tuturuuu/types/primitives/Task';
@@ -43,6 +42,7 @@ import {
 } from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
 import { Separator } from '@tuturuuu/ui/separator';
+import type { ViewType } from '@tuturuuu/ui/tuDo/shared/board-views';
 import { cn } from '@tuturuuu/utils/format';
 import { useRouter } from 'next/navigation';
 import { useMemo, useState } from 'react';
@@ -305,7 +305,8 @@ export function BoardHeader({ board, currentView, onViewChange }: Props) {
                     <AlertDialogTitle>Are you sure?</AlertDialogTitle>
                     <AlertDialogDescription>
                       This action cannot be undone. This will permanently delete
-                      the board &quot;{board.name}&quot; and all of its tasks and lists.
+                      the board &quot;{board.name}&quot; and all of its tasks
+                      and lists.
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>

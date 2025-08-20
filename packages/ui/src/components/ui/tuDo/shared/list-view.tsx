@@ -1,8 +1,5 @@
 'use client';
 
-import { TaskEditDialog } from '@tuturuuu/ui/tuDo/shared/task-edit-dialog';
-import { getTagColorStyling } from '@tuturuuu/utils/tag-utils';
-import { getTasks, priorityCompare } from '@tuturuuu/utils/task-helper';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { TaskPriority } from '@tuturuuu/types/primitives/Priority';
@@ -86,7 +83,10 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@tuturuuu/ui/tooltip';
+import { TaskEditDialog } from '@tuturuuu/ui/tuDo/shared/task-edit-dialog';
 import { cn } from '@tuturuuu/utils/format';
+import { getTagColorStyling } from '@tuturuuu/utils/tag-utils';
+import { getTasks, priorityCompare } from '@tuturuuu/utils/task-helper';
 import {
   addDays,
   format,
@@ -1485,8 +1485,9 @@ export function ListView({
                                 </li>
                               </ul>
                               <p className="text-xs text-muted-foreground">
-                                The amber dot indicates a task in a &quot;Done&quot; list
-                                that hasn&apos;t been individually checked.
+                                The amber dot indicates a task in a
+                                &quot;Done&quot; list that hasn&apos;t been
+                                individually checked.
                               </p>
                             </div>
                           </PopoverContent>

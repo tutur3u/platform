@@ -1,12 +1,16 @@
 'use client';
 
-import { BoardViews } from '@tuturuuu/ui/tuDo/shared/board-views';
-import { getTaskBoard, getTaskLists, getTasks } from '@tuturuuu/utils/task-helper';
 import { useQuery } from '@tanstack/react-query';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskBoard } from '@tuturuuu/types/primitives/TaskBoard';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
+import { BoardViews } from '@tuturuuu/ui/tuDo/shared/board-views';
+import {
+  getTaskBoard,
+  getTaskLists,
+  getTasks,
+} from '@tuturuuu/utils/task-helper';
 import { useParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 

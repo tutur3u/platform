@@ -1,11 +1,15 @@
-import { BoardClient } from '@tuturuuu/ui/tuDo/shared/board-client';
-import { getTaskBoard, getTaskLists, getTasks } from '@tuturuuu/utils/task-helper';
 import { createClient } from '@tuturuuu/supabase/next/server';
+import { BoardClient } from '@tuturuuu/ui/tuDo/shared/board-client';
+import {
+  getTaskBoard,
+  getTaskLists,
+  getTasks,
+} from '@tuturuuu/utils/task-helper';
 import { notFound, redirect } from 'next/navigation';
 
 interface Props {
-    wsId: string;
-    boardId: string;
+  wsId: string;
+  boardId: string;
 }
 
 export default async function TaskBoardPage({ wsId, boardId }: Props) {

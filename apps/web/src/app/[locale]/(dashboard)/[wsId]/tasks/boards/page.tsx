@@ -12,17 +12,11 @@ interface Props {
   }>;
 }
 
-export default async function ProjectsPage({
-  params,
-  searchParams,
-}: Props) {
+export default async function ProjectsPage({ params, searchParams }: Props) {
   const { wsId: id } = await params;
   const sp = await searchParams;
   const workspace = await getWorkspace(id);
   const wsId = workspace?.id;
 
-
-  return (
-    <WorkspaceProjectsPage wsId={wsId} searchParams={sp} />
-  )
+  return <WorkspaceProjectsPage wsId={wsId} searchParams={sp} />;
 }

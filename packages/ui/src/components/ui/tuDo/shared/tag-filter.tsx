@@ -1,7 +1,5 @@
 'use client';
 
-import { getTagColorStyling } from '@tuturuuu/utils/tag-utils';
-import { useBoardTaskTags } from '@tuturuuu/utils/task-helper';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -16,6 +14,8 @@ import {
 import { useToast } from '@tuturuuu/ui/hooks/use-toast';
 import { Filter, Tag, X } from '@tuturuuu/ui/icons';
 import { cn } from '@tuturuuu/utils/format';
+import { getTagColorStyling } from '@tuturuuu/utils/tag-utils';
+import { useBoardTaskTags } from '@tuturuuu/utils/task-helper';
 import { useState } from 'react';
 
 interface TagFilterProps {

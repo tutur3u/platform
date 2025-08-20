@@ -1,8 +1,7 @@
 'use client';
 
-import { TaskBoardForm } from '@tuturuuu/ui/tuDo/boards/form';
-import type { EnhancedTaskBoard } from '@tuturuuu/types/primitives/TaskBoard';
 import type { Row } from '@tanstack/react-table';
+import type { EnhancedTaskBoard } from '@tuturuuu/types/primitives/TaskBoard';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -24,6 +23,7 @@ import {
 } from '@tuturuuu/ui/dropdown-menu';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import { Ellipsis, Eye } from '@tuturuuu/ui/icons';
+import { TaskBoardForm } from '@tuturuuu/ui/tuDo/boards/form';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -123,9 +123,9 @@ export function ProjectRowActions({ row }: ProjectRowActionsProps) {
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Task Board</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete &quot;{data.name.slice(0, 20)}...&quot;?
-              This action cannot be undone and will permanently delete the task
-              board and all its tasks.
+              Are you sure you want to delete &quot;{data.name.slice(0, 20)}
+              ...&quot;? This action cannot be undone and will permanently
+              delete the task board and all its tasks.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

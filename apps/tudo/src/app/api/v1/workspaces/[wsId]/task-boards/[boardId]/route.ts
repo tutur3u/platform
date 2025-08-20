@@ -1,3 +1,3 @@
-import { PUT, DELETE } from '@tuturuuu/apis/tuDo/board/boardId/route';
+import { DELETE, PUT } from '@tuturuuu/apis/tuDo/board/boardId/route';
 
 export { PUT, DELETE };

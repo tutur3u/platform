@@ -1,13 +1,13 @@
 'use client';
 
-import { getTagColorStyling } from '@tuturuuu/utils/tag-utils';
-import { useBoardTaskTags } from '@tuturuuu/utils/task-helper';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { useToast } from '@tuturuuu/ui/hooks/use-toast';
 import { Plus, Tag, X } from '@tuturuuu/ui/icons';
 import { cn } from '@tuturuuu/utils/format';
+import { getTagColorStyling } from '@tuturuuu/utils/tag-utils';
+import { useBoardTaskTags } from '@tuturuuu/utils/task-helper';
 import { type KeyboardEvent, useEffect, useRef, useState } from 'react';
 
 interface TaskTagInputProps {

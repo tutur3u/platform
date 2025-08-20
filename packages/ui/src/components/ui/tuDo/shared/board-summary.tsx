@@ -1,6 +1,5 @@
 'use client';
 
-import { getTaskLists, getTasks } from '@tuturuuu/utils/task-helper';
 import { useQuery } from '@tanstack/react-query';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { TaskBoard } from '@tuturuuu/types/primitives/TaskBoard';
@@ -13,6 +12,7 @@ import {
 } from '@tuturuuu/ui/icons';
 import { Progress } from '@tuturuuu/ui/progress';
 import { cn } from '@tuturuuu/utils/format';
+import { getTaskLists, getTasks } from '@tuturuuu/utils/task-helper';
 import { format } from 'date-fns';
 
 interface Props {

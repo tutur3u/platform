@@ -1,8 +1,8 @@
 /**
  * Utility functions for task management and calculations
  */
-import { TaskPriority } from '@tuturuuu/types/primitives/Priority';
 import type { Active, Over } from '@dnd-kit/core';
+import { TaskPriority } from '@tuturuuu/types/primitives/Priority';
 
 interface Task {
   id: string;
@@ -52,7 +52,6 @@ export function hasDraggableData(
 
   return data.type === 'Task' || data.type === 'Column';
 }
-
 
 /**
  * Calculate the number of days a task is overdue
@@ -238,4 +237,3 @@ export function getFilteredMetrics(
     avgProgress,
   };
 }
-

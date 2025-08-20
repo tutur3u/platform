@@ -1,9 +1,5 @@
 'use client';
 
-import {
-  useCreateBoardWithTemplate,
-  useStatusTemplates,
-} from '@tuturuuu/utils/task-helper';
 import type { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
 import type { TaskBoard } from '@tuturuuu/types/primitives/TaskBoard';
 import { Badge } from '@tuturuuu/ui/badge';
@@ -36,6 +32,10 @@ import { ScrollArea } from '@tuturuuu/ui/scroll-area';
 import { Separator } from '@tuturuuu/ui/separator';
 import { Skeleton } from '@tuturuuu/ui/skeleton';
 import { cn } from '@tuturuuu/utils/format';
+import {
+  useCreateBoardWithTemplate,
+  useStatusTemplates,
+} from '@tuturuuu/utils/task-helper';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import React from 'react';
