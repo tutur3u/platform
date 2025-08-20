@@ -41,8 +41,6 @@ import {
   Info,
   MoreHorizontal,
   Plus,
-  Settings,
-  Target,
   Timer,
   Trash2,
   TrendingUp,
