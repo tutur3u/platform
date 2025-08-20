@@ -24,6 +24,12 @@ import { priorityCompare } from '@/lib/task-helper';
 import { useQuery } from '@tanstack/react-query';
 import type { TimeTrackingCategory } from '@tuturuuu/types/db';
 import type { TaskPriority } from '@tuturuuu/types/primitives/Priority';
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from '@tuturuuu/ui/accordion';
 import { Alert, AlertDescription } from '@tuturuuu/ui/alert';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -876,371 +882,388 @@ export default function TimeTrackerContent({
 
         {/* Enhanced Quick Actions - Single Row */}
         {!isViewingOtherUser && (
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <h3 className="text-sm font-medium text-foreground">
-                ⚡ Quick Actions
-              </h3>
-              <div className="text-xs text-muted-foreground">
-                {(() => {
-                  const hour = new Date().getHours();
-                  const isPeakTime =
-                    (hour >= 9 && hour <= 11) || (hour >= 14 && hour <= 16);
-                  return isPeakTime
-                    ? '🧠 Peak focus time'
-                    : '📈 Building momentum';
-                })()}
-              </div>
-            </div>
-
-            {/* Action Grid with proper spacing to prevent cutoff */}
-            <div className="grid grid-cols-2 gap-3 p-1 sm:grid-cols-4 lg:gap-4">
-              {/* Continue Last Session */}
-              <button
-                onClick={() => {
-                  if (!recentSessions[0]) {
-                    toast.info('No recent session to continue');
-                    return;
-                  }
-                  if (isRunning) {
-                    toast.info('Timer is already running');
-                    return;
-                  }
-                  setShowContinueConfirm(true);
-                }}
-                disabled={!recentSessions[0] || isRunning}
-                className={cn(
-                  'group relative rounded-lg border p-3 text-left transition-all duration-300',
-                  'hover:shadow-lg hover:shadow-blue-500/20 active:scale-[0.98]',
-                  recentSessions[0] && !isRunning
-                    ? 'border-blue-200/60 bg-gradient-to-br from-blue-50 to-blue-100/50 hover:-translate-y-1 dark:border-blue-800/60 dark:from-blue-950/30 dark:to-blue-900/20'
-                    : 'cursor-not-allowed border-muted bg-muted/30 opacity-60'
-                )}
-              >
-                <div className="flex items-start gap-2">
-                  <div
+          // <div className="space-y-3">
+          <Accordion
+            collapsible
+            className="w-full space-y-3"
+            type="single"
+          >
+            <AccordionItem value="item-1">
+              <AccordionTrigger>
+                <div className="flex items-center justify-between">
+                  <h3 className="text-sm font-medium text-foreground">
+                    ⚡ Quick Actions
+                  </h3>
+                  <div className="text-xs text-muted-foreground">
+                    {(() => {
+                      const hour = new Date().getHours();
+                      const isPeakTime =
+                        (hour >= 9 && hour <= 11) || (hour >= 14 && hour <= 16);
+                      return isPeakTime
+                        ? '🧠 Peak focus time'
+                        : '📈 Building momentum';
+                    })()}
+                  </div>
+                </div>
+              </AccordionTrigger>
+              <AccordionContent>
+                {/* Action Grid with proper spacing to prevent cutoff */}
+                <div className="grid grid-cols-2 gap-3 p-1 sm:grid-cols-4 lg:gap-4">
+                  {/* Continue Last Session */}
+                  <button
+                    onClick={() => {
+                      if (!recentSessions[0]) {
+                        toast.info('No recent session to continue');
+                        return;
+                      }
+                      if (isRunning) {
+                        toast.info('Timer is already running');
+                        return;
+                      }
+                      setShowContinueConfirm(true);
+                    }}
+                    disabled={!recentSessions[0] || isRunning}
                     className={cn(
-                      'flex-shrink-0 rounded-full p-1.5 transition-colors',
+                      'group relative rounded-lg border p-3 text-left transition-all duration-300',
+                      'hover:shadow-lg hover:shadow-blue-500/20 active:scale-[0.98]',
                       recentSessions[0] && !isRunning
-                        ? 'bg-blue-500/20 group-hover:bg-blue-500/30'
-                        : 'bg-muted-foreground/20'
+                        ? 'border-blue-200/60 bg-gradient-to-br from-blue-50 to-blue-100/50 hover:-translate-y-1 dark:border-blue-800/60 dark:from-blue-950/30 dark:to-blue-900/20'
+                        : 'cursor-not-allowed border-muted bg-muted/30 opacity-60'
                     )}
                   >
-                    <RotateCcw
-                      className={cn(
-                        'h-3 w-3 transition-transform group-hover:rotate-12',
-                        recentSessions[0] && !isRunning
-                          ? 'text-blue-600 dark:text-blue-400'
-                          : 'text-muted-foreground'
-                      )}
-                    />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p
-                      className={cn(
-                        'text-xs font-medium',
-                        recentSessions[0] && !isRunning
-                          ? 'text-blue-700 dark:text-blue-300'
-                          : 'text-muted-foreground'
-                      )}
-                    >
-                      Continue Last
-                    </p>
-                    {recentSessions[0] ? (
-                      <>
+                    <div className="flex items-start gap-2">
+                      <div
+                        className={cn(
+                          'flex-shrink-0 rounded-full p-1.5 transition-colors',
+                          recentSessions[0] && !isRunning
+                            ? 'bg-blue-500/20 group-hover:bg-blue-500/30'
+                            : 'bg-muted-foreground/20'
+                        )}
+                      >
+                        <RotateCcw
+                          className={cn(
+                            'h-3 w-3 transition-transform group-hover:rotate-12',
+                            recentSessions[0] && !isRunning
+                              ? 'text-blue-600 dark:text-blue-400'
+                              : 'text-muted-foreground'
+                          )}
+                        />
+                      </div>
+                      <div className="min-w-0 flex-1">
                         <p
-                          className="line-clamp-2 text-sm font-bold text-blue-900 dark:text-blue-100"
-                          title={recentSessions[0].title}
+                          className={cn(
+                            'text-xs font-medium',
+                            recentSessions[0] && !isRunning
+                              ? 'text-blue-700 dark:text-blue-300'
+                              : 'text-muted-foreground'
+                          )}
                         >
-                          {recentSessions[0].title}
+                          Continue Last
                         </p>
-                        {recentSessions[0].category && (
-                          <div className="mt-1 flex items-center gap-1">
-                            <div
-                              className={cn(
-                                'h-2 w-2 rounded-full',
-                                recentSessions[0].category.color
-                                  ? `bg-dynamic-${recentSessions[0].category.color.toLowerCase()}/70`
-                                  : 'bg-blue-500/70'
-                              )}
-                            />
-                            <span className="truncate text-xs text-blue-700/80 dark:text-blue-300/80">
-                              {recentSessions[0].category.name}
-                            </span>
-                          </div>
+                        {recentSessions[0] ? (
+                          <>
+                            <p
+                              className="line-clamp-2 text-sm font-bold text-blue-900 dark:text-blue-100"
+                              title={recentSessions[0].title}
+                            >
+                              {recentSessions[0].title}
+                            </p>
+                            {recentSessions[0].category && (
+                              <div className="mt-1 flex items-center gap-1">
+                                <div
+                                  className={cn(
+                                    'h-2 w-2 rounded-full',
+                                    recentSessions[0].category.color
+                                      ? `bg-dynamic-${recentSessions[0].category.color.toLowerCase()}/70`
+                                      : 'bg-blue-500/70'
+                                  )}
+                                />
+                                <span className="truncate text-xs text-blue-700/80 dark:text-blue-300/80">
+                                  {recentSessions[0].category.name}
+                                </span>
+                              </div>
+                            )}
+                            {/* Focus Score Badge */}
+                            {recentSessions[0] && (
+                              <div className="mt-1 flex items-center gap-1">
+                                <div className="h-1 w-8 rounded-full bg-blue-200 dark:bg-blue-900/50">
+                                  <div
+                                    className="h-1 rounded-full bg-blue-500 transition-all dark:bg-blue-400"
+                                    style={{
+                                      width: `${Math.round(calculateFocusScore(recentSessions[0]))}%`,
+                                    }}
+                                  />
+                                </div>
+                                <span className="text-xs font-medium text-blue-600 dark:text-blue-400">
+                                  Focus:{' '}
+                                  {Math.round(
+                                    calculateFocusScore(recentSessions[0])
+                                  )}
+                                  %
+                                </span>
+                              </div>
+                            )}
+                          </>
+                        ) : (
+                          <p className="text-sm font-bold text-muted-foreground">
+                            No recent session
+                          </p>
                         )}
-                        {/* Focus Score Badge */}
-                        {recentSessions[0] && (
-                          <div className="mt-1 flex items-center gap-1">
-                            <div className="h-1 w-8 rounded-full bg-blue-200 dark:bg-blue-900/50">
-                              <div
-                                className="h-1 rounded-full bg-blue-500 transition-all dark:bg-blue-400"
-                                style={{
-                                  width: `${Math.round(calculateFocusScore(recentSessions[0]))}%`,
-                                }}
-                              />
-                            </div>
-                            <span className="text-xs font-medium text-blue-600 dark:text-blue-400">
-                              Focus:{' '}
-                              {Math.round(
-                                calculateFocusScore(recentSessions[0])
-                              )}
-                              %
-                            </span>
-                          </div>
-                        )}
-                      </>
-                    ) : (
-                      <p className="text-sm font-bold text-muted-foreground">
-                        No recent session
-                      </p>
+                      </div>
+                    </div>
+                    {recentSessions[0] && (
+                      <div className="absolute top-2 right-2 opacity-0 transition-opacity group-hover:opacity-100">
+                        <span className="text-lg">🔄</span>
+                      </div>
                     )}
-                  </div>
-                </div>
-                {recentSessions[0] && (
-                  <div className="absolute top-2 right-2 opacity-0 transition-opacity group-hover:opacity-100">
-                    <span className="text-lg">🔄</span>
-                  </div>
-                )}
-              </button>
+                  </button>
 
-              {/* Next Task */}
-              <button
-                onClick={async () => {
-                  await fetchNextTasks();
+                  {/* Next Task */}
+                  <button
+                    onClick={async () => {
+                      await fetchNextTasks();
 
-                  if (availableTasks.length === 0) {
-                    // No tasks available - show overlay to create tasks or view boards
-                    setShowTaskSelector(true);
-                    return;
-                  }
-
-                  if (availableTasks.length === 1) {
-                    // Single task - auto-start
-                    const task = availableTasks[0];
-                    const isUnassigned =
-                      !task || !task.assignees || task.assignees.length === 0;
-
-                    try {
-                      // If task is unassigned, assign to current user first
-                      if (!task) return;
-                      if (isUnassigned) {
-                        const { createClient } = await import(
-                          '@tuturuuu/supabase/next/client'
-                        );
-                        const supabase = createClient();
-
-                        const { error: assignError } = await supabase
-                          .from('task_assignees')
-                          .insert({
-                            task_id: task.id,
-                            user_id: currentUserId,
-                          });
-
-                        if (assignError) {
-                          console.error('Task assignment error:', assignError);
-                          throw new Error(
-                            assignError.message || 'Failed to assign task'
-                          );
-                        }
-
-                        toast.success(
-                          `Assigned task "${task.name}" to yourself`
-                        );
+                      if (availableTasks.length === 0) {
+                        // No tasks available - show overlay to create tasks or view boards
+                        setShowTaskSelector(true);
+                        return;
                       }
 
-                      // Start session
-                      const response = await apiCall(
-                        `/api/v1/workspaces/${wsId}/time-tracking/sessions`,
-                        {
-                          method: 'POST',
-                          body: JSON.stringify({
-                            title: task.name,
-                            description:
-                              task.description || `Working on: ${task.name}`,
-                            task_id: task.id,
-                            category_id:
-                              categories.find((c) =>
-                                c.name.toLowerCase().includes('work')
-                              )?.id || null,
-                          }),
+                      if (availableTasks.length === 1) {
+                        // Single task - auto-start
+                        const task = availableTasks[0];
+                        const isUnassigned =
+                          !task ||
+                          !task.assignees ||
+                          task.assignees.length === 0;
+
+                        try {
+                          // If task is unassigned, assign to current user first
+                          if (!task) return;
+                          if (isUnassigned) {
+                            const { createClient } = await import(
+                              '@tuturuuu/supabase/next/client'
+                            );
+                            const supabase = createClient();
+
+                            const { error: assignError } = await supabase
+                              .from('task_assignees')
+                              .insert({
+                                task_id: task.id,
+                                user_id: currentUserId,
+                              });
+
+                            if (assignError) {
+                              console.error(
+                                'Task assignment error:',
+                                assignError
+                              );
+                              throw new Error(
+                                assignError.message || 'Failed to assign task'
+                              );
+                            }
+
+                            toast.success(
+                              `Assigned task "${task.name}" to yourself`
+                            );
+                          }
+
+                          // Start session
+                          const response = await apiCall(
+                            `/api/v1/workspaces/${wsId}/time-tracking/sessions`,
+                            {
+                              method: 'POST',
+                              body: JSON.stringify({
+                                title: task.name,
+                                description:
+                                  task.description ||
+                                  `Working on: ${task.name}`,
+                                task_id: task.id,
+                                category_id:
+                                  categories.find((c) =>
+                                    c.name.toLowerCase().includes('work')
+                                  )?.id || null,
+                              }),
+                            }
+                          );
+
+                          setCurrentSession(response.session);
+                          setIsRunning(true);
+                          setElapsedTime(0);
+                          await fetchData();
+
+                          toast.success(`Started: ${task.name}`);
+                        } catch (error) {
+                          console.error('Error starting task:', error);
+                          toast.error('Failed to start task session');
                         }
-                      );
-
-                      setCurrentSession(response.session);
-                      setIsRunning(true);
-                      setElapsedTime(0);
-                      await fetchData();
-
-                      toast.success(`Started: ${task.name}`);
-                    } catch (error) {
-                      console.error('Error starting task:', error);
-                      toast.error('Failed to start task session');
-                    }
-                  } else {
-                    // Multiple tasks - show selector
-                    setShowTaskSelector(true);
-                  }
-                }}
-                disabled={isRunning}
-                className={cn(
-                  'group relative rounded-lg border p-3 text-left transition-all duration-300',
-                  'hover:shadow-lg hover:shadow-purple-500/20 active:scale-[0.98]',
-                  !isRunning
-                    ? 'border-purple-200/60 bg-gradient-to-br from-purple-50 to-purple-100/50 hover:-translate-y-1 dark:border-purple-800/60 dark:from-purple-950/30 dark:to-purple-900/20'
-                    : 'cursor-not-allowed border-muted bg-muted/30 opacity-60'
-                )}
-              >
-                <div className="flex items-start gap-2">
-                  <div className="flex-shrink-0 rounded-full bg-purple-500/20 p-1.5 transition-colors group-hover:bg-purple-500/30">
-                    <CheckSquare className="h-3 w-3 text-purple-600 transition-transform group-hover:scale-110 dark:text-purple-400" />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-xs font-medium text-purple-700 dark:text-purple-300">
-                      Next Task
-                    </p>
-                    {nextTaskPreview ? (
-                      <>
-                        <p className="truncate text-sm font-bold text-purple-900 dark:text-purple-100">
-                          {nextTaskPreview.name}
-                        </p>
-                        <div className="flex items-center gap-1">
-                          <span
-                            className={cn(
-                              'inline-flex items-center rounded-full px-1.5 py-0.5 text-xs font-medium',
-                              nextTaskPreview.priority === 'critical'
-                                ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300'
-                                : nextTaskPreview.priority === 'high'
-                                  ? 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300'
-                                  : nextTaskPreview.priority === 'normal'
-                                    ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300'
-                                    : nextTaskPreview.priority === 'low'
-                                      ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300'
-                                      : 'bg-gray-100 text-gray-700 dark:bg-gray-900/30 dark:text-gray-300'
-                            )}
-                          >
-                            {nextTaskPreview.priority === 'critical'
-                              ? 'Urgent'
-                              : nextTaskPreview.priority === 'high'
-                                ? 'High'
-                                : nextTaskPreview.priority === 'normal'
-                                  ? 'Medium'
-                                  : nextTaskPreview.priority === 'low'
-                                    ? 'Low'
-                                    : 'No Priority'}
-                          </span>
-                          {nextTaskPreview.is_assigned_to_current_user ? (
-                            <span className="text-xs text-purple-600/80 dark:text-purple-400/80">
-                              • Assigned to you
-                            </span>
-                          ) : (
-                            <span className="text-xs text-purple-600/80 dark:text-purple-400/80">
-                              • Can assign to yourself
-                            </span>
-                          )}
-                        </div>
-                      </>
-                    ) : (
-                      <>
-                        <p className="text-sm font-bold text-purple-900 dark:text-purple-100">
-                          No tasks available
-                        </p>
-                        <p className="text-xs text-purple-600/80 dark:text-purple-400/80">
-                          Create or assign tasks
-                        </p>
-                      </>
+                      } else {
+                        // Multiple tasks - show selector
+                        setShowTaskSelector(true);
+                      }
+                    }}
+                    disabled={isRunning}
+                    className={cn(
+                      'group relative rounded-lg border p-3 text-left transition-all duration-300',
+                      'hover:shadow-lg hover:shadow-purple-500/20 active:scale-[0.98]',
+                      !isRunning
+                        ? 'border-purple-200/60 bg-gradient-to-br from-purple-50 to-purple-100/50 hover:-translate-y-1 dark:border-purple-800/60 dark:from-purple-950/30 dark:to-purple-900/20'
+                        : 'cursor-not-allowed border-muted bg-muted/30 opacity-60'
                     )}
-                  </div>
-                </div>
-                <div className="absolute top-2 right-2 opacity-0 transition-opacity group-hover:opacity-100">
-                  <span className="text-lg">🎯</span>
-                </div>
-              </button>
+                  >
+                    <div className="flex items-start gap-2">
+                      <div className="flex-shrink-0 rounded-full bg-purple-500/20 p-1.5 transition-colors group-hover:bg-purple-500/30">
+                        <CheckSquare className="h-3 w-3 text-purple-600 transition-transform group-hover:scale-110 dark:text-purple-400" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-xs font-medium text-purple-700 dark:text-purple-300">
+                          Next Task
+                        </p>
+                        {nextTaskPreview ? (
+                          <>
+                            <p className="truncate text-sm font-bold text-purple-900 dark:text-purple-100">
+                              {nextTaskPreview.name}
+                            </p>
+                            <div className="flex items-center gap-1">
+                              <span
+                                className={cn(
+                                  'inline-flex items-center rounded-full px-1.5 py-0.5 text-xs font-medium',
+                                  nextTaskPreview.priority === 'critical'
+                                    ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300'
+                                    : nextTaskPreview.priority === 'high'
+                                      ? 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300'
+                                      : nextTaskPreview.priority === 'normal'
+                                        ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300'
+                                        : nextTaskPreview.priority === 'low'
+                                          ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300'
+                                          : 'bg-gray-100 text-gray-700 dark:bg-gray-900/30 dark:text-gray-300'
+                                )}
+                              >
+                                {nextTaskPreview.priority === 'critical'
+                                  ? 'Urgent'
+                                  : nextTaskPreview.priority === 'high'
+                                    ? 'High'
+                                    : nextTaskPreview.priority === 'normal'
+                                      ? 'Medium'
+                                      : nextTaskPreview.priority === 'low'
+                                        ? 'Low'
+                                        : 'No Priority'}
+                              </span>
+                              {nextTaskPreview.is_assigned_to_current_user ? (
+                                <span className="text-xs text-purple-600/80 dark:text-purple-400/80">
+                                  • Assigned to you
+                                </span>
+                              ) : (
+                                <span className="text-xs text-purple-600/80 dark:text-purple-400/80">
+                                  • Can assign to yourself
+                                </span>
+                              )}
+                            </div>
+                          </>
+                        ) : (
+                          <>
+                            <p className="text-sm font-bold text-purple-900 dark:text-purple-100">
+                              No tasks available
+                            </p>
+                            <p className="text-xs text-purple-600/80 dark:text-purple-400/80">
+                              Create or assign tasks
+                            </p>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                    <div className="absolute top-2 right-2 opacity-0 transition-opacity group-hover:opacity-100">
+                      <span className="text-lg">🎯</span>
+                    </div>
+                  </button>
 
-              {/* Break Timer */}
-              <button
-                onClick={() => {
-                  // Scroll to timer controls and pre-fill with break session
-                  document
-                    .querySelector('[data-timer-controls]')
-                    ?.scrollIntoView({ behavior: 'smooth' });
+                  {/* Break Timer */}
+                  <button
+                    onClick={() => {
+                      // Scroll to timer controls and pre-fill with break session
+                      document
+                        .querySelector('[data-timer-controls]')
+                        ?.scrollIntoView({ behavior: 'smooth' });
 
-                  setTimeout(() => {
-                    const titleInput = document.querySelector(
-                      '[data-title-input]'
-                    ) as HTMLInputElement;
-                    if (titleInput) {
-                      titleInput.value = 'Break Time';
-                      titleInput.dispatchEvent(
-                        new Event('input', { bubbles: true })
+                      setTimeout(() => {
+                        const titleInput = document.querySelector(
+                          '[data-title-input]'
+                        ) as HTMLInputElement;
+                        if (titleInput) {
+                          titleInput.value = 'Break Time';
+                          titleInput.dispatchEvent(
+                            new Event('input', { bubbles: true })
+                          );
+                          titleInput.focus();
+                        }
+                      }, 300);
+
+                      toast.success(
+                        'Break session ready! Take 5-15 minutes to recharge.'
                       );
-                      titleInput.focus();
-                    }
-                  }, 300);
+                    }}
+                    disabled={isRunning}
+                    className={cn(
+                      'group relative rounded-lg border p-3 text-left transition-all duration-300',
+                      'hover:shadow-lg hover:shadow-green-500/20 active:scale-[0.98]',
+                      !isRunning
+                        ? 'border-green-200/60 bg-gradient-to-br from-green-50 to-green-100/50 hover:-translate-y-1 dark:border-green-800/60 dark:from-green-950/30 dark:to-green-900/20'
+                        : 'cursor-not-allowed border-muted bg-muted/30 opacity-60'
+                    )}
+                  >
+                    <div className="flex items-start gap-2">
+                      <div className="flex-shrink-0 rounded-full bg-green-500/20 p-1.5 transition-colors group-hover:bg-green-500/30">
+                        <Pause className="h-3 w-3 text-green-600 transition-transform group-hover:scale-110 dark:text-green-400" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-xs font-medium text-green-700 dark:text-green-300">
+                          Break Timer
+                        </p>
+                        <p className="text-sm font-bold text-green-900 dark:text-green-100">
+                          Take 5 min
+                        </p>
+                        <p className="text-xs text-green-600/80 dark:text-green-400/80">
+                          Recharge session
+                        </p>
+                      </div>
+                    </div>
+                    <div className="absolute top-2 right-2 opacity-0 transition-opacity group-hover:opacity-100">
+                      <span className="text-lg">☕</span>
+                    </div>
+                  </button>
 
-                  toast.success(
-                    'Break session ready! Take 5-15 minutes to recharge.'
-                  );
-                }}
-                disabled={isRunning}
-                className={cn(
-                  'group relative rounded-lg border p-3 text-left transition-all duration-300',
-                  'hover:shadow-lg hover:shadow-green-500/20 active:scale-[0.98]',
-                  !isRunning
-                    ? 'border-green-200/60 bg-gradient-to-br from-green-50 to-green-100/50 hover:-translate-y-1 dark:border-green-800/60 dark:from-green-950/30 dark:to-green-900/20'
-                    : 'cursor-not-allowed border-muted bg-muted/30 opacity-60'
-                )}
-              >
-                <div className="flex items-start gap-2">
-                  <div className="flex-shrink-0 rounded-full bg-green-500/20 p-1.5 transition-colors group-hover:bg-green-500/30">
-                    <Pause className="h-3 w-3 text-green-600 transition-transform group-hover:scale-110 dark:text-green-400" />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-xs font-medium text-green-700 dark:text-green-300">
-                      Break Timer
-                    </p>
-                    <p className="text-sm font-bold text-green-900 dark:text-green-100">
-                      Take 5 min
-                    </p>
-                    <p className="text-xs text-green-600/80 dark:text-green-400/80">
-                      Recharge session
-                    </p>
-                  </div>
+                  {/* Analytics Dashboard */}
+                  <button
+                    onClick={() => {
+                      setActiveTab('history');
+                    }}
+                    className="group relative rounded-lg border border-amber-200/60 bg-gradient-to-br from-amber-50 to-amber-100/50 p-3 text-left transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:shadow-amber-500/20 active:scale-[0.98] dark:border-amber-800/60 dark:from-amber-950/30 dark:to-amber-900/20"
+                  >
+                    <div className="flex items-start gap-2">
+                      <div className="flex-shrink-0 rounded-full bg-amber-500/20 p-1.5 transition-colors group-hover:bg-amber-500/30">
+                        <BarChart2 className="h-3 w-3 text-amber-600 transition-transform group-hover:scale-110 dark:text-amber-400" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-xs font-medium text-amber-700 dark:text-amber-300">
+                          Analytics
+                        </p>
+                        <p className="text-sm font-bold text-amber-900 dark:text-amber-100">
+                          Focus: {productivityMetrics.avgFocusScore}%
+                        </p>
+                        <p className="text-xs text-amber-600/80 dark:text-amber-400/80">
+                          {productivityMetrics.todaySessionCount} sessions today
+                        </p>
+                      </div>
+                    </div>
+                    <div className="absolute top-2 right-2 opacity-0 transition-opacity group-hover:opacity-100">
+                      <span className="text-lg">📊</span>
+                    </div>
+                  </button>
                 </div>
-                <div className="absolute top-2 right-2 opacity-0 transition-opacity group-hover:opacity-100">
-                  <span className="text-lg">☕</span>
-                </div>
-              </button>
-
-              {/* Analytics Dashboard */}
-              <button
-                onClick={() => {
-                  setActiveTab('history');
-                }}
-                className="group relative rounded-lg border border-amber-200/60 bg-gradient-to-br from-amber-50 to-amber-100/50 p-3 text-left transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:shadow-amber-500/20 active:scale-[0.98] dark:border-amber-800/60 dark:from-amber-950/30 dark:to-amber-900/20"
-              >
-                <div className="flex items-start gap-2">
-                  <div className="flex-shrink-0 rounded-full bg-amber-500/20 p-1.5 transition-colors group-hover:bg-amber-500/30">
-                    <BarChart2 className="h-3 w-3 text-amber-600 transition-transform group-hover:scale-110 dark:text-amber-400" />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-xs font-medium text-amber-700 dark:text-amber-300">
-                      Analytics
-                    </p>
-                    <p className="text-sm font-bold text-amber-900 dark:text-amber-100">
-                      Focus: {productivityMetrics.avgFocusScore}%
-                    </p>
-                    <p className="text-xs text-amber-600/80 dark:text-amber-400/80">
-                      {productivityMetrics.todaySessionCount} sessions today
-                    </p>
-                  </div>
-                </div>
-                <div className="absolute top-2 right-2 opacity-0 transition-opacity group-hover:opacity-100">
-                  <span className="text-lg">📊</span>
-                </div>
-              </button>
-            </div>
-          </div>
+              </AccordionContent>
+            </AccordionItem>
+            {/* </div> */}
+          </Accordion>
         )}
 
         {/* Current Session Status Banner */}
