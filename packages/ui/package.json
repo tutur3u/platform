@@ -112,6 +112,8 @@
     "./hooks/time-blocking-provider": "./src/hooks/time-blocking-provider.tsx",
     "./hooks/use-calendar": "./src/hooks/use-calendar.tsx",
     "./hooks/use-calendar-sync": "./src/hooks/use-calendar-sync.tsx",
+    "./hooks/useSearchParams": "./src/hooks/useSearchParams.tsx",
+    "./calendar-settings": "./src/components/ui/legacy/calendar/settings/index.ts",
     "./hooks/use-popover-manager": "./src/hooks/use-popover-manager.tsx",
     "./resolvers": "./src/resolvers.ts",
     "./gsap": "./src/gsap.ts",
@@ -125,6 +127,7 @@
     },
     "./utils/plan-helpers": "./src/utils/plan-helpers.ts",
     "./utils/date-helper": "./src/utils/date-helper.ts",
+    "./finance": "./src/components/ui/finance/index.ts",
     "./*": "./src/components/ui/*.tsx"
   },
   "packageManager": "bun@1.2.20"

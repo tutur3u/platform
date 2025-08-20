@@ -1,4 +1,3 @@
-import type { FinanceDashboardSearchParams } from '../finance/(dashboard)/page';
 import { InventoryCategoryStatistics } from './categories/inventory';
 import { UsersCategoryStatistics } from './categories/users';
 import FinanceStatistics from './finance';
@@ -20,6 +19,7 @@ import LoadingStatisticCard from '@/components/loading-statistic-card';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import type { AuroraForecast } from '@tuturuuu/types/db';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
+import type { FinanceDashboardSearchParams } from '@tuturuuu/ui/finance/shared/metrics';
 import { Separator } from '@tuturuuu/ui/separator';
 import { getWorkspace, verifySecret } from '@tuturuuu/utils/workspace-helper';
 import { getTranslations } from 'next-intl/server';
