@@ -1,9 +1,5 @@
 'use client';
 
-import { EnhancedTaskList } from '@tuturuuu/ui/tuDo/boards/boardId/enhanced-task-list';
-import { StatusSection } from '@tuturuuu/ui/tuDo/boards/boardId/status-section';
-import { TaskCard } from '@tuturuuu/ui/tuDo/boards/boardId/task';
-import { useMoveTask } from '@tuturuuu/utils/task-helper';
 import {
   DndContext,
   type DragEndEvent,
@@ -27,7 +23,11 @@ import { createClient } from '@tuturuuu/supabase/next/client';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskBoardStatus } from '@tuturuuu/types/primitives/TaskBoard';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
+import { EnhancedTaskList } from '@tuturuuu/ui/tuDo/boards/boardId/enhanced-task-list';
+import { StatusSection } from '@tuturuuu/ui/tuDo/boards/boardId/status-section';
+import { TaskCard } from '@tuturuuu/ui/tuDo/boards/boardId/task';
 import { cn } from '@tuturuuu/utils/format';
+import { useMoveTask } from '@tuturuuu/utils/task-helper';
 import { useState } from 'react';
 import { toast } from 'sonner';
 

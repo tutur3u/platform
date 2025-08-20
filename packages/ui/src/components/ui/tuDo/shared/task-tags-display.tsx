@@ -1,6 +1,5 @@
 'use client';
 
-import { getTagColorStyling } from '@tuturuuu/utils/tag-utils';
 import { Badge } from '@tuturuuu/ui/badge';
 import {
   Tooltip,
@@ -9,6 +8,7 @@ import {
   TooltipTrigger,
 } from '@tuturuuu/ui/tooltip';
 import { cn } from '@tuturuuu/utils/format';
+import { getTagColorStyling } from '@tuturuuu/utils/tag-utils';
 
 interface TaskTagsDisplayProps {
   tags: string[];

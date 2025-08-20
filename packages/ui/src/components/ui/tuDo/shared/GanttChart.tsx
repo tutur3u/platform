@@ -1,12 +1,12 @@
 'use client';
 
-import type { GanttTask } from '@tuturuuu/types/primitives/Task';
-import { getTaskCompletionDate } from '@tuturuuu/utils/task-helpers';
 import { GanttControls } from './GanttControls';
 import { GanttHeader } from './GanttHeader';
 import { GanttTimeline } from './GanttTimeline';
 import { TaskDetailCard } from './TaskDetailCard';
+import type { GanttTask } from '@tuturuuu/types/primitives/Task';
 import { Card } from '@tuturuuu/ui/card';
+import { getTaskCompletionDate } from '@tuturuuu/utils/task-helpers';
 import type { MouseEvent as DOMMouseEvent } from 'react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 

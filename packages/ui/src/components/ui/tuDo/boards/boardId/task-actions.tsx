@@ -1,5 +1,3 @@
-import { TaskTagInput } from '@tuturuuu/ui/tuDo/shared/task-tag-input';
-import { useDeleteTask, useUpdateTask } from '@tuturuuu/utils/task-helper';
 import { useQuery } from '@tanstack/react-query';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { TaskPriority } from '@tuturuuu/types/primitives/Priority';
@@ -38,7 +36,9 @@ import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
 import { Separator } from '@tuturuuu/ui/separator';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
+import { TaskTagInput } from '@tuturuuu/ui/tuDo/shared/task-tag-input';
 import { cn } from '@tuturuuu/utils/format';
+import { useDeleteTask, useUpdateTask } from '@tuturuuu/utils/task-helper';
 import { addDays, format, isBefore, isToday, startOfToday } from 'date-fns';
 import { useCallback, useEffect, useState } from 'react';
 
@@ -101,7 +101,7 @@ export function TaskActions({ taskId, boardId, onUpdate }: Props) {
 
       if (error) throw error;
 
-      return  transformTaskData(data);
+      return transformTaskData(data);
     },
     enabled: !!taskId && isEditDialogOpen, // Only fetch when modal is open
     staleTime: 0, // Always fetch fresh data

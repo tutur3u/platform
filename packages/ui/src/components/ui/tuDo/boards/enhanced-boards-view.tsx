@@ -1,31 +1,23 @@
 'use client';
 
 import { projectColumns } from './columns';
-// Import new components
-import { GanttChart } from '@tuturuuu/ui/tuDo/shared/GanttChart';
-import { StatusDistribution } from '@tuturuuu/ui/tuDo/shared/StatusDistribution';
-import { TaskCreationAnalytics } from '@tuturuuu/ui/tuDo/shared/TaskCreationAnalytics';
-import { TaskGroup } from '@tuturuuu/ui/tuDo/shared/TaskGroup';
-import { TaskWorkflowAnalytics } from '@tuturuuu/ui/tuDo/shared/TaskWorkflowAnalytics';
-// Import analytics hooks
-import {
-  useAvgDuration,
-  useOnTimeRate,
-  useTaskVelocity,
-} from '@tuturuuu/ui/hooks/use-task-analytics';
 import type { EnhancedTaskBoard } from '@tuturuuu/types/primitives/TaskBoard';
-// Import helper functions
-import { getFilteredMetrics } from '@tuturuuu/utils/task-helpers';
-import { CustomDataTable } from '@tuturuuu/ui/custom/tables/custom-data-table';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Card } from '@tuturuuu/ui/card';
+import { CustomDataTable } from '@tuturuuu/ui/custom/tables/custom-data-table';
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
 } from '@tuturuuu/ui/dialog';
+// Import analytics hooks
+import {
+  useAvgDuration,
+  useOnTimeRate,
+  useTaskVelocity,
+} from '@tuturuuu/ui/hooks/use-task-analytics';
 import {
   Activity,
   AlertTriangle,
@@ -56,6 +48,14 @@ import {
   SelectValue,
 } from '@tuturuuu/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
+// Import new components
+import { GanttChart } from '@tuturuuu/ui/tuDo/shared/GanttChart';
+import { StatusDistribution } from '@tuturuuu/ui/tuDo/shared/StatusDistribution';
+import { TaskCreationAnalytics } from '@tuturuuu/ui/tuDo/shared/TaskCreationAnalytics';
+import { TaskGroup } from '@tuturuuu/ui/tuDo/shared/TaskGroup';
+import { TaskWorkflowAnalytics } from '@tuturuuu/ui/tuDo/shared/TaskWorkflowAnalytics';
+// Import helper functions
+import { getFilteredMetrics } from '@tuturuuu/utils/task-helpers';
 import { useRouter } from 'next/navigation';
 import { useCallback, useMemo, useState } from 'react';
 
