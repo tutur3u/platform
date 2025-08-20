@@ -1,7 +1,5 @@
 'use client';
 
-import { Task, prioritizeTasks } from '../../utils/task-prioritization';
-import { priorityCompare } from '@/lib/task-helper';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { TaskPriority } from '@tuturuuu/types/primitives/Priority';
 import { Button } from '@tuturuuu/ui/button';
@@ -27,6 +25,8 @@ import { cn } from '@tuturuuu/utils/format';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { priorityCompare } from '@/lib/task-helper';
+import { prioritizeTasks, type Task } from '../../utils/task-prioritization';
 
 interface QuickTimeTrackerProps {
   wsId: string;
@@ -304,9 +304,10 @@ export function QuickTimeTracker({
           </div>
           <div>
             <div className="font-medium">Timer Stopped!</div>
-            <div className="text-sm text-muted-foreground">
-              Tracked {formatDuration(data.session.duration_seconds || 0)} for "
-              {data.session.title}"
+            <div className="text-muted-foreground text-sm">
+              Tracked {formatDuration(data.session.duration_seconds || 0)} for
+              &quot;
+              {data.session.title}&quot;
             </div>
           </div>
         </div>,
@@ -360,8 +361,8 @@ export function QuickTimeTracker({
             </div>
             <div>
               <div className="font-medium">Timer Started!</div>
-              <div className="text-sm text-muted-foreground">
-                Tracking "{data.session.title}"
+              <div className="text-muted-foreground text-sm">
+                Tracking &quot;{data.session.title}&quot;
               </div>
             </div>
           </div>
@@ -676,16 +677,16 @@ export function QuickTimeTracker({
                     <Timer className="h-4 w-4 text-white" />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium text-green-900 dark:text-green-100">
+                    <p className="truncate font-medium text-green-900 text-sm dark:text-green-100">
                       {runningSession.title}
                     </p>
-                    <p className="text-xs text-green-700 dark:text-green-300">
+                    <p className="text-green-700 text-xs dark:text-green-300">
                       Running
                     </p>
                   </div>
                 </div>
                 <div className="text-right">
-                  <p className="font-mono text-lg font-bold text-green-900 dark:text-green-100">
+                  <p className="font-bold font-mono text-green-900 text-lg dark:text-green-100">
                     {formatTime(elapsedTime)}
                   </p>
                 </div>
@@ -716,7 +717,7 @@ export function QuickTimeTracker({
             /* Task Selection */
             <div className="space-y-3">
               <div className="space-y-2">
-                <Label htmlFor="task-search" className="text-sm font-medium">
+                <Label htmlFor="task-search" className="font-medium text-sm">
                   Select Task
                 </Label>
 
@@ -724,7 +725,7 @@ export function QuickTimeTracker({
                 <div className="relative" data-task-dropdown>
                   <div className="flex">
                     <div className="relative flex-1">
-                      <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                      <Search className="-translate-y-1/2 absolute top-1/2 left-3 h-4 w-4 text-muted-foreground" />
                       <Input
                         id="task-search"
                         placeholder="Search tasks..."
@@ -741,7 +742,7 @@ export function QuickTimeTracker({
                             setSelectedTask(null);
                             setTaskSearchQuery('');
                           }}
-                          className="absolute top-1/2 right-3 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                          className="-translate-y-1/2 absolute top-1/2 right-3 text-muted-foreground hover:text-foreground"
                         >
                           <X className="h-4 w-4" />
                         </button>
@@ -753,7 +754,7 @@ export function QuickTimeTracker({
                       <button
                         data-board-button
                         onClick={() => setShowBoardDropdown(!showBoardDropdown)}
-                        className="flex h-9 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background hover:bg-accent focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:outline-none"
+                        className="flex h-9 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background hover:bg-accent focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
                       >
                         <span className="truncate">
                           {selectedBoardId === 'all'
@@ -822,18 +823,18 @@ export function QuickTimeTracker({
                                 </div>
                                 <div className="min-w-0 flex-1">
                                   <div className="flex items-center gap-1.5">
-                                    <span className="line-clamp-1 text-xs font-medium">
+                                    <span className="line-clamp-1 font-medium text-xs">
                                       {task.name}
                                     </span>
                                     {task.is_assigned_to_current_user && (
-                                      <span className="inline-flex items-center rounded-full bg-blue-100 px-1.5 py-0.5 text-[10px] font-medium text-blue-800 dark:bg-blue-900/50 dark:text-blue-200">
+                                      <span className="inline-flex items-center rounded-full bg-blue-100 px-1.5 py-0.5 font-medium text-[10px] text-blue-800 dark:bg-blue-900/50 dark:text-blue-200">
                                         Assigned
                                       </span>
                                     )}
                                     {task.priority && (
                                       <span
                                         className={cn(
-                                          'inline-flex items-center rounded px-1 py-0.5 text-[10px] font-medium',
+                                          'inline-flex items-center rounded px-1 py-0.5 font-medium text-[10px]',
                                           getPriorityColor(task.priority)
                                         )}
                                       >
@@ -864,7 +865,7 @@ export function QuickTimeTracker({
                             </button>
                           ))
                         ) : (
-                          <div className="p-3 text-center text-xs text-muted-foreground">
+                          <div className="p-3 text-center text-muted-foreground text-xs">
                             {taskSearchQuery
                               ? 'No tasks found matching your search'
                               : 'No tasks available'}
@@ -885,15 +886,15 @@ export function QuickTimeTracker({
                     </div>
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2">
-                        <span className="text-sm font-semibold text-dynamic-green">
+                        <span className="font-semibold text-dynamic-green text-sm">
                           Selected Task
                         </span>
                       </div>
-                      <p className="mt-1 text-sm font-medium text-foreground">
+                      <p className="mt-1 font-medium text-foreground text-sm">
                         {selectedTask.name}
                       </p>
                       {selectedTask.description && (
-                        <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">
+                        <p className="mt-1 line-clamp-2 text-muted-foreground text-xs">
                           {selectedTask.description}
                         </p>
                       )}
@@ -901,7 +902,7 @@ export function QuickTimeTracker({
                         {selectedTask.priority && (
                           <span
                             className={cn(
-                              'inline-flex items-center rounded px-1.5 py-0.5 text-xs font-medium',
+                              'inline-flex items-center rounded px-1.5 py-0.5 font-medium text-xs',
                               getPriorityColor(selectedTask.priority)
                             )}
                           >
@@ -912,13 +913,13 @@ export function QuickTimeTracker({
                           <div className="flex items-center gap-2">
                             <div className="flex items-center gap-1">
                               <MapPin className="h-3 w-3 text-muted-foreground" />
-                              <span className="text-xs text-muted-foreground">
+                              <span className="text-muted-foreground text-xs">
                                 {selectedTask.board_name}
                               </span>
                             </div>
                             <div className="flex items-center gap-1">
                               <Tag className="h-3 w-3 text-dynamic-green" />
-                              <span className="text-xs text-dynamic-green">
+                              <span className="text-dynamic-green text-xs">
                                 {selectedTask.list_name}
                               </span>
                             </div>
@@ -960,7 +961,7 @@ export function QuickTimeTracker({
                   className={cn(
                     'group rounded-lg border p-3 text-left transition-all duration-200',
                     recentSessions?.[0] && !runningSession
-                      ? 'border-blue-200 bg-gradient-to-br from-blue-50 to-blue-100/50 hover:shadow-md hover:shadow-blue-500/20 active:scale-[0.98] dark:border-blue-800 dark:from-blue-950/30 dark:to-blue-900/20'
+                      ? 'border-blue-200 bg-gradient-to-br from-blue-50 to-blue-100/50 hover:shadow-blue-500/20 hover:shadow-md active:scale-[0.98] dark:border-blue-800 dark:from-blue-950/30 dark:to-blue-900/20'
                       : 'cursor-not-allowed border-muted bg-muted/30 opacity-60'
                   )}
                 >
@@ -985,7 +986,7 @@ export function QuickTimeTracker({
                     <div className="min-w-0 flex-1">
                       <p
                         className={cn(
-                          'text-xs font-medium',
+                          'font-medium text-xs',
                           recentSessions?.[0] && !runningSession
                             ? 'text-blue-700 dark:text-blue-300'
                             : 'text-muted-foreground'
@@ -996,7 +997,7 @@ export function QuickTimeTracker({
                       {recentSessions?.[0] ? (
                         <>
                           <p
-                            className="line-clamp-1 text-sm font-bold text-blue-900 dark:text-blue-100"
+                            className="line-clamp-1 font-bold text-blue-900 text-sm dark:text-blue-100"
                             title={recentSessions[0].title}
                           >
                             {recentSessions[0].title}
@@ -1011,14 +1012,14 @@ export function QuickTimeTracker({
                                     : 'bg-blue-500/70'
                                 )}
                               />
-                              <span className="truncate text-xs text-blue-700/80 dark:text-blue-300/80">
+                              <span className="truncate text-blue-700/80 text-xs dark:text-blue-300/80">
                                 {recentSessions[0].category.name}
                               </span>
                             </div>
                           )}
                         </>
                       ) : (
-                        <p className="text-sm font-bold text-muted-foreground">
+                        <p className="font-bold text-muted-foreground text-sm">
                           No recent session
                         </p>
                       )}
@@ -1062,7 +1063,7 @@ export function QuickTimeTracker({
                     <div className="min-w-0 flex-1">
                       <p
                         className={cn(
-                          'text-xs font-medium',
+                          'font-medium text-xs',
                           nextTaskData?.nextTask && !runningSession
                             ? 'text-purple-700 dark:text-purple-300'
                             : 'text-muted-foreground'
@@ -1073,7 +1074,7 @@ export function QuickTimeTracker({
                       {nextTaskData?.nextTask ? (
                         <>
                           <p
-                            className="line-clamp-1 text-sm font-bold text-purple-900 dark:text-purple-100"
+                            className="line-clamp-1 font-bold text-purple-900 text-sm dark:text-purple-100"
                             title={nextTaskData.nextTask.name}
                           >
                             {nextTaskData.nextTask.name}
@@ -1081,7 +1082,7 @@ export function QuickTimeTracker({
                           <div className="mt-1 flex items-center gap-1">
                             <span
                               className={cn(
-                                'inline-flex items-center rounded px-1 py-0.5 text-xs font-medium',
+                                'inline-flex items-center rounded px-1 py-0.5 font-medium text-xs',
                                 getPriorityColor(nextTaskData.nextTask.priority)
                               )}
                             >
@@ -1089,11 +1090,11 @@ export function QuickTimeTracker({
                             </span>
                             {nextTaskData.nextTask
                               .is_assigned_to_current_user ? (
-                              <span className="text-xs text-purple-600/80 dark:text-purple-400/80">
+                              <span className="text-purple-600/80 text-xs dark:text-purple-400/80">
                                 • You
                               </span>
                             ) : (
-                              <span className="text-xs text-purple-600/80 dark:text-purple-400/80">
+                              <span className="text-purple-600/80 text-xs dark:text-purple-400/80">
                                 • Auto-assign
                               </span>
                             )}
@@ -1101,10 +1102,10 @@ export function QuickTimeTracker({
                         </>
                       ) : (
                         <>
-                          <p className="text-sm font-bold text-muted-foreground">
+                          <p className="font-bold text-muted-foreground text-sm">
                             No tasks available
                           </p>
-                          <p className="text-xs text-muted-foreground">
+                          <p className="text-muted-foreground text-xs">
                             Create or assign tasks
                           </p>
                         </>

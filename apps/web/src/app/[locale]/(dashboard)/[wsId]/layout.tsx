@@ -1,20 +1,9 @@
-import NavbarActions from '../../navbar-actions';
-import { UserNav } from '../../user-nav';
-import InvitationCard from './invitation-card';
-import PersonalWorkspacePrompt from './personal-workspace-prompt';
-import { Structure } from './structure';
-import type { NavLink } from '@/components/navigation';
-import {
-  DEV_MODE,
-  SIDEBAR_BEHAVIOR_COOKIE_NAME,
-  SIDEBAR_COLLAPSED_COOKIE_NAME,
-} from '@/constants/common';
-import { SidebarProvider } from '@/context/sidebar-context';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import {
   Activity,
   Archive,
   Banknote,
+  BarChart2,
   Blocks,
   Bolt,
   BookKey,
@@ -23,6 +12,7 @@ import {
   Calendar,
   Cctv,
   ChartArea,
+  CheckSquare,
   CircleCheck,
   CircleDollarSign,
   Clock,
@@ -47,10 +37,11 @@ import {
   ScanSearch,
   ScrollText,
   Send,
+  Settings,
   ShieldUser,
   Sparkles,
-  SquareUserRound,
   SquaresIntersect,
+  SquareUserRound,
   Star,
   Tag,
   Target,
@@ -70,10 +61,22 @@ import {
   getWorkspace,
   verifySecret,
 } from '@tuturuuu/utils/workspace-helper';
-import { getTranslations } from 'next-intl/server';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
+import { getTranslations } from 'next-intl/server';
 import { type ReactNode, Suspense } from 'react';
+import type { NavLink } from '@/components/navigation';
+import {
+  DEV_MODE,
+  SIDEBAR_BEHAVIOR_COOKIE_NAME,
+  SIDEBAR_COLLAPSED_COOKIE_NAME,
+} from '@/constants/common';
+import { SidebarProvider } from '@/context/sidebar-context';
+import NavbarActions from '../../navbar-actions';
+import { UserNav } from '../../user-nav';
+import InvitationCard from './invitation-card';
+import PersonalWorkspacePrompt from './personal-workspace-prompt';
+import { Structure } from './structure';
 
 interface LayoutProps {
   params: Promise<{
@@ -438,6 +441,21 @@ export default async function Layout({ children, params }: LayoutProps) {
               matchExact: true,
             },
             {
+              title: t('sidebar_tabs.analytics'),
+              href: `/${correctedWSId}/time-tracker/analytics`,
+              icon: <BarChart2 className="h-5 w-5" />,
+            },
+            {
+              title: t('sidebar_tabs.tasks'),
+              href: `/${correctedWSId}/time-tracker/tasks`,
+              icon: <CheckSquare className="h-5 w-5" />,
+            },
+            {
+              title: t('sidebar_tabs.reports'),
+              href: `/${correctedWSId}/time-tracker/reports`,
+              icon: <FileText className="h-5 w-5" />,
+            },
+            {
               title: t('sidebar_tabs.history'),
               href: `/${correctedWSId}/time-tracker/history`,
               icon: <History className="h-5 w-5" />,
@@ -451,6 +469,11 @@ export default async function Layout({ children, params }: LayoutProps) {
               title: t('sidebar_tabs.categories'),
               href: `/${correctedWSId}/time-tracker/categories`,
               icon: <Tag className="h-5 w-5" />,
+            },
+            {
+              title: t('sidebar_tabs.settings'),
+              href: `/${correctedWSId}/time-tracker/settings`,
+              icon: <Settings className="h-5 w-5" />,
             },
           ],
         },
