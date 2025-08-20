@@ -883,11 +883,7 @@ export default function TimeTrackerContent({
         {/* Enhanced Quick Actions - Single Row */}
         {!isViewingOtherUser && (
           // <div className="space-y-3">
-          <Accordion
-            collapsible
-            className="w-full"
-            type="single"
-          >
+          <Accordion collapsible className="w-full" type="single">
             <AccordionItem value="quick-actions">
               <AccordionTrigger>
                 <div className="flex flex-1 items-center justify-between">
