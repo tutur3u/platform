@@ -1276,7 +1276,15 @@ export function ActivityHeatmap({
     setCurrentIndex,
     maxVisibleCards,
   }: {
-    cards: any[];
+    cards: Array<{
+      type: string;
+      data?: unknown;
+      monthKey?: string;
+      name?: string;
+      trend?: string;
+      trendValue?: number;
+      isSubtle?: boolean;
+    }>;
     currentIndex: number;
     setCurrentIndex: (index: number) => void;
     maxVisibleCards: number;
@@ -1350,23 +1358,60 @@ export function ActivityHeatmap({
         >
           <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {visibleCards.map((card) => {
-              if (card.type === 'summary' && card.data) {
-                return <SummaryCard key="summary" data={card.data} />;
+              if (
+                card.type === 'summary' &&
+                card.data &&
+                typeof card.data === 'object' &&
+                card.data !== null
+              ) {
+                return (
+                  <SummaryCard
+                    key="summary"
+                    data={
+                      card.data as {
+                        monthCount: number;
+                        focusScore: number;
+                        totalDuration: number;
+                        avgDaily: number;
+                        totalSessions: number;
+                        activeDays: number;
+                        avgSession: number;
+                      }
+                    }
+                  />
+                );
               }
 
-              if (card.type === 'monthly' && card.data) {
+              if (
+                card.type === 'monthly' &&
+                card.data &&
+                card.monthKey &&
+                card.trend &&
+                card.trendValue !== undefined
+              ) {
                 return (
                   <MonthlyCard
                     key={card.monthKey}
                     monthKey={card.monthKey}
-                    data={card.data}
-                    trend={card.trend}
+                    data={
+                      card.data as {
+                        name: string;
+                        activeDays: number;
+                        totalDuration: number;
+                        totalSessions: number;
+                        dates: Array<{
+                          date?: { format: (format: string) => string };
+                          activity?: { duration: number };
+                        }>;
+                      }
+                    }
+                    trend={card.trend as 'up' | 'down' | 'neutral'}
                     trendValue={card.trendValue}
                   />
                 );
               }
 
-              if (card.type === 'upcoming') {
+              if (card.type === 'upcoming' && card.monthKey && card.name) {
                 return (
                   <UpcomingCard
                     key={`upcoming-${card.monthKey}`}

@@ -2,7 +2,7 @@
 
 import { Card, CardContent } from '@tuturuuu/ui/card';
 import { Calendar, Clock, Settings, TrendingUp, Zap } from '@tuturuuu/ui/icons';
-import { useMemo } from 'react';
+import { useCallback, useMemo } from 'react';
 
 interface YearSummaryStatsProps {
   dailyActivity: Array<{
@@ -19,48 +19,54 @@ export function YearSummaryStats({
   formatDuration,
 }: YearSummaryStatsProps) {
   // Helper function to calculate longest streak
-  const calculateLongestStreak = (
-    dailyActivity: Array<{ date: string; duration: number; sessions: number }>
-  ) => {
-    if (!dailyActivity.length) return 0;
+  const calculateLongestStreak = useCallback(
+    (
+      dailyActivity: Array<{ date: string; duration: number; sessions: number }>
+    ) => {
+      if (!dailyActivity.length) return 0;
 
-    const sortedDays = dailyActivity
-      .filter((day) => day.duration > 0)
-      .map((day) => new Date(day.date))
-      .sort((a, b) => a.getTime() - b.getTime());
+      const sortedDays = dailyActivity
+        .filter((day) => day.duration > 0)
+        .map((day) => new Date(day.date))
+        .sort((a, b) => a.getTime() - b.getTime());
 
-    let maxStreak = 0;
-    let currentStreak = 1;
+      let maxStreak = 0;
+      let currentStreak = 1;
 
-    for (let i = 1; i < sortedDays.length; i++) {
-      const prevDay = sortedDays[i - 1];
-      const currentDay = sortedDays[i];
-      if (!prevDay || !currentDay) continue;
+      for (let i = 1; i < sortedDays.length; i++) {
+        const prevDay = sortedDays[i - 1];
+        const currentDay = sortedDays[i];
+        if (!prevDay || !currentDay) continue;
 
-      const diffInDays =
-        (currentDay.getTime() - prevDay.getTime()) / (1000 * 60 * 60 * 24);
+        const diffInDays =
+          (currentDay.getTime() - prevDay.getTime()) / (1000 * 60 * 60 * 24);
 
-      if (diffInDays === 1) {
-        currentStreak++;
-      } else {
-        maxStreak = Math.max(maxStreak, currentStreak);
-        currentStreak = 1;
+        if (diffInDays === 1) {
+          currentStreak++;
+        } else {
+          maxStreak = Math.max(maxStreak, currentStreak);
+          currentStreak = 1;
+        }
       }
-    }
 
-    return Math.max(maxStreak, currentStreak);
-  };
+      return Math.max(maxStreak, currentStreak);
+    },
+    []
+  );
 
   // Helper function to find most productive day
-  const findMostProductiveDay = (
-    dailyActivity: Array<{ date: string; duration: number; sessions: number }>
-  ) => {
-    if (!dailyActivity.length) return null;
+  const findMostProductiveDay = useCallback(
+    (
+      dailyActivity: Array<{ date: string; duration: number; sessions: number }>
+    ) => {
+      if (!dailyActivity.length) return null;
 
-    return dailyActivity.reduce((max, day) =>
-      day.duration > max.duration ? day : max
-    );
-  };
+      return dailyActivity.reduce((max, day) =>
+        day.duration > max.duration ? day : max
+      );
+    },
+    []
+  );
 
   // Calculate additional stats for enhanced UX
   const additionalStats = useMemo(() => {
@@ -80,7 +86,7 @@ export function YearSummaryStats({
       longestStreak,
       mostProductiveDay,
     };
-  }, [dailyActivity]);
+  }, [dailyActivity, calculateLongestStreak, findMostProductiveDay]);
 
   return (
     <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-5">
@@ -91,11 +97,11 @@ export function YearSummaryStats({
               <Calendar className="h-4 w-4 text-amber-600" />
             </div>
             <div className="min-w-0 flex-1">
-              <p className="text-xs font-medium text-muted-foreground">
+              <p className="font-medium text-muted-foreground text-xs">
                 Total This Year
               </p>
               <p
-                className="truncate text-lg font-bold"
+                className="truncate font-bold text-lg"
                 title={formatDuration(additionalStats.totalYearTime)}
               >
                 {formatDuration(additionalStats.totalYearTime)}
@@ -112,10 +118,10 @@ export function YearSummaryStats({
               <TrendingUp className="h-4 w-4 text-emerald-600" />
             </div>
             <div className="min-w-0 flex-1">
-              <p className="text-xs font-medium text-muted-foreground">
+              <p className="font-medium text-muted-foreground text-xs">
                 Active Days
               </p>
-              <p className="truncate text-lg font-bold">
+              <p className="truncate font-bold text-lg">
                 {additionalStats.activeDays}
               </p>
             </div>
@@ -130,11 +136,11 @@ export function YearSummaryStats({
               <Clock className="h-4 w-4 text-violet-600" />
             </div>
             <div className="min-w-0 flex-1">
-              <p className="text-xs font-medium text-muted-foreground">
+              <p className="font-medium text-muted-foreground text-xs">
                 Daily Average
               </p>
               <p
-                className="truncate text-lg font-bold"
+                className="truncate font-bold text-lg"
                 title={formatDuration(additionalStats.avgDailyTime)}
               >
                 {formatDuration(additionalStats.avgDailyTime)}
@@ -151,10 +157,10 @@ export function YearSummaryStats({
               <Zap className="h-4 w-4 text-rose-600" />
             </div>
             <div className="min-w-0 flex-1">
-              <p className="text-xs font-medium text-muted-foreground">
+              <p className="font-medium text-muted-foreground text-xs">
                 Longest Streak
               </p>
-              <p className="truncate text-lg font-bold">
+              <p className="truncate font-bold text-lg">
                 {additionalStats.longestStreak} days
               </p>
             </div>
@@ -169,11 +175,11 @@ export function YearSummaryStats({
               <Settings className="h-4 w-4 text-indigo-600" />
             </div>
             <div className="min-w-0 flex-1">
-              <p className="text-xs font-medium text-muted-foreground">
+              <p className="font-medium text-muted-foreground text-xs">
                 Most Productive
               </p>
               <p
-                className="truncate text-sm font-bold"
+                className="truncate font-bold text-sm"
                 title={additionalStats.mostProductiveDay?.date}
               >
                 {additionalStats.mostProductiveDay

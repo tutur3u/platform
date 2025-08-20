@@ -90,7 +90,7 @@ interface TimerControlsProps {
   onSessionUpdate: () => void;
   formatTime: (seconds: number) => string;
   formatDuration: (seconds: number) => string;
-  apiCall: (url: string, options?: RequestInit) => Promise<any>;
+  apiCall: (url: string, options?: RequestInit) => Promise<unknown>;
   isDraggingTask?: boolean;
   onGoToTasksTab?: () => void;
   currentUserId?: string;
@@ -357,7 +357,9 @@ export function TimerControls({
         const response = await apiCall(
           `/api/v1/workspaces/${wsId}/time-tracking/sessions/${sessionId}`
         );
-        return response.session || null;
+        return (
+          (response as { session?: SessionWithRelations })?.session || null
+        );
       } catch (error) {
         console.warn('Failed to fetch session details:', error);
         return null;
@@ -1241,7 +1243,7 @@ export function TimerControls({
       const response = await apiCall(
         `/api/v1/workspaces/${wsId}/boards-with-lists`
       );
-      setBoards(response.boards || []);
+      setBoards((response as { boards?: TaskBoard[] })?.boards || []);
     } catch (error) {
       console.error('Error fetching boards:', error);
       toast.error('Failed to load boards');
@@ -1254,7 +1256,9 @@ export function TimerControls({
       const response = await apiCall(
         `/api/v1/workspaces/${wsId}/time-tracking/templates`
       );
-      setTemplates(response.templates || []);
+      setTemplates(
+        (response as { templates?: SessionTemplate[] })?.templates || []
+      );
     } catch (error) {
       console.error('Error fetching templates:', error);
     }
@@ -1386,7 +1390,8 @@ export function TimerControls({
         }),
       });
 
-      const newTask = response.task;
+      const newTask = (response as { task?: WorkspaceTask })?.task;
+      if (!newTask) return;
       setSelectedTaskId(newTask.id);
 
       // In task mode, set the title to the working format
@@ -1436,7 +1441,9 @@ export function TimerControls({
         }
       );
 
-      setCurrentSession(response.session);
+      setCurrentSession(
+        (response as { session?: SessionWithRelations })?.session || null
+      );
       setIsRunning(true);
       setElapsedTime(0);
       setNewSessionTitle('');
@@ -1494,7 +1501,9 @@ export function TimerControls({
         }
       );
 
-      setCurrentSession(response.session);
+      setCurrentSession(
+        (response as { session?: SessionWithRelations })?.session || null
+      );
       setIsRunning(true);
       setElapsedTime(0);
 
@@ -1567,7 +1576,9 @@ export function TimerControls({
         }
       );
 
-      const completedSession = response.session;
+      const completedSession = (response as { session?: SessionWithRelations })
+        ?.session;
+      if (!completedSession) return;
       setJustCompleted(completedSession);
 
       // Clear all session states
@@ -1661,7 +1672,10 @@ export function TimerControls({
       );
 
       // Restore session from paused state
-      setCurrentSession(response.session || pausedSession);
+      setCurrentSession(
+        (response as { session?: SessionWithRelations })?.session ||
+          pausedSession
+      );
       setElapsedTime(pausedElapsedTime);
       setIsRunning(true);
 
@@ -3434,7 +3448,9 @@ export function TimerControls({
               {/* Session Mode Toggle */}
               <Tabs
                 value={sessionMode}
-                onValueChange={(v) => handleSessionModeChange(v as any)}
+                onValueChange={(v) =>
+                  handleSessionModeChange(v as 'task' | 'manual')
+                }
               >
                 <TabsList className="grid h-full w-full grid-cols-2 bg-muted/50">
                   <TabsTrigger

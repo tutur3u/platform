@@ -61,10 +61,12 @@ export function WorkspaceSelect({
   customRedirectSuffix,
   disableCreateNewWorkspace,
 }: {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  t: any;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  localUseQuery: any;
+  t: (key: string) => string;
+  localUseQuery: <T = unknown>(options: {
+    queryKey: string[];
+    queryFn: () => Promise<T>;
+    enabled?: boolean;
+  }) => { data?: T };
   hideLeading?: boolean;
   customRedirectSuffix?: string;
   disableCreateNewWorkspace?: boolean;
@@ -208,7 +210,7 @@ export function WorkspaceSelect({
               aria-label="Select a workspace"
               className={cn(
                 hideLeading ? 'justify-center p-0' : 'justify-start',
-                'w-full text-start whitespace-normal'
+                'w-full whitespace-normal text-start'
               )}
               disabled={!workspaces || workspaces.length === 0}
             >
