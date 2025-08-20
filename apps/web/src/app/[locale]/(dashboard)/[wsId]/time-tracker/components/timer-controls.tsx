@@ -530,7 +530,7 @@ export function TimerControls({
 
       // Restore previous session for new mode if exists
       const previousSession = timerModeSessions[newMode];
-      if (previousSession && previousSession.sessionId) {
+      if (previousSession?.sessionId) {
         // Restore the session state
         setElapsedTime(previousSession.elapsedTime);
 
@@ -1340,7 +1340,7 @@ export function TimerControls({
         title.length > 2
     );
 
-    if (matchingTask && matchingTask.id && title.length > 2) {
+    if (matchingTask?.id && title.length > 2) {
       setSelectedTaskId(matchingTask.id);
       setShowTaskSuggestion(false);
     } else if (
@@ -1457,7 +1457,7 @@ export function TimerControls({
   const startTimer = async () => {
     if (sessionMode === 'task' && selectedTaskId && selectedTaskId !== 'none') {
       const selectedTask = tasks.find((t) => t.id === selectedTaskId);
-      if (selectedTask && selectedTask.name) {
+      if (selectedTask?.name) {
         await startTimerWithTask(selectedTaskId, selectedTask.name);
         return;
       }
