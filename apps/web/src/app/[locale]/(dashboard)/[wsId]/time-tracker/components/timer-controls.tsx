@@ -38,6 +38,7 @@ import { toast } from '@tuturuuu/ui/sonner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { cn } from '@tuturuuu/utils/format';
+import Image from 'next/image';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type {
   ExtendedWorkspaceTask,
@@ -1676,7 +1677,7 @@ export function TimerControls({
       clearPausedSessionFromStorage();
 
       const pauseDuration = pauseStartTime
-        ? Math.floor((new Date().getTime() - pauseStartTime.getTime()) / 1000)
+        ? Math.floor((Date.now() - pauseStartTime.getTime()) / 1000)
         : 0;
 
       onSessionUpdate();
@@ -3276,9 +3277,7 @@ export function TimerControls({
                           • Break:{' '}
                           {formatDuration(
                             Math.floor(
-                              (new Date().getTime() -
-                                pauseStartTime.getTime()) /
-                                1000
+                              (Date.now() - pauseStartTime.getTime()) / 1000
                             )
                           )}
                         </span>
@@ -4040,7 +4039,7 @@ export function TimerControls({
                                                         }
                                                       >
                                                         {assignee.avatar_url ? (
-                                                          <img
+                                                          <Image
                                                             src={
                                                               assignee.avatar_url
                                                             }
@@ -4049,6 +4048,8 @@ export function TimerControls({
                                                               assignee.email ||
                                                               ''
                                                             }
+                                                            width={16}
+                                                            height={16}
                                                             className="h-full w-full rounded-full object-cover"
                                                           />
                                                         ) : (
