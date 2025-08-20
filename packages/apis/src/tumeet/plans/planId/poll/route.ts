@@ -63,11 +63,11 @@ export async function POST(
 
 export async function DELETE(
   req: Request,
-  { params }: { params: { planId: string } }
+  { params }: { params: Promise<{ planId: string }> }
 ) {
   const sbAdmin = await createAdminClient();
   const supabase = await createClient();
-  const { planId } = params;
+  const { planId } = await params;
   const { pollId } = await req.json();
 
   try {
