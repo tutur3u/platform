@@ -888,7 +888,7 @@ export default function TimeTrackerContent({
             className="w-full space-y-3"
             type="single"
           >
-            <AccordionItem value="item-1">
+            <AccordionItem value="quick-actions">
               <AccordionTrigger>
                 <div className="flex flex-1 items-center justify-between">
                   <h3 className="text-sm font-medium text-foreground">
