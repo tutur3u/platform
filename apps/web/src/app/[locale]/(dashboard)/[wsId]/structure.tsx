@@ -54,8 +54,11 @@ export function Structure({
   const [isCollapsed, setIsCollapsed] = useState(defaultCollapsed);
 
   // Utility function for path matching that respects segment boundaries
-  const matchesPath = useCallback((pathname: string, target?: string) =>
-    !!target && (pathname === target || pathname.startsWith(`${target}/`)), []);
+  const matchesPath = useCallback(
+    (pathname: string, target?: string) =>
+      !!target && (pathname === target || pathname.startsWith(`${target}/`)),
+    []
+  );
 
   useEffect(() => {
     if (behavior === 'collapsed' || behavior === 'hover') {
@@ -87,26 +90,7 @@ export function Structure({
     [pathname, matchesPath]
   );
 
-  // Helper function to handle time tracker navigation logic
-  const getTimeTrackerNavigation = useCallback(() => {
-    for (const section of links) {
-      if (section?.children) {
-        const timeTrackerLink = section.children.find((child) =>
-          child?.title?.toLowerCase().includes('tracker')
-        );
 
-        if (timeTrackerLink?.children) {
-          return {
-            currentLinks: timeTrackerLink.children,
-            history: [links, section.children],
-            titleHistory: [section.title, timeTrackerLink.title],
-            direction: 'forward' as const,
-          };
-        }
-      }
-    }
-    return null;
-  }, [links]);
 
   const [navState, setNavState] = useState<{
     currentLinks: (NavLink | null)[];
@@ -114,13 +98,21 @@ export function Structure({
     titleHistory: (string | null)[];
     direction: 'forward' | 'backward';
   }>(() => {
-    // Special handling for time tracker routes - need to go two levels deep
-    const isTimeTrackerRoute = pathname.includes('/time-tracker');
+         // Special handling for time tracker routes - need to go two levels deep
+     const isTimeTrackerRoute = pathname.includes('/time-tracker');
 
-    if (isTimeTrackerRoute) {
-      const timeTrackerNav = getTimeTrackerNavigation();
-      if (timeTrackerNav) return timeTrackerNav;
-    }
+     if (isTimeTrackerRoute) {
+       const productivity = links.find((s) => s?.children?.some((c) => c?.title?.toLowerCase().includes('tracker')));
+       const timeTracker = productivity?.children?.find((c) => c?.title?.toLowerCase().includes('tracker'));
+       if (timeTracker?.children) {
+         return {
+           currentLinks: timeTracker.children,
+           history: [links, productivity!.children!],
+           titleHistory: [productivity!.title, timeTracker.title],
+           direction: 'forward' as const,
+         };
+       }
+     }
 
     // Standard logic for other routes
     for (const link of links) {
@@ -165,8 +157,16 @@ export function Structure({
         );
 
         if (!isShowingTimeTrackerChildren) {
-          const timeTrackerNav = getTimeTrackerNavigation();
-          if (timeTrackerNav) return timeTrackerNav;
+          const productivity = links.find((s) => s?.children?.some((c) => c?.title?.toLowerCase().includes('tracker')));
+          const timeTracker = productivity?.children?.find((c) => c?.title?.toLowerCase().includes('tracker'));
+          if (timeTracker?.children) {
+            return {
+              currentLinks: timeTracker.children,
+              history: [links, productivity!.children!],
+              titleHistory: [productivity!.title, timeTracker.title],
+              direction: 'forward',
+            };
+          }
         }
 
         // We're already showing time tracker children, keep them visible
@@ -267,7 +267,7 @@ export function Structure({
       // We are at the top level and no submenu is active, do nothing.
       return prevState;
     });
-  }, [pathname, links, hasActiveChild, getTimeTrackerNavigation, matchesPath]);
+  }, [pathname, links, hasActiveChild, matchesPath]);
 
   const handleToggle = () => {
     const newCollapsed = !isCollapsed;

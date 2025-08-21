@@ -157,8 +157,6 @@ export default function TimeTrackerContent({
   const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
   const [retryCount, setRetryCount] = useState(0);
 
-
-
   // Heatmap settings state (unused but kept for future use)
   // const [heatmapSettings, setHeatmapSettings] = useState(() => {
   //   if (typeof window !== 'undefined') {
