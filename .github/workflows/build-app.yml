@@ -1,14 +1,12 @@
 name: Build App
 on:
   workflow_call:
-    inputs:
-      vercel-project-id:
-        required: true
-        type: string
     secrets:
       VERCEL_TOKEN:
         required: true
       VERCEL_ORG_ID:
+        required: true
+      VERCEL_PROJECT_ID:
         required: true
       TURBO_TOKEN:
         required: true
@@ -24,7 +22,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-      VERCEL_PROJECT_ID: ${{ inputs.vercel-project-id }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
       TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
       TURBO_TEAM: ${{ secrets.TURBO_TEAM }}
       GOOGLE_VERTEX_PROJECT: ${{ secrets.GOOGLE_VERTEX_PROJECT }}
@@ -76,6 +74,17 @@ jobs:
     - name: Install Vercel CLI
       if: steps.check_commits.outputs.skip_build != 'true'
       run: bun install --global vercel@latest
+
+    - name: Debug environment variables
+      if: steps.check_commits.outputs.skip_build != 'true'
+      run: |
+        echo "VERCEL_ORG_ID: $VERCEL_ORG_ID"
+        echo "VERCEL_PROJECT_ID: $VERCEL_PROJECT_ID"
+        echo "VERCEL_PROJECT_ID length: ${#VERCEL_PROJECT_ID}"
+        if [ -z "$VERCEL_PROJECT_ID" ]; then
+          echo "ERROR: VERCEL_PROJECT_ID is empty or unset"
+          exit 1
+        fi
 
     - name: Pull Vercel Environment Information
       if: steps.check_commits.outputs.skip_build != 'true'

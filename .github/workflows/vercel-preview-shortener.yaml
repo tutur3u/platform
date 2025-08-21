@@ -59,17 +59,15 @@ jobs:
           echo "❌ apps-to-build.txt not found, skipping build"
         fi
 
-    - name: Extract project ID
-      id: extract-project-id
-      env:
-        PROJECT_ID: ${{ secrets.VERCEL_SHORTENER_PROJECT_ID }}
-      run: |
-        echo "project_id=$PROJECT_ID" >> $GITHUB_OUTPUT
-
   deploy-shortener:
     needs: check-changes
     if: needs.check-changes.outputs.shortener_detected == 'true'
     uses: ./.github/workflows/build-app.yml
-    with:
-      vercel-project-id: ${{ needs.check-changes.outputs.project_id }}
-    secrets: inherit
+    secrets:
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_SHORTENER_PROJECT_ID }}
+      TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
+      TURBO_TEAM: ${{ secrets.TURBO_TEAM }}
+      GOOGLE_VERTEX_PROJECT: ${{ secrets.GOOGLE_VERTEX_PROJECT }}
+      GOOGLE_VERTEX_LOCATION: ${{ secrets.GOOGLE_VERTEX_LOCATION }}
