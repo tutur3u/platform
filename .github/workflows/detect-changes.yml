@@ -4,11 +4,6 @@ on:
     branches-ignore:
     - 'main'
     - 'production'
-  pull_request:
-    types: [ opened, synchronize, reopened ]
-    paths:
-    - 'apps/**'
-    - 'packages/**'
   workflow_dispatch:
 
 
@@ -21,13 +16,36 @@ jobs:
       with:
         fetch-depth: 0
 
+    - name: Check for relevant changes
+      id: check-changes
+      run: |
+        # Get changed files compared to main branch
+        CHANGED_FILES=$(git diff --name-only origin/main...HEAD)
+        
+        # Check if any changes are in apps/* or packages/*
+        RELEVANT_CHANGES=$(echo "$CHANGED_FILES" | grep -E '^(apps|packages)/' || true)
+        
+        if [ -z "$RELEVANT_CHANGES" ]; then
+          echo "ℹ️  No changes detected in apps/* or packages/* directories"
+          echo "✅ Workflow completed successfully - no apps need to be built"
+          echo "has_relevant_changes=false" >> $GITHUB_OUTPUT
+          exit 0
+        else
+          echo "📋 Found relevant changes in:"
+          echo "$RELEVANT_CHANGES"
+          echo "has_relevant_changes=true" >> $GITHUB_OUTPUT
+        fi
+
     - name: Setup bun
+      if: steps.check-changes.outputs.has_relevant_changes == 'true'
       uses: oven-sh/setup-bun@v2
 
     - name: Install dependencies
+      if: steps.check-changes.outputs.has_relevant_changes == 'true'
       run: bun install
 
     - name: Install jq and fd
+      if: steps.check-changes.outputs.has_relevant_changes == 'true'
       run: |
         if ! command -v jq &> /dev/null; then
           echo "Installing jq..."
@@ -47,6 +65,7 @@ jobs:
         fi
 
     - name: Detect changes using Turbo
+      if: steps.check-changes.outputs.has_relevant_changes == 'true'
       id: changes
       run: |
         set -e  # Exit on any error
@@ -255,6 +274,7 @@ jobs:
         exit 0
 
     - name: Upload apps-to-build artifact
+      if: steps.check-changes.outputs.has_relevant_changes == 'true'
       uses: actions/upload-artifact@v4
       with:
         name: apps-to-build
@@ -262,6 +282,29 @@ jobs:
         retention-days: 1
 
     - name: Upload matrix artifact
+      if: steps.check-changes.outputs.has_relevant_changes == 'true'
+      uses: actions/upload-artifact@v4
+      with:
+        name: matrix
+        path: matrix.json
+        retention-days: 1
+
+    - name: Create empty artifacts for no changes
+      if: steps.check-changes.outputs.has_relevant_changes == 'false'
+      run: |
+        echo "" > apps-to-build.txt
+        echo "[]" > matrix.json
+
+    - name: Upload empty apps-to-build artifact
+      if: steps.check-changes.outputs.has_relevant_changes == 'false'
+      uses: actions/upload-artifact@v4
+      with:
+        name: apps-to-build
+        path: apps-to-build.txt
+        retention-days: 1
+
+    - name: Upload empty matrix artifact
+      if: steps.check-changes.outputs.has_relevant_changes == 'false'
       uses: actions/upload-artifact@v4
       with:
         name: matrix
