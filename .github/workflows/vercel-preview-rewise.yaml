@@ -38,14 +38,14 @@ jobs:
           echo "✅ Force deployment requested via workflow_dispatch"
           exit 0
         fi
-        
+
         # Check if artifact was downloaded successfully
         if [ "${{ steps.download-artifact.outcome }}" != "success" ]; then
           echo "rewise_detected=false" >> $GITHUB_OUTPUT
           echo "❌ Failed to download apps-to-build artifact, skipping build"
           exit 0
         fi
-        
+
         if [ -f "apps-to-build.txt" ]; then
           if grep -q "rewise" "apps-to-build.txt"; then
             echo "rewise_detected=true" >> $GITHUB_OUTPUT

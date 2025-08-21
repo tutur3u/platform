@@ -37,14 +37,14 @@ jobs:
           echo "✅ Force deployment requested via workflow_dispatch"
           exit 0
         fi
-        
+
         # Check if artifact was downloaded successfully
         if [ "${{ steps.download-artifact.outcome }}" != "success" ]; then
           echo "web_detected=false" >> $GITHUB_OUTPUT
           echo "❌ Failed to download apps-to-build artifact, skipping build"
           exit 0
         fi
-        
+
         if [ -f "apps-to-build.txt" ]; then
           if grep -q "web" "apps-to-build.txt"; then
             echo "web_detected=true" >> $GITHUB_OUTPUT
@@ -65,7 +65,7 @@ jobs:
     secrets:
       VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
       VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_WEB_PROJECT_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PLATFORM_PROJECT_ID }}
       TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
       TURBO_TEAM: ${{ secrets.TURBO_TEAM }}
       GOOGLE_VERTEX_PROJECT: ${{ secrets.GOOGLE_VERTEX_PROJECT }}
