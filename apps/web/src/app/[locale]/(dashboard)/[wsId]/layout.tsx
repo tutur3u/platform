@@ -444,43 +444,36 @@ export default async function Layout({ children, params }: LayoutProps) {
             {
               title: t('sidebar_tabs.analytics'),
               href: `/${correctedWSId}/time-tracker/analytics`,
-              aliases: [`/${correctedWSId}/time-tracker/analytics`],
               icon: <ChartArea className="h-4 w-4" />,
             },
             {
               title: t('sidebar_tabs.tasks'),
               href: `/${correctedWSId}/time-tracker/tasks`,
-              aliases: [`/${correctedWSId}/time-tracker/tasks`],
               icon: <CircleCheck className="h-4 w-4" />,
             },
             {
               title: t('sidebar_tabs.reports'),
               href: `/${correctedWSId}/time-tracker/reports`,
-              aliases: [`/${correctedWSId}/time-tracker/reports`],
               icon: <Clock className="h-4 w-4" />,
             },
             {
               title: t('sidebar_tabs.settings'),
               href: `/${correctedWSId}/time-tracker/settings`,
-              aliases: [`/${correctedWSId}/time-tracker/settings`],
               icon: <Cog className="h-4 w-4" />,
             },
             {
               title: t('sidebar_tabs.history'),
               href: `/${correctedWSId}/time-tracker/history`,
-              aliases: [`/${correctedWSId}/time-tracker/history`],
               icon: <Clock className="h-4 w-4" />,
             },
             {
               title: t('sidebar_tabs.categories'),
               href: `/${correctedWSId}/time-tracker/categories`,
-              aliases: [`/${correctedWSId}/time-tracker/categories`],
               icon: <FolderSync className="h-4 w-4" />,
             },
             {
               title: t('sidebar_tabs.goals'),
               href: `/${correctedWSId}/time-tracker/goals`,
-              aliases: [`/${correctedWSId}/time-tracker/goals`],
               icon: <Target className="h-4 w-4" />,
             },
           ],

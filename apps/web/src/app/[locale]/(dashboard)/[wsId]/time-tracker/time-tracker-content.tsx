@@ -13,7 +13,6 @@ import { Alert, AlertDescription } from '@tuturuuu/ui/alert';
 import { Button } from '@tuturuuu/ui/button';
 import {
   AlertCircle,
-  Calendar,
   CheckSquare,
   Clock,
   LayoutDashboard,
@@ -27,16 +26,13 @@ import {
   WifiOff,
 } from '@tuturuuu/ui/icons';
 import { toast } from '@tuturuuu/ui/sonner';
-import { Tabs, TabsContent } from '@tuturuuu/ui/tabs';
+
 import { cn } from '@tuturuuu/utils/format';
 import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone';
 import utc from 'dayjs/plugin/utc';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { priorityCompare } from '@/lib/task-helper';
-import { CategoryManager } from './components/category-manager';
-import { GoalManager } from './components/goal-manager';
-import { SessionHistory } from './components/session-history';
 import { TimerControls } from './components/timer-controls';
 import { UserSelector } from './components/user-selector';
 import { useCurrentUser } from './hooks/use-current-user';
@@ -45,7 +41,6 @@ import type {
   SessionWithRelations,
   TimerStats,
   TimeTrackerData,
-  TimeTrackingGoal,
 } from './types';
 
 // interface TaskSidebarFilters {
@@ -81,8 +76,6 @@ export default function TimeTrackerContent({
   wsId,
   initialData,
 }: TimeTrackerContentProps) {
-  const [activeTab, setActiveTab] = useState('timer');
-
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const { userId: currentUserId, isLoading: isLoadingUser } = useCurrentUser();
 
@@ -107,9 +100,7 @@ export default function TimeTrackerContent({
   const [categories, setCategories] = useState<TimeTrackingCategory[]>(
     initialData.categories || []
   );
-  const [goals, setGoals] = useState<TimeTrackingGoal[]>(
-    initialData.goals || []
-  );
+
   const [recentSessions, setRecentSessions] = useState<SessionWithRelations[]>(
     initialData.recentSessions || []
   );
@@ -503,31 +494,25 @@ export default function TimeTrackerContent({
         );
 
         // Process results with fallbacks for failed calls
-        const [
-          categoriesRes,
-          runningRes,
-          recentRes,
-          statsRes,
-          goalsRes,
-          tasksRes,
-        ] = results.map((result, index) => {
-          if (result.status === 'fulfilled') {
-            return result.value;
-          } else {
-            const { name, fallback } = apiCalls[index] || {
-              name: 'unknown',
-              fallback: {},
-            };
-            console.warn(`API call for ${name} failed:`, result.reason);
-            // Only show error toast for critical failures, not for tasks
-            if (name !== 'tasks') {
-              toast.error(
-                `Failed to load ${name}: ${result.reason.message || 'Unknown error'}`
-              );
+        const [categoriesRes, runningRes, recentRes, statsRes, , tasksRes] =
+          results.map((result, index) => {
+            if (result.status === 'fulfilled') {
+              return result.value;
+            } else {
+              const { name, fallback } = apiCalls[index] || {
+                name: 'unknown',
+                fallback: {},
+              };
+              console.warn(`API call for ${name} failed:`, result.reason);
+              // Only show error toast for critical failures, not for tasks
+              if (name !== 'tasks') {
+                toast.error(
+                  `Failed to load ${name}: ${result.reason.message || 'Unknown error'}`
+                );
+              }
+              return fallback;
             }
-            return fallback;
-          }
-        });
+          });
 
         if (!isMountedRef.current) return;
 
@@ -541,7 +526,7 @@ export default function TimeTrackerContent({
             streak: 0,
           }
         );
-        setGoals(goalsRes.goals || []);
+
         setTasks(tasksRes.tasks || []);
 
         // Only update timer state if we're viewing current user's data
@@ -678,15 +663,9 @@ export default function TimeTrackerContent({
   }, []);
 
   // Handle user selection change
-  const handleUserChange = useCallback(
-    (userId: string | null) => {
-      setSelectedUserId(userId);
-      if (userId !== null && activeTab === 'timer') {
-        setActiveTab('history');
-      }
-    },
-    [activeTab]
-  );
+  const handleUserChange = useCallback((userId: string | null) => {
+    setSelectedUserId(userId);
+  }, []);
 
   // Retry function with exponential backoff
   const handleRetry = useCallback(() => {
@@ -1297,106 +1276,36 @@ export default function TimeTrackerContent({
             </div>
           </div>
 
-          {/* Main Tabs - Timer, History, Categories, Goals */}
-          <Tabs value={activeTab} onValueChange={setActiveTab}>
-            {/* Tab Content */}
-            {!isViewingOtherUser && (
-              <TabsContent
-                value="timer"
-                className="fade-in-50 animate-in duration-300"
-              >
-                <div data-timer-controls>
-                  <TimerControls
-                    wsId={wsId}
-                    currentSession={currentSession}
-                    setCurrentSession={setCurrentSession}
-                    elapsedTime={elapsedTime}
-                    setElapsedTime={setElapsedTime}
-                    isRunning={isRunning}
-                    setIsRunning={setIsRunning}
-                    categories={categories}
-                    tasks={tasks}
-                    onSessionUpdate={() => fetchData(false)}
-                    formatTime={formatTime}
-                    formatDuration={formatDuration}
-                    apiCall={apiCall}
-                    isDraggingTask={false}
-                    onGoToTasksTab={() => {
-                      toast.success(
-                        'Navigate to Tasks page to create your first task!'
-                      );
-                    }}
-                    currentUserId={currentUserId}
-                  />
-                </div>
-              </TabsContent>
-            )}
-
-            <TabsContent
-              value="history"
+          {/* Timer Controls */}
+          {!isViewingOtherUser && (
+            <div
+              data-timer-controls
               className="fade-in-50 animate-in duration-300"
             >
-              {isViewingOtherUser && (
-                <div className="slide-in-from-top mb-4 animate-in rounded-lg border border-blue-200 bg-blue-50 p-4 duration-300 dark:border-blue-800/60 dark:bg-blue-950/30">
-                  <p className="flex items-center gap-2 text-blue-700 text-sm dark:text-blue-300">
-                    <Calendar className="h-4 w-4" />
-                    You&apos;re viewing another user&apos;s session history. You
-                    can see their sessions but cannot edit them.
-                  </p>
-                </div>
-              )}
-              <SessionHistory
+              <TimerControls
                 wsId={wsId}
-                sessions={recentSessions}
+                currentSession={currentSession}
+                setCurrentSession={setCurrentSession}
+                elapsedTime={elapsedTime}
+                setElapsedTime={setElapsedTime}
+                isRunning={isRunning}
+                setIsRunning={setIsRunning}
                 categories={categories}
                 tasks={tasks}
                 onSessionUpdate={() => fetchData(false)}
-                readOnly={isViewingOtherUser}
+                formatTime={formatTime}
                 formatDuration={formatDuration}
                 apiCall={apiCall}
+                isDraggingTask={false}
+                onGoToTasksTab={() => {
+                  toast.success(
+                    'Navigate to Tasks page to create your first task!'
+                  );
+                }}
+                currentUserId={currentUserId}
               />
-            </TabsContent>
-
-            {!isViewingOtherUser && (
-              <TabsContent
-                value="categories"
-                className="fade-in-50 animate-in duration-300"
-              >
-                <CategoryManager
-                  wsId={wsId}
-                  categories={categories}
-                  onCategoriesUpdate={() => fetchData(false)}
-                  readOnly={isViewingOtherUser}
-                  apiCall={apiCall}
-                />
-              </TabsContent>
-            )}
-
-            <TabsContent
-              value="goals"
-              className="fade-in-50 animate-in duration-300"
-            >
-              {isViewingOtherUser && (
-                <div className="slide-in-from-top mb-4 animate-in rounded-lg border border-blue-200 bg-blue-50 p-4 duration-300 dark:border-blue-800/60 dark:bg-blue-950/30">
-                  <p className="flex items-center gap-2 text-blue-700 text-sm dark:text-blue-300">
-                    <TrendingUp className="h-4 w-4" />
-                    You&apos;re viewing another user&apos;s goals. You can see
-                    their progress but cannot edit them.
-                  </p>
-                </div>
-              )}
-              <GoalManager
-                wsId={wsId}
-                goals={goals}
-                categories={categories}
-                timerStats={timerStats}
-                onGoalsUpdate={() => fetchData(false)}
-                readOnly={isViewingOtherUser}
-                formatDuration={formatDuration}
-                apiCall={apiCall}
-              />
-            </TabsContent>
-          </Tabs>
+            </div>
+          )}
         </div>
       </div>
 
