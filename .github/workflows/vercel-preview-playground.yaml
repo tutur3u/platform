@@ -1,21 +1,21 @@
-name: Vercel Nova Preview Deployment
+name: Vercel Playground Preview Deployment
 on:
   workflow_run:
     workflows: ["Detect Changes for Apps"]
     types: [completed]
-    branches-ignore: [production]
+    branches-ignore: [main, production]
 
 jobs:
-  deploy-nova:
+  deploy-playground:
     if: |
       github.event.workflow_run.conclusion == 'success' &&
-      contains(fromJSON(github.event.workflow_run.outputs.apps), 'nova')
+      contains(fromJSON(github.event.workflow_run.outputs.apps), 'playground')
     uses: ./.github/workflows/build-app.yml
     with:
-      app: nova
-      app-path: apps/nova
+      app: playground
+      app-path: apps/playground
       build-command: vercel build --token=${{ secrets.VERCEL_TOKEN }}
-      vercel-project-id: ${{ secrets.VERCEL_NOVA_PROJECT_ID }}
+      vercel-project-id: ${{ secrets.VERCEL_PLAYGROUND_PROJECT_ID }}
     secrets:
       VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
       VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}

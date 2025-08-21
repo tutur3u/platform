@@ -1,0 +1,87 @@
+name: Detect Changes for Apps
+on:
+  pull_request:
+    types: [ opened, synchronize, reopened ]
+    paths:
+    - 'apps/**'
+    - 'packages/**'
+
+jobs:
+  detect-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      apps-to-build: ${{ steps.changes.outputs.apps }}
+      matrix: ${{ steps.changes.outputs.matrix }}
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v5
+      with:
+        fetch-depth: 0
+
+    - name: Setup bun
+      uses: oven-sh/setup-bun@v2
+
+    - name: Install dependencies
+      run: bun install
+
+    - name: Detect changes using Turbo
+      id: changes
+      run: |
+        # Get changed files
+        CHANGED_FILES=$(git diff --name-only origin/main...HEAD)
+
+        # Use Turbo to find affected packages for each app
+        APPS_TO_BUILD=()
+
+        # Get all apps from workspace
+        APPS=$(bun run turbo list --filter="apps/*" --json | jq -r '.[].name')
+
+        for app in $APPS; do
+          # Check if app directory changed
+          # Extract the app name without the @tuturuuu/ prefix
+          app_name=${app#@tuturuuu/}
+          app_path="apps/$app_name"
+          if echo "$CHANGED_FILES" | grep -q "^$app_path/"; then
+            APPS_TO_BUILD+=("$app")
+            continue
+          fi
+          
+          # Use Turbo to find what would be affected if we built this app
+          # This automatically includes all dependencies
+          AFFECTED=$(bun run turbo run build --filter="$app" --dry-run --json | jq -r '.[].package')
+          
+          # Check if any of the affected packages changed
+          for pkg in $AFFECTED; do
+            pkg_path=""
+            if [[ $pkg == @tuturuuu/* ]]; then
+              pkg_name=${pkg#@tuturuuu/}
+              pkg_path="packages/$pkg_name"
+            elif [[ $pkg == apps/* ]]; then
+              pkg_name=${pkg#apps/}
+              pkg_path="apps/$pkg_name"
+            fi
+            
+            if [ -n "$pkg_path" ] && echo "$CHANGED_FILES" | grep -q "^$pkg_path/"; then
+              APPS_TO_BUILD+=("$app")
+              break
+            fi
+          done
+        done
+
+        # Remove duplicates and create matrix
+        UNIQUE_APPS=$(printf '%s\n' "${APPS_TO_BUILD[@]}" | sort -u | grep -v '^$')
+        MATRIX=$(echo "$UNIQUE_APPS" | jq -R -s -c 'split("\n")[:-1] | map({app: .})')
+
+        echo "apps=$(echo "$UNIQUE_APPS" | tr '\n' ',' | sed 's/,$//')" >> $GITHUB_OUTPUT
+        echo "matrix=$MATRIX" >> $GITHUB_OUTPUT
+
+        echo "=== Debug Information ==="
+        echo "Changed files:"
+        echo "$CHANGED_FILES" | head -20
+        echo "..."
+        echo ""
+        echo "All apps found:"
+        echo "$APPS"
+        echo ""
+        echo "Apps to build: $UNIQUE_APPS"
+        echo "Matrix: $MATRIX"
