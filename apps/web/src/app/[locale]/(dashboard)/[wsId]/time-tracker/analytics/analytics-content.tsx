@@ -1,16 +1,16 @@
 'use client';
 
+import { ActivityHeatmap } from '../components/activity-heatmap';
+import { StatsOverview } from '../components/stats-overview';
+import { YearSummaryStats } from '../components/year-summary-stats';
+import { useCurrentUser } from '../hooks/use-current-user';
+import type { TimerStats } from '../types';
 import { Button } from '@tuturuuu/ui/button';
 import { Clock, RefreshCw, TrendingUp } from '@tuturuuu/ui/icons';
 import { toast } from '@tuturuuu/ui/sonner';
 import { cn, formatDuration } from '@tuturuuu/utils/format';
 import { useParams } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityHeatmap } from '../components/activity-heatmap';
-import { StatsOverview } from '../components/stats-overview';
-import { YearSummaryStats } from '../components/year-summary-stats';
-import { useCurrentUser } from '../hooks/use-current-user';
-import type { TimerStats } from '../types';
 
 interface AnalyticsContentProps {
   wsId?: string;
@@ -209,7 +209,7 @@ export function AnalyticsContent({ wsId: propWsId }: AnalyticsContentProps) {
       <div className="flex items-center justify-center py-24">
         <div className="space-y-4 text-center">
           <div className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent"></div>
-          <p className="animate-pulse text-muted-foreground text-sm">
+          <p className="animate-pulse text-sm text-muted-foreground">
             Loading analytics...
           </p>
         </div>
@@ -220,7 +220,7 @@ export function AnalyticsContent({ wsId: propWsId }: AnalyticsContentProps) {
   return (
     <div
       className={cn(
-        'fade-in-50 animate-in space-y-6 duration-500',
+        'space-y-6 duration-500 animate-in fade-in-50',
         isLoading && 'opacity-50'
       )}
     >
@@ -234,16 +234,16 @@ export function AnalyticsContent({ wsId: propWsId }: AnalyticsContentProps) {
                 <TrendingUp className="h-6 w-6 text-white" />
               </div>
               <div>
-                <h1 className="font-bold text-2xl tracking-tight sm:text-3xl">
+                <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">
                   Analytics Dashboard
                 </h1>
-                <p className="text-muted-foreground text-sm sm:text-base">
+                <p className="text-sm text-muted-foreground sm:text-base">
                   Track and analyze your productivity patterns
                 </p>
               </div>
             </div>
 
-            <div className="flex flex-wrap items-center gap-2 text-muted-foreground text-xs">
+            <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
               <div className="flex items-center gap-1">
                 <div className="h-2 w-2 rounded-full bg-green-500"></div>
                 <span>Week starts Monday</span>
@@ -256,7 +256,7 @@ export function AnalyticsContent({ wsId: propWsId }: AnalyticsContentProps) {
             </div>
 
             {lastRefresh && (
-              <div className="flex items-center gap-2 text-muted-foreground text-xs">
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
                 <Clock className="h-3 w-3" />
                 <span>Last updated: {lastRefresh.toLocaleTimeString()}</span>
                 {isOffline && (
