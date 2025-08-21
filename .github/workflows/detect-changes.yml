@@ -68,10 +68,6 @@ jobs:
           # Filter for actual app packages and clean up the output
           POTENTIAL_APPS=$(cat /tmp/turbo_output | grep "^@tuturuuu/" | grep -v "#build" | tr -d ' ' | sort -u)
           
-          # Debug: show raw turbo output
-          echo "Raw turbo list output:"
-          cat /tmp/turbo_output | head -20
-          echo "..."
           
           # Check if we actually found any apps (not just that the command succeeded)
           if [ -n "$POTENTIAL_APPS" ]; then
@@ -150,10 +146,6 @@ jobs:
             # The output format is: @tuturuuu/package-name#build
             POTENTIAL_AFFECTED=$(cat /tmp/turbo_build_output | grep "^@tuturuuu/" | sed 's|#build||' | tr -d ' ' | sort -u)
             
-            # Debug: show raw build output for first few lines
-            echo "Raw turbo build output (first 10 lines):"
-            cat /tmp/turbo_build_output | head -10
-            echo "..."
             
             # Check if we actually found dependencies (not just that the command succeeded)
             if [ -n "$POTENTIAL_AFFECTED" ]; then
@@ -221,7 +213,7 @@ jobs:
         echo "$UNIQUE_APPS" > apps-to-build.txt
         echo "$MATRIX" > matrix.json
 
-        echo "=== Debug Information ==="
+        echo "=== Information ==="
         echo "Changed files:"
         echo "$CHANGED_FILES" | head -20
         echo "..."
