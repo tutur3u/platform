@@ -1,4 +1,4 @@
-name: Vercel Platform Preview Deployment
+name: Vercel Tudo Preview Deployment
 on:
   workflow_run:
     workflows: [ "Detect Changes for Apps" ]
@@ -16,7 +16,7 @@ jobs:
     runs-on: ubuntu-latest
     if: (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch != 'production') || github.event_name == 'workflow_dispatch'
     outputs:
-      web_detected: ${{ steps.check-web.outputs.web_detected }}
+      tudo_detected: ${{ steps.check-tudo.outputs.tudo_detected }}
     steps:
     - name: Download apps-to-build artifact
       uses: actions/download-artifact@v4
@@ -28,44 +28,44 @@ jobs:
         github-token: ${{ secrets.GITHUB_TOKEN }}
         run-id: ${{ github.event.workflow_run.id }}
 
-    - name: Check if web should be built
-      id: check-web
+    - name: Check if tudo should be built
+      id: check-tudo
       run: |
         # Force deploy if triggered manually with force_deploy=true
         if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ inputs.force_deploy }}" = "true" ]; then
-          echo "web_detected=true" >> $GITHUB_OUTPUT
+          echo "tudo_detected=true" >> $GITHUB_OUTPUT
           echo "✅ Force deployment requested via workflow_dispatch"
           exit 0
         fi
 
         # Check if artifact was downloaded successfully
         if [ "${{ steps.download-artifact.outcome }}" != "success" ]; then
-          echo "web_detected=false" >> $GITHUB_OUTPUT
+          echo "tudo_detected=false" >> $GITHUB_OUTPUT
           echo "❌ Failed to download apps-to-build artifact, skipping build"
           exit 0
         fi
 
         if [ -f "apps-to-build.txt" ]; then
-          if grep -q "web" "apps-to-build.txt"; then
-            echo "web_detected=true" >> $GITHUB_OUTPUT
-            echo "✅ Web changes detected, proceeding with build"
+          if grep -q "tudo" "apps-to-build.txt"; then
+            echo "tudo_detected=true" >> $GITHUB_OUTPUT
+            echo "✅ Tudo changes detected, proceeding with build"
           else
-            echo "web_detected=false" >> $GITHUB_OUTPUT
-            echo "❌ No Web changes detected, skipping build"
+            echo "tudo_detected=false" >> $GITHUB_OUTPUT
+            echo "❌ No Tudo changes detected, skipping build"
           fi
         else
-          echo "web_detected=false" >> $GITHUB_OUTPUT
+          echo "tudo_detected=false" >> $GITHUB_OUTPUT
           echo "❌ apps-to-build.txt not found, skipping build"
         fi
 
-  deploy-web:
+  deploy-tudo:
     needs: check-changes
-    if: needs.check-changes.outputs.web_detected == 'true'
+    if: needs.check-changes.outputs.tudo_detected == 'true'
     uses: ./.github/workflows/build-app.yml
     secrets:
       VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
       VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PLATFORM_PROJECT_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_TUDO_PROJECT_ID }}
       TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
       TURBO_TEAM: ${{ secrets.TURBO_TEAM }}
       GOOGLE_VERTEX_PROJECT: ${{ secrets.GOOGLE_VERTEX_PROJECT }}
