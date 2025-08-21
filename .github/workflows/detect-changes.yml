@@ -53,7 +53,13 @@ jobs:
 
         # Ensure we have the latest main branch
         CHANGED_FILES=$(git diff --name-only origin/main...HEAD)
-        echo "Changed files found: $(echo "$CHANGED_FILES" | wc -l)"
+        CHANGED_COUNT=$(echo "$CHANGED_FILES" | wc -l)
+        echo "Changed files found: $CHANGED_COUNT"
+
+        if [ "$CHANGED_COUNT" -eq 0 ]; then
+          echo "ℹ️  No changes detected compared to main branch"
+          echo "   This workflow will continue but no apps will be built"
+        fi
 
         # Use Turbo to find affected packages for each app
         APPS_TO_BUILD=()
@@ -66,9 +72,8 @@ jobs:
         echo "Attempting to use Turbo list..."
         if bun run turbo list --filter="apps/*" > /tmp/turbo_output 2>&1; then
           # Filter for actual app packages and clean up the output
-          POTENTIAL_APPS=$(cat /tmp/turbo_output | grep "^@tuturuuu/" | grep -v "#build" | tr -d ' ' | sort -u)
-          
-          
+          POTENTIAL_APPS=$(cat /tmp/turbo_output | grep "^@tuturuuu/[^/]*$" | grep -v "#build" | tr -d ' ' | sort -u)
+
           # Check if we actually found any apps (not just that the command succeeded)
           if [ -n "$POTENTIAL_APPS" ]; then
             APPS="$POTENTIAL_APPS"
@@ -144,9 +149,8 @@ jobs:
           if bun run turbo run build --filter="$app" --dry-run > /tmp/turbo_build_output 2>&1; then
             # Clean up the output to only get package names, not paths or build targets
             # The output format is: @tuturuuu/package-name#build
-            POTENTIAL_AFFECTED=$(cat /tmp/turbo_build_output | grep "^@tuturuuu/" | sed 's|#build||' | tr -d ' ' | sort -u)
-            
-            
+            POTENTIAL_AFFECTED=$(cat /tmp/turbo_build_output | grep "^@tuturuuu/[^/]*#build$" | sed 's|#build||' | tr -d ' ' | sort -u)
+
             # Check if we actually found dependencies (not just that the command succeeded)
             if [ -n "$POTENTIAL_AFFECTED" ]; then
               AFFECTED="$POTENTIAL_AFFECTED"
@@ -226,7 +230,8 @@ jobs:
 
         # Validate outputs
         if [ -z "$UNIQUE_APPS" ]; then
-          echo "⚠️  Warning: No apps to build detected"
+          echo "ℹ️  No apps require building based on detected changes"
+          echo "   This is normal when changes don't affect any applications"
         else
           echo "✅ Successfully detected apps to build: $UNIQUE_APPS"
         fi
@@ -237,7 +242,16 @@ jobs:
           echo "✅ Matrix created successfully: $MATRIX"
         fi
 
-        # Exit successfully
+        # Provide final summary
+        if [ "$CHANGED_COUNT" -eq 0 ]; then
+          echo "🏁 Workflow completed: No changes to process"
+        elif [ -z "$UNIQUE_APPS" ]; then
+          echo "🏁 Workflow completed: Changes detected but no apps affected"
+        else
+          echo "🏁 Workflow completed: Ready to build $UNIQUE_APPS"
+        fi
+
+        # Always exit successfully to avoid workflow failures
         exit 0
 
     - name: Upload apps-to-build artifact
