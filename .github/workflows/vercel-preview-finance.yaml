@@ -19,7 +19,7 @@ jobs:
       finance_detected: ${{ steps.check-finance.outputs.finance_detected }}
     steps:
     - name: Download apps-to-build artifact
-      uses: actions/download-artifact@v4
+      uses: actions/download-artifact@v5
       id: download-artifact
       continue-on-error: true
       with:
