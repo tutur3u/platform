@@ -1,10 +1,10 @@
+import { DataTableColumnHeader } from '@/components/data-table-column-header';
+import { DataTableRowActions } from '@/components/data-table-row-actions';
 import type { ColumnDef } from '@tanstack/react-table';
 import type { Wallet } from '@tuturuuu/types/primitives/Wallet';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Checkbox } from '@tuturuuu/ui/checkbox';
 import { formatCurrency } from '@tuturuuu/utils/format';
-import { DataTableColumnHeader } from '@/components/data-table-column-header';
-import { DataTableRowActions } from '@/components/data-table-row-actions';
 
 export const walletColumns: ColumnDef<Wallet>[] = [
   {

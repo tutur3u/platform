@@ -1,5 +1,9 @@
 'use client';
 
+import { TimerControls } from './components/timer-controls';
+import { UserSelector } from './components/user-selector';
+import { useCurrentUser } from './hooks/use-current-user';
+import type { ExtendedWorkspaceTask, SessionWithRelations } from './types';
 import type { TimeTrackingCategory } from '@tuturuuu/types/db';
 import { Button } from '@tuturuuu/ui/button';
 import { Card } from '@tuturuuu/ui/card';
@@ -8,10 +12,6 @@ import { toast } from '@tuturuuu/ui/sonner';
 import { cn } from '@tuturuuu/utils/format';
 import { useParams } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { TimerControls } from './components/timer-controls';
-import { UserSelector } from './components/user-selector';
-import { useCurrentUser } from './hooks/use-current-user';
-import type { ExtendedWorkspaceTask, SessionWithRelations } from './types';
 
 export default function TimeTrackerContent() {
   const params = useParams();
@@ -129,7 +129,7 @@ export default function TimeTrackerContent() {
       <div className="flex items-center justify-center py-24">
         <div className="space-y-4 text-center">
           <div className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent"></div>
-          <p className="animate-pulse text-muted-foreground text-sm">
+          <p className="animate-pulse text-sm text-muted-foreground">
             Loading timer...
           </p>
         </div>
@@ -146,10 +146,10 @@ export default function TimeTrackerContent() {
             <Clock className="h-6 w-6 text-white" />
           </div>
           <div>
-            <h1 className="font-bold text-2xl tracking-tight sm:text-3xl">
+            <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">
               Time Tracker
             </h1>
-            <p className="text-muted-foreground text-sm sm:text-base">
+            <p className="text-sm text-muted-foreground sm:text-base">
               Track your time with detailed analytics
             </p>
           </div>

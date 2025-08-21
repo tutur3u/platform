@@ -1,5 +1,12 @@
 'use client';
 
+import { useCurrentUser } from '../hooks/use-current-user';
+import type { ExtendedWorkspaceTask, TaskSidebarFilters } from '../types';
+import {
+  generateAssigneeInitials,
+  getFilteredAndSortedSidebarTasks,
+  useTaskCounts,
+} from '../utils';
 import { Button } from '@tuturuuu/ui/button';
 import { CheckCircle, Clock, MapPin, RefreshCw, Tag } from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
@@ -15,13 +22,6 @@ import { cn } from '@tuturuuu/utils/format';
 import Image from 'next/image';
 import { useParams } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { useCurrentUser } from '../hooks/use-current-user';
-import type { ExtendedWorkspaceTask, TaskSidebarFilters } from '../types';
-import {
-  generateAssigneeInitials,
-  getFilteredAndSortedSidebarTasks,
-  useTaskCounts,
-} from '../utils';
 
 interface TasksContentProps {
   wsId?: string;
@@ -225,7 +225,7 @@ export function TasksContent({ wsId: propWsId }: TasksContentProps) {
       <div className="flex items-center justify-center py-24">
         <div className="space-y-4 text-center">
           <div className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent"></div>
-          <p className="animate-pulse text-muted-foreground text-sm">
+          <p className="animate-pulse text-sm text-muted-foreground">
             Loading tasks...
           </p>
         </div>
@@ -236,7 +236,7 @@ export function TasksContent({ wsId: propWsId }: TasksContentProps) {
   return (
     <div
       className={cn(
-        'fade-in-50 animate-in space-y-6 duration-500',
+        'space-y-6 duration-500 animate-in fade-in-50',
         isLoading && 'opacity-50'
       )}
     >
@@ -250,16 +250,16 @@ export function TasksContent({ wsId: propWsId }: TasksContentProps) {
                 <CheckCircle className="h-6 w-6 text-white" />
               </div>
               <div>
-                <h1 className="font-bold text-2xl tracking-tight sm:text-3xl">
+                <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">
                   Task Workspace
                 </h1>
-                <p className="text-muted-foreground text-sm sm:text-base">
+                <p className="text-sm text-muted-foreground sm:text-base">
                   Drag tasks to timer to start tracking 🎯
                 </p>
               </div>
             </div>
 
-            <div className="flex flex-wrap items-center gap-2 text-muted-foreground text-xs">
+            <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
               <div className="flex items-center gap-1">
                 <div className="h-2 w-2 rounded-full bg-green-500"></div>
                 <span>My Tasks: {myTasksCount}</span>
@@ -272,7 +272,7 @@ export function TasksContent({ wsId: propWsId }: TasksContentProps) {
             </div>
 
             {lastRefresh && (
-              <div className="flex items-center gap-2 text-muted-foreground text-xs">
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
                 <Clock className="h-3 w-3" />
                 <span>Last updated: {lastRefresh.toLocaleTimeString()}</span>
                 {isOffline && (
@@ -340,7 +340,7 @@ export function TasksContent({ wsId: propWsId }: TasksContentProps) {
                   }))
                 }
                 className={cn(
-                  'flex items-center gap-1.5 rounded-md px-2.5 py-1.5 font-medium text-xs transition-all',
+                  'flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition-all',
                   tasksSidebarFilters.assignee === 'mine'
                     ? 'bg-blue-100 text-blue-700 ring-1 ring-blue-200 dark:bg-blue-900/30 dark:text-blue-300 dark:ring-blue-800'
                     : 'bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground'
@@ -364,7 +364,7 @@ export function TasksContent({ wsId: propWsId }: TasksContentProps) {
                   }))
                 }
                 className={cn(
-                  'flex items-center gap-1.5 rounded-md px-2.5 py-1.5 font-medium text-xs transition-all',
+                  'flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition-all',
                   tasksSidebarFilters.assignee === 'unassigned'
                     ? 'bg-orange-100 text-orange-700 ring-1 ring-orange-200 dark:bg-orange-900/30 dark:text-orange-300 dark:ring-orange-800'
                     : 'bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground'
@@ -466,11 +466,11 @@ export function TasksContent({ wsId: propWsId }: TasksContentProps) {
               tasksSidebarFilters.list !== 'all' ||
               tasksSidebarFilters.assignee !== 'all') && (
               <div className="flex flex-wrap items-center gap-2">
-                <span className="text-muted-foreground text-xs">
+                <span className="text-xs text-muted-foreground">
                   Active filters:
                 </span>
                 {tasksSidebarSearch && (
-                  <span className="inline-flex items-center gap-1 rounded-md bg-blue-100 px-2 py-1 text-blue-700 text-xs dark:bg-blue-900/30 dark:text-blue-300">
+                  <span className="inline-flex items-center gap-1 rounded-md bg-blue-100 px-2 py-1 text-xs text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
                     Search: &quot;{tasksSidebarSearch}&quot;
                     <Button
                       type="button"
@@ -484,7 +484,7 @@ export function TasksContent({ wsId: propWsId }: TasksContentProps) {
                   </span>
                 )}
                 {tasksSidebarFilters.board !== 'all' && (
-                  <span className="inline-flex items-center gap-1 rounded-md bg-green-100 px-2 py-1 text-green-700 text-xs dark:bg-green-900/30 dark:text-green-300">
+                  <span className="inline-flex items-center gap-1 rounded-md bg-green-100 px-2 py-1 text-xs text-green-700 dark:bg-green-900/30 dark:text-green-300">
                     Board: {tasksSidebarFilters.board}
                     <Button
                       type="button"
@@ -503,7 +503,7 @@ export function TasksContent({ wsId: propWsId }: TasksContentProps) {
                   </span>
                 )}
                 {tasksSidebarFilters.list !== 'all' && (
-                  <span className="inline-flex items-center gap-1 rounded-md bg-purple-100 px-2 py-1 text-purple-700 text-xs dark:bg-purple-900/30 dark:text-purple-300">
+                  <span className="inline-flex items-center gap-1 rounded-md bg-purple-100 px-2 py-1 text-xs text-purple-700 dark:bg-purple-900/30 dark:text-purple-300">
                     List: {tasksSidebarFilters.list}
                     <Button
                       type="button"
@@ -522,7 +522,7 @@ export function TasksContent({ wsId: propWsId }: TasksContentProps) {
                   </span>
                 )}
                 {tasksSidebarFilters.assignee !== 'all' && (
-                  <span className="inline-flex items-center gap-1 rounded-md bg-orange-100 px-2 py-1 text-orange-700 text-xs dark:bg-orange-900/30 dark:text-orange-300">
+                  <span className="inline-flex items-center gap-1 rounded-md bg-orange-100 px-2 py-1 text-xs text-orange-700 dark:bg-orange-900/30 dark:text-orange-300">
                     {tasksSidebarFilters.assignee === 'mine'
                       ? 'My Tasks'
                       : tasksSidebarFilters.assignee === 'unassigned'
@@ -556,7 +556,7 @@ export function TasksContent({ wsId: propWsId }: TasksContentProps) {
                       assignee: 'all',
                     });
                   }}
-                  className="h-auto p-0 text-muted-foreground text-xs hover:text-foreground"
+                  className="h-auto p-0 text-xs text-muted-foreground hover:text-foreground"
                 >
                   Clear all
                 </Button>
@@ -576,9 +576,9 @@ export function TasksContent({ wsId: propWsId }: TasksContentProps) {
 
               if (tasks.length === 0) {
                 return (
-                  <div className="rounded-lg border-2 border-muted-foreground/25 border-dashed p-6 text-center">
+                  <div className="rounded-lg border-2 border-dashed border-muted-foreground/25 p-6 text-center">
                     <CheckCircle className="mx-auto mb-3 h-8 w-8 text-muted-foreground" />
-                    <p className="text-muted-foreground text-sm">
+                    <p className="text-sm text-muted-foreground">
                       No tasks available. Create tasks in your project boards to
                       see them here.
                     </p>
@@ -588,9 +588,9 @@ export function TasksContent({ wsId: propWsId }: TasksContentProps) {
 
               if (filteredSidebarTasks.length === 0) {
                 return (
-                  <div className="rounded-lg border-2 border-muted-foreground/25 border-dashed p-6 text-center">
+                  <div className="rounded-lg border-2 border-dashed border-muted-foreground/25 p-6 text-center">
                     <CheckCircle className="mx-auto mb-3 h-8 w-8 text-muted-foreground" />
-                    <p className="text-muted-foreground text-sm">
+                    <p className="text-sm text-muted-foreground">
                       No tasks found matching your criteria.
                     </p>
                   </div>
@@ -600,7 +600,7 @@ export function TasksContent({ wsId: propWsId }: TasksContentProps) {
               return (
                 <>
                   {/* Task Count Header */}
-                  <div className="mb-3 flex items-center justify-between px-1 text-muted-foreground text-xs">
+                  <div className="mb-3 flex items-center justify-between px-1 text-xs text-muted-foreground">
                     <span>
                       {filteredSidebarTasks.length} task
                       {filteredSidebarTasks.length !== 1 ? 's' : ''} available
@@ -629,7 +629,7 @@ export function TasksContent({ wsId: propWsId }: TasksContentProps) {
                               ? 'border-blue-300 bg-gradient-to-br from-blue-50 to-blue-100 ring-1 ring-blue-200 dark:border-blue-700 dark:from-blue-950/30 dark:to-blue-900/30 dark:ring-blue-800'
                               : 'border-gray-200/60 bg-white dark:border-gray-700/60 dark:bg-gray-800/80',
                             isDraggingTask &&
-                              'shadow-blue-500/10 shadow-md ring-1 ring-blue-400/30'
+                              'shadow-md ring-1 shadow-blue-500/10 ring-blue-400/30'
                           )}
                           draggable
                           onDragStart={(e) => {
@@ -668,7 +668,7 @@ export function TasksContent({ wsId: propWsId }: TasksContentProps) {
                               <div className="flex items-start justify-between gap-2">
                                 <h4
                                   className={cn(
-                                    'mb-1 font-medium text-sm',
+                                    'mb-1 text-sm font-medium',
                                     task.is_assigned_to_current_user
                                       ? 'text-blue-900 dark:text-blue-100'
                                       : 'text-gray-900 dark:text-gray-100'
@@ -676,14 +676,14 @@ export function TasksContent({ wsId: propWsId }: TasksContentProps) {
                                 >
                                   {task.name}
                                   {task.is_assigned_to_current_user && (
-                                    <span className="ml-2 inline-flex items-center rounded-full bg-blue-100 px-2 py-0.5 font-medium text-blue-800 text-xs dark:bg-blue-900/50 dark:text-blue-200">
+                                    <span className="ml-2 inline-flex items-center rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-800 dark:bg-blue-900/50 dark:text-blue-200">
                                       Assigned to you
                                     </span>
                                   )}
                                 </h4>
                               </div>
                               {task.description && (
-                                <p className="mb-3 line-clamp-2 text-gray-600 text-xs dark:text-gray-400">
+                                <p className="mb-3 line-clamp-2 text-xs text-gray-600 dark:text-gray-400">
                                   {task.description}
                                 </p>
                               )}
@@ -691,7 +691,7 @@ export function TasksContent({ wsId: propWsId }: TasksContentProps) {
                               {/* Assignees Display */}
                               {task.assignees && task.assignees.length > 0 && (
                                 <div className="mb-2 flex items-center gap-2">
-                                  <div className="-space-x-1 flex">
+                                  <div className="flex -space-x-1">
                                     {task.assignees
                                       .slice(0, 3)
                                       .map((assignee) => (
@@ -716,7 +716,7 @@ export function TasksContent({ wsId: propWsId }: TasksContentProps) {
                                               className="h-full w-full rounded-full object-cover"
                                             />
                                           ) : (
-                                            <div className="flex h-full w-full items-center justify-center font-medium text-[8px] text-gray-600 dark:text-gray-300">
+                                            <div className="flex h-full w-full items-center justify-center text-[8px] font-medium text-gray-600 dark:text-gray-300">
                                               {generateAssigneeInitials(
                                                 assignee
                                               )}
@@ -725,12 +725,12 @@ export function TasksContent({ wsId: propWsId }: TasksContentProps) {
                                         </div>
                                       ))}
                                     {task.assignees.length > 3 && (
-                                      <div className="flex h-5 w-5 items-center justify-center rounded-full border-2 border-white bg-gray-200 font-medium text-[8px] text-gray-600 dark:border-gray-800 dark:bg-gray-700 dark:text-gray-300">
+                                      <div className="flex h-5 w-5 items-center justify-center rounded-full border-2 border-white bg-gray-200 text-[8px] font-medium text-gray-600 dark:border-gray-800 dark:bg-gray-700 dark:text-gray-300">
                                         +{task.assignees.length - 3}
                                       </div>
                                     )}
                                   </div>
-                                  <span className="text-muted-foreground text-xs">
+                                  <span className="text-xs text-muted-foreground">
                                     {task.assignees.length} assigned
                                   </span>
                                 </div>
@@ -740,20 +740,20 @@ export function TasksContent({ wsId: propWsId }: TasksContentProps) {
                                 <div className="flex items-center gap-2">
                                   <div className="flex items-center gap-1 rounded-md bg-gray-100 px-1.5 py-0.5 dark:bg-gray-700">
                                     <MapPin className="h-3 w-3 text-gray-500 dark:text-gray-400" />
-                                    <span className="font-medium text-gray-600 text-xs dark:text-gray-300">
+                                    <span className="text-xs font-medium text-gray-600 dark:text-gray-300">
                                       {task.board_name}
                                     </span>
                                   </div>
                                   <div className="flex items-center gap-1 rounded-md bg-blue-100 px-1.5 py-0.5 dark:bg-blue-900/30">
                                     <Tag className="h-3 w-3 text-blue-600 dark:text-blue-400" />
-                                    <span className="font-medium text-blue-700 text-xs dark:text-blue-300">
+                                    <span className="text-xs font-medium text-blue-700 dark:text-blue-300">
                                       {task.list_name}
                                     </span>
                                   </div>
                                 </div>
                               )}
                             </div>
-                            <div className="flex flex-shrink-0 items-center gap-1.5 text-gray-400 text-xs opacity-0 transition-opacity group-hover:opacity-100">
+                            <div className="flex flex-shrink-0 items-center gap-1.5 text-xs text-gray-400 opacity-0 transition-opacity group-hover:opacity-100">
                               <span className="font-medium">Drag</span>
                               <svg
                                 className="h-3.5 w-3.5"
@@ -779,7 +779,7 @@ export function TasksContent({ wsId: propWsId }: TasksContentProps) {
                     {/* Scroll indicator */}
                     {filteredSidebarTasks.length > 5 && (
                       <div className="mt-2 text-center">
-                        <div className="inline-flex items-center gap-1 text-muted-foreground text-xs">
+                        <div className="inline-flex items-center gap-1 text-xs text-muted-foreground">
                           <span>Scroll for more</span>
                           <svg
                             className="h-3 w-3"

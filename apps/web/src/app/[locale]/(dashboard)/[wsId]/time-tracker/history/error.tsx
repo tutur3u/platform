@@ -19,7 +19,7 @@ export default function HistoryError({
     <div className="container mx-auto p-6">
       <div className="flex flex-col items-center justify-center space-y-4 py-12">
         <AlertTriangle className="h-16 w-16 text-destructive" />
-        <h2 className="font-bold text-2xl">Something went wrong!</h2>
+        <h2 className="text-2xl font-bold">Something went wrong!</h2>
         <p className="max-w-md text-center text-muted-foreground">
           We encountered an error while loading the time tracking history.
           Please try again or contact support if the problem persists.

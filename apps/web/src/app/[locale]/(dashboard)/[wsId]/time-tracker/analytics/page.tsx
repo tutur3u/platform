@@ -1,6 +1,6 @@
-import { Suspense } from 'react';
 import Loading from '../loading';
 import { AnalyticsContent } from './analytics-content';
+import { Suspense } from 'react';
 
 export default function AnalyticsPage() {
   return (

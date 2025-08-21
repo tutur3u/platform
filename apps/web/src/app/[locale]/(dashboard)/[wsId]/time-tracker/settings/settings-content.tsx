@@ -1,5 +1,6 @@
 'use client';
 
+import { useCurrentUser } from '../hooks/use-current-user';
 import { Button } from '@tuturuuu/ui/button';
 import { Calendar, Clock, RefreshCw, Settings } from '@tuturuuu/ui/icons';
 import { Label } from '@tuturuuu/ui/label';
@@ -12,9 +13,7 @@ import {
 } from '@tuturuuu/ui/select';
 import { Switch as SwitchComponent } from '@tuturuuu/ui/switch';
 import { cn } from '@tuturuuu/utils/format';
-
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { useCurrentUser } from '../hooks/use-current-user';
 
 export function SettingsContent() {
   const { userId: currentUserId, isLoading: isLoadingUser } = useCurrentUser();
@@ -64,7 +63,7 @@ export function SettingsContent() {
       <div className="flex items-center justify-center py-24">
         <div className="space-y-4 text-center">
           <div className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent"></div>
-          <p className="animate-pulse text-muted-foreground text-sm">
+          <p className="animate-pulse text-sm text-muted-foreground">
             Loading settings...
           </p>
         </div>
@@ -75,7 +74,7 @@ export function SettingsContent() {
   return (
     <div
       className={cn(
-        'fade-in-50 animate-in space-y-6 duration-500',
+        'space-y-6 duration-500 animate-in fade-in-50',
         isLoading && 'opacity-50'
       )}
     >
@@ -89,16 +88,16 @@ export function SettingsContent() {
                 <Settings className="h-6 w-6 text-white" />
               </div>
               <div>
-                <h1 className="font-bold text-2xl tracking-tight sm:text-3xl">
+                <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">
                   Timer Settings
                 </h1>
-                <p className="text-muted-foreground text-sm sm:text-base">
+                <p className="text-sm text-muted-foreground sm:text-base">
                   Customize your tracking experience ⚙️
                 </p>
               </div>
             </div>
 
-            <div className="flex flex-wrap items-center gap-2 text-muted-foreground text-xs">
+            <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
               <div className="flex items-center gap-1">
                 <div className="h-2 w-2 rounded-full bg-green-500"></div>
                 <span>Settings saved locally</span>
@@ -111,7 +110,7 @@ export function SettingsContent() {
             </div>
 
             {lastRefresh && (
-              <div className="flex items-center gap-2 text-muted-foreground text-xs">
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
                 <Clock className="h-3 w-3" />
                 <span>Last updated: {lastRefresh.toLocaleTimeString()}</span>
               </div>
@@ -145,10 +144,10 @@ export function SettingsContent() {
                     <Calendar className="h-5 w-5 text-white" />
                   </div>
                   <div>
-                    <h3 className="font-semibold text-gray-900 text-lg sm:text-xl dark:text-gray-100">
+                    <h3 className="text-lg font-semibold text-gray-900 sm:text-xl dark:text-gray-100">
                       Activity Heatmap Display
                     </h3>
-                    <p className="text-gray-600 text-sm dark:text-gray-400">
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
                       Customize how your activity heatmap is displayed
                     </p>
                   </div>
@@ -199,7 +198,7 @@ export function SettingsContent() {
                         </SelectItem>
                       </SelectContent>
                     </Select>
-                    <p className="text-muted-foreground text-xs">
+                    <p className="text-xs text-muted-foreground">
                       {heatmapSettings.viewMode === 'original' &&
                         'GitHub-style grid view with day labels'}
                       {heatmapSettings.viewMode === 'hybrid' &&
@@ -268,7 +267,7 @@ export function SettingsContent() {
 
                 <div className="space-y-4">
                   <div className="rounded-lg border bg-muted/30 p-4 dark:bg-muted/20">
-                    <h4 className="mb-2 font-medium text-sm">Preview</h4>
+                    <h4 className="mb-2 text-sm font-medium">Preview</h4>
                     <div className="space-y-2 text-xs">
                       <div className="flex items-center gap-2">
                         <div className="h-3 w-3 rounded-sm bg-gray-200 dark:bg-gray-700"></div>
@@ -290,10 +289,10 @@ export function SettingsContent() {
                   </div>
 
                   <div className="rounded-lg border bg-blue-50 p-4 dark:border-blue-800 dark:bg-blue-950/30">
-                    <h4 className="mb-2 font-medium text-blue-900 text-sm dark:text-blue-100">
+                    <h4 className="mb-2 text-sm font-medium text-blue-900 dark:text-blue-100">
                       Current Settings
                     </h4>
-                    <div className="space-y-1 text-blue-800 text-xs dark:text-blue-200">
+                    <div className="space-y-1 text-xs text-blue-800 dark:text-blue-200">
                       <p>View Mode: {heatmapSettings.viewMode}</p>
                       <p>Time Reference: {heatmapSettings.timeReference}</p>
                       <p>
@@ -316,10 +315,10 @@ export function SettingsContent() {
                     <Clock className="h-5 w-5 text-white" />
                   </div>
                   <div>
-                    <h3 className="font-semibold text-gray-900 text-lg sm:text-xl dark:text-gray-100">
+                    <h3 className="text-lg font-semibold text-gray-900 sm:text-xl dark:text-gray-100">
                       More Settings Coming Soon
                     </h3>
-                    <p className="text-gray-600 text-sm dark:text-gray-400">
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
                       Additional customization options in development
                     </p>
                   </div>
@@ -331,10 +330,10 @@ export function SettingsContent() {
                   <div className="mb-2 flex h-8 w-8 items-center justify-center rounded-lg bg-amber-100 dark:bg-amber-900/50">
                     <Clock className="h-4 w-4 text-amber-600 dark:text-amber-400" />
                   </div>
-                  <h4 className="mb-1 font-medium text-amber-900 text-sm dark:text-amber-100">
+                  <h4 className="mb-1 text-sm font-medium text-amber-900 dark:text-amber-100">
                     Timer Preferences
                   </h4>
-                  <p className="text-amber-700 text-xs dark:text-amber-300">
+                  <p className="text-xs text-amber-700 dark:text-amber-300">
                     Default session duration, break reminders, auto-pause
                   </p>
                 </div>
@@ -343,10 +342,10 @@ export function SettingsContent() {
                   <div className="mb-2 flex h-8 w-8 items-center justify-center rounded-lg bg-blue-100 dark:bg-blue-900/50">
                     <Calendar className="h-4 w-4 text-blue-600 dark:text-blue-400" />
                   </div>
-                  <h4 className="mb-1 font-medium text-blue-900 text-sm dark:text-blue-100">
+                  <h4 className="mb-1 text-sm font-medium text-blue-900 dark:text-blue-100">
                     Default Categories
                   </h4>
-                  <p className="text-blue-700 text-xs dark:text-blue-300">
+                  <p className="text-xs text-blue-700 dark:text-blue-300">
                     Pre-configured categories for common activities
                   </p>
                 </div>
@@ -355,17 +354,17 @@ export function SettingsContent() {
                   <div className="mb-2 flex h-8 w-8 items-center justify-center rounded-lg bg-green-100 dark:bg-green-900/50">
                     <Settings className="h-4 w-4 text-green-600 dark:text-green-400" />
                   </div>
-                  <h4 className="mb-1 font-medium text-green-900 text-sm dark:text-green-100">
+                  <h4 className="mb-1 text-sm font-medium text-green-900 dark:text-green-100">
                     Productivity Goals
                   </h4>
-                  <p className="text-green-700 text-xs dark:text-green-300">
+                  <p className="text-xs text-green-700 dark:text-green-300">
                     Set daily/weekly time targets and notifications
                   </p>
                 </div>
               </div>
 
-              <div className="mt-6 rounded-lg border-2 border-muted-foreground/25 border-dashed bg-muted/30 p-4 dark:bg-muted/20">
-                <p className="text-muted-foreground text-sm">
+              <div className="mt-6 rounded-lg border-2 border-dashed border-muted-foreground/25 bg-muted/30 p-4 dark:bg-muted/20">
+                <p className="text-sm text-muted-foreground">
                   🔧 We&apos;re continuously improving the time tracker with
                   more customization options. These features will help you
                   tailor the experience to your workflow and preferences.

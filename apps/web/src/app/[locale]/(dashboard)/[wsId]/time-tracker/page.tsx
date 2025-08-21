@@ -1,7 +1,7 @@
+import TimeTrackerContent from './time-tracker-content';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
 import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import { notFound } from 'next/navigation';
-import TimeTrackerContent from './time-tracker-content';
 
 interface Props {
   params: Promise<{

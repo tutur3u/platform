@@ -1,12 +1,11 @@
+import { DataTableColumnHeader } from '@/components/data-table-column-header';
+import { DataTableRowActions } from '@/components/data-table-row-actions';
 import type { ColumnDef } from '@tanstack/react-table';
 import type { Transaction } from '@tuturuuu/types/primitives/Transaction';
 import { Badge } from '@tuturuuu/ui/badge';
-
 import { Checkbox } from '@tuturuuu/ui/checkbox';
 import { Calendar, DollarSign } from '@tuturuuu/ui/icons';
 import { formatCurrency } from '@tuturuuu/utils/format';
-import { DataTableColumnHeader } from '@/components/data-table-column-header';
-import { DataTableRowActions } from '@/components/data-table-row-actions';
 
 export const transactionColumns: ColumnDef<Transaction>[] = [
   {
