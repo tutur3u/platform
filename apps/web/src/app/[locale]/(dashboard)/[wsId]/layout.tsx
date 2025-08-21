@@ -423,6 +423,7 @@ export default async function Layout({ children, params }: LayoutProps) {
         },
         {
           title: t('sidebar_tabs.time_tracker'),
+          key: 'time-tracker',
           aliases: [
             `/${correctedWSId}/time-tracker`,
             `/${correctedWSId}/time-tracker/analytics`,
@@ -454,7 +455,7 @@ export default async function Layout({ children, params }: LayoutProps) {
             {
               title: t('sidebar_tabs.reports'),
               href: `/${correctedWSId}/time-tracker/reports`,
-              icon: <Clock className="h-4 w-4" />,
+              icon: <FileText className="h-4 w-4" />,
             },
             {
               title: t('sidebar_tabs.settings'),

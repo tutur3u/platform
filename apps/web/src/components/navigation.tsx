@@ -9,6 +9,7 @@ import { type ReactNode, useCallback, useEffect, useState } from 'react';
 
 export interface NavLink {
   title: string;
+  key?: string;
   trailing?: string;
   icon?: ReactNode;
   href?: string;
