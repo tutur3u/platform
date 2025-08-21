@@ -41,13 +41,13 @@ export default function TimeTrackerGoalsPage() {
     <div className="container mx-auto space-y-6 p-6">
       <div className="mb-6 flex items-center gap-2">
         <Target className="h-6 w-6 text-primary" />
-        <h1 className="font-bold text-2xl">Time Tracker Goals</h1>
+        <h1 className="text-2xl font-bold">Time Tracker Goals</h1>
       </div>
 
       {/* Search and Actions Bar */}
       <div className="flex flex-col gap-4 sm:flex-row">
         <div className="relative flex-1">
-          <Search className="-translate-y-1/2 absolute top-1/2 left-3 h-4 w-4 transform text-muted-foreground" />
+          <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transform text-muted-foreground" />
           <Input placeholder="Search goals..." className="pl-10" />
         </div>
         <Button variant="outline" className="flex items-center gap-2">
@@ -135,45 +135,45 @@ export default function TimeTrackerGoalsPage() {
       <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="font-medium text-sm">Total Goals</CardTitle>
+            <CardTitle className="text-sm font-medium">Total Goals</CardTitle>
             <Target className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="font-bold text-2xl">8</div>
-            <p className="text-muted-foreground text-xs">+1 new this week</p>
+            <div className="text-2xl font-bold">8</div>
+            <p className="text-xs text-muted-foreground">+1 new this week</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="font-medium text-sm">In Progress</CardTitle>
+            <CardTitle className="text-sm font-medium">In Progress</CardTitle>
             <Clock className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="font-bold text-2xl">5</div>
-            <p className="text-muted-foreground text-xs">Currently active</p>
+            <div className="text-2xl font-bold">5</div>
+            <p className="text-xs text-muted-foreground">Currently active</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="font-medium text-sm">Completed</CardTitle>
+            <CardTitle className="text-sm font-medium">Completed</CardTitle>
             <Target className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="font-bold text-2xl">2</div>
-            <p className="text-muted-foreground text-xs">This month</p>
+            <div className="text-2xl font-bold">2</div>
+            <p className="text-xs text-muted-foreground">This month</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="font-medium text-sm">Success Rate</CardTitle>
+            <CardTitle className="text-sm font-medium">Success Rate</CardTitle>
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="font-bold text-2xl">87%</div>
-            <p className="text-muted-foreground text-xs">+5% from last month</p>
+            <div className="text-2xl font-bold">87%</div>
+            <p className="text-xs text-muted-foreground">+5% from last month</p>
           </CardContent>
         </Card>
       </div>
@@ -194,10 +194,10 @@ export default function TimeTrackerGoalsPage() {
                 <div className="flex items-center gap-3">
                   <div className="h-3 w-3 rounded-full bg-blue-500"></div>
                   <div>
-                    <h3 className="font-medium text-lg">
+                    <h3 className="text-lg font-medium">
                       Complete Mobile App Development
                     </h3>
-                    <p className="text-muted-foreground text-sm">
+                    <p className="text-sm text-muted-foreground">
                       Finish the React Native mobile application
                     </p>
                   </div>
@@ -207,18 +207,18 @@ export default function TimeTrackerGoalsPage() {
 
               <div className="mb-4 grid grid-cols-1 gap-4 md:grid-cols-3">
                 <div className="rounded-lg bg-blue-50 p-3 text-center">
-                  <div className="text-muted-foreground text-sm">
+                  <div className="text-sm text-muted-foreground">
                     Target Hours
                   </div>
-                  <div className="font-bold text-blue-600 text-xl">200h</div>
+                  <div className="text-xl font-bold text-blue-600">200h</div>
                 </div>
                 <div className="rounded-lg bg-green-50 p-3 text-center">
-                  <div className="text-muted-foreground text-sm">Completed</div>
-                  <div className="font-bold text-green-600 text-xl">156h</div>
+                  <div className="text-sm text-muted-foreground">Completed</div>
+                  <div className="text-xl font-bold text-green-600">156h</div>
                 </div>
                 <div className="rounded-lg bg-orange-50 p-3 text-center">
-                  <div className="text-muted-foreground text-sm">Remaining</div>
-                  <div className="font-bold text-orange-600 text-xl">44h</div>
+                  <div className="text-sm text-muted-foreground">Remaining</div>
+                  <div className="text-xl font-bold text-orange-600">44h</div>
                 </div>
               </div>
 
@@ -230,7 +230,7 @@ export default function TimeTrackerGoalsPage() {
                 <Progress value={78} className="h-2" />
               </div>
 
-              <div className="flex items-center justify-between text-muted-foreground text-sm">
+              <div className="flex items-center justify-between text-sm text-muted-foreground">
                 <span>Deadline: December 31, 2024</span>
                 <span>Category: Development</span>
               </div>
@@ -256,10 +256,10 @@ export default function TimeTrackerGoalsPage() {
                 <div className="flex items-center gap-3">
                   <div className="h-3 w-3 rounded-full bg-green-500"></div>
                   <div>
-                    <h3 className="font-medium text-lg">
+                    <h3 className="text-lg font-medium">
                       Learn Advanced React Patterns
                     </h3>
-                    <p className="text-muted-foreground text-sm">
+                    <p className="text-sm text-muted-foreground">
                       Master advanced React concepts and patterns
                     </p>
                   </div>
@@ -269,18 +269,18 @@ export default function TimeTrackerGoalsPage() {
 
               <div className="mb-4 grid grid-cols-1 gap-4 md:grid-cols-3">
                 <div className="rounded-lg bg-blue-50 p-3 text-center">
-                  <div className="text-muted-foreground text-sm">
+                  <div className="text-sm text-muted-foreground">
                     Target Hours
                   </div>
-                  <div className="font-bold text-blue-600 text-xl">80h</div>
+                  <div className="text-xl font-bold text-blue-600">80h</div>
                 </div>
                 <div className="rounded-lg bg-green-50 p-3 text-center">
-                  <div className="text-muted-foreground text-sm">Completed</div>
-                  <div className="font-bold text-green-600 text-xl">45h</div>
+                  <div className="text-sm text-muted-foreground">Completed</div>
+                  <div className="text-xl font-bold text-green-600">45h</div>
                 </div>
                 <div className="rounded-lg bg-orange-50 p-3 text-center">
-                  <div className="text-muted-foreground text-sm">Remaining</div>
-                  <div className="font-bold text-orange-600 text-xl">35h</div>
+                  <div className="text-sm text-muted-foreground">Remaining</div>
+                  <div className="text-xl font-bold text-orange-600">35h</div>
                 </div>
               </div>
 
@@ -292,7 +292,7 @@ export default function TimeTrackerGoalsPage() {
                 <Progress value={56} className="h-2" />
               </div>
 
-              <div className="flex items-center justify-between text-muted-foreground text-sm">
+              <div className="flex items-center justify-between text-sm text-muted-foreground">
                 <span>Deadline: November 15, 2024</span>
                 <span>Category: Learning</span>
               </div>
@@ -318,10 +318,10 @@ export default function TimeTrackerGoalsPage() {
                 <div className="flex items-center gap-3">
                   <div className="h-3 w-3 rounded-full bg-yellow-500"></div>
                   <div>
-                    <h3 className="font-medium text-lg">
+                    <h3 className="text-lg font-medium">
                       Design System Overhaul
                     </h3>
-                    <p className="text-muted-foreground text-sm">
+                    <p className="text-sm text-muted-foreground">
                       Redesign and implement new design system
                     </p>
                   </div>
@@ -331,18 +331,18 @@ export default function TimeTrackerGoalsPage() {
 
               <div className="mb-4 grid grid-cols-1 gap-4 md:grid-cols-3">
                 <div className="rounded-lg bg-blue-50 p-3 text-center">
-                  <div className="text-muted-foreground text-sm">
+                  <div className="text-sm text-muted-foreground">
                     Target Hours
                   </div>
-                  <div className="font-bold text-blue-600 text-xl">120h</div>
+                  <div className="text-xl font-bold text-blue-600">120h</div>
                 </div>
                 <div className="rounded-lg bg-green-50 p-3 text-center">
-                  <div className="text-muted-foreground text-sm">Completed</div>
-                  <div className="font-bold text-green-600 text-xl">28h</div>
+                  <div className="text-sm text-muted-foreground">Completed</div>
+                  <div className="text-xl font-bold text-green-600">28h</div>
                 </div>
                 <div className="rounded-lg bg-orange-50 p-3 text-center">
-                  <div className="text-muted-foreground text-sm">Remaining</div>
-                  <div className="font-bold text-orange-600 text-xl">92h</div>
+                  <div className="text-sm text-muted-foreground">Remaining</div>
+                  <div className="text-xl font-bold text-orange-600">92h</div>
                 </div>
               </div>
 
@@ -354,7 +354,7 @@ export default function TimeTrackerGoalsPage() {
                 <Progress value={23} className="h-2" />
               </div>
 
-              <div className="flex items-center justify-between text-muted-foreground text-sm">
+              <div className="flex items-center justify-between text-sm text-muted-foreground">
                 <span>Deadline: January 31, 2025</span>
                 <span>Category: Design</span>
               </div>
@@ -391,10 +391,10 @@ export default function TimeTrackerGoalsPage() {
                 <div className="h-3 w-3 rounded-full bg-green-500"></div>
                 <div>
                   <h3 className="font-medium">Complete Frontend Course</h3>
-                  <p className="text-muted-foreground text-sm">
+                  <p className="text-sm text-muted-foreground">
                     Finished advanced frontend development course
                   </p>
-                  <div className="mt-1 text-muted-foreground text-xs">
+                  <div className="mt-1 text-xs text-muted-foreground">
                     Completed: 60h / Target: 60h • Finished on August 15, 2024
                   </div>
                 </div>
@@ -412,10 +412,10 @@ export default function TimeTrackerGoalsPage() {
                 <div className="h-3 w-3 rounded-full bg-green-500"></div>
                 <div>
                   <h3 className="font-medium">API Integration Project</h3>
-                  <p className="text-muted-foreground text-sm">
+                  <p className="text-sm text-muted-foreground">
                     Successfully integrated third-party APIs
                   </p>
-                  <div className="mt-1 text-muted-foreground text-xs">
+                  <div className="mt-1 text-xs text-muted-foreground">
                     Completed: 45h / Target: 40h • Finished on August 10, 2024
                   </div>
                 </div>
