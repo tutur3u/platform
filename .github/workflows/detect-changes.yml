@@ -4,6 +4,11 @@ on:
     branches-ignore:
     - 'main'
     - 'production'
+  pull_request:
+    types: [ opened, synchronize, reopened ]
+    paths:
+    - 'apps/**'
+    - 'packages/**'
   workflow_dispatch:
 
 
@@ -22,7 +27,7 @@ jobs:
     - name: Install dependencies
       run: bun install
 
-    - name: Install jq
+    - name: Install jq and fd
       run: |
         if ! command -v jq &> /dev/null; then
           echo "Installing jq..."
@@ -32,13 +37,23 @@ jobs:
           echo "jq is already available"
         fi
 
+        if ! command -v fd &> /dev/null; then
+          echo "Installing fd..."
+          sudo apt-get install -y fd-find
+          # Create symlink for fd
+          sudo ln -sf $(which fdfind) /usr/local/bin/fd 2>/dev/null || true
+        else
+          echo "fd is already available"
+        fi
+
     - name: Detect changes using Turbo
       id: changes
       run: |
         set -e  # Exit on any error
 
-        # Get changed files
-        CHANGED_FILES=$(git diff --name-only origin/main...HEAD)
+        # Ensure we have the latest main branch
+        git fetch origin main:main || git fetch origin main
+        CHANGED_FILES=$(git diff --name-only HEAD~$(git rev-list --count HEAD ^main)..HEAD)
         echo "Changed files found: $(echo "$CHANGED_FILES" | wc -l)"
 
         # Use Turbo to find affected packages for each app
@@ -52,13 +67,37 @@ jobs:
         echo "Attempting to use Turbo list..."
         if bun run turbo list --filter="apps/*" > /tmp/turbo_output 2>&1; then
           # Filter for actual app packages and clean up the output
-          APPS=$(cat /tmp/turbo_output | grep "^@tuturuuu/" | grep -v "#build" | tr -d ' ' | sort -u)
-          echo "✅ Turbo list successful, found apps: $APPS"
+          POTENTIAL_APPS=$(cat /tmp/turbo_output | grep "^@tuturuuu/" | grep -v "#build" | tr -d ' ' | sort -u)
           
           # Debug: show raw turbo output
           echo "Raw turbo list output:"
           cat /tmp/turbo_output | head -20
           echo "..."
+          
+          # Check if we actually found any apps (not just that the command succeeded)
+          if [ -n "$POTENTIAL_APPS" ]; then
+            APPS="$POTENTIAL_APPS"
+            echo "✅ Turbo list successful, found apps: $APPS"
+          else
+            echo "⚠️  Turbo list succeeded but found no apps (likely due to lockfile issues)"
+            echo "🔄 Falling back to directory scanning method..."
+            # Method 2: Direct directory scanning
+            if command -v fd &> /dev/null; then
+              APPS="$(fd -t f package.json apps \
+                | while read -r f; do \
+                    jq -r 'select(.name|startswith("@tuturuuu/")) | .name' "$f" 2>/dev/null || true; \
+                  done \
+                | sort -u)"
+            else
+              echo "fd not available, using find..."
+              APPS="$(find apps -name package.json -type f \
+                | while read -r f; do \
+                    jq -r 'select(.name|startswith("@tuturuuu/")) | .name' "$f" 2>/dev/null || true; \
+                  done \
+                | sort -u)"
+            fi
+            echo "✅ Directory scan successful, found apps: $APPS"
+          fi
         else
           echo "⚠️  Turbo list failed (likely due to Tailwind CSS v4 WASM dependencies)"
           echo "Turbo error output:"
@@ -67,14 +106,26 @@ jobs:
           
           echo "🔄 Falling back to directory scanning method..."
           # Method 2: Direct directory scanning
-          APPS=$(find apps/*/package.json -exec sh -c 'grep -l "name.*@tuturuuu" {} | sed "s|apps/\([^/]*\)/package.json|@tuturuuu/\1|"' \;)
+          if command -v fd &> /dev/null; then
+            APPS="$(fd -t f package.json apps \
+              | while read -r f; do \
+                  jq -r 'select(.name|startswith("@tuturuuu/")) | .name' "$f" 2>/dev/null || true; \
+                done \
+              | sort -u)"
+          else
+            echo "fd not available, using find..."
+            APPS="$(find apps -name package.json -type f \
+              | while read -r f; do \
+                  jq -r 'select(.name|startswith("@tuturuuu/")) | .name' "$f" 2>/dev/null || true; \
+                done \
+              | sort -u)"
+          fi
           echo "✅ Directory scan successful, found apps: $APPS"
         fi
 
-        # Fallback: hardcode known apps if all else fails
         if [ -z "$APPS" ]; then
-          echo "Using fallback app list..."
-          APPS="@tuturuuu/nova @tuturuuu/web @tuturuuu/calendar @tuturuuu/rewise @tuturuuu/shortener @tuturuuu/tumeet @tuturuuu/finance @tuturuuu/external @tuturuuu/playground"
+          echo "❌ Could not discover apps via turbo or scan. Exiting to avoid stale deployments."
+          exit 1
         fi
 
         echo "Processing apps: $APPS"
@@ -98,13 +149,25 @@ jobs:
           if bun run turbo run build --filter="$app" --dry-run > /tmp/turbo_build_output 2>&1; then
             # Clean up the output to only get package names, not paths or build targets
             # The output format is: @tuturuuu/package-name#build
-            AFFECTED=$(cat /tmp/turbo_build_output | grep "^@tuturuuu/" | sed 's|#build||' | tr -d ' ' | sort -u)
-            echo "✅ Turbo build analysis for $app successful, found dependencies: $AFFECTED"
+            POTENTIAL_AFFECTED=$(cat /tmp/turbo_build_output | grep "^@tuturuuu/" | sed 's|#build||' | tr -d ' ' | sort -u)
             
             # Debug: show raw build output for first few lines
             echo "Raw turbo build output (first 10 lines):"
             cat /tmp/turbo_build_output | head -10
             echo "..."
+            
+            # Check if we actually found dependencies (not just that the command succeeded)
+            if [ -n "$POTENTIAL_AFFECTED" ]; then
+              AFFECTED="$POTENTIAL_AFFECTED"
+              echo "✅ Turbo build analysis for $app successful, found dependencies: $AFFECTED"
+            else
+              echo "⚠️  Turbo build analysis for $app succeeded but found no dependencies, using package.json fallback..."
+              # Fallback: read dependencies directly from package.json
+              if [ -f "apps/$app_name/package.json" ]; then
+                AFFECTED=$(grep -o '"@tuturuuu/[^"]*"' "apps/$app_name/package.json" | tr -d '"')
+                echo "📦 Package.json fallback for $app found: $AFFECTED"
+              fi
+            fi
           else
             echo "⚠️  Turbo build analysis for $app failed, using package.json fallback..."
             # Fallback: read dependencies directly from package.json
