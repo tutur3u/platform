@@ -433,6 +433,15 @@ export default async function Layout({ children, params }: LayoutProps) {
           icon: <ClockFading className="h-5 w-5" />,
           disabled: ENABLE_AI_ONLY || withoutPermission('manage_projects'),
           experimental: 'beta',
+          aliases: [
+            `/${correctedWSId}/time-tracker/analytics`,
+            `/${correctedWSId}/time-tracker/tasks`,
+            `/${correctedWSId}/time-tracker/reports`,
+            `/${correctedWSId}/time-tracker/history`,
+            `/${correctedWSId}/time-tracker/goals`,
+            `/${correctedWSId}/time-tracker/categories`,
+            `/${correctedWSId}/time-tracker/settings`,
+          ],
           children: [
             {
               title: t('sidebar_tabs.timer'),

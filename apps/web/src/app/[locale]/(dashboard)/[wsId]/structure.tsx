@@ -1,9 +1,5 @@
 'use client';
 
-import { Nav } from './nav';
-import type { NavLink } from '@/components/navigation';
-import { PROD_MODE, SIDEBAR_COLLAPSED_COOKIE_NAME } from '@/constants/common';
-import { useSidebar } from '@/context/sidebar-context';
 import { useQuery } from '@tanstack/react-query';
 import type { Workspace } from '@tuturuuu/types/db';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
@@ -14,10 +10,10 @@ import { ArrowLeft } from '@tuturuuu/ui/icons';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { cn } from '@tuturuuu/utils/format';
 import { setCookie } from 'cookies-next';
-import { useTranslations } from 'next-intl';
 import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import {
   type ReactNode,
   Suspense,
@@ -25,6 +21,10 @@ import {
   useEffect,
   useState,
 } from 'react';
+import type { NavLink } from '@/components/navigation';
+import { PROD_MODE, SIDEBAR_COLLAPSED_COOKIE_NAME } from '@/constants/common';
+import { useSidebar } from '@/context/sidebar-context';
+import { Nav } from './nav';
 
 interface MailProps {
   wsId: string;
@@ -84,6 +84,21 @@ export function Structure({
     [pathname]
   );
 
+  // Function to check if a parent link should be active based on pathname
+  const checkParentActive = useCallback(
+    (link: NavLink): boolean => {
+      if (!link.href) return false;
+
+      // Check if the current pathname matches the parent href or any of its aliases
+      const parentMatches =
+        pathname.startsWith(link.href) ||
+        (link.aliases?.some((alias) => pathname.startsWith(alias)) ?? false);
+
+      return parentMatches;
+    },
+    [pathname]
+  );
+
   const [navState, setNavState] = useState<{
     currentLinks: (NavLink | null)[];
     history: (NavLink | null)[][];
@@ -93,8 +108,12 @@ export function Structure({
     // Find if any submenu should be active for the current path.
     for (const link of links) {
       if (link?.children && link.children.length > 0) {
-        const isActive = hasActiveChild(link.children);
-        if (isActive) {
+        // Check if this parent link is active (either through href or aliases)
+        const isParentActive = checkParentActive(link);
+        // Also check if any child is active
+        const hasActiveChildren = hasActiveChild(link.children);
+
+        if (isParentActive || hasActiveChildren) {
           return {
             currentLinks: link.children,
             history: [links],
@@ -123,13 +142,57 @@ export function Structure({
 
   useEffect(() => {
     setNavState((prevState) => {
+      // If we are already in a submenu, check if we should stay there
+      if (prevState.history.length > 0) {
+        const currentParentTitle = prevState.titleHistory[0];
+        const currentParent = links.find(
+          (link) => link?.title === currentParentTitle
+        );
+
+        // If the current parent is still active (either through href or aliases), stay in the submenu
+        if (currentParent && checkParentActive(currentParent)) {
+          return prevState;
+        }
+      }
+
       // Find if any submenu should be active for the current path.
+      // We need to check for the deepest level of navigation that matches
       for (const link of links) {
         if (link?.children && link.children.length > 0) {
-          const isActive = hasActiveChild(link.children);
+          // Check if this parent link is active (either through href or aliases)
+          const isParentActive = checkParentActive(link);
+          // Also check if any child is active
+          const hasActiveChildren = hasActiveChild(link.children);
 
-          if (isActive) {
-            // If the active submenu is not the one currently displayed, switch to it.
+          if (isParentActive || hasActiveChildren) {
+            // Check if any grandchild (nested child) is active - this takes priority
+            for (const child of link.children) {
+              if (child?.children && child.children.length > 0) {
+                const isChildParentActive = checkParentActive(child);
+                const childHasActiveChildren = hasActiveChild(child.children);
+
+                if (isChildParentActive || childHasActiveChildren) {
+                  // We found an active grandchild level - show that instead
+                  if (
+                    prevState.titleHistory.length !== 2 ||
+                    prevState.titleHistory[0] !== link.title ||
+                    prevState.titleHistory[1] !== child.title
+                  ) {
+                    return {
+                      currentLinks: child.children,
+                      history: [links, link.children],
+                      titleHistory: [link.title, child.title],
+                      direction: 'forward',
+                    };
+                  }
+
+                  // We're already in the correct nested submenu
+                  return prevState;
+                }
+              }
+            }
+
+            // No grandchild level is active, so show the first level
             if (
               prevState.titleHistory[prevState.titleHistory.length - 1] !==
               link.title
@@ -138,21 +201,6 @@ export function Structure({
                 currentLinks: link.children,
                 history: [links],
                 titleHistory: [link.title],
-                direction: 'forward',
-              };
-            }
-
-            // We're already in this submenu, but we need to check if we should go deeper
-            // Find the specific child that matches the current pathname
-            const activeChild = link.children.find(
-              (child) => child.href && pathname.startsWith(child.href)
-            );
-
-            if (activeChild?.children && activeChild.children.length > 0) {
-              return {
-                currentLinks: activeChild.children,
-                history: [...prevState.history, prevState.currentLinks],
-                titleHistory: [...prevState.titleHistory, activeChild.title],
                 direction: 'forward',
               };
             }
@@ -185,7 +233,7 @@ export function Structure({
       // We are at the top level and no submenu is active, do nothing.
       return prevState;
     });
-  }, [pathname, links, hasActiveChild]);
+  }, [links, hasActiveChild, checkParentActive]);
 
   const handleToggle = () => {
     const newCollapsed = !isCollapsed;
@@ -203,12 +251,24 @@ export function Structure({
     newLinks: (NavLink | null)[],
     parentTitle: string
   ) => {
-    setNavState((prevState) => ({
-      currentLinks: newLinks,
-      history: [...prevState.history, prevState.currentLinks],
-      titleHistory: [...prevState.titleHistory, parentTitle],
-      direction: 'forward',
-    }));
+    setNavState((prevState) => {
+      // If we're already in a submenu and the new parent is the same as the current one,
+      // don't change the navigation state - just stay in the current submenu
+      if (
+        prevState.history.length > 0 &&
+        prevState.titleHistory[0] === parentTitle
+      ) {
+        return prevState;
+      }
+
+      // Otherwise, navigate to the new submenu
+      return {
+        currentLinks: newLinks,
+        history: [...prevState.history, prevState.currentLinks],
+        titleHistory: [...prevState.titleHistory, parentTitle],
+        direction: 'forward',
+      };
+    });
   };
 
   const handleNavBack = () => {
@@ -322,8 +382,8 @@ export function Structure({
         className={cn(
           'absolute flex h-full w-full flex-col transition-transform duration-300 ease-in-out',
           navState.direction === 'forward'
-            ? 'animate-in slide-in-from-right'
-            : 'animate-in slide-in-from-left'
+            ? 'slide-in-from-right animate-in'
+            : 'slide-in-from-left animate-in'
         )}
       >
         {navState.history.length === 0 ? (
@@ -353,7 +413,7 @@ export function Structure({
             />
             {!isCollapsed && currentTitle && (
               <div className="p-2 pt-0">
-                <h2 className="line-clamp-1 px-2 text-sm font-semibold tracking-wide text-muted-foreground uppercase">
+                <h2 className="line-clamp-1 px-2 font-semibold text-muted-foreground text-sm uppercase tracking-wide">
                   {currentTitle}
                 </h2>
               </div>
@@ -397,7 +457,7 @@ export function Structure({
         </Link>
       </div>
       <div className="mx-2 h-4 w-px flex-none rotate-12 bg-foreground/20" />
-      <div className="flex items-center gap-2 text-lg font-semibold break-words">
+      <div className="flex items-center gap-2 break-words font-semibold text-lg">
         {currentLink?.icon && (
           <div className="flex-none">{currentLink.icon}</div>
         )}
