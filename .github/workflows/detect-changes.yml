@@ -34,10 +34,32 @@ jobs:
         # Use Turbo to find affected packages for each app
         APPS_TO_BUILD=()
 
-        # Get all apps from workspace
+        # Get all apps from workspace - try multiple approaches
         echo "Getting apps from workspace..."
-        APPS=$(bun run turbo list --filter="apps/*" | grep "^@tuturuuu/" | tr -d ' ')
-        echo "Found apps: $APPS"
+
+        # Method 1: Try turbo list
+        APPS=""
+        echo "Attempting to use Turbo list..."
+        if bun run turbo list --filter="apps/*" > /tmp/turbo_output 2>&1; then
+          APPS=$(cat /tmp/turbo_output | grep "^@tuturuuu/" | tr -d ' ')
+          echo "✅ Turbo list successful, found apps: $APPS"
+        else
+          echo "⚠️  Turbo list failed (likely due to Tailwind CSS v4 WASM dependencies)"
+          echo "Turbo error output:"
+          cat /tmp/turbo_output | head -10
+          echo "..."
+          
+          echo "🔄 Falling back to directory scanning method..."
+          # Method 2: Direct directory scanning
+          APPS=$(find apps/*/package.json -exec sh -c 'grep -l "name.*@tuturuuu" {} | sed "s|apps/\([^/]*\)/package.json|@tuturuuu/\1|"' \;)
+          echo "✅ Directory scan successful, found apps: $APPS"
+        fi
+
+        # Fallback: hardcode known apps if all else fails
+        if [ -z "$APPS" ]; then
+          echo "Using fallback app list..."
+          APPS="@tuturuuu/nova @tuturuuu/web @tuturuuu/calendar @tuturuuu/rewise @tuturuuu/shortener @tuturuuu/tumeet @tuturuuu/finance @tuturuuu/external @tuturuuu/playground"
+        fi
 
         for app in $APPS; do
           # Check if app directory changed
@@ -49,9 +71,19 @@ jobs:
             continue
           fi
           
-          # Use Turbo to find what would be affected if we built this app
-          # This automatically includes all dependencies
-          AFFECTED=$(bun run turbo run build --filter="$app" --dry-run | grep "^@tuturuuu/" | tr -d ' ')
+          # Try to use Turbo to find dependencies, fallback to package.json scanning
+          AFFECTED=""
+          if bun run turbo run build --filter="$app" --dry-run > /tmp/turbo_build_output 2>&1; then
+            AFFECTED=$(cat /tmp/turbo_build_output | grep "^@tuturuuu/" | tr -d ' ')
+            echo "Turbo build analysis for $app successful, found: $AFFECTED"
+          else
+            echo "Turbo build analysis for $app failed, using package.json fallback..."
+            # Fallback: read dependencies directly from package.json
+            if [ -f "apps/$app_name/package.json" ]; then
+              AFFECTED=$(grep -o '"@tuturuuu/[^"]*"' "apps/$app_name/package.json" | tr -d '"')
+              echo "Package.json fallback for $app found: $AFFECTED"
+            fi
+          fi
           
           # Check if any of the affected packages changed
           for pkg in $AFFECTED; do
