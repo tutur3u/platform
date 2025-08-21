@@ -1,15 +1,15 @@
 name: Vercel Rewise Preview Deployment
 on:
   workflow_run:
-    workflows: ["Detect Changes for Apps"]
-    types: [completed]
-    branches-ignore: [main, production]
+    workflows: [ "Detect Changes for Apps" ]
+    types: [ completed ]
+    branches-ignore: [ production ]
 
 jobs:
   deploy-rewise:
     if: |
       github.event.workflow_run.conclusion == 'success' &&
-      contains(fromJSON(github.event.workflow_run.outputs.apps), 'rewise')
+      contains(fromJSON(github.event.workflow_run.outputs.apps-to-build), 'rewise')
     uses: ./.github/workflows/build-app.yml
     with:
       app: rewise
