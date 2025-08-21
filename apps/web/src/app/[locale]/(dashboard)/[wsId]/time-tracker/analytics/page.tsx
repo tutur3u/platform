@@ -1,3 +1,4 @@
+import { getTranslations } from 'next-intl/server';
 import {
   Card,
   CardContent,
@@ -7,12 +8,13 @@ import {
 } from '@tuturuuu/ui/card';
 import { ChartArea, Clock, TrendingUp, Users } from '@tuturuuu/ui/icons';
 
-export default function TimeTrackerAnalyticsPage() {
+export default async function TimeTrackerAnalyticsPage() {
+  const t = await getTranslations();
   return (
     <div className="container mx-auto space-y-6 p-6">
       <div className="mb-6 flex items-center gap-2">
         <ChartArea className="h-6 w-6 text-primary" />
-        <h1 className="font-bold text-2xl">Time Tracker Analytics</h1>
+        <h1 className="font-bold text-2xl">{t('time-tracker.analytics.title')}</h1>
       </div>
 
       {/* Overview Cards */}
@@ -20,14 +22,14 @@ export default function TimeTrackerAnalyticsPage() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="font-medium text-sm">
-              Total Time Tracked
+              {t('time-tracker.analytics.total_time')}
             </CardTitle>
             <Clock className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="font-bold text-2xl">127.5h</div>
             <p className="text-muted-foreground text-xs">
-              +12.3% from last month
+              {t('time-tracker.analytics.from_last_month', { value: '+12.3%' })}
             </p>
           </CardContent>
         </Card>
@@ -35,25 +37,25 @@ export default function TimeTrackerAnalyticsPage() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="font-medium text-sm">
-              Active Projects
+              {t('time-tracker.analytics.active_projects')}
             </CardTitle>
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="font-bold text-2xl">8</div>
-            <p className="text-muted-foreground text-xs">+2 new this week</p>
+            <p className="text-muted-foreground text-xs">{t('time-tracker.analytics.new_this_week', { count: 2 })}</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="font-medium text-sm">Team Members</CardTitle>
+            <CardTitle className="font-medium text-sm">{t('time-tracker.analytics.team_members')}</CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="font-bold text-2xl">12</div>
             <p className="text-muted-foreground text-xs">
-              All active this month
+              {t('time-tracker.analytics.all_active_this_month')}
             </p>
           </CardContent>
         </Card>
@@ -61,13 +63,13 @@ export default function TimeTrackerAnalyticsPage() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="font-medium text-sm">
-              Productivity Score
+              {t('time-tracker.analytics.productivity_score')}
             </CardTitle>
             <ChartArea className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="font-bold text-2xl">87%</div>
-            <p className="text-muted-foreground text-xs">+5% from last week</p>
+            <p className="text-muted-foreground text-xs">{t('time-tracker.analytics.from_last_week', { value: '+5%' })}</p>
           </CardContent>
         </Card>
       </div>
@@ -76,28 +78,28 @@ export default function TimeTrackerAnalyticsPage() {
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <Card>
           <CardHeader>
-            <CardTitle>Time Distribution by Project</CardTitle>
+            <CardTitle>{t('time-tracker.analytics.time_distribution_title')}</CardTitle>
             <CardDescription>
-              How time is allocated across different projects
+              {t('time-tracker.analytics.time_distribution_description')}
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="flex h-64 items-center justify-center text-muted-foreground">
-              Chart placeholder - Time distribution visualization
+            <div className="flex h-64 items-center justify-center text-muted-foreground" aria-hidden="true">
+              {t('time-tracker.analytics.chart_placeholder_time_distribution')}
             </div>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader>
-            <CardTitle>Weekly Time Trends</CardTitle>
+            <CardTitle>{t('time-tracker.analytics.weekly_trends_title')}</CardTitle>
             <CardDescription>
-              Time tracking patterns over the last 4 weeks
+              {t('time-tracker.analytics.weekly_trends_description')}
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="flex h-64 items-center justify-center text-muted-foreground">
-              Chart placeholder - Weekly trends visualization
+            <div className="flex h-64 items-center justify-center text-muted-foreground" aria-hidden="true">
+              {t('time-tracker.analytics.chart_placeholder_weekly_trends')}
             </div>
           </CardContent>
         </Card>

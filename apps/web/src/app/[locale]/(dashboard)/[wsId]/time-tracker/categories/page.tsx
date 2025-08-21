@@ -1,3 +1,4 @@
+import { getTranslations } from 'next-intl/server';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -34,55 +35,56 @@ import {
   SelectValue,
 } from '@tuturuuu/ui/select';
 
-export default function TimeTrackerCategoriesPage() {
+export default async function TimeTrackerCategoriesPage() {
+  const t = await getTranslations();
   return (
     <div className="container mx-auto space-y-6 p-6">
       <div className="mb-6 flex items-center gap-2">
         <FolderSync className="h-6 w-6 text-primary" />
-        <h1 className="font-bold text-2xl">Time Tracker Categories</h1>
+        <h1 className="font-bold text-2xl">{t('time-tracker.categories.title')}</h1>
       </div>
 
       {/* Search and Actions Bar */}
       <div className="flex flex-col gap-4 sm:flex-row">
         <div className="relative flex-1">
           <Search className="-translate-y-1/2 absolute top-1/2 left-3 h-4 w-4 transform text-muted-foreground" />
-          <Input placeholder="Search categories..." className="pl-10" />
+          <Input placeholder={t('time-tracker.categories.search_placeholder')} className="pl-10" />
         </div>
         <Button variant="outline" className="flex items-center gap-2">
           <Filter className="h-4 w-4" />
-          Filter
+          {t('time-tracker.categories.filter')}
         </Button>
         <Dialog>
           <DialogTrigger asChild>
             <Button className="flex items-center gap-2">
               <Plus className="h-4 w-4" />
-              New Category
+              {t('time-tracker.categories.new_category')}
             </Button>
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Create New Category</DialogTitle>
+              <DialogTitle>{t('time-tracker.categories.create_title')}</DialogTitle>
               <DialogDescription>
-                Add a new category to organize your time tracking entries.
+                {t('time-tracker.categories.create_description')}
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="category-name">Category Name</Label>
+                <Label htmlFor="category-name">{t('time-tracker.categories.name_label')}</Label>
                 <Input
                   id="category-name"
-                  placeholder="e.g., Development, Design, Research"
+                  placeholder={t('time-tracker.categories.name_placeholder')}
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="category-description">Description</Label>
+                <Label htmlFor="category-description">{t('time-tracker.categories.description_label')}</Label>
                 <Input
                   id="category-description"
-                  placeholder="Brief description of this category"
+                  placeholder={t('time-tracker.categories.description_placeholder')}
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="category-color">Color</Label>
+                <Label htmlFor="category-color">{t('time-tracker.categories.color_label')}</Label>
                 <Select defaultValue="blue">
                   <SelectTrigger id="category-color">
                     <SelectValue />
@@ -98,8 +100,8 @@ export default function TimeTrackerCategoriesPage() {
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="category-budget">Time Budget (hours)</Label>
-                <Input id="category-budget" type="number" placeholder="40" />
+                <Label htmlFor="category-budget">{t('time-tracker.categories.budget_label')}</Label>
+                <Input id="category-budget" type="number" placeholder="40" min={0} step={1} />
               </div>
             </div>
             <div className="mt-6 flex justify-end gap-2">
