@@ -71,5 +71,5 @@ jobs:
     if: needs.check-changes.outputs.web_detected == 'true'
     uses: ./.github/workflows/build-app.yml
     with:
-      vercel-project-id: ${{ needs.check-changes.outputs.project_id || secrets.VERCEL_WEB_PROJECT_ID }}
+      vercel-project-id: ${{ needs.check-changes.outputs.project_id }}
     secrets: inherit
