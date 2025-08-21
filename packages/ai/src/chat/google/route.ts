@@ -219,7 +219,7 @@ export function createPOST(
   }
 ) {
   // Higher-order function that returns the actual request handler
-  return async function handler(req: NextRequest) {
+  return async function handler(req: NextRequest): Promise<Response> {
     const sbAdmin = await createAdminClient();
 
     const {
@@ -461,6 +461,7 @@ export function createPOST(
         );
       }
       console.log(error);
+      return new Response('Internal Server Error', { status: 500 });
     }
   };
 }

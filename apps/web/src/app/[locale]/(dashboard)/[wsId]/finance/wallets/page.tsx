@@ -23,11 +23,10 @@ export default async function WorkspaceWalletsPage({
   params,
   searchParams,
 }: Props) {
-  const t = await getTranslations();
   const { wsId: id } = await params;
-
   const workspace = await getWorkspace(id);
   const wsId = workspace.id;
+  const t = await getTranslations();
 
   const { page = '1', pageSize = '10' } = await searchParams;
   const parsedPage = Number.parseInt(page, 10);

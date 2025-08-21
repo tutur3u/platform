@@ -1,10 +1,10 @@
-import { transactionColumns } from '../../transactions/columns';
+import { transactionColumns } from './columns';
 import { CustomDataTable } from '@/components/custom-data-table';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import type { Transaction } from '@tuturuuu/types/primitives/Transaction';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
-import { Calendar, CreditCard, DollarSign, Wallet } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
+import { Wallet, DollarSign, CreditCard, Calendar } from '@tuturuuu/ui/icons';
 import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import 'dayjs/locale/vi';
 import moment from 'moment';
@@ -23,15 +23,14 @@ interface Props {
   }>;
 }
 
-export default async function WalletDetailsPage({
+export default async function WorkspaceWalletDetailsPage({
   params,
   searchParams,
 }: Props) {
-  const t = await getTranslations();
   const { wsId: id, walletId, locale } = await params;
-
   const workspace = await getWorkspace(id);
   const wsId = workspace.id;
+  const t = await getTranslations();
 
   const { wallet } = await getData(walletId);
   const { data: rawData, count } = await getTransactions(
@@ -200,6 +199,7 @@ async function getTransactions(
       category: transaction_categories?.name,
     })
   );
+  
   if (error) throw error;
 
   return { data, count } as {
