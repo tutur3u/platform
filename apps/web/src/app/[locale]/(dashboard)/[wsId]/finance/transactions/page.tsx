@@ -1,4 +1,13 @@
+import { createClient } from '@tuturuuu/supabase/next/server';
+import type { Transaction } from '@tuturuuu/types/primitives/Transaction';
+import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
+import { Separator } from '@tuturuuu/ui/separator';
 import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
+import { getTranslations } from 'next-intl/server';
+import { CustomDataTable } from '@/components/custom-data-table';
+import { transactionColumns } from './columns';
+import { ExportDialogContent } from './export-dialog-content';
+import { TransactionForm } from './form';
 
 interface Props {
   params: Promise<{
@@ -30,10 +39,6 @@ export default async function WorkspaceTransactionsPage({
   });
   const t = await getTranslations();
 
-  const { containsPermission } = await getPermissions({
-    wsId,
-  });
-
   const data = rawData.map((d) => ({
     ...d,
     href: `/${wsId}/finance/transactions/${d.id}`,
@@ -53,15 +58,13 @@ export default async function WorkspaceTransactionsPage({
       <Separator className="my-4" />
       <CustomDataTable
         data={data}
-        columnGenerator={transactionColumns}
+        columnGenerator={() => transactionColumns}
         toolbarExportContent={
-          containsPermission('export_finance_data') && (
-            <ExportDialogContent
-              wsId={wsId}
-              exportType="transactions"
-              searchParams={searchParamsData}
-            />
-          )
+          <ExportDialogContent
+            wsId={wsId}
+            exportType="transactions"
+            searchParams={searchParamsData}
+          />
         }
         namespace="transaction-data-table"
         count={count}

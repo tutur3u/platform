@@ -1,11 +1,11 @@
-import { transactionColumns } from './columns';
-import { CustomDataTable } from '@/components/custom-data-table';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import type { Transaction } from '@tuturuuu/types/primitives/Transaction';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
+import { Calendar, CreditCard, DollarSign, Wallet } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
-import { Wallet, DollarSign, CreditCard, Calendar } from '@tuturuuu/ui/icons';
 import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
+import { CustomDataTable } from '@/components/custom-data-table';
+import { transactionColumns } from './columns';
 import 'dayjs/locale/vi';
 import moment from 'moment';
 import { getTranslations } from 'next-intl/server';
@@ -61,7 +61,7 @@ export default async function WorkspaceWalletDetailsPage({
       <div className="grid h-fit gap-4 md:grid-cols-2">
         <div className="grid gap-4">
           <div className="grid h-fit gap-2 rounded-lg border p-4">
-            <div className="text-lg font-semibold">
+            <div className="font-semibold text-lg">
               {t('invoices.basic-info')}
             </div>
             <Separator />
@@ -100,7 +100,7 @@ export default async function WorkspaceWalletDetailsPage({
         <div className="grid gap-4">
           <div className="h-full rounded-lg border p-4">
             <div className="grid h-full content-start gap-2">
-              <div className="text-lg font-semibold">
+              <div className="font-semibold text-lg">
                 {t('wallet-data-table.description')}
               </div>
               <Separator />
@@ -112,7 +112,7 @@ export default async function WorkspaceWalletDetailsPage({
       <Separator className="my-4" />
       <CustomDataTable
         data={transactions}
-        columnGenerator={transactionColumns}
+        columnGenerator={() => transactionColumns}
         namespace="transaction-data-table"
         count={count}
         defaultVisibility={{
@@ -199,7 +199,7 @@ async function getTransactions(
       category: transaction_categories?.name,
     })
   );
-  
+
   if (error) throw error;
 
   return { data, count } as {
