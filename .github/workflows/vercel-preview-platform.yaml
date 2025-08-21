@@ -11,6 +11,7 @@ jobs:
     if: github.event.workflow_run.conclusion == 'success'
     outputs:
       web_detected: ${{ steps.check-web.outputs.web_detected }}
+      project_id: ${{ steps.extract-project-id.outputs.project_id }}
     steps:
     - name: Download apps-to-build artifact
       uses: actions/download-artifact@v4
@@ -36,10 +37,17 @@ jobs:
           echo "❌ apps-to-build.txt not found, skipping build"
         fi
 
+    - name: Extract project ID
+      id: extract-project-id
+      env:
+        PROJECT_ID: ${{ secrets.VERCEL_WEB_PROJECT_ID }}
+      run: |
+        echo "project_id=$PROJECT_ID" >> $GITHUB_OUTPUT
+
   deploy-web:
     needs: check-changes
     if: needs.check-changes.outputs.web_detected == 'true'
     uses: ./.github/workflows/build-app.yml
     with:
-      vercel-project-id: ${{ secrets.VERCEL_WEB_PROJECT_ID }}
+      vercel-project-id: ${{ needs.check-changes.outputs.project_id }}
     secrets: inherit
