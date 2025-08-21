@@ -19,7 +19,7 @@ jobs:
       calendar_detected: ${{ steps.check-calendar.outputs.calendar_detected }}
     steps:
     - name: Download apps-to-build artifact
-      uses: actions/download-artifact@v4
+      uses: actions/download-artifact@v5
       id: download-artifact
       continue-on-error: true
       with:
