@@ -14,9 +14,9 @@ import { Button } from '@tuturuuu/ui/button';
 import {
   AlertCircle,
   Calendar,
-  CheckCircle,
   CheckSquare,
   Clock,
+  LayoutDashboard,
   Pause,
   Play,
   PlusCircle,
@@ -25,7 +25,6 @@ import {
   Timer,
   TrendingUp,
   WifiOff,
-  Zap,
 } from '@tuturuuu/ui/icons';
 import { toast } from '@tuturuuu/ui/sonner';
 import { Tabs, TabsContent } from '@tuturuuu/ui/tabs';
@@ -33,7 +32,7 @@ import { cn } from '@tuturuuu/utils/format';
 import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone';
 import utc from 'dayjs/plugin/utc';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { priorityCompare } from '@/lib/task-helper';
 import { CategoryManager } from './components/category-manager';
 import { GoalManager } from './components/goal-manager';
@@ -48,7 +47,12 @@ import type {
   TimeTrackerData,
   TimeTrackingGoal,
 } from './types';
-import { useTaskCounts } from './utils';
+
+// interface TaskSidebarFilters {
+//   board: string;
+//   list: string;
+//   assignee: string;
+// }
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -120,7 +124,7 @@ export default function TimeTrackerContent({
         const elapsed = Math.max(
           0,
           Math.floor(
-            (new Date().getTime() -
+            (Date.now() -
               new Date(runningSessionFromQuery.start_time).getTime()) /
               1000
           )
@@ -136,8 +140,7 @@ export default function TimeTrackerContent({
   const [elapsedTime, setElapsedTime] = useState(() => {
     if (!initialData.runningSession) return 0;
     const elapsed = Math.floor(
-      (new Date().getTime() -
-        new Date(initialData.runningSession.start_time).getTime()) /
+      (Date.now() - new Date(initialData.runningSession.start_time).getTime()) /
         1000
     );
     return Math.max(0, elapsed); // Ensure non-negative
@@ -163,45 +166,45 @@ export default function TimeTrackerContent({
   const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
   const [retryCount, setRetryCount] = useState(0);
 
-  // Heatmap settings state
-  const [heatmapSettings, setHeatmapSettings] = useState(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('heatmap-settings');
-      if (saved) {
-        try {
-          return JSON.parse(saved);
-        } catch {
-          // Fall through to default
-        }
-      }
-    }
-    return {
-      viewMode: 'original' as 'original' | 'hybrid' | 'calendar-only',
-      timeReference: 'smart' as 'relative' | 'absolute' | 'smart',
-      showOnboardingTips: true,
-    };
-  });
+  // Heatmap settings state (unused but kept for future use)
+  // const [heatmapSettings, setHeatmapSettings] = useState(() => {
+  //   if (typeof window !== 'undefined') {
+  //     const saved = localStorage.getItem('heatmap-settings');
+  //     if (saved) {
+  //       try {
+  //           return JSON.parse(saved);
+  //         } catch {
+  //           // Fall through to default
+  //         }
+  //       }
+  //     }
+  //     return {
+  //       viewMode: 'original' as 'original' | 'hybrid' | 'calendar-only',
+  //       timeReference: 'smart' as 'relative' | 'absolute' | 'smart',
+  //       showOnboardingTips: true,
+  //     };
+  //   });
 
-  // Listen for heatmap settings changes from child components
-  useEffect(() => {
-    const handleSettingsChange = (event: CustomEvent) => {
-      setHeatmapSettings(event.detail);
-    };
+  // Listen for heatmap settings changes from child components (unused but kept for future use)
+  // useEffect(() => {
+  //   const handleSettingsChange = (event: CustomEvent) => {
+  //     setHeatmapSettings(event.detail);
+  //   };
 
-    if (typeof window !== 'undefined') {
-      window.addEventListener(
-        'heatmap-settings-changed',
-        handleSettingsChange as EventListener
-      );
+  //   if (typeof window !== 'undefined') {
+  //     window.addEventListener(
+  //       'heatmap-settings-changed',
+  //       handleSettingsChange as EventListener
+  //     );
 
-      return () => {
-        window.removeEventListener(
-          'heatmap-settings-changed',
-          handleSettingsChange as EventListener
-        );
-      };
-    }
-  }, []);
+  //     return () => {
+  //       window.removeEventListener(
+  //         'heatmap-settings-changed',
+  //         handleSettingsChange as EventListener
+  //       );
+  //     };
+  //   }
+  // }, []);
 
   // Refs for cleanup
   const timerIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -259,37 +262,81 @@ export default function TimeTrackerContent({
     [userTimezone]
   );
 
-  // Calculate productivity metrics
-  const productivityMetrics = useMemo(() => {
-    if (!recentSessions.length) {
-      return {
-        avgFocusScore: 0,
-        todaySessionCount: 0,
-      };
-    }
+  // Calculate productivity metrics (unused but kept for future use)
+  // const productivityMetrics = useMemo(() => {
+  //   if (!recentSessions.length) {
+  //     return {
+  //       avgFocusScore: 0,
+  //       todaySessionCount: 0,
+  //     };
+  //   }
 
-    const today = dayjs().tz(userTimezone);
-    const todaySessions = recentSessions.filter((session) => {
-      const sessionDate = dayjs.utc(session.start_time).tz(userTimezone);
-      return sessionDate.isSame(today, 'day');
-    });
+  //   const today = dayjs().tz(userTimezone);
+  //   const todaySessions = recentSessions.filter((session) => {
+  //     const sessionDate = dayjs.utc(session.start_time).tz(userTimezone);
+  //       return sessionDate.isSame(today, 'day');
+  //     });
 
-    const focusScores = recentSessions
-      .slice(0, 10)
-      .map((session) => calculateFocusScore(session));
-    const avgFocusScore =
-      focusScores.length > 0
-        ? Math.round(
-            focusScores.reduce((sum, score) => sum + score, 0) /
-              focusScores.length
-          )
-        : 0;
+  //   const focusScores = recentSessions
+  //     .slice(0, 10)
+  //     .map((session) => calculateFocusScore(session));
+  //   const avgFocusScore =
+  //     focusScores.length > 0
+  //       ? Math.round(
+  //           focusScores.reduce((sum, score) => sum + score, 0) /
+  //             focusScores.length
+  //         )
+  //         : 0;
 
-    return {
-      avgFocusScore,
-      todaySessionCount: todaySessions.length,
-    };
-  }, [recentSessions, calculateFocusScore, userTimezone]);
+  //   return {
+  //     avgFocusScore,
+  //     todaySessionCount: todaySessions.length,
+  //   };
+  // }, [recentSessions, calculateFocusScore, userTimezone]);
+
+  // API call helper with enhanced error handling and retry logic
+  const apiCall = useCallback(
+    async (url: string, options: RequestInit = {}) => {
+      const controller = new AbortController();
+
+      try {
+        const response = await fetch(url, {
+          headers: {
+            'Content-Type': 'application/json',
+            ...options.headers,
+          },
+          signal: controller.signal,
+          ...options,
+        });
+
+        if (!response.ok) {
+          const error = await response
+            .json()
+            .catch(() => ({ error: 'Unknown error' }));
+          throw new Error(error.error || `HTTP ${response.status}`);
+        }
+
+        setIsOffline(false);
+        setRetryCount(0);
+        return response.json();
+      } catch (err) {
+        if (err instanceof Error && err.name === 'AbortError') {
+          throw err;
+        }
+
+        const isNetworkError =
+          err instanceof TypeError && err.message.includes('fetch');
+        if (isNetworkError) {
+          setIsOffline(true);
+        }
+
+        const message = err instanceof Error ? err.message : 'Network error';
+        console.error('API call failed:', message);
+        throw new Error(message);
+      }
+    },
+    []
+  );
 
   // Function to fetch next tasks with smart priority logic
   const fetchNextTasks = useCallback(async () => {
@@ -352,7 +399,7 @@ export default function TimeTrackerContent({
       setAvailableTasks([]);
       setNextTaskPreview(null);
     }
-  }, [wsId]);
+  }, [wsId, apiCall]);
 
   // Fetch next task preview on mount
   useEffect(() => {
@@ -384,50 +431,6 @@ export default function TimeTrackerContent({
     }
     return `${minutes}m`;
   }, []);
-
-  // API call helper with enhanced error handling and retry logic
-  const apiCall = useCallback(
-    async (url: string, options: RequestInit = {}) => {
-      const controller = new AbortController();
-
-      try {
-        const response = await fetch(url, {
-          headers: {
-            'Content-Type': 'application/json',
-            ...options.headers,
-          },
-          signal: controller.signal,
-          ...options,
-        });
-
-        if (!response.ok) {
-          const error = await response
-            .json()
-            .catch(() => ({ error: 'Unknown error' }));
-          throw new Error(error.error || `HTTP ${response.status}`);
-        }
-
-        setIsOffline(false);
-        setRetryCount(0);
-        return response.json();
-      } catch (err) {
-        if (err instanceof Error && err.name === 'AbortError') {
-          throw err;
-        }
-
-        const isNetworkError =
-          err instanceof TypeError && err.message.includes('fetch');
-        if (isNetworkError) {
-          setIsOffline(true);
-        }
-
-        const message = err instanceof Error ? err.message : 'Network error';
-        console.error('API call failed:', message);
-        throw new Error(message);
-      }
-    },
-    []
-  );
 
   // Fetch all data with enhanced error handling and exponential backoff
   const fetchData = useCallback(
@@ -511,7 +514,10 @@ export default function TimeTrackerContent({
           if (result.status === 'fulfilled') {
             return result.value;
           } else {
-            const { name, fallback } = apiCalls[index]!;
+            const { name, fallback } = apiCalls[index] || {
+              name: 'unknown',
+              fallback: {},
+            };
             console.warn(`API call for ${name} failed:`, result.reason);
             // Only show error toast for critical failures, not for tasks
             if (name !== 'tasks') {
@@ -546,7 +552,7 @@ export default function TimeTrackerContent({
             const elapsed = Math.max(
               0,
               Math.floor(
-                (new Date().getTime() -
+                (Date.now() -
                   new Date(runningRes.session.start_time).getTime()) /
                   1000
               )
@@ -607,7 +613,7 @@ export default function TimeTrackerContent({
         clearInterval(refreshIntervalRef.current);
       }
     };
-  }, [isLoading, retryCount]); // Remove fetchData dependency
+  }, [isLoading, retryCount, fetchData]);
 
   // Timer effect with better cleanup
   useEffect(() => {
@@ -617,8 +623,7 @@ export default function TimeTrackerContent({
           const elapsed = Math.max(
             0,
             Math.floor(
-              (new Date().getTime() -
-                new Date(currentSession.start_time).getTime()) /
+              (Date.now() - new Date(currentSession.start_time).getTime()) /
                 1000
             )
           );
@@ -638,7 +643,7 @@ export default function TimeTrackerContent({
   // Load data on mount and when dependencies change
   useEffect(() => {
     fetchData();
-  }, [wsId, currentUserId, selectedUserId]); // Only depend on actual values, not the function
+  }, [fetchData]);
 
   // Online/offline detection
   useEffect(() => {
@@ -657,7 +662,7 @@ export default function TimeTrackerContent({
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
     };
-  }, [retryCount]); // Remove fetchData dependency
+  }, [retryCount, fetchData]);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -686,45 +691,44 @@ export default function TimeTrackerContent({
   // Retry function with exponential backoff
   const handleRetry = useCallback(() => {
     fetchData(true, true);
-  }, []); // Remove fetchData dependency
+  }, [fetchData]);
 
-  // Drag and drop state for highlighting drop zones
-  const [isDraggingTask, setIsDraggingTask] = useState(false);
+  // Drag and drop state for highlighting drop zones (unused but kept for future use)
+  // const [isDraggingTask, setIsDraggingTask] = useState(false);
 
-  // Tasks sidebar search and filter state with persistence
-  const [tasksSidebarSearch, setTasksSidebarSearch] = useState('');
-  const [tasksSidebarFilters, setTasksSidebarFilters] =
-    useState<TaskSidebarFilters>(() => {
-      if (typeof window !== 'undefined') {
-        const saved = localStorage.getItem(`time-tracker-filters-${wsId}`);
-        if (saved) {
-          try {
-            return {
-              board: 'all',
-              list: 'all',
-              assignee: 'all',
-              ...JSON.parse(saved),
-            };
-          } catch {
-            return { board: 'all', list: 'all', assignee: 'all' };
-          }
-        }
-      }
-      return { board: 'all', list: 'all', assignee: 'all' };
-    });
+  // Tasks sidebar search and filter state with persistence (unused but kept for future use)
+  // const [tasksSidebarSearch, setTasksSidebarSearch] = useState('');
+  // const [tasksSidebarFilters, setTasksSidebarFilters] =
+  //   useState<TaskSidebarFilters>(() => {
+  //     if (typeof window !== 'undefined') {
+  //       const saved = localStorage.getItem(`time-tracker-filters-${wsId}`);
+  //       if (saved) {
+  //         try {
+  //           return {
+  //             board: 'all',
+  //             list: 'all',
+  //             assignee: 'all',
+  //             ...JSON.parse(saved),
+  //         };
+  //       } catch {
+  //         return { board: 'all', list: 'all', assignee: 'all' };
+  //       }
+  //     }
+  //     return { board: 'all', list: 'all', assignee: 'all' };
+  //   });
 
-  // Save filters to localStorage when they change
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      localStorage.setItem(
-        `time-tracker-filters-${wsId}`,
-        JSON.stringify(tasksSidebarFilters)
-      );
-    }
-  }, [tasksSidebarFilters, wsId]);
+  // Save filters to localStorage when they change (unused but kept for future use)
+  // useEffect(() => {
+  //   if (typeof window !== 'undefined') {
+  //     localStorage.setItem(
+  //       `time-tracker-filters-${wsId}`,
+  //       JSON.stringify(tasksSidebarFilters)
+  //     );
+  //   }
+  // }, [tasksSidebarFilters, wsId]);
 
-  // Use memoized task counts
-  const { myTasksCount, unassignedCount } = useTaskCounts(tasks);
+  // Use memoized task counts (unused but kept for future use)
+  // const { myTasksCount, unassignedCount } = useTaskCounts(tasks);
 
   if (isLoadingUser || !currentUserId) {
     return (
@@ -875,6 +879,7 @@ export default function TimeTrackerContent({
                 <div className="grid grid-cols-2 gap-3 p-1 sm:grid-cols-4 lg:gap-4">
                   {/* Continue Last Session */}
                   <button
+                    type="button"
                     onClick={() => {
                       if (!recentSessions[0]) {
                         toast.info('No recent session to continue');
@@ -984,6 +989,7 @@ export default function TimeTrackerContent({
 
                   {/* Next Task */}
                   <button
+                    type="button"
                     onClick={async () => {
                       await fetchNextTasks();
 
@@ -1143,6 +1149,7 @@ export default function TimeTrackerContent({
 
                   {/* Break Timer */}
                   <button
+                    type="button"
                     onClick={() => {
                       // Scroll to timer controls and pre-fill with break session
                       document
@@ -1275,7 +1282,7 @@ export default function TimeTrackerContent({
               <div className="flex-1">
                 <div className="flex items-center gap-2">
                   <p className="font-medium text-blue-700 text-sm dark:text-blue-300">
-                    Today's Progress:
+                    Today&apos;s Progress:
                   </p>
                   <span className="font-bold text-blue-900 text-sm dark:text-blue-100">
                     {formatDuration(timerStats.todayTime)}
@@ -1313,7 +1320,7 @@ export default function TimeTrackerContent({
                     formatTime={formatTime}
                     formatDuration={formatDuration}
                     apiCall={apiCall}
-                    isDraggingTask={isDraggingTask}
+                    isDraggingTask={false}
                     onGoToTasksTab={() => {
                       toast.success(
                         'Navigate to Tasks page to create your first task!'
@@ -1333,8 +1340,8 @@ export default function TimeTrackerContent({
                 <div className="slide-in-from-top mb-4 animate-in rounded-lg border border-blue-200 bg-blue-50 p-4 duration-300 dark:border-blue-800/60 dark:bg-blue-950/30">
                   <p className="flex items-center gap-2 text-blue-700 text-sm dark:text-blue-300">
                     <Calendar className="h-4 w-4" />
-                    You're viewing another user's session history. You can see
-                    their sessions but cannot edit them.
+                    You&apos;re viewing another user&apos;s session history. You
+                    can see their sessions but cannot edit them.
                   </p>
                 </div>
               )}
@@ -1373,8 +1380,8 @@ export default function TimeTrackerContent({
                 <div className="slide-in-from-top mb-4 animate-in rounded-lg border border-blue-200 bg-blue-50 p-4 duration-300 dark:border-blue-800/60 dark:bg-blue-950/30">
                   <p className="flex items-center gap-2 text-blue-700 text-sm dark:text-blue-300">
                     <TrendingUp className="h-4 w-4" />
-                    You're viewing another user's goals. You can see their
-                    progress but cannot edit them.
+                    You&apos;re viewing another user&apos;s goals. You can see
+                    their progress but cannot edit them.
                   </p>
                 </div>
               )}
@@ -1507,8 +1514,8 @@ export default function TimeTrackerContent({
                       No Tasks Available
                     </h4>
                     <p className="mb-4 text-gray-600 text-sm dark:text-gray-400">
-                      You don't have any assigned tasks. Create a new task or
-                      check available boards.
+                      You don&apos;t have any assigned tasks. Create a new task
+                      or check available boards.
                     </p>
 
                     <div className="flex flex-col gap-2 sm:flex-row sm:justify-center">
@@ -1551,6 +1558,7 @@ export default function TimeTrackerContent({
 
                   return (
                     <button
+                      type="button"
                       key={task.id}
                       onClick={async () => {
                         try {

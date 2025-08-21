@@ -6,7 +6,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@tuturuuu/ui/card';
-import { Bell, Clock, Cog, Palette, Shield, Users } from '@tuturuuu/ui/icons';
+import { Bell, Cog, Palette, Shield, Users } from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
 import {
