@@ -157,6 +157,8 @@ export default function TimeTrackerContent({
   const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
   const [retryCount, setRetryCount] = useState(0);
 
+
+
   // Heatmap settings state (unused but kept for future use)
   // const [heatmapSettings, setHeatmapSettings] = useState(() => {
   //   if (typeof window !== 'undefined') {
@@ -583,13 +585,19 @@ export default function TimeTrackerContent({
     [wsId, apiCall, currentUserId, selectedUserId, isViewingOtherUser]
   );
 
+  // Ref to hold the latest fetchData function to avoid stale closures
+  const fetchDataRef = useRef(fetchData);
+  useEffect(() => {
+    fetchDataRef.current = fetchData;
+  }, [fetchData]);
+
   // Auto-refresh with exponential backoff and visibility check
   useEffect(() => {
     const refreshInterval = Math.min(30000 * 2 ** retryCount, 300000); // Max 5 minutes
 
     refreshIntervalRef.current = setInterval(() => {
       if (document.visibilityState === 'visible' && !isLoading) {
-        fetchData(false, retryCount > 0); // Silent refresh
+        fetchDataRef.current(false, retryCount > 0); // Silent refresh
       }
     }, refreshInterval);
 
@@ -598,7 +606,7 @@ export default function TimeTrackerContent({
         clearInterval(refreshIntervalRef.current);
       }
     };
-  }, [isLoading, retryCount, fetchData]);
+  }, [isLoading, retryCount]);
 
   // Timer effect with better cleanup
   useEffect(() => {
@@ -635,7 +643,7 @@ export default function TimeTrackerContent({
     const handleOnline = () => {
       setIsOffline(false);
       if (retryCount > 0) {
-        fetchData(false, true);
+        fetchDataRef.current(false, true);
       }
     };
     const handleOffline = () => setIsOffline(true);
@@ -647,7 +655,7 @@ export default function TimeTrackerContent({
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
     };
-  }, [retryCount, fetchData]);
+  }, [retryCount]);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -669,8 +677,8 @@ export default function TimeTrackerContent({
 
   // Retry function with exponential backoff
   const handleRetry = useCallback(() => {
-    fetchData(true, true);
-  }, [fetchData]);
+    fetchDataRef.current(true, true);
+  }, []);
 
   // Drag and drop state for highlighting drop zones (unused but kept for future use)
   // const [isDraggingTask, setIsDraggingTask] = useState(false);

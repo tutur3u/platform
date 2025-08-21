@@ -179,8 +179,8 @@ export function Structure({
         if (link?.children && link.children.length > 0) {
           // Check if this link should be active based on pathname or aliases
           const linkMatches =
-            (link.href && pathname.startsWith(link.href)) ||
-            link.aliases?.some((alias) => pathname.startsWith(alias));
+            (link.href && matchesPath(pathname, link.href)) ||
+            link.aliases?.some((alias) => matchesPath(pathname, alias));
 
           const isActive = linkMatches || hasActiveChild(link.children);
 
@@ -202,8 +202,8 @@ export function Structure({
             // Find the specific child that matches the current pathname
             const activeChild = link.children.find(
               (child) =>
-                (child.href && pathname.startsWith(child.href)) ||
-                child.aliases?.some((alias) => pathname.startsWith(alias))
+                (child.href && matchesPath(pathname, child.href)) ||
+                child.aliases?.some((alias) => matchesPath(pathname, alias))
             );
 
             if (activeChild?.children && activeChild.children.length > 0) {
@@ -267,7 +267,7 @@ export function Structure({
       // We are at the top level and no submenu is active, do nothing.
       return prevState;
     });
-  }, [pathname, links, hasActiveChild, getTimeTrackerNavigation]);
+  }, [pathname, links, hasActiveChild, getTimeTrackerNavigation, matchesPath]);
 
   const handleToggle = () => {
     const newCollapsed = !isCollapsed;
