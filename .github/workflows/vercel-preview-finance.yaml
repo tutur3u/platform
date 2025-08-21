@@ -7,17 +7,43 @@ on:
 
 jobs:
   deploy-finance:
-    if: |
-      github.event.workflow_run.conclusion == 'success' &&
-      contains(fromJSON(github.event.workflow_run.outputs.apps-to-build), 'finance')
-    uses: ./.github/workflows/build-app.yml
-    with:
-      app: finance
-      app-path: apps/finance
-      build-command: vercel build --token=${{ secrets.VERCEL_TOKEN }}
-      vercel-project-id: ${{ secrets.VERCEL_FINANCE_PROJECT_ID }}
-    secrets:
-      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-      TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
-      TURBO_TEAM: ${{ secrets.TURBO_TEAM }}
+    runs-on: ubuntu-latest
+    if: github.event.workflow_run.conclusion == 'success'
+    steps:
+    - name: Download apps-to-build artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: apps-to-build
+        path: ./
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        run-id: ${{ github.event.workflow_run.id }}
+
+    - name: Check if finance should be built
+      id: check-finance
+      run: |
+        if [ -f "apps-to-build.txt" ]; then
+          if grep -q "finance" "apps-to-build.txt"; then
+            echo "finance_detected=true" >> $GITHUB_OUTPUT
+            echo "✅ Finance changes detected, proceeding with build"
+          else
+            echo "finance_detected=false" >> $GITHUB_OUTPUT
+            echo "❌ No Finance changes detected, skipping build"
+          fi
+        else
+          echo "finance_detected=false" >> $GITHUB_OUTPUT
+          echo "❌ apps-to-build.txt not found, skipping build"
+        fi
+
+    - name: Build and Deploy Finance
+      if: steps.check-finance.outputs.finance_detected == 'true'
+      uses: ./.github/workflows/build-app.yml
+      with:
+        app: finance
+        app-path: apps/finance
+        build-command: vercel build --token=${{ secrets.VERCEL_TOKEN }}
+        vercel-project-id: ${{ secrets.VERCEL_FINANCE_PROJECT_ID }}
+      secrets:
+        VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+        TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
+        TURBO_TEAM: ${{ secrets.TURBO_TEAM }}

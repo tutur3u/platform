@@ -7,17 +7,43 @@ on:
 
 jobs:
   deploy-calendar:
-    if: |
-      github.event.workflow_run.conclusion == 'success' &&
-      contains(fromJSON(github.event.workflow_run.outputs.apps-to-build), 'calendar')
-    uses: ./.github/workflows/build-app.yml
-    with:
-      app: calendar
-      app-path: apps/calendar
-      build-command: vercel build --token=${{ secrets.VERCEL_TOKEN }}
-      vercel-project-id: ${{ secrets.VERCEL_CALENDAR_PROJECT_ID }}
-    secrets:
-      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-      TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
-      TURBO_TEAM: ${{ secrets.TURBO_TEAM }}
+    runs-on: ubuntu-latest
+    if: github.event.workflow_run.conclusion == 'success'
+    steps:
+    - name: Download apps-to-build artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: apps-to-build
+        path: ./
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        run-id: ${{ github.event.workflow_run.id }}
+
+    - name: Check if calendar should be built
+      id: check-calendar
+      run: |
+        if [ -f "apps-to-build.txt" ]; then
+          if grep -q "calendar" "apps-to-build.txt"; then
+            echo "calendar_detected=true" >> $GITHUB_OUTPUT
+            echo "✅ Calendar changes detected, proceeding with build"
+          else
+            echo "calendar_detected=false" >> $GITHUB_OUTPUT
+            echo "❌ No Calendar changes detected, skipping build"
+          fi
+        else
+          echo "calendar_detected=false" >> $GITHUB_OUTPUT
+          echo "❌ apps-to-build.txt not found, skipping build"
+        fi
+
+    - name: Build and Deploy Calendar
+      if: steps.check-calendar.outputs.calendar_detected == 'true'
+      uses: ./.github/workflows/build-app.yml
+      with:
+        app: calendar
+        app-path: apps/calendar
+        build-command: vercel build --token=${{ secrets.VERCEL_TOKEN }}
+        vercel-project-id: ${{ secrets.VERCEL_CALENDAR_PROJECT_ID }}
+      secrets:
+        VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+        TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
+        TURBO_TEAM: ${{ secrets.TURBO_TEAM }}

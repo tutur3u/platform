@@ -7,17 +7,43 @@ on:
 
 jobs:
   deploy-shortener:
-    if: |
-      github.event.workflow_run.conclusion == 'success' &&
-      contains(fromJSON(github.event.workflow_run.outputs.apps-to-build), 'shortener')
-    uses: ./.github/workflows/build-app.yml
-    with:
-      app: shortener
-      app-path: apps/shortener
-      build-command: vercel build --token=${{ secrets.VERCEL_TOKEN }}
-      vercel-project-id: ${{ secrets.VERCEL_SHORTENER_PROJECT_ID }}
-    secrets:
-      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-      TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
-      TURBO_TEAM: ${{ secrets.TURBO_TEAM }}
+    runs-on: ubuntu-latest
+    if: github.event.workflow_run.conclusion == 'success'
+    steps:
+    - name: Download apps-to-build artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: apps-to-build
+        path: ./
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        run-id: ${{ github.event.workflow_run.id }}
+
+    - name: Check if shortener should be built
+      id: check-shortener
+      run: |
+        if [ -f "apps-to-build.txt" ]; then
+          if grep -q "shortener" "apps-to-build.txt"; then
+            echo "shortener_detected=true" >> $GITHUB_OUTPUT
+            echo "✅ Shortener changes detected, proceeding with build"
+          else
+            echo "shortener_detected=false" >> $GITHUB_OUTPUT
+            echo "❌ No Shortener changes detected, skipping build"
+          fi
+        else
+          echo "shortener_detected=false" >> $GITHUB_OUTPUT
+          echo "❌ apps-to-build.txt not found, skipping build"
+        fi
+
+    - name: Build and Deploy Shortener
+      if: steps.check-shortener.outputs.shortener_detected == 'true'
+      uses: ./.github/workflows/build-app.yml
+      with:
+        app: shortener
+        app-path: apps/shortener
+        build-command: vercel build --token=${{ secrets.VERCEL_TOKEN }}
+        vercel-project-id: ${{ secrets.VERCEL_SHORTENER_PROJECT_ID }}
+      secrets:
+        VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+        TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
+        TURBO_TEAM: ${{ secrets.TURBO_TEAM }}

@@ -1,5 +1,4 @@
 name: Vercel Platform Preview Deployment
-
 on:
   workflow_run:
     workflows: [ "Detect Changes for Apps" ]
@@ -8,17 +7,43 @@ on:
 
 jobs:
   deploy-web:
-    if: |
-      github.event.workflow_run.conclusion == 'success' &&
-      contains(fromJSON(github.event.workflow_run.outputs.apps-to-build), 'web')
-    uses: ./.github/workflows/build-app.yml
-    with:
-      app: web
-      app-path: apps/web
-      build-command: vercel build --token=${{ secrets.VERCEL_TOKEN }}
-      vercel-project-id: ${{ secrets.VERCEL_WEB_PROJECT_ID }}
-    secrets:
-      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-      TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
-      TURBO_TEAM: ${{ secrets.TURBO_TEAM }}
+    runs-on: ubuntu-latest
+    if: github.event.workflow_run.conclusion == 'success'
+    steps:
+    - name: Download apps-to-build artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: apps-to-build
+        path: ./
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        run-id: ${{ github.event.workflow_run.id }}
+
+    - name: Check if web should be built
+      id: check-web
+      run: |
+        if [ -f "apps-to-build.txt" ]; then
+          if grep -q "web" "apps-to-build.txt"; then
+            echo "web_detected=true" >> $GITHUB_OUTPUT
+            echo "✅ Web changes detected, proceeding with build"
+          else
+            echo "web_detected=false" >> $GITHUB_OUTPUT
+            echo "❌ No Web changes detected, skipping build"
+          fi
+        else
+          echo "web_detected=false" >> $GITHUB_OUTPUT
+          echo "❌ apps-to-build.txt not found, skipping build"
+        fi
+
+    - name: Build and Deploy Web
+      if: steps.check-web.outputs.web_detected == 'true'
+      uses: ./.github/workflows/build-app.yml
+      with:
+        app: web
+        app-path: apps/web
+        build-command: vercel build --token=${{ secrets.VERCEL_TOKEN }}
+        vercel-project-id: ${{ secrets.VERCEL_WEB_PROJECT_ID }}
+      secrets:
+        VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+        TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
+        TURBO_TEAM: ${{ secrets.TURBO_TEAM }}

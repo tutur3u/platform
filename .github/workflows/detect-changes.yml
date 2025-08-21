@@ -9,9 +9,6 @@ on:
 jobs:
   detect-changes:
     runs-on: ubuntu-latest
-    outputs:
-      apps-to-build: ${{ steps.changes.outputs.apps }}
-      matrix: ${{ steps.changes.outputs.matrix }}
     steps:
     - name: Checkout code
       uses: actions/checkout@v5
@@ -157,8 +154,9 @@ jobs:
           MATRIX="[]"
         fi
 
-        echo "apps=$(echo "$UNIQUE_APPS" | tr '\n' ',' | sed 's/,$//')" >> $GITHUB_OUTPUT
-        echo "matrix=$MATRIX" >> $GITHUB_OUTPUT
+        # Save results to files for artifacts
+        echo "$UNIQUE_APPS" > apps-to-build.txt
+        echo "$MATRIX" > matrix.json
 
         echo "=== Debug Information ==="
         echo "Changed files:"
@@ -186,3 +184,17 @@ jobs:
 
         # Exit successfully
         exit 0
+
+    - name: Upload apps-to-build artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: apps-to-build
+        path: apps-to-build.txt
+        retention-days: 1
+
+    - name: Upload matrix artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: matrix
+        path: matrix.json
+        retention-days: 1

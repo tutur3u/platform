@@ -7,17 +7,43 @@ on:
 
 jobs:
   deploy-rewise:
-    if: |
-      github.event.workflow_run.conclusion == 'success' &&
-      contains(fromJSON(github.event.workflow_run.outputs.apps-to-build), 'rewise')
-    uses: ./.github/workflows/build-app.yml
-    with:
-      app: rewise
-      app-path: apps/rewise
-      build-command: vercel build --token=${{ secrets.VERCEL_TOKEN }}
-      vercel-project-id: ${{ secrets.VERCEL_REWISE_PROJECT_ID }}
-    secrets:
-      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-      TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
-      TURBO_TEAM: ${{ secrets.TURBO_TEAM }}
+    runs-on: ubuntu-latest
+    if: github.event.workflow_run.conclusion == 'success'
+    steps:
+    - name: Download apps-to-build artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: apps-to-build
+        path: ./
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        run-id: ${{ github.event.workflow_run.id }}
+
+    - name: Check if rewise should be built
+      id: check-rewise
+      run: |
+        if [ -f "apps-to-build.txt" ]; then
+          if grep -q "rewise" "apps-to-build.txt"; then
+            echo "rewise_detected=true" >> $GITHUB_OUTPUT
+            echo "✅ Rewise changes detected, proceeding with build"
+          else
+            echo "rewise_detected=false" >> $GITHUB_OUTPUT
+            echo "❌ No Rewise changes detected, skipping build"
+          fi
+        else
+          echo "rewise_detected=false" >> $GITHUB_OUTPUT
+          echo "❌ apps-to-build.txt not found, skipping build"
+        fi
+
+    - name: Build and Deploy Rewise
+      if: steps.check-rewise.outputs.rewise_detected == 'true'
+      uses: ./.github/workflows/build-app.yml
+      with:
+        app: rewise
+        app-path: apps/rewise
+        build-command: vercel build --token=${{ secrets.VERCEL_TOKEN }}
+        vercel-project-id: ${{ secrets.VERCEL_REWISE_PROJECT_ID }}
+      secrets:
+        VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+        TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
+        TURBO_TEAM: ${{ secrets.TURBO_TEAM }}

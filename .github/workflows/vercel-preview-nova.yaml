@@ -7,17 +7,43 @@ on:
 
 jobs:
   deploy-nova:
-    if: |
-      github.event.workflow_run.conclusion == 'success' &&
-      contains(fromJSON(github.event.workflow_run.outputs.apps-to-build), 'nova')
-    uses: ./.github/workflows/build-app.yml
-    with:
-      app: nova
-      app-path: apps/nova
-      build-command: vercel build --token=${{ secrets.VERCEL_TOKEN }}
-      vercel-project-id: ${{ secrets.VERCEL_NOVA_PROJECT_ID }}
-    secrets:
-      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-      TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
-      TURBO_TEAM: ${{ secrets.TURBO_TEAM }}
+    runs-on: ubuntu-latest
+    if: github.event.workflow_run.conclusion == 'success'
+    steps:
+    - name: Download apps-to-build artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: apps-to-build
+        path: ./
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        run-id: ${{ github.event.workflow_run.id }}
+
+    - name: Check if nova should be built
+      id: check-nova
+      run: |
+        if [ -f "apps-to-build.txt" ]; then
+          if grep -q "nova" "apps-to-build.txt"; then
+            echo "nova_detected=true" >> $GITHUB_OUTPUT
+            echo "✅ Nova changes detected, proceeding with build"
+          else
+            echo "nova_detected=false" >> $GITHUB_OUTPUT
+            echo "❌ No Nova changes detected, skipping build"
+          fi
+        else
+          echo "nova_detected=false" >> $GITHUB_OUTPUT
+          echo "❌ apps-to-build.txt not found, skipping build"
+        fi
+
+    - name: Build and Deploy Nova
+      if: steps.check-nova.outputs.nova_detected == 'true'
+      uses: ./.github/workflows/build-app.yml
+      with:
+        app: nova
+        app-path: apps/nova
+        build-command: vercel build --token=${{ secrets.VERCEL_TOKEN }}
+        vercel-project-id: ${{ secrets.VERCEL_NOVA_PROJECT_ID }}
+      secrets:
+        VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+        TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
+        TURBO_TEAM: ${{ secrets.TURBO_TEAM }}
