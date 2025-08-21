@@ -4,9 +4,6 @@ on:
     branches-ignore:
     - 'main'
     - 'production'
-    paths:
-    - 'apps/**'
-    - 'packages/**'
   workflow_dispatch:
 
 
