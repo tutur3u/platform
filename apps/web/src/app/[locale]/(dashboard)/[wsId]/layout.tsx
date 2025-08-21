@@ -73,15 +73,15 @@ import PersonalWorkspacePrompt from './personal-workspace-prompt';
 import { Structure } from './structure';
 
 interface LayoutProps {
-  params: Promise<{
+  params: {
     wsId: string;
-  }>;
+  };
   children: ReactNode;
 }
 
 export default async function Layout({ children, params }: LayoutProps) {
   const t = await getTranslations();
-  const { wsId: id } = await params;
+  const { wsId: id } = params;
 
   const workspace = await getWorkspace(id);
   const wsId = workspace.id;

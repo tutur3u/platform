@@ -28,11 +28,15 @@ export function NavLink({
   // Recursive function to check if any nested child matches the pathname
   const hasActiveChild = (navLinks: NavLinkType[]): boolean => {
     return navLinks.some((child) => {
-      const childMatches =
+      const aliasMatches = child.aliases?.some((alias) =>
+        child.matchExact ? pathname === alias : pathname.startsWith(alias)
+      );
+      const hrefMatches =
         child.href &&
         (child.matchExact
           ? pathname === child.href
           : pathname.startsWith(child.href));
+      const childMatches = Boolean(aliasMatches || hrefMatches);
 
       if (childMatches) return true;
 
@@ -97,6 +101,7 @@ export function NavLink({
         : 'hover:bg-accent hover:text-accent-foreground'
     ),
     onClick: () => {
+      if (link.tempDisabled) return;
       if (onLinkClick) {
         onLinkClick();
       } else if (hasChildren) {

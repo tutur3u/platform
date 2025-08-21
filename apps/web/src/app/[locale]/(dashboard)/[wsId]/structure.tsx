@@ -53,6 +53,10 @@ export function Structure({
   const { behavior, handleBehaviorChange } = useSidebar();
   const [isCollapsed, setIsCollapsed] = useState(defaultCollapsed);
 
+  // Utility function for path matching that respects segment boundaries
+  const matchesPath = useCallback((pathname: string, target?: string) =>
+    !!target && (pathname === target || pathname.startsWith(`${target}/`)), []);
+
   useEffect(() => {
     if (behavior === 'collapsed' || behavior === 'hover') {
       setIsCollapsed(true);
@@ -66,8 +70,8 @@ export function Structure({
     (navLinks: NavLink[]): boolean => {
       return navLinks.some((child) => {
         const childMatches =
-          (child?.href && pathname.startsWith(child.href)) ||
-          child?.aliases?.some((alias) => pathname.startsWith(alias));
+          (child?.href && matchesPath(pathname, child.href)) ||
+          child?.aliases?.some((alias) => matchesPath(pathname, alias));
 
         if (childMatches) {
           return true;
@@ -80,7 +84,7 @@ export function Structure({
         return false;
       });
     },
-    [pathname]
+    [pathname, matchesPath]
   );
 
   // Helper function to handle time tracker navigation logic
@@ -318,7 +322,11 @@ export function Structure({
       if (link.requireRootMember && !user?.email?.endsWith('@tuturuuu.com'))
         return [];
       if (link.requireRootWorkspace && !isRootWorkspace) return [];
-      if (link.allowedRoles && link.allowedRoles.length > 0) return [];
+      // TODO: Implement role-based filtering when user roles are available
+      // if (link.allowedRoles?.length) {
+      //   const hasRole = user?.roles?.some((r) => link.allowedRoles!.includes(r));
+      //   if (!hasRole) return [];
+      // }
 
       // For navigation items with children, always include them
       if (link.children && link.children.length > 0) {
@@ -349,8 +357,8 @@ export function Structure({
   )
     .filter(
       (link) =>
-        (link.href && pathname.startsWith(link.href)) ||
-        link.aliases?.some((alias) => pathname.startsWith(alias))
+        (link.href && matchesPath(pathname, link.href)) ||
+        link.aliases?.some((alias) => matchesPath(pathname, alias))
     )
     .sort((a, b) => {
       const aLength = a.href ? a.href.length : a.aliases?.[0]?.length || 0;

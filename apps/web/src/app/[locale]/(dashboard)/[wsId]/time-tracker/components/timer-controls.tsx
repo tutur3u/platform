@@ -1516,9 +1516,9 @@ export function TimerControls({
           body: JSON.stringify({
             title: newSessionTitle,
             description: newSessionDescription || null,
-            categoryId:
+            category_id:
               selectedCategoryId === 'none' ? null : selectedCategoryId || null,
-            taskId: selectedTaskId === 'none' ? null : selectedTaskId || null,
+            task_id: selectedTaskId === 'none' ? null : selectedTaskId || null,
           }),
         }
       )) as { session: SessionWithRelations };
