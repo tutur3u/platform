@@ -310,3 +310,106 @@ jobs:
         name: matrix
         path: matrix.json
         retention-days: 1
+
+    - name: Trigger deployment workflows for affected apps
+      if: steps.check-changes.outputs.has_relevant_changes == 'true'
+      run: |
+        # Read the apps that need to be built
+        if [ -f "apps-to-build.txt" ]; then
+          APPS_TO_BUILD=$(cat apps-to-build.txt | grep -v '^$' | sort -u)
+          
+          if [ -n "$APPS_TO_BUILD" ]; then
+            echo "🚀 Triggering deployment workflows for affected apps..."
+            
+            for app in $APPS_TO_BUILD; do
+              # Extract app name from @tuturuuu/app-name format
+              app_name=${app#@tuturuuu/}
+              
+              echo "📦 Processing app: $app_name"
+              
+              # Map app names to their corresponding workflow files
+              case "$app_name" in
+                "calendar")
+                  workflow_file="vercel-preview-calendar.yaml"
+                  ;;
+                "finance")
+                  workflow_file="vercel-preview-finance.yaml"
+                  ;;
+                "nova")
+                  workflow_file="vercel-preview-nova.yaml"
+                  ;;
+                "rewise")
+                  workflow_file="vercel-preview-rewise.yaml"
+                  ;;
+                "shortener")
+                  workflow_file="vercel-preview-shortener.yaml"
+                  ;;
+                "tudo")
+                  workflow_file="vercel-preview-todo.yaml"
+                  ;;
+                "tumeet")
+                  workflow_file="vercel-preview-tumeet.yaml"
+                  ;;
+                "web"|"platform")
+                  workflow_file="vercel-preview-platform.yaml"
+                  ;;
+                "external")
+                  # External app might not have a preview workflow
+                  echo "⚠️  External app detected but no preview workflow configured"
+                  continue
+                  ;;
+                "playground")
+                  # Playground might not need deployment
+                  echo "⚠️  Playground app detected but no preview workflow configured"
+                  continue
+                  ;;
+                *)
+                  echo "⚠️  Unknown app: $app_name, skipping workflow trigger"
+                  continue
+                  ;;
+              esac
+              
+              echo "🔄 Triggering workflow: $workflow_file for app: $app_name"
+              
+              # Method 1: Use GitHub API to trigger the workflow directly
+              if curl -L \
+                -X POST \
+                -H "Accept: application/vnd.github+json" \
+                -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+                -H "X-GitHub-Api-Version: 2022-11-28" \
+                "https://api.github.com/repos/${{ github.repository }}/actions/workflows/$workflow_file/dispatches" \
+                -d "{\"ref\":\"${{ github.ref }}\",\"inputs\":{\"force_deploy\":\"false\"}}" \
+                --fail --silent --show-error; then
+                echo "✅ Successfully triggered $workflow_file via API"
+              else
+                echo "❌ Failed to trigger $workflow_file via API"
+                
+                # Method 2: Try repository dispatch as fallback
+                echo "🔄 Attempting repository dispatch for $app_name..."
+                if curl -L \
+                  -X POST \
+                  -H "Accept: application/vnd.github+json" \
+                  -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+                  -H "X-GitHub-Api-Version: 2022-11-28" \
+                  "https://api.github.com/repos/${{ github.repository }}/dispatches" \
+                  -d "{\"event_type\":\"deploy-app\",\"client_payload\":{\"app\":\"$app_name\",\"ref\":\"${{ github.ref }}\",\"force_deploy\":false}}" \
+                  --fail --silent --show-error; then
+                  echo "✅ Successfully sent repository dispatch for $app_name"
+                else
+                  echo "❌ Repository dispatch also failed for $app_name"
+                fi
+              fi
+              
+              # Small delay between API calls to avoid rate limiting
+              sleep 1
+            done
+            
+            echo "✅ Finished triggering deployment workflows"
+          else
+            echo "ℹ️  No apps found in apps-to-build.txt"
+          fi
+        else
+          echo "ℹ️  apps-to-build.txt not found, no workflows to trigger"
+        fi
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
