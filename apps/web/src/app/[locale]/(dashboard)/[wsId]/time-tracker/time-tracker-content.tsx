@@ -24,8 +24,21 @@ import { priorityCompare } from '@/lib/task-helper';
 import { useQuery } from '@tanstack/react-query';
 import type { TimeTrackingCategory } from '@tuturuuu/types/db';
 import type { TaskPriority } from '@tuturuuu/types/primitives/Priority';
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from '@tuturuuu/ui/accordion';
 import { Alert, AlertDescription } from '@tuturuuu/ui/alert';
 import { Button } from '@tuturuuu/ui/button';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@tuturuuu/ui/card';
 import {
   AlertCircle,
   BarChart2,
@@ -33,8 +46,10 @@ import {
   CheckCircle,
   CheckSquare,
   Clock,
+  Goal,
   History,
   LayoutDashboard,
+  LayoutGrid,
   MapPin,
   Pause,
   Play,
@@ -93,9 +108,11 @@ export default function TimeTrackerContent({
   wsId,
   initialData,
 }: TimeTrackerContentProps) {
-  const { userId: currentUserId, isLoading: isLoadingUser } = useCurrentUser();
+  const [sidebarView, setSidebarView] = useState('analytics');
   const [activeTab, setActiveTab] = useState('timer');
+
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
+  const { userId: currentUserId, isLoading: isLoadingUser } = useCurrentUser();
 
   // Use React Query for running session to sync with command palette
   const { data: runningSessionFromQuery } = useQuery({
@@ -703,11 +720,6 @@ export default function TimeTrackerContent({
     fetchData(true, true);
   }, []); // Remove fetchData dependency
 
-  // Sidebar View Switching
-  const [sidebarView, setSidebarView] = useState<
-    'analytics' | 'tasks' | 'reports' | 'settings'
-  >('analytics');
-
   // Drag and drop state for highlighting drop zones
   const [isDraggingTask, setIsDraggingTask] = useState(false);
 
@@ -870,371 +882,384 @@ export default function TimeTrackerContent({
 
         {/* Enhanced Quick Actions - Single Row */}
         {!isViewingOtherUser && (
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <h3 className="text-sm font-medium text-foreground">
-                ⚡ Quick Actions
-              </h3>
-              <div className="text-xs text-muted-foreground">
-                {(() => {
-                  const hour = new Date().getHours();
-                  const isPeakTime =
-                    (hour >= 9 && hour <= 11) || (hour >= 14 && hour <= 16);
-                  return isPeakTime
-                    ? '🧠 Peak focus time'
-                    : '📈 Building momentum';
-                })()}
-              </div>
-            </div>
-
-            {/* Action Grid with proper spacing to prevent cutoff */}
-            <div className="grid grid-cols-2 gap-3 p-1 sm:grid-cols-4 lg:gap-4">
-              {/* Continue Last Session */}
-              <button
-                onClick={() => {
-                  if (!recentSessions[0]) {
-                    toast.info('No recent session to continue');
-                    return;
-                  }
-                  if (isRunning) {
-                    toast.info('Timer is already running');
-                    return;
-                  }
-                  setShowContinueConfirm(true);
-                }}
-                disabled={!recentSessions[0] || isRunning}
-                className={cn(
-                  'group relative rounded-lg border p-3 text-left transition-all duration-300',
-                  'hover:shadow-lg hover:shadow-blue-500/20 active:scale-[0.98]',
-                  recentSessions[0] && !isRunning
-                    ? 'border-blue-200/60 bg-gradient-to-br from-blue-50 to-blue-100/50 hover:-translate-y-1 dark:border-blue-800/60 dark:from-blue-950/30 dark:to-blue-900/20'
-                    : 'cursor-not-allowed border-muted bg-muted/30 opacity-60'
-                )}
-              >
-                <div className="flex items-start gap-2">
-                  <div
+          // <div className="space-y-3">
+          <Accordion collapsible className="w-full" type="single">
+            <AccordionItem value="quick-actions">
+              <AccordionTrigger>
+                <div className="flex flex-1 items-center justify-between">
+                  <h3 className="text-sm font-medium text-foreground">
+                    ⚡ Quick Actions
+                  </h3>
+                  <div className="text-xs text-muted-foreground">
+                    {(() => {
+                      const hour = new Date().getHours();
+                      const isPeakTime =
+                        (hour >= 9 && hour <= 11) || (hour >= 14 && hour <= 16);
+                      return isPeakTime
+                        ? '🧠 Peak focus time'
+                        : '📈 Building momentum';
+                    })()}
+                  </div>
+                </div>
+              </AccordionTrigger>
+              <AccordionContent>
+                {/* Action Grid with proper spacing to prevent cutoff */}
+                <div className="grid grid-cols-2 gap-3 p-1 sm:grid-cols-4 lg:gap-4">
+                  {/* Continue Last Session */}
+                  <button
+                    onClick={() => {
+                      if (!recentSessions[0]) {
+                        toast.info('No recent session to continue');
+                        return;
+                      }
+                      if (isRunning) {
+                        toast.info('Timer is already running');
+                        return;
+                      }
+                      setShowContinueConfirm(true);
+                    }}
+                    disabled={!recentSessions[0] || isRunning}
                     className={cn(
-                      'flex-shrink-0 rounded-full p-1.5 transition-colors',
+                      'group relative rounded-lg border p-3 text-left transition-all duration-300',
+                      'hover:shadow-lg hover:shadow-blue-500/20 active:scale-[0.98]',
                       recentSessions[0] && !isRunning
-                        ? 'bg-blue-500/20 group-hover:bg-blue-500/30'
-                        : 'bg-muted-foreground/20'
+                        ? 'border-blue-200/60 bg-gradient-to-br from-blue-50 to-blue-100/50 hover:-translate-y-1 dark:border-blue-800/60 dark:from-blue-950/30 dark:to-blue-900/20'
+                        : 'cursor-not-allowed border-muted bg-muted/30 opacity-60'
                     )}
                   >
-                    <RotateCcw
-                      className={cn(
-                        'h-3 w-3 transition-transform group-hover:rotate-12',
-                        recentSessions[0] && !isRunning
-                          ? 'text-blue-600 dark:text-blue-400'
-                          : 'text-muted-foreground'
-                      )}
-                    />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p
-                      className={cn(
-                        'text-xs font-medium',
-                        recentSessions[0] && !isRunning
-                          ? 'text-blue-700 dark:text-blue-300'
-                          : 'text-muted-foreground'
-                      )}
-                    >
-                      Continue Last
-                    </p>
-                    {recentSessions[0] ? (
-                      <>
+                    <div className="flex items-start gap-2">
+                      <div
+                        className={cn(
+                          'flex-shrink-0 rounded-full p-1.5 transition-colors',
+                          recentSessions[0] && !isRunning
+                            ? 'bg-blue-500/20 group-hover:bg-blue-500/30'
+                            : 'bg-muted-foreground/20'
+                        )}
+                      >
+                        <RotateCcw
+                          className={cn(
+                            'h-3 w-3 transition-transform group-hover:rotate-12',
+                            recentSessions[0] && !isRunning
+                              ? 'text-blue-600 dark:text-blue-400'
+                              : 'text-muted-foreground'
+                          )}
+                        />
+                      </div>
+                      <div className="min-w-0 flex-1">
                         <p
-                          className="line-clamp-2 text-sm font-bold text-blue-900 dark:text-blue-100"
-                          title={recentSessions[0].title}
+                          className={cn(
+                            'text-xs font-medium',
+                            recentSessions[0] && !isRunning
+                              ? 'text-blue-700 dark:text-blue-300'
+                              : 'text-muted-foreground'
+                          )}
                         >
-                          {recentSessions[0].title}
+                          Continue Last
                         </p>
-                        {recentSessions[0].category && (
-                          <div className="mt-1 flex items-center gap-1">
-                            <div
-                              className={cn(
-                                'h-2 w-2 rounded-full',
-                                recentSessions[0].category.color
-                                  ? `bg-dynamic-${recentSessions[0].category.color.toLowerCase()}/70`
-                                  : 'bg-blue-500/70'
-                              )}
-                            />
-                            <span className="truncate text-xs text-blue-700/80 dark:text-blue-300/80">
-                              {recentSessions[0].category.name}
-                            </span>
-                          </div>
+                        {recentSessions[0] ? (
+                          <>
+                            <p
+                              className="line-clamp-2 text-sm font-bold text-blue-900 dark:text-blue-100"
+                              title={recentSessions[0].title}
+                            >
+                              {recentSessions[0].title}
+                            </p>
+                            {recentSessions[0].category && (
+                              <div className="mt-1 flex items-center gap-1">
+                                <div
+                                  className={cn(
+                                    'h-2 w-2 rounded-full',
+                                    recentSessions[0].category.color
+                                      ? `bg-dynamic-${recentSessions[0].category.color.toLowerCase()}/70`
+                                      : 'bg-blue-500/70'
+                                  )}
+                                />
+                                <span className="truncate text-xs text-blue-700/80 dark:text-blue-300/80">
+                                  {recentSessions[0].category.name}
+                                </span>
+                              </div>
+                            )}
+                            {/* Focus Score Badge */}
+                            {recentSessions[0] && (
+                              <div className="mt-1 flex items-center gap-1">
+                                <div className="h-1 w-8 rounded-full bg-blue-200 dark:bg-blue-900/50">
+                                  <div
+                                    className="h-1 rounded-full bg-blue-500 transition-all dark:bg-blue-400"
+                                    style={{
+                                      width: `${Math.round(calculateFocusScore(recentSessions[0]))}%`,
+                                    }}
+                                  />
+                                </div>
+                                <span className="text-xs font-medium text-blue-600 dark:text-blue-400">
+                                  Focus:{' '}
+                                  {Math.round(
+                                    calculateFocusScore(recentSessions[0])
+                                  )}
+                                  %
+                                </span>
+                              </div>
+                            )}
+                          </>
+                        ) : (
+                          <p className="text-sm font-bold text-muted-foreground">
+                            No recent session
+                          </p>
                         )}
-                        {/* Focus Score Badge */}
-                        {recentSessions[0] && (
-                          <div className="mt-1 flex items-center gap-1">
-                            <div className="h-1 w-8 rounded-full bg-blue-200 dark:bg-blue-900/50">
-                              <div
-                                className="h-1 rounded-full bg-blue-500 transition-all dark:bg-blue-400"
-                                style={{
-                                  width: `${Math.round(calculateFocusScore(recentSessions[0]))}%`,
-                                }}
-                              />
-                            </div>
-                            <span className="text-xs font-medium text-blue-600 dark:text-blue-400">
-                              Focus:{' '}
-                              {Math.round(
-                                calculateFocusScore(recentSessions[0])
-                              )}
-                              %
-                            </span>
-                          </div>
-                        )}
-                      </>
-                    ) : (
-                      <p className="text-sm font-bold text-muted-foreground">
-                        No recent session
-                      </p>
+                      </div>
+                    </div>
+                    {recentSessions[0] && (
+                      <div className="absolute top-2 right-2 opacity-0 transition-opacity group-hover:opacity-100">
+                        <span className="text-lg">🔄</span>
+                      </div>
                     )}
-                  </div>
-                </div>
-                {recentSessions[0] && (
-                  <div className="absolute top-2 right-2 opacity-0 transition-opacity group-hover:opacity-100">
-                    <span className="text-lg">🔄</span>
-                  </div>
-                )}
-              </button>
+                  </button>
 
-              {/* Next Task */}
-              <button
-                onClick={async () => {
-                  await fetchNextTasks();
+                  {/* Next Task */}
+                  <button
+                    onClick={async () => {
+                      await fetchNextTasks();
 
-                  if (availableTasks.length === 0) {
-                    // No tasks available - show overlay to create tasks or view boards
-                    setShowTaskSelector(true);
-                    return;
-                  }
-
-                  if (availableTasks.length === 1) {
-                    // Single task - auto-start
-                    const task = availableTasks[0];
-                    const isUnassigned =
-                      !task || !task.assignees || task.assignees.length === 0;
-
-                    try {
-                      // If task is unassigned, assign to current user first
-                      if (!task) return;
-                      if (isUnassigned) {
-                        const { createClient } = await import(
-                          '@tuturuuu/supabase/next/client'
-                        );
-                        const supabase = createClient();
-
-                        const { error: assignError } = await supabase
-                          .from('task_assignees')
-                          .insert({
-                            task_id: task.id,
-                            user_id: currentUserId,
-                          });
-
-                        if (assignError) {
-                          console.error('Task assignment error:', assignError);
-                          throw new Error(
-                            assignError.message || 'Failed to assign task'
-                          );
-                        }
-
-                        toast.success(
-                          `Assigned task "${task.name}" to yourself`
-                        );
+                      if (availableTasks.length === 0) {
+                        // No tasks available - show overlay to create tasks or view boards
+                        setShowTaskSelector(true);
+                        return;
                       }
 
-                      // Start session
-                      const response = await apiCall(
-                        `/api/v1/workspaces/${wsId}/time-tracking/sessions`,
-                        {
-                          method: 'POST',
-                          body: JSON.stringify({
-                            title: task.name,
-                            description:
-                              task.description || `Working on: ${task.name}`,
-                            task_id: task.id,
-                            category_id:
-                              categories.find((c) =>
-                                c.name.toLowerCase().includes('work')
-                              )?.id || null,
-                          }),
+                      if (availableTasks.length === 1) {
+                        // Single task - auto-start
+                        const task = availableTasks[0];
+                        const isUnassigned =
+                          !task ||
+                          !task.assignees ||
+                          task.assignees.length === 0;
+
+                        try {
+                          // If task is unassigned, assign to current user first
+                          if (!task) return;
+                          if (isUnassigned) {
+                            const { createClient } = await import(
+                              '@tuturuuu/supabase/next/client'
+                            );
+                            const supabase = createClient();
+
+                            const { error: assignError } = await supabase
+                              .from('task_assignees')
+                              .insert({
+                                task_id: task.id,
+                                user_id: currentUserId,
+                              });
+
+                            if (assignError) {
+                              console.error(
+                                'Task assignment error:',
+                                assignError
+                              );
+                              throw new Error(
+                                assignError.message || 'Failed to assign task'
+                              );
+                            }
+
+                            toast.success(
+                              `Assigned task "${task.name}" to yourself`
+                            );
+                          }
+
+                          // Start session
+                          const response = await apiCall(
+                            `/api/v1/workspaces/${wsId}/time-tracking/sessions`,
+                            {
+                              method: 'POST',
+                              body: JSON.stringify({
+                                title: task.name,
+                                description:
+                                  task.description ||
+                                  `Working on: ${task.name}`,
+                                task_id: task.id,
+                                category_id:
+                                  categories.find((c) =>
+                                    c.name.toLowerCase().includes('work')
+                                  )?.id || null,
+                              }),
+                            }
+                          );
+
+                          setCurrentSession(response.session);
+                          setIsRunning(true);
+                          setElapsedTime(0);
+                          await fetchData();
+
+                          toast.success(`Started: ${task.name}`);
+                        } catch (error) {
+                          console.error('Error starting task:', error);
+                          toast.error('Failed to start task session');
                         }
-                      );
-
-                      setCurrentSession(response.session);
-                      setIsRunning(true);
-                      setElapsedTime(0);
-                      await fetchData();
-
-                      toast.success(`Started: ${task.name}`);
-                    } catch (error) {
-                      console.error('Error starting task:', error);
-                      toast.error('Failed to start task session');
-                    }
-                  } else {
-                    // Multiple tasks - show selector
-                    setShowTaskSelector(true);
-                  }
-                }}
-                disabled={isRunning}
-                className={cn(
-                  'group relative rounded-lg border p-3 text-left transition-all duration-300',
-                  'hover:shadow-lg hover:shadow-purple-500/20 active:scale-[0.98]',
-                  !isRunning
-                    ? 'border-purple-200/60 bg-gradient-to-br from-purple-50 to-purple-100/50 hover:-translate-y-1 dark:border-purple-800/60 dark:from-purple-950/30 dark:to-purple-900/20'
-                    : 'cursor-not-allowed border-muted bg-muted/30 opacity-60'
-                )}
-              >
-                <div className="flex items-start gap-2">
-                  <div className="flex-shrink-0 rounded-full bg-purple-500/20 p-1.5 transition-colors group-hover:bg-purple-500/30">
-                    <CheckSquare className="h-3 w-3 text-purple-600 transition-transform group-hover:scale-110 dark:text-purple-400" />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-xs font-medium text-purple-700 dark:text-purple-300">
-                      Next Task
-                    </p>
-                    {nextTaskPreview ? (
-                      <>
-                        <p className="truncate text-sm font-bold text-purple-900 dark:text-purple-100">
-                          {nextTaskPreview.name}
-                        </p>
-                        <div className="flex items-center gap-1">
-                          <span
-                            className={cn(
-                              'inline-flex items-center rounded-full px-1.5 py-0.5 text-xs font-medium',
-                              nextTaskPreview.priority === 'critical'
-                                ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300'
-                                : nextTaskPreview.priority === 'high'
-                                  ? 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300'
-                                  : nextTaskPreview.priority === 'normal'
-                                    ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300'
-                                    : nextTaskPreview.priority === 'low'
-                                      ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300'
-                                      : 'bg-gray-100 text-gray-700 dark:bg-gray-900/30 dark:text-gray-300'
-                            )}
-                          >
-                            {nextTaskPreview.priority === 'critical'
-                              ? 'Urgent'
-                              : nextTaskPreview.priority === 'high'
-                                ? 'High'
-                                : nextTaskPreview.priority === 'normal'
-                                  ? 'Medium'
-                                  : nextTaskPreview.priority === 'low'
-                                    ? 'Low'
-                                    : 'No Priority'}
-                          </span>
-                          {nextTaskPreview.is_assigned_to_current_user ? (
-                            <span className="text-xs text-purple-600/80 dark:text-purple-400/80">
-                              • Assigned to you
-                            </span>
-                          ) : (
-                            <span className="text-xs text-purple-600/80 dark:text-purple-400/80">
-                              • Can assign to yourself
-                            </span>
-                          )}
-                        </div>
-                      </>
-                    ) : (
-                      <>
-                        <p className="text-sm font-bold text-purple-900 dark:text-purple-100">
-                          No tasks available
-                        </p>
-                        <p className="text-xs text-purple-600/80 dark:text-purple-400/80">
-                          Create or assign tasks
-                        </p>
-                      </>
+                      } else {
+                        // Multiple tasks - show selector
+                        setShowTaskSelector(true);
+                      }
+                    }}
+                    disabled={isRunning}
+                    className={cn(
+                      'group relative rounded-lg border p-3 text-left transition-all duration-300',
+                      'hover:shadow-lg hover:shadow-purple-500/20 active:scale-[0.98]',
+                      !isRunning
+                        ? 'border-purple-200/60 bg-gradient-to-br from-purple-50 to-purple-100/50 hover:-translate-y-1 dark:border-purple-800/60 dark:from-purple-950/30 dark:to-purple-900/20'
+                        : 'cursor-not-allowed border-muted bg-muted/30 opacity-60'
                     )}
-                  </div>
-                </div>
-                <div className="absolute top-2 right-2 opacity-0 transition-opacity group-hover:opacity-100">
-                  <span className="text-lg">🎯</span>
-                </div>
-              </button>
+                  >
+                    <div className="flex items-start gap-2">
+                      <div className="flex-shrink-0 rounded-full bg-purple-500/20 p-1.5 transition-colors group-hover:bg-purple-500/30">
+                        <CheckSquare className="h-3 w-3 text-purple-600 transition-transform group-hover:scale-110 dark:text-purple-400" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-xs font-medium text-purple-700 dark:text-purple-300">
+                          Next Task
+                        </p>
+                        {nextTaskPreview ? (
+                          <>
+                            <p className="truncate text-sm font-bold text-purple-900 dark:text-purple-100">
+                              {nextTaskPreview.name}
+                            </p>
+                            <div className="flex items-center gap-1">
+                              <span
+                                className={cn(
+                                  'inline-flex items-center rounded-full px-1.5 py-0.5 text-xs font-medium',
+                                  nextTaskPreview.priority === 'critical'
+                                    ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300'
+                                    : nextTaskPreview.priority === 'high'
+                                      ? 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300'
+                                      : nextTaskPreview.priority === 'normal'
+                                        ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300'
+                                        : nextTaskPreview.priority === 'low'
+                                          ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300'
+                                          : 'bg-gray-100 text-gray-700 dark:bg-gray-900/30 dark:text-gray-300'
+                                )}
+                              >
+                                {nextTaskPreview.priority === 'critical'
+                                  ? 'Urgent'
+                                  : nextTaskPreview.priority === 'high'
+                                    ? 'High'
+                                    : nextTaskPreview.priority === 'normal'
+                                      ? 'Medium'
+                                      : nextTaskPreview.priority === 'low'
+                                        ? 'Low'
+                                        : 'No Priority'}
+                              </span>
+                              {nextTaskPreview.is_assigned_to_current_user ? (
+                                <span className="text-xs text-purple-600/80 dark:text-purple-400/80">
+                                  • Assigned to you
+                                </span>
+                              ) : (
+                                <span className="text-xs text-purple-600/80 dark:text-purple-400/80">
+                                  • Can assign to yourself
+                                </span>
+                              )}
+                            </div>
+                          </>
+                        ) : (
+                          <>
+                            <p className="text-sm font-bold text-purple-900 dark:text-purple-100">
+                              No tasks available
+                            </p>
+                            <p className="text-xs text-purple-600/80 dark:text-purple-400/80">
+                              Create or assign tasks
+                            </p>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                    <div className="absolute top-2 right-2 opacity-0 transition-opacity group-hover:opacity-100">
+                      <span className="text-lg">🎯</span>
+                    </div>
+                  </button>
 
-              {/* Break Timer */}
-              <button
-                onClick={() => {
-                  // Scroll to timer controls and pre-fill with break session
-                  document
-                    .querySelector('[data-timer-controls]')
-                    ?.scrollIntoView({ behavior: 'smooth' });
+                  {/* Break Timer */}
+                  <button
+                    onClick={() => {
+                      // Scroll to timer controls and pre-fill with break session
+                      document
+                        .querySelector('[data-timer-controls]')
+                        ?.scrollIntoView({ behavior: 'smooth' });
 
-                  setTimeout(() => {
-                    const titleInput = document.querySelector(
-                      '[data-title-input]'
-                    ) as HTMLInputElement;
-                    if (titleInput) {
-                      titleInput.value = 'Break Time';
-                      titleInput.dispatchEvent(
-                        new Event('input', { bubbles: true })
+                      setTimeout(() => {
+                        const titleInput = document.querySelector(
+                          '[data-title-input]'
+                        ) as HTMLInputElement;
+                        if (titleInput) {
+                          titleInput.value = 'Break Time';
+                          titleInput.dispatchEvent(
+                            new Event('input', { bubbles: true })
+                          );
+                          titleInput.focus();
+                        }
+                      }, 300);
+
+                      toast.success(
+                        'Break session ready! Take 5-15 minutes to recharge.'
                       );
-                      titleInput.focus();
-                    }
-                  }, 300);
+                    }}
+                    disabled={isRunning}
+                    className={cn(
+                      'group relative rounded-lg border p-3 text-left transition-all duration-300',
+                      'hover:shadow-lg hover:shadow-green-500/20 active:scale-[0.98]',
+                      !isRunning
+                        ? 'border-green-200/60 bg-gradient-to-br from-green-50 to-green-100/50 hover:-translate-y-1 dark:border-green-800/60 dark:from-green-950/30 dark:to-green-900/20'
+                        : 'cursor-not-allowed border-muted bg-muted/30 opacity-60'
+                    )}
+                  >
+                    <div className="flex items-start gap-2">
+                      <div className="flex-shrink-0 rounded-full bg-green-500/20 p-1.5 transition-colors group-hover:bg-green-500/30">
+                        <Pause className="h-3 w-3 text-green-600 transition-transform group-hover:scale-110 dark:text-green-400" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-xs font-medium text-green-700 dark:text-green-300">
+                          Break Timer
+                        </p>
+                        <p className="text-sm font-bold text-green-900 dark:text-green-100">
+                          Take 5 min
+                        </p>
+                        <p className="text-xs text-green-600/80 dark:text-green-400/80">
+                          Recharge session
+                        </p>
+                      </div>
+                    </div>
+                    <div className="absolute top-2 right-2 opacity-0 transition-opacity group-hover:opacity-100">
+                      <span className="text-lg">☕</span>
+                    </div>
+                  </button>
 
-                  toast.success(
-                    'Break session ready! Take 5-15 minutes to recharge.'
-                  );
-                }}
-                disabled={isRunning}
-                className={cn(
-                  'group relative rounded-lg border p-3 text-left transition-all duration-300',
-                  'hover:shadow-lg hover:shadow-green-500/20 active:scale-[0.98]',
-                  !isRunning
-                    ? 'border-green-200/60 bg-gradient-to-br from-green-50 to-green-100/50 hover:-translate-y-1 dark:border-green-800/60 dark:from-green-950/30 dark:to-green-900/20'
-                    : 'cursor-not-allowed border-muted bg-muted/30 opacity-60'
-                )}
-              >
-                <div className="flex items-start gap-2">
-                  <div className="flex-shrink-0 rounded-full bg-green-500/20 p-1.5 transition-colors group-hover:bg-green-500/30">
-                    <Pause className="h-3 w-3 text-green-600 transition-transform group-hover:scale-110 dark:text-green-400" />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-xs font-medium text-green-700 dark:text-green-300">
-                      Break Timer
-                    </p>
-                    <p className="text-sm font-bold text-green-900 dark:text-green-100">
-                      Take 5 min
-                    </p>
-                    <p className="text-xs text-green-600/80 dark:text-green-400/80">
-                      Recharge session
-                    </p>
-                  </div>
+                  {/* Analytics Dashboard */}
+                  <button
+                    onClick={() => {
+                      setActiveTab('history');
+                    }}
+                    className="group relative rounded-lg border border-amber-200/60 bg-gradient-to-br from-amber-50 to-amber-100/50 p-3 text-left transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:shadow-amber-500/20 active:scale-[0.98] dark:border-amber-800/60 dark:from-amber-950/30 dark:to-amber-900/20"
+                  >
+                    <div className="flex items-start gap-2">
+                      <div className="flex-shrink-0 rounded-full bg-amber-500/20 p-1.5 transition-colors group-hover:bg-amber-500/30">
+                        <BarChart2 className="h-3 w-3 text-amber-600 transition-transform group-hover:scale-110 dark:text-amber-400" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-xs font-medium text-amber-700 dark:text-amber-300">
+                          Analytics
+                        </p>
+                        <p className="text-sm font-bold text-amber-900 dark:text-amber-100">
+                          Focus: {productivityMetrics.avgFocusScore}%
+                        </p>
+                        <p className="text-xs text-amber-600/80 dark:text-amber-400/80">
+                          {productivityMetrics.todaySessionCount} sessions today
+                        </p>
+                      </div>
+                    </div>
+                    <div className="absolute top-2 right-2 opacity-0 transition-opacity group-hover:opacity-100">
+                      <span className="text-lg">📊</span>
+                    </div>
+                  </button>
                 </div>
-                <div className="absolute top-2 right-2 opacity-0 transition-opacity group-hover:opacity-100">
-                  <span className="text-lg">☕</span>
-                </div>
-              </button>
-
-              {/* Analytics Dashboard */}
-              <button
-                onClick={() => {
-                  setActiveTab('history');
-                }}
-                className="group relative rounded-lg border border-amber-200/60 bg-gradient-to-br from-amber-50 to-amber-100/50 p-3 text-left transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:shadow-amber-500/20 active:scale-[0.98] dark:border-amber-800/60 dark:from-amber-950/30 dark:to-amber-900/20"
-              >
-                <div className="flex items-start gap-2">
-                  <div className="flex-shrink-0 rounded-full bg-amber-500/20 p-1.5 transition-colors group-hover:bg-amber-500/30">
-                    <BarChart2 className="h-3 w-3 text-amber-600 transition-transform group-hover:scale-110 dark:text-amber-400" />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-xs font-medium text-amber-700 dark:text-amber-300">
-                      Analytics
-                    </p>
-                    <p className="text-sm font-bold text-amber-900 dark:text-amber-100">
-                      Focus: {productivityMetrics.avgFocusScore}%
-                    </p>
-                    <p className="text-xs text-amber-600/80 dark:text-amber-400/80">
-                      {productivityMetrics.todaySessionCount} sessions today
-                    </p>
-                  </div>
-                </div>
-                <div className="absolute top-2 right-2 opacity-0 transition-opacity group-hover:opacity-100">
-                  <span className="text-lg">📊</span>
-                </div>
-              </button>
-            </div>
-          </div>
+              </AccordionContent>
+            </AccordionItem>
+            {/* </div> */}
+          </Accordion>
         )}
 
         {/* Current Session Status Banner */}
@@ -1301,6 +1326,963 @@ export default function TimeTrackerContent({
 
         {/* New Layout: Analytics sidebar on left, Timer controls and tabs on right */}
         <div className="grid grid-cols-1 gap-6 pb-6 lg:grid-cols-5 lg:items-start">
+          {/* Left Side: Switchable Sidebar Views - Second on mobile */}
+          <div className="order-2 lg:order-1 lg:col-span-2">
+            <div className="space-y-6">
+              {/* Sidebar View Switcher */}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-1 rounded-lg bg-muted/50 p-1">
+                  <button
+                    onClick={() => setSidebarView('analytics')}
+                    className={cn(
+                      'flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition-all',
+                      sidebarView === 'analytics'
+                        ? 'bg-background text-foreground shadow-sm'
+                        : 'text-muted-foreground hover:text-foreground'
+                    )}
+                  >
+                    <TrendingUp className="h-3 w-3" />
+                    Analytics
+                  </button>
+                  {!isViewingOtherUser && (
+                    <button
+                      onClick={() => setSidebarView('tasks')}
+                      className={cn(
+                        'flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition-all',
+                        sidebarView === 'tasks'
+                          ? 'bg-background text-foreground shadow-sm'
+                          : 'text-muted-foreground hover:text-foreground'
+                      )}
+                    >
+                      <CheckCircle className="h-3 w-3" />
+                      Tasks
+                    </button>
+                  )}
+                  <button
+                    onClick={() => setSidebarView('reports')}
+                    className={cn(
+                      'flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition-all',
+                      sidebarView === 'reports'
+                        ? 'bg-background text-foreground shadow-sm'
+                        : 'text-muted-foreground hover:text-foreground'
+                    )}
+                  >
+                    <History className="h-3 w-3" />
+                    Reports
+                  </button>
+                  <button
+                    onClick={() => setSidebarView('settings')}
+                    className={cn(
+                      'flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition-all',
+                      sidebarView === 'settings'
+                        ? 'bg-background text-foreground shadow-sm'
+                        : 'text-muted-foreground hover:text-foreground'
+                    )}
+                  >
+                    <Settings className="h-3 w-3" />
+                    Settings
+                  </button>
+                </div>
+              </div>
+
+              {/* Sidebar Content */}
+              {sidebarView === 'analytics' && (
+                <>
+                  {/* Stats Overview - Enhanced for sidebar */}
+                  <Card>
+                    <CardHeader>
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-purple-600 shadow-lg">
+                          <TrendingUp className="h-5 w-5 text-white" />
+                        </div>
+                        <div>
+                          <CardTitle className="text-lg sm:text-xl">
+                            Your Progress
+                          </CardTitle>
+                          <CardDescription>
+                            Track your productivity metrics ⚡
+                          </CardDescription>
+                        </div>
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      {/* Custom sidebar-optimized stats layout */}
+                      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                        {/* Today */}
+                        <div className="rounded-lg border border-dynamic-blue/30 bg-background p-3 transition-all duration-300 hover:shadow-md">
+                          <div className="flex items-center gap-3">
+                            <div className="rounded-full bg-dynamic-blue/10 p-2 shadow-sm">
+                              <Calendar className="h-4 w-4 text-blue-500" />
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-center gap-2">
+                                <p className="text-xs font-medium text-muted-foreground">
+                                  Today
+                                </p>
+                                <span className="text-sm">
+                                  {new Date().getDay() === 0 ||
+                                  new Date().getDay() === 6
+                                    ? '🏖️'
+                                    : '💼'}
+                                </span>
+                              </div>
+                              <p className="text-xs text-muted-foreground/80">
+                                {new Date().toLocaleDateString('en-US', {
+                                  weekday: 'long',
+                                })}
+                              </p>
+                              <p className="text-lg font-bold">
+                                {formatDuration(timerStats.todayTime)}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* This Week */}
+                        <div className="rounded-lg border border-dynamic-green/30 bg-background p-3 transition-all duration-300 hover:shadow-md">
+                          <div className="flex items-center gap-3">
+                            <div className="rounded-full bg-dynamic-green/10 p-2 shadow-sm">
+                              <TrendingUp className="h-4 w-4 text-green-500" />
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-center gap-2">
+                                <p className="text-xs font-medium text-muted-foreground">
+                                  This Week
+                                </p>
+                                <span className="text-sm">📊</span>
+                              </div>
+                              <p className="text-xs text-muted-foreground/80">
+                                {(() => {
+                                  const today = new Date();
+                                  const dayOfWeek = today.getDay();
+                                  const daysToSubtract =
+                                    dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+                                  const startOfWeek = new Date(today);
+                                  startOfWeek.setDate(
+                                    today.getDate() - daysToSubtract
+                                  );
+                                  const endOfWeek = new Date(startOfWeek);
+                                  endOfWeek.setDate(startOfWeek.getDate() + 6);
+                                  return `${startOfWeek.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${endOfWeek.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`;
+                                })()}
+                              </p>
+                              <p className="text-lg font-bold">
+                                {formatDuration(timerStats.weekTime)}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* This Month */}
+                        <div className="rounded-lg border border-dynamic-purple/30 bg-background p-3 transition-all duration-300 hover:shadow-md">
+                          <div className="flex items-center gap-3">
+                            <div className="rounded-full bg-dynamic-purple/10 p-2 shadow-sm">
+                              <Zap className="h-4 w-4 text-purple-500" />
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-center gap-2">
+                                <p className="text-xs font-medium text-muted-foreground">
+                                  This Month
+                                </p>
+                                <span className="text-sm">🚀</span>
+                              </div>
+                              <p className="text-xs text-muted-foreground/80">
+                                {new Date().toLocaleDateString('en-US', {
+                                  month: 'long',
+                                  year: 'numeric',
+                                })}
+                              </p>
+                              <p className="text-lg font-bold">
+                                {formatDuration(timerStats.monthTime)}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Streak */}
+                        <div className="rounded-lg border border-dynamic-orange/30 bg-background p-3 transition-all duration-300 hover:shadow-md">
+                          <div className="flex items-center gap-3">
+                            <div className="rounded-full bg-dynamic-orange/10 p-2 shadow-sm">
+                              <Clock className="h-4 w-4 text-orange-500" />
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-center gap-2">
+                                <p className="text-xs font-medium text-muted-foreground">
+                                  Streak
+                                </p>
+                                <span className="text-sm">
+                                  {timerStats.streak >= 7 ? '🏆' : '⭐'}
+                                </span>
+                              </div>
+                              <p className="text-xs text-muted-foreground/80">
+                                {timerStats.streak > 0
+                                  ? 'consecutive days'
+                                  : 'start today!'}
+                              </p>
+                              <p className="text-lg font-bold">
+                                {timerStats.streak} days
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  {/* Activity Heatmap - Enhanced with better header */}
+                  {timerStats.dailyActivity && (
+                    <Card className="relative overflow-visible">
+                      <CardHeader>
+                        <div className="flex items-center gap-3">
+                          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 shadow-lg">
+                            <Calendar className="h-5 w-5 text-white" />
+                          </div>
+                          <div>
+                            <CardTitle className="text-lg sm:text-xl">
+                              Activity Heatmap
+                            </CardTitle>
+                            <CardDescription>
+                              {(() => {
+                                const totalDuration =
+                                  timerStats.dailyActivity?.reduce(
+                                    (sum, day) => sum + day.duration,
+                                    0
+                                  ) || 0;
+                                return totalDuration > 0
+                                  ? `${formatDuration(totalDuration)} tracked this year 🔥`
+                                  : 'Start tracking to see your activity pattern 🌱';
+                              })()}
+                            </CardDescription>
+                          </div>
+                        </div>
+                      </CardHeader>
+                      <CardContent>
+                        {/* Remove the original header from ActivityHeatmap component and provide overflow space */}
+                        <div className="relative overflow-visible [&>div>div:first-child]:hidden">
+                          <ActivityHeatmap
+                            dailyActivity={timerStats.dailyActivity}
+                            formatDuration={formatDuration}
+                            settings={heatmapSettings}
+                          />
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )}
+                </>
+              )}
+
+              {/* Tasks View */}
+              {sidebarView === 'tasks' && (
+                <div className="space-y-6">
+                  {/* Tasks Header */}
+                  <Card>
+                    <CardHeader>
+                      {/* Header Section */}
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 shadow-lg">
+                          <CheckCircle className="h-5 w-5 text-white" />
+                        </div>
+                        <div>
+                          <CardTitle className="text-lg sm:text-xl">
+                            Task Workspace
+                          </CardTitle>
+                          <CardDescription>
+                            Drag tasks to timer to start tracking 🎯
+                          </CardDescription>
+                        </div>
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      {/* Enhanced Search and Filter Bar */}
+                      <div className="mb-5 space-y-4">
+                        {/* Quick Filter Buttons */}
+                        <div className="flex flex-wrap gap-2">
+                          <button
+                            onClick={() =>
+                              setTasksSidebarFilters((prev) => ({
+                                ...prev,
+                                assignee:
+                                  prev.assignee === 'mine' ? 'all' : 'mine',
+                              }))
+                            }
+                            className={cn(
+                              'flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition-all',
+                              tasksSidebarFilters.assignee === 'mine'
+                                ? 'bg-blue-100 text-blue-700 ring-1 ring-blue-200 dark:bg-blue-900/30 dark:text-blue-300 dark:ring-blue-800'
+                                : 'bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground'
+                            )}
+                          >
+                            <CheckCircle className="h-3 w-3" />
+                            My Tasks
+                            {myTasksCount > 0 && (
+                              <span className="ml-1 rounded-full bg-current px-1.5 py-0.5 text-[10px] text-white">
+                                {myTasksCount}
+                              </span>
+                            )}
+                          </button>
+                          <button
+                            onClick={() =>
+                              setTasksSidebarFilters((prev) => ({
+                                ...prev,
+                                assignee:
+                                  prev.assignee === 'unassigned'
+                                    ? 'all'
+                                    : 'unassigned',
+                              }))
+                            }
+                            className={cn(
+                              'flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition-all',
+                              tasksSidebarFilters.assignee === 'unassigned'
+                                ? 'bg-orange-100 text-orange-700 ring-1 ring-orange-200 dark:bg-orange-900/30 dark:text-orange-300 dark:ring-orange-800'
+                                : 'bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground'
+                            )}
+                          >
+                            <svg
+                              className="h-3 w-3"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                              />
+                            </svg>
+                            Unassigned
+                            {unassignedCount > 0 && (
+                              <span className="ml-1 rounded-full bg-current px-1.5 py-0.5 text-[10px] text-white">
+                                {unassignedCount}
+                              </span>
+                            )}
+                          </button>
+                        </div>
+
+                        {/* Search and Dropdown Filters */}
+                        <div className="flex gap-2">
+                          <div className="flex-1">
+                            <Input
+                              placeholder="Search tasks..."
+                              value={tasksSidebarSearch}
+                              onChange={(e) =>
+                                setTasksSidebarSearch(e.target.value)
+                              }
+                              className="h-8 text-xs"
+                            />
+                          </div>
+                          <Select
+                            value={tasksSidebarFilters.board}
+                            onValueChange={(value) =>
+                              setTasksSidebarFilters((prev) => ({
+                                ...prev,
+                                board: value,
+                              }))
+                            }
+                          >
+                            <SelectTrigger className="h-8 w-24 text-xs">
+                              <SelectValue placeholder="Board" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="all">All Boards</SelectItem>
+                              {[
+                                ...new Set(
+                                  tasks
+                                    .map((task) => task.board_name)
+                                    .filter((name): name is string =>
+                                      Boolean(name)
+                                    )
+                                ),
+                              ].map((board) => (
+                                <SelectItem key={board} value={board}>
+                                  {board}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <Select
+                            value={tasksSidebarFilters.list}
+                            onValueChange={(value) =>
+                              setTasksSidebarFilters((prev) => ({
+                                ...prev,
+                                list: value,
+                              }))
+                            }
+                          >
+                            <SelectTrigger className="h-8 w-20 text-xs">
+                              <SelectValue placeholder="List" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="all">All Lists</SelectItem>
+                              {[
+                                ...new Set(
+                                  tasks
+                                    .map((task) => task.list_name)
+                                    .filter((name): name is string =>
+                                      Boolean(name)
+                                    )
+                                ),
+                              ].map((list) => (
+                                <SelectItem key={list} value={list}>
+                                  {list}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        {/* Active Filters Display */}
+                        {(tasksSidebarSearch ||
+                          tasksSidebarFilters.board !== 'all' ||
+                          tasksSidebarFilters.list !== 'all' ||
+                          tasksSidebarFilters.assignee !== 'all') && (
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span className="text-xs text-muted-foreground">
+                              Active filters:
+                            </span>
+                            {tasksSidebarSearch && (
+                              <span className="inline-flex items-center gap-1 rounded-md bg-blue-100 px-2 py-1 text-xs text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
+                                Search: "{tasksSidebarSearch}"
+                                <button
+                                  onClick={() => setTasksSidebarSearch('')}
+                                  className="hover:text-blue-900 dark:hover:text-blue-100"
+                                >
+                                  ×
+                                </button>
+                              </span>
+                            )}
+                            {tasksSidebarFilters.board !== 'all' && (
+                              <span className="inline-flex items-center gap-1 rounded-md bg-green-100 px-2 py-1 text-xs text-green-700 dark:bg-green-900/30 dark:text-green-300">
+                                Board: {tasksSidebarFilters.board}
+                                <button
+                                  onClick={() =>
+                                    setTasksSidebarFilters((prev) => ({
+                                      ...prev,
+                                      board: 'all',
+                                    }))
+                                  }
+                                  className="hover:text-green-900 dark:hover:text-green-100"
+                                >
+                                  ×
+                                </button>
+                              </span>
+                            )}
+                            {tasksSidebarFilters.list !== 'all' && (
+                              <span className="inline-flex items-center gap-1 rounded-md bg-purple-100 px-2 py-1 text-xs text-purple-700 dark:bg-purple-900/30 dark:text-purple-300">
+                                List: {tasksSidebarFilters.list}
+                                <button
+                                  onClick={() =>
+                                    setTasksSidebarFilters((prev) => ({
+                                      ...prev,
+                                      list: 'all',
+                                    }))
+                                  }
+                                  className="hover:text-purple-900 dark:hover:text-purple-100"
+                                >
+                                  ×
+                                </button>
+                              </span>
+                            )}
+                            {tasksSidebarFilters.assignee !== 'all' && (
+                              <span className="inline-flex items-center gap-1 rounded-md bg-orange-100 px-2 py-1 text-xs text-orange-700 dark:bg-orange-900/30 dark:text-orange-300">
+                                {tasksSidebarFilters.assignee === 'mine'
+                                  ? 'My Tasks'
+                                  : tasksSidebarFilters.assignee ===
+                                      'unassigned'
+                                    ? 'Unassigned'
+                                    : 'Assignee Filter'}
+                                <button
+                                  onClick={() =>
+                                    setTasksSidebarFilters((prev) => ({
+                                      ...prev,
+                                      assignee: 'all',
+                                    }))
+                                  }
+                                  className="hover:text-orange-900 dark:hover:text-orange-100"
+                                >
+                                  ×
+                                </button>
+                              </span>
+                            )}
+                            <button
+                              onClick={() => {
+                                setTasksSidebarSearch('');
+                                setTasksSidebarFilters({
+                                  board: 'all',
+                                  list: 'all',
+                                  assignee: 'all',
+                                });
+                              }}
+                              className="text-xs text-muted-foreground hover:text-foreground"
+                            >
+                              Clear all
+                            </button>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Task List with Scrollable Container */}
+                      <div className="space-y-4">
+                        {(() => {
+                          // Filter and sort tasks for sidebar with user prioritization
+                          const filteredSidebarTasks =
+                            getFilteredAndSortedSidebarTasks(
+                              tasks,
+                              tasksSidebarSearch,
+                              tasksSidebarFilters
+                            );
+
+                          if (tasks.length === 0) {
+                            return (
+                              <div className="rounded-lg border-2 border-dashed border-muted-foreground/25 p-6 text-center">
+                                <CheckCircle className="mx-auto mb-3 h-8 w-8 text-muted-foreground" />
+                                <p className="text-sm text-muted-foreground">
+                                  No tasks available. Create tasks in your
+                                  project boards to see them here.
+                                </p>
+                              </div>
+                            );
+                          }
+
+                          if (filteredSidebarTasks.length === 0) {
+                            return (
+                              <div className="rounded-lg border-2 border-dashed border-muted-foreground/25 p-6 text-center">
+                                <CheckCircle className="mx-auto mb-3 h-8 w-8 text-muted-foreground" />
+                                <p className="text-sm text-muted-foreground">
+                                  No tasks found matching your criteria.
+                                </p>
+                              </div>
+                            );
+                          }
+
+                          return (
+                            <>
+                              {/* Task Count Header */}
+                              <div className="mb-3 flex items-center justify-between px-1 text-xs text-muted-foreground">
+                                <span>
+                                  {filteredSidebarTasks.length} task
+                                  {filteredSidebarTasks.length !== 1
+                                    ? 's'
+                                    : ''}{' '}
+                                  available
+                                  {(tasksSidebarSearch ||
+                                    tasksSidebarFilters.board !== 'all' ||
+                                    tasksSidebarFilters.list !== 'all' ||
+                                    tasksSidebarFilters.assignee !== 'all') &&
+                                    ` (filtered from ${tasks.length} total)`}
+                                </span>
+                                <span className="font-medium text-blue-600 dark:text-blue-400">
+                                  Drag to timer →
+                                </span>
+                              </div>
+
+                              {/* Scrollable Task Container */}
+                              <div className="/40 max-h-[400px] overflow-y-auto rounded-lg border bg-gray-50/30 p-4 dark:border-gray-700/40 dark:bg-gray-800/20">
+                                <div className="space-y-4">
+                                  {filteredSidebarTasks.map((task) => (
+                                    <div
+                                      key={task.id}
+                                      className={cn(
+                                        'group cursor-grab rounded-lg border p-4 shadow-sm transition-all duration-200 hover:scale-[1.01] hover:shadow-md active:cursor-grabbing',
+                                        // Enhanced styling for assigned tasks
+                                        task.is_assigned_to_current_user
+                                          ? 'border-blue-300 bg-gradient-to-br from-blue-50 to-blue-100 ring-1 ring-blue-200 dark:border-blue-700 dark:from-blue-950/30 dark:to-blue-900/30 dark:ring-blue-800'
+                                          : '/60 bg-white dark:border-gray-700/60 dark:bg-gray-800/80',
+                                        isDraggingTask &&
+                                          'shadow-md ring-1 shadow-blue-500/10 ring-blue-400/30'
+                                      )}
+                                      draggable
+                                      onDragStart={(e) => {
+                                        e.dataTransfer.setData(
+                                          'application/json',
+                                          JSON.stringify({
+                                            type: 'task',
+                                            task: task,
+                                          })
+                                        );
+                                        setIsDraggingTask(true);
+                                      }}
+                                      onDragEnd={() => {
+                                        setIsDraggingTask(false);
+                                      }}
+                                    >
+                                      <div className="flex items-start gap-4">
+                                        <div
+                                          className={cn(
+                                            'flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg border',
+                                            task.is_assigned_to_current_user
+                                              ? 'border-blue-300 bg-gradient-to-br from-blue-100 to-blue-200 dark:border-blue-600 dark:from-blue-800 dark:to-blue-700'
+                                              : 'border-blue-200/60 bg-gradient-to-br from-blue-50 to-blue-100 dark:border-blue-700/60 dark:from-blue-900/50 dark:to-blue-800/50'
+                                          )}
+                                        >
+                                          <CheckCircle
+                                            className={cn(
+                                              'h-4 w-4',
+                                              task.is_assigned_to_current_user
+                                                ? 'text-blue-700 dark:text-blue-300'
+                                                : 'text-blue-600 dark:text-blue-400'
+                                            )}
+                                          />
+                                        </div>
+                                        <div className="min-w-0 flex-1">
+                                          <div className="flex items-start justify-between gap-2">
+                                            <h4
+                                              className={cn(
+                                                'mb-1 text-sm font-medium',
+                                                task.is_assigned_to_current_user
+                                                  ? 'text-blue-900 dark:text-blue-100'
+                                                  : 'text-gray-900 dark:text-gray-100'
+                                              )}
+                                            >
+                                              {task.name}
+                                              {task.is_assigned_to_current_user && (
+                                                <span className="ml-2 inline-flex items-center rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-800 dark:bg-blue-900/50 dark:text-blue-200">
+                                                  Assigned to you
+                                                </span>
+                                              )}
+                                            </h4>
+                                          </div>
+                                          {task.description && (
+                                            <p className="mb-3 line-clamp-2 text-xs text-gray-600 dark:text-gray-400">
+                                              {task.description}
+                                            </p>
+                                          )}
+
+                                          {/* Assignees Display */}
+                                          {task.assignees &&
+                                            task.assignees.length > 0 && (
+                                              <div className="mb-2 flex items-center gap-2">
+                                                <div className="flex -space-x-1">
+                                                  {task.assignees
+                                                    .slice(0, 3)
+                                                    .map((assignee) => (
+                                                      <div
+                                                        key={assignee.id}
+                                                        className="h-5 w-5 rounded-full border-2 border-white bg-gradient-to-br from-gray-100 to-gray-200 dark:border-gray-800 dark:from-gray-700 dark:to-gray-600"
+                                                        title={
+                                                          assignee.display_name ||
+                                                          assignee.email
+                                                        }
+                                                      >
+                                                        {assignee.avatar_url ? (
+                                                          <img
+                                                            src={
+                                                              assignee.avatar_url
+                                                            }
+                                                            alt={
+                                                              assignee.display_name ||
+                                                              assignee.email ||
+                                                              ''
+                                                            }
+                                                            className="h-full w-full rounded-full object-cover"
+                                                          />
+                                                        ) : (
+                                                          <div className="flex h-full w-full items-center justify-center text-[8px] font-medium text-gray-600 dark:text-gray-300">
+                                                            {generateAssigneeInitials(
+                                                              assignee
+                                                            )}
+                                                          </div>
+                                                        )}
+                                                      </div>
+                                                    ))}
+                                                  {task.assignees.length >
+                                                    3 && (
+                                                    <div className="flex h-5 w-5 items-center justify-center rounded-full border-2 border-white bg-gray-200 text-[8px] font-medium text-gray-600 dark:border-gray-800 dark:bg-gray-700 dark:text-gray-300">
+                                                      +
+                                                      {task.assignees.length -
+                                                        3}
+                                                    </div>
+                                                  )}
+                                                </div>
+                                                <span className="text-xs text-muted-foreground">
+                                                  {task.assignees.length}{' '}
+                                                  assigned
+                                                </span>
+                                              </div>
+                                            )}
+
+                                          {task.board_name &&
+                                            task.list_name && (
+                                              <div className="flex items-center gap-2">
+                                                <div className="flex items-center gap-1 rounded-md bg-gray-100 px-1.5 py-0.5 dark:bg-gray-700">
+                                                  <MapPin className="h-3 w-3 text-gray-500 dark:text-gray-400" />
+                                                  <span className="text-xs font-medium text-gray-600 dark:text-gray-300">
+                                                    {task.board_name}
+                                                  </span>
+                                                </div>
+                                                <div className="flex items-center gap-1 rounded-md bg-blue-100 px-1.5 py-0.5 dark:bg-blue-900/30">
+                                                  <Tag className="h-3 w-3 text-blue-600 dark:text-blue-400" />
+                                                  <span className="text-xs font-medium text-blue-700 dark:text-blue-300">
+                                                    {task.list_name}
+                                                  </span>
+                                                </div>
+                                              </div>
+                                            )}
+                                        </div>
+                                        <div className="flex flex-shrink-0 items-center gap-1.5 text-xs text-gray-400 opacity-0 transition-opacity group-hover:opacity-100">
+                                          <span className="font-medium">
+                                            Drag
+                                          </span>
+                                          <svg
+                                            className="h-3.5 w-3.5"
+                                            fill="none"
+                                            stroke="currentColor"
+                                            viewBox="0 0 24 24"
+                                          >
+                                            <path
+                                              strokeLinecap="round"
+                                              strokeLinejoin="round"
+                                              strokeWidth={2}
+                                              d="M8 9l4-4 4 4m0 6l-4 4-4-4"
+                                            />
+                                          </svg>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+
+                                {/* Scroll indicator */}
+                                {filteredSidebarTasks.length > 5 && (
+                                  <div className="mt-2 text-center">
+                                    <div className="inline-flex items-center gap-1 text-xs text-muted-foreground">
+                                      <span>Scroll for more</span>
+                                      <svg
+                                        className="h-3 w-3"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        viewBox="0 0 24 24"
+                                      >
+                                        <path
+                                          strokeLinecap="round"
+                                          strokeLinejoin="round"
+                                          strokeWidth={2}
+                                          d="M19 14l-7 7m0 0l-7-7m7 7V3"
+                                        />
+                                      </svg>
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            </>
+                          );
+                        })()}
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              )}
+
+              {/* Reports View */}
+              {sidebarView === 'reports' && (
+                <div className="space-y-6">
+                  <Card>
+                    <CardHeader>
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-purple-500 to-pink-600 shadow-lg">
+                          <History className="h-5 w-5 text-white" />
+                        </div>
+                        <div>
+                          <CardTitle className="text-lg sm:text-xl">
+                            Reports & Analytics
+                          </CardTitle>
+                          <CardDescription>
+                            Detailed insights coming soon 📊
+                          </CardDescription>
+                        </div>
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="rounded-lg border-2 border-dashed border-muted-foreground/25 p-6 text-center">
+                        <History className="mx-auto mb-3 h-8 w-8 text-muted-foreground" />
+                        <p className="text-sm text-muted-foreground">
+                          Advanced reporting features are coming soon. Stay
+                          tuned for detailed analytics, custom reports, and
+                          productivity insights.
+                        </p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              )}
+
+              {/* Settings View */}
+              {sidebarView === 'settings' && (
+                <div className="space-y-6">
+                  <Card>
+                    <CardHeader>
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-gray-500 to-gray-700 shadow-lg">
+                          <Settings className="h-5 w-5 text-white" />
+                        </div>
+                        <div>
+                          <CardTitle className="text-lg sm:text-xl">
+                            Timer Settings
+                          </CardTitle>
+                          <CardDescription>
+                            Customize your tracking experience ⚙️
+                          </CardDescription>
+                        </div>
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-6">
+                        {/* Activity Heatmap Settings */}
+                        <div className="space-y-4">
+                          <div className="flex items-center gap-2">
+                            <Calendar className="h-4 w-4 text-muted-foreground" />
+                            <h4 className="font-medium">
+                              Activity Heatmap Display
+                            </h4>
+                          </div>
+
+                          <div className="grid gap-4">
+                            <div className="space-y-2">
+                              <Label htmlFor="heatmap-view">
+                                Heatmap View Style
+                              </Label>
+                              <Select
+                                value={heatmapSettings.viewMode}
+                                onValueChange={(
+                                  value: 'original' | 'hybrid' | 'calendar-only'
+                                ) => {
+                                  const newSettings = {
+                                    ...heatmapSettings,
+                                    viewMode: value,
+                                  };
+                                  setHeatmapSettings(newSettings);
+                                  localStorage.setItem(
+                                    'heatmap-settings',
+                                    JSON.stringify(newSettings)
+                                  );
+                                }}
+                              >
+                                <SelectTrigger id="heatmap-view">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="original">
+                                    <div className="flex items-center gap-2">
+                                      <div className="h-2 w-2 rounded-sm bg-blue-500" />
+                                      <span>Original Grid</span>
+                                    </div>
+                                  </SelectItem>
+                                  <SelectItem value="hybrid">
+                                    <div className="flex items-center gap-2">
+                                      <div className="h-2 w-2 rounded-sm bg-green-500" />
+                                      <span>Hybrid (Year + Calendar)</span>
+                                    </div>
+                                  </SelectItem>
+                                  <SelectItem value="calendar-only">
+                                    <div className="flex items-center gap-2">
+                                      <div className="h-2 w-2 rounded-sm bg-purple-500" />
+                                      <span>Calendar Only</span>
+                                    </div>
+                                  </SelectItem>
+                                  <SelectItem value="compact-cards">
+                                    <div className="flex items-center gap-2">
+                                      <div className="h-2 w-2 rounded-sm bg-orange-500" />
+                                      <span>Compact Cards</span>
+                                    </div>
+                                  </SelectItem>
+                                </SelectContent>
+                              </Select>
+                              <p className="text-xs text-muted-foreground">
+                                {heatmapSettings.viewMode === 'original' &&
+                                  'GitHub-style grid view with day labels'}
+                                {heatmapSettings.viewMode === 'hybrid' &&
+                                  'Year overview plus monthly calendar details'}
+                                {heatmapSettings.viewMode === 'calendar-only' &&
+                                  'Traditional calendar interface'}
+                                {heatmapSettings.viewMode === 'compact-cards' &&
+                                  'Monthly summary cards with key metrics and mini previews'}
+                              </p>
+                            </div>
+
+                            <div className="space-y-2">
+                              <Label htmlFor="time-reference">
+                                Time Reference
+                              </Label>
+                              <Select
+                                value={heatmapSettings.timeReference}
+                                onValueChange={(
+                                  value: 'relative' | 'absolute' | 'smart'
+                                ) => {
+                                  const newSettings = {
+                                    ...heatmapSettings,
+                                    timeReference: value,
+                                  };
+                                  setHeatmapSettings(newSettings);
+                                  localStorage.setItem(
+                                    'heatmap-settings',
+                                    JSON.stringify(newSettings)
+                                  );
+                                }}
+                              >
+                                <SelectTrigger id="time-reference">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="relative">
+                                    Relative ("2 weeks ago")
+                                  </SelectItem>
+                                  <SelectItem value="absolute">
+                                    Absolute ("Jan 15, 2024")
+                                  </SelectItem>
+                                  <SelectItem value="smart">
+                                    Smart (Both combined)
+                                  </SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+
+                            <div className="flex items-center space-x-2">
+                              <Switch
+                                id="onboarding-tips"
+                                checked={heatmapSettings.showOnboardingTips}
+                                onCheckedChange={(checked) => {
+                                  const newSettings = {
+                                    ...heatmapSettings,
+                                    showOnboardingTips: checked,
+                                  };
+                                  setHeatmapSettings(newSettings);
+                                  localStorage.setItem(
+                                    'heatmap-settings',
+                                    JSON.stringify(newSettings)
+                                  );
+                                }}
+                              />
+                              <Label
+                                htmlFor="onboarding-tips"
+                                className="text-sm"
+                              >
+                                Show onboarding tips
+                              </Label>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Coming Soon Section */}
+                        <div className="rounded-lg border-2 border-dashed border-muted-foreground/25 p-4">
+                          <div className="mb-2 flex items-center gap-2">
+                            <Clock className="h-4 w-4 text-muted-foreground" />
+                            <h4 className="font-medium text-muted-foreground">
+                              More Settings Coming Soon
+                            </h4>
+                          </div>
+                          <p className="text-xs text-muted-foreground">
+                            Notifications, default categories, productivity
+                            goals, and more customization options.
+                          </p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              )}
+            </div>
+          </div>
+
           {/* Right Side: Tabs with Timer Controls - First on mobile */}
           <div className="order-1 lg:order-2 lg:col-span-3">
             <div className="space-y-6">
@@ -1317,7 +2299,7 @@ export default function TimeTrackerContent({
                           : 'text-muted-foreground hover:text-foreground'
                       )}
                     >
-                      <Timer className="h-3 w-3" />
+                      <Clock className="h-3 w-3" />
                       Timer
                     </button>
                   )}
@@ -1330,7 +2312,7 @@ export default function TimeTrackerContent({
                         : 'text-muted-foreground hover:text-foreground'
                     )}
                   >
-                    <Clock className="h-3 w-3" />
+                    <History className="h-3 w-3" />
                     History
                   </button>
                   {!isViewingOtherUser && (
@@ -1343,7 +2325,7 @@ export default function TimeTrackerContent({
                           : 'text-muted-foreground hover:text-foreground'
                       )}
                     >
-                      <Settings className="h-3 w-3" />
+                      <LayoutGrid className="h-3 w-3" />
                       Categories
                     </button>
                   )}
@@ -1356,7 +2338,7 @@ export default function TimeTrackerContent({
                         : 'text-muted-foreground hover:text-foreground'
                     )}
                   >
-                    <TrendingUp className="h-3 w-3" />
+                    <Goal className="h-3 w-3" />
                     Goals
                   </button>
                 </div>
@@ -1463,950 +2445,6 @@ export default function TimeTrackerContent({
                   />
                 </TabsContent>
               </Tabs>
-            </div>
-          </div>
-
-          {/* Left Side: Switchable Sidebar Views - Second on mobile */}
-          <div className="order-2 lg:order-1 lg:col-span-2">
-            <div className="space-y-6">
-              {/* Sidebar View Switcher */}
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-1 rounded-lg bg-muted/50 p-1">
-                  <button
-                    onClick={() => setSidebarView('analytics')}
-                    className={cn(
-                      'flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition-all',
-                      sidebarView === 'analytics'
-                        ? 'bg-background text-foreground shadow-sm'
-                        : 'text-muted-foreground hover:text-foreground'
-                    )}
-                  >
-                    <TrendingUp className="h-3 w-3" />
-                    Analytics
-                  </button>
-                  {!isViewingOtherUser && (
-                    <button
-                      onClick={() => setSidebarView('tasks')}
-                      className={cn(
-                        'flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition-all',
-                        sidebarView === 'tasks'
-                          ? 'bg-background text-foreground shadow-sm'
-                          : 'text-muted-foreground hover:text-foreground'
-                      )}
-                    >
-                      <CheckCircle className="h-3 w-3" />
-                      Tasks
-                    </button>
-                  )}
-                  <button
-                    onClick={() => setSidebarView('reports')}
-                    className={cn(
-                      'flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition-all',
-                      sidebarView === 'reports'
-                        ? 'bg-background text-foreground shadow-sm'
-                        : 'text-muted-foreground hover:text-foreground'
-                    )}
-                  >
-                    <History className="h-3 w-3" />
-                    Reports
-                  </button>
-                  <button
-                    onClick={() => setSidebarView('settings')}
-                    className={cn(
-                      'flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition-all',
-                      sidebarView === 'settings'
-                        ? 'bg-background text-foreground shadow-sm'
-                        : 'text-muted-foreground hover:text-foreground'
-                    )}
-                  >
-                    <Settings className="h-3 w-3" />
-                    Settings
-                  </button>
-                </div>
-              </div>
-
-              {/* Sidebar Content */}
-              {sidebarView === 'analytics' && (
-                <>
-                  {/* Stats Overview - Enhanced for sidebar */}
-                  <div className="rounded-xl border bg-gradient-to-br from-white to-gray-50/30 p-4 shadow-sm sm:p-6 dark:border-gray-800/60 dark:bg-gray-950/50 dark:from-gray-950/80 dark:to-gray-900/60">
-                    <div className="mb-4">
-                      <div className="flex items-center gap-3">
-                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-purple-600 shadow-lg">
-                          <TrendingUp className="h-5 w-5 text-white" />
-                        </div>
-                        <div>
-                          <h3 className="text-lg font-semibold text-gray-900 sm:text-xl dark:text-gray-100">
-                            Your Progress
-                          </h3>
-                          <p className="text-sm text-gray-600 dark:text-gray-400">
-                            Track your productivity metrics ⚡
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                    {/* Custom sidebar-optimized stats layout */}
-                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                      {/* Today */}
-                      <div className="rounded-lg border border-dynamic-blue/30 bg-background p-3 transition-all duration-300 hover:shadow-md">
-                        <div className="flex items-center gap-3">
-                          <div className="rounded-full bg-dynamic-blue/10 p-2 shadow-sm">
-                            <Calendar className="h-4 w-4 text-blue-500" />
-                          </div>
-                          <div className="min-w-0 flex-1">
-                            <div className="flex items-center gap-2">
-                              <p className="text-xs font-medium text-muted-foreground">
-                                Today
-                              </p>
-                              <span className="text-sm">
-                                {new Date().getDay() === 0 ||
-                                new Date().getDay() === 6
-                                  ? '🏖️'
-                                  : '💼'}
-                              </span>
-                            </div>
-                            <p className="text-xs text-muted-foreground/80">
-                              {new Date().toLocaleDateString('en-US', {
-                                weekday: 'long',
-                              })}
-                            </p>
-                            <p className="text-lg font-bold">
-                              {formatDuration(timerStats.todayTime)}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* This Week */}
-                      <div className="rounded-lg border border-dynamic-green/30 bg-background p-3 transition-all duration-300 hover:shadow-md">
-                        <div className="flex items-center gap-3">
-                          <div className="rounded-full bg-dynamic-green/10 p-2 shadow-sm">
-                            <TrendingUp className="h-4 w-4 text-green-500" />
-                          </div>
-                          <div className="min-w-0 flex-1">
-                            <div className="flex items-center gap-2">
-                              <p className="text-xs font-medium text-muted-foreground">
-                                This Week
-                              </p>
-                              <span className="text-sm">📊</span>
-                            </div>
-                            <p className="text-xs text-muted-foreground/80">
-                              {(() => {
-                                const today = new Date();
-                                const dayOfWeek = today.getDay();
-                                const daysToSubtract =
-                                  dayOfWeek === 0 ? 6 : dayOfWeek - 1;
-                                const startOfWeek = new Date(today);
-                                startOfWeek.setDate(
-                                  today.getDate() - daysToSubtract
-                                );
-                                const endOfWeek = new Date(startOfWeek);
-                                endOfWeek.setDate(startOfWeek.getDate() + 6);
-                                return `${startOfWeek.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${endOfWeek.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`;
-                              })()}
-                            </p>
-                            <p className="text-lg font-bold">
-                              {formatDuration(timerStats.weekTime)}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* This Month */}
-                      <div className="rounded-lg border border-dynamic-purple/30 bg-background p-3 transition-all duration-300 hover:shadow-md">
-                        <div className="flex items-center gap-3">
-                          <div className="rounded-full bg-dynamic-purple/10 p-2 shadow-sm">
-                            <Zap className="h-4 w-4 text-purple-500" />
-                          </div>
-                          <div className="min-w-0 flex-1">
-                            <div className="flex items-center gap-2">
-                              <p className="text-xs font-medium text-muted-foreground">
-                                This Month
-                              </p>
-                              <span className="text-sm">🚀</span>
-                            </div>
-                            <p className="text-xs text-muted-foreground/80">
-                              {new Date().toLocaleDateString('en-US', {
-                                month: 'long',
-                                year: 'numeric',
-                              })}
-                            </p>
-                            <p className="text-lg font-bold">
-                              {formatDuration(timerStats.monthTime)}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Streak */}
-                      <div className="rounded-lg border border-dynamic-orange/30 bg-background p-3 transition-all duration-300 hover:shadow-md">
-                        <div className="flex items-center gap-3">
-                          <div className="rounded-full bg-dynamic-orange/10 p-2 shadow-sm">
-                            <Clock className="h-4 w-4 text-orange-500" />
-                          </div>
-                          <div className="min-w-0 flex-1">
-                            <div className="flex items-center gap-2">
-                              <p className="text-xs font-medium text-muted-foreground">
-                                Streak
-                              </p>
-                              <span className="text-sm">
-                                {timerStats.streak >= 7 ? '🏆' : '⭐'}
-                              </span>
-                            </div>
-                            <p className="text-xs text-muted-foreground/80">
-                              {timerStats.streak > 0
-                                ? 'consecutive days'
-                                : 'start today!'}
-                            </p>
-                            <p className="text-lg font-bold">
-                              {timerStats.streak} days
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Activity Heatmap - Enhanced with better header */}
-                  {timerStats.dailyActivity && (
-                    <div className="relative overflow-visible rounded-xl border bg-background/50 p-4 shadow-sm sm:p-6 dark:border-gray-800/60 dark:bg-background/80">
-                      <div className="mb-6">
-                        <div className="flex items-center gap-3">
-                          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 shadow-lg">
-                            <Calendar className="h-5 w-5 text-white" />
-                          </div>
-                          <div>
-                            <h3 className="text-lg font-semibold text-gray-900 sm:text-xl dark:text-gray-100">
-                              Activity Heatmap
-                            </h3>
-                            <p className="text-sm text-gray-600 dark:text-gray-400">
-                              {(() => {
-                                const totalDuration =
-                                  timerStats.dailyActivity?.reduce(
-                                    (sum, day) => sum + day.duration,
-                                    0
-                                  ) || 0;
-                                return totalDuration > 0
-                                  ? `${formatDuration(totalDuration)} tracked this year 🔥`
-                                  : 'Start tracking to see your activity pattern 🌱';
-                              })()}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                      {/* Remove the original header from ActivityHeatmap component and provide overflow space */}
-                      <div className="relative overflow-visible [&>div>div:first-child]:hidden">
-                        <ActivityHeatmap
-                          dailyActivity={timerStats.dailyActivity}
-                          formatDuration={formatDuration}
-                          settings={heatmapSettings}
-                        />
-                      </div>
-                    </div>
-                  )}
-                </>
-              )}
-
-              {/* Tasks View */}
-              {sidebarView === 'tasks' && (
-                <div className="space-y-6">
-                  {/* Tasks Header */}
-                  <div className="rounded-xl border bg-gradient-to-br from-white to-gray-50/30 p-6 shadow-sm dark:border-gray-800/60 dark:bg-gray-950/50 dark:from-gray-950/80 dark:to-gray-900/60">
-                    {/* Header Section */}
-                    <div className="mb-6">
-                      <div className="mb-3 flex items-center gap-3">
-                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 shadow-lg">
-                          <CheckCircle className="h-5 w-5 text-white" />
-                        </div>
-                        <div>
-                          <h3 className="text-lg font-semibold text-gray-900 sm:text-xl dark:text-gray-100">
-                            Task Workspace
-                          </h3>
-                          <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
-                            Drag tasks to timer to start tracking 🎯
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Enhanced Search and Filter Bar */}
-                    <div className="mb-5 space-y-4">
-                      {/* Quick Filter Buttons */}
-                      <div className="flex flex-wrap gap-2">
-                        <button
-                          onClick={() =>
-                            setTasksSidebarFilters((prev) => ({
-                              ...prev,
-                              assignee:
-                                prev.assignee === 'mine' ? 'all' : 'mine',
-                            }))
-                          }
-                          className={cn(
-                            'flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition-all',
-                            tasksSidebarFilters.assignee === 'mine'
-                              ? 'bg-blue-100 text-blue-700 ring-1 ring-blue-200 dark:bg-blue-900/30 dark:text-blue-300 dark:ring-blue-800'
-                              : 'bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground'
-                          )}
-                        >
-                          <CheckCircle className="h-3 w-3" />
-                          My Tasks
-                          {myTasksCount > 0 && (
-                            <span className="ml-1 rounded-full bg-current px-1.5 py-0.5 text-[10px] text-white">
-                              {myTasksCount}
-                            </span>
-                          )}
-                        </button>
-                        <button
-                          onClick={() =>
-                            setTasksSidebarFilters((prev) => ({
-                              ...prev,
-                              assignee:
-                                prev.assignee === 'unassigned'
-                                  ? 'all'
-                                  : 'unassigned',
-                            }))
-                          }
-                          className={cn(
-                            'flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition-all',
-                            tasksSidebarFilters.assignee === 'unassigned'
-                              ? 'bg-orange-100 text-orange-700 ring-1 ring-orange-200 dark:bg-orange-900/30 dark:text-orange-300 dark:ring-orange-800'
-                              : 'bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground'
-                          )}
-                        >
-                          <svg
-                            className="h-3 w-3"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                            />
-                          </svg>
-                          Unassigned
-                          {unassignedCount > 0 && (
-                            <span className="ml-1 rounded-full bg-current px-1.5 py-0.5 text-[10px] text-white">
-                              {unassignedCount}
-                            </span>
-                          )}
-                        </button>
-                      </div>
-
-                      {/* Search and Dropdown Filters */}
-                      <div className="flex gap-2">
-                        <div className="flex-1">
-                          <Input
-                            placeholder="Search tasks..."
-                            value={tasksSidebarSearch}
-                            onChange={(e) =>
-                              setTasksSidebarSearch(e.target.value)
-                            }
-                            className="h-8 text-xs"
-                          />
-                        </div>
-                        <Select
-                          value={tasksSidebarFilters.board}
-                          onValueChange={(value) =>
-                            setTasksSidebarFilters((prev) => ({
-                              ...prev,
-                              board: value,
-                            }))
-                          }
-                        >
-                          <SelectTrigger className="h-8 w-24 text-xs">
-                            <SelectValue placeholder="Board" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="all">All Boards</SelectItem>
-                            {[
-                              ...new Set(
-                                tasks
-                                  .map((task) => task.board_name)
-                                  .filter((name): name is string =>
-                                    Boolean(name)
-                                  )
-                              ),
-                            ].map((board) => (
-                              <SelectItem key={board} value={board}>
-                                {board}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <Select
-                          value={tasksSidebarFilters.list}
-                          onValueChange={(value) =>
-                            setTasksSidebarFilters((prev) => ({
-                              ...prev,
-                              list: value,
-                            }))
-                          }
-                        >
-                          <SelectTrigger className="h-8 w-20 text-xs">
-                            <SelectValue placeholder="List" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="all">All Lists</SelectItem>
-                            {[
-                              ...new Set(
-                                tasks
-                                  .map((task) => task.list_name)
-                                  .filter((name): name is string =>
-                                    Boolean(name)
-                                  )
-                              ),
-                            ].map((list) => (
-                              <SelectItem key={list} value={list}>
-                                {list}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-
-                      {/* Active Filters Display */}
-                      {(tasksSidebarSearch ||
-                        tasksSidebarFilters.board !== 'all' ||
-                        tasksSidebarFilters.list !== 'all' ||
-                        tasksSidebarFilters.assignee !== 'all') && (
-                        <div className="flex flex-wrap items-center gap-2">
-                          <span className="text-xs text-muted-foreground">
-                            Active filters:
-                          </span>
-                          {tasksSidebarSearch && (
-                            <span className="inline-flex items-center gap-1 rounded-md bg-blue-100 px-2 py-1 text-xs text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
-                              Search: "{tasksSidebarSearch}"
-                              <button
-                                onClick={() => setTasksSidebarSearch('')}
-                                className="hover:text-blue-900 dark:hover:text-blue-100"
-                              >
-                                ×
-                              </button>
-                            </span>
-                          )}
-                          {tasksSidebarFilters.board !== 'all' && (
-                            <span className="inline-flex items-center gap-1 rounded-md bg-green-100 px-2 py-1 text-xs text-green-700 dark:bg-green-900/30 dark:text-green-300">
-                              Board: {tasksSidebarFilters.board}
-                              <button
-                                onClick={() =>
-                                  setTasksSidebarFilters((prev) => ({
-                                    ...prev,
-                                    board: 'all',
-                                  }))
-                                }
-                                className="hover:text-green-900 dark:hover:text-green-100"
-                              >
-                                ×
-                              </button>
-                            </span>
-                          )}
-                          {tasksSidebarFilters.list !== 'all' && (
-                            <span className="inline-flex items-center gap-1 rounded-md bg-purple-100 px-2 py-1 text-xs text-purple-700 dark:bg-purple-900/30 dark:text-purple-300">
-                              List: {tasksSidebarFilters.list}
-                              <button
-                                onClick={() =>
-                                  setTasksSidebarFilters((prev) => ({
-                                    ...prev,
-                                    list: 'all',
-                                  }))
-                                }
-                                className="hover:text-purple-900 dark:hover:text-purple-100"
-                              >
-                                ×
-                              </button>
-                            </span>
-                          )}
-                          {tasksSidebarFilters.assignee !== 'all' && (
-                            <span className="inline-flex items-center gap-1 rounded-md bg-orange-100 px-2 py-1 text-xs text-orange-700 dark:bg-orange-900/30 dark:text-orange-300">
-                              {tasksSidebarFilters.assignee === 'mine'
-                                ? 'My Tasks'
-                                : tasksSidebarFilters.assignee === 'unassigned'
-                                  ? 'Unassigned'
-                                  : 'Assignee Filter'}
-                              <button
-                                onClick={() =>
-                                  setTasksSidebarFilters((prev) => ({
-                                    ...prev,
-                                    assignee: 'all',
-                                  }))
-                                }
-                                className="hover:text-orange-900 dark:hover:text-orange-100"
-                              >
-                                ×
-                              </button>
-                            </span>
-                          )}
-                          <button
-                            onClick={() => {
-                              setTasksSidebarSearch('');
-                              setTasksSidebarFilters({
-                                board: 'all',
-                                list: 'all',
-                                assignee: 'all',
-                              });
-                            }}
-                            className="text-xs text-muted-foreground hover:text-foreground"
-                          >
-                            Clear all
-                          </button>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Task List with Scrollable Container */}
-                    <div className="space-y-4">
-                      {(() => {
-                        // Filter and sort tasks for sidebar with user prioritization
-                        const filteredSidebarTasks =
-                          getFilteredAndSortedSidebarTasks(
-                            tasks,
-                            tasksSidebarSearch,
-                            tasksSidebarFilters
-                          );
-
-                        if (tasks.length === 0) {
-                          return (
-                            <div className="rounded-lg border-2 border-dashed border-muted-foreground/25 p-6 text-center">
-                              <CheckCircle className="mx-auto mb-3 h-8 w-8 text-muted-foreground" />
-                              <p className="text-sm text-muted-foreground">
-                                No tasks available. Create tasks in your project
-                                boards to see them here.
-                              </p>
-                            </div>
-                          );
-                        }
-
-                        if (filteredSidebarTasks.length === 0) {
-                          return (
-                            <div className="rounded-lg border-2 border-dashed border-muted-foreground/25 p-6 text-center">
-                              <CheckCircle className="mx-auto mb-3 h-8 w-8 text-muted-foreground" />
-                              <p className="text-sm text-muted-foreground">
-                                No tasks found matching your criteria.
-                              </p>
-                            </div>
-                          );
-                        }
-
-                        return (
-                          <>
-                            {/* Task Count Header */}
-                            <div className="mb-3 flex items-center justify-between px-1 text-xs text-muted-foreground">
-                              <span>
-                                {filteredSidebarTasks.length} task
-                                {filteredSidebarTasks.length !== 1
-                                  ? 's'
-                                  : ''}{' '}
-                                available
-                                {(tasksSidebarSearch ||
-                                  tasksSidebarFilters.board !== 'all' ||
-                                  tasksSidebarFilters.list !== 'all' ||
-                                  tasksSidebarFilters.assignee !== 'all') &&
-                                  ` (filtered from ${tasks.length} total)`}
-                              </span>
-                              <span className="font-medium text-blue-600 dark:text-blue-400">
-                                Drag to timer →
-                              </span>
-                            </div>
-
-                            {/* Scrollable Task Container */}
-                            <div className="/40 max-h-[400px] overflow-y-auto rounded-lg border bg-gray-50/30 p-4 dark:border-gray-700/40 dark:bg-gray-800/20">
-                              <div className="space-y-4">
-                                {filteredSidebarTasks.map((task) => (
-                                  <div
-                                    key={task.id}
-                                    className={cn(
-                                      'group cursor-grab rounded-lg border p-4 shadow-sm transition-all duration-200 hover:scale-[1.01] hover:shadow-md active:cursor-grabbing',
-                                      // Enhanced styling for assigned tasks
-                                      task.is_assigned_to_current_user
-                                        ? 'border-blue-300 bg-gradient-to-br from-blue-50 to-blue-100 ring-1 ring-blue-200 dark:border-blue-700 dark:from-blue-950/30 dark:to-blue-900/30 dark:ring-blue-800'
-                                        : '/60 bg-white dark:border-gray-700/60 dark:bg-gray-800/80',
-                                      isDraggingTask &&
-                                        'shadow-md ring-1 shadow-blue-500/10 ring-blue-400/30'
-                                    )}
-                                    draggable
-                                    onDragStart={(e) => {
-                                      e.dataTransfer.setData(
-                                        'application/json',
-                                        JSON.stringify({
-                                          type: 'task',
-                                          task: task,
-                                        })
-                                      );
-                                      setIsDraggingTask(true);
-                                    }}
-                                    onDragEnd={() => {
-                                      setIsDraggingTask(false);
-                                    }}
-                                  >
-                                    <div className="flex items-start gap-4">
-                                      <div
-                                        className={cn(
-                                          'flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg border',
-                                          task.is_assigned_to_current_user
-                                            ? 'border-blue-300 bg-gradient-to-br from-blue-100 to-blue-200 dark:border-blue-600 dark:from-blue-800 dark:to-blue-700'
-                                            : 'border-blue-200/60 bg-gradient-to-br from-blue-50 to-blue-100 dark:border-blue-700/60 dark:from-blue-900/50 dark:to-blue-800/50'
-                                        )}
-                                      >
-                                        <CheckCircle
-                                          className={cn(
-                                            'h-4 w-4',
-                                            task.is_assigned_to_current_user
-                                              ? 'text-blue-700 dark:text-blue-300'
-                                              : 'text-blue-600 dark:text-blue-400'
-                                          )}
-                                        />
-                                      </div>
-                                      <div className="min-w-0 flex-1">
-                                        <div className="flex items-start justify-between gap-2">
-                                          <h4
-                                            className={cn(
-                                              'mb-1 text-sm font-medium',
-                                              task.is_assigned_to_current_user
-                                                ? 'text-blue-900 dark:text-blue-100'
-                                                : 'text-gray-900 dark:text-gray-100'
-                                            )}
-                                          >
-                                            {task.name}
-                                            {task.is_assigned_to_current_user && (
-                                              <span className="ml-2 inline-flex items-center rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-800 dark:bg-blue-900/50 dark:text-blue-200">
-                                                Assigned to you
-                                              </span>
-                                            )}
-                                          </h4>
-                                        </div>
-                                        {task.description && (
-                                          <p className="mb-3 line-clamp-2 text-xs text-gray-600 dark:text-gray-400">
-                                            {task.description}
-                                          </p>
-                                        )}
-
-                                        {/* Assignees Display */}
-                                        {task.assignees &&
-                                          task.assignees.length > 0 && (
-                                            <div className="mb-2 flex items-center gap-2">
-                                              <div className="flex -space-x-1">
-                                                {task.assignees
-                                                  .slice(0, 3)
-                                                  .map((assignee) => (
-                                                    <div
-                                                      key={assignee.id}
-                                                      className="h-5 w-5 rounded-full border-2 border-white bg-gradient-to-br from-gray-100 to-gray-200 dark:border-gray-800 dark:from-gray-700 dark:to-gray-600"
-                                                      title={
-                                                        assignee.display_name ||
-                                                        assignee.email
-                                                      }
-                                                    >
-                                                      {assignee.avatar_url ? (
-                                                        <img
-                                                          src={
-                                                            assignee.avatar_url
-                                                          }
-                                                          alt={
-                                                            assignee.display_name ||
-                                                            assignee.email ||
-                                                            ''
-                                                          }
-                                                          className="h-full w-full rounded-full object-cover"
-                                                        />
-                                                      ) : (
-                                                        <div className="flex h-full w-full items-center justify-center text-[8px] font-medium text-gray-600 dark:text-gray-300">
-                                                          {generateAssigneeInitials(
-                                                            assignee
-                                                          )}
-                                                        </div>
-                                                      )}
-                                                    </div>
-                                                  ))}
-                                                {task.assignees.length > 3 && (
-                                                  <div className="flex h-5 w-5 items-center justify-center rounded-full border-2 border-white bg-gray-200 text-[8px] font-medium text-gray-600 dark:border-gray-800 dark:bg-gray-700 dark:text-gray-300">
-                                                    +{task.assignees.length - 3}
-                                                  </div>
-                                                )}
-                                              </div>
-                                              <span className="text-xs text-muted-foreground">
-                                                {task.assignees.length} assigned
-                                              </span>
-                                            </div>
-                                          )}
-
-                                        {task.board_name && task.list_name && (
-                                          <div className="flex items-center gap-2">
-                                            <div className="flex items-center gap-1 rounded-md bg-gray-100 px-1.5 py-0.5 dark:bg-gray-700">
-                                              <MapPin className="h-3 w-3 text-gray-500 dark:text-gray-400" />
-                                              <span className="text-xs font-medium text-gray-600 dark:text-gray-300">
-                                                {task.board_name}
-                                              </span>
-                                            </div>
-                                            <div className="flex items-center gap-1 rounded-md bg-blue-100 px-1.5 py-0.5 dark:bg-blue-900/30">
-                                              <Tag className="h-3 w-3 text-blue-600 dark:text-blue-400" />
-                                              <span className="text-xs font-medium text-blue-700 dark:text-blue-300">
-                                                {task.list_name}
-                                              </span>
-                                            </div>
-                                          </div>
-                                        )}
-                                      </div>
-                                      <div className="flex flex-shrink-0 items-center gap-1.5 text-xs text-gray-400 opacity-0 transition-opacity group-hover:opacity-100">
-                                        <span className="font-medium">
-                                          Drag
-                                        </span>
-                                        <svg
-                                          className="h-3.5 w-3.5"
-                                          fill="none"
-                                          stroke="currentColor"
-                                          viewBox="0 0 24 24"
-                                        >
-                                          <path
-                                            strokeLinecap="round"
-                                            strokeLinejoin="round"
-                                            strokeWidth={2}
-                                            d="M8 9l4-4 4 4m0 6l-4 4-4-4"
-                                          />
-                                        </svg>
-                                      </div>
-                                    </div>
-                                  </div>
-                                ))}
-                              </div>
-
-                              {/* Scroll indicator */}
-                              {filteredSidebarTasks.length > 5 && (
-                                <div className="mt-2 text-center">
-                                  <div className="inline-flex items-center gap-1 text-xs text-muted-foreground">
-                                    <span>Scroll for more</span>
-                                    <svg
-                                      className="h-3 w-3"
-                                      fill="none"
-                                      stroke="currentColor"
-                                      viewBox="0 0 24 24"
-                                    >
-                                      <path
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        strokeWidth={2}
-                                        d="M19 14l-7 7m0 0l-7-7m7 7V3"
-                                      />
-                                    </svg>
-                                  </div>
-                                </div>
-                              )}
-                            </div>
-                          </>
-                        );
-                      })()}
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Reports View */}
-              {sidebarView === 'reports' && (
-                <div className="space-y-6">
-                  <div className="rounded-xl border bg-gradient-to-br from-white to-gray-50/30 p-4 shadow-sm sm:p-6 dark:border-gray-800/60 dark:bg-gray-950/50 dark:from-gray-950/80 dark:to-gray-900/60">
-                    <div className="mb-4">
-                      <div className="flex items-center gap-3">
-                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-purple-500 to-pink-600 shadow-lg">
-                          <History className="h-5 w-5 text-white" />
-                        </div>
-                        <div>
-                          <h3 className="text-lg font-semibold text-gray-900 sm:text-xl dark:text-gray-100">
-                            Reports & Analytics
-                          </h3>
-                          <p className="text-sm text-gray-600 dark:text-gray-400">
-                            Detailed insights coming soon 📊
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="rounded-lg border-2 border-dashed border-muted-foreground/25 p-6 text-center">
-                      <History className="mx-auto mb-3 h-8 w-8 text-muted-foreground" />
-                      <p className="text-sm text-muted-foreground">
-                        Advanced reporting features are coming soon. Stay tuned
-                        for detailed analytics, custom reports, and productivity
-                        insights.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Settings View */}
-              {sidebarView === 'settings' && (
-                <div className="space-y-6">
-                  <div className="rounded-xl border bg-gradient-to-br from-white to-gray-50/30 p-4 shadow-sm sm:p-6 dark:border-gray-800/60 dark:bg-gray-950/50 dark:from-gray-950/80 dark:to-gray-900/60">
-                    <div className="mb-4">
-                      <div className="flex items-center gap-3">
-                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-gray-500 to-gray-700 shadow-lg">
-                          <Settings className="h-5 w-5 text-white" />
-                        </div>
-                        <div>
-                          <h3 className="text-lg font-semibold text-gray-900 sm:text-xl dark:text-gray-100">
-                            Timer Settings
-                          </h3>
-                          <p className="text-sm text-gray-600 dark:text-gray-400">
-                            Customize your tracking experience ⚙️
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="space-y-6">
-                      {/* Activity Heatmap Settings */}
-                      <div className="space-y-4">
-                        <div className="flex items-center gap-2">
-                          <Calendar className="h-4 w-4 text-muted-foreground" />
-                          <h4 className="font-medium">
-                            Activity Heatmap Display
-                          </h4>
-                        </div>
-
-                        <div className="grid gap-4">
-                          <div className="space-y-2">
-                            <Label htmlFor="heatmap-view">
-                              Heatmap View Style
-                            </Label>
-                            <Select
-                              value={heatmapSettings.viewMode}
-                              onValueChange={(
-                                value: 'original' | 'hybrid' | 'calendar-only'
-                              ) => {
-                                const newSettings = {
-                                  ...heatmapSettings,
-                                  viewMode: value,
-                                };
-                                setHeatmapSettings(newSettings);
-                                localStorage.setItem(
-                                  'heatmap-settings',
-                                  JSON.stringify(newSettings)
-                                );
-                              }}
-                            >
-                              <SelectTrigger id="heatmap-view">
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="original">
-                                  <div className="flex items-center gap-2">
-                                    <div className="h-2 w-2 rounded-sm bg-blue-500" />
-                                    <span>Original Grid</span>
-                                  </div>
-                                </SelectItem>
-                                <SelectItem value="hybrid">
-                                  <div className="flex items-center gap-2">
-                                    <div className="h-2 w-2 rounded-sm bg-green-500" />
-                                    <span>Hybrid (Year + Calendar)</span>
-                                  </div>
-                                </SelectItem>
-                                <SelectItem value="calendar-only">
-                                  <div className="flex items-center gap-2">
-                                    <div className="h-2 w-2 rounded-sm bg-purple-500" />
-                                    <span>Calendar Only</span>
-                                  </div>
-                                </SelectItem>
-                                <SelectItem value="compact-cards">
-                                  <div className="flex items-center gap-2">
-                                    <div className="h-2 w-2 rounded-sm bg-orange-500" />
-                                    <span>Compact Cards</span>
-                                  </div>
-                                </SelectItem>
-                              </SelectContent>
-                            </Select>
-                            <p className="text-xs text-muted-foreground">
-                              {heatmapSettings.viewMode === 'original' &&
-                                'GitHub-style grid view with day labels'}
-                              {heatmapSettings.viewMode === 'hybrid' &&
-                                'Year overview plus monthly calendar details'}
-                              {heatmapSettings.viewMode === 'calendar-only' &&
-                                'Traditional calendar interface'}
-                              {heatmapSettings.viewMode === 'compact-cards' &&
-                                'Monthly summary cards with key metrics and mini previews'}
-                            </p>
-                          </div>
-
-                          <div className="space-y-2">
-                            <Label htmlFor="time-reference">
-                              Time Reference
-                            </Label>
-                            <Select
-                              value={heatmapSettings.timeReference}
-                              onValueChange={(
-                                value: 'relative' | 'absolute' | 'smart'
-                              ) => {
-                                const newSettings = {
-                                  ...heatmapSettings,
-                                  timeReference: value,
-                                };
-                                setHeatmapSettings(newSettings);
-                                localStorage.setItem(
-                                  'heatmap-settings',
-                                  JSON.stringify(newSettings)
-                                );
-                              }}
-                            >
-                              <SelectTrigger id="time-reference">
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="relative">
-                                  Relative ("2 weeks ago")
-                                </SelectItem>
-                                <SelectItem value="absolute">
-                                  Absolute ("Jan 15, 2024")
-                                </SelectItem>
-                                <SelectItem value="smart">
-                                  Smart (Both combined)
-                                </SelectItem>
-                              </SelectContent>
-                            </Select>
-                          </div>
-
-                          <div className="flex items-center space-x-2">
-                            <Switch
-                              id="onboarding-tips"
-                              checked={heatmapSettings.showOnboardingTips}
-                              onCheckedChange={(checked) => {
-                                const newSettings = {
-                                  ...heatmapSettings,
-                                  showOnboardingTips: checked,
-                                };
-                                setHeatmapSettings(newSettings);
-                                localStorage.setItem(
-                                  'heatmap-settings',
-                                  JSON.stringify(newSettings)
-                                );
-                              }}
-                            />
-                            <Label
-                              htmlFor="onboarding-tips"
-                              className="text-sm"
-                            >
-                              Show onboarding tips
-                            </Label>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Coming Soon Section */}
-                      <div className="rounded-lg border-2 border-dashed border-muted-foreground/25 p-4">
-                        <div className="mb-2 flex items-center gap-2">
-                          <Clock className="h-4 w-4 text-muted-foreground" />
-                          <h4 className="font-medium text-muted-foreground">
-                            More Settings Coming Soon
-                          </h4>
-                        </div>
-                        <p className="text-xs text-muted-foreground">
-                          Notifications, default categories, productivity goals,
-                          and more customization options.
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
             </div>
           </div>
         </div>
