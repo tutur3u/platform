@@ -24,9 +24,21 @@ jobs:
     - name: Install dependencies
       run: bun install
 
+    - name: Install jq
+      run: |
+        if ! command -v jq &> /dev/null; then
+          echo "Installing jq..."
+          sudo apt-get update
+          sudo apt-get install -y jq
+        else
+          echo "jq is already available"
+        fi
+
     - name: Detect changes using Turbo
       id: changes
       run: |
+        set -e  # Exit on any error
+
         # Get changed files
         CHANGED_FILES=$(git diff --name-only origin/main...HEAD)
         echo "Changed files found: $(echo "$CHANGED_FILES" | wc -l)"
@@ -37,12 +49,18 @@ jobs:
         # Get all apps from workspace - try multiple approaches
         echo "Getting apps from workspace..."
 
-        # Method 1: Try turbo list
+        # Method 1: Try turbo list with better filtering
         APPS=""
         echo "Attempting to use Turbo list..."
         if bun run turbo list --filter="apps/*" > /tmp/turbo_output 2>&1; then
-          APPS=$(cat /tmp/turbo_output | grep "^@tuturuuu/" | tr -d ' ')
+          # Filter for actual app packages and clean up the output
+          APPS=$(cat /tmp/turbo_output | grep "^@tuturuuu/" | grep -v "#build" | tr -d ' ' | sort -u)
           echo "✅ Turbo list successful, found apps: $APPS"
+          
+          # Debug: show raw turbo output
+          echo "Raw turbo list output:"
+          cat /tmp/turbo_output | head -20
+          echo "..."
         else
           echo "⚠️  Turbo list failed (likely due to Tailwind CSS v4 WASM dependencies)"
           echo "Turbo error output:"
@@ -61,12 +79,18 @@ jobs:
           APPS="@tuturuuu/nova @tuturuuu/web @tuturuuu/calendar @tuturuuu/rewise @tuturuuu/shortener @tuturuuu/tumeet @tuturuuu/finance @tuturuuu/external @tuturuuu/playground"
         fi
 
+        echo "Processing apps: $APPS"
+
         for app in $APPS; do
           # Check if app directory changed
           # Extract the app name without the @tuturuuu/ prefix
           app_name=${app#@tuturuuu/}
           app_path="apps/$app_name"
+          
+          echo "Checking app: $app ($app_path)"
+          
           if echo "$CHANGED_FILES" | grep -q "^$app_path/"; then
+            echo "✅ App $app has direct changes, adding to build list"
             APPS_TO_BUILD+=("$app")
             continue
           fi
@@ -74,14 +98,21 @@ jobs:
           # Try to use Turbo to find dependencies, fallback to package.json scanning
           AFFECTED=""
           if bun run turbo run build --filter="$app" --dry-run > /tmp/turbo_build_output 2>&1; then
-            AFFECTED=$(cat /tmp/turbo_build_output | grep "^@tuturuuu/" | tr -d ' ')
-            echo "Turbo build analysis for $app successful, found: $AFFECTED"
+            # Clean up the output to only get package names, not paths or build targets
+            # The output format is: @tuturuuu/package-name#build
+            AFFECTED=$(cat /tmp/turbo_build_output | grep "^@tuturuuu/" | sed 's|#build||' | tr -d ' ' | sort -u)
+            echo "✅ Turbo build analysis for $app successful, found dependencies: $AFFECTED"
+            
+            # Debug: show raw build output for first few lines
+            echo "Raw turbo build output (first 10 lines):"
+            cat /tmp/turbo_build_output | head -10
+            echo "..."
           else
-            echo "Turbo build analysis for $app failed, using package.json fallback..."
+            echo "⚠️  Turbo build analysis for $app failed, using package.json fallback..."
             # Fallback: read dependencies directly from package.json
             if [ -f "apps/$app_name/package.json" ]; then
               AFFECTED=$(grep -o '"@tuturuuu/[^"]*"' "apps/$app_name/package.json" | tr -d '"')
-              echo "Package.json fallback for $app found: $AFFECTED"
+              echo "📦 Package.json fallback for $app found: $AFFECTED"
             fi
           fi
           
@@ -90,13 +121,16 @@ jobs:
             pkg_path=""
             if [[ $pkg == @tuturuuu/* ]]; then
               pkg_name=${pkg#@tuturuuu/}
-              pkg_path="packages/$pkg_name"
-            elif [[ $pkg == apps/* ]]; then
-              pkg_name=${pkg#apps/}
-              pkg_path="apps/$pkg_name"
+              # Check if it's an app or package
+              if [ -d "apps/$pkg_name" ]; then
+                pkg_path="apps/$pkg_name"
+              elif [ -d "packages/$pkg_name" ]; then
+                pkg_path="packages/$pkg_name"
+              fi
             fi
             
             if [ -n "$pkg_path" ] && echo "$CHANGED_FILES" | grep -q "^$pkg_path/"; then
+              echo "🔗 Package $pkg ($pkg_path) changed, adding app $app to build list"
               APPS_TO_BUILD+=("$app")
               break
             fi
@@ -105,7 +139,23 @@ jobs:
 
         # Remove duplicates and create matrix
         UNIQUE_APPS=$(printf '%s\n' "${APPS_TO_BUILD[@]}" | sort -u | grep -v '^$')
-        MATRIX=$(echo "$UNIQUE_APPS" | jq -R -s -c 'split("\n")[:-1] | map({app: .})')
+
+        # Create matrix safely, handle empty case
+        if [ -n "$UNIQUE_APPS" ]; then
+          # Ensure jq is available and handle potential errors
+          if command -v jq >/dev/null 2>&1; then
+            MATRIX=$(echo "$UNIQUE_APPS" | jq -R -s -c 'split("\n")[:-1] | map({app: .})' 2>/dev/null || echo "[]")
+            if [ "$MATRIX" = "[]" ] && [ -n "$UNIQUE_APPS" ]; then
+              echo "⚠️  jq matrix creation failed, using fallback format"
+              MATRIX=$(echo "$UNIQUE_APPS" | sed 's/^/{"app":"/;s/$/"}/' | tr '\n' ',' | sed 's/,$//' | sed 's/^/[/;s/$/]/')
+            fi
+          else
+            echo "⚠️  jq not available, using fallback matrix format"
+            MATRIX=$(echo "$UNIQUE_APPS" | sed 's/^/{"app":"/;s/$/"}/' | tr '\n' ',' | sed 's/,$//' | sed 's/^/[/;s/$/]/')
+          fi
+        else
+          MATRIX="[]"
+        fi
 
         echo "apps=$(echo "$UNIQUE_APPS" | tr '\n' ',' | sed 's/,$//')" >> $GITHUB_OUTPUT
         echo "matrix=$MATRIX" >> $GITHUB_OUTPUT
@@ -120,3 +170,19 @@ jobs:
         echo ""
         echo "Apps to build: $UNIQUE_APPS"
         echo "Matrix: $MATRIX"
+
+        # Validate outputs
+        if [ -z "$UNIQUE_APPS" ]; then
+          echo "⚠️  Warning: No apps to build detected"
+        else
+          echo "✅ Successfully detected apps to build: $UNIQUE_APPS"
+        fi
+
+        if [ "$MATRIX" = "[]" ] && [ -n "$UNIQUE_APPS" ]; then
+          echo "⚠️  Warning: Matrix is empty but apps were detected"
+        else
+          echo "✅ Matrix created successfully: $MATRIX"
+        fi
+
+        # Exit successfully
+        exit 0
