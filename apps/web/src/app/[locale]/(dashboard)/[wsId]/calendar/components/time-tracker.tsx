@@ -1866,9 +1866,9 @@ export default function TimeTracker({ wsId, tasks = [] }: TimeTrackerProps) {
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Time Session</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete the session "
-              {sessionToDelete?.title}"? This action cannot be undone and will
-              permanently remove the tracked time.
+              Are you sure you want to delete the session &quot;
+              {sessionToDelete?.title}&quot;? This action cannot be undone and
+              will permanently remove the tracked time.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -1893,7 +1893,7 @@ export default function TimeTracker({ wsId, tasks = [] }: TimeTrackerProps) {
               Create New Task
             </DialogTitle>
             <DialogDescription>
-              Create a new task to track time for. We'll start the timer
+              Create a new task to track time for. We&apos;ll start the timer
               automatically once the task is created.
             </DialogDescription>
           </DialogHeader>
