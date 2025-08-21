@@ -40,10 +40,9 @@ import {
   Info,
   MoreHorizontal,
   Plus,
-  Timer,
+  Target,
   Trash2,
   TrendingUp,
-  Target,
 } from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
@@ -969,7 +968,7 @@ export function GoalManager({
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               {isDeleting ? 'Deleting...' : 'Delete Goal'}
-            </Button>
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

@@ -1,9 +1,7 @@
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
 import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import { notFound } from 'next/navigation';
-import { getTimeTrackingData } from '@/lib/time-tracking-helper';
 import TimeTrackerContent from './time-tracker-content';
-import type { TimeTrackerData } from './types';
 
 interface Props {
   params: Promise<{
@@ -21,12 +19,7 @@ export default async function TimeTrackerPage({ params }: Props) {
 
     if (!workspace || !user) notFound();
 
-    const rawData = await getTimeTrackingData(workspace.id, user.id);
-
-    // Transform data to match expected types
-    const initialData: TimeTrackerData = { ...rawData };
-
-    return <TimeTrackerContent wsId={workspace.id} initialData={initialData} />;
+    return <TimeTrackerContent />;
   } catch (error) {
     console.error('Error loading time tracker:', error);
     notFound();

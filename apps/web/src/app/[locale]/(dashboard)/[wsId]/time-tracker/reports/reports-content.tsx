@@ -14,11 +14,7 @@ import { cn } from '@tuturuuu/utils/format';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useCurrentUser } from '../hooks/use-current-user';
 
-interface ReportsContentProps {
-  wsId?: string;
-}
-
-export function ReportsContent({ wsId: propWsId }: ReportsContentProps) {
+export function ReportsContent() {
   const { userId: currentUserId, isLoading: isLoadingUser } = useCurrentUser();
 
   const [isLoading, setIsLoading] = useState(false);

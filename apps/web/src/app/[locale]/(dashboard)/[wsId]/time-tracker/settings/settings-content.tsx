@@ -366,9 +366,9 @@ export function SettingsContent() {
 
               <div className="mt-6 rounded-lg border-2 border-muted-foreground/25 border-dashed bg-muted/30 p-4 dark:bg-muted/20">
                 <p className="text-muted-foreground text-sm">
-                  🔧 We're continuously improving the time tracker with more
-                  customization options. These features will help you tailor the
-                  experience to your workflow and preferences.
+                  🔧 We&apos;re continuously improving the time tracker with
+                  more customization options. These features will help you
+                  tailor the experience to your workflow and preferences.
                 </p>
               </div>
             </div>

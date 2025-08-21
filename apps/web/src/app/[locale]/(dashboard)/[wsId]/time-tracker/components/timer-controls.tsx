@@ -17,6 +17,7 @@ import {
   ClockFading,
   Copy,
   ExternalLink,
+  fruit,
   Icon,
   MapPin,
   Pause,
@@ -29,7 +30,6 @@ import {
   TableOfContents,
   Tag,
   Timer,
-  fruit,
 } from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
@@ -4353,9 +4353,10 @@ export function TimerControls({
                 </TabsContent>
               </Tabs>
 
-              <div
+              <button
+                type="button"
                 className={cn(
-                  'rounded-lg border-2 border-dashed p-6 text-center transition-all duration-200',
+                  'w-full rounded-lg border-2 border-dashed p-6 text-center transition-all duration-200',
                   isDragOver
                     ? 'border-blue-500 bg-blue-50/50 dark:bg-blue-950/20'
                     : isDraggingTask
@@ -4366,6 +4367,7 @@ export function TimerControls({
                 onDragOver={handleDragOver}
                 onDragLeave={handleDragLeave}
                 onDrop={handleDrop}
+                aria-label="Drop zone for dragging tasks to start time tracking"
               >
                 <Clock
                   className={cn(
@@ -4409,7 +4411,7 @@ export function TimerControls({
                       ? 'Drop zone is ready • Drag outside to cancel'
                       : 'Drag tasks to the search field or select manually below'}
                 </p>
-              </div>
+              </button>
 
               {/* Quick Start Templates */}
               {templates.length > 0 && (

@@ -144,7 +144,12 @@ export function AnalyticsContent({ wsId: propWsId }: AnalyticsContentProps) {
           if (result.status === 'fulfilled') {
             return result.value;
           } else {
-            const { name, fallback } = apiCalls[index]!;
+            const apiCall = apiCalls[index];
+            if (!apiCall) {
+              console.warn(`API call at index ${index} not found`);
+              return { sessions: [] };
+            }
+            const { name, fallback } = apiCall;
             console.warn(`API call for ${name} failed:`, result.reason);
             toast.error(
               `Failed to load ${name}: ${result.reason.message || 'Unknown error'}`
