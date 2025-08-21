@@ -113,6 +113,7 @@
     "./hooks/use-calendar": "./src/hooks/use-calendar.tsx",
     "./hooks/use-calendar-sync": "./src/hooks/use-calendar-sync.tsx",
     "./hooks/useSearchParams": "./src/hooks/useSearchParams.tsx",
+    "./hooks/use-task-analytics": "./src/hooks/use-task-analytics.ts",
     "./calendar-settings": "./src/components/ui/legacy/calendar/settings/index.ts",
     "./hooks/use-popover-manager": "./src/hooks/use-popover-manager.tsx",
     "./resolvers": "./src/resolvers.ts",
