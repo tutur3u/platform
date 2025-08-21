@@ -1,15 +1,3 @@
-import NavbarActions from '../../navbar-actions';
-import { UserNav } from '../../user-nav';
-import InvitationCard from './invitation-card';
-import PersonalWorkspacePrompt from './personal-workspace-prompt';
-import { Structure } from './structure';
-import type { NavLink } from '@/components/navigation';
-import {
-  DEV_MODE,
-  SIDEBAR_BEHAVIOR_COOKIE_NAME,
-  SIDEBAR_COLLAPSED_COOKIE_NAME,
-} from '@/constants/common';
-import { SidebarProvider } from '@/context/sidebar-context';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import {
   Activity,
@@ -48,9 +36,10 @@ import {
   Send,
   ShieldUser,
   Sparkles,
-  SquareUserRound,
   SquaresIntersect,
+  SquareUserRound,
   Star,
+  Target,
   TextSelect,
   Trash,
   TriangleAlert,
@@ -66,10 +55,22 @@ import {
   getWorkspace,
   verifySecret,
 } from '@tuturuuu/utils/workspace-helper';
-import { getTranslations } from 'next-intl/server';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
+import { getTranslations } from 'next-intl/server';
 import { type ReactNode, Suspense } from 'react';
+import type { NavLink } from '@/components/navigation';
+import {
+  DEV_MODE,
+  SIDEBAR_BEHAVIOR_COOKIE_NAME,
+  SIDEBAR_COLLAPSED_COOKIE_NAME,
+} from '@/constants/common';
+import { SidebarProvider } from '@/context/sidebar-context';
+import NavbarActions from '../../navbar-actions';
+import { UserNav } from '../../user-nav';
+import InvitationCard from './invitation-card';
+import PersonalWorkspacePrompt from './personal-workspace-prompt';
+import { Structure } from './structure';
 
 interface LayoutProps {
   params: Promise<{
@@ -422,8 +423,67 @@ export default async function Layout({ children, params }: LayoutProps) {
         },
         {
           title: t('sidebar_tabs.time_tracker'),
-          href: `/${correctedWSId}/time-tracker`,
+          aliases: [
+            `/${correctedWSId}/time-tracker`,
+            `/${correctedWSId}/time-tracker/analytics`,
+            `/${correctedWSId}/time-tracker/tasks`,
+            `/${correctedWSId}/time-tracker/reports`,
+            `/${correctedWSId}/time-tracker/settings`,
+            `/${correctedWSId}/time-tracker/history`,
+            `/${correctedWSId}/time-tracker/categories`,
+            `/${correctedWSId}/time-tracker/goals`,
+          ],
           icon: <ClockFading className="h-5 w-5" />,
+          children: [
+            {
+              title: t('sidebar_tabs.timer'),
+              href: `/${correctedWSId}/time-tracker`,
+              icon: <ClockFading className="h-4 w-4" />,
+              matchExact: true,
+            },
+            {
+              title: t('sidebar_tabs.analytics'),
+              href: `/${correctedWSId}/time-tracker/analytics`,
+              aliases: [`/${correctedWSId}/time-tracker/analytics`],
+              icon: <ChartArea className="h-4 w-4" />,
+            },
+            {
+              title: t('sidebar_tabs.tasks'),
+              href: `/${correctedWSId}/time-tracker/tasks`,
+              aliases: [`/${correctedWSId}/time-tracker/tasks`],
+              icon: <CircleCheck className="h-4 w-4" />,
+            },
+            {
+              title: t('sidebar_tabs.reports'),
+              href: `/${correctedWSId}/time-tracker/reports`,
+              aliases: [`/${correctedWSId}/time-tracker/reports`],
+              icon: <Clock className="h-4 w-4" />,
+            },
+            {
+              title: t('sidebar_tabs.settings'),
+              href: `/${correctedWSId}/time-tracker/settings`,
+              aliases: [`/${correctedWSId}/time-tracker/settings`],
+              icon: <Cog className="h-4 w-4" />,
+            },
+            {
+              title: t('sidebar_tabs.history'),
+              href: `/${correctedWSId}/time-tracker/history`,
+              aliases: [`/${correctedWSId}/time-tracker/history`],
+              icon: <Clock className="h-4 w-4" />,
+            },
+            {
+              title: t('sidebar_tabs.categories'),
+              href: `/${correctedWSId}/time-tracker/categories`,
+              aliases: [`/${correctedWSId}/time-tracker/categories`],
+              icon: <FolderSync className="h-4 w-4" />,
+            },
+            {
+              title: t('sidebar_tabs.goals'),
+              href: `/${correctedWSId}/time-tracker/goals`,
+              aliases: [`/${correctedWSId}/time-tracker/goals`],
+              icon: <Target className="h-4 w-4" />,
+            },
+          ],
           disabled: ENABLE_AI_ONLY || withoutPermission('manage_projects'),
           experimental: 'beta',
         },

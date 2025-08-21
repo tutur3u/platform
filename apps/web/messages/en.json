@@ -822,7 +822,14 @@
     "meeting_notes": "Meeting Notes",
     "meetings": "Meetings",
     "plans": "Plans",
-    "ai_executions": "AI Executions"
+    "ai_executions": "AI Executions",
+    "timer": "Timer",
+    "analytics": "Analytics",
+    "reports": "Reports",
+    "settings": "Settings",
+    "history": "History",
+    "categories": "Categories",
+    "goals": "Goals"
   },
   "link-shortener": {
     "title": "Link Shortener",

@@ -1,11 +1,11 @@
 'use client';
 
-import type { NavLink as NavLinkType } from '@/components/navigation';
 import { ChevronRight } from '@tuturuuu/ui/icons';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { cn } from '@tuturuuu/utils/format';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import type { NavLink as NavLinkType } from '@/components/navigation';
 
 interface NavLinkProps {
   wsId: string;
@@ -44,10 +44,30 @@ export function NavLink({
     });
   };
 
-  const isActive =
-    (href &&
-      (link.matchExact ? pathname === href : pathname.startsWith(href))) ||
-    (children && hasActiveChild(children));
+  // For time tracker routes, only mark as active if it's an exact match or if it's the most specific match
+  const isTimeTrackerRoute = pathname.includes('/time-tracker');
+
+  let isActive = false;
+
+  if (isTimeTrackerRoute && href && href.includes('/time-tracker')) {
+    // For time tracker routes, use exact matching to avoid multiple active states
+    if (link.matchExact) {
+      isActive = pathname === href;
+    } else {
+      // For non-exact matches, only mark as active if it's the most specific match
+      const currentPathSegments = pathname.split('/').length;
+      const linkPathSegments = href.split('/').length;
+      isActive =
+        pathname.startsWith(href) && currentPathSegments === linkPathSegments;
+    }
+  } else {
+    // Standard logic for non-time-tracker routes
+    isActive = Boolean(
+      (href &&
+        (link.matchExact ? pathname === href : pathname.startsWith(href))) ||
+        (children && hasActiveChild(children))
+    );
+  }
 
   const content = (
     <>
@@ -68,7 +88,7 @@ export function NavLink({
 
   const commonProps = {
     className: cn(
-      'flex cursor-pointer items-center justify-between rounded-md p-2 text-sm font-medium',
+      'flex cursor-pointer items-center justify-between rounded-md p-2 font-medium text-sm',
       isCollapsed && 'justify-center',
       isActive && 'bg-accent text-accent-foreground',
       link.isBack && 'mb-2 cursor-pointer',

@@ -1,0 +1,144 @@
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@tuturuuu/ui/card';
+import { ChartArea, Clock, TrendingUp, Users } from '@tuturuuu/ui/icons';
+
+export default function TimeTrackerAnalyticsPage() {
+  return (
+    <div className="container mx-auto space-y-6 p-6">
+      <div className="mb-6 flex items-center gap-2">
+        <ChartArea className="h-6 w-6 text-primary" />
+        <h1 className="font-bold text-2xl">Time Tracker Analytics</h1>
+      </div>
+
+      {/* Overview Cards */}
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="font-medium text-sm">
+              Total Time Tracked
+            </CardTitle>
+            <Clock className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="font-bold text-2xl">127.5h</div>
+            <p className="text-muted-foreground text-xs">
+              +12.3% from last month
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="font-medium text-sm">
+              Active Projects
+            </CardTitle>
+            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="font-bold text-2xl">8</div>
+            <p className="text-muted-foreground text-xs">+2 new this week</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="font-medium text-sm">Team Members</CardTitle>
+            <Users className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="font-bold text-2xl">12</div>
+            <p className="text-muted-foreground text-xs">
+              All active this month
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="font-medium text-sm">
+              Productivity Score
+            </CardTitle>
+            <ChartArea className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="font-bold text-2xl">87%</div>
+            <p className="text-muted-foreground text-xs">+5% from last week</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Charts and Detailed Analytics */}
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <Card>
+          <CardHeader>
+            <CardTitle>Time Distribution by Project</CardTitle>
+            <CardDescription>
+              How time is allocated across different projects
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex h-64 items-center justify-center text-muted-foreground">
+              Chart placeholder - Time distribution visualization
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Weekly Time Trends</CardTitle>
+            <CardDescription>
+              Time tracking patterns over the last 4 weeks
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex h-64 items-center justify-center text-muted-foreground">
+              Chart placeholder - Weekly trends visualization
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Additional Analytics Sections */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Performance Insights</CardTitle>
+          <CardDescription>Key metrics and recommendations</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+            <div className="rounded-lg border p-4 text-center">
+              <div className="font-semibold text-green-600 text-lg">
+                Peak Hours
+              </div>
+              <div className="font-bold text-2xl">9 AM - 11 AM</div>
+              <div className="text-muted-foreground text-sm">
+                Most productive time
+              </div>
+            </div>
+            <div className="rounded-lg border p-4 text-center">
+              <div className="font-semibold text-blue-600 text-lg">
+                Focus Score
+              </div>
+              <div className="font-bold text-2xl">92%</div>
+              <div className="text-muted-foreground text-sm">
+                High concentration
+              </div>
+            </div>
+            <div className="rounded-lg border p-4 text-center">
+              <div className="font-semibold text-lg text-orange-600">
+                Break Efficiency
+              </div>
+              <div className="font-bold text-2xl">78%</div>
+              <div className="text-muted-foreground text-sm">Good balance</div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}

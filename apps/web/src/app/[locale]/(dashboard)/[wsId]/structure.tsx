@@ -1,9 +1,5 @@
 'use client';
 
-import { Nav } from './nav';
-import type { NavLink } from '@/components/navigation';
-import { PROD_MODE, SIDEBAR_COLLAPSED_COOKIE_NAME } from '@/constants/common';
-import { useSidebar } from '@/context/sidebar-context';
 import { useQuery } from '@tanstack/react-query';
 import type { Workspace } from '@tuturuuu/types/db';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
@@ -14,10 +10,10 @@ import { ArrowLeft } from '@tuturuuu/ui/icons';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { cn } from '@tuturuuu/utils/format';
 import { setCookie } from 'cookies-next';
-import { useTranslations } from 'next-intl';
 import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import {
   type ReactNode,
   Suspense,
@@ -25,6 +21,10 @@ import {
   useEffect,
   useState,
 } from 'react';
+import type { NavLink } from '@/components/navigation';
+import { PROD_MODE, SIDEBAR_COLLAPSED_COOKIE_NAME } from '@/constants/common';
+import { useSidebar } from '@/context/sidebar-context';
+import { Nav } from './nav';
 
 interface MailProps {
   wsId: string;
@@ -66,9 +66,8 @@ export function Structure({
     (navLinks: NavLink[]): boolean => {
       return navLinks.some((child) => {
         const childMatches =
-          child?.href &&
-          (pathname.startsWith(child.href) ||
-            child.aliases?.some((alias) => pathname.startsWith(alias)));
+          (child?.href && pathname.startsWith(child.href)) ||
+          child?.aliases?.some((alias) => pathname.startsWith(alias));
 
         if (childMatches) {
           return true;
@@ -90,6 +89,32 @@ export function Structure({
     titleHistory: (string | null)[];
     direction: 'forward' | 'backward';
   }>(() => {
+    // Special handling for time tracker routes - need to go two levels deep
+    const isTimeTrackerRoute = pathname.includes('/time-tracker');
+
+    if (isTimeTrackerRoute) {
+      // Find the productivity section
+      for (const section of links) {
+        if (section?.children) {
+          // Find the time tracker within productivity
+          const timeTrackerLink = section.children.find(
+            (child) =>
+              child?.title?.toLowerCase().includes('tracker') && child.children
+          );
+
+          if (timeTrackerLink?.children) {
+            return {
+              currentLinks: timeTrackerLink.children,
+              history: [links, section.children],
+              titleHistory: [section.title, timeTrackerLink.title],
+              direction: 'forward' as const,
+            };
+          }
+        }
+      }
+    }
+
+    // Standard logic for other routes
     for (const link of links) {
       if (link?.children && link.children.length > 0) {
         const isActive = hasActiveChild(link.children);
@@ -103,6 +128,7 @@ export function Structure({
         }
       }
     }
+
     // Flatten links with a single child
     const flattenedLinks = links
       .flatMap((link) =>
@@ -121,10 +147,51 @@ export function Structure({
 
   useEffect(() => {
     setNavState((prevState) => {
+      // Special handling for time tracker routes - need to go two levels deep
+      const isTimeTrackerRoute = pathname.includes('/time-tracker');
+
+      if (isTimeTrackerRoute) {
+        // Check if we're already showing time tracker children
+        const isShowingTimeTrackerChildren = prevState.titleHistory.some(
+          (title) => title?.toLowerCase().includes('tracker')
+        );
+
+        if (!isShowingTimeTrackerChildren) {
+          // Find the productivity section and drill down to time tracker children
+          for (const section of links) {
+            if (section?.children) {
+              const timeTrackerLink = section.children.find(
+                (child) =>
+                  child?.title?.toLowerCase().includes('tracker') &&
+                  child.children
+              );
+
+              if (timeTrackerLink?.children) {
+                return {
+                  currentLinks: timeTrackerLink.children,
+                  history: [links, section.children],
+                  titleHistory: [section.title, timeTrackerLink.title],
+                  direction: 'forward',
+                };
+              }
+            }
+          }
+        }
+
+        // We're already showing time tracker children, keep them visible
+        return prevState;
+      }
+
+      // Standard navigation logic for non-time-tracker routes
       // Find if any submenu should be active for the current path.
       for (const link of links) {
         if (link?.children && link.children.length > 0) {
-          const isActive = hasActiveChild(link.children);
+          // Check if this link should be active based on pathname or aliases
+          const linkMatches =
+            (link.href && pathname.startsWith(link.href)) ||
+            link.aliases?.some((alias) => pathname.startsWith(alias));
+
+          const isActive = linkMatches || hasActiveChild(link.children);
 
           if (isActive) {
             // If the active submenu is not the one currently displayed, switch to it.
@@ -143,7 +210,9 @@ export function Structure({
             // We're already in this submenu, but we need to check if we should go deeper
             // Find the specific child that matches the current pathname
             const activeChild = link.children.find(
-              (child) => child.href && pathname.startsWith(child.href)
+              (child) =>
+                (child.href && pathname.startsWith(child.href)) ||
+                child.aliases?.some((alias) => pathname.startsWith(alias))
             );
 
             if (activeChild?.children && activeChild.children.length > 0) {
@@ -161,9 +230,33 @@ export function Structure({
         }
       }
 
-      // If we are in a submenu, but no submenu link is active for the current path,
-      // it means we navigated to a top-level page. Go back to the main menu.
+      // Check if we're currently in a submenu and if any of its children still match the current path
       if (prevState.history.length > 0) {
+        const currentParentTitle =
+          prevState.titleHistory[prevState.titleHistory.length - 1];
+
+        // For time tracker, if we're still on a time tracker route, keep the submenu open
+        if (
+          isTimeTrackerRoute &&
+          currentParentTitle?.toLowerCase().includes('tracker')
+        ) {
+          return prevState;
+        }
+
+        const currentParent = links.find(
+          (link) => link?.title === prevState.titleHistory[0]
+        );
+
+        if (currentParent?.children) {
+          const stillActive = hasActiveChild(currentParent.children);
+          if (stillActive) {
+            // We're still in the same submenu, keep it open
+            return prevState;
+          }
+        }
+
+        // If we are in a submenu, but no submenu link is active for the current path,
+        // it means we navigated to a top-level page. Go back to the main menu.
         // Flatten links with a single child
         const flattenedLinks = links
           .flatMap((link) =>
@@ -240,16 +333,13 @@ export function Structure({
       if (link.requireRootWorkspace && !isRootWorkspace) return [];
       if (link.allowedRoles && link.allowedRoles.length > 0) return [];
 
-      if (link.children && link.children.length > 1) {
+      // For navigation items with children, always include them
+      if (link.children && link.children.length > 0) {
         const filteredChildren = getFilteredLinks(link.children);
         if (filteredChildren.length === 0) {
           return [];
         }
         return [{ ...link, children: filteredChildren }];
-      }
-      // Flatten links with a single child
-      if (link.children && link.children.length === 1) {
-        return getFilteredLinks([link.children[0] as NavLink]);
       }
 
       return [link];
@@ -272,11 +362,14 @@ export function Structure({
   )
     .filter(
       (link) =>
-        link.href &&
-        (pathname.startsWith(link.href) ||
-          link.aliases?.some((alias) => pathname.startsWith(alias)))
+        (link.href && pathname.startsWith(link.href)) ||
+        link.aliases?.some((alias) => pathname.startsWith(alias))
     )
-    .sort((a, b) => (b.href?.length || 0) - (a.href?.length || 0));
+    .sort((a, b) => {
+      const aLength = a.href ? a.href.length : a.aliases?.[0]?.length || 0;
+      const bLength = b.href ? b.href.length : b.aliases?.[0]?.length || 0;
+      return bLength - aLength;
+    });
 
   const currentLink = matchedLinks?.[0];
 
@@ -320,8 +413,8 @@ export function Structure({
         className={cn(
           'absolute flex h-full w-full flex-col transition-transform duration-300 ease-in-out',
           navState.direction === 'forward'
-            ? 'animate-in slide-in-from-right'
-            : 'animate-in slide-in-from-left'
+            ? 'slide-in-from-right animate-in'
+            : 'slide-in-from-left animate-in'
         )}
       >
         {navState.history.length === 0 ? (
@@ -351,7 +444,7 @@ export function Structure({
             />
             {!isCollapsed && currentTitle && (
               <div className="p-2 pt-0">
-                <h2 className="line-clamp-1 px-2 text-sm font-semibold tracking-wide text-muted-foreground uppercase">
+                <h2 className="line-clamp-1 px-2 font-semibold text-muted-foreground text-sm uppercase tracking-wide">
                   {currentTitle}
                 </h2>
               </div>
@@ -395,7 +488,7 @@ export function Structure({
         </Link>
       </div>
       <div className="mx-2 h-4 w-px flex-none rotate-30 bg-foreground/20" />
-      <div className="flex items-center gap-2 text-lg font-semibold break-all">
+      <div className="flex items-center gap-2 break-all font-semibold text-lg">
         {currentLink?.icon && (
           <div className="flex-none">{currentLink.icon}</div>
         )}
