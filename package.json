@@ -32,9 +32,6 @@
     "trigger:deploy": "bun run --filter @tuturuuu/trigger trigger:deploy",
     "test": "turbo run test",
     "test:watch": "turbo run test:watch",
-    "lint": "turbo run lint",
-    "format": "prettier --write .",
-    "format:check": "prettier --check .",
     "format-and-lint": "biome check",
     "format-and-lint:fix": "biome check --write",
     "format-and-lint:ci": "biome ci",
@@ -76,10 +73,7 @@
     "node": ">=22"
   },
   "packageManager": "bun@1.2.20",
-  "workspaces": [
-    "apps/*",
-    "packages/*"
-  ],
+  "workspaces": ["apps/*", "packages/*"],
   "trustedDependencies": [
     "@tailwindcss/oxide",
     "@vercel/speed-insights",

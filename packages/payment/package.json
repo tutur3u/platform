@@ -8,9 +8,6 @@
     "./polar/next": "./src/polar/next/index.ts",
     "./dodo/*": "./src/dodo/*.ts"
   },
-  "scripts": {
-    "lint": "eslint ."
-  },
   "dependencies": {
     "@polar-sh/checkout": "^0.1.12",
     "@polar-sh/nextjs": "^0.4.4",

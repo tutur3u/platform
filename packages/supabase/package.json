@@ -7,7 +7,6 @@
     "access": "public"
   },
   "scripts": {
-    "lint": "eslint .",
     "test": "vitest run",
     "test:watch": "vitest"
   },

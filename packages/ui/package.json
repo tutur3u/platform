@@ -6,7 +6,6 @@
     "access": "public"
   },
   "scripts": {
-    "lint": "eslint .",
     "ui": "bunx shadcn-ui@latest"
   },
   "dependencies": {

@@ -4,8 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "email dev -p 7001",
-    "export": "email export",
-    "lint": "eslint ."
+    "export": "email export"
   },
   "dependencies": {
     "@react-email/components": "^0.5.1",

@@ -10,7 +10,6 @@
     "./google-calendar-incremental-sync": "./google-calendar-incremental-sync.ts"
   },
   "scripts": {
-    "lint": "eslint .",
     "trigger:dev": "bunx trigger.dev@latest dev",
     "trigger:deploy": "bunx trigger.dev@latest deploy"
   },

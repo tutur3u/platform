@@ -5,9 +5,6 @@
   "publishConfig": {
     "access": "public"
   },
-  "scripts": {
-    "lint": "eslint ."
-  },
   "exports": {
     ".": "./src/core/index.ts"
   },

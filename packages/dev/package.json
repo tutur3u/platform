@@ -8,9 +8,6 @@
     "./core": "./src/index.ts"
   },
   "license": "MIT",
-  "scripts": {
-    "lint": "eslint ."
-  },
   "dependencies": {
     "@tuturuuu/supabase": "workspace:*",
     "@tuturuuu/types": "workspace:*",
