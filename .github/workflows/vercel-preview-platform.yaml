@@ -6,9 +6,11 @@ on:
     branches-ignore: [ production ]
 
 jobs:
-  deploy-web:
+  check-changes:
     runs-on: ubuntu-latest
     if: github.event.workflow_run.conclusion == 'success'
+    outputs:
+      web_detected: ${{ steps.check-web.outputs.web_detected }}
     steps:
     - name: Download apps-to-build artifact
       uses: actions/download-artifact@v4
@@ -34,16 +36,10 @@ jobs:
           echo "❌ apps-to-build.txt not found, skipping build"
         fi
 
-    - name: Build and Deploy Web
-      if: steps.check-web.outputs.web_detected == 'true'
-      uses: ./.github/workflows/build-app.yml
-      with:
-        app: web
-        app-path: apps/web
-        build-command: vercel build --token=${{ secrets.VERCEL_TOKEN }}
-        vercel-project-id: ${{ secrets.VERCEL_WEB_PROJECT_ID }}
-      secrets:
-        VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-        VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-        TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
-        TURBO_TEAM: ${{ secrets.TURBO_TEAM }}
+  deploy-web:
+    needs: check-changes
+    if: needs.check-changes.outputs.web_detected == 'true'
+    uses: ./.github/workflows/build-app.yml
+    with:
+      vercel-project-id: ${{ secrets.VERCEL_WEB_PROJECT_ID }}
+    secrets: inherit

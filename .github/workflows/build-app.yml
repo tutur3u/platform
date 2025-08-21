@@ -2,15 +2,6 @@ name: Build App
 on:
   workflow_call:
     inputs:
-      app:
-        required: true
-        type: string
-      app-path:
-        required: true
-        type: string
-      build-command:
-        required: true
-        type: string
       vercel-project-id:
         required: true
         type: string
@@ -20,13 +11,24 @@ on:
       VERCEL_ORG_ID:
         required: true
       TURBO_TOKEN:
-        required: false
+        required: true
       TURBO_TEAM:
+        required: true
+      GOOGLE_VERTEX_PROJECT:
+        required: false
+      GOOGLE_VERTEX_LOCATION:
         required: false
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ inputs.vercel-project-id }}
+      TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
+      TURBO_TEAM: ${{ secrets.TURBO_TEAM }}
+      GOOGLE_VERTEX_PROJECT: ${{ secrets.GOOGLE_VERTEX_PROJECT }}
+      GOOGLE_VERTEX_LOCATION: ${{ secrets.GOOGLE_VERTEX_LOCATION }}
     steps:
     - name: Checkout code
       uses: actions/checkout@v5
@@ -77,20 +79,12 @@ jobs:
 
     - name: Pull Vercel Environment Information
       if: steps.check_commits.outputs.skip_build != 'true'
-      env:
-        VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
       run: vercel pull --yes --environment=preview --token=${{ secrets.VERCEL_TOKEN }}
 
     - name: Build Project Artifacts
       if: steps.check_commits.outputs.skip_build != 'true'
-      env:
-        VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-        VERCEL_PROJECT_ID: ${{ inputs.vercel-project-id }}
-      run: ${{ inputs.build-command }}
+      run: vercel build --token=${{ secrets.VERCEL_TOKEN }}
 
     - name: Deploy Project Artifacts to Vercel
       if: steps.check_commits.outputs.skip_build != 'true'
-      env:
-        VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-        VERCEL_PROJECT_ID: ${{ inputs.vercel-project-id }}
       run: vercel deploy --archive=tgz --prebuilt --token=${{ secrets.VERCEL_TOKEN }}

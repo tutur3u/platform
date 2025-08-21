@@ -6,9 +6,11 @@ on:
     branches-ignore: [ production ]
 
 jobs:
-  deploy-nova:
+  check-changes:
     runs-on: ubuntu-latest
     if: github.event.workflow_run.conclusion == 'success'
+    outputs:
+      nova_detected: ${{ steps.check-nova.outputs.nova_detected }}
     steps:
     - name: Download apps-to-build artifact
       uses: actions/download-artifact@v4
@@ -34,16 +36,10 @@ jobs:
           echo "❌ apps-to-build.txt not found, skipping build"
         fi
 
-    - name: Build and Deploy Nova
-      if: steps.check-nova.outputs.nova_detected == 'true'
-      uses: ./.github/workflows/build-app.yml
-      with:
-        app: nova
-        app-path: apps/nova
-        build-command: vercel build --token=${{ secrets.VERCEL_TOKEN }}
-        vercel-project-id: ${{ secrets.VERCEL_NOVA_PROJECT_ID }}
-      secrets:
-        VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-        VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-        TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
-        TURBO_TEAM: ${{ secrets.TURBO_TEAM }}
+  deploy-nova:
+    needs: check-changes
+    if: needs.check-changes.outputs.nova_detected == 'true'
+    uses: ./.github/workflows/build-app.yml
+    with:
+      vercel-project-id: ${{ secrets.VERCEL_NOVA_PROJECT_ID }}
+    secrets: inherit
