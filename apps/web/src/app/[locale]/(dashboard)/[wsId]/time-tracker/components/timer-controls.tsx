@@ -3358,7 +3358,6 @@ export function TimerControls({
             </div>
           ) : (
             <div className="space-y-6">
-
               {/* Session Mode Toggle */}
               <Tabs
                 value={sessionMode}
