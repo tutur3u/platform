@@ -50,7 +50,9 @@ export function UserSelector({
       try {
         const response = await apiCall(`/api/v1/workspaces/${wsId}/members`);
         console.log('response', response);
-        setUsers(Array.isArray(response) ? response : response.data || []);
+        setUsers(
+          Array.isArray(response) ? response : (response as any)?.data || []
+        );
       } catch (error) {
         console.error('Error fetching workspace users:', error);
         setError(

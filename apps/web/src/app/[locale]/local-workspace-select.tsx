@@ -6,5 +6,10 @@ import { useTranslations } from 'next-intl';
 
 export default function LocalWorkspaceSelect() {
   const t = useTranslations();
-  return <WorkspaceSelect t={t} localUseQuery={useQuery} />;
+  return (
+    <WorkspaceSelect
+      t={t as (key: string) => string}
+      localUseQuery={useQuery}
+    />
+  );
 }

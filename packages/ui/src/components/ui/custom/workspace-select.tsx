@@ -1,7 +1,6 @@
 'use client';
 
 import { createClient } from '@tuturuuu/supabase/next/client';
-import type { Workspace } from '@tuturuuu/types/db';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -83,7 +82,17 @@ export function WorkspaceSelect({
     enabled: !!wsId,
   });
 
-  const workspaces = (workspacesQuery?.data || []) as Workspace[];
+  const workspaces = (workspacesQuery?.data || []) as Array<{
+    id: string;
+    name: string | null;
+    personal: boolean;
+    avatar_url: string | null;
+    logo_url: string | null;
+    created_at: string | null;
+    creator_id: string | null;
+    created_by_me: boolean;
+    workspace_members: any[];
+  }>;
 
   const form = useForm({
     resolver: zodResolver(FormSchema),
