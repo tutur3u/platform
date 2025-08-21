@@ -3,18 +3,26 @@ on:
   workflow_run:
     workflows: [ "Detect Changes for Apps" ]
     types: [ completed ]
-    branches-ignore: [ production ]
+  workflow_dispatch:
+    inputs:
+      force_deploy:
+        description: 'Force deployment regardless of changes'
+        required: false
+        default: 'false'
+        type: boolean
 
 jobs:
   check-changes:
     runs-on: ubuntu-latest
-    if: github.event.workflow_run.conclusion == 'success'
+    if: github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch != 'production' || github.event_name == 'workflow_dispatch'
     outputs:
       calendar_detected: ${{ steps.check-calendar.outputs.calendar_detected }}
       project_id: ${{ steps.extract-project-id.outputs.project_id }}
     steps:
     - name: Download apps-to-build artifact
       uses: actions/download-artifact@v4
+      id: download-artifact
+      continue-on-error: true
       with:
         name: apps-to-build
         path: ./
@@ -24,6 +32,20 @@ jobs:
     - name: Check if calendar should be built
       id: check-calendar
       run: |
+        # Force deploy if triggered manually with force_deploy=true
+        if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ inputs.force_deploy }}" = "true" ]; then
+          echo "calendar_detected=true" >> $GITHUB_OUTPUT
+          echo "✅ Force deployment requested via workflow_dispatch"
+          exit 0
+        fi
+        
+        # Check if artifact was downloaded successfully
+        if [ "${{ steps.download-artifact.outcome }}" != "success" ]; then
+          echo "calendar_detected=false" >> $GITHUB_OUTPUT
+          echo "❌ Failed to download apps-to-build artifact, skipping build"
+          exit 0
+        fi
+        
         if [ -f "apps-to-build.txt" ]; then
           if grep -q "calendar" "apps-to-build.txt"; then
             echo "calendar_detected=true" >> $GITHUB_OUTPUT
@@ -49,5 +71,5 @@ jobs:
     if: needs.check-changes.outputs.calendar_detected == 'true'
     uses: ./.github/workflows/build-app.yml
     with:
-      vercel-project-id: ${{ needs.check-changes.outputs.project_id }}
+      vercel-project-id: ${{ needs.check-changes.outputs.project_id || secrets.VERCEL_CALENDAR_PROJECT_ID }}
     secrets: inherit

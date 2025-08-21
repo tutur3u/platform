@@ -5,6 +5,14 @@ on:
     paths:
     - 'apps/**'
     - 'packages/**'
+  push:
+    branches-ignore:
+    - 'main'
+    - 'production'
+    paths:
+    - 'apps/**'
+    - 'packages/**'
+  workflow_dispatch:
 
 jobs:
   detect-changes:
