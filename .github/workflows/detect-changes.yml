@@ -29,12 +29,15 @@ jobs:
       run: |
         # Get changed files
         CHANGED_FILES=$(git diff --name-only origin/main...HEAD)
+        echo "Changed files found: $(echo "$CHANGED_FILES" | wc -l)"
 
         # Use Turbo to find affected packages for each app
         APPS_TO_BUILD=()
 
         # Get all apps from workspace
-        APPS=$(bun run turbo list --filter="apps/*" --json | jq -r '.[].name')
+        echo "Getting apps from workspace..."
+        APPS=$(bun run turbo list --filter="apps/*" | grep "^@tuturuuu/" | tr -d ' ')
+        echo "Found apps: $APPS"
 
         for app in $APPS; do
           # Check if app directory changed
@@ -48,7 +51,7 @@ jobs:
           
           # Use Turbo to find what would be affected if we built this app
           # This automatically includes all dependencies
-          AFFECTED=$(bun run turbo run build --filter="$app" --dry-run --json | jq -r '.[].package')
+          AFFECTED=$(bun run turbo run build --filter="$app" --dry-run | grep "^@tuturuuu/" | tr -d ' ')
           
           # Check if any of the affected packages changed
           for pkg in $AFFECTED; do
