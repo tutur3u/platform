@@ -90,6 +90,58 @@ export function Structure({
     [pathname, matchesPath]
   );
 
+  // Universal helper function to find the deepest active navigation structure
+  const findDeepestActiveNavigation = useCallback(
+    (navLinks: (NavLink | null)[], currentPath: string) => {
+      // Recursively search for the deepest active navigation
+      const findDeepest = (links: (NavLink | null)[], depth = 0): any => {
+        for (const link of links) {
+          if (!link) continue;
+
+          // Check if this link or any of its children are active
+          if (link.href && matchesPath(pathname, link.href)) {
+            if (link.children && link.children.length > 0) {
+              // This link is active and has children, go deeper
+              const deeper = findDeepest(link.children, depth + 1);
+              if (deeper) {
+                return {
+                  currentLinks: deeper.currentLinks,
+                  history: [navLinks, ...deeper.history],
+                  titleHistory: [link.title, ...deeper.titleHistory],
+                  direction: 'forward' as const,
+                };
+              }
+            }
+            // This link is active but no deeper children, return it
+            return {
+              currentLinks: [link],
+              history: [navLinks],
+              titleHistory: [link.title],
+              direction: 'forward' as const,
+            };
+          }
+
+          // Check children recursively
+          if (link.children && link.children.length > 0) {
+            const childResult = findDeepest(link.children, depth + 1);
+            if (childResult) {
+              return {
+                currentLinks: childResult.currentLinks,
+                history: [navLinks, ...childResult.history],
+                titleHistory: [link.title, ...childResult.titleHistory],
+                direction: 'forward' as const,
+              };
+            }
+          }
+        }
+        return null;
+      };
+
+      return findDeepest(navLinks);
+    },
+    [matchesPath, pathname]
+  );
+
 
 
   const [navState, setNavState] = useState<{
@@ -98,20 +150,10 @@ export function Structure({
     titleHistory: (string | null)[];
     direction: 'forward' | 'backward';
   }>(() => {
-               // Special handling for time tracker routes - need to go two levels deep
-      const isTimeTrackerRoute = pathname.includes('/time-tracker');
-
-      if (isTimeTrackerRoute) {
-        const productivity = links.find((s) => s?.children?.some((c) => c?.key === 'time-tracker'));
-        const timeTracker = productivity?.children?.find((c) => c?.key === 'time-tracker');
-        if (timeTracker?.children) {
-          return {
-            currentLinks: timeTracker.children,
-            history: [links, productivity!.children!],
-            titleHistory: [productivity!.title, timeTracker.title],
-            direction: 'forward' as const,
-          };
-        }
+      // Universal logic for deeply nested navigation - automatically detects multi-level structures
+      const deepNestedNavigation = findDeepestActiveNavigation(links, pathname);
+      if (deepNestedNavigation) {
+        return deepNestedNavigation;
       }
 
     // Standard logic for other routes
@@ -147,30 +189,10 @@ export function Structure({
 
   useEffect(() => {
     setNavState((prevState) => {
-      // Special handling for time tracker routes - need to go two levels deep
-      const isTimeTrackerRoute = pathname.includes('/time-tracker');
-
-      if (isTimeTrackerRoute) {
-        // Check if we're already showing time tracker children
-        const isShowingTimeTrackerChildren = prevState.titleHistory.some(
-          (title) => title?.toLowerCase().includes('tracker')
-        );
-
-        if (!isShowingTimeTrackerChildren) {
-          const productivity = links.find((s) => s?.children?.some((c) => c?.key === 'time-tracker'));
-          const timeTracker = productivity?.children?.find((c) => c?.key === 'time-tracker');
-          if (timeTracker?.children) {
-            return {
-              currentLinks: timeTracker.children,
-              history: [links, productivity!.children!],
-              titleHistory: [productivity!.title, timeTracker.title],
-              direction: 'forward',
-            };
-          }
-        }
-
-        // We're already showing time tracker children, keep them visible
-        return prevState;
+      // Universal logic for deeply nested navigation - automatically detects multi-level structures
+      const deepNestedNavigation = findDeepestActiveNavigation(links, pathname);
+      if (deepNestedNavigation) {
+        return deepNestedNavigation;
       }
 
       // Standard navigation logic for non-time-tracker routes
@@ -226,11 +248,8 @@ export function Structure({
         const currentParentTitle =
           prevState.titleHistory[prevState.titleHistory.length - 1];
 
-        // For time tracker, if we're still on a time tracker route, keep the submenu open
-        if (
-          isTimeTrackerRoute &&
-          currentParentTitle?.toLowerCase().includes('tracker')
-        ) {
+        // Check if we're still in the same submenu context
+        if (currentParentTitle && prevState.titleHistory.includes(currentParentTitle)) {
           return prevState;
         }
 
@@ -267,7 +286,7 @@ export function Structure({
       // We are at the top level and no submenu is active, do nothing.
       return prevState;
     });
-  }, [pathname, links, hasActiveChild, matchesPath]);
+  }, [pathname, links, hasActiveChild, matchesPath, findDeepestActiveNavigation]);
 
   const handleToggle = () => {
     const newCollapsed = !isCollapsed;

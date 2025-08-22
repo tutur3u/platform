@@ -50,9 +50,6 @@ export function NavLink({
     });
   };
 
-  // For time tracker routes, only mark as active if it's an exact match or if it's the most specific match
-  const isTimeTrackerRoute = /(^|\/)time-tracker(\/|$)/.test(pathname || '');
-
   // Helper function to normalize paths for comparison
   const normalize = (p: string): string[] => {
     const queryRemoved = p.split('?')[0] || p;
@@ -61,36 +58,37 @@ export function NavLink({
     return segments.filter(Boolean);
   };
 
-  let isActive = false;
-
-  if (isTimeTrackerRoute && href && /(^|\/)time-tracker(\/|$)/.test(href)) {
-    // For time tracker routes, use exact matching to avoid multiple active states
+  // Universal logic for nested navigation routes - prevents multiple active states
+  const isActive = (() => {
     if (link.matchExact) {
-      isActive = (pathname || '') === href;
-    } else {
-      // For non-exact matches, only mark as active if it's the most specific match
+      return (pathname || '') === href;
+    }
+
+    if (href) {
       const safePathname = pathname || '';
       const safeHref = href || '';
+      
+      // Check if this is a nested route (has multiple path segments)
       const currentPathSegments = normalize(safePathname).length;
       const linkPathSegments = normalize(safeHref).length;
-      isActive =
-        safePathname.startsWith(safeHref) &&
-        currentPathSegments === linkPathSegments;
+      
+      if (currentPathSegments > linkPathSegments) {
+        // For nested routes, only mark as active if it's the most specific match
+        // This prevents parent routes from being active when child routes are active
+        return safePathname.startsWith(safeHref) && currentPathSegments === linkPathSegments;
+      } else {
+        // For same-level or parent routes, use standard startsWith logic
+        return safePathname.startsWith(safeHref);
+      }
     }
-    // Optional: if you want the parent "Time Tracker" link to highlight when any child is active
-    if (!isActive && link.children && link.children.length > 0) {
-      isActive = hasActiveChild(link.children);
+
+    // Check if any children are active
+    if (link.children && link.children.length > 0) {
+      return hasActiveChild(link.children);
     }
-  } else {
-    // Standard logic for non-time-tracker routes
-    isActive = Boolean(
-      (href &&
-        (link.matchExact
-          ? (pathname || '') === href
-          : (pathname || '').startsWith(href))) ||
-        (link.children && hasActiveChild(link.children))
-    );
-  }
+
+    return false;
+  })();
 
   const content = (
     <>
