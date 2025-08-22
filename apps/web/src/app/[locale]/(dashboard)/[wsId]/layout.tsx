@@ -467,6 +467,21 @@ export default async function Layout({ children, params }: LayoutProps) {
             withoutPermission('manage_users'),
         },
         {
+          title: t('sidebar_tabs.operational_structure'),
+          aliases: [`/${correctedWSId}/operational-structure`],
+          href: `/${correctedWSId}/operational-structure`,
+          icon: <Users className="h-5 w-5" />,
+          disabled:
+            ENABLE_AI_ONLY ||
+            !(await verifySecret({
+              forceAdmin: true,
+              wsId,
+              name: 'ENABLE_USERS',
+              value: 'true',
+            })) ||
+            withoutPermission('manage_users'),
+        },
+        {
           title: t('sidebar_tabs.finance'),
           aliases: [`/${correctedWSId}/finance`],
           href: `/${correctedWSId}/finance/transactions`,
