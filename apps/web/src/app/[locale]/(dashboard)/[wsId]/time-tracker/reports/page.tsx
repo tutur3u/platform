@@ -28,7 +28,7 @@ export default function TimeTrackerReportsPage() {
     <div className="container mx-auto space-y-6 p-6">
       <div className="mb-6 flex items-center gap-2">
         <FileText className="h-6 w-6 text-primary" />
-        <h1 className="font-bold text-2xl">Time Tracker Reports</h1>
+        <h1 className="text-2xl font-bold">Time Tracker Reports</h1>
       </div>
 
       {/* Report Controls */}
@@ -42,7 +42,7 @@ export default function TimeTrackerReportsPage() {
         <CardContent>
           <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
             <div className="space-y-2">
-              <label htmlFor="report-type" className="font-medium text-sm">
+              <label htmlFor="report-type" className="text-sm font-medium">
                 Report Type
               </label>
               <Select defaultValue="summary">
@@ -60,7 +60,7 @@ export default function TimeTrackerReportsPage() {
             </div>
 
             <div className="space-y-2">
-              <label htmlFor="date-range" className="font-medium text-sm">
+              <label htmlFor="date-range" className="text-sm font-medium">
                 Date Range
               </label>
               <Select defaultValue="month">
@@ -78,7 +78,7 @@ export default function TimeTrackerReportsPage() {
             </div>
 
             <div className="space-y-2">
-              <label htmlFor="team-member" className="font-medium text-sm">
+              <label htmlFor="team-member" className="text-sm font-medium">
                 Team Member
               </label>
               <Select defaultValue="all">
@@ -95,7 +95,7 @@ export default function TimeTrackerReportsPage() {
             </div>
 
             <div className="space-y-2">
-              <label htmlFor="format" className="font-medium text-sm">
+              <label htmlFor="format" className="text-sm font-medium">
                 Format
               </label>
               <Select defaultValue="pdf">
@@ -239,7 +239,7 @@ export default function TimeTrackerReportsPage() {
                 <FileText className="h-8 w-8 text-blue-500" />
                 <div>
                   <h3 className="font-medium">Monthly Productivity Report</h3>
-                  <p className="text-muted-foreground text-sm">
+                  <p className="text-sm text-muted-foreground">
                     Generated on August 15, 2024
                   </p>
                 </div>
@@ -257,7 +257,7 @@ export default function TimeTrackerReportsPage() {
                 <FileText className="h-8 w-8 text-green-500" />
                 <div>
                   <h3 className="font-medium">Project Time Analysis</h3>
-                  <p className="text-muted-foreground text-sm">
+                  <p className="text-sm text-muted-foreground">
                     Generated on August 10, 2024
                   </p>
                 </div>
@@ -275,7 +275,7 @@ export default function TimeTrackerReportsPage() {
                 <FileText className="h-8 w-8 text-orange-500" />
                 <div>
                   <h3 className="font-medium">Team Performance Report</h3>
-                  <p className="text-muted-foreground text-sm">
+                  <p className="text-sm text-muted-foreground">
                     Generated on August 5, 2024
                   </p>
                 </div>
@@ -304,7 +304,7 @@ export default function TimeTrackerReportsPage() {
                 <Calendar className="h-5 w-5 text-purple-500" />
                 <div>
                   <h3 className="font-medium">Weekly Team Summary</h3>
-                  <p className="text-muted-foreground text-sm">
+                  <p className="text-sm text-muted-foreground">
                     Every Monday at 9:00 AM
                   </p>
                 </div>
@@ -322,7 +322,7 @@ export default function TimeTrackerReportsPage() {
                 <Calendar className="h-5 w-5 text-purple-500" />
                 <div>
                   <h3 className="font-medium">Monthly Billing Report</h3>
-                  <p className="text-muted-foreground text-sm">
+                  <p className="text-sm text-muted-foreground">
                     First day of each month
                   </p>
                 </div>

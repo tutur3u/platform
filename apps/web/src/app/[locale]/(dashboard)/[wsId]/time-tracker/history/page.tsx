@@ -22,7 +22,7 @@ export default function TimeTrackerHistoryPage() {
     <div className="container mx-auto space-y-6 p-6">
       <div className="mb-6 flex items-center gap-2">
         <Clock className="h-6 w-6 text-primary" />
-        <h1 className="font-bold text-2xl">Time Tracker History</h1>
+        <h1 className="text-2xl font-bold">Time Tracker History</h1>
       </div>
 
       {/* Search and Filter Bar */}
@@ -36,7 +36,7 @@ export default function TimeTrackerHistoryPage() {
         <CardContent>
           <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
             <div className="relative">
-              <Search className="-translate-y-1/2 absolute top-1/2 left-3 h-4 w-4 transform text-muted-foreground" />
+              <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transform text-muted-foreground" />
               <Input placeholder="Search entries..." className="pl-10" />
             </div>
             <Input type="date" placeholder="Start date" />
@@ -53,23 +53,23 @@ export default function TimeTrackerHistoryPage() {
       <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="font-medium text-sm">Total Entries</CardTitle>
+            <CardTitle className="text-sm font-medium">Total Entries</CardTitle>
             <Clock className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="font-bold text-2xl">1,247</div>
-            <p className="text-muted-foreground text-xs">This month</p>
+            <div className="text-2xl font-bold">1,247</div>
+            <p className="text-xs text-muted-foreground">This month</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="font-medium text-sm">Total Hours</CardTitle>
+            <CardTitle className="text-sm font-medium">Total Hours</CardTitle>
             <Clock className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="font-bold text-2xl">2,156.5h</div>
-            <p className="text-muted-foreground text-xs">
+            <div className="text-2xl font-bold">2,156.5h</div>
+            <p className="text-xs text-muted-foreground">
               +15.2% from last month
             </p>
           </CardContent>
@@ -77,27 +77,27 @@ export default function TimeTrackerHistoryPage() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="font-medium text-sm">
+            <CardTitle className="text-sm font-medium">
               Active Projects
             </CardTitle>
             <Calendar className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="font-bold text-2xl">12</div>
-            <p className="text-muted-foreground text-xs">Currently tracking</p>
+            <div className="text-2xl font-bold">12</div>
+            <p className="text-xs text-muted-foreground">Currently tracking</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="font-medium text-sm">
+            <CardTitle className="text-sm font-medium">
               Avg. Daily Hours
             </CardTitle>
             <Clock className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="font-bold text-2xl">7.8h</div>
-            <p className="text-muted-foreground text-xs">Target: 8.0h</p>
+            <div className="text-2xl font-bold">7.8h</div>
+            <p className="text-xs text-muted-foreground">Target: 8.0h</p>
           </CardContent>
         </Card>
       </div>
@@ -126,10 +126,10 @@ export default function TimeTrackerHistoryPage() {
                 <div className="h-3 w-3 rounded-full bg-blue-500"></div>
                 <div>
                   <h3 className="font-medium">Design System Update</h3>
-                  <p className="text-muted-foreground text-sm">
+                  <p className="text-sm text-muted-foreground">
                     Updated component library with new design tokens
                   </p>
-                  <div className="mt-1 flex items-center gap-4 text-muted-foreground text-xs">
+                  <div className="mt-1 flex items-center gap-4 text-xs text-muted-foreground">
                     <span>Project: Design</span>
                     <span>Date: Aug 22, 2024</span>
                   </div>
@@ -139,7 +139,7 @@ export default function TimeTrackerHistoryPage() {
                 <Badge variant="secondary">Design</Badge>
                 <div className="text-right">
                   <div className="font-semibold">2h 30m</div>
-                  <div className="text-muted-foreground text-xs">
+                  <div className="text-xs text-muted-foreground">
                     9:00 AM - 11:30 AM
                   </div>
                 </div>
@@ -154,10 +154,10 @@ export default function TimeTrackerHistoryPage() {
                 <div className="h-3 w-3 rounded-full bg-green-500"></div>
                 <div>
                   <h3 className="font-medium">API Documentation</h3>
-                  <p className="text-muted-foreground text-sm">
+                  <p className="text-sm text-muted-foreground">
                     Wrote comprehensive API documentation
                   </p>
-                  <div className="mt-1 flex items-center gap-4 text-muted-foreground text-xs">
+                  <div className="mt-1 flex items-center gap-4 text-xs text-muted-foreground">
                     <span>Project: Development</span>
                     <span>Date: Aug 21, 2024</span>
                   </div>
@@ -167,7 +167,7 @@ export default function TimeTrackerHistoryPage() {
                 <Badge variant="secondary">Development</Badge>
                 <div className="text-right">
                   <div className="font-semibold">4h 15m</div>
-                  <div className="text-muted-foreground text-xs">
+                  <div className="text-xs text-muted-foreground">
                     1:00 PM - 5:15 PM
                   </div>
                 </div>
@@ -182,10 +182,10 @@ export default function TimeTrackerHistoryPage() {
                 <div className="h-3 w-3 rounded-full bg-yellow-500"></div>
                 <div>
                   <h3 className="font-medium">User Research</h3>
-                  <p className="text-muted-foreground text-sm">
+                  <p className="text-sm text-muted-foreground">
                     Conducted user interviews for new feature
                   </p>
-                  <div className="mt-1 flex items-center gap-4 text-muted-foreground text-xs">
+                  <div className="mt-1 flex items-center gap-4 text-xs text-muted-foreground">
                     <span>Project: Research</span>
                     <span>Date: Aug 20, 2024</span>
                   </div>
@@ -195,7 +195,7 @@ export default function TimeTrackerHistoryPage() {
                 <Badge variant="secondary">Research</Badge>
                 <div className="text-right">
                   <div className="font-semibold">1h 45m</div>
-                  <div className="text-muted-foreground text-xs">
+                  <div className="text-xs text-muted-foreground">
                     10:00 AM - 11:45 AM
                   </div>
                 </div>
@@ -210,10 +210,10 @@ export default function TimeTrackerHistoryPage() {
                 <div className="h-3 w-3 rounded-full bg-purple-500"></div>
                 <div>
                   <h3 className="font-medium">Team Meeting</h3>
-                  <p className="text-muted-foreground text-sm">
+                  <p className="text-sm text-muted-foreground">
                     Weekly team sync and planning
                   </p>
-                  <div className="mt-1 flex items-center gap-4 text-muted-foreground text-xs">
+                  <div className="mt-1 flex items-center gap-4 text-xs text-muted-foreground">
                     <span>Project: Meetings</span>
                     <span>Date: Aug 19, 2024</span>
                   </div>
@@ -223,7 +223,7 @@ export default function TimeTrackerHistoryPage() {
                 <Badge variant="secondary">Meetings</Badge>
                 <div className="text-right">
                   <div className="font-semibold">1h 0m</div>
-                  <div className="text-muted-foreground text-xs">
+                  <div className="text-xs text-muted-foreground">
                     2:00 PM - 3:00 PM
                   </div>
                 </div>
@@ -238,10 +238,10 @@ export default function TimeTrackerHistoryPage() {
                 <div className="h-3 w-3 rounded-full bg-red-500"></div>
                 <div>
                   <h3 className="font-medium">Bug Fixes</h3>
-                  <p className="text-muted-foreground text-sm">
+                  <p className="text-sm text-muted-foreground">
                     Fixed critical bugs in production
                   </p>
-                  <div className="mt-1 flex items-center gap-4 text-muted-foreground text-xs">
+                  <div className="mt-1 flex items-center gap-4 text-xs text-muted-foreground">
                     <span>Project: Development</span>
                     <span>Date: Aug 18, 2024</span>
                   </div>
@@ -251,7 +251,7 @@ export default function TimeTrackerHistoryPage() {
                 <Badge variant="destructive">Urgent</Badge>
                 <div className="text-right">
                   <div className="font-semibold">3h 20m</div>
-                  <div className="text-muted-foreground text-xs">
+                  <div className="text-xs text-muted-foreground">
                     6:00 PM - 9:20 PM
                   </div>
                 </div>
@@ -264,7 +264,7 @@ export default function TimeTrackerHistoryPage() {
 
           {/* Pagination */}
           <div className="mt-6 flex items-center justify-between border-t pt-6">
-            <div className="text-muted-foreground text-sm">
+            <div className="text-sm text-muted-foreground">
               Showing 1-5 of 1,247 entries
             </div>
             <div className="flex gap-2">
