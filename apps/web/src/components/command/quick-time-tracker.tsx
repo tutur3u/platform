@@ -532,7 +532,7 @@ export function QuickTimeTracker({
           selectedTask.description || `Working on: ${selectedTask.name}`,
         taskId: selectedTask.id,
       });
-    } catch (error) {
+    } catch {
       toast.error('Failed to start task session');
     } finally {
       // Note: setIsLoading(false) is handled in the mutation's onSettled callback
@@ -555,7 +555,7 @@ export function QuickTimeTracker({
   };
 
   const startNextTask = async () => {
-    const nextTask = nextTaskData?.nextTask;
+    const nextTask = getNextTask();
     if (!nextTask) {
       toast.info('No available tasks to start');
       return;
@@ -595,7 +595,7 @@ export function QuickTimeTracker({
         description: nextTask.description || `Working on: ${nextTask.name}`,
         taskId: nextTask.id,
       });
-    } catch (error) {
+    } catch {
       toast.error('Failed to start task session');
     } finally {
       // Note: setIsLoading(false) is handled in the mutation's onSettled callback
@@ -696,7 +696,7 @@ export function QuickTimeTracker({
       case 'critical':
         return 'text-red-600 bg-red-100 dark:text-red-400 dark:bg-red-900/30';
       case 'high':
-        return 'text-orange-600 bg-orange-100 dark:text-orange-400 dark:bg-orange-900/30';
+        return 'text-orange-600 bg-orange-100 dark:text-orange-400 dark:bg-red-900/30';
       case 'normal':
         return 'text-yellow-600 bg-yellow-100 dark:text-yellow-400 dark:bg-yellow-900/30';
       case 'low':
@@ -704,6 +704,14 @@ export function QuickTimeTracker({
       default:
         return 'text-gray-600 bg-gray-100 dark:text-gray-400 dark:bg-gray-900/30';
     }
+  };
+
+  // Helper function to safely get the next task
+  const getNextTask = () => {
+    if (Array.isArray(nextTaskData)) {
+      return undefined;
+    }
+    return nextTaskData?.nextTask;
   };
 
   return (
@@ -784,6 +792,7 @@ export function QuickTimeTracker({
                       />
                       {selectedTask && (
                         <button
+                          type="button"
                           onClick={() => {
                             setSelectedTask(null);
                             setTaskSearchQuery('');
@@ -798,6 +807,7 @@ export function QuickTimeTracker({
                     {/* Board Filter Dropdown */}
                     <div className="relative ml-2 w-32" data-board-dropdown>
                       <button
+                        type="button"
                         data-board-button
                         onClick={() => setShowBoardDropdown(!showBoardDropdown)}
                         className="flex h-9 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background hover:bg-accent focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
@@ -817,6 +827,7 @@ export function QuickTimeTracker({
                         <div className="absolute top-full right-0 z-50 mt-1 w-full rounded-md border bg-popover p-1 shadow-md">
                           <div className="max-h-32 overflow-y-auto">
                             <button
+                              type="button"
                               onClick={() => {
                                 handleBoardChange('all');
                                 setShowBoardDropdown(false);
@@ -830,6 +841,7 @@ export function QuickTimeTracker({
                             </button>
                             {boardsData?.map((board: any) => (
                               <button
+                                type="button"
                                 key={board.id}
                                 onClick={() => {
                                   handleBoardChange(board.id);
@@ -859,6 +871,7 @@ export function QuickTimeTracker({
                         {filteredTasks.length > 0 ? (
                           filteredTasks.slice(0, 12).map((task: any) => (
                             <button
+                              type="button"
                               key={task.id}
                               onClick={() => handleTaskSelect(task)}
                               className="w-full rounded-sm p-2 text-left transition-colors hover:bg-accent"
@@ -998,6 +1011,7 @@ export function QuickTimeTracker({
               <div className="grid grid-cols-2 gap-2">
                 {/* Continue Last Session */}
                 <button
+                  type="button"
                   onClick={continueLastSession}
                   disabled={
                     !recentSessions?.[0] ||
@@ -1075,15 +1089,14 @@ export function QuickTimeTracker({
 
                 {/* Next Task */}
                 <button
+                  type="button"
                   onClick={startNextTask}
                   disabled={
-                    !nextTaskData?.nextTask ||
-                    runningSession ||
-                    startMutation.isPending
+                    !getNextTask() || runningSession || startMutation.isPending
                   }
                   className={cn(
                     'group rounded-lg border p-3 text-left transition-all duration-200',
-                    nextTaskData?.nextTask && !runningSession
+                    getNextTask() && !runningSession
                       ? 'border-purple-200 bg-gradient-to-br from-purple-50 to-purple-100/50 hover:shadow-md hover:shadow-purple-500/20 active:scale-[0.98] dark:border-purple-800 dark:from-purple-950/30 dark:to-purple-900/20'
                       : 'cursor-not-allowed border-muted bg-muted/30 opacity-60'
                   )}
@@ -1092,7 +1105,7 @@ export function QuickTimeTracker({
                     <div
                       className={cn(
                         'flex-shrink-0 rounded-full p-1 transition-colors',
-                        nextTaskData?.nextTask && !runningSession
+                        getNextTask() && !runningSession
                           ? 'bg-purple-500/20 group-hover:bg-purple-500/30'
                           : 'bg-muted-foreground/20'
                       )}
@@ -1100,7 +1113,7 @@ export function QuickTimeTracker({
                       <CheckSquare
                         className={cn(
                           'h-3 w-3 transition-transform group-hover:scale-110',
-                          nextTaskData?.nextTask && !runningSession
+                          getNextTask() && !runningSession
                             ? 'text-purple-600 dark:text-purple-400'
                             : 'text-muted-foreground'
                         )}
@@ -1110,32 +1123,31 @@ export function QuickTimeTracker({
                       <p
                         className={cn(
                           'font-medium text-xs',
-                          nextTaskData?.nextTask && !runningSession
+                          getNextTask() && !runningSession
                             ? 'text-purple-700 dark:text-purple-300'
                             : 'text-muted-foreground'
                         )}
                       >
                         Next Task
                       </p>
-                      {nextTaskData?.nextTask ? (
+                      {getNextTask() ? (
                         <>
                           <p
                             className="line-clamp-1 font-bold text-purple-900 text-sm dark:text-purple-100"
-                            title={nextTaskData.nextTask.name}
+                            title={getNextTask()?.name}
                           >
-                            {nextTaskData.nextTask.name}
+                            {getNextTask()?.name}
                           </p>
                           <div className="mt-1 flex items-center gap-1">
                             <span
                               className={cn(
                                 'inline-flex items-center rounded px-1 py-0.5 font-medium text-xs',
-                                getPriorityColor(nextTaskData.nextTask.priority)
+                                getPriorityColor(getNextTask()?.priority)
                               )}
                             >
-                              {getPriorityLabel(nextTaskData.nextTask.priority)}
+                              {getPriorityLabel(getNextTask()?.priority)}
                             </span>
-                            {nextTaskData.nextTask
-                              .is_assigned_to_current_user ? (
+                            {getNextTask()?.is_assigned_to_current_user ? (
                               <span className="text-purple-600/80 text-xs dark:text-purple-400/80">
                                 • You
                               </span>
