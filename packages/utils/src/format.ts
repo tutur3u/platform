@@ -62,27 +62,23 @@ export function formatDuration(seconds: number): string {
  * Validates if a URL is a safe blob URL
  */
 export function isValidBlobUrl(url: string | null | undefined): boolean {
-  if (!url || typeof url !== 'string') return false;
-  return url.startsWith('blob:');
+  if (typeof url !== 'string') return false;
+  const s = url.trim();
+  return s.toLowerCase().startsWith('blob:');
 }
 
 /**
  * Validates if a URL is a safe HTTP or HTTPS URL
  */
 export function isValidHttpUrl(url: string | null | undefined): boolean {
-  if (!url || typeof url !== 'string') return false;
-
+  if (typeof url !== 'string') return false;
+  const s = url.trim();
   try {
-    const parsedUrl = new URL(url);
-    return parsedUrl.protocol === 'http:' || parsedUrl.protocol === 'https:';
+    const parsedUrl = new URL(s);
+    const protocol = parsedUrl.protocol.toLowerCase();
+    // Require a hostname to avoid odd cases like "http:/foo"
+    return (protocol === 'http:' || protocol === 'https:') && !!parsedUrl.hostname;
   } catch {
     return false;
   }
-}
-
-/**
- * General URL validator that accepts blob and http/https URLs
- */
-export function isValidUrl(url: string | null | undefined): boolean {
-  return isValidBlobUrl(url) || isValidHttpUrl(url);
 }
