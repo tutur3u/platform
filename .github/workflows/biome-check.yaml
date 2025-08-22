@@ -180,7 +180,7 @@ jobs:
         if: steps.create-pr.outputs.pull-request-url != ''
         run: |
           echo "Biome formatting issues were found and a PR has been created."
-          echo `PR URL: ${{ steps.create-pr.outputs.pull-request-url }}` >> $GITHUB_OUTPUT
+          echo `PR URL: ${{ steps.create-pr.outputs.pull-request-url }}`
           exit 1
 
   comment:
