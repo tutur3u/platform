@@ -31,35 +31,37 @@ CREATE UNIQUE INDEX time_tracking_settings_user_ws_unique ON public.time_trackin
 
 -- Foreign key constraints
 alter table "public"."time_tracking_settings" add constraint "time_tracking_settings_ws_id_fkey" FOREIGN KEY (ws_id) REFERENCES workspaces(id) ON DELETE CASCADE;
+
 alter table "public"."time_tracking_settings" add constraint "time_tracking_settings_user_id_fkey" FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE;
+
 alter table "public"."time_tracking_settings" add constraint "time_tracking_settings_default_category_id_fkey" FOREIGN KEY (default_category_id) REFERENCES time_tracking_categories(id) ON DELETE SET NULL;
 
 -- Indexes for performance
 CREATE INDEX time_tracking_settings_user_id_idx ON public.time_tracking_settings USING btree (user_id);
-CREATE INDEX time_tracking_settings_ws_id_idx ON public.time_tracking_settings USING btree (ws_id);
+CREATE INDEX time_tracking_settings_user_id_idx ON public.time_tracking_settings USING btree (ws_id);
 
 -- RLS Policies
 create policy "Allow users to read their own settings" on "public"."time_tracking_settings" as permissive for select to authenticated using (
-    user_id = auth.uid() AND 
+    user_id = auth.uid() AND
     EXISTS (
-        SELECT 1 FROM workspace_members wu 
-        WHERE wu.ws_id = time_tracking_settings.ws_id 
+        SELECT 1 FROM workspace_members wu
+        WHERE wu.ws_id = time_tracking_settings.ws_id
         AND wu.user_id = auth.uid()
     )
 );
 
 create policy "Allow users to manage their own settings" on "public"."time_tracking_settings" as permissive for all to authenticated using (
-    user_id = auth.uid() AND 
+    user_id = auth.uid() AND
     EXISTS (
-        SELECT 1 FROM workspace_members wu 
-        WHERE wu.ws_id = time_tracking_settings.ws_id 
+        SELECT 1 FROM workspace_members wu
+        WHERE wu.ws_id = time_tracking_settings.ws_id
         AND wu.user_id = auth.uid()
     )
 ) with check (
-    user_id = auth.uid() AND 
+    user_id = auth.uid() AND
     EXISTS (
-        SELECT 1 FROM workspace_members wu 
-        WHERE wu.ws_id = time_tracking_settings.ws_id 
+        SELECT 1 FROM workspace_members wu
+        WHERE wu.ws_id = time_tracking_settings.ws_id
         AND wu.user_id = auth.uid()
     )
 );
