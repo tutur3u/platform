@@ -4,7 +4,6 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
-import { transformAssignees } from '@/lib/task-helper';
 import 'server-only';
 
 export const getTimeTrackingData = async (wsId: string, userId: string) => {
@@ -223,49 +222,29 @@ export const getTimeTrackingData = async (wsId: string, userId: string) => {
   };
 
   // Transform tasks to match the ExtendedWorkspaceTask interface expected by the time tracker
-  const transformedTasks = (tasks || []).map(
-    (
-      task: WorkspaceTask & {
-        list?: {
-          id: string;
-          name: string;
-          status: string;
-          board?: {
-            id: string;
-            name: string;
-            ws_id: string;
-          };
-        };
-        assignees?: Array<{
-          user?: {
-            id: string;
-            display_name?: string;
-            avatar_url?: string;
-            user_private_details?: Array<{ email?: string }>;
-          };
-        }>;
-      }
-    ) => ({
-      ...task,
-      // Flatten nested data for easier access
-      board_id: task.list?.board?.id,
-      board_name: task.list?.board?.name,
-      list_id: task.list?.id,
-      list_name: task.list?.name,
-      list_status: task.list?.status,
-      // Transform assignees to match expected format
-      assignees: transformAssignees(task.assignees || []).map((user) => ({
-        ...user,
-        // Extract email from nested user_private_details
-        email: user?.user_private_details?.[0]?.email || null,
+  const transformedTasks = (tasks || []).map((task: any) => ({
+    ...task,
+    // Flatten nested data for easier access
+    board_id: task.list?.board?.id,
+    board_name: task.list?.board?.name,
+    list_id: task.list?.id,
+    list_name: task.list?.name,
+    list_status: task.list?.status,
+    // Transform assignees to match expected format
+    assignees: (task.assignees || [])
+      .filter((a: any) => a.user?.id) // Filter out assignees without user IDs
+      .map((a: any) => ({
+        id: a.user!.id, // We know user exists due to filter
+        display_name: a.user.display_name || undefined,
+        avatar_url: a.user.avatar_url || undefined,
+        email: a.user.user_private_details?.[0]?.email || undefined,
       })),
-      // Add current user assignment flag
-      is_assigned_to_current_user:
-        task.assignees?.some((a) => a.user?.id === userId) || false,
-      // Ensure task is available for time tracking
-      completed: false, // Since we filtered out archived tasks, none should be completed
-    })
-  );
+    // Add current user assignment flag
+    is_assigned_to_current_user:
+      task.assignees?.some((a: any) => a.user?.id === userId) || false,
+    // Ensure task is available for time tracking
+    completed: false, // Since we filtered out archived tasks, none should be completed
+  }));
 
   return {
     categories: categories || [],
