@@ -12,9 +12,6 @@
     "./identity-linking": "./src/identity-linking.ts"
   },
   "license": "MIT",
-  "scripts": {
-    "lint": "eslint ."
-  },
   "dependencies": {
     "@tuturuuu/supabase": "workspace:*",
     "@tuturuuu/types": "workspace:*",
@@ -24,7 +21,6 @@
     "react": "^19.1.1"
   },
   "devDependencies": {
-    "@tuturuuu/eslint-config": "workspace:*",
     "@tuturuuu/typescript-config": "workspace:*",
     "@types/node": "^24.3.0",
     "@types/react": "^19.1.10",

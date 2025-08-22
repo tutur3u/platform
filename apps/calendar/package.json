@@ -4,9 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "next dev -p 3001 --turbopack",
-    "build": "NODE_OPTIONS='--max-old-space-size=8192' next build --turbo",
-    "start": "next start",
-    "lint": "next lint"
+    "build": "next build --turbopack",
+    "start": "next start"
   },
   "dependencies": {
     "@formatjs/intl-localematcher": "^0.6.1",
@@ -29,7 +28,6 @@
     "zod": "^4.0.17"
   },
   "devDependencies": {
-    "@tuturuuu/eslint-config": "workspace:*",
     "@tuturuuu/typescript-config": "workspace:*",
     "@types/negotiator": "^0.6.4",
     "@types/node": "^24.3.0",
