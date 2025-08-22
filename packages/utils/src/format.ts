@@ -86,10 +86,3 @@ export function isValidHttpUrl(url: string | null | undefined): boolean {
 export function isValidUrl(url: string | null | undefined): boolean {
   return isValidBlobUrl(url) || isValidHttpUrl(url);
 }
-
-/**
- * Sanitizes a URL by validating it and returning undefined if invalid
- */
-export function sanitizeUrl(url: string | null | undefined): string | undefined {
-  return isValidUrl(url) ? url : undefined;
-}
