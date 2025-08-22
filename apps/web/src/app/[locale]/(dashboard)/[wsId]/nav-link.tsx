@@ -55,11 +55,10 @@ export function NavLink({
 
   // Helper function to normalize paths for comparison
   const normalize = (p: string): string[] => {
-    return p
-      .split('?')[0] // drop query string
-      .replace(/\/+$/, '') // trim trailing slash(es)
-      .split('/') // split into segments
-      .filter(Boolean); // remove empty segments
+    const queryRemoved = p.split('?')[0] || p;
+    const trimmed = queryRemoved.replace(/\/+$/, '');
+    const segments = trimmed.split('/');
+    return segments.filter(Boolean);
   };
 
   let isActive = false;
@@ -72,8 +71,8 @@ export function NavLink({
       // For non-exact matches, only mark as active if it's the most specific match
       const safePathname = pathname || '';
       const safeHref = href || '';
-      const currentPathSegments = normalize(pathname || '').length;
-      const linkPathSegments = normalize(href || '').length;
+      const currentPathSegments = normalize(safePathname).length;
+      const linkPathSegments = normalize(safeHref).length;
       isActive =
         safePathname.startsWith(safeHref) &&
         currentPathSegments === linkPathSegments;

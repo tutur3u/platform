@@ -1,10 +1,10 @@
 'use client';
 
-import { NavLink } from './nav-link';
-import type { NavLink as NavLinkType } from '@/components/navigation';
 import { cn } from '@tuturuuu/utils/format';
 import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
+import type { NavLink as NavLinkType } from '@/components/navigation';
+import { NavLink } from './nav-link';
 
 interface NavProps {
   wsId: string;
@@ -43,9 +43,18 @@ export function Nav({
       <nav className="grid gap-y-1">
         {links.map((link, index) => {
           if (!link) {
+            // Find the previous non-null link to create a better key
+            const prevLink = links
+              .slice(0, index)
+              .reverse()
+              .find((l) => l !== null);
+            const dividerKey = prevLink
+              ? `nav-divider-${prevLink.href || prevLink.title}`
+              : `nav-divider-${index}`;
+
             return (
               <div
-                key={`nav-divider-${index}`}
+                key={dividerKey}
                 className={cn(
                   'my-2 ml-4 border-b',
                   isCollapsed ? 'mx-auto w-1/2' : 'w-auto'
