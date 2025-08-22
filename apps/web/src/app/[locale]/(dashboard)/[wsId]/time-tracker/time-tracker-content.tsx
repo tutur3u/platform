@@ -1861,9 +1861,7 @@ export default function TimeTrackerContent({
                               <div className="mb-3 flex items-center justify-between px-1 text-xs text-muted-foreground">
                                 <span>
                                   {filteredSidebarTasks.length} task
-                                  {filteredSidebarTasks.length !== 1
-                                    ? 's'
-                                    : ''}{' '}
+                                  {filteredSidebarTasks.length !== 1 ? 's' : ''}{' '}
                                   available
                                   {(tasksSidebarSearch ||
                                     tasksSidebarFilters.board !== 'all' ||
