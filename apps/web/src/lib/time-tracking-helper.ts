@@ -226,21 +226,21 @@ export const getTimeTrackingData = async (wsId: string, userId: string) => {
     ...task,
     // Add extended properties
     board_id: task.list?.board?.id,
-    board_name: task.list?.board?.name,
-    list_name: task.list?.name,
-    list_status: task.list?.status,
+    board_name: task.list?.board?.name || undefined,
+    list_name: task.list?.name || undefined,
+    list_status: task.list?.status || undefined,
     // Transform assignees to match expected format
     assignees: (task.assignees || [])
-      .filter(
-        (a): a is typeof a & { user: NonNullable<typeof a.user> } =>
-          a.user?.id !== undefined
-      ) // Filter out assignees without user IDs
-      .map((a) => ({
-        id: a.user.id, // We know user exists due to filter
-        display_name: a.user.display_name || undefined,
-        avatar_url: a.user.avatar_url || undefined,
-        email: a.user.user_private_details?.email || undefined,
-      })),
+      .filter((a) => a.user?.id !== undefined) // Filter out assignees without user IDs
+      .map((a) => {
+        const user = a.user!; // Safe to use ! here since we filtered above
+        return {
+          id: user.id,
+          display_name: user.display_name || undefined,
+          avatar_url: user.avatar_url || undefined,
+          email: user.user_private_details?.email || undefined,
+        };
+      }),
     // Add current user assignment flag
     is_assigned_to_current_user:
       task.assignees?.some((a) => a.user?.id === userId) || false,
