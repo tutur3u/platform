@@ -10,7 +10,6 @@
     "./google-calendar-incremental-sync": "./google-calendar-incremental-sync.ts"
   },
   "scripts": {
-    "lint": "eslint .",
     "trigger:dev": "bunx trigger.dev@latest dev",
     "trigger:deploy": "bunx trigger.dev@latest deploy"
   },
@@ -25,7 +24,6 @@
   },
   "devDependencies": {
     "@trigger.dev/build": "^4.0.1",
-    "@tuturuuu/eslint-config": "workspace:*",
     "@tuturuuu/typescript-config": "workspace:*"
   },
   "packageManager": "bun@1.2.20"
