@@ -1,11 +1,11 @@
 'use client';
 
-import type { NavLink as NavLinkType } from '@/components/navigation';
 import { ChevronRight } from '@tuturuuu/ui/icons';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { cn } from '@tuturuuu/utils/format';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import type { NavLink as NavLinkType } from '@/components/navigation';
 
 interface NavLinkProps {
   wsId: string;
@@ -67,15 +67,18 @@ export function NavLink({
     if (href) {
       const safePathname = pathname || '';
       const safeHref = href || '';
-      
+
       // Check if this is a nested route (has multiple path segments)
       const currentPathSegments = normalize(safePathname).length;
       const linkPathSegments = normalize(safeHref).length;
-      
+
       if (currentPathSegments > linkPathSegments) {
         // For nested routes, only mark as active if it's the most specific match
         // This prevents parent routes from being active when child routes are active
-        return safePathname.startsWith(safeHref) && currentPathSegments === linkPathSegments;
+        return (
+          safePathname.startsWith(safeHref) &&
+          currentPathSegments === linkPathSegments
+        );
       } else {
         // For same-level or parent routes, use standard startsWith logic
         return safePathname.startsWith(safeHref);
@@ -109,7 +112,7 @@ export function NavLink({
 
   const commonProps = {
     className: cn(
-      'flex cursor-pointer items-center justify-between rounded-md p-2 text-sm font-medium',
+      'flex cursor-pointer items-center justify-between rounded-md p-2 font-medium text-sm',
       isCollapsed && 'justify-center',
       isActive && 'bg-accent text-accent-foreground',
       link.isBack && 'mb-2 cursor-pointer',

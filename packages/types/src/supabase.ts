@@ -6487,6 +6487,82 @@ export type Database = {
           ws_id?: string;
         };
       };
+      time_tracking_settings: {
+        Insert: {
+          auto_start_break?: boolean | null;
+          break_duration_minutes?: null | number;
+          created_at?: null | string;
+          daily_goal_minutes?: null | number;
+          default_category_id?: null | string;
+          id?: string;
+          notifications_enabled?: boolean | null;
+          reminder_interval_minutes?: null | number;
+          time_format?: null | string;
+          updated_at?: null | string;
+          user_id: string;
+          week_starts_on?: null | string;
+          weekly_goal_minutes?: null | number;
+          work_duration_minutes?: null | number;
+          ws_id: string;
+        };
+        Relationships: [
+          {
+            columns: ['default_category_id'];
+            foreignKeyName: 'time_tracking_settings_default_category_id_fkey';
+            isOneToOne: false;
+            referencedColumns: ['id'];
+            referencedRelation: 'time_tracking_categories';
+          },
+          {
+            columns: ['ws_id'];
+            foreignKeyName: 'time_tracking_settings_ws_id_fkey';
+            isOneToOne: false;
+            referencedColumns: ['id'];
+            referencedRelation: 'workspace_link_counts';
+          },
+          {
+            columns: ['ws_id'];
+            foreignKeyName: 'time_tracking_settings_ws_id_fkey';
+            isOneToOne: false;
+            referencedColumns: ['id'];
+            referencedRelation: 'workspaces';
+          },
+        ];
+        Row: {
+          auto_start_break: boolean | null;
+          break_duration_minutes: null | number;
+          created_at: null | string;
+          daily_goal_minutes: null | number;
+          default_category_id: null | string;
+          id: string;
+          notifications_enabled: boolean | null;
+          reminder_interval_minutes: null | number;
+          time_format: null | string;
+          updated_at: null | string;
+          user_id: string;
+          week_starts_on: null | string;
+          weekly_goal_minutes: null | number;
+          work_duration_minutes: null | number;
+          ws_id: string;
+        };
+        Update: {
+          auto_start_break?: boolean | null;
+          break_duration_minutes?: null | number;
+          created_at?: null | string;
+          daily_goal_minutes?: null | number;
+          default_category_id?: null | string;
+          id?: string;
+          notifications_enabled?: boolean | null;
+          reminder_interval_minutes?: null | number;
+          time_format?: null | string;
+          updated_at?: null | string;
+          user_id?: string;
+          week_starts_on?: null | string;
+          weekly_goal_minutes?: null | number;
+          work_duration_minutes?: null | number;
+          ws_id?: string;
+        };
+      };
       timezones: {
         Insert: {
           abbr: string;

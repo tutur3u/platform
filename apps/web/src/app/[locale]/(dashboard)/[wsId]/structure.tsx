@@ -142,19 +142,17 @@ export function Structure({
     [matchesPath, pathname]
   );
 
-
-
   const [navState, setNavState] = useState<{
     currentLinks: (NavLink | null)[];
     history: (NavLink | null)[][];
     titleHistory: (string | null)[];
     direction: 'forward' | 'backward';
   }>(() => {
-      // Universal logic for deeply nested navigation - automatically detects multi-level structures
-      const deepNestedNavigation = findDeepestActiveNavigation(links, pathname);
-      if (deepNestedNavigation) {
-        return deepNestedNavigation;
-      }
+    // Universal logic for deeply nested navigation - automatically detects multi-level structures
+    const deepNestedNavigation = findDeepestActiveNavigation(links, pathname);
+    if (deepNestedNavigation) {
+      return deepNestedNavigation;
+    }
 
     // Standard logic for other routes
     for (const link of links) {
@@ -249,7 +247,10 @@ export function Structure({
           prevState.titleHistory[prevState.titleHistory.length - 1];
 
         // Check if we're still in the same submenu context
-        if (currentParentTitle && prevState.titleHistory.includes(currentParentTitle)) {
+        if (
+          currentParentTitle &&
+          prevState.titleHistory.includes(currentParentTitle)
+        ) {
           return prevState;
         }
 
@@ -286,7 +287,13 @@ export function Structure({
       // We are at the top level and no submenu is active, do nothing.
       return prevState;
     });
-  }, [pathname, links, hasActiveChild, matchesPath, findDeepestActiveNavigation]);
+  }, [
+    pathname,
+    links,
+    hasActiveChild,
+    matchesPath,
+    findDeepestActiveNavigation,
+  ]);
 
   const handleToggle = () => {
     const newCollapsed = !isCollapsed;
