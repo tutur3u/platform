@@ -8,7 +8,7 @@ import { Input } from "@tuturuuu/ui/input"
 import { Label } from "@tuturuuu/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@tuturuuu/ui/select"
 import { Textarea } from "@tuturuuu/ui/textarea"
-import { cn } from "@tuturuuu/utils/format"
+import { cn, isValidBlobUrl } from "@tuturuuu/utils/format"
 import { AlertTriangle, X, Upload, CheckCircle, AlertCircle } from "@tuturuuu/ui/icons"
 import { toast } from "@tuturuuu/ui/sonner"
 import { useTranslations } from "next-intl"
@@ -438,7 +438,7 @@ export function ReportProblemDialog({
                     <div key={index} className="relative group">
                       <div className="aspect-square rounded-lg border-2 border-gray-200 dark:border-gray-700 overflow-hidden bg-gray-50 dark:bg-gray-800">
                         <img
-                          src={preview || "/placeholder.svg"}
+                          src={isValidBlobUrl(preview) ? preview : "/placeholder.svg"}
                           alt={t("screenshot-alt", { number: index + 1 })}
                           className="w-full h-full object-cover"
                         />
