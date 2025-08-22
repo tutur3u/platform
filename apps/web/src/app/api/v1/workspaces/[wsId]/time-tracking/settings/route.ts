@@ -182,7 +182,7 @@ export async function PUT(
       updated_at: new Date().toISOString(),
     };
 
-    let result: { data: any; error: any };
+    let result: any; // Will hold the actual settings data, not the Supabase response
     if (existingSettings) {
       // Update existing settings
       const { data, error } = await supabase
