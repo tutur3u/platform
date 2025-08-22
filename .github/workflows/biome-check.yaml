@@ -51,7 +51,7 @@ jobs:
         run: |
           # Capture biome output and exit code
           set +e
-          biome_output=$(bun format-and-lint:ci --ignore-path .prettierignore 2>&1)
+          biome_output=$(bun format-and-lint:ci 2>&1)
           biome_exit_code=$?
           set -e
           
