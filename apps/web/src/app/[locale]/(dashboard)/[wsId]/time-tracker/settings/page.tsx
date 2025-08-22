@@ -112,7 +112,7 @@ export default function TimeTrackerSettingsPage() {
     <div className="container mx-auto space-y-6 p-6">
       <div className="mb-6 flex items-center gap-2">
         <Cog className="h-6 w-6 text-primary" />
-        <h1 className="font-bold text-2xl">Time Tracker Settings</h1>
+        <h1 className="text-2xl font-bold">Time Tracker Settings</h1>
       </div>
 
       {/* General Settings */}
@@ -211,7 +211,7 @@ export default function TimeTrackerSettingsPage() {
             <div className="flex items-center justify-between">
               <div className="space-y-0.5">
                 <Label>Auto-start timer on task selection</Label>
-                <p className="text-muted-foreground text-sm">
+                <p className="text-sm text-muted-foreground">
                   Automatically start the timer when selecting a task
                 </p>
               </div>
@@ -226,7 +226,7 @@ export default function TimeTrackerSettingsPage() {
             <div className="flex items-center justify-between">
               <div className="space-y-0.5">
                 <Label>Show break reminders</Label>
-                <p className="text-muted-foreground text-sm">
+                <p className="text-sm text-muted-foreground">
                   Get notified when it's time to take a break
                 </p>
               </div>
@@ -241,7 +241,7 @@ export default function TimeTrackerSettingsPage() {
             <div className="flex items-center justify-between">
               <div className="space-y-0.5">
                 <Label>Round time to nearest minute</Label>
-                <p className="text-muted-foreground text-sm">
+                <p className="text-sm text-muted-foreground">
                   Automatically round tracked time to the nearest minute
                 </p>
               </div>
@@ -271,7 +271,7 @@ export default function TimeTrackerSettingsPage() {
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
               <Label>Break time notifications</Label>
-              <p className="text-muted-foreground text-sm">
+              <p className="text-sm text-muted-foreground">
                 Get notified when it's time to take scheduled breaks
               </p>
             </div>
@@ -286,7 +286,7 @@ export default function TimeTrackerSettingsPage() {
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
               <Label>Daily summary emails</Label>
-              <p className="text-muted-foreground text-sm">
+              <p className="text-sm text-muted-foreground">
                 Receive daily summary of your time tracking
               </p>
             </div>
@@ -301,7 +301,7 @@ export default function TimeTrackerSettingsPage() {
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
               <Label>Weekly report notifications</Label>
-              <p className="text-muted-foreground text-sm">
+              <p className="text-sm text-muted-foreground">
                 Get notified when weekly reports are ready
               </p>
             </div>
@@ -316,7 +316,7 @@ export default function TimeTrackerSettingsPage() {
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
               <Label>Idle time warnings</Label>
-              <p className="text-muted-foreground text-sm">
+              <p className="text-sm text-muted-foreground">
                 Warn when timer has been idle for too long
               </p>
             </div>
@@ -345,7 +345,7 @@ export default function TimeTrackerSettingsPage() {
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
               <Label>Share time data with team</Label>
-              <p className="text-muted-foreground text-sm">
+              <p className="text-sm text-muted-foreground">
                 Allow team members to see your time tracking data
               </p>
             </div>
@@ -360,7 +360,7 @@ export default function TimeTrackerSettingsPage() {
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
               <Label>Auto-sync with calendar</Label>
-              <p className="text-muted-foreground text-sm">
+              <p className="text-sm text-muted-foreground">
                 Automatically sync tracked time with your calendar
               </p>
             </div>
@@ -375,7 +375,7 @@ export default function TimeTrackerSettingsPage() {
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
               <Label>Data retention (months)</Label>
-              <p className="text-muted-foreground text-sm">
+              <p className="text-sm text-muted-foreground">
                 How long to keep your time tracking data
               </p>
             </div>
@@ -414,7 +414,7 @@ export default function TimeTrackerSettingsPage() {
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
               <Label>Team time tracking</Label>
-              <p className="text-muted-foreground text-sm">
+              <p className="text-sm text-muted-foreground">
                 Enable time tracking for all team members
               </p>
             </div>
@@ -429,7 +429,7 @@ export default function TimeTrackerSettingsPage() {
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
               <Label>Project time limits</Label>
-              <p className="text-muted-foreground text-sm">
+              <p className="text-sm text-muted-foreground">
                 Set maximum time limits for projects
               </p>
             </div>
@@ -444,7 +444,7 @@ export default function TimeTrackerSettingsPage() {
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
               <Label>Approval workflow</Label>
-              <p className="text-muted-foreground text-sm">
+              <p className="text-sm text-muted-foreground">
                 Require approval for time entries over 8 hours
               </p>
             </div>
@@ -512,7 +512,7 @@ export default function TimeTrackerSettingsPage() {
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
               <Label>Compact mode</Label>
-              <p className="text-muted-foreground text-sm">
+              <p className="text-sm text-muted-foreground">
                 Use a more compact layout for the interface
               </p>
             </div>
