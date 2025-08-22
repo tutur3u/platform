@@ -14,7 +14,7 @@
     "trigger:deploy": "bunx trigger.dev@latest deploy"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.56.0",
+    "@supabase/supabase-js": "^2.55.0",
     "@trigger.dev/sdk": "^4.0.1",
     "@tuturuuu/supabase": "workspace:*",
     "@tuturuuu/types": "workspace:*",

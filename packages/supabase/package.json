@@ -11,8 +11,8 @@
     "test:watch": "vitest"
   },
   "dependencies": {
-    "@supabase/ssr": "^0.6.1",
-    "@supabase/supabase-js": "^2.56.0",
+    "@supabase/ssr": "^0.7.0",
+    "@supabase/supabase-js": "^2.55.0",
     "@tuturuuu/types": "workspace:*",
     "next": "^15.5.0",
     "react": "^19.1.1",
