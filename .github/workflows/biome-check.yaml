@@ -199,7 +199,7 @@ jobs:
               '### 📋 Next Steps\n' +
               (formatHasIssues === 'true' ?
                 '### 🛠️ \nRun the following command to fix issues:\n```bash\nbiome format --write\n```\nThen commit and push the changes.' : '') +
-                lintHasIssues === 'true' ?
+              (lintHasIssues === 'true' ?
                 '### 🛠️ \nRun the following command to fix issues:\n```bash\nbiome lint --write\n```\nThen commit and push the changes.' : '');
             
             body = `
