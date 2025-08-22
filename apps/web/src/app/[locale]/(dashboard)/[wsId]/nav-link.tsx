@@ -29,13 +29,15 @@ export function NavLink({
   const hasActiveChild = (navLinks: NavLinkType[]): boolean => {
     return navLinks.some((child) => {
       const aliasMatches = child.aliases?.some((alias) =>
-        child.matchExact ? pathname === alias : pathname.startsWith(alias)
+        child.matchExact
+          ? (pathname || '') === alias
+          : (pathname || '').startsWith(alias)
       );
       const hrefMatches =
         child.href &&
         (child.matchExact
-          ? pathname === child.href
-          : pathname.startsWith(child.href));
+          ? (pathname || '') === child.href
+          : (pathname || '').startsWith(child.href));
       const childMatches = Boolean(aliasMatches || hrefMatches);
 
       if (childMatches) return true;
@@ -49,26 +51,32 @@ export function NavLink({
   };
 
   // For time tracker routes, only mark as active if it's an exact match or if it's the most specific match
-  const isTimeTrackerRoute = /(^|\/)time-tracker(\/|$)/.test(pathname);
+  const isTimeTrackerRoute = /(^|\/)time-tracker(\/|$)/.test(pathname || '');
+
+  // Helper function to normalize paths for comparison
+  const normalize = (p: string): string[] => {
+    return p
+      .split('?')[0] // drop query string
+      .replace(/\/+$/, '') // trim trailing slash(es)
+      .split('/') // split into segments
+      .filter(Boolean); // remove empty segments
+  };
 
   let isActive = false;
 
   if (isTimeTrackerRoute && href && /(^|\/)time-tracker(\/|$)/.test(href)) {
     // For time tracker routes, use exact matching to avoid multiple active states
     if (link.matchExact) {
-      isActive = pathname === href;
+      isActive = (pathname || '') === href;
     } else {
       // For non-exact matches, only mark as active if it's the most specific match
-      const normalize = (p: string) =>
-        p
-          .split('?')[0]           // drop query string
-          .replace(/\/+$/, '')     // trim trailing slash(es)
-          .split('/')              // split into segments
-          .filter(Boolean);        // remove empty segments
-      const currentPathSegments = normalize(pathname).length;
-      const linkPathSegments = normalize(href).length;
+      const safePathname = pathname || '';
+      const safeHref = href || '';
+      const currentPathSegments = normalize(pathname || '').length;
+      const linkPathSegments = normalize(href || '').length;
       isActive =
-        pathname.startsWith(href) && currentPathSegments === linkPathSegments;
+        safePathname.startsWith(safeHref) &&
+        currentPathSegments === linkPathSegments;
     }
     // Optional: if you want the parent "Time Tracker" link to highlight when any child is active
     if (!isActive && link.children && link.children.length > 0) {
@@ -78,7 +86,9 @@ export function NavLink({
     // Standard logic for non-time-tracker routes
     isActive = Boolean(
       (href &&
-        (link.matchExact ? pathname === href : pathname.startsWith(href))) ||
+        (link.matchExact
+          ? (pathname || '') === href
+          : (pathname || '').startsWith(href))) ||
         (link.children && hasActiveChild(link.children))
     );
   }
@@ -114,8 +124,8 @@ export function NavLink({
       if (link.tempDisabled) return;
       if (onLinkClick) {
         onLinkClick();
-      } else if (hasChildren) {
-        onSubMenuClick(children!, title);
+      } else if (hasChildren && children) {
+        onSubMenuClick(children, title);
       } else if (href) {
         onClick();
       }

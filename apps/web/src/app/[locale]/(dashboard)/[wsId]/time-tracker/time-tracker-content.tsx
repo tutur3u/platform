@@ -335,7 +335,21 @@ export default function TimeTrackerContent({
       const response = await apiCall(
         `/api/v1/workspaces/${wsId}/tasks?limit=100`
       );
-      let prioritizedTasks = [];
+
+      // Type guard to ensure response has tasks
+      if (
+        !response ||
+        typeof response !== 'object' ||
+        !('tasks' in response) ||
+        !Array.isArray(response.tasks)
+      ) {
+        console.warn('Invalid response format for tasks');
+        setAvailableTasks([]);
+        setNextTaskPreview(null);
+        return;
+      }
+
+      let prioritizedTasks: ExtendedWorkspaceTask[] = [];
 
       // 1. First priority: Urgent tasks (priority 1) assigned to current user
       const myUrgentTasks = response.tasks.filter(
