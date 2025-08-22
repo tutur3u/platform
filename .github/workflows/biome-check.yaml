@@ -198,9 +198,9 @@ jobs:
               '### 🎉 All Issues Resolved!\n\nYour code is now **100% clean**! Great job! 🏆' :
               '### 📋 Next Steps\n' +
               (formatHasIssues === 'true' ?
-                '\n### Run the following command to fix format issues:\n```bash\nbiome format --write\n```' : '') +
+                '\nRun the following command to fix format issues:\n```bash\nbiome format --write\n```' : '') +
               (lintHasIssues === 'true' ?
-                '\n### Run the following command to fix lint issues:\n```bash\nbiome lint --write\n```' : '');
+                '\nRun the following command to fix lint issues:\n```bash\nbiome lint --write\n```' : '');
             
             body = `
             ## ${issueIcon} Biome Check Report
