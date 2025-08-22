@@ -69,7 +69,7 @@ export async function GET(
           id,
           display_name,
           avatar_url,
-          email
+          user_private_details(email)
         )
       `)
       .eq('ws_id', wsId);
@@ -177,7 +177,7 @@ export async function GET(
         id: member.user_id,
         name: member.users.display_name,
         avatar: member.users.avatar_url,
-        email: member.users.email,
+        email: member.users.user_private_details?.email,
         role: member.role,
         time_stats: {
           total_time_seconds: timeData.total_time_seconds,
