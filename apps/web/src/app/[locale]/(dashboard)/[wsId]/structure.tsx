@@ -99,7 +99,18 @@ export function Structure({
           if (!link) continue;
 
           // Check if this link or any of its children are active
-          if (link.href && matchesPath(pathname, link.href)) {
+          if (link.href && matchesPath(currentPath, link.href)) {
+            // Special handling for dashboard - it should not create a submenu state
+            if (link.matchExact && currentPath === link.href) {
+              // Dashboard is active and we're exactly on the dashboard page
+              return {
+                currentLinks: [link],
+                history: [],
+                titleHistory: [],
+                direction: 'forward' as const,
+              };
+            }
+            
             if (link.children && link.children.length > 0) {
               // This link is active and has children, go deeper
               const deeper = findDeepest(link.children, depth + 1);
@@ -139,7 +150,7 @@ export function Structure({
 
       return findDeepest(navLinks);
     },
-    [matchesPath, pathname]
+    [matchesPath]
   );
 
   const [navState, setNavState] = useState<{
@@ -191,6 +202,17 @@ export function Structure({
       const deepNestedNavigation = findDeepestActiveNavigation(links, pathname);
       if (deepNestedNavigation) {
         return deepNestedNavigation;
+      }
+
+      // Special handling for dashboard - if we're on the dashboard page, show top-level navigation
+      const dashboardLink = links.find(link => link?.matchExact && link.href === pathname);
+      if (dashboardLink) {
+        return {
+          currentLinks: [dashboardLink],
+          history: [],
+          titleHistory: [],
+          direction: 'forward' as const,
+        };
       }
 
       // Standard navigation logic for non-time-tracker routes
