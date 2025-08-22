@@ -28,7 +28,6 @@
     "zod": "^4.0.17"
   },
   "devDependencies": {
-    "@tuturuuu/eslint-config": "workspace:*",
     "@tuturuuu/typescript-config": "workspace:*",
     "@types/negotiator": "^0.6.4",
     "@types/node": "^24.3.0",

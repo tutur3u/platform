@@ -16,7 +16,6 @@
     "dodopayments-checkout": "^1.0.1"
   },
   "devDependencies": {
-    "@tuturuuu/eslint-config": "workspace:*",
     "@tuturuuu/typescript-config": "workspace:*"
   },
   "packageManager": "bun@1.2.20"

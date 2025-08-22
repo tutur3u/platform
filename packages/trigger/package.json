@@ -24,7 +24,6 @@
   },
   "devDependencies": {
     "@trigger.dev/build": "^4.0.1",
-    "@tuturuuu/eslint-config": "workspace:*",
     "@tuturuuu/typescript-config": "workspace:*"
   },
   "packageManager": "bun@1.2.20"
