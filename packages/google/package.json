@@ -5,9 +5,6 @@
   "publishConfig": {
     "access": "public"
   },
-  "scripts": {
-    "lint": "eslint ."
-  },
   "exports": {
     ".": "./src/core/index.ts"
   },
@@ -16,7 +13,6 @@
     "google-auth-library": "^10.2.1"
   },
   "devDependencies": {
-    "@tuturuuu/eslint-config": "workspace:*",
     "@tuturuuu/types": "workspace:*",
     "@tuturuuu/typescript-config": "workspace:*",
     "@types/node": "^24.3.0",
