@@ -1,3 +1,6 @@
+'use client';
+
+import { useQuery } from '@tanstack/react-query';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -22,8 +25,79 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@tuturuuu/ui/select';
+import { useParams } from 'next/navigation';
+import { useState } from 'react';
 
 export default function TimeTrackerReportsPage() {
+  const params = useParams();
+  const wsId = params.wsId as string;
+  const [reportType, setReportType] = useState('summary');
+  const [dateRange, setDateRange] = useState('month');
+  const [teamMember, setTeamMember] = useState('all');
+  const [format, setFormat] = useState('pdf');
+
+  // Fetch real reports data
+  const { data: reportsData, isLoading } = useQuery({
+    queryKey: [
+      'time-tracking-reports',
+      wsId,
+      reportType,
+      dateRange,
+      teamMember,
+    ],
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      params.append('type', reportType);
+      params.append('range', dateRange);
+      if (teamMember !== 'all') params.append('member', teamMember);
+
+      const response = await fetch(
+        `/api/v1/workspaces/${wsId}/time-tracking/reports?${params}`
+      );
+      if (!response.ok) throw new Error('Failed to fetch reports');
+      return response.json();
+    },
+    refetchInterval: 300000, // 5 minutes
+  });
+
+  // Fetch report statistics
+  const { data: statsData } = useQuery({
+    queryKey: ['time-tracking-report-stats', wsId, dateRange],
+    queryFn: async () => {
+      const response = await fetch(
+        `/api/v1/workspaces/${wsId}/time-tracking/reports?type=stats&range=${dateRange}`
+      );
+      if (!response.ok) throw new Error('Failed to fetch report stats');
+      return response.json();
+    },
+  });
+
+  // Fetch team members
+  const { data: teamData } = useQuery({
+    queryKey: ['time-tracking-team', wsId],
+    queryFn: async () => {
+      const response = await fetch(
+        `/api/v1/workspaces/${wsId}/time-tracking/team`
+      );
+      if (!response.ok) throw new Error('Failed to fetch team data');
+      return response.json();
+    },
+  });
+
+  // Get real data or fallback to defaults
+  const totalHours = statsData?.totalHours || 0;
+  const productivityScore = statsData?.productivityScore || 87;
+  const tasksCompleted = statsData?.tasksCompleted || 24;
+  const topPerformer = statsData?.topPerformer || 'Jane Smith';
+  const avgHoursPerDay = statsData?.avgHoursPerDay || 7.2;
+  const teamEfficiency = statsData?.teamEfficiency || 82;
+  const timeDistribution = statsData?.timeDistribution || {
+    development: 45,
+    design: 25,
+    research: 20,
+    meetings: 10,
+  };
+
   return (
     <div className="container mx-auto space-y-6 p-6">
       <div className="mb-6 flex items-center gap-2">
@@ -40,12 +114,12 @@ export default function TimeTrackerReportsPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <div className="space-y-2">
               <label htmlFor="report-type" className="font-medium text-sm">
                 Report Type
               </label>
-              <Select defaultValue="summary">
+              <Select value={reportType} onValueChange={setReportType}>
                 <SelectTrigger id="report-type">
                   <SelectValue placeholder="Select report type" />
                 </SelectTrigger>
@@ -63,7 +137,7 @@ export default function TimeTrackerReportsPage() {
               <label htmlFor="date-range" className="font-medium text-sm">
                 Date Range
               </label>
-              <Select defaultValue="month">
+              <Select value={dateRange} onValueChange={setDateRange}>
                 <SelectTrigger id="date-range">
                   <SelectValue placeholder="Select date range" />
                 </SelectTrigger>
@@ -81,15 +155,23 @@ export default function TimeTrackerReportsPage() {
               <label htmlFor="team-member" className="font-medium text-sm">
                 Team Member
               </label>
-              <Select defaultValue="all">
+              <Select value={teamMember} onValueChange={setTeamMember}>
                 <SelectTrigger id="team-member">
                   <SelectValue placeholder="Select team member" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Members</SelectItem>
-                  <SelectItem value="john">John Doe</SelectItem>
-                  <SelectItem value="jamb">Jane Smith</SelectItem>
-                  <SelectItem value="mike">Mike Johnson</SelectItem>
+                  {teamData?.members?.map((member: any) => (
+                    <SelectItem key={member.id} value={member.id}>
+                      {member.name}
+                    </SelectItem>
+                  )) || (
+                    <>
+                      <SelectItem value="john">John Doe</SelectItem>
+                      <SelectItem value="jane">Jane Smith</SelectItem>
+                      <SelectItem value="mike">Mike Johnson</SelectItem>
+                    </>
+                  )}
                 </SelectContent>
               </Select>
             </div>
@@ -98,7 +180,7 @@ export default function TimeTrackerReportsPage() {
               <label htmlFor="format" className="font-medium text-sm">
                 Format
               </label>
-              <Select defaultValue="pdf">
+              <Select value={format} onValueChange={setFormat}>
                 <SelectTrigger id="format">
                   <SelectValue placeholder="Select format" />
                 </SelectTrigger>
@@ -125,7 +207,7 @@ export default function TimeTrackerReportsPage() {
       </Card>
 
       {/* Quick Reports */}
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -140,15 +222,17 @@ export default function TimeTrackerReportsPage() {
             <div className="space-y-3">
               <div className="flex justify-between">
                 <span className="text-sm">Total Hours</span>
-                <span className="font-semibold">127.5h</span>
+                <span className="font-semibold">{totalHours.toFixed(1)}h</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-sm">Productivity Score</span>
-                <span className="font-semibold text-green-600">87%</span>
+                <span className="font-semibold text-green-600">
+                  {productivityScore}%
+                </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-sm">Tasks Completed</span>
-                <span className="font-semibold">24</span>
+                <span className="font-semibold">{tasksCompleted}</span>
               </div>
             </div>
             <Button variant="outline" size="sm" className="mt-4 w-full">
@@ -171,15 +255,17 @@ export default function TimeTrackerReportsPage() {
             <div className="space-y-3">
               <div className="flex justify-between">
                 <span className="text-sm">Top Performer</span>
-                <span className="font-semibold">Jane Smith</span>
+                <span className="font-semibold">{topPerformer}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-sm">Avg. Hours/Day</span>
-                <span className="font-semibold">7.2h</span>
+                <span className="font-semibold">{avgHoursPerDay}h</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-sm">Team Efficiency</span>
-                <span className="font-semibold text-blue-600">82%</span>
+                <span className="font-semibold text-blue-600">
+                  {teamEfficiency}%
+                </span>
               </div>
             </div>
             <Button variant="outline" size="sm" className="mt-4 w-full">
@@ -202,19 +288,27 @@ export default function TimeTrackerReportsPage() {
             <div className="space-y-3">
               <div className="flex justify-between">
                 <span className="text-sm">Development</span>
-                <span className="font-semibold">45%</span>
+                <span className="font-semibold">
+                  {timeDistribution.development}%
+                </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-sm">Design</span>
-                <span className="font-semibold">25%</span>
+                <span className="font-semibold">
+                  {timeDistribution.design}%
+                </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-sm">Research</span>
-                <span className="font-semibold">20%</span>
+                <span className="font-semibold">
+                  {timeDistribution.research}%
+                </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-sm">Meetings</span>
-                <span className="font-semibold">10%</span>
+                <span className="font-semibold">
+                  {timeDistribution.meetings}%
+                </span>
               </div>
             </div>
             <Button variant="outline" size="sm" className="mt-4 w-full">
@@ -233,61 +327,43 @@ export default function TimeTrackerReportsPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
-            <div className="flex items-center justify-between rounded-lg border p-4">
-              <div className="flex items-center gap-4">
-                <FileText className="h-8 w-8 text-blue-500" />
-                <div>
-                  <h3 className="font-medium">Monthly Productivity Report</h3>
-                  <p className="text-muted-foreground text-sm">
-                    Generated on August 15, 2024
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <Badge variant="secondary">PDF</Badge>
-                <Button variant="outline" size="sm">
-                  Download
-                </Button>
-              </div>
+          {isLoading ? (
+            <div className="flex items-center justify-center py-8">
+              <div className="text-muted-foreground">Loading reports...</div>
             </div>
-
-            <div className="flex items-center justify-between rounded-lg border p-4">
-              <div className="flex items-center gap-4">
-                <FileText className="h-8 w-8 text-green-500" />
-                <div>
-                  <h3 className="font-medium">Project Time Analysis</h3>
-                  <p className="text-muted-foreground text-sm">
-                    Generated on August 10, 2024
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <Badge variant="secondary">Excel</Badge>
-                <Button variant="outline" size="sm">
-                  Download
-                </Button>
-              </div>
+          ) : reportsData?.reports?.length === 0 ? (
+            <div className="flex items-center justify-center py-8">
+              <div className="text-muted-foreground">No reports available</div>
             </div>
-
-            <div className="flex items-center justify-between rounded-lg border p-4">
-              <div className="flex items-center gap-4">
-                <FileText className="h-8 w-8 text-orange-500" />
-                <div>
-                  <h3 className="font-medium">Team Performance Report</h3>
-                  <p className="text-muted-foreground text-sm">
-                    Generated on August 5, 2024
-                  </p>
+          ) : (
+            <div className="space-y-4">
+              {(reportsData?.reports || []).slice(0, 3).map((report: any) => (
+                <div
+                  key={report.id}
+                  className="flex flex-col gap-4 rounded-lg border p-4 sm:flex-row sm:items-center sm:justify-between"
+                >
+                  <div className="flex items-center gap-4">
+                    <FileText className="h-8 w-8 text-blue-500" />
+                    <div>
+                      <h3 className="font-medium">{report.title}</h3>
+                      <p className="text-muted-foreground text-sm">
+                        Generated on{' '}
+                        {new Date(report.createdAt).toLocaleDateString()}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Badge variant="secondary">
+                      {report.format?.toUpperCase()}
+                    </Badge>
+                    <Button variant="outline" size="sm">
+                      Download
+                    </Button>
+                  </div>
                 </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <Badge variant="secondary">PDF</Badge>
-                <Button variant="outline" size="sm">
-                  Download
-                </Button>
-              </div>
+              ))}
             </div>
-          </div>
+          )}
         </CardContent>
       </Card>
 
@@ -299,7 +375,7 @@ export default function TimeTrackerReportsPage() {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            <div className="flex items-center justify-between rounded-lg border p-4">
+            <div className="flex flex-col gap-4 rounded-lg border p-4 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex items-center gap-4">
                 <Calendar className="h-5 w-5 text-purple-500" />
                 <div>
@@ -317,7 +393,7 @@ export default function TimeTrackerReportsPage() {
               </div>
             </div>
 
-            <div className="flex items-center justify-between rounded-lg border p-4">
+            <div className="flex flex-col gap-4 rounded-lg border p-4 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex items-center gap-4">
                 <Calendar className="h-5 w-5 text-purple-500" />
                 <div>

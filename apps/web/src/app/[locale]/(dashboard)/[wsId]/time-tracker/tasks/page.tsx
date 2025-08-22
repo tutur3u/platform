@@ -1,3 +1,6 @@
+'use client';
+
+import { useQuery } from '@tanstack/react-query';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -9,8 +12,63 @@ import {
 } from '@tuturuuu/ui/card';
 import { CircleCheck, Clock, Filter, Plus, Search } from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
+import { useParams } from 'next/navigation';
+import { useState } from 'react';
+
+// Helper function to format duration
+const formatDuration = (seconds: number): string => {
+  const hours = Math.floor(seconds / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
+  if (hours > 0) {
+    return `${hours}h ${minutes}m`;
+  }
+  return `${minutes}m`;
+};
 
 export default function TimeTrackerTasksPage() {
+  const params = useParams();
+  const wsId = params.wsId as string;
+  const [searchQuery, setSearchQuery] = useState('');
+
+  // Fetch real tasks data
+  const { data: tasksData, isLoading } = useQuery({
+    queryKey: ['time-tracking-tasks', wsId],
+    queryFn: async () => {
+      const response = await fetch(
+        `/api/v1/workspaces/${wsId}/time-tracking/tasks`
+      );
+      if (!response.ok) throw new Error('Failed to fetch tasks');
+      return response.json();
+    },
+    refetchInterval: 300000, // 5 minutes
+  });
+
+  // Fetch task statistics
+  const { data: statsData } = useQuery({
+    queryKey: ['time-tracking-task-stats', wsId],
+    queryFn: async () => {
+      const response = await fetch(
+        `/api/v1/workspaces/${wsId}/time-tracking/tasks?type=stats`
+      );
+      if (!response.ok) throw new Error('Failed to fetch task stats');
+      return response.json();
+    },
+  });
+
+  // Filter tasks based on search
+  const filteredTasks =
+    tasksData?.tasks?.filter(
+      (task: any) =>
+        task.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        task.description?.toLowerCase().includes(searchQuery.toLowerCase())
+    ) || [];
+
+  // Calculate real statistics
+  const totalTasks = statsData?.totalTasks || 0;
+  const inProgressTasks = statsData?.inProgressTasks || 0;
+  const completedTasks = statsData?.completedTasks || 0;
+  const overdueTasks = statsData?.overdueTasks || 0;
+
   return (
     <div className="container mx-auto space-y-6 p-6">
       <div className="mb-6 flex items-center gap-2">
@@ -22,7 +80,12 @@ export default function TimeTrackerTasksPage() {
       <div className="flex flex-col gap-4 sm:flex-row">
         <div className="relative flex-1">
           <Search className="-translate-y-1/2 absolute top-1/2 left-3 h-4 w-4 transform text-muted-foreground" />
-          <Input placeholder="Search tasks..." className="pl-10" />
+          <Input
+            placeholder="Search tasks..."
+            className="pl-10"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
         </div>
         <Button variant="outline" className="flex items-center gap-2">
           <Filter className="h-4 w-4" />
@@ -42,7 +105,7 @@ export default function TimeTrackerTasksPage() {
             <CircleCheck className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="font-bold text-2xl">24</div>
+            <div className="font-bold text-2xl">{totalTasks}</div>
             <p className="text-muted-foreground text-xs">+3 new this week</p>
           </CardContent>
         </Card>
@@ -53,7 +116,7 @@ export default function TimeTrackerTasksPage() {
             <Clock className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="font-bold text-2xl">8</div>
+            <div className="font-bold text-2xl">{inProgressTasks}</div>
             <p className="text-muted-foreground text-xs">Currently active</p>
           </CardContent>
         </Card>
@@ -64,7 +127,7 @@ export default function TimeTrackerTasksPage() {
             <CircleCheck className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="font-bold text-2xl">12</div>
+            <div className="font-bold text-2xl">{completedTasks}</div>
             <p className="text-muted-foreground text-xs">This month</p>
           </CardContent>
         </Card>
@@ -75,7 +138,9 @@ export default function TimeTrackerTasksPage() {
             <Clock className="h-4 w-4 text-red-500" />
           </CardHeader>
           <CardContent>
-            <div className="font-bold text-2xl text-red-600">4</div>
+            <div className="font-bold text-2xl text-red-600">
+              {overdueTasks}
+            </div>
             <p className="text-muted-foreground text-xs">Needs attention</p>
           </CardContent>
         </Card>
@@ -90,84 +155,61 @@ export default function TimeTrackerTasksPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
-            {/* Sample Tasks */}
-            <div className="flex items-center justify-between rounded-lg border p-4 transition-colors hover:bg-accent/50">
-              <div className="flex items-center gap-4">
-                <div className="h-3 w-3 rounded-full bg-blue-500"></div>
-                <div>
-                  <h3 className="font-medium">Design System Update</h3>
-                  <p className="text-muted-foreground text-sm">
-                    Update component library with new design tokens
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-center gap-4">
-                <Badge variant="secondary">Design</Badge>
-                <div className="text-muted-foreground text-sm">2h 30m</div>
-                <Button variant="outline" size="sm">
-                  Start Timer
-                </Button>
+          {isLoading ? (
+            <div className="flex items-center justify-center py-8">
+              <div className="text-muted-foreground">Loading tasks...</div>
+            </div>
+          ) : filteredTasks.length === 0 ? (
+            <div className="flex items-center justify-center py-8">
+              <div className="text-muted-foreground">
+                {searchQuery
+                  ? 'No tasks match your search'
+                  : 'No tasks available'}
               </div>
             </div>
-
-            <div className="flex items-center justify-between rounded-lg border p-4 transition-colors hover:bg-accent/50">
-              <div className="flex items-center gap-4">
-                <div className="h-3 w-3 rounded-full bg-green-500"></div>
-                <div>
-                  <h3 className="font-medium">API Documentation</h3>
-                  <p className="text-muted-foreground text-sm">
-                    Write comprehensive API documentation
-                  </p>
+          ) : (
+            <div className="space-y-4">
+              {filteredTasks.slice(0, 10).map((task: any) => (
+                <div
+                  key={task.id}
+                  className="flex items-center justify-between rounded-lg border p-4 transition-colors hover:bg-accent/50"
+                >
+                  <div className="flex items-center gap-4">
+                    <div
+                      className={`h-3 w-3 rounded-full ${
+                        task.priority === 'high'
+                          ? 'bg-red-500'
+                          : task.priority === 'medium'
+                            ? 'bg-yellow-500'
+                            : task.priority === 'low'
+                              ? 'bg-green-500'
+                              : 'bg-blue-500'
+                      }`}
+                    ></div>
+                    <div>
+                      <h3 className="font-medium">{task.name}</h3>
+                      <p className="text-muted-foreground text-sm">
+                        {task.description || 'No description'}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <Badge variant="secondary">
+                      {task.category?.name || 'General'}
+                    </Badge>
+                    <div className="text-muted-foreground text-sm">
+                      {task.estimatedTime
+                        ? formatDuration(task.estimatedTime)
+                        : 'No estimate'}
+                    </div>
+                    <Button variant="outline" size="sm">
+                      Start Timer
+                    </Button>
+                  </div>
                 </div>
-              </div>
-              <div className="flex items-center gap-4">
-                <Badge variant="secondary">Development</Badge>
-                <div className="text-muted-foreground text-sm">4h 15m</div>
-                <Button variant="outline" size="sm">
-                  Start Timer
-                </Button>
-              </div>
+              ))}
             </div>
-
-            <div className="flex items-center justify-between rounded-lg border p-4 transition-colors hover:bg-accent/50">
-              <div className="flex items-center gap-4">
-                <div className="h-3 w-3 rounded-full bg-yellow-500"></div>
-                <div>
-                  <h3 className="font-medium">User Research</h3>
-                  <p className="text-muted-foreground text-sm">
-                    Conduct user interviews for new feature
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-center gap-4">
-                <Badge variant="secondary">Research</Badge>
-                <div className="text-muted-foreground text-sm">1h 45m</div>
-                <Button variant="outline" size="sm">
-                  Start Timer
-                </Button>
-              </div>
-            </div>
-
-            <div className="flex items-center justify-between rounded-lg border p-4 transition-colors hover:bg-accent/50">
-              <div className="flex items-center gap-4">
-                <div className="h-3 w-3 rounded-full bg-red-500"></div>
-                <div>
-                  <h3 className="font-medium">Bug Fixes</h3>
-                  <p className="text-muted-foreground text-sm">
-                    Fix critical bugs in production
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-center gap-4">
-                <Badge variant="destructive">Urgent</Badge>
-                <div className="text-muted-foreground text-sm">3h 20m</div>
-                <Button variant="outline" size="sm">
-                  Start Timer
-                </Button>
-              </div>
-            </div>
-          </div>
+          )}
         </CardContent>
       </Card>
 

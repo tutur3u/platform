@@ -1,3 +1,6 @@
+'use client';
+
+import { useQuery } from '@tanstack/react-query';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -35,8 +38,50 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@tuturuuu/ui/select';
+import { useParams } from 'next/navigation';
+import { useState } from 'react';
 
 export default function TimeTrackerGoalsPage() {
+  const params = useParams();
+  const wsId = params.wsId as string;
+  const [searchQuery, setSearchQuery] = useState('');
+
+  // Fetch real goals data
+  const { data: goalsData, isLoading } = useQuery({
+    queryKey: ['time-tracking-goals', wsId],
+    queryFn: async () => {
+      const response = await fetch(
+        `/api/v1/workspaces/${wsId}/time-tracking/goals`
+      );
+      if (!response.ok) throw new Error('Failed to fetch goals');
+      return response.json();
+    },
+    refetchInterval: 300000, // 5 minutes
+  });
+
+  // Filter goals based on search
+  const filteredGoals =
+    goalsData?.goals?.filter(
+      (goal: any) =>
+        goal.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        goal.description?.toLowerCase().includes(searchQuery.toLowerCase())
+    ) || [];
+
+  // Calculate real statistics
+  const totalGoals = goalsData?.totalGoals || 0;
+  const inProgressGoals = goalsData?.inProgressGoals || 0;
+  const completedGoals = goalsData?.completedGoals || 0;
+  const successRate =
+    totalGoals > 0 ? Math.round((completedGoals / totalGoals) * 100) : 0;
+
+  // Separate active and completed goals
+  const activeGoals = filteredGoals.filter(
+    (goal: any) => goal.status !== 'completed'
+  );
+  const completedGoalsList = filteredGoals.filter(
+    (goal: any) => goal.status === 'completed'
+  );
+
   return (
     <div className="container mx-auto space-y-6 p-6">
       <div className="mb-6 flex items-center gap-2">
@@ -48,7 +93,12 @@ export default function TimeTrackerGoalsPage() {
       <div className="flex flex-col gap-4 sm:flex-row">
         <div className="relative flex-1">
           <Search className="-translate-y-1/2 absolute top-1/2 left-3 h-4 w-4 transform text-muted-foreground" />
-          <Input placeholder="Search goals..." className="pl-10" />
+          <Input
+            placeholder="Search goals..."
+            className="pl-10"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
         </div>
         <Button variant="outline" className="flex items-center gap-2">
           <Filter className="h-4 w-4" />
@@ -139,7 +189,7 @@ export default function TimeTrackerGoalsPage() {
             <Target className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="font-bold text-2xl">8</div>
+            <div className="font-bold text-2xl">{totalGoals}</div>
             <p className="text-muted-foreground text-xs">+1 new this week</p>
           </CardContent>
         </Card>
@@ -150,7 +200,7 @@ export default function TimeTrackerGoalsPage() {
             <Clock className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="font-bold text-2xl">5</div>
+            <div className="font-bold text-2xl">{inProgressGoals}</div>
             <p className="text-muted-foreground text-xs">Currently active</p>
           </CardContent>
         </Card>
@@ -161,7 +211,7 @@ export default function TimeTrackerGoalsPage() {
             <Target className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="font-bold text-2xl">2</div>
+            <div className="font-bold text-2xl">{completedGoals}</div>
             <p className="text-muted-foreground text-xs">This month</p>
           </CardContent>
         </Card>
@@ -172,7 +222,7 @@ export default function TimeTrackerGoalsPage() {
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="font-bold text-2xl">87%</div>
+            <div className="font-bold text-2xl">{successRate}%</div>
             <p className="text-muted-foreground text-xs">+5% from last month</p>
           </CardContent>
         </Card>
@@ -187,194 +237,116 @@ export default function TimeTrackerGoalsPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="space-y-6">
-            {/* Sample Active Goals */}
-            <div className="rounded-lg border p-4">
-              <div className="mb-4 flex items-start justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="h-3 w-3 rounded-full bg-blue-500"></div>
-                  <div>
-                    <h3 className="font-medium text-lg">
-                      Complete Mobile App Development
-                    </h3>
-                    <p className="text-muted-foreground text-sm">
-                      Finish the React Native mobile application
-                    </p>
-                  </div>
-                </div>
-                <Badge variant="secondary">High Priority</Badge>
-              </div>
-
-              <div className="mb-4 grid grid-cols-1 gap-4 md:grid-cols-3">
-                <div className="rounded-lg bg-blue-50 p-3 text-center">
-                  <div className="text-muted-foreground text-sm">
-                    Target Hours
-                  </div>
-                  <div className="font-bold text-blue-600 text-xl">200h</div>
-                </div>
-                <div className="rounded-lg bg-green-50 p-3 text-center">
-                  <div className="text-muted-foreground text-sm">Completed</div>
-                  <div className="font-bold text-green-600 text-xl">156h</div>
-                </div>
-                <div className="rounded-lg bg-orange-50 p-3 text-center">
-                  <div className="text-muted-foreground text-sm">Remaining</div>
-                  <div className="font-bold text-orange-600 text-xl">44h</div>
-                </div>
-              </div>
-
-              <div className="mb-4 space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span>Progress</span>
-                  <span>78%</span>
-                </div>
-                <Progress value={78} className="h-2" />
-              </div>
-
-              <div className="flex items-center justify-between text-muted-foreground text-sm">
-                <span>Deadline: December 31, 2024</span>
-                <span>Category: Development</span>
-              </div>
-
-              <div className="mt-4 flex gap-2">
-                <Button variant="outline" size="sm">
-                  <Edit className="mr-2 h-4 w-4" />
-                  Edit
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="text-red-600 hover:text-red-700"
-                >
-                  <Trash2 className="mr-2 h-4 w-4" />
-                  Delete
-                </Button>
+          {isLoading ? (
+            <div className="flex items-center justify-center py-8">
+              <div className="text-muted-foreground">Loading goals...</div>
+            </div>
+          ) : activeGoals.length === 0 ? (
+            <div className="flex items-center justify-center py-8">
+              <div className="text-muted-foreground">
+                No active goals available
               </div>
             </div>
+          ) : (
+            <div className="space-y-6">
+              {activeGoals.map((goal: any) => {
+                const progress =
+                  goal.targetHours > 0
+                    ? Math.round((goal.completedHours / goal.targetHours) * 100)
+                    : 0;
+                const remainingHours = goal.targetHours - goal.completedHours;
 
-            <div className="rounded-lg border p-4">
-              <div className="mb-4 flex items-start justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="h-3 w-3 rounded-full bg-green-500"></div>
-                  <div>
-                    <h3 className="font-medium text-lg">
-                      Learn Advanced React Patterns
-                    </h3>
-                    <p className="text-muted-foreground text-sm">
-                      Master advanced React concepts and patterns
-                    </p>
+                return (
+                  <div key={goal.id} className="rounded-lg border p-4">
+                    <div className="mb-4 flex items-start justify-between">
+                      <div className="flex items-center gap-3">
+                        <div
+                          className={`h-3 w-3 rounded-full ${
+                            goal.priority === 'high'
+                              ? 'bg-red-500'
+                              : goal.priority === 'medium'
+                                ? 'bg-yellow-500'
+                                : goal.priority === 'low'
+                                  ? 'bg-green-500'
+                                  : 'bg-blue-500'
+                          }`}
+                        ></div>
+                        <div>
+                          <h3 className="font-medium text-lg">{goal.title}</h3>
+                          <p className="text-muted-foreground text-sm">
+                            {goal.description || 'No description'}
+                          </p>
+                        </div>
+                      </div>
+                      <Badge variant="secondary">
+                        {goal.priority} Priority
+                      </Badge>
+                    </div>
+
+                    <div className="mb-4 grid grid-cols-1 gap-4 md:grid-cols-3">
+                      <div className="rounded-lg bg-blue-50 p-3 text-center">
+                        <div className="text-muted-foreground text-sm">
+                          Target Hours
+                        </div>
+                        <div className="font-bold text-blue-600 text-xl">
+                          {goal.targetHours}h
+                        </div>
+                      </div>
+                      <div className="rounded-lg bg-green-50 p-3 text-center">
+                        <div className="text-muted-foreground text-sm">
+                          Completed
+                        </div>
+                        <div className="font-bold text-green-600 text-xl">
+                          {goal.completedHours}h
+                        </div>
+                      </div>
+                      <div className="rounded-lg bg-orange-50 p-3 text-center">
+                        <div className="text-muted-foreground text-sm">
+                          Remaining
+                        </div>
+                        <div className="font-bold text-orange-600 text-xl">
+                          {remainingHours}h
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="mb-4 space-y-2">
+                      <div className="flex justify-between text-sm">
+                        <span>Progress</span>
+                        <span>{progress}%</span>
+                      </div>
+                      <Progress value={progress} className="h-2" />
+                    </div>
+
+                    <div className="flex items-center justify-between text-muted-foreground text-sm">
+                      <span>
+                        Deadline:{' '}
+                        {goal.deadline
+                          ? new Date(goal.deadline).toLocaleDateString()
+                          : 'No deadline'}
+                      </span>
+                      <span>Category: {goal.category?.name || 'General'}</span>
+                    </div>
+
+                    <div className="mt-4 flex gap-2">
+                      <Button variant="outline" size="sm">
+                        <Edit className="mr-2 h-4 w-4" />
+                        Edit
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="text-red-600 hover:text-red-700"
+                      >
+                        <Trash2 className="mr-2 h-4 w-4" />
+                        Delete
+                      </Button>
+                    </div>
                   </div>
-                </div>
-                <Badge variant="secondary">Medium Priority</Badge>
-              </div>
-
-              <div className="mb-4 grid grid-cols-1 gap-4 md:grid-cols-3">
-                <div className="rounded-lg bg-blue-50 p-3 text-center">
-                  <div className="text-muted-foreground text-sm">
-                    Target Hours
-                  </div>
-                  <div className="font-bold text-blue-600 text-xl">80h</div>
-                </div>
-                <div className="rounded-lg bg-green-50 p-3 text-center">
-                  <div className="text-muted-foreground text-sm">Completed</div>
-                  <div className="font-bold text-green-600 text-xl">45h</div>
-                </div>
-                <div className="rounded-lg bg-orange-50 p-3 text-center">
-                  <div className="text-muted-foreground text-sm">Remaining</div>
-                  <div className="font-bold text-orange-600 text-xl">35h</div>
-                </div>
-              </div>
-
-              <div className="mb-4 space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span>Progress</span>
-                  <span>56%</span>
-                </div>
-                <Progress value={56} className="h-2" />
-              </div>
-
-              <div className="flex items-center justify-between text-muted-foreground text-sm">
-                <span>Deadline: November 15, 2024</span>
-                <span>Category: Learning</span>
-              </div>
-
-              <div className="mt-4 flex gap-2">
-                <Button variant="outline" size="sm">
-                  <Edit className="mr-2 h-4 w-4" />
-                  Edit
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="text-red-600 hover:text-red-700"
-                >
-                  <Trash2 className="mr-2 h-4 w-4" />
-                  Delete
-                </Button>
-              </div>
+                );
+              })}
             </div>
-
-            <div className="rounded-lg border p-4">
-              <div className="mb-4 flex items-start justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="h-3 w-3 rounded-full bg-yellow-500"></div>
-                  <div>
-                    <h3 className="font-medium text-lg">
-                      Design System Overhaul
-                    </h3>
-                    <p className="text-muted-foreground text-sm">
-                      Redesign and implement new design system
-                    </p>
-                  </div>
-                </div>
-                <Badge variant="secondary">Medium Priority</Badge>
-              </div>
-
-              <div className="mb-4 grid grid-cols-1 gap-4 md:grid-cols-3">
-                <div className="rounded-lg bg-blue-50 p-3 text-center">
-                  <div className="text-muted-foreground text-sm">
-                    Target Hours
-                  </div>
-                  <div className="font-bold text-blue-600 text-xl">120h</div>
-                </div>
-                <div className="rounded-lg bg-green-50 p-3 text-center">
-                  <div className="text-muted-foreground text-sm">Completed</div>
-                  <div className="font-bold text-green-600 text-xl">28h</div>
-                </div>
-                <div className="rounded-lg bg-orange-50 p-3 text-center">
-                  <div className="text-muted-foreground text-sm">Remaining</div>
-                  <div className="font-bold text-orange-600 text-xl">92h</div>
-                </div>
-              </div>
-
-              <div className="mb-4 space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span>Progress</span>
-                  <span>23%</span>
-                </div>
-                <Progress value={23} className="h-2" />
-              </div>
-
-              <div className="flex items-center justify-between text-muted-foreground text-sm">
-                <span>Deadline: January 31, 2025</span>
-                <span>Category: Design</span>
-              </div>
-
-              <div className="mt-4 flex gap-2">
-                <Button variant="outline" size="sm">
-                  <Edit className="mr-2 h-4 w-4" />
-                  Edit
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="text-red-600 hover:text-red-700"
-                >
-                  <Trash2 className="mr-2 h-4 w-4" />
-                  Delete
-                </Button>
-              </div>
-            </div>
-          </div>
+          )}
         </CardContent>
       </Card>
 
@@ -385,49 +357,45 @@ export default function TimeTrackerGoalsPage() {
           <CardDescription>Goals you've successfully achieved</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
-            <div className="flex items-center justify-between rounded-lg border bg-green-50 p-4">
-              <div className="flex items-center gap-4">
-                <div className="h-3 w-3 rounded-full bg-green-500"></div>
-                <div>
-                  <h3 className="font-medium">Complete Frontend Course</h3>
-                  <p className="text-muted-foreground text-sm">
-                    Finished advanced frontend development course
-                  </p>
-                  <div className="mt-1 text-muted-foreground text-xs">
-                    Completed: 60h / Target: 60h • Finished on August 15, 2024
-                  </div>
-                </div>
+          {completedGoalsList.length === 0 ? (
+            <div className="flex items-center justify-center py-8">
+              <div className="text-muted-foreground">
+                No completed goals yet
               </div>
-              <Badge
-                variant="secondary"
-                className="bg-green-100 text-green-800"
-              >
-                Completed
-              </Badge>
             </div>
-
-            <div className="flex items-center justify-between rounded-lg border bg-green-50 p-4">
-              <div className="flex items-center gap-4">
-                <div className="h-3 w-3 rounded-full bg-green-500"></div>
-                <div>
-                  <h3 className="font-medium">API Integration Project</h3>
-                  <p className="text-muted-foreground text-sm">
-                    Successfully integrated third-party APIs
-                  </p>
-                  <div className="mt-1 text-muted-foreground text-xs">
-                    Completed: 45h / Target: 40h • Finished on August 10, 2024
+          ) : (
+            <div className="space-y-4">
+              {completedGoalsList.map((goal: any) => (
+                <div
+                  key={goal.id}
+                  className="flex items-center justify-between rounded-lg border bg-green-50 p-4"
+                >
+                  <div className="flex items-center gap-4">
+                    <div className="h-3 w-3 rounded-full bg-green-500"></div>
+                    <div>
+                      <h3 className="font-medium">{goal.title}</h3>
+                      <p className="text-muted-foreground text-sm">
+                        {goal.description || 'No description'}
+                      </p>
+                      <div className="mt-1 text-muted-foreground text-xs">
+                        Completed: {goal.completedHours}h / Target:{' '}
+                        {goal.targetHours}h • Finished on{' '}
+                        {goal.completedAt
+                          ? new Date(goal.completedAt).toLocaleDateString()
+                          : 'Unknown date'}
+                      </div>
+                    </div>
                   </div>
+                  <Badge
+                    variant="secondary"
+                    className="bg-green-100 text-green-800"
+                  >
+                    Completed
+                  </Badge>
                 </div>
-              </div>
-              <Badge
-                variant="secondary"
-                className="bg-green-100 text-green-800"
-              >
-                Completed
-              </Badge>
+              ))}
             </div>
-          </div>
+          )}
         </CardContent>
       </Card>
 

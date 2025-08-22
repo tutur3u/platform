@@ -1,4 +1,6 @@
-import { getTranslations } from 'next-intl/server';
+'use client';
+
+import { useQuery } from '@tanstack/react-query';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -34,57 +36,129 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@tuturuuu/ui/select';
+import { useParams } from 'next/navigation';
+import { useState } from 'react';
 
-export default async function TimeTrackerCategoriesPage() {
-  const t = await getTranslations();
+// Helper function to format duration
+const formatDuration = (seconds: number): string => {
+  const hours = Math.floor(seconds / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
+  if (hours > 0) {
+    return `${hours}h ${minutes}m`;
+  }
+  return `${minutes}m`;
+};
+
+// Helper function to get color class
+const getColorClass = (color: string): string => {
+  const colorMap: Record<string, string> = {
+    red: 'bg-red-500',
+    green: 'bg-green-500',
+    yellow: 'bg-yellow-500',
+    purple: 'bg-purple-500',
+    orange: 'bg-orange-500',
+    blue: 'bg-blue-500',
+  };
+  return colorMap[color] || 'bg-blue-500';
+};
+
+export default function TimeTrackerCategoriesPage() {
+  const params = useParams();
+  const wsId = params.wsId as string;
+  const [searchQuery, setSearchQuery] = useState('');
+
+  // Fetch real categories data
+  const { data: categoriesData, isLoading } = useQuery({
+    queryKey: ['time-tracking-categories', wsId],
+    queryFn: async () => {
+      const response = await fetch(
+        `/api/v1/workspaces/${wsId}/time-tracking/categories`
+      );
+      if (!response.ok) throw new Error('Failed to fetch categories');
+      return response.json();
+    },
+    refetchInterval: 300000, // 5 minutes
+  });
+
+  // Fetch category statistics
+  const { data: statsData } = useQuery({
+    queryKey: ['time-tracking-category-stats', wsId],
+    queryFn: async () => {
+      const response = await fetch(
+        `/api/v1/workspaces/${wsId}/time-tracking/categories?type=stats`
+      );
+      if (!response.ok) throw new Error('Failed to fetch category stats');
+      return response.json();
+    },
+  });
+
+  // Filter categories based on search
+  const filteredCategories =
+    categoriesData?.categories?.filter(
+      (category: any) =>
+        category.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        category.description?.toLowerCase().includes(searchQuery.toLowerCase())
+    ) || [];
+
+  // Calculate real statistics
+  const totalCategories = statsData?.totalCategories || 0;
+  const activeCategories = statsData?.activeCategories || 0;
+  const totalHours = statsData?.totalHours || 0;
+  const avgUsage = totalCategories > 0 ? totalHours / totalCategories : 0;
+
   return (
     <div className="container mx-auto space-y-6 p-6">
       <div className="mb-6 flex items-center gap-2">
         <FolderSync className="h-6 w-6 text-primary" />
-        <h1 className="font-bold text-2xl">{t('time-tracker.categories.title')}</h1>
+        <h1 className="font-bold text-2xl">Time Tracker Categories</h1>
       </div>
 
       {/* Search and Actions Bar */}
       <div className="flex flex-col gap-4 sm:flex-row">
         <div className="relative flex-1">
           <Search className="-translate-y-1/2 absolute top-1/2 left-3 h-4 w-4 transform text-muted-foreground" />
-          <Input placeholder={t('time-tracker.categories.search_placeholder')} className="pl-10" />
+          <Input
+            placeholder="Search categories..."
+            className="pl-10"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
         </div>
         <Button variant="outline" className="flex items-center gap-2">
           <Filter className="h-4 w-4" />
-          {t('time-tracker.categories.filter')}
+          Filter
         </Button>
         <Dialog>
           <DialogTrigger asChild>
             <Button className="flex items-center gap-2">
               <Plus className="h-4 w-4" />
-              {t('time-tracker.categories.new_category')}
+              New Category
             </Button>
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>{t('time-tracker.categories.create_title')}</DialogTitle>
+              <DialogTitle>Create New Category</DialogTitle>
               <DialogDescription>
-                {t('time-tracker.categories.create_description')}
+                Add a new category to organize your time tracking entries.
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="category-name">{t('time-tracker.categories.name_label')}</Label>
+                <Label htmlFor="category-name">Category Name</Label>
                 <Input
                   id="category-name"
-                  placeholder={t('time-tracker.categories.name_placeholder')}
+                  placeholder="e.g., Development, Design, Research"
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="category-description">{t('time-tracker.categories.description_label')}</Label>
+                <Label htmlFor="category-description">Description</Label>
                 <Input
                   id="category-description"
-                  placeholder={t('time-tracker.categories.description_placeholder')}
+                  placeholder="Brief description of this category"
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="category-color">{t('time-tracker.categories.color_label')}</Label>
+                <Label htmlFor="category-color">Color</Label>
                 <Select defaultValue="blue">
                   <SelectTrigger id="category-color">
                     <SelectValue />
@@ -100,8 +174,14 @@ export default async function TimeTrackerCategoriesPage() {
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="category-budget">{t('time-tracker.categories.budget_label')}</Label>
-                <Input id="category-budget" type="number" placeholder="40" min={0} step={1} />
+                <Label htmlFor="category-budget">Time Budget (hours)</Label>
+                <Input
+                  id="category-budget"
+                  type="number"
+                  placeholder="40"
+                  min={0}
+                  step={1}
+                />
               </div>
             </div>
             <div className="mt-6 flex justify-end gap-2">
@@ -113,7 +193,7 @@ export default async function TimeTrackerCategoriesPage() {
       </div>
 
       {/* Categories Overview */}
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="font-medium text-sm">
@@ -122,7 +202,7 @@ export default async function TimeTrackerCategoriesPage() {
             <FolderSync className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="font-bold text-2xl">12</div>
+            <div className="font-bold text-2xl">{totalCategories}</div>
             <p className="text-muted-foreground text-xs">+2 new this month</p>
           </CardContent>
         </Card>
@@ -135,7 +215,7 @@ export default async function TimeTrackerCategoriesPage() {
             <Clock className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="font-bold text-2xl">10</div>
+            <div className="font-bold text-2xl">{activeCategories}</div>
             <p className="text-muted-foreground text-xs">Currently in use</p>
           </CardContent>
         </Card>
@@ -146,7 +226,9 @@ export default async function TimeTrackerCategoriesPage() {
             <Clock className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="font-bold text-2xl">2,156.5h</div>
+            <div className="font-bold text-2xl">
+              {formatDuration(totalHours)}
+            </div>
             <p className="text-muted-foreground text-xs">This month</p>
           </CardContent>
         </Card>
@@ -157,7 +239,7 @@ export default async function TimeTrackerCategoriesPage() {
             <Clock className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="font-bold text-2xl">179.7h</div>
+            <div className="font-bold text-2xl">{formatDuration(avgUsage)}</div>
             <p className="text-muted-foreground text-xs">Per category</p>
           </CardContent>
         </Card>
@@ -172,230 +254,71 @@ export default async function TimeTrackerCategoriesPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
-            {/* Sample Categories */}
-            <div className="flex items-center justify-between rounded-lg border p-4 transition-colors hover:bg-accent/50">
-              <div className="flex items-center gap-4">
-                <div className="h-4 w-4 rounded-full bg-blue-500"></div>
-                <div>
-                  <h3 className="font-medium">Development</h3>
-                  <p className="text-muted-foreground text-sm">
-                    Software development and coding tasks
-                  </p>
-                  <div className="mt-1 flex items-center gap-4 text-muted-foreground text-xs">
-                    <span>Budget: 160h/month</span>
-                    <span>Used: 145.5h</span>
-                  </div>
-                </div>
-              </div>
-              <div className="flex items-center gap-4">
-                <Badge variant="secondary">Active</Badge>
-                <div className="text-right">
-                  <div className="font-semibold">145.5h</div>
-                  <div className="text-muted-foreground text-xs">
-                    91% of budget
-                  </div>
-                </div>
-                <div className="flex gap-2">
-                  <Button variant="outline" size="sm">
-                    <Edit className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="text-red-600 hover:text-red-700"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
+          {isLoading ? (
+            <div className="flex items-center justify-center py-8">
+              <div className="text-muted-foreground">Loading categories...</div>
+            </div>
+          ) : filteredCategories.length === 0 ? (
+            <div className="flex items-center justify-center py-8">
+              <div className="text-muted-foreground">
+                {searchQuery
+                  ? 'No categories match your search'
+                  : 'No categories available'}
               </div>
             </div>
-
-            <div className="flex items-center justify-between rounded-lg border p-4 transition-colors hover:bg-accent/50">
-              <div className="flex items-center gap-4">
-                <div className="h-4 w-4 rounded-full bg-green-500"></div>
-                <div>
-                  <h3 className="font-medium">Design</h3>
-                  <p className="text-muted-foreground text-sm">
-                    UI/UX design and creative work
-                  </p>
-                  <div className="mt-1 flex items-center gap-4 text-muted-foreground text-xs">
-                    <span>Budget: 80h/month</span>
-                    <span>Used: 67.2h</span>
+          ) : (
+            <div className="space-y-4">
+              {filteredCategories.map((category: any) => (
+                <div
+                  key={category.id}
+                  className="flex flex-col gap-4 rounded-lg border p-4 transition-colors hover:bg-accent/50 sm:flex-row sm:items-center sm:justify-between"
+                >
+                  <div className="flex items-center gap-4">
+                    <div
+                      className={`h-4 w-4 rounded-full ${getColorClass(category.color || 'blue')}`}
+                    ></div>
+                    <div>
+                      <h3 className="font-medium">{category.name}</h3>
+                      <p className="text-muted-foreground text-sm">
+                        {category.description || 'No description'}
+                      </p>
+                      <div className="mt-1 flex flex-col gap-2 text-muted-foreground text-xs sm:flex-row sm:gap-4">
+                        <span>Budget: {category.budgetHours || 0}h/month</span>
+                        <span>
+                          Used: {formatDuration(category.usedTime || 0)}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+                    <Badge variant="secondary">Active</Badge>
+                    <div className="text-right">
+                      <div className="font-semibold">
+                        {formatDuration(category.usedTime || 0)}
+                      </div>
+                      <div className="text-muted-foreground text-xs">
+                        {category.budgetHours
+                          ? `${Math.round(((category.usedTime || 0) / (category.budgetHours * 3600)) * 100)}% of budget`
+                          : 'No budget set'}
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button variant="outline" size="sm">
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="text-red-600 hover:text-red-700"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </div>
                 </div>
-              </div>
-              <div className="flex items-center gap-4">
-                <Badge variant="secondary">Active</Badge>
-                <div className="text-right">
-                  <div className="font-semibold">67.2h</div>
-                  <div className="text-muted-foreground text-xs">
-                    84% of budget
-                  </div>
-                </div>
-                <div className="flex gap-2">
-                  <Button variant="outline" size="sm">
-                    <Edit className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="text-red-600 hover:text-red-700"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
+              ))}
             </div>
-
-            <div className="flex items-center justify-between rounded-lg border p-4 transition-colors hover:bg-accent/50">
-              <div className="flex items-center gap-4">
-                <div className="h-4 w-4 rounded-full bg-yellow-500"></div>
-                <div>
-                  <h3 className="font-medium">Research</h3>
-                  <p className="text-muted-foreground text-sm">
-                    Market research and analysis
-                  </p>
-                  <div className="mt-1 flex items-center gap-4 text-muted-foreground text-xs">
-                    <span>Budget: 40h/month</span>
-                    <span>Used: 38.8h</span>
-                  </div>
-                </div>
-              </div>
-              <div className="flex items-center gap-4">
-                <Badge variant="secondary">Active</Badge>
-                <div className="text-right">
-                  <div className="font-semibold">38.8h</div>
-                  <div className="text-muted-foreground text-xs">
-                    97% of budget
-                  </div>
-                </div>
-                <div className="flex gap-2">
-                  <Button variant="outline" size="sm">
-                    <Edit className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="text-red-600 hover:text-red-700"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex items-center justify-between rounded-lg border p-4 transition-colors hover:bg-accent/50">
-              <div className="flex items-center gap-4">
-                <div className="h-4 w-4 rounded-full bg-purple-500"></div>
-                <div>
-                  <h3 className="font-medium">Meetings</h3>
-                  <p className="text-muted-foreground text-sm">
-                    Team meetings and client calls
-                  </p>
-                  <div className="mt-1 flex items-center gap-4 text-muted-foreground text-xs">
-                    <span>Budget: 60h/month</span>
-                    <span>Used: 52.1h</span>
-                  </div>
-                </div>
-              </div>
-              <div className="flex items-center gap-4">
-                <Badge variant="secondary">Active</Badge>
-                <div className="text-right">
-                  <div className="font-semibold">52.1h</div>
-                  <div className="text-muted-foreground text-xs">
-                    87% of budget
-                  </div>
-                </div>
-                <div className="flex gap-2">
-                  <Button variant="outline" size="sm">
-                    <Edit className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="text-red-600 hover:text-red-700"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex items-center justify-between rounded-lg border p-4 transition-colors hover:bg-accent/50">
-              <div className="flex items-center gap-4">
-                <div className="h-4 w-4 rounded-full bg-orange-500"></div>
-                <div>
-                  <h3 className="font-medium">Documentation</h3>
-                  <p className="text-muted-foreground text-sm">
-                    Writing and maintaining documentation
-                  </p>
-                  <div className="mt-1 flex items-center gap-4 text-muted-foreground text-xs">
-                    <span>Budget: 30h/month</span>
-                    <span>Used: 25.3h</span>
-                  </div>
-                </div>
-              </div>
-              <div className="flex items-center gap-4">
-                <Badge variant="secondary">Active</Badge>
-                <div className="text-right">
-                  <div className="font-semibold">25.3h</div>
-                  <div className="text-muted-foreground text-xs">
-                    84% of budget
-                  </div>
-                </div>
-                <div className="flex gap-2">
-                  <Button variant="outline" size="sm">
-                    <Edit className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="text-red-600 hover:text-red-700"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex items-center justify-between rounded-lg border p-4 transition-colors hover:bg-accent/50">
-              <div className="flex items-center gap-4">
-                <div className="h-4 w-4 rounded-full bg-red-500"></div>
-                <div>
-                  <h3 className="font-medium">Bug Fixes</h3>
-                  <p className="text-muted-foreground text-sm">
-                    Bug fixes and maintenance
-                  </p>
-                  <div className="mt-1 flex items-center gap-4 text-muted-foreground text-xs">
-                    <span>Budget: 20h/month</span>
-                    <span>Used: 18.7h</span>
-                  </div>
-                </div>
-              </div>
-              <div className="flex items-center gap-4">
-                <Badge variant="secondary">Active</Badge>
-                <div className="text-right">
-                  <div className="font-semibold">18.7h</div>
-                  <div className="text-muted-foreground text-xs">
-                    94% of budget
-                  </div>
-                </div>
-                <div className="flex gap-2">
-                  <Button variant="outline" size="sm">
-                    <Edit className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="text-red-600 hover:text-red-700"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-            </div>
-          </div>
+          )}
         </CardContent>
       </Card>
 
@@ -408,9 +331,18 @@ export default async function TimeTrackerCategoriesPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="flex h-64 items-center justify-center text-muted-foreground">
-            Chart placeholder - Category usage visualization
-          </div>
+          {filteredCategories.length > 0 ? (
+            <div className="h-64">
+              {/* Chart would go here - using existing chart components */}
+              <div className="flex h-full items-center justify-center text-muted-foreground">
+                Chart visualization - Category usage data available
+              </div>
+            </div>
+          ) : (
+            <div className="flex h-64 items-center justify-center text-muted-foreground">
+              No category data available for visualization
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -423,7 +355,7 @@ export default async function TimeTrackerCategoriesPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <Button
               variant="outline"
               className="flex h-20 flex-col items-center justify-center gap-2"

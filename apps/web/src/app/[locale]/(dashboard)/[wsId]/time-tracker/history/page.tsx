@@ -1,3 +1,6 @@
+'use client';
+
+import { useQuery } from '@tanstack/react-query';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -16,8 +19,76 @@ import {
   Search,
 } from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
+import { useParams } from 'next/navigation';
+import { useState } from 'react';
+
+// Helper function to format duration
+const formatDuration = (seconds: number): string => {
+  const hours = Math.floor(seconds / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
+  if (hours > 0) {
+    return `${hours}h ${minutes}m`;
+  }
+  return `${minutes}m`;
+};
 
 export default function TimeTrackerHistoryPage() {
+  const params = useParams();
+  const wsId = params.wsId as string;
+  const [searchQuery, setSearchQuery] = useState('');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+
+  // Fetch real history data
+  const { data: historyData, isLoading } = useQuery({
+    queryKey: ['time-tracking-history', wsId, startDate, endDate],
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      if (startDate) params.append('startDate', startDate);
+      if (endDate) params.append('endDate', endDate);
+
+      const response = await fetch(
+        `/api/v1/workspaces/${wsId}/time-tracking/sessions?type=history&${params}`
+      );
+      if (!response.ok) throw new Error('Failed to fetch history');
+      return response.json();
+    },
+    refetchInterval: 300000, // 5 minutes
+  });
+
+  // Fetch history statistics
+  const { data: statsData } = useQuery({
+    queryKey: ['time-tracking-history-stats', wsId, startDate, endDate],
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      if (startDate) params.append('startDate', startDate);
+      if (endDate) params.append('endDate', endDate);
+
+      const response = await fetch(
+        `/api/v1/workspaces/${wsId}/time-tracking/sessions?type=history-stats&${params}`
+      );
+      if (!response.ok) throw new Error('Failed to fetch history stats');
+      return response.json();
+    },
+  });
+
+  // Filter sessions based on search
+  const filteredSessions =
+    historyData?.sessions?.filter(
+      (session: any) =>
+        session.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        session.description
+          ?.toLowerCase()
+          .includes(searchQuery.toLowerCase()) ||
+        session.category?.name.toLowerCase().includes(searchQuery.toLowerCase())
+    ) || [];
+
+  // Calculate real statistics
+  const totalEntries = statsData?.totalEntries || 0;
+  const totalHours = statsData?.totalHours || 0;
+  const activeProjects = statsData?.activeProjects || 0;
+  const avgDailyHours = statsData?.avgDailyHours || 0;
+
   return (
     <div className="container mx-auto space-y-6 p-6">
       <div className="mb-6 flex items-center gap-2">
@@ -37,10 +108,25 @@ export default function TimeTrackerHistoryPage() {
           <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
             <div className="relative">
               <Search className="-translate-y-1/2 absolute top-1/2 left-3 h-4 w-4 transform text-muted-foreground" />
-              <Input placeholder="Search entries..." className="pl-10" />
+              <Input
+                placeholder="Search entries..."
+                className="pl-10"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
             </div>
-            <Input type="date" placeholder="Start date" />
-            <Input type="date" placeholder="End date" />
+            <Input
+              type="date"
+              placeholder="Start date"
+              value={startDate}
+              onChange={(e) => setStartDate(e.target.value)}
+            />
+            <Input
+              type="date"
+              placeholder="End date"
+              value={endDate}
+              onChange={(e) => setEndDate(e.target.value)}
+            />
             <Button variant="outline" className="flex items-center gap-2">
               <Filter className="h-4 w-4" />
               Filter
@@ -57,7 +143,7 @@ export default function TimeTrackerHistoryPage() {
             <Clock className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="font-bold text-2xl">1,247</div>
+            <div className="font-bold text-2xl">{totalEntries}</div>
             <p className="text-muted-foreground text-xs">This month</p>
           </CardContent>
         </Card>
@@ -68,7 +154,9 @@ export default function TimeTrackerHistoryPage() {
             <Clock className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="font-bold text-2xl">2,156.5h</div>
+            <div className="font-bold text-2xl">
+              {formatDuration(totalHours)}
+            </div>
             <p className="text-muted-foreground text-xs">
               +15.2% from last month
             </p>
@@ -83,7 +171,7 @@ export default function TimeTrackerHistoryPage() {
             <Calendar className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="font-bold text-2xl">12</div>
+            <div className="font-bold text-2xl">{activeProjects}</div>
             <p className="text-muted-foreground text-xs">Currently tracking</p>
           </CardContent>
         </Card>
@@ -96,7 +184,9 @@ export default function TimeTrackerHistoryPage() {
             <Clock className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="font-bold text-2xl">7.8h</div>
+            <div className="font-bold text-2xl">
+              {avgDailyHours.toFixed(1)}h
+            </div>
             <p className="text-muted-foreground text-xs">Target: 8.0h</p>
           </CardContent>
         </Card>
@@ -119,172 +209,113 @@ export default function TimeTrackerHistoryPage() {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
-            {/* Sample Time Entries */}
-            <div className="flex items-center justify-between rounded-lg border p-4 transition-colors hover:bg-accent/50">
-              <div className="flex items-center gap-4">
-                <div className="h-3 w-3 rounded-full bg-blue-500"></div>
-                <div>
-                  <h3 className="font-medium">Design System Update</h3>
-                  <p className="text-muted-foreground text-sm">
-                    Updated component library with new design tokens
-                  </p>
-                  <div className="mt-1 flex items-center gap-4 text-muted-foreground text-xs">
-                    <span>Project: Design</span>
-                    <span>Date: Aug 22, 2024</span>
-                  </div>
-                </div>
-              </div>
-              <div className="flex items-center gap-4">
-                <Badge variant="secondary">Design</Badge>
-                <div className="text-right">
-                  <div className="font-semibold">2h 30m</div>
-                  <div className="text-muted-foreground text-xs">
-                    9:00 AM - 11:30 AM
-                  </div>
-                </div>
-                <Button variant="outline" size="sm">
-                  <Eye className="h-4 w-4" />
-                </Button>
+          {isLoading ? (
+            <div className="flex items-center justify-center py-8">
+              <div className="text-muted-foreground">Loading history...</div>
+            </div>
+          ) : filteredSessions.length === 0 ? (
+            <div className="flex items-center justify-center py-8">
+              <div className="text-muted-foreground">
+                {searchQuery
+                  ? 'No entries match your search'
+                  : 'No time entries available'}
               </div>
             </div>
-
-            <div className="flex items-center justify-between rounded-lg border p-4 transition-colors hover:bg-accent/50">
-              <div className="flex items-center gap-4">
-                <div className="h-3 w-3 rounded-full bg-green-500"></div>
-                <div>
-                  <h3 className="font-medium">API Documentation</h3>
-                  <p className="text-muted-foreground text-sm">
-                    Wrote comprehensive API documentation
-                  </p>
-                  <div className="mt-1 flex items-center gap-4 text-muted-foreground text-xs">
-                    <span>Project: Development</span>
-                    <span>Date: Aug 21, 2024</span>
+          ) : (
+            <div className="space-y-4">
+              {filteredSessions.slice(0, 10).map((session: any) => (
+                <div
+                  key={session.id}
+                  className="flex items-center justify-between rounded-lg border p-4 transition-colors hover:bg-accent/50"
+                >
+                  <div className="flex items-center gap-4">
+                    <div
+                      className={`h-3 w-3 rounded-full ${
+                        session.category?.color === 'red'
+                          ? 'bg-red-500'
+                          : session.category?.color === 'green'
+                            ? 'bg-green-500'
+                            : session.category?.color === 'yellow'
+                              ? 'bg-yellow-500'
+                              : session.category?.color === 'purple'
+                                ? 'bg-purple-500'
+                                : session.category?.color === 'orange'
+                                  ? 'bg-orange-500'
+                                  : 'bg-blue-500'
+                      }`}
+                    ></div>
+                    <div>
+                      <h3 className="font-medium">{session.title}</h3>
+                      <p className="text-muted-foreground text-sm">
+                        {session.description || 'No description'}
+                      </p>
+                      <div className="mt-1 flex items-center gap-4 text-muted-foreground text-xs">
+                        <span>
+                          Project: {session.category?.name || 'General'}
+                        </span>
+                        <span>
+                          Date:{' '}
+                          {new Date(session.start_time).toLocaleDateString()}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <Badge variant="secondary">
+                      {session.category?.name || 'General'}
+                    </Badge>
+                    <div className="text-right">
+                      <div className="font-semibold">
+                        {session.duration_seconds
+                          ? formatDuration(session.duration_seconds)
+                          : 'In progress'}
+                      </div>
+                      <div className="text-muted-foreground text-xs">
+                        {session.start_time
+                          ? new Date(session.start_time).toLocaleTimeString(
+                              [],
+                              { hour: '2-digit', minute: '2-digit' }
+                            )
+                          : ''}
+                        {session.end_time && session.start_time
+                          ? ` - ${new Date(session.end_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
+                          : ''}
+                      </div>
+                    </div>
+                    <Button variant="outline" size="sm">
+                      <Eye className="h-4 w-4" />
+                    </Button>
                   </div>
                 </div>
-              </div>
-              <div className="flex items-center gap-4">
-                <Badge variant="secondary">Development</Badge>
-                <div className="text-right">
-                  <div className="font-semibold">4h 15m</div>
-                  <div className="text-muted-foreground text-xs">
-                    1:00 PM - 5:15 PM
-                  </div>
-                </div>
-                <Button variant="outline" size="sm">
-                  <Eye className="h-4 w-4" />
-                </Button>
-              </div>
+              ))}
             </div>
-
-            <div className="flex items-center justify-between rounded-lg border p-4 transition-colors hover:bg-accent/50">
-              <div className="flex items-center gap-4">
-                <div className="h-3 w-3 rounded-full bg-yellow-500"></div>
-                <div>
-                  <h3 className="font-medium">User Research</h3>
-                  <p className="text-muted-foreground text-sm">
-                    Conducted user interviews for new feature
-                  </p>
-                  <div className="mt-1 flex items-center gap-4 text-muted-foreground text-xs">
-                    <span>Project: Research</span>
-                    <span>Date: Aug 20, 2024</span>
-                  </div>
-                </div>
-              </div>
-              <div className="flex items-center gap-4">
-                <Badge variant="secondary">Research</Badge>
-                <div className="text-right">
-                  <div className="font-semibold">1h 45m</div>
-                  <div className="text-muted-foreground text-xs">
-                    10:00 AM - 11:45 AM
-                  </div>
-                </div>
-                <Button variant="outline" size="sm">
-                  <Eye className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
-
-            <div className="flex items-center justify-between rounded-lg border p-4 transition-colors hover:bg-accent/50">
-              <div className="flex items-center gap-4">
-                <div className="h-3 w-3 rounded-full bg-purple-500"></div>
-                <div>
-                  <h3 className="font-medium">Team Meeting</h3>
-                  <p className="text-muted-foreground text-sm">
-                    Weekly team sync and planning
-                  </p>
-                  <div className="mt-1 flex items-center gap-4 text-muted-foreground text-xs">
-                    <span>Project: Meetings</span>
-                    <span>Date: Aug 19, 2024</span>
-                  </div>
-                </div>
-              </div>
-              <div className="flex items-center gap-4">
-                <Badge variant="secondary">Meetings</Badge>
-                <div className="text-right">
-                  <div className="font-semibold">1h 0m</div>
-                  <div className="text-muted-foreground text-xs">
-                    2:00 PM - 3:00 PM
-                  </div>
-                </div>
-                <Button variant="outline" size="sm">
-                  <Eye className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
-
-            <div className="flex items-center justify-between rounded-lg border p-4 transition-colors hover:bg-accent/50">
-              <div className="flex items-center gap-4">
-                <div className="h-3 w-3 rounded-full bg-red-500"></div>
-                <div>
-                  <h3 className="font-medium">Bug Fixes</h3>
-                  <p className="text-muted-foreground text-sm">
-                    Fixed critical bugs in production
-                  </p>
-                  <div className="mt-1 flex items-center gap-4 text-muted-foreground text-xs">
-                    <span>Project: Development</span>
-                    <span>Date: Aug 18, 2024</span>
-                  </div>
-                </div>
-              </div>
-              <div className="flex items-center gap-4">
-                <Badge variant="destructive">Urgent</Badge>
-                <div className="text-right">
-                  <div className="font-semibold">3h 20m</div>
-                  <div className="text-muted-foreground text-xs">
-                    6:00 PM - 9:20 PM
-                  </div>
-                </div>
-                <Button variant="outline" size="sm">
-                  <Eye className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
-          </div>
+          )}
 
           {/* Pagination */}
-          <div className="mt-6 flex items-center justify-between border-t pt-6">
-            <div className="text-muted-foreground text-sm">
-              Showing 1-5 of 1,247 entries
+          {filteredSessions.length > 10 && (
+            <div className="mt-6 flex items-center justify-between border-t pt-6">
+              <div className="text-muted-foreground text-sm">
+                Showing 1-10 of {filteredSessions.length} entries
+              </div>
+              <div className="flex gap-2">
+                <Button variant="outline" size="sm">
+                  Previous
+                </Button>
+                <Button variant="outline" size="sm">
+                  1
+                </Button>
+                <Button variant="outline" size="sm">
+                  2
+                </Button>
+                <Button variant="outline" size="sm">
+                  3
+                </Button>
+                <Button variant="outline" size="sm">
+                  Next
+                </Button>
+              </div>
             </div>
-            <div className="flex gap-2">
-              <Button variant="outline" size="sm">
-                Previous
-              </Button>
-              <Button variant="outline" size="sm">
-                1
-              </Button>
-              <Button variant="outline" size="sm">
-                2
-              </Button>
-              <Button variant="outline" size="sm">
-                3
-              </Button>
-              <Button variant="outline" size="sm">
-                Next
-              </Button>
-            </div>
-          </div>
+          )}
         </CardContent>
       </Card>
 

@@ -1,3 +1,6 @@
+'use client';
+
+import { useQuery } from '@tanstack/react-query';
 import { Button } from '@tuturuuu/ui/button';
 import {
   Card,
@@ -18,8 +21,93 @@ import {
 } from '@tuturuuu/ui/select';
 import { Separator } from '@tuturuuu/ui/separator';
 import { Switch } from '@tuturuuu/ui/switch';
+import { useParams } from 'next/navigation';
+import { useEffect, useState } from 'react';
 
 export default function TimeTrackerSettingsPage() {
+  const params = useParams();
+  const wsId = params.wsId as string;
+  const [settings, setSettings] = useState({
+    defaultProject: 'general',
+    workHours: 8,
+    breakDuration: 15,
+    timezone: 'utc',
+    autoStartTimer: true,
+    showBreakReminders: true,
+    roundTime: false,
+    breakNotifications: true,
+    dailySummaryEmails: false,
+    weeklyReportNotifications: true,
+    idleTimeWarnings: true,
+    shareWithTeam: true,
+    autoSyncCalendar: false,
+    dataRetention: 12,
+    teamTimeTracking: true,
+    projectTimeLimits: false,
+    approvalWorkflow: false,
+    theme: 'system',
+    accentColor: 'blue',
+    compactMode: false,
+  });
+
+  // Fetch real settings data
+  const { data: settingsData } = useQuery({
+    queryKey: ['time-tracking-settings', wsId],
+    queryFn: async () => {
+      const response = await fetch(
+        `/api/v1/workspaces/${wsId}/time-tracking/settings`
+      );
+      if (!response.ok) throw new Error('Failed to fetch settings');
+      return response.json();
+    },
+  });
+
+  // Fetch available projects
+  const { data: projectsData } = useQuery({
+    queryKey: ['time-tracking-projects', wsId],
+    queryFn: async () => {
+      const response = await fetch(
+        `/api/v1/workspaces/${wsId}/time-tracking/projects`
+      );
+      if (!response.ok) throw new Error('Failed to fetch projects');
+      return response.json();
+    },
+  });
+
+  // Update settings when data is loaded
+  useEffect(() => {
+    if (settingsData?.settings) {
+      setSettings((prev) => ({ ...prev, ...settingsData.settings }));
+    }
+  }, [settingsData?.settings]);
+
+  const handleSettingChange = (key: string, value: any) => {
+    setSettings((prev) => ({ ...prev, [key]: value }));
+  };
+
+  const handleSave = async () => {
+    try {
+      const response = await fetch(
+        `/api/v1/workspaces/${wsId}/time-tracking/settings`,
+        {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(settings),
+        }
+      );
+      if (!response.ok) throw new Error('Failed to save settings');
+      // Show success message
+    } catch (error) {
+      // Show error message
+    }
+  };
+
+  const handleReset = () => {
+    if (settingsData?.settings) {
+      setSettings((prev) => ({ ...prev, ...settingsData.settings }));
+    }
+  };
+
   return (
     <div className="container mx-auto space-y-6 p-6">
       <div className="mb-6 flex items-center gap-2">
@@ -37,18 +125,31 @@ export default function TimeTrackerSettingsPage() {
           <CardDescription>Basic time tracker configuration</CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="default-project">Default Project</Label>
-              <Select defaultValue="general">
+              <Select
+                value={settings.defaultProject}
+                onValueChange={(value) =>
+                  handleSettingChange('defaultProject', value)
+                }
+              >
                 <SelectTrigger id="default-project">
                   <SelectValue placeholder="Select default project" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="general">General</SelectItem>
-                  <SelectItem value="development">Development</SelectItem>
-                  <SelectItem value="design">Design</SelectItem>
-                  <SelectItem value="research">Research</SelectItem>
+                  {projectsData?.projects?.map((project: any) => (
+                    <SelectItem key={project.id} value={project.id}>
+                      {project.name}
+                    </SelectItem>
+                  )) || (
+                    <>
+                      <SelectItem value="general">General</SelectItem>
+                      <SelectItem value="development">Development</SelectItem>
+                      <SelectItem value="design">Design</SelectItem>
+                      <SelectItem value="research">Research</SelectItem>
+                    </>
+                  )}
                 </SelectContent>
               </Select>
             </div>
@@ -58,7 +159,10 @@ export default function TimeTrackerSettingsPage() {
               <Input
                 id="work-hours"
                 type="number"
-                defaultValue="8"
+                value={settings.workHours}
+                onChange={(e) =>
+                  handleSettingChange('workHours', parseFloat(e.target.value))
+                }
                 min="1"
                 max="24"
                 step="0.5"
@@ -70,7 +174,10 @@ export default function TimeTrackerSettingsPage() {
               <Input
                 id="break-duration"
                 type="number"
-                defaultValue="15"
+                value={settings.breakDuration}
+                onChange={(e) =>
+                  handleSettingChange('breakDuration', parseInt(e.target.value))
+                }
                 min="5"
                 max="60"
                 step="5"
@@ -79,7 +186,12 @@ export default function TimeTrackerSettingsPage() {
 
             <div className="space-y-2">
               <Label htmlFor="timezone">Timezone</Label>
-              <Select defaultValue="utc">
+              <Select
+                value={settings.timezone}
+                onValueChange={(value) =>
+                  handleSettingChange('timezone', value)
+                }
+              >
                 <SelectTrigger id="timezone">
                   <SelectValue placeholder="Select timezone" />
                 </SelectTrigger>
@@ -103,7 +215,12 @@ export default function TimeTrackerSettingsPage() {
                   Automatically start the timer when selecting a task
                 </p>
               </div>
-              <Switch defaultChecked />
+              <Switch
+                checked={settings.autoStartTimer}
+                onCheckedChange={(checked) =>
+                  handleSettingChange('autoStartTimer', checked)
+                }
+              />
             </div>
 
             <div className="flex items-center justify-between">
@@ -113,7 +230,12 @@ export default function TimeTrackerSettingsPage() {
                   Get notified when it's time to take a break
                 </p>
               </div>
-              <Switch defaultChecked />
+              <Switch
+                checked={settings.showBreakReminders}
+                onCheckedChange={(checked) =>
+                  handleSettingChange('showBreakReminders', checked)
+                }
+              />
             </div>
 
             <div className="flex items-center justify-between">
@@ -123,7 +245,12 @@ export default function TimeTrackerSettingsPage() {
                   Automatically round tracked time to the nearest minute
                 </p>
               </div>
-              <Switch />
+              <Switch
+                checked={settings.roundTime}
+                onCheckedChange={(checked) =>
+                  handleSettingChange('roundTime', checked)
+                }
+              />
             </div>
           </div>
         </CardContent>
@@ -148,7 +275,12 @@ export default function TimeTrackerSettingsPage() {
                 Get notified when it's time to take scheduled breaks
               </p>
             </div>
-            <Switch defaultChecked />
+            <Switch
+              checked={settings.breakNotifications}
+              onCheckedChange={(checked) =>
+                handleSettingChange('breakNotifications', checked)
+              }
+            />
           </div>
 
           <div className="flex items-center justify-between">
@@ -158,7 +290,12 @@ export default function TimeTrackerSettingsPage() {
                 Receive daily summary of your time tracking
               </p>
             </div>
-            <Switch />
+            <Switch
+              checked={settings.dailySummaryEmails}
+              onCheckedChange={(checked) =>
+                handleSettingChange('dailySummaryEmails', checked)
+              }
+            />
           </div>
 
           <div className="flex items-center justify-between">
@@ -168,7 +305,12 @@ export default function TimeTrackerSettingsPage() {
                 Get notified when weekly reports are ready
               </p>
             </div>
-            <Switch defaultChecked />
+            <Switch
+              checked={settings.weeklyReportNotifications}
+              onCheckedChange={(checked) =>
+                handleSettingChange('weeklyReportNotifications', checked)
+              }
+            />
           </div>
 
           <div className="flex items-center justify-between">
@@ -178,7 +320,12 @@ export default function TimeTrackerSettingsPage() {
                 Warn when timer has been idle for too long
               </p>
             </div>
-            <Switch defaultChecked />
+            <Switch
+              checked={settings.idleTimeWarnings}
+              onCheckedChange={(checked) =>
+                handleSettingChange('idleTimeWarnings', checked)
+              }
+            />
           </div>
         </CardContent>
       </Card>
@@ -202,7 +349,12 @@ export default function TimeTrackerSettingsPage() {
                 Allow team members to see your time tracking data
               </p>
             </div>
-            <Switch defaultChecked />
+            <Switch
+              checked={settings.shareWithTeam}
+              onCheckedChange={(checked) =>
+                handleSettingChange('shareWithTeam', checked)
+              }
+            />
           </div>
 
           <div className="flex items-center justify-between">
@@ -212,7 +364,12 @@ export default function TimeTrackerSettingsPage() {
                 Automatically sync tracked time with your calendar
               </p>
             </div>
-            <Switch />
+            <Switch
+              checked={settings.autoSyncCalendar}
+              onCheckedChange={(checked) =>
+                handleSettingChange('autoSyncCalendar', checked)
+              }
+            />
           </div>
 
           <div className="flex items-center justify-between">
@@ -222,7 +379,12 @@ export default function TimeTrackerSettingsPage() {
                 How long to keep your time tracking data
               </p>
             </div>
-            <Select defaultValue="12">
+            <Select
+              value={settings.dataRetention.toString()}
+              onValueChange={(value) =>
+                handleSettingChange('dataRetention', parseInt(value))
+              }
+            >
               <SelectTrigger className="w-32">
                 <SelectValue />
               </SelectTrigger>
@@ -256,7 +418,12 @@ export default function TimeTrackerSettingsPage() {
                 Enable time tracking for all team members
               </p>
             </div>
-            <Switch defaultChecked />
+            <Switch
+              checked={settings.teamTimeTracking}
+              onCheckedChange={(checked) =>
+                handleSettingChange('teamTimeTracking', checked)
+              }
+            />
           </div>
 
           <div className="flex items-center justify-between">
@@ -266,7 +433,12 @@ export default function TimeTrackerSettingsPage() {
                 Set maximum time limits for projects
               </p>
             </div>
-            <Switch />
+            <Switch
+              checked={settings.projectTimeLimits}
+              onCheckedChange={(checked) =>
+                handleSettingChange('projectTimeLimits', checked)
+              }
+            />
           </div>
 
           <div className="flex items-center justify-between">
@@ -276,7 +448,12 @@ export default function TimeTrackerSettingsPage() {
                 Require approval for time entries over 8 hours
               </p>
             </div>
-            <Switch />
+            <Switch
+              checked={settings.approvalWorkflow}
+              onCheckedChange={(checked) =>
+                handleSettingChange('approvalWorkflow', checked)
+              }
+            />
           </div>
         </CardContent>
       </Card>
@@ -293,10 +470,13 @@ export default function TimeTrackerSettingsPage() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="theme">Theme</Label>
-              <Select defaultValue="system">
+              <Select
+                value={settings.theme}
+                onValueChange={(value) => handleSettingChange('theme', value)}
+              >
                 <SelectTrigger id="theme">
                   <SelectValue />
                 </SelectTrigger>
@@ -310,7 +490,12 @@ export default function TimeTrackerSettingsPage() {
 
             <div className="space-y-2">
               <Label htmlFor="accent-color">Accent Color</Label>
-              <Select defaultValue="blue">
+              <Select
+                value={settings.accentColor}
+                onValueChange={(value) =>
+                  handleSettingChange('accentColor', value)
+                }
+              >
                 <SelectTrigger id="accent-color">
                   <SelectValue />
                 </SelectTrigger>
@@ -331,15 +516,22 @@ export default function TimeTrackerSettingsPage() {
                 Use a more compact layout for the interface
               </p>
             </div>
-            <Switch />
+            <Switch
+              checked={settings.compactMode}
+              onCheckedChange={(checked) =>
+                handleSettingChange('compactMode', checked)
+              }
+            />
           </div>
         </CardContent>
       </Card>
 
       {/* Save Button */}
       <div className="flex justify-end gap-4">
-        <Button variant="outline">Reset to Defaults</Button>
-        <Button>Save Settings</Button>
+        <Button variant="outline" onClick={handleReset}>
+          Reset to Defaults
+        </Button>
+        <Button onClick={handleSave}>Save Settings</Button>
       </div>
     </div>
   );
