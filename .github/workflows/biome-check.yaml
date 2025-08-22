@@ -176,9 +176,11 @@ jobs:
             const lintHasIssues = '${{ needs.lint.outputs.has_issues }}';
             
             // Calculate overall status
-            const formatIssueCount = parseInt(formatErrors) || 0;
+            const formatErrorsCount = parseInt(formatErrors) || 0;
+            const lintErrorsCount = parseInt(lintErrors) || 0;
+            const lintWarningsCount = parseInt(lintWarnings) || 0;
             const lintIssueCount = parseInt(lintTotalIssues) || 0;
-            const totalIssuesAcrossJobs = formatIssueCount + lintIssueCount;
+            const totalIssuesAcrossJobs = formatErrorsCount + lintIssueCount;
             const overallSuccess = formatHasIssues === 'false' && lintHasIssues === 'false';
             
             let body;
@@ -187,7 +189,9 @@ jobs:
 
             const issueIcon = totalIssuesAcrossJobs > 50 ? '🚨' : totalIssuesAcrossJobs > 20 ? '⚠️' : totalIssuesAcrossJobs > 10 ? '🔍' : '🔧';
             
-            const formatStatus = formatIssueCount > 0 ? '🔴 Issues found' : '✅ Passed';
+            const formatStatus = formatErrorsCount > 0 ? '🔴 Issues found' : '✅ Passed';
+            const lintErrorsStatus = lintErrorsCount > 0 ? '🔴 Needs fixing' : '✅ None';
+            const lintWarningsStatus = lintWarningsCount > 0 ? '🟡 Consider fixing' : '✅ None';
             const lintStatus = lintIssueCount > 0 ? '🔴 Issues found' : '✅ Passed';
             
             const nextSteps = overallSuccess ?
@@ -208,16 +212,16 @@ jobs:
             | Metric | Value | Status |
             |--------|-------|--------|
             | 📁 **Files Checked** | ${formatFilesChecked} | ✅ Complete |
-            | 🔧 **Format Errors** | ${formatErrors} | ${formatStatus} |
+            | 🔧 **Format Errors** | ${formatErrorsCount} | ${formatStatus} |
 
             ### 🔍 Lint Check Results
 
             | Metric | Value | Status |
             |--------|-------|--------|
             | 📁 **Files Checked** | ${lintFilesChecked} | ✅ Complete |
-            | ❌ **Errors** | ${lintErrors} | ${parseInt(lintErrors) > 0 ? '🔴 Needs fixing' : '✅ None'} |
-            | ⚠️ **Warnings** | ${lintWarnings} | ${parseInt(lintWarnings) > 0 ? '🟡 Consider fixing' : '✅ None'} |
-            | 📝 **Total Issues** | ${lintTotalIssues} | ${lintStatus} |
+            | ❌ **Errors** | ${lintErrorsCount} | ${lintErrorsStatus} |
+            | ⚠️ **Warnings** | ${lintWarningsCount} | ${lintWarningsStatus} |
+            | 📝 **Total Issues** | ${lintIssueCount} | ${lintStatus} |
 
             ${nextSteps}
 
