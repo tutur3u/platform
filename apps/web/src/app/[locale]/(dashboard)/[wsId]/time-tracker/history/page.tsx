@@ -93,7 +93,7 @@ export default function TimeTrackerHistoryPage() {
     <div className="container mx-auto space-y-6 p-6">
       <div className="mb-6 flex items-center gap-2">
         <Clock className="h-6 w-6 text-primary" />
-        <h1 className="font-bold text-2xl">Time Tracker History</h1>
+        <h1 className="text-2xl font-bold">Time Tracker History</h1>
       </div>
 
       {/* Search and Filter Bar */}
@@ -107,7 +107,7 @@ export default function TimeTrackerHistoryPage() {
         <CardContent>
           <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
             <div className="relative">
-              <Search className="-translate-y-1/2 absolute top-1/2 left-3 h-4 w-4 transform text-muted-foreground" />
+              <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transform text-muted-foreground" />
               <Input
                 placeholder="Search entries..."
                 className="pl-10"
@@ -139,25 +139,25 @@ export default function TimeTrackerHistoryPage() {
       <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="font-medium text-sm">Total Entries</CardTitle>
+            <CardTitle className="text-sm font-medium">Total Entries</CardTitle>
             <Clock className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="font-bold text-2xl">{totalEntries}</div>
-            <p className="text-muted-foreground text-xs">This month</p>
+            <div className="text-2xl font-bold">{totalEntries}</div>
+            <p className="text-xs text-muted-foreground">This month</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="font-medium text-sm">Total Hours</CardTitle>
+            <CardTitle className="text-sm font-medium">Total Hours</CardTitle>
             <Clock className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="font-bold text-2xl">
+            <div className="text-2xl font-bold">
               {formatDuration(totalHours)}
             </div>
-            <p className="text-muted-foreground text-xs">
+            <p className="text-xs text-muted-foreground">
               +15.2% from last month
             </p>
           </CardContent>
@@ -165,29 +165,29 @@ export default function TimeTrackerHistoryPage() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="font-medium text-sm">
+            <CardTitle className="text-sm font-medium">
               Active Projects
             </CardTitle>
             <Calendar className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="font-bold text-2xl">{activeProjects}</div>
-            <p className="text-muted-foreground text-xs">Currently tracking</p>
+            <div className="text-2xl font-bold">{activeProjects}</div>
+            <p className="text-xs text-muted-foreground">Currently tracking</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="font-medium text-sm">
+            <CardTitle className="text-sm font-medium">
               Avg. Daily Hours
             </CardTitle>
             <Clock className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="font-bold text-2xl">
+            <div className="text-2xl font-bold">
               {avgDailyHours.toFixed(1)}h
             </div>
-            <p className="text-muted-foreground text-xs">Target: 8.0h</p>
+            <p className="text-xs text-muted-foreground">Target: 8.0h</p>
           </CardContent>
         </Card>
       </div>
@@ -246,10 +246,10 @@ export default function TimeTrackerHistoryPage() {
                     ></div>
                     <div>
                       <h3 className="font-medium">{session.title}</h3>
-                      <p className="text-muted-foreground text-sm">
+                      <p className="text-sm text-muted-foreground">
                         {session.description || 'No description'}
                       </p>
-                      <div className="mt-1 flex items-center gap-4 text-muted-foreground text-xs">
+                      <div className="mt-1 flex items-center gap-4 text-xs text-muted-foreground">
                         <span>
                           Project: {session.category?.name || 'General'}
                         </span>
@@ -270,7 +270,7 @@ export default function TimeTrackerHistoryPage() {
                           ? formatDuration(session.duration_seconds)
                           : 'In progress'}
                       </div>
-                      <div className="text-muted-foreground text-xs">
+                      <div className="text-xs text-muted-foreground">
                         {session.start_time
                           ? new Date(session.start_time).toLocaleTimeString(
                               [],
@@ -294,7 +294,7 @@ export default function TimeTrackerHistoryPage() {
           {/* Pagination */}
           {filteredSessions.length > 10 && (
             <div className="mt-6 flex items-center justify-between border-t pt-6">
-              <div className="text-muted-foreground text-sm">
+              <div className="text-sm text-muted-foreground">
                 Showing 1-10 of {filteredSessions.length} entries
               </div>
               <div className="flex gap-2">

@@ -1,5 +1,6 @@
 'use client';
 
+import { LineChart, PieChart } from '@/components/ui/charts';
 import { useQuery } from '@tanstack/react-query';
 import {
   Card,
@@ -11,7 +12,6 @@ import {
 import { ChartArea, Clock, TrendingUp, Users } from '@tuturuuu/ui/icons';
 import { useParams } from 'next/navigation';
 import { useState } from 'react';
-import { LineChart, PieChart } from '@/components/ui/charts';
 
 // Helper function to format duration
 const formatDuration = (seconds: number): string => {
@@ -90,21 +90,21 @@ export default function TimeTrackerAnalyticsPage() {
     <div className="container mx-auto space-y-6 p-6">
       <div className="mb-6 flex items-center gap-2">
         <ChartArea className="h-6 w-6 text-primary" />
-        <h1 className="font-bold text-2xl">Time Tracker Analytics</h1>
+        <h1 className="text-2xl font-bold">Time Tracker Analytics</h1>
       </div>
 
       {/* Overview Cards */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="font-medium text-sm">
+            <CardTitle className="text-sm font-medium">
               Total Time Tracked
             </CardTitle>
             <Clock className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="font-bold text-2xl">{totalTimeFormatted}</div>
-            <p className="text-muted-foreground text-xs">
+            <div className="text-2xl font-bold">{totalTimeFormatted}</div>
+            <p className="text-xs text-muted-foreground">
               {lastMonthChange} from last month
             </p>
           </CardContent>
@@ -112,14 +112,14 @@ export default function TimeTrackerAnalyticsPage() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="font-medium text-sm">
+            <CardTitle className="text-sm font-medium">
               Active Projects
             </CardTitle>
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="font-bold text-2xl">{activeProjects}</div>
-            <p className="text-muted-foreground text-xs">
+            <div className="text-2xl font-bold">{activeProjects}</div>
+            <p className="text-xs text-muted-foreground">
               +{newThisWeek} new this week
             </p>
           </CardContent>
@@ -127,12 +127,12 @@ export default function TimeTrackerAnalyticsPage() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="font-medium text-sm">Team Members</CardTitle>
+            <CardTitle className="text-sm font-medium">Team Members</CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="font-bold text-2xl">{teamMembers}</div>
-            <p className="text-muted-foreground text-xs">
+            <div className="text-2xl font-bold">{teamMembers}</div>
+            <p className="text-xs text-muted-foreground">
               {allActiveThisMonth}
             </p>
           </CardContent>
@@ -140,16 +140,16 @@ export default function TimeTrackerAnalyticsPage() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="font-medium text-sm">
+            <CardTitle className="text-sm font-medium">
               Productivity Score
             </CardTitle>
             <ChartArea className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="font-bold text-2xl">
+            <div className="text-2xl font-bold">
               {formatPercentage(productivityScore)}
             </div>
-            <p className="text-muted-foreground text-xs">
+            <p className="text-xs text-muted-foreground">
               {lastWeekChange} from last week
             </p>
           </CardContent>
@@ -218,35 +218,35 @@ export default function TimeTrackerAnalyticsPage() {
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <div className="rounded-lg border p-4 text-center">
-              <div className="font-semibold text-green-600 text-lg">
+              <div className="text-lg font-semibold text-green-600">
                 Peak Hours
               </div>
-              <div className="font-bold text-2xl">
+              <div className="text-2xl font-bold">
                 {analyticsData?.peakHours || '9 AM - 11 AM'}
               </div>
-              <div className="text-muted-foreground text-sm">
+              <div className="text-sm text-muted-foreground">
                 Most productive time
               </div>
             </div>
             <div className="rounded-lg border p-4 text-center">
-              <div className="font-semibold text-blue-600 text-lg">
+              <div className="text-lg font-semibold text-blue-600">
                 Focus Score
               </div>
-              <div className="font-bold text-2xl">
+              <div className="text-2xl font-bold">
                 {formatPercentage(analyticsData?.focusScore || 92)}
               </div>
-              <div className="text-muted-foreground text-sm">
+              <div className="text-sm text-muted-foreground">
                 High concentration
               </div>
             </div>
             <div className="rounded-lg border p-4 text-center">
-              <div className="font-semibold text-lg text-orange-600">
+              <div className="text-lg font-semibold text-orange-600">
                 Break Efficiency
               </div>
-              <div className="font-bold text-2xl">
+              <div className="text-2xl font-bold">
                 {formatPercentage(analyticsData?.breakEfficiency || 78)}
               </div>
-              <div className="text-muted-foreground text-sm">Good balance</div>
+              <div className="text-sm text-muted-foreground">Good balance</div>
             </div>
           </div>
         </CardContent>

@@ -102,7 +102,7 @@ export default function TimeTrackerReportsPage() {
     <div className="container mx-auto space-y-6 p-6">
       <div className="mb-6 flex items-center gap-2">
         <FileText className="h-6 w-6 text-primary" />
-        <h1 className="font-bold text-2xl">Time Tracker Reports</h1>
+        <h1 className="text-2xl font-bold">Time Tracker Reports</h1>
       </div>
 
       {/* Report Controls */}
@@ -116,7 +116,7 @@ export default function TimeTrackerReportsPage() {
         <CardContent>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <div className="space-y-2">
-              <label htmlFor="report-type" className="font-medium text-sm">
+              <label htmlFor="report-type" className="text-sm font-medium">
                 Report Type
               </label>
               <Select value={reportType} onValueChange={setReportType}>
@@ -134,7 +134,7 @@ export default function TimeTrackerReportsPage() {
             </div>
 
             <div className="space-y-2">
-              <label htmlFor="date-range" className="font-medium text-sm">
+              <label htmlFor="date-range" className="text-sm font-medium">
                 Date Range
               </label>
               <Select value={dateRange} onValueChange={setDateRange}>
@@ -152,7 +152,7 @@ export default function TimeTrackerReportsPage() {
             </div>
 
             <div className="space-y-2">
-              <label htmlFor="team-member" className="font-medium text-sm">
+              <label htmlFor="team-member" className="text-sm font-medium">
                 Team Member
               </label>
               <Select value={teamMember} onValueChange={setTeamMember}>
@@ -177,7 +177,7 @@ export default function TimeTrackerReportsPage() {
             </div>
 
             <div className="space-y-2">
-              <label htmlFor="format" className="font-medium text-sm">
+              <label htmlFor="format" className="text-sm font-medium">
                 Format
               </label>
               <Select value={format} onValueChange={setFormat}>
@@ -346,7 +346,7 @@ export default function TimeTrackerReportsPage() {
                     <FileText className="h-8 w-8 text-blue-500" />
                     <div>
                       <h3 className="font-medium">{report.title}</h3>
-                      <p className="text-muted-foreground text-sm">
+                      <p className="text-sm text-muted-foreground">
                         Generated on{' '}
                         {new Date(report.createdAt).toLocaleDateString()}
                       </p>
@@ -380,7 +380,7 @@ export default function TimeTrackerReportsPage() {
                 <Calendar className="h-5 w-5 text-purple-500" />
                 <div>
                   <h3 className="font-medium">Weekly Team Summary</h3>
-                  <p className="text-muted-foreground text-sm">
+                  <p className="text-sm text-muted-foreground">
                     Every Monday at 9:00 AM
                   </p>
                 </div>
@@ -398,7 +398,7 @@ export default function TimeTrackerReportsPage() {
                 <Calendar className="h-5 w-5 text-purple-500" />
                 <div>
                   <h3 className="font-medium">Monthly Billing Report</h3>
-                  <p className="text-muted-foreground text-sm">
+                  <p className="text-sm text-muted-foreground">
                     First day of each month
                   </p>
                 </div>

@@ -72,7 +72,8 @@ export async function GET(
     // Fetch tasks with time tracking data
     const { data: tasks, error } = await supabase
       .from('tasks')
-      .select(`
+      .select(
+        `
         *,
         task_lists!inner (
           id,
@@ -92,7 +93,8 @@ export async function GET(
             avatar_url
           )
         )
-      `)
+      `
+      )
       .eq('task_lists.workspace_boards.ws_id', wsId)
       .eq('deleted', false)
       .eq('archived', false)

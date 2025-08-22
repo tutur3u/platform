@@ -66,12 +66,14 @@ export async function GET(
       // Return report statistics
       const { data: sessions, error } = await supabase
         .from('time_tracking_sessions')
-        .select(`
+        .select(
+          `
           duration_seconds,
           start_time,
           category_id,
           time_tracking_categories(name, color)
-        `)
+        `
+        )
         .eq('ws_id', wsId)
         .eq('user_id', member || user.id)
         .gte('start_time', startDate.toISOString())
@@ -140,11 +142,13 @@ export async function GET(
     // Default report type - summary
     const { data: sessions, error } = await supabase
       .from('time_tracking_sessions')
-      .select(`
+      .select(
+        `
         *,
         category:time_tracking_categories(name, color),
         task:tasks(name, description)
-      `)
+      `
+      )
       .eq('ws_id', wsId)
       .eq('user_id', member || user.id)
       .gte('start_time', startDate.toISOString())

@@ -62,7 +62,8 @@ export async function GET(
     // Get all workspace members
     const { data: members, error: membersError } = await supabase
       .from('workspace_members')
-      .select(`
+      .select(
+        `
         user_id,
         role,
         users!inner (
@@ -71,7 +72,8 @@ export async function GET(
           avatar_url,
           user_private_details(email)
         )
-      `)
+      `
+      )
       .eq('ws_id', wsId);
 
     if (membersError) throw membersError;
@@ -83,13 +85,15 @@ export async function GET(
     if (memberIds.length > 0) {
       const { data: sessions, error: sessionsError } = await supabase
         .from('time_tracking_sessions')
-        .select(`
+        .select(
+          `
           user_id,
           duration_seconds,
           start_time,
           category_id,
           time_tracking_categories(name, color)
-        `)
+        `
+        )
         .eq('ws_id', wsId)
         .in('user_id', memberIds)
         .gte('start_time', startDate.toISOString())

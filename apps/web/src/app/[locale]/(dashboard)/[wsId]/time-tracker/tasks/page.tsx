@@ -73,13 +73,13 @@ export default function TimeTrackerTasksPage() {
     <div className="container mx-auto space-y-6 p-6">
       <div className="mb-6 flex items-center gap-2">
         <CircleCheck className="h-6 w-6 text-primary" />
-        <h1 className="font-bold text-2xl">Time Tracker Tasks</h1>
+        <h1 className="text-2xl font-bold">Time Tracker Tasks</h1>
       </div>
 
       {/* Search and Filter Bar */}
       <div className="flex flex-col gap-4 sm:flex-row">
         <div className="relative flex-1">
-          <Search className="-translate-y-1/2 absolute top-1/2 left-3 h-4 w-4 transform text-muted-foreground" />
+          <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transform text-muted-foreground" />
           <Input
             placeholder="Search tasks..."
             className="pl-10"
@@ -101,47 +101,47 @@ export default function TimeTrackerTasksPage() {
       <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="font-medium text-sm">Total Tasks</CardTitle>
+            <CardTitle className="text-sm font-medium">Total Tasks</CardTitle>
             <CircleCheck className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="font-bold text-2xl">{totalTasks}</div>
-            <p className="text-muted-foreground text-xs">+3 new this week</p>
+            <div className="text-2xl font-bold">{totalTasks}</div>
+            <p className="text-xs text-muted-foreground">+3 new this week</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="font-medium text-sm">In Progress</CardTitle>
+            <CardTitle className="text-sm font-medium">In Progress</CardTitle>
             <Clock className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="font-bold text-2xl">{inProgressTasks}</div>
-            <p className="text-muted-foreground text-xs">Currently active</p>
+            <div className="text-2xl font-bold">{inProgressTasks}</div>
+            <p className="text-xs text-muted-foreground">Currently active</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="font-medium text-sm">Completed</CardTitle>
+            <CardTitle className="text-sm font-medium">Completed</CardTitle>
             <CircleCheck className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="font-bold text-2xl">{completedTasks}</div>
-            <p className="text-muted-foreground text-xs">This month</p>
+            <div className="text-2xl font-bold">{completedTasks}</div>
+            <p className="text-xs text-muted-foreground">This month</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="font-medium text-sm">Overdue</CardTitle>
+            <CardTitle className="text-sm font-medium">Overdue</CardTitle>
             <Clock className="h-4 w-4 text-red-500" />
           </CardHeader>
           <CardContent>
-            <div className="font-bold text-2xl text-red-600">
+            <div className="text-2xl font-bold text-red-600">
               {overdueTasks}
             </div>
-            <p className="text-muted-foreground text-xs">Needs attention</p>
+            <p className="text-xs text-muted-foreground">Needs attention</p>
           </CardContent>
         </Card>
       </div>
@@ -188,7 +188,7 @@ export default function TimeTrackerTasksPage() {
                     ></div>
                     <div>
                       <h3 className="font-medium">{task.name}</h3>
-                      <p className="text-muted-foreground text-sm">
+                      <p className="text-sm text-muted-foreground">
                         {task.description || 'No description'}
                       </p>
                     </div>
@@ -197,7 +197,7 @@ export default function TimeTrackerTasksPage() {
                     <Badge variant="secondary">
                       {task.category?.name || 'General'}
                     </Badge>
-                    <div className="text-muted-foreground text-sm">
+                    <div className="text-sm text-muted-foreground">
                       {task.estimatedTime
                         ? formatDuration(task.estimatedTime)
                         : 'No estimate'}

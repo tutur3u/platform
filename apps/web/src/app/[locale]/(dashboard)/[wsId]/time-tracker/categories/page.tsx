@@ -110,13 +110,13 @@ export default function TimeTrackerCategoriesPage() {
     <div className="container mx-auto space-y-6 p-6">
       <div className="mb-6 flex items-center gap-2">
         <FolderSync className="h-6 w-6 text-primary" />
-        <h1 className="font-bold text-2xl">Time Tracker Categories</h1>
+        <h1 className="text-2xl font-bold">Time Tracker Categories</h1>
       </div>
 
       {/* Search and Actions Bar */}
       <div className="flex flex-col gap-4 sm:flex-row">
         <div className="relative flex-1">
-          <Search className="-translate-y-1/2 absolute top-1/2 left-3 h-4 w-4 transform text-muted-foreground" />
+          <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transform text-muted-foreground" />
           <Input
             placeholder="Search categories..."
             className="pl-10"
@@ -196,51 +196,51 @@ export default function TimeTrackerCategoriesPage() {
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="font-medium text-sm">
+            <CardTitle className="text-sm font-medium">
               Total Categories
             </CardTitle>
             <FolderSync className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="font-bold text-2xl">{totalCategories}</div>
-            <p className="text-muted-foreground text-xs">+2 new this month</p>
+            <div className="text-2xl font-bold">{totalCategories}</div>
+            <p className="text-xs text-muted-foreground">+2 new this month</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="font-medium text-sm">
+            <CardTitle className="text-sm font-medium">
               Active Categories
             </CardTitle>
             <Clock className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="font-bold text-2xl">{activeCategories}</div>
-            <p className="text-muted-foreground text-xs">Currently in use</p>
+            <div className="text-2xl font-bold">{activeCategories}</div>
+            <p className="text-xs text-muted-foreground">Currently in use</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="font-medium text-sm">Total Hours</CardTitle>
+            <CardTitle className="text-sm font-medium">Total Hours</CardTitle>
             <Clock className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="font-bold text-2xl">
+            <div className="text-2xl font-bold">
               {formatDuration(totalHours)}
             </div>
-            <p className="text-muted-foreground text-xs">This month</p>
+            <p className="text-xs text-muted-foreground">This month</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="font-medium text-sm">Avg. Usage</CardTitle>
+            <CardTitle className="text-sm font-medium">Avg. Usage</CardTitle>
             <Clock className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="font-bold text-2xl">{formatDuration(avgUsage)}</div>
-            <p className="text-muted-foreground text-xs">Per category</p>
+            <div className="text-2xl font-bold">{formatDuration(avgUsage)}</div>
+            <p className="text-xs text-muted-foreground">Per category</p>
           </CardContent>
         </Card>
       </div>
@@ -279,10 +279,10 @@ export default function TimeTrackerCategoriesPage() {
                     ></div>
                     <div>
                       <h3 className="font-medium">{category.name}</h3>
-                      <p className="text-muted-foreground text-sm">
+                      <p className="text-sm text-muted-foreground">
                         {category.description || 'No description'}
                       </p>
-                      <div className="mt-1 flex flex-col gap-2 text-muted-foreground text-xs sm:flex-row sm:gap-4">
+                      <div className="mt-1 flex flex-col gap-2 text-xs text-muted-foreground sm:flex-row sm:gap-4">
                         <span>Budget: {category.budgetHours || 0}h/month</span>
                         <span>
                           Used: {formatDuration(category.usedTime || 0)}
@@ -296,7 +296,7 @@ export default function TimeTrackerCategoriesPage() {
                       <div className="font-semibold">
                         {formatDuration(category.usedTime || 0)}
                       </div>
-                      <div className="text-muted-foreground text-xs">
+                      <div className="text-xs text-muted-foreground">
                         {category.budgetHours
                           ? `${Math.round(((category.usedTime || 0) / (category.budgetHours * 3600)) * 100)}% of budget`
                           : 'No budget set'}
