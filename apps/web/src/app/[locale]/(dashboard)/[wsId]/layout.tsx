@@ -632,6 +632,7 @@ export default async function Layout({ children, params }: LayoutProps) {
         `/${correctedWSId}/roles`,
         `/${correctedWSId}/settings/reports`,
         `/${correctedWSId}/billing`,
+        `/${correctedWSId}/usage`,
         `/${correctedWSId}/api-keys`,
         `/${correctedWSId}/secrets`,
         `/${correctedWSId}/infrastructure`,
