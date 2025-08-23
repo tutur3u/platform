@@ -1,3 +1,10 @@
+import type { NavLink } from '@/components/navigation';
+import {
+  DEV_MODE,
+  SIDEBAR_BEHAVIOR_COOKIE_NAME,
+  SIDEBAR_COLLAPSED_COOKIE_NAME,
+} from '@/constants/common';
+import { SidebarProvider } from '@/context/sidebar-context';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import {
   Activity,
@@ -12,6 +19,7 @@ import {
   Calendar,
   Cctv,
   ChartArea,
+  ChartColumnStacked,
   CircleCheck,
   CircleDollarSign,
   ClipboardList,
@@ -62,17 +70,10 @@ import {
   getWorkspace,
   verifySecret,
 } from '@tuturuuu/utils/workspace-helper';
+import { getTranslations } from 'next-intl/server';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
-import { getTranslations } from 'next-intl/server';
 import { type ReactNode, Suspense } from 'react';
-import type { NavLink } from '@/components/navigation';
-import {
-  DEV_MODE,
-  SIDEBAR_BEHAVIOR_COOKIE_NAME,
-  SIDEBAR_COLLAPSED_COOKIE_NAME,
-} from '@/constants/common';
-import { SidebarProvider } from '@/context/sidebar-context';
 import NavbarActions from '../../navbar-actions';
 import { UserNav } from '../../user-nav';
 import InvitationCard from './invitation-card';
@@ -677,6 +678,11 @@ export default async function Layout({ children, params }: LayoutProps) {
           icon: <CircleDollarSign className="h-5 w-5" />,
           requireRootWorkspace: true,
           requireRootMember: true,
+        },
+        {
+          title: t('sidebar_tabs.usage'),
+          href: `/${correctedWSId}/usage`,
+          icon: <ChartColumnStacked className="h-5 w-5" />,
         },
         {
           title: t('workspace-settings-layout.api_keys'),

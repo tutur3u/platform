@@ -848,7 +848,8 @@
     "plans": "Kế hoạch",
     "ai_executions": "Xử lí AI",
     "operational_structure": "Cấu trúc hoạt động",
-    "structure": "Kết cấu"
+    "structure": "Kết cấu",
+    "usage": "Lưu lượng"
   },
   "link-shortener": {
     "title": "Rút ngắn liên kết",
