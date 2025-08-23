@@ -1,11 +1,11 @@
 'use client';
 
-import { DEV_MODE, PROD_MODE } from '@/constants/common';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { type ReactNode, useCallback, useEffect, useState } from 'react';
+import { DEV_MODE, PROD_MODE } from '@/constants/common';
 
 export interface NavLink {
   title: string;
@@ -77,7 +77,7 @@ export function Navigation({
   }, [urlToLoad, scrollActiveLinksIntoView]);
 
   return (
-    <div className="mb-4 scrollbar-none flex flex-none gap-1 overflow-x-auto font-semibold">
+    <div className="scrollbar-none mb-4 flex flex-none gap-1 overflow-x-auto font-semibold">
       {navLinks.map((link) => {
         // If the link is disabled, don't render it
         if (link?.disabled) return null;
