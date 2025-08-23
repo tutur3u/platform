@@ -55,8 +55,17 @@ export function Structure({
 
   // Utility function for path matching that respects segment boundaries
   const matchesPath = useCallback(
-    (pathname: string, target?: string) =>
-      !!target && (pathname === target || pathname.startsWith(`${target}/`)),
+    (pathname: string, target?: string, hasChildren?: boolean) => {
+      if (!target) return false;
+      
+      // For items WITH children, use startsWith to match subroutes
+      if (hasChildren) {
+        return pathname === target || pathname.startsWith(`${target}/`);
+      }
+      
+      // For items WITHOUT children, use exact matching only
+      return pathname === target;
+    },
     []
   );
 
@@ -73,8 +82,8 @@ export function Structure({
     (navLinks: NavLink[]): boolean => {
       return navLinks.some((child) => {
         const childMatches =
-          (child?.href && matchesPath(pathname, child.href)) ||
-          child?.aliases?.some((alias) => matchesPath(pathname, alias));
+          (child?.href && matchesPath(pathname, child.href, child.children && child.children.length > 0)) ||
+          child?.aliases?.some((alias) => matchesPath(pathname, alias, child.children && child.children.length > 0));
 
         if (childMatches) {
           return true;
@@ -90,67 +99,52 @@ export function Structure({
     [pathname, matchesPath]
   );
 
-  // Universal helper function to find the deepest active navigation structure
-  const findDeepestActiveNavigation = useCallback(
-    (navLinks: (NavLink | null)[], currentPath: string) => {
-      // Recursively search for the deepest active navigation
-      const findDeepest = (links: (NavLink | null)[], depth = 0): any => {
-        for (const link of links) {
-          if (!link) continue;
+  // Universal helper function to find active navigation structure
+  const findActiveNavigation = useCallback(
+    (navLinks: (NavLink | null)[], currentPath: string): {
+      currentLinks: (NavLink | null)[];
+      history: (NavLink | null)[];
+      titleHistory: (string | null)[];
+      direction: 'forward' | 'backward';
+    } | null => {
+      for (const link of navLinks) {
+        if (!link) continue;
 
-          // Check if this link or any of its children are active
-          if (link.href && matchesPath(currentPath, link.href)) {
-            // Special handling for dashboard - it should not create a submenu state
-            if (link.matchExact && currentPath === link.href) {
-              // Dashboard is active and we're exactly on the dashboard page
-              return {
-                currentLinks: [link],
-                history: [],
-                titleHistory: [],
-                direction: 'forward' as const,
-              };
-            }
-            
-            if (link.children && link.children.length > 0) {
-              // This link is active and has children, go deeper
-              const deeper = findDeepest(link.children, depth + 1);
-              if (deeper) {
-                return {
-                  currentLinks: deeper.currentLinks,
-                  history: [navLinks, ...deeper.history],
-                  titleHistory: [link.title, ...deeper.titleHistory],
-                  direction: 'forward' as const,
-                };
-              }
-            }
-            // This link is active but no deeper children, return it
+        // Check if this link should be active based on pathname or aliases
+        const linkMatches =
+          (link.href && matchesPath(pathname, link.href, link.children && link.children.length > 0)) ||
+          link.aliases?.some((alias) => matchesPath(pathname, alias, link.children && link.children.length > 0));
+
+        if (linkMatches) {
+          // If link has children, show submenu panel
+          if (link.children && link.children.length > 0) {
             return {
-              currentLinks: [link],
+              currentLinks: link.children,
               history: [navLinks],
               titleHistory: [link.title],
               direction: 'forward' as const,
             };
           }
+          // If link has no children, don't create submenu - return null for main navigation
+          return null;
+        }
 
-          // Check children recursively
-          if (link.children && link.children.length > 0) {
-            const childResult = findDeepest(link.children, depth + 1);
-            if (childResult) {
-              return {
-                currentLinks: childResult.currentLinks,
-                history: [navLinks, ...childResult.history],
-                titleHistory: [link.title, ...childResult.titleHistory],
-                direction: 'forward' as const,
-              };
-            }
+        // Check children recursively for active items
+        if (link.children && link.children.length > 0) {
+          const childResult = findActiveNavigation(link.children, currentPath);
+          if (childResult) {
+            return {
+              currentLinks: childResult.currentLinks,
+              history: [navLinks, ...childResult.history],
+              titleHistory: [link.title, ...childResult.titleHistory],
+              direction: 'forward' as const,
+            };
           }
         }
-        return null;
-      };
-
-      return findDeepest(navLinks);
+      }
+      return null;
     },
-    [matchesPath]
+    [matchesPath, pathname]
   );
 
   const [navState, setNavState] = useState<{
@@ -159,25 +153,11 @@ export function Structure({
     titleHistory: (string | null)[];
     direction: 'forward' | 'backward';
   }>(() => {
-    // Universal logic for deeply nested navigation - automatically detects multi-level structures
-    const deepNestedNavigation = findDeepestActiveNavigation(links, pathname);
-    if (deepNestedNavigation) {
-      return deepNestedNavigation;
-    }
-
-    // Standard logic for other routes
-    for (const link of links) {
-      if (link?.children && link.children.length > 0) {
-        const isActive = hasActiveChild(link.children);
-        if (isActive) {
-          return {
-            currentLinks: link.children,
-            history: [links],
-            titleHistory: [link.title],
-            direction: 'forward' as const,
-          };
-        }
-      }
+    // Universal logic for active navigation - detects submenu structures consistently
+    const activeNavigation = findActiveNavigation(links, pathname);
+    
+    if (activeNavigation) {
+      return activeNavigation;
     }
 
     // Flatten links with a single child
@@ -198,69 +178,10 @@ export function Structure({
 
   useEffect(() => {
     setNavState((prevState) => {
-      // Universal logic for deeply nested navigation - automatically detects multi-level structures
-      const deepNestedNavigation = findDeepestActiveNavigation(links, pathname);
-      if (deepNestedNavigation) {
-        return deepNestedNavigation;
-      }
-
-      // Special handling for dashboard - if we're on the dashboard page, show top-level navigation
-      const dashboardLink = links.find(link => link?.matchExact && link.href === pathname);
-      if (dashboardLink) {
-        return {
-          currentLinks: [dashboardLink],
-          history: [],
-          titleHistory: [],
-          direction: 'forward' as const,
-        };
-      }
-
-      // Standard navigation logic for non-time-tracker routes
-      // Find if any submenu should be active for the current path.
-      for (const link of links) {
-        if (link?.children && link.children.length > 0) {
-          // Check if this link should be active based on pathname or aliases
-          const linkMatches =
-            (link.href && matchesPath(pathname, link.href)) ||
-            link.aliases?.some((alias) => matchesPath(pathname, alias));
-
-          const isActive = linkMatches || hasActiveChild(link.children);
-
-          if (isActive) {
-            // If the active submenu is not the one currently displayed, switch to it.
-            if (
-              prevState.titleHistory[prevState.titleHistory.length - 1] !==
-              link.title
-            ) {
-              return {
-                currentLinks: link.children,
-                history: [links],
-                titleHistory: [link.title],
-                direction: 'forward',
-              };
-            }
-
-            // We're already in this submenu, but we need to check if we should go deeper
-            // Find the specific child that matches the current pathname
-            const activeChild = link.children.find(
-              (child) =>
-                (child.href && matchesPath(pathname, child.href)) ||
-                child.aliases?.some((alias) => matchesPath(pathname, alias))
-            );
-
-            if (activeChild?.children && activeChild.children.length > 0) {
-              return {
-                currentLinks: activeChild.children,
-                history: [...prevState.history, prevState.currentLinks],
-                titleHistory: [...prevState.titleHistory, activeChild.title],
-                direction: 'forward',
-              };
-            }
-
-            // It's the correct submenu, do nothing to the state.
-            return prevState;
-          }
-        }
+      // Universal logic for active navigation - detects submenu structures consistently
+      const activeNavigation = findActiveNavigation(links, pathname);
+      if (activeNavigation) {
+        return activeNavigation;
       }
 
       // Check if we're currently in a submenu and if any of its children still match the current path
@@ -313,8 +234,7 @@ export function Structure({
     pathname,
     links,
     hasActiveChild,
-    matchesPath,
-    findDeepestActiveNavigation,
+    findActiveNavigation,
   ]);
 
   const handleToggle = () => {
@@ -405,8 +325,8 @@ export function Structure({
   )
     .filter(
       (link) =>
-        (link.href && matchesPath(pathname, link.href)) ||
-        link.aliases?.some((alias) => matchesPath(pathname, alias))
+        (link.href && matchesPath(pathname, link.href, link.children && link.children.length > 0)) ||
+        link.aliases?.some((alias) => matchesPath(pathname, alias, link.children && link.children.length > 0))
     )
     .sort((a, b) => {
       const aLength = a.href ? a.href.length : a.aliases?.[0]?.length || 0;
