@@ -28,7 +28,7 @@ CREATE TYPE public.product AS ENUM (
 ALTER TABLE public.support_inquiries 
 ADD COLUMN type public.support_type NOT NULL DEFAULT 'support',
 ADD COLUMN product public.product NOT NULL DEFAULT 'other',
-ADD COLUMN creator_id uuid NOT NULL DEFAULT auth.uid(),
+ADD COLUMN creator_id uuid DEFAULT auth.uid(),
 ADD COLUMN images text[];
 
 -- Add foreign key constraint for creator_id to users table with cascade options
@@ -91,10 +91,10 @@ USING (
   bucket_id = 'support_inquiries' AND
 
   -- 2. Check for authentication
-  auth.role() = 'authenticated'
+  auth.role() = 'authenticated' AND
 
   -- 3. Match the authenticated user's ID with the inquiry's creator ID
-  auth.uid() AND is_org_member(auth.uid(), '00000000-0000-0000-0000-000000000000')
+  is_org_member(auth.uid(), '00000000-0000-0000-0000-000000000000')
 );
 
 
