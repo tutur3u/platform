@@ -31,7 +31,7 @@ interface MailProps {
   workspace: Workspace | null;
   defaultCollapsed: boolean;
   user: WorkspaceUser | null;
-  links: (NavLink | null)[];
+  links: NavLink[];
   actions: ReactNode;
   userPopover: ReactNode;
   children: ReactNode;
@@ -50,7 +50,9 @@ export function Structure({
 }: MailProps) {
   const t = useTranslations();
   const pathname = usePathname();
+
   const { behavior, handleBehaviorChange } = useSidebar();
+  const [initialized, setInitialized] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(defaultCollapsed);
 
   // Utility function for path matching that respects segment boundaries
@@ -70,6 +72,26 @@ export function Structure({
   );
 
   useEffect(() => {
+    setInitialized(true);
+  }, []);
+
+  // Utility function for path matching that respects segment boundaries
+  const matchesPath = useCallback(
+    (pathname: string, target?: string, hasChildren?: boolean) => {
+      if (!target) return false;
+
+      // For items WITH children, use startsWith to match subroutes
+      if (hasChildren) {
+        return pathname === target || pathname.startsWith(`${target}/`);
+      }
+
+      // For items WITHOUT children, use exact matching only
+      return pathname === target;
+    },
+    []
+  );
+
+  useEffect(() => {
     if (behavior === 'collapsed' || behavior === 'hover') {
       setIsCollapsed(true);
     } else {
@@ -82,8 +104,19 @@ export function Structure({
     (navLinks: NavLink[]): boolean => {
       return navLinks.some((child) => {
         const childMatches =
-          (child?.href && matchesPath(pathname, child.href, child.children && child.children.length > 0)) ||
-          child?.aliases?.some((alias) => matchesPath(pathname, alias, child.children && child.children.length > 0));
+          (child?.href &&
+            matchesPath(
+              pathname,
+              child.href,
+              child.children && child.children.length > 0
+            )) ||
+          child?.aliases?.some((alias) =>
+            matchesPath(
+              pathname,
+              alias,
+              child.children && child.children.length > 0
+            )
+          );
 
         if (childMatches) {
           return true;
@@ -101,10 +134,13 @@ export function Structure({
 
   // Universal helper function to find active navigation structure
   const findActiveNavigation = useCallback(
-    (navLinks: (NavLink | null)[], currentPath: string): {
-      currentLinks: (NavLink | null)[];
-      history: (NavLink | null)[];
-      titleHistory: (string | null)[];
+    (
+      navLinks: NavLink[],
+      currentPath: string
+    ): {
+      currentLinks: NavLink[];
+      history: NavLink[][]; // stack of previous levels
+      titleHistory: string[];
       direction: 'forward' | 'backward';
     } | null => {
       for (const link of navLinks) {
@@ -112,8 +148,19 @@ export function Structure({
 
         // Check if this link should be active based on pathname or aliases
         const linkMatches =
-          (link.href && matchesPath(pathname, link.href, link.children && link.children.length > 0)) ||
-          link.aliases?.some((alias) => matchesPath(pathname, alias, link.children && link.children.length > 0));
+          (link.href &&
+            matchesPath(
+              pathname,
+              link.href,
+              link.children && link.children.length > 0
+            )) ||
+          link.aliases?.some((alias) =>
+            matchesPath(
+              pathname,
+              alias,
+              link.children && link.children.length > 0
+            )
+          );
 
         if (linkMatches) {
           // If link has children, show submenu panel
@@ -148,14 +195,14 @@ export function Structure({
   );
 
   const [navState, setNavState] = useState<{
-    currentLinks: (NavLink | null)[];
-    history: (NavLink | null)[][];
-    titleHistory: (string | null)[];
+    currentLinks: NavLink[];
+    history: NavLink[][]; // stack of previous levels
+    titleHistory: string[];
     direction: 'forward' | 'backward';
   }>(() => {
     // Universal logic for active navigation - detects submenu structures consistently
     const activeNavigation = findActiveNavigation(links, pathname);
-    
+
     if (activeNavigation) {
       return activeNavigation;
     }
@@ -167,10 +214,10 @@ export function Structure({
           ? [link.children[0] as NavLink]
           : [link]
       )
-      .filter(Boolean) as (NavLink | null)[];
+      .filter(Boolean) as NavLink[];
     return {
       currentLinks: flattenedLinks,
-      history: [],
+      history: [] as NavLink[][],
       titleHistory: [],
       direction: 'forward' as const,
     };
@@ -186,31 +233,6 @@ export function Structure({
 
       // Check if we're currently in a submenu and if any of its children still match the current path
       if (prevState.history.length > 0) {
-        const currentParentTitle =
-          prevState.titleHistory[prevState.titleHistory.length - 1];
-
-        // Check if we're still in the same submenu context
-        if (
-          currentParentTitle &&
-          prevState.titleHistory.includes(currentParentTitle)
-        ) {
-          return prevState;
-        }
-
-        const currentParent = links.find(
-          (link) => link?.title === prevState.titleHistory[0]
-        );
-
-        if (currentParent?.children) {
-          const stillActive = hasActiveChild(currentParent.children);
-          if (stillActive) {
-            // We're still in the same submenu, keep it open
-            return prevState;
-          }
-        }
-
-        // If we are in a submenu, but no submenu link is active for the current path,
-        // it means we navigated to a top-level page. Go back to the main menu.
         // Flatten links with a single child
         const flattenedLinks = links
           .flatMap((link) =>
@@ -218,10 +240,10 @@ export function Structure({
               ? [link.children[0] as NavLink]
               : [link]
           )
-          .filter(Boolean) as (NavLink | null)[];
+          .filter(Boolean) as NavLink[];
         return {
           currentLinks: flattenedLinks,
-          history: [],
+          history: [] as NavLink[][],
           titleHistory: [],
           direction: 'backward',
         };
@@ -230,12 +252,7 @@ export function Structure({
       // We are at the top level and no submenu is active, do nothing.
       return prevState;
     });
-  }, [
-    pathname,
-    links,
-    hasActiveChild,
-    findActiveNavigation,
-  ]);
+  }, [pathname, links, findActiveNavigation]);
 
   const handleToggle = () => {
     const newCollapsed = !isCollapsed;
@@ -249,10 +266,7 @@ export function Structure({
     }
   };
 
-  const handleNavChange = (
-    newLinks: (NavLink | null)[],
-    parentTitle: string
-  ) => {
+  const handleNavChange = (newLinks: NavLink[], parentTitle: string) => {
     setNavState((prevState) => ({
       currentLinks: newLinks,
       history: [...prevState.history, prevState.currentLinks],
@@ -263,10 +277,12 @@ export function Structure({
 
   const handleNavBack = () => {
     setNavState((prevState) => {
-      const previousLinks = prevState.history[prevState.history.length - 1];
+      const newHistory = prevState.history.slice(0, -1);
+      const previousLevel =
+        prevState.history[prevState.history.length - 1] ?? links;
       return {
-        currentLinks: previousLinks || links,
-        history: prevState.history.slice(0, -1),
+        currentLinks: previousLevel,
+        history: newHistory,
         titleHistory: prevState.titleHistory.slice(0, -1),
         direction: 'backward',
       };
@@ -279,9 +295,7 @@ export function Structure({
 
   const isRootWorkspace = wsId === ROOT_WORKSPACE_ID;
 
-  const getFilteredLinks = (
-    linksToFilter: (NavLink | null)[] | undefined
-  ): NavLink[] =>
+  const getFilteredLinks = (linksToFilter: NavLink[] | undefined): NavLink[] =>
     (linksToFilter || []).flatMap((link) => {
       if (!link) return [];
 
@@ -290,11 +304,7 @@ export function Structure({
       if (link.requireRootMember && !user?.email?.endsWith('@tuturuuu.com'))
         return [];
       if (link.requireRootWorkspace && !isRootWorkspace) return [];
-      // TODO: Implement role-based filtering when user roles are available
-      // if (link.allowedRoles?.length) {
-      //   const hasRole = user?.roles?.some((r) => link.allowedRoles!.includes(r));
-      //   if (!hasRole) return [];
-      // }
+      // Do not filter by allowedRoles here; this is handled in `Navigation` where role context exists
 
       // For navigation items with children, always include them
       if (link.children && link.children.length > 0) {
@@ -325,8 +335,19 @@ export function Structure({
   )
     .filter(
       (link) =>
-        (link.href && matchesPath(pathname, link.href, link.children && link.children.length > 0)) ||
-        link.aliases?.some((alias) => matchesPath(pathname, alias, link.children && link.children.length > 0))
+        (link.href &&
+          matchesPath(
+            pathname,
+            link.href,
+            link.children && link.children.length > 0
+          )) ||
+        link.aliases?.some((alias) =>
+          matchesPath(
+            pathname,
+            alias,
+            link.children && link.children.length > 0
+          )
+        )
     )
     .sort((a, b) => {
       const aLength = a.href ? a.href.length : a.aliases?.[0]?.length || 0;
@@ -450,7 +471,7 @@ export function Structure({
           />
         </Link>
       </div>
-      <div className="mx-2 h-4 w-px flex-none rotate-[30deg] bg-foreground/20" />
+      <div className="mx-2 h-4 w-px flex-none rotate-30 bg-foreground/20" />
       <div className="flex items-center gap-2 break-all font-semibold text-lg">
         {currentLink?.icon && (
           <div className="flex-none">{currentLink.icon}</div>
@@ -459,6 +480,8 @@ export function Structure({
       </div>
     </>
   );
+
+  if (!initialized) return null;
 
   return (
     <BaseStructure

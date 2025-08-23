@@ -1,15 +1,3 @@
-import NavbarActions from '../../navbar-actions';
-import { UserNav } from '../../user-nav';
-import InvitationCard from './invitation-card';
-import PersonalWorkspacePrompt from './personal-workspace-prompt';
-import { Structure } from './structure';
-import type { NavLink } from '@/components/navigation';
-import {
-  DEV_MODE,
-  SIDEBAR_BEHAVIOR_COOKIE_NAME,
-  SIDEBAR_COLLAPSED_COOKIE_NAME,
-} from '@/constants/common';
-import { SidebarProvider } from '@/context/sidebar-context';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import {
   Activity,
@@ -18,6 +6,7 @@ import {
   Blocks,
   Bolt,
   BookKey,
+  BookUser,
   Box,
   BriefcaseBusiness,
   Calendar,
@@ -25,6 +14,7 @@ import {
   ChartArea,
   CircleCheck,
   CircleDollarSign,
+  ClipboardList,
   Clock,
   ClockFading,
   Cog,
@@ -34,7 +24,9 @@ import {
   GalleryVerticalEnd,
   GraduationCap,
   HardDrive,
+  IdCardLanyard,
   KeyRound,
+  LayoutDashboard,
   Link,
   Logs,
   Mail,
@@ -43,22 +35,25 @@ import {
   Play,
   Presentation,
   QrCodeIcon,
+  ReceiptText,
   ScanSearch,
   ScrollText,
   Send,
   ShieldUser,
   Sparkles,
-  SquareUserRound,
   SquaresIntersect,
+  SquareUserRound,
   Star,
-  Target,
+  Tags,
   TextSelect,
   Trash,
   TriangleAlert,
+  UserCheck,
   UserLock,
   Users,
   VectorSquare,
   Vote,
+  Wallet,
 } from '@tuturuuu/ui/icons';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
@@ -67,10 +62,22 @@ import {
   getWorkspace,
   verifySecret,
 } from '@tuturuuu/utils/workspace-helper';
-import { getTranslations } from 'next-intl/server';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
+import { getTranslations } from 'next-intl/server';
 import { type ReactNode, Suspense } from 'react';
+import type { NavLink } from '@/components/navigation';
+import {
+  DEV_MODE,
+  SIDEBAR_BEHAVIOR_COOKIE_NAME,
+  SIDEBAR_COLLAPSED_COOKIE_NAME,
+} from '@/constants/common';
+import { SidebarProvider } from '@/context/sidebar-context';
+import NavbarActions from '../../navbar-actions';
+import { UserNav } from '../../user-nav';
+import InvitationCard from './invitation-card';
+import PersonalWorkspacePrompt from './personal-workspace-prompt';
+import { Structure } from './structure';
 
 interface LayoutProps {
   params: Promise<{
@@ -507,9 +514,80 @@ export default async function Layout({ children, params }: LayoutProps) {
       children: [
         {
           title: t('sidebar_tabs.users'),
-          aliases: [`/${correctedWSId}/users`],
-          href: `/${correctedWSId}/users/database`,
+          aliases: [
+            `/${correctedWSId}/users`,
+            `/${correctedWSId}/users/attendance`,
+            `/${correctedWSId}/users/database`,
+            `/${correctedWSId}/users/groups`,
+            `/${correctedWSId}/users/group-tags`,
+            `/${correctedWSId}/users/reports`,
+            `/${correctedWSId}/users/fields`,
+            `/${correctedWSId}/users/structure`,
+          ],
           icon: <Users className="h-5 w-5" />,
+          children: [
+            {
+              title: t('workspace-users-tabs.overview'),
+              href: `/${wsId}/users`,
+              icon: <LayoutDashboard className="h-5 w-5" />,
+              matchExact: true,
+              disabled: withoutPermission('manage_users'),
+            },
+            {
+              title: t('workspace-users-tabs.attendance'),
+              href: `/${wsId}/users/attendance`,
+              icon: <UserCheck className="h-5 w-5" />,
+              disabled: withoutPermission('manage_users'),
+            },
+            {
+              title: t('workspace-users-tabs.database'),
+              href: `/${wsId}/users/database`,
+              icon: <BookUser className="h-5 w-5" />,
+              disabled: withoutPermission('manage_users'),
+            },
+            {
+              title: t('workspace-users-tabs.groups'),
+              href: `/${wsId}/users/groups`,
+              icon: <Users className="h-5 w-5" />,
+              disabled: withoutPermission('manage_users'),
+            },
+            {
+              title: t('workspace-users-tabs.group_tags'),
+              href: `/${wsId}/users/group-tags`,
+              icon: <Tags className="h-5 w-5" />,
+              disabled: withoutPermission('manage_users'),
+            },
+            {
+              title: t('workspace-users-tabs.reports'),
+              href: `/${wsId}/users/reports`,
+              icon: <ClipboardList className="h-5 w-5" />,
+              disabled: withoutPermission('manage_users'),
+            },
+            {
+              title: t('workspace-users-tabs.fields'),
+              href: `/${wsId}/users/fields`,
+              icon: <PencilLine className="h-5 w-5" />,
+              disabled: withoutPermission('manage_users'),
+            },
+            {
+              title: t('sidebar_tabs.structure'),
+              aliases: [`/${correctedWSId}/users/structure`],
+              href: `/${correctedWSId}/users/structure`,
+              icon: <IdCardLanyard className="h-5 w-5" />,
+              requireRootWorkspace: true,
+              requireRootMember: true,
+              disabled:
+                !DEV_MODE ||
+                ENABLE_AI_ONLY ||
+                !(await verifySecret({
+                  forceAdmin: true,
+                  wsId,
+                  name: 'ENABLE_USERS',
+                  value: 'true',
+                })) ||
+                withoutPermission('manage_users'),
+            },
+          ],
           disabled:
             ENABLE_AI_ONLY ||
             !(await verifySecret({
@@ -522,9 +600,55 @@ export default async function Layout({ children, params }: LayoutProps) {
         },
         {
           title: t('sidebar_tabs.finance'),
-          aliases: [`/${correctedWSId}/finance`],
-          href: `/${correctedWSId}/finance/transactions`,
+          aliases: [
+            `/${correctedWSId}/finance`,
+            `/${correctedWSId}/finance/transactions`,
+            `/${correctedWSId}/finance/wallets`,
+            `/${correctedWSId}/finance/transactions/categories`,
+            `/${correctedWSId}/finance/invoices`,
+            `/${correctedWSId}/finance/settings`,
+          ],
           icon: <Banknote className="h-5 w-5" />,
+          children: [
+            {
+              title: t('workspace-finance-tabs.overview'),
+              href: `/${wsId}/finance`,
+              icon: <LayoutDashboard className="h-5 w-5" />,
+              matchExact: true,
+              disabled: withoutPermission('manage_finance'),
+            },
+            {
+              title: t('workspace-finance-tabs.transactions'),
+              href: `/${wsId}/finance/transactions`,
+              icon: <Banknote className="h-5 w-5" />,
+              matchExact: true,
+              disabled: withoutPermission('manage_finance'),
+            },
+            {
+              title: t('workspace-finance-tabs.wallets'),
+              href: `/${wsId}/finance/wallets`,
+              icon: <Wallet className="h-5 w-5" />,
+              disabled: withoutPermission('manage_finance'),
+            },
+            {
+              title: t('workspace-finance-tabs.categories'),
+              href: `/${wsId}/finance/transactions/categories`,
+              icon: <Tags className="h-5 w-5" />,
+              disabled: withoutPermission('manage_finance'),
+            },
+            {
+              title: t('workspace-finance-tabs.invoices'),
+              href: `/${wsId}/finance/invoices`,
+              icon: <ReceiptText className="h-5 w-5" />,
+              disabled: withoutPermission('manage_finance'),
+            },
+            {
+              title: t('workspace-finance-tabs.settings'),
+              href: `/${wsId}/finance/settings`,
+              icon: <Cog className="h-5 w-5" />,
+              disabled: true,
+            },
+          ],
           disabled:
             ENABLE_AI_ONLY ||
             !(await verifySecret({
@@ -763,7 +887,7 @@ export default async function Layout({ children, params }: LayoutProps) {
         user={user}
         workspace={workspace}
         defaultCollapsed={defaultCollapsed}
-        links={navLinks}
+        links={navLinks.filter(Boolean) as NavLink[]}
         actions={
           <Suspense
             key={user.id}
