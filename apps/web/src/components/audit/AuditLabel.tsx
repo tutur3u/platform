@@ -1,11 +1,11 @@
-import type { Workspace } from "@tuturuuu/types/db";
-import type { AuditLog } from "@tuturuuu/types/primitives/audit-log";
-import type { User } from "@tuturuuu/types/primitives/User";
-import moment from "moment";
-import { getLabel } from "@/utils/audit-helper";
-import "moment/locale/vi";
-import { useLocale, useTranslations } from "next-intl";
-import useSWR from "swr";
+import type { Workspace } from '@tuturuuu/types/db';
+import type { AuditLog } from '@tuturuuu/types/primitives/audit-log';
+import type { User } from '@tuturuuu/types/primitives/User';
+import moment from 'moment';
+import { getLabel } from '@/utils/audit-helper';
+import 'moment/locale/vi';
+import { useLocale, useTranslations } from 'next-intl';
+import useSWR from 'swr';
 
 interface Props {
   data: AuditLog;
@@ -17,8 +17,8 @@ interface Props {
 const AuditLabel = ({ data, isLoading, hasActor, actor }: Props) => {
   const locale = useLocale();
 
-  const commonT = useTranslations("common");
-  const t = useTranslations("ws-activities");
+  const commonT = useTranslations('common');
+  const t = useTranslations('ws-activities');
 
   const wsId = data?.ws_id;
   const wsApiPath = wsId ? `/api/workspaces/${wsId}` : null;
@@ -27,11 +27,11 @@ const AuditLabel = ({ data, isLoading, hasActor, actor }: Props) => {
 
   const label = getLabel(
     t as (key: string, options?: { count: number }) => string,
-    data,
+    data
   );
-  const unnamedWorkspace = commonT("unnamed-workspace");
+  const unnamedWorkspace = commonT('unnamed-workspace');
 
-  const fullLabel = isLoading ? commonT("loading") : label.trim();
+  const fullLabel = isLoading ? commonT('loading') : label.trim();
 
   const localizedMoment = moment(data.ts).locale(locale);
   const relativeTime = localizedMoment.fromNow();
@@ -45,12 +45,12 @@ const AuditLabel = ({ data, isLoading, hasActor, actor }: Props) => {
               {actor.display_name}
             </span>
           ) : (
-            "..."
+            '...'
           )
         ) : null}
 
         <span className="text-foreground/80 dark:text-zinc-400">
-          {" "}
+          {' '}
           {hasActor
             ? fullLabel.toLowerCase()
             : /* Capitalize the first letter of the sentence */
@@ -61,11 +61,11 @@ const AuditLabel = ({ data, isLoading, hasActor, actor }: Props) => {
         {relativeTime.charAt(0).toUpperCase() + relativeTime.slice(1)}
         {workspace ? (
           <span className="text-purple-600 dark:text-purple-300">
-            {" "}
+            {' '}
             • {workspace.name || unnamedWorkspace}
           </span>
         ) : (
-          ""
+          ''
         )}
       </div>
     </>
