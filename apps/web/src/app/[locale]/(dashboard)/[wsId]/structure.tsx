@@ -130,25 +130,20 @@ export function Structure({
       for (const link of navLinks) {
         if (!link) continue;
 
-        // Check if this link should be active based on pathname or aliases
-        const linkMatches =
-          (link.href &&
-            matchesPath(
-              pathname,
-              link.href,
-              link.children && link.children.length > 0
-            )) ||
-          link.aliases?.some((alias) =>
-            matchesPath(
-              pathname,
-              alias,
-              link.children && link.children.length > 0
-            )
-          );
+        // Depth-first: attempt to resolve deeper levels first
+        if (link.children && link.children.length > 0) {
+          const deeper = findActiveNavigation(link.children, currentPath);
+          if (deeper) {
+            return {
+              currentLinks: deeper.currentLinks,
+              history: [navLinks, ...deeper.history],
+              titleHistory: [link.title, ...deeper.titleHistory],
+              direction: 'forward' as const,
+            };
+          }
 
-        if (linkMatches) {
-          // If link has children, show submenu panel
-          if (link.children && link.children.length > 0) {
+          // If any descendant leaf matches, open this submenu level
+          if (hasActiveChild(link.children)) {
             return {
               currentLinks: link.children,
               history: [navLinks],
@@ -156,26 +151,37 @@ export function Structure({
               direction: 'forward' as const,
             };
           }
-          // If link has no children, don't create submenu - return null for main navigation
-          return null;
         }
 
-        // Check children recursively for active items
-        if (link.children && link.children.length > 0) {
-          const childResult = findActiveNavigation(link.children, currentPath);
-          if (childResult) {
-            return {
-              currentLinks: childResult.currentLinks,
-              history: [navLinks, ...childResult.history],
-              titleHistory: [link.title, ...childResult.titleHistory],
-              direction: 'forward' as const,
-            };
-          }
+        // Check if this link should be active based on pathname or aliases
+        const linkMatches =
+          (link.href &&
+            matchesPath(
+              currentPath,
+              link.href,
+              link.children && link.children.length > 0
+            )) ||
+          link.aliases?.some((alias) =>
+            matchesPath(
+              currentPath,
+              alias,
+              link.children && link.children.length > 0
+            )
+          );
+
+        if (linkMatches && link.children && link.children.length > 0) {
+          // Prefer showing submenu when current link matches and has children
+          return {
+            currentLinks: link.children,
+            history: [navLinks],
+            titleHistory: [link.title],
+            direction: 'forward' as const,
+          };
         }
       }
       return null;
     },
-    [matchesPath, pathname]
+    [matchesPath, hasActiveChild]
   );
 
   const [navState, setNavState] = useState<{
