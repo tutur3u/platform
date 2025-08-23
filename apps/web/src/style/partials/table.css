@@ -35,7 +35,7 @@
       &::before {
         @apply ml-2 h-full w-[1px] bg-black/20;
         @apply dark:bg-white/20;
-        content: '';
+        content: "";
       }
     }
 
@@ -57,7 +57,7 @@
       &:hover,
       &.selected {
         &::before {
-          content: '';
+          content: "";
           @apply w-2.5;
         }
       }
@@ -98,7 +98,7 @@
       &.selected {
         &::before {
           @apply h-2.5;
-          content: '';
+          content: "";
         }
       }
       &:hover {
