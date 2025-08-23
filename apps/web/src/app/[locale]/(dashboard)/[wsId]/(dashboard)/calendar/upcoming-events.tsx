@@ -5,6 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
 import { isAllDayEvent } from '@tuturuuu/ui/hooks/calendar-utils';
 import { Calendar, Clock, MapPin } from '@tuturuuu/ui/icons';
 import { format, isThisWeek, isToday, isTomorrow } from 'date-fns';
+import dayjs from 'dayjs';
+import relativeTime from 'dayjs/plugin/relativeTime';
 import Link from 'next/link';
 
 interface UpcomingCalendarEventsProps {
@@ -15,6 +17,8 @@ export default async function UpcomingCalendarEvents({
   wsId,
 }: UpcomingCalendarEventsProps) {
   const supabase = await createClient();
+
+  dayjs.extend(relativeTime);
 
   // Get upcoming events (next 7 days)
   const now = new Date();
@@ -71,6 +75,8 @@ export default async function UpcomingCalendarEvents({
 
     return `${format(start, 'MMM d, h:mm a')} - ${format(end, 'h:mm a')}`;
   };
+
+  const getRelativeTime = (startAt: string) => dayjs(startAt).fromNow();
 
   const isEventSoon = (startAt: string) => {
     const start = new Date(startAt);
@@ -129,6 +135,8 @@ export default async function UpcomingCalendarEvents({
                   </div>
                   <span>•</span>
                   <span>{formatEventTime(event.start_at, event.end_at)}</span>
+                  <span>•</span>
+                  <span>{getRelativeTime(event.start_at)}</span>
                 </div>
 
                 {event.location && (
