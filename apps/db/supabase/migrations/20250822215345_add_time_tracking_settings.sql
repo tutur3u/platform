@@ -38,7 +38,7 @@ alter table "public"."time_tracking_settings" add constraint "time_tracking_sett
 
 -- Indexes for performance
 CREATE INDEX time_tracking_settings_user_id_idx ON public.time_tracking_settings USING btree (user_id);
-CREATE INDEX time_tracking_settings_user_id_idx ON public.time_tracking_settings USING btree (ws_id);
+CREATE INDEX time_tracking_settings_ws_id_idx ON public.time_tracking_settings USING btree (ws_id);
 
 -- RLS Policies
 create policy "Allow users to read their own settings" on "public"."time_tracking_settings" as permissive for select to authenticated using (
