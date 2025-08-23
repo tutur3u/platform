@@ -48,7 +48,7 @@ export default async function TasksAssignedToMe({
       )
     `)
     .eq('list.board.ws_id', wsId)
-    .eq('assignees.user.id', userId)
+    .eq('assignees.user_id', userId)
     .eq('deleted', false)
     .in('list.status', ['not_started', 'active']) // Only active tasks
     .order('priority', { ascending: false })

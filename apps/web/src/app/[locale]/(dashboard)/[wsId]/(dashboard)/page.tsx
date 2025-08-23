@@ -1,10 +1,10 @@
-import LoadingStatisticCard from '@/components/loading-statistic-card';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import type { AuroraForecast } from '@tuturuuu/types/db';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
 import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import { notFound } from 'next/navigation';
 import { Suspense } from 'react';
+import LoadingStatisticCard from '@/components/loading-statistic-card';
 import UpcomingCalendarEvents from './calendar/upcoming-events';
 import DashboardCardSkeleton from './dashboard-card-skeleton';
 import NewlyCreatedTasks from './tasks/newly-created-tasks';
