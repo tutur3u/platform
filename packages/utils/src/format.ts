@@ -77,7 +77,9 @@ export function isValidHttpUrl(url: string | null | undefined): boolean {
     const parsedUrl = new URL(s);
     const protocol = parsedUrl.protocol.toLowerCase();
     // Require a hostname to avoid odd cases like "http:/foo"
-    return (protocol === 'http:' || protocol === 'https:') && !!parsedUrl.hostname;
+    return (
+      (protocol === 'http:' || protocol === 'https:') && !!parsedUrl.hostname
+    );
   } catch {
     return false;
   }
