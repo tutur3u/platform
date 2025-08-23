@@ -31,7 +31,7 @@ interface MailProps {
   workspace: Workspace | null;
   defaultCollapsed: boolean;
   user: WorkspaceUser | null;
-  links: (NavLink | null)[];
+  links: NavLink[];
   actions: ReactNode;
   userPopover: ReactNode;
   children: ReactNode;
@@ -119,12 +119,12 @@ export function Structure({
   // Universal helper function to find active navigation structure
   const findActiveNavigation = useCallback(
     (
-      navLinks: (NavLink | null)[],
+      navLinks: NavLink[],
       currentPath: string
     ): {
-      currentLinks: (NavLink | null)[];
-      history: (NavLink | null)[];
-      titleHistory: (string | null)[];
+      currentLinks: NavLink[];
+      history: NavLink[][]; // stack of previous levels
+      titleHistory: string[];
       direction: 'forward' | 'backward';
     } | null => {
       for (const link of navLinks) {
@@ -179,9 +179,9 @@ export function Structure({
   );
 
   const [navState, setNavState] = useState<{
-    currentLinks: (NavLink | null)[];
-    history: (NavLink | null)[][];
-    titleHistory: (string | null)[];
+    currentLinks: NavLink[];
+    history: NavLink[][]; // stack of previous levels
+    titleHistory: string[];
     direction: 'forward' | 'backward';
   }>(() => {
     // Universal logic for active navigation - detects submenu structures consistently
@@ -198,10 +198,10 @@ export function Structure({
           ? [link.children[0] as NavLink]
           : [link]
       )
-      .filter(Boolean) as (NavLink | null)[];
+      .filter(Boolean) as NavLink[];
     return {
       currentLinks: flattenedLinks,
-      history: [],
+      history: [] as NavLink[][],
       titleHistory: [],
       direction: 'forward' as const,
     };
@@ -224,10 +224,10 @@ export function Structure({
               ? [link.children[0] as NavLink]
               : [link]
           )
-          .filter(Boolean) as (NavLink | null)[];
+          .filter(Boolean) as NavLink[];
         return {
           currentLinks: flattenedLinks,
-          history: [],
+          history: [] as NavLink[][],
           titleHistory: [],
           direction: 'backward',
         };
@@ -250,10 +250,7 @@ export function Structure({
     }
   };
 
-  const handleNavChange = (
-    newLinks: (NavLink | null)[],
-    parentTitle: string
-  ) => {
+  const handleNavChange = (newLinks: NavLink[], parentTitle: string) => {
     setNavState((prevState) => ({
       currentLinks: newLinks,
       history: [...prevState.history, prevState.currentLinks],
@@ -264,10 +261,12 @@ export function Structure({
 
   const handleNavBack = () => {
     setNavState((prevState) => {
-      const previousLinks = prevState.history[prevState.history.length - 1];
+      const newHistory = prevState.history.slice(0, -1);
+      const previousLevel =
+        prevState.history[prevState.history.length - 1] ?? links;
       return {
-        currentLinks: previousLinks || links,
-        history: prevState.history.slice(0, -1),
+        currentLinks: previousLevel,
+        history: newHistory,
         titleHistory: prevState.titleHistory.slice(0, -1),
         direction: 'backward',
       };
@@ -280,9 +279,7 @@ export function Structure({
 
   const isRootWorkspace = wsId === ROOT_WORKSPACE_ID;
 
-  const getFilteredLinks = (
-    linksToFilter: (NavLink | null)[] | undefined
-  ): NavLink[] =>
+  const getFilteredLinks = (linksToFilter: NavLink[] | undefined): NavLink[] =>
     (linksToFilter || []).flatMap((link) => {
       if (!link) return [];
 
@@ -291,7 +288,7 @@ export function Structure({
       if (link.requireRootMember && !user?.email?.endsWith('@tuturuuu.com'))
         return [];
       if (link.requireRootWorkspace && !isRootWorkspace) return [];
-      if (link.allowedRoles && link.allowedRoles.length > 0) return [];
+      // Do not filter by allowedRoles here; this is handled in `Navigation` where role context exists
 
       if (link.children && link.children.length > 1) {
         const filteredChildren = getFilteredLinks(link.children);

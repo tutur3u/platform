@@ -834,7 +834,7 @@ export default async function Layout({ children, params }: LayoutProps) {
         user={user}
         workspace={workspace}
         defaultCollapsed={defaultCollapsed}
-        links={navLinks}
+        links={navLinks.filter(Boolean) as NavLink[]}
         actions={
           <Suspense
             key={user.id}
