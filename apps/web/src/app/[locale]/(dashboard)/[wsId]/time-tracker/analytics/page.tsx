@@ -9,9 +9,11 @@ import {
   CardTitle,
 } from '@tuturuuu/ui/card';
 import { ChartArea, Clock, TrendingUp, Users } from '@tuturuuu/ui/icons';
+import dayjs from 'dayjs';
 import { useParams } from 'next/navigation';
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { LineChart, PieChart } from '@/components/ui/charts';
+import { ActivityHeatmap } from '../components/activity-heatmap';
 
 // Helper function to format duration
 const formatDuration = (seconds: number): string => {
@@ -60,31 +62,74 @@ export default function TimeTrackerAnalyticsPage() {
 
   // Prepare chart data from real data
   const timeDistributionData =
-    analyticsData?.categoryData?.map((cat: any) => ({
+    analyticsData?.analytics?.categoryBreakdown?.map((cat: any) => ({
       name: cat.name,
-      value: cat.totalTime,
+      value: cat.time,
       color: cat.color,
     })) || [];
 
   const weeklyTrendsData =
-    analyticsData?.weeklyData?.map((week: any) => ({
+    analyticsData?.analytics?.weeklyData?.map((week: any) => ({
       week: week.weekStart,
       hours: week.totalHours,
     })) || [];
 
-  // Calculate real metrics
+  // Calculate real metrics from API data
   const totalTime = statsData?.stats?.monthTime || 0;
   const totalTimeFormatted = formatDuration(totalTime);
-  const lastMonthChange = '+12.3%'; // This would be calculated from real data comparison
 
-  const activeProjects = analyticsData?.activeProjects || 8;
-  const newThisWeek = analyticsData?.newProjects || 2;
+  // Use real percentage change from API
+  const timeChange = analyticsData?.analytics?.timeChange || 0;
+  const lastMonthChange =
+    timeChange > 0 ? `+${timeChange.toFixed(1)}%` : `${timeChange.toFixed(1)}%`;
 
-  const teamMembers = analyticsData?.teamMembers || 12;
-  const allActiveThisMonth = 'All active this month';
+  const activeProjects = analyticsData?.analytics?.activeProjects?.length || 0;
+  const newThisWeek = analyticsData?.analytics?.newProjects?.length || 0;
 
-  const productivityScore = analyticsData?.productivityScore || 87;
-  const lastWeekChange = '+5%'; // This would be calculated from real data comparison
+  const teamMembers = analyticsData?.analytics?.teamMembers || 0;
+  const allActiveThisMonth =
+    teamMembers > 0 ? `${teamMembers} active members` : 'No team members';
+
+  const productivityScore = analyticsData?.analytics?.productivityScore || 0;
+  const lastWeekChange =
+    timeChange > 0 ? `+${timeChange.toFixed(1)}%` : `${timeChange.toFixed(1)}%`;
+
+  // Client-side rendering to prevent hydration issues
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
+  // Transform heatmap data for your existing component
+  const dailyActivity = useMemo(() => {
+    const heatmapData = analyticsData?.analytics?.heatmapData || [];
+    const dailyMap = new Map<string, { duration: number; sessions: number }>();
+
+    // Aggregate hourly data into daily totals
+    heatmapData.forEach((hourData: any) => {
+      const date = dayjs()
+        .subtract(
+          ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].indexOf(
+            hourData.day
+          ),
+          'day'
+        )
+        .format('YYYY-MM-DD');
+
+      const existing = dailyMap.get(date) || { duration: 0, sessions: 0 };
+      dailyMap.set(date, {
+        duration: existing.duration + hourData.time,
+        sessions: existing.sessions + (hourData.time > 0 ? 1 : 0),
+      });
+    });
+
+    return Array.from(dailyMap.entries()).map(([date, data]) => ({
+      date,
+      duration: data.duration,
+      sessions: data.sessions,
+    }));
+  }, [analyticsData]);
 
   return (
     <div className="container mx-auto space-y-6 p-6">
@@ -105,7 +150,7 @@ export default function TimeTrackerAnalyticsPage() {
           <CardContent>
             <div className="font-bold text-2xl">{totalTimeFormatted}</div>
             <p className="text-muted-foreground text-xs">
-              {lastMonthChange} from last month
+              {lastMonthChange} from last {period}
             </p>
           </CardContent>
         </Card>
@@ -120,7 +165,9 @@ export default function TimeTrackerAnalyticsPage() {
           <CardContent>
             <div className="font-bold text-2xl">{activeProjects}</div>
             <p className="text-muted-foreground text-xs">
-              +{newThisWeek} new this week
+              {newThisWeek > 0
+                ? `+${newThisWeek} new this week`
+                : 'No new projects'}
             </p>
           </CardContent>
         </Card>
@@ -150,7 +197,7 @@ export default function TimeTrackerAnalyticsPage() {
               {formatPercentage(productivityScore)}
             </div>
             <p className="text-muted-foreground text-xs">
-              {lastWeekChange} from last week
+              {lastWeekChange} from last {period}
             </p>
           </CardContent>
         </Card>
@@ -160,9 +207,9 @@ export default function TimeTrackerAnalyticsPage() {
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <Card>
           <CardHeader>
-            <CardTitle>Time Distribution by Project</CardTitle>
+            <CardTitle>Time Distribution by Category</CardTitle>
             <CardDescription>
-              How time is allocated across different projects
+              How time is allocated across different categories
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -209,6 +256,23 @@ export default function TimeTrackerAnalyticsPage() {
         </Card>
       </div>
 
+      {/* Activity Heatmap */}
+      {isClient ? (
+        <ActivityHeatmap
+          dailyActivity={dailyActivity}
+          formatDuration={formatDuration}
+        />
+      ) : (
+        <div className="animate-pulse rounded-lg border p-4">
+          <div className="mb-4 h-8 w-48 rounded bg-gray-200"></div>
+          <div className="space-y-2">
+            <div className="h-4 w-full rounded bg-gray-200"></div>
+            <div className="h-4 w-3/4 rounded bg-gray-200"></div>
+            <div className="h-4 w-1/2 rounded bg-gray-200"></div>
+          </div>
+        </div>
+      )}
+
       {/* Additional Analytics Sections */}
       <Card>
         <CardHeader>
@@ -219,34 +283,34 @@ export default function TimeTrackerAnalyticsPage() {
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <div className="rounded-lg border p-4 text-center">
               <div className="font-semibold text-green-600 text-lg">
-                Peak Hours
+                Total Sessions
               </div>
               <div className="font-bold text-2xl">
-                {analyticsData?.peakHours || '9 AM - 11 AM'}
+                {analyticsData?.analytics?.overview?.totalSessions || 0}
               </div>
-              <div className="text-muted-foreground text-sm">
-                Most productive time
-              </div>
+              <div className="text-muted-foreground text-sm">This {period}</div>
             </div>
             <div className="rounded-lg border p-4 text-center">
               <div className="font-semibold text-blue-600 text-lg">
-                Focus Score
+                Avg Session Length
               </div>
               <div className="font-bold text-2xl">
-                {formatPercentage(analyticsData?.focusScore || 92)}
+                {formatDuration(
+                  analyticsData?.analytics?.overview?.avgSessionLength || 0
+                )}
               </div>
-              <div className="text-muted-foreground text-sm">
-                High concentration
-              </div>
+              <div className="text-muted-foreground text-sm">Per session</div>
             </div>
             <div className="rounded-lg border p-4 text-center">
               <div className="font-semibold text-lg text-orange-600">
-                Break Efficiency
+                Categories Used
               </div>
               <div className="font-bold text-2xl">
-                {formatPercentage(analyticsData?.breakEfficiency || 78)}
+                {analyticsData?.analytics?.categoryBreakdown?.length || 0}
               </div>
-              <div className="text-muted-foreground text-sm">Good balance</div>
+              <div className="text-muted-foreground text-sm">
+                Different categories
+              </div>
             </div>
           </div>
         </CardContent>
