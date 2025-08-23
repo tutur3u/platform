@@ -135,10 +135,11 @@ export function ActivityHeatmap({
     const isPeriodicReminder =
       onboardingState.viewCount >= 10 &&
       (!onboardingState.dismissedAt ||
-        Math.floor(
-          (Date.now() - new Date(onboardingState.dismissedAt).getTime()) /
-            (1000 * 60 * 60 * 24)
-        ) >= 14);
+        (typeof window !== 'undefined' &&
+          Math.floor(
+            (Date.now() - new Date(onboardingState.dismissedAt).getTime()) /
+              (1000 * 60 * 60 * 24)
+          ) >= 14));
 
     return isNewUser || changedViewMode || isPeriodicReminder;
   }, [settings.showOnboardingTips, onboardingState, settings.viewMode]);
@@ -303,7 +304,8 @@ export function ActivityHeatmap({
       'bg-emerald-600 dark:bg-emerald-600/80', // Medium-high activity
       'bg-emerald-800 dark:bg-emerald-400/90', // High activity
     ];
-    return colors[Math.max(0, Math.min(4, intensity))]!;
+    const index = Math.max(0, Math.min(4, intensity));
+    return colors[index] as string;
   };
 
   const monthNames = [
@@ -335,7 +337,7 @@ export function ActivityHeatmap({
       // Show month label if we're in the first week of the month and it's a different month
       if (month !== lastMonth && dayOfMonth <= 7) {
         monthLabels.push({
-          label: monthNames[month]!,
+          label: monthNames[month] || 'Unknown',
           weekIndex,
         });
         lastMonth = month;
@@ -362,17 +364,19 @@ export function ActivityHeatmap({
     let lastMonth = -1;
 
     weeksSubset.forEach((week, weekIndex) => {
-      const firstDayOfWeek = week.find((day) => day !== null);
-      if (firstDayOfWeek) {
-        const month = firstDayOfWeek.date.month();
-        const dayOfMonth = firstDayOfWeek.date.date();
+      if (week && week.length > 0) {
+        const firstDayOfWeek = week.find((day) => day !== null);
+        if (firstDayOfWeek) {
+          const month = firstDayOfWeek.date.month();
+          const dayOfMonth = firstDayOfWeek.date.date();
 
-        if (month !== lastMonth && dayOfMonth <= 7) {
-          labels.push({
-            label: monthNames[month]!,
-            weekIndex: weekIndex,
-          });
-          lastMonth = month;
+          if (month !== lastMonth && dayOfMonth <= 7) {
+            labels.push({
+              label: monthNames[month] || 'Unknown',
+              weekIndex: weekIndex,
+            });
+            lastMonth = month;
+          }
         }
       }
     });
@@ -405,7 +409,7 @@ export function ActivityHeatmap({
       >
         {/* Month Labels */}
         <div
-          className="grid text-xs font-medium text-gray-500 dark:text-gray-400"
+          className="grid font-medium text-gray-500 text-xs dark:text-gray-400"
           style={{
             gridTemplateColumns: `repeat(${weeksSubset.length}, minmax(0, 1fr))`,
             gap: isMobile ? '1.5px' : '2.5px',
@@ -461,6 +465,7 @@ export function ActivityHeatmap({
               <Tooltip key={globalIndex}>
                 <TooltipTrigger asChild>
                   <button
+                    type="button"
                     className={cn(
                       'relative aspect-square rounded-[2px] transition-all duration-200 ease-out focus:outline-none',
                       isMobile
@@ -496,7 +501,7 @@ export function ActivityHeatmap({
                     <div className="font-semibold text-gray-900 dark:text-gray-100">
                       {day.date.format('dddd, MMMM D, YYYY')}
                       {settings.timeReference === 'smart' && (
-                        <div className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                        <div className="mt-1 text-gray-500 text-xs dark:text-gray-400">
                           {day.date.fromNow()} • {day.date.format('MMM D')}
                         </div>
                       )}
@@ -540,7 +545,7 @@ export function ActivityHeatmap({
                           <div className="flex items-center gap-1">
                             {[...Array(5)].map((_, i) => (
                               <div
-                                key={i}
+                                key={`intensity-dot-${day.date.format('YYYY-MM-DD')}-${i}`}
                                 className={cn(
                                   'h-1.5 w-1.5 rounded-full transition-colors',
                                   i < intensity
@@ -550,7 +555,7 @@ export function ActivityHeatmap({
                               />
                             ))}
                           </div>
-                          <span className="text-xs font-medium text-gray-500 dark:text-gray-400">
+                          <span className="font-medium text-gray-500 text-xs dark:text-gray-400">
                             Level {intensity}
                           </span>
                         </div>
@@ -564,7 +569,7 @@ export function ActivityHeatmap({
                     {isToday && (
                       <div className="flex items-center gap-2 rounded-lg bg-blue-50 px-2.5 py-1.5 dark:bg-blue-900/40">
                         <div className="h-2.5 w-2.5 animate-pulse rounded-full bg-blue-500 shadow-sm" />
-                        <span className="text-sm font-semibold text-blue-600 dark:text-blue-400">
+                        <span className="font-semibold text-blue-600 text-sm dark:text-blue-400">
                           Today
                         </span>
                       </div>
@@ -614,23 +619,24 @@ export function ActivityHeatmap({
     return (
       <div className="space-y-3">
         <div className="flex items-center justify-between">
-          <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300">
+          <h4 className="font-medium text-gray-700 text-sm dark:text-gray-300">
             {today.format('YYYY')} Activity Pattern
           </h4>
-          <span className="text-xs text-gray-500 dark:text-gray-400">
+          <span className="text-gray-500 text-xs dark:text-gray-400">
             {dailyActivity?.length || 0} active days
           </span>
         </div>
 
         <div className="grid grid-cols-12 gap-2">
-          {monthlyData.map((month, index) => (
-            <Tooltip key={index}>
+          {monthlyData.map((month) => (
+            <Tooltip key={`month-${month.month.format('YYYY-MM')}`}>
               <TooltipTrigger asChild>
                 <button
+                  type="button"
                   className={cn(
-                    'h-12 rounded-md transition-all hover:scale-105 focus:ring-2 focus:ring-emerald-400/50 focus:outline-none',
+                    'h-12 rounded-md transition-all hover:scale-105 focus:outline-none focus:ring-2 focus:ring-emerald-400/50',
                     getColorClass(month.intensity),
-                    'flex flex-col items-center justify-center text-xs font-medium'
+                    'flex flex-col items-center justify-center font-medium text-xs'
                   )}
                   onClick={() => setCurrentMonth(month.month)}
                 >
@@ -644,7 +650,7 @@ export function ActivityHeatmap({
                   <div className="font-medium">
                     {month.month.format('MMMM YYYY')}
                   </div>
-                  <div className="text-sm text-gray-500 dark:text-gray-400">
+                  <div className="text-gray-500 text-sm dark:text-gray-400">
                     {formatDuration(month.duration)} • {month.sessions} sessions
                   </div>
                 </div>
@@ -701,10 +707,10 @@ export function ActivityHeatmap({
         {/* Month Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <h4 className="text-base font-semibold text-gray-900 dark:text-gray-100">
+            <h4 className="font-semibold text-base text-gray-900 dark:text-gray-100">
               {currentMonth.format('MMMM YYYY')}
             </h4>
-            <div className="flex items-center gap-3 text-xs text-gray-600 dark:text-gray-400">
+            <div className="flex items-center gap-3 text-gray-600 text-xs dark:text-gray-400">
               <span>{monthlyStats.activeDays} active days</span>
               <span>{formatDuration(monthlyStats.totalDuration)} tracked</span>
             </div>
@@ -734,7 +740,7 @@ export function ActivityHeatmap({
         {/* Calendar Grid */}
         <div className="space-y-2">
           {/* Day Headers */}
-          <div className="grid grid-cols-7 gap-1.5 text-center text-xs font-medium text-gray-500 dark:text-gray-400">
+          <div className="grid grid-cols-7 gap-1.5 text-center font-medium text-gray-500 text-xs dark:text-gray-400">
             {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => (
               <div key={day} className="py-1 text-center">
                 {day}
@@ -744,15 +750,16 @@ export function ActivityHeatmap({
 
           {/* Calendar Days */}
           <div className="grid grid-cols-7 gap-1.5">
-            {days.map((day, index) => {
+            {days.map((day) => {
               const intensity = getIntensity(day.activity?.duration || 0);
 
               return (
-                <Tooltip key={index}>
+                <Tooltip key={`calendar-day-${day.date.format('YYYY-MM-DD')}`}>
                   <TooltipTrigger asChild>
                     <button
+                      type="button"
                       className={cn(
-                        'relative h-8 w-full rounded-md text-xs font-medium transition-all focus:outline-none',
+                        'relative h-8 w-full rounded-md font-medium text-xs transition-all focus:outline-none',
                         'hover:z-10 hover:scale-105 focus:z-10 focus:scale-105',
                         day.isCurrentMonth
                           ? 'text-gray-900 dark:text-gray-100'
@@ -772,18 +779,18 @@ export function ActivityHeatmap({
                       <div className="font-medium">
                         {day.date.format('dddd, MMMM D, YYYY')}
                         {settings.timeReference === 'smart' && (
-                          <div className="text-xs text-gray-500 dark:text-gray-400">
+                          <div className="text-gray-500 text-xs dark:text-gray-400">
                             {day.date.fromNow()}
                           </div>
                         )}
                       </div>
                       {day.activity ? (
-                        <div className="text-sm text-emerald-600 dark:text-emerald-400">
+                        <div className="text-emerald-600 text-sm dark:text-emerald-400">
                           {formatDuration(day.activity.duration)} •{' '}
                           {day.activity.sessions} sessions
                         </div>
                       ) : (
-                        <div className="text-sm text-gray-500 dark:text-gray-400">
+                        <div className="text-gray-500 text-sm dark:text-gray-400">
                           No activity recorded
                         </div>
                       )}
@@ -865,9 +872,9 @@ export function ActivityHeatmap({
   }, [dailyActivity, userTimezone]);
 
   const calculateMonthlyStats = useCallback(
-    (monthlyDataParam: typeof monthlyData) => {
+    (monthlyDataInput: typeof monthlyData) => {
       // Calculate streaks for each month
-      Object.values(monthlyDataParam).forEach((monthData) => {
+      Object.values(monthlyDataInput).forEach((monthData) => {
         let currentStreak = 0;
         let longestStreak = 0;
 
@@ -886,12 +893,12 @@ export function ActivityHeatmap({
           }
         }
 
-        monthData.longestStreak = longestStreak;
+        monthData.longestStreak = currentStreak;
         monthData.currentStreak = currentStreak;
       });
 
       // Sort months chronologically (most recent first)
-      const sortedMonths = Object.entries(monthlyDataParam)
+      const sortedMonths = Object.entries(monthlyDataInput)
         .sort(([a], [b]) => b.localeCompare(a))
         .slice(0, 12); // Show last 12 months
 
@@ -959,7 +966,7 @@ export function ActivityHeatmap({
         },
       };
     },
-    [monthlyData]
+    []
   );
 
   // Card components
@@ -967,14 +974,14 @@ export function ActivityHeatmap({
     <div className="group relative overflow-hidden rounded-lg border bg-gradient-to-br from-blue-50 to-indigo-50 p-3 shadow-sm transition-all hover:shadow-md dark:border-blue-800/30 dark:from-blue-950/20 dark:to-indigo-950/20">
       <div className="mb-2 flex items-center justify-between">
         <div>
-          <h4 className="text-sm font-semibold text-blue-900 dark:text-blue-100">
+          <h4 className="font-semibold text-blue-900 text-sm dark:text-blue-100">
             Overall
           </h4>
-          <span className="text-xs text-blue-600 dark:text-blue-300">
+          <span className="text-blue-600 text-xs dark:text-blue-300">
             {data.monthCount} month{data.monthCount > 1 ? 's' : ''}
           </span>
         </div>
-        <div className="rounded-full bg-blue-100 px-2 py-1 text-xs font-medium text-blue-700 dark:bg-blue-900/50 dark:text-blue-300">
+        <div className="rounded-full bg-blue-100 px-2 py-1 font-medium text-blue-700 text-xs dark:bg-blue-900/50 dark:text-blue-300">
           {data.focusScore}%
         </div>
       </div>
@@ -1006,8 +1013,8 @@ export function ActivityHeatmap({
         </div>
       </div>
 
-      <div className="border-t border-blue-200 pt-2 dark:border-blue-800">
-        <p className="text-xs text-blue-700 dark:text-blue-300">
+      <div className="border-blue-200 border-t pt-2 dark:border-blue-800">
+        <p className="text-blue-700 text-xs dark:text-blue-300">
           {data.activeDays < 7
             ? `Great start! Building momentum.`
             : `Avg session: ${formatDuration(Math.round(data.avgSession))}`}
@@ -1042,7 +1049,7 @@ export function ActivityHeatmap({
       <div className="group relative overflow-hidden rounded-lg border bg-gradient-to-br from-green-50 to-emerald-50 p-3 shadow-sm transition-all hover:shadow-md dark:border-green-800/30 dark:from-green-950/20 dark:to-emerald-950/20">
         <div className="mb-2 flex items-center justify-between">
           <div>
-            <h4 className="text-sm font-semibold text-green-900 dark:text-green-100">
+            <h4 className="font-semibold text-green-900 text-sm dark:text-green-100">
               {data.name}
             </h4>
             <div className="flex items-center gap-1">
@@ -1050,7 +1057,7 @@ export function ActivityHeatmap({
               {trend !== 'neutral' && (
                 <span
                   className={cn(
-                    'text-xs font-medium',
+                    'font-medium text-xs',
                     trend === 'up'
                       ? 'text-green-600 dark:text-green-400'
                       : 'text-red-600 dark:text-red-400'
@@ -1062,7 +1069,7 @@ export function ActivityHeatmap({
               )}
             </div>
           </div>
-          <div className="rounded-full bg-green-100 px-2 py-1 text-xs font-medium text-green-700 dark:bg-green-900/50 dark:text-green-300">
+          <div className="rounded-full bg-green-100 px-2 py-1 font-medium text-green-700 text-xs dark:bg-green-900/50 dark:text-green-300">
             {focusScore}%
           </div>
         </div>
@@ -1098,7 +1105,7 @@ export function ActivityHeatmap({
         <div className="mb-2">
           <div className="grid grid-cols-7 gap-px">
             {Array.from({ length: 7 * 4 }, (_, i) => {
-              const monthStart = dayjs(monthKey + '-01');
+              const monthStart = dayjs(`${monthKey}-01`);
               const dayOffset = i - monthStart.day();
               const currentDay = monthStart.add(dayOffset, 'day');
 
@@ -1115,7 +1122,7 @@ export function ActivityHeatmap({
 
               return (
                 <div
-                  key={i}
+                  key={`mini-heatmap-${monthKey}-${currentDay.format('YYYY-MM-DD')}`}
                   className={cn(
                     'aspect-square rounded-[1px] transition-all',
                     isCurrentMonth
@@ -1130,8 +1137,8 @@ export function ActivityHeatmap({
           </div>
         </div>
 
-        <div className="border-t border-green-200 pt-2 dark:border-green-800">
-          <p className="text-xs text-green-700 dark:text-green-300">
+        <div className="border-green-200 border-t pt-2 dark:border-green-800">
+          <p className="text-green-700 text-xs dark:text-green-300">
             {consistencyScore >= 80
               ? 'Excellent consistency!'
               : consistencyScore >= 50
@@ -1143,16 +1150,22 @@ export function ActivityHeatmap({
     );
   };
 
-  const UpcomingCard = ({ name }: { monthKey: string; name: string }) => (
+  const UpcomingCard = ({
+    monthKey,
+    name,
+  }: {
+    monthKey: string;
+    name: string;
+  }) => (
     <div className="group relative overflow-hidden rounded-lg border border-muted/40 bg-gradient-to-br from-muted/20 to-muted/10 p-3 opacity-60 backdrop-blur-sm transition-all hover:from-muted/30 hover:to-muted/20 hover:opacity-80">
       <div className="mb-2 flex items-center justify-between">
         <div>
-          <h4 className="text-sm font-semibold text-muted-foreground/80">
+          <h4 className="font-semibold text-muted-foreground/80 text-sm">
             {name}
           </h4>
-          <span className="text-xs text-muted-foreground/60">Next month</span>
+          <span className="text-muted-foreground/60 text-xs">Next month</span>
         </div>
-        <div className="rounded-full bg-muted/50 px-2 py-1 text-xs font-medium text-muted-foreground/70 backdrop-blur-sm">
+        <div className="rounded-full bg-muted/50 px-2 py-1 font-medium text-muted-foreground/70 text-xs backdrop-blur-sm">
           Plan
         </div>
       </div>
@@ -1180,14 +1193,23 @@ export function ActivityHeatmap({
 
       <div className="mb-2 opacity-30">
         <div className="grid grid-cols-7 gap-px">
-          {Array.from({ length: 7 * 4 }, (_, i) => (
-            <div key={i} className="aspect-square rounded-[1px] bg-muted/50" />
-          ))}
+          {Array.from({ length: 7 * 4 }, (_, i) => {
+            const monthStart = dayjs(`${monthKey}-01`);
+            const dayOffset = i - monthStart.day();
+            const currentDay = monthStart.add(dayOffset, 'day');
+
+            return (
+              <div
+                key={`placeholder-${monthKey}-${currentDay.format('YYYY-MM-DD')}`}
+                className="aspect-square rounded-[1px] bg-muted/50"
+              />
+            );
+          })}
         </div>
       </div>
 
-      <div className="border-t border-muted/30 pt-2">
-        <p className="text-xs text-muted-foreground/60">
+      <div className="border-muted/30 border-t pt-2">
+        <p className="text-muted-foreground/60 text-xs">
           Keep the momentum going! 🚀
         </p>
       </div>
@@ -1198,14 +1220,14 @@ export function ActivityHeatmap({
     <div className="group relative overflow-hidden rounded-lg border bg-gradient-to-br from-purple-50 to-violet-50 p-3 shadow-sm transition-all hover:shadow-md dark:border-purple-800/30 dark:from-purple-950/20 dark:to-violet-950/20">
       <div className="mb-2 flex items-center justify-between">
         <div>
-          <h4 className="text-sm font-semibold text-purple-900 dark:text-purple-100">
+          <h4 className="font-semibold text-purple-900 text-sm dark:text-purple-100">
             Get Started
           </h4>
-          <span className="text-xs text-purple-600 dark:text-purple-300">
+          <span className="text-purple-600 text-xs dark:text-purple-300">
             Begin journey
           </span>
         </div>
-        <div className="rounded-full bg-purple-100 px-2 py-1 text-xs font-medium text-purple-700 dark:bg-purple-900/50 dark:text-purple-300">
+        <div className="rounded-full bg-purple-100 px-2 py-1 font-medium text-purple-700 text-xs dark:bg-purple-900/50 dark:text-purple-300">
           New
         </div>
       </div>
@@ -1231,8 +1253,8 @@ export function ActivityHeatmap({
         </div>
       </div>
 
-      <div className="mt-3 border-t border-purple-200 pt-2 dark:border-purple-800">
-        <p className="text-xs text-purple-700 dark:text-purple-300">
+      <div className="mt-3 border-purple-200 border-t pt-2 dark:border-purple-800">
+        <p className="text-purple-700 text-xs dark:text-purple-300">
           💡 Try 25-min Pomodoro sessions
         </p>
       </div>
@@ -1279,10 +1301,11 @@ export function ActivityHeatmap({
         {totalCards > maxVisibleCards && (
           <>
             <button
+              type="button"
               onClick={scrollLeft}
               disabled={!canScrollLeft}
               className={cn(
-                'absolute top-1/2 left-0 z-10 h-8 w-8 -translate-y-1/2 rounded-full border bg-background/80 shadow-md backdrop-blur-sm transition-all',
+                '-translate-y-1/2 absolute top-1/2 left-0 z-10 h-8 w-8 rounded-full border bg-background/80 shadow-md backdrop-blur-sm transition-all',
                 canScrollLeft
                   ? 'border-border text-foreground hover:border-accent-foreground/20 hover:bg-accent'
                   : 'cursor-not-allowed border-muted text-muted-foreground opacity-50'
@@ -1293,10 +1316,11 @@ export function ActivityHeatmap({
             </button>
 
             <button
+              type="button"
               onClick={scrollRight}
               disabled={!canScrollRight}
               className={cn(
-                'absolute top-1/2 right-0 z-10 h-8 w-8 -translate-y-1/2 rounded-full border bg-background/80 shadow-md backdrop-blur-sm transition-all',
+                '-translate-y-1/2 absolute top-1/2 right-0 z-10 h-8 w-8 rounded-full border bg-background/80 shadow-md backdrop-blur-sm transition-all',
                 canScrollRight
                   ? 'border-border text-foreground hover:border-accent-foreground/20 hover:bg-accent'
                   : 'cursor-not-allowed border-muted text-muted-foreground opacity-50'
@@ -1357,19 +1381,25 @@ export function ActivityHeatmap({
           <div className="mt-3 flex justify-center gap-1">
             {Array.from(
               { length: Math.ceil(totalCards / maxVisibleCards) },
-              (_, i) => (
-                <button
-                  key={i}
-                  onClick={() => setCurrentIndex(i * maxVisibleCards)}
-                  className={cn(
-                    'h-2 w-2 rounded-full transition-all',
-                    Math.floor(currentIndex / maxVisibleCards) === i
-                      ? 'bg-primary'
-                      : 'bg-muted-foreground/30 hover:bg-muted-foreground/50'
-                  )}
-                  aria-label={`Go to page ${i + 1}`}
-                />
-              )
+              (_, i) => {
+                const pageNumber = i + 1;
+                const startIndex = i * maxVisibleCards;
+
+                return (
+                  <button
+                    type="button"
+                    key={`pagination-${startIndex}-${pageNumber}`}
+                    onClick={() => setCurrentIndex(startIndex)}
+                    className={cn(
+                      'h-2 w-2 rounded-full transition-all',
+                      Math.floor(currentIndex / maxVisibleCards) === i
+                        ? 'bg-primary'
+                        : 'bg-muted-foreground/30 hover:bg-muted-foreground/50'
+                    )}
+                    aria-label={`Go to page ${pageNumber}`}
+                  />
+                );
+              }
             )}
           </div>
         )}
@@ -1434,7 +1464,7 @@ export function ActivityHeatmap({
 
       return allCards;
     },
-    [calculateMonthlyStats]
+    []
   );
 
   // Rename and lift hooks into a proper React component
@@ -1459,10 +1489,10 @@ export function ActivityHeatmap({
       {/* Header */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0 flex-1">
-          <h3 className="text-lg font-semibold text-gray-900 sm:text-xl dark:text-gray-100">
+          <h3 className="font-semibold text-gray-900 text-lg sm:text-xl dark:text-gray-100">
             Activity Heatmap
           </h3>
-          <p className="text-sm text-gray-600 sm:text-base dark:text-gray-400">
+          <p className="text-gray-600 text-sm sm:text-base dark:text-gray-400">
             {totalDuration > 0
               ? `${formatDuration(totalDuration)} tracked this year`
               : 'Start tracking to see your activity pattern'}
@@ -1482,7 +1512,7 @@ export function ActivityHeatmap({
                 Display Mode
               </DropdownMenuLabel>
               {externalSettings && (
-                <div className="px-2 py-1 text-xs text-muted-foreground">
+                <div className="px-2 py-1 text-muted-foreground text-xs">
                   Controlled by Timer Settings
                 </div>
               )}
@@ -1592,7 +1622,7 @@ export function ActivityHeatmap({
           </DropdownMenu>
 
           {/* Legend */}
-          <div className="flex items-center gap-2 rounded-lg bg-white/80 px-3 py-2 text-xs text-gray-600 shadow-sm ring-1 ring-gray-200/50 sm:gap-3 dark:bg-gray-800/80 dark:text-gray-400 dark:ring-gray-700/50">
+          <div className="flex items-center gap-2 rounded-lg bg-white/80 px-3 py-2 text-gray-600 text-xs shadow-sm ring-1 ring-gray-200/50 sm:gap-3 dark:bg-gray-800/80 dark:text-gray-400 dark:ring-gray-700/50">
             <span className="hidden font-medium sm:inline">Less</span>
             <div className="flex items-center gap-1">
               {[0, 1, 2, 3, 4].map((intensity) => (
@@ -1628,12 +1658,12 @@ export function ActivityHeatmap({
                     'Compact Card Overview'}
                 </p>
                 {onboardingState.viewCount > 0 && (
-                  <span className="text-xs text-blue-600 opacity-75 dark:text-blue-400">
+                  <span className="text-blue-600 text-xs opacity-75 dark:text-blue-400">
                     View #{onboardingState.viewCount + 1}
                   </span>
                 )}
               </div>
-              <p className="leading-relaxed text-blue-700 dark:text-blue-300">
+              <p className="text-blue-700 leading-relaxed dark:text-blue-300">
                 {settings.viewMode === 'original' &&
                   'Track your productivity with GitHub-style visualization. Darker squares = more active days. Hover over any day for details, and use the View menu above to explore other layouts!'}
                 {settings.viewMode === 'hybrid' &&
@@ -1644,7 +1674,7 @@ export function ActivityHeatmap({
                   'Monthly summaries at a glance! Each card shows key stats with a mini heatmap preview. Scroll horizontally to see different months and track your progress over time.'}
               </p>
               {onboardingState.viewCount >= 3 && (
-                <p className="text-xs text-blue-600 opacity-80 dark:text-blue-400">
+                <p className="text-blue-600 text-xs opacity-80 dark:text-blue-400">
                   💭 Tip: You can always toggle these tips on/off in the View
                   menu or Settings panel.
                 </p>
@@ -1672,7 +1702,7 @@ export function ActivityHeatmap({
             <div className="space-y-6">
               {/* Day labels for mobile */}
               <div className="flex items-start gap-3 overflow-visible">
-                <div className="flex w-8 flex-col justify-between gap-[2px] text-xs font-medium text-gray-500 dark:text-gray-400">
+                <div className="flex w-8 flex-col justify-between gap-[2px] font-medium text-gray-500 text-xs dark:text-gray-400">
                   <span className="leading-none">M</span>
                   <span className="leading-none">T</span>
                   <span className="leading-none">W</span>
@@ -1687,7 +1717,7 @@ export function ActivityHeatmap({
               </div>
 
               <div className="flex items-start gap-3 overflow-visible">
-                <div className="flex w-8 flex-col justify-between gap-[2px] text-xs font-medium text-gray-500 dark:text-gray-400">
+                <div className="flex w-8 flex-col justify-between gap-[2px] font-medium text-gray-500 text-xs dark:text-gray-400">
                   <span className="leading-none">M</span>
                   <span className="leading-none">T</span>
                   <span className="leading-none">W</span>
@@ -1703,7 +1733,7 @@ export function ActivityHeatmap({
 
               {/* Third row for mobile */}
               <div className="flex items-start gap-3 overflow-visible">
-                <div className="flex w-8 flex-col justify-between gap-[2px] text-xs font-medium text-gray-500 dark:text-gray-400">
+                <div className="flex w-8 flex-col justify-between gap-[2px] font-medium text-gray-500 text-xs dark:text-gray-400">
                   <span className="leading-none">M</span>
                   <span className="leading-none">T</span>
                   <span className="leading-none">W</span>
@@ -1724,7 +1754,7 @@ export function ActivityHeatmap({
             <div className="space-y-6">
               {/* Row 1: First 6 months */}
               <div className="flex gap-4 overflow-visible">
-                <div className="flex flex-col justify-between text-sm font-semibold text-gray-500 dark:text-gray-400">
+                <div className="flex flex-col justify-between font-semibold text-gray-500 text-sm dark:text-gray-400">
                   <span className="leading-none">Mon</span>
                   <span className="leading-none">Wed</span>
                   <span className="leading-none">Fri</span>
@@ -1740,7 +1770,7 @@ export function ActivityHeatmap({
 
               {/* Row 2: Last 6 months */}
               <div className="flex gap-4 overflow-visible">
-                <div className="flex flex-col justify-between text-sm font-semibold text-gray-500 dark:text-gray-400">
+                <div className="flex flex-col justify-between font-semibold text-gray-500 text-sm dark:text-gray-400">
                   <span className="leading-none">Mon</span>
                   <span className="leading-none">Wed</span>
                   <span className="leading-none">Fri</span>
