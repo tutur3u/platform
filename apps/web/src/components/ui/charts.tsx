@@ -148,11 +148,14 @@ export const PieChart = ({
             `${name}: ${((percent ?? 0) * 100).toFixed(0)}%`
           }
         >
-          {data.map((_, index) => (
-            <Cell key={`cell-${index}`} fill={colors[index % colors.length]} />
+          {data.map((entry, index) => (
+            <Cell
+              key={`cell-${entry.name}-${index}`}
+              fill={colors[index % colors.length]}
+            />
           ))}
         </Pie>
-        <Tooltip formatter={(value: number) => [`${value} races`, 'Count']} />
+        <Tooltip formatter={(value: number) => [`${value}`, 'Value']} />
         <Legend />
       </RechartsPieChart>
     </ResponsiveContainer>
