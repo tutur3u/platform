@@ -1,8 +1,14 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
-import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
-import { Clock, Target, Timer, TrendingUp, Zap } from '@tuturuuu/ui/icons';
+import {
+  Clock,
+  ClockFading,
+  Target,
+  Timer,
+  TrendingUp,
+  Zap,
+} from '@tuturuuu/ui/icons';
 import Link from 'next/link';
 
 interface TimeTrackingMetricsProps {
@@ -139,25 +145,12 @@ export default async function TimeTrackingMetrics({
     return `${minutes}m`;
   };
 
-  const getProductivityColor = (score: number) => {
-    if (score >= 80) return 'text-green-600 bg-green-50 border-green-200';
-    if (score >= 60) return 'text-blue-600 bg-blue-50 border-blue-200';
-    if (score >= 40) return 'text-yellow-600 bg-yellow-50 border-yellow-200';
-    return 'text-red-600 bg-red-50 border-red-200';
-  };
-
-  const getProductivityLabel = (score: number) => {
-    if (score >= 80) return 'Excellent';
-    if (score >= 60) return 'Good';
-    if (score >= 40) return 'Average';
-    return 'Needs Improvement';
-  };
-
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-        <CardTitle className="font-semibold text-base">
-          ⏰ Time Tracking Metrics
+        <CardTitle className="flex items-center gap-2 font-semibold text-base">
+          <ClockFading className="h-5 w-5" />
+          <div className="line-clamp-1">Time Tracking</div>
         </CardTitle>
         <Link href={`/${wsId}/time-tracker`}>
           <Button variant="ghost" size="sm" className="h-8 px-2">
@@ -223,11 +216,6 @@ export default async function TimeTrackingMetrics({
             </div>
             <div className="flex items-center gap-2">
               <p className="font-medium text-sm">{productivityScore}</p>
-              <Badge
-                className={`text-xs ${getProductivityColor(productivityScore)}`}
-              >
-                {getProductivityLabel(productivityScore)}
-              </Badge>
             </div>
           </div>
         </div>

@@ -3,7 +3,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
-import { AlertCircle, CheckCircle2, Clock, Plus } from '@tuturuuu/ui/icons';
+import { CheckCircle, Plus } from '@tuturuuu/ui/icons';
 import { cn } from '@tuturuuu/utils/format';
 import { format } from 'date-fns';
 import Link from 'next/link';
@@ -70,23 +70,14 @@ export default async function NewlyCreatedTasks({
     }
   };
 
-  const getStatusIcon = (listStatus: string) => {
-    switch (listStatus) {
-      case 'active':
-        return <Clock className="h-3 w-3" />;
-      case 'done':
-      case 'closed':
-        return <CheckCircle2 className="h-3 w-3" />;
-      default:
-        return <AlertCircle className="h-3 w-3" />;
-    }
-  };
-
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
         <CardTitle className="font-semibold text-base">
-          🆕 Recently Created Tasks
+          <CardTitle className="flex items-center gap-2 font-semibold text-base">
+            <CheckCircle className="h-5 w-5" />
+            <div className="line-clamp-1">Recently Created Tasks</div>
+          </CardTitle>
         </CardTitle>
         <Link href={`/${wsId}/tasks`}>
           <Button variant="ghost" size="sm" className="h-8 px-2">
@@ -104,17 +95,14 @@ export default async function NewlyCreatedTasks({
             >
               <div className="flex-1 space-y-1">
                 <div className="flex items-start gap-2">
-                  <div className="mt-0.5">
-                    {getStatusIcon(task.list?.status || 'not_started')}
-                  </div>
                   <div className="flex-1">
-                    <h4 className="font-medium leading-none">{task.name}</h4>
+                    <h4 className="line-clamp-1 font-medium">{task.name}</h4>
                     {task.description && (
                       <p className="mt-1 line-clamp-2 text-muted-foreground text-xs">
                         {task.description}
                       </p>
                     )}
-                    <div className="mt-2 flex items-center gap-2 text-muted-foreground text-xs">
+                    <div className="mt-2 flex flex-wrap items-center gap-2 text-muted-foreground text-xs">
                       <span>{task.list?.board?.name}</span>
                       <span>•</span>
                       <span>{task.list?.name}</span>

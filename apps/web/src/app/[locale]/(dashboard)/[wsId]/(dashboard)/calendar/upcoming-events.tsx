@@ -1,5 +1,4 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
-import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
 import { isAllDayEvent } from '@tuturuuu/ui/hooks/calendar-utils';
@@ -43,20 +42,6 @@ export default async function UpcomingCalendarEvents({
   const upcomingEvents =
     allEvents?.filter((event) => !isAllDayEvent(event)).slice(0, 5) || [];
 
-  const getEventColor = (color: string | null) => {
-    const colorMap: Record<string, string> = {
-      RED: 'bg-red-500',
-      ORANGE: 'bg-orange-500',
-      YELLOW: 'bg-yellow-500',
-      GREEN: 'bg-green-500',
-      BLUE: 'bg-blue-500',
-      PURPLE: 'bg-purple-500',
-      PINK: 'bg-pink-500',
-      CYAN: 'bg-cyan-500',
-    };
-    return colorMap[color || 'BLUE'] || 'bg-blue-500';
-  };
-
   const getDateLabel = (dateString: string) => {
     const date = new Date(dateString);
     if (isToday(date)) return 'Today';
@@ -78,17 +63,12 @@ export default async function UpcomingCalendarEvents({
 
   const getRelativeTime = (startAt: string) => dayjs(startAt).fromNow();
 
-  const isEventSoon = (startAt: string) => {
-    const start = new Date(startAt);
-    const diffInMinutes = (start.getTime() - now.getTime()) / (1000 * 60);
-    return diffInMinutes <= 30 && diffInMinutes > 0;
-  };
-
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-        <CardTitle className="font-semibold text-base">
-          📅 Next Up on Calendar
+        <CardTitle className="flex items-center gap-2 font-semibold text-base">
+          <Calendar className="h-5 w-5" />
+          <div className="line-clamp-1">Next Up on Calendar</div>
         </CardTitle>
         <Link href={`/${wsId}/calendar`}>
           <Button variant="ghost" size="sm" className="h-8 px-2">
@@ -104,22 +84,9 @@ export default async function UpcomingCalendarEvents({
               key={event.id}
               className="flex items-start gap-3 rounded-lg border bg-card/50 p-3 transition-colors hover:bg-muted/50"
             >
-              <div
-                className={`h-full w-1 rounded-full ${getEventColor(event.color)} flex-shrink-0`}
-              />
               <div className="flex-1 space-y-1">
-                <div className="flex items-start justify-between">
-                  <h4 className="font-medium leading-none">
-                    {event.title || 'Untitled Event'}
-                  </h4>
-                  {isEventSoon(event.start_at) && (
-                    <Badge
-                      variant="destructive"
-                      className="animate-pulse text-xs"
-                    >
-                      Starting Soon
-                    </Badge>
-                  )}
+                <div className="line-clamp-1 font-medium">
+                  {event.title || 'Untitled Event'}
                 </div>
 
                 {event.description && (
@@ -128,7 +95,7 @@ export default async function UpcomingCalendarEvents({
                   </p>
                 )}
 
-                <div className="flex items-center gap-2 text-muted-foreground text-xs">
+                <div className="flex flex-wrap items-center gap-2 text-muted-foreground text-xs">
                   <div className="flex items-center gap-1">
                     <Clock className="h-3 w-3" />
                     <span>{getDateLabel(event.start_at)}</span>
@@ -141,9 +108,9 @@ export default async function UpcomingCalendarEvents({
 
                 {event.location && (
                   <div className="flex items-center gap-2 text-muted-foreground text-xs">
-                    <div className="flex items-center gap-1">
-                      <MapPin className="h-3 w-3" />
-                      <span className="truncate">{event.location}</span>
+                    <div className="flex items-start gap-1">
+                      <MapPin className="h-3 w-3 flex-none" />
+                      <span className="line-clamp-2">{event.location}</span>
                     </div>
                   </div>
                 )}
