@@ -2298,8 +2298,7 @@ export function SessionHistory({
                   <div className="mb-6 rounded-lg border p-4">
                     <h3 className="mb-3 flex items-center gap-2 text-sm font-medium text-muted-foreground">
                       <BarChart2 className="h-4 w-4" />
-                      {viewMode.charAt(0).toUpperCase() +
-                        viewMode.slice(1)}{' '}
+                      {viewMode.charAt(0).toUpperCase() + viewMode.slice(1)}{' '}
                       Summary
                     </h3>
                     <div className="space-y-4">
