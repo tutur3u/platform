@@ -1,4 +1,5 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
+import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import { type NextRequest, NextResponse } from 'next/server';
 
 interface Params {
@@ -8,8 +9,14 @@ interface Params {
 }
 
 export async function GET(_: NextRequest, { params }: Params) {
-  const { wsId } = await params;
+  const { wsId: id } = await params;
   const supabase = await createClient();
+
+  let wsId = id;
+  if (wsId.toLowerCase() === 'personal') {
+    const workspace = await getWorkspace(id);
+    wsId = workspace.id;
+  }
 
   const { data, error } = await supabase
     .from('workspace_members')

@@ -1,6 +1,7 @@
 'use client';
 
 import {
+  closestCorners,
   DndContext,
   type DragEndEvent,
   type DragOverEvent,
@@ -9,13 +10,12 @@ import {
   KeyboardSensor,
   MeasuringStrategy,
   PointerSensor,
-  closestCorners,
   useSensor,
   useSensors,
 } from '@dnd-kit/core';
 import {
-  SortableContext,
   horizontalListSortingStrategy,
+  SortableContext,
 } from '@dnd-kit/sortable';
 import { useQueryClient } from '@tanstack/react-query';
 import { createClient } from '@tuturuuu/supabase/next/client';
@@ -325,14 +325,14 @@ export function KanbanBoard({ boardId, tasks, isLoading }: Props) {
 
             {/* Stacked effect layers */}
             <div
-              className="absolute inset-0 -z-10 rounded-lg bg-background/80"
+              className="-z-10 absolute inset-0 rounded-lg bg-background/80"
               style={{
                 transform: 'translateY(4px) translateX(2px) rotate(-1deg)',
                 boxShadow: '0 4px 16px rgba(0,0,0,0.08)',
               }}
             />
             <div
-              className="absolute inset-0 -z-20 rounded-lg bg-background/60"
+              className="-z-20 absolute inset-0 rounded-lg bg-background/60"
               style={{
                 transform: 'translateY(8px) translateX(4px) rotate(-2deg)',
                 boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
@@ -341,7 +341,7 @@ export function KanbanBoard({ boardId, tasks, isLoading }: Props) {
           </div>
 
           {/* Count badge */}
-          <div className="absolute -top-2 -right-2 flex h-7 w-7 items-center justify-center rounded-full border-2 border-background bg-primary text-xs font-bold text-primary-foreground shadow-lg">
+          <div className="-top-2 -right-2 absolute flex h-7 w-7 items-center justify-center rounded-full border-2 border-background bg-primary font-bold text-primary-foreground text-xs shadow-lg">
             {selectedTasks.size}
           </div>
         </div>
@@ -565,11 +565,11 @@ export function KanbanBoard({ boardId, tasks, isLoading }: Props) {
       {isMultiSelectMode && selectedTasks.size > 0 && (
         <div className="flex items-center justify-between border-b px-4 py-2">
           <div className="flex items-center gap-2">
-            <span className="text-sm font-medium">
+            <span className="font-medium text-sm">
               {selectedTasks.size} task{selectedTasks.size !== 1 ? 's' : ''}{' '}
               selected
             </span>
-            <span className="text-xs text-muted-foreground">
+            <span className="text-muted-foreground text-xs">
               Drag to move all • Press Esc to clear
             </span>
           </div>

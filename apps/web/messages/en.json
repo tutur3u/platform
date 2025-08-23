@@ -838,7 +838,16 @@
     "ai_executions": "AI Executions",
     "operational_structure": "Operational Structure",
     "structure": "Structure",
+    "usage": "Usage",
     "inquiries": "Inquiries"
+  },
+  "usage": {
+    "description": "Monitor workspace activity, feature usage, and system metrics across your organization",
+    "workspace_overview": "Workspace Overview",
+    "feature_usage": "Feature Usage",
+    "ai_automation": "AI & Automation",
+    "content_storage": "Content & Storage",
+    "trends": "Usage Trends"
   },
   "link-shortener": {
     "title": "Link Shortener",

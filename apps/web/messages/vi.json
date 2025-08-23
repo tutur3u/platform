@@ -849,7 +849,16 @@
     "ai_executions": "Xử lí AI",
     "operational_structure": "Cấu trúc hoạt động",
     "structure": "Kết cấu",
+    "usage": "Lưu lượng",
     "inquiries": "Yêu cầu hỗ trợ"
+  },
+  "usage": {
+    "description": "Theo dõi hoạt động workspace, sử dụng tính năng và các số liệu hệ thống trong tổ chức của bạn",
+    "workspace_overview": "Tổng quan Workspace",
+    "feature_usage": "Sử dụng Tính năng",
+    "ai_automation": "AI & Tự động hóa",
+    "content_storage": "Nội dung & Lưu trữ",
+    "trends": "Xu hướng Sử dụng"
   },
   "link-shortener": {
     "title": "Rút ngắn liên kết",
