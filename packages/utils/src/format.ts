@@ -57,3 +57,28 @@ export function formatDuration(seconds: number): string {
 
   return parts.join(' ');
 }
+
+/**
+ * Validates if a URL is a safe blob URL
+ */
+export function isValidBlobUrl(url: string | null | undefined): boolean {
+  if (typeof url !== 'string') return false;
+  const s = url.trim();
+  return s.toLowerCase().startsWith('blob:');
+}
+
+/**
+ * Validates if a URL is a safe HTTP or HTTPS URL
+ */
+export function isValidHttpUrl(url: string | null | undefined): boolean {
+  if (typeof url !== 'string') return false;
+  const s = url.trim();
+  try {
+    const parsedUrl = new URL(s);
+    const protocol = parsedUrl.protocol.toLowerCase();
+    // Require a hostname to avoid odd cases like "http:/foo"
+    return (protocol === 'http:' || protocol === 'https:') && !!parsedUrl.hostname;
+  } catch {
+    return false;
+  }
+}

@@ -7,11 +7,13 @@ import { ThemeDropdownItems } from './(dashboard)/_components/theme-dropdown-ite
 import DashboardMenuItem from './dashboard-menu-item';
 import InviteMembersMenuItem from './invite-members-menu-item';
 import MeetTogetherMenuItem from './meet-together-menu-item';
+import ReportProblemMenuItem from './report-problem-menu-item';
 import RewiseMenuItem from './rewise-menu-item';
 import UserSettingsDialog from './settings-dialog';
 import UserPresenceIndicator from './user-presence-indicator';
 import { CommandPalette } from '@/components/command';
 import { SidebarContext } from '@/context/sidebar-context';
+import { DEV_MODE } from '@/constants/common';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Dialog } from '@tuturuuu/ui/dialog';
@@ -228,6 +230,7 @@ export default function UserNavClient({
               <Settings className="mr-2 h-4 w-4" />
               <span>{t('common.settings')}</span>
             </DropdownMenuItem>
+            {DEV_MODE && <ReportProblemMenuItem />}
           </DropdownMenuGroup>
           <InviteMembersMenuItem />
           <DropdownMenuSeparator />
