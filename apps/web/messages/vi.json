@@ -834,7 +834,8 @@
     "meetings": "Các cuộc họp",
     "plans": "Kế hoạch",
     "ai_executions": "Xử lí AI",
-    "operational_structure": "Cấu trúc hoạt động"
+    "operational_structure": "Cấu trúc hoạt động",
+    "structure": "Kết cấu"
   },
   "link-shortener": {
     "title": "Rút ngắn liên kết",
