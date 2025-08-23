@@ -96,17 +96,13 @@ export const OrgChartCanvas = React.memo<OrgChartCanvasProps>(
       };
 
       el.addEventListener('wheel', onWheel, { passive: false });
-      // @ts-expect-error: gesture events are Safari-specific
       el.addEventListener('gesturestart', onGesture, { passive: false });
-      // @ts-expect-error: gesture events are Safari-specific
       el.addEventListener('gesturechange', onGesture, { passive: false });
       el.addEventListener('touchmove', onTouchMove, { passive: false });
 
       return () => {
         el.removeEventListener('wheel', onWheel as EventListener);
-        // @ts-expect-error Safari-specific
         el.removeEventListener('gesturestart', onGesture as EventListener);
-        // @ts-expect-error Safari-specific
         el.removeEventListener('gesturechange', onGesture as EventListener);
         el.removeEventListener('touchmove', onTouchMove as EventListener);
       };

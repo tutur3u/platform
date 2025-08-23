@@ -31,6 +31,7 @@ export function useNodeInteractions({
       // Search in reverse order to prioritize nodes drawn on top
       for (let i = nodes.length - 1; i >= 0; i--) {
         const node = nodes[i];
+        if (!node) continue;
         if (
           worldX >= node.x &&
           worldX <= node.x + node.width &&

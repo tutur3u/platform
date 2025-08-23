@@ -150,18 +150,26 @@ export function useViewport({
   }, []);
 
   // Touch helpers
-  const getTouchDistance = useCallback((t1: Touch, t2: Touch) => {
-    const dx = t1.clientX - t2.clientX;
-    const dy = t1.clientY - t2.clientY;
-    return Math.hypot(dx, dy);
-  }, []);
+  const getTouchDistance = useCallback(
+    (t1: React.Touch | undefined, t2: React.Touch | undefined) => {
+      if (!t1 || !t2) return 0;
+      const dx = t1.clientX - t2.clientX;
+      const dy = t1.clientY - t2.clientY;
+      return Math.hypot(dx, dy);
+    },
+    []
+  );
 
-  const getTouchCenter = useCallback((t1: Touch, t2: Touch) => {
-    return {
-      x: (t1.clientX + t2.clientX) / 2,
-      y: (t1.clientY + t2.clientY) / 2,
-    };
-  }, []);
+  const getTouchCenter = useCallback(
+    (t1: React.Touch | undefined, t2: React.Touch | undefined) => {
+      if (!t1 || !t2) return { x: 0, y: 0 };
+      return {
+        x: (t1.clientX + t2.clientX) / 2,
+        y: (t1.clientY + t2.clientY) / 2,
+      };
+    },
+    []
+  );
 
   const handleTouchStart = useCallback(
     (event: React.TouchEvent<HTMLCanvasElement>) => {
@@ -169,7 +177,7 @@ export function useViewport({
       if (event.touches.length === 1) {
         const t = event.touches[0];
         setIsPanning(true);
-        setPanStart({ x: t.clientX, y: t.clientY });
+        setPanStart({ x: t?.clientX ?? 0, y: t?.clientY ?? 0 });
       } else if (event.touches.length >= 2) {
         const d = getTouchDistance(event.touches[0], event.touches[1]);
         setPinchDistance(d);
@@ -187,6 +195,7 @@ export function useViewport({
         // Pinch zoom (and allow translate by following center)
         const t1 = event.touches[0];
         const t2 = event.touches[1];
+        if (!t1 || !t2) return;
         const newDistance = getTouchDistance(t1, t2);
         const center = getTouchCenter(t1, t2);
 
@@ -209,11 +218,11 @@ export function useViewport({
       } else if (event.touches.length === 1 && isPanning) {
         // Single-finger pan
         const t = event.touches[0];
-        const dx = t.clientX - panStart.x;
-        const dy = t.clientY - panStart.y;
+        const dx = (t?.clientX ?? 0) - panStart.x;
+        const dy = (t?.clientY ?? 0) - panStart.y;
         setOffsetX((prev) => prev + dx);
         setOffsetY((prev) => prev + dy);
-        setPanStart({ x: t.clientX, y: t.clientY });
+        setPanStart({ x: t?.clientX ?? 0, y: t?.clientY ?? 0 });
       }
     },
     [

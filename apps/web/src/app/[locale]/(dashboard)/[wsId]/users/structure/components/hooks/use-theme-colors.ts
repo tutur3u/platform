@@ -81,6 +81,13 @@ export function useThemeColors(): ThemeColors {
         // Convert HSL values to RGB
         const hslValues = value.split(/\s+/);
         if (hslValues.length === 3) {
+          if (
+            hslValues[0] === undefined ||
+            hslValues[1] === undefined ||
+            hslValues[2] === undefined
+          )
+            return fallback;
+
           const h = parseFloat(hslValues[0]);
           const s = parseFloat(hslValues[1]) / 100;
           const l = parseFloat(hslValues[2]) / 100;

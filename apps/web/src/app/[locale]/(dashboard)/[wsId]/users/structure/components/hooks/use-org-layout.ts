@@ -81,7 +81,7 @@ export function useOrgLayout(data: OrganizationalData): UseOrgLayoutReturn {
       const departmentTrees: Record<string, EmploymentNode[]> = {};
       for (const orgId in departmentNodesByOrg) {
         departmentTrees[orgId] = [];
-        departmentNodesByOrg[orgId].forEach((node) => {
+        departmentNodesByOrg[orgId]?.forEach((node) => {
           const supervisorLink = data.supervisors.find(
             (s) => s.employee_id === node.id
           );
@@ -93,7 +93,7 @@ export function useOrgLayout(data: OrganizationalData): UseOrgLayoutReturn {
             }
           }
           if (isRoot) {
-            departmentTrees[orgId].push(node);
+            departmentTrees[orgId]?.push(node);
           }
         });
       }
@@ -118,7 +118,7 @@ export function useOrgLayout(data: OrganizationalData): UseOrgLayoutReturn {
           }
         };
 
-        roots.forEach((root) => {
+        roots?.forEach((root) => {
           traverse(root, 0, roots);
         });
 
@@ -175,7 +175,7 @@ export function useOrgLayout(data: OrganizationalData): UseOrgLayoutReturn {
       );
 
       // Position executive level at top
-      const executiveLayout = departmentLayouts[executiveOrgs[0]];
+      const executiveLayout = departmentLayouts[executiveOrgs[0] ?? ''];
       if (executiveLayout) {
         executiveLayout.x = 0;
         executiveLayout.y = 0;
@@ -196,7 +196,7 @@ export function useOrgLayout(data: OrganizationalData): UseOrgLayoutReturn {
       }
 
       // Position external organizations at bottom
-      const externalLayout = departmentLayouts[externalOrgs[0]];
+      const externalLayout = departmentLayouts[externalOrgs[0] ?? ''];
       if (externalLayout) {
         const totalDeptWidth = currentX - CHART_CONFIG.DEPARTMENT_H_MARGIN;
         externalLayout.x = totalDeptWidth / 2 - externalLayout.width / 2;
@@ -220,7 +220,7 @@ export function useOrgLayout(data: OrganizationalData): UseOrgLayoutReturn {
       const allNodes: EmploymentNode[] = [];
       for (const orgId in departmentLayouts) {
         const layout = departmentLayouts[orgId];
-        layout.nodes.forEach((node) => {
+        layout?.nodes.forEach((node) => {
           node.x =
             layout.x +
             node.relX +
@@ -244,6 +244,7 @@ export function useOrgLayout(data: OrganizationalData): UseOrgLayoutReturn {
 
       for (const orgId in departmentLayouts) {
         const layout = departmentLayouts[orgId];
+        if (!layout) continue;
         minX = Math.min(minX, layout.x);
         minY = Math.min(minY, layout.y);
         maxX = Math.max(maxX, layout.x + layout.width);

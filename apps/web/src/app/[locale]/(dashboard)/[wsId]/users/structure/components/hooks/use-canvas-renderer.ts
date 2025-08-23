@@ -69,7 +69,13 @@ export function useCanvasRenderer({
         ctx.setLineDash([8, 6]);
 
         ctx.beginPath();
-        ctx.roundRect(layout.x, layout.y, layout.width, layout.height, 10);
+        ctx.roundRect(
+          layout?.x ?? 0,
+          layout?.y ?? 0,
+          layout?.width ?? 0,
+          layout?.height ?? 0,
+          10
+        );
         ctx.fill();
         ctx.stroke();
         ctx.setLineDash([]);
@@ -78,7 +84,7 @@ export function useCanvasRenderer({
         ctx.fillStyle = org.color || themeColors.textPrimary;
         ctx.font = 'bold 16px Inter';
         ctx.textAlign = 'left';
-        ctx.fillText(org.name, layout.x + 20, layout.y + 25);
+        ctx.fillText(org.name, (layout?.x ?? 0) + 20, (layout?.y ?? 0) + 25);
       }
     },
     [data.organizations, departmentLayouts, themeColors]
