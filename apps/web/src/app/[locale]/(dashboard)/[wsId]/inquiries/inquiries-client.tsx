@@ -230,7 +230,8 @@ export function InquiriesClient({
                                   />
                                   <AvatarFallback>
                                     {inquiry.users.display_name?.[0] ||
-                                      inquiry.users.user_private_details.email?.[0] ||
+                                      inquiry.users.user_private_details
+                                        .email?.[0] ||
                                       'U'}
                                   </AvatarFallback>
                                 </Avatar>
