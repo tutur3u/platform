@@ -1,5 +1,6 @@
 'use client';
 
+import type { Product, SupportType } from '@tuturuuu/types/db';
 import { Button } from '@tuturuuu/ui/button';
 import {
   Dialog,
@@ -13,6 +14,7 @@ import {
   AlertCircle,
   AlertTriangle,
   CheckCircle,
+  MessageSquareWarning,
   Upload,
   X,
 } from '@tuturuuu/ui/icons';
@@ -35,16 +37,38 @@ import { useEffect, useId, useRef, useState } from 'react';
 import { z } from 'zod';
 
 interface ReportProblemFormData {
-  product: string;
+  product: Product | '';
+  type: SupportType | '';
   suggestion: string;
   images: File[];
 }
 
-const MAX_IMAGE_SIZE = 10 * 1024 * 1024; // 10MB
+const MAX_IMAGE_SIZE = 1024 * 1024; // 1MB
 
 // Zod schema for form validation
 const reportProblemSchema = z.object({
-  product: z.string().min(1, 'Please select a product'),
+  product: z.enum(
+    [
+      'web',
+      'nova',
+      'rewise',
+      'calendar',
+      'finance',
+      'tudo',
+      'tumeet',
+      'shortener',
+      'qr',
+      'drive',
+      'mail',
+      'other',
+    ],
+    {
+      message: 'Please select a product',
+    }
+  ),
+  type: z.enum(['bug', 'feature-request'], {
+    message: 'Please select a support type',
+  }),
   suggestion: z
     .string()
     .trim()
@@ -57,20 +81,20 @@ const reportProblemSchema = z.object({
       message: 'Only image files are allowed',
     })
     .refine((files) => files.every((f) => f.size <= MAX_IMAGE_SIZE), {
-      message: 'Each image must be 10MB or less',
+      message: 'Each image must be 1MB or less',
     }),
 });
 
 interface ReportProblemDialogProps {
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
-  products?: Array<{ value: string; label: string }>;
+  products?: Array<{ value: Product; label: string }>;
   className?: string;
   trigger?: React.ReactNode;
   showTrigger?: boolean;
 }
 
-const DEFAULT_PRODUCTS = [
+const DEFAULT_PRODUCTS: Array<{ value: Product; label: string }> = [
   { value: 'web', label: 'Web Dashboard' },
   { value: 'nova', label: 'Nova' },
   { value: 'rewise', label: 'Rewise' },
@@ -79,9 +103,15 @@ const DEFAULT_PRODUCTS = [
   { value: 'tudo', label: 'Tudo' },
   { value: 'tumeet', label: 'Tumeet' },
   { value: 'shortener', label: 'URL Shortener' },
-  { value: 'playground', label: 'Playground' },
-  { value: 'external', label: 'External Apps' },
+  { value: 'qr', label: 'QR Code' },
+  { value: 'drive', label: 'Drive' },
+  { value: 'mail', label: 'Mail' },
   { value: 'other', label: 'Other' },
+];
+
+const DEFAULT_SUPPORT_TYPES: Array<{ value: SupportType; label: string }> = [
+  { value: 'bug', label: 'Bug Report' },
+  { value: 'feature-request', label: 'Feature Request' },
 ];
 
 const LOCAL_STORAGE_KEY = 'report-problem-form-data';
@@ -99,6 +129,7 @@ export function ReportProblemDialog({
   const imageUploadId = useId();
   const [formData, setFormData] = useState<ReportProblemFormData>({
     product: '',
+    type: '',
     suggestion: '',
     images: [],
   });
@@ -106,6 +137,7 @@ export function ReportProblemDialog({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [validationErrors, setValidationErrors] = useState<{
     product?: string;
+    type?: string;
     suggestion?: string;
     images?: string;
   }>({});
@@ -121,6 +153,7 @@ export function ReportProblemDialog({
         const parsed = JSON.parse(savedData);
         setFormData({
           product: parsed.product || '',
+          type: parsed.type || '',
           suggestion: parsed.suggestion || '',
           images: [], // Don't restore files from localStorage
         });
@@ -134,11 +167,12 @@ export function ReportProblemDialog({
   useEffect(() => {
     const dataToSave = {
       product: formData.product,
+      type: formData.type,
       suggestion: formData.suggestion,
       // Don't save files to localStorage
     };
     localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(dataToSave));
-  }, [formData.product, formData.suggestion]);
+  }, [formData.product, formData.type, formData.suggestion]);
 
   const validateForm = () => {
     const result = reportProblemSchema.safeParse(formData);
@@ -149,12 +183,16 @@ export function ReportProblemDialog({
 
     const fieldErrors: {
       product?: string;
+      type?: string;
       suggestion?: string;
       images?: string;
     } = {};
     for (const issue of result.error.issues) {
       if (issue.path[0] === 'product' && !fieldErrors.product) {
         fieldErrors.product = issue.message;
+      }
+      if (issue.path[0] === 'type' && !fieldErrors.type) {
+        fieldErrors.type = issue.message;
       }
       if (issue.path[0] === 'suggestion' && !fieldErrors.suggestion) {
         fieldErrors.suggestion = issue.message;
@@ -168,9 +206,16 @@ export function ReportProblemDialog({
   };
 
   const handleProductChange = (value: string) => {
-    setFormData((prev) => ({ ...prev, product: value }));
+    setFormData((prev) => ({ ...prev, product: value as Product }));
     if (validationErrors.product) {
       setValidationErrors((prev) => ({ ...prev, product: undefined }));
+    }
+  };
+
+  const handleTypeChange = (value: string) => {
+    setFormData((prev) => ({ ...prev, type: value as SupportType }));
+    if (validationErrors.type) {
+      setValidationErrors((prev) => ({ ...prev, type: undefined }));
     }
   };
 
@@ -217,7 +262,7 @@ export function ReportProblemDialog({
     if (rejectedCount > 0) {
       setValidationErrors((prev) => ({
         ...prev,
-        images: 'Some files were rejected (only images up to 10MB).',
+        images: 'Some files were rejected (only images up to 1MB).',
       }));
     } else if (validationErrors.images) {
       setValidationErrors((prev) => ({ ...prev, images: undefined }));
@@ -287,7 +332,15 @@ export function ReportProblemDialog({
       // Default API submission logic
       const apiFormData = new FormData();
       apiFormData.append('product', formData.product);
+      apiFormData.append('type', formData.type);
       apiFormData.append('suggestion', formData.suggestion);
+
+      // Generate a subject based on the type and product
+      const subject = `${formData.type === 'bug' ? 'Bug Report' : 'Feature Request'} - ${
+        DEFAULT_PRODUCTS.find((p) => p.value === formData.product)?.label ||
+        formData.product
+      }`;
+      apiFormData.append('subject', subject);
 
       // Append images
       formData.images.forEach((image, index) => {
@@ -309,7 +362,7 @@ export function ReportProblemDialog({
       }
 
       // Clear form data after successful submission
-      setFormData({ product: '', suggestion: '', images: [] });
+      setFormData({ product: '', type: '', suggestion: '', images: [] });
       setImagePreviews([]);
       imagePreviewsRef.current = [];
       setValidationErrors({});
@@ -365,7 +418,7 @@ export function ReportProblemDialog({
                 className
               )}
             >
-              <AlertTriangle className="h-4 w-4" />
+              <MessageSquareWarning className="h-4 w-4" />
               {t('report-problem')}
             </Button>
           )}
@@ -418,6 +471,39 @@ export function ReportProblemDialog({
                 <div className="flex items-center gap-1 text-red-600 text-sm">
                   <AlertCircle className="h-3 w-3" />
                   {validationErrors.product}
+                </div>
+              )}
+            </div>
+
+            <div className="space-y-3">
+              <Label
+                htmlFor="type"
+                className="flex items-center gap-1 font-medium text-sm"
+              >
+                Support Type *
+              </Label>
+              <Select value={formData.type} onValueChange={handleTypeChange}>
+                <SelectTrigger
+                  className={cn(
+                    'h-11',
+                    validationErrors.type &&
+                      'border-red-500 focus:border-red-500'
+                  )}
+                >
+                  <SelectValue placeholder="Select support type..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {DEFAULT_SUPPORT_TYPES.map((type) => (
+                    <SelectItem key={type.value} value={type.value}>
+                      {type.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {validationErrors.type && (
+                <div className="flex items-center gap-1 text-red-600 text-sm">
+                  <AlertCircle className="h-3 w-3" />
+                  {validationErrors.type}
                 </div>
               )}
             </div>
@@ -502,7 +588,7 @@ export function ReportProblemDialog({
                         : 'Click to upload or drag and drop'}
                     </p>
                     <p className="text-muted-foreground text-xs">
-                      PNG, JPG, GIF up to 10MB each
+                      PNG, JPG, GIF up to 1MB each
                     </p>
                   </div>
                 </button>
@@ -560,6 +646,7 @@ export function ReportProblemDialog({
                 type="submit"
                 disabled={
                   !formData.product ||
+                  !formData.type ||
                   !formData.suggestion.trim() ||
                   isSubmitting
                 }

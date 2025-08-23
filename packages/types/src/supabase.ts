@@ -32,6 +32,19 @@ export type Database = {
         | 'ENABLE_EDUCATION'
         | 'ENABLE_QUIZZES';
       platform_service: 'NOVA' | 'REWISE' | 'TUTURUUU' | 'UPSKII';
+      product:
+        | 'calendar'
+        | 'drive'
+        | 'finance'
+        | 'mail'
+        | 'nova'
+        | 'other'
+        | 'qr'
+        | 'rewise'
+        | 'shortener'
+        | 'tudo'
+        | 'tumeet'
+        | 'web';
       recording_status:
         | 'completed'
         | 'failed'
@@ -40,6 +53,7 @@ export type Database = {
         | 'recording'
         | 'transcribing';
       subscription_status: 'active' | 'canceled' | 'past_due' | 'trialing';
+      support_type: 'bug' | 'feature-request' | 'job-application' | 'support';
       task_board_status: 'active' | 'closed' | 'done' | 'not_started';
       task_priority: 'critical' | 'high' | 'low' | 'normal';
       workspace_api_key_scope:
@@ -5952,34 +5966,75 @@ export type Database = {
       support_inquiries: {
         Insert: {
           created_at?: string;
+          creator_id?: string;
           email: string;
           id?: string;
+          images?: null | string[];
           is_read?: boolean;
           is_resolved?: boolean;
           message: string;
           name: string;
+          product?: Database['public']['Enums']['product'];
           subject: string;
+          type?: Database['public']['Enums']['support_type'];
         };
-        Relationships: [];
+        Relationships: [
+          {
+            columns: ['creator_id'];
+            foreignKeyName: 'fk_support_inquiries_creator_id';
+            isOneToOne: false;
+            referencedColumns: ['user_id'];
+            referencedRelation: 'nova_user_challenge_leaderboard';
+          },
+          {
+            columns: ['creator_id'];
+            foreignKeyName: 'fk_support_inquiries_creator_id';
+            isOneToOne: false;
+            referencedColumns: ['user_id'];
+            referencedRelation: 'nova_user_leaderboard';
+          },
+          {
+            columns: ['creator_id'];
+            foreignKeyName: 'fk_support_inquiries_creator_id';
+            isOneToOne: false;
+            referencedColumns: ['id'];
+            referencedRelation: 'shortened_links_creator_stats';
+          },
+          {
+            columns: ['creator_id'];
+            foreignKeyName: 'fk_support_inquiries_creator_id';
+            isOneToOne: false;
+            referencedColumns: ['id'];
+            referencedRelation: 'users';
+          },
+        ];
         Row: {
           created_at: string;
+          creator_id: string;
           email: string;
           id: string;
+          images: null | string[];
           is_read: boolean;
           is_resolved: boolean;
           message: string;
           name: string;
+          product: Database['public']['Enums']['product'];
           subject: string;
+          type: Database['public']['Enums']['support_type'];
         };
         Update: {
           created_at?: string;
+          creator_id?: string;
           email?: string;
           id?: string;
+          images?: null | string[];
           is_read?: boolean;
           is_resolved?: boolean;
           message?: string;
           name?: string;
+          product?: Database['public']['Enums']['product'];
           subject?: string;
+          type?: Database['public']['Enums']['support_type'];
         };
       };
       task_assignees: {
@@ -11658,6 +11713,20 @@ export const Constants = {
         'ENABLE_QUIZZES',
       ],
       platform_service: ['NOVA', 'REWISE', 'TUTURUUU', 'UPSKII'],
+      product: [
+        'calendar',
+        'drive',
+        'finance',
+        'mail',
+        'nova',
+        'other',
+        'qr',
+        'rewise',
+        'shortener',
+        'tudo',
+        'tumeet',
+        'web',
+      ],
       recording_status: [
         'completed',
         'failed',
@@ -11667,6 +11736,7 @@ export const Constants = {
         'transcribing',
       ],
       subscription_status: ['active', 'canceled', 'past_due', 'trialing'],
+      support_type: ['bug', 'feature-request', 'job-application', 'support'],
       task_board_status: ['active', 'closed', 'done', 'not_started'],
       task_priority: ['critical', 'high', 'low', 'normal'],
       workspace_api_key_scope: [

@@ -50,7 +50,7 @@
   "common": {
     "requires_attendance": "Requires attendance",
     "success": "Success",
-    "report-problem": "Report a Problem",
+    "report-problem": "Leave a Feedback",
     "report-problem-description": "Help us improve by reporting issues you've encountered. Your feedback is valuable to us.",
     "affected-product": "Affected Product",
     "affected-product-required": "Affected Product *",
@@ -838,7 +838,8 @@
     "ai_executions": "AI Executions",
     "operational_structure": "Operational Structure",
     "structure": "Structure",
-    "usage": "Usage"
+    "usage": "Usage",
+    "inquiries": "Inquiries"
   },
   "usage": {
     "description": "Monitor workspace activity, feature usage, and system metrics across your organization",

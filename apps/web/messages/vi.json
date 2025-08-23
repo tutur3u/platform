@@ -50,7 +50,7 @@
   "common": {
     "requires_attendance": "Yêu cầu điểm danh",
     "success": "Thành công",
-    "report-problem": "Báo cáo sự cố",
+    "report-problem": "Để lại góp ý",
     "report-problem-description": "Hãy giúp chúng tôi cải thiện bằng cách báo cáo các vấn đề bạn gặp phải. Phản hồi của bạn rất có giá trị đối với chúng tôi.",
     "affected-product": "Sản phẩm bị ảnh hưởng",
     "affected-product-required": "Sản phẩm bị ảnh hưởng *",
@@ -849,7 +849,8 @@
     "ai_executions": "Xử lí AI",
     "operational_structure": "Cấu trúc hoạt động",
     "structure": "Kết cấu",
-    "usage": "Lưu lượng"
+    "usage": "Lưu lượng",
+    "inquiries": "Yêu cầu hỗ trợ"
   },
   "usage": {
     "description": "Theo dõi hoạt động workspace, sử dụng tính năng và các số liệu hệ thống trong tổ chức của bạn",
