@@ -50,7 +50,7 @@
   "common": {
     "requires_attendance": "Requires attendance",
     "success": "Success",
-    "report-problem": "Report a Problem",
+    "report-problem": "Leave a Feedback",
     "report-problem-description": "Help us improve by reporting issues you've encountered. Your feedback is valuable to us.",
     "affected-product": "Affected Product",
     "affected-product-required": "Affected Product *",
@@ -837,7 +837,8 @@
     "plans": "Plans",
     "ai_executions": "AI Executions",
     "operational_structure": "Operational Structure",
-    "structure": "Structure"
+    "structure": "Structure",
+    "inquiries": "Inquiries"
   },
   "link-shortener": {
     "title": "Link Shortener",

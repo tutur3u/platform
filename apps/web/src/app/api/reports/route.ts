@@ -1,5 +1,28 @@
+import {
+  createAdminClient,
+  createClient,
+  createDynamicClient,
+} from '@tuturuuu/supabase/next/server';
+import type { Product, SupportType } from '@tuturuuu/types/db';
 import { generateRandomUUID } from '@tuturuuu/utils/uuid-helper';
 import { type NextRequest, NextResponse } from 'next/server';
+
+// Runtime representation of the Product enum values
+// This ensures we don't have to manually maintain the list
+const VALID_PRODUCTS: readonly Product[] = [
+  'web',
+  'nova',
+  'rewise',
+  'calendar',
+  'finance',
+  'tudo',
+  'tumeet',
+  'shortener',
+  'qr',
+  'drive',
+  'mail',
+  'other',
+] as const;
 
 export async function POST(request: NextRequest) {
   try {
@@ -7,14 +30,34 @@ export async function POST(request: NextRequest) {
 
     const product = formData.get('product');
     const suggestion = formData.get('suggestion');
+    const type = formData.get('type');
+    const subject = formData.get('subject');
     if (
       typeof product !== 'string' ||
       typeof suggestion !== 'string' ||
+      typeof type !== 'string' ||
+      typeof subject !== 'string' ||
       !product.trim() ||
-      !suggestion.trim()
+      !suggestion.trim() ||
+      !type.trim() ||
+      !subject.trim()
     ) {
       return NextResponse.json(
-        { success: false, message: 'product and suggestion are required.' },
+        {
+          success: false,
+          message: 'product, suggestion, type and subject are required.',
+        },
+        { status: 400 }
+      );
+    }
+
+    // Validate product value using the enum values
+    if (!VALID_PRODUCTS.includes(product as Product)) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: `Invalid product. Must be one of: ${VALID_PRODUCTS.join(', ')}`,
+        },
         { status: 400 }
       );
     }
@@ -25,7 +68,7 @@ export async function POST(request: NextRequest) {
       'image/jpeg',
       'image/webp',
     ]);
-    const MAX_IMAGE_SIZE_BYTES = 5 * 1024 * 1024; // 5MB
+    const MAX_IMAGE_SIZE_BYTES = 1024 * 1024; // 1MB
     const images: File[] = [];
     for (let i = 0; i < 5; i++) {
       const value = formData.get(`image_${i}`);
@@ -41,7 +84,7 @@ export async function POST(request: NextRequest) {
         }
         if (value.size > MAX_IMAGE_SIZE_BYTES) {
           return NextResponse.json(
-            { success: false, message: 'Image exceeds 5MB limit.' },
+            { success: false, message: 'Image exceeds 1MB limit.' },
             { status: 400 }
           );
         }
@@ -49,18 +92,107 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // TODO: Implement actual report submission logic
-    // This could involve:
-    // 1. Validating the data
-    // 2. Uploading images to a storage service (AWS S3, Cloudinary, etc.)
-    // 3. Saving the report to a database
-    // 4. Sending notifications to the development team
-    // 5. Creating a ticket in a project management system
+    // Create Supabase client for database operations
+    const supabase = await createClient();
+    const sbAdmin = await createAdminClient();
 
-    console.log('Report submitted:', {
+    // Get current user if authenticated
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+
+    if (authError) {
+      console.error('Auth error:', authError);
+    }
+
+    // Create support inquiry first and get the generated ID
+    const { data: insertData, error: insertError } = await supabase
+      .from('support_inquiries')
+      .insert({
+        name: 'Report Submission',
+        email: user?.email || 'reports@tuturuuu.com',
+        subject: subject as string,
+        message: suggestion,
+        type: type as SupportType,
+        product: product as Product,
+        creator_id: user?.id || undefined,
+        images: [], // Will be updated after image uploads
+      })
+      .select('id')
+      .single();
+
+    if (insertError) {
+      console.error('Error creating support inquiry:', insertError);
+      return NextResponse.json(
+        {
+          success: false,
+          message: 'Failed to create support inquiry',
+        },
+        { status: 500 }
+      );
+    }
+
+    const inquiryId = insertData.id;
+
+    // Upload images to storage bucket if any
+    const uploadedImageNames: string[] = [];
+
+    if (images.length > 0) {
+      // Use dynamic client for storage operations
+      const storageClient = await createDynamicClient();
+
+      for (const image of images) {
+        try {
+          // Generate unique filename
+          const fileExtension = image.name.split('.').pop();
+          const fileName = `${generateRandomUUID()}.${fileExtension}`;
+          const storagePath = `${inquiryId}/${fileName}`;
+
+          // Upload to support_inquiries bucket
+          const { error: uploadError } = await storageClient.storage
+            .from('support_inquiries')
+            .upload(storagePath, image, {
+              cacheControl: '3600',
+              upsert: false,
+            });
+
+          if (uploadError) {
+            console.error('Error uploading image:', uploadError);
+            // Continue with other images even if one fails
+            continue;
+          }
+
+          uploadedImageNames.push(fileName);
+        } catch (uploadError) {
+          console.error('Error uploading image:', uploadError);
+        }
+      }
+
+      // Update the support inquiry with image filenames
+      if (uploadedImageNames.length > 0) {
+        const { error: updateError } = await sbAdmin
+          .from('support_inquiries')
+          .update({ images: uploadedImageNames })
+          .eq('id', inquiryId);
+
+        if (updateError) {
+          console.error(
+            'Error updating support inquiry with images:',
+            updateError
+          );
+          // Don't fail the entire request if image update fails
+        }
+      }
+    }
+
+    console.log('Report submitted successfully:', {
+      inquiryId,
       product,
       suggestion,
       imageCount: images.length,
+      uploadedImages: uploadedImageNames,
+      userId: user?.id || 'anonymous',
       images: images.map((img) => ({
         name: img.name,
         size: img.size,
@@ -68,13 +200,11 @@ export async function POST(request: NextRequest) {
       })),
     });
 
-    // Simulate processing time
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-
     return NextResponse.json({
       success: true,
       message: 'Report submitted successfully',
-      reportId: generateRandomUUID(), // Generate a unique ID
+      reportId: inquiryId,
+      uploadedImages: uploadedImageNames,
     });
   } catch (error) {
     console.error('Error processing report submission:', error);

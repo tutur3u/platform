@@ -727,6 +727,13 @@ export default async function Layout({ children, params }: LayoutProps) {
           requireRootWorkspace: true,
           requireRootMember: true,
         },
+        {
+          title: t('sidebar_tabs.inquiries'),
+          href: `/${correctedWSId}/inquiries`,
+          icon: <MessageCircleIcon className="h-5 w-5" />,
+          requireRootWorkspace: true,
+          requireRootMember: true,
+        },
       ].filter(Boolean) as NavLink[],
     },
   ] satisfies (NavLink | null)[];
