@@ -10,6 +10,7 @@ import DashboardCardSkeleton from './dashboard-card-skeleton';
 import NewlyCreatedTasks from './tasks/newly-created-tasks';
 import TasksAssignedToMe from './tasks/tasks-assigned-to-me';
 import TimeTrackingMetrics from './time-tracker/time-tracking-metrics';
+import RecentTumeetPlans from './tumeet/recent-plans';
 
 interface Props {
   params: Promise<{
@@ -52,6 +53,10 @@ export default async function WorkspaceHomePage({ params }: Props) {
 
           <Suspense fallback={<DashboardCardSkeleton />}>
             <TimeTrackingMetrics wsId={wsId} userId={currentUser.id} />
+          </Suspense>
+
+          <Suspense fallback={<DashboardCardSkeleton />}>
+            <RecentTumeetPlans />
           </Suspense>
         </div>
       )}
