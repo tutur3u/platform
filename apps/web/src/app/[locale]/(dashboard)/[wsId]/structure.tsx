@@ -53,6 +53,22 @@ export function Structure({
   const { behavior, handleBehaviorChange } = useSidebar();
   const [isCollapsed, setIsCollapsed] = useState(defaultCollapsed);
 
+  // Utility function for path matching that respects segment boundaries
+  const matchesPath = useCallback(
+    (pathname: string, target?: string, hasChildren?: boolean) => {
+      if (!target) return false;
+      
+      // For items WITH children, use startsWith to match subroutes
+      if (hasChildren) {
+        return pathname === target || pathname.startsWith(`${target}/`);
+      }
+      
+      // For items WITHOUT children, use exact matching only
+      return pathname === target;
+    },
+    []
+  );
+
   useEffect(() => {
     if (behavior === 'collapsed' || behavior === 'hover') {
       setIsCollapsed(true);
@@ -66,9 +82,8 @@ export function Structure({
     (navLinks: NavLink[]): boolean => {
       return navLinks.some((child) => {
         const childMatches =
-          child?.href &&
-          (pathname.startsWith(child.href) ||
-            child.aliases?.some((alias) => pathname.startsWith(alias)));
+          (child?.href && matchesPath(pathname, child.href, child.children && child.children.length > 0)) ||
+          child?.aliases?.some((alias) => matchesPath(pathname, alias, child.children && child.children.length > 0));
 
         if (childMatches) {
           return true;
@@ -84,25 +99,67 @@ export function Structure({
     [pathname]
   );
 
+  // Universal helper function to find active navigation structure
+  const findActiveNavigation = useCallback(
+    (navLinks: (NavLink | null)[], currentPath: string): {
+      currentLinks: (NavLink | null)[];
+      history: (NavLink | null)[];
+      titleHistory: (string | null)[];
+      direction: 'forward' | 'backward';
+    } | null => {
+      for (const link of navLinks) {
+        if (!link) continue;
+
+        // Check if this link should be active based on pathname or aliases
+        const linkMatches =
+          (link.href && matchesPath(pathname, link.href, link.children && link.children.length > 0)) ||
+          link.aliases?.some((alias) => matchesPath(pathname, alias, link.children && link.children.length > 0));
+
+        if (linkMatches) {
+          // If link has children, show submenu panel
+          if (link.children && link.children.length > 0) {
+            return {
+              currentLinks: link.children,
+              history: [navLinks],
+              titleHistory: [link.title],
+              direction: 'forward' as const,
+            };
+          }
+          // If link has no children, don't create submenu - return null for main navigation
+          return null;
+        }
+
+        // Check children recursively for active items
+        if (link.children && link.children.length > 0) {
+          const childResult = findActiveNavigation(link.children, currentPath);
+          if (childResult) {
+            return {
+              currentLinks: childResult.currentLinks,
+              history: [navLinks, ...childResult.history],
+              titleHistory: [link.title, ...childResult.titleHistory],
+              direction: 'forward' as const,
+            };
+          }
+        }
+      }
+      return null;
+    },
+    [matchesPath, pathname]
+  );
+
   const [navState, setNavState] = useState<{
     currentLinks: (NavLink | null)[];
     history: (NavLink | null)[][];
     titleHistory: (string | null)[];
     direction: 'forward' | 'backward';
   }>(() => {
-    for (const link of links) {
-      if (link?.children && link.children.length > 0) {
-        const isActive = hasActiveChild(link.children);
-        if (isActive) {
-          return {
-            currentLinks: link.children,
-            history: [links],
-            titleHistory: [link.title],
-            direction: 'forward' as const,
-          };
-        }
-      }
+    // Universal logic for active navigation - detects submenu structures consistently
+    const activeNavigation = findActiveNavigation(links, pathname);
+    
+    if (activeNavigation) {
+      return activeNavigation;
     }
+
     // Flatten links with a single child
     const flattenedLinks = links
       .flatMap((link) =>
@@ -121,48 +178,13 @@ export function Structure({
 
   useEffect(() => {
     setNavState((prevState) => {
-      // Find if any submenu should be active for the current path.
-      for (const link of links) {
-        if (link?.children && link.children.length > 0) {
-          const isActive = hasActiveChild(link.children);
-
-          if (isActive) {
-            // If the active submenu is not the one currently displayed, switch to it.
-            if (
-              prevState.titleHistory[prevState.titleHistory.length - 1] !==
-              link.title
-            ) {
-              return {
-                currentLinks: link.children,
-                history: [links],
-                titleHistory: [link.title],
-                direction: 'forward',
-              };
-            }
-
-            // We're already in this submenu, but we need to check if we should go deeper
-            // Find the specific child that matches the current pathname
-            const activeChild = link.children.find(
-              (child) => child.href && pathname.startsWith(child.href)
-            );
-
-            if (activeChild?.children && activeChild.children.length > 0) {
-              return {
-                currentLinks: activeChild.children,
-                history: [...prevState.history, prevState.currentLinks],
-                titleHistory: [...prevState.titleHistory, activeChild.title],
-                direction: 'forward',
-              };
-            }
-
-            // It's the correct submenu, do nothing to the state.
-            return prevState;
-          }
-        }
+      // Universal logic for active navigation - detects submenu structures consistently
+      const activeNavigation = findActiveNavigation(links, pathname);
+      if (activeNavigation) {
+        return activeNavigation;
       }
 
-      // If we are in a submenu, but no submenu link is active for the current path,
-      // it means we navigated to a top-level page. Go back to the main menu.
+      // Check if we're currently in a submenu and if any of its children still match the current path
       if (prevState.history.length > 0) {
         // Flatten links with a single child
         const flattenedLinks = links
@@ -183,7 +205,12 @@ export function Structure({
       // We are at the top level and no submenu is active, do nothing.
       return prevState;
     });
-  }, [pathname, links, hasActiveChild]);
+  }, [
+    pathname,
+    links,
+    hasActiveChild,
+    findActiveNavigation,
+  ]);
 
   const handleToggle = () => {
     const newCollapsed = !isCollapsed;
@@ -272,9 +299,8 @@ export function Structure({
   )
     .filter(
       (link) =>
-        link.href &&
-        (pathname.startsWith(link.href) ||
-          link.aliases?.some((alias) => pathname.startsWith(alias)))
+        (link.href && matchesPath(pathname, link.href, link.children && link.children.length > 0)) ||
+        link.aliases?.some((alias) => matchesPath(pathname, alias, link.children && link.children.length > 0))
     )
     .sort((a, b) => (b.href?.length || 0) - (a.href?.length || 0));
 
