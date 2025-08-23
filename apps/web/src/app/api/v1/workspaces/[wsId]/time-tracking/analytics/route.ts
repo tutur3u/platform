@@ -57,7 +57,7 @@ export async function GET(
         `
         *,
         category:time_tracking_categories(name, color),
-        task:tasks(name, list_id)
+        task:tasks(name, list_id, created_at)
       `
       )
       .eq('ws_id', wsId)

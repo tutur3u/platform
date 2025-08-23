@@ -55,22 +55,6 @@ export function Structure({
   const [initialized, setInitialized] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(defaultCollapsed);
 
-  // Utility function for path matching that respects segment boundaries
-  const matchesPath = useCallback(
-    (pathname: string, target?: string, hasChildren?: boolean) => {
-      if (!target) return false;
-      
-      // For items WITH children, use startsWith to match subroutes
-      if (hasChildren) {
-        return pathname === target || pathname.startsWith(`${target}/`);
-      }
-      
-      // For items WITHOUT children, use exact matching only
-      return pathname === target;
-    },
-    []
-  );
-
   useEffect(() => {
     setInitialized(true);
   }, []);

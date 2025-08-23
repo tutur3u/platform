@@ -45,6 +45,7 @@ import {
   SquareUserRound,
   Star,
   Tags,
+  Target,
   TextSelect,
   Trash,
   TriangleAlert,
