@@ -1,7 +1,7 @@
-import { type NavLink, Navigation } from '@tuturuuu/ui/custom/navigation';
+import { Navigation, type NavLink } from '@tuturuuu/ui/custom/navigation';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
-import { getTranslations } from 'next-intl/server';
 import { redirect } from 'next/navigation';
+import { getTranslations } from 'next-intl/server';
 import type React from 'react';
 
 interface FinanceLayoutProps {

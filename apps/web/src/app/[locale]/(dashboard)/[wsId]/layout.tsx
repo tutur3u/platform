@@ -35,6 +35,7 @@ import {
   Play,
   Presentation,
   QrCodeIcon,
+  ReceiptText,
   ScanSearch,
   ScrollText,
   Send,
@@ -52,6 +53,7 @@ import {
   Users,
   VectorSquare,
   Vote,
+  Wallet,
 } from '@tuturuuu/ui/icons';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
@@ -519,6 +521,8 @@ export default async function Layout({ children, params }: LayoutProps) {
               aliases: [`/${correctedWSId}/users/structure`],
               href: `/${correctedWSId}/users/structure`,
               icon: <IdCardLanyard className="h-5 w-5" />,
+              requireRootWorkspace: true,
+              requireRootMember: true,
               disabled:
                 !DEV_MODE ||
                 ENABLE_AI_ONLY ||
@@ -543,9 +547,55 @@ export default async function Layout({ children, params }: LayoutProps) {
         },
         {
           title: t('sidebar_tabs.finance'),
-          aliases: [`/${correctedWSId}/finance`],
-          href: `/${correctedWSId}/finance/transactions`,
+          aliases: [
+            `/${correctedWSId}/finance`,
+            `/${correctedWSId}/finance/transactions`,
+            `/${correctedWSId}/finance/wallets`,
+            `/${correctedWSId}/finance/transactions/categories`,
+            `/${correctedWSId}/finance/invoices`,
+            `/${correctedWSId}/finance/settings`,
+          ],
           icon: <Banknote className="h-5 w-5" />,
+          children: [
+            {
+              title: t('workspace-finance-tabs.overview'),
+              href: `/${wsId}/finance`,
+              icon: <LayoutDashboard className="h-5 w-5" />,
+              matchExact: true,
+              disabled: withoutPermission('manage_finance'),
+            },
+            {
+              title: t('workspace-finance-tabs.transactions'),
+              href: `/${wsId}/finance/transactions`,
+              icon: <Banknote className="h-5 w-5" />,
+              matchExact: true,
+              disabled: withoutPermission('manage_finance'),
+            },
+            {
+              title: t('workspace-finance-tabs.wallets'),
+              href: `/${wsId}/finance/wallets`,
+              icon: <Wallet className="h-5 w-5" />,
+              disabled: withoutPermission('manage_finance'),
+            },
+            {
+              title: t('workspace-finance-tabs.categories'),
+              href: `/${wsId}/finance/transactions/categories`,
+              icon: <Tags className="h-5 w-5" />,
+              disabled: withoutPermission('manage_finance'),
+            },
+            {
+              title: t('workspace-finance-tabs.invoices'),
+              href: `/${wsId}/finance/invoices`,
+              icon: <ReceiptText className="h-5 w-5" />,
+              disabled: withoutPermission('manage_finance'),
+            },
+            {
+              title: t('workspace-finance-tabs.settings'),
+              href: `/${wsId}/finance/settings`,
+              icon: <Cog className="h-5 w-5" />,
+              disabled: true,
+            },
+          ],
           disabled:
             ENABLE_AI_ONLY ||
             !(await verifySecret({

@@ -1,9 +1,5 @@
 'use client';
 
-import { Nav } from './nav';
-import type { NavLink } from '@/components/navigation';
-import { PROD_MODE, SIDEBAR_COLLAPSED_COOKIE_NAME } from '@/constants/common';
-import { useSidebar } from '@/context/sidebar-context';
 import { useQuery } from '@tanstack/react-query';
 import type { Workspace } from '@tuturuuu/types/db';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
@@ -14,10 +10,10 @@ import { ArrowLeft } from '@tuturuuu/ui/icons';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { cn } from '@tuturuuu/utils/format';
 import { setCookie } from 'cookies-next';
-import { useTranslations } from 'next-intl';
 import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import {
   type ReactNode,
   Suspense,
@@ -25,6 +21,10 @@ import {
   useEffect,
   useState,
 } from 'react';
+import type { NavLink } from '@/components/navigation';
+import { PROD_MODE, SIDEBAR_COLLAPSED_COOKIE_NAME } from '@/constants/common';
+import { useSidebar } from '@/context/sidebar-context';
+import { Nav } from './nav';
 
 interface MailProps {
   wsId: string;
@@ -50,19 +50,25 @@ export function Structure({
 }: MailProps) {
   const t = useTranslations();
   const pathname = usePathname();
+
   const { behavior, handleBehaviorChange } = useSidebar();
+  const [initialized, setInitialized] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(defaultCollapsed);
+
+  useEffect(() => {
+    setInitialized(true);
+  }, []);
 
   // Utility function for path matching that respects segment boundaries
   const matchesPath = useCallback(
     (pathname: string, target?: string, hasChildren?: boolean) => {
       if (!target) return false;
-      
+
       // For items WITH children, use startsWith to match subroutes
       if (hasChildren) {
         return pathname === target || pathname.startsWith(`${target}/`);
       }
-      
+
       // For items WITHOUT children, use exact matching only
       return pathname === target;
     },
@@ -82,8 +88,19 @@ export function Structure({
     (navLinks: NavLink[]): boolean => {
       return navLinks.some((child) => {
         const childMatches =
-          (child?.href && matchesPath(pathname, child.href, child.children && child.children.length > 0)) ||
-          child?.aliases?.some((alias) => matchesPath(pathname, alias, child.children && child.children.length > 0));
+          (child?.href &&
+            matchesPath(
+              pathname,
+              child.href,
+              child.children && child.children.length > 0
+            )) ||
+          child?.aliases?.some((alias) =>
+            matchesPath(
+              pathname,
+              alias,
+              child.children && child.children.length > 0
+            )
+          );
 
         if (childMatches) {
           return true;
@@ -96,12 +113,15 @@ export function Structure({
         return false;
       });
     },
-    [pathname]
+    [pathname, matchesPath]
   );
 
   // Universal helper function to find active navigation structure
   const findActiveNavigation = useCallback(
-    (navLinks: (NavLink | null)[], currentPath: string): {
+    (
+      navLinks: (NavLink | null)[],
+      currentPath: string
+    ): {
       currentLinks: (NavLink | null)[];
       history: (NavLink | null)[];
       titleHistory: (string | null)[];
@@ -112,8 +132,19 @@ export function Structure({
 
         // Check if this link should be active based on pathname or aliases
         const linkMatches =
-          (link.href && matchesPath(pathname, link.href, link.children && link.children.length > 0)) ||
-          link.aliases?.some((alias) => matchesPath(pathname, alias, link.children && link.children.length > 0));
+          (link.href &&
+            matchesPath(
+              pathname,
+              link.href,
+              link.children && link.children.length > 0
+            )) ||
+          link.aliases?.some((alias) =>
+            matchesPath(
+              pathname,
+              alias,
+              link.children && link.children.length > 0
+            )
+          );
 
         if (linkMatches) {
           // If link has children, show submenu panel
@@ -155,7 +186,7 @@ export function Structure({
   }>(() => {
     // Universal logic for active navigation - detects submenu structures consistently
     const activeNavigation = findActiveNavigation(links, pathname);
-    
+
     if (activeNavigation) {
       return activeNavigation;
     }
@@ -205,12 +236,7 @@ export function Structure({
       // We are at the top level and no submenu is active, do nothing.
       return prevState;
     });
-  }, [
-    pathname,
-    links,
-    hasActiveChild,
-    findActiveNavigation,
-  ]);
+  }, [pathname, links, findActiveNavigation]);
 
   const handleToggle = () => {
     const newCollapsed = !isCollapsed;
@@ -299,8 +325,19 @@ export function Structure({
   )
     .filter(
       (link) =>
-        (link.href && matchesPath(pathname, link.href, link.children && link.children.length > 0)) ||
-        link.aliases?.some((alias) => matchesPath(pathname, alias, link.children && link.children.length > 0))
+        (link.href &&
+          matchesPath(
+            pathname,
+            link.href,
+            link.children && link.children.length > 0
+          )) ||
+        link.aliases?.some((alias) =>
+          matchesPath(
+            pathname,
+            alias,
+            link.children && link.children.length > 0
+          )
+        )
     )
     .sort((a, b) => (b.href?.length || 0) - (a.href?.length || 0));
 
@@ -346,8 +383,8 @@ export function Structure({
         className={cn(
           'absolute flex h-full w-full flex-col transition-transform duration-300 ease-in-out',
           navState.direction === 'forward'
-            ? 'animate-in slide-in-from-right'
-            : 'animate-in slide-in-from-left'
+            ? 'slide-in-from-right animate-in'
+            : 'slide-in-from-left animate-in'
         )}
       >
         {navState.history.length === 0 ? (
@@ -377,7 +414,7 @@ export function Structure({
             />
             {!isCollapsed && currentTitle && (
               <div className="p-2 pt-0">
-                <h2 className="line-clamp-1 px-2 text-sm font-semibold tracking-wide text-muted-foreground uppercase">
+                <h2 className="line-clamp-1 px-2 font-semibold text-muted-foreground text-sm uppercase tracking-wide">
                   {currentTitle}
                 </h2>
               </div>
@@ -421,7 +458,7 @@ export function Structure({
         </Link>
       </div>
       <div className="mx-2 h-4 w-px flex-none rotate-30 bg-foreground/20" />
-      <div className="flex items-center gap-2 text-lg font-semibold break-all">
+      <div className="flex items-center gap-2 break-all font-semibold text-lg">
         {currentLink?.icon && (
           <div className="flex-none">{currentLink.icon}</div>
         )}
@@ -429,6 +466,8 @@ export function Structure({
       </div>
     </>
   );
+
+  if (!initialized) return null;
 
   return (
     <BaseStructure
