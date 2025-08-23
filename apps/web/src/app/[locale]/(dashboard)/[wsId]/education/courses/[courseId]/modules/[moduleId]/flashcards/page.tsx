@@ -1,11 +1,11 @@
-import FlashcardForm from '../../../../../flashcards/form';
-import { AIFlashcards } from './client-ai';
-import ClientFlashcards from './client-flashcards';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { SwatchBook } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
 import { getTranslations } from 'next-intl/server';
+import FlashcardForm from '../../../../../flashcards/form';
+import { AIFlashcards } from './client-ai';
+import ClientFlashcards from './client-flashcards';
 
 interface Props {
   params: Promise<{
@@ -52,7 +52,7 @@ export default async function ModuleFlashcardsPage({ params }: Props) {
       <FeatureSummary
         title={
           <div className="flex items-center justify-between gap-4">
-            <h1 className="flex w-full items-center gap-2 text-lg font-bold md:text-2xl">
+            <h1 className="flex w-full items-center gap-2 font-bold text-lg md:text-2xl">
               <SwatchBook className="h-5 w-5" />
               {t('ws-flashcards.plural')}
             </h1>
@@ -73,8 +73,8 @@ export default async function ModuleFlashcardsPage({ params }: Props) {
               moduleId={moduleId}
               cards={cards.map(({ frontHTML, backHTML, ...rest }) => ({
                 ...rest,
-                frontHTML: frontHTML.toString(),
-                backHTML: backHTML.toString(),
+                frontHTML,
+                backHTML,
               }))}
             />
             <Separator className="col-span-full my-2" />

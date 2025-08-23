@@ -1,6 +1,5 @@
 'use client';
 
-import FlashcardForm from '../../../../../flashcards/form';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import {
   AlertDialog,
@@ -16,11 +15,12 @@ import {
 import { Button } from '@tuturuuu/ui/button';
 import { Pencil, Trash, X } from '@tuturuuu/ui/icons';
 import { cn } from '@tuturuuu/utils/format';
-import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import type React from 'react';
-import { useState } from 'react';
+import { type ReactElement, useState } from 'react';
 import { Flashcard } from 'react-quizlet-flashcard';
+import FlashcardForm from '../../../../../flashcards/form';
 
 export default function ClientFlashcards({
   wsId,
@@ -35,8 +35,8 @@ export default function ClientFlashcards({
         id: string;
         front: string;
         back: string;
-        frontHTML: string;
-        backHTML: string;
+        frontHTML: ReactElement;
+        backHTML: ReactElement;
         frontCardStyle?: React.CSSProperties;
         frontContentStyle?: React.CSSProperties;
         backCardStyle?: React.CSSProperties;
@@ -105,17 +105,15 @@ export default function ClientFlashcards({
             <>
               {card && (
                 <Flashcard
-                  frontHTML={card.frontHTML}
-                  backHTML={card.backHTML}
-                  frontCardStyle={card.frontCardStyle}
-                  frontContentStyle={card.frontContentStyle}
-                  backCardStyle={card.backCardStyle}
-                  backContentStyle={card.backContentStyle}
+                  front={{ html: card.frontHTML, style: card.frontCardStyle }}
+                  back={{ html: card.backHTML, style: card.backCardStyle }}
                   className={card.className}
-                  height={card.height}
-                  width={card.width}
-                  borderRadius={card.borderRadius}
-                  style={card.style}
+                  style={{
+                    width: card.width,
+                    height: card.height,
+                    borderRadius: card.borderRadius,
+                    ...card.style,
+                  }}
                 />
               )}
               {previewMode || (

@@ -1,14 +1,14 @@
 'use client';
 
-import ClientFlashcards from './client-flashcards';
-import { GenerateDialog } from '@/components/generate-dialog';
 import { useObject } from '@tuturuuu/ai/object/core';
 import { flashcardSchema } from '@tuturuuu/ai/object/types';
 import { Button } from '@tuturuuu/ui/button';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
-import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { useState } from 'react';
+import { GenerateDialog } from '@/components/generate-dialog';
+import ClientFlashcards from './client-flashcards';
 
 export function AIFlashcards({
   wsId,
@@ -120,8 +120,8 @@ export function AIFlashcards({
               moduleId="ai-generated"
               cards={cards.map(({ frontHTML, backHTML, ...rest }) => ({
                 ...rest,
-                frontHTML: frontHTML.toString(),
-                backHTML: backHTML.toString(),
+                frontHTML,
+                backHTML,
               }))}
             />
           </div>

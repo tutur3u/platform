@@ -64,7 +64,7 @@
     @apply h-auto w-full max-w-full;
   }
 
-  [data-type='horizontalRule'] {
+  [data-type="horizontalRule"] {
     @apply my-8 cursor-pointer py-4 transition-all duration-100 ease-in-out;
 
     &.ProseMirror-selectednode {
@@ -86,7 +86,7 @@
     }
   }
 
-  [data-type='emoji'] {
+  [data-type="emoji"] {
     display: inline-block;
 
     img {
