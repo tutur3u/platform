@@ -96,7 +96,7 @@ export default async function TasksAssignedToMe({
           <UserStar className="h-5 w-5" />
           <div className="line-clamp-1">My Tasks</div>
         </CardTitle>
-        <Link href={`/${wsId}/tasks?assignee=${userId}`}>
+        <Link href={`/${wsId}/tasks/boards`}>
           <Button variant="ghost" size="sm" className="h-8 px-2">
             <User className="mr-1 h-3 w-3" />
             View All

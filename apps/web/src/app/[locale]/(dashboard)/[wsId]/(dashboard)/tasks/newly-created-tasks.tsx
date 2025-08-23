@@ -79,7 +79,7 @@ export default async function NewlyCreatedTasks({
             <div className="line-clamp-1">Recently Created Tasks</div>
           </CardTitle>
         </CardTitle>
-        <Link href={`/${wsId}/tasks`}>
+        <Link href={`/${wsId}/tasks/boards`}>
           <Button variant="ghost" size="sm" className="h-8 px-2">
             <Plus className="mr-1 h-3 w-3" />
             View All
