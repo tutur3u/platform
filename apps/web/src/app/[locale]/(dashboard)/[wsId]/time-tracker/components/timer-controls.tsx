@@ -773,12 +773,14 @@ export function TimerControls({
       try {
         // Lazily create a singleton AudioContext to prevent resource leaks
         if (!audioContextRef.current) {
-          audioContextRef.current = new (window.AudioContext ||
+          audioContextRef.current = new (
+            window.AudioContext ||
             (
               window as typeof window & {
                 webkitAudioContext?: typeof AudioContext;
               }
-            ).webkitAudioContext)();
+            ).webkitAudioContext
+          )();
         }
 
         const audioContext = audioContextRef.current;
