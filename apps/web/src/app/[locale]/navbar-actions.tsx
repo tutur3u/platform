@@ -27,7 +27,7 @@ export default async function NavbarActions({
       <div className="flex w-full flex-col gap-2">
         {/* Report Problem button - only shows in sidebar */}
         {sbUser && !hideMetadata && DEV_MODE && <ReportProblemDialog />}
-        
+
         {/* Main actions row */}
         <div className="flex w-full items-center gap-1">
           {sbUser ? (
