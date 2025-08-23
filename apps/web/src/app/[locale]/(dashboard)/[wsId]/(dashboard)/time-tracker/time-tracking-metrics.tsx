@@ -135,6 +135,13 @@ export default async function TimeTrackingMetrics({
 
   const productivityScore = calculateProductivityScore();
 
+  // Determine if there is no data across all metrics
+  const noData =
+    todayTime === 0 &&
+    weekTime === 0 &&
+    streak === 0 &&
+    productivityScore === 0;
+
   // Format duration helper
   const formatDuration = (seconds: number) => {
     const hours = Math.floor(seconds / 3600);
@@ -161,7 +168,7 @@ export default async function TimeTrackingMetrics({
       </CardHeader>
       <CardContent className="space-y-4">
         {/* Currently Running Session */}
-        {runningSession && (
+        {!noData && runningSession && (
           <div className="rounded-lg border border-green-200 bg-green-50 p-3">
             <div className="mb-2 flex items-center gap-2">
               <div className="h-2 w-2 animate-pulse rounded-full bg-green-500" />
@@ -178,50 +185,52 @@ export default async function TimeTrackingMetrics({
         )}
 
         {/* Key Metrics */}
-        <div className="grid grid-cols-2 gap-3">
-          <div className="space-y-1">
-            <div className="flex items-center gap-1 text-muted-foreground text-xs">
-              <Clock className="h-3 w-3" />
-              Today
+        {!noData && (
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1">
+              <div className="flex items-center gap-1 text-muted-foreground text-xs">
+                <Clock className="h-3 w-3" />
+                Today
+              </div>
+              <p className="font-medium text-sm">
+                {todayTime > 0 ? formatDuration(todayTime) : '0m'}
+              </p>
             </div>
-            <p className="font-medium text-sm">
-              {todayTime > 0 ? formatDuration(todayTime) : '0m'}
-            </p>
-          </div>
 
-          <div className="space-y-1">
-            <div className="flex items-center gap-1 text-muted-foreground text-xs">
-              <TrendingUp className="h-3 w-3" />
-              This Week
+            <div className="space-y-1">
+              <div className="flex items-center gap-1 text-muted-foreground text-xs">
+                <TrendingUp className="h-3 w-3" />
+                This Week
+              </div>
+              <p className="font-medium text-sm">
+                {weekTime > 0 ? formatDuration(weekTime) : '0m'}
+              </p>
             </div>
-            <p className="font-medium text-sm">
-              {weekTime > 0 ? formatDuration(weekTime) : '0m'}
-            </p>
-          </div>
 
-          <div className="space-y-1">
-            <div className="flex items-center gap-1 text-muted-foreground text-xs">
-              <Target className="h-3 w-3" />
-              Streak
+            <div className="space-y-1">
+              <div className="flex items-center gap-1 text-muted-foreground text-xs">
+                <Target className="h-3 w-3" />
+                Streak
+              </div>
+              <p className="font-medium text-sm">
+                {streak} day{streak !== 1 ? 's' : ''}
+              </p>
             </div>
-            <p className="font-medium text-sm">
-              {streak} day{streak !== 1 ? 's' : ''}
-            </p>
-          </div>
 
-          <div className="space-y-1">
-            <div className="flex items-center gap-1 text-muted-foreground text-xs">
-              <Zap className="h-3 w-3" />
-              Focus Score
-            </div>
-            <div className="flex items-center gap-2">
-              <p className="font-medium text-sm">{productivityScore}</p>
+            <div className="space-y-1">
+              <div className="flex items-center gap-1 text-muted-foreground text-xs">
+                <Zap className="h-3 w-3" />
+                Focus Score
+              </div>
+              <div className="flex items-center gap-2">
+                <p className="font-medium text-sm">{productivityScore}</p>
+              </div>
             </div>
           </div>
-        </div>
+        )}
 
         {/* Top Categories Today */}
-        {todayData && todayData.length > 0 && (
+        {!noData && todayData && todayData.length > 0 && (
           <div className="space-y-2">
             <h4 className="font-medium text-muted-foreground text-xs">
               Today's Focus
@@ -275,7 +284,7 @@ export default async function TimeTrackingMetrics({
         )}
 
         {/* No Data State */}
-        {todayTime === 0 && weekTime === 0 && !runningSession && (
+        {noData && (
           <div className="py-4 text-center text-muted-foreground">
             <div className="mb-2">
               <Timer className="mx-auto h-6 w-6 opacity-50" />
