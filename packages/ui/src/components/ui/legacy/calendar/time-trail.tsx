@@ -1,11 +1,9 @@
-import { useCalendar } from '../../../../hooks/use-calendar';
-import { DAY_HEIGHT, HOUR_HEIGHT } from './config';
 import { cn } from '@tuturuuu/utils/format';
 import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone';
-import utc from 'dayjs/plugin/utc';
+import { useCalendarSettings } from './settings/settings-context';
+import { DAY_HEIGHT, HOUR_HEIGHT } from './config';
 
-dayjs.extend(utc);
 dayjs.extend(timezone);
 
 // Reusable component for time column
@@ -15,7 +13,7 @@ const TimeColumn = ({
   timeFormat,
   className,
   style,
-  muted = false,
+  muted,
 }: {
   timezone: string | undefined;
   primaryTimezone: string | undefined;
@@ -88,7 +86,7 @@ const TimeColumn = ({
 
 export const TimeTrail = () => {
   // Get settings from context
-  const { settings } = useCalendar();
+  const { settings } = useCalendarSettings();
   const tz = settings?.timezone?.timezone;
   const secondaryTz = settings?.timezone?.secondaryTimezone;
   const showSecondary =
