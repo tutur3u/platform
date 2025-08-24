@@ -2,19 +2,8 @@ import { DEV_MODE } from '@/constants/common';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import type { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
-import dayjs from 'dayjs';
-import timezone from 'dayjs/plugin/timezone';
-import utc from 'dayjs/plugin/utc';
+import { dayjs } from '@tuturuuu/ui/lib/dayjs-setup';
 import { type NextRequest, NextResponse } from 'next/server';
-
-// Extend dayjs with timezone and UTC plugins
-dayjs.extend(utc);
-dayjs.extend(timezone);
-
-// Helper to add minutes to a dayjs date
-const addMinutes = (date: dayjs.Dayjs, minutes: number): dayjs.Dayjs => {
-  return date.add(minutes, 'minute');
-};
 
 export async function POST(request: NextRequest) {
   if (!DEV_MODE) {
@@ -85,19 +74,14 @@ export async function POST(request: NextRequest) {
     const durationInMinutes = (Math.floor(Math.random() * 16) + 1) * 15;
 
     const eventStartTime = cursorTime;
-    const eventEndTime = addMinutes(eventStartTime, durationInMinutes);
+    const eventEndTime = dayjs(cursorTime).add(durationInMinutes, 'minute');
 
     // If event ends after active hours, move to the next day and retry this iteration
     if (
       eventEndTime.hour() >= ACTIVE_HOURS_END ||
       eventEndTime.date() > eventStartTime.date()
     ) {
-      cursorTime = cursorTime
-        .add(1, 'day')
-        .hour(ACTIVE_HOURS_START)
-        .minute(0)
-        .second(0)
-        .millisecond(0);
+      cursorTime = dayjs(cursorTime).add(1, 'day').hour(ACTIVE_HOURS_START).minute(0).second(0).millisecond(0);
       i--; // Decrement to ensure we still generate the correct total `count` of events
       continue;
     }
@@ -113,7 +97,7 @@ export async function POST(request: NextRequest) {
 
     // Add a random pre-determined break (0 or 15 minutes)
     const gapInMinutes = Math.random() < 0.5 ? 0 : 15;
-    cursorTime = addMinutes(cursorTime, gapInMinutes);
+    cursorTime = dayjs(cursorTime).add(gapInMinutes, 'minute');
   }
 
   const availableColors: SupportedColor[] = [

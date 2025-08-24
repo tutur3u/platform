@@ -1,10 +1,5 @@
 import type { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
-import dayjs from 'dayjs';
-import timezone from 'dayjs/plugin/timezone';
-import utc from 'dayjs/plugin/utc';
-
-dayjs.extend(utc);
-dayjs.extend(timezone);
+import { dayjs } from '../lib/dayjs-setup';
 
 export function isAllDayEvent(
   event: Pick<CalendarEvent, 'start_at' | 'end_at'>

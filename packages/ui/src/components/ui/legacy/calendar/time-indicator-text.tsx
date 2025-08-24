@@ -77,6 +77,12 @@ export const TimeIndicatorText = ({ columnIndex }: { columnIndex: number }) => {
     ? TIME_INDICATOR_OFFSETS.DUAL_TIMEZONE
     : TIME_INDICATOR_OFFSETS.SINGLE_TIMEZONE;
 
+  // In dual mode, the secondary indicator sits one time-column further left
+  const secondaryLeftOffset =
+    leftOffset -
+    (TIME_INDICATOR_OFFSETS.SINGLE_TIMEZONE -
+      TIME_INDICATOR_OFFSETS.DUAL_TIMEZONE);
+
   return (
     <>
       {/* Primary time indicator (red) */}
@@ -99,7 +105,7 @@ export const TimeIndicatorText = ({ columnIndex }: { columnIndex: number }) => {
         <div
           className="pointer-events-none absolute top-[-0.075rem] z-100 flex items-center"
           style={{
-            left: `${leftOffset + TIME_INDICATOR_OFFSETS.DUAL_TIMEZONE}px`,
+            left: `${secondaryLeftOffset}px`,
             transform: `translateY(${totalHours * HOUR_HEIGHT - 10}px)`,
             transition: 'transform 0.3s ease-out',
           }}
