@@ -1,6 +1,22 @@
 'use client';
 
 import {
+  type ColumnDef,
+  type ColumnFiltersState,
+  flexRender,
+  getCoreRowModel,
+  getFacetedRowModel,
+  getFacetedUniqueValues,
+  getFilteredRowModel,
+  getSortedRowModel,
+  type SortingState,
+  useReactTable,
+  type VisibilityState,
+} from '@tanstack/react-table';
+import { cn } from '@tuturuuu/utils/format';
+import { type ReactNode, useState } from 'react';
+import { Card } from '../../card';
+import {
   Table,
   TableBody,
   TableCell,
@@ -10,21 +26,6 @@ import {
 } from '../../table';
 import { DataTablePagination } from './data-table-pagination';
 import { DataTableToolbar } from './data-table-toolbar';
-import {
-  type ColumnDef,
-  type ColumnFiltersState,
-  type SortingState,
-  type VisibilityState,
-  flexRender,
-  getCoreRowModel,
-  getFacetedRowModel,
-  getFacetedUniqueValues,
-  getFilteredRowModel,
-  getSortedRowModel,
-  useReactTable,
-} from '@tanstack/react-table';
-import { cn } from '@tuturuuu/utils/format';
-import { type ReactNode, useState } from 'react';
 
 export interface DataTableProps<TData, TValue> {
   hideToolbar?: boolean;
@@ -166,14 +167,17 @@ export function DataTable<TData, TValue>({
           exportContent={toolbarExportContent}
         />
       )}
-      <div className="rounded-md border">
+      <Card>
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>
                 {headerGroup.headers.map((header) => {
                   return (
-                    <TableHead key={header.id} className="text-foreground/70">
+                    <TableHead
+                      key={header.id}
+                      className="bg-foreground/5 font-semibold text-foreground/70 first:rounded-tl-xl last:rounded-tr-xl"
+                    >
                       {header.isPlaceholder
                         ? null
                         : flexRender(
@@ -229,7 +233,7 @@ export function DataTable<TData, TValue>({
             )}
           </TableBody>
         </Table>
-      </div>
+      </Card>
 
       {hidePagination ||
         (count !== undefined && (
