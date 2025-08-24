@@ -410,15 +410,8 @@ export function ReportProblemDialog({
       {showTrigger && (
         <DialogTrigger asChild>
           {trigger || (
-            <Button
-              variant="outline"
-              size="sm"
-              className={cn(
-                'w-full justify-start gap-2 border-orange-200 bg-orange-50 text-orange-700 transition-colors hover:bg-orange-100 hover:text-orange-800 dark:border-orange-800 dark:bg-orange-950 dark:text-orange-300 dark:hover:bg-orange-900',
-                className
-              )}
-            >
-              <MessageSquareWarning className="h-4 w-4" />
+            <Button variant="secondary" size="sm" className={cn(className)}>
+              <MessageSquareWarning className="mr-2 h-4 w-4" />
               {t('report-problem')}
             </Button>
           )}
