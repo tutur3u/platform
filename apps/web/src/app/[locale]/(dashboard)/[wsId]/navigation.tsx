@@ -421,16 +421,19 @@ export async function WorkspaceNavigationLinks({
               title: t('sidebar_tabs.time_tracker'),
               href: `/${personalOrWsId}/time-tracker`,
               icon: <ClockFading className="h-5 w-5" />,
+              matchExact: true,
             },
             {
               title: t('sidebar_tabs.history'),
-              href: `/${personalOrWsId}/time-tracker/history`,
+              // href: `/${personalOrWsId}/time-tracker/history`,
               icon: <ClipboardClock className="h-5 w-5" />,
+              tempDisabled: true,
             },
             {
               title: t('sidebar_tabs.categories'),
-              href: `/${personalOrWsId}/time-tracker/categories`,
+              // href: `/${personalOrWsId}/time-tracker/categories`,
               icon: <Tags className="h-5 w-5" />,
+              tempDisabled: true,
             },
             {
               title: t('sidebar_tabs.goals'),
@@ -439,8 +442,9 @@ export async function WorkspaceNavigationLinks({
             },
             {
               title: t('sidebar_tabs.settings'),
-              href: `/${personalOrWsId}/time-tracker/settings`,
+              // href: `/${personalOrWsId}/time-tracker/settings`,
               icon: <Settings className="h-5 w-5" />,
+              tempDisabled: true,
             },
           ],
           icon: <ClockFading className="h-5 w-5" />,
