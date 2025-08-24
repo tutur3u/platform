@@ -9,6 +9,7 @@ import 'dayjs/locale/vi';
 import moment from 'moment';
 import { getTranslations } from 'next-intl/server';
 import { notFound } from 'next/navigation';
+import { Card } from '../../../card';
 
 interface Props {
   wsId: string;
@@ -53,9 +54,9 @@ export default async function WalletDetailsPage({
       />
       <Separator className="my-4" />
       <div className="grid h-fit gap-4 md:grid-cols-2">
-        <div className="grid gap-4">
-          <div className="grid h-fit gap-2 rounded-lg border p-4">
-            <div className="text-lg font-semibold">
+        <Card className="grid gap-4">
+          <div className="grid h-fit gap-2 rounded-lg p-4">
+            <div className="font-semibold text-lg">
               {t('invoices.basic-info')}
             </div>
             <Separator />
@@ -89,19 +90,17 @@ export default async function WalletDetailsPage({
               }
             />
           </div>
-        </div>
+        </Card>
 
-        <div className="grid gap-4">
-          <div className="h-full rounded-lg border p-4">
-            <div className="grid h-full content-start gap-2">
-              <div className="text-lg font-semibold">
-                {t('wallet-data-table.description')}
-              </div>
-              <Separator />
-              <p>{wallet.description || t('common.empty')}</p>
+        <Card className="grid h-full gap-4 p-4">
+          <div className="grid h-full content-start gap-2">
+            <div className="font-semibold text-lg">
+              {t('wallet-data-table.description')}
             </div>
+            <Separator />
+            <p>{wallet.description || t('common.empty')}</p>
           </div>
-        </div>
+        </Card>
       </div>
       <Separator className="my-4" />
       <CustomDataTable
