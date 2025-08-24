@@ -1,14 +1,14 @@
 'use client';
 
+import type { Table } from '@tanstack/react-table';
+import { Dialog, DialogContent, DialogTrigger } from '@tuturuuu/ui/dialog';
+import { Download, RotateCcw, Upload } from 'lucide-react';
+import type { ReactNode } from 'react';
 import { Button } from '../../button';
 import SearchBar from '../search-bar';
 import { DataTableCreateButton } from './data-table-create-button';
 import { DataTableRefreshButton } from './data-table-refresh-button';
 import { DataTableViewOptions } from './data-table-view-options';
-import type { Table } from '@tanstack/react-table';
-import { Dialog, DialogContent, DialogTrigger } from '@tuturuuu/ui/dialog';
-import { Download, RotateCcw, Upload } from 'lucide-react';
-import type { ReactNode } from 'react';
 
 interface DataTableToolbarProps<TData> {
   hasData: boolean;
@@ -61,7 +61,7 @@ export function DataTableToolbar<TData>({
             t={t}
             defaultValue={defaultQuery}
             onSearch={onSearch}
-            className="col-span-full w-full md:col-span-1 md:max-w-xs"
+            className="col-span-full w-full bg-background md:col-span-1 md:max-w-xs"
           />
         )}
         {filters}
