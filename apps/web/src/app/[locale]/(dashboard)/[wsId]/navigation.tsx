@@ -426,9 +426,9 @@ export async function WorkspaceNavigationLinks({
             },
             {
               title: t('sidebar_tabs.timer'),
-              href: `/${personalOrWsId}/time-tracker`,
+              // href: `/${personalOrWsId}/time-tracker/timer`,
               icon: <Timer className="h-5 w-5" />,
-              matchExact: true,
+              tempDisabled: true,
             },
             {
               title: t('sidebar_tabs.history'),
