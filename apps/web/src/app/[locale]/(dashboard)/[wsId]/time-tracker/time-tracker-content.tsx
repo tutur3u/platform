@@ -264,6 +264,50 @@ export default function TimeTrackerContent({
     };
   }, [recentSessions, calculateFocusScore, userTimezone]);
 
+  // API call helper with enhanced error handling and retry logic
+  const apiCall = useCallback(
+    async (url: string, options: RequestInit = {}) => {
+      const controller = new AbortController();
+
+      try {
+        const response = await fetch(url, {
+          headers: {
+            'Content-Type': 'application/json',
+            ...options.headers,
+          },
+          signal: controller.signal,
+          ...options,
+        });
+
+        if (!response.ok) {
+          const error = await response
+            .json()
+            .catch(() => ({ error: 'Unknown error' }));
+          throw new Error(error.error || `HTTP ${response.status}`);
+        }
+
+        setIsOffline(false);
+        setRetryCount(0);
+        return response.json();
+      } catch (err) {
+        if (err instanceof Error && err.name === 'AbortError') {
+          throw err;
+        }
+
+        const isNetworkError =
+          err instanceof TypeError && err.message.includes('fetch');
+        if (isNetworkError) {
+          setIsOffline(true);
+        }
+
+        const message = err instanceof Error ? err.message : 'Network error';
+        console.error('API call failed:', message);
+        throw new Error(message);
+      }
+    },
+    []
+  );
+
   // Function to fetch next tasks with smart priority logic
   const fetchNextTasks = useCallback(async () => {
     try {
@@ -325,7 +369,7 @@ export default function TimeTrackerContent({
       setAvailableTasks([]);
       setNextTaskPreview(null);
     }
-  }, [wsId]);
+  }, [wsId, apiCall]);
 
   // Fetch next task preview on mount
   useEffect(() => {
@@ -357,50 +401,6 @@ export default function TimeTrackerContent({
     }
     return `${minutes}m`;
   }, []);
-
-  // API call helper with enhanced error handling and retry logic
-  const apiCall = useCallback(
-    async (url: string, options: RequestInit = {}) => {
-      const controller = new AbortController();
-
-      try {
-        const response = await fetch(url, {
-          headers: {
-            'Content-Type': 'application/json',
-            ...options.headers,
-          },
-          signal: controller.signal,
-          ...options,
-        });
-
-        if (!response.ok) {
-          const error = await response
-            .json()
-            .catch(() => ({ error: 'Unknown error' }));
-          throw new Error(error.error || `HTTP ${response.status}`);
-        }
-
-        setIsOffline(false);
-        setRetryCount(0);
-        return response.json();
-      } catch (err) {
-        if (err instanceof Error && err.name === 'AbortError') {
-          throw err;
-        }
-
-        const isNetworkError =
-          err instanceof TypeError && err.message.includes('fetch');
-        if (isNetworkError) {
-          setIsOffline(true);
-        }
-
-        const message = err instanceof Error ? err.message : 'Network error';
-        console.error('API call failed:', message);
-        throw new Error(message);
-      }
-    },
-    []
-  );
 
   // Fetch all data with enhanced error handling and exponential backoff
   const fetchData = useCallback(
@@ -473,12 +473,13 @@ export default function TimeTrackerContent({
         );
 
         // Process results with fallbacks for failed calls
-        const [categoriesRes, runningRes, recentRes, statsRes, tasksRes] =
-          results.map((result, index) => {
+        const [categoriesRes, runningRes, recentRes, tasksRes] = results.map(
+          (result, index) => {
             if (result.status === 'fulfilled') {
               return result.value;
             } else {
-              const { name, fallback } = apiCalls[index]!;
+              if (!apiCalls[index]) return null;
+              const { name, fallback } = apiCalls[index];
               console.warn(`API call for ${name} failed:`, result.reason);
               // Only show error toast for critical failures, not for tasks
               if (name !== 'tasks') {
@@ -488,7 +489,8 @@ export default function TimeTrackerContent({
               }
               return fallback;
             }
-          });
+          }
+        );
 
         if (!isMountedRef.current) return;
 
@@ -565,7 +567,7 @@ export default function TimeTrackerContent({
         clearInterval(refreshIntervalRef.current);
       }
     };
-  }, [isLoading, retryCount]); // Remove fetchData dependency
+  }, [isLoading, retryCount, fetchData]); // Remove fetchData dependency
 
   // Timer effect with better cleanup
   useEffect(() => {
@@ -592,11 +594,6 @@ export default function TimeTrackerContent({
     };
   }, [isRunning, currentSession, isViewingOtherUser]);
 
-  // Load data on mount and when dependencies change
-  useEffect(() => {
-    fetchData();
-  }, [wsId, currentUserId, selectedUserId]); // Only depend on actual values, not the function
-
   // Online/offline detection
   useEffect(() => {
     const handleOnline = () => {
@@ -614,7 +611,7 @@ export default function TimeTrackerContent({
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
     };
-  }, [retryCount]); // Remove fetchData dependency
+  }, [retryCount, fetchData]); // Remove fetchData dependency
 
   // Cleanup on unmount
   useEffect(() => {
@@ -643,7 +640,7 @@ export default function TimeTrackerContent({
   // Retry function with exponential backoff
   const handleRetry = useCallback(() => {
     fetchData(true, true);
-  }, []); // Remove fetchData dependency
+  }, [fetchData]); // Remove fetchData dependency
 
   // Drag and drop state for highlighting drop zones
   const [isDraggingTask, setIsDraggingTask] = useState(false);
