@@ -8,7 +8,7 @@ export default function TaskCreationDate({
   creationDate: string;
 }) {
   return (
-    <span>
+    <span className="font-semibold text-dynamic-pink">
       {creationDate && format(new Date(creationDate), 'MMM d, h:mm a')}
     </span>
   );

@@ -45,7 +45,7 @@ export default function UpcomingEventDetails({
         {formatEventTime(event.start_at, event.end_at)}
       </span>
       <span>•</span>
-      <span className="font-semibold text-dynamic-pink">
+      <span className="font-semibold text-dynamic-orange">
         {getRelativeTime(event.start_at)}
       </span>
     </div>
