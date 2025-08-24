@@ -24,16 +24,22 @@ import {
 import {
   CheckCircle,
   Clock,
+  ClockFading,
   Copy,
   ExternalLink,
+  Icon,
   MapPin,
   Pause,
   Play,
   RefreshCw,
+  Settings,
+  Settings2,
   Sparkles,
   Square,
+  TableOfContents,
   Tag,
   Timer,
+  fruit,
 } from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
@@ -759,8 +765,9 @@ export function TimerControls({
       try {
         // Lazily create a singleton AudioContext to prevent resource leaks
         if (!audioContextRef.current) {
-          audioContextRef.current = new (window.AudioContext ||
-            (window as any).webkitAudioContext)();
+          audioContextRef.current = new (
+            window.AudioContext || (window as any).webkitAudioContext
+          )();
         }
 
         const audioContext = audioContextRef.current;
@@ -2042,7 +2049,9 @@ export function TimerControls({
       <Dialog open={showCustomSettings} onOpenChange={setShowCustomSettings}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
-            <DialogTitle>⚙️ Advanced Custom Timer Settings</DialogTitle>
+            <DialogTitle className="flex items-center gap-2">
+              <Settings2 className="h-5 w-5" /> Advanced Custom Timer Settings
+            </DialogTitle>
             <DialogDescription>
               Fine-tune your custom timer experience with advanced options
             </DialogDescription>
@@ -2301,7 +2310,9 @@ export function TimerControls({
       >
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>🍅 Pomodoro Settings</DialogTitle>
+            <DialogTitle className="flex items-center gap-2">
+              <Icon iconNode={fruit} className="h-5 w-5" /> Pomodoro Settings
+            </DialogTitle>
             <DialogDescription>
               Customize your focus and break durations
             </DialogDescription>
@@ -2469,7 +2480,9 @@ export function TimerControls({
       >
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>⏱️ Stopwatch Settings</DialogTitle>
+            <DialogTitle className="flex items-center gap-2">
+              <Timer className="h-5 w-5" /> Stopwatch Settings
+            </DialogTitle>
             <DialogDescription>
               Customize your stopwatch experience and productivity features
             </DialogDescription>
@@ -2603,7 +2616,7 @@ export function TimerControls({
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <Timer className="h-5 w-5" />
+              <Clock className="h-5 w-5" />
               Time Tracker
             </div>
             {/* Timer Mode Selector */}
@@ -2629,19 +2642,19 @@ export function TimerControls({
                     value="stopwatch"
                     disabled={sessionProtection.isActive}
                   >
-                    ⏱️ Stopwatch
+                    <Timer className="h-5 w-5" /> Stopwatch
                   </SelectItem>
                   <SelectItem
                     value="pomodoro"
                     disabled={sessionProtection.isActive}
                   >
-                    🍅 Pomodoro
+                    <Icon iconNode={fruit} className="h-5 w-5" /> Pomodoro
                   </SelectItem>
                   <SelectItem
                     value="custom"
                     disabled={sessionProtection.isActive}
                   >
-                    ⏲️ Custom
+                    <Settings2 className="h-5 w-5" /> Custom
                   </SelectItem>
                 </SelectContent>
               </Select>
@@ -2679,7 +2692,7 @@ export function TimerControls({
                   }
                   disabled={sessionProtection.isActive}
                 >
-                  ⚙️
+                  <Settings className="h-3 w-3 text-muted-foreground" />
                 </Button>
               )}
               {timerMode === 'pomodoro' && (
@@ -2711,7 +2724,7 @@ export function TimerControls({
                   }
                   disabled={sessionProtection.isActive}
                 >
-                  ⚙️
+                  <Settings className="h-3 w-3 text-muted-foreground" />
                 </Button>
               )}
               {timerMode === 'custom' && (
@@ -2743,7 +2756,7 @@ export function TimerControls({
                   }
                   disabled={sessionProtection.isActive}
                 >
-                  ⚙️
+                  <Settings className="h-3 w-3 text-muted-foreground" />
                 </Button>
               )}
             </div>
@@ -2786,9 +2799,11 @@ export function TimerControls({
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-purple-100 dark:bg-purple-900/20">
-                  {customTimerSettings.type === 'enhanced-stopwatch'
-                    ? '⏱️'
-                    : '⏲️'}
+                  {customTimerSettings.type === 'enhanced-stopwatch' ? (
+                    <Timer className="h-5 w-5" />
+                  ) : (
+                    <ClockFading className="h-5 w-5" />
+                  )}
                 </div>
                 <div>
                   <h3 className="text-sm font-medium">
@@ -2841,7 +2856,7 @@ export function TimerControls({
                     : 'Enhanced Stopwatch'
                 }
               >
-                ⏱️ Stopwatch
+                <Timer className="h-5 w-5" /> Stopwatch
               </Button>
               <Button
                 variant={
@@ -2877,7 +2892,7 @@ export function TimerControls({
                     : 'Traditional Countdown'
                 }
               >
-                ⏲️ Countdown
+                <ClockFading className="h-5 w-5" /> Countdown
               </Button>
             </div>
 
@@ -3344,64 +3359,6 @@ export function TimerControls({
             </div>
           ) : (
             <div className="space-y-6">
-              <div
-                className={cn(
-                  'rounded-lg border-2 border-dashed p-6 text-center transition-all duration-200',
-                  isDragOver
-                    ? 'border-blue-500 bg-blue-50/50 dark:bg-blue-950/20'
-                    : isDraggingTask
-                      ? 'border-blue-400/60 bg-blue-50/30 dark:bg-blue-950/10'
-                      : 'border-muted-foreground/25'
-                )}
-                onDragEnter={handleDragEnter}
-                onDragOver={handleDragOver}
-                onDragLeave={handleDragLeave}
-                onDrop={handleDrop}
-              >
-                <Clock
-                  className={cn(
-                    'mx-auto mb-3 h-12 w-12 transition-colors duration-200',
-                    isDragOver
-                      ? 'text-blue-500'
-                      : isDraggingTask
-                        ? 'text-blue-400'
-                        : 'text-muted-foreground'
-                  )}
-                />
-                <p
-                  className={cn(
-                    'text-base transition-colors duration-200',
-                    isDragOver
-                      ? 'text-blue-700 dark:text-blue-300'
-                      : isDraggingTask
-                        ? 'text-blue-600 dark:text-blue-400'
-                        : 'text-muted-foreground'
-                  )}
-                >
-                  {isDragOver
-                    ? 'Drop task here to start tracking'
-                    : isDraggingTask
-                      ? 'Drag task here to start tracking'
-                      : 'Ready to start tracking time'}
-                </p>
-                <p
-                  className={cn(
-                    'mt-2 text-xs transition-colors duration-200',
-                    isDragOver
-                      ? 'text-blue-600/70 dark:text-blue-400/70'
-                      : isDraggingTask
-                        ? 'text-blue-500/70 dark:text-blue-400/70'
-                        : 'text-muted-foreground'
-                  )}
-                >
-                  {isDragOver
-                    ? 'Release to select this task'
-                    : isDraggingTask
-                      ? 'Drop zone is ready • Drag outside to cancel'
-                      : 'Drag tasks to the search field or select manually below'}
-                </p>
-              </div>
-
               {/* Session Mode Toggle */}
               <Tabs
                 value={sessionMode}
@@ -3424,7 +3381,7 @@ export function TimerControls({
                     value="manual"
                     className="flex items-center gap-2 data-[state=active]:bg-background data-[state=active]:shadow-sm"
                   >
-                    <Timer className="h-4 w-4" />
+                    <TableOfContents className="h-4 w-4" />
                     <div className="flex flex-col items-start">
                       <span className="text-sm font-medium">Manual</span>
                       <span className="text-xs text-muted-foreground">
@@ -4300,6 +4257,64 @@ export function TimerControls({
                   </Button>
                 </TabsContent>
               </Tabs>
+
+              <div
+                className={cn(
+                  'rounded-lg border-2 border-dashed p-6 text-center transition-all duration-200',
+                  isDragOver
+                    ? 'border-blue-500 bg-blue-50/50 dark:bg-blue-950/20'
+                    : isDraggingTask
+                      ? 'border-blue-400/60 bg-blue-50/30 dark:bg-blue-950/10'
+                      : 'border-muted-foreground/25'
+                )}
+                onDragEnter={handleDragEnter}
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
+              >
+                <Clock
+                  className={cn(
+                    'mx-auto mb-3 h-12 w-12 transition-colors duration-200',
+                    isDragOver
+                      ? 'text-blue-500'
+                      : isDraggingTask
+                        ? 'text-blue-400'
+                        : 'text-muted-foreground'
+                  )}
+                />
+                <p
+                  className={cn(
+                    'text-base transition-colors duration-200',
+                    isDragOver
+                      ? 'text-blue-700 dark:text-blue-300'
+                      : isDraggingTask
+                        ? 'text-blue-600 dark:text-blue-400'
+                        : 'text-muted-foreground'
+                  )}
+                >
+                  {isDragOver
+                    ? 'Drop task here to start tracking'
+                    : isDraggingTask
+                      ? 'Drag task here to start tracking'
+                      : 'Ready to start tracking time'}
+                </p>
+                <p
+                  className={cn(
+                    'mt-2 text-xs transition-colors duration-200',
+                    isDragOver
+                      ? 'text-blue-600/70 dark:text-blue-400/70'
+                      : isDraggingTask
+                        ? 'text-blue-500/70 dark:text-blue-400/70'
+                        : 'text-muted-foreground'
+                  )}
+                >
+                  {isDragOver
+                    ? 'Release to select this task'
+                    : isDraggingTask
+                      ? 'Drop zone is ready • Drag outside to cancel'
+                      : 'Drag tasks to the search field or select manually below'}
+                </p>
+              </div>
 
               {/* Quick Start Templates */}
               {templates.length > 0 && (

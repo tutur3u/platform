@@ -1,4 +1,4 @@
-import { CustomDataTable } from '@/components/custom-data-table';
+import { CustomDataTable } from '@tuturuuu/ui/custom/tables/custom-data-table';
 import { Separator } from '@tuturuuu/ui/separator';
 
 export default function Loading() {

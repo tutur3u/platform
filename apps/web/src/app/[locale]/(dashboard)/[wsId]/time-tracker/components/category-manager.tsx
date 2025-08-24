@@ -30,10 +30,9 @@ import {
 } from '@tuturuuu/ui/dropdown-menu';
 import {
   Edit,
+  LayoutGrid,
   MoreHorizontal,
-  Palette,
   Plus,
-  Settings,
   Trash2,
 } from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
@@ -210,7 +209,7 @@ export function CategoryManager({
         <CardHeader>
           <div className="flex items-center justify-between">
             <CardTitle className="flex items-center gap-2">
-              <Settings className="h-5 w-5" />
+              <LayoutGrid className="h-5 w-5" />
               Category Management
             </CardTitle>
             {!readOnly && (
@@ -228,7 +227,7 @@ export function CategoryManager({
         <CardContent>
           {categories.length === 0 ? (
             <div className="py-12 text-center">
-              <Palette className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
+              <LayoutGrid className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
               <p className="text-lg text-muted-foreground">
                 No categories created yet
               </p>
@@ -318,7 +317,10 @@ export function CategoryManager({
       <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Create New Category</DialogTitle>
+            <DialogTitle className="flex items-center gap-2">
+              <Plus className="h-5 w-5" />
+              Create New Category
+            </DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <div>
@@ -392,7 +394,10 @@ export function CategoryManager({
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Edit Category</DialogTitle>
+            <DialogTitle className="flex items-center gap-2">
+              <Edit className="h-5 w-5" />
+              Edit Category
+            </DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <div>

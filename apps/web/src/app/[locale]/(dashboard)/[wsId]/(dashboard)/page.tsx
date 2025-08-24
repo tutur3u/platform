@@ -1,46 +1,28 @@
-import type { FinanceDashboardSearchParams } from '../finance/(dashboard)/page';
-import { InventoryCategoryStatistics } from './categories/inventory';
-import { UsersCategoryStatistics } from './categories/users';
-import FinanceStatistics from './finance';
-import {
-  BatchesStatistics,
-  InventoryProductsStatistics,
-  ProductCategoriesStatistics,
-  ProductsStatistics,
-  PromotionsStatistics,
-  SuppliersStatistics,
-  UnitsStatistics,
-  UserGroupTagsStatistics,
-  UserGroupsStatistics,
-  UserReportsStatistics,
-  UsersStatistics,
-  WarehousesStatistics,
-} from './statistics';
 import LoadingStatisticCard from '@/components/loading-statistic-card';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import type { AuroraForecast } from '@tuturuuu/types/db';
-import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
-import { Separator } from '@tuturuuu/ui/separator';
-import { getWorkspace, verifySecret } from '@tuturuuu/utils/workspace-helper';
-import { getTranslations } from 'next-intl/server';
+import { getCurrentUser } from '@tuturuuu/utils/user-helper';
+import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import { notFound } from 'next/navigation';
 import { Suspense } from 'react';
+import UpcomingCalendarEvents from './calendar/upcoming-events';
+import DashboardCardSkeleton from './dashboard-card-skeleton';
+import NewlyCreatedTasks from './tasks/newly-created-tasks';
+import TasksAssignedToMe from './tasks/tasks-assigned-to-me';
+import TimeTrackingMetrics from './time-tracker/time-tracking-metrics';
+import RecentTumeetPlans from './tumeet/recent-plans';
 
 interface Props {
   params: Promise<{
     wsId: string;
   }>;
-  searchParams: Promise<FinanceDashboardSearchParams>;
 }
 
-export default async function WorkspaceHomePage({
-  params,
-  searchParams,
-}: Props) {
-  const t = await getTranslations();
+export default async function WorkspaceHomePage({ params }: Props) {
   const { wsId: id } = await params;
 
   const workspace = await getWorkspace(id);
+  const currentUser = await getCurrentUser();
   const forecast = await getForecast();
   const mlMetrics = await getMLMetrics();
   const statsMetrics = await getStatsMetrics();
@@ -51,91 +33,40 @@ export default async function WorkspaceHomePage({
     return <LoadingStatisticCard />;
   }
 
-  const ENABLE_AI_ONLY = await verifySecret({
-    forceAdmin: true,
-    wsId: workspace.id,
-    name: 'ENABLE_AI_ONLY',
-    value: 'true',
-  });
-
   const wsId = workspace?.id;
 
   return (
     <>
-      {id !== 'personal' && (
-        <>
-          <FeatureSummary
-            pluralTitle={t('ws-home.home')}
-            description={
-              <>
-                {t('ws-home.description_p1')}{' '}
-                <span className="font-semibold text-foreground underline">
-                  {workspace.name || t('common.untitled')}
-                </span>{' '}
-                {t('ws-home.description_p2')}
-              </>
-            }
-          />
-          <Separator className="my-4" />
-        </>
-      )}
+      {currentUser && (
+        <div className="mb-6 grid gap-4 md:grid-cols-2">
+          <Suspense fallback={<DashboardCardSkeleton />}>
+            <NewlyCreatedTasks wsId={wsId} />
+          </Suspense>
 
-      {ENABLE_AI_ONLY || (
-        <>
-          <FinanceStatistics wsId={wsId} searchParams={searchParams} />
-          <InventoryCategoryStatistics wsId={wsId} />
-          <div className="grid items-end gap-4 md:grid-cols-2 xl:grid-cols-4">
-            <Suspense fallback={<LoadingStatisticCard />}>
-              <ProductsStatistics wsId={wsId} />
-            </Suspense>
+          <Suspense fallback={<DashboardCardSkeleton />}>
+            <TasksAssignedToMe
+              wsId={wsId}
+              userId={currentUser.id}
+              isPersonal={workspace.personal}
+            />
+          </Suspense>
 
-            <Suspense fallback={<LoadingStatisticCard />}>
-              <InventoryProductsStatistics wsId={wsId} />
-            </Suspense>
+          <Suspense fallback={<DashboardCardSkeleton />}>
+            <UpcomingCalendarEvents wsId={wsId} />
+          </Suspense>
 
-            <Suspense fallback={<LoadingStatisticCard />}>
-              <ProductCategoriesStatistics wsId={wsId} />
-            </Suspense>
+          <Suspense fallback={<DashboardCardSkeleton />}>
+            <TimeTrackingMetrics
+              wsId={wsId}
+              userId={currentUser.id}
+              isPersonal={workspace.personal}
+            />
+          </Suspense>
 
-            <Suspense fallback={<LoadingStatisticCard />}>
-              <BatchesStatistics wsId={wsId} />
-            </Suspense>
-
-            <Suspense fallback={<LoadingStatisticCard />}>
-              <WarehousesStatistics wsId={wsId} />
-            </Suspense>
-
-            <Suspense fallback={<LoadingStatisticCard />}>
-              <UnitsStatistics wsId={wsId} />
-            </Suspense>
-
-            <Suspense fallback={<LoadingStatisticCard />}>
-              <SuppliersStatistics wsId={wsId} />
-            </Suspense>
-
-            <Suspense fallback={<LoadingStatisticCard />}>
-              <PromotionsStatistics wsId={wsId} />
-            </Suspense>
-          </div>
-          <UsersCategoryStatistics wsId={wsId} />
-          <div className="grid items-end gap-4 md:grid-cols-2 xl:grid-cols-4">
-            <Suspense fallback={<LoadingStatisticCard />}>
-              <UsersStatistics wsId={wsId} />
-            </Suspense>
-
-            <Suspense fallback={<LoadingStatisticCard />}>
-              <UserGroupsStatistics wsId={wsId} />
-            </Suspense>
-
-            <Suspense fallback={<LoadingStatisticCard />}>
-              <UserGroupTagsStatistics wsId={wsId} />
-            </Suspense>
-
-            <Suspense fallback={<LoadingStatisticCard />}>
-              <UserReportsStatistics wsId={wsId} />
-            </Suspense>
-          </div>
-        </>
+          <Suspense fallback={<DashboardCardSkeleton />}>
+            <RecentTumeetPlans />
+          </Suspense>
+        </div>
       )}
     </>
   );

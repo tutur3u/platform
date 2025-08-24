@@ -1,5 +1,6 @@
-import { useCalendar } from '../../../../hooks/use-calendar';
 import { HOUR_HEIGHT } from './config';
+import { useCalendarSettings } from './settings/settings-context';
+import { useCalendar } from '@tuturuuu/ui/hooks/use-calendar';
 import { getEventStyles } from '@tuturuuu/utils/color-helper';
 import { cn } from '@tuturuuu/utils/format';
 import { format } from 'date-fns';
@@ -117,10 +118,10 @@ export const CalendarCell = ({ date, hour }: CalendarCellProps) => {
   const {
     addEmptyEvent,
     addEmptyEventWithDuration,
-    settings,
     isDragging,
     setIsDragging,
   } = useCalendar();
+  const { settings } = useCalendarSettings();
   const [isHovering, setIsHovering] = useState(false);
   const cellRef = useRef<HTMLDivElement>(null);
   const dragStartRef = useRef<{ date: Date; y: number } | null>(null);

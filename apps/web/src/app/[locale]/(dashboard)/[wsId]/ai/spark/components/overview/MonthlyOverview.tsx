@@ -154,10 +154,7 @@ export function MonthlyOverview({
                 )}
                 <div className="mt-2 flex items-center gap-2 text-xs text-muted-foreground">
                   <Calendar className="h-3 w-3" />
-                  {format(
-                    parseISO(currentMilestone.start_date),
-                    'MMM d'
-                  )} -{' '}
+                  {format(parseISO(currentMilestone.start_date), 'MMM d')} -{' '}
                   {format(parseISO(currentMilestone.end_date), 'MMM d, yyyy')}
                 </div>
                 {currentMilestone.progress !== undefined && (

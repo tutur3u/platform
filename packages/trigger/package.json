@@ -10,13 +10,12 @@
     "./google-calendar-incremental-sync": "./google-calendar-incremental-sync.ts"
   },
   "scripts": {
-    "lint": "eslint .",
     "trigger:dev": "bunx trigger.dev@latest dev",
     "trigger:deploy": "bunx trigger.dev@latest deploy"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.55.0",
-    "@trigger.dev/sdk": "^3.3.17",
+    "@supabase/supabase-js": "^2.56.0",
+    "@trigger.dev/sdk": "^4.0.1",
     "@tuturuuu/supabase": "workspace:*",
     "@tuturuuu/types": "workspace:*",
     "@tuturuuu/google": "workspace:*",
@@ -24,8 +23,7 @@
     "dayjs": "^1.11.13"
   },
   "devDependencies": {
-    "@trigger.dev/build": "^3.3.17",
-    "@tuturuuu/eslint-config": "workspace:*",
+    "@trigger.dev/build": "^4.0.1",
     "@tuturuuu/typescript-config": "workspace:*"
   },
   "packageManager": "bun@1.2.20"

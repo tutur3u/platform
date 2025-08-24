@@ -34,10 +34,7 @@ import {
   TooltipTrigger,
 } from '@tuturuuu/ui/tooltip';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
-import {
-  getPermissions,
-  verifyHasSecrets,
-} from '@tuturuuu/utils/workspace-helper';
+import { getPermissions, getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
@@ -58,8 +55,11 @@ export default async function WorkspaceStorageObjectsPage({
   params,
   searchParams,
 }: Props) {
-  const { wsId } = await params;
+  const { wsId: id } = await params;
   const t = await getTranslations();
+
+  const workspace = await getWorkspace(id);
+  const wsId = workspace.id;
 
   const { withoutPermission } = await getPermissions({
     wsId,
@@ -68,7 +68,6 @@ export default async function WorkspaceStorageObjectsPage({
 
   if (withoutPermission('manage_drive')) redirect(`/${wsId}`);
 
-  await verifyHasSecrets(wsId, ['ENABLE_DRIVE'], `/${wsId}`);
   const { data } = await getData(wsId, await searchParams);
 
   const count = await getFileCount(wsId);

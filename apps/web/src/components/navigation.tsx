@@ -14,6 +14,7 @@ export interface NavLink {
   href?: string;
   newTab?: boolean;
   matchExact?: boolean;
+  excludePaths?: string[];
   label?: string;
   external?: boolean;
   disabled?: boolean;
@@ -77,7 +78,7 @@ export function Navigation({
   }, [urlToLoad, scrollActiveLinksIntoView]);
 
   return (
-    <div className="mb-4 scrollbar-none flex flex-none gap-1 overflow-x-auto font-semibold">
+    <div className="scrollbar-none mb-4 flex flex-none gap-1 overflow-x-auto font-semibold">
       {navLinks.map((link) => {
         // If the link is disabled, don't render it
         if (link?.disabled) return null;
@@ -114,9 +115,14 @@ export function Navigation({
               href
                 ? matchExact
                   ? pathname === href
-                  : (pathname?.startsWith(href) ?? false)
+                  : ((pathname?.startsWith(href) &&
+                      link?.excludePaths?.every(
+                        (path) => !path.includes(pathname)
+                      )) ??
+                    false)
                 : false
             )
+
             .filter(Boolean).length > 0;
 
         const isDevOnly = link.disableOnProduction;

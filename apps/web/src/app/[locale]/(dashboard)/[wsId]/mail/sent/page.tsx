@@ -42,7 +42,7 @@ export default async function MailPage({ params, searchParams }: Props) {
     ? JSON.parse(collapsedCookie.value)
     : undefined;
 
-  const { data } = await getMailsData(wsId, searchParamsData);
+  const { data } = await getMailsData(searchParamsData);
   const credential = await getWorkspaceMailCredential(wsId);
   const user = await getCurrentUser();
 
@@ -59,31 +59,25 @@ export default async function MailPage({ params, searchParams }: Props) {
   );
 }
 
-async function getMailsData(
-  wsId: string,
-  {
-    page = '1',
-    pageSize = '10',
-    userId,
-    retry = true,
-  }: SearchParams & { retry?: boolean } = {}
-) {
+async function getMailsData({
+  page = '1',
+  pageSize = '10',
+  userId,
+  retry = true,
+}: SearchParams & { retry?: boolean } = {}) {
   const supabase = await createClient();
 
-  let queryBuilder = supabase
-    .from('internal_emails')
-    .select(`*`, {
-      count: 'exact',
-    })
-    .eq('ws_id', wsId);
+  let queryBuilder = supabase.from('internal_emails').select(`*`, {
+    count: 'exact',
+  });
 
   if (userId) {
     queryBuilder = queryBuilder.eq('user_id', userId);
   }
 
   if (page && pageSize) {
-    const parsedPage = Number.parseInt(page);
-    const parsedSize = Number.parseInt(pageSize);
+    const parsedPage = Number.parseInt(page, 10);
+    const parsedSize = Number.parseInt(pageSize, 10);
     const start = (parsedPage - 1) * parsedSize;
     const end = parsedPage * parsedSize - 1;
     queryBuilder = queryBuilder.range(start, end).limit(parsedSize);
@@ -95,7 +89,7 @@ async function getMailsData(
 
   if (error) {
     if (!retry) throw error;
-    return getMailsData(wsId, { pageSize, retry: false });
+    return getMailsData({ pageSize, retry: false });
   }
 
   return {

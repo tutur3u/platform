@@ -1,0 +1,52 @@
+{
+  "name": "@tuturuuu/finance",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev -p 7808 --turbopack",
+    "devx": "bun sb:stop && bun sb:start && bun dev",
+    "devrs": "bun sb:stop && bun sb:start && bun sb:reset && bun dev",
+    "build": "next build --turbopack",
+    "start": "next start",
+    "preview": "next build --turbopack && next start -p 7808 --turbopack",
+    "stop": "cd ../db && bun sb:stop",
+    "sb:status": "cd ../db && bun sb:status",
+    "sb:start": "cd ../db && bun sb:start",
+    "sb:stop": "cd ../db && bun sb:stop",
+    "sb:sync": "cd ../db && bun sb:sync",
+    "sb:reset": "cd ../db && bun sb:reset",
+    "sb:diff": "cd ../db && bun sb:diff",
+    "sb:new": "cd ../db && bun sb:new",
+    "sb:up": "cd ../db && bun sb:up",
+    "sb:typegen": "cd ../db && bun sb:typegen",
+    "ui:add": "bunx shadcn-ui@latest add",
+    "ui:diff": "bunx shadcn-ui@latest diff"
+  },
+  "dependencies": {
+    "@tanstack/react-query": "^5.85.5",
+    "@tuturuuu/ai": "workspace:*",
+    "@tuturuuu/apis": "workspace:*",
+    "@tuturuuu/supabase": "workspace:*",
+    "@tuturuuu/types": "workspace:*",
+    "@tuturuuu/ui": "workspace:*",
+    "@tuturuuu/utils": "workspace:*",
+    "@vercel/analytics": "^1.5.0",
+    "dayjs": "^1.11.13",
+    "nanoid": "^5.1.5",
+    "next": "^15.5.0",
+    "next-intl": "^4.3.5",
+    "qrcode.react": "^4.2.0",
+    "react": "^19.1.1",
+    "react-dom": "^19.1.1",
+    "zod": "^4.1.0"
+  },
+  "devDependencies": {
+    "@tuturuuu/typescript-config": "workspace:*",
+    "@types/node": "^24.3.0",
+    "@types/react": "^19.1.11",
+    "@types/react-dom": "^19.1.7",
+    "postcss": "^8.5.6",
+    "typescript": "^5.9.2"
+  },
+  "packageManager": "bun@1.2.20"
+}

@@ -150,3 +150,7 @@ export type WorkspaceEducationAccessRequest =
 
 export type RecordingStatus = Database['public']['Enums']['recording_status'];
 export type RecordingTranscript = Tables<'recording_transcripts'>;
+
+export type SupportInquiry = Tables<'support_inquiries'>;
+export type SupportType = Database['public']['Enums']['support_type'];
+export type Product = Database['public']['Enums']['product'];
