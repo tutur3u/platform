@@ -145,7 +145,7 @@ export default async function RecentTumeetPlans() {
                   <div className="flex-1 space-y-2">
                     <div className="flex items-start gap-2">
                       <div className="flex flex-1 flex-col items-start justify-start">
-                        <h4 className="line-clamp-2 font-semibold text-sm leading-none">
+                        <h4 className="line-clamp-2 font-semibold text-sm">
                           {plan.name || 'Untitled Plan'}
                         </h4>
                         <div className="mt-2 flex items-center gap-2 text-dynamic-pink text-xs">

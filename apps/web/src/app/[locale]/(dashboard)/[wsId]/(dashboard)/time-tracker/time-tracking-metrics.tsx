@@ -204,7 +204,7 @@ export default async function TimeTrackingMetrics({
 
         {/* Key Metrics */}
         {!noData && (
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid gap-4 lg:grid-cols-2">
             <div className="group rounded-xl border border-dynamic-blue/10 bg-gradient-to-br from-dynamic-blue/5 to-dynamic-cyan/5 p-4 transition-all duration-300 hover:shadow-dynamic-blue/10 hover:shadow-md">
               <div className="mb-2 flex items-center gap-2">
                 <div className="rounded-lg bg-dynamic-blue/10 p-1.5 text-dynamic-blue transition-colors group-hover:bg-dynamic-blue/20">
