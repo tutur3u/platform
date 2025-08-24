@@ -15,6 +15,7 @@ import {
   BookKey,
   BookUser,
   Box,
+  Boxes,
   BriefcaseBusiness,
   Calendar,
   Cctv,
@@ -39,11 +40,13 @@ import {
   Logs,
   Mail,
   MessageCircleIcon,
+  Package,
   PencilLine,
   Play,
   Presentation,
   QrCodeIcon,
   ReceiptText,
+  RulerDimensionLine,
   ScanSearch,
   ScrollText,
   Send,
@@ -54,14 +57,17 @@ import {
   Star,
   Tags,
   TextSelect,
+  TicketPercent,
   Trash,
   TriangleAlert,
+  Truck,
   UserCheck,
   UserLock,
   Users,
   VectorSquare,
   Vote,
   Wallet,
+  Warehouse,
 } from '@tuturuuu/ui/icons';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
@@ -609,8 +615,58 @@ export default async function Layout({ children, params }: LayoutProps) {
         },
         {
           title: t('sidebar_tabs.inventory'),
-          href: `/${correctedWSId}/inventory`,
           icon: <Archive className="h-5 w-5" />,
+          children: [
+            {
+              title: t('workspace-inventory-tabs.overview'),
+              href: `/${correctedWSId}/inventory`,
+              icon: <LayoutDashboard className="h-5 w-5" />,
+              matchExact: true,
+              disabled: withoutPermission('manage_inventory'),
+            },
+            {
+              title: t('workspace-inventory-tabs.products'),
+              href: `/${correctedWSId}/inventory/products`,
+              icon: <Package className="h-5 w-5" />,
+              disabled: withoutPermission('manage_inventory'),
+            },
+            {
+              title: t('workspace-inventory-tabs.categories'),
+              href: `/${correctedWSId}/inventory/categories`,
+              icon: <Tags className="h-5 w-5" />,
+              disabled: withoutPermission('manage_inventory'),
+            },
+            {
+              title: t('workspace-inventory-tabs.units'),
+              href: `/${correctedWSId}/inventory/units`,
+              icon: <RulerDimensionLine className="h-5 w-5" />,
+              disabled: withoutPermission('manage_inventory'),
+            },
+            {
+              title: t('workspace-inventory-tabs.suppliers'),
+              href: `/${correctedWSId}/inventory/suppliers`,
+              icon: <Truck className="h-5 w-5" />,
+              disabled: withoutPermission('manage_inventory'),
+            },
+            {
+              title: t('workspace-inventory-tabs.warehouses'),
+              href: `/${correctedWSId}/inventory/warehouses`,
+              icon: <Warehouse className="h-5 w-5" />,
+              disabled: withoutPermission('manage_inventory'),
+            },
+            {
+              title: t('workspace-inventory-tabs.batches'),
+              href: `/${correctedWSId}/inventory/batches`,
+              icon: <Boxes className="h-5 w-5" />,
+              disabled: withoutPermission('manage_inventory'),
+            },
+            {
+              title: t('workspace-inventory-tabs.promotions'),
+              href: `/${correctedWSId}/inventory/promotions`,
+              icon: <TicketPercent className="h-5 w-5" />,
+              disabled: withoutPermission('manage_inventory'),
+            },
+          ],
           disabled:
             ENABLE_AI_ONLY ||
             !(await verifySecret({
