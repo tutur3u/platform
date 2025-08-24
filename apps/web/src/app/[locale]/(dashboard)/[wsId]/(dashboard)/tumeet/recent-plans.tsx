@@ -207,7 +207,7 @@ export default async function RecentTumeetPlans() {
             </Link>
           ))
         ) : (
-          <div className="py-8 text-center">
+          <div className="col-span-full py-8 text-center">
             <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full border border-dynamic-gray/20 bg-gradient-to-br from-dynamic-gray/10 to-dynamic-slate/10">
               <Calendar className="h-8 w-8 text-dynamic-gray/60" />
             </div>
