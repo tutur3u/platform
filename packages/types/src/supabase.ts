@@ -5966,7 +5966,7 @@ export type Database = {
       support_inquiries: {
         Insert: {
           created_at?: string;
-          creator_id?: string;
+          creator_id?: null | string;
           email: string;
           id?: string;
           images?: null | string[];
@@ -6010,7 +6010,7 @@ export type Database = {
         ];
         Row: {
           created_at: string;
-          creator_id: string;
+          creator_id: null | string;
           email: string;
           id: string;
           images: null | string[];
@@ -6024,7 +6024,7 @@ export type Database = {
         };
         Update: {
           created_at?: string;
-          creator_id?: string;
+          creator_id?: null | string;
           email?: string;
           id?: string;
           images?: null | string[];
