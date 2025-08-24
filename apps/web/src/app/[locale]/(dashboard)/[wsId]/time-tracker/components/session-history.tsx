@@ -72,6 +72,7 @@ import dayjs from 'dayjs';
 import isoWeek from 'dayjs/plugin/isoWeek';
 import timezone from 'dayjs/plugin/timezone';
 import utc from 'dayjs/plugin/utc';
+import { useRouter } from 'next/navigation';
 import { type FC, useCallback, useMemo, useState } from 'react';
 import type { SessionWithRelations } from '../types';
 
@@ -762,6 +763,8 @@ export function SessionHistory({
   categories,
   tasks,
 }: SessionHistoryProps) {
+  const router = useRouter();
+
   const [searchQuery, setSearchQuery] = useState('');
   const [filterCategoryId, setFilterCategoryId] = useState<string>('all');
   const [filterDuration, setFilterDuration] = useState<string>('all');
@@ -1046,6 +1049,7 @@ export function SessionHistory({
         `/api/v1/workspaces/${wsId}/time-tracking/sessions/${session.id}`,
         { method: 'PATCH', body: JSON.stringify({ action: 'resume' }) }
       );
+      router.refresh();
       toast.success(`Started new session: "${session.title}"`);
     } catch (error) {
       console.error('Error resuming session:', error);
@@ -1101,6 +1105,7 @@ export function SessionHistory({
           }),
         }
       );
+      router.refresh();
       setSessionToEdit(null);
       toast.success('Session updated successfully');
     } catch (error) {
@@ -1120,6 +1125,7 @@ export function SessionHistory({
         { method: 'DELETE' }
       );
       setSessionToDelete(null);
+      router.refresh();
       toast.success('Session deleted successfully');
     } catch (error) {
       console.error('Error deleting session:', error);

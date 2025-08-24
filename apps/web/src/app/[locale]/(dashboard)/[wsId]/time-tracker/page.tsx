@@ -9,7 +9,6 @@ import {
 import { Calendar, Clock, TrendingUp, Zap } from '@tuturuuu/ui/icons';
 import { getCurrentSupabaseUser } from '@tuturuuu/utils/user-helper';
 import { notFound } from 'next/navigation';
-import { Fragment } from 'react';
 import { ActivityHeatmap } from './components/activity-heatmap';
 
 const formatDuration = (seconds: number | undefined): string => {
@@ -140,7 +139,7 @@ export default async function TimeTrackerPage({
   };
 
   return (
-    <Fragment>
+    <div className="grid gap-4 pb-4">
       {/* Stats Overview - Enhanced for sidebar */}
       <Card>
         <CardHeader>
@@ -310,6 +309,6 @@ export default async function TimeTrackerPage({
           </CardContent>
         </Card>
       )}
-    </Fragment>
+    </div>
   );
 }

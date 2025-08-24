@@ -57,6 +57,7 @@ import {
 import { toast } from '@tuturuuu/ui/sonner';
 import { Switch } from '@tuturuuu/ui/switch';
 import { cn } from '@tuturuuu/utils/format';
+import { useRouter } from 'next/navigation';
 import { useCallback, useState } from 'react';
 import type { TimerStats, TimeTrackingGoal } from '../types';
 
@@ -73,6 +74,8 @@ export function GoalManager({
   categories,
   timerStats,
 }: GoalManagerProps) {
+  const router = useRouter();
+
   const formatDuration = useCallback((seconds: number): string => {
     const safeSeconds = Math.max(0, Math.floor(seconds));
     const hours = Math.floor(safeSeconds / 3600);
@@ -137,6 +140,7 @@ export function GoalManager({
 
       setIsAddDialogOpen(false);
       resetForm();
+      router.refresh();
       toast.success('Goal created successfully');
     } catch (error) {
       console.error('Error creating goal:', error);
@@ -168,6 +172,7 @@ export function GoalManager({
       setIsEditDialogOpen(false);
       setGoalToEdit(null);
       resetForm();
+      router.refresh();
       toast.success('Goal updated successfully');
     } catch (error) {
       console.error('Error updating goal:', error);
@@ -191,6 +196,7 @@ export function GoalManager({
       );
 
       setGoalToDelete(null);
+      router.refresh();
       toast.success('Goal deleted successfully');
     } catch (error) {
       console.error('Error deleting goal:', error);

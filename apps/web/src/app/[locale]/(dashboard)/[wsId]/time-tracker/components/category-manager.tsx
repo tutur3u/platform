@@ -46,6 +46,7 @@ import {
 import { toast } from '@tuturuuu/ui/sonner';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { cn } from '@tuturuuu/utils/format';
+import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
 interface CategoryManagerProps {
@@ -67,6 +68,8 @@ const CATEGORY_COLORS = [
 ];
 
 export function CategoryManager({ wsId, categories }: CategoryManagerProps) {
+  const router = useRouter();
+
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [categoryToDelete, setCategoryToDelete] =
@@ -120,6 +123,7 @@ export function CategoryManager({ wsId, categories }: CategoryManagerProps) {
 
       setIsAddDialogOpen(false);
       resetForm();
+      router.refresh();
       toast.success('Category created successfully');
     } catch (error) {
       console.error('Error creating category:', error);
@@ -153,6 +157,7 @@ export function CategoryManager({ wsId, categories }: CategoryManagerProps) {
       setIsEditDialogOpen(false);
       setCategoryToEdit(null);
       resetForm();
+      router.refresh();
       toast.success('Category updated successfully');
     } catch (error) {
       console.error('Error updating category:', error);
@@ -176,6 +181,7 @@ export function CategoryManager({ wsId, categories }: CategoryManagerProps) {
       );
 
       setCategoryToDelete(null);
+      router.refresh();
       toast.success('Category deleted successfully');
     } catch (error) {
       console.error('Error deleting category:', error);
