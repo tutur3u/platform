@@ -568,9 +568,7 @@ export default async function Layout({ children, params }: LayoutProps) {
             {
               title: t('workspace-finance-tabs.transactions'),
               href: `/${correctedWSId}/finance/transactions`,
-              excludePaths: [
-                `/${correctedWSId}/finance/transactions/categories`,
-              ],
+              matchExact: true,
               icon: <Banknote className="h-5 w-5" />,
               disabled: withoutPermission('manage_finance'),
             },
