@@ -40,7 +40,7 @@ import { TaskTagInput } from '@tuturuuu/ui/tuDo/shared/task-tag-input';
 import { cn } from '@tuturuuu/utils/format';
 import { useDeleteTask, useUpdateTask } from '@tuturuuu/utils/task-helper';
 import { addDays, format, isBefore, isToday, startOfToday } from 'date-fns';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useId, useState } from 'react';
 
 // Extract to a utility function for better performance and reusability
 const transformTaskData = (data: any): Task => {
@@ -75,6 +75,8 @@ interface Props {
 export function TaskActions({ taskId, boardId, onUpdate }: Props) {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const { toast } = useToast();
+  const nameId = useId();
+  const descriptionId = useId();
 
   // Fetch the latest task data using React Query
   const { data: task, isLoading: isTaskLoading } = useQuery<Task>({
@@ -285,7 +287,7 @@ export function TaskActions({ taskId, boardId, onUpdate }: Props) {
             type="button"
             variant="outline"
             size="xs"
-            className="absolute top-2 right-2 z-10 h-7 border-border/50 px-2 text-muted-foreground opacity-0 transition-all duration-200 group-hover:opacity-100 hover:border-border hover:bg-muted/80 hover:text-foreground hover:shadow-sm"
+            className="absolute top-2 right-2 z-10 h-7 border-border/50 px-2 text-muted-foreground opacity-0 transition-all duration-200 hover:border-border hover:bg-muted/80 hover:text-foreground hover:shadow-sm group-hover:opacity-100"
           >
             <MoreHorizontal className="h-3.5 w-3.5" />
             <span className="sr-only">Open task options</span>
@@ -294,7 +296,7 @@ export function TaskActions({ taskId, boardId, onUpdate }: Props) {
         <DropdownMenuContent align="end" className="w-[200px] p-1">
           <DropdownMenuItem
             onClick={() => setIsEditDialogOpen(true)}
-            className="cursor-pointer gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors hover:bg-muted"
+            className="cursor-pointer gap-3 rounded-md px-3 py-2 font-medium text-sm transition-colors hover:bg-muted"
           >
             <Pencil className="h-4 w-4" />
             <span>Edit task</span>
@@ -303,7 +305,7 @@ export function TaskActions({ taskId, boardId, onUpdate }: Props) {
           <DropdownMenuSeparator className="my-1" />
           <DropdownMenuItem
             onClick={() => setIsDeleteDialogOpen(true)}
-            className="cursor-pointer gap-3 rounded-md px-3 py-2 text-sm font-medium"
+            className="cursor-pointer gap-3 rounded-md px-3 py-2 font-medium text-sm"
           >
             <Trash2 className="h-4 w-4" />
             <span>Delete task</span>
@@ -358,12 +360,12 @@ export function TaskActions({ taskId, boardId, onUpdate }: Props) {
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
-              <Label htmlFor="name" className="flex items-center gap-1">
+              <Label htmlFor={nameId} className="flex items-center gap-1">
                 Task name
                 <span className="text-destructive">*</span>
               </Label>
               <Input
-                id="name"
+                id={nameId}
                 value={newName}
                 onChange={(e) => setNewName(e.target.value)}
                 placeholder="Enter task name"
@@ -372,15 +374,15 @@ export function TaskActions({ taskId, boardId, onUpdate }: Props) {
                 })}
               />
               {!newName.trim() && (
-                <p className="text-xs text-destructive">
+                <p className="text-destructive text-xs">
                   Task name is required
                 </p>
               )}
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="description">Description</Label>
+              <Label htmlFor={descriptionId}>Description</Label>
               <Textarea
-                id="description"
+                id={descriptionId}
                 value={newDescription}
                 onChange={(e) => setNewDescription(e.target.value)}
                 placeholder="Enter task description"
@@ -431,22 +433,29 @@ export function TaskActions({ taskId, boardId, onUpdate }: Props) {
                     color: 'bg-red-100 text-red-700',
                   },
                 ].map(({ value, label, color }) => (
-                  <Button
-                    key={value}
-                    type="button"
-                    variant={newPriority === value ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => setNewPriority(value as TaskPriority)}
-                    className={cn(
-                      'h-8 px-3 text-xs',
-                      newPriority === value && color
-                    )}
-                    role="radio"
-                    aria-checked={newPriority === value}
-                    aria-label={`Priority: ${label}`}
-                  >
-                    {label}
-                  </Button>
+                  <div key={value} className="relative">
+                    <input
+                      type="radio"
+                      id={`priority-${value}`}
+                      name="priority"
+                      value={value}
+                      checked={newPriority === value}
+                      onChange={() => setNewPriority(value as TaskPriority)}
+                      className="sr-only"
+                    />
+                    <label
+                      htmlFor={`priority-${value}`}
+                      className={cn(
+                        'inline-flex h-8 cursor-pointer items-center justify-center rounded-md border px-3 font-medium text-xs transition-colors hover:bg-accent hover:text-accent-foreground',
+                        newPriority === value ? color : 'bg-background',
+                        newPriority === value
+                          ? 'border-transparent'
+                          : 'border-input'
+                      )}
+                    >
+                      {label}
+                    </label>
+                  </div>
                 ))}
               </div>
             </div>
@@ -503,7 +512,7 @@ export function TaskActions({ taskId, boardId, onUpdate }: Props) {
                 </PopoverContent>
               </Popover>
               {isStartDateAfterEndDate && (
-                <p className="text-xs text-destructive">
+                <p className="text-destructive text-xs">
                   Start date cannot be after end date
                 </p>
               )}
@@ -562,13 +571,13 @@ export function TaskActions({ taskId, boardId, onUpdate }: Props) {
                 </PopoverContent>
               </Popover>
               {isOverdue && (
-                <div className="flex items-center gap-1 text-xs text-destructive">
+                <div className="flex items-center gap-1 text-destructive text-xs">
                   <AlertCircle className="h-3 w-3" />
                   Due date is in the past
                 </div>
               )}
               {isStartDateAfterEndDate && (
-                <p className="text-xs text-destructive">
+                <p className="text-destructive text-xs">
                   Due date cannot be before start date
                 </p>
               )}
@@ -595,7 +604,7 @@ export function TaskActions({ taskId, boardId, onUpdate }: Props) {
                 </Tooltip>
               )}
               {newStartDate && (
-                <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                <div className="flex items-center gap-1 text-muted-foreground text-xs">
                   <Clock className="h-3 w-3" />
                   {isToday(newStartDate)
                     ? 'Starts today'
