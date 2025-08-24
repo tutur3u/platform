@@ -139,7 +139,7 @@ export default async function TasksAssignedToMe({
                           <span>•</span>
                           <Link
                             href={`/${task.list.board.ws_id}/tasks/boards/${task.list?.board?.id}`}
-                            className="font-semibold text-dynamic-pink transition-colors hover:text-dynamic-pink/80 hover:underline"
+                            className="font-semibold text-dynamic-orange transition-colors hover:text-dynamic-orange/80 hover:underline"
                           >
                             {task.list?.name}
                           </Link>
