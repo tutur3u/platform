@@ -29,7 +29,7 @@ import { cn } from '@tuturuuu/utils/format';
 import { createTask } from '@tuturuuu/utils/task-helper';
 import { format } from 'date-fns';
 import { useParams } from 'next/navigation';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 interface Props {
   listId: string;
@@ -109,6 +109,13 @@ export function TaskForm({ listId, onTaskCreated }: Props) {
       const newTask = await createTask(supabase, listId, taskData);
 
       // Add assignees if any selected
+      if (wsId === 'personal') {
+        await supabase.from('task_assignees').insert({
+          task_id: newTask.id,
+          user_id: members[0].id,
+        });
+      }
+
       if (selectedAssignees.length > 0) {
         await Promise.all(
           selectedAssignees.map(async (userId) => {
@@ -269,7 +276,7 @@ export function TaskForm({ listId, onTaskCreated }: Props) {
           </div>
 
           {/* Quick Assignee Selection */}
-          {members.length > 0 && (
+          {members.length > 0 && wsId !== 'personal' && (
             <div className="space-y-2">
               <Label className="text-xs font-medium">Quick Assign</Label>
               <div className="flex flex-wrap gap-2">
