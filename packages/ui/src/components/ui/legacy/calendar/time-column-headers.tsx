@@ -1,5 +1,5 @@
 import { cn } from '@tuturuuu/utils/format';
-import { Calendar, Clock } from 'lucide-react';
+import { Calendar } from 'lucide-react';
 
 interface TimeColumnHeadersProps {
   showSecondary: boolean;
@@ -53,7 +53,6 @@ export const TimeColumnHeaders = ({
       >
         {isWeekday ? (
           <>
-            <Clock className="mb-0.5 h-3 w-3 text-muted-foreground" />
             <div className="text-[10px] font-medium text-muted-foreground">
               {primaryTzAbbr}
             </div>
