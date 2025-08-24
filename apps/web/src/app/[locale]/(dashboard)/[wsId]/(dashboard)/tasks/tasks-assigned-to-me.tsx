@@ -10,16 +10,18 @@ import Link from 'next/link';
 interface TasksAssignedToMeProps {
   wsId: string;
   userId: string;
+  isPersonal?: boolean;
 }
 
 export default async function TasksAssignedToMe({
   wsId,
   userId,
+  isPersonal = false,
 }: TasksAssignedToMeProps) {
   const supabase = await createClient();
 
   // Get tasks assigned to the current user
-  const { data: assignedTasks, error } = await supabase
+  const queryBuilder = supabase
     .from('tasks')
     .select(`
       *,
@@ -30,7 +32,7 @@ export default async function TasksAssignedToMe({
         board:workspace_boards!inner(
           id,
           name,
-          ws_id
+          ws_id${isPersonal ? ', workspaces(id, name)' : ''}
         )
       ),
       assignees:task_assignees!inner(
@@ -41,13 +43,18 @@ export default async function TasksAssignedToMe({
         )
       )
     `)
-    .eq('list.board.ws_id', wsId)
     .eq('assignees.user_id', userId)
     .eq('deleted', false)
     .in('list.status', ['not_started', 'active']) // Only active tasks
     .order('priority', { ascending: false })
     .order('end_date', { ascending: true })
     .limit(5);
+
+  if (!isPersonal) {
+    queryBuilder.eq('list.board.ws_id', wsId);
+  }
+
+  const { data: assignedTasks, error } = await queryBuilder;
 
   if (error) {
     console.error('Error fetching assigned tasks:', error);
@@ -122,23 +129,34 @@ export default async function TasksAssignedToMe({
                       </p>
                     )}
                     <div className="mt-2 flex flex-wrap items-center gap-2 text-muted-foreground text-xs">
-                      <span className="font-semibold">
-                        <Link
-                          href={`/${wsId}/tasks/boards/${task.list?.board?.id}`}
-                          className="hover:underline"
-                        >
+                      {isPersonal && (
+                        <>
+                          <Link
+                            href={`/${task.list?.board?.workspaces?.id}`}
+                            className="text-dynamic-blue hover:underline"
+                          >
+                            <span className="font-semibold">
+                              {task.list?.board?.workspaces?.name}
+                            </span>
+                          </Link>
+                          <span>•</span>
+                        </>
+                      )}
+                      <Link
+                        href={`/${task.list.board.ws_id}/tasks/boards/${task.list?.board?.id}`}
+                        className="text-dynamic-green hover:underline"
+                      >
+                        <span className="font-semibold">
                           {task.list?.board?.name}
-                        </Link>
-                      </span>
+                        </span>
+                      </Link>
                       <span>•</span>
-                      <span className="font-semibold">
-                        <Link
-                          href={`/${wsId}/tasks/boards/${task.list?.board?.id}`}
-                          className="hover:underline"
-                        >
-                          {task.list?.name}
-                        </Link>
-                      </span>
+                      <Link
+                        href={`/${task.list.board.ws_id}/tasks/boards/${task.list?.board?.id}`}
+                        className="text-dynamic-pink hover:underline"
+                      >
+                        <span className="font-semibold">{task.list?.name}</span>
+                      </Link>
                       {task.end_date && (
                         <>
                           <span>•</span>

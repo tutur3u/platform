@@ -103,23 +103,21 @@ export default async function NewlyCreatedTasks({
                       </p>
                     )}
                     <div className="mt-2 flex flex-wrap items-center gap-2 text-muted-foreground text-xs">
-                      <span className="font-semibold">
-                        <Link
-                          href={`/${wsId}/tasks/boards/${task.list?.board?.id}`}
-                          className="hover:underline"
-                        >
+                      <Link
+                        href={`/${wsId}/tasks/boards/${task.list?.board?.id}`}
+                        className="text-dynamic-green hover:underline"
+                      >
+                        <span className="font-semibold">
                           {task.list?.board?.name}
-                        </Link>
-                      </span>
+                        </span>
+                      </Link>
                       <span>•</span>
-                      <span className="font-semibold">
-                        <Link
-                          href={`/${wsId}/tasks/boards/${task.list?.board?.id}`}
-                          className="hover:underline"
-                        >
-                          {task.list?.name}
-                        </Link>
-                      </span>
+                      <Link
+                        href={`/${wsId}/tasks/boards/${task.list?.board?.id}`}
+                        className="text-dynamic-pink hover:underline"
+                      >
+                        <span className="font-semibold">{task.list?.name}</span>
+                      </Link>
                       <span>•</span>
                       <span>
                         {task.created_at &&

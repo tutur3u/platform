@@ -44,7 +44,11 @@ export default async function WorkspaceHomePage({ params }: Props) {
           </Suspense>
 
           <Suspense fallback={<DashboardCardSkeleton />}>
-            <TasksAssignedToMe wsId={wsId} userId={currentUser.id} />
+            <TasksAssignedToMe
+              wsId={wsId}
+              userId={currentUser.id}
+              isPersonal={workspace.personal}
+            />
           </Suspense>
 
           <Suspense fallback={<DashboardCardSkeleton />}>
