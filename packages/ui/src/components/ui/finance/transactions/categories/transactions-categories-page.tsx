@@ -6,7 +6,7 @@ import { transactionColumns } from '@tuturuuu/ui/finance/transactions/columns';
 import ExportDialogContent from '@tuturuuu/ui/finance/transactions/export-dialog-content';
 import { TransactionForm } from '@tuturuuu/ui/finance/transactions/form';
 import { Separator } from '@tuturuuu/ui/separator';
-import { getPermissions } from '@tuturuuu/utils/workspace-helper';
+import { getPermissions, getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import { getTranslations } from 'next-intl/server';
 
 interface Props {
@@ -19,9 +19,12 @@ interface Props {
 }
 
 export default async function TransactionsCategoriesPage({
-  wsId,
+  wsId: id,
   searchParams,
 }: Props) {
+  const workspace = await getWorkspace(id);
+  const wsId = workspace.id;
+
   const { data: rawData, count } = await getData(wsId, searchParams);
   const t = await getTranslations();
 
