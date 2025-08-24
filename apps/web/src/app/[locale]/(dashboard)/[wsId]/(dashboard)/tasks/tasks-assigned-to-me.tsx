@@ -2,7 +2,7 @@ import { createClient } from '@tuturuuu/supabase/next/server';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
-import { User, UserStar } from '@tuturuuu/ui/icons';
+import { User, UserRoundCheck, UserStar } from '@tuturuuu/ui/icons';
 import { cn } from '@tuturuuu/utils/format';
 import Link from 'next/link';
 import TaskDueDate from './task-due-date';
@@ -79,100 +79,128 @@ export default async function TasksAssignedToMe({
   };
 
   return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+    <Card className="overflow-hidden border-dynamic-orange/20 transition-all duration-300 hover:shadow-lg">
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 border-dynamic-orange/10 border-b bg-gradient-to-r from-dynamic-orange/5 to-dynamic-red/5 pb-3">
         <CardTitle className="flex items-center gap-2 font-semibold text-base">
-          <UserStar className="h-5 w-5" />
+          <div className="rounded-lg bg-dynamic-orange/10 p-1.5 text-dynamic-orange">
+            <UserStar className="h-4 w-4" />
+          </div>
           <div className="line-clamp-1">My Tasks</div>
         </CardTitle>
         <Link href={`/${wsId}/tasks/boards`}>
-          <Button variant="ghost" size="sm" className="h-8 px-2">
-            <User className="mr-1 h-3 w-3" />
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-8 px-2 transition-colors hover:bg-dynamic-orange/10 hover:text-dynamic-orange"
+          >
+            <UserRoundCheck className="mr-1 h-3 w-3" />
             View All
           </Button>
         </Link>
       </CardHeader>
-      <CardContent className="space-y-3">
+      <CardContent className="h-full space-y-6 p-6">
         {assignedTasks && assignedTasks.length > 0 ? (
-          assignedTasks.map((task) => (
-            <div
-              key={task.id}
-              className="flex items-start justify-between rounded-lg border bg-card/50 p-3 transition-colors hover:bg-muted/50"
-            >
-              <div className="flex-1 space-y-1">
-                <div className="flex items-start gap-2">
-                  <div className="flex-1">
-                    <h4 className="line-clamp-1 font-medium">{task.name}</h4>
-                    {task.description && (
-                      <p className="mt-1 line-clamp-2 text-muted-foreground text-xs">
-                        {task.description}
-                      </p>
-                    )}
-                    <div className="mt-2 flex flex-wrap items-center gap-2 text-muted-foreground text-xs">
-                      {isPersonal && (
-                        <>
+          <div className="space-y-3">
+            {assignedTasks.map((task) => (
+              <div
+                key={task.id}
+                className="group rounded-xl border border-dynamic-orange/10 bg-gradient-to-br from-dynamic-orange/5 to-dynamic-red/5 p-4 transition-all duration-300 hover:shadow-dynamic-orange/10 hover:shadow-md"
+              >
+                <div className="flex items-start justify-between">
+                  <div className="flex-1 space-y-2">
+                    <div className="flex items-start gap-2">
+                      <div className="flex-1">
+                        <h4 className="line-clamp-1 font-semibold text-sm">
+                          {task.name}
+                        </h4>
+                        {task.description && (
+                          <p className="mt-1 line-clamp-2 text-dynamic-orange/70 text-xs">
+                            {task.description}
+                          </p>
+                        )}
+                        <div className="mt-2 flex flex-wrap items-center gap-2 text-dynamic-orange/60 text-xs">
+                          {isPersonal && (
+                            <>
+                              <Link
+                                href={`/${task.list?.board?.ws_id}`}
+                                className="font-semibold text-dynamic-blue transition-colors hover:text-dynamic-blue/80 hover:underline"
+                              >
+                                {task.list?.board?.workspaces?.name}
+                              </Link>
+                              <span>•</span>
+                            </>
+                          )}
                           <Link
-                            href={`/${task.list?.board?.ws_id}`}
-                            className="text-dynamic-blue hover:underline"
+                            href={`/${task.list.board.ws_id}/tasks/boards/${task.list?.board?.id}`}
+                            className="font-semibold text-dynamic-green transition-colors hover:text-dynamic-green/80 hover:underline"
                           >
-                            <span className="font-semibold">
-                              {task.list?.board?.workspaces?.name}
-                            </span>
+                            {task.list?.board?.name}
                           </Link>
                           <span>•</span>
-                        </>
-                      )}
-                      <Link
-                        href={`/${task.list.board.ws_id}/tasks/boards/${task.list?.board?.id}`}
-                        className="text-dynamic-green hover:underline"
+                          <Link
+                            href={`/${task.list.board.ws_id}/tasks/boards/${task.list?.board?.id}`}
+                            className="font-semibold text-dynamic-pink transition-colors hover:text-dynamic-pink/80 hover:underline"
+                          >
+                            {task.list?.name}
+                          </Link>
+                          {task.end_date && (
+                            <>
+                              <span>•</span>
+                              <TaskDueDate dueDate={task.end_date} />
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="ml-3 flex flex-col items-end gap-2">
+                    {task.priority && (
+                      <Badge
+                        className={cn(
+                          'font-semibold text-xs transition-colors',
+                          getPriorityColor(task.priority)
+                        )}
                       >
-                        <span className="font-semibold">
-                          {task.list?.board?.name}
+                        {task.priority}
+                      </Badge>
+                    )}
+                    <div className="text-dynamic-orange/60 text-xs">
+                      {task.assignees && task.assignees.length > 1 && (
+                        <span className="font-medium">
+                          +{task.assignees.length - 1} others
                         </span>
-                      </Link>
-                      <span>•</span>
-                      <Link
-                        href={`/${task.list.board.ws_id}/tasks/boards/${task.list?.board?.id}`}
-                        className="text-dynamic-pink hover:underline"
-                      >
-                        <span className="font-semibold">{task.list?.name}</span>
-                      </Link>
-                      {task.end_date && (
-                        <>
-                          <span>•</span>
-                          <TaskDueDate dueDate={task.end_date} />
-                        </>
                       )}
                     </div>
                   </div>
                 </div>
               </div>
-              <div className="ml-3 flex flex-col items-end gap-1">
-                {task.priority && (
-                  <Badge
-                    className={cn(
-                      'font-medium text-xs',
-                      getPriorityColor(task.priority)
-                    )}
-                  >
-                    {task.priority}
-                  </Badge>
-                )}
-                <div className="text-muted-foreground text-xs">
-                  {task.assignees && task.assignees.length > 1 && (
-                    <span>+{task.assignees.length - 1} others</span>
-                  )}
-                </div>
-              </div>
-            </div>
-          ))
+            ))}
+          </div>
         ) : (
-          <div className="py-8 text-center text-muted-foreground">
-            <div className="mb-2">
-              <User className="mx-auto h-8 w-8 opacity-50" />
+          <div className="py-8 text-center">
+            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full border border-dynamic-gray/20 bg-gradient-to-br from-dynamic-gray/10 to-dynamic-slate/10">
+              <User className="h-8 w-8 text-dynamic-gray/60" />
             </div>
-            <p className="text-sm">No tasks assigned to you</p>
-            <p className="text-xs">Your assigned tasks will appear here</p>
+            <div className="space-y-2">
+              <h3 className="font-semibold text-base text-dynamic-gray">
+                No tasks assigned to you
+              </h3>
+              <p className="mx-auto max-w-xs text-dynamic-gray/60 text-sm">
+                Your assigned tasks will appear here
+              </p>
+            </div>
+            <div className="mt-6">
+              <Link href={`/${wsId}/tasks/boards`}>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="border-dynamic-orange/20 text-dynamic-orange transition-all duration-200 hover:border-dynamic-orange/30 hover:bg-dynamic-orange/10"
+                >
+                  <User className="mr-2 h-4 w-4" />
+                  View Tasks
+                </Button>
+              </Link>
+            </div>
           </div>
         )}
       </CardContent>
