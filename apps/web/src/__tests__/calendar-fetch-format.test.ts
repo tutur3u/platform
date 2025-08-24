@@ -1,5 +1,4 @@
 import { convertGoogleAllDayEvent } from '@tuturuuu/ui/hooks/calendar-utils';
-import { dayjs } from '@tuturuuu/ui/lib/dayjs-setup';
 import { describe, expect, test } from 'vitest';
 
 describe('convertGoogleAllDayEvent', () => {
