@@ -145,7 +145,7 @@ export default async function RecentTumeetPlans() {
                   <div className="flex-1 space-y-2">
                     <div className="flex items-start gap-2">
                       <div className="flex flex-1 flex-col items-start justify-start">
-                        <h4 className="line-clamp-2 font-semibold text-sm leading-none">
+                        <h4 className="line-clamp-2 font-semibold text-sm">
                           {plan.name || 'Untitled Plan'}
                         </h4>
                         <div className="mt-2 flex items-center gap-2 text-dynamic-pink text-xs">
@@ -207,7 +207,7 @@ export default async function RecentTumeetPlans() {
             </Link>
           ))
         ) : (
-          <div className="py-8 text-center">
+          <div className="col-span-full py-8 text-center">
             <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full border border-dynamic-gray/20 bg-gradient-to-br from-dynamic-gray/10 to-dynamic-slate/10">
               <Calendar className="h-8 w-8 text-dynamic-gray/60" />
             </div>

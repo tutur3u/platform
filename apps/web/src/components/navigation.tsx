@@ -1,11 +1,11 @@
 'use client';
 
+import { DEV_MODE, PROD_MODE } from '@/constants/common';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { type ReactNode, useCallback, useEffect, useState } from 'react';
-import { DEV_MODE, PROD_MODE } from '@/constants/common';
 
 export interface NavLink {
   title: string;
@@ -14,6 +14,7 @@ export interface NavLink {
   href?: string;
   newTab?: boolean;
   matchExact?: boolean;
+  excludePaths?: string[];
   label?: string;
   external?: boolean;
   disabled?: boolean;
@@ -116,6 +117,10 @@ export function Navigation({
                   ? pathname === href
                   : (pathname?.startsWith(href) ?? false)
                 : false
+            )
+            .filter(
+              (link) =>
+                !link.excludePaths?.some((path) => path.includes(pathname))
             )
             .filter(Boolean).length > 0;
 
