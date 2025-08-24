@@ -81,7 +81,12 @@ export async function POST(request: NextRequest) {
       eventEndTime.hour() >= ACTIVE_HOURS_END ||
       eventEndTime.date() > eventStartTime.date()
     ) {
-      cursorTime = dayjs(cursorTime).add(1, 'day').hour(ACTIVE_HOURS_START).minute(0).second(0).millisecond(0);
+      cursorTime = dayjs(cursorTime)
+        .add(1, 'day')
+        .hour(ACTIVE_HOURS_START)
+        .minute(0)
+        .second(0)
+        .millisecond(0);
       i--; // Decrement to ensure we still generate the correct total `count` of events
       continue;
     }

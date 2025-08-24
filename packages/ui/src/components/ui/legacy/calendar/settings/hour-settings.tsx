@@ -41,7 +41,8 @@ export function HoursSettings({ wsId }: HoursSettingsProps) {
         }
 
         // Validate UUID format
-        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+        const uuidRegex =
+          /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
         if (!uuidRegex.test(wsId)) {
           console.error('Invalid UUID format for wsId:', wsId);
           toast.error('Invalid workspace ID format');
@@ -52,7 +53,10 @@ export function HoursSettings({ wsId }: HoursSettingsProps) {
         const supabase = createClient();
 
         // Check if user is authenticated
-        const { data: { user }, error: authError } = await supabase.auth.getUser();
+        const {
+          data: { user },
+          error: authError,
+        } = await supabase.auth.getUser();
         if (authError || !user) {
           console.error('Authentication error:', authError);
           toast.error('Please log in to access workspace settings');
@@ -88,7 +92,7 @@ export function HoursSettings({ wsId }: HoursSettingsProps) {
             details: error.details,
             hint: error.hint,
             code: error.code,
-            wsId
+            wsId,
           });
           toast.error(
             'Failed to load hour settings. Please refresh or try again later.'
@@ -135,22 +139,23 @@ export function HoursSettings({ wsId }: HoursSettingsProps) {
               hint: insertError.hint,
               code: insertError.code,
               wsId,
-              defaultSettings
+              defaultSettings,
             });
-            
+
             // Try to get more context about the workspace
-            const { data: workspaceData, error: workspaceError } = await supabase
-              .from('workspaces')
-              .select('id, name')
-              .eq('id', wsId)
-              .single();
-              
+            const { data: workspaceData, error: workspaceError } =
+              await supabase
+                .from('workspaces')
+                .select('id, name')
+                .eq('id', wsId)
+                .single();
+
             if (workspaceError) {
               console.error('Workspace lookup failed:', workspaceError);
             } else {
               console.log('Workspace found:', workspaceData);
             }
-            
+
             return;
           }
 
@@ -230,7 +235,7 @@ export function HoursSettings({ wsId }: HoursSettingsProps) {
           hint: error.hint,
           code: error.code,
           wsId,
-          newHours
+          newHours,
         });
         toast.error('Failed to update personal hours');
         return;
@@ -238,7 +243,10 @@ export function HoursSettings({ wsId }: HoursSettingsProps) {
 
       toast.success('Personal hours updated');
     } catch (unexpectedError) {
-      console.error('Unexpected error updating personal hours:', unexpectedError);
+      console.error(
+        'Unexpected error updating personal hours:',
+        unexpectedError
+      );
       toast.error('An unexpected error occurred while updating personal hours');
     }
   };
@@ -276,7 +284,7 @@ export function HoursSettings({ wsId }: HoursSettingsProps) {
           hint: error.hint,
           code: error.code,
           wsId,
-          newHours
+          newHours,
         });
         toast.error('Failed to update work hours');
         return;
@@ -322,7 +330,7 @@ export function HoursSettings({ wsId }: HoursSettingsProps) {
           hint: error.hint,
           code: error.code,
           wsId,
-          newHours
+          newHours,
         });
         toast.error('Failed to update meeting hours');
         return;
@@ -330,7 +338,10 @@ export function HoursSettings({ wsId }: HoursSettingsProps) {
 
       toast.success('Meeting hours updated');
     } catch (unexpectedError) {
-      console.error('Unexpected error updating meeting hours:', unexpectedError);
+      console.error(
+        'Unexpected error updating meeting hours:',
+        unexpectedError
+      );
       toast.error('An unexpected error occurred while updating meeting hours');
     }
   };
