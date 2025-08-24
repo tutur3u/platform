@@ -5,8 +5,8 @@ import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
 import { CheckCircle, Plus } from '@tuturuuu/ui/icons';
 import { cn } from '@tuturuuu/utils/format';
-import { format } from 'date-fns';
 import Link from 'next/link';
+import TaskCreationDate from './task-creation-date';
 
 interface NewlyCreatedTasksProps {
   wsId: string;
@@ -118,11 +118,12 @@ export default async function NewlyCreatedTasks({
                       >
                         <span className="font-semibold">{task.list?.name}</span>
                       </Link>
-                      <span>•</span>
-                      <span>
-                        {task.created_at &&
-                          format(new Date(task.created_at), 'MMM d, h:mm a')}
-                      </span>
+                      {task.created_at && (
+                        <>
+                          <span>•</span>
+                          <TaskCreationDate creationDate={task.created_at} />
+                        </>
+                      )}
                     </div>
                   </div>
                 </div>

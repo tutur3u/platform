@@ -2,11 +2,11 @@ import { createClient } from '@tuturuuu/supabase/next/server';
 import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
 import { isAllDayEvent } from '@tuturuuu/ui/hooks/calendar-utils';
-import { Calendar, Clock, MapPin } from '@tuturuuu/ui/icons';
-import { format, isThisWeek, isToday, isTomorrow } from 'date-fns';
+import { Calendar, MapPin } from '@tuturuuu/ui/icons';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import Link from 'next/link';
+import UpcomingEventDetails from './upcoming-event-details';
 
 interface UpcomingCalendarEventsProps {
   wsId: string;
@@ -42,27 +42,6 @@ export default async function UpcomingCalendarEvents({
   const upcomingEvents =
     allEvents?.filter((event) => !isAllDayEvent(event)).slice(0, 5) || [];
 
-  const getDateLabel = (dateString: string) => {
-    const date = new Date(dateString);
-    if (isToday(date)) return 'Today';
-    if (isTomorrow(date)) return 'Tomorrow';
-    if (isThisWeek(date)) return format(date, 'EEEE');
-    return format(date, 'MMM d');
-  };
-
-  const formatEventTime = (startAt: string, endAt: string) => {
-    const start = new Date(startAt);
-    const end = new Date(endAt);
-
-    if (isToday(start)) {
-      return `${format(start, 'h:mm a')} - ${format(end, 'h:mm a')}`;
-    }
-
-    return `${format(start, 'MMM d, h:mm a')} - ${format(end, 'h:mm a')}`;
-  };
-
-  const getRelativeTime = (startAt: string) => dayjs(startAt).fromNow();
-
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
@@ -95,16 +74,7 @@ export default async function UpcomingCalendarEvents({
                   </p>
                 )}
 
-                <div className="flex flex-wrap items-center gap-2 text-muted-foreground text-xs">
-                  <div className="flex items-center gap-1">
-                    <Clock className="h-3 w-3" />
-                    <span>{getDateLabel(event.start_at)}</span>
-                  </div>
-                  <span>•</span>
-                  <span>{formatEventTime(event.start_at, event.end_at)}</span>
-                  <span>•</span>
-                  <span>{getRelativeTime(event.start_at)}</span>
-                </div>
+                <UpcomingEventDetails event={event} />
 
                 {event.location && (
                   <div className="flex items-center gap-2 text-muted-foreground text-xs">
