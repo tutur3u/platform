@@ -118,11 +118,11 @@ export function Navigation({
                   : (pathname?.startsWith(href) ?? false)
                 : false
             )
-            .filter(Boolean).length >
-          (0).filter(
-            (link) =>
-              !link.excludePaths?.some((path) => path.includes(pathname))
-          );
+            .filter(
+              (link) =>
+                !link.excludePaths?.some((path) => path.includes(pathname))
+            )
+            .filter(Boolean).length > 0;
 
         const isDevOnly = link.disableOnProduction;
         const isRootOnly = link.requireRootWorkspace;
