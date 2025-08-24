@@ -54,6 +54,7 @@ import {
   Tags,
   TextSelect,
   TicketPercent,
+  Timer,
   Trash,
   TriangleAlert,
   Truck,
@@ -418,9 +419,15 @@ export async function WorkspaceNavigationLinks({
           href: `/${personalOrWsId}/time-tracker`,
           children: [
             {
-              title: t('sidebar_tabs.time_tracker'),
+              title: t('sidebar_tabs.overview'),
               href: `/${personalOrWsId}/time-tracker`,
-              icon: <ClockFading className="h-5 w-5" />,
+              icon: <LayoutDashboard className="h-5 w-5" />,
+              matchExact: true,
+            },
+            {
+              title: t('sidebar_tabs.timer'),
+              href: `/${personalOrWsId}/time-tracker`,
+              icon: <Timer className="h-5 w-5" />,
               matchExact: true,
             },
             {
@@ -431,9 +438,8 @@ export async function WorkspaceNavigationLinks({
             },
             {
               title: t('sidebar_tabs.categories'),
-              // href: `/${personalOrWsId}/time-tracker/categories`,
+              href: `/${personalOrWsId}/time-tracker/categories`,
               icon: <Tags className="h-5 w-5" />,
-              tempDisabled: true,
             },
             {
               title: t('sidebar_tabs.goals'),

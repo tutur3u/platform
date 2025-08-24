@@ -854,7 +854,9 @@
     "history": "Lịch sử",
     "categories": "Danh mục",
     "settings": "Cài đặt",
-    "goals": "Mục tiêu"
+    "goals": "Mục tiêu",
+    "overview": "Tổng quan",
+    "timer": "Hẹn giờ"
   },
   "usage": {
     "description": "Theo dõi hoạt động workspace, sử dụng tính năng và các số liệu hệ thống trong tổ chức của bạn",

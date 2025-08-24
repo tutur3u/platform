@@ -29,7 +29,6 @@ import {
   Clock,
   History,
   LayoutDashboard,
-  LayoutGrid,
   MapPin,
   Pause,
   Play,
@@ -61,7 +60,6 @@ import timezone from 'dayjs/plugin/timezone';
 import utc from 'dayjs/plugin/utc';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityHeatmap } from './components/activity-heatmap';
-import { CategoryManager } from './components/category-manager';
 import { SessionHistory } from './components/session-history';
 import { TimerControls } from './components/timer-controls';
 import { UserSelector } from './components/user-selector';
@@ -72,7 +70,6 @@ import type {
   TaskSidebarFilters,
   TimerStats,
   TimeTrackerData,
-  TimeTrackingGoal,
 } from './types';
 import {
   generateAssigneeInitials,
@@ -133,9 +130,6 @@ export default function TimeTrackerContent({
     useState<SessionWithRelations | null>(initialData.runningSession);
   const [categories, setCategories] = useState<TimeTrackingCategory[]>(
     initialData.categories || []
-  );
-  const [goals, setGoals] = useState<TimeTrackingGoal[]>(
-    initialData.goals || []
   );
   const [recentSessions, setRecentSessions] = useState<SessionWithRelations[]>(
     initialData.recentSessions || []
@@ -565,7 +559,6 @@ export default function TimeTrackerContent({
             streak: 0,
           }
         );
-        setGoals(goalsRes.goals || []);
         setTasks(tasksRes.tasks || []);
 
         // Only update timer state if we're viewing current user's data
@@ -2283,21 +2276,6 @@ export default function TimeTrackerContent({
                     <History className="h-3 w-3" />
                     History
                   </button>
-                  {!isViewingOtherUser && (
-                    <button
-                      type="button"
-                      onClick={() => setActiveTab('categories')}
-                      className={cn(
-                        'flex items-center gap-1.5 rounded-md px-2.5 py-1.5 font-medium text-xs transition-all',
-                        activeTab === 'categories'
-                          ? 'bg-background text-foreground shadow-sm'
-                          : 'text-muted-foreground hover:text-foreground'
-                      )}
-                    >
-                      <LayoutGrid className="h-3 w-3" />
-                      Categories
-                    </button>
-                  )}
                 </div>
               </div>
 
@@ -2361,21 +2339,6 @@ export default function TimeTrackerContent({
                     apiCall={apiCall}
                   />
                 </TabsContent>
-
-                {!isViewingOtherUser && (
-                  <TabsContent
-                    value="categories"
-                    className="fade-in-50 animate-in duration-300"
-                  >
-                    <CategoryManager
-                      wsId={wsId}
-                      categories={categories}
-                      onCategoriesUpdate={() => fetchData(false)}
-                      readOnly={isViewingOtherUser}
-                      apiCall={apiCall}
-                    />
-                  </TabsContent>
-                )}
               </Tabs>
             </div>
           </div>

@@ -11,7 +11,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@tuturuuu/ui/alert-dialog';
-import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
 import {
@@ -51,10 +50,7 @@ import { useState } from 'react';
 
 interface CategoryManagerProps {
   wsId: string;
-  categories: TimeTrackingCategory[];
-  onCategoriesUpdate: () => void;
-  readOnly?: boolean;
-  apiCall: (url: string, options?: RequestInit) => Promise<any>;
+  categories: TimeTrackingCategory[] | null;
 }
 
 const CATEGORY_COLORS = [
@@ -70,13 +66,7 @@ const CATEGORY_COLORS = [
   { value: 'GRAY', label: 'Gray', class: 'bg-gray-500' },
 ];
 
-export function CategoryManager({
-  wsId,
-  categories,
-  onCategoriesUpdate,
-  readOnly = false,
-  apiCall,
-}: CategoryManagerProps) {
+export function CategoryManager({ wsId, categories }: CategoryManagerProps) {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [categoryToDelete, setCategoryToDelete] =
@@ -119,7 +109,7 @@ export function CategoryManager({
     setIsLoading(true);
 
     try {
-      await apiCall(`/api/v1/workspaces/${wsId}/time-tracking/categories`, {
+      await fetch(`/api/v1/workspaces/${wsId}/time-tracking/categories`, {
         method: 'POST',
         body: JSON.stringify({
           name: name.trim(),
@@ -130,7 +120,6 @@ export function CategoryManager({
 
       setIsAddDialogOpen(false);
       resetForm();
-      onCategoriesUpdate();
       toast.success('Category created successfully');
     } catch (error) {
       console.error('Error creating category:', error);
@@ -149,7 +138,7 @@ export function CategoryManager({
     setIsLoading(true);
 
     try {
-      await apiCall(
+      await fetch(
         `/api/v1/workspaces/${wsId}/time-tracking/categories/${categoryToEdit.id}`,
         {
           method: 'PATCH',
@@ -164,7 +153,6 @@ export function CategoryManager({
       setIsEditDialogOpen(false);
       setCategoryToEdit(null);
       resetForm();
-      onCategoriesUpdate();
       toast.success('Category updated successfully');
     } catch (error) {
       console.error('Error updating category:', error);
@@ -180,7 +168,7 @@ export function CategoryManager({
     setIsDeleting(true);
 
     try {
-      await apiCall(
+      await fetch(
         `/api/v1/workspaces/${wsId}/time-tracking/categories/${categoryToDelete.id}`,
         {
           method: 'DELETE',
@@ -188,7 +176,6 @@ export function CategoryManager({
       );
 
       setCategoryToDelete(null);
-      onCategoriesUpdate();
       toast.success('Category deleted successfully');
     } catch (error) {
       console.error('Error deleting category:', error);
@@ -212,46 +199,42 @@ export function CategoryManager({
               <LayoutGrid className="h-5 w-5" />
               Category Management
             </CardTitle>
-            {!readOnly && (
-              <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button onClick={openAddDialog}>
-                    <Plus className="mr-2 h-4 w-4" />
-                    Add Category
-                  </Button>
-                </DialogTrigger>
-              </Dialog>
-            )}
+            <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+              <DialogTrigger asChild>
+                <Button onClick={openAddDialog}>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Add Category
+                </Button>
+              </DialogTrigger>
+            </Dialog>
           </div>
         </CardHeader>
         <CardContent>
-          {categories.length === 0 ? (
+          {categories?.length === 0 ? (
             <div className="py-12 text-center">
               <LayoutGrid className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
               <p className="text-lg text-muted-foreground">
                 No categories created yet
               </p>
-              <p className="mt-1 text-sm text-muted-foreground">
+              <p className="mt-1 text-muted-foreground text-sm">
                 Create categories to organize your time tracking sessions
               </p>
-              {!readOnly && (
-                <Button
-                  onClick={openAddDialog}
-                  variant="outline"
-                  className="mt-4"
-                >
-                  <Plus className="mr-2 h-4 w-4" />
-                  Create First Category
-                </Button>
-              )}
+              <Button
+                onClick={openAddDialog}
+                variant="outline"
+                className="mt-4"
+              >
+                <Plus className="mr-2 h-4 w-4" />
+                Create First Category
+              </Button>
             </div>
           ) : (
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {categories.map((category) => (
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+              {categories?.map((category) => (
                 <Card key={category.id} className="group relative">
                   <CardContent className="p-4">
                     <div className="flex items-start justify-between">
-                      <div className="flex min-w-0 flex-1 items-center gap-3">
+                      <div className="flex min-w-0 flex-1 items-start gap-3">
                         <div
                           className={cn(
                             'h-6 w-6 flex-shrink-0 rounded-full',
@@ -263,47 +246,40 @@ export function CategoryManager({
                             {category.name}
                           </h3>
                           {category.description && (
-                            <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">
+                            <p className="mt-1 line-clamp-2 text-muted-foreground text-sm">
                               {category.description}
                             </p>
                           )}
-                          <div className="mt-2">
-                            <Badge variant="secondary" className="text-xs">
-                              {category.color?.toLowerCase() || 'blue'}
-                            </Badge>
-                          </div>
                         </div>
                       </div>
 
-                      {!readOnly && (
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-8 w-8 p-0 opacity-0 transition-opacity group-hover:opacity-100"
-                            >
-                              <MoreHorizontal className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem
-                              onClick={() => openEditDialog(category)}
-                            >
-                              <Edit className="mr-2 h-4 w-4" />
-                              Edit Category
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem
-                              onClick={() => setCategoryToDelete(category)}
-                              className="text-destructive focus:text-destructive"
-                            >
-                              <Trash2 className="mr-2 h-4 w-4" />
-                              Delete Category
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      )}
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 w-8 p-0 opacity-0 transition-opacity group-hover:opacity-100"
+                          >
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem
+                            onClick={() => openEditDialog(category)}
+                          >
+                            <Edit className="mr-2 h-4 w-4" />
+                            Edit Category
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem
+                            onClick={() => setCategoryToDelete(category)}
+                            className="text-destructive focus:text-destructive"
+                          >
+                            <Trash2 className="mr-2 h-4 w-4" />
+                            Delete Category
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </div>
                   </CardContent>
                 </Card>

@@ -843,7 +843,9 @@
     "history": "History",
     "categories": "Categories",
     "settings": "Settings",
-    "goals": "Goals"
+    "goals": "Goals",
+    "overview": "Overview",
+    "timer": "Timer"
   },
   "usage": {
     "description": "Monitor workspace activity, feature usage, and system metrics across your organization",
