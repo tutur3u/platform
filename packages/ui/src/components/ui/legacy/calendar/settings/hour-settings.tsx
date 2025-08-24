@@ -32,77 +32,160 @@ export function HoursSettings({ wsId }: HoursSettingsProps) {
 
   useEffect(() => {
     const fetchHours = async () => {
-      const supabase = createClient();
+      try {
+        // Validate wsId before proceeding
+        if (!wsId || typeof wsId !== 'string' || wsId.trim() === '') {
+          console.error('Invalid wsId provided:', wsId);
+          toast.error('Invalid workspace ID provided');
+          return;
+        }
 
-      const { data, error } = await supabase
-        .from('workspace_calendar_hour_settings')
-        .select('*')
-        .eq('ws_id', wsId);
+        // Validate UUID format
+        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+        if (!uuidRegex.test(wsId)) {
+          console.error('Invalid UUID format for wsId:', wsId);
+          toast.error('Invalid workspace ID format');
+          return;
+        }
 
-      if (error) {
-        console.error('Error fetching hours:', error);
-        toast.error(
-          'Failed to load hour settings. Please refresh or try again later.'
-        );
-        return;
-      }
+        console.log('Fetching hours for workspace:', wsId);
+        const supabase = createClient();
 
-      // If no data exists, create default settings
-      if (!data || data.length === 0) {
-        const makeDefaultData = () => structuredClone(defaultWeekTimeRanges);
-        const defaultSettings = [
-          {
-            type: 'PERSONAL' as const,
-            data: JSON.stringify(makeDefaultData()),
-            ws_id: wsId,
-          },
-          {
-            type: 'WORK' as const,
-            data: JSON.stringify(makeDefaultData()),
-            ws_id: wsId,
-          },
-          {
-            type: 'MEETING' as const,
-            data: JSON.stringify(makeDefaultData()),
-            ws_id: wsId,
-          },
-        ];
+        // Check if user is authenticated
+        const { data: { user }, error: authError } = await supabase.auth.getUser();
+        if (authError || !user) {
+          console.error('Authentication error:', authError);
+          toast.error('Please log in to access workspace settings');
+          return;
+        }
 
-        const { error: insertError } = await supabase
+        console.log('User authenticated:', user.id);
+
+        // Check if workspace exists and user has access
+        const { data: workspace, error: workspaceError } = await supabase
+          .from('workspaces')
+          .select('id, name')
+          .eq('id', wsId)
+          .single();
+
+        if (workspaceError || !workspace) {
+          console.error('Workspace access error:', workspaceError);
+          toast.error('Workspace not found or access denied');
+          return;
+        }
+
+        console.log('Workspace access confirmed:', workspace.name);
+
+        const { data, error } = await supabase
           .from('workspace_calendar_hour_settings')
-          .insert(defaultSettings)
-          .select();
+          .select('*')
+          .eq('ws_id', wsId);
 
-        if (insertError) {
-          console.error('Error creating default settings:', insertError);
+        if (error) {
+          console.error('Error fetching hours:', {
+            error,
+            message: error.message,
+            details: error.details,
+            hint: error.hint,
+            code: error.code,
+            wsId
+          });
+          toast.error(
+            'Failed to load hour settings. Please refresh or try again later.'
+          );
+          return;
+        }
+
+        console.log('Fetched existing hour settings:', data);
+
+        // If no data exists, create default settings
+        if (!data || data.length === 0) {
+          const makeDefaultData = () => structuredClone(defaultWeekTimeRanges);
+          const defaultSettings = [
+            {
+              type: 'PERSONAL' as const,
+              data: JSON.stringify(makeDefaultData()),
+              ws_id: wsId,
+            },
+            {
+              type: 'WORK' as const,
+              data: JSON.stringify(makeDefaultData()),
+              ws_id: wsId,
+            },
+            {
+              type: 'MEETING' as const,
+              data: JSON.stringify(makeDefaultData()),
+              ws_id: wsId,
+            },
+          ];
+
+          console.log('Attempting to create default settings for wsId:', wsId);
+          console.log('Default settings to insert:', defaultSettings);
+
+          const { error: insertError, data: insertedData } = await supabase
+            .from('workspace_calendar_hour_settings')
+            .insert(defaultSettings)
+            .select();
+
+          if (insertError) {
+            console.error('Error creating default settings:', {
+              error: insertError,
+              message: insertError.message,
+              details: insertError.details,
+              hint: insertError.hint,
+              code: insertError.code,
+              wsId,
+              defaultSettings
+            });
+            
+            // Try to get more context about the workspace
+            const { data: workspaceData, error: workspaceError } = await supabase
+              .from('workspaces')
+              .select('id, name')
+              .eq('id', wsId)
+              .single();
+              
+            if (workspaceError) {
+              console.error('Workspace lookup failed:', workspaceError);
+            } else {
+              console.log('Workspace found:', workspaceData);
+            }
+            
+            return;
+          }
+
+          console.log('Successfully created default settings:', insertedData);
+          setValue({
+            personalHours: defaultWeekTimeRanges,
+            workHours: defaultWeekTimeRanges,
+            meetingHours: defaultWeekTimeRanges,
+          });
           return;
         }
 
         setValue({
-          personalHours: defaultWeekTimeRanges,
-          workHours: defaultWeekTimeRanges,
-          meetingHours: defaultWeekTimeRanges,
+          personalHours: isValidWeekTimeRanges(
+            safeParse(data?.find((h) => h.type === 'PERSONAL')?.data)
+          )
+            ? safeParse(data?.find((h) => h.type === 'PERSONAL')?.data)
+            : defaultWeekTimeRanges,
+          workHours: isValidWeekTimeRanges(
+            safeParse(data?.find((h) => h.type === 'WORK')?.data)
+          )
+            ? safeParse(data?.find((h) => h.type === 'WORK')?.data)
+            : defaultWeekTimeRanges,
+          meetingHours: isValidWeekTimeRanges(
+            safeParse(data?.find((h) => h.type === 'MEETING')?.data)
+          )
+            ? safeParse(data?.find((h) => h.type === 'MEETING')?.data)
+            : defaultWeekTimeRanges,
         });
-        return;
-      }
 
-      setValue({
-        personalHours: isValidWeekTimeRanges(
-          safeParse(data?.find((h) => h.type === 'PERSONAL')?.data)
-        )
-          ? safeParse(data?.find((h) => h.type === 'PERSONAL')?.data)
-          : defaultWeekTimeRanges,
-        workHours: isValidWeekTimeRanges(
-          safeParse(data?.find((h) => h.type === 'WORK')?.data)
-        )
-          ? safeParse(data?.find((h) => h.type === 'WORK')?.data)
-          : defaultWeekTimeRanges,
-        meetingHours: isValidWeekTimeRanges(
-          safeParse(data?.find((h) => h.type === 'MEETING')?.data)
-        )
-          ? safeParse(data?.find((h) => h.type === 'MEETING')?.data)
-          : defaultWeekTimeRanges,
-      });
+        console.log('Hour settings loaded successfully');
+      } catch (unexpectedError) {
+        console.error('Unexpected error in fetchHours:', unexpectedError);
+        toast.error('An unexpected error occurred while loading hour settings');
+      }
     };
 
     fetchHours();
@@ -115,102 +198,141 @@ export function HoursSettings({ wsId }: HoursSettingsProps) {
   const handlePersonalHoursChange = async (
     newHours?: WeekTimeRanges | null
   ) => {
-    if (!newHours) {
-      toast.error('No hours provided');
-      return;
+    try {
+      if (!newHours) {
+        toast.error('No hours provided');
+        return;
+      }
+
+      setValue((prev) => ({
+        ...prev,
+        personalHours: newHours,
+      }));
+
+      const supabase = createClient();
+
+      const { error } = await supabase
+        .from('workspace_calendar_hour_settings')
+        .upsert(
+          {
+            data: JSON.stringify(newHours),
+            type: 'PERSONAL',
+            ws_id: wsId,
+          },
+          { onConflict: 'ws_id,type' }
+        );
+
+      if (error) {
+        console.error('Error updating personal hours:', {
+          error,
+          message: error.message,
+          details: error.details,
+          hint: error.hint,
+          code: error.code,
+          wsId,
+          newHours
+        });
+        toast.error('Failed to update personal hours');
+        return;
+      }
+
+      toast.success('Personal hours updated');
+    } catch (unexpectedError) {
+      console.error('Unexpected error updating personal hours:', unexpectedError);
+      toast.error('An unexpected error occurred while updating personal hours');
     }
-
-    setValue((prev) => ({
-      ...prev,
-      personalHours: newHours,
-    }));
-
-    const supabase = createClient();
-
-    const { error } = await supabase
-      .from('workspace_calendar_hour_settings')
-      .upsert(
-        {
-          data: JSON.stringify(newHours),
-          type: 'PERSONAL',
-          ws_id: wsId,
-        },
-        { onConflict: 'ws_id,type' }
-      );
-
-    if (error) {
-      console.error('Error updating personal hours:', error);
-      toast.error('Failed to update personal hours');
-      return;
-    }
-
-    toast.success('Personal hours updated');
   };
 
   const handleWorkHoursChange = async (newHours?: WeekTimeRanges | null) => {
-    if (!newHours) {
-      toast.error('No hours provided');
-      return;
+    try {
+      if (!newHours) {
+        toast.error('No hours provided');
+        return;
+      }
+
+      setValue((prev) => ({
+        ...prev,
+        workHours: newHours,
+      }));
+
+      const supabase = createClient();
+
+      const { error } = await supabase
+        .from('workspace_calendar_hour_settings')
+        .upsert(
+          {
+            data: JSON.stringify(newHours),
+            type: 'WORK',
+            ws_id: wsId,
+          },
+          { onConflict: 'ws_id,type' }
+        );
+
+      if (error) {
+        console.error('Error updating work hours:', {
+          error,
+          message: error.message,
+          details: error.details,
+          hint: error.hint,
+          code: error.code,
+          wsId,
+          newHours
+        });
+        toast.error('Failed to update work hours');
+        return;
+      }
+
+      toast.success('Work hours updated');
+    } catch (unexpectedError) {
+      console.error('Unexpected error updating work hours:', unexpectedError);
+      toast.error('An unexpected error occurred while updating work hours');
     }
-
-    setValue((prev) => ({
-      ...prev,
-      workHours: newHours,
-    }));
-
-    const supabase = createClient();
-
-    const { error } = await supabase
-      .from('workspace_calendar_hour_settings')
-      .upsert(
-        {
-          data: JSON.stringify(newHours),
-          type: 'WORK',
-          ws_id: wsId,
-        },
-        { onConflict: 'ws_id,type' }
-      );
-
-    if (error) {
-      console.error('Error updating work hours:', error);
-      toast.error('Failed to update work hours');
-      return;
-    }
-
-    toast.success('Work hours updated');
   };
 
   const handleMeetingHoursChange = async (newHours?: WeekTimeRanges | null) => {
-    if (!newHours) {
-      toast.error('No hours provided');
-      return;
+    try {
+      if (!newHours) {
+        toast.error('No hours provided');
+        return;
+      }
+
+      setValue((prev) => ({
+        ...prev,
+        meetingHours: newHours,
+      }));
+
+      const supabase = createClient();
+
+      const { error } = await supabase
+        .from('workspace_calendar_hour_settings')
+        .upsert(
+          {
+            data: JSON.stringify(newHours),
+            type: 'MEETING',
+            ws_id: wsId,
+          },
+          { onConflict: 'ws_id,type' }
+        );
+
+      if (error) {
+        console.error('Error updating meeting hours:', {
+          error,
+          message: error.message,
+          details: error.details,
+          hint: error.hint,
+          code: error.code,
+          wsId,
+          newHours
+        });
+        toast.error('Failed to update meeting hours');
+        return;
+      }
+
+      toast.success('Meeting hours updated');
+    } catch (unexpectedError) {
+      console.error('Unexpected error updating meeting hours:', unexpectedError);
+      toast.error('An unexpected error occurred while updating meeting hours');
     }
-
-    setValue((prev) => ({
-      ...prev,
-      meetingHours: newHours,
-    }));
-
-    const supabase = createClient();
-
-    const { error } = await supabase
-      .from('workspace_calendar_hour_settings')
-      .upsert(
-        {
-          data: JSON.stringify(newHours),
-          type: 'MEETING',
-          ws_id: wsId,
-        },
-        { onConflict: 'ws_id,type' }
-      );
-
-    if (error) {
-      console.error('Error updating meeting hours:', error);
-      toast.error('Failed to update meeting hours');
-      return;
-    }
-
-    toast.success('Meeting hours updated');
   };
 
   // Helper to get a summary of active days
