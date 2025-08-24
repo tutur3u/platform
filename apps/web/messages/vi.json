@@ -850,7 +850,11 @@
     "operational_structure": "Cấu trúc hoạt động",
     "structure": "Kết cấu",
     "usage": "Lưu lượng",
-    "inquiries": "Yêu cầu hỗ trợ"
+    "inquiries": "Yêu cầu hỗ trợ",
+    "history": "Lịch sử",
+    "categories": "Danh mục",
+    "settings": "Cài đặt",
+    "goals": "Mục tiêu"
   },
   "usage": {
     "description": "Theo dõi hoạt động workspace, sử dụng tính năng và các số liệu hệ thống trong tổ chức của bạn",

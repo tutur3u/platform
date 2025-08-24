@@ -17,14 +17,15 @@ import {
   ChartColumnStacked,
   CircleCheck,
   CircleDollarSign,
+  ClipboardClock,
   ClipboardList,
   Clock,
   ClockFading,
-  Cog,
   Database,
   FileText,
   FolderSync,
   GalleryVerticalEnd,
+  Goal,
   GraduationCap,
   HardDrive,
   IdCardLanyard,
@@ -44,6 +45,7 @@ import {
   ScanSearch,
   ScrollText,
   Send,
+  Settings,
   ShieldUser,
   Sparkles,
   SquaresIntersect,
@@ -414,6 +416,33 @@ export async function WorkspaceNavigationLinks({
         {
           title: t('sidebar_tabs.time_tracker'),
           href: `/${personalOrWsId}/time-tracker`,
+          children: [
+            {
+              title: t('sidebar_tabs.time_tracker'),
+              href: `/${personalOrWsId}/time-tracker`,
+              icon: <ClockFading className="h-5 w-5" />,
+            },
+            {
+              title: t('sidebar_tabs.history'),
+              href: `/${personalOrWsId}/time-tracker/history`,
+              icon: <ClipboardClock className="h-5 w-5" />,
+            },
+            {
+              title: t('sidebar_tabs.categories'),
+              href: `/${personalOrWsId}/time-tracker/categories`,
+              icon: <Tags className="h-5 w-5" />,
+            },
+            {
+              title: t('sidebar_tabs.goals'),
+              href: `/${personalOrWsId}/time-tracker/goals`,
+              icon: <Goal className="h-5 w-5" />,
+            },
+            {
+              title: t('sidebar_tabs.settings'),
+              href: `/${personalOrWsId}/time-tracker/settings`,
+              icon: <Settings className="h-5 w-5" />,
+            },
+          ],
           icon: <ClockFading className="h-5 w-5" />,
           disabled: ENABLE_AI_ONLY || withoutPermission('manage_projects'),
           experimental: 'beta',
@@ -575,7 +604,7 @@ export async function WorkspaceNavigationLinks({
             {
               title: t('workspace-finance-tabs.settings'),
               href: `/${personalOrWsId}/finance/settings`,
-              icon: <Cog className="h-5 w-5" />,
+              icon: <Settings className="h-5 w-5" />,
               disabled: true,
             },
           ],
@@ -657,7 +686,7 @@ export async function WorkspaceNavigationLinks({
     },
     {
       title: t('common.settings'),
-      icon: <Cog className="h-5 w-5" />,
+      icon: <Settings className="h-5 w-5" />,
       aliases: [
         `/${personalOrWsId}/members`,
         `/${personalOrWsId}/teams`,
