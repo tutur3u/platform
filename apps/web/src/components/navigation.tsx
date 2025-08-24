@@ -115,13 +115,14 @@ export function Navigation({
               href
                 ? matchExact
                   ? pathname === href
-                  : (pathname?.startsWith(href) ?? false)
+                  : ((pathname?.startsWith(href) &&
+                      link?.excludePaths?.every(
+                        (path) => !path.includes(pathname)
+                      )) ??
+                    false)
                 : false
             )
-            .filter(
-              (link) =>
-                !link.excludePaths?.some((path) => path.includes(pathname))
-            )
+
             .filter(Boolean).length > 0;
 
         const isDevOnly = link.disableOnProduction;
