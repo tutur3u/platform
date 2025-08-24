@@ -1,5 +1,6 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { getCurrentSupabaseUser } from '@tuturuuu/utils/user-helper';
+import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import { notFound } from 'next/navigation';
 import { GoalManager } from '../components/goal-manager';
 
@@ -10,7 +11,10 @@ export default async function TimeTrackerGoalsPage({
 }) {
   const user = await getCurrentSupabaseUser();
   const supabase = await createClient();
-  const { wsId } = await params;
+  const { wsId: id } = await params;
+
+  const workspace = await getWorkspace(id);
+  const wsId = workspace.id;
 
   if (!user) return notFound();
 
