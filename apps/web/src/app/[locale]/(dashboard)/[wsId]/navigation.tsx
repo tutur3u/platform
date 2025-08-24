@@ -432,9 +432,8 @@ export async function WorkspaceNavigationLinks({
             },
             {
               title: t('sidebar_tabs.history'),
-              // href: `/${personalOrWsId}/time-tracker/history`,
+              href: `/${personalOrWsId}/time-tracker/history`,
               icon: <ClipboardClock className="h-5 w-5" />,
-              tempDisabled: true,
             },
             {
               title: t('sidebar_tabs.categories'),

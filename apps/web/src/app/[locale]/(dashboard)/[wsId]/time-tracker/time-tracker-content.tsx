@@ -27,7 +27,6 @@ import {
   CheckCircle,
   CheckSquare,
   Clock,
-  History,
   LayoutDashboard,
   MapPin,
   Pause,
@@ -60,7 +59,6 @@ import timezone from 'dayjs/plugin/timezone';
 import utc from 'dayjs/plugin/utc';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityHeatmap } from './components/activity-heatmap';
-import { SessionHistory } from './components/session-history';
 import { TimerControls } from './components/timer-controls';
 import { UserSelector } from './components/user-selector';
 import { useCurrentUser } from './hooks/use-current-user';
@@ -2245,40 +2243,6 @@ export default function TimeTrackerContent({
           {/* Right Side: Tabs with Timer Controls - First on mobile */}
           <div className="order-1 lg:order-2 lg:col-span-3">
             <div className="space-y-6">
-              {/* Tab Navigation - Styled like sidebar switcher */}
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-1 rounded-lg bg-muted/50 p-1">
-                  {!isViewingOtherUser && (
-                    <button
-                      type="button"
-                      onClick={() => setActiveTab('timer')}
-                      className={cn(
-                        'flex items-center gap-1.5 rounded-md px-2.5 py-1.5 font-medium text-xs transition-all',
-                        activeTab === 'timer'
-                          ? 'bg-background text-foreground shadow-sm'
-                          : 'text-muted-foreground hover:text-foreground'
-                      )}
-                    >
-                      <Clock className="h-3 w-3" />
-                      Timer
-                    </button>
-                  )}
-                  <button
-                    type="button"
-                    onClick={() => setActiveTab('history')}
-                    className={cn(
-                      'flex items-center gap-1.5 rounded-md px-2.5 py-1.5 font-medium text-xs transition-all',
-                      activeTab === 'history'
-                        ? 'bg-background text-foreground shadow-sm'
-                        : 'text-muted-foreground hover:text-foreground'
-                    )}
-                  >
-                    <History className="h-3 w-3" />
-                    History
-                  </button>
-                </div>
-              </div>
-
               {/* Main Tabs - Timer, History, Categories, Goals */}
               <Tabs value={activeTab} onValueChange={setActiveTab}>
                 {/* Tab Content */}
@@ -2314,31 +2278,6 @@ export default function TimeTrackerContent({
                     </div>
                   </TabsContent>
                 )}
-
-                <TabsContent
-                  value="history"
-                  className="fade-in-50 animate-in duration-300"
-                >
-                  {isViewingOtherUser && (
-                    <div className="slide-in-from-top mb-4 animate-in rounded-lg border border-blue-200 bg-blue-50 p-4 duration-300 dark:border-blue-800 dark:bg-blue-950/30">
-                      <p className="flex items-center gap-2 text-blue-700 text-sm dark:text-blue-300">
-                        <Calendar className="h-4 w-4" />
-                        You're viewing another user's session history. You can
-                        see their sessions but cannot edit them.
-                      </p>
-                    </div>
-                  )}
-                  <SessionHistory
-                    wsId={wsId}
-                    sessions={recentSessions}
-                    categories={categories}
-                    tasks={tasks}
-                    onSessionUpdate={() => fetchData(false)}
-                    readOnly={isViewingOtherUser}
-                    formatDuration={formatDuration}
-                    apiCall={apiCall}
-                  />
-                </TabsContent>
               </Tabs>
             </div>
           </div>
