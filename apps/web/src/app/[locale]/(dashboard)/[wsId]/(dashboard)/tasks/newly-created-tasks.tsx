@@ -58,15 +58,15 @@ export default async function NewlyCreatedTasks({
     switch (priority) {
       case 'critical':
       case 'urgent':
-        return 'bg-red-500 text-white';
+        return 'bg-dynamic-red/10 text-dynamic-red border-dynamic-red/20';
       case 'high':
-        return 'bg-orange-500 text-white';
+        return 'bg-dynamic-orange/10 text-dynamic-orange border-dynamic-orange/20';
       case 'medium':
-        return 'bg-yellow-500 text-white';
+        return 'bg-dynamic-yellow/10 text-dynamic-yellow border-dynamic-yellow/20';
       case 'low':
-        return 'bg-green-500 text-white';
+        return 'bg-dynamic-green/10 text-dynamic-green border-dynamic-green/20';
       default:
-        return 'bg-gray-500 text-white';
+        return 'bg-dynamic-blue/10 text-dynamic-blue border-dynamic-blue/20';
     }
   };
 
@@ -103,9 +103,23 @@ export default async function NewlyCreatedTasks({
                       </p>
                     )}
                     <div className="mt-2 flex flex-wrap items-center gap-2 text-muted-foreground text-xs">
-                      <span>{task.list?.board?.name}</span>
+                      <span className="font-semibold">
+                        <Link
+                          href={`/${wsId}/tasks/boards/${task.list?.board?.id}`}
+                          className="hover:underline"
+                        >
+                          {task.list?.board?.name}
+                        </Link>
+                      </span>
                       <span>•</span>
-                      <span>{task.list?.name}</span>
+                      <span className="font-semibold">
+                        <Link
+                          href={`/${wsId}/tasks/boards/${task.list?.board?.id}`}
+                          className="hover:underline"
+                        >
+                          {task.list?.name}
+                        </Link>
+                      </span>
                       <span>•</span>
                       <span>
                         {task.created_at &&

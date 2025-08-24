@@ -58,15 +58,15 @@ export default async function TasksAssignedToMe({
     switch (priority) {
       case 'critical':
       case 'urgent':
-        return 'bg-red-500 text-white';
+        return 'bg-dynamic-red/10 text-dynamic-red border-dynamic-red/20';
       case 'high':
-        return 'bg-orange-500 text-white';
+        return 'bg-dynamic-orange/10 text-dynamic-orange border-dynamic-orange/20';
       case 'medium':
-        return 'bg-yellow-500 text-white';
+        return 'bg-dynamic-yellow/10 text-dynamic-yellow border-dynamic-yellow/20';
       case 'low':
-        return 'bg-green-500 text-white';
+        return 'bg-dynamic-green/10 text-dynamic-green border-dynamic-green/20';
       default:
-        return 'bg-gray-500 text-white';
+        return 'bg-dynamic-blue/10 text-dynamic-blue border-dynamic-blue/20';
     }
   };
 
@@ -82,11 +82,13 @@ export default async function TasksAssignedToMe({
     const date = new Date(dueDate);
     const now = new Date();
 
-    if (date < now) return 'text-red-600 bg-red-50 border-red-200';
-    if (isToday(date)) return 'text-orange-600 bg-orange-50 border-orange-200';
+    if (date < now)
+      return 'text-dynamic-red bg-dynamic-red/10 border-dynamic-red/20';
+    if (isToday(date))
+      return 'text-dynamic-orange bg-dynamic-orange/10 border-dynamic-orange/20';
     if (isTomorrow(date))
-      return 'text-yellow-600 bg-yellow-50 border-yellow-200';
-    return 'text-blue-600 bg-blue-50 border-blue-200';
+      return 'text-dynamic-yellow bg-dynamic-yellow/10 border-dynamic-yellow/20';
+    return 'text-dynamic-blue bg-dynamic-blue/10 border-dynamic-blue/20';
   };
 
   return (
@@ -120,9 +122,23 @@ export default async function TasksAssignedToMe({
                       </p>
                     )}
                     <div className="mt-2 flex flex-wrap items-center gap-2 text-muted-foreground text-xs">
-                      <span>{task.list?.board?.name}</span>
+                      <span className="font-semibold">
+                        <Link
+                          href={`/${wsId}/tasks/boards/${task.list?.board?.id}`}
+                          className="hover:underline"
+                        >
+                          {task.list?.board?.name}
+                        </Link>
+                      </span>
                       <span>•</span>
-                      <span>{task.list?.name}</span>
+                      <span className="font-semibold">
+                        <Link
+                          href={`/${wsId}/tasks/boards/${task.list?.board?.id}`}
+                          className="hover:underline"
+                        >
+                          {task.list?.name}
+                        </Link>
+                      </span>
                       {task.end_date && (
                         <>
                           <span>•</span>
