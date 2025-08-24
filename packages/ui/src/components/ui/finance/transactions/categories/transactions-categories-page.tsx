@@ -10,11 +10,11 @@ import { getTranslations } from 'next-intl/server';
 
 interface Props {
   wsId: string;
-  searchParams: Promise<{
+  searchParams: {
     q: string;
     page: string;
     pageSize: string;
-  }>;
+  };
 }
 
 export default async function TransactionsCategoriesPage({
@@ -24,7 +24,7 @@ export default async function TransactionsCategoriesPage({
   const workspace = await getWorkspace(id);
   const wsId = workspace.id;
 
-  const { data: rawData, count } = await getData(wsId, await searchParams);
+  const { data: rawData, count } = await getData(wsId, searchParams);
   const t = await getTranslations();
 
   const data = rawData.map((d) => ({
