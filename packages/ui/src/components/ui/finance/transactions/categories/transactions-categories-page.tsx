@@ -5,15 +5,16 @@ import { CustomDataTable } from '@tuturuuu/ui/custom/tables/custom-data-table';
 import { transactionCategoryColumns } from '@tuturuuu/ui/finance/transactions/categories/columns';
 import { TransactionCategoryForm } from '@tuturuuu/ui/finance/transactions/categories/form';
 import { Separator } from '@tuturuuu/ui/separator';
+import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import { getTranslations } from 'next-intl/server';
 
 interface Props {
   wsId: string;
-  searchParams: {
+  searchParams: Promise<{
     q: string;
     page: string;
     pageSize: string;
-  };
+  }>;
 }
 
 export default async function TransactionsCategoriesPage({
@@ -28,7 +29,7 @@ export default async function TransactionsCategoriesPage({
 
   const data = rawData.map((d) => ({
     ...d,
-    // href: `/${wsId}/finance/transactions/${d.id}`,
+    href: `/${wsId}/finance/transactions/categories/${d.id}`,
     ws_id: wsId,
   }));
 
