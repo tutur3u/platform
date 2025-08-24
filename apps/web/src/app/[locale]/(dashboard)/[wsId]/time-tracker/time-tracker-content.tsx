@@ -23,7 +23,6 @@ import {
 import {
   AlertCircle,
   BarChart2,
-  Calendar,
   CheckCircle,
   CheckSquare,
   Clock,
@@ -34,15 +33,11 @@ import {
   PlusCircle,
   RefreshCw,
   RotateCcw,
-  Settings,
   Tag,
   Timer,
-  TrendingUp,
   WifiOff,
-  Zap,
 } from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
-import { Label } from '@tuturuuu/ui/label';
 import {
   Select,
   SelectContent,
@@ -51,14 +46,12 @@ import {
   SelectValue,
 } from '@tuturuuu/ui/select';
 import { toast } from '@tuturuuu/ui/sonner';
-import { Switch } from '@tuturuuu/ui/switch';
 import { Tabs, TabsContent } from '@tuturuuu/ui/tabs';
 import { cn } from '@tuturuuu/utils/format';
 import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone';
 import utc from 'dayjs/plugin/utc';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityHeatmap } from './components/activity-heatmap';
 import { TimerControls } from './components/timer-controls';
 import { UserSelector } from './components/user-selector';
 import { useCurrentUser } from './hooks/use-current-user';
@@ -66,7 +59,6 @@ import type {
   ExtendedWorkspaceTask,
   SessionWithRelations,
   TaskSidebarFilters,
-  TimerStats,
   TimeTrackerData,
 } from './types';
 import {
@@ -102,7 +94,7 @@ export default function TimeTrackerContent({
   wsId,
   initialData,
 }: TimeTrackerContentProps) {
-  const [sidebarView, setSidebarView] = useState('analytics');
+  const [sidebarView, setSidebarView] = useState('tasks');
   const [activeTab, setActiveTab] = useState('timer');
 
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
@@ -132,7 +124,6 @@ export default function TimeTrackerContent({
   const [recentSessions, setRecentSessions] = useState<SessionWithRelations[]>(
     initialData.recentSessions || []
   );
-  const [timerStats, setTimerStats] = useState<TimerStats>(initialData.stats);
 
   // Sync React Query data with local state
   useEffect(() => {
@@ -184,46 +175,6 @@ export default function TimeTrackerContent({
   const [isOffline, setIsOffline] = useState(false);
   const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
   const [retryCount, setRetryCount] = useState(0);
-
-  // Heatmap settings state
-  const [heatmapSettings, setHeatmapSettings] = useState(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('heatmap-settings');
-      if (saved) {
-        try {
-          return JSON.parse(saved);
-        } catch {
-          // Fall through to default
-        }
-      }
-    }
-    return {
-      viewMode: 'original' as 'original' | 'hybrid' | 'calendar-only',
-      timeReference: 'smart' as 'relative' | 'absolute' | 'smart',
-      showOnboardingTips: true,
-    };
-  });
-
-  // Listen for heatmap settings changes from child components
-  useEffect(() => {
-    const handleSettingsChange = (event: CustomEvent) => {
-      setHeatmapSettings(event.detail);
-    };
-
-    if (typeof window !== 'undefined') {
-      window.addEventListener(
-        'heatmap-settings-changed',
-        handleSettingsChange as EventListener
-      );
-
-      return () => {
-        window.removeEventListener(
-          'heatmap-settings-changed',
-          handleSettingsChange as EventListener
-        );
-      };
-    }
-  }, []);
 
   // Refs for cleanup
   const timerIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -522,41 +473,27 @@ export default function TimeTrackerContent({
         );
 
         // Process results with fallbacks for failed calls
-        const [
-          categoriesRes,
-          runningRes,
-          recentRes,
-          statsRes,
-          goalsRes,
-          tasksRes,
-        ] = results.map((result, index) => {
-          if (result.status === 'fulfilled') {
-            return result.value;
-          } else {
-            const { name, fallback } = apiCalls[index]!;
-            console.warn(`API call for ${name} failed:`, result.reason);
-            // Only show error toast for critical failures, not for tasks
-            if (name !== 'tasks') {
-              toast.error(
-                `Failed to load ${name}: ${result.reason.message || 'Unknown error'}`
-              );
+        const [categoriesRes, runningRes, recentRes, statsRes, tasksRes] =
+          results.map((result, index) => {
+            if (result.status === 'fulfilled') {
+              return result.value;
+            } else {
+              const { name, fallback } = apiCalls[index]!;
+              console.warn(`API call for ${name} failed:`, result.reason);
+              // Only show error toast for critical failures, not for tasks
+              if (name !== 'tasks') {
+                toast.error(
+                  `Failed to load ${name}: ${result.reason.message || 'Unknown error'}`
+                );
+              }
+              return fallback;
             }
-            return fallback;
-          }
-        });
+          });
 
         if (!isMountedRef.current) return;
 
         setCategories(categoriesRes.categories || []);
         setRecentSessions(recentRes.sessions || []);
-        setTimerStats(
-          statsRes.stats || {
-            todayTime: 0,
-            weekTime: 0,
-            monthTime: 0,
-            streak: 0,
-          }
-        );
         setTasks(tasksRes.tasks || []);
 
         // Only update timer state if we're viewing current user's data
@@ -1321,239 +1258,6 @@ export default function TimeTrackerContent({
           {/* Left Side: Switchable Sidebar Views - Second on mobile */}
           <div className="order-2 lg:order-1 lg:col-span-2">
             <div className="space-y-6">
-              {/* Sidebar View Switcher */}
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-1 rounded-lg bg-muted/50 p-1">
-                  <button
-                    type="button"
-                    onClick={() => setSidebarView('analytics')}
-                    className={cn(
-                      'flex items-center gap-1.5 rounded-md px-2.5 py-1.5 font-medium text-xs transition-all',
-                      sidebarView === 'analytics'
-                        ? 'bg-background text-foreground shadow-sm'
-                        : 'text-muted-foreground hover:text-foreground'
-                    )}
-                  >
-                    <TrendingUp className="h-3 w-3" />
-                    Analytics
-                  </button>
-                  {!isViewingOtherUser && (
-                    <button
-                      type="button"
-                      onClick={() => setSidebarView('tasks')}
-                      className={cn(
-                        'flex items-center gap-1.5 rounded-md px-2.5 py-1.5 font-medium text-xs transition-all',
-                        sidebarView === 'tasks'
-                          ? 'bg-background text-foreground shadow-sm'
-                          : 'text-muted-foreground hover:text-foreground'
-                      )}
-                    >
-                      <CheckCircle className="h-3 w-3" />
-                      Tasks
-                    </button>
-                  )}
-                  <button
-                    type="button"
-                    onClick={() => setSidebarView('settings')}
-                    className={cn(
-                      'flex items-center gap-1.5 rounded-md px-2.5 py-1.5 font-medium text-xs transition-all',
-                      sidebarView === 'settings'
-                        ? 'bg-background text-foreground shadow-sm'
-                        : 'text-muted-foreground hover:text-foreground'
-                    )}
-                  >
-                    <Settings className="h-3 w-3" />
-                    Settings
-                  </button>
-                </div>
-              </div>
-
-              {/* Sidebar Content */}
-              {sidebarView === 'analytics' && (
-                <>
-                  {/* Stats Overview - Enhanced for sidebar */}
-                  <Card>
-                    <CardHeader>
-                      <div className="flex items-center gap-3">
-                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-purple-600 shadow-lg">
-                          <TrendingUp className="h-5 w-5 text-white" />
-                        </div>
-                        <div>
-                          <CardTitle className="text-lg sm:text-xl">
-                            Your Progress
-                          </CardTitle>
-                          <CardDescription>
-                            Track your productivity metrics ⚡
-                          </CardDescription>
-                        </div>
-                      </div>
-                    </CardHeader>
-                    <CardContent>
-                      {/* Custom sidebar-optimized stats layout */}
-                      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                        {/* Today */}
-                        <div className="rounded-lg border border-dynamic-blue/30 bg-background p-3 transition-all duration-300 hover:shadow-md">
-                          <div className="flex items-center gap-3">
-                            <div className="rounded-full bg-dynamic-blue/10 p-2 shadow-sm">
-                              <Calendar className="h-4 w-4 text-blue-500" />
-                            </div>
-                            <div className="min-w-0 flex-1">
-                              <div className="flex items-center gap-2">
-                                <p className="font-medium text-muted-foreground text-xs">
-                                  Today
-                                </p>
-                                <span className="text-sm">
-                                  {new Date().getDay() === 0 ||
-                                  new Date().getDay() === 6
-                                    ? '🏖️'
-                                    : '💼'}
-                                </span>
-                              </div>
-                              <p className="text-muted-foreground/80 text-xs">
-                                {new Date().toLocaleDateString('en-US', {
-                                  weekday: 'long',
-                                })}
-                              </p>
-                              <p className="font-bold text-lg">
-                                {formatDuration(timerStats.todayTime)}
-                              </p>
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* This Week */}
-                        <div className="rounded-lg border border-dynamic-green/30 bg-background p-3 transition-all duration-300 hover:shadow-md">
-                          <div className="flex items-center gap-3">
-                            <div className="rounded-full bg-dynamic-green/10 p-2 shadow-sm">
-                              <TrendingUp className="h-4 w-4 text-green-500" />
-                            </div>
-                            <div className="min-w-0 flex-1">
-                              <div className="flex items-center gap-2">
-                                <p className="font-medium text-muted-foreground text-xs">
-                                  This Week
-                                </p>
-                                <span className="text-sm">📊</span>
-                              </div>
-                              <p className="text-muted-foreground/80 text-xs">
-                                {(() => {
-                                  const today = new Date();
-                                  const dayOfWeek = today.getDay();
-                                  const daysToSubtract =
-                                    dayOfWeek === 0 ? 6 : dayOfWeek - 1;
-                                  const startOfWeek = new Date(today);
-                                  startOfWeek.setDate(
-                                    today.getDate() - daysToSubtract
-                                  );
-                                  const endOfWeek = new Date(startOfWeek);
-                                  endOfWeek.setDate(startOfWeek.getDate() + 6);
-                                  return `${startOfWeek.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${endOfWeek.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`;
-                                })()}
-                              </p>
-                              <p className="font-bold text-lg">
-                                {formatDuration(timerStats.weekTime)}
-                              </p>
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* This Month */}
-                        <div className="rounded-lg border border-dynamic-purple/30 bg-background p-3 transition-all duration-300 hover:shadow-md">
-                          <div className="flex items-center gap-3">
-                            <div className="rounded-full bg-dynamic-purple/10 p-2 shadow-sm">
-                              <Zap className="h-4 w-4 text-purple-500" />
-                            </div>
-                            <div className="min-w-0 flex-1">
-                              <div className="flex items-center gap-2">
-                                <p className="font-medium text-muted-foreground text-xs">
-                                  This Month
-                                </p>
-                                <span className="text-sm">🚀</span>
-                              </div>
-                              <p className="text-muted-foreground/80 text-xs">
-                                {new Date().toLocaleDateString('en-US', {
-                                  month: 'long',
-                                  year: 'numeric',
-                                })}
-                              </p>
-                              <p className="font-bold text-lg">
-                                {formatDuration(timerStats.monthTime)}
-                              </p>
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Streak */}
-                        <div className="rounded-lg border border-dynamic-orange/30 bg-background p-3 transition-all duration-300 hover:shadow-md">
-                          <div className="flex items-center gap-3">
-                            <div className="rounded-full bg-dynamic-orange/10 p-2 shadow-sm">
-                              <Clock className="h-4 w-4 text-orange-500" />
-                            </div>
-                            <div className="min-w-0 flex-1">
-                              <div className="flex items-center gap-2">
-                                <p className="font-medium text-muted-foreground text-xs">
-                                  Streak
-                                </p>
-                                <span className="text-sm">
-                                  {timerStats.streak >= 7 ? '🏆' : '⭐'}
-                                </span>
-                              </div>
-                              <p className="text-muted-foreground/80 text-xs">
-                                {timerStats.streak > 0
-                                  ? 'consecutive days'
-                                  : 'start today!'}
-                              </p>
-                              <p className="font-bold text-lg">
-                                {timerStats.streak} days
-                              </p>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  {/* Activity Heatmap - Enhanced with better header */}
-                  {timerStats.dailyActivity && (
-                    <Card className="relative overflow-visible">
-                      <CardHeader>
-                        <div className="flex items-center gap-3">
-                          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 shadow-lg">
-                            <Calendar className="h-5 w-5 text-white" />
-                          </div>
-                          <div>
-                            <CardTitle className="text-lg sm:text-xl">
-                              Activity Heatmap
-                            </CardTitle>
-                            <CardDescription>
-                              {(() => {
-                                const totalDuration =
-                                  timerStats.dailyActivity?.reduce(
-                                    (sum, day) => sum + day.duration,
-                                    0
-                                  ) || 0;
-                                return totalDuration > 0
-                                  ? `${formatDuration(totalDuration)} tracked this year 🔥`
-                                  : 'Start tracking to see your activity pattern 🌱';
-                              })()}
-                            </CardDescription>
-                          </div>
-                        </div>
-                      </CardHeader>
-                      <CardContent>
-                        {/* Remove the original header from ActivityHeatmap component and provide overflow space */}
-                        <div className="relative overflow-visible [&>div>div:first-child]:hidden">
-                          <ActivityHeatmap
-                            dailyActivity={timerStats.dailyActivity}
-                            formatDuration={formatDuration}
-                            settings={heatmapSettings}
-                          />
-                        </div>
-                      </CardContent>
-                    </Card>
-                  )}
-                </>
-              )}
-
               {/* Tasks View */}
               {sidebarView === 'tasks' && (
                 <div className="space-y-6">
@@ -2057,181 +1761,6 @@ export default function TimeTrackerContent({
                             </>
                           );
                         })()}
-                      </div>
-                    </CardContent>
-                  </Card>
-                </div>
-              )}
-
-              {/* Settings View */}
-              {sidebarView === 'settings' && (
-                <div className="space-y-6">
-                  <Card>
-                    <CardHeader>
-                      <div className="flex items-center gap-3">
-                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-gray-500 to-gray-700 shadow-lg">
-                          <Settings className="h-5 w-5 text-white" />
-                        </div>
-                        <div>
-                          <CardTitle className="text-lg sm:text-xl">
-                            Timer Settings
-                          </CardTitle>
-                          <CardDescription>
-                            Customize your tracking experience ⚙️
-                          </CardDescription>
-                        </div>
-                      </div>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-6">
-                        {/* Activity Heatmap Settings */}
-                        <div className="space-y-4">
-                          <div className="flex items-center gap-2">
-                            <Calendar className="h-4 w-4 text-muted-foreground" />
-                            <h4 className="font-medium">
-                              Activity Heatmap Display
-                            </h4>
-                          </div>
-
-                          <div className="grid gap-4">
-                            <div className="space-y-2">
-                              <Label htmlFor="heatmap-view">
-                                Heatmap View Style
-                              </Label>
-                              <Select
-                                value={heatmapSettings.viewMode}
-                                onValueChange={(
-                                  value: 'original' | 'hybrid' | 'calendar-only'
-                                ) => {
-                                  const newSettings = {
-                                    ...heatmapSettings,
-                                    viewMode: value,
-                                  };
-                                  setHeatmapSettings(newSettings);
-                                  localStorage.setItem(
-                                    'heatmap-settings',
-                                    JSON.stringify(newSettings)
-                                  );
-                                }}
-                              >
-                                <SelectTrigger id="heatmap-view">
-                                  <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="original">
-                                    <div className="flex items-center gap-2">
-                                      <div className="h-2 w-2 rounded-sm bg-blue-500" />
-                                      <span>Original Grid</span>
-                                    </div>
-                                  </SelectItem>
-                                  <SelectItem value="hybrid">
-                                    <div className="flex items-center gap-2">
-                                      <div className="h-2 w-2 rounded-sm bg-green-500" />
-                                      <span>Hybrid (Year + Calendar)</span>
-                                    </div>
-                                  </SelectItem>
-                                  <SelectItem value="calendar-only">
-                                    <div className="flex items-center gap-2">
-                                      <div className="h-2 w-2 rounded-sm bg-purple-500" />
-                                      <span>Calendar Only</span>
-                                    </div>
-                                  </SelectItem>
-                                  <SelectItem value="compact-cards">
-                                    <div className="flex items-center gap-2">
-                                      <div className="h-2 w-2 rounded-sm bg-orange-500" />
-                                      <span>Compact Cards</span>
-                                    </div>
-                                  </SelectItem>
-                                </SelectContent>
-                              </Select>
-                              <p className="text-muted-foreground text-xs">
-                                {heatmapSettings.viewMode === 'original' &&
-                                  'GitHub-style grid view with day labels'}
-                                {heatmapSettings.viewMode === 'hybrid' &&
-                                  'Year overview plus monthly calendar details'}
-                                {heatmapSettings.viewMode === 'calendar-only' &&
-                                  'Traditional calendar interface'}
-                                {heatmapSettings.viewMode === 'compact-cards' &&
-                                  'Monthly summary cards with key metrics and mini previews'}
-                              </p>
-                            </div>
-
-                            <div className="space-y-2">
-                              <Label htmlFor="time-reference">
-                                Time Reference
-                              </Label>
-                              <Select
-                                value={heatmapSettings.timeReference}
-                                onValueChange={(
-                                  value: 'relative' | 'absolute' | 'smart'
-                                ) => {
-                                  const newSettings = {
-                                    ...heatmapSettings,
-                                    timeReference: value,
-                                  };
-                                  setHeatmapSettings(newSettings);
-                                  localStorage.setItem(
-                                    'heatmap-settings',
-                                    JSON.stringify(newSettings)
-                                  );
-                                }}
-                              >
-                                <SelectTrigger id="time-reference">
-                                  <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="relative">
-                                    Relative ("2 weeks ago")
-                                  </SelectItem>
-                                  <SelectItem value="absolute">
-                                    Absolute ("Jan 15, 2024")
-                                  </SelectItem>
-                                  <SelectItem value="smart">
-                                    Smart (Both combined)
-                                  </SelectItem>
-                                </SelectContent>
-                              </Select>
-                            </div>
-
-                            <div className="flex items-center space-x-2">
-                              <Switch
-                                id="onboarding-tips"
-                                checked={heatmapSettings.showOnboardingTips}
-                                onCheckedChange={(checked) => {
-                                  const newSettings = {
-                                    ...heatmapSettings,
-                                    showOnboardingTips: checked,
-                                  };
-                                  setHeatmapSettings(newSettings);
-                                  localStorage.setItem(
-                                    'heatmap-settings',
-                                    JSON.stringify(newSettings)
-                                  );
-                                }}
-                              />
-                              <Label
-                                htmlFor="onboarding-tips"
-                                className="text-sm"
-                              >
-                                Show onboarding tips
-                              </Label>
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Coming Soon Section */}
-                        <div className="rounded-lg border-2 border-muted-foreground/25 border-dashed p-4">
-                          <div className="mb-2 flex items-center gap-2">
-                            <Clock className="h-4 w-4 text-muted-foreground" />
-                            <h4 className="font-medium text-muted-foreground">
-                              More Settings Coming Soon
-                            </h4>
-                          </div>
-                          <p className="text-muted-foreground text-xs">
-                            Notifications, default categories, productivity
-                            goals, and more customization options.
-                          </p>
-                        </div>
                       </div>
                     </CardContent>
                   </Card>

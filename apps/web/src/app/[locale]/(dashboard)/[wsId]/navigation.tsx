@@ -426,9 +426,8 @@ export async function WorkspaceNavigationLinks({
             },
             {
               title: t('sidebar_tabs.timer'),
-              // href: `/${personalOrWsId}/time-tracker/timer`,
+              href: `/${personalOrWsId}/time-tracker/timer`,
               icon: <Timer className="h-5 w-5" />,
-              tempDisabled: true,
             },
             {
               title: t('sidebar_tabs.history'),
@@ -447,9 +446,8 @@ export async function WorkspaceNavigationLinks({
             },
             {
               title: t('sidebar_tabs.settings'),
-              // href: `/${personalOrWsId}/time-tracker/settings`,
+              href: `/${personalOrWsId}/time-tracker/settings`,
               icon: <Settings className="h-5 w-5" />,
-              tempDisabled: true,
             },
           ],
           icon: <ClockFading className="h-5 w-5" />,
