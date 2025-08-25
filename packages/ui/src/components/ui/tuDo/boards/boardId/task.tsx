@@ -76,16 +76,54 @@ interface Props {
   isSelected?: boolean;
   isMultiSelectMode?: boolean;
   onSelect?: (taskId: string, event: React.MouseEvent) => void;
+  isMinimalMode?: boolean;
 }
 
 // Lightweight drag overlay version
-export function LightweightTaskCard({ task }: { task: Task }) {
+export function LightweightTaskCard({
+  task,
+  isMinimalMode = false,
+}: {
+  task: Task;
+  isMinimalMode?: boolean;
+}) {
   const labels = {
     critical: 'Urgent',
     high: 'High',
     normal: 'Medium',
     low: 'Low',
   };
+
+  // Minimal mode for scrollbar interaction
+  if (isMinimalMode) {
+    return (
+      <Card className="pointer-events-none w-full max-w-[350px] scale-105 select-none border-2 border-primary/20 bg-background opacity-95 shadow-xl ring-2 ring-primary/20">
+        <div className="flex h-12 items-center px-3">
+          <div className="flex min-w-0 flex-1 items-center gap-2">
+            <div className="h-2 w-2 flex-shrink-0 rounded-full bg-muted-foreground/60" />
+            <div className="min-w-0 flex-1">
+              <div className="truncate font-medium text-foreground text-xs">
+                {task.name}
+              </div>
+            </div>
+          </div>
+          {task.priority && (
+            <div className="flex-shrink-0">
+              <div
+                className={cn(
+                  'h-2 w-2 rounded-full',
+                  task.priority === 'critical' && 'bg-dynamic-red/80',
+                  task.priority === 'high' && 'bg-dynamic-orange/80',
+                  task.priority === 'normal' && 'bg-dynamic-yellow/80',
+                  task.priority === 'low' && 'bg-dynamic-blue/80'
+                )}
+              />
+            </div>
+          )}
+        </div>
+      </Card>
+    );
+  }
 
   return (
     <Card className="pointer-events-none w-full max-w-[350px] scale-105 select-none border-2 border-primary/20 bg-background opacity-95 shadow-xl ring-2 ring-primary/20">
@@ -119,6 +157,7 @@ export const TaskCard = React.memo(function TaskCard({
   isSelected = false,
   isMultiSelectMode = false,
   onSelect,
+  isMinimalMode = false,
 }: Props) {
   const [isLoading, setIsLoading] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
@@ -425,6 +464,46 @@ export const TaskCard = React.memo(function TaskCard({
 
   // Hide the source card during drag (unless in overlay)
   if (isDragging && !isOverlay) return null;
+
+  // Minimal mode for scrollbar interaction
+  if (isMinimalMode) {
+    return (
+      <Card
+        data-id={task.id}
+        ref={setNodeRef}
+        style={{ ...style, height: '3rem' }}
+        className={cn(
+          'group relative cursor-default overflow-hidden rounded-lg border-l-4 transition-all duration-200',
+          getCardColorClasses(),
+          isSelected && 'bg-primary/5 shadow-md ring-2 ring-primary/50'
+        )}
+      >
+        <div className="flex h-full items-center px-3">
+          <div className="flex min-w-0 flex-1 items-center gap-2">
+            <div className="h-2 w-2 flex-shrink-0 rounded-full bg-muted-foreground/60" />
+            <div className="min-w-0 flex-1">
+              <div className="truncate font-medium text-foreground text-xs">
+                {task.name}
+              </div>
+            </div>
+          </div>
+          {task.priority && (
+            <div className="flex-shrink-0">
+              <div
+                className={cn(
+                  'h-2 w-2 rounded-full',
+                  task.priority === 'critical' && 'bg-dynamic-red/80',
+                  task.priority === 'high' && 'bg-dynamic-orange/80',
+                  task.priority === 'normal' && 'bg-dynamic-yellow/80',
+                  task.priority === 'low' && 'bg-dynamic-blue/80'
+                )}
+              />
+            </div>
+          )}
+        </div>
+      </Card>
+    );
+  }
 
   return (
     <Card

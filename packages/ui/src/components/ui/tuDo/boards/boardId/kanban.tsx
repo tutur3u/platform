@@ -46,6 +46,7 @@ export function KanbanBoard({ boardId, tasks, isLoading }: Props) {
   const [activeTask, setActiveTask] = useState<Task | null>(null);
   const [selectedTasks, setSelectedTasks] = useState<Set<string>>(new Set());
   const [isMultiSelectMode, setIsMultiSelectMode] = useState(false);
+  const [isScrollbarActive, setIsScrollbarActive] = useState(false);
   const pickedUpTaskColumn = useRef<string | null>(null);
   const queryClient = useQueryClient();
   const moveTaskMutation = useMoveTask(boardId);
@@ -53,6 +54,21 @@ export function KanbanBoard({ boardId, tasks, isLoading }: Props) {
   const boardRef = useRef<HTMLDivElement>(null);
   const dragStartCardLeft = useRef<number | null>(null);
   const overlayWidth = 350; // Column width
+
+  // Scrollbar interaction detection
+  const handleScrollbarInteraction = useCallback((e: Event) => {
+    const target = e.target as HTMLElement;
+    if (
+      target.classList.contains('scrollbar-thumb') ||
+      target.classList.contains('scrollbar-track')
+    ) {
+      setIsScrollbarActive(true);
+    }
+  }, []);
+
+  const handleScrollbarRelease = useCallback(() => {
+    setTimeout(() => setIsScrollbarActive(false), 500);
+  }, []);
 
   const handleTaskCreated = useCallback(() => {
     // Invalidate the tasks query to trigger a refetch
@@ -620,7 +636,23 @@ export function KanbanBoard({ boardId, tasks, isLoading }: Props) {
               strategy={horizontalListSortingStrategy}
             >
               <div
-                ref={boardRef}
+                ref={(el) => {
+                  if (el) {
+                    el.addEventListener(
+                      'mousedown',
+                      handleScrollbarInteraction
+                    );
+                    el.addEventListener('mouseup', handleScrollbarRelease);
+                    el.addEventListener('mouseleave', () =>
+                      setIsScrollbarActive(false)
+                    );
+
+                    // Store ref
+                    if (boardRef.current !== el) {
+                      boardRef.current = el;
+                    }
+                  }
+                }}
                 className="scrollbar-thin scrollbar-track-transparent scrollbar-thumb-muted-foreground/50 flex h-full flex-shrink-0 gap-4 overflow-x-auto"
               >
                 {columns
@@ -654,6 +686,7 @@ export function KanbanBoard({ boardId, tasks, isLoading }: Props) {
                         selectedTasks={selectedTasks}
                         isMultiSelectMode={isMultiSelectMode}
                         onTaskSelect={handleTaskSelect}
+                        isScrollbarActive={isScrollbarActive}
                       />
                     );
                   })}
@@ -673,7 +706,12 @@ export function KanbanBoard({ boardId, tasks, isLoading }: Props) {
             }}
           >
             {MemoizedColumnOverlay}
-            {MemoizedTaskOverlay}
+            {activeTask && (
+              <LightweightTaskCard
+                task={activeTask}
+                isMinimalMode={isScrollbarActive}
+              />
+            )}
           </DragOverlay>
         </DndContext>
       </div>

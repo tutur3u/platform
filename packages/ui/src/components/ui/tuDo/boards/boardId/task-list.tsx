@@ -61,6 +61,7 @@ interface Props {
   selectedTasks?: Set<string>;
   isMultiSelectMode?: boolean;
   onTaskSelect?: (taskId: string, event: React.MouseEvent) => void;
+  isScrollbarActive?: boolean;
 }
 
 type SortOption =
@@ -115,6 +116,7 @@ export const BoardColumn = React.memo(function BoardColumn({
   selectedTasks,
   onTaskSelect,
   isMultiSelectMode,
+  isScrollbarActive = false,
 }: Props) {
   const params = useParams();
   const wsId = params.wsId as string;
@@ -147,8 +149,36 @@ export const BoardColumn = React.memo(function BoardColumn({
   const [sortPanelOpen, setSortPanelOpen] = useState(false);
   const [assigneesOpen, setAssigneesOpen] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
+  const [scrollbarTimeout, setScrollbarTimeout] =
+    useState<NodeJS.Timeout | null>(null);
 
   const searchInputRef = useRef<HTMLInputElement>(null);
+
+  // Scrollbar interaction handlers
+  const handleScrollbarMouseDown = useCallback(() => {
+    setIsScrollbarActive(true);
+    // Clear any existing timeout
+    if (scrollbarTimeout) {
+      clearTimeout(scrollbarTimeout);
+    }
+  }, [scrollbarTimeout]);
+
+  const handleScrollbarMouseUp = useCallback(() => {
+    // Set a timeout to deactivate minimal mode after scrollbar is released
+    const timeout = setTimeout(() => {
+      setIsScrollbarActive(false);
+    }, 500); // Keep minimal mode for 500ms after release for better UX
+    setScrollbarTimeout(timeout);
+  }, []);
+
+  const handleScrollbarMouseLeave = useCallback(() => {
+    // Deactivate minimal mode when mouse leaves scrollbar area
+    setIsScrollbarActive(false);
+    if (scrollbarTimeout) {
+      clearTimeout(scrollbarTimeout);
+      setScrollbarTimeout(null);
+    }
+  }, [scrollbarTimeout]);
 
   const {
     setNodeRef,
@@ -188,6 +218,15 @@ export const BoardColumn = React.memo(function BoardColumn({
       debouncedSearch.cancel();
     };
   }, [searchQuery, debouncedSearch]);
+
+  // Cleanup scrollbar timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (scrollbarTimeout) {
+        clearTimeout(scrollbarTimeout);
+      }
+    };
+  }, [scrollbarTimeout]);
 
   // Filter and sort tasks for this column
   const filteredAndSortedTasks = useMemo(() => {
@@ -926,7 +965,35 @@ export const BoardColumn = React.memo(function BoardColumn({
         </div>
       )}
 
-      <div className="max-h-[24rem] flex-1 space-y-1.5 overflow-y-auto p-3 pb-6">
+      <div
+        ref={(el) => {
+          if (el) {
+            // Add scrollbar interaction detection
+            const handleScrollbarInteraction = (e: Event) => {
+              const target = e.target as HTMLElement;
+              if (
+                target.classList.contains('scrollbar-thumb') ||
+                target.classList.contains('scrollbar-track') ||
+                target === el
+              ) {
+                handleScrollbarMouseDown();
+              }
+            };
+
+            el.addEventListener('mousedown', handleScrollbarInteraction);
+            el.addEventListener('mouseup', handleScrollbarMouseUp);
+            el.addEventListener('mouseleave', handleScrollbarMouseLeave);
+
+            // Cleanup function
+            return () => {
+              el.removeEventListener('mousedown', handleScrollbarInteraction);
+              el.removeEventListener('mouseup', handleScrollbarMouseUp);
+              el.removeEventListener('mouseleave', handleScrollbarMouseLeave);
+            };
+          }
+        }}
+        className="max-h-[24rem] flex-1 space-y-1.5 overflow-y-auto p-3 pb-6"
+      >
         {filteredAndSortedTasks.length === 0 ? (
           <div className="flex h-32 items-center justify-center text-muted-foreground">
             <div className="text-center">
@@ -956,6 +1023,7 @@ export const BoardColumn = React.memo(function BoardColumn({
               isSelected={isMultiSelectMode && selectedTasks?.has(task.id)}
               isMultiSelectMode={isMultiSelectMode}
               onSelect={onTaskSelect}
+              isMinimalMode={isScrollbarActive}
             />
           ))
         )}
