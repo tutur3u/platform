@@ -61,7 +61,7 @@ export function TaskDetailCard({
 
       <div
         ref={clickCardRef}
-        className="fixed z-[9999] max-w-sm rounded-lg border border-gray-200 bg-white shadow-xl duration-200 animate-in slide-in-from-bottom-2 dark:border-gray-700 dark:bg-gray-900"
+        className="slide-in-from-bottom-2 fixed z-[9999] max-w-sm animate-in rounded-lg border border-gray-200 bg-white shadow-xl duration-200 dark:border-gray-700 dark:bg-gray-900"
         style={{
           left: Math.max(
             10,
@@ -74,17 +74,17 @@ export function TaskDetailCard({
         }}
       >
         {/* Compact Header */}
-        <div className="rounded-t-lg border-b border-gray-100 bg-gradient-to-r from-blue-50 to-indigo-50 p-3 dark:border-gray-800 dark:from-blue-900/20 dark:to-indigo-900/20">
+        <div className="rounded-t-lg border-gray-100 border-b bg-gradient-to-r from-blue-50 to-indigo-50 p-3 dark:border-gray-800 dark:from-blue-900/20 dark:to-indigo-900/20">
           <div className="flex items-center justify-between">
             <div className="min-w-0 flex-1">
-              <h4 className="truncate text-sm font-semibold text-gray-800 dark:text-gray-100">
+              <h4 className="truncate font-semibold text-gray-800 text-sm dark:text-gray-100">
                 {clickedTask.name}
               </h4>
               <div className="mt-1 flex items-center gap-1">
                 <Badge variant="outline" className="px-1 py-0 text-xs">
                   {clickedTask.boardName || 'Unknown Board'}
                 </Badge>
-                <span className="text-xs text-muted-foreground">•</span>
+                <span className="text-muted-foreground text-xs">•</span>
                 <Badge variant="outline" className="px-1 py-0 text-xs">
                   {clickedTask.listName || 'Unknown List'}
                 </Badge>
@@ -94,7 +94,7 @@ export function TaskDetailCard({
               <Badge
                 variant="outline"
                 className={cn(
-                  'text-xs font-medium',
+                  'font-medium text-xs',
                   clickedTask.status === 'done' &&
                     'border-green-200 bg-green-50 text-green-700 dark:border-green-800 dark:bg-green-900/20 dark:text-green-400',
                   clickedTask.status === 'closed' &&
@@ -141,7 +141,7 @@ export function TaskDetailCard({
         {/* Compact Content */}
         <div className="space-y-2 p-3">
           {clickedTask.description && (
-            <p className="line-clamp-2 text-xs text-gray-600 dark:text-gray-400">
+            <p className="scrollbar-thin scrollbar-track-transparent scrollbar-thumb-gray-400/30 hover:scrollbar-thumb-gray-400/50 max-h-24 overflow-y-auto whitespace-pre-line text-gray-600 text-xs dark:text-gray-400">
               {clickedTask.description}
             </p>
           )}
@@ -213,10 +213,10 @@ export function TaskDetailCard({
 
           {clickedTask.assignee_name && (
             <div className="flex items-center gap-2 pt-1">
-              <div className="flex h-5 w-5 items-center justify-center rounded-full bg-gradient-to-br from-blue-400 to-purple-500 text-xs font-medium text-white">
+              <div className="flex h-5 w-5 items-center justify-center rounded-full bg-gradient-to-br from-blue-400 to-purple-500 font-medium text-white text-xs">
                 {clickedTask.assignee_name.charAt(0).toUpperCase()}
               </div>
-              <span className="text-xs font-medium">
+              <span className="font-medium text-xs">
                 {clickedTask.assignee_name}
               </span>
             </div>
@@ -252,7 +252,7 @@ export function TaskDetailCard({
             clickedTask.status !== 'closed' && (
               <div className="flex items-center gap-1 rounded border border-red-200 bg-red-50 p-2 dark:border-red-800 dark:bg-red-900/20">
                 <AlertTriangle className="h-3 w-3 text-red-500" />
-                <span className="text-xs font-medium text-red-600 dark:text-red-400">
+                <span className="font-medium text-red-600 text-xs dark:text-red-400">
                   Overdue by{' '}
                   {Math.ceil(
                     (Date.now() - new Date(clickedTask.end_date).getTime()) /

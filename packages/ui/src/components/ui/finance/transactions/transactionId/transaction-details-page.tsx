@@ -1,5 +1,3 @@
-import { Bill } from './bill';
-import { DetailObjects } from './objects';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { CalendarIcon, DollarSign, Wallet } from '@tuturuuu/ui/icons';
@@ -10,6 +8,9 @@ import moment from 'moment';
 import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import { Card } from '../../../card';
+import { Bill } from './bill';
+import { DetailObjects } from './objects';
 
 interface Props {
   wsId: string;
@@ -40,9 +41,9 @@ export default async function TransactionDetailsPage({
       />
       <Separator className="my-4" />
       <div className="grid h-fit gap-4 md:grid-cols-2">
-        <div className="space-y-4 overflow-auto">
-          <div className="grid h-fit gap-2 rounded-lg border p-4">
-            <div className="text-lg font-semibold">
+        <Card className="space-y-4 overflow-auto">
+          <div className="grid h-fit gap-2 p-4">
+            <div className="font-semibold text-lg">
               {t('invoices.basic-info')}
             </div>
             <Separator />
@@ -80,19 +81,17 @@ export default async function TransactionDetailsPage({
               objects={objects}
             />
           )}
-        </div>
+        </Card>
 
-        <div className="grid h-fit gap-4">
-          <div className="h-full rounded-lg border p-4">
-            <div className="grid h-full content-start gap-2">
-              <div className="text-lg font-semibold">
-                {t('ai_chat.upload_files')}
-              </div>
-              <Separator className="mb-2" />
-              <Bill wsId={wsId} transactionId={transactionId} />
+        <Card className="grid h-fit gap-4 p-4">
+          <div className="grid h-full content-start gap-2">
+            <div className="font-semibold text-lg">
+              {t('ai_chat.upload_files')}
             </div>
+            <Separator className="mb-2" />
+            <Bill wsId={wsId} transactionId={transactionId} />
           </div>
-        </div>
+        </Card>
       </div>
     </div>
   );

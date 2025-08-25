@@ -64,8 +64,7 @@ import {
   isTomorrow,
   isYesterday,
 } from 'date-fns';
-import { useEffect, useMemo, useRef, useState } from 'react';
-import React from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 
 interface Props {
   task: Task;
@@ -89,9 +88,9 @@ export function LightweightTaskCard({ task }: { task: Task }) {
   };
 
   return (
-    <Card className="pointer-events-none w-full max-w-[350px] scale-105 border-2 border-primary/20 bg-background opacity-95 shadow-xl ring-2 ring-primary/20 select-none">
+    <Card className="pointer-events-none w-full max-w-[350px] scale-105 select-none border-2 border-primary/20 bg-background opacity-95 shadow-xl ring-2 ring-primary/20">
       <div className="flex flex-col gap-2 p-4">
-        <div className="truncate text-base font-semibold">{task.name}</div>
+        <div className="truncate font-semibold text-base">{task.name}</div>
         <div className="flex items-center gap-2">
           {task.priority && (
             <Badge variant="secondary" className="text-xs">
@@ -99,7 +98,7 @@ export function LightweightTaskCard({ task }: { task: Task }) {
             </Badge>
           )}
           {task.tags && task.tags.length > 0 && (
-            <span className="text-xs text-muted-foreground">
+            <span className="text-muted-foreground text-xs">
               +{task.tags.length} tags
             </span>
           )}
@@ -463,14 +462,14 @@ export const TaskCard = React.memo(function TaskCard({
     >
       {/* Overdue indicator */}
       {isOverdue && !task.archived && (
-        <div className="absolute top-0 right-0 h-0 w-0 border-t-[20px] border-l-[20px] border-t-dynamic-red/80 border-l-transparent">
-          <AlertCircle className="absolute -top-4 -right-[18px] h-3 w-3" />
+        <div className="absolute top-0 right-0 h-0 w-0 border-t-[20px] border-t-dynamic-red/80 border-l-[20px] border-l-transparent">
+          <AlertCircle className="-top-4 -right-[18px] absolute h-3 w-3" />
         </div>
       )}
 
       {/* Selection indicator */}
       {isMultiSelectMode && isSelected && (
-        <div className="absolute top-2 left-2 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground shadow-sm">
+        <div className="absolute top-2 left-2 flex h-5 w-5 items-center justify-center rounded-full bg-primary font-bold text-primary-foreground text-xs shadow-sm">
           ✓
         </div>
       )}
@@ -494,7 +493,7 @@ export const TaskCard = React.memo(function TaskCard({
                       setEditDescription(task.description || '');
                     }
                   }}
-                  className="text-sm font-semibold"
+                  className="font-semibold text-sm"
                   autoFocus
                 />
                 <Textarea
@@ -532,10 +531,10 @@ export const TaskCard = React.memo(function TaskCard({
                   <button
                     type="button"
                     className={cn(
-                      'w-full cursor-pointer text-left text-xs leading-tight font-semibold transition-colors',
+                      'w-full cursor-pointer text-left font-semibold text-xs leading-tight transition-colors',
                       task.archived
                         ? 'text-muted-foreground line-through'
-                        : 'text-foreground group-hover:text-foreground/90 hover:text-primary'
+                        : 'text-foreground hover:text-primary group-hover:text-foreground/90'
                     )}
                     onClick={() => setIsEditing(true)}
                     aria-label={`Edit task: ${task.name}`}
@@ -548,7 +547,7 @@ export const TaskCard = React.memo(function TaskCard({
                   <div className="mb-1">
                     <button
                       type="button"
-                      className="line-clamp-2 w-full cursor-pointer border-none bg-transparent p-0 text-left text-xs text-muted-foreground hover:text-foreground/80 focus:outline-none"
+                      className="scrollbar-none group-hover:scrollbar-thin scrollbar-track-transparent scrollbar-thumb-muted-foreground/30 group-hover:scrollbar-thumb-muted-foreground/50 max-h-20 w-full cursor-pointer overflow-y-auto whitespace-pre-line border-none bg-transparent p-0 text-left text-muted-foreground text-xs hover:text-foreground/80 focus:outline-none"
                       title={task.description}
                       onClick={() => setIsEditing(true)}
                       onKeyDown={(e) => {
@@ -595,7 +594,7 @@ export const TaskCard = React.memo(function TaskCard({
                 >
                   <div className="min-w-[320px] space-y-4 p-4">
                     <div className="flex items-center justify-between">
-                      <Label className="text-sm font-semibold">
+                      <Label className="font-semibold text-sm">
                         Set Due Date
                       </Label>
                       <Button
@@ -649,7 +648,7 @@ export const TaskCard = React.memo(function TaskCard({
                     </div>
 
                     <div className="border-t pt-3">
-                      <Label className="mb-2 block text-xs text-muted-foreground">
+                      <Label className="mb-2 block text-muted-foreground text-xs">
                         Or pick a specific date:
                       </Label>
                       <DateTimePicker
@@ -842,7 +841,7 @@ export const TaskCard = React.memo(function TaskCard({
         {/* Bottom Row: Three-column layout for assignee, priority/tags, and checkbox, with only one tag visible and +N tooltip for extras */}
         <div className="flex h-8 min-w-0 items-center gap-x-1 overflow-hidden whitespace-nowrap">
           {/* Assignee: left, not cut off */}
-          <div className="max-w-[120px] min-w-0 flex-shrink-0 truncate overflow-hidden">
+          <div className="min-w-0 max-w-[120px] flex-shrink-0 overflow-hidden truncate">
             <AssigneeSelect
               taskId={task.id}
               assignees={task.assignees}
@@ -851,17 +850,17 @@ export const TaskCard = React.memo(function TaskCard({
           </div>
           {/* Priority */}
           {!task.archived && task.priority && (
-            <div className="max-w-[80px] min-w-0 overflow-hidden">
+            <div className="min-w-0 max-w-[80px] overflow-hidden">
               {getPriorityIndicator()}
             </div>
           )}
           {/* Tags and +N: do NOT shrink */}
           {!task.archived && task.tags && task.tags.length > 0 && (
-            <div className="max-w-[180px] min-w-0">
+            <div className="min-w-0 max-w-[180px]">
               <TaskTagsDisplay
                 tags={task.tags}
                 maxDisplay={1}
-                className="mt-0 h-6 truncate rounded-full px-1.5 py-0.5 text-[10px] font-medium"
+                className="mt-0 h-6 truncate rounded-full px-1.5 py-0.5 font-medium text-[10px]"
                 clickable={false}
               />
             </div>
@@ -903,10 +902,10 @@ export const TaskCard = React.memo(function TaskCard({
 
       {/* Footer - Enhanced priority indicator */}
       {!task.archived && task.priority === 'critical' && (
-        <div className="mt-3 flex items-center justify-center border-t border-dynamic-red/20 pt-2">
+        <div className="mt-3 flex items-center justify-center border-dynamic-red/20 border-t pt-2">
           <div className="flex items-center gap-1 text-dynamic-red/80">
             <Sparkles className="h-3 w-3 animate-pulse" />
-            <span className="text-[10px] font-medium">Urgent Priority</span>
+            <span className="font-medium text-[10px]">Urgent Priority</span>
           </div>
         </div>
       )}

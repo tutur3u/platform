@@ -2,11 +2,11 @@ import { createClient } from '@tuturuuu/supabase/next/server';
 import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
 import { isAllDayEvent } from '@tuturuuu/ui/hooks/calendar-utils';
-import { Calendar, Clock, MapPin } from '@tuturuuu/ui/icons';
-import { format, isThisWeek, isToday, isTomorrow } from 'date-fns';
+import { Calendar, MapPin } from '@tuturuuu/ui/icons';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import Link from 'next/link';
+import UpcomingEventDetails from './upcoming-event-details';
 
 interface UpcomingCalendarEventsProps {
   wsId: string;
@@ -42,90 +42,88 @@ export default async function UpcomingCalendarEvents({
   const upcomingEvents =
     allEvents?.filter((event) => !isAllDayEvent(event)).slice(0, 5) || [];
 
-  const getDateLabel = (dateString: string) => {
-    const date = new Date(dateString);
-    if (isToday(date)) return 'Today';
-    if (isTomorrow(date)) return 'Tomorrow';
-    if (isThisWeek(date)) return format(date, 'EEEE');
-    return format(date, 'MMM d');
-  };
-
-  const formatEventTime = (startAt: string, endAt: string) => {
-    const start = new Date(startAt);
-    const end = new Date(endAt);
-
-    if (isToday(start)) {
-      return `${format(start, 'h:mm a')} - ${format(end, 'h:mm a')}`;
-    }
-
-    return `${format(start, 'MMM d, h:mm a')} - ${format(end, 'h:mm a')}`;
-  };
-
-  const getRelativeTime = (startAt: string) => dayjs(startAt).fromNow();
-
   return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+    <Card className="overflow-hidden border-dynamic-cyan/20 transition-all duration-300 hover:shadow-lg">
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 border-dynamic-cyan/10 border-b bg-gradient-to-r from-dynamic-cyan/5 to-dynamic-blue/5 pb-3">
         <CardTitle className="flex items-center gap-2 font-semibold text-base">
-          <Calendar className="h-5 w-5" />
+          <div className="rounded-lg bg-dynamic-cyan/10 p-1.5 text-dynamic-cyan">
+            <Calendar className="h-4 w-4" />
+          </div>
           <div className="line-clamp-1">Next Up on Calendar</div>
         </CardTitle>
         <Link href={`/${wsId}/calendar`}>
-          <Button variant="ghost" size="sm" className="h-8 px-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-8 px-2 transition-colors hover:bg-dynamic-cyan/10 hover:text-dynamic-cyan"
+          >
             <Calendar className="mr-1 h-3 w-3" />
             View Calendar
           </Button>
         </Link>
       </CardHeader>
-      <CardContent className="space-y-3">
+      <CardContent className="h-full space-y-6 p-6">
         {upcomingEvents && upcomingEvents.length > 0 ? (
-          upcomingEvents.map((event) => (
-            <div
-              key={event.id}
-              className="flex items-start gap-3 rounded-lg border bg-card/50 p-3 transition-colors hover:bg-muted/50"
-            >
-              <div className="flex-1 space-y-1">
-                <div className="line-clamp-1 font-medium">
-                  {event.title || 'Untitled Event'}
-                </div>
-
-                {event.description && (
-                  <p className="line-clamp-2 text-muted-foreground text-xs">
-                    {event.description}
-                  </p>
-                )}
-
-                <div className="flex flex-wrap items-center gap-2 text-muted-foreground text-xs">
-                  <div className="flex items-center gap-1">
-                    <Clock className="h-3 w-3" />
-                    <span>{getDateLabel(event.start_at)}</span>
-                  </div>
-                  <span>•</span>
-                  <span>{formatEventTime(event.start_at, event.end_at)}</span>
-                  <span>•</span>
-                  <span>{getRelativeTime(event.start_at)}</span>
-                </div>
-
-                {event.location && (
-                  <div className="flex items-center gap-2 text-muted-foreground text-xs">
-                    <div className="flex items-start gap-1">
-                      <MapPin className="h-3 w-3 flex-none" />
-                      <span className="line-clamp-2">{event.location}</span>
+          <div className="space-y-3">
+            {upcomingEvents.map((event) => (
+              <div
+                key={event.id}
+                className="group rounded-xl border border-dynamic-cyan/10 bg-gradient-to-br from-dynamic-cyan/5 to-dynamic-blue/5 p-4 transition-all duration-300 hover:shadow-dynamic-cyan/10 hover:shadow-md"
+              >
+                <div className="flex items-start gap-3">
+                  <div className="flex-1 space-y-2">
+                    <div className="line-clamp-1 font-semibold text-sm">
+                      {event.title || 'Untitled Event'}
                     </div>
+
+                    {event.description && (
+                      <p className="line-clamp-2 text-dynamic-cyan/70 text-xs">
+                        {event.description}
+                      </p>
+                    )}
+
+                    <UpcomingEventDetails event={event} />
+
+                    {event.location && (
+                      <div className="flex items-center gap-2 text-dynamic-cyan/60 text-xs">
+                        <div className="flex items-start gap-1">
+                          <MapPin className="h-3 w-3 flex-none text-dynamic-cyan/80" />
+                          <span className="line-clamp-2 font-medium">
+                            {event.location}
+                          </span>
+                        </div>
+                      </div>
+                    )}
                   </div>
-                )}
+                </div>
               </div>
-            </div>
-          ))
+            ))}
+          </div>
         ) : (
-          <div className="py-8 text-center text-muted-foreground">
-            <div className="mb-2">
-              <Calendar className="mx-auto h-8 w-8 opacity-50" />
+          <div className="py-8 text-center">
+            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full border border-dynamic-gray/20 bg-gradient-to-br from-dynamic-gray/10 to-dynamic-slate/10">
+              <Calendar className="h-8 w-8 text-dynamic-gray/60" />
             </div>
-            <p className="text-sm">No upcoming events</p>
-            <p className="text-xs">
-              Your calendar events for the next 7 days will appear here
-            </p>
+            <div className="space-y-2">
+              <h3 className="font-semibold text-base text-dynamic-gray">
+                No upcoming events
+              </h3>
+              <p className="mx-auto max-w-xs text-dynamic-gray/60 text-sm">
+                Your calendar events for the next 7 days will appear here
+              </p>
+            </div>
+            <div className="mt-6">
+              <Link href={`/${wsId}/calendar`}>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="border-dynamic-cyan/20 text-dynamic-cyan transition-all duration-200 hover:border-dynamic-cyan/30 hover:bg-dynamic-cyan/10"
+                >
+                  <Calendar className="mr-2 h-4 w-4" />
+                  View Calendar
+                </Button>
+              </Link>
+            </div>
           </div>
         )}
       </CardContent>

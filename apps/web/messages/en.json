@@ -839,7 +839,13 @@
     "operational_structure": "Operational Structure",
     "structure": "Structure",
     "usage": "Usage",
-    "inquiries": "Inquiries"
+    "inquiries": "Inquiries",
+    "history": "History",
+    "categories": "Categories",
+    "settings": "Settings",
+    "goals": "Goals",
+    "overview": "Overview",
+    "timer": "Timer"
   },
   "usage": {
     "description": "Monitor workspace activity, feature usage, and system metrics across your organization",

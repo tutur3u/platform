@@ -1,4 +1,3 @@
-import { invoiceColumns } from './columns';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import type { Invoice } from '@tuturuuu/types/primitives/Invoice';
 import { Button } from '@tuturuuu/ui/button';
@@ -6,8 +5,10 @@ import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { CustomDataTable } from '@tuturuuu/ui/custom/tables/custom-data-table';
 import { Plus } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
+import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';
+import { invoiceColumns } from './columns';
 
 interface Props {
   wsId: string;
@@ -18,8 +19,12 @@ interface Props {
   };
 }
 
-export default async function InvoicesPage({ wsId, searchParams }: Props) {
+export default async function InvoicesPage({ wsId: id, searchParams }: Props) {
   const t = await getTranslations();
+
+  const workspace = await getWorkspace(id);
+  const wsId = workspace.id;
+
   const { data: rawData, count } = await getData(wsId, searchParams);
 
   const data = rawData.map((d) => ({
