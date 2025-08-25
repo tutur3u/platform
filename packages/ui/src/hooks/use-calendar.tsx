@@ -230,6 +230,7 @@ export const CalendarProvider = ({
         const originalId = eventId.includes('-')
           ? eventId.split('-')[0]
           : eventId;
+        if (!originalId) return 0;
         const event = events.find((e: CalendarEvent) => e.id === originalId);
         if (!event) return 0;
 
@@ -272,7 +273,7 @@ export const CalendarProvider = ({
         ) as number[];
 
         const level = Math.max(...prevEventLevels) + 1;
-        memo.set(originalId, level);
+        memo.set(originalId!, level);
         return level;
       };
       return compute(eventId);
@@ -1392,9 +1393,6 @@ export const CalendarProvider = ({
 export const useCalendar = () => {
   const context = useContext(CalendarContext);
   if (context === undefined)
-    throw new Error('useCalendar() must be used within a CalendarProvider.');
-  return context;
-};
     throw new Error('useCalendar() must be used within a CalendarProvider.');
   return context;
 };
