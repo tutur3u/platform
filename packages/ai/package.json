@@ -40,6 +40,7 @@
     "next": "^15.5.0",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
+    "streamdown": "^1.0.12",
     "zod": "^4.1.1"
   },
   "devDependencies": {
