@@ -168,19 +168,48 @@ export function ActivityHeatmap({ dailyActivity }: ActivityHeatmapProps) {
         ) >= 14);
 
     return isNewUser || changedViewMode || isPeriodicReminder;
-  }, [settings.showOnboardingTips, onboardingState, settings.viewMode]);
+  }, [
+    settings.showOnboardingTips,
+    settings.viewMode,
+    onboardingState.showTips,
+    onboardingState.viewCount,
+    onboardingState.lastViewMode,
+    onboardingState.dismissedAt,
+  ]);
 
   // Track view mode changes and update count
   useEffect(() => {
-    if (settings.viewMode !== onboardingState.lastViewMode) {
+    setOnboardingState((currentState) => {
+      if (settings.viewMode !== currentState.lastViewMode) {
+        const newState = {
+          ...currentState,
+          viewCount: currentState.viewCount + 1,
+          lastViewMode: settings.viewMode,
+          showTips: true, // Reset to show tips when view mode changes
+          dismissedAt: null,
+        };
+
+        if (typeof window !== 'undefined') {
+          localStorage.setItem(
+            'time-tracker-onboarding',
+            JSON.stringify(newState)
+          );
+        }
+
+        return newState;
+      }
+      return currentState;
+    });
+  }, [settings.viewMode]);
+
+  // Handle tip dismissal
+  const handleDismissTips = useCallback(() => {
+    setOnboardingState((currentState) => {
       const newState = {
-        ...onboardingState,
-        viewCount: onboardingState.viewCount + 1,
-        lastViewMode: settings.viewMode,
-        showTips: true, // Reset to show tips when view mode changes
-        dismissedAt: null,
+        ...currentState,
+        showTips: false,
+        dismissedAt: new Date().toISOString(),
       };
-      setOnboardingState(newState);
 
       if (typeof window !== 'undefined') {
         localStorage.setItem(
@@ -188,30 +217,19 @@ export function ActivityHeatmap({ dailyActivity }: ActivityHeatmapProps) {
           JSON.stringify(newState)
         );
       }
-    }
-  }, [settings.viewMode, onboardingState]);
 
-  // Handle tip dismissal
-  const handleDismissTips = useCallback(() => {
-    const newState = {
-      ...onboardingState,
-      showTips: false,
-      dismissedAt: new Date().toISOString(),
-    };
-    setOnboardingState(newState);
-
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('time-tracker-onboarding', JSON.stringify(newState));
-    }
+      return newState;
+    });
 
     // Clear auto-hide timer if active
     if (tipAutoHideTimer) {
       clearTimeout(tipAutoHideTimer);
       setTipAutoHideTimer(null);
     }
-  }, [onboardingState, tipAutoHideTimer]);
+  }, [tipAutoHideTimer]);
 
   // Set up auto-hide timer when tips are shown (optional - can be disabled)
+  // biome-ignore lint/correctness/useExhaustiveDependencies(handleDismissTips): suppress dependency array linting
   useEffect(() => {
     if (shouldShowOnboardingTips && onboardingState.viewCount >= 5) {
       // Only auto-hide for users who've seen tips multiple times
@@ -225,7 +243,7 @@ export function ActivityHeatmap({ dailyActivity }: ActivityHeatmapProps) {
         clearTimeout(timer);
       };
     }
-  }, [shouldShowOnboardingTips, onboardingState.viewCount, handleDismissTips]);
+  }, [shouldShowOnboardingTips, onboardingState.viewCount]);
 
   // Cleanup timer on unmount
   useEffect(() => {
