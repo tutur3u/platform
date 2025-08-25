@@ -17,5 +17,5 @@
     "@types/node": "^24.3.0",
     "@types/react": "^19.1.11"
   },
-  "packageManager": "bun@1.2.20"
+  "packageManager": "bun@1.2.21"
 }

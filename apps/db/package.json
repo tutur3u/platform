@@ -22,5 +22,5 @@
     "supabase": "^2.39.2",
     "typescript": "^5.9.2"
   },
-  "packageManager": "bun@1.2.20"
+  "packageManager": "bun@1.2.21"
 }
