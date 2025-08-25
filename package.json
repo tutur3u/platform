@@ -77,7 +77,7 @@
   "engines": {
     "node": ">=22"
   },
-  "packageManager": "bun@1.2.20",
+  "packageManager": "bun@1.2.21",
   "workspaces": ["apps/*", "packages/*"],
   "trustedDependencies": [
     "@tailwindcss/oxide",

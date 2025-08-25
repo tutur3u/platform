@@ -20,5 +20,5 @@
     ".": "./index.ts",
     "./*": "./src/*.ts"
   },
-  "packageManager": "bun@1.2.20"
+  "packageManager": "bun@1.2.21"
 }
