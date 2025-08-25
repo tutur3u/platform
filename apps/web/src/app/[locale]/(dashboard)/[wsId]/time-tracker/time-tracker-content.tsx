@@ -1,7 +1,6 @@
 /** biome-ignore-all lint/a11y/noSvgWithoutTitle: <> */
 'use client';
 
-import { priorityCompare } from '@/lib/task-helper';
 import { useQuery } from '@tanstack/react-query';
 import type { TimeTrackingCategory } from '@tuturuuu/types/db';
 import type { TaskPriority } from '@tuturuuu/types/primitives/Priority';
@@ -51,7 +50,9 @@ import { cn } from '@tuturuuu/utils/format';
 import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone';
 import utc from 'dayjs/plugin/utc';
+import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { priorityCompare } from '@/lib/task-helper';
 import { TimerControls } from './components/timer-controls';
 import { UserSelector } from './components/user-selector';
 import { useCurrentUser } from './hooks/use-current-user';
@@ -442,24 +443,24 @@ export default function TimeTrackerContent({
               ),
             fallback: { sessions: [] },
           },
-          {
-            name: 'stats',
-            call: () =>
-              apiCall(
-                `/api/v1/workspaces/${wsId}/time-tracking/sessions?type=stats${userParam}`
-              ),
-            fallback: {
-              stats: { todayTime: 0, weekTime: 0, monthTime: 0, streak: 0 },
-            },
-          },
-          {
-            name: 'goals',
-            call: () =>
-              apiCall(
-                `/api/v1/workspaces/${wsId}/time-tracking/goals${goalsUserParam}`
-              ),
-            fallback: { goals: [] },
-          },
+          // {
+          //   name: 'stats',
+          //   call: () =>
+          //     apiCall(
+          //       `/api/v1/workspaces/${wsId}/time-tracking/sessions?type=stats${userParam}`
+          //     ),
+          //   fallback: {
+          //     stats: { todayTime: 0, weekTime: 0, monthTime: 0, streak: 0 },
+          //   },
+          // },
+          // {
+          //   name: 'goals',
+          //   call: () =>
+          //     apiCall(
+          //       `/api/v1/workspaces/${wsId}/time-tracking/goals${goalsUserParam}`
+          //     ),
+          //   fallback: { goals: [] },
+          // },
           {
             name: 'tasks',
             call: () => apiCall(`/api/v1/workspaces/${wsId}/tasks?limit=100`),
@@ -1531,6 +1532,15 @@ export default function TimeTrackerContent({
                                   No tasks available. Create tasks in your
                                   project boards to see them here.
                                 </p>
+                                <Link href={`/${wsId}/tasks/boards`}>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="text-xs"
+                                  >
+                                    Go to Tasks Tab
+                                  </Button>
+                                </Link>
                               </div>
                             );
                           }
@@ -1793,12 +1803,6 @@ export default function TimeTrackerContent({
                         formatDuration={formatDuration}
                         apiCall={apiCall}
                         isDraggingTask={isDraggingTask}
-                        onGoToTasksTab={() => {
-                          setSidebarView('tasks');
-                          toast.success(
-                            'Switched to Tasks tab - create your first task!'
-                          );
-                        }}
                         currentUserId={currentUserId}
                       />
                     </div>
