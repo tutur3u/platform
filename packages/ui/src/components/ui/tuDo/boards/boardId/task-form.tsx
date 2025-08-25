@@ -50,6 +50,7 @@ export function TaskForm({ listId, onTaskCreated }: Props) {
   const [endDate, setEndDate] = useState<Date | undefined>();
   const [selectedAssignees, setSelectedAssignees] = useState<string[]>([]);
   const [tags, setTags] = useState<string[]>([]);
+  const [isPersonal, setIsPersonal] = useState(false);
 
   const params = useParams();
   const wsId = params.wsId as string;
@@ -65,6 +66,19 @@ export function TaskForm({ listId, onTaskCreated }: Props) {
     },
     enabled: !!wsId && isAdding,
   });
+
+  useEffect(() => {
+    const checkIsPersonal = async () => {
+      if (wsId === 'personal') {
+        setIsPersonal(true);
+        return;
+      }
+      const response = await fetch(`/api/workspaces/${wsId}/is-personal`);
+      const { isPersonal } = await response.json();
+      setIsPersonal(isPersonal);
+    };
+    checkIsPersonal();
+  }, [wsId]);
 
   const handleReset = () => {
     setName('');
@@ -109,7 +123,7 @@ export function TaskForm({ listId, onTaskCreated }: Props) {
       const newTask = await createTask(supabase, listId, taskData);
 
       // Add assignees if any selected
-      if (wsId === 'personal') {
+      if (isPersonal) {
         await supabase.from('task_assignees').insert({
           task_id: newTask.id,
           user_id: members[0].id,
@@ -276,7 +290,7 @@ export function TaskForm({ listId, onTaskCreated }: Props) {
           </div>
 
           {/* Quick Assignee Selection */}
-          {members.length > 0 && wsId !== 'personal' && (
+          {members.length > 0 && !isPersonal && (
             <div className="space-y-2">
               <Label className="text-xs font-medium">Quick Assign</Label>
               <div className="flex flex-wrap gap-2">
