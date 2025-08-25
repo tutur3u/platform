@@ -1,8 +1,6 @@
 import type { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
-import { useCalendar } from '../../../../hooks/use-calendar';
-import { useCalendarSync } from '../../../../hooks/use-calendar-sync';
-import { useCalendarSettings } from './settings/settings-context';
-import { useTimezone } from '../../../../hooks/use-timezone';
+import { useCalendar } from '@tuturuuu/ui/hooks/use-calendar';
+import { useCalendarSync } from '@tuturuuu/ui/hooks/use-calendar-sync';
 import { getEventStyles } from '@tuturuuu/utils/color-helper';
 import { cn } from '@tuturuuu/utils/format';
 import dayjs from 'dayjs';
@@ -10,13 +8,11 @@ import isBetween from 'dayjs/plugin/isBetween';
 import isSameOrAfter from 'dayjs/plugin/isSameOrAfter';
 import isSameOrBefore from 'dayjs/plugin/isSameOrBefore';
 import timezone from 'dayjs/plugin/timezone';
-import utc from 'dayjs/plugin/utc';
 import { ChevronDown, ChevronUp } from 'lucide-react';
 import React, { useCallback, useMemo, useRef, useState } from 'react';
 import { MIN_COLUMN_WIDTH } from './config';
-import { TimeColumnHeaders } from './time-column-headers';
+import { useCalendarSettings } from './settings/settings-context';
 
-dayjs.extend(utc);
 dayjs.extend(isBetween);
 dayjs.extend(isSameOrAfter);
 dayjs.extend(isSameOrBefore);
@@ -68,15 +64,16 @@ const EventContent = ({ event }: { event: CalendarEvent }) => (
   <>
     {typeof event.google_event_id === 'string' &&
       event.google_event_id.trim() !== '' && (
-        <svg
-          className="mr-1 inline-block h-[1.25em] w-[1.25em] align-middle opacity-80 dark:opacity-90"
-          viewBox="0 0 24 24"
-          fill="currentColor"
+        <span
+          className="mr-1 inline-block h-[1.25em] w-[1.25em] bg-center bg-contain bg-no-repeat align-middle opacity-80 dark:opacity-90"
+          style={{
+            backgroundImage: 'url("/media/google-calendar-icon.png")',
+          }}
+          title="Synced from Google Calendar"
           data-testid="google-calendar-logo"
-          aria-hidden="true"
-        >
-          <path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z" />
-        </svg>
+          role="img"
+          aria-label="Google Calendar"
+        />
       )}
     <span className="truncate">{event.title}</span>
   </>
@@ -88,14 +85,7 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
   const { settings } = useCalendarSettings();
   const showWeekends = settings.appearance.showWeekends;
   const tz = settings?.timezone?.timezone;
-  const secondaryTz = settings?.timezone?.secondaryTimezone;
-  const showSecondary = Boolean(
-    settings?.timezone?.showSecondaryTimezone && secondaryTz
-  );
   const [expandedDates, setExpandedDates] = useState<string[]>([]);
-
-  // Use shared timezone utility
-  const { toTz } = useTimezone(tz);
 
   // Drag and drop state
   const [dragState, setDragState] = useState<DragState>({
@@ -122,35 +112,33 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
   // Add refs for drag threshold and timer
   const dragStartPos = useRef<{ x: number; y: number } | null>(null);
   const dragInitiated = useRef(false);
-  const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const longPressTimer = useRef<NodeJS.Timeout | null>(null);
   const DRAG_THRESHOLD = 5; // px
   const LONG_PRESS_DURATION = 250; // ms
 
   // Constants for layout
   const EVENT_LEFT_OFFSET = 4; // 4px offset from left edge
-  const EVENT_HEIGHT_REM = 1.35;
-  const ROW_HEIGHT_REM = 1.6; // Used for vertical placement of rows
-  const ROW_TOP_OFFSET_REM = 0.25; // Additional top offset per row
-  const EXPANSION_BTN_ROW_MULTIPLIER = 1.7;
-  const BAR_BASE_HEIGHT_REM = 1.9;
-  const HEIGHT_PER_EVENT_REM = 1.75;
 
   // Filter out weekend days if showWeekends is false
   const visibleDates = showWeekends
     ? dates
     : dates.filter((date) => {
-        const day = toTz(date).day();
+        const day =
+          tz === 'auto' ? dayjs(date).day() : dayjs(date).tz(tz).day();
         return day !== 0 && day !== 6; // 0 = Sunday, 6 = Saturday
       });
 
   // Stable drag event handlers using refs
   const handleDragStart = useCallback(
-    (x: number, y: number, eventSpan: EventSpan) => {
+    (e: React.MouseEvent, eventSpan: EventSpan) => {
       // Don't allow dragging locked events
       if (eventSpan.event.locked) return;
 
       // Don't allow dragging if there are no visible dates or only one date
       if (visibleDates.length <= 1) return;
+
+      e.preventDefault();
+      e.stopPropagation();
 
       const rect = containerRef.current?.getBoundingClientRect();
       if (!rect) return;
@@ -166,10 +154,10 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
         isDragging: true,
         draggedEvent: eventSpan.event,
         draggedEventSpan: eventSpan,
-        startX: x,
-        startY: y,
-        currentX: x,
-        currentY: y,
+        startX: e.clientX,
+        startY: e.clientY,
+        currentX: e.clientX,
+        currentY: e.clientY,
         targetDateIndex: eventSpan.startIndex,
         originalDateIndex: eventSpan.startIndex,
         previewSpan,
@@ -182,7 +170,7 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
     [visibleDates.length]
   );
 
-  // Stable drag move handler (mouse)
+  // Stable drag move handler
   const handleDragMove = useCallback(
     (e: MouseEvent) => {
       const currentDragState = dragStateRef.current;
@@ -230,52 +218,6 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
     [visibleDates.length]
   );
 
-  // Stable drag move handler (touch)
-  const handleTouchDragMove = useCallback(
-    (e: TouchEvent) => {
-      const currentDragState = dragStateRef.current;
-      if (
-        !currentDragState.isDragging ||
-        !containerRef.current ||
-        !currentDragState.draggedEventSpan
-      ) {
-        return;
-      }
-      const touch = e.touches[0] || e.changedTouches?.[0];
-      if (!touch) return;
-      // Prevent viewport scrolling while dragging
-      e.preventDefault();
-      const rect = containerRef.current.getBoundingClientRect();
-      const relativeX = touch.clientX - rect.left;
-      const columnWidth = rect.width / visibleDates.length;
-      const targetDateIndex = Math.floor(relativeX / columnWidth);
-      const clampedTargetIndex = Math.max(
-        0,
-        Math.min(targetDateIndex, visibleDates.length - 1)
-      );
-      const originalSpan = currentDragState.draggedEventSpan.span;
-      const newStartIndex = clampedTargetIndex;
-      const newEndIndex = Math.min(
-        newStartIndex + originalSpan - 1,
-        visibleDates.length - 1
-      );
-      const adjustedSpan = newEndIndex - newStartIndex + 1;
-      const previewSpan = {
-        startIndex: newStartIndex,
-        span: adjustedSpan,
-        row: currentDragState.draggedEventSpan.row,
-      };
-      setDragState((prev) => ({
-        ...prev,
-        currentX: touch.clientX,
-        currentY: touch.clientY,
-        targetDateIndex: clampedTargetIndex,
-        previewSpan,
-      }));
-    },
-    [visibleDates.length]
-  );
-
   // Stable drag end handler
   const handleDragEnd = useCallback(async () => {
     const currentDragState = dragStateRef.current;
@@ -294,6 +236,10 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
       console.warn('Invalid original date index for drag operation');
       return;
     }
+
+    // Helper for dayjs + timezone
+    const getDayjsDate = (d: string | Date) =>
+      tz === 'auto' ? dayjs(d) : dayjs(d).tz(tz);
 
     // Reset drag state and cursor
     setDragState({
@@ -318,75 +264,47 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
     }
 
     try {
-      // Use toTz for all conversions
-      const originalStartDate = toTz(
+      // Use helper for all dayjs conversions
+      const originalStartDate = getDayjsDate(
         visibleDates[originalDateIndex] ?? new Date()
       );
-      const targetStartDate = toTz(visibleDates[targetDateIndex] ?? new Date());
+      const targetStartDate = getDayjsDate(
+        visibleDates[targetDateIndex] ?? new Date()
+      );
       const daysDiff = targetStartDate.diff(originalStartDate, 'day');
-      const currentStart = toTz(currentDragState.draggedEvent.start_at);
-      const currentEnd = toTz(currentDragState.draggedEvent.end_at);
+      const currentStart = getDayjsDate(currentDragState.draggedEvent.start_at);
+      const currentEnd = getDayjsDate(currentDragState.draggedEvent.end_at);
       const newStart = currentStart.add(daysDiff, 'day');
       const newEnd = currentEnd.add(daysDiff, 'day');
 
       if (typeof updateEvent === 'function') {
         await updateEvent(currentDragState.draggedEvent.id, {
-          // Normalize to local midnight for all-day events
-          start_at: newStart.startOf('day').toISOString(),
-          end_at: newEnd.startOf('day').toISOString(),
+          start_at: newStart.toISOString(),
+          end_at: newEnd.toISOString(),
         });
       } else {
         console.warn('updateEvent function not available');
       }
     } catch (error) {
       console.error('Failed to update event:', error);
-      // NOTE: Consider surfacing this error to the user via toast/snackbar
-      // Optionally revert optimistic UI if updateEvent throws (tracked in issue XYZ-1234)
     }
-  }, [visibleDates, toTz, updateEvent]);
+  }, [visibleDates, tz, updateEvent]);
 
-  // Set up global mouse and touch event listeners with stable handlers
+  // Set up global mouse event listeners with stable handlers
   React.useEffect(() => {
     if (dragState.isDragging) {
       document.addEventListener('mousemove', handleDragMove);
       document.addEventListener('mouseup', handleDragEnd);
-      // Add touch listeners to support touch dragging after long-press
-      const onTouchMove = (e: TouchEvent) => handleTouchDragMove(e);
-      const onTouchEnd = () => handleDragEnd();
-      document.addEventListener('touchmove', onTouchMove, { passive: false });
-      document.addEventListener('touchend', onTouchEnd);
 
       return () => {
         document.removeEventListener('mousemove', handleDragMove);
         document.removeEventListener('mouseup', handleDragEnd);
-        document.removeEventListener('touchmove', onTouchMove);
-        document.removeEventListener('touchend', onTouchEnd);
       };
     }
-  }, [
-    dragState.isDragging,
-    handleDragMove,
-    handleTouchDragMove,
-    handleDragEnd,
-  ]);
-
-  // Cleanup any pending long-press timers on unmount
-  React.useEffect(() => {
-    return () => {
-      if (longPressTimer.current) {
-        clearTimeout(longPressTimer.current);
-        longPressTimer.current = null;
-      }
-    };
-  }, []);
+  }, [dragState.isDragging, handleDragMove, handleDragEnd]);
 
   // Process events to determine their spans across visible dates
   const eventLayout = useMemo((): EventLayout => {
-    // If there are no visible dates, nothing to layout
-    if (visibleDates.length === 0) {
-      return { spans: [], maxVisibleEventsPerDay: 0, eventsByDay: [] };
-    }
-
     const spans: EventSpan[] = [];
     const eventsByDay: EventSpan[][] = Array(visibleDates.length)
       .fill(null)
@@ -397,16 +315,22 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
 
     // Process each all-day event
     allDayEvents.forEach((event) => {
-      const eventStart = toTz(event.start_at);
-      const eventEnd = toTz(event.end_at);
+      const eventStart =
+        tz === 'auto' ? dayjs(event.start_at) : dayjs(event.start_at).tz(tz);
+      const eventEnd =
+        tz === 'auto' ? dayjs(event.end_at) : dayjs(event.end_at).tz(tz);
 
       // Find the start and end indices within our visible dates
       let startIndex = -1;
       let endIndex = -1;
 
       // First pass: find any overlap with visible dates
-      const firstVisibleDate = toTz(visibleDates[0]!);
-      const lastVisibleDate = toTz(visibleDates[visibleDates.length - 1]!);
+      const firstVisibleDate =
+        tz === 'auto' ? dayjs(visibleDates[0]) : dayjs(visibleDates[0]).tz(tz);
+      const lastVisibleDate =
+        tz === 'auto'
+          ? dayjs(visibleDates[visibleDates.length - 1])
+          : dayjs(visibleDates[visibleDates.length - 1]).tz(tz);
 
       // Check if event overlaps with our visible date range at all
       // Event overlaps if: event_start < visible_end AND event_end > visible_start
@@ -416,7 +340,7 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
 
       // Debug logging for multi-day events
       const eventDurationDays = eventEnd.diff(eventStart, 'day');
-      if (process.env.NODE_ENV === 'development' && eventDurationDays > 0) {
+      if (eventDurationDays > 0) {
         console.log('Multi-day event processing:', {
           title: event.title,
           eventStart: eventStart.format('YYYY-MM-DD'),
@@ -447,7 +371,10 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
       } else {
         // Find the first visible date that matches the event start
         for (let i = 0; i < visibleDates.length; i++) {
-          const currentDate = toTz(visibleDates[i]!);
+          const currentDate =
+            tz === 'auto'
+              ? dayjs(visibleDates[i])
+              : dayjs(visibleDates[i]).tz(tz);
           if (
             currentDate.isSameOrAfter(eventStart, 'day') &&
             currentDate.isBefore(eventEnd, 'day')
@@ -465,7 +392,10 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
       } else {
         // Find the last visible date that the event covers
         for (let i = visibleDates.length - 1; i >= 0; i--) {
-          const currentDate = toTz(visibleDates[i]!);
+          const currentDate =
+            tz === 'auto'
+              ? dayjs(visibleDates[i])
+              : dayjs(visibleDates[i]).tz(tz);
           if (
             currentDate.isBefore(eventEnd, 'day') &&
             currentDate.isSameOrAfter(eventStart, 'day')
@@ -579,7 +509,10 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
     // Calculate max visible events per day for layout purposes
     let maxVisibleEventsPerDay = 0;
     eventsByDay.forEach((dayEvents, dayIndex) => {
-      const dateKey = toTz(visibleDates[dayIndex]!).format('YYYY-MM-DD');
+      const dateKey =
+        tz === 'auto'
+          ? dayjs(visibleDates[dayIndex]).format('YYYY-MM-DD')
+          : dayjs(visibleDates[dayIndex]).tz(tz).format('YYYY-MM-DD');
 
       const shouldShowAll = dayEvents.length === MAX_EVENTS_DISPLAY + 1;
       const isExpanded = expandedDates.includes(dateKey) || shouldShowAll;
@@ -591,7 +524,7 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
     });
 
     return { spans, maxVisibleEventsPerDay, eventsByDay };
-  }, [allDayEvents, visibleDates, toTz, expandedDates]);
+  }, [allDayEvents, visibleDates, tz, expandedDates]);
 
   // Get unique events for a specific date (for expansion logic)
   const getUniqueEventsForDate = (dateIndex: number): EventSpan[] => {
@@ -611,11 +544,8 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
     );
   };
 
-  // Calculate dynamic height based on visible events
-  const barHeight = Math.max(
-    BAR_BASE_HEIGHT_REM,
-    eventLayout.maxVisibleEventsPerDay * HEIGHT_PER_EVENT_REM
-  );
+  // Calculate dynamic height based on visible events - match time trail height
+  const barHeight = Math.max(30, eventLayout.maxVisibleEventsPerDay * 28); // 30px base, 28px per event
 
   // Enhanced mouse and touch handlers
   const handleEventMouseDown = (e: React.MouseEvent, eventSpan: EventSpan) => {
@@ -635,7 +565,7 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
         Math.sqrt(dx * dx + dy * dy) > DRAG_THRESHOLD
       ) {
         dragInitiated.current = true;
-        handleDragStart(e.clientX, e.clientY, eventSpan);
+        handleDragStart(e, eventSpan);
       }
       // If drag already started, let handleDragMove do its job
     };
@@ -663,17 +593,20 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
     dragInitiated.current = false;
     // Start long-press timer
     longPressTimer.current = setTimeout(() => {
-      // Remove initial detection listeners before starting drag
-      document.removeEventListener('touchmove', onTouchMove);
-      document.removeEventListener('touchend', onTouchEnd);
       dragInitiated.current = true;
-      handleDragStart(touch.clientX, touch.clientY, eventSpan);
+      handleDragStart(
+        {
+          ...e,
+          clientX: touch.clientX,
+          clientY: touch.clientY,
+          preventDefault: () => {},
+          stopPropagation: () => {},
+        } as any,
+        eventSpan
+      );
     }, LONG_PRESS_DURATION);
 
     const onTouchMove = (moveEvent: TouchEvent) => {
-      // Guard: no-op early when drag is already initiated
-      if (dragInitiated.current) return;
-
       if (!dragStartPos.current) return;
       const moveTouch = moveEvent.touches[0];
       if (!moveTouch) return;
@@ -710,8 +643,21 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
 
   return (
     <div className="flex">
-      {/* Time column headers - matching the main calendar layout */}
-      <TimeColumnHeaders showSecondary={showSecondary} variant="all-day" />
+      {/* Left sidebar for timezone headers */}
+      <div
+        className="flex flex-col border-l bg-muted/30"
+        style={{
+          width: '128px',
+          height: `${barHeight}px`,
+        }}
+      >
+        {/* Timezone header row */}
+        <div className="flex h-8 items-center justify-center border-b bg-muted/50 px-2 font-medium text-muted-foreground text-xs">
+          {tz === 'auto' ? 'Local' : tz}
+        </div>
+        {/* Empty space below for visual balance */}
+        <div className="flex-1" />
+      </div>
 
       {/* All-day event columns with relative positioning for spanning events */}
       <div
@@ -719,8 +665,7 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
         className={cn('relative flex-1 border-b')}
         style={{
           minWidth: `${visibleDates.length * MIN_COLUMN_WIDTH}px`,
-          height: `${barHeight}rem`,
-          touchAction: dragState.isDragging ? 'none' : 'auto',
+          height: `${barHeight}px`,
         }}
       >
         {/* Grid background for date columns - this maintains proper borders */}
@@ -731,7 +676,10 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
           }}
         >
           {visibleDates.map((date, dateIndex) => {
-            const dateKey = toTz(date).format('YYYY-MM-DD');
+            const dateKey =
+              tz === 'auto'
+                ? dayjs(date).format('YYYY-MM-DD')
+                : dayjs(date).tz(tz).format('YYYY-MM-DD');
 
             const dateEvents = getUniqueEventsForDate(dateIndex);
             const shouldShowAll = dateEvents.length === MAX_EVENTS_DISPLAY + 1;
@@ -749,7 +697,6 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
 
             return (
               <div
-                id={`all-day-events-${dateKey}`}
                 key={`all-day-column-${dateKey}`}
                 className={cn(
                   'group flex h-full flex-col justify-start border-l transition-colors duration-200 last:border-r',
@@ -767,13 +714,17 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
                 {hiddenCount > 0 && (
                   <button
                     type="button"
-                    aria-expanded={false}
-                    aria-controls={`all-day-events-${dateKey}`}
-                    className="flex items-center justify-center rounded-sm px-2 py-1 font-medium text-muted-foreground transition-colors hover:bg-muted/40"
+                    className="flex cursor-pointer items-center justify-center rounded-sm px-2 py-1 font-medium text-muted-foreground text-xs transition-colors hover:bg-muted/40"
                     onClick={() => toggleDateExpansion(dateKey)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        toggleDateExpansion(dateKey);
+                      }
+                    }}
                     style={{
                       position: 'absolute',
-                      top: `${MAX_EVENTS_DISPLAY * EXPANSION_BTN_ROW_MULTIPLIER}rem`,
+                      top: `${MAX_EVENTS_DISPLAY * 28}px`,
                       left: `${(dateIndex * 100) / visibleDates.length}%`,
                       width: `${100 / visibleDates.length}%`,
                       zIndex: 10,
@@ -789,13 +740,17 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
                   dateEvents.length > MAX_EVENTS_DISPLAY && (
                     <button
                       type="button"
-                      aria-expanded={true}
-                      aria-controls={`all-day-events-${dateKey}`}
-                      className="flex items-center justify-center rounded-sm px-2 py-1 font-medium text-muted-foreground transition-colors hover:bg-muted/40"
+                      className="flex cursor-pointer items-center justify-center rounded-sm px-2 py-1 font-medium text-muted-foreground text-xs transition-colors hover:bg-muted/40"
                       onClick={() => toggleDateExpansion(dateKey)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
+                          toggleDateExpansion(dateKey);
+                        }
+                      }}
                       style={{
                         position: 'absolute',
-                        top: `${dateEvents.length * EXPANSION_BTN_ROW_MULTIPLIER}rem`,
+                        top: `${dateEvents.length * 28}px`,
                         left: `${(dateIndex * 100) / visibleDates.length}%`,
                         width: `${100 / visibleDates.length}%`,
                         zIndex: 10,
@@ -823,174 +778,143 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
               style={{
                 left: `calc(${(dragState.previewSpan.startIndex * 100) / visibleDates.length}% + ${EVENT_LEFT_OFFSET}px)`,
                 width: `calc(${(dragState.previewSpan.span * 100) / visibleDates.length}% - ${EVENT_LEFT_OFFSET * 2}px)`,
-                top: `${dragState.previewSpan.row * ROW_HEIGHT_REM + ROW_TOP_OFFSET_REM}rem`,
-                height: `${EVENT_HEIGHT_REM}rem`,
+                top: `${dragState.previewSpan.row * 28 + 4}px`,
+                height: '22px',
                 zIndex: 8,
               }}
             />
           )}
 
-        {/* Container for all-day events with proper accessibility */}
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute inset-0"
-        >
-          {/* Absolute positioned spanning events */}
-          {eventLayout.spans.map((eventSpan) => {
-            const { event, startIndex, span, row, isCutOffStart, isCutOffEnd } =
-              eventSpan;
-            const { bg, border, text } = getEventStyles(event.color || 'BLUE');
+        {/* Absolute positioned spanning events */}
+        {eventLayout.spans.map((eventSpan) => {
+          const { event, startIndex, span, row, isCutOffStart, isCutOffEnd } =
+            eventSpan;
+          const { bg, border, text } = getEventStyles(event.color || 'BLUE');
 
-            // Use the assigned row directly instead of calculating it
-            const eventRow = row;
+          // Use the assigned row directly instead of calculating it
+          const eventRow = row;
 
-            // Check if this event should be visible based on expansion state
-            const shouldHideEvent = visibleDates.some((date, dateIndex) => {
-              if (dateIndex < startIndex || dateIndex > startIndex + span - 1)
-                return false;
+          // Check if this event should be visible based on expansion state
+          const shouldHideEvent = visibleDates.some((date, dateIndex) => {
+            if (dateIndex < startIndex || dateIndex > startIndex + span - 1)
+              return false;
 
-              const dateKey = toTz(date).format('YYYY-MM-DD');
+            const dateKey =
+              tz === 'auto'
+                ? dayjs(date).format('YYYY-MM-DD')
+                : dayjs(date).tz(tz).format('YYYY-MM-DD');
 
-              const dateEvents = getUniqueEventsForDate(dateIndex);
-              const shouldShowAll =
-                dateEvents.length === MAX_EVENTS_DISPLAY + 1;
-              const isExpanded =
-                expandedDates.includes(dateKey) || shouldShowAll;
-              const visibleCount = isExpanded
-                ? dateEvents.length
-                : Math.min(dateEvents.length, MAX_EVENTS_DISPLAY);
+            const dateEvents = getUniqueEventsForDate(dateIndex);
+            const shouldShowAll = dateEvents.length === MAX_EVENTS_DISPLAY + 1;
+            const isExpanded = expandedDates.includes(dateKey) || shouldShowAll;
+            const visibleCount = isExpanded
+              ? dateEvents.length
+              : Math.min(dateEvents.length, MAX_EVENTS_DISPLAY);
 
-              return eventRow >= visibleCount;
-            });
+            return eventRow >= visibleCount;
+          });
 
-            if (shouldHideEvent) return null;
+          if (shouldHideEvent) return null;
 
-            // Check if this event is currently being dragged
-            const isDraggedEvent =
-              dragState.isDragging && dragState.draggedEvent?.id === event.id;
+          // Check if this event is currently being dragged
+          const isDraggedEvent =
+            dragState.isDragging && dragState.draggedEvent?.id === event.id;
 
-            return (
-              <div
-                key={`spanning-event-${event.id}`}
-                className={cn(
-                  'pointer-events-auto absolute flex items-center rounded-sm border-l-2 px-2 py-1 font-semibold transition-all duration-200',
-                  // Cursor changes based on locked state and drag state
-                  event.locked
-                    ? 'cursor-not-allowed opacity-60'
-                    : dragState.isDragging
-                      ? 'cursor-grabbing'
-                      : 'cursor-grab hover:cursor-grab',
-                  // Visual feedback for dragging
-                  isDraggedEvent && 'scale-95 opacity-30',
-                  // Normal styling
-                  bg,
-                  border,
-                  text,
-                  // Special styling for cut-off events
-                  (isCutOffStart || isCutOffEnd) && 'border-dashed'
-                )}
-                style={{
-                  left: `calc(${(startIndex * 100) / visibleDates.length}% + ${EVENT_LEFT_OFFSET}px)`,
-                  width: `calc(${(span * 100) / visibleDates.length}% - ${EVENT_LEFT_OFFSET * 2}px)`,
-                  top: `${eventRow * ROW_HEIGHT_REM + ROW_TOP_OFFSET_REM}rem`,
-                  height: `${EVENT_HEIGHT_REM}rem`,
-                  zIndex: isDraggedEvent ? 10 : 5,
-                }}
-                role="button"
-                tabIndex={0}
-                aria-label={`${event.title} (all-day event)`}
-                onClick={() => {
-                  // Only open modal if not dragging and not locked
+          return (
+            <button
+              type="button"
+              key={`spanning-event-${event.id}`}
+              className={cn(
+                'absolute flex items-center rounded-sm border-l px-2 py-1 font-semibold text-xs transition-all duration-200',
+                // Cursor changes based on locked state and drag state
+                event.locked
+                  ? 'cursor-not-allowed opacity-60'
+                  : dragState.isDragging
+                    ? 'cursor-grabbing'
+                    : 'cursor-grab hover:cursor-grab',
+                // Visual feedback for dragging
+                isDraggedEvent && 'scale-95 opacity-30',
+                // Normal styling
+                bg,
+                border,
+                text,
+                // Special styling for cut-off events
+                (isCutOffStart || isCutOffEnd) && 'border-dashed'
+              )}
+              style={{
+                left: `calc(${(startIndex * 100) / visibleDates.length}% + ${EVENT_LEFT_OFFSET}px)`,
+                width: `calc(${(span * 100) / visibleDates.length}% - ${EVENT_LEFT_OFFSET * 2}px)`,
+                top: `${eventRow * 28 + 4}px`,
+                height: '22px',
+                zIndex: isDraggedEvent ? 10 : 5,
+              }}
+              onClick={() => {
+                // Only open modal if not dragging and not locked
+                if (!dragState.isDragging && !event.locked) {
+                  openModal(event.id, 'all-day');
+                }
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
                   if (!dragState.isDragging && !event.locked) {
                     openModal(event.id, 'all-day');
                   }
-                }}
-                onKeyDown={(e) => {
-                  if (
-                    !dragState.isDragging &&
-                    !event.locked &&
-                    (e.key === 'Enter' || e.key === ' ')
-                  ) {
-                    e.preventDefault();
-                    openModal(event.id, 'all-day');
-                  }
-                }}
-                onMouseDown={(e) => handleEventMouseDown(e, eventSpan)}
-                onTouchStart={(e) => handleEventTouchStart(e, eventSpan)}
-              >
-                {/* Cut-off indicator for events that start before visible range */}
-                {isCutOffStart && (
-                  <>
-                    <span
-                      className="mr-1 opacity-75"
-                      aria-hidden="true"
-                      title="Event continues from previous days"
-                    >
-                      ←
-                    </span>
-                    <span className="sr-only">
-                      Continues from previous days
-                    </span>
-                  </>
-                )}
-                {/* Use shared EventContent component */}
-                <EventContent event={event} />
-                {/* Cut-off indicator for events that end after visible range */}
-                {isCutOffEnd && (
-                  <>
-                    <span
-                      className="ml-1 opacity-75"
-                      aria-hidden="true"
-                      title="Event continues to next days"
-                    >
-                      →
-                    </span>
-                    <span className="sr-only">Continues to next days</span>
-                  </>
-                )}
-              </div>
-            );
-          })}
-        </div>
-
-        {/* Enhanced drag preview with better positioning */}
-        {dragState.isDragging &&
-          dragState.draggedEvent &&
-          (() => {
-            const styles = getEventStyles(
-              dragState.draggedEvent.color || 'BLUE'
-            );
-            return (
-              <div
-                ref={dragPreviewRef}
-                className={cn(
-                  'pointer-events-none fixed z-50 truncate rounded-sm border-l-2 px-2 py-1 font-semibold shadow-xl',
-                  'transform backdrop-blur-sm transition-none',
-                  styles.bg,
-                  styles.border,
-                  styles.text,
-                  'opacity-90'
-                )}
-                style={{
-                  left: `${dragState.currentX + 15}px`,
-                  top: `${dragState.currentY - 20}px`,
-                  height: `${EVENT_HEIGHT_REM}rem`,
-                  minWidth: '120px',
-                  maxWidth: '250px',
-                  transform: 'rotate(-2deg)',
-                }}
-              >
-                {/* Accessibility: Live region for screen readers */}
-                <span className="sr-only" role="status" aria-live="assertive">
-                  Dragging &apos;{dragState.draggedEvent.title}&apos;
+                }
+              }}
+              onMouseDown={(e) => handleEventMouseDown(e, eventSpan)}
+              onTouchStart={(e) => handleEventTouchStart(e, eventSpan)}
+            >
+              {/* Cut-off indicator for events that start before visible range */}
+              {isCutOffStart && (
+                <span
+                  className="mr-1 text-xs opacity-75"
+                  title="Event continues from previous days"
+                >
+                  ←
                 </span>
-
-                {/* Use shared EventContent component */}
-                <EventContent event={dragState.draggedEvent} />
-              </div>
-            );
-          })()}
+              )}
+              {/* Use shared EventContent component */}
+              <EventContent event={event} />
+              {/* Cut-off indicator for events that end after visible range */}
+              {isCutOffEnd && (
+                <span
+                  className="ml-1 text-xs opacity-75"
+                  title="Event continues to next days"
+                >
+                  →
+                </span>
+              )}
+            </button>
+          );
+        })}
       </div>
+
+      {/* Enhanced drag preview with better positioning */}
+      {dragState.isDragging && dragState.draggedEvent && (
+        <div
+          ref={dragPreviewRef}
+          className={cn(
+            'pointer-events-none fixed z-50 truncate rounded-sm border-l px-2 py-1 font-semibold text-xs shadow-xl',
+            'transform backdrop-blur-sm transition-none',
+            getEventStyles(dragState.draggedEvent.color || 'BLUE').bg,
+            getEventStyles(dragState.draggedEvent.color || 'BLUE').border,
+            getEventStyles(dragState.draggedEvent.color || 'BLUE').text,
+            'opacity-90'
+          )}
+          style={{
+            left: `${dragState.currentX + 15}px`,
+            top: `${dragState.currentY - 20}px`,
+            height: '22px',
+            minWidth: '120px',
+            maxWidth: '250px',
+            transform: 'rotate(-2deg)',
+          }}
+        >
+          {/* Use shared EventContent component */}
+          <EventContent event={dragState.draggedEvent} />
+        </div>
+      )}
     </div>
   );
 };

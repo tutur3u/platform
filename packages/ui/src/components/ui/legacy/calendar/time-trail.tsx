@@ -1,8 +1,8 @@
 import { cn } from '@tuturuuu/utils/format';
 import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone';
-import { useCalendarSettings } from './settings/settings-context';
 import { DAY_HEIGHT, HOUR_HEIGHT } from './config';
+import { useCalendarSettings } from './settings/settings-context';
 
 dayjs.extend(timezone);
 
@@ -58,7 +58,7 @@ const TimeColumn = ({
   return (
     <div
       className={cn(
-        'relative w-16 border-r border-border dark:border-zinc-800',
+        'relative w-16 border-border border-r dark:border-zinc-800',
         className
       )}
       style={style}
@@ -71,7 +71,7 @@ const TimeColumn = ({
         >
           <span
             className={cn(
-              'text-sm font-medium',
+              'font-medium text-sm',
               muted ? 'text-muted-foreground/60' : 'text-muted-foreground',
               hour === 0 && 'hidden'
             )}
@@ -94,22 +94,22 @@ export const TimeTrail = () => {
   const timeFormat = settings?.appearance?.timeFormat;
 
   return (
-    <div className="flex" style={{ height: DAY_HEIGHT }}>
+    <div className="flex" style={{ height: 'auto', minHeight: '30px' }}>
       {showSecondary && (
         <TimeColumn
           timezone={secondaryTz}
           primaryTimezone={tz}
           timeFormat={timeFormat}
-          className="border-r border-border/30 dark:border-zinc-700/50"
+          className="border-border/30 border-r dark:border-zinc-700/50"
           muted={true}
-          style={{ height: DAY_HEIGHT }}
+          style={{ height: 'auto', minHeight: '30px' }}
         />
       )}
       <TimeColumn
         timezone={tz}
         primaryTimezone={tz}
         timeFormat={timeFormat}
-        style={{ height: DAY_HEIGHT }}
+        style={{ height: 'auto', minHeight: '30px' }}
       />
     </div>
   );
