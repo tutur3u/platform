@@ -1,8 +1,8 @@
 /** biome-ignore-all lint/a11y/noSvgWithoutTitle: <> */
 'use client';
 
-import { priorityCompare } from '@/lib/task-helper';
 import { useQuery } from '@tanstack/react-query';
+import { createClient } from '@tuturuuu/supabase/next/client';
 import type { TimeTrackingCategory } from '@tuturuuu/types/db';
 import type { TaskPriority } from '@tuturuuu/types/primitives/Priority';
 import {
@@ -46,15 +46,13 @@ import {
   SelectValue,
 } from '@tuturuuu/ui/select';
 import { toast } from '@tuturuuu/ui/sonner';
-import { Tabs, TabsContent } from '@tuturuuu/ui/tabs';
 import { cn } from '@tuturuuu/utils/format';
 import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone';
 import utc from 'dayjs/plugin/utc';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { priorityCompare } from '@/lib/task-helper';
 import { TimerControls } from './components/timer-controls';
-import { UserSelector } from './components/user-selector';
-import { useCurrentUser } from './hooks/use-current-user';
 import type {
   ExtendedWorkspaceTask,
   SessionWithRelations,
@@ -94,11 +92,24 @@ export default function TimeTrackerContent({
   wsId,
   initialData,
 }: TimeTrackerContentProps) {
-  const [sidebarView, setSidebarView] = useState('tasks');
-  const [activeTab, setActiveTab] = useState('timer');
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
-  const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
-  const { userId: currentUserId, isLoading: isLoadingUser } = useCurrentUser();
+  useEffect(() => {
+    const getUser = async () => {
+      try {
+        const supabase = createClient();
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+        setCurrentUserId(user?.id || null);
+      } catch (error) {
+        console.error('Error getting current user:', error);
+        setCurrentUserId(null);
+      }
+    };
+
+    getUser();
+  }, []);
 
   // Use React Query for running session to sync with command palette
   const { data: runningSessionFromQuery } = useQuery({
@@ -113,7 +124,7 @@ export default function TimeTrackerContent({
     },
     refetchInterval: 30000, // 30 seconds
     initialData: initialData.runningSession,
-    enabled: !selectedUserId, // Only fetch for current user
+    enabled: !!currentUserId,
   });
 
   const [currentSession, setCurrentSession] =
@@ -127,7 +138,7 @@ export default function TimeTrackerContent({
 
   // Sync React Query data with local state
   useEffect(() => {
-    if (!selectedUserId && runningSessionFromQuery !== undefined) {
+    if (!currentUserId && runningSessionFromQuery !== undefined) {
       setCurrentSession(runningSessionFromQuery);
       setIsRunning(!!runningSessionFromQuery);
       if (runningSessionFromQuery) {
@@ -144,7 +155,7 @@ export default function TimeTrackerContent({
         setElapsedTime(0);
       }
     }
-  }, [runningSessionFromQuery, selectedUserId]);
+  }, [runningSessionFromQuery, currentUserId]);
 
   // Timer state (only for current user)
   const [elapsedTime, setElapsedTime] = useState(() => {
@@ -182,9 +193,6 @@ export default function TimeTrackerContent({
     null
   );
   const isMountedRef = useRef(true);
-
-  // Whether we're viewing another user's data
-  const isViewingOtherUser = selectedUserId !== null;
 
   // Get user timezone
   const userTimezone = dayjs.tz.guess();
@@ -373,10 +381,8 @@ export default function TimeTrackerContent({
 
   // Fetch next task preview on mount
   useEffect(() => {
-    if (!isViewingOtherUser) {
-      fetchNextTasks();
-    }
-  }, [fetchNextTasks, isViewingOtherUser]);
+    fetchNextTasks();
+  }, [fetchNextTasks]);
 
   // Memoized formatters
   const formatTime = useCallback((seconds: number): string => {
@@ -411,10 +417,8 @@ export default function TimeTrackerContent({
       setError(null);
 
       try {
-        const userParam = selectedUserId ? `&userId=${selectedUserId}` : '';
-        const goalsUserParam = selectedUserId
-          ? `?userId=${selectedUserId}`
-          : '';
+        const userParam = currentUserId ? `&userId=${currentUserId}` : '';
+        const goalsUserParam = currentUserId ? `?userId=${currentUserId}` : '';
 
         // Individual API calls with error handling for each
         const apiCalls = [
@@ -427,11 +431,9 @@ export default function TimeTrackerContent({
           {
             name: 'running',
             call: () =>
-              !isViewingOtherUser
-                ? apiCall(
-                    `/api/v1/workspaces/${wsId}/time-tracking/sessions?type=running`
-                  )
-                : Promise.resolve({ session: null }),
+              apiCall(
+                `/api/v1/workspaces/${wsId}/time-tracking/sessions?type=running`
+              ),
             fallback: { session: null },
           },
           {
@@ -498,27 +500,18 @@ export default function TimeTrackerContent({
         setRecentSessions(recentRes.sessions || []);
         setTasks(tasksRes.tasks || []);
 
-        // Only update timer state if we're viewing current user's data
-        if (!isViewingOtherUser) {
-          if (runningRes.session) {
-            setCurrentSession(runningRes.session);
-            setIsRunning(true);
-            const elapsed = Math.max(
-              0,
-              Math.floor(
-                (Date.now() -
-                  new Date(runningRes.session.start_time).getTime()) /
-                  1000
-              )
-            );
-            setElapsedTime(elapsed);
-          } else {
-            setCurrentSession(null);
-            setIsRunning(false);
-            setElapsedTime(0);
-          }
+        if (runningRes.session) {
+          setCurrentSession(runningRes.session);
+          setIsRunning(true);
+          const elapsed = Math.max(
+            0,
+            Math.floor(
+              (Date.now() - new Date(runningRes.session.start_time).getTime()) /
+                1000
+            )
+          );
+          setElapsedTime(elapsed);
         } else {
-          // Clear timer state when viewing other users
           setCurrentSession(null);
           setIsRunning(false);
           setElapsedTime(0);
@@ -549,7 +542,7 @@ export default function TimeTrackerContent({
         }
       }
     },
-    [wsId, apiCall, currentUserId, selectedUserId, isViewingOtherUser]
+    [wsId, apiCall, currentUserId]
   );
 
   // Auto-refresh with exponential backoff and visibility check
@@ -571,7 +564,7 @@ export default function TimeTrackerContent({
 
   // Timer effect with better cleanup
   useEffect(() => {
-    if (isRunning && currentSession && !isViewingOtherUser) {
+    if (isRunning && currentSession) {
       timerIntervalRef.current = setInterval(() => {
         if (isMountedRef.current) {
           const elapsed = Math.max(
@@ -592,7 +585,7 @@ export default function TimeTrackerContent({
         timerIntervalRef.current = null;
       }
     };
-  }, [isRunning, currentSession, isViewingOtherUser]);
+  }, [isRunning, currentSession]);
 
   // Online/offline detection
   useEffect(() => {
@@ -625,17 +618,6 @@ export default function TimeTrackerContent({
       }
     };
   }, []);
-
-  // Handle user selection change
-  const handleUserChange = useCallback(
-    (userId: string | null) => {
-      setSelectedUserId(userId);
-      if (userId !== null && activeTab === 'timer') {
-        setActiveTab('history');
-      }
-    },
-    [activeTab]
-  );
 
   // Retry function with exponential backoff
   const handleRetry = useCallback(() => {
@@ -680,7 +662,7 @@ export default function TimeTrackerContent({
   // Use memoized task counts
   const { myTasksCount, unassignedCount } = useTaskCounts(tasks);
 
-  if (isLoadingUser || !currentUserId) {
+  if (!currentUserId) {
     return (
       <div className="flex items-center justify-center py-24">
         <div className="space-y-4 text-center">
@@ -714,56 +696,52 @@ export default function TimeTrackerContent({
                   Time Tracker
                 </h1>
                 <p className="text-muted-foreground text-sm sm:text-base">
-                  {isViewingOtherUser
-                    ? "Viewing another user's time tracking data"
-                    : 'Track and manage your time across projects'}
+                  Track and manage your time across projects
                 </p>
               </div>
             </div>
 
-            {!isViewingOtherUser && (
-              <div className="flex flex-wrap items-center gap-2 text-muted-foreground text-xs">
-                <div className="flex items-center gap-1">
-                  <div className="h-2 w-2 rounded-full bg-green-500"></div>
-                  <span>Week starts Monday</span>
-                </div>
-                <span>•</span>
-                <div className="flex items-center gap-1">
-                  <div className="h-2 w-2 rounded-full bg-blue-500"></div>
-                  <span>Times updated in real-time</span>
-                </div>
-                {(() => {
-                  const today = new Date();
-                  const dayOfWeek = today.getDay();
-
-                  if (dayOfWeek === 1) {
-                    return (
-                      <>
-                        <span>•</span>
-                        <div className="flex items-center gap-1">
-                          <span>🎯</span>
-                          <span>Week resets today!</span>
-                        </div>
-                      </>
-                    );
-                  } else if (dayOfWeek === 0) {
-                    return (
-                      <>
-                        <span>•</span>
-                        <span>Week resets tomorrow</span>
-                      </>
-                    );
-                  } else {
-                    return (
-                      <>
-                        <span>•</span>
-                        <span>Week resets Monday</span>
-                      </>
-                    );
-                  }
-                })()}
+            <div className="flex flex-wrap items-center gap-2 text-muted-foreground text-xs">
+              <div className="flex items-center gap-1">
+                <div className="h-2 w-2 rounded-full bg-green-500"></div>
+                <span>Week starts Monday</span>
               </div>
-            )}
+              <span>•</span>
+              <div className="flex items-center gap-1">
+                <div className="h-2 w-2 rounded-full bg-blue-500"></div>
+                <span>Times updated in real-time</span>
+              </div>
+              {(() => {
+                const today = new Date();
+                const dayOfWeek = today.getDay();
+
+                if (dayOfWeek === 1) {
+                  return (
+                    <>
+                      <span>•</span>
+                      <div className="flex items-center gap-1">
+                        <span>🎯</span>
+                        <span>Week resets today!</span>
+                      </div>
+                    </>
+                  );
+                } else if (dayOfWeek === 0) {
+                  return (
+                    <>
+                      <span>•</span>
+                      <span>Week resets tomorrow</span>
+                    </>
+                  );
+                } else {
+                  return (
+                    <>
+                      <span>•</span>
+                      <span>Week resets Monday</span>
+                    </>
+                  );
+                }
+              })()}
+            </div>
 
             {lastRefresh && (
               <div className="flex items-center gap-2 text-muted-foreground text-xs">
@@ -792,404 +770,387 @@ export default function TimeTrackerContent({
               />
               <span className="hidden sm:inline">Refresh</span>
             </Button>
-            <UserSelector
-              wsId={wsId}
-              selectedUserId={selectedUserId}
-              onUserChange={handleUserChange}
-              currentUserId={currentUserId}
-              apiCall={apiCall}
-            />
           </div>
         </div>
 
         {/* Enhanced Quick Actions - Single Row */}
-        {!isViewingOtherUser && (
-          // <div className="space-y-3">
-          <Accordion collapsible className="w-full" type="single">
-            <AccordionItem value="quick-actions">
-              <AccordionTrigger>
-                <div className="flex flex-1 items-center justify-between">
-                  <h3 className="font-medium text-foreground text-sm">
-                    ⚡ Quick Actions
-                  </h3>
-                  <div className="text-muted-foreground text-xs">
-                    {(() => {
-                      const hour = new Date().getHours();
-                      const isPeakTime =
-                        (hour >= 9 && hour <= 11) || (hour >= 14 && hour <= 16);
-                      return isPeakTime
-                        ? '🧠 Peak focus time'
-                        : '📈 Building momentum';
-                    })()}
-                  </div>
+        <Accordion collapsible className="w-full" type="single">
+          <AccordionItem value="quick-actions">
+            <AccordionTrigger>
+              <div className="flex flex-1 items-center justify-between">
+                <h3 className="font-medium text-foreground text-sm">
+                  ⚡ Quick Actions
+                </h3>
+                <div className="text-muted-foreground text-xs">
+                  {(() => {
+                    const hour = new Date().getHours();
+                    const isPeakTime =
+                      (hour >= 9 && hour <= 11) || (hour >= 14 && hour <= 16);
+                    return isPeakTime
+                      ? '🧠 Peak focus time'
+                      : '📈 Building momentum';
+                  })()}
                 </div>
-              </AccordionTrigger>
-              <AccordionContent>
-                {/* Action Grid with proper spacing to prevent cutoff */}
-                <div className="grid grid-cols-2 gap-3 p-1 sm:grid-cols-4 lg:gap-4">
-                  {/* Continue Last Session */}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (!recentSessions[0]) {
-                        toast.info('No recent session to continue');
-                        return;
-                      }
-                      if (isRunning) {
-                        toast.info('Timer is already running');
-                        return;
-                      }
-                      setShowContinueConfirm(true);
-                    }}
-                    disabled={!recentSessions[0] || isRunning}
-                    className={cn(
-                      'group relative rounded-lg border p-3 text-left transition-all duration-300',
-                      'hover:shadow-blue-500/20 hover:shadow-lg active:scale-[0.98]',
-                      recentSessions[0] && !isRunning
-                        ? 'hover:-translate-y-1 border-blue-200/60 bg-gradient-to-br from-blue-50 to-blue-100/50 dark:border-blue-800/60 dark:from-blue-950/30 dark:to-blue-900/20'
-                        : 'cursor-not-allowed border-muted bg-muted/30 opacity-60'
-                    )}
-                  >
-                    <div className="flex items-start gap-2">
-                      <div
+              </div>
+            </AccordionTrigger>
+            <AccordionContent>
+              {/* Action Grid with proper spacing to prevent cutoff */}
+              <div className="grid grid-cols-2 gap-3 p-1 sm:grid-cols-4 lg:gap-4">
+                {/* Continue Last Session */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (!recentSessions[0]) {
+                      toast.info('No recent session to continue');
+                      return;
+                    }
+                    if (isRunning) {
+                      toast.info('Timer is already running');
+                      return;
+                    }
+                    setShowContinueConfirm(true);
+                  }}
+                  disabled={!recentSessions[0] || isRunning}
+                  className={cn(
+                    'group relative rounded-lg border p-3 text-left transition-all duration-300',
+                    'hover:shadow-blue-500/20 hover:shadow-lg active:scale-[0.98]',
+                    recentSessions[0] && !isRunning
+                      ? 'hover:-translate-y-1 border-blue-200/60 bg-gradient-to-br from-blue-50 to-blue-100/50 dark:border-blue-800/60 dark:from-blue-950/30 dark:to-blue-900/20'
+                      : 'cursor-not-allowed border-muted bg-muted/30 opacity-60'
+                  )}
+                >
+                  <div className="flex items-start gap-2">
+                    <div
+                      className={cn(
+                        'flex-shrink-0 rounded-full p-1.5 transition-colors',
+                        recentSessions[0] && !isRunning
+                          ? 'bg-blue-500/20 group-hover:bg-blue-500/30'
+                          : 'bg-muted-foreground/20'
+                      )}
+                    >
+                      <RotateCcw
                         className={cn(
-                          'flex-shrink-0 rounded-full p-1.5 transition-colors',
+                          'h-3 w-3 transition-transform group-hover:rotate-12',
                           recentSessions[0] && !isRunning
-                            ? 'bg-blue-500/20 group-hover:bg-blue-500/30'
-                            : 'bg-muted-foreground/20'
+                            ? 'text-blue-600 dark:text-blue-400'
+                            : 'text-muted-foreground'
+                        )}
+                      />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p
+                        className={cn(
+                          'font-medium text-xs',
+                          recentSessions[0] && !isRunning
+                            ? 'text-blue-700 dark:text-blue-300'
+                            : 'text-muted-foreground'
                         )}
                       >
-                        <RotateCcw
-                          className={cn(
-                            'h-3 w-3 transition-transform group-hover:rotate-12',
-                            recentSessions[0] && !isRunning
-                              ? 'text-blue-600 dark:text-blue-400'
-                              : 'text-muted-foreground'
-                          )}
-                        />
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <p
-                          className={cn(
-                            'font-medium text-xs',
-                            recentSessions[0] && !isRunning
-                              ? 'text-blue-700 dark:text-blue-300'
-                              : 'text-muted-foreground'
-                          )}
-                        >
-                          Continue Last
-                        </p>
-                        {recentSessions[0] ? (
-                          <>
-                            <p
-                              className="line-clamp-2 font-bold text-blue-900 text-sm dark:text-blue-100"
-                              title={recentSessions[0].title}
-                            >
-                              {recentSessions[0].title}
-                            </p>
-                            {recentSessions[0].category && (
-                              <div className="mt-1 flex items-center gap-1">
-                                <div
-                                  className={cn(
-                                    'h-2 w-2 rounded-full',
-                                    recentSessions[0].category.color
-                                      ? `bg-dynamic-${recentSessions[0].category.color.toLowerCase()}/70`
-                                      : 'bg-blue-500/70'
-                                  )}
-                                />
-                                <span className="truncate text-blue-700/80 text-xs dark:text-blue-300/80">
-                                  {recentSessions[0].category.name}
-                                </span>
-                              </div>
-                            )}
-                            {/* Focus Score Badge */}
-                            {recentSessions[0] && (
-                              <div className="mt-1 flex items-center gap-1">
-                                <div className="h-1 w-8 rounded-full bg-blue-200 dark:bg-blue-900/50">
-                                  <div
-                                    className="h-1 rounded-full bg-blue-500 transition-all dark:bg-blue-400"
-                                    style={{
-                                      width: `${Math.round(calculateFocusScore(recentSessions[0]))}%`,
-                                    }}
-                                  />
-                                </div>
-                                <span className="font-medium text-blue-600 text-xs dark:text-blue-400">
-                                  Focus:{' '}
-                                  {Math.round(
-                                    calculateFocusScore(recentSessions[0])
-                                  )}
-                                  %
-                                </span>
-                              </div>
-                            )}
-                          </>
-                        ) : (
-                          <p className="font-bold text-muted-foreground text-sm">
-                            No recent session
+                        Continue Last
+                      </p>
+                      {recentSessions[0] ? (
+                        <>
+                          <p
+                            className="line-clamp-2 font-bold text-blue-900 text-sm dark:text-blue-100"
+                            title={recentSessions[0].title}
+                          >
+                            {recentSessions[0].title}
                           </p>
-                        )}
-                      </div>
+                          {recentSessions[0].category && (
+                            <div className="mt-1 flex items-center gap-1">
+                              <div
+                                className={cn(
+                                  'h-2 w-2 rounded-full',
+                                  recentSessions[0].category.color
+                                    ? `bg-dynamic-${recentSessions[0].category.color.toLowerCase()}/70`
+                                    : 'bg-blue-500/70'
+                                )}
+                              />
+                              <span className="truncate text-blue-700/80 text-xs dark:text-blue-300/80">
+                                {recentSessions[0].category.name}
+                              </span>
+                            </div>
+                          )}
+                          {/* Focus Score Badge */}
+                          {recentSessions[0] && (
+                            <div className="mt-1 flex items-center gap-1">
+                              <div className="h-1 w-8 rounded-full bg-blue-200 dark:bg-blue-900/50">
+                                <div
+                                  className="h-1 rounded-full bg-blue-500 transition-all dark:bg-blue-400"
+                                  style={{
+                                    width: `${Math.round(calculateFocusScore(recentSessions[0]))}%`,
+                                  }}
+                                />
+                              </div>
+                              <span className="font-medium text-blue-600 text-xs dark:text-blue-400">
+                                Focus:{' '}
+                                {Math.round(
+                                  calculateFocusScore(recentSessions[0])
+                                )}
+                                %
+                              </span>
+                            </div>
+                          )}
+                        </>
+                      ) : (
+                        <p className="font-bold text-muted-foreground text-sm">
+                          No recent session
+                        </p>
+                      )}
                     </div>
-                    {recentSessions[0] && (
-                      <div className="absolute top-2 right-2 opacity-0 transition-opacity group-hover:opacity-100">
-                        <span className="text-lg">🔄</span>
-                      </div>
-                    )}
-                  </button>
+                  </div>
+                  {recentSessions[0] && (
+                    <div className="absolute top-2 right-2 opacity-0 transition-opacity group-hover:opacity-100">
+                      <span className="text-lg">🔄</span>
+                    </div>
+                  )}
+                </button>
 
-                  {/* Next Task */}
-                  <button
-                    type="button"
-                    onClick={async () => {
-                      await fetchNextTasks();
+                {/* Next Task */}
+                <button
+                  type="button"
+                  onClick={async () => {
+                    await fetchNextTasks();
 
-                      if (availableTasks.length === 0) {
-                        // No tasks available - show overlay to create tasks or view boards
-                        setShowTaskSelector(true);
-                        return;
-                      }
+                    if (availableTasks.length === 0) {
+                      // No tasks available - show overlay to create tasks or view boards
+                      setShowTaskSelector(true);
+                      return;
+                    }
 
-                      if (availableTasks.length === 1) {
-                        // Single task - auto-start
-                        const task = availableTasks[0];
-                        const isUnassigned =
-                          !task ||
-                          !task.assignees ||
-                          task.assignees.length === 0;
+                    if (availableTasks.length === 1) {
+                      // Single task - auto-start
+                      const task = availableTasks[0];
+                      const isUnassigned =
+                        !task || !task.assignees || task.assignees.length === 0;
 
-                        try {
-                          // If task is unassigned, assign to current user first
-                          if (!task) return;
-                          if (isUnassigned) {
-                            const { createClient } = await import(
-                              '@tuturuuu/supabase/next/client'
+                      try {
+                        // If task is unassigned, assign to current user first
+                        if (!task) return;
+                        if (isUnassigned) {
+                          const { createClient } = await import(
+                            '@tuturuuu/supabase/next/client'
+                          );
+                          const supabase = createClient();
+
+                          const { error: assignError } = await supabase
+                            .from('task_assignees')
+                            .insert({
+                              task_id: task.id,
+                              user_id: currentUserId,
+                            });
+
+                          if (assignError) {
+                            console.error(
+                              'Task assignment error:',
+                              assignError
                             );
-                            const supabase = createClient();
-
-                            const { error: assignError } = await supabase
-                              .from('task_assignees')
-                              .insert({
-                                task_id: task.id,
-                                user_id: currentUserId,
-                              });
-
-                            if (assignError) {
-                              console.error(
-                                'Task assignment error:',
-                                assignError
-                              );
-                              throw new Error(
-                                assignError.message || 'Failed to assign task'
-                              );
-                            }
-
-                            toast.success(
-                              `Assigned task "${task.name}" to yourself`
+                            throw new Error(
+                              assignError.message || 'Failed to assign task'
                             );
                           }
 
-                          // Start session
-                          const response = await apiCall(
-                            `/api/v1/workspaces/${wsId}/time-tracking/sessions`,
-                            {
-                              method: 'POST',
-                              body: JSON.stringify({
-                                title: task.name,
-                                description:
-                                  task.description ||
-                                  `Working on: ${task.name}`,
-                                task_id: task.id,
-                                category_id:
-                                  categories.find((c) =>
-                                    c.name.toLowerCase().includes('work')
-                                  )?.id || null,
-                              }),
-                            }
+                          toast.success(
+                            `Assigned task "${task.name}" to yourself`
                           );
-
-                          setCurrentSession(response.session);
-                          setIsRunning(true);
-                          setElapsedTime(0);
-                          await fetchData();
-
-                          toast.success(`Started: ${task.name}`);
-                        } catch (error) {
-                          console.error('Error starting task:', error);
-                          toast.error('Failed to start task session');
                         }
-                      } else {
-                        // Multiple tasks - show selector
-                        setShowTaskSelector(true);
+
+                        // Start session
+                        const response = await apiCall(
+                          `/api/v1/workspaces/${wsId}/time-tracking/sessions`,
+                          {
+                            method: 'POST',
+                            body: JSON.stringify({
+                              title: task.name,
+                              description:
+                                task.description || `Working on: ${task.name}`,
+                              task_id: task.id,
+                              category_id:
+                                categories.find((c) =>
+                                  c.name.toLowerCase().includes('work')
+                                )?.id || null,
+                            }),
+                          }
+                        );
+
+                        setCurrentSession(response.session);
+                        setIsRunning(true);
+                        setElapsedTime(0);
+                        await fetchData();
+
+                        toast.success(`Started: ${task.name}`);
+                      } catch (error) {
+                        console.error('Error starting task:', error);
+                        toast.error('Failed to start task session');
                       }
-                    }}
-                    disabled={isRunning}
-                    className={cn(
-                      'group relative rounded-lg border p-3 text-left transition-all duration-300',
-                      'hover:shadow-lg hover:shadow-purple-500/20 active:scale-[0.98]',
-                      !isRunning
-                        ? 'hover:-translate-y-1 border-purple-200/60 bg-gradient-to-br from-purple-50 to-purple-100/50 dark:border-purple-800/60 dark:from-purple-950/30 dark:to-purple-900/20'
-                        : 'cursor-not-allowed border-muted bg-muted/30 opacity-60'
-                    )}
-                  >
-                    <div className="flex items-start gap-2">
-                      <div className="flex-shrink-0 rounded-full bg-purple-500/20 p-1.5 transition-colors group-hover:bg-purple-500/30">
-                        <CheckSquare className="h-3 w-3 text-purple-600 transition-transform group-hover:scale-110 dark:text-purple-400" />
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="font-medium text-purple-700 text-xs dark:text-purple-300">
-                          Next Task
-                        </p>
-                        {nextTaskPreview ? (
-                          <>
-                            <p className="truncate font-bold text-purple-900 text-sm dark:text-purple-100">
-                              {nextTaskPreview.name}
-                            </p>
-                            <div className="flex items-center gap-1">
-                              <span
-                                className={cn(
-                                  'inline-flex items-center rounded-full px-1.5 py-0.5 font-medium text-xs',
-                                  nextTaskPreview.priority === 'critical'
-                                    ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300'
-                                    : nextTaskPreview.priority === 'high'
-                                      ? 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300'
-                                      : nextTaskPreview.priority === 'normal'
-                                        ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300'
-                                        : nextTaskPreview.priority === 'low'
-                                          ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300'
-                                          : 'bg-gray-100 text-gray-700 dark:bg-gray-900/30 dark:text-gray-300'
-                                )}
-                              >
-                                {nextTaskPreview.priority === 'critical'
-                                  ? 'Urgent'
+                    } else {
+                      // Multiple tasks - show selector
+                      setShowTaskSelector(true);
+                    }
+                  }}
+                  disabled={isRunning}
+                  className={cn(
+                    'group relative rounded-lg border p-3 text-left transition-all duration-300',
+                    'hover:shadow-lg hover:shadow-purple-500/20 active:scale-[0.98]',
+                    !isRunning
+                      ? 'hover:-translate-y-1 border-purple-200/60 bg-gradient-to-br from-purple-50 to-purple-100/50 dark:border-purple-800/60 dark:from-purple-950/30 dark:to-purple-900/20'
+                      : 'cursor-not-allowed border-muted bg-muted/30 opacity-60'
+                  )}
+                >
+                  <div className="flex items-start gap-2">
+                    <div className="flex-shrink-0 rounded-full bg-purple-500/20 p-1.5 transition-colors group-hover:bg-purple-500/30">
+                      <CheckSquare className="h-3 w-3 text-purple-600 transition-transform group-hover:scale-110 dark:text-purple-400" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="font-medium text-purple-700 text-xs dark:text-purple-300">
+                        Next Task
+                      </p>
+                      {nextTaskPreview ? (
+                        <>
+                          <p className="truncate font-bold text-purple-900 text-sm dark:text-purple-100">
+                            {nextTaskPreview.name}
+                          </p>
+                          <div className="flex items-center gap-1">
+                            <span
+                              className={cn(
+                                'inline-flex items-center rounded-full px-1.5 py-0.5 font-medium text-xs',
+                                nextTaskPreview.priority === 'critical'
+                                  ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300'
                                   : nextTaskPreview.priority === 'high'
-                                    ? 'High'
+                                    ? 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300'
                                     : nextTaskPreview.priority === 'normal'
-                                      ? 'Medium'
+                                      ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300'
                                       : nextTaskPreview.priority === 'low'
-                                        ? 'Low'
-                                        : 'No Priority'}
-                              </span>
-                              {nextTaskPreview.is_assigned_to_current_user ? (
-                                <span className="text-purple-600/80 text-xs dark:text-purple-400/80">
-                                  • Assigned to you
-                                </span>
-                              ) : (
-                                <span className="text-purple-600/80 text-xs dark:text-purple-400/80">
-                                  • Can assign to yourself
-                                </span>
+                                        ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300'
+                                        : 'bg-gray-100 text-gray-700 dark:bg-gray-900/30 dark:text-gray-300'
                               )}
-                            </div>
-                          </>
-                        ) : (
-                          <>
-                            <p className="font-bold text-purple-900 text-sm dark:text-purple-100">
-                              No tasks available
-                            </p>
-                            <p className="text-purple-600/80 text-xs dark:text-purple-400/80">
-                              Create or assign tasks
-                            </p>
-                          </>
-                        )}
-                      </div>
+                            >
+                              {nextTaskPreview.priority === 'critical'
+                                ? 'Urgent'
+                                : nextTaskPreview.priority === 'high'
+                                  ? 'High'
+                                  : nextTaskPreview.priority === 'normal'
+                                    ? 'Medium'
+                                    : nextTaskPreview.priority === 'low'
+                                      ? 'Low'
+                                      : 'No Priority'}
+                            </span>
+                            {nextTaskPreview.is_assigned_to_current_user ? (
+                              <span className="text-purple-600/80 text-xs dark:text-purple-400/80">
+                                • Assigned to you
+                              </span>
+                            ) : (
+                              <span className="text-purple-600/80 text-xs dark:text-purple-400/80">
+                                • Can assign to yourself
+                              </span>
+                            )}
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          <p className="font-bold text-purple-900 text-sm dark:text-purple-100">
+                            No tasks available
+                          </p>
+                          <p className="text-purple-600/80 text-xs dark:text-purple-400/80">
+                            Create or assign tasks
+                          </p>
+                        </>
+                      )}
                     </div>
-                    <div className="absolute top-2 right-2 opacity-0 transition-opacity group-hover:opacity-100">
-                      <span className="text-lg">🎯</span>
-                    </div>
-                  </button>
+                  </div>
+                  <div className="absolute top-2 right-2 opacity-0 transition-opacity group-hover:opacity-100">
+                    <span className="text-lg">🎯</span>
+                  </div>
+                </button>
 
-                  {/* Break Timer */}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      // Scroll to timer controls and pre-fill with break session
-                      document
-                        .querySelector('[data-timer-controls]')
-                        ?.scrollIntoView({ behavior: 'smooth' });
+                {/* Break Timer */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    // Scroll to timer controls and pre-fill with break session
+                    document
+                      .querySelector('[data-timer-controls]')
+                      ?.scrollIntoView({ behavior: 'smooth' });
 
-                      setTimeout(() => {
-                        const titleInput = document.querySelector(
-                          '[data-title-input]'
-                        ) as HTMLInputElement;
-                        if (titleInput) {
-                          titleInput.value = 'Break Time';
-                          titleInput.dispatchEvent(
-                            new Event('input', { bubbles: true })
-                          );
-                          titleInput.focus();
-                        }
-                      }, 300);
+                    setTimeout(() => {
+                      const titleInput = document.querySelector(
+                        '[data-title-input]'
+                      ) as HTMLInputElement;
+                      if (titleInput) {
+                        titleInput.value = 'Break Time';
+                        titleInput.dispatchEvent(
+                          new Event('input', { bubbles: true })
+                        );
+                        titleInput.focus();
+                      }
+                    }, 300);
 
-                      toast.success(
-                        'Break session ready! Take 5-15 minutes to recharge.'
-                      );
-                    }}
-                    disabled={isRunning}
-                    className={cn(
-                      'group relative rounded-lg border p-3 text-left transition-all duration-300',
-                      'hover:shadow-green-500/20 hover:shadow-lg active:scale-[0.98]',
-                      !isRunning
-                        ? 'hover:-translate-y-1 border-green-200/60 bg-gradient-to-br from-green-50 to-green-100/50 dark:border-green-800/60 dark:from-green-950/30 dark:to-green-900/20'
-                        : 'cursor-not-allowed border-muted bg-muted/30 opacity-60'
-                    )}
-                  >
-                    <div className="flex items-start gap-2">
-                      <div className="flex-shrink-0 rounded-full bg-green-500/20 p-1.5 transition-colors group-hover:bg-green-500/30">
-                        <Pause className="h-3 w-3 text-green-600 transition-transform group-hover:scale-110 dark:text-green-400" />
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="font-medium text-green-700 text-xs dark:text-green-300">
-                          Break Timer
-                        </p>
-                        <p className="font-bold text-green-900 text-sm dark:text-green-100">
-                          Take 5 min
-                        </p>
-                        <p className="text-green-600/80 text-xs dark:text-green-400/80">
-                          Recharge session
-                        </p>
-                      </div>
+                    toast.success(
+                      'Break session ready! Take 5-15 minutes to recharge.'
+                    );
+                  }}
+                  disabled={isRunning}
+                  className={cn(
+                    'group relative rounded-lg border p-3 text-left transition-all duration-300',
+                    'hover:shadow-green-500/20 hover:shadow-lg active:scale-[0.98]',
+                    !isRunning
+                      ? 'hover:-translate-y-1 border-green-200/60 bg-gradient-to-br from-green-50 to-green-100/50 dark:border-green-800/60 dark:from-green-950/30 dark:to-green-900/20'
+                      : 'cursor-not-allowed border-muted bg-muted/30 opacity-60'
+                  )}
+                >
+                  <div className="flex items-start gap-2">
+                    <div className="flex-shrink-0 rounded-full bg-green-500/20 p-1.5 transition-colors group-hover:bg-green-500/30">
+                      <Pause className="h-3 w-3 text-green-600 transition-transform group-hover:scale-110 dark:text-green-400" />
                     </div>
-                    <div className="absolute top-2 right-2 opacity-0 transition-opacity group-hover:opacity-100">
-                      <span className="text-lg">☕</span>
+                    <div className="min-w-0 flex-1">
+                      <p className="font-medium text-green-700 text-xs dark:text-green-300">
+                        Break Timer
+                      </p>
+                      <p className="font-bold text-green-900 text-sm dark:text-green-100">
+                        Take 5 min
+                      </p>
+                      <p className="text-green-600/80 text-xs dark:text-green-400/80">
+                        Recharge session
+                      </p>
                     </div>
-                  </button>
+                  </div>
+                  <div className="absolute top-2 right-2 opacity-0 transition-opacity group-hover:opacity-100">
+                    <span className="text-lg">☕</span>
+                  </div>
+                </button>
 
-                  {/* Analytics Dashboard */}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setActiveTab('history');
-                    }}
-                    className="group hover:-translate-y-1 relative rounded-lg border border-amber-200/60 bg-gradient-to-br from-amber-50 to-amber-100/50 p-3 text-left transition-all duration-300 hover:shadow-amber-500/20 hover:shadow-lg active:scale-[0.98] dark:border-amber-800/60 dark:from-amber-950/30 dark:to-amber-900/20"
-                  >
-                    <div className="flex items-start gap-2">
-                      <div className="flex-shrink-0 rounded-full bg-amber-500/20 p-1.5 transition-colors group-hover:bg-amber-500/30">
-                        <BarChart2 className="h-3 w-3 text-amber-600 transition-transform group-hover:scale-110 dark:text-amber-400" />
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="font-medium text-amber-700 text-xs dark:text-amber-300">
-                          Analytics
-                        </p>
-                        <p className="font-bold text-amber-900 text-sm dark:text-amber-100">
-                          Focus: {productivityMetrics.avgFocusScore}%
-                        </p>
-                        <p className="text-amber-600/80 text-xs dark:text-amber-400/80">
-                          {productivityMetrics.todaySessionCount} sessions today
-                        </p>
-                      </div>
+                {/* Analytics Dashboard */}
+                <button
+                  type="button"
+                  className="group hover:-translate-y-1 relative rounded-lg border border-amber-200/60 bg-gradient-to-br from-amber-50 to-amber-100/50 p-3 text-left transition-all duration-300 hover:shadow-amber-500/20 hover:shadow-lg active:scale-[0.98] dark:border-amber-800/60 dark:from-amber-950/30 dark:to-amber-900/20"
+                >
+                  <div className="flex items-start gap-2">
+                    <div className="flex-shrink-0 rounded-full bg-amber-500/20 p-1.5 transition-colors group-hover:bg-amber-500/30">
+                      <BarChart2 className="h-3 w-3 text-amber-600 transition-transform group-hover:scale-110 dark:text-amber-400" />
                     </div>
-                    <div className="absolute top-2 right-2 opacity-0 transition-opacity group-hover:opacity-100">
-                      <span className="text-lg">📊</span>
+                    <div className="min-w-0 flex-1">
+                      <p className="font-medium text-amber-700 text-xs dark:text-amber-300">
+                        Analytics
+                      </p>
+                      <p className="font-bold text-amber-900 text-sm dark:text-amber-100">
+                        Focus: {productivityMetrics.avgFocusScore}%
+                      </p>
+                      <p className="text-amber-600/80 text-xs dark:text-amber-400/80">
+                        {productivityMetrics.todaySessionCount} sessions today
+                      </p>
                     </div>
-                  </button>
-                </div>
-              </AccordionContent>
-            </AccordionItem>
-            {/* </div> */}
-          </Accordion>
-        )}
+                  </div>
+                  <div className="absolute top-2 right-2 opacity-0 transition-opacity group-hover:opacity-100">
+                    <span className="text-lg">📊</span>
+                  </div>
+                </button>
+              </div>
+            </AccordionContent>
+          </AccordionItem>
+        </Accordion>
 
         {/* Current Session Status Banner */}
-        {!isViewingOtherUser && currentSession && (
+        {currentSession && (
           <div className="rounded-lg border border-red-200/60 bg-gradient-to-r from-red-50 to-red-100/50 p-4 shadow-sm dark:border-red-800/60 dark:from-red-950/30 dark:to-red-900/20">
             <div className="flex items-center gap-3">
               <div className="flex h-8 w-8 items-center justify-center rounded-full bg-red-500/20">
@@ -1254,557 +1215,519 @@ export default function TimeTrackerContent({
         <div className="grid grid-cols-1 gap-6 pb-6 lg:grid-cols-5 lg:items-start">
           {/* Left Side: Switchable Sidebar Views - Second on mobile */}
           <div className="order-2 lg:order-1 lg:col-span-2">
-            <div className="space-y-6">
-              {/* Tasks View */}
-              {sidebarView === 'tasks' && (
-                <div className="space-y-6">
-                  {/* Tasks Header */}
-                  <Card>
-                    <CardHeader>
-                      {/* Header Section */}
-                      <div className="flex items-center gap-3">
-                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 shadow-lg">
-                          <CheckCircle className="h-5 w-5 text-white" />
-                        </div>
-                        <div>
-                          <CardTitle className="text-lg sm:text-xl">
-                            Task Workspace
-                          </CardTitle>
-                          <CardDescription>
-                            Drag tasks to timer to start tracking 🎯
-                          </CardDescription>
-                        </div>
-                      </div>
-                    </CardHeader>
-                    <CardContent>
-                      {/* Enhanced Search and Filter Bar */}
-                      <div className="mb-5 space-y-4">
-                        {/* Quick Filter Buttons */}
-                        <div className="flex flex-wrap gap-2">
+            {/* Tasks View */}
+            <Card>
+              <CardHeader>
+                {/* Header Section */}
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 shadow-lg">
+                    <CheckCircle className="h-5 w-5 text-white" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-lg sm:text-xl">
+                      Task Workspace
+                    </CardTitle>
+                    <CardDescription>
+                      Drag tasks to timer to start tracking 🎯
+                    </CardDescription>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {/* Enhanced Search and Filter Bar */}
+                <div className="mb-5 space-y-4">
+                  {/* Quick Filter Buttons */}
+                  <div className="flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setTasksSidebarFilters((prev) => ({
+                          ...prev,
+                          assignee: prev.assignee === 'mine' ? 'all' : 'mine',
+                        }))
+                      }
+                      className={cn(
+                        'flex items-center gap-1.5 rounded-md px-2.5 py-1.5 font-medium text-xs transition-all',
+                        tasksSidebarFilters.assignee === 'mine'
+                          ? 'bg-blue-100 text-blue-700 ring-1 ring-blue-200 dark:bg-blue-900/30 dark:text-blue-300 dark:ring-blue-800'
+                          : 'bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground'
+                      )}
+                    >
+                      <CheckCircle className="h-3 w-3" />
+                      My Tasks
+                      {myTasksCount > 0 && (
+                        <span className="ml-1 rounded-full bg-current px-1.5 py-0.5 text-[10px] text-white">
+                          {myTasksCount}
+                        </span>
+                      )}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setTasksSidebarFilters((prev) => ({
+                          ...prev,
+                          assignee:
+                            prev.assignee === 'unassigned'
+                              ? 'all'
+                              : 'unassigned',
+                        }))
+                      }
+                      className={cn(
+                        'flex items-center gap-1.5 rounded-md px-2.5 py-1.5 font-medium text-xs transition-all',
+                        tasksSidebarFilters.assignee === 'unassigned'
+                          ? 'bg-orange-100 text-orange-700 ring-1 ring-orange-200 dark:bg-orange-900/30 dark:text-orange-300 dark:ring-orange-800'
+                          : 'bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground'
+                      )}
+                    >
+                      <svg
+                        className="h-3 w-3"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                        />
+                      </svg>
+                      Unassigned
+                      {unassignedCount > 0 && (
+                        <span className="ml-1 rounded-full bg-current px-1.5 py-0.5 text-[10px] text-white">
+                          {unassignedCount}
+                        </span>
+                      )}
+                    </button>
+                  </div>
+
+                  {/* Search and Dropdown Filters */}
+                  <div className="flex gap-2">
+                    <div className="flex-1">
+                      <Input
+                        placeholder="Search tasks..."
+                        value={tasksSidebarSearch}
+                        onChange={(e) => setTasksSidebarSearch(e.target.value)}
+                        className="h-8 text-xs"
+                      />
+                    </div>
+                    <Select
+                      value={tasksSidebarFilters.board}
+                      onValueChange={(value) =>
+                        setTasksSidebarFilters((prev) => ({
+                          ...prev,
+                          board: value,
+                        }))
+                      }
+                    >
+                      <SelectTrigger className="h-8 w-24 text-xs">
+                        <SelectValue placeholder="Board" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Boards</SelectItem>
+                        {[
+                          ...new Set(
+                            tasks
+                              .map((task) => task.board_name)
+                              .filter((name): name is string => Boolean(name))
+                          ),
+                        ].map((board) => (
+                          <SelectItem key={board} value={board}>
+                            {board}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Select
+                      value={tasksSidebarFilters.list}
+                      onValueChange={(value) =>
+                        setTasksSidebarFilters((prev) => ({
+                          ...prev,
+                          list: value,
+                        }))
+                      }
+                    >
+                      <SelectTrigger className="h-8 w-20 text-xs">
+                        <SelectValue placeholder="List" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Lists</SelectItem>
+                        {[
+                          ...new Set(
+                            tasks
+                              .map((task) => task.list_name)
+                              .filter((name): name is string => Boolean(name))
+                          ),
+                        ].map((list) => (
+                          <SelectItem key={list} value={list}>
+                            {list}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* Active Filters Display */}
+                  {(tasksSidebarSearch ||
+                    tasksSidebarFilters.board !== 'all' ||
+                    tasksSidebarFilters.list !== 'all' ||
+                    tasksSidebarFilters.assignee !== 'all') && (
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="text-muted-foreground text-xs">
+                        Active filters:
+                      </span>
+                      {tasksSidebarSearch && (
+                        <span className="inline-flex items-center gap-1 rounded-md bg-blue-100 px-2 py-1 text-blue-700 text-xs dark:bg-blue-900/30 dark:text-blue-300">
+                          Search: "{tasksSidebarSearch}"
+                          <button
+                            type="button"
+                            onClick={() => setTasksSidebarSearch('')}
+                            className="hover:text-blue-900 dark:hover:text-blue-100"
+                          >
+                            ×
+                          </button>
+                        </span>
+                      )}
+                      {tasksSidebarFilters.board !== 'all' && (
+                        <span className="inline-flex items-center gap-1 rounded-md bg-green-100 px-2 py-1 text-green-700 text-xs dark:bg-green-900/30 dark:text-green-300">
+                          Board: {tasksSidebarFilters.board}
                           <button
                             type="button"
                             onClick={() =>
                               setTasksSidebarFilters((prev) => ({
                                 ...prev,
-                                assignee:
-                                  prev.assignee === 'mine' ? 'all' : 'mine',
+                                board: 'all',
                               }))
                             }
-                            className={cn(
-                              'flex items-center gap-1.5 rounded-md px-2.5 py-1.5 font-medium text-xs transition-all',
-                              tasksSidebarFilters.assignee === 'mine'
-                                ? 'bg-blue-100 text-blue-700 ring-1 ring-blue-200 dark:bg-blue-900/30 dark:text-blue-300 dark:ring-blue-800'
-                                : 'bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground'
-                            )}
+                            className="hover:text-green-900 dark:hover:text-green-100"
                           >
-                            <CheckCircle className="h-3 w-3" />
-                            My Tasks
-                            {myTasksCount > 0 && (
-                              <span className="ml-1 rounded-full bg-current px-1.5 py-0.5 text-[10px] text-white">
-                                {myTasksCount}
-                              </span>
-                            )}
+                            ×
                           </button>
+                        </span>
+                      )}
+                      {tasksSidebarFilters.list !== 'all' && (
+                        <span className="inline-flex items-center gap-1 rounded-md bg-purple-100 px-2 py-1 text-purple-700 text-xs dark:bg-purple-900/30 dark:text-purple-300">
+                          List: {tasksSidebarFilters.list}
                           <button
                             type="button"
                             onClick={() =>
                               setTasksSidebarFilters((prev) => ({
                                 ...prev,
-                                assignee:
-                                  prev.assignee === 'unassigned'
-                                    ? 'all'
-                                    : 'unassigned',
+                                list: 'all',
                               }))
                             }
-                            className={cn(
-                              'flex items-center gap-1.5 rounded-md px-2.5 py-1.5 font-medium text-xs transition-all',
-                              tasksSidebarFilters.assignee === 'unassigned'
-                                ? 'bg-orange-100 text-orange-700 ring-1 ring-orange-200 dark:bg-orange-900/30 dark:text-orange-300 dark:ring-orange-800'
-                                : 'bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground'
-                            )}
+                            className="hover:text-purple-900 dark:hover:text-purple-100"
                           >
-                            <svg
-                              className="h-3 w-3"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                              />
-                            </svg>
-                            Unassigned
-                            {unassignedCount > 0 && (
-                              <span className="ml-1 rounded-full bg-current px-1.5 py-0.5 text-[10px] text-white">
-                                {unassignedCount}
-                              </span>
-                            )}
+                            ×
                           </button>
-                        </div>
-
-                        {/* Search and Dropdown Filters */}
-                        <div className="flex gap-2">
-                          <div className="flex-1">
-                            <Input
-                              placeholder="Search tasks..."
-                              value={tasksSidebarSearch}
-                              onChange={(e) =>
-                                setTasksSidebarSearch(e.target.value)
-                              }
-                              className="h-8 text-xs"
-                            />
-                          </div>
-                          <Select
-                            value={tasksSidebarFilters.board}
-                            onValueChange={(value) =>
+                        </span>
+                      )}
+                      {tasksSidebarFilters.assignee !== 'all' && (
+                        <span className="inline-flex items-center gap-1 rounded-md bg-orange-100 px-2 py-1 text-orange-700 text-xs dark:bg-orange-900/30 dark:text-orange-300">
+                          {tasksSidebarFilters.assignee === 'mine'
+                            ? 'My Tasks'
+                            : tasksSidebarFilters.assignee === 'unassigned'
+                              ? 'Unassigned'
+                              : 'Assignee Filter'}
+                          <button
+                            type="button"
+                            onClick={() =>
                               setTasksSidebarFilters((prev) => ({
                                 ...prev,
-                                board: value,
+                                assignee: 'all',
                               }))
                             }
+                            className="hover:text-orange-900 dark:hover:text-orange-100"
                           >
-                            <SelectTrigger className="h-8 w-24 text-xs">
-                              <SelectValue placeholder="Board" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="all">All Boards</SelectItem>
-                              {[
-                                ...new Set(
-                                  tasks
-                                    .map((task) => task.board_name)
-                                    .filter((name): name is string =>
-                                      Boolean(name)
-                                    )
-                                ),
-                              ].map((board) => (
-                                <SelectItem key={board} value={board}>
-                                  {board}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          <Select
-                            value={tasksSidebarFilters.list}
-                            onValueChange={(value) =>
-                              setTasksSidebarFilters((prev) => ({
-                                ...prev,
-                                list: value,
-                              }))
-                            }
-                          >
-                            <SelectTrigger className="h-8 w-20 text-xs">
-                              <SelectValue placeholder="List" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="all">All Lists</SelectItem>
-                              {[
-                                ...new Set(
-                                  tasks
-                                    .map((task) => task.list_name)
-                                    .filter((name): name is string =>
-                                      Boolean(name)
-                                    )
-                                ),
-                              ].map((list) => (
-                                <SelectItem key={list} value={list}>
-                                  {list}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
+                            ×
+                          </button>
+                        </span>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setTasksSidebarSearch('');
+                          setTasksSidebarFilters({
+                            board: 'all',
+                            list: 'all',
+                            assignee: 'all',
+                          });
+                        }}
+                        className="text-muted-foreground text-xs hover:text-foreground"
+                      >
+                        Clear all
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                {/* Task List with Scrollable Container */}
+                <div className="space-y-4">
+                  {(() => {
+                    // Filter and sort tasks for sidebar with user prioritization
+                    const filteredSidebarTasks =
+                      getFilteredAndSortedSidebarTasks(
+                        tasks,
+                        tasksSidebarSearch,
+                        tasksSidebarFilters
+                      );
+
+                    if (tasks.length === 0) {
+                      return (
+                        <div className="rounded-lg border-2 border-muted-foreground/25 border-dashed p-6 text-center">
+                          <CheckCircle className="mx-auto mb-3 h-8 w-8 text-muted-foreground" />
+                          <p className="text-muted-foreground text-sm">
+                            No tasks available. Create tasks in your project
+                            boards to see them here.
+                          </p>
+                        </div>
+                      );
+                    }
+
+                    if (filteredSidebarTasks.length === 0) {
+                      return (
+                        <div className="rounded-lg border-2 border-muted-foreground/25 border-dashed p-6 text-center">
+                          <CheckCircle className="mx-auto mb-3 h-8 w-8 text-muted-foreground" />
+                          <p className="text-muted-foreground text-sm">
+                            No tasks found matching your criteria.
+                          </p>
+                        </div>
+                      );
+                    }
+
+                    return (
+                      <>
+                        {/* Task Count Header */}
+                        <div className="mb-3 flex items-center justify-between px-1 text-muted-foreground text-xs">
+                          <span>
+                            {filteredSidebarTasks.length} task
+                            {filteredSidebarTasks.length !== 1 ? 's' : ''}{' '}
+                            available
+                            {(tasksSidebarSearch ||
+                              tasksSidebarFilters.board !== 'all' ||
+                              tasksSidebarFilters.list !== 'all' ||
+                              tasksSidebarFilters.assignee !== 'all') &&
+                              ` (filtered from ${tasks.length} total)`}
+                          </span>
+                          <span className="font-medium text-blue-600 dark:text-blue-400">
+                            Drag to timer →
+                          </span>
                         </div>
 
-                        {/* Active Filters Display */}
-                        {(tasksSidebarSearch ||
-                          tasksSidebarFilters.board !== 'all' ||
-                          tasksSidebarFilters.list !== 'all' ||
-                          tasksSidebarFilters.assignee !== 'all') && (
-                          <div className="flex flex-wrap items-center gap-2">
-                            <span className="text-muted-foreground text-xs">
-                              Active filters:
-                            </span>
-                            {tasksSidebarSearch && (
-                              <span className="inline-flex items-center gap-1 rounded-md bg-blue-100 px-2 py-1 text-blue-700 text-xs dark:bg-blue-900/30 dark:text-blue-300">
-                                Search: "{tasksSidebarSearch}"
-                                <button
-                                  type="button"
-                                  onClick={() => setTasksSidebarSearch('')}
-                                  className="hover:text-blue-900 dark:hover:text-blue-100"
-                                >
-                                  ×
-                                </button>
-                              </span>
-                            )}
-                            {tasksSidebarFilters.board !== 'all' && (
-                              <span className="inline-flex items-center gap-1 rounded-md bg-green-100 px-2 py-1 text-green-700 text-xs dark:bg-green-900/30 dark:text-green-300">
-                                Board: {tasksSidebarFilters.board}
-                                <button
-                                  type="button"
-                                  onClick={() =>
-                                    setTasksSidebarFilters((prev) => ({
-                                      ...prev,
-                                      board: 'all',
-                                    }))
-                                  }
-                                  className="hover:text-green-900 dark:hover:text-green-100"
-                                >
-                                  ×
-                                </button>
-                              </span>
-                            )}
-                            {tasksSidebarFilters.list !== 'all' && (
-                              <span className="inline-flex items-center gap-1 rounded-md bg-purple-100 px-2 py-1 text-purple-700 text-xs dark:bg-purple-900/30 dark:text-purple-300">
-                                List: {tasksSidebarFilters.list}
-                                <button
-                                  type="button"
-                                  onClick={() =>
-                                    setTasksSidebarFilters((prev) => ({
-                                      ...prev,
-                                      list: 'all',
-                                    }))
-                                  }
-                                  className="hover:text-purple-900 dark:hover:text-purple-100"
-                                >
-                                  ×
-                                </button>
-                              </span>
-                            )}
-                            {tasksSidebarFilters.assignee !== 'all' && (
-                              <span className="inline-flex items-center gap-1 rounded-md bg-orange-100 px-2 py-1 text-orange-700 text-xs dark:bg-orange-900/30 dark:text-orange-300">
-                                {tasksSidebarFilters.assignee === 'mine'
-                                  ? 'My Tasks'
-                                  : tasksSidebarFilters.assignee ===
-                                      'unassigned'
-                                    ? 'Unassigned'
-                                    : 'Assignee Filter'}
-                                <button
-                                  type="button"
-                                  onClick={() =>
-                                    setTasksSidebarFilters((prev) => ({
-                                      ...prev,
-                                      assignee: 'all',
-                                    }))
-                                  }
-                                  className="hover:text-orange-900 dark:hover:text-orange-100"
-                                >
-                                  ×
-                                </button>
-                              </span>
-                            )}
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setTasksSidebarSearch('');
-                                setTasksSidebarFilters({
-                                  board: 'all',
-                                  list: 'all',
-                                  assignee: 'all',
-                                });
-                              }}
-                              className="text-muted-foreground text-xs hover:text-foreground"
-                            >
-                              Clear all
-                            </button>
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Task List with Scrollable Container */}
-                      <div className="space-y-4">
-                        {(() => {
-                          // Filter and sort tasks for sidebar with user prioritization
-                          const filteredSidebarTasks =
-                            getFilteredAndSortedSidebarTasks(
-                              tasks,
-                              tasksSidebarSearch,
-                              tasksSidebarFilters
-                            );
-
-                          if (tasks.length === 0) {
-                            return (
-                              <div className="rounded-lg border-2 border-muted-foreground/25 border-dashed p-6 text-center">
-                                <CheckCircle className="mx-auto mb-3 h-8 w-8 text-muted-foreground" />
-                                <p className="text-muted-foreground text-sm">
-                                  No tasks available. Create tasks in your
-                                  project boards to see them here.
-                                </p>
-                              </div>
-                            );
-                          }
-
-                          if (filteredSidebarTasks.length === 0) {
-                            return (
-                              <div className="rounded-lg border-2 border-muted-foreground/25 border-dashed p-6 text-center">
-                                <CheckCircle className="mx-auto mb-3 h-8 w-8 text-muted-foreground" />
-                                <p className="text-muted-foreground text-sm">
-                                  No tasks found matching your criteria.
-                                </p>
-                              </div>
-                            );
-                          }
-
-                          return (
-                            <>
-                              {/* Task Count Header */}
-                              <div className="mb-3 flex items-center justify-between px-1 text-muted-foreground text-xs">
-                                <span>
-                                  {filteredSidebarTasks.length} task
-                                  {filteredSidebarTasks.length !== 1 ? 's' : ''}{' '}
-                                  available
-                                  {(tasksSidebarSearch ||
-                                    tasksSidebarFilters.board !== 'all' ||
-                                    tasksSidebarFilters.list !== 'all' ||
-                                    tasksSidebarFilters.assignee !== 'all') &&
-                                    ` (filtered from ${tasks.length} total)`}
-                                </span>
-                                <span className="font-medium text-blue-600 dark:text-blue-400">
-                                  Drag to timer →
-                                </span>
-                              </div>
-
-                              {/* Scrollable Task Container */}
-                              <div className="/40 max-h-[400px] overflow-y-auto rounded-lg border bg-gray-50/30 p-4 dark:border-gray-700/40 dark:bg-gray-800/20">
-                                <div className="space-y-4">
-                                  {filteredSidebarTasks.map((task) => (
-                                    // biome-ignore lint/a11y/noStaticElementInteractions: <>
-                                    <div
-                                      key={task.id}
+                        {/* Scrollable Task Container */}
+                        <div className="/40 max-h-[400px] overflow-y-auto rounded-lg border bg-gray-50/30 p-4 dark:border-gray-700/40 dark:bg-gray-800/20">
+                          <div className="space-y-4">
+                            {filteredSidebarTasks.map((task) => (
+                              // biome-ignore lint/a11y/noStaticElementInteractions: <>
+                              <div
+                                key={task.id}
+                                className={cn(
+                                  'group cursor-grab rounded-lg border p-4 shadow-sm transition-all duration-200 hover:scale-[1.01] hover:shadow-md active:cursor-grabbing',
+                                  // Enhanced styling for assigned tasks
+                                  task.is_assigned_to_current_user
+                                    ? 'border-blue-300 bg-gradient-to-br from-blue-50 to-blue-100 ring-1 ring-blue-200 dark:border-blue-700 dark:from-blue-950/30 dark:to-blue-900/30 dark:ring-blue-800'
+                                    : '/60 bg-white dark:border-gray-700/60 dark:bg-gray-800/80',
+                                  isDraggingTask &&
+                                    'shadow-blue-500/10 shadow-md ring-1 ring-blue-400/30'
+                                )}
+                                draggable
+                                onDragStart={(e) => {
+                                  e.dataTransfer.setData(
+                                    'application/json',
+                                    JSON.stringify({
+                                      type: 'task',
+                                      task: task,
+                                    })
+                                  );
+                                  setIsDraggingTask(true);
+                                }}
+                                onDragEnd={() => {
+                                  setIsDraggingTask(false);
+                                }}
+                              >
+                                <div className="flex items-start gap-4">
+                                  <div
+                                    className={cn(
+                                      'flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg border',
+                                      task.is_assigned_to_current_user
+                                        ? 'border-blue-300 bg-gradient-to-br from-blue-100 to-blue-200 dark:border-blue-600 dark:from-blue-800 dark:to-blue-700'
+                                        : 'border-blue-200/60 bg-gradient-to-br from-blue-50 to-blue-100 dark:border-blue-700/60 dark:from-blue-900/50 dark:to-blue-800/50'
+                                    )}
+                                  >
+                                    <CheckCircle
                                       className={cn(
-                                        'group cursor-grab rounded-lg border p-4 shadow-sm transition-all duration-200 hover:scale-[1.01] hover:shadow-md active:cursor-grabbing',
-                                        // Enhanced styling for assigned tasks
+                                        'h-4 w-4',
                                         task.is_assigned_to_current_user
-                                          ? 'border-blue-300 bg-gradient-to-br from-blue-50 to-blue-100 ring-1 ring-blue-200 dark:border-blue-700 dark:from-blue-950/30 dark:to-blue-900/30 dark:ring-blue-800'
-                                          : '/60 bg-white dark:border-gray-700/60 dark:bg-gray-800/80',
-                                        isDraggingTask &&
-                                          'shadow-blue-500/10 shadow-md ring-1 ring-blue-400/30'
+                                          ? 'text-blue-700 dark:text-blue-300'
+                                          : 'text-blue-600 dark:text-blue-400'
                                       )}
-                                      draggable
-                                      onDragStart={(e) => {
-                                        e.dataTransfer.setData(
-                                          'application/json',
-                                          JSON.stringify({
-                                            type: 'task',
-                                            task: task,
-                                          })
-                                        );
-                                        setIsDraggingTask(true);
-                                      }}
-                                      onDragEnd={() => {
-                                        setIsDraggingTask(false);
-                                      }}
-                                    >
-                                      <div className="flex items-start gap-4">
-                                        <div
-                                          className={cn(
-                                            'flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg border',
-                                            task.is_assigned_to_current_user
-                                              ? 'border-blue-300 bg-gradient-to-br from-blue-100 to-blue-200 dark:border-blue-600 dark:from-blue-800 dark:to-blue-700'
-                                              : 'border-blue-200/60 bg-gradient-to-br from-blue-50 to-blue-100 dark:border-blue-700/60 dark:from-blue-900/50 dark:to-blue-800/50'
-                                          )}
-                                        >
-                                          <CheckCircle
-                                            className={cn(
-                                              'h-4 w-4',
-                                              task.is_assigned_to_current_user
-                                                ? 'text-blue-700 dark:text-blue-300'
-                                                : 'text-blue-600 dark:text-blue-400'
-                                            )}
-                                          />
-                                        </div>
-                                        <div className="min-w-0 flex-1">
-                                          <div className="flex items-start justify-between gap-2">
-                                            <h4
-                                              className={cn(
-                                                'mb-1 font-medium text-sm',
-                                                task.is_assigned_to_current_user
-                                                  ? 'text-blue-900 dark:text-blue-100'
-                                                  : 'text-gray-900 dark:text-gray-100'
-                                              )}
-                                            >
-                                              {task.name}
-                                              {task.is_assigned_to_current_user && (
-                                                <span className="ml-2 inline-flex items-center rounded-full bg-blue-100 px-2 py-0.5 font-medium text-blue-800 text-xs dark:bg-blue-900/50 dark:text-blue-200">
-                                                  Assigned to you
-                                                </span>
-                                              )}
-                                            </h4>
-                                          </div>
-                                          {task.description && (
-                                            <p className="mb-3 line-clamp-2 text-gray-600 text-xs dark:text-gray-400">
-                                              {task.description}
-                                            </p>
-                                          )}
+                                    />
+                                  </div>
+                                  <div className="min-w-0 flex-1">
+                                    <div className="flex items-start justify-between gap-2">
+                                      <h4
+                                        className={cn(
+                                          'mb-1 font-medium text-sm',
+                                          task.is_assigned_to_current_user
+                                            ? 'text-blue-900 dark:text-blue-100'
+                                            : 'text-gray-900 dark:text-gray-100'
+                                        )}
+                                      >
+                                        {task.name}
+                                        {task.is_assigned_to_current_user && (
+                                          <span className="ml-2 inline-flex items-center rounded-full bg-blue-100 px-2 py-0.5 font-medium text-blue-800 text-xs dark:bg-blue-900/50 dark:text-blue-200">
+                                            Assigned to you
+                                          </span>
+                                        )}
+                                      </h4>
+                                    </div>
+                                    {task.description && (
+                                      <p className="mb-3 line-clamp-2 text-gray-600 text-xs dark:text-gray-400">
+                                        {task.description}
+                                      </p>
+                                    )}
 
-                                          {/* Assignees Display */}
-                                          {task.assignees &&
-                                            task.assignees.length > 0 && (
-                                              <div className="mb-2 flex items-center gap-2">
-                                                <div className="-space-x-1 flex">
-                                                  {task.assignees
-                                                    .slice(0, 3)
-                                                    .map((assignee) => (
-                                                      <div
-                                                        key={assignee.id}
-                                                        className="h-5 w-5 rounded-full border-2 border-white bg-gradient-to-br from-gray-100 to-gray-200 dark:border-gray-800 dark:from-gray-700 dark:to-gray-600"
-                                                        title={
-                                                          assignee.display_name ||
-                                                          assignee.email
-                                                        }
-                                                      >
-                                                        {assignee.avatar_url ? (
-                                                          // biome-ignore lint/performance/noImgElement: <>
-                                                          <img
-                                                            src={
-                                                              assignee.avatar_url
-                                                            }
-                                                            alt={
-                                                              assignee.display_name ||
-                                                              assignee.email ||
-                                                              ''
-                                                            }
-                                                            className="h-full w-full rounded-full object-cover"
-                                                          />
-                                                        ) : (
-                                                          <div className="flex h-full w-full items-center justify-center font-medium text-[8px] text-gray-600 dark:text-gray-300">
-                                                            {generateAssigneeInitials(
-                                                              assignee
-                                                            )}
-                                                          </div>
-                                                        )}
-                                                      </div>
-                                                    ))}
-                                                  {task.assignees.length >
-                                                    3 && (
-                                                    <div className="flex h-5 w-5 items-center justify-center rounded-full border-2 border-white bg-gray-200 font-medium text-[8px] text-gray-600 dark:border-gray-800 dark:bg-gray-700 dark:text-gray-300">
-                                                      +
-                                                      {task.assignees.length -
-                                                        3}
+                                    {/* Assignees Display */}
+                                    {task.assignees &&
+                                      task.assignees.length > 0 && (
+                                        <div className="mb-2 flex items-center gap-2">
+                                          <div className="-space-x-1 flex">
+                                            {task.assignees
+                                              .slice(0, 3)
+                                              .map((assignee) => (
+                                                <div
+                                                  key={assignee.id}
+                                                  className="h-5 w-5 rounded-full border-2 border-white bg-gradient-to-br from-gray-100 to-gray-200 dark:border-gray-800 dark:from-gray-700 dark:to-gray-600"
+                                                  title={
+                                                    assignee.display_name ||
+                                                    assignee.email
+                                                  }
+                                                >
+                                                  {assignee.avatar_url ? (
+                                                    // biome-ignore lint/performance/noImgElement: <>
+                                                    <img
+                                                      src={assignee.avatar_url}
+                                                      alt={
+                                                        assignee.display_name ||
+                                                        assignee.email ||
+                                                        ''
+                                                      }
+                                                      className="h-full w-full rounded-full object-cover"
+                                                    />
+                                                  ) : (
+                                                    <div className="flex h-full w-full items-center justify-center font-medium text-[8px] text-gray-600 dark:text-gray-300">
+                                                      {generateAssigneeInitials(
+                                                        assignee
+                                                      )}
                                                     </div>
                                                   )}
                                                 </div>
-                                                <span className="text-muted-foreground text-xs">
-                                                  {task.assignees.length}{' '}
-                                                  assigned
-                                                </span>
+                                              ))}
+                                            {task.assignees.length > 3 && (
+                                              <div className="flex h-5 w-5 items-center justify-center rounded-full border-2 border-white bg-gray-200 font-medium text-[8px] text-gray-600 dark:border-gray-800 dark:bg-gray-700 dark:text-gray-300">
+                                                +{task.assignees.length - 3}
                                               </div>
                                             )}
-
-                                          {task.board_name &&
-                                            task.list_name && (
-                                              <div className="flex items-center gap-2">
-                                                <div className="flex items-center gap-1 rounded-md bg-gray-100 px-1.5 py-0.5 dark:bg-gray-700">
-                                                  <MapPin className="h-3 w-3 text-gray-500 dark:text-gray-400" />
-                                                  <span className="font-medium text-gray-600 text-xs dark:text-gray-300">
-                                                    {task.board_name}
-                                                  </span>
-                                                </div>
-                                                <div className="flex items-center gap-1 rounded-md bg-blue-100 px-1.5 py-0.5 dark:bg-blue-900/30">
-                                                  <Tag className="h-3 w-3 text-blue-600 dark:text-blue-400" />
-                                                  <span className="font-medium text-blue-700 text-xs dark:text-blue-300">
-                                                    {task.list_name}
-                                                  </span>
-                                                </div>
-                                              </div>
-                                            )}
-                                        </div>
-                                        <div className="flex flex-shrink-0 items-center gap-1.5 text-gray-400 text-xs opacity-0 transition-opacity group-hover:opacity-100">
-                                          <span className="font-medium">
-                                            Drag
+                                          </div>
+                                          <span className="text-muted-foreground text-xs">
+                                            {task.assignees.length} assigned
                                           </span>
-                                          <svg
-                                            className="h-3.5 w-3.5"
-                                            fill="none"
-                                            stroke="currentColor"
-                                            viewBox="0 0 24 24"
-                                          >
-                                            <path
-                                              strokeLinecap="round"
-                                              strokeLinejoin="round"
-                                              strokeWidth={2}
-                                              d="M8 9l4-4 4 4m0 6l-4 4-4-4"
-                                            />
-                                          </svg>
+                                        </div>
+                                      )}
+
+                                    {task.board_name && task.list_name && (
+                                      <div className="flex items-center gap-2">
+                                        <div className="flex items-center gap-1 rounded-md bg-gray-100 px-1.5 py-0.5 dark:bg-gray-700">
+                                          <MapPin className="h-3 w-3 text-gray-500 dark:text-gray-400" />
+                                          <span className="font-medium text-gray-600 text-xs dark:text-gray-300">
+                                            {task.board_name}
+                                          </span>
+                                        </div>
+                                        <div className="flex items-center gap-1 rounded-md bg-blue-100 px-1.5 py-0.5 dark:bg-blue-900/30">
+                                          <Tag className="h-3 w-3 text-blue-600 dark:text-blue-400" />
+                                          <span className="font-medium text-blue-700 text-xs dark:text-blue-300">
+                                            {task.list_name}
+                                          </span>
                                         </div>
                                       </div>
-                                    </div>
-                                  ))}
-                                </div>
-
-                                {/* Scroll indicator */}
-                                {filteredSidebarTasks.length > 5 && (
-                                  <div className="mt-2 text-center">
-                                    <div className="inline-flex items-center gap-1 text-muted-foreground text-xs">
-                                      <span>Scroll for more</span>
-                                      <svg
-                                        className="h-3 w-3"
-                                        fill="none"
-                                        stroke="currentColor"
-                                        viewBox="0 0 24 24"
-                                      >
-                                        <path
-                                          strokeLinecap="round"
-                                          strokeLinejoin="round"
-                                          strokeWidth={2}
-                                          d="M19 14l-7 7m0 0l-7-7m7 7V3"
-                                        />
-                                      </svg>
-                                    </div>
+                                    )}
                                   </div>
-                                )}
+                                  <div className="flex flex-shrink-0 items-center gap-1.5 text-gray-400 text-xs opacity-0 transition-opacity group-hover:opacity-100">
+                                    <span className="font-medium">Drag</span>
+                                    <svg
+                                      className="h-3.5 w-3.5"
+                                      fill="none"
+                                      stroke="currentColor"
+                                      viewBox="0 0 24 24"
+                                    >
+                                      <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth={2}
+                                        d="M8 9l4-4 4 4m0 6l-4 4-4-4"
+                                      />
+                                    </svg>
+                                  </div>
+                                </div>
                               </div>
-                            </>
-                          );
-                        })()}
-                      </div>
-                    </CardContent>
-                  </Card>
+                            ))}
+                          </div>
+
+                          {/* Scroll indicator */}
+                          {filteredSidebarTasks.length > 5 && (
+                            <div className="mt-2 text-center">
+                              <div className="inline-flex items-center gap-1 text-muted-foreground text-xs">
+                                <span>Scroll for more</span>
+                                <svg
+                                  className="h-3 w-3"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  viewBox="0 0 24 24"
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M19 14l-7 7m0 0l-7-7m7 7V3"
+                                  />
+                                </svg>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </>
+                    );
+                  })()}
                 </div>
-              )}
-            </div>
+              </CardContent>
+            </Card>
           </div>
 
           {/* Right Side: Tabs with Timer Controls - First on mobile */}
           <div className="order-1 lg:order-2 lg:col-span-3">
-            <div className="space-y-6">
-              {/* Main Tabs - Timer, History, Categories, Goals */}
-              <Tabs value={activeTab} onValueChange={setActiveTab}>
-                {/* Tab Content */}
-                {!isViewingOtherUser && (
-                  <TabsContent
-                    value="timer"
-                    className="fade-in-50 animate-in duration-300"
-                  >
-                    <div data-timer-controls>
-                      <TimerControls
-                        wsId={wsId}
-                        currentSession={currentSession}
-                        setCurrentSession={setCurrentSession}
-                        elapsedTime={elapsedTime}
-                        setElapsedTime={setElapsedTime}
-                        isRunning={isRunning}
-                        setIsRunning={setIsRunning}
-                        categories={categories}
-                        tasks={tasks}
-                        onSessionUpdate={() => fetchData(false)}
-                        formatTime={formatTime}
-                        formatDuration={formatDuration}
-                        apiCall={apiCall}
-                        isDraggingTask={isDraggingTask}
-                        onGoToTasksTab={() => {
-                          setSidebarView('tasks');
-                          toast.success(
-                            'Switched to Tasks tab - create your first task!'
-                          );
-                        }}
-                        currentUserId={currentUserId}
-                      />
-                    </div>
-                  </TabsContent>
-                )}
-              </Tabs>
+            <div className="fade-in-50 animate-in duration-300">
+              <TimerControls
+                wsId={wsId}
+                currentSession={currentSession}
+                setCurrentSession={setCurrentSession}
+                elapsedTime={elapsedTime}
+                setElapsedTime={setElapsedTime}
+                isRunning={isRunning}
+                setIsRunning={setIsRunning}
+                categories={categories}
+                tasks={tasks}
+                onSessionUpdate={() => fetchData(false)}
+                formatTime={formatTime}
+                formatDuration={formatDuration}
+                apiCall={apiCall}
+                isDraggingTask={isDraggingTask}
+                onGoToTasksTab={() => {
+                  toast.success(
+                    'Switched to Tasks tab - create your first task!'
+                  );
+                }}
+                currentUserId={currentUserId}
+              />
             </div>
           </div>
         </div>
