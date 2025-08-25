@@ -71,11 +71,9 @@ export function TaskForm({ listId, onTaskCreated }: Props) {
     const checkIsPersonal = async () => {
       if (wsId === 'personal') {
         setIsPersonal(true);
-        return;
+      } else {
+        setIsPersonal(false);
       }
-      const response = await fetch(`/api/workspaces/${wsId}/is-personal`);
-      const { isPersonal } = await response.json();
-      setIsPersonal(isPersonal);
     };
     checkIsPersonal();
   }, [wsId]);
