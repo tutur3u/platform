@@ -585,7 +585,7 @@ export function KanbanBoard({ boardId, tasks, isLoading }: Props) {
       )}
 
       {/* Kanban Board */}
-      <div className="flex-1 overflow-hidden">
+      <div className="min-h-0 flex-1 overflow-hidden">
         <DndContext
           sensors={sensors}
           collisionDetection={closestCorners}
@@ -619,7 +619,10 @@ export function KanbanBoard({ boardId, tasks, isLoading }: Props) {
               items={columnsId}
               strategy={horizontalListSortingStrategy}
             >
-              <div ref={boardRef} className="flex h-full gap-4">
+              <div
+                ref={boardRef}
+                className="scrollbar-thin scrollbar-track-transparent scrollbar-thumb-muted-foreground/50 flex h-full flex-shrink-0 gap-4 overflow-x-auto"
+              >
                 {columns
                   .sort((a, b) => {
                     // First sort by status priority, then by position within status

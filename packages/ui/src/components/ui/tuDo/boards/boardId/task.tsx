@@ -193,7 +193,7 @@ export const TaskCard = React.memo(function TaskCard({
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
-    height: 'var(--task-height)',
+    height: '5.5rem',
   };
 
   const now = new Date();

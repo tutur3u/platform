@@ -111,7 +111,7 @@ export function BoardViews({ board }: Props) {
       <BoardSummary
         board={createBoardWithFilteredTasks(board, filteredTasks)}
       />
-      <div className="flex-1 overflow-hidden">{renderView()}</div>
+      <div className="min-h-0 flex-1 overflow-hidden">{renderView()}</div>
     </div>
   );
 }
