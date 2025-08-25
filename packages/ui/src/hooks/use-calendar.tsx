@@ -1,19 +1,19 @@
-import { toast } from '../components/ui/sonner';
-import { createAllDayEvent, isAllDayEvent } from './calendar-utils';
-import { useCalendarSync } from './use-calendar-sync';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type {
   Workspace,
   WorkspaceCalendarGoogleToken,
 } from '@tuturuuu/types/db';
-import type { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
 import type { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
+import type { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
 import dayjs from 'dayjs';
 import moment from 'moment';
+import { toast } from '../components/ui/sonner';
+import { createAllDayEvent, isAllDayEvent } from './calendar-utils';
+import { useCalendarSync } from './use-calendar-sync';
 import 'moment/locale/vi';
 import {
-  type ReactNode,
   createContext,
+  type ReactNode,
   useCallback,
   useContext,
   useEffect,
@@ -288,22 +288,32 @@ export const CalendarProvider = ({
 
       const eventColor = event.color || 'BLUE';
 
-      // Create an event signature to check for duplicates
-      const newEventSignature = `${event.title || ''}|${event.description || ''}|${startDate.toISOString()}|${endDate.toISOString()}`;
+      // Only check for actual system duplicates (same ID or Google event ID)
+      // Allow users to create events with similar content (legitimate use case)
+      const actualDuplicates = events.filter((e: CalendarEvent) => {
+        // Check if this is the same event by ID
+        if (e.id === event.id) return true;
 
-      // Check existing events for potential duplicates to prevent race condition
-      const duplicates = events.filter((e: CalendarEvent) => {
-        const existingSignature = createEventSignature(e);
-        return existingSignature === newEventSignature;
+        // Check if this is the same Google Calendar event
+        if (
+          event.google_event_id &&
+          e.google_event_id === event.google_event_id
+        )
+          return true;
+
+        // Check if this is a pending event with the same temporary ID
+        if (event.id === 'new' && e.id === 'new') return true;
+
+        return false;
       });
 
-      // If duplicates already exist, return the first one
-      if (duplicates.length > 0) {
+      // If actual system duplicates exist, return the first one
+      if (actualDuplicates.length > 0) {
         // Clear any pending new event
         setPendingNewEvent(null);
 
         // Return the existing event
-        return duplicates[0];
+        return actualDuplicates[0];
       }
 
       // No duplicates, proceed with creating the event
@@ -589,31 +599,32 @@ export const CalendarProvider = ({
           ...pendingNewEvent,
           ...cleanedUpdates,
         };
-        // Check for potential duplicates before creating a new event
-        if (cleanedUpdates.title || pendingNewEvent.title) {
-          const startDate = roundToNearest15Minutes(
-            new Date(newEventData.start_at || new Date())
-          );
-          const endDate = roundToNearest15Minutes(
-            new Date(newEventData.end_at || new Date())
-          );
+        // Only check for actual system duplicates (same ID or Google event ID)
+        // Allow users to create events with similar content (legitimate use case)
+        const actualDuplicates = events.filter((e: CalendarEvent) => {
+          // Check if this is the same event by ID
+          if (e.id === newEventData.id) return true;
 
-          const newEventSignature = `${newEventData.title || ''}|${newEventData.description || ''}|${startDate.toISOString()}|${endDate.toISOString()}`;
+          // Check if this is the same Google Calendar event
+          if (
+            newEventData.google_event_id &&
+            e.google_event_id === newEventData.google_event_id
+          )
+            return true;
 
-          // Check existing events for potential duplicates
-          const duplicates = events.filter((e: CalendarEvent) => {
-            const existingSignature = createEventSignature(e);
-            return existingSignature === newEventSignature;
-          });
+          // Check if this is a pending event with the same temporary ID
+          if (newEventData.id === 'new' && e.id === 'new') return true;
 
-          // If duplicates already exist, return the first one
-          if (duplicates.length > 0) {
-            // Clear any pending new event
-            setPendingNewEvent(null);
+          return false;
+        });
 
-            // Return the existing event
-            return duplicates[0];
-          }
+        // If actual system duplicates exist, return the first one
+        if (actualDuplicates.length > 0) {
+          // Clear any pending new event
+          setPendingNewEvent(null);
+
+          // Return the existing event
+          return actualDuplicates[0];
         }
 
         // Create a new event instead of updating
