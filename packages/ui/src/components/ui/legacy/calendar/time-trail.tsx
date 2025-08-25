@@ -1,10 +1,10 @@
+import { dayjs } from '@tuturuuu/ui/lib/dayjs-setup';
 import { cn } from '@tuturuuu/utils/format';
-import dayjs from 'dayjs';
-import timezone from 'dayjs/plugin/timezone';
-import { HOUR_HEIGHT } from './config';
+import { DAY_HEIGHT, HOUR_HEIGHT } from './config';
 import { useCalendarSettings } from './settings/settings-context';
 
-dayjs.extend(timezone);
+// Extract hours array as a constant to avoid recreation on every render
+const HOURS = Array.from(Array(24).keys());
 
 // Reusable component for time column
 const TimeColumn = ({
@@ -22,8 +22,6 @@ const TimeColumn = ({
   style?: React.CSSProperties;
   muted?: boolean;
 }) => {
-  const hours = Array.from(Array(24).keys());
-
   // Format time in the specified timezone
   const formatTime = (hour: number) => {
     const fmt = timeFormat === '24h' ? 'HH:mm' : 'h a';
@@ -63,7 +61,7 @@ const TimeColumn = ({
       )}
       style={style}
     >
-      {hours.map((hour) => (
+      {HOURS.map((hour) => (
         <div
           key={`trail-hour-${hour}`}
           className="absolute flex h-20 w-full items-center justify-end pr-2"
@@ -94,7 +92,7 @@ export const TimeTrail = () => {
   const timeFormat = settings?.appearance?.timeFormat;
 
   return (
-    <div className="flex" style={{ height: 'auto', minHeight: '30px' }}>
+    <div className="flex" style={{ height: DAY_HEIGHT }}>
       {showSecondary && (
         <TimeColumn
           timezone={secondaryTz}
@@ -102,14 +100,14 @@ export const TimeTrail = () => {
           timeFormat={timeFormat}
           className="border-border/30 border-r dark:border-zinc-700/50"
           muted={true}
-          style={{ height: 'auto', minHeight: '30px' }}
+          style={{ height: DAY_HEIGHT }}
         />
       )}
       <TimeColumn
         timezone={tz}
         primaryTimezone={tz}
         timeFormat={timeFormat}
-        style={{ height: 'auto', minHeight: '30px' }}
+        style={{ height: DAY_HEIGHT }}
       />
     </div>
   );
