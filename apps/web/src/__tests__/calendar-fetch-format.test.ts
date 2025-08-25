@@ -1,12 +1,5 @@
 import { convertGoogleAllDayEvent } from '@tuturuuu/ui/hooks/calendar-utils';
-import dayjs from 'dayjs';
-import timezone from 'dayjs/plugin/timezone';
-import utc from 'dayjs/plugin/utc';
 import { describe, expect, test } from 'vitest';
-
-// Extend dayjs with required plugins for timezone handling
-dayjs.extend(utc);
-dayjs.extend(timezone);
 
 describe('convertGoogleAllDayEvent', () => {
   test('converts all-day (date-only) event to midnight in user timezone', () => {

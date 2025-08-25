@@ -1,19 +1,14 @@
-import { toast } from '../components/ui/sonner';
-import { createAllDayEvent, isAllDayEvent } from './calendar-utils';
-import { useCalendarSync } from './use-calendar-sync';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type {
   Workspace,
   WorkspaceCalendarGoogleToken,
 } from '@tuturuuu/types/db';
-import type { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
 import type { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
-import dayjs from 'dayjs';
-import moment from 'moment';
-import 'moment/locale/vi';
+import type { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
+import { dayjs } from '@tuturuuu/ui/lib/dayjs-setup';
 import {
-  type ReactNode,
   createContext,
+  type ReactNode,
   useCallback,
   useContext,
   useEffect,
@@ -21,6 +16,9 @@ import {
   useRef,
   useState,
 } from 'react';
+import { toast } from '../components/ui/sonner';
+import { createAllDayEvent, isAllDayEvent } from './calendar-utils';
+import { useCalendarSync } from './use-calendar-sync';
 
 // Utility function to round time to nearest 15-minute interval
 const roundToNearest15Minutes = (date: Date): Date => {
@@ -33,11 +31,6 @@ const roundToNearest15Minutes = (date: Date): Date => {
   roundedDate.setSeconds(0);
   roundedDate.setMilliseconds(0);
   return roundedDate;
-};
-
-// Function to create a unique signature for an event based on its content
-const createEventSignature = (event: CalendarEvent): string => {
-  return `${event.title}|${event.description || ''}|${event.start_at}|${event.end_at}`;
 };
 
 // Updated context with improved type definitions
@@ -135,7 +128,9 @@ export const CalendarProvider = ({
   const queryClient = useQueryClient();
 
   // Add debounce timer reference for update events
-  const updateDebounceTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const updateDebounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null
+  );
   const pendingUpdatesRef = useRef<Map<string, PendingEventUpdate>>(
     new Map<string, PendingEventUpdate>()
   );
@@ -206,19 +201,20 @@ export const CalendarProvider = ({
   );
 
   const getUpcomingEvent = useCallback(() => {
-    const now = new Date();
-    // Get the next event that is happening
-    return events.find((e: CalendarEvent) => {
-      const start = e.start_at;
-      const end = e.end_at;
-      const startDate = moment(start).toDate();
-      const endDate = moment(end).toDate();
-      const isSameDay =
-        startDate.getDate() === now.getDate() &&
-        startDate.getMonth() === now.getMonth() &&
-        startDate.getFullYear() === now.getFullYear();
-      return isSameDay && startDate > now && endDate > now;
-    });
+    const now = dayjs();
+    // Pick the earliest event later today
+    const today = now.startOf('day');
+    return events
+      .filter((e: CalendarEvent) => {
+        const start = dayjs(e.start_at);
+        const end = dayjs(e.end_at);
+        return (
+          start.isSame(today, 'day') && start.isAfter(now) && end.isAfter(now)
+        );
+      })
+      .sort(
+        (a, b) => dayjs(a.start_at).valueOf() - dayjs(b.start_at).valueOf()
+      )[0];
   }, [events]);
 
   const getEvents = useCallback(() => events, [events]);
@@ -226,52 +222,60 @@ export const CalendarProvider = ({
   // Event level calculation for overlapping events
   const getEventLevel = useCallback(
     (eventId: string) => {
-      // Handle IDs for split multi-day events (they contain a dash and date)
-      const originalId = eventId.includes('-')
-        ? eventId.split('-')[0]
-        : eventId;
-      const event = events.find((e: CalendarEvent) => e.id === originalId);
-      if (!event) return 0;
+      const memo = new Map<string, number>();
+      const compute = (eventId: string): number => {
+        if (memo.has(eventId)) return memo.get(eventId)!;
 
-      const eventIndex = events.findIndex(
-        (e: CalendarEvent) => e.id === originalId
-      );
-      const prevEvents = events
-        .slice(0, eventIndex)
-        .filter((e: CalendarEvent) => {
-          if (e.id === originalId) return false;
+        // Handle IDs for split multi-day events (they contain a dash and date)
+        const originalId = eventId.includes('-')
+          ? eventId.split('-')[0]
+          : eventId;
+        const event = events.find((e: CalendarEvent) => e.id === originalId);
+        if (!event) return 0;
 
-          const eventStart = moment(event.start_at).toDate();
-          const eventEnd = moment(event.end_at).toDate();
-          const eStart = moment(e.start_at).toDate();
-          const eEnd = moment(e.end_at).toDate();
+        const eventIndex = events.findIndex(
+          (e: CalendarEvent) => e.id === originalId
+        );
+        const prevEvents = events
+          .slice(0, eventIndex)
+          .filter((e: CalendarEvent) => {
+            if (e.id === originalId) return false;
 
-          // For multi-day events, we need to check if they overlap on the same day
-          const eventStartDay = new Date(
-            eventStart.getFullYear(),
-            eventStart.getMonth(),
-            eventStart.getDate()
-          );
+            const eventStart = dayjs(event.start_at).toDate();
+            const eventEnd = dayjs(event.end_at).toDate();
+            const eStart = dayjs(e.start_at).toDate();
+            const eEnd = dayjs(e.end_at).toDate();
 
-          const eStartDay = new Date(
-            eStart.getFullYear(),
-            eStart.getMonth(),
-            eStart.getDate()
-          );
+            // For multi-day events, we need to check if they overlap on the same day
+            const eventStartDay = new Date(
+              eventStart.getFullYear(),
+              eventStart.getMonth(),
+              eventStart.getDate()
+            );
 
-          if (eventStartDay.getTime() !== eStartDay.getTime()) return false;
+            const eStartDay = new Date(
+              eStart.getFullYear(),
+              eStart.getMonth(),
+              eStart.getDate()
+            );
 
-          // Check for time overlap
-          return !(eEnd <= eventStart || eStart >= eventEnd);
-        });
+            if (eventStartDay.getTime() !== eStartDay.getTime()) return false;
 
-      if (prevEvents.length === 0) return 0;
+            // Check for time overlap
+            return !(eEnd <= eventStart || eStart >= eventEnd);
+          });
 
-      const prevEventLevels = prevEvents.map((e: CalendarEvent) =>
-        getEventLevel(e.id)
-      ) as number[];
+        if (prevEvents.length === 0) return 0;
 
-      return Math.max(...prevEventLevels) + 1;
+        const prevEventLevels = prevEvents.map((e: CalendarEvent) =>
+          e.id ? compute(e.id) : 0
+        ) as number[];
+
+        const level = Math.max(...prevEventLevels) + 1;
+        memo.set(originalId, level);
+        return level;
+      };
+      return compute(eventId);
     },
     [events]
   );
@@ -288,22 +292,26 @@ export const CalendarProvider = ({
 
       const eventColor = event.color || 'BLUE';
 
-      // Create an event signature to check for duplicates
-      const newEventSignature = `${event.title || ''}|${event.description || ''}|${startDate.toISOString()}|${endDate.toISOString()}`;
+      // Only check for Google Calendar duplicates (same google_event_id)
+      // Allow users to create events with similar content (legitimate use case)
+      const actualDuplicates = events.filter((e: CalendarEvent) => {
+        // Check if this is the same Google Calendar event
+        if (
+          event.google_event_id &&
+          e.google_event_id === event.google_event_id
+        )
+          return true;
 
-      // Check existing events for potential duplicates to prevent race condition
-      const duplicates = events.filter((e: CalendarEvent) => {
-        const existingSignature = createEventSignature(e);
-        return existingSignature === newEventSignature;
+        return false;
       });
 
-      // If duplicates already exist, return the first one
-      if (duplicates.length > 0) {
+      // If actual system duplicates exist, return the first one
+      if (actualDuplicates.length > 0) {
         // Clear any pending new event
         setPendingNewEvent(null);
 
         // Return the existing event
-        return duplicates[0];
+        return actualDuplicates[0];
       }
 
       // No duplicates, proceed with creating the event
@@ -445,13 +453,23 @@ export const CalendarProvider = ({
 
       // Take the first item from the queue
       const update = updateQueueRef.current.shift();
-
       if (!update || !update._eventId) {
         isProcessingQueueRef.current = false;
         return;
       }
 
       const eventId = update._eventId;
+
+      // Drop stale updates for this event (keep only the latest)
+      const latest = pendingUpdatesRef.current.get(eventId);
+      if (latest && latest._updateId !== update._updateId) {
+        // Skip this outdated update and continue with the queue
+        isProcessingQueueRef.current = false;
+        if (updateQueueRef.current.length > 0)
+          setTimeout(processUpdateQueue, 0);
+        return;
+      }
+
       const {
         _updateId,
         _timestamp,
@@ -525,6 +543,8 @@ export const CalendarProvider = ({
           if (_resolve) {
             _resolve(data as CalendarEvent);
           }
+          // Clear the pending marker for this event
+          pendingUpdatesRef.current.delete(eventId);
         } else {
           if (_reject) {
             _reject(
@@ -589,31 +609,32 @@ export const CalendarProvider = ({
           ...pendingNewEvent,
           ...cleanedUpdates,
         };
-        // Check for potential duplicates before creating a new event
-        if (cleanedUpdates.title || pendingNewEvent.title) {
-          const startDate = roundToNearest15Minutes(
-            new Date(newEventData.start_at || new Date())
-          );
-          const endDate = roundToNearest15Minutes(
-            new Date(newEventData.end_at || new Date())
-          );
+        // Only check for actual system duplicates (same ID or Google event ID)
+        // Allow users to create events with similar content (legitimate use case)
+        const actualDuplicates = events.filter((e: CalendarEvent) => {
+          // Check if this is the same event by ID
+          if (e.id === newEventData.id) return true;
 
-          const newEventSignature = `${newEventData.title || ''}|${newEventData.description || ''}|${startDate.toISOString()}|${endDate.toISOString()}`;
+          // Check if this is the same Google Calendar event
+          if (
+            newEventData.google_event_id &&
+            e.google_event_id === newEventData.google_event_id
+          )
+            return true;
 
-          // Check existing events for potential duplicates
-          const duplicates = events.filter((e: CalendarEvent) => {
-            const existingSignature = createEventSignature(e);
-            return existingSignature === newEventSignature;
-          });
+          // Check if this is a pending event with the same temporary ID
+          if (newEventData.id === 'new' && e.id === 'new') return true;
 
-          // If duplicates already exist, return the first one
-          if (duplicates.length > 0) {
-            // Clear any pending new event
-            setPendingNewEvent(null);
+          return false;
+        });
 
-            // Return the existing event
-            return duplicates[0];
-          }
+        // If actual system duplicates exist, return the first one
+        if (actualDuplicates.length > 0) {
+          // Clear any pending new event
+          setPendingNewEvent(null);
+
+          // Return the existing event
+          return actualDuplicates[0];
         }
 
         // Create a new event instead of updating
@@ -674,6 +695,12 @@ export const CalendarProvider = ({
 
       // Find the event first to get the Google Calendar ID
       const eventToDelete = events.find((e: CalendarEvent) => e.id === eventId);
+      if (!eventToDelete) throw new Error(`Event ${eventId} not found`);
+      if (eventToDelete.ws_id !== ws?.id) {
+        throw new Error(
+          `Event ${eventId} does not belong to current workspace (${ws?.id})`
+        );
+      }
       const googleCalendarEventId = eventToDelete?.google_event_id;
 
       // --- Google Calendar Sync (Delete) ---
@@ -1068,7 +1095,7 @@ export const CalendarProvider = ({
         queryClient.invalidateQueries(['calendarEvents', ws?.id]);
       }
     },
-    [googleEvents, events, ws?.id, queryClient]
+    [googleEvents, events, ws?.id, queryClient, experimentalGoogleToken]
   );
 
   // Modal management
@@ -1365,6 +1392,9 @@ export const CalendarProvider = ({
 export const useCalendar = () => {
   const context = useContext(CalendarContext);
   if (context === undefined)
+    throw new Error('useCalendar() must be used within a CalendarProvider.');
+  return context;
+};
     throw new Error('useCalendar() must be used within a CalendarProvider.');
   return context;
 };

@@ -1,26 +1,31 @@
-import { AllDayEventBar } from './all-day-event-bar';
-import { MIN_COLUMN_WIDTH } from './config';
-import { DayTitle } from './day-title';
-import { useCalendarSettings } from './settings/settings-context';
 import { cn } from '@tuturuuu/utils/format';
 import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone';
-import { Clock } from 'lucide-react';
+import { useMemo } from 'react';
+import { useCalendarSettings } from './settings/settings-context';
+import { AllDayEventBar } from './all-day-event-bar';
+import { MIN_COLUMN_WIDTH } from './config';
+import { DayTitle } from './day-title';
+import { TimeColumnHeaders } from './time-column-headers';
 
 dayjs.extend(timezone);
 
 export const WeekdayBar = ({
-  locale,
-  view,
   dates,
+  view,
+  locale,
 }: {
-  locale: string;
-  view: 'day' | '4-days' | 'week' | 'month';
   dates: Date[];
+  view: 'day' | '4-days' | 'week' | 'month';
+  locale: string;
 }) => {
   const { settings } = useCalendarSettings();
   const showWeekends = settings.appearance.showWeekends;
   const tz = settings?.timezone?.timezone;
+  const secondaryTz = settings?.timezone?.secondaryTimezone;
+  const showSecondary = Boolean(
+    settings?.timezone?.showSecondaryTimezone && secondaryTz
+  );
 
   // Filter out weekend days if showWeekends is false
   const visibleDates = showWeekends
@@ -31,14 +36,70 @@ export const WeekdayBar = ({
         return day !== 0 && day !== 6; // 0 = Sunday, 6 = Saturday
       });
 
+  // Get timezone abbreviations with error handling and memoization
+  const primaryTzAbbr = useMemo(() => {
+    if (!tz) return '';
+
+    let tzToUse = tz;
+    let fallback = tz;
+
+    if (tz === 'auto') {
+      try {
+        tzToUse = Intl.DateTimeFormat().resolvedOptions().timeZone;
+        fallback = 'Local';
+      } catch (e) {
+        console.error('Failed to detect system timezone', e);
+        return 'Local';
+      }
+    }
+
+    try {
+      return (
+        Intl.DateTimeFormat('en-US', {
+          timeZoneName: 'short',
+          timeZone: tzToUse,
+        })
+          .formatToParts(new Date())
+          .find((part) => part.type === 'timeZoneName')?.value || fallback
+      );
+    } catch (e) {
+      console.error(`Failed to get abbreviation for timezone: ${tzToUse}`, e);
+      return fallback;
+    }
+  }, [tz]);
+
+  const secondaryTzAbbr = useMemo(() => {
+    if (!secondaryTz) return '';
+
+    try {
+      return (
+        Intl.DateTimeFormat('en-US', {
+          timeZoneName: 'short',
+          timeZone: secondaryTz,
+        })
+          .formatToParts(new Date())
+          .find((part) => part.type === 'timeZoneName')?.value || secondaryTz
+      );
+    } catch (e) {
+      console.error(
+        `Failed to get abbreviation for timezone: ${secondaryTz}`,
+        e
+      );
+      return secondaryTz;
+    }
+  }, [secondaryTz]);
+
   return (
     <div className="flex flex-col bg-background/50">
       {/* Weekday header bar */}
       <div className="flex">
-        {/* Time column header */}
-        <div className="flex w-16 items-center justify-center rounded-tl-lg border border-r-0 bg-muted/30 p-2 font-medium">
-          <Clock className="h-4 w-4 text-muted-foreground" />
-        </div>
+        {/* Time column headers */}
+        <TimeColumnHeaders
+          showSecondary={showSecondary}
+          secondaryTzAbbr={secondaryTzAbbr}
+          primaryTzAbbr={primaryTzAbbr}
+          variant="weekday"
+        />
 
         {/* Weekday columns */}
         <div

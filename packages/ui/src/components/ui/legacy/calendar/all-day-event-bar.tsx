@@ -1,5 +1,3 @@
-import { MIN_COLUMN_WIDTH } from './config';
-import { useCalendarSettings } from './settings/settings-context';
 import type { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
 import { useCalendar } from '@tuturuuu/ui/hooks/use-calendar';
 import { useCalendarSync } from '@tuturuuu/ui/hooks/use-calendar-sync';
@@ -10,8 +8,10 @@ import isBetween from 'dayjs/plugin/isBetween';
 import isSameOrAfter from 'dayjs/plugin/isSameOrAfter';
 import isSameOrBefore from 'dayjs/plugin/isSameOrBefore';
 import timezone from 'dayjs/plugin/timezone';
-import { Calendar, ChevronDown, ChevronUp } from 'lucide-react';
+import { ChevronDown, ChevronUp } from 'lucide-react';
 import React, { useCallback, useMemo, useRef, useState } from 'react';
+import { MIN_COLUMN_WIDTH } from './config';
+import { useCalendarSettings } from './settings/settings-context';
 
 dayjs.extend(isBetween);
 dayjs.extend(isSameOrAfter);
@@ -64,14 +64,15 @@ const EventContent = ({ event }: { event: CalendarEvent }) => (
   <>
     {typeof event.google_event_id === 'string' &&
       event.google_event_id.trim() !== '' && (
-        <img
-          src="/media/google-calendar-icon.png"
-          alt="Google Calendar"
-          className="mr-1 inline-block h-[1.25em] w-[1.25em] align-middle opacity-80 dark:opacity-90"
+        <span
+          className="mr-1 inline-block h-[1.25em] w-[1.25em] bg-center bg-contain bg-no-repeat align-middle opacity-80 dark:opacity-90"
+          style={{
+            backgroundImage: 'url("/media/google-calendar-icon.png")',
+          }}
           title="Synced from Google Calendar"
           data-testid="google-calendar-logo"
-          width={18}
-          height={18}
+          role="img"
+          aria-label="Google Calendar"
         />
       )}
     <span className="truncate">{event.title}</span>
@@ -543,8 +544,8 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
     );
   };
 
-  // Calculate dynamic height based on visible events
-  const barHeight = Math.max(1.9, eventLayout.maxVisibleEventsPerDay * 1.75);
+  // Calculate dynamic height based on visible events - match time trail height
+  const barHeight = Math.max(30, eventLayout.maxVisibleEventsPerDay * 28); // 30px base, 28px per event
 
   // Enhanced mouse and touch handlers
   const handleEventMouseDown = (e: React.MouseEvent, eventSpan: EventSpan) => {
@@ -642,9 +643,20 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
 
   return (
     <div className="flex">
-      {/* Label column */}
-      <div className="flex w-16 items-center justify-center border-b border-l bg-muted/30 p-2 font-medium">
-        <Calendar className="h-4 w-4 text-muted-foreground" />
+      {/* Left sidebar for timezone headers */}
+      <div
+        className="flex flex-col border-l bg-muted/30"
+        style={{
+          width: '128px',
+          height: `${barHeight}px`,
+        }}
+      >
+        {/* Timezone header row */}
+        <div className="flex h-8 items-center justify-center border-b bg-muted/50 px-2 font-medium text-muted-foreground text-xs">
+          {tz === 'auto' ? 'Local' : tz}
+        </div>
+        {/* Empty space below for visual balance */}
+        <div className="flex-1" />
       </div>
 
       {/* All-day event columns with relative positioning for spanning events */}
@@ -653,7 +665,7 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
         className={cn('relative flex-1 border-b')}
         style={{
           minWidth: `${visibleDates.length * MIN_COLUMN_WIDTH}px`,
-          height: `${barHeight}rem`,
+          height: `${barHeight}px`,
         }}
       >
         {/* Grid background for date columns - this maintains proper borders */}
@@ -700,12 +712,19 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
               >
                 {/* Show/hide expansion button */}
                 {hiddenCount > 0 && (
-                  <div
-                    className="flex cursor-pointer items-center justify-center rounded-sm px-2 py-1 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted/40"
+                  <button
+                    type="button"
+                    className="flex cursor-pointer items-center justify-center rounded-sm px-2 py-1 font-medium text-muted-foreground text-xs transition-colors hover:bg-muted/40"
                     onClick={() => toggleDateExpansion(dateKey)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        toggleDateExpansion(dateKey);
+                      }
+                    }}
                     style={{
                       position: 'absolute',
-                      top: `${MAX_EVENTS_DISPLAY * 1.7}rem`,
+                      top: `${MAX_EVENTS_DISPLAY * 28}px`,
                       left: `${(dateIndex * 100) / visibleDates.length}%`,
                       width: `${100 / visibleDates.length}%`,
                       zIndex: 10,
@@ -713,18 +732,25 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
                   >
                     <ChevronDown className="mr-1 h-3 w-3" />
                     {hiddenCount} more
-                  </div>
+                  </button>
                 )}
 
                 {isExpanded &&
                   !shouldShowAll &&
                   dateEvents.length > MAX_EVENTS_DISPLAY && (
-                    <div
-                      className="flex cursor-pointer items-center justify-center rounded-sm px-2 py-1 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted/40"
+                    <button
+                      type="button"
+                      className="flex cursor-pointer items-center justify-center rounded-sm px-2 py-1 font-medium text-muted-foreground text-xs transition-colors hover:bg-muted/40"
                       onClick={() => toggleDateExpansion(dateKey)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
+                          toggleDateExpansion(dateKey);
+                        }
+                      }}
                       style={{
                         position: 'absolute',
-                        top: `${dateEvents.length * 1.7}rem`,
+                        top: `${dateEvents.length * 28}px`,
                         left: `${(dateIndex * 100) / visibleDates.length}%`,
                         width: `${100 / visibleDates.length}%`,
                         zIndex: 10,
@@ -732,7 +758,7 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
                     >
                       <ChevronUp className="mr-1 h-3 w-3" />
                       Show less
-                    </div>
+                    </button>
                   )}
               </div>
             );
@@ -752,8 +778,8 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
               style={{
                 left: `calc(${(dragState.previewSpan.startIndex * 100) / visibleDates.length}% + ${EVENT_LEFT_OFFSET}px)`,
                 width: `calc(${(dragState.previewSpan.span * 100) / visibleDates.length}% - ${EVENT_LEFT_OFFSET * 2}px)`,
-                top: `${dragState.previewSpan.row * 1.6 + 0.25}rem`,
-                height: '1.35rem',
+                top: `${dragState.previewSpan.row * 28 + 4}px`,
+                height: '22px',
                 zIndex: 8,
               }}
             />
@@ -795,10 +821,11 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
             dragState.isDragging && dragState.draggedEvent?.id === event.id;
 
           return (
-            <div
+            <button
+              type="button"
               key={`spanning-event-${event.id}`}
               className={cn(
-                'absolute flex items-center rounded-sm border-l-2 px-2 py-1 text-xs font-semibold transition-all duration-200',
+                'absolute flex items-center rounded-sm border-l px-2 py-1 font-semibold text-xs transition-all duration-200',
                 // Cursor changes based on locked state and drag state
                 event.locked
                   ? 'cursor-not-allowed opacity-60'
@@ -817,14 +844,22 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
               style={{
                 left: `calc(${(startIndex * 100) / visibleDates.length}% + ${EVENT_LEFT_OFFSET}px)`,
                 width: `calc(${(span * 100) / visibleDates.length}% - ${EVENT_LEFT_OFFSET * 2}px)`,
-                top: `${eventRow * 1.6 + 0.25}rem`,
-                height: '1.35rem',
+                top: `${eventRow * 28 + 4}px`,
+                height: '22px',
                 zIndex: isDraggedEvent ? 10 : 5,
               }}
               onClick={() => {
                 // Only open modal if not dragging and not locked
                 if (!dragState.isDragging && !event.locked) {
                   openModal(event.id, 'all-day');
+                }
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  if (!dragState.isDragging && !event.locked) {
+                    openModal(event.id, 'all-day');
+                  }
                 }
               }}
               onMouseDown={(e) => handleEventMouseDown(e, eventSpan)}
@@ -850,7 +885,7 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
                   →
                 </span>
               )}
-            </div>
+            </button>
           );
         })}
       </div>
@@ -860,7 +895,7 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
         <div
           ref={dragPreviewRef}
           className={cn(
-            'pointer-events-none fixed z-50 truncate rounded-sm border-l-2 px-2 py-1 text-xs font-semibold shadow-xl',
+            'pointer-events-none fixed z-50 truncate rounded-sm border-l px-2 py-1 font-semibold text-xs shadow-xl',
             'transform backdrop-blur-sm transition-none',
             getEventStyles(dragState.draggedEvent.color || 'BLUE').bg,
             getEventStyles(dragState.draggedEvent.color || 'BLUE').border,
@@ -870,7 +905,7 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
           style={{
             left: `${dragState.currentX + 15}px`,
             top: `${dragState.currentY - 20}px`,
-            height: '1.35rem',
+            height: '22px',
             minWidth: '120px',
             maxWidth: '250px',
             transform: 'rotate(-2deg)',

@@ -1,6 +1,5 @@
 'use client';
 
-import { isAllDayEvent } from './calendar-utils';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type {
   Workspace,
@@ -19,6 +18,7 @@ import {
   useRef,
   useState,
 } from 'react';
+import { isAllDayEvent } from './calendar-utils';
 
 const CalendarSyncContext = createContext<{
   data: WorkspaceCalendarEvent[] | null;
@@ -510,9 +510,14 @@ export const CalendarSyncProvider = ({
   Show data from database to Tuturuuu
   */
 
-  // Create a unique signature for an event based on its content
+  // Create a unique signature for an event based on system identifiers
+  // This prevents actual system duplicates while allowing legitimate similar events
   const createEventSignature = (event: CalendarEvent): string => {
-    return `${event.title}|${event.description || ''}|${event.start_at}|${event.end_at}`;
+    // Use system identifiers instead of content for duplicate detection
+    if (event.google_event_id) {
+      return `google_${event.google_event_id}`;
+    }
+    return `db_${event.id}`;
   };
 
   // Detect and remove duplicate events

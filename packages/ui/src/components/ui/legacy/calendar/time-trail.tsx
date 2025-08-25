@@ -1,37 +1,67 @@
+import { dayjs } from '@tuturuuu/ui/lib/dayjs-setup';
+import { cn } from '@tuturuuu/utils/format';
 import { DAY_HEIGHT, HOUR_HEIGHT } from './config';
 import { useCalendarSettings } from './settings/settings-context';
-import { cn } from '@tuturuuu/utils/format';
-import dayjs from 'dayjs';
-import timezone from 'dayjs/plugin/timezone';
 
-dayjs.extend(timezone);
+// Extract hours array as a constant to avoid recreation on every render
+const HOURS = Array.from(Array(24).keys());
 
-export const TimeTrail = () => {
-  // Get settings from context
-  const { settings } = useCalendarSettings();
-  const tz = settings?.timezone?.timezone;
-
-  // Only show hours (not every half hour)
-  const hours = Array.from(Array(24).keys());
-
-  // Format time for display - only show hour
+// Reusable component for time column
+const TimeColumn = ({
+  timezone: tz,
+  primaryTimezone,
+  timeFormat,
+  className,
+  style,
+  muted,
+}: {
+  timezone: string | undefined;
+  primaryTimezone: string | undefined;
+  timeFormat: '24h' | '12h' | undefined;
+  className?: string;
+  style?: React.CSSProperties;
+  muted?: boolean;
+}) => {
+  // Format time in the specified timezone
   const formatTime = (hour: number) => {
-    let date = dayjs();
-    date =
-      tz === 'auto'
-        ? date.hour(hour).minute(0).second(0).millisecond(0)
-        : date.tz(tz).hour(hour).minute(0).second(0).millisecond(0);
-    const timeFormat =
-      settings?.appearance?.timeFormat === '24h' ? 'HH:mm' : 'h a';
-    return date.format(timeFormat);
+    const fmt = timeFormat === '24h' ? 'HH:mm' : 'h a';
+    if (tz && tz !== 'auto') {
+      // If a specific timezone is provided, show the time in tz that corresponds
+      // to the given hour in the reference (primary) timezone.
+      let baseDate: dayjs.Dayjs;
+
+      if (primaryTimezone === 'auto' || !primaryTimezone) {
+        // If primary is local time, create a local time and convert to secondary
+        baseDate = dayjs().hour(hour).minute(0).second(0).millisecond(0);
+        baseDate = baseDate.tz(tz);
+      } else {
+        // If primary is a specific timezone, create time in that timezone first
+        baseDate = dayjs()
+          .tz(primaryTimezone)
+          .hour(hour)
+          .minute(0)
+          .second(0)
+          .millisecond(0);
+        baseDate = baseDate.tz(tz);
+      }
+
+      return baseDate.format(fmt);
+    } else {
+      // Primary timezone - show the hour as-is
+      const date = dayjs().hour(hour).minute(0).second(0).millisecond(0);
+      return date.format(fmt);
+    }
   };
 
   return (
     <div
-      className="relative w-16 border-r border-border dark:border-zinc-800"
-      style={{ height: DAY_HEIGHT }}
+      className={cn(
+        'relative w-16 border-border border-r dark:border-zinc-800',
+        className
+      )}
+      style={style}
     >
-      {hours.map((hour) => (
+      {HOURS.map((hour) => (
         <div
           key={`trail-hour-${hour}`}
           className="absolute flex h-20 w-full items-center justify-end pr-2"
@@ -39,7 +69,8 @@ export const TimeTrail = () => {
         >
           <span
             className={cn(
-              'text-sm font-medium text-muted-foreground',
+              'font-medium text-sm',
+              muted ? 'text-muted-foreground/60' : 'text-muted-foreground',
               hour === 0 && 'hidden'
             )}
           >
@@ -47,6 +78,37 @@ export const TimeTrail = () => {
           </span>
         </div>
       ))}
+    </div>
+  );
+};
+
+export const TimeTrail = () => {
+  // Get settings from context
+  const { settings } = useCalendarSettings();
+  const tz = settings?.timezone?.timezone;
+  const secondaryTz = settings?.timezone?.secondaryTimezone;
+  const showSecondary =
+    Boolean(settings?.timezone?.showSecondaryTimezone) && Boolean(secondaryTz);
+  const timeFormat = settings?.appearance?.timeFormat;
+
+  return (
+    <div className="flex" style={{ height: DAY_HEIGHT }}>
+      {showSecondary && (
+        <TimeColumn
+          timezone={secondaryTz}
+          primaryTimezone={tz}
+          timeFormat={timeFormat}
+          className="border-border/30 border-r dark:border-zinc-700/50"
+          muted={true}
+          style={{ height: DAY_HEIGHT }}
+        />
+      )}
+      <TimeColumn
+        timezone={tz}
+        primaryTimezone={tz}
+        timeFormat={timeFormat}
+        style={{ height: DAY_HEIGHT }}
+      />
     </div>
   );
 };

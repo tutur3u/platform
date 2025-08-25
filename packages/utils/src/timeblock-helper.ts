@@ -1,18 +1,6 @@
 import type { Timeblock } from '@tuturuuu/types/primitives/Timeblock';
-import dayjs, { type Dayjs } from 'dayjs';
-import isBetween from 'dayjs/plugin/isBetween';
-import isSameOrAfter from 'dayjs/plugin/isSameOrAfter';
-import isSameOrBefore from 'dayjs/plugin/isSameOrBefore';
-import minMax from 'dayjs/plugin/minMax';
-import timezone from 'dayjs/plugin/timezone';
-import utc from 'dayjs/plugin/utc';
-
-dayjs.extend(isSameOrBefore);
-dayjs.extend(isSameOrAfter);
-dayjs.extend(isBetween);
-dayjs.extend(timezone);
-dayjs.extend(minMax);
-dayjs.extend(utc);
+import type { Dayjs } from 'dayjs';
+import { dayjs } from '@tuturuuu/ui/lib/dayjs-setup';
 
 dayjs.tz.setDefault();
 

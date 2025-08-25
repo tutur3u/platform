@@ -5,7 +5,7 @@ import { Button } from './button';
 import { Input } from './input';
 import { cn } from '@tuturuuu/utils/format';
 import { X } from 'lucide-react';
-import React, { type KeyboardEvent, useRef, useState } from 'react';
+import { type KeyboardEvent, useRef, useState } from 'react';
 
 interface TagsInputProps {
   value: string[];
@@ -34,6 +34,7 @@ export function TagsInput({
 }: TagsInputProps) {
   const [inputValue, setInputValue] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   const addTag = (tag: string) => {
     const trimmedTag = tag.trim();
@@ -74,7 +75,12 @@ export function TagsInput({
     }
   };
 
-  const handleInputBlur = () => {
+  const handleInputBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+    // Safely handle null relatedTarget (Safari/React retargeting)
+    const candidate = e.relatedTarget || document.activeElement;
+    const isInternalFocus =
+      candidate && containerRef.current?.contains(candidate as Node);
+    if (isInternalFocus) return; // Don't add a tag when moving focus within the component
     if (inputValue.trim()) {
       addTag(inputValue);
     }
@@ -82,6 +88,7 @@ export function TagsInput({
 
   return (
     <div
+      ref={containerRef}
       className={cn(
         'flex min-h-10 w-full flex-wrap items-center gap-1 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2',
         disabled && 'cursor-not-allowed opacity-50',
@@ -102,6 +109,11 @@ export function TagsInput({
               variant="ghost"
               size="sm"
               className="h-auto p-0 text-muted-foreground hover:text-foreground"
+              aria-label={`Remove ${tag}`}
+              onPointerDown={(e) => {
+                // Prevent input blur so onBlur doesn't add a partial tag unintentionally
+                e.preventDefault();
+              }}
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();

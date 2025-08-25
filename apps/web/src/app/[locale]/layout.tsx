@@ -16,6 +16,9 @@ import { setRequestLocale } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 import type { ReactNode } from 'react';
 
+// Initialize dayjs plugins once at startup
+import '@tuturuuu/ui/lib/dayjs-setup';
+
 export { viewport } from '@tuturuuu/utils/common/nextjs';
 
 interface Props {
