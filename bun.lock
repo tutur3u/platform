@@ -55,6 +55,7 @@
       "name": "@tuturuuu/db",
       "version": "1.0.0",
       "devDependencies": {
+        "@biomejs/biome": "^2.2.2",
         "supabase": "^2.39.2",
         "typescript": "^5.9.2",
       },
@@ -789,7 +790,7 @@
         "react-dom": "^19.1.1",
         "tailwind-merge": "^3.3.1",
         "uuid": "^11.1.0",
-        "zod": "^4.1.0",
+        "zod": "^4.1.1",
       },
       "devDependencies": {
         "@tuturuuu/types": "workspace:*",
