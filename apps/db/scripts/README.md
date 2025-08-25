@@ -88,6 +88,6 @@ The script is integrated into the Supabase workflow:
 
 1. **Generation**: `bun supabase gen types typescript --local --schema public`
 2. **Sorting**: `node ./scripts/sort-types.js` (ensures consistent key ordering)
-3. **Formatting**: `prettier --write` (applies consistent formatting)
+3. **Formatting**: `biome format --write` (applies consistent formatting)
 
 This ensures that every time types are generated, the object keys are consistently ordered alphabetically, preventing unnecessary git diffs and making it easier to track actual database schema changes.
