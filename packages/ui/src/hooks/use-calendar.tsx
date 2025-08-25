@@ -35,11 +35,6 @@ const roundToNearest15Minutes = (date: Date): Date => {
   return roundedDate;
 };
 
-// Function to create a unique signature for an event based on its content
-const createEventSignature = (event: CalendarEvent): string => {
-  return `${event.title}|${event.description || ''}|${event.start_at}|${event.end_at}`;
-};
-
 // Updated context with improved type definitions
 const CalendarContext = createContext<{
   getEvent: (eventId: string) => CalendarEvent | undefined;
@@ -288,21 +283,15 @@ export const CalendarProvider = ({
 
       const eventColor = event.color || 'BLUE';
 
-      // Only check for actual system duplicates (same ID or Google event ID)
+      // Only check for Google Calendar duplicates (same google_event_id)
       // Allow users to create events with similar content (legitimate use case)
       const actualDuplicates = events.filter((e: CalendarEvent) => {
-        // Check if this is the same event by ID
-        if (e.id === event.id) return true;
-
         // Check if this is the same Google Calendar event
         if (
           event.google_event_id &&
           e.google_event_id === event.google_event_id
         )
           return true;
-
-        // Check if this is a pending event with the same temporary ID
-        if (event.id === 'new' && e.id === 'new') return true;
 
         return false;
       });
