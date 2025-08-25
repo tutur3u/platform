@@ -1,9 +1,5 @@
 'use client';
 
 export default function NeoMeetingAgentPage() {
-  return (
-    <div className="">
-    </div>
-  );
+  return <div className=""></div>;
 }
-
