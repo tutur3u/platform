@@ -7,9 +7,7 @@ interface Params {
     }>;
   }
 
-export async function GET(
-  _: Request,
-  { params }: Params
+export async function GET(_: Request, { params }: Params
 ) {
   const { wsId } = await params;
   const isPersonal = await isPersonalWorkspace(wsId);
