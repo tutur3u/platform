@@ -17,3 +17,6 @@ export const TIME_INDICATOR_OFFSETS = {
   SINGLE_TIMEZONE: -(TIME_COLUMN_WIDTH + BORDER_WIDTH + PADDING_OFFSET),
   DUAL_TIMEZONE: -(TIME_COLUMN_WIDTH * 2 + BORDER_WIDTH * 2 + PADDING_OFFSET),
 } as const;
+
+// Time label positioning constant
+export const TIME_LABEL_Y_OFFSET = -0.65; // positions label slightly above the hour grid line
