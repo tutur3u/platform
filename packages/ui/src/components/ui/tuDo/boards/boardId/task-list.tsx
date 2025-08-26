@@ -398,8 +398,10 @@ export const BoardColumn = React.memo(function BoardColumn({
         // Also check for common scrollbar selectors
         target.matches('[data-radix-scroll-area-viewport]') ||
         target.closest('[data-radix-scroll-area-viewport]') ||
-        // Check if clicking on the right edge of the container (where scrollbar usually is)
-        (target === container && e.offsetX > container.clientWidth - 20);
+        // Only check right edge if there's actually a visible scrollbar
+        (target === container &&
+          container.scrollHeight > container.clientHeight &&
+          e.offsetX > container.clientWidth - 20);
 
       if (isScrollbarClick) {
         isDraggingScrollbar = true;
@@ -465,8 +467,10 @@ export const BoardColumn = React.memo(function BoardColumn({
           // Also check for common scrollbar selectors
           target.matches('[data-radix-scroll-area-viewport]') ||
           target.closest('[data-radix-scroll-area-viewport]') ||
-          // Check if clicking on the right edge of the container (where scrollbar usually is)
-          (target === container && e.offsetX > container.clientWidth - 20);
+          // Only check right edge if there's actually a visible scrollbar
+          (target === container &&
+            container.scrollHeight > container.clientHeight &&
+            e.offsetX > container.clientWidth - 20);
 
         // If clicking outside scrollbar and compact mode is active, deactivate it
         if (!isScrollbarClick && isScrolling && isCompactMode) {
