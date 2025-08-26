@@ -232,7 +232,6 @@ export const TaskCard = React.memo(function TaskCard({
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
-    height: '5.5rem',
   };
 
   const now = new Date();
@@ -579,7 +578,7 @@ export const TaskCard = React.memo(function TaskCard({
                   value={editDescription}
                   onChange={(e) => setEditDescription(e.target.value)}
                   placeholder="Add description..."
-                  className="text-xs"
+                  className="scrollbar-thin scrollbar-track-transparent scrollbar-thumb-muted-foreground/30 hover:scrollbar-thumb-muted-foreground/50 max-h-32 resize-none overflow-y-auto text-xs"
                 />
                 <div className="flex justify-end gap-2 pt-1">
                   <Button
@@ -626,7 +625,7 @@ export const TaskCard = React.memo(function TaskCard({
                   <div className="mb-1">
                     <button
                       type="button"
-                      className="scrollbar-none hover:scrollbar-thin scrollbar-track-transparent scrollbar-thumb-muted-foreground/30 hover:scrollbar-thumb-muted-foreground/50 max-h-20 w-full cursor-pointer overflow-y-hidden hover:overflow-y-auto whitespace-pre-line border-none bg-transparent p-0 text-left text-muted-foreground text-xs hover:text-foreground/80 focus:outline-none"
+                      className="scrollbar-none hover:scrollbar-thin scrollbar-track-transparent scrollbar-thumb-muted-foreground/30 hover:scrollbar-thumb-muted-foreground/50 max-h-20 w-full cursor-pointer overflow-y-hidden whitespace-pre-line border-none bg-transparent p-0 text-left text-muted-foreground text-xs hover:overflow-y-auto hover:text-foreground/80 focus:outline-none"
                       title={task.description}
                       onClick={() => setIsEditing(true)}
                       onKeyDown={(e) => {
