@@ -413,6 +413,10 @@
     "save_credentials_desc": "Tự động đăng nhập khi bạn quay lại kế hoạch này",
     "logged_in_as": "Đăng nhập như"
   },
+  "neo-meeting-agent": {
+    "headline-p1": "Tóm tắt ngay cuộc họp của bạn chỉ bằng",
+    "headline-p2": "vài cú nhấp chuột"
+  },
   "invite": {
     "invited-to": "Bạn được mời vào",
     "accept-invite": "Chấp nhận lời mời",

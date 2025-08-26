@@ -412,6 +412,10 @@
     "save_credentials_desc": "Automatically log in when you return to this plan",
     "logged_in_as": "Logged in as"
   },
+  "neo-meeting-agent": {
+    "headline-p1": "Instantly summarize your meeting in just",
+    "headline-p2": "a few clicks"
+  },
   "invite": {
     "invited-to": "You have been invited to join",
     "accept-invite": "Accept Invite",
