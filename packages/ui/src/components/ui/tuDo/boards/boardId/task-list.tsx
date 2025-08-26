@@ -55,7 +55,6 @@ import { statusIcons } from './status-section';
 // Custom hooks for scrollbar and compact mode management
 const useScrollbarDrag = (
   scrollContainerRef: React.RefObject<HTMLDivElement | null>,
-  // biome-ignore lint/correctness/noUnusedFunctionParameters: parameter is used in event handlers
   setIsScrolling: (scrolling: boolean) => void
 ) => {
   useEffect(() => {
@@ -113,6 +112,7 @@ const useCompactModeToasts = (
   isCompactMode: boolean,
   isScrolling: boolean,
   isScrollbarActive: boolean,
+
   setIsScrolling: (scrolling: boolean) => void
 ) => {
   useEffect(() => {
@@ -353,6 +353,11 @@ export const BoardColumn = React.memo(function BoardColumn({
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, [checkOverflow]);
+
+  // React to external scrollbar activation immediately
+  useEffect(() => {
+    checkOverflow();
+  }, [scrollbarActive, checkOverflow]);
 
   // Cleanup scrollbar timeout on unmount
 
