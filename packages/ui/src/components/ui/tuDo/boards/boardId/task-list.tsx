@@ -52,6 +52,136 @@ import React, {
 import { toast } from 'sonner';
 import { statusIcons } from './status-section';
 
+// Custom hooks for scrollbar and compact mode management
+const useScrollbarDrag = (
+  scrollContainerRef: React.RefObject<HTMLDivElement | null>,
+  setIsScrolling: (scrolling: boolean) => void
+) => {
+  useEffect(() => {
+    const container = scrollContainerRef.current;
+    if (!container) return;
+
+    let isDraggingScrollbar = false;
+
+    const handleMouseDown = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+
+      const isScrollbarClick =
+        target.classList.contains('scrollbar-thumb') ||
+        target.classList.contains('scrollbar-track') ||
+        target.closest('.scrollbar-thumb') ||
+        target.closest('.scrollbar-track') ||
+        target.matches('[data-radix-scroll-area-viewport]') ||
+        target.closest('[data-radix-scroll-area-viewport]') ||
+        (target === container &&
+          container.scrollHeight > container.clientHeight &&
+          e.offsetX > container.clientWidth - SCROLLBAR_CLICK_OFFSET);
+
+      if (isScrollbarClick) {
+        isDraggingScrollbar = true;
+        setIsScrolling(true);
+      }
+    };
+
+    const handleMouseMove = () => {
+      if (isDraggingScrollbar) {
+        setIsScrolling(true);
+      }
+    };
+
+    const handleMouseUp = () => {
+      if (isDraggingScrollbar) {
+        isDraggingScrollbar = false;
+        setIsScrolling(false);
+      }
+    };
+
+    container.addEventListener('mousedown', handleMouseDown);
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+
+    return () => {
+      container.removeEventListener('mousedown', handleMouseDown);
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [scrollContainerRef, setIsScrolling]);
+};
+
+const useCompactModeToasts = (
+  isCompactMode: boolean,
+  isScrolling: boolean,
+  setIsScrolling: (scrolling: boolean) => void
+) => {
+  useEffect(() => {
+    if (isScrolling && !isCompactMode) {
+      toast.dismiss('compact-deactivated');
+      toast.success('Compact mode activated', {
+        id: 'compact-activated',
+        description: 'Task cards are now in compact view for better scrolling',
+        duration: 4000,
+      });
+    } else if (!isScrolling && isCompactMode) {
+      toast.dismiss('compact-activated');
+      toast.info('Compact mode deactivated', {
+        id: 'compact-deactivated',
+        description: 'Task cards returned to normal view',
+        duration: 1500,
+      });
+    }
+  }, [isScrolling, isCompactMode]);
+};
+
+const useClickOutside = (
+  scrollContainerRef: React.RefObject<HTMLDivElement | null>,
+  isScrolling: boolean,
+  isCompactMode: boolean,
+  setIsScrolling: (scrolling: boolean) => void
+) => {
+  useEffect(() => {
+    const container = scrollContainerRef.current;
+    if (!container) return;
+
+    const handleClickOutside = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      const hasVisibleScrollbar = container.scrollHeight > container.clientHeight;
+
+      if (hasVisibleScrollbar) {
+        const isScrollbarClick =
+          target.classList.contains('scrollbar-thumb') ||
+          target.classList.contains('scrollbar-track') ||
+          target.closest('.scrollbar-thumb') ||
+          target.closest('.scrollbar-track') ||
+          target.matches('[data-radix-scroll-area-viewport]') ||
+          target.closest('[data-radix-scroll-area-viewport]') ||
+          (target === container &&
+            container.scrollHeight > container.clientHeight &&
+            e.offsetX > container.clientWidth - SCROLLBAR_CLICK_OFFSET);
+
+        if (!isScrollbarClick && isScrolling && isCompactMode) {
+          setIsScrolling(false);
+          toast.info('Compact mode deactivated', {
+            description: 'Task cards returned to normal view',
+            duration: 2000,
+          });
+        }
+      } else {
+        if (isScrolling && isCompactMode) {
+          setIsScrolling(false);
+          toast.info('Compact mode deactivated', {
+            id: 'compact-deactivated',
+            description: 'Task cards returned to normal view',
+            duration: 1500,
+          });
+        }
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [scrollContainerRef, isScrolling, isCompactMode, setIsScrolling]);
+};
+
 interface Props {
   column: TaskList;
   boardId: string;
@@ -88,6 +218,9 @@ interface TaskListFilters {
   overdue: boolean;
   dueSoon: boolean;
 }
+
+// Constants
+const SCROLLBAR_CLICK_OFFSET = 20;
 
 // Color mappings for visual consistency
 const colorClasses: Record<SupportedColor, string> = {
@@ -379,134 +512,10 @@ export const BoardColumn = React.memo(function BoardColumn({
     }
   }, [filteredAndSortedTasks.length, checkOverflow]);
 
-  // Detect scrollbar dragging vs wheel scrolling
-  useEffect(() => {
-    const container = scrollContainerRef.current;
-    if (!container) return;
-
-    let isDraggingScrollbar = false;
-
-    const handleMouseDown = (e: MouseEvent) => {
-      const target = e.target as HTMLElement;
-
-      // Check if clicking on scrollbar elements - be more specific but not too restrictive
-      const isScrollbarClick =
-        target.classList.contains('scrollbar-thumb') ||
-        target.classList.contains('scrollbar-track') ||
-        target.closest('.scrollbar-thumb') ||
-        target.closest('.scrollbar-track') ||
-        // Also check for common scrollbar selectors
-        target.matches('[data-radix-scroll-area-viewport]') ||
-        target.closest('[data-radix-scroll-area-viewport]') ||
-        // Only check right edge if there's actually a visible scrollbar
-        (target === container &&
-          container.scrollHeight > container.clientHeight &&
-          e.offsetX > container.clientWidth - 20);
-
-      if (isScrollbarClick) {
-        isDraggingScrollbar = true;
-        setIsScrolling(true);
-
-        // Only show activation toast if compact mode wasn't already active
-        if (!isCompactMode) {
-          // Dismiss any existing deactivation toast first
-          toast.dismiss('compact-deactivated');
-
-          toast.success('Compact mode activated', {
-            id: 'compact-activated',
-            description:
-              'Task cards are now in compact view for better scrolling',
-            duration: 4000,
-          });
-        }
-      }
-    };
-
-    const handleMouseMove = () => {
-      if (isDraggingScrollbar) {
-        // User is actively dragging scrollbar
-        setIsScrolling(true);
-      }
-    };
-
-    const handleMouseUp = () => {
-      if (isDraggingScrollbar) {
-        isDraggingScrollbar = false;
-        // Turn off compact mode immediately when scrollbar is released
-        setIsScrolling(false);
-
-        // Only show deactivation toast if compact mode was actually active
-        if (isCompactMode) {
-          // Dismiss any existing activation toast first
-          toast.dismiss('compact-activated');
-
-          toast.info('Compact mode deactivated', {
-            id: 'compact-deactivated',
-            description: 'Task cards returned to normal view',
-            duration: 1500,
-          });
-        }
-      }
-    };
-
-    // Deactivate compact mode when clicking outside the scrollbar area
-    const handleClickOutside = (e: MouseEvent) => {
-      const target = e.target as HTMLElement;
-
-      // Check if there's actually a visible scrollbar
-      const hasVisibleScrollbar =
-        container && container.scrollHeight > container.clientHeight;
-
-      if (hasVisibleScrollbar) {
-        // When scrollbar is visible, only deactivate when clicking outside scrollbar area
-        const isScrollbarClick =
-          target.classList.contains('scrollbar-thumb') ||
-          target.classList.contains('scrollbar-track') ||
-          target.closest('.scrollbar-thumb') ||
-          target.closest('.scrollbar-track') ||
-          // Also check for common scrollbar selectors
-          target.matches('[data-radix-scroll-area-viewport]') ||
-          target.closest('[data-radix-scroll-area-viewport]') ||
-          // Only check right edge if there's actually a visible scrollbar
-          (target === container &&
-            container.scrollHeight > container.clientHeight &&
-            e.offsetX > container.clientWidth - 20);
-
-        // If clicking outside scrollbar and compact mode is active, deactivate it
-        if (!isScrollbarClick && isScrolling && isCompactMode) {
-          setIsScrolling(false);
-
-          toast.info('Compact mode deactivated', {
-            description: 'Task cards returned to normal view',
-            duration: 2000,
-          });
-        }
-      } else {
-        // When no scrollbar is visible, clicking anywhere deactivates compact mode
-        if (isScrolling && isCompactMode) {
-          setIsScrolling(false);
-
-          toast.info('Compact mode deactivated', {
-            id: 'compact-deactivated',
-            description: 'Task cards returned to normal view',
-            duration: 1500,
-          });
-        }
-      }
-    };
-
-    container.addEventListener('mousedown', handleMouseDown);
-    document.addEventListener('mousemove', handleMouseMove);
-    document.addEventListener('mouseup', handleMouseUp);
-    document.addEventListener('mousedown', handleClickOutside);
-
-    return () => {
-      container.removeEventListener('mousedown', handleMouseDown);
-      document.removeEventListener('mousemove', handleMouseMove);
-      document.removeEventListener('mouseup', handleMouseUp);
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [isCompactMode, isScrolling]);
+  // Use custom hooks for scrollbar and compact mode management
+  useScrollbarDrag(scrollContainerRef, setIsScrolling);
+  useCompactModeToasts(isCompactMode, isScrolling, setIsScrolling);
+  useClickOutside(scrollContainerRef, isScrolling, isCompactMode, setIsScrolling);
 
   const clearAllFilters = () => {
     setSearchQuery('');
