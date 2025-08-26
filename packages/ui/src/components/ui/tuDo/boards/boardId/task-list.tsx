@@ -253,6 +253,7 @@ export const BoardColumn = React.memo(function BoardColumn({
   selectedTasks,
   onTaskSelect,
   isMultiSelectMode,
+  isScrollbarActive,
 }: Props) {
   const params = useParams();
   const wsId = params.wsId as string;
@@ -288,27 +289,11 @@ export const BoardColumn = React.memo(function BoardColumn({
   const [isCompactMode, setIsCompactMode] = useState(false);
   const [isScrolling, setIsScrolling] = useState(false);
 
+  // Ensure isScrollbarActive is always a boolean
+  const scrollbarActive = isScrollbarActive ?? false;
+
   const searchInputRef = useRef<HTMLInputElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
-
-  // Check if content overflows
-  const checkOverflow = useCallback(() => {
-    if (scrollContainerRef.current) {
-      const container = scrollContainerRef.current;
-      const hasOverflow = container.scrollHeight > container.clientHeight;
-      const shouldBeCompact = hasOverflow && (isScrolling || isScrollbarActive);
-
-      // Enable compact mode if there's overflow AND (user is scrolling OR scrollbar is active)
-      setIsCompactMode(shouldBeCompact);
-    }
-  }, [isScrolling, isScrollbarActive]);
-
-  // Monitor window resize for overflow changes
-  useEffect(() => {
-    const handleResize = () => checkOverflow();
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, [checkOverflow]);
 
   const {
     setNodeRef,
@@ -348,6 +333,25 @@ export const BoardColumn = React.memo(function BoardColumn({
       debouncedSearch.cancel();
     };
   }, [searchQuery, debouncedSearch]);
+
+  // Check if content overflows and update compact mode
+  const checkOverflow = useCallback(() => {
+    if (scrollContainerRef.current) {
+      const container = scrollContainerRef.current;
+      const hasOverflow = container.scrollHeight > container.clientHeight;
+      const shouldBeCompact = hasOverflow && (isScrolling || scrollbarActive);
+
+      // Enable compact mode if there's overflow AND (user is scrolling OR scrollbar is active)
+      setIsCompactMode(shouldBeCompact);
+    }
+  }, [isScrolling, scrollbarActive]);
+
+  // Monitor window resize for overflow changes
+  useEffect(() => {
+    const handleResize = () => checkOverflow();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [checkOverflow]);
 
   // Cleanup scrollbar timeout on unmount
 
@@ -517,7 +521,12 @@ export const BoardColumn = React.memo(function BoardColumn({
 
   // Use custom hooks for scrollbar and compact mode management
   useScrollbarDrag(scrollContainerRef, setIsScrolling);
-  useCompactModeToasts(isCompactMode, isScrolling, isScrollbarActive, setIsScrolling);
+  useCompactModeToasts(
+    isCompactMode,
+    isScrolling,
+    scrollbarActive,
+    setIsScrolling
+  );
   useClickOutside(
     scrollContainerRef,
     isScrolling,
