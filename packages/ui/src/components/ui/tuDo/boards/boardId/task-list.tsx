@@ -55,7 +55,7 @@ import { statusIcons } from './status-section';
 // Custom hooks for scrollbar and compact mode management
 const useScrollbarDrag = (
   scrollContainerRef: React.RefObject<HTMLDivElement | null>,
-  setIsScrolling: (scrolling: boolean) => void
+  setIsScrolling: (scrolling: boolean) => void // Used in handleMouseDown, handleMouseMove, handleMouseUp
 ) => {
   useEffect(() => {
     const container = scrollContainerRef.current;
@@ -111,17 +111,19 @@ const useScrollbarDrag = (
 const useCompactModeToasts = (
   isCompactMode: boolean,
   isScrolling: boolean,
+  isScrollbarActive: boolean,
   setIsScrolling: (scrolling: boolean) => void
 ) => {
   useEffect(() => {
-    if (isScrolling && !isCompactMode) {
+    const shouldActivate = isScrolling || isScrollbarActive;
+    if (shouldActivate && !isCompactMode) {
       toast.dismiss('compact-deactivated');
       toast.success('Compact mode activated', {
         id: 'compact-activated',
         description: 'Task cards are now in compact view for better scrolling',
         duration: 4000,
       });
-    } else if (!isScrolling && isCompactMode) {
+    } else if (!shouldActivate && isCompactMode) {
       toast.dismiss('compact-activated');
       toast.info('Compact mode deactivated', {
         id: 'compact-deactivated',
@@ -129,7 +131,7 @@ const useCompactModeToasts = (
         duration: 1500,
       });
     }
-  }, [isScrolling, isCompactMode]);
+  }, [isScrolling, isScrollbarActive, isCompactMode]);
 };
 
 const useClickOutside = (
@@ -294,12 +296,12 @@ export const BoardColumn = React.memo(function BoardColumn({
     if (scrollContainerRef.current) {
       const container = scrollContainerRef.current;
       const hasOverflow = container.scrollHeight > container.clientHeight;
-      const shouldBeCompact = hasOverflow && isScrolling;
+      const shouldBeCompact = hasOverflow && (isScrolling || isScrollbarActive);
 
-      // Only enable compact mode if there's overflow AND user is scrolling
+      // Enable compact mode if there's overflow AND (user is scrolling OR scrollbar is active)
       setIsCompactMode(shouldBeCompact);
     }
-  }, [isScrolling]);
+  }, [isScrolling, isScrollbarActive]);
 
   // Monitor window resize for overflow changes
   useEffect(() => {
@@ -515,7 +517,7 @@ export const BoardColumn = React.memo(function BoardColumn({
 
   // Use custom hooks for scrollbar and compact mode management
   useScrollbarDrag(scrollContainerRef, setIsScrolling);
-  useCompactModeToasts(isCompactMode, isScrolling, setIsScrolling);
+  useCompactModeToasts(isCompactMode, isScrolling, isScrollbarActive, setIsScrolling);
   useClickOutside(
     scrollContainerRef,
     isScrolling,
