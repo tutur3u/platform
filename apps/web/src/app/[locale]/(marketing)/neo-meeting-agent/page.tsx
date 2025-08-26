@@ -11,7 +11,9 @@ export default async function NeoMeetingAgentPage() {
         <div className="flex flex-col items-center">
           <h1 className="mx-auto mb-2 text-center text-2xl leading-tight! font-bold tracking-tight text-balance text-foreground md:text-4xl lg:text-6xl">
             {t('headline-p1')}{' '}
-            <GradientHeadline>{t('headline-p2')}</GradientHeadline>.
+            <GradientHeadline gradient="yellow-orange">
+              {t('headline-p2')}
+            </GradientHeadline>
           </h1>
         </div>
       </div>
