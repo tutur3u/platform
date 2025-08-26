@@ -144,7 +144,8 @@ const useClickOutside = (
 
     const handleClickOutside = (e: MouseEvent) => {
       const target = e.target as HTMLElement;
-      const hasVisibleScrollbar = container.scrollHeight > container.clientHeight;
+      const hasVisibleScrollbar =
+        container.scrollHeight > container.clientHeight;
 
       if (hasVisibleScrollbar) {
         const isScrollbarClick =
@@ -515,7 +516,12 @@ export const BoardColumn = React.memo(function BoardColumn({
   // Use custom hooks for scrollbar and compact mode management
   useScrollbarDrag(scrollContainerRef, setIsScrolling);
   useCompactModeToasts(isCompactMode, isScrolling, setIsScrolling);
-  useClickOutside(scrollContainerRef, isScrolling, isCompactMode, setIsScrolling);
+  useClickOutside(
+    scrollContainerRef,
+    isScrolling,
+    isCompactMode,
+    setIsScrolling
+  );
 
   const clearAllFilters = () => {
     setSearchQuery('');

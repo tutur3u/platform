@@ -106,7 +106,9 @@ export function KanbanBoard({ boardId, tasks, isLoading }: Props) {
       return () => {
         node.removeEventListener('mousedown', handleScrollbarInteraction);
         node.removeEventListener('mouseup', handleScrollbarRelease);
-        node.removeEventListener('mouseleave', () => setIsScrollbarActive(false));
+        node.removeEventListener('mouseleave', () =>
+          setIsScrollbarActive(false)
+        );
       };
     }
   }, [handleScrollbarInteraction, handleScrollbarRelease]);
@@ -595,7 +597,7 @@ export function KanbanBoard({ boardId, tasks, isLoading }: Props) {
         <div
           ref={scrollbarRef}
           onScroll={syncScroll}
-          className="sticky bottom-0 left-0 z-10 overflow-x-auto overflow-y-hidden scrollbar-thin scrollbar-track-transparent scrollbar-thumb-muted-foreground/50"
+          className="scrollbar-thin scrollbar-track-transparent scrollbar-thumb-muted-foreground/50 sticky bottom-0 left-0 z-10 overflow-x-auto overflow-y-hidden"
         >
           {/* Scrollable content container */}
           <div

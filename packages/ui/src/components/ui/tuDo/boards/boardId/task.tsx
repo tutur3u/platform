@@ -75,7 +75,13 @@ interface MinimalTaskCardProps {
   isSelected?: boolean;
 }
 
-function MinimalTaskCard({ task, style, setNodeRef, className, isSelected }: MinimalTaskCardProps) {
+function MinimalTaskCard({
+  task,
+  style,
+  setNodeRef,
+  className,
+  isSelected,
+}: MinimalTaskCardProps) {
   const getPriorityIndicator = () => {
     if (!task.priority) return null;
     return (
@@ -112,9 +118,7 @@ function MinimalTaskCard({ task, style, setNodeRef, className, isSelected }: Min
           </div>
         </div>
         {task.priority && (
-          <div className="flex-shrink-0">
-            {getPriorityIndicator()}
-          </div>
+          <div className="flex-shrink-0">{getPriorityIndicator()}</div>
         )}
       </div>
     </Card>
