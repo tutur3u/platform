@@ -82,17 +82,6 @@ export function KanbanBoard({ boardId, tasks, isLoading }: Props) {
     setOverlayWidth(350);
   }, []);
 
-  // Scrollbar interaction detection
-  const handleScrollbarInteraction = useCallback((e: Event) => {
-    const target = e.target as HTMLElement;
-    if (
-      target.classList.contains('scrollbar-thumb') ||
-      target.classList.contains('scrollbar-track')
-    ) {
-      setIsScrollbarActive(true);
-    }
-  }, []);
-
   // Sync scroll between main content and fixed scrollbar
   const syncScroll = useCallback((e: UIEvent<HTMLDivElement>) => {
     const target = e.currentTarget as HTMLElement;
