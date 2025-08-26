@@ -1134,7 +1134,7 @@ export const BoardColumn = React.memo(function BoardColumn({
 
 export function BoardContainer({ children }: { children: React.ReactNode }) {
   return (
-    <div className="scrollbar-thin scrollbar-track-transparent scrollbar-thumb-muted-foreground/50 relative flex h-full min-h-0 w-full flex-nowrap overflow-x-auto pb-4">
+    <div className="relative flex h-full min-h-0 w-full flex-nowrap pb-4">
       {children}
     </div>
   );
