@@ -60,6 +60,7 @@ export function KanbanBoard({ boardId, tasks, isLoading }: Props) {
   // Ref for the Kanban board container
   const boardRef = useRef<HTMLDivElement>(null);
   const scrollbarRef = useRef<HTMLDivElement>(null);
+  const columnsContainerRef = useRef<HTMLDivElement>(null);
   const dragStartCardLeft = useRef<number | null>(null);
   const overlayWidth = 350; // Column width
 
@@ -93,6 +94,22 @@ export function KanbanBoard({ boardId, tasks, isLoading }: Props) {
     queryClient.invalidateQueries({ queryKey: ['tasks', boardId] });
     queryClient.invalidateQueries({ queryKey: ['task_lists', boardId] });
   }, [queryClient, boardId]);
+
+  // Manage event listeners for scrollbar interaction
+  useEffect(() => {
+    const node = columnsContainerRef.current;
+    if (node) {
+      node.addEventListener('mousedown', handleScrollbarInteraction);
+      node.addEventListener('mouseup', handleScrollbarRelease);
+      node.addEventListener('mouseleave', () => setIsScrollbarActive(false));
+
+      return () => {
+        node.removeEventListener('mousedown', handleScrollbarInteraction);
+        node.removeEventListener('mouseup', handleScrollbarRelease);
+        node.removeEventListener('mouseleave', () => setIsScrollbarActive(false));
+      };
+    }
+  }, [handleScrollbarInteraction, handleScrollbarRelease]);
 
   // Multi-select handlers
   const handleTaskSelect = useCallback(
@@ -630,18 +647,7 @@ export function KanbanBoard({ boardId, tasks, isLoading }: Props) {
                   strategy={horizontalListSortingStrategy}
                 >
                   <div
-                    ref={(el) => {
-                      if (el) {
-                        el.addEventListener(
-                          'mousedown',
-                          handleScrollbarInteraction
-                        );
-                        el.addEventListener('mouseup', handleScrollbarRelease);
-                        el.addEventListener('mouseleave', () =>
-                          setIsScrollbarActive(false)
-                        );
-                      }
-                    }}
+                    ref={columnsContainerRef}
                     className="flex h-full flex-shrink-0 gap-4"
                   >
                     {columns
