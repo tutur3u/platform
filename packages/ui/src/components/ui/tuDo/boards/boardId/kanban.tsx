@@ -574,149 +574,138 @@ export function KanbanBoard({ boardId, tasks, isLoading }: Props) {
 
       {/* Kanban Board */}
       <div className="min-h-0 flex-1 overflow-hidden">
-        <div
-          ref={boardRef}
-          onScroll={syncScroll}
-          className="scrollbar-none relative h-full overflow-x-auto pb-6"
-          onWheel={(e) => {
-            // Enable Shift + scroll for horizontal scrolling
-            if (e.shiftKey) {
-              e.preventDefault();
-              const container = boardRef.current;
-              if (container) {
-                container.scrollLeft += e.deltaY;
-              }
-            }
-          }}
-        >
-          <DndContext
-            sensors={sensors}
-            collisionDetection={closestCorners}
-            onDragStart={onDragStart}
-            onDragOver={onDragOver}
-            onDragEnd={onDragEnd}
-            measuring={{
-              droppable: {
-                strategy: MeasuringStrategy.Always,
-              },
-            }}
-            modifiers={[
-              (args) => {
-                const { transform } = args;
-                if (!boardRef.current || dragStartCardLeft.current === null)
-                  return transform;
-                const boardRect = boardRef.current.getBoundingClientRect();
-                // Clamp overlay within board
-                const minX = boardRect.left - dragStartCardLeft.current;
-                const maxX =
-                  boardRect.right - dragStartCardLeft.current - overlayWidth;
-                return {
-                  ...transform,
-                  x: Math.max(minX, Math.min(transform.x, maxX)),
-                };
-              },
-            ]}
-          >
-            <BoardContainer>
-              <SortableContext
-                items={columnsId}
-                strategy={horizontalListSortingStrategy}
-              >
-                <div
-                  ref={(el) => {
-                    if (el) {
-                      el.addEventListener(
-                        'mousedown',
-                        handleScrollbarInteraction
-                      );
-                      el.addEventListener('mouseup', handleScrollbarRelease);
-                      el.addEventListener('mouseleave', () =>
-                        setIsScrollbarActive(false)
-                      );
-                    }
-                  }}
-                  className="flex h-full flex-shrink-0 gap-4"
-                >
-                  {columns
-                    .sort((a, b) => {
-                      // First sort by status priority, then by position within status
-                      const statusOrder = {
-                        not_started: 0,
-                        active: 1,
-                        done: 2,
-                        closed: 3,
-                      };
-                      const statusA =
-                        statusOrder[a.status as keyof typeof statusOrder] ??
-                        999;
-                      const statusB =
-                        statusOrder[b.status as keyof typeof statusOrder] ??
-                        999;
-                      if (statusA !== statusB) return statusA - statusB;
-                      return (a.position || 0) - (b.position || 0);
-                    })
-                    .map((column) => {
-                      const columnTasks = tasks.filter(
-                        (task) => task.list_id === column.id
-                      );
-                      return (
-                        <BoardColumn
-                          key={column.id}
-                          column={column}
-                          boardId={boardId}
-                          tasks={columnTasks}
-                          onTaskCreated={handleTaskCreated}
-                          onListUpdated={handleTaskCreated}
-                          selectedTasks={selectedTasks}
-                          isMultiSelectMode={isMultiSelectMode}
-                          onTaskSelect={handleTaskSelect}
-                          isScrollbarActive={isScrollbarActive}
-                        />
-                      );
-                    })}
-                  <TaskListForm
-                    boardId={boardId}
-                    onListCreated={handleTaskCreated}
-                  />
-                </div>
-              </SortableContext>
-            </BoardContainer>
-            <DragOverlay
-              wrapperElement="div"
-              style={{
-                width: 'min(350px, 90vw)',
-                maxWidth: '350px',
-                pointerEvents: 'none',
-              }}
-            >
-              {MemoizedColumnOverlay}
-              {activeTask && (
-                <LightweightTaskCard
-                  task={activeTask}
-                  isMinimalMode={isScrollbarActive}
-                />
-              )}
-            </DragOverlay>
-          </DndContext>
-        </div>
-      </div>
-
-      {/* Fixed horizontal scrollbar below board summary */}
-      <div
-        className="absolute right-0 left-0 z-[9999] h-3 border-border border-t bg-background"
-        style={{ bottom: '-12px' }}
-      >
+        {/* Horizontal scrollbar wrapper - sticky at bottom */}
         <div
           ref={scrollbarRef}
           onScroll={syncScroll}
-          className="scrollbar-thin scrollbar-track-transparent scrollbar-thumb-muted-foreground/50 h-full overflow-x-auto"
+          className="sticky bottom-0 left-0 z-10 overflow-x-auto overflow-y-hidden scrollbar-thin scrollbar-track-transparent scrollbar-thumb-muted-foreground/50"
         >
+          {/* Scrollable content container */}
           <div
-            className="h-full"
-            style={{
-              width: `${Math.max(columns.length * 350 + 200 + 350, 100)}px`,
+            ref={boardRef}
+            onScroll={syncScroll}
+            className="scrollbar-none relative h-full pb-4"
+            onWheel={(e) => {
+              // Enable Shift + scroll for horizontal scrolling
+              if (e.shiftKey) {
+                e.preventDefault();
+                const container = boardRef.current;
+                if (container) {
+                  container.scrollLeft += e.deltaY;
+                }
+              }
             }}
-          />
+          >
+            <DndContext
+              sensors={sensors}
+              collisionDetection={closestCorners}
+              onDragStart={onDragStart}
+              onDragOver={onDragOver}
+              onDragEnd={onDragEnd}
+              measuring={{
+                droppable: {
+                  strategy: MeasuringStrategy.Always,
+                },
+              }}
+              modifiers={[
+                (args) => {
+                  const { transform } = args;
+                  if (!boardRef.current || dragStartCardLeft.current === null)
+                    return transform;
+                  const boardRect = boardRef.current.getBoundingClientRect();
+                  // Clamp overlay within board
+                  const minX = boardRect.left - dragStartCardLeft.current;
+                  const maxX =
+                    boardRect.right - dragStartCardLeft.current - overlayWidth;
+                  return {
+                    ...transform,
+                    x: Math.max(minX, Math.min(transform.x, maxX)),
+                  };
+                },
+              ]}
+            >
+              <BoardContainer>
+                <SortableContext
+                  items={columnsId}
+                  strategy={horizontalListSortingStrategy}
+                >
+                  <div
+                    ref={(el) => {
+                      if (el) {
+                        el.addEventListener(
+                          'mousedown',
+                          handleScrollbarInteraction
+                        );
+                        el.addEventListener('mouseup', handleScrollbarRelease);
+                        el.addEventListener('mouseleave', () =>
+                          setIsScrollbarActive(false)
+                        );
+                      }
+                    }}
+                    className="flex h-full flex-shrink-0 gap-4"
+                  >
+                    {columns
+                      .sort((a, b) => {
+                        // First sort by status priority, then by position within status
+                        const statusOrder = {
+                          not_started: 0,
+                          active: 1,
+                          done: 2,
+                          closed: 3,
+                        };
+                        const statusA =
+                          statusOrder[a.status as keyof typeof statusOrder] ??
+                          999;
+                        const statusB =
+                          statusOrder[b.status as keyof typeof statusOrder] ??
+                          999;
+                        if (statusA !== statusB) return statusA - statusB;
+                        return (a.position || 0) - (b.position || 0);
+                      })
+                      .map((column) => {
+                        const columnTasks = tasks.filter(
+                          (task) => task.list_id === column.id
+                        );
+                        return (
+                          <BoardColumn
+                            key={column.id}
+                            column={column}
+                            boardId={boardId}
+                            tasks={columnTasks}
+                            onTaskCreated={handleTaskCreated}
+                            onListUpdated={handleTaskCreated}
+                            selectedTasks={selectedTasks}
+                            isMultiSelectMode={isMultiSelectMode}
+                            onTaskSelect={handleTaskSelect}
+                            isScrollbarActive={isScrollbarActive}
+                          />
+                        );
+                      })}
+                    <TaskListForm
+                      boardId={boardId}
+                      onListCreated={handleTaskCreated}
+                    />
+                  </div>
+                </SortableContext>
+              </BoardContainer>
+              <DragOverlay
+                wrapperElement="div"
+                style={{
+                  width: 'min(350px, 90vw)',
+                  maxWidth: '350px',
+                  pointerEvents: 'none',
+                }}
+              >
+                {MemoizedColumnOverlay}
+                {activeTask && (
+                  <LightweightTaskCard
+                    task={activeTask}
+                    isMinimalMode={isScrollbarActive}
+                  />
+                )}
+              </DragOverlay>
+            </DndContext>
+          </div>
         </div>
       </div>
     </div>
