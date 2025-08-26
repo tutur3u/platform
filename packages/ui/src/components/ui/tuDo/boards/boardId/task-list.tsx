@@ -55,7 +55,8 @@ import { statusIcons } from './status-section';
 // Custom hooks for scrollbar and compact mode management
 const useScrollbarDrag = (
   scrollContainerRef: React.RefObject<HTMLDivElement | null>,
-  setIsScrolling: (scrolling: boolean) => void // Used in handleMouseDown, handleMouseMove, handleMouseUp
+  // biome-ignore lint/correctness/noUnusedFunctionParameters: parameter is used in event handlers
+  setIsScrolling: (scrolling: boolean) => void
 ) => {
   useEffect(() => {
     const container = scrollContainerRef.current;
