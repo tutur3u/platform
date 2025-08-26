@@ -153,6 +153,23 @@ export function KanbanBoard({ boardId, tasks, isLoading }: Props) {
     return () => window.removeEventListener('resize', computeOverlayWidth);
   }, [computeOverlayWidth]);
 
+  // Handle Shift + Wheel for horizontal scrolling with non-passive listener
+  useEffect(() => {
+    const boardElement = boardRef.current;
+    if (!boardElement) return;
+
+    const handleWheel = (e: WheelEvent) => {
+      // Enable Shift + Wheel for horizontal scrolling
+      if (e.shiftKey) {
+        e.preventDefault();
+        boardElement.scrollLeft += e.deltaY;
+      }
+    };
+
+    boardElement.addEventListener('wheel', handleWheel, { passive: false });
+    return () => boardElement.removeEventListener('wheel', handleWheel);
+  }, []);
+
   // Multi-select handlers
   const handleTaskSelect = useCallback(
     (taskId: string, event: React.MouseEvent) => {
@@ -638,15 +655,6 @@ export function KanbanBoard({ boardId, tasks, isLoading }: Props) {
           ref={boardRef}
           onScroll={syncScroll}
           className="scrollbar-none h-full overflow-x-auto overflow-y-hidden pb-4"
-          onWheel={(e) => {
-            // Enable Shift + Wheel for horizontal scrolling
-            if (e.shiftKey) {
-              e.preventDefault();
-              if (boardRef.current) {
-                boardRef.current.scrollLeft += e.deltaY;
-              }
-            }
-          }}
         >
           <DndContext
             sensors={sensors}
