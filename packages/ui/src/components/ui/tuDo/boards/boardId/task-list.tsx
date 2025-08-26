@@ -355,6 +355,7 @@ export const BoardColumn = React.memo(function BoardColumn({
   }, [checkOverflow]);
 
   // React to external scrollbar activation immediately
+  // biome-ignore lint/correctness/useExhaustiveDependencies: scrollbarActive is derived from isScrollbarActive prop and should trigger effect when prop changes
   useEffect(() => {
     checkOverflow();
   }, [scrollbarActive, checkOverflow]);
