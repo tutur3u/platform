@@ -393,7 +393,8 @@ const TimeBlockingProvider = ({
       }: { mode: 'add' | 'remove'; date: Date; tentativeMode?: boolean },
       event?: TouchEvent | MouseEvent
     ) => {
-      const touch = event && 'touches' in event ? event.touches?.[0] : undefined;
+      const touch =
+        event && 'touches' in event ? event.touches?.[0] : undefined;
 
       setEditing((prevData) => {
         const nextMode = prevData?.mode ?? mode;
