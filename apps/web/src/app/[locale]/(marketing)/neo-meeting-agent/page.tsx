@@ -1,3 +1,4 @@
+import NeoMeetingAgentLanding from './landing';
 import GradientHeadline from '@/app/[locale]/(marketing)/gradient-headline';
 import { Separator } from '@ncthub/ui/separator';
 import { getTranslations } from 'next-intl/server';
@@ -15,6 +16,10 @@ export default async function NeoMeetingAgentPage() {
               {t('headline-p2')}
             </GradientHeadline>
           </h1>
+        </div>
+
+        <div className="mt-12">
+          <NeoMeetingAgentLanding />
         </div>
       </div>
       <Separator className="mt-8 mb-4 md:mt-16" />
