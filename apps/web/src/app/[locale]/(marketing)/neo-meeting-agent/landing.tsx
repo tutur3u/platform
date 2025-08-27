@@ -11,11 +11,13 @@ export default function NeoMeetingAgentLanding() {
       {/* left column */}
       <div className="flex flex-col gap-6">
         <FileUploader
+          accept={{ 'video/*': [] }}
           value={files}
           onValueChange={setFiles}
           // onUpload={}
           maxFileCount={1}
           maxSize={1024 * 1024 * 1024 * 2}
+          hideClearButton={true}
         />
       </div>
 
