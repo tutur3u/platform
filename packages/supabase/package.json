@@ -17,7 +17,7 @@
     "next": "^15.5.0",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
-    "zod": "^4.1.1"
+    "zod": "^4.1.3"
   },
   "devDependencies": {
     "@tuturuuu/typescript-config": "workspace:*",
@@ -33,5 +33,5 @@
     "./next/common": "./src/next/common.ts",
     "./next/client": "./src/next/client.ts"
   },
-  "packageManager": "bun@1.2.20"
+  "packageManager": "bun@1.2.21"
 }
