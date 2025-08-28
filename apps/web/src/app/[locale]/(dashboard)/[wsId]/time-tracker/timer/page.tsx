@@ -1,8 +1,8 @@
-import { getTimeTrackingData } from '@/lib/time-tracking-helper';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
 import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import { notFound } from 'next/navigation';
-import TimeTrackerContent from '../time-tracker-content';
+import { getTimeTrackingData } from '@/lib/time-tracking-helper';
+import TimeTrackerContent from '../components/time-tracker-content';
 import type { TimeTrackerData } from '../types';
 
 interface Props {

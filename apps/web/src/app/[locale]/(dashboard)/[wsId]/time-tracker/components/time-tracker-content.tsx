@@ -52,18 +52,18 @@ import timezone from 'dayjs/plugin/timezone';
 import utc from 'dayjs/plugin/utc';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { priorityCompare } from '@/lib/task-helper';
-import { TimerControls } from './components/timer-controls';
 import type {
   ExtendedWorkspaceTask,
   SessionWithRelations,
   TaskSidebarFilters,
   TimeTrackerData,
-} from './types';
+} from '../types';
 import {
   generateAssigneeInitials,
   getFilteredAndSortedSidebarTasks,
   useTaskCounts,
-} from './utils';
+} from '../utils';
+import { TimerControls } from './timer-controls';
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
