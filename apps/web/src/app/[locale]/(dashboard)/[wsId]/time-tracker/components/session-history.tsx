@@ -29,6 +29,7 @@ import {
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
 import {
+  AlertTriangle,
   BarChart2,
   Brain,
   Briefcase,
@@ -757,6 +758,13 @@ const StackedSessionItem: FC<{
   );
 };
 
+// Helper function to check if a session is older than one week
+const isSessionOlderThanOneWeek = (session: SessionWithRelations): boolean => {
+  const sessionStartTime = dayjs.utc(session.start_time);
+  const oneWeekAgo = dayjs().subtract(1, 'week');
+  return sessionStartTime.isBefore(oneWeekAgo);
+};
+
 export function SessionHistory({
   wsId,
   sessions,
@@ -1085,10 +1093,13 @@ export function SessionHistory({
     setIsEditing(true);
     try {
       const userTz = dayjs.tz.guess();
-      await fetch(
+      const response = await fetch(
         `/api/v1/workspaces/${wsId}/time-tracking/sessions/${sessionToEdit.id}`,
         {
           method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+          },
           body: JSON.stringify({
             action: 'edit',
             title: editTitle,
@@ -1105,12 +1116,20 @@ export function SessionHistory({
           }),
         }
       );
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to update session');
+      }
+
       router.refresh();
       setSessionToEdit(null);
       toast.success('Session updated successfully');
     } catch (error) {
       console.error('Error updating session:', error);
-      toast.error('Failed to update session');
+      const errorMessage =
+        error instanceof Error ? error.message : 'Failed to update session';
+      toast.error(errorMessage);
     } finally {
       setIsEditing(false);
     }
@@ -1979,28 +1998,50 @@ export function SessionHistory({
                 </Select>
               </div>
             </div>
-            {sessionToEdit && !sessionToEdit.is_running && (
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <Label htmlFor="edit-start-time">Start Time</Label>
-                  <Input
-                    id="edit-start-time"
-                    type="datetime-local"
-                    value={editStartTime}
-                    onChange={(e) => setEditStartTime(e.target.value)}
-                  />
+            {sessionToEdit &&
+              !sessionToEdit.is_running &&
+              (isSessionOlderThanOneWeek(sessionToEdit) ? (
+                <div className="rounded-lg border border-orange-200 bg-orange-50 p-4 dark:border-orange-800 dark:bg-orange-950/50">
+                  <div className="flex items-center gap-2 text-orange-700 dark:text-orange-300">
+                    <AlertTriangle className="h-4 w-4" />
+                    <span className="font-medium text-sm">
+                      Time Editing Restricted
+                    </span>
+                  </div>
+                  <p className="mt-2 text-orange-600 text-sm dark:text-orange-400">
+                    Start time and end time cannot be edited for sessions older
+                    than one week. This session is from{' '}
+                    <span className="font-medium">
+                      {dayjs
+                        .utc(sessionToEdit.start_time)
+                        .tz(dayjs.tz.guess())
+                        .format('MMM D, YYYY')}
+                    </span>
+                    .
+                  </p>
                 </div>
-                <div>
-                  <Label htmlFor="edit-end-time">End Time</Label>
-                  <Input
-                    id="edit-end-time"
-                    type="datetime-local"
-                    value={editEndTime}
-                    onChange={(e) => setEditEndTime(e.target.value)}
-                  />
+              ) : (
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <Label htmlFor="edit-start-time">Start Time</Label>
+                    <Input
+                      id="edit-start-time"
+                      type="datetime-local"
+                      value={editStartTime}
+                      onChange={(e) => setEditStartTime(e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="edit-end-time">End Time</Label>
+                    <Input
+                      id="edit-end-time"
+                      type="datetime-local"
+                      value={editEndTime}
+                      onChange={(e) => setEditEndTime(e.target.value)}
+                    />
+                  </div>
                 </div>
-              </div>
-            )}
+              ))}
             <div className="flex gap-2 pt-4">
               <Button
                 variant="outline"
