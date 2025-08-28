@@ -98,8 +98,8 @@ export default function SelectableDayTime({
       // This ensures a 12:00-12:15 slot only highlights the 12:00 slot
       // Special handling for hour boundaries: when endMinute is 0, we need to go back to the previous slot
       const endBlock = Math.floor(
-        (endHour ?? 0) * hourSplits + 
-        ((endMinute ?? 0) === 0 ? -1 : Math.max(0, (endMinute ?? 0) - 1)) / 15
+        (endHour ?? 0) * hourSplits +
+          ((endMinute ?? 0) === 0 ? -1 : Math.max(0, (endMinute ?? 0) - 1)) / 15
       );
 
       return i >= startBlock && i <= endBlock;
