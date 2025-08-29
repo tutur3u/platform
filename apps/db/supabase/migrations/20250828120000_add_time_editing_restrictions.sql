@@ -46,7 +46,7 @@ $$ LANGUAGE plpgsql;
 -- =================================================================
 
 CREATE TRIGGER enforce_time_tracking_update
-BEFORE UPDATE ON time_tracking_sessions
+BEFORE UPDATE ON public.time_tracking_sessions
 FOR EACH ROW
 EXECUTE FUNCTION check_time_tracking_session_update();
 
@@ -71,8 +71,15 @@ WITH CHECK (
 
 -- POLICY FOR DELETE: Allow users to delete their own sessions from workspaces they belong to.
 CREATE POLICY "Allow users to delete their own sessions" ON "public"."time_tracking_sessions"
-AS PERMISSIVE FOR DELETE TO authenticated
 USING (
+    user_id = auth.uid() AND 
+    EXISTS (
+        SELECT 1 FROM workspace_members wu 
+        WHERE wu.ws_id = time_tracking_sessions.ws_id 
+        AND wu.user_id = auth.uid()
+    )
+)
+WITH CHECK (
     user_id = auth.uid() AND 
     EXISTS (
         SELECT 1 FROM workspace_members wu 
@@ -86,6 +93,14 @@ USING (
 CREATE POLICY "Allow users to update their own sessions" ON "public"."time_tracking_sessions"
 AS PERMISSIVE FOR UPDATE TO authenticated
 USING (
+    user_id = auth.uid() AND 
+    EXISTS (
+        SELECT 1 FROM workspace_members wu 
+        WHERE wu.ws_id = time_tracking_sessions.ws_id 
+        AND wu.user_id = auth.uid()
+    )
+)
+WITH CHECK (
     user_id = auth.uid() AND 
     EXISTS (
         SELECT 1 FROM workspace_members wu 
