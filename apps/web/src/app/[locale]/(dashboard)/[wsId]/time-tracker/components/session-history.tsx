@@ -1073,18 +1073,21 @@ export function SessionHistory({
   const openEditDialog = (session: SessionWithRelations | undefined) => {
     if (!session) return;
     setSessionToEdit(session);
-    
+
     const userTz = dayjs.tz.guess();
-    const startTimeFormatted = dayjs.utc(session.start_time).tz(userTz).format('YYYY-MM-DDTHH:mm');
+    const startTimeFormatted = dayjs
+      .utc(session.start_time)
+      .tz(userTz)
+      .format('YYYY-MM-DDTHH:mm');
     const endTimeFormatted = session.end_time
       ? dayjs.utc(session.end_time).tz(userTz).format('YYYY-MM-DDTHH:mm')
       : '';
-    
+
     const title = session.title;
     const description = session.description || '';
     const categoryId = session.category_id || 'none';
     const taskId = session.task_id || 'none';
-    
+
     // Set current edit values
     setEditTitle(title);
     setEditDescription(description);
@@ -1092,7 +1095,7 @@ export function SessionHistory({
     setEditTaskId(taskId);
     setEditStartTime(startTimeFormatted);
     setEditEndTime(endTimeFormatted);
-    
+
     // Store original values for comparison
     setOriginalValues({
       title,
@@ -1114,7 +1117,7 @@ export function SessionHistory({
     setIsEditing(true);
     try {
       const userTz = dayjs.tz.guess();
-      
+
       // Build only the fields that have changed
       const changes: {
         action: string;
@@ -1127,34 +1130,39 @@ export function SessionHistory({
       } = {
         action: 'edit',
       };
-      
+
       // Check each field for changes and only include dirty fields
       if (editTitle !== originalValues.title) {
         changes.title = editTitle;
       }
-      
+
       if (editDescription !== originalValues.description) {
         changes.description = editDescription;
       }
-      
-      const currentCategoryId = editCategoryId === 'none' ? null : editCategoryId || null;
-      const originalCategoryId = originalValues.categoryId === 'none' ? null : originalValues.categoryId || null;
+
+      const currentCategoryId =
+        editCategoryId === 'none' ? null : editCategoryId || null;
+      const originalCategoryId =
+        originalValues.categoryId === 'none'
+          ? null
+          : originalValues.categoryId || null;
       if (currentCategoryId !== originalCategoryId) {
         changes.categoryId = currentCategoryId;
       }
-      
+
       const currentTaskId = editTaskId === 'none' ? null : editTaskId || null;
-      const originalTaskId = originalValues.taskId === 'none' ? null : originalValues.taskId || null;
+      const originalTaskId =
+        originalValues.taskId === 'none' ? null : originalValues.taskId || null;
       if (currentTaskId !== originalTaskId) {
         changes.taskId = currentTaskId;
       }
-      
+
       if (editStartTime !== originalValues.startTime) {
         changes.startTime = editStartTime
           ? dayjs.tz(editStartTime, userTz).utc().toISOString()
           : undefined;
       }
-      
+
       if (editEndTime !== originalValues.endTime) {
         changes.endTime = editEndTime
           ? dayjs.tz(editEndTime, userTz).utc().toISOString()
@@ -1162,14 +1170,14 @@ export function SessionHistory({
       }
 
       // Basic temporal guard: end >= start when both provided
-        if (changes.startTime && changes.endTime) {
-          if (dayjs(changes.endTime).isBefore(dayjs(changes.startTime))) {
-            toast.error('End time cannot be before start time');
-            setIsEditing(false);
-            return;
-          }
+      if (changes.startTime && changes.endTime) {
+        if (dayjs(changes.endTime).isBefore(dayjs(changes.startTime))) {
+          toast.error('End time cannot be before start time');
+          setIsEditing(false);
+          return;
         }
-      
+      }
+
       // Only make the request if there are actual changes
       if (Object.keys(changes).length === 1) {
         // Only the 'action' field is present, no actual changes
@@ -1233,7 +1241,7 @@ export function SessionHistory({
   const [editTaskId, setEditTaskId] = useState('');
   const [editStartTime, setEditStartTime] = useState('');
   const [editEndTime, setEditEndTime] = useState('');
-  
+
   // Original values to track changes
   const [originalValues, setOriginalValues] = useState<{
     title: string;
@@ -2004,10 +2012,7 @@ export function SessionHistory({
       </Card>
 
       {/* Edit Session Dialog */}
-      <Dialog
-        open={!!sessionToEdit}
-        onOpenChange={() => closeEditDialog()}
-      >
+      <Dialog open={!!sessionToEdit} onOpenChange={() => closeEditDialog()}>
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>Edit Session</DialogTitle>
