@@ -1160,6 +1160,15 @@ export function SessionHistory({
           ? dayjs.tz(editEndTime, userTz).utc().toISOString()
           : undefined;
       }
+
+      // Basic temporal guard: end >= start when both provided
+        if (changes.startTime && changes.endTime) {
+          if (dayjs(changes.endTime).isBefore(dayjs(changes.startTime))) {
+            toast.error('End time cannot be before start time');
+            setIsEditing(false);
+            return;
+          }
+        }
       
       // Only make the request if there are actual changes
       if (Object.keys(changes).length === 1) {

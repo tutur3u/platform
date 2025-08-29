@@ -78,14 +78,6 @@ USING (
         WHERE wu.ws_id = time_tracking_sessions.ws_id 
         AND wu.user_id = auth.uid()
     )
-)
-WITH CHECK (
-    user_id = auth.uid() AND 
-    EXISTS (
-        SELECT 1 FROM workspace_members wu 
-        WHERE wu.ws_id = time_tracking_sessions.ws_id 
-        AND wu.user_id = auth.uid()
-    )
 );
 
 -- POLICY FOR UPDATE (SIMPLIFIED): Allow users to update their own sessions.
