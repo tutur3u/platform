@@ -95,7 +95,6 @@ export default function TimeTrackerContent({
   wsId,
   initialData,
 }: TimeTrackerContentProps) {
-  const [sidebarView, setSidebarView] = useState('tasks');
   const [activeTab, setActiveTab] = useState('timer');
 
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
@@ -413,9 +412,9 @@ export default function TimeTrackerContent({
 
       try {
         const userParam = selectedUserId ? `&userId=${selectedUserId}` : '';
-        const goalsUserParam = selectedUserId
-          ? `?userId=${selectedUserId}`
-          : '';
+        // const goalsUserParam = selectedUserId
+        //   ? `?userId=${selectedUserId}`
+        //   : '';
 
         // Individual API calls with error handling for each
         const apiCalls = [
@@ -1257,522 +1256,514 @@ export default function TimeTrackerContent({
           <div className="order-2 lg:order-1 lg:col-span-2">
             <div className="space-y-6">
               {/* Tasks View */}
-              {sidebarView === 'tasks' && (
-                <div className="space-y-6">
-                  {/* Tasks Header */}
-                  <Card>
-                    <CardHeader>
-                      {/* Header Section */}
-                      <div className="flex items-center gap-3">
-                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 shadow-lg">
-                          <CheckCircle className="h-5 w-5 text-white" />
-                        </div>
-                        <div>
-                          <CardTitle className="text-lg sm:text-xl">
-                            Task Workspace
-                          </CardTitle>
-                          <CardDescription>
-                            Drag tasks to timer to start tracking 🎯
-                          </CardDescription>
-                        </div>
+              <div className="space-y-6">
+                {/* Tasks Header */}
+                <Card>
+                  <CardHeader>
+                    {/* Header Section */}
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 shadow-lg">
+                        <CheckCircle className="h-5 w-5 text-white" />
                       </div>
-                    </CardHeader>
-                    <CardContent>
-                      {/* Enhanced Search and Filter Bar */}
-                      <div className="mb-5 space-y-4">
-                        {/* Quick Filter Buttons */}
-                        <div className="flex flex-wrap gap-2">
-                          <button
-                            type="button"
-                            onClick={() =>
-                              setTasksSidebarFilters((prev) => ({
-                                ...prev,
-                                assignee:
-                                  prev.assignee === 'mine' ? 'all' : 'mine',
-                              }))
-                            }
-                            className={cn(
-                              'flex items-center gap-1.5 rounded-md px-2.5 py-1.5 font-medium text-xs transition-all',
-                              tasksSidebarFilters.assignee === 'mine'
-                                ? 'bg-blue-100 text-blue-700 ring-1 ring-blue-200 dark:bg-blue-900/30 dark:text-blue-300 dark:ring-blue-800'
-                                : 'bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground'
-                            )}
-                          >
-                            <CheckCircle className="h-3 w-3" />
-                            My Tasks
-                            {myTasksCount > 0 && (
-                              <span className="ml-1 rounded-full bg-current px-1.5 py-0.5 text-[10px] text-white">
-                                {myTasksCount}
-                              </span>
-                            )}
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() =>
-                              setTasksSidebarFilters((prev) => ({
-                                ...prev,
-                                assignee:
-                                  prev.assignee === 'unassigned'
-                                    ? 'all'
-                                    : 'unassigned',
-                              }))
-                            }
-                            className={cn(
-                              'flex items-center gap-1.5 rounded-md px-2.5 py-1.5 font-medium text-xs transition-all',
-                              tasksSidebarFilters.assignee === 'unassigned'
-                                ? 'bg-orange-100 text-orange-700 ring-1 ring-orange-200 dark:bg-orange-900/30 dark:text-orange-300 dark:ring-orange-800'
-                                : 'bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground'
-                            )}
-                          >
-                            <svg
-                              className="h-3 w-3"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                              />
-                            </svg>
-                            Unassigned
-                            {unassignedCount > 0 && (
-                              <span className="ml-1 rounded-full bg-current px-1.5 py-0.5 text-[10px] text-white">
-                                {unassignedCount}
-                              </span>
-                            )}
-                          </button>
-                        </div>
-
-                        {/* Search and Dropdown Filters */}
-                        <div className="flex gap-2">
-                          <div className="flex-1">
-                            <Input
-                              placeholder="Search tasks..."
-                              value={tasksSidebarSearch}
-                              onChange={(e) =>
-                                setTasksSidebarSearch(e.target.value)
-                              }
-                              className="h-8 text-xs"
-                            />
-                          </div>
-                          <Select
-                            value={tasksSidebarFilters.board}
-                            onValueChange={(value) =>
-                              setTasksSidebarFilters((prev) => ({
-                                ...prev,
-                                board: value,
-                              }))
-                            }
-                          >
-                            <SelectTrigger className="h-8 w-24 text-xs">
-                              <SelectValue placeholder="Board" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="all">All Boards</SelectItem>
-                              {[
-                                ...new Set(
-                                  tasks
-                                    .map((task) => task.board_name)
-                                    .filter((name): name is string =>
-                                      Boolean(name)
-                                    )
-                                ),
-                              ].map((board) => (
-                                <SelectItem key={board} value={board}>
-                                  {board}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          <Select
-                            value={tasksSidebarFilters.list}
-                            onValueChange={(value) =>
-                              setTasksSidebarFilters((prev) => ({
-                                ...prev,
-                                list: value,
-                              }))
-                            }
-                          >
-                            <SelectTrigger className="h-8 w-20 text-xs">
-                              <SelectValue placeholder="List" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="all">All Lists</SelectItem>
-                              {[
-                                ...new Set(
-                                  tasks
-                                    .map((task) => task.list_name)
-                                    .filter((name): name is string =>
-                                      Boolean(name)
-                                    )
-                                ),
-                              ].map((list) => (
-                                <SelectItem key={list} value={list}>
-                                  {list}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-
-                        {/* Active Filters Display */}
-                        {(tasksSidebarSearch ||
-                          tasksSidebarFilters.board !== 'all' ||
-                          tasksSidebarFilters.list !== 'all' ||
-                          tasksSidebarFilters.assignee !== 'all') && (
-                          <div className="flex flex-wrap items-center gap-2">
-                            <span className="text-muted-foreground text-xs">
-                              Active filters:
+                      <div>
+                        <CardTitle className="text-lg sm:text-xl">
+                          Task Workspace
+                        </CardTitle>
+                        <CardDescription>
+                          Drag tasks to timer to start tracking 🎯
+                        </CardDescription>
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    {/* Enhanced Search and Filter Bar */}
+                    <div className="mb-5 space-y-4">
+                      {/* Quick Filter Buttons */}
+                      <div className="flex flex-wrap gap-2">
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setTasksSidebarFilters((prev) => ({
+                              ...prev,
+                              assignee:
+                                prev.assignee === 'mine' ? 'all' : 'mine',
+                            }))
+                          }
+                          className={cn(
+                            'flex items-center gap-1.5 rounded-md px-2.5 py-1.5 font-medium text-xs transition-all',
+                            tasksSidebarFilters.assignee === 'mine'
+                              ? 'bg-blue-100 text-blue-700 ring-1 ring-blue-200 dark:bg-blue-900/30 dark:text-blue-300 dark:ring-blue-800'
+                              : 'bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground'
+                          )}
+                        >
+                          <CheckCircle className="h-3 w-3" />
+                          My Tasks
+                          {myTasksCount > 0 && (
+                            <span className="ml-1 rounded-full bg-current px-1.5 py-0.5 text-[10px] text-white">
+                              {myTasksCount}
                             </span>
-                            {tasksSidebarSearch && (
-                              <span className="inline-flex items-center gap-1 rounded-md bg-blue-100 px-2 py-1 text-blue-700 text-xs dark:bg-blue-900/30 dark:text-blue-300">
-                                Search: "{tasksSidebarSearch}"
-                                <button
-                                  type="button"
-                                  onClick={() => setTasksSidebarSearch('')}
-                                  className="hover:text-blue-900 dark:hover:text-blue-100"
-                                >
-                                  ×
-                                </button>
-                              </span>
-                            )}
-                            {tasksSidebarFilters.board !== 'all' && (
-                              <span className="inline-flex items-center gap-1 rounded-md bg-green-100 px-2 py-1 text-green-700 text-xs dark:bg-green-900/30 dark:text-green-300">
-                                Board: {tasksSidebarFilters.board}
-                                <button
-                                  type="button"
-                                  onClick={() =>
-                                    setTasksSidebarFilters((prev) => ({
-                                      ...prev,
-                                      board: 'all',
-                                    }))
-                                  }
-                                  className="hover:text-green-900 dark:hover:text-green-100"
-                                >
-                                  ×
-                                </button>
-                              </span>
-                            )}
-                            {tasksSidebarFilters.list !== 'all' && (
-                              <span className="inline-flex items-center gap-1 rounded-md bg-purple-100 px-2 py-1 text-purple-700 text-xs dark:bg-purple-900/30 dark:text-purple-300">
-                                List: {tasksSidebarFilters.list}
-                                <button
-                                  type="button"
-                                  onClick={() =>
-                                    setTasksSidebarFilters((prev) => ({
-                                      ...prev,
-                                      list: 'all',
-                                    }))
-                                  }
-                                  className="hover:text-purple-900 dark:hover:text-purple-100"
-                                >
-                                  ×
-                                </button>
-                              </span>
-                            )}
-                            {tasksSidebarFilters.assignee !== 'all' && (
-                              <span className="inline-flex items-center gap-1 rounded-md bg-orange-100 px-2 py-1 text-orange-700 text-xs dark:bg-orange-900/30 dark:text-orange-300">
-                                {tasksSidebarFilters.assignee === 'mine'
-                                  ? 'My Tasks'
-                                  : tasksSidebarFilters.assignee ===
-                                      'unassigned'
-                                    ? 'Unassigned'
-                                    : 'Assignee Filter'}
-                                <button
-                                  type="button"
-                                  onClick={() =>
-                                    setTasksSidebarFilters((prev) => ({
-                                      ...prev,
-                                      assignee: 'all',
-                                    }))
-                                  }
-                                  className="hover:text-orange-900 dark:hover:text-orange-100"
-                                >
-                                  ×
-                                </button>
-                              </span>
-                            )}
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setTasksSidebarSearch('');
-                                setTasksSidebarFilters({
-                                  board: 'all',
-                                  list: 'all',
-                                  assignee: 'all',
-                                });
-                              }}
-                              className="text-muted-foreground text-xs hover:text-foreground"
-                            >
-                              Clear all
-                            </button>
-                          </div>
-                        )}
+                          )}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setTasksSidebarFilters((prev) => ({
+                              ...prev,
+                              assignee:
+                                prev.assignee === 'unassigned'
+                                  ? 'all'
+                                  : 'unassigned',
+                            }))
+                          }
+                          className={cn(
+                            'flex items-center gap-1.5 rounded-md px-2.5 py-1.5 font-medium text-xs transition-all',
+                            tasksSidebarFilters.assignee === 'unassigned'
+                              ? 'bg-orange-100 text-orange-700 ring-1 ring-orange-200 dark:bg-orange-900/30 dark:text-orange-300 dark:ring-orange-800'
+                              : 'bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground'
+                          )}
+                        >
+                          <svg
+                            className="h-3 w-3"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                            />
+                          </svg>
+                          Unassigned
+                          {unassignedCount > 0 && (
+                            <span className="ml-1 rounded-full bg-current px-1.5 py-0.5 text-[10px] text-white">
+                              {unassignedCount}
+                            </span>
+                          )}
+                        </button>
                       </div>
 
-                      {/* Task List with Scrollable Container */}
-                      <div className="space-y-4">
-                        {(() => {
-                          // Filter and sort tasks for sidebar with user prioritization
-                          const filteredSidebarTasks =
-                            getFilteredAndSortedSidebarTasks(
-                              tasks,
-                              tasksSidebarSearch,
-                              tasksSidebarFilters
-                            );
-
-                          if (tasks.length === 0) {
-                            return (
-                              <div className="rounded-lg border-2 border-muted-foreground/25 border-dashed p-6 text-center">
-                                <CheckCircle className="mx-auto mb-3 h-8 w-8 text-muted-foreground" />
-                                <p className="text-muted-foreground text-sm">
-                                  No tasks available. Create tasks in your
-                                  project boards to see them here.
-                                </p>
-                                <Link href={`/${wsId}/tasks/boards`}>
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    className="text-xs"
-                                  >
-                                    Go to Tasks Tab
-                                  </Button>
-                                </Link>
-                              </div>
-                            );
+                      {/* Search and Dropdown Filters */}
+                      <div className="flex gap-2">
+                        <div className="flex-1">
+                          <Input
+                            placeholder="Search tasks..."
+                            value={tasksSidebarSearch}
+                            onChange={(e) =>
+                              setTasksSidebarSearch(e.target.value)
+                            }
+                            className="h-8 text-xs"
+                          />
+                        </div>
+                        <Select
+                          value={tasksSidebarFilters.board}
+                          onValueChange={(value) =>
+                            setTasksSidebarFilters((prev) => ({
+                              ...prev,
+                              board: value,
+                            }))
                           }
-
-                          if (filteredSidebarTasks.length === 0) {
-                            return (
-                              <div className="rounded-lg border-2 border-muted-foreground/25 border-dashed p-6 text-center">
-                                <CheckCircle className="mx-auto mb-3 h-8 w-8 text-muted-foreground" />
-                                <p className="text-muted-foreground text-sm">
-                                  No tasks found matching your criteria.
-                                </p>
-                              </div>
-                            );
+                        >
+                          <SelectTrigger className="h-8 w-24 text-xs">
+                            <SelectValue placeholder="Board" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="all">All Boards</SelectItem>
+                            {[
+                              ...new Set(
+                                tasks
+                                  .map((task) => task.board_name)
+                                  .filter((name): name is string =>
+                                    Boolean(name)
+                                  )
+                              ),
+                            ].map((board) => (
+                              <SelectItem key={board} value={board}>
+                                {board}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <Select
+                          value={tasksSidebarFilters.list}
+                          onValueChange={(value) =>
+                            setTasksSidebarFilters((prev) => ({
+                              ...prev,
+                              list: value,
+                            }))
                           }
+                        >
+                          <SelectTrigger className="h-8 w-20 text-xs">
+                            <SelectValue placeholder="List" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="all">All Lists</SelectItem>
+                            {[
+                              ...new Set(
+                                tasks
+                                  .map((task) => task.list_name)
+                                  .filter((name): name is string =>
+                                    Boolean(name)
+                                  )
+                              ),
+                            ].map((list) => (
+                              <SelectItem key={list} value={list}>
+                                {list}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
 
+                      {/* Active Filters Display */}
+                      {(tasksSidebarSearch ||
+                        tasksSidebarFilters.board !== 'all' ||
+                        tasksSidebarFilters.list !== 'all' ||
+                        tasksSidebarFilters.assignee !== 'all') && (
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="text-muted-foreground text-xs">
+                            Active filters:
+                          </span>
+                          {tasksSidebarSearch && (
+                            <span className="inline-flex items-center gap-1 rounded-md bg-blue-100 px-2 py-1 text-blue-700 text-xs dark:bg-blue-900/30 dark:text-blue-300">
+                              Search: "{tasksSidebarSearch}"
+                              <button
+                                type="button"
+                                onClick={() => setTasksSidebarSearch('')}
+                                className="hover:text-blue-900 dark:hover:text-blue-100"
+                              >
+                                ×
+                              </button>
+                            </span>
+                          )}
+                          {tasksSidebarFilters.board !== 'all' && (
+                            <span className="inline-flex items-center gap-1 rounded-md bg-green-100 px-2 py-1 text-green-700 text-xs dark:bg-green-900/30 dark:text-green-300">
+                              Board: {tasksSidebarFilters.board}
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  setTasksSidebarFilters((prev) => ({
+                                    ...prev,
+                                    board: 'all',
+                                  }))
+                                }
+                                className="hover:text-green-900 dark:hover:text-green-100"
+                              >
+                                ×
+                              </button>
+                            </span>
+                          )}
+                          {tasksSidebarFilters.list !== 'all' && (
+                            <span className="inline-flex items-center gap-1 rounded-md bg-purple-100 px-2 py-1 text-purple-700 text-xs dark:bg-purple-900/30 dark:text-purple-300">
+                              List: {tasksSidebarFilters.list}
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  setTasksSidebarFilters((prev) => ({
+                                    ...prev,
+                                    list: 'all',
+                                  }))
+                                }
+                                className="hover:text-purple-900 dark:hover:text-purple-100"
+                              >
+                                ×
+                              </button>
+                            </span>
+                          )}
+                          {tasksSidebarFilters.assignee !== 'all' && (
+                            <span className="inline-flex items-center gap-1 rounded-md bg-orange-100 px-2 py-1 text-orange-700 text-xs dark:bg-orange-900/30 dark:text-orange-300">
+                              {tasksSidebarFilters.assignee === 'mine'
+                                ? 'My Tasks'
+                                : tasksSidebarFilters.assignee === 'unassigned'
+                                  ? 'Unassigned'
+                                  : 'Assignee Filter'}
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  setTasksSidebarFilters((prev) => ({
+                                    ...prev,
+                                    assignee: 'all',
+                                  }))
+                                }
+                                className="hover:text-orange-900 dark:hover:text-orange-100"
+                              >
+                                ×
+                              </button>
+                            </span>
+                          )}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setTasksSidebarSearch('');
+                              setTasksSidebarFilters({
+                                board: 'all',
+                                list: 'all',
+                                assignee: 'all',
+                              });
+                            }}
+                            className="text-muted-foreground text-xs hover:text-foreground"
+                          >
+                            Clear all
+                          </button>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Task List with Scrollable Container */}
+                    <div className="space-y-4">
+                      {(() => {
+                        // Filter and sort tasks for sidebar with user prioritization
+                        const filteredSidebarTasks =
+                          getFilteredAndSortedSidebarTasks(
+                            tasks,
+                            tasksSidebarSearch,
+                            tasksSidebarFilters
+                          );
+
+                        if (tasks.length === 0) {
                           return (
-                            <>
-                              {/* Task Count Header */}
-                              <div className="mb-3 flex items-center justify-between px-1 text-muted-foreground text-xs">
-                                <span>
-                                  {filteredSidebarTasks.length} task
-                                  {filteredSidebarTasks.length !== 1 ? 's' : ''}{' '}
-                                  available
-                                  {(tasksSidebarSearch ||
-                                    tasksSidebarFilters.board !== 'all' ||
-                                    tasksSidebarFilters.list !== 'all' ||
-                                    tasksSidebarFilters.assignee !== 'all') &&
-                                    ` (filtered from ${tasks.length} total)`}
-                                </span>
-                                <span className="font-medium text-blue-600 dark:text-blue-400">
-                                  Drag to timer →
-                                </span>
-                              </div>
+                            <div className="rounded-lg border-2 border-muted-foreground/25 border-dashed p-6 text-center">
+                              <CheckCircle className="mx-auto mb-3 h-8 w-8 text-muted-foreground" />
+                              <p className="text-muted-foreground text-sm">
+                                No tasks available. Create tasks in your project
+                                boards to see them here.
+                              </p>
+                              <Link href={`/${wsId}/tasks/boards`}>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="text-xs"
+                                >
+                                  Go to Tasks Tab
+                                </Button>
+                              </Link>
+                            </div>
+                          );
+                        }
 
-                              {/* Scrollable Task Container */}
-                              <div className="/40 max-h-[400px] overflow-y-auto rounded-lg border bg-gray-50/30 p-4 dark:border-gray-700/40 dark:bg-gray-800/20">
-                                <div className="space-y-4">
-                                  {filteredSidebarTasks.map((task) => (
-                                    // biome-ignore lint/a11y/noStaticElementInteractions: <>
-                                    <div
-                                      key={task.id}
-                                      className={cn(
-                                        'group cursor-grab rounded-lg border p-4 shadow-sm transition-all duration-200 hover:scale-[1.01] hover:shadow-md active:cursor-grabbing',
-                                        // Enhanced styling for assigned tasks
-                                        task.is_assigned_to_current_user
-                                          ? 'border-blue-300 bg-gradient-to-br from-blue-50 to-blue-100 ring-1 ring-blue-200 dark:border-blue-700 dark:from-blue-950/30 dark:to-blue-900/30 dark:ring-blue-800'
-                                          : '/60 bg-white dark:border-gray-700/60 dark:bg-gray-800/80',
-                                        isDraggingTask &&
-                                          'shadow-blue-500/10 shadow-md ring-1 ring-blue-400/30'
-                                      )}
-                                      draggable
-                                      onDragStart={(e) => {
-                                        e.dataTransfer.setData(
-                                          'application/json',
-                                          JSON.stringify({
-                                            type: 'task',
-                                            task: task,
-                                          })
-                                        );
-                                        setIsDraggingTask(true);
-                                      }}
-                                      onDragEnd={() => {
-                                        setIsDraggingTask(false);
-                                      }}
-                                    >
-                                      <div className="flex items-start gap-4">
-                                        <div
+                        if (filteredSidebarTasks.length === 0) {
+                          return (
+                            <div className="rounded-lg border-2 border-muted-foreground/25 border-dashed p-6 text-center">
+                              <CheckCircle className="mx-auto mb-3 h-8 w-8 text-muted-foreground" />
+                              <p className="text-muted-foreground text-sm">
+                                No tasks found matching your criteria.
+                              </p>
+                            </div>
+                          );
+                        }
+
+                        return (
+                          <>
+                            {/* Task Count Header */}
+                            <div className="mb-3 flex items-center justify-between px-1 text-muted-foreground text-xs">
+                              <span>
+                                {filteredSidebarTasks.length} task
+                                {filteredSidebarTasks.length !== 1 ? 's' : ''}{' '}
+                                available
+                                {(tasksSidebarSearch ||
+                                  tasksSidebarFilters.board !== 'all' ||
+                                  tasksSidebarFilters.list !== 'all' ||
+                                  tasksSidebarFilters.assignee !== 'all') &&
+                                  ` (filtered from ${tasks.length} total)`}
+                              </span>
+                              <span className="font-medium text-blue-600 dark:text-blue-400">
+                                Drag to timer →
+                              </span>
+                            </div>
+
+                            {/* Scrollable Task Container */}
+                            <div className="/40 max-h-[400px] overflow-y-auto rounded-lg border bg-gray-50/30 p-4 dark:border-gray-700/40 dark:bg-gray-800/20">
+                              <div className="space-y-4">
+                                {filteredSidebarTasks.map((task) => (
+                                  // biome-ignore lint/a11y/noStaticElementInteractions: <>
+                                  <div
+                                    key={task.id}
+                                    className={cn(
+                                      'group cursor-grab rounded-lg border p-4 shadow-sm transition-all duration-200 hover:scale-[1.01] hover:shadow-md active:cursor-grabbing',
+                                      // Enhanced styling for assigned tasks
+                                      task.is_assigned_to_current_user
+                                        ? 'border-blue-300 bg-gradient-to-br from-blue-50 to-blue-100 ring-1 ring-blue-200 dark:border-blue-700 dark:from-blue-950/30 dark:to-blue-900/30 dark:ring-blue-800'
+                                        : '/60 bg-white dark:border-gray-700/60 dark:bg-gray-800/80',
+                                      isDraggingTask &&
+                                        'shadow-blue-500/10 shadow-md ring-1 ring-blue-400/30'
+                                    )}
+                                    draggable
+                                    onDragStart={(e) => {
+                                      e.dataTransfer.setData(
+                                        'application/json',
+                                        JSON.stringify({
+                                          type: 'task',
+                                          task: task,
+                                        })
+                                      );
+                                      setIsDraggingTask(true);
+                                    }}
+                                    onDragEnd={() => {
+                                      setIsDraggingTask(false);
+                                    }}
+                                  >
+                                    <div className="flex items-start gap-4">
+                                      <div
+                                        className={cn(
+                                          'flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg border',
+                                          task.is_assigned_to_current_user
+                                            ? 'border-blue-300 bg-gradient-to-br from-blue-100 to-blue-200 dark:border-blue-600 dark:from-blue-800 dark:to-blue-700'
+                                            : 'border-blue-200/60 bg-gradient-to-br from-blue-50 to-blue-100 dark:border-blue-700/60 dark:from-blue-900/50 dark:to-blue-800/50'
+                                        )}
+                                      >
+                                        <CheckCircle
                                           className={cn(
-                                            'flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg border',
+                                            'h-4 w-4',
                                             task.is_assigned_to_current_user
-                                              ? 'border-blue-300 bg-gradient-to-br from-blue-100 to-blue-200 dark:border-blue-600 dark:from-blue-800 dark:to-blue-700'
-                                              : 'border-blue-200/60 bg-gradient-to-br from-blue-50 to-blue-100 dark:border-blue-700/60 dark:from-blue-900/50 dark:to-blue-800/50'
+                                              ? 'text-blue-700 dark:text-blue-300'
+                                              : 'text-blue-600 dark:text-blue-400'
                                           )}
-                                        >
-                                          <CheckCircle
+                                        />
+                                      </div>
+                                      <div className="min-w-0 flex-1">
+                                        <div className="flex items-start justify-between gap-2">
+                                          <h4
                                             className={cn(
-                                              'h-4 w-4',
+                                              'mb-1 font-medium text-sm',
                                               task.is_assigned_to_current_user
-                                                ? 'text-blue-700 dark:text-blue-300'
-                                                : 'text-blue-600 dark:text-blue-400'
+                                                ? 'text-blue-900 dark:text-blue-100'
+                                                : 'text-gray-900 dark:text-gray-100'
                                             )}
-                                          />
+                                          >
+                                            {task.name}
+                                            {task.is_assigned_to_current_user && (
+                                              <span className="ml-2 inline-flex items-center rounded-full bg-blue-100 px-2 py-0.5 font-medium text-blue-800 text-xs dark:bg-blue-900/50 dark:text-blue-200">
+                                                Assigned to you
+                                              </span>
+                                            )}
+                                          </h4>
                                         </div>
-                                        <div className="min-w-0 flex-1">
-                                          <div className="flex items-start justify-between gap-2">
-                                            <h4
-                                              className={cn(
-                                                'mb-1 font-medium text-sm',
-                                                task.is_assigned_to_current_user
-                                                  ? 'text-blue-900 dark:text-blue-100'
-                                                  : 'text-gray-900 dark:text-gray-100'
-                                              )}
-                                            >
-                                              {task.name}
-                                              {task.is_assigned_to_current_user && (
-                                                <span className="ml-2 inline-flex items-center rounded-full bg-blue-100 px-2 py-0.5 font-medium text-blue-800 text-xs dark:bg-blue-900/50 dark:text-blue-200">
-                                                  Assigned to you
-                                                </span>
-                                              )}
-                                            </h4>
-                                          </div>
-                                          {task.description && (
-                                            <p className="mb-3 line-clamp-2 text-gray-600 text-xs dark:text-gray-400">
-                                              {task.description}
-                                            </p>
+                                        {task.description && (
+                                          <p className="mb-3 line-clamp-2 text-gray-600 text-xs dark:text-gray-400">
+                                            {task.description}
+                                          </p>
+                                        )}
+
+                                        {/* Assignees Display */}
+                                        {task.assignees &&
+                                          task.assignees.length > 0 && (
+                                            <div className="mb-2 flex items-center gap-2">
+                                              <div className="-space-x-1 flex">
+                                                {task.assignees
+                                                  .slice(0, 3)
+                                                  .map((assignee) => (
+                                                    <div
+                                                      key={assignee.id}
+                                                      className="h-5 w-5 rounded-full border-2 border-white bg-gradient-to-br from-gray-100 to-gray-200 dark:border-gray-800 dark:from-gray-700 dark:to-gray-600"
+                                                      title={
+                                                        assignee.display_name ||
+                                                        assignee.email
+                                                      }
+                                                    >
+                                                      {assignee.avatar_url ? (
+                                                        // biome-ignore lint/performance/noImgElement: <div>
+                                                        <img
+                                                          src={
+                                                            assignee.avatar_url
+                                                          }
+                                                          alt={
+                                                            assignee.display_name ||
+                                                            assignee.email ||
+                                                            ''
+                                                          }
+                                                          className="h-full w-full rounded-full object-cover"
+                                                        />
+                                                      ) : (
+                                                        <div className="flex h-full w-full items-center justify-center font-medium text-[8px] text-gray-600 dark:text-gray-300">
+                                                          {generateAssigneeInitials(
+                                                            assignee
+                                                          )}
+                                                        </div>
+                                                      )}
+                                                    </div>
+                                                  ))}
+                                                {task.assignees.length > 3 && (
+                                                  <div className="flex h-5 w-5 items-center justify-center rounded-full border-2 border-white bg-gray-200 font-medium text-[8px] text-gray-600 dark:border-gray-800 dark:bg-gray-700 dark:text-gray-300">
+                                                    +{task.assignees.length - 3}
+                                                  </div>
+                                                )}
+                                              </div>
+                                              <span className="text-muted-foreground text-xs">
+                                                {task.assignees.length} assigned
+                                              </span>
+                                            </div>
                                           )}
 
-                                          {/* Assignees Display */}
-                                          {task.assignees &&
-                                            task.assignees.length > 0 && (
-                                              <div className="mb-2 flex items-center gap-2">
-                                                <div className="-space-x-1 flex">
-                                                  {task.assignees
-                                                    .slice(0, 3)
-                                                    .map((assignee) => (
-                                                      <div
-                                                        key={assignee.id}
-                                                        className="h-5 w-5 rounded-full border-2 border-white bg-gradient-to-br from-gray-100 to-gray-200 dark:border-gray-800 dark:from-gray-700 dark:to-gray-600"
-                                                        title={
-                                                          assignee.display_name ||
-                                                          assignee.email
-                                                        }
-                                                      >
-                                                        {assignee.avatar_url ? (
-                                                          // biome-ignore lint/performance/noImgElement: <>
-                                                          <img
-                                                            src={
-                                                              assignee.avatar_url
-                                                            }
-                                                            alt={
-                                                              assignee.display_name ||
-                                                              assignee.email ||
-                                                              ''
-                                                            }
-                                                            className="h-full w-full rounded-full object-cover"
-                                                          />
-                                                        ) : (
-                                                          <div className="flex h-full w-full items-center justify-center font-medium text-[8px] text-gray-600 dark:text-gray-300">
-                                                            {generateAssigneeInitials(
-                                                              assignee
-                                                            )}
-                                                          </div>
-                                                        )}
-                                                      </div>
-                                                    ))}
-                                                  {task.assignees.length >
-                                                    3 && (
-                                                    <div className="flex h-5 w-5 items-center justify-center rounded-full border-2 border-white bg-gray-200 font-medium text-[8px] text-gray-600 dark:border-gray-800 dark:bg-gray-700 dark:text-gray-300">
-                                                      +
-                                                      {task.assignees.length -
-                                                        3}
-                                                    </div>
-                                                  )}
-                                                </div>
-                                                <span className="text-muted-foreground text-xs">
-                                                  {task.assignees.length}{' '}
-                                                  assigned
-                                                </span>
-                                              </div>
-                                            )}
-
-                                          {task.board_name &&
-                                            task.list_name && (
-                                              <div className="flex items-center gap-2">
-                                                <div className="flex items-center gap-1 rounded-md bg-gray-100 px-1.5 py-0.5 dark:bg-gray-700">
-                                                  <MapPin className="h-3 w-3 text-gray-500 dark:text-gray-400" />
-                                                  <span className="font-medium text-gray-600 text-xs dark:text-gray-300">
-                                                    {task.board_name}
-                                                  </span>
-                                                </div>
-                                                <div className="flex items-center gap-1 rounded-md bg-blue-100 px-1.5 py-0.5 dark:bg-blue-900/30">
-                                                  <Tag className="h-3 w-3 text-blue-600 dark:text-blue-400" />
-                                                  <span className="font-medium text-blue-700 text-xs dark:text-blue-300">
-                                                    {task.list_name}
-                                                  </span>
-                                                </div>
-                                              </div>
-                                            )}
-                                        </div>
-                                        <div className="flex flex-shrink-0 items-center gap-1.5 text-gray-400 text-xs opacity-0 transition-opacity group-hover:opacity-100">
-                                          <span className="font-medium">
-                                            Drag
-                                          </span>
-                                          <svg
-                                            className="h-3.5 w-3.5"
-                                            fill="none"
-                                            stroke="currentColor"
-                                            viewBox="0 0 24 24"
-                                          >
-                                            <path
-                                              strokeLinecap="round"
-                                              strokeLinejoin="round"
-                                              strokeWidth={2}
-                                              d="M8 9l4-4 4 4m0 6l-4 4-4-4"
-                                            />
-                                          </svg>
-                                        </div>
+                                        {task.board_name && task.list_name && (
+                                          <div className="flex items-center gap-2">
+                                            <div className="flex items-center gap-1 rounded-md bg-gray-100 px-1.5 py-0.5 dark:bg-gray-700">
+                                              <MapPin className="h-3 w-3 text-gray-500 dark:text-gray-400" />
+                                              <span className="font-medium text-gray-600 text-xs dark:text-gray-300">
+                                                {task.board_name}
+                                              </span>
+                                            </div>
+                                            <div className="flex items-center gap-1 rounded-md bg-blue-100 px-1.5 py-0.5 dark:bg-blue-900/30">
+                                              <Tag className="h-3 w-3 text-blue-600 dark:text-blue-400" />
+                                              <span className="font-medium text-blue-700 text-xs dark:text-blue-300">
+                                                {task.list_name}
+                                              </span>
+                                            </div>
+                                          </div>
+                                        )}
+                                      </div>
+                                      <div className="flex flex-shrink-0 items-center gap-1.5 text-gray-400 text-xs opacity-0 transition-opacity group-hover:opacity-100">
+                                        <span className="font-medium">
+                                          Drag
+                                        </span>
+                                        <svg
+                                          className="h-3.5 w-3.5"
+                                          fill="none"
+                                          stroke="currentColor"
+                                          viewBox="0 0 24 24"
+                                        >
+                                          <path
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                            strokeWidth={2}
+                                            d="M8 9l4-4 4 4m0 6l-4 4-4-4"
+                                          />
+                                        </svg>
                                       </div>
                                     </div>
-                                  ))}
-                                </div>
-
-                                {/* Scroll indicator */}
-                                {filteredSidebarTasks.length > 5 && (
-                                  <div className="mt-2 text-center">
-                                    <div className="inline-flex items-center gap-1 text-muted-foreground text-xs">
-                                      <span>Scroll for more</span>
-                                      <svg
-                                        className="h-3 w-3"
-                                        fill="none"
-                                        stroke="currentColor"
-                                        viewBox="0 0 24 24"
-                                      >
-                                        <path
-                                          strokeLinecap="round"
-                                          strokeLinejoin="round"
-                                          strokeWidth={2}
-                                          d="M19 14l-7 7m0 0l-7-7m7 7V3"
-                                        />
-                                      </svg>
-                                    </div>
                                   </div>
-                                )}
+                                ))}
                               </div>
-                            </>
-                          );
-                        })()}
-                      </div>
-                    </CardContent>
-                  </Card>
-                </div>
-              )}
+
+                              {/* Scroll indicator */}
+                              {filteredSidebarTasks.length > 5 && (
+                                <div className="mt-2 text-center">
+                                  <div className="inline-flex items-center gap-1 text-muted-foreground text-xs">
+                                    <span>Scroll for more</span>
+                                    <svg
+                                      className="h-3 w-3"
+                                      fill="none"
+                                      stroke="currentColor"
+                                      viewBox="0 0 24 24"
+                                    >
+                                      <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth={2}
+                                        d="M19 14l-7 7m0 0l-7-7m7 7V3"
+                                      />
+                                    </svg>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          </>
+                        );
+                      })()}
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
             </div>
           </div>
 
