@@ -15,9 +15,8 @@ import isBetween from 'dayjs/plugin/isBetween';
 import minMax from 'dayjs/plugin/minMax';
 import { useRouter } from 'next/navigation';
 import {
-  type ReactNode,
-  type Touch,
   createContext,
+  type ReactNode,
   useCallback,
   useContext,
   useEffect,
@@ -119,10 +118,8 @@ const TimeBlockContext = createContext({
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   setSelectedTimeBlocks: (_: { planId?: string; data: Timeblock[] }) => {},
   edit: (
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     _: { mode: 'add' | 'remove'; date: Date; tentativeMode?: boolean },
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars, @typescript-eslint/no-explicit-any
-    __?: any
+    __?: TouchEvent | MouseEvent
   ) => {},
   endEditing: () => {},
   setDisplayMode: (
@@ -394,10 +391,10 @@ const TimeBlockingProvider = ({
         date,
         tentativeMode,
       }: { mode: 'add' | 'remove'; date: Date; tentativeMode?: boolean },
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      event?: any
+      event?: TouchEvent | MouseEvent
     ) => {
-      const touch = event?.touches?.[0] as Touch | undefined;
+      const touch =
+        event && 'touches' in event ? event.touches?.[0] : undefined;
 
       setEditing((prevData) => {
         const nextMode = prevData?.mode ?? mode;
@@ -422,10 +419,23 @@ const TimeBlockingProvider = ({
         const nextEnd =
           prevData?.initialTouch !== undefined && nextTouch
             ? nextStart
-              ? dayjs(nextStart)
-                  .add(Math.floor((touchYDiff / 15) * 1.25) * 15, 'minute')
-                  .add(Math.floor(touchXDiff / 15 / 3), 'day')
-                  .toDate()
+              ? // Only apply complex calculation if there's significant movement
+                // For taps with minimal movement, use the same date as start
+                // Increased thresholds to prevent accidental multi-selection on mobile
+                Math.abs(touchXDiff) > 30 || Math.abs(touchYDiff) > 30
+                ? dayjs(nextStart)
+                    .add(Math.floor((touchYDiff / 15) * 1.25) * 15, 'minute')
+                    .add(
+                      // Only add days if horizontal movement is significant (more than 80px)
+                      // and vertical movement is minimal (less than 40px) to avoid accidental cross-day selection
+                      // Also ensure we're actually dragging (not just a tap)
+                      Math.abs(touchXDiff) > 80 && Math.abs(touchYDiff) < 40
+                        ? Math.floor(touchXDiff / 100)
+                        : 0,
+                      'day'
+                    )
+                    .toDate()
+                : nextStart // For single taps, end = start
               : nextStart
             : date;
 

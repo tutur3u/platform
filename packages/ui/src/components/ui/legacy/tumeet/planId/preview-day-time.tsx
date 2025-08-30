@@ -126,20 +126,22 @@ function PreviewDayTime({
       const startTime = timetzToTime(tb.start_time);
       const endTime = timetzToTime(tb.end_time);
 
-      const [startHour, startMinute] = startTime
-        .split(':')
-        .map((v) => Number(v) - start);
+      const [startHourStr, startMinuteStr] = startTime.split(':');
+      const startHour = Number(startHourStr) - start;
+      const startMinute = Number(startMinuteStr);
 
-      const [endHour, endMinute] = endTime
-        .split(':')
-        .map((v) => Number(v) - start);
+      const [endHourStr, endMinuteStr] = endTime.split(':');
+      const endHour = Number(endHourStr) - start;
+      const endMinute = Number(endMinuteStr);
 
-      const startBlock =
-        Math.floor((startHour ?? 0) * hourSplits + (startMinute ?? 0) / 15) + 1;
-      const endBlock = Math.floor(
-        (endHour ?? 0) * hourSplits + (endMinute ?? 0) / 15
+      const startBlock = Math.floor(
+        (startHour ?? 0) * hourSplits + (startMinute ?? 0) / 15
       );
-
+      // End is exclusive; when endMinute is 0, step back one slot
+      const endBlock = Math.floor(
+        (endHour ?? 0) * hourSplits +
+          ((endMinute ?? 0) === 0 ? -1 : Math.max(0, (endMinute ?? 0) - 1)) / 15
+      );
       return i >= startBlock && i <= endBlock;
     });
 
@@ -153,7 +155,7 @@ function PreviewDayTime({
   };
 
   return (
-    <div className="relative w-full border border-b-0 border-foreground/20">
+    <div className="relative w-full border border-foreground/20 border-b-0">
       {hourBlocks
         .map((i) => (i + start) * hourSplits)
         // duplicate each item `hourSplits` times
@@ -239,9 +241,9 @@ function PreviewDayTime({
                       hideBorder
                         ? ''
                         : (i + 1) % hourSplits === 0
-                          ? 'border-b border-foreground/20'
+                          ? 'border-foreground/20 border-b'
                           : (i + 1) % (hourSplits / 2) === 0
-                            ? 'border-b border-dashed border-foreground/20'
+                            ? 'border-foreground/20 border-b border-dashed'
                             : ''
                     }`}
                   />
