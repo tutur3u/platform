@@ -2,17 +2,20 @@ import { getCurrentUser } from '@tuturuuu/utils/user-helper';
 import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import { notFound } from 'next/navigation';
 import { getTimeTrackingData } from '@/lib/time-tracking-helper';
-import TimeTrackerContent from '../components/time-tracker-content';
-import type { TimeTrackerData } from '../types';
+import TimeTrackerHeader from './components/time-tracker-header';
+import type { TimeTrackerData } from './types';
 
-interface Props {
+interface TimeTrackerLayoutProps {
+  children: React.ReactNode;
   params: Promise<{
-    locale: string;
     wsId: string;
   }>;
 }
 
-export default async function TimeTrackerPage({ params }: Props) {
+export default async function TimeTrackerLayout({
+  children,
+  params,
+}: TimeTrackerLayoutProps) {
   const { wsId: id } = await params;
   const workspace = await getWorkspace(id);
   const wsId = workspace?.id;
@@ -24,13 +27,17 @@ export default async function TimeTrackerPage({ params }: Props) {
     if (!workspace || !user) notFound();
 
     const rawData = await getTimeTrackingData(wsId, user.id);
-
-    // Transform data to match expected types
     const initialData: TimeTrackerData = { ...rawData };
 
-    return <TimeTrackerContent wsId={wsId} initialData={initialData} />;
+    return (
+      <div className="space-y-6">
+        <TimeTrackerHeader wsId={wsId} initialData={initialData} />
+
+        {children}
+      </div>
+    );
   } catch (error) {
-    console.error('Error loading time tracker:', error);
+    console.error('Error loading time tracker data:', error);
     notFound();
   }
 }

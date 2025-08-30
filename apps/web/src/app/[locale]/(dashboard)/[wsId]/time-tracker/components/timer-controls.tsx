@@ -41,6 +41,7 @@ import {
   SelectValue,
 } from '@tuturuuu/ui/select';
 import { toast } from '@tuturuuu/ui/sonner';
+import { Switch } from '@tuturuuu/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { cn } from '@tuturuuu/utils/format';
@@ -2111,26 +2112,24 @@ export function TimerControls({
                 </div>
                 <div className="flex items-center justify-between">
                   <Label>Auto-stop at target</Label>
-                  <input
-                    type="checkbox"
+                  <Switch
                     checked={customTimerSettings.autoStopAtTarget}
-                    onChange={(e) =>
+                    onCheckedChange={(checked) =>
                       setCustomTimerSettings((prev) => ({
                         ...prev,
-                        autoStopAtTarget: e.target.checked,
+                        autoStopAtTarget: checked,
                       }))
                     }
                   />
                 </div>
                 <div className="flex items-center justify-between">
                   <Label>Target notifications</Label>
-                  <input
-                    type="checkbox"
+                  <Switch
                     checked={customTimerSettings.enableTargetNotification}
-                    onChange={(e) =>
+                    onCheckedChange={(checked) =>
                       setCustomTimerSettings((prev) => ({
                         ...prev,
-                        enableTargetNotification: e.target.checked,
+                        enableTargetNotification: checked,
                       }))
                     }
                   />
@@ -2160,26 +2159,24 @@ export function TimerControls({
                 </div>
                 <div className="flex items-center justify-between">
                   <Label>Auto-restart</Label>
-                  <input
-                    type="checkbox"
+                  <Switch
                     checked={customTimerSettings.autoRestart}
-                    onChange={(e) =>
+                    onCheckedChange={(checked) =>
                       setCustomTimerSettings((prev) => ({
                         ...prev,
-                        autoRestart: e.target.checked,
+                        autoRestart: checked,
                       }))
                     }
                   />
                 </div>
                 <div className="flex items-center justify-between">
                   <Label>Show time remaining</Label>
-                  <input
-                    type="checkbox"
+                  <Switch
                     checked={customTimerSettings.showTimeRemaining}
-                    onChange={(e) =>
+                    onCheckedChange={(checked) =>
                       setCustomTimerSettings((prev) => ({
                         ...prev,
-                        showTimeRemaining: e.target.checked,
+                        showTimeRemaining: checked,
                       }))
                     }
                   />
@@ -2191,13 +2188,12 @@ export function TimerControls({
               <h4 className="font-medium text-sm">Break Reminders</h4>
               <div className="flex items-center justify-between">
                 <Label>Enable break reminders</Label>
-                <input
-                  type="checkbox"
+                <Switch
                   checked={customTimerSettings.enableBreakReminders}
-                  onChange={(e) =>
+                  onCheckedChange={(checked) =>
                     setCustomTimerSettings((prev) => ({
                       ...prev,
-                      enableBreakReminders: e.target.checked,
+                      enableBreakReminders: checked,
                     }))
                   }
                 />
@@ -2212,26 +2208,24 @@ export function TimerControls({
               <h4 className="font-medium text-sm">Audio & Notifications</h4>
               <div className="flex items-center justify-between">
                 <Label>Play completion sound</Label>
-                <input
-                  type="checkbox"
+                <Switch
                   checked={customTimerSettings.playCompletionSound}
-                  onChange={(e) =>
+                  onCheckedChange={(checked) =>
                     setCustomTimerSettings((prev) => ({
                       ...prev,
-                      playCompletionSound: e.target.checked,
+                      playCompletionSound: checked,
                     }))
                   }
                 />
               </div>
               <div className="flex items-center justify-between">
                 <Label>Browser notifications</Label>
-                <input
-                  type="checkbox"
+                <Switch
                   checked={customTimerSettings.showNotifications}
-                  onChange={(e) =>
+                  onCheckedChange={(checked) =>
                     setCustomTimerSettings((prev) => ({
                       ...prev,
-                      showNotifications: e.target.checked,
+                      showNotifications: checked,
                     }))
                   }
                 />
@@ -2242,13 +2236,12 @@ export function TimerControls({
               <h4 className="font-medium text-sm">Motivation & Feedback</h4>
               <div className="flex items-center justify-between">
                 <Label>Motivational messages</Label>
-                <input
-                  type="checkbox"
+                <Switch
                   checked={customTimerSettings.enableMotivationalMessages}
-                  onChange={(e) =>
+                  onCheckedChange={(checked) =>
                     setCustomTimerSettings((prev) => ({
                       ...prev,
-                      enableMotivationalMessages: e.target.checked,
+                      enableMotivationalMessages: checked,
                     }))
                   }
                 />
@@ -2384,13 +2377,12 @@ export function TimerControls({
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <Label>Auto-start breaks</Label>
-                <input
-                  type="checkbox"
+                <Switch
                   checked={pomodoroSettings.autoStartBreaks}
-                  onChange={(e) =>
+                  onCheckedChange={(checked) =>
                     setPomodoroSettings((prev) => ({
                       ...prev,
-                      autoStartBreaks: e.target.checked,
+                      autoStartBreaks: checked,
                     }))
                   }
                 />
@@ -2398,13 +2390,12 @@ export function TimerControls({
 
               <div className="flex items-center justify-between">
                 <Label>Auto-start focus</Label>
-                <input
-                  type="checkbox"
+                <Switch
                   checked={pomodoroSettings.autoStartFocus}
-                  onChange={(e) =>
+                  onCheckedChange={(checked) =>
                     setPomodoroSettings((prev) => ({
                       ...prev,
-                      autoStartFocus: e.target.checked,
+                      autoStartFocus: checked,
                     }))
                   }
                 />
@@ -2412,13 +2403,12 @@ export function TimerControls({
 
               <div className="flex items-center justify-between">
                 <Label>Enable notifications</Label>
-                <input
-                  type="checkbox"
+                <Switch
                   checked={pomodoroSettings.enableNotifications}
-                  onChange={(e) =>
+                  onCheckedChange={(checked) =>
                     setPomodoroSettings((prev) => ({
                       ...prev,
-                      enableNotifications: e.target.checked,
+                      enableNotifications: checked,
                     }))
                   }
                 />
@@ -2426,13 +2416,12 @@ export function TimerControls({
 
               <div className="flex items-center justify-between">
                 <Label>20-20-20 eye breaks</Label>
-                <input
-                  type="checkbox"
+                <Switch
                   checked={pomodoroSettings.enable2020Rule}
-                  onChange={(e) =>
+                  onCheckedChange={(checked) =>
                     setPomodoroSettings((prev) => ({
                       ...prev,
-                      enable2020Rule: e.target.checked,
+                      enable2020Rule: checked,
                     }))
                   }
                 />
@@ -2440,13 +2429,12 @@ export function TimerControls({
 
               <div className="flex items-center justify-between">
                 <Label>Movement reminders</Label>
-                <input
-                  type="checkbox"
+                <Switch
                   checked={pomodoroSettings.enableMovementReminder}
-                  onChange={(e) =>
+                  onCheckedChange={(checked) =>
                     setPomodoroSettings((prev) => ({
                       ...prev,
-                      enableMovementReminder: e.target.checked,
+                      enableMovementReminder: checked,
                     }))
                   }
                 />
@@ -2490,13 +2478,12 @@ export function TimerControls({
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <Label>Break reminders</Label>
-                <input
-                  type="checkbox"
+                <Switch
                   checked={stopwatchSettings.enableBreakReminders}
-                  onChange={(e) =>
+                  onCheckedChange={(checked) =>
                     setStopwatchSettings((prev) => ({
                       ...prev,
-                      enableBreakReminders: e.target.checked,
+                      enableBreakReminders: checked,
                     }))
                   }
                 />
@@ -2504,13 +2491,12 @@ export function TimerControls({
 
               <div className="flex items-center justify-between">
                 <Label>20-20-20 eye breaks</Label>
-                <input
-                  type="checkbox"
+                <Switch
                   checked={stopwatchSettings.enable2020Rule}
-                  onChange={(e) =>
+                  onCheckedChange={(checked) =>
                     setStopwatchSettings((prev) => ({
                       ...prev,
-                      enable2020Rule: e.target.checked,
+                      enable2020Rule: checked,
                     }))
                   }
                 />
@@ -2518,13 +2504,12 @@ export function TimerControls({
 
               <div className="flex items-center justify-between">
                 <Label>Movement reminders</Label>
-                <input
-                  type="checkbox"
+                <Switch
                   checked={stopwatchSettings.enableMovementReminder}
-                  onChange={(e) =>
+                  onCheckedChange={(checked) =>
                     setStopwatchSettings((prev) => ({
                       ...prev,
-                      enableMovementReminder: e.target.checked,
+                      enableMovementReminder: checked,
                     }))
                   }
                 />
@@ -2532,13 +2517,12 @@ export function TimerControls({
 
               <div className="flex items-center justify-between">
                 <Label>Productivity insights</Label>
-                <input
-                  type="checkbox"
+                <Switch
                   checked={stopwatchSettings.showProductivityInsights}
-                  onChange={(e) =>
+                  onCheckedChange={(checked) =>
                     setStopwatchSettings((prev) => ({
                       ...prev,
-                      showProductivityInsights: e.target.checked,
+                      showProductivityInsights: checked,
                     }))
                   }
                 />
@@ -2546,13 +2530,12 @@ export function TimerControls({
 
               <div className="flex items-center justify-between">
                 <Label>Enable notifications</Label>
-                <input
-                  type="checkbox"
+                <Switch
                   checked={stopwatchSettings.enableNotifications}
-                  onChange={(e) =>
+                  onCheckedChange={(checked) =>
                     setStopwatchSettings((prev) => ({
                       ...prev,
-                      enableNotifications: e.target.checked,
+                      enableNotifications: checked,
                     }))
                   }
                 />
@@ -2560,13 +2543,12 @@ export function TimerControls({
 
               <div className="flex items-center justify-between">
                 <Label>Session milestones</Label>
-                <input
-                  type="checkbox"
+                <Switch
                   checked={stopwatchSettings.enableSessionMilestones}
-                  onChange={(e) =>
+                  onCheckedChange={(checked) =>
                     setStopwatchSettings((prev) => ({
                       ...prev,
-                      enableSessionMilestones: e.target.checked,
+                      enableSessionMilestones: checked,
                     }))
                   }
                 />
@@ -2574,13 +2556,12 @@ export function TimerControls({
 
               <div className="flex items-center justify-between">
                 <Label>Completion sound</Label>
-                <input
-                  type="checkbox"
+                <Switch
                   checked={stopwatchSettings.playCompletionSound}
-                  onChange={(e) =>
+                  onCheckedChange={(checked) =>
                     setStopwatchSettings((prev) => ({
                       ...prev,
-                      playCompletionSound: e.target.checked,
+                      playCompletionSound: checked,
                     }))
                   }
                 />
@@ -2903,10 +2884,14 @@ export function TimerControls({
                     Interval Breaks:
                   </span>
                   <div className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
+                    {customTimerSettings.enableIntervalBreaks && (
+                      <span className="text-muted-foreground text-xs">
+                        every {customTimerSettings.intervalFrequency}min
+                      </span>
+                    )}
+                    <Switch
                       checked={customTimerSettings.enableIntervalBreaks}
-                      onChange={(e) => {
+                      onCheckedChange={(checked) => {
                         if (sessionProtection.isActive) {
                           toast.error(
                             'Cannot modify break settings during active session',
@@ -2920,11 +2905,10 @@ export function TimerControls({
                         }
                         setCustomTimerSettings((prev) => ({
                           ...prev,
-                          enableIntervalBreaks: e.target.checked,
+                          enableIntervalBreaks: checked,
                         }));
                       }}
                       className={cn(
-                        'h-3 w-3 rounded',
                         sessionProtection.isActive &&
                           'cursor-not-allowed opacity-50'
                       )}
@@ -2935,11 +2919,6 @@ export function TimerControls({
                           : 'Enable interval breaks'
                       }
                     />
-                    {customTimerSettings.enableIntervalBreaks && (
-                      <span className="text-muted-foreground text-xs">
-                        every {customTimerSettings.intervalFrequency}min
-                      </span>
-                    )}
                   </div>
                 </div>
               </div>
@@ -3400,7 +3379,7 @@ export function TimerControls({
                     </Label>
 
                     {tasks.length === 0 ? (
-                      <div className="rounded-lg border-2 border-muted-foreground/25 border-dashed p-4 text-center">
+                      <div className="mt-2 rounded-lg border-2 border-muted-foreground/25 border-dashed p-4 text-center">
                         <CheckCircle className="mx-auto mb-2 h-8 w-8 text-muted-foreground" />
                         <p className="mb-2 font-medium text-muted-foreground text-sm">
                           No tasks available
@@ -4256,20 +4235,27 @@ export function TimerControls({
                   <Label className="text-muted-foreground text-sm">
                     Quick Start:
                   </Label>
-                  <div className="space-y-2">
+                  <div className="mt-2 space-y-2">
                     {templates.slice(0, 3).map((template, idx) => (
                       <Button
                         key={idx}
                         variant="outline"
                         size="sm"
                         onClick={() => startFromTemplate(template)}
-                        className="w-full justify-start text-sm"
+                        className="h-auto min-h-[2rem] w-full justify-start p-2 text-sm"
                       >
-                        <Copy className="mr-2 h-3 w-3" />
-                        {template.title}
-                        <Badge variant="secondary" className="ml-auto text-xs">
-                          {template.usage_count}×
-                        </Badge>
+                        <div className="flex w-full min-w-0 items-center">
+                          <Copy className="mr-2 h-3 w-3 flex-shrink-0" />
+                          <span className="flex-1 truncate text-left">
+                            {template.title}
+                          </span>
+                          <Badge
+                            variant="secondary"
+                            className="ml-2 flex-shrink-0 text-xs"
+                          >
+                            {template.usage_count}×
+                          </Badge>
+                        </div>
                       </Button>
                     ))}
                   </div>

@@ -9,15 +9,15 @@
     ".": "./src/core/index.ts"
   },
   "dependencies": {
-    "googleapis": "^157.0.0",
-    "google-auth-library": "^10.2.1"
+    "googleapis": "^159.0.0",
+    "google-auth-library": "^10.3.0"
   },
   "devDependencies": {
     "@tuturuuu/types": "workspace:*",
     "@tuturuuu/typescript-config": "workspace:*",
     "@types/node": "^24.3.0",
-    "@types/react": "^19.1.11",
-    "@vitejs/plugin-react": "^5.0.1",
+    "@types/react": "^19.1.12",
+    "@vitejs/plugin-react": "^5.0.2",
     "@vitest/coverage-v8": "^3.2.4",
     "typescript": "^5.9.2",
     "vite": "^7.1.3"

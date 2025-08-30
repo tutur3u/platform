@@ -16,7 +16,7 @@ export default function SelectableDayTime({
   disabled: boolean;
   tentativeMode?: boolean;
 }) {
-  const { editing, selectedTimeBlocks, edit, setPreviewDate } =
+  const { editing, selectedTimeBlocks, edit, setPreviewDate, endEditing } =
     useTimeBlocking();
 
   const hourBlocks = Array.from(Array(Math.floor(end + 1 - start)).keys());
@@ -83,18 +83,23 @@ export default function SelectableDayTime({
       const startTime = timetzToTime(tb.start_time);
       const endTime = timetzToTime(tb.end_time);
 
-      const [startHour, startMinute] = startTime
-        .split(':')
-        .map((v) => Number(v) - start);
+      const [startHourStr, startMinuteStr] = startTime.split(':');
+      const startHour = Number(startHourStr) - start;
+      const startMinute = Number(startMinuteStr);
 
-      const [endHour, endMinute] = endTime
-        .split(':')
-        .map((v) => Number(v) - start);
+      const [endHourStr, endMinuteStr] = endTime.split(':');
+      const endHour = Number(endHourStr) - start;
+      const endMinute = Number(endMinuteStr);
 
-      const startBlock =
-        Math.floor((startHour ?? 0) * hourSplits + (startMinute ?? 0) / 15) + 1;
+      const startBlock = Math.floor(
+        (startHour ?? 0) * hourSplits + (startMinute ?? 0) / 15
+      );
+      // For end block, subtract 1 minute to make it exclusive
+      // This ensures a 12:00-12:15 slot only highlights the 12:00 slot
+      // Special handling for hour boundaries: when endMinute is 0, we need to go back to the previous slot
       const endBlock = Math.floor(
-        (endHour ?? 0) * hourSplits + (endMinute ?? 0) / 15
+        (endHour ?? 0) * hourSplits +
+          ((endMinute ?? 0) === 0 ? -1 : Math.max(0, (endMinute ?? 0) - 1)) / 15
       );
 
       return i >= startBlock && i <= endBlock;
@@ -110,7 +115,7 @@ export default function SelectableDayTime({
   };
 
   return (
-    <div className="relative w-full border border-b-0 border-foreground/20">
+    <div className="relative w-full border border-foreground/20 border-b-0">
       {hourBlocks
         .map((i) => (i + start) * hourSplits)
         // duplicate each item `hourSplits` times
@@ -180,7 +185,8 @@ export default function SelectableDayTime({
                   : isSelectable
                     ? (e) => {
                         if (editing.enabled) return;
-                        edit(editData, e);
+                        e.preventDefault();
+                        edit(editData, e.nativeEvent);
                       }
                     : (e) => {
                         e.preventDefault();
@@ -193,9 +199,20 @@ export default function SelectableDayTime({
                   : isSelectable
                     ? (e) => {
                         if (!editing.enabled) return;
-                        edit(editData, e);
+                        e.preventDefault();
+                        edit(editData, e.nativeEvent);
                       }
                     : undefined
+              }
+              onTouchEnd={
+                disabled
+                  ? undefined
+                  : (e) => {
+                      e.preventDefault();
+                      if (editing.enabled) {
+                        endEditing();
+                      }
+                    }
               }
               className={`${
                 i + hourSplits < array.length
@@ -215,9 +232,9 @@ export default function SelectableDayTime({
                 hideBorder
                   ? ''
                   : (i + 1) % hourSplits === 0
-                    ? 'border-b border-foreground/50'
+                    ? 'border-foreground/50 border-b'
                     : (i + 1) % (hourSplits / 2) === 0
-                      ? 'border-b border-dashed border-foreground/50'
+                      ? 'border-foreground/50 border-b border-dashed'
                       : '',
                 i === 0 && 'rounded-t-[0.2rem]'
               )}`}
