@@ -32,7 +32,6 @@ export default async function TimeTrackerLayout({
     return (
       <div className="space-y-6">
         <TimeTrackerHeader wsId={wsId} initialData={initialData} />
-
         {children}
       </div>
     );

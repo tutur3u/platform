@@ -45,6 +45,7 @@ import { Switch } from '@tuturuuu/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { cn } from '@tuturuuu/utils/format';
+import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type {
   ExtendedWorkspaceTask,
@@ -98,7 +99,6 @@ interface TimerControlsProps {
   formatDuration: (seconds: number) => string;
   apiCall: (url: string, options?: RequestInit) => Promise<any>;
   isDraggingTask?: boolean;
-  onGoToTasksTab?: () => void;
   currentUserId?: string;
 }
 
@@ -238,7 +238,6 @@ export function TimerControls({
   formatDuration,
   apiCall,
   isDraggingTask = false,
-  onGoToTasksTab,
   currentUserId,
 }: TimerControlsProps) {
   const [isLoading, setIsLoading] = useState(false);
@@ -3389,22 +3388,15 @@ export function TimerControls({
                           Create tasks in your project boards to start tracking
                           time
                         </p>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => {
-                            if (onGoToTasksTab) {
-                              onGoToTasksTab();
-                            } else {
-                              toast.info(
-                                'Redirecting to Tasks tab to create a task...'
-                              );
-                            }
-                          }}
-                          className="text-xs"
-                        >
-                          Go to Tasks Tab
-                        </Button>
+                        <Link href={`/${wsId}/tasks/boards`}>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="text-xs"
+                          >
+                            Go to Tasks Tab
+                          </Button>
+                        </Link>
                       </div>
                     ) : (
                       <>

@@ -1108,11 +1108,6 @@ export default function TimeTrackerContent({
               formatDuration={formatDuration}
               apiCall={apiCall}
               isDraggingTask={isDraggingTask}
-              onGoToTasksTab={() => {
-                toast.success(
-                  'Switched to Tasks tab - create your first task!'
-                );
-              }}
               currentUserId={currentUserId}
             />
           </div>

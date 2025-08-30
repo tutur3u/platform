@@ -14,12 +14,10 @@ import {
   AlertCircle,
   BarChart2,
   CheckSquare,
-  Clock,
   Pause,
   RefreshCw,
   RotateCcw,
   Timer,
-  WifiOff,
 } from '@tuturuuu/ui/icons';
 import { toast } from '@tuturuuu/ui/sonner';
 import { cn } from '@tuturuuu/utils/format';
@@ -65,7 +63,6 @@ export default function TimeTrackerHeader({
     getUser();
   }, []);
 
-  // State management
   const [currentSession, setCurrentSession] =
     useState<SessionWithRelations | null>(initialData.runningSession);
   const [categories, setCategories] = useState<TimeTrackingCategory[]>(
@@ -75,7 +72,6 @@ export default function TimeTrackerHeader({
     initialData.recentSessions || []
   );
 
-  // Timer state
   const [elapsedTime, setElapsedTime] = useState(() => {
     if (!initialData.runningSession) return 0;
     const elapsed = Math.floor(
@@ -86,15 +82,12 @@ export default function TimeTrackerHeader({
   });
   const [isRunning, setIsRunning] = useState(!!initialData.runningSession);
 
-  // Quick actions state
   const [nextTaskPreview, setNextTaskPreview] =
     useState<ExtendedWorkspaceTask | null>(null);
 
-  // Loading and error states
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isOffline, setIsOffline] = useState(false);
-  const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
   const [retryCount, setRetryCount] = useState(0);
 
   // Refs for cleanup
@@ -314,7 +307,6 @@ export default function TimeTrackerHeader({
           setElapsedTime(0);
         }
 
-        setLastRefresh(new Date());
         setRetryCount(0);
       } catch (error) {
         const message =
@@ -475,7 +467,7 @@ export default function TimeTrackerHeader({
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Main Header Section */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="flex-1 space-y-3">
@@ -492,61 +484,6 @@ export default function TimeTrackerHeader({
               </p>
             </div>
           </div>
-
-          <div className="flex flex-wrap items-center gap-2 text-muted-foreground text-xs">
-            <div className="flex items-center gap-1">
-              <div className="h-2 w-2 rounded-full bg-green-500"></div>
-              <span>Week starts Monday</span>
-            </div>
-            <span>•</span>
-            <div className="flex items-center gap-1">
-              <div className="h-2 w-2 rounded-full bg-blue-500"></div>
-              <span>Times updated in real-time</span>
-            </div>
-            {(() => {
-              const today = new Date();
-              const dayOfWeek = today.getDay();
-
-              if (dayOfWeek === 1) {
-                return (
-                  <>
-                    <span>•</span>
-                    <div className="flex items-center gap-1">
-                      <span>🎯</span>
-                      <span>Week resets today!</span>
-                    </div>
-                  </>
-                );
-              } else if (dayOfWeek === 0) {
-                return (
-                  <>
-                    <span>•</span>
-                    <span>Week resets tomorrow</span>
-                  </>
-                );
-              } else {
-                return (
-                  <>
-                    <span>•</span>
-                    <span>Week resets Monday</span>
-                  </>
-                );
-              }
-            })()}
-          </div>
-
-          {lastRefresh && (
-            <div className="flex items-center gap-2 text-muted-foreground text-xs">
-              <Clock className="h-3 w-3" />
-              <span>Last updated: {lastRefresh.toLocaleTimeString()}</span>
-              {isOffline && (
-                <div className="flex items-center gap-1 text-amber-600">
-                  <WifiOff className="h-3 w-3" />
-                  <span>Offline</span>
-                </div>
-              )}
-            </div>
-          )}
         </div>
 
         <div className="flex items-center gap-3">
