@@ -59,7 +59,7 @@ export async function PATCH(
       const endTime = new Date().toISOString();
       const startTime = new Date(session.start_time);
       const durationSeconds = Math.floor(
-        (new Date().getTime() - startTime.getTime()) / 1000
+        (Date.now() - startTime.getTime()) / 1000
       );
 
       const { data, error } = await sbAdmin
@@ -89,7 +89,7 @@ export async function PATCH(
       const endTime = new Date().toISOString();
       const startTime = new Date(session.start_time);
       const durationSeconds = Math.floor(
-        (new Date().getTime() - startTime.getTime()) / 1000
+        (Date.now() - startTime.getTime()) / 1000
       );
 
       const { data, error } = await sbAdmin
@@ -149,7 +149,16 @@ export async function PATCH(
       const { title, description, categoryId, taskId, startTime, endTime } =
         body;
 
-      const updateData: any = {
+      const updateData: {
+        updated_at: string;
+        title?: string;
+        description?: string | null;
+        category_id?: string | null;
+        task_id?: string | null;
+        start_time?: string;
+        end_time?: string;
+        duration_seconds?: number;
+      } = {
         updated_at: new Date().toISOString(),
       };
 
@@ -161,6 +170,26 @@ export async function PATCH(
 
       // Only update times for completed sessions
       if (!session.is_running) {
+        // Check if editing time fields is requested
+        const isEditingTime = startTime !== undefined || endTime !== undefined;
+
+        if (isEditingTime) {
+          // Check if more than one week has passed since the session start time
+          const sessionStartTime = new Date(session.start_time);
+          const oneWeekAgo = new Date();
+          oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+
+          if (sessionStartTime < oneWeekAgo) {
+            return NextResponse.json(
+              {
+                error:
+                  'Cannot edit start time or end time for sessions older than one week',
+              },
+              { status: 400 }
+            );
+          }
+        }
+
         if (startTime)
           updateData.start_time = new Date(startTime).toISOString();
         if (endTime) {

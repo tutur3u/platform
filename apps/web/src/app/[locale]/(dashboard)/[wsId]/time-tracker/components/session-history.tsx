@@ -29,6 +29,7 @@ import {
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
 import {
+  AlertTriangle,
   BarChart2,
   Brain,
   Briefcase,
@@ -757,6 +758,13 @@ const StackedSessionItem: FC<{
   );
 };
 
+// Helper function to check if a session is older than one week
+const isSessionOlderThanOneWeek = (session: SessionWithRelations): boolean => {
+  const sessionStartTime = dayjs.utc(session.start_time);
+  const oneWeekAgo = dayjs().utc().subtract(1, 'week');
+  return sessionStartTime.isBefore(oneWeekAgo);
+};
+
 export function SessionHistory({
   wsId,
   sessions,
@@ -1065,52 +1073,143 @@ export function SessionHistory({
   const openEditDialog = (session: SessionWithRelations | undefined) => {
     if (!session) return;
     setSessionToEdit(session);
-    setEditTitle(session.title);
-    setEditDescription(session.description || '');
-    setEditCategoryId(session.category_id || 'none');
-    setEditTaskId(session.task_id || 'none');
+
     const userTz = dayjs.tz.guess();
-    setEditStartTime(
-      dayjs.utc(session.start_time).tz(userTz).format('YYYY-MM-DDTHH:mm')
-    );
-    setEditEndTime(
-      session.end_time
-        ? dayjs.utc(session.end_time).tz(userTz).format('YYYY-MM-DDTHH:mm')
-        : ''
-    );
+    const startTimeFormatted = dayjs
+      .utc(session.start_time)
+      .tz(userTz)
+      .format('YYYY-MM-DDTHH:mm');
+    const endTimeFormatted = session.end_time
+      ? dayjs.utc(session.end_time).tz(userTz).format('YYYY-MM-DDTHH:mm')
+      : '';
+
+    const title = session.title;
+    const description = session.description || '';
+    const categoryId = session.category_id || 'none';
+    const taskId = session.task_id || 'none';
+
+    // Set current edit values
+    setEditTitle(title);
+    setEditDescription(description);
+    setEditCategoryId(categoryId);
+    setEditTaskId(taskId);
+    setEditStartTime(startTimeFormatted);
+    setEditEndTime(endTimeFormatted);
+
+    // Store original values for comparison
+    setOriginalValues({
+      title,
+      description,
+      categoryId,
+      taskId,
+      startTime: startTimeFormatted,
+      endTime: endTimeFormatted,
+    });
+  };
+
+  const closeEditDialog = () => {
+    setSessionToEdit(null);
+    setOriginalValues(null);
   };
 
   const saveEdit = async () => {
-    if (!sessionToEdit) return;
+    if (!sessionToEdit || !originalValues) return;
     setIsEditing(true);
     try {
       const userTz = dayjs.tz.guess();
-      await fetch(
+
+      // Build only the fields that have changed
+      const changes: {
+        action: string;
+        title?: string;
+        description?: string;
+        categoryId?: string | null;
+        taskId?: string | null;
+        startTime?: string;
+        endTime?: string;
+      } = {
+        action: 'edit',
+      };
+
+      // Check each field for changes and only include dirty fields
+      if (editTitle !== originalValues.title) {
+        changes.title = editTitle;
+      }
+
+      if (editDescription !== originalValues.description) {
+        changes.description = editDescription;
+      }
+
+      const currentCategoryId =
+        editCategoryId === 'none' ? null : editCategoryId || null;
+      const originalCategoryId =
+        originalValues.categoryId === 'none'
+          ? null
+          : originalValues.categoryId || null;
+      if (currentCategoryId !== originalCategoryId) {
+        changes.categoryId = currentCategoryId;
+      }
+
+      const currentTaskId = editTaskId === 'none' ? null : editTaskId || null;
+      const originalTaskId =
+        originalValues.taskId === 'none' ? null : originalValues.taskId || null;
+      if (currentTaskId !== originalTaskId) {
+        changes.taskId = currentTaskId;
+      }
+
+      if (editStartTime !== originalValues.startTime) {
+        changes.startTime = editStartTime
+          ? dayjs.tz(editStartTime, userTz).utc().toISOString()
+          : undefined;
+      }
+
+      if (editEndTime !== originalValues.endTime) {
+        changes.endTime = editEndTime
+          ? dayjs.tz(editEndTime, userTz).utc().toISOString()
+          : undefined;
+      }
+
+      // Basic temporal guard: end >= start when both provided
+      if (changes.startTime && changes.endTime) {
+        if (dayjs(changes.endTime).isBefore(dayjs(changes.startTime))) {
+          toast.error('End time cannot be before start time');
+          setIsEditing(false);
+          return;
+        }
+      }
+
+      // Only make the request if there are actual changes
+      if (Object.keys(changes).length === 1) {
+        // Only the 'action' field is present, no actual changes
+        closeEditDialog();
+        toast.info('No changes detected');
+        return;
+      }
+
+      const response = await fetch(
         `/api/v1/workspaces/${wsId}/time-tracking/sessions/${sessionToEdit.id}`,
         {
           method: 'PATCH',
-          body: JSON.stringify({
-            action: 'edit',
-            title: editTitle,
-            description: editDescription,
-            categoryId:
-              editCategoryId === 'none' ? null : editCategoryId || null,
-            taskId: editTaskId === 'none' ? null : editTaskId || null,
-            startTime: editStartTime
-              ? dayjs.tz(editStartTime, userTz).utc().toISOString()
-              : undefined,
-            endTime: editEndTime
-              ? dayjs.tz(editEndTime, userTz).utc().toISOString()
-              : undefined,
-          }),
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(changes),
         }
       );
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to update session');
+      }
+
       router.refresh();
-      setSessionToEdit(null);
+      closeEditDialog();
       toast.success('Session updated successfully');
     } catch (error) {
       console.error('Error updating session:', error);
-      toast.error('Failed to update session');
+      const errorMessage =
+        error instanceof Error ? error.message : 'Failed to update session';
+      toast.error(errorMessage);
     } finally {
       setIsEditing(false);
     }
@@ -1142,6 +1241,16 @@ export function SessionHistory({
   const [editTaskId, setEditTaskId] = useState('');
   const [editStartTime, setEditStartTime] = useState('');
   const [editEndTime, setEditEndTime] = useState('');
+
+  // Original values to track changes
+  const [originalValues, setOriginalValues] = useState<{
+    title: string;
+    description: string;
+    categoryId: string;
+    taskId: string;
+    startTime: string;
+    endTime: string;
+  } | null>(null);
 
   return (
     <>
@@ -1903,10 +2012,7 @@ export function SessionHistory({
       </Card>
 
       {/* Edit Session Dialog */}
-      <Dialog
-        open={!!sessionToEdit}
-        onOpenChange={() => setSessionToEdit(null)}
-      >
+      <Dialog open={!!sessionToEdit} onOpenChange={() => closeEditDialog()}>
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>Edit Session</DialogTitle>
@@ -1979,32 +2085,54 @@ export function SessionHistory({
                 </Select>
               </div>
             </div>
-            {sessionToEdit && !sessionToEdit.is_running && (
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <Label htmlFor="edit-start-time">Start Time</Label>
-                  <Input
-                    id="edit-start-time"
-                    type="datetime-local"
-                    value={editStartTime}
-                    onChange={(e) => setEditStartTime(e.target.value)}
-                  />
+            {sessionToEdit &&
+              !sessionToEdit.is_running &&
+              (isSessionOlderThanOneWeek(sessionToEdit) ? (
+                <div className="rounded-lg border border-orange-200 bg-orange-50 p-4 dark:border-orange-800 dark:bg-orange-950/50">
+                  <div className="flex items-center gap-2 text-orange-700 dark:text-orange-300">
+                    <AlertTriangle className="h-4 w-4" />
+                    <span className="font-medium text-sm">
+                      Time Editing Restricted
+                    </span>
+                  </div>
+                  <p className="mt-2 text-orange-600 text-sm dark:text-orange-400">
+                    Start time and end time cannot be edited for sessions older
+                    than one week. This session is from{' '}
+                    <span className="font-medium">
+                      {dayjs
+                        .utc(sessionToEdit.start_time)
+                        .tz(dayjs.tz.guess())
+                        .format('MMM D, YYYY')}
+                    </span>
+                    .
+                  </p>
                 </div>
-                <div>
-                  <Label htmlFor="edit-end-time">End Time</Label>
-                  <Input
-                    id="edit-end-time"
-                    type="datetime-local"
-                    value={editEndTime}
-                    onChange={(e) => setEditEndTime(e.target.value)}
-                  />
+              ) : (
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <Label htmlFor="edit-start-time">Start Time</Label>
+                    <Input
+                      id="edit-start-time"
+                      type="datetime-local"
+                      value={editStartTime}
+                      onChange={(e) => setEditStartTime(e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="edit-end-time">End Time</Label>
+                    <Input
+                      id="edit-end-time"
+                      type="datetime-local"
+                      value={editEndTime}
+                      onChange={(e) => setEditEndTime(e.target.value)}
+                    />
+                  </div>
                 </div>
-              </div>
-            )}
+              ))}
             <div className="flex gap-2 pt-4">
               <Button
                 variant="outline"
-                onClick={() => setSessionToEdit(null)}
+                onClick={() => closeEditDialog()}
                 className="flex-1"
               >
                 Cancel
