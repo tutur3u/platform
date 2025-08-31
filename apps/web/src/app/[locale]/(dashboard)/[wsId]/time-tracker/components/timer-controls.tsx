@@ -1,5 +1,6 @@
 'use client';
 
+import { useQueryClient } from '@tanstack/react-query';
 import type { TimeTrackingCategory, WorkspaceTask } from '@tuturuuu/types/db';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
@@ -272,6 +273,7 @@ export function TimerControls({
   isDraggingTask = false,
   currentUserId,
 }: TimerControlsProps) {
+  const queryClient = useQueryClient();
   const [isLoading, setIsLoading] = useState(false);
   const [newSessionTitle, setNewSessionTitle] = useState('');
   const [newSessionDescription, setNewSessionDescription] = useState('');
@@ -1475,6 +1477,11 @@ export function TimerControls({
       setSelectedCategoryId('none');
       setSelectedTaskId('none');
 
+      // Invalidate the running session query to update sidebar
+      queryClient.invalidateQueries({
+        queryKey: ['running-time-session', wsId],
+      });
+
       onSessionUpdate();
       toast.success('Timer started!');
     } catch (error) {
@@ -1570,6 +1577,11 @@ export function TimerControls({
       setSelectedCategoryId('none');
       setSelectedTaskId('none');
 
+      // Invalidate the running session query to update sidebar
+      queryClient.invalidateQueries({
+        queryKey: ['running-time-session', wsId],
+      });
+
       onSessionUpdate();
       toast.success(
         `Timer started${timerMode === 'pomodoro' ? ' - Focus time!' : ''}`
@@ -1617,6 +1629,11 @@ export function TimerControls({
 
       // Show completion celebration
       setTimeout(() => setJustCompleted(null), 3000);
+
+      // Invalidate the running session query to update sidebar
+      queryClient.invalidateQueries({
+        queryKey: ['running-time-session', wsId],
+      });
 
       onSessionUpdate();
       toast.success(
@@ -1710,6 +1727,11 @@ export function TimerControls({
       const pauseDuration = pauseStartTime
         ? Math.floor((new Date().getTime() - pauseStartTime.getTime()) / 1000)
         : 0;
+
+      // Invalidate the running session query to update sidebar
+      queryClient.invalidateQueries({
+        queryKey: ['running-time-session', wsId],
+      });
 
       onSessionUpdate();
       toast.success('Timer resumed!', {

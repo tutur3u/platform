@@ -1,5 +1,6 @@
 'use client';
 
+import { useQueryClient } from '@tanstack/react-query';
 import type { TimeTrackingCategory, WorkspaceTask } from '@tuturuuu/types/db';
 import {
   AlertDialog,
@@ -503,10 +504,7 @@ const StackedSessionItem: FC<{
                         Edit Session
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />
-                      <DropdownMenuItem
-                        onClick={() => onDelete(latestSession)}
-                        className="text-destructive focus:text-destructive"
-                      >
+                      <DropdownMenuItem onClick={() => onDelete(latestSession)}>
                         <Trash2 className="mr-2 h-4 w-4" />
                         Delete Session
                       </DropdownMenuItem>
@@ -700,14 +698,13 @@ const StackedSessionItem: FC<{
                             </div>
                           </div>
                           <div className="flex items-center gap-3">
-                            <div className="text-right">
+                            <div className="flex h-full flex-col items-center justify-center text-right">
                               <span className="font-medium text-sm">
-                                {session.duration_seconds
-                                  ? formatDuration(session.duration_seconds)
-                                  : '-'}
+                                {session.duration_seconds &&
+                                  formatDuration(session.duration_seconds)}
                               </span>
                               {session.is_running && (
-                                <div className="mt-1">
+                                <div>
                                   <Badge
                                     variant="secondary"
                                     className="text-xs"
@@ -738,7 +735,6 @@ const StackedSessionItem: FC<{
                                 <DropdownMenuSeparator />
                                 <DropdownMenuItem
                                   onClick={() => onDelete(session)}
-                                  className="text-destructive focus:text-destructive"
                                 >
                                   <Trash2 className="mr-2 h-3 w-3" />
                                   Delete
@@ -802,6 +798,7 @@ export function SessionHistory({
   tasks,
 }: SessionHistoryProps) {
   const router = useRouter();
+  const queryClient = useQueryClient();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [filterCategoryId, setFilterCategoryId] = useState<string>('all');
@@ -1097,6 +1094,12 @@ export function SessionHistory({
         `/api/v1/workspaces/${wsId}/time-tracking/sessions/${session.id}`,
         { method: 'PATCH', body: JSON.stringify({ action: 'resume' }) }
       );
+
+      // Invalidate the running session query to update sidebar
+      queryClient.invalidateQueries({
+        queryKey: ['running-time-session', wsId],
+      });
+
       router.refresh();
       toast.success(`Started new session: "${session.title}"`);
     } catch (error) {
@@ -1263,6 +1266,12 @@ export function SessionHistory({
         `/api/v1/workspaces/${wsId}/time-tracking/sessions/${sessionToDelete.id}`,
         { method: 'DELETE' }
       );
+
+      // Invalidate the running session query to update sidebar in case an active session was deleted
+      queryClient.invalidateQueries({
+        queryKey: ['running-time-session', wsId],
+      });
+
       setSessionToDelete(null);
       router.refresh();
       toast.success('Session deleted successfully');

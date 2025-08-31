@@ -1,5 +1,6 @@
 'use client';
 
+import { useQueryClient } from '@tanstack/react-query';
 import type { TimeTrackingCategory } from '@tuturuuu/types/db';
 import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
@@ -52,6 +53,7 @@ export function SimpleTimerControls({
   formatDuration,
   apiCall,
 }: SimpleTimerControlsProps) {
+  const queryClient = useQueryClient();
   const [isLoading, setIsLoading] = useState(false);
   const [sessionTitle, setSessionTitle] = useState('');
   const [sessionDescription, setSessionDescription] = useState('');
@@ -108,6 +110,12 @@ export function SimpleTimerControls({
       setCurrentSession(response.session || null);
       setIsRunning(true);
       setElapsedTime(0);
+
+      // Invalidate the running session query to update sidebar
+      queryClient.invalidateQueries({
+        queryKey: ['running-time-session', wsId],
+      });
+
       onSessionUpdate();
       toast.success('Timer started!');
     } catch (error) {
@@ -123,6 +131,7 @@ export function SimpleTimerControls({
     selectedTaskId,
     apiCall,
     wsId,
+    queryClient,
     setCurrentSession,
     setIsRunning,
     setElapsedTime,
@@ -158,6 +167,12 @@ export function SimpleTimerControls({
       setSelectedCategoryId(workCategory?.id || 'none');
 
       setTimeout(() => setJustCompleted(null), 3000);
+
+      // Invalidate the running session query to update sidebar
+      queryClient.invalidateQueries({
+        queryKey: ['running-time-session', wsId],
+      });
+
       onSessionUpdate();
 
       toast.success(
@@ -174,6 +189,7 @@ export function SimpleTimerControls({
     pausedSession,
     apiCall,
     wsId,
+    queryClient,
     workCategory,
     onSessionUpdate,
     formatDuration,
@@ -241,6 +257,11 @@ export function SimpleTimerControls({
       setPausedSession(null);
       setPausedElapsedTime(0);
 
+      // Invalidate the running session query to update sidebar
+      queryClient.invalidateQueries({
+        queryKey: ['running-time-session', wsId],
+      });
+
       onSessionUpdate();
       toast.success('Timer resumed!');
     } catch (error) {
@@ -253,6 +274,7 @@ export function SimpleTimerControls({
     pausedSession,
     apiCall,
     wsId,
+    queryClient,
     pausedElapsedTime,
     onSessionUpdate,
     setCurrentSession,
@@ -367,13 +389,6 @@ export function SimpleTimerControls({
                 <Square className="mr-2 h-4 w-4" />
                 Stop
               </Button>
-            </div>
-
-            <div className="text-center text-muted-foreground text-xs">
-              <span className="rounded bg-muted px-2 py-1">⌘/Ctrl + P</span> to
-              pause •{' '}
-              <span className="rounded bg-muted px-2 py-1">⌘/Ctrl + Enter</span>{' '}
-              to stop
             </div>
           </div>
         ) : pausedSession ? (
