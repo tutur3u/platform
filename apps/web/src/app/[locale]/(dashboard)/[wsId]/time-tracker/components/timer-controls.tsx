@@ -47,6 +47,7 @@ import { Textarea } from '@tuturuuu/ui/textarea';
 import { cn } from '@tuturuuu/utils/format';
 import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import type { ComponentProps, ElementType } from 'react';
 import type {
   ExtendedWorkspaceTask,
   SessionWithRelations,
@@ -205,7 +206,13 @@ interface PausedSessionData {
 }
 
 // Tab metadata for timer mode selector
-const TIMER_MODE_TABS = [
+type TimerModeTab = {
+  value: TimerMode;
+  label: string;
+  icon: ElementType<{ className?: string }>;
+};
+
+const TIMER_MODE_TABS: readonly TimerModeTab[] = [
   {
     value: TimerMode.stopwatch,
     label: 'Stopwatch',
@@ -214,7 +221,9 @@ const TIMER_MODE_TABS = [
   {
     value: TimerMode.pomodoro,
     label: 'Pomodoro',
-    icon: () => <Icon iconNode={fruit} className="h-3 w-3" />,
+    icon: (props: ComponentProps<'svg'>) => (
+      <Icon iconNode={fruit} {...props} />
+    ),
   },
   {
     value: TimerMode.custom,
@@ -2746,11 +2755,7 @@ export function TimerControls({
                             : tab.label
                         }
                       >
-                        {typeof IconComponent === 'function' ? (
-                          <IconComponent />
-                        ) : (
-                          <IconComponent className="h-3 w-3" />
-                        )}
+                        <IconComponent className="h-3 w-3" />
                         {tab.label}
                       </TabsTrigger>
                     );
