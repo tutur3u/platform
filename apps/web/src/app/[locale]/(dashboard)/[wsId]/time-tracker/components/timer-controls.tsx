@@ -2601,43 +2601,53 @@ export function TimerControls({
             </div>
             {/* Timer Mode Selector */}
             <div className="flex items-center gap-2">
-              <Select
+                <Tabs
                 value={timerMode}
-                onValueChange={(value: TimerMode) =>
-                  handleTimerModeChange(value)
-                }
-                disabled={sessionProtection.isActive}
+                onValueChange={(value: string) => handleTimerModeChange(value)}
+                className="w-auto"
               >
-                <SelectTrigger
-                  className={cn(
-                    'h-8 w-32 text-xs',
-                    sessionProtection.isActive &&
-                      'cursor-not-allowed opacity-50'
-                  )}
-                >
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem
+                <TabsList className="grid grid-cols-3 h-8 bg-muted/50 p-1">
+                  <TabsTrigger
                     value="stopwatch"
                     disabled={sessionProtection.isActive}
+                    className={cn(
+                      "flex items-center gap-1 text-xs px-2 py-1",
+                      sessionProtection.isActive &&
+                        "cursor-not-allowed opacity-50",
+                      "data-[state=active]:bg-background data-[state=active]:shadow-sm",
+                    )}
                   >
-                    <Timer className="h-5 w-5" /> Stopwatch
-                  </SelectItem>
-                  <SelectItem
+                    <Timer className="h-3 w-3" />
+                    Stopwatch
+                  </TabsTrigger>
+                  <TabsTrigger
                     value="pomodoro"
                     disabled={sessionProtection.isActive}
+                    className={cn(
+                      "flex items-center gap-1 text-xs px-2 py-1",
+                      sessionProtection.isActive &&
+                        "cursor-not-allowed opacity-50",
+                      "data-[state=active]:bg-background data-[state=active]:shadow-sm",
+                    )}
                   >
-                    <Icon iconNode={fruit} className="h-5 w-5" /> Pomodoro
-                  </SelectItem>
-                  <SelectItem
+                    <Icon iconNode={fruit} className="h-3 w-3" />
+                    Pomodoro
+                  </TabsTrigger>
+                  <TabsTrigger
                     value="custom"
                     disabled={sessionProtection.isActive}
+                    className={cn(
+                      "flex items-center gap-1 text-xs px-2 py-1",
+                      sessionProtection.isActive &&
+                        "cursor-not-allowed opacity-50",
+                      "data-[state=active]:bg-background data-[state=active]:shadow-sm",
+                    )}
                   >
-                    <Settings2 className="h-5 w-5" /> Custom
-                  </SelectItem>
-                </SelectContent>
-              </Select>
+                    <Settings2 className="h-3 w-3" />
+                    Custom
+                  </TabsTrigger>
+                </TabsList>
+              </Tabs>
               {sessionProtection.isActive && (
                 <div className="text-muted-foreground text-xs">
                   🔒 Active Session
