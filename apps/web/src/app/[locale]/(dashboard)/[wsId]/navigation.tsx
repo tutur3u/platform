@@ -7,6 +7,7 @@ import {
   Blocks,
   Bolt,
   BookKey,
+  BookText,
   BookUser,
   Box,
   Boxes,
@@ -31,7 +32,10 @@ import {
   IdCardLanyard,
   KeyRound,
   LayoutDashboard,
+  LayoutList,
   Link,
+  ListCheck,
+  ListTodo,
   Logs,
   Mail,
   MessageCircleIcon,
@@ -50,6 +54,7 @@ import {
   SquaresIntersect,
   SquareUserRound,
   Star,
+  SwatchBook,
   Tags,
   TextSelect,
   TicketPercent,
@@ -387,6 +392,39 @@ export async function WorkspaceNavigationLinks({
           title: t('sidebar_tabs.education'),
           href: `/${personalOrWsId}/education`,
           icon: <GraduationCap className="h-5 w-5" />,
+          children: [
+            {
+              title: t('workspace-education-tabs.overview'),
+              href: `/${wsId}/education`,
+              icon: <LayoutDashboard className="h-5 w-5" />,
+              matchExact: true,
+            },
+            {
+              title: t('workspace-education-tabs.courses'),
+              href: `/${wsId}/education/courses`,
+              icon: <BookText className="h-5 w-5" />,
+            },
+            {
+              title: t('workspace-education-tabs.flashcards'),
+              href: `/${wsId}/education/flashcards`,
+              icon: <SwatchBook className="h-5 w-5" />,
+            },
+            {
+              title: t('workspace-education-tabs.quiz-sets'),
+              href: `/${wsId}/education/quiz-sets`,
+              icon: <LayoutList className="h-5 w-5" />,
+            },
+            {
+              title: t('workspace-education-tabs.quizzes'),
+              href: `/${wsId}/education/quizzes`,
+              icon: <ListTodo className="h-5 w-5" />,
+            },
+            {
+              title: t('workspace-education-tabs.attempts'),
+              href: `/${wsId}/education/attempts`,
+              icon: <ListCheck className="h-5 w-5" />,
+            },
+          ],
           disabled:
             ENABLE_AI_ONLY ||
             !(await verifySecret({
