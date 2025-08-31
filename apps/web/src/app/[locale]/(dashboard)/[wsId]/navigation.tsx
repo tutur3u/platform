@@ -66,11 +66,7 @@ import {
   Warehouse,
 } from '@tuturuuu/ui/icons';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
-import {
-  checkTuturuuuAdmin,
-  getPermissions,
-  verifySecret,
-} from '@tuturuuu/utils/workspace-helper';
+import { getPermissions, verifySecret } from '@tuturuuu/utils/workspace-helper';
 import { getTranslations } from 'next-intl/server';
 
 export async function WorkspaceNavigationLinks({
@@ -456,7 +452,6 @@ export async function WorkspaceNavigationLinks({
               title: t('sidebar_tabs.time_tracker_management'),
               href: `/${personalOrWsId}/time-tracker/management`,
               icon: <Users className="h-5 w-5" />,
-              disabled: !(await checkTuturuuuAdmin()),
               requireRootWorkspace: true,
               requireRootMember: true,
             },
