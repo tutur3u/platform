@@ -7,6 +7,7 @@
     "usernamehw.errorlens", // Error Lens
     "YoavBls.pretty-ts-errors", // Pretty TypeScript Errors
     "aaron-bond.better-comments", // Better Comments
-    "PKief.material-icon-theme" // Material Icon Theme
+    "PKief.material-icon-theme", // Material Icon Theme
+    "lokalise.i18n-ally" // i18n Ally
   ]
 }
