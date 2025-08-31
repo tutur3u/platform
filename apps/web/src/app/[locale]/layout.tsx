@@ -12,8 +12,8 @@ import { cn } from '@tuturuuu/utils/format';
 import { Analytics as VercelAnalytics } from '@vercel/analytics/react';
 import { SpeedInsights as VercelInsights } from '@vercel/speed-insights/next';
 import type { Metadata } from 'next';
-import { setRequestLocale } from 'next-intl/server';
 import { notFound } from 'next/navigation';
+import { setRequestLocale } from 'next-intl/server';
 import type { ReactNode } from 'react';
 
 export { viewport } from '@tuturuuu/utils/common/nextjs';
