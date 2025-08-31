@@ -3060,7 +3060,7 @@ export function TimerControls({
                     : timerMode === TimerMode.pomodoro &&
                         countdownState.sessionType !== 'focus'
                       ? 'bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950/20 dark:to-blue-900/20'
-                      : timerMode === TimerMode.custom 
+                      : timerMode === TimerMode.custom
                         ? 'bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-950/20 dark:to-purple-900/20'
                         : 'bg-gradient-to-br from-red-50 to-red-100 dark:from-red-950/20 dark:to-red-900/20'
                 )}
@@ -3074,7 +3074,7 @@ export function TimerControls({
                       : timerMode === TimerMode.pomodoro &&
                           countdownState.sessionType !== 'focus'
                         ? 'from-blue-500/10 to-transparent'
-                        : timerMode === TimerMode.custom 
+                        : timerMode === TimerMode.custom
                           ? 'from-purple-500/10 to-transparent'
                           : 'from-red-500/10 to-transparent'
                   )}
