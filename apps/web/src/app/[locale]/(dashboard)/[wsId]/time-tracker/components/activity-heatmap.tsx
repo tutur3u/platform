@@ -1032,14 +1032,6 @@ export function ActivityHeatmap({ dailyActivity }: ActivityHeatmapProps) {
           </div>
         </div>
       </div>
-
-      <div className="border-blue-200 border-t pt-2 dark:border-blue-800">
-        <p className="text-blue-700 text-xs dark:text-blue-300">
-          {data.activeDays < 7
-            ? `Great start! Building momentum.`
-            : `Avg session: ${formatDuration(Math.round(data.avgSession))}`}
-        </p>
-      </div>
     </div>
   );
 
@@ -1155,16 +1147,6 @@ export function ActivityHeatmap({ dailyActivity }: ActivityHeatmapProps) {
               );
             })}
           </div>
-        </div>
-
-        <div className="border-green-200 border-t pt-2 dark:border-green-800">
-          <p className="text-green-700 text-xs dark:text-green-300">
-            {consistencyScore >= 80
-              ? 'Excellent consistency!'
-              : consistencyScore >= 50
-                ? 'Good habits forming'
-                : 'Building momentum'}
-          </p>
         </div>
       </div>
     );
