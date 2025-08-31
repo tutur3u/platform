@@ -280,8 +280,32 @@ export function Structure({
   };
 
   const isHoverMode = behavior === 'hover';
-  const onMouseEnter = isHoverMode ? () => setIsCollapsed(false) : undefined;
-  const onMouseLeave = isHoverMode ? () => setIsCollapsed(true) : undefined;
+
+  // Helper function to check if any dialogs are currently open
+  const hasOpenDialogs = useCallback(() => {
+    const hasDialogs =
+      document.querySelector('[data-state="open"][role="dialog"]') !== null;
+    const hasAlertDialogs =
+      document.querySelector('[data-state="open"][role="alertdialog"]') !==
+      null;
+    return hasDialogs || hasAlertDialogs;
+  }, []);
+
+  const onMouseEnter = isHoverMode
+    ? () => {
+        if (!hasOpenDialogs()) {
+          setIsCollapsed(false);
+        }
+      }
+    : undefined;
+
+  const onMouseLeave = isHoverMode
+    ? () => {
+        if (!hasOpenDialogs()) {
+          setIsCollapsed(true);
+        }
+      }
+    : undefined;
 
   const isRootWorkspace = wsId === ROOT_WORKSPACE_ID;
 
