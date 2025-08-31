@@ -46,8 +46,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { cn } from '@tuturuuu/utils/format';
 import Link from 'next/link';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { ComponentProps, ElementType } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type {
   ExtendedWorkspaceTask,
   SessionWithRelations,
@@ -4536,4 +4536,3 @@ export function TimerControls({
     </>
   );
 }
-2;
