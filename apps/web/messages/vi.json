@@ -856,7 +856,8 @@
     "settings": "Cài đặt",
     "goals": "Mục tiêu",
     "overview": "Tổng quan",
-    "timer": "Hẹn giờ"
+    "timer": "Hẹn giờ",
+    "time_tracker_management": "Quản lý"
   },
   "usage": {
     "description": "Theo dõi hoạt động workspace, sử dụng tính năng và các số liệu hệ thống trong tổ chức của bạn",

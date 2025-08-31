@@ -1,5 +1,3 @@
-import type { NavLink } from '@/components/navigation';
-import { DEV_MODE } from '@/constants/common';
 import {
   Activity,
   Archive,
@@ -67,8 +65,14 @@ import {
   Warehouse,
 } from '@tuturuuu/ui/icons';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
-import { getPermissions, verifySecret } from '@tuturuuu/utils/workspace-helper';
+import {
+  checkTuturuuuAdmin,
+  getPermissions,
+  verifySecret,
+} from '@tuturuuu/utils/workspace-helper';
 import { getTranslations } from 'next-intl/server';
+import type { NavLink } from '@/components/navigation';
+import { DEV_MODE } from '@/constants/common';
 
 export async function WorkspaceNavigationLinks({
   wsId,
@@ -448,6 +452,14 @@ export async function WorkspaceNavigationLinks({
               title: t('sidebar_tabs.settings'),
               href: `/${personalOrWsId}/time-tracker/settings`,
               icon: <Settings className="h-5 w-5" />,
+            },
+            {
+              title: t('sidebar_tabs.time_tracker_management'),
+              href: `/${personalOrWsId}/time-tracker/management`,
+              icon: <Users className="h-5 w-5" />,
+              disabled: !(await checkTuturuuuAdmin()),
+              requireRootWorkspace: true,
+              requireRootMember: true,
             },
           ],
           icon: <ClockFading className="h-5 w-5" />,
