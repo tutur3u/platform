@@ -100,7 +100,6 @@ interface TimerControlsProps {
   formatDuration: (seconds: number) => string;
   apiCall: (url: string, options?: RequestInit) => Promise<any>;
   isDraggingTask?: boolean;
-  onGoToTasksTab?: () => void;
   currentUserId?: string;
 }
 
@@ -271,7 +270,6 @@ export function TimerControls({
   formatDuration,
   apiCall,
   isDraggingTask = false,
-  onGoToTasksTab,
   currentUserId,
 }: TimerControlsProps) {
   const [isLoading, setIsLoading] = useState(false);
