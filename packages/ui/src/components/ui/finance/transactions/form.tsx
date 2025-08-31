@@ -1,5 +1,6 @@
 'use client';
 
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type { Transaction } from '@tuturuuu/types/primitives/Transaction';
 import type { TransactionCategory } from '@tuturuuu/types/primitives/TransactionCategory';
 import type { Wallet } from '@tuturuuu/types/primitives/Wallet';
@@ -34,7 +35,6 @@ import { enUS, vi } from 'date-fns/locale';
 import { useLocale, useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
-import useSWR from 'swr';
 import * as z from 'zod';
 
 interface Props {
@@ -57,30 +57,24 @@ const FormSchema = z.object({
 export function TransactionForm({ wsId, data, onFinish }: Props) {
   const t = useTranslations();
   const locale = useLocale();
+  const queryClient = useQueryClient();
 
   // const [mode, setMode] = useState<'standard' | 'transfer'>('standard');
 
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
-  const {
-    data: categories,
-    error: categoriesError,
-    mutate: mutateCategories,
-  } = useSWR<TransactionCategory[]>(
-    `/api/workspaces/${wsId}/transactions/categories`,
-    fetcher
-  );
+  const { data: categories, isLoading: categoriesLoading } = useQuery<
+    TransactionCategory[]
+  >({
+    queryKey: [`/api/workspaces/${wsId}/transactions/categories`],
+    queryFn: () => fetcher(`/api/workspaces/${wsId}/transactions/categories`),
+  });
 
-  const categoriesLoading = !categories && !categoriesError;
-
-  const {
-    data: wallets,
-    error: walletsError,
-    mutate: mutateWallets,
-  } = useSWR<Wallet[]>(`/api/workspaces/${wsId}/wallets`, fetcher);
-
-  const walletsLoading = !wallets && !walletsError;
+  const { data: wallets, isLoading: walletsLoading } = useQuery<Wallet[]>({
+    queryKey: [`/api/workspaces/${wsId}/wallets`],
+    queryFn: () => fetcher(`/api/workspaces/${wsId}/wallets`),
+  });
 
   const form = useForm({
     resolver: zodResolver(FormSchema),
@@ -119,6 +113,10 @@ export function TransactionForm({ wsId, data, onFinish }: Props) {
     );
 
     if (res.ok) {
+      // Invalidate transaction-related queries to refresh any transaction lists
+      queryClient.invalidateQueries({
+        queryKey: [`/api/workspaces/${wsId}/transactions`],
+      });
       onFinish?.(data);
       router.refresh();
     } else {
@@ -152,7 +150,9 @@ export function TransactionForm({ wsId, data, onFinish }: Props) {
             onFinish={() => {
               setNewContent(undefined);
               setNewContentType(undefined);
-              mutateWallets();
+              queryClient.invalidateQueries({
+                queryKey: [`/api/workspaces/${wsId}/wallets`],
+              });
             }}
           />
         ) : (
@@ -162,7 +162,9 @@ export function TransactionForm({ wsId, data, onFinish }: Props) {
             onFinish={() => {
               setNewContent(undefined);
               setNewContentType(undefined);
-              mutateCategories();
+              queryClient.invalidateQueries({
+                queryKey: [`/api/workspaces/${wsId}/transactions/categories`],
+              });
             }}
           />
         )}
@@ -187,7 +189,7 @@ export function TransactionForm({ wsId, data, onFinish }: Props) {
                     options={
                       wallets
                         ? wallets.map((wallet) => ({
-                            value: wallet.id!,
+                            value: wallet.id || '',
                             label: wallet.name || '',
                           }))
                         : []
@@ -223,7 +225,7 @@ export function TransactionForm({ wsId, data, onFinish }: Props) {
                     options={
                       categories
                         ? categories.map((category) => ({
-                            value: category.id!,
+                            value: category.id || '',
                             label: category.name || '',
                           }))
                         : []
@@ -272,7 +274,7 @@ export function TransactionForm({ wsId, data, onFinish }: Props) {
                       const numericValue = parseFloat(
                         e.target.value.replace(/[^0-9.]/g, '')
                       );
-                      if (!isNaN(numericValue)) {
+                      if (!Number.isNaN(numericValue)) {
                         field.onChange(numericValue);
                       } else {
                         // Handle case where the input is not a number (e.g., all non-numeric characters are deleted)

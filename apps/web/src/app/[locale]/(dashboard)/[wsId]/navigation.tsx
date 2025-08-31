@@ -1,3 +1,5 @@
+import type { NavLink } from '@/components/navigation';
+import { DEV_MODE } from '@/constants/common';
 import {
   Activity,
   Archive,
@@ -41,7 +43,6 @@ import {
   ReceiptText,
   RulerDimensionLine,
   ScanSearch,
-  ScrollText,
   Send,
   Settings,
   ShieldUser,
@@ -71,8 +72,6 @@ import {
   verifySecret,
 } from '@tuturuuu/utils/workspace-helper';
 import { getTranslations } from 'next-intl/server';
-import type { NavLink } from '@/components/navigation';
-import { DEV_MODE } from '@/constants/common';
 
 export async function WorkspaceNavigationLinks({
   wsId,
@@ -499,7 +498,6 @@ export async function WorkspaceNavigationLinks({
             `/${personalOrWsId}/users/groups`,
             `/${personalOrWsId}/users/group-tags`,
             `/${personalOrWsId}/users/reports`,
-            `/${personalOrWsId}/users/fields`,
             `/${personalOrWsId}/users/structure`,
           ],
           icon: <Users className="h-5 w-5" />,
@@ -539,12 +537,6 @@ export async function WorkspaceNavigationLinks({
               title: t('workspace-users-tabs.reports'),
               href: `/${personalOrWsId}/users/reports`,
               icon: <ClipboardList className="h-5 w-5" />,
-              disabled: withoutPermission('manage_users'),
-            },
-            {
-              title: t('workspace-users-tabs.fields'),
-              href: `/${personalOrWsId}/users/fields`,
-              icon: <PencilLine className="h-5 w-5" />,
               disabled: withoutPermission('manage_users'),
             },
             {
@@ -717,7 +709,6 @@ export async function WorkspaceNavigationLinks({
         `/${personalOrWsId}/secrets`,
         `/${personalOrWsId}/infrastructure`,
         `/${personalOrWsId}/migrations`,
-        `/${personalOrWsId}/activities`,
       ],
       children: [
         {
@@ -803,14 +794,6 @@ export async function WorkspaceNavigationLinks({
           href: `/${personalOrWsId}/migrations`,
           icon: <FolderSync className="h-5 w-5" />,
           disabled: withoutPermission('manage_external_migrations'),
-          requireRootWorkspace: true,
-          requireRootMember: true,
-        },
-        {
-          title: t('workspace-settings-layout.activities'),
-          href: `/${personalOrWsId}/activities`,
-          icon: <ScrollText className="h-5 w-5" />,
-          disabled: withoutPermission('manage_workspace_audit_logs'),
           requireRootWorkspace: true,
           requireRootMember: true,
         },
