@@ -35,6 +35,7 @@ import { cn } from '@tuturuuu/utils/format';
 import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone';
 import utc from 'dayjs/plugin/utc';
+import Link from 'next/link';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { priorityCompare } from '@/lib/task-helper';
 import type {
@@ -861,12 +862,24 @@ export default function TimeTrackerContent({
 
                   if (tasks.length === 0) {
                     return (
-                      <div className="rounded-lg border-2 border-muted-foreground/25 border-dashed p-6 text-center">
-                        <CheckCircle className="mx-auto mb-3 h-8 w-8 text-muted-foreground" />
-                        <p className="text-muted-foreground text-sm">
-                          No tasks available. Create tasks in your project
-                          boards to see them here.
+                      <div className="rounded-lg border-2 border-muted-foreground/25 border-dashed p-4 text-center">
+                        <CheckCircle className="mx-auto mb-2 h-8 w-8 text-muted-foreground" />
+                        <p className="mb-2 font-medium text-muted-foreground text-sm">
+                          No tasks available
                         </p>
+                        <p className="mb-3 text-muted-foreground text-xs">
+                          Create tasks in your project boards to start tracking
+                          time
+                        </p>
+                        <Link href={`/${wsId}/tasks/boards`}>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="text-xs"
+                          >
+                            Go to Tasks Tab
+                          </Button>
+                        </Link>
                       </div>
                     );
                   }
