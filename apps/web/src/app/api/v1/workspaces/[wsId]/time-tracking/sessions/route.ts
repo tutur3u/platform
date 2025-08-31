@@ -353,7 +353,15 @@ export async function POST(
     }
 
     const body = await request.json();
-    const { title, description, categoryId, taskId } = body;
+    const {
+      title,
+      description,
+      categoryId,
+      taskId,
+      startTime,
+      endTime,
+      isManualEntry,
+    } = body;
 
     if (!title?.trim()) {
       return NextResponse.json({ error: 'Title is required' }, { status: 400 });
@@ -362,6 +370,61 @@ export async function POST(
     // Use service role client for secure operations
     const sbAdmin = await createAdminClient(); // This should use service role
 
+    // If this is a manual entry (missed entry), handle differently
+    if (isManualEntry && startTime && endTime) {
+      // Validate time range
+      const start = new Date(startTime);
+      const end = new Date(endTime);
+
+      if (end <= start) {
+        return NextResponse.json(
+          { error: 'End time must be after start time' },
+          { status: 400 }
+        );
+      }
+
+      // Calculate duration in seconds
+      const durationSeconds = Math.floor(
+        (end.getTime() - start.getTime()) / 1000
+      );
+
+      if (durationSeconds < 60) {
+        return NextResponse.json(
+          { error: 'Session must be at least 1 minute long' },
+          { status: 400 }
+        );
+      }
+
+      // Create completed session (not running)
+      const { data, error } = await sbAdmin
+        .from('time_tracking_sessions')
+        .insert({
+          ws_id: wsId,
+          user_id: user.id,
+          title: title.trim(),
+          description: description?.trim() || null,
+          category_id: categoryId || null,
+          task_id: taskId || null,
+          start_time: start.toISOString(),
+          end_time: end.toISOString(),
+          duration_seconds: durationSeconds,
+          is_running: false,
+        })
+        .select(
+          `
+          *,
+          category:time_tracking_categories(*),
+          task:tasks(*)
+        `
+        )
+        .single();
+
+      if (error) throw error;
+
+      return NextResponse.json({ session: data }, { status: 201 });
+    }
+
+    // Regular session creation (starts running immediately)
     // Stop any existing running sessions
     await sbAdmin
       .from('time_tracking_sessions')
