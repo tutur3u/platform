@@ -1,8 +1,8 @@
+import { getTimeTrackingData } from '@/lib/time-tracking-helper';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
 import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import { notFound } from 'next/navigation';
-import { getTimeTrackingData } from '@/lib/time-tracking-helper';
-import TimeTrackerContent from '../components/time-tracker-content';
+import TimeTrackerWrapper from '../components/time-tracker-wrapper';
 import type { TimeTrackerData } from '../types';
 
 interface Props {
@@ -28,7 +28,7 @@ export default async function TimeTrackerPage({ params }: Props) {
     // Transform data to match expected types
     const initialData: TimeTrackerData = { ...rawData };
 
-    return <TimeTrackerContent wsId={wsId} initialData={initialData} />;
+    return <TimeTrackerWrapper wsId={wsId} initialData={initialData} />;
   } catch (error) {
     console.error('Error loading time tracker:', error);
     notFound();
