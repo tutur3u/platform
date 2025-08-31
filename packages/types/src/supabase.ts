@@ -6419,6 +6419,34 @@ export type Database = {
             referencedRelation: 'time_tracking_categories';
           },
           {
+            columns: ['user_id'];
+            foreignKeyName: 'time_tracking_goals_user_id_fkey';
+            isOneToOne: false;
+            referencedColumns: ['user_id'];
+            referencedRelation: 'nova_user_challenge_leaderboard';
+          },
+          {
+            columns: ['user_id'];
+            foreignKeyName: 'time_tracking_goals_user_id_fkey';
+            isOneToOne: false;
+            referencedColumns: ['user_id'];
+            referencedRelation: 'nova_user_leaderboard';
+          },
+          {
+            columns: ['user_id'];
+            foreignKeyName: 'time_tracking_goals_user_id_fkey';
+            isOneToOne: false;
+            referencedColumns: ['id'];
+            referencedRelation: 'shortened_links_creator_stats';
+          },
+          {
+            columns: ['user_id'];
+            foreignKeyName: 'time_tracking_goals_user_id_fkey';
+            isOneToOne: false;
+            referencedColumns: ['id'];
+            referencedRelation: 'users';
+          },
+          {
             columns: ['ws_id'];
             foreignKeyName: 'time_tracking_goals_ws_id_fkey';
             isOneToOne: false;
@@ -6489,6 +6517,34 @@ export type Database = {
             isOneToOne: false;
             referencedColumns: ['id'];
             referencedRelation: 'tasks';
+          },
+          {
+            columns: ['user_id'];
+            foreignKeyName: 'time_tracking_sessions_user_id_fkey';
+            isOneToOne: false;
+            referencedColumns: ['user_id'];
+            referencedRelation: 'nova_user_challenge_leaderboard';
+          },
+          {
+            columns: ['user_id'];
+            foreignKeyName: 'time_tracking_sessions_user_id_fkey';
+            isOneToOne: false;
+            referencedColumns: ['user_id'];
+            referencedRelation: 'nova_user_leaderboard';
+          },
+          {
+            columns: ['user_id'];
+            foreignKeyName: 'time_tracking_sessions_user_id_fkey';
+            isOneToOne: false;
+            referencedColumns: ['id'];
+            referencedRelation: 'shortened_links_creator_stats';
+          },
+          {
+            columns: ['user_id'];
+            foreignKeyName: 'time_tracking_sessions_user_id_fkey';
+            isOneToOne: false;
+            referencedColumns: ['id'];
+            referencedRelation: 'users';
           },
           {
             columns: ['ws_id'];
@@ -11208,6 +11264,34 @@ export type Database = {
             isOneToOne: false;
             referencedColumns: ['id'];
             referencedRelation: 'tasks';
+          },
+          {
+            columns: ['user_id'];
+            foreignKeyName: 'time_tracking_sessions_user_id_fkey';
+            isOneToOne: false;
+            referencedColumns: ['user_id'];
+            referencedRelation: 'nova_user_challenge_leaderboard';
+          },
+          {
+            columns: ['user_id'];
+            foreignKeyName: 'time_tracking_sessions_user_id_fkey';
+            isOneToOne: false;
+            referencedColumns: ['user_id'];
+            referencedRelation: 'nova_user_leaderboard';
+          },
+          {
+            columns: ['user_id'];
+            foreignKeyName: 'time_tracking_sessions_user_id_fkey';
+            isOneToOne: false;
+            referencedColumns: ['id'];
+            referencedRelation: 'shortened_links_creator_stats';
+          },
+          {
+            columns: ['user_id'];
+            foreignKeyName: 'time_tracking_sessions_user_id_fkey';
+            isOneToOne: false;
+            referencedColumns: ['id'];
+            referencedRelation: 'users';
           },
           {
             columns: ['ws_id'];
