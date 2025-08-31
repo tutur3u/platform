@@ -227,105 +227,84 @@ export default function TimeTrackerManagementClient() {
   };
 
   return (
-    <div className="flex flex-1 flex-col overflow-hidden">
+    <div className="space-y-4">
       {/* Header */}
-      <header className="flex items-center justify-between border-dynamic-border/20 border-b bg-background p-4">
-        <div className="relative w-full max-w-sm">
-          <Search className="-translate-y-1/2 absolute top-1/2 left-3 size-4 transform text-dynamic-muted" />
-          <Input
-            placeholder="Search sessions, categories, or goals..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="border-dynamic-border/20 bg-dynamic-muted/5 pl-10"
-          />
+      <div className="space-y-4 border-dynamic-border/20 border-b p-4">
+        <h2 className="mb-6 font-semibold text-2xl text-dynamic-foreground">
+          Time Tracker Management
+        </h2>
+
+        {/* Stats Cards */}
+        <div className="mb-6 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+          <Card className="border-dynamic-blue/20 bg-dynamic-blue/5">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="font-medium text-dynamic-muted text-sm">
+                Total Sessions
+              </CardTitle>
+              <Clock className="size-4 text-dynamic-blue" />
+            </CardHeader>
+            <CardContent>
+              <div className="font-bold text-2xl text-dynamic-blue">
+                {totalSessions}
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-dynamic-green/20 bg-dynamic-green/5">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="font-medium text-dynamic-muted text-sm">
+                Active Today
+              </CardTitle>
+              <Play className="size-4 text-dynamic-green" />
+            </CardHeader>
+            <CardContent>
+              <div className="font-bold text-2xl text-dynamic-green">
+                {activeSessions}
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-dynamic-yellow/20 bg-dynamic-yellow/5">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="font-medium text-dynamic-muted text-sm">
+                Hours Today
+              </CardTitle>
+              <Target className="size-4 text-dynamic-yellow" />
+            </CardHeader>
+            <CardContent>
+              <div className="font-bold text-2xl text-dynamic-yellow">
+                {totalHoursToday.toFixed(1)}h
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-dynamic-red/20 bg-dynamic-red/5">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="font-medium text-dynamic-muted text-sm">
+                Behind Schedule
+              </CardTitle>
+              <FolderOpen className="size-4 text-dynamic-red" />
+            </CardHeader>
+            <CardContent>
+              <div className="font-bold text-2xl text-dynamic-red">
+                {behindSchedule}
+              </div>
+            </CardContent>
+          </Card>
         </div>
-        <div className="flex items-center gap-4">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="text-dynamic-muted hover:text-dynamic-foreground"
-          >
-            <Bell className="size-4" />
-          </Button>
-          <div className="flex items-center gap-3">
-            <Avatar className="size-8">
-              <AvatarImage src="https://i.pravatar.cc/40?u=admin" alt="Admin" />
-              <AvatarFallback>AD</AvatarFallback>
-            </Avatar>
-            <div className="hidden sm:block">
-              <h3 className="font-semibold text-dynamic-foreground text-sm">
-                Admin User
-              </h3>
-              <p className="text-dynamic-muted text-xs">System Administrator</p>
-            </div>
-          </div>
-        </div>
-      </header>
+      </div>
 
       {/* Main content */}
-      <main className="flex-1 overflow-y-auto bg-dynamic-background p-6">
-        <div className="container mx-auto max-w-7xl">
-          <h2 className="mb-6 font-bold text-3xl text-dynamic-foreground">
-            Time Tracker Dashboard
-          </h2>
-
-          {/* Stats Cards */}
-          <div className="mb-6 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-            <Card className="border-dynamic-blue/20 bg-dynamic-blue/5">
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="font-medium text-dynamic-muted text-sm">
-                  Total Sessions
-                </CardTitle>
-                <Clock className="size-4 text-dynamic-blue" />
-              </CardHeader>
-              <CardContent>
-                <div className="font-bold text-2xl text-dynamic-blue">
-                  {totalSessions}
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="border-dynamic-green/20 bg-dynamic-green/5">
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="font-medium text-dynamic-muted text-sm">
-                  Active Today
-                </CardTitle>
-                <Play className="size-4 text-dynamic-green" />
-              </CardHeader>
-              <CardContent>
-                <div className="font-bold text-2xl text-dynamic-green">
-                  {activeSessions}
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="border-dynamic-yellow/20 bg-dynamic-yellow/5">
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="font-medium text-dynamic-muted text-sm">
-                  Hours Today
-                </CardTitle>
-                <Target className="size-4 text-dynamic-yellow" />
-              </CardHeader>
-              <CardContent>
-                <div className="font-bold text-2xl text-dynamic-yellow">
-                  {totalHoursToday.toFixed(1)}h
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="border-dynamic-red/20 bg-dynamic-red/5">
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="font-medium text-dynamic-muted text-sm">
-                  Behind Schedule
-                </CardTitle>
-                <FolderOpen className="size-4 text-dynamic-red" />
-              </CardHeader>
-              <CardContent>
-                <div className="font-bold text-2xl text-dynamic-red">
-                  {behindSchedule}
-                </div>
-              </CardContent>
-            </Card>
+      <div className="overflow-y-auto bg-dynamic-background p-6">
+        <div className="container mx-auto max-w-7xl space-y-4">
+          <div className="relative w-full max-w-sm">
+            <Search className="-translate-y-1/2 absolute top-1/2 left-3 size-4 transform text-dynamic-muted" />
+            <Input
+              placeholder="Search sessions, categories, or goals..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="border-dynamic-border/20 bg-dynamic-muted/5 pl-10"
+            />
           </div>
 
           {/* Sessions Table */}
@@ -473,7 +452,7 @@ export default function TimeTrackerManagementClient() {
             </CardContent>
           </Card>
         </div>
-      </main>
+      </div>
 
       {/* Session Details Modal */}
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
