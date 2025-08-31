@@ -1,16 +1,16 @@
-"use client";
+'use client';
 
-import type { TimeTrackingCategory, WorkspaceTask } from "@tuturuuu/types/db";
-import { Badge } from "@tuturuuu/ui/badge";
-import { Button } from "@tuturuuu/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@tuturuuu/ui/card";
+import type { TimeTrackingCategory, WorkspaceTask } from '@tuturuuu/types/db';
+import { Badge } from '@tuturuuu/ui/badge';
+import { Button } from '@tuturuuu/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from "@tuturuuu/ui/dialog";
+} from '@tuturuuu/ui/dialog';
 import {
   CheckCircle,
   Clock,
@@ -30,31 +30,31 @@ import {
   TableOfContents,
   Tag,
   Timer,
-} from "@tuturuuu/ui/icons";
-import { Input } from "@tuturuuu/ui/input";
-import { Label } from "@tuturuuu/ui/label";
+} from '@tuturuuu/ui/icons';
+import { Input } from '@tuturuuu/ui/input';
+import { Label } from '@tuturuuu/ui/label';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@tuturuuu/ui/select";
-import { toast } from "@tuturuuu/ui/sonner";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@tuturuuu/ui/tabs";
-import { Textarea } from "@tuturuuu/ui/textarea";
-import { cn } from "@tuturuuu/utils/format";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+} from '@tuturuuu/ui/select';
+import { toast } from '@tuturuuu/ui/sonner';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
+import { Textarea } from '@tuturuuu/ui/textarea';
+import { cn } from '@tuturuuu/utils/format';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type {
   ExtendedWorkspaceTask,
   SessionWithRelations,
   TaskFilters,
-} from "../types";
+} from '../types';
 import {
   generateAssigneeInitials,
   getFilteredAndSortedTasks,
   useTaskCounts,
-} from "../utils";
+} from '../utils';
 
 interface SessionTemplate {
   title: string;
@@ -114,9 +114,13 @@ interface PomodoroSettings {
   enableMovementReminder: boolean;
 }
 
-enum TimerMode {stopwatch = "stopwatch", pomodoro = "pomodoro", custom = "custom"}
-type SessionType = "focus" | "short-break" | "long-break";
-type CustomTimerType = "enhanced-stopwatch" | "traditional-countdown";
+enum TimerMode {
+  stopwatch = 'stopwatch',
+  pomodoro = 'pomodoro',
+  custom = 'custom',
+}
+type SessionType = 'focus' | 'short-break' | 'long-break';
+type CustomTimerType = 'enhanced-stopwatch' | 'traditional-countdown';
 
 interface CountdownState {
   targetTime: number; // in seconds
@@ -241,11 +245,11 @@ export function TimerControls({
   currentUserId,
 }: TimerControlsProps) {
   const [isLoading, setIsLoading] = useState(false);
-  const [newSessionTitle, setNewSessionTitle] = useState("");
-  const [newSessionDescription, setNewSessionDescription] = useState("");
-  const [selectedCategoryId, setSelectedCategoryId] = useState<string>("none");
-  const [selectedTaskId, setSelectedTaskId] = useState<string>("none");
-  const [sessionMode, setSessionMode] = useState<"task" | "manual">("task");
+  const [newSessionTitle, setNewSessionTitle] = useState('');
+  const [newSessionDescription, setNewSessionDescription] = useState('');
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string>('none');
+  const [selectedTaskId, setSelectedTaskId] = useState<string>('none');
+  const [sessionMode, setSessionMode] = useState<'task' | 'manual'>('task');
   const [showTaskSuggestion, setShowTaskSuggestion] = useState(false);
   const [templates, setTemplates] = useState<SessionTemplate[]>([]);
   const [justCompleted, setJustCompleted] =
@@ -260,19 +264,19 @@ export function TimerControls({
   // Pomodoro and timer mode state
   const [timerMode, setTimerMode] = useState<TimerMode>(TimerMode.stopwatch);
   const [pomodoroSettings, setPomodoroSettings] = useState<PomodoroSettings>(
-    DEFAULT_POMODORO_SETTINGS,
+    DEFAULT_POMODORO_SETTINGS
   );
   const [countdownState, setCountdownState] = useState<CountdownState>({
     targetTime: 25 * 60, // 25 minutes in seconds
     remainingTime: 25 * 60,
-    sessionType: "focus",
+    sessionType: 'focus',
     pomodoroSession: 1,
     cycleCount: 0,
   });
 
   const [customTimerSettings, setCustomTimerSettings] =
     useState<CustomTimerSettings>({
-      type: "enhanced-stopwatch",
+      type: 'enhanced-stopwatch',
 
       // Enhanced Stopwatch defaults
       targetDuration: 60, // 1 hour goal
@@ -303,7 +307,7 @@ export function TimerControls({
 
   // Stopwatch settings state
   const [stopwatchSettings, setStopwatchSettings] = useState<StopwatchSettings>(
-    DEFAULT_STOPWATCH_SETTINGS,
+    DEFAULT_STOPWATCH_SETTINGS
   );
 
   // Session protection state
@@ -313,7 +317,7 @@ export function TimerControls({
       currentMode: TimerMode.stopwatch,
       canSwitchModes: true,
       canModifySettings: true,
-    },
+    }
   );
 
   // Separate break time tracking for each timer mode
@@ -352,29 +356,29 @@ export function TimerControls({
   const [lastNotificationTime, setLastNotificationTime] = useState<number>(0);
 
   // localStorage keys for persistence
-  const PAUSED_SESSION_KEY = `paused-session-${wsId}-${currentUserId || "user"}`;
-  const TIMER_MODE_SESSIONS_KEY = `timer-mode-sessions-${wsId}-${currentUserId || "user"}`;
+  const PAUSED_SESSION_KEY = `paused-session-${wsId}-${currentUserId || 'user'}`;
+  const TIMER_MODE_SESSIONS_KEY = `timer-mode-sessions-${wsId}-${currentUserId || 'user'}`;
 
   // Helper function to re-fetch session details by ID
   const fetchSessionById = useCallback(
     async (sessionId: string): Promise<SessionWithRelations | null> => {
       try {
         const response = await apiCall(
-          `/api/v1/workspaces/${wsId}/time-tracking/sessions/${sessionId}`,
+          `/api/v1/workspaces/${wsId}/time-tracking/sessions/${sessionId}`
         );
         return response.session || null;
       } catch (error) {
-        console.warn("Failed to fetch session details:", error);
+        console.warn('Failed to fetch session details:', error);
         return null;
       }
     },
-    [apiCall, wsId],
+    [apiCall, wsId]
   );
 
   // Helper functions for localStorage persistence (storing only minimal data)
   const savePausedSessionToStorage = useCallback(
     (session: SessionWithRelations, elapsed: number, pauseTime: Date) => {
-      if (typeof window !== "undefined") {
+      if (typeof window !== 'undefined') {
         try {
           const pausedData: PausedSessionData = {
             sessionId: session.id,
@@ -384,15 +388,15 @@ export function TimerControls({
           };
           localStorage.setItem(PAUSED_SESSION_KEY, JSON.stringify(pausedData));
         } catch (error) {
-          console.warn("Failed to save paused session to localStorage:", error);
+          console.warn('Failed to save paused session to localStorage:', error);
         }
       }
     },
-    [PAUSED_SESSION_KEY, timerMode],
+    [PAUSED_SESSION_KEY, timerMode]
   );
 
   const loadPausedSessionFromStorage = useCallback(async () => {
-    if (typeof window !== "undefined") {
+    if (typeof window !== 'undefined') {
       try {
         const pausedDataStr = localStorage.getItem(PAUSED_SESSION_KEY);
 
@@ -422,7 +426,7 @@ export function TimerControls({
           }
         }
       } catch (error) {
-        console.warn("Failed to load paused session from localStorage:", error);
+        console.warn('Failed to load paused session from localStorage:', error);
         clearPausedSessionFromStorage();
       }
     }
@@ -430,13 +434,13 @@ export function TimerControls({
   }, [PAUSED_SESSION_KEY, fetchSessionById, timerMode]);
 
   const clearPausedSessionFromStorage = useCallback(() => {
-    if (typeof window !== "undefined") {
+    if (typeof window !== 'undefined') {
       try {
         localStorage.removeItem(PAUSED_SESSION_KEY);
       } catch (error) {
         console.warn(
-          "Failed to clear paused session from localStorage:",
-          error,
+          'Failed to clear paused session from localStorage:',
+          error
         );
       }
     }
@@ -452,16 +456,16 @@ export function TimerControls({
         canModifySettings: !isActive,
       });
     },
-    [],
+    []
   );
 
   const getCurrentBreakState = useCallback(() => {
     switch (timerMode) {
-      case "stopwatch":
+      case 'stopwatch':
         return stopwatchBreakState;
-      case "pomodoro":
+      case 'pomodoro':
         return pomodoroBreakState;
-      case "custom":
+      case 'custom':
         return customBreakState;
       default:
         return stopwatchBreakState;
@@ -471,18 +475,18 @@ export function TimerControls({
   const updateCurrentBreakState = useCallback(
     (updates: Partial<BreakTimeState>) => {
       switch (timerMode) {
-        case "stopwatch":
+        case 'stopwatch':
           setStopwatchBreakState((prev) => ({ ...prev, ...updates }));
           break;
-        case "pomodoro":
+        case 'pomodoro':
           setPomodoroBreakState((prev) => ({ ...prev, ...updates }));
           break;
-        case "custom":
+        case 'custom':
           setCustomBreakState((prev) => ({ ...prev, ...updates }));
           break;
       }
     },
-    [timerMode],
+    [timerMode]
   );
 
   // Safe timer mode switching with validation
@@ -491,8 +495,8 @@ export function TimerControls({
       const newMode: TimerMode = TimerMode[modeValue as keyof typeof TimerMode];
       // Prevent mode switching if session is active
       if (sessionProtection.isActive) {
-        toast.error("Cannot switch timer modes during an active session", {
-          description: "Please stop or pause your current timer first.",
+        toast.error('Cannot switch timer modes during an active session', {
+          description: 'Please stop or pause your current timer first.',
           duration: 4000,
         });
         return;
@@ -509,9 +513,9 @@ export function TimerControls({
             : null,
           elapsedTime: elapsedTime,
           breakTimeState: currentBreakState,
-          pomodoroState: timerMode === "pomodoro" ? countdownState : undefined,
+          pomodoroState: timerMode === 'pomodoro' ? countdownState : undefined,
           customTimerState:
-            timerMode === "custom"
+            timerMode === 'custom'
               ? {
                   hasReachedTarget,
                   targetProgress:
@@ -538,20 +542,20 @@ export function TimerControls({
 
         // Restore break state for new mode
         switch (newMode) {
-          case "stopwatch":
+          case 'stopwatch':
             setStopwatchBreakState(previousSession.breakTimeState);
             break;
-          case "pomodoro":
+          case 'pomodoro':
             setPomodoroBreakState(previousSession.breakTimeState);
             if (previousSession.pomodoroState) {
               setCountdownState(previousSession.pomodoroState);
             }
             break;
-          case "custom":
+          case 'custom':
             setCustomBreakState(previousSession.breakTimeState);
             if (previousSession.customTimerState) {
               setHasReachedTarget(
-                previousSession.customTimerState.hasReachedTarget,
+                previousSession.customTimerState.hasReachedTarget
               );
             }
             break;
@@ -563,7 +567,7 @@ export function TimerControls({
         });
       } else {
         toast.success(`Switched to ${newMode} mode`, {
-          description: "Ready to start a new session",
+          description: 'Ready to start a new session',
           duration: 2000,
         });
       }
@@ -580,28 +584,28 @@ export function TimerControls({
       timerModeSessions,
       setElapsedTime,
       formatDuration,
-    ],
+    ]
   );
 
   // Persistence for timer mode sessions
   const saveTimerModeSessionsToStorage = useCallback(() => {
-    if (typeof window !== "undefined") {
+    if (typeof window !== 'undefined') {
       try {
         localStorage.setItem(
           TIMER_MODE_SESSIONS_KEY,
-          JSON.stringify(timerModeSessions),
+          JSON.stringify(timerModeSessions)
         );
       } catch (error) {
         console.warn(
-          "Failed to save timer mode sessions to localStorage:",
-          error,
+          'Failed to save timer mode sessions to localStorage:',
+          error
         );
       }
     }
   }, [TIMER_MODE_SESSIONS_KEY, timerModeSessions]);
 
   const loadTimerModeSessionsFromStorage = useCallback(() => {
-    if (typeof window !== "undefined") {
+    if (typeof window !== 'undefined') {
       try {
         const sessionsData = localStorage.getItem(TIMER_MODE_SESSIONS_KEY);
         if (sessionsData) {
@@ -611,8 +615,8 @@ export function TimerControls({
         }
       } catch (error) {
         console.warn(
-          "Failed to load timer mode sessions from localStorage:",
-          error,
+          'Failed to load timer mode sessions from localStorage:',
+          error
         );
       }
     }
@@ -625,12 +629,12 @@ export function TimerControls({
       const pausedData = await loadPausedSessionFromStorage();
       if (pausedData) {
         console.log(
-          "Restored paused session from localStorage:",
-          pausedData.session.title,
+          'Restored paused session from localStorage:',
+          pausedData.session.title
         );
 
         // Show a toast to let user know their paused session was restored
-        toast.success("Paused session restored!", {
+        toast.success('Paused session restored!', {
           description: `${pausedData.session.title} - ${formatDuration(pausedData.elapsed)} tracked`,
           duration: 5000,
         });
@@ -670,15 +674,15 @@ export function TimerControls({
       // Only clear if we have a different user or workspace
       const keys = Object.keys(localStorage).filter(
         (key) =>
-          key.startsWith("paused-session-") &&
-          !key.includes(`-${wsId}-${currentUserId}`),
+          key.startsWith('paused-session-') &&
+          !key.includes(`-${wsId}-${currentUserId}`)
       );
       keys.forEach((key) => {
         // Also clean up legacy keys (paused-elapsed and pause-time)
         const relatedKeys = [
           key,
-          key.replace("paused-session-", "paused-elapsed-"),
-          key.replace("paused-session-", "pause-time-"),
+          key.replace('paused-session-', 'paused-elapsed-'),
+          key.replace('paused-session-', 'pause-time-'),
         ];
         relatedKeys.forEach((k) => localStorage.removeItem(k));
       });
@@ -690,7 +694,7 @@ export function TimerControls({
     return () => {
       if (
         audioContextRef.current &&
-        audioContextRef.current.state !== "closed"
+        audioContextRef.current.state !== 'closed'
       ) {
         audioContextRef.current.close();
       }
@@ -702,20 +706,20 @@ export function TimerControls({
   const dragCounterRef = useRef(0);
 
   // Task search and filter state
-  const [taskSearchQuery, setTaskSearchQuery] = useState("");
+  const [taskSearchQuery, setTaskSearchQuery] = useState('');
   const [taskFilters, setTaskFilters] = useState<TaskFilters>({
-    priority: "all",
-    status: "all",
-    board: "all",
-    list: "all",
-    assignee: "all",
+    priority: 'all',
+    status: 'all',
+    board: 'all',
+    list: 'all',
+    assignee: 'all',
   });
   const [isTaskDropdownOpen, setIsTaskDropdownOpen] = useState(false);
   const [isSearchMode, setIsSearchMode] = useState(false);
 
   // Dropdown positioning state
-  const [dropdownPosition, setDropdownPosition] = useState<"below" | "above">(
-    "below",
+  const [dropdownPosition, setDropdownPosition] = useState<'below' | 'above'>(
+    'below'
   );
 
   // Refs for positioning
@@ -751,10 +755,10 @@ export function TimerControls({
   // Task creation state
   const [boards, setBoards] = useState<TaskBoard[]>([]);
   const [showTaskCreation, setShowTaskCreation] = useState(false);
-  const [selectedBoardId, setSelectedBoardId] = useState("");
-  const [selectedListId, setSelectedListId] = useState("");
-  const [newTaskName, setNewTaskName] = useState("");
-  const [newTaskDescription, setNewTaskDescription] = useState("");
+  const [selectedBoardId, setSelectedBoardId] = useState('');
+  const [selectedListId, setSelectedListId] = useState('');
+  const [newTaskName, setNewTaskName] = useState('');
+  const [newTaskDescription, setNewTaskDescription] = useState('');
   const [isCreatingTask, setIsCreatingTask] = useState(false);
 
   // Use memoized task counts
@@ -762,18 +766,19 @@ export function TimerControls({
 
   // Notification and sound functions
   const playNotificationSound = useCallback(() => {
-    if ("Audio" in window) {
+    if ('Audio' in window) {
       try {
         // Lazily create a singleton AudioContext to prevent resource leaks
         if (!audioContextRef.current) {
-          audioContextRef.current = new (window.AudioContext ||
-            (window as any).webkitAudioContext)();
+          audioContextRef.current = new (
+            window.AudioContext || (window as any).webkitAudioContext
+          )();
         }
 
         const audioContext = audioContextRef.current;
 
         // Resume context if suspended (required for some browsers)
-        if (audioContext.state === "suspended") {
+        if (audioContext.state === 'suspended') {
           audioContext.resume();
         }
 
@@ -786,19 +791,19 @@ export function TimerControls({
         oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
         oscillator.frequency.setValueAtTime(
           600,
-          audioContext.currentTime + 0.1,
+          audioContext.currentTime + 0.1
         );
 
         gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
         gainNode.gain.exponentialRampToValueAtTime(
           0.01,
-          audioContext.currentTime + 0.5,
+          audioContext.currentTime + 0.5
         );
 
         oscillator.start(audioContext.currentTime);
         oscillator.stop(audioContext.currentTime + 0.5);
       } catch (error) {
-        console.warn("Could not play notification sound:", error);
+        console.warn('Could not play notification sound:', error);
       }
     }
   }, []);
@@ -807,27 +812,27 @@ export function TimerControls({
     (
       title: string,
       body: string,
-      actions?: { title: string; action: () => void }[],
+      actions?: { title: string; action: () => void }[]
     ) => {
       // Check if notifications are enabled and supported
       if (
         !pomodoroSettings.enableNotifications ||
-        !("Notification" in window)
+        !('Notification' in window)
       ) {
         return;
       }
 
       // Request permission if needed
-      if (Notification.permission === "default") {
+      if (Notification.permission === 'default') {
         Notification.requestPermission();
         return;
       }
 
-      if (Notification.permission === "granted") {
+      if (Notification.permission === 'granted') {
         const notification = new Notification(title, {
           body,
-          icon: "/favicon.ico",
-          tag: "pomodoro-timer",
+          icon: '/favicon.ico',
+          tag: 'pomodoro-timer',
           requireInteraction: true,
         });
 
@@ -854,7 +859,7 @@ export function TimerControls({
 
       playNotificationSound();
     },
-    [pomodoroSettings.enableNotifications, playNotificationSound],
+    [pomodoroSettings.enableNotifications, playNotificationSound]
   );
 
   // Pomodoro timer logic
@@ -863,13 +868,13 @@ export function TimerControls({
       let duration: number;
 
       switch (sessionType) {
-        case "focus":
+        case 'focus':
           duration = pomodoroSettings.focusTime * 60;
           break;
-        case "short-break":
+        case 'short-break':
           duration = pomodoroSettings.shortBreakTime * 60;
           break;
-        case "long-break":
+        case 'long-break':
           duration = pomodoroSettings.longBreakTime * 60;
           break;
       }
@@ -882,24 +887,24 @@ export function TimerControls({
       }));
 
       const sessionName =
-        sessionType === "focus"
-          ? "Focus Session"
-          : sessionType === "short-break"
-            ? "Short Break"
-            : "Long Break";
+        sessionType === 'focus'
+          ? 'Focus Session'
+          : sessionType === 'short-break'
+            ? 'Short Break'
+            : 'Long Break';
 
       showNotification(
         `${sessionName} Started!`,
-        `${Math.floor(duration / 60)} minutes of ${sessionType === "focus" ? "focused work" : "break time"}`,
+        `${Math.floor(duration / 60)} minutes of ${sessionType === 'focus' ? 'focused work' : 'break time'}`
       );
     },
-    [pomodoroSettings, showNotification],
+    [pomodoroSettings, showNotification]
   );
 
   const handlePomodoroComplete = useCallback(() => {
     const { sessionType, pomodoroSession } = countdownState;
 
-    if (sessionType === "focus") {
+    if (sessionType === 'focus') {
       // Focus session completed
       const nextSession = pomodoroSession + 1;
       const isTimeForLongBreak =
@@ -912,38 +917,38 @@ export function TimerControls({
       }));
 
       showNotification(
-        "Focus Session Complete! 🎉",
-        `Great work! Time for a ${isTimeForLongBreak ? "long" : "short"} break.`,
+        'Focus Session Complete! 🎉',
+        `Great work! Time for a ${isTimeForLongBreak ? 'long' : 'short'} break.`,
         [
           {
-            title: "Start Break",
+            title: 'Start Break',
             action: () =>
               startPomodoroSession(
-                isTimeForLongBreak ? "long-break" : "short-break",
+                isTimeForLongBreak ? 'long-break' : 'short-break'
               ),
           },
-        ],
+        ]
       );
 
       if (!pomodoroSettings.autoStartBreaks) {
         // Pause timer and wait for user action
         setIsRunning(false);
       } else {
-        startPomodoroSession(isTimeForLongBreak ? "long-break" : "short-break");
+        startPomodoroSession(isTimeForLongBreak ? 'long-break' : 'short-break');
       }
     } else {
       // Break completed
-      showNotification("Break Complete! ⚡", "Ready to focus again?", [
+      showNotification('Break Complete! ⚡', 'Ready to focus again?', [
         {
-          title: "Start Focus",
-          action: () => startPomodoroSession("focus"),
+          title: 'Start Focus',
+          action: () => startPomodoroSession('focus'),
         },
       ]);
 
       if (!pomodoroSettings.autoStartFocus) {
         setIsRunning(false);
       } else {
-        startPomodoroSession("focus");
+        startPomodoroSession('focus');
       }
     }
   }, [
@@ -964,16 +969,16 @@ export function TimerControls({
     let enableMovementBreaks = false;
 
     switch (timerMode) {
-      case "stopwatch":
+      case 'stopwatch':
         enableEyeBreaks = stopwatchSettings.enable2020Rule || false;
         enableMovementBreaks =
           stopwatchSettings.enableMovementReminder || false;
         break;
-      case "pomodoro":
+      case 'pomodoro':
         enableEyeBreaks = pomodoroSettings.enable2020Rule;
         enableMovementBreaks = pomodoroSettings.enableMovementReminder;
         break;
-      case "custom":
+      case 'custom':
         enableEyeBreaks = customTimerSettings.enableBreakReminders || false;
         enableMovementBreaks =
           customTimerSettings.enableBreakReminders || false;
@@ -985,13 +990,13 @@ export function TimerControls({
       enableEyeBreaks &&
       now - currentBreakState.lastEyeBreakTime > 20 * 60 * 1000 && // 20 minutes
       isRunning &&
-      (timerMode === "stopwatch" || countdownState.sessionType === "focus")
+      (timerMode === 'stopwatch' || countdownState.sessionType === 'focus')
     ) {
       if (now - lastNotificationTime > 5 * 60 * 1000) {
         // Don't spam notifications
         showNotification(
-          "Eye Break Time! 👁️",
-          "Look at something 20 feet away for 20 seconds",
+          'Eye Break Time! 👁️',
+          'Look at something 20 feet away for 20 seconds'
         );
         updateCurrentBreakState({ lastEyeBreakTime: now });
         setLastNotificationTime(now);
@@ -1003,12 +1008,12 @@ export function TimerControls({
       enableMovementBreaks &&
       now - currentBreakState.lastMovementBreakTime > 60 * 60 * 1000 && // 60 minutes
       isRunning &&
-      (timerMode === "stopwatch" || countdownState.sessionType === "focus")
+      (timerMode === 'stopwatch' || countdownState.sessionType === 'focus')
     ) {
       if (now - lastNotificationTime > 5 * 60 * 1000) {
         showNotification(
-          "Movement Break! 🚶",
-          "Time to stand up and stretch for a few minutes",
+          'Movement Break! 🚶',
+          'Time to stand up and stretch for a few minutes'
         );
         updateCurrentBreakState({ lastMovementBreakTime: now });
         setLastNotificationTime(now);
@@ -1017,7 +1022,7 @@ export function TimerControls({
 
     // Session milestones for stopwatch mode
     if (
-      timerMode === "stopwatch" &&
+      timerMode === 'stopwatch' &&
       stopwatchSettings.enableSessionMilestones &&
       isRunning
     ) {
@@ -1037,7 +1042,7 @@ export function TimerControls({
             `🎯 Session Milestone! (${timeStr})`,
             stopwatchSettings.showProductivityInsights
               ? `Great focus! You've been working for ${timeStr}. Consider taking a break soon.`
-              : `You've reached ${timeStr} of focused work.`,
+              : `You've reached ${timeStr} of focused work.`
           );
           setLastNotificationTime(now);
           break;
@@ -1060,9 +1065,9 @@ export function TimerControls({
   // Update countdown timer (for pomodoro and traditional countdown modes)
   useEffect(() => {
     if (
-      (timerMode === "pomodoro" ||
-        (timerMode === "custom" &&
-          customTimerSettings.type === "traditional-countdown")) &&
+      (timerMode === 'pomodoro' ||
+        (timerMode === 'custom' &&
+          customTimerSettings.type === 'traditional-countdown')) &&
       isRunning &&
       countdownState.remainingTime > 0
     ) {
@@ -1071,26 +1076,26 @@ export function TimerControls({
           const newRemainingTime = prev.remainingTime - 1;
 
           if (newRemainingTime <= 0) {
-            if (timerMode === "pomodoro") {
+            if (timerMode === 'pomodoro') {
               handlePomodoroComplete();
             } else if (
-              timerMode === "custom" &&
-              customTimerSettings.type === "traditional-countdown"
+              timerMode === 'custom' &&
+              customTimerSettings.type === 'traditional-countdown'
             ) {
               // Handle traditional countdown completion
               showNotification(
-                "Countdown Complete! ⏰",
+                'Countdown Complete! ⏰',
                 customTimerSettings.enableMotivationalMessages
                   ? "Great work! You've completed your custom countdown timer."
-                  : "Your countdown has finished.",
+                  : 'Your countdown has finished.',
                 customTimerSettings.autoRestart
                   ? [
                       {
-                        title: "Auto-restart in 3s...",
+                        title: 'Auto-restart in 3s...',
                         action: () => {},
                       },
                     ]
-                  : undefined,
+                  : undefined
               );
 
               if (customTimerSettings.playCompletionSound) {
@@ -1134,8 +1139,8 @@ export function TimerControls({
   // Enhanced stopwatch interval breaks and target monitoring
   useEffect(() => {
     if (
-      timerMode === "custom" &&
-      customTimerSettings.type === "enhanced-stopwatch" &&
+      timerMode === 'custom' &&
+      customTimerSettings.type === 'enhanced-stopwatch' &&
       isRunning
     ) {
       const interval = setInterval(() => {
@@ -1149,7 +1154,7 @@ export function TimerControls({
           const currentBreakState = getCurrentBreakStateRef.current();
           const timeSinceLastBreak = Math.floor(
             (currentTime - currentBreakState.lastIntervalBreakTime) /
-              (1000 * 60),
+              (1000 * 60)
           );
 
           if (timeSinceLastBreak >= intervalFreq) {
@@ -1167,10 +1172,10 @@ export function TimerControls({
               `Take a ${breakDuration}-minute break - you've been working for ${intervalFreq} minutes`,
               [
                 {
-                  title: "Got it!",
+                  title: 'Got it!',
                   action: () => {},
                 },
-              ],
+              ]
             );
 
             if (customTimerSettings.playCompletionSound) {
@@ -1192,11 +1197,11 @@ export function TimerControls({
               [
                 {
                   title: customTimerSettings.autoStopAtTarget
-                    ? "Timer Stopped"
-                    : "Keep Going",
+                    ? 'Timer Stopped'
+                    : 'Keep Going',
                   action: () => {},
                 },
-              ],
+              ]
             );
 
             if (customTimerSettings.playCompletionSound) {
@@ -1233,12 +1238,12 @@ export function TimerControls({
   const fetchBoards = useCallback(async () => {
     try {
       const response = await apiCall(
-        `/api/v1/workspaces/${wsId}/boards-with-lists`,
+        `/api/v1/workspaces/${wsId}/boards-with-lists`
       );
       setBoards(response.boards || []);
     } catch (error) {
-      console.error("Error fetching boards:", error);
-      toast.error("Failed to load boards");
+      console.error('Error fetching boards:', error);
+      toast.error('Failed to load boards');
     }
   }, [wsId, apiCall]);
 
@@ -1246,11 +1251,11 @@ export function TimerControls({
   const fetchTemplates = useCallback(async () => {
     try {
       const response = await apiCall(
-        `/api/v1/workspaces/${wsId}/time-tracking/templates`,
+        `/api/v1/workspaces/${wsId}/time-tracking/templates`
       );
       setTemplates(response.templates || []);
     } catch (error) {
-      console.error("Error fetching templates:", error);
+      console.error('Error fetching templates:', error);
     }
   }, [wsId, apiCall]);
 
@@ -1262,63 +1267,63 @@ export function TimerControls({
   // Handle task selection change
   const handleTaskSelectionChange = (taskId: string) => {
     setSelectedTaskId(taskId);
-    if (taskId && taskId !== "none") {
+    if (taskId && taskId !== 'none') {
       const selectedTask = tasks.find((t) => t.id === taskId);
       if (selectedTask) {
         // Set task mode and populate fields (same as drag & drop)
-        setSessionMode("task");
+        setSessionMode('task');
         setNewSessionTitle(`Working on: ${selectedTask.name}`);
-        setNewSessionDescription(selectedTask.description || "");
+        setNewSessionDescription(selectedTask.description || '');
 
         // Show success feedback (same as drag & drop)
         toast.success(`Task "${selectedTask.name}" ready to track!`, {
           description:
-            "Click Start Timer to begin tracking time for this task.",
+            'Click Start Timer to begin tracking time for this task.',
           duration: 3000,
         });
 
         // Close dropdown and exit search mode
         setIsTaskDropdownOpen(false);
         setIsSearchMode(false);
-        setTaskSearchQuery("");
+        setTaskSearchQuery('');
       }
     } else {
       // Reset when no task selected
-      setNewSessionTitle("");
-      setNewSessionDescription("");
+      setNewSessionTitle('');
+      setNewSessionDescription('');
       setIsSearchMode(true);
     }
   };
 
   // Handle session mode change with cleanup
-  const handleSessionModeChange = (mode: "task" | "manual") => {
+  const handleSessionModeChange = (mode: 'task' | 'manual') => {
     const previousMode = sessionMode;
     setSessionMode(mode);
 
     // Clear form state when switching modes for better UX
-    setNewSessionTitle("");
-    setNewSessionDescription("");
-    setSelectedTaskId("none");
+    setNewSessionTitle('');
+    setNewSessionDescription('');
+    setSelectedTaskId('none');
     setShowTaskSuggestion(false);
 
     // Reset any temporary states
-    setSelectedCategoryId("none");
+    setSelectedCategoryId('none');
     setIsSearchMode(true);
-    setTaskSearchQuery("");
+    setTaskSearchQuery('');
     setIsTaskDropdownOpen(false);
 
     // Provide helpful feedback
     if (previousMode !== mode) {
-      if (mode === "manual") {
-        toast.success("Switched to manual mode - start typing freely!", {
+      if (mode === 'manual') {
+        toast.success('Switched to manual mode - start typing freely!', {
           duration: 2000,
         });
       } else {
         toast.success(
-          "Switched to task-based mode - select or create a task!",
+          'Switched to task-based mode - select or create a task!',
           {
             duration: 2000,
-          },
+          }
         );
       }
     }
@@ -1332,7 +1337,7 @@ export function TimerControls({
     const matchingTask = tasks.find(
       (task) =>
         task.name?.toLowerCase().includes(title.toLowerCase()) &&
-        title.length > 2,
+        title.length > 2
     );
 
     if (matchingTask && title.length > 2) {
@@ -1340,7 +1345,7 @@ export function TimerControls({
       setShowTaskSuggestion(false);
     } else if (
       title.length > 2 &&
-      (selectedTaskId === "none" || !selectedTaskId)
+      (selectedTaskId === 'none' || !selectedTaskId)
     ) {
       // Suggest creating a new task if title doesn't match any existing task
       setShowTaskSuggestion(true);
@@ -1359,12 +1364,12 @@ export function TimerControls({
   // Create new task
   const createTask = async () => {
     if (!newTaskName.trim()) {
-      toast.error("Please enter a task name");
+      toast.error('Please enter a task name');
       return;
     }
 
     if (!selectedListId) {
-      toast.error("Please select a list");
+      toast.error('Please select a list');
       return;
     }
 
@@ -1372,7 +1377,7 @@ export function TimerControls({
 
     try {
       const response = await apiCall(`/api/v1/workspaces/${wsId}/tasks`, {
-        method: "POST",
+        method: 'POST',
         body: JSON.stringify({
           name: newTaskName,
           description: newTaskDescription || null,
@@ -1385,27 +1390,27 @@ export function TimerControls({
 
       // In task mode, set the title to the working format
       // In manual mode, keep the user's original title
-      if (sessionMode === "task") {
+      if (sessionMode === 'task') {
         setNewSessionTitle(`Working on: ${newTask.name}`);
       }
 
       setShowTaskCreation(false);
-      setNewTaskName("");
-      setNewTaskDescription("");
-      setSelectedBoardId("");
-      setSelectedListId("");
+      setNewTaskName('');
+      setNewTaskDescription('');
+      setSelectedBoardId('');
+      setSelectedListId('');
       setShowTaskSuggestion(false);
 
       toast.success(`Task "${newTask.name}" created successfully!`);
 
       // In task mode, start timer automatically
       // In manual mode, just link the task and let user start manually
-      if (sessionMode === "task") {
+      if (sessionMode === 'task') {
         await startTimerWithTask(newTask.id, newTask.name);
       }
     } catch (error) {
-      console.error("Error creating task:", error);
-      toast.error("Failed to create task");
+      console.error('Error creating task:', error);
+      toast.error('Failed to create task');
     } finally {
       setIsCreatingTask(false);
     }
@@ -1419,30 +1424,30 @@ export function TimerControls({
       const response = await apiCall(
         `/api/v1/workspaces/${wsId}/time-tracking/sessions`,
         {
-          method: "POST",
+          method: 'POST',
           body: JSON.stringify({
             title: `Working on: ${taskName}`,
             description: newSessionDescription || null,
             categoryId:
-              selectedCategoryId === "none" ? null : selectedCategoryId || null,
+              selectedCategoryId === 'none' ? null : selectedCategoryId || null,
             taskId: taskId,
           }),
-        },
+        }
       );
 
       setCurrentSession(response.session);
       setIsRunning(true);
       setElapsedTime(0);
-      setNewSessionTitle("");
-      setNewSessionDescription("");
-      setSelectedCategoryId("none");
-      setSelectedTaskId("none");
+      setNewSessionTitle('');
+      setNewSessionDescription('');
+      setSelectedCategoryId('none');
+      setSelectedTaskId('none');
 
       onSessionUpdate();
-      toast.success("Timer started!");
+      toast.success('Timer started!');
     } catch (error) {
-      console.error("Error starting timer:", error);
-      toast.error("Failed to start timer");
+      console.error('Error starting timer:', error);
+      toast.error('Failed to start timer');
     } finally {
       setIsLoading(false);
     }
@@ -1450,7 +1455,7 @@ export function TimerControls({
 
   // Start timer
   const startTimer = async () => {
-    if (sessionMode === "task" && selectedTaskId && selectedTaskId !== "none") {
+    if (sessionMode === 'task' && selectedTaskId && selectedTaskId !== 'none') {
       const selectedTask = tasks.find((t) => t.id === selectedTaskId);
       if (selectedTask) {
         await startTimerWithTask(selectedTaskId, selectedTask.name!);
@@ -1459,15 +1464,15 @@ export function TimerControls({
     }
 
     if (
-      sessionMode === "task" &&
-      (selectedTaskId === "none" || !selectedTaskId)
+      sessionMode === 'task' &&
+      (selectedTaskId === 'none' || !selectedTaskId)
     ) {
       setShowTaskCreation(true);
       return;
     }
 
     if (!newSessionTitle.trim()) {
-      toast.error("Please enter a title for your time session");
+      toast.error('Please enter a title for your time session');
       return;
     }
 
@@ -1477,15 +1482,15 @@ export function TimerControls({
       const response = await apiCall(
         `/api/v1/workspaces/${wsId}/time-tracking/sessions`,
         {
-          method: "POST",
+          method: 'POST',
           body: JSON.stringify({
             title: newSessionTitle,
             description: newSessionDescription || null,
             categoryId:
-              selectedCategoryId === "none" ? null : selectedCategoryId || null,
-            taskId: selectedTaskId === "none" ? null : selectedTaskId || null,
+              selectedCategoryId === 'none' ? null : selectedCategoryId || null,
+            taskId: selectedTaskId === 'none' ? null : selectedTaskId || null,
           }),
-        },
+        }
       );
 
       setCurrentSession(response.session);
@@ -1496,21 +1501,21 @@ export function TimerControls({
       updateSessionProtection(true, timerMode);
 
       // Initialize timer mode specific settings
-      if (timerMode === "pomodoro") {
+      if (timerMode === 'pomodoro') {
         // Start first Pomodoro focus session
-        startPomodoroSession("focus");
-      } else if (timerMode === "custom") {
+        startPomodoroSession('focus');
+      } else if (timerMode === 'custom') {
         // Initialize custom timer based on type
-        if (customTimerSettings.type === "traditional-countdown") {
+        if (customTimerSettings.type === 'traditional-countdown') {
           const countdownDuration =
             (customTimerSettings.countdownDuration || 25) * 60;
           setCountdownState((prev) => ({
             ...prev,
             targetTime: countdownDuration,
             remainingTime: countdownDuration,
-            sessionType: "focus",
+            sessionType: 'focus',
           }));
-        } else if (customTimerSettings.type === "enhanced-stopwatch") {
+        } else if (customTimerSettings.type === 'enhanced-stopwatch') {
           // Reset enhanced stopwatch tracking
           updateCurrentBreakState({
             lastIntervalBreakTime: Date.now(),
@@ -1523,23 +1528,23 @@ export function TimerControls({
             ...prev,
             targetTime: 0,
             remainingTime: 0,
-            sessionType: "focus",
+            sessionType: 'focus',
           }));
         }
       }
 
-      setNewSessionTitle("");
-      setNewSessionDescription("");
-      setSelectedCategoryId("none");
-      setSelectedTaskId("none");
+      setNewSessionTitle('');
+      setNewSessionDescription('');
+      setSelectedCategoryId('none');
+      setSelectedTaskId('none');
 
       onSessionUpdate();
       toast.success(
-        `Timer started${timerMode === "pomodoro" ? " - Focus time!" : ""}`,
+        `Timer started${timerMode === 'pomodoro' ? ' - Focus time!' : ''}`
       );
     } catch (error) {
-      console.error("Error starting timer:", error);
-      toast.error("Failed to start timer");
+      console.error('Error starting timer:', error);
+      toast.error('Failed to start timer');
     } finally {
       setIsLoading(false);
     }
@@ -1556,9 +1561,9 @@ export function TimerControls({
       const response = await apiCall(
         `/api/v1/workspaces/${wsId}/time-tracking/sessions/${sessionToStop.id}`,
         {
-          method: "PATCH",
-          body: JSON.stringify({ action: "stop" }),
-        },
+          method: 'PATCH',
+          body: JSON.stringify({ action: 'stop' }),
+        }
       );
 
       const completedSession = response.session;
@@ -1586,11 +1591,11 @@ export function TimerControls({
         `Session completed! Tracked ${formatDuration(completedSession.duration_seconds || 0)}`,
         {
           duration: 4000,
-        },
+        }
       );
     } catch (error) {
-      console.error("Error stopping timer:", error);
-      toast.error("Failed to stop timer");
+      console.error('Error stopping timer:', error);
+      toast.error('Failed to stop timer');
     } finally {
       setIsLoading(false);
     }
@@ -1606,9 +1611,9 @@ export function TimerControls({
       await apiCall(
         `/api/v1/workspaces/${wsId}/time-tracking/sessions/${currentSession.id}`,
         {
-          method: "PATCH",
-          body: JSON.stringify({ action: "pause" }),
-        },
+          method: 'PATCH',
+          body: JSON.stringify({ action: 'pause' }),
+        }
       );
 
       const pauseTime = new Date();
@@ -1627,13 +1632,13 @@ export function TimerControls({
       setElapsedTime(0);
 
       onSessionUpdate();
-      toast.success("Timer paused - Click Resume to continue", {
+      toast.success('Timer paused - Click Resume to continue', {
         description: `Session: ${currentSession.title}`,
         duration: 4000,
       });
     } catch (error) {
-      console.error("Error pausing timer:", error);
-      toast.error("Failed to pause timer");
+      console.error('Error pausing timer:', error);
+      toast.error('Failed to pause timer');
     } finally {
       setIsLoading(false);
     }
@@ -1649,9 +1654,9 @@ export function TimerControls({
       const response = await apiCall(
         `/api/v1/workspaces/${wsId}/time-tracking/sessions/${pausedSession.id}`,
         {
-          method: "PATCH",
-          body: JSON.stringify({ action: "resume" }),
-        },
+          method: 'PATCH',
+          body: JSON.stringify({ action: 'resume' }),
+        }
       );
 
       // Restore session from paused state
@@ -1675,16 +1680,16 @@ export function TimerControls({
         : 0;
 
       onSessionUpdate();
-      toast.success("Timer resumed!", {
+      toast.success('Timer resumed!', {
         description:
           pauseDuration > 0
             ? `Paused for ${formatDuration(pauseDuration)}`
-            : "Welcome back to your session",
+            : 'Welcome back to your session',
         duration: 3000,
       });
     } catch (error) {
-      console.error("Error resuming timer:", error);
-      toast.error("Failed to resume timer");
+      console.error('Error resuming timer:', error);
+      toast.error('Failed to resume timer');
     } finally {
       setIsLoading(false);
     }
@@ -1693,9 +1698,9 @@ export function TimerControls({
   // Start from template
   const startFromTemplate = async (template: SessionTemplate) => {
     setNewSessionTitle(template.title);
-    setNewSessionDescription(template.description || "");
-    setSelectedCategoryId(template.category_id || "none");
-    setSelectedTaskId(template.task_id || "none");
+    setNewSessionDescription(template.description || '');
+    setSelectedCategoryId(template.category_id || 'none');
+    setSelectedTaskId(template.task_id || 'none');
   };
 
   // Drag and drop handlers
@@ -1726,48 +1731,48 @@ export function TimerControls({
     setIsDragOver(false);
 
     try {
-      const data = JSON.parse(e.dataTransfer.getData("application/json"));
-      if (data.type === "task" && data.task) {
+      const data = JSON.parse(e.dataTransfer.getData('application/json'));
+      if (data.type === 'task' && data.task) {
         const task = data.task;
 
         // Set task mode and populate fields
-        setSessionMode("task");
+        setSessionMode('task');
         setSelectedTaskId(task.id);
         setNewSessionTitle(`Working on: ${task.name}`);
-        setNewSessionDescription(task.description || "");
+        setNewSessionDescription(task.description || '');
 
         // Exit search mode and show selected task
         setIsSearchMode(false);
-        setTaskSearchQuery("");
+        setTaskSearchQuery('');
         setIsTaskDropdownOpen(false);
 
         // Show success feedback
         toast.success(`Task "${task.name}" ready to track!`, {
           description:
-            "Click Start Timer to begin tracking time for this task.",
+            'Click Start Timer to begin tracking time for this task.',
           duration: 3000,
         });
       }
     } catch (error) {
-      console.error("Error handling dropped task:", error);
-      toast.error("Failed to process dropped task");
+      console.error('Error handling dropped task:', error);
+      toast.error('Failed to process dropped task');
     }
   };
 
   const getCategoryColor = (color: string) => {
     const colorMap: Record<string, string> = {
-      RED: "bg-dynamic-red/80",
-      BLUE: "bg-dynamic-blue/80",
-      GREEN: "bg-dynamic-green/80",
-      YELLOW: "bg-dynamic-yellow/80",
-      ORANGE: "bg-dynamic-orange/80",
-      PURPLE: "bg-dynamic-purple/80",
-      PINK: "bg-dynamic-pink/80",
-      INDIGO: "bg-dynamic-indigo/80",
-      CYAN: "bg-dynamic-cyan/80",
-      GRAY: "bg-dynamic-gray/80",
+      RED: 'bg-dynamic-red/80',
+      BLUE: 'bg-dynamic-blue/80',
+      GREEN: 'bg-dynamic-green/80',
+      YELLOW: 'bg-dynamic-yellow/80',
+      ORANGE: 'bg-dynamic-orange/80',
+      PURPLE: 'bg-dynamic-purple/80',
+      PINK: 'bg-dynamic-pink/80',
+      INDIGO: 'bg-dynamic-indigo/80',
+      CYAN: 'bg-dynamic-cyan/80',
+      GRAY: 'bg-dynamic-gray/80',
     };
-    return colorMap[color] || "bg-dynamic-blue/80";
+    return colorMap[color] || 'bg-dynamic-blue/80';
   };
 
   // Get lists for selected board
@@ -1785,10 +1790,10 @@ export function TimerControls({
       ...new Set(
         tasks
           .map((task) => task.board_name)
-          .filter((name): name is string => Boolean(name)),
+          .filter((name): name is string => Boolean(name))
       ),
     ],
-    [tasks],
+    [tasks]
   );
 
   const uniqueLists = useMemo(
@@ -1796,10 +1801,10 @@ export function TimerControls({
       ...new Set(
         tasks
           .map((task) => task.list_name)
-          .filter((name): name is string => Boolean(name)),
+          .filter((name): name is string => Boolean(name))
       ),
     ],
-    [tasks],
+    [tasks]
   );
 
   // Calculate dropdown position
@@ -1821,9 +1826,9 @@ export function TimerControls({
       spaceBelow >= Math.min(dropdownHeight, 200) ||
       spaceBelow >= spaceAbove
     ) {
-      setDropdownPosition("below");
+      setDropdownPosition('below');
     } else {
-      setDropdownPosition("above");
+      setDropdownPosition('above');
     }
   }, []);
 
@@ -1858,8 +1863,8 @@ export function TimerControls({
       const target = event.target as Element;
       // Check if click is outside the dropdown container
       if (
-        !target.closest("[data-task-dropdown]") &&
-        !target.closest(".absolute.z-\\[100\\]")
+        !target.closest('[data-task-dropdown]') &&
+        !target.closest('.absolute.z-\\[100\\]')
       ) {
         setIsTaskDropdownOpen(false);
         setIsSearchMode(false);
@@ -1868,9 +1873,9 @@ export function TimerControls({
 
     if (isTaskDropdownOpen) {
       // Use capture phase to ensure we catch the event before other handlers
-      document.addEventListener("mousedown", handleClickOutside, true);
+      document.addEventListener('mousedown', handleClickOutside, true);
       return () =>
-        document.removeEventListener("mousedown", handleClickOutside, true);
+        document.removeEventListener('mousedown', handleClickOutside, true);
     }
   }, [isTaskDropdownOpen]);
 
@@ -1906,13 +1911,13 @@ export function TimerControls({
       calculateDropdownPosition();
 
       // Add event listeners
-      window.addEventListener("scroll", handleScroll, true);
-      window.addEventListener("resize", handleResize);
+      window.addEventListener('scroll', handleScroll, true);
+      window.addEventListener('resize', handleResize);
 
       return () => {
         clearTimeout(scrollTimeout);
-        window.removeEventListener("scroll", handleScroll, true);
-        window.removeEventListener("resize", handleResize);
+        window.removeEventListener('scroll', handleScroll, true);
+        window.removeEventListener('resize', handleResize);
       };
     }
   }, [isTaskDropdownOpen, calculateDropdownPosition, isDropdownVisible]);
@@ -1922,12 +1927,12 @@ export function TimerControls({
     const handleKeyDown = (event: KeyboardEvent) => {
       // Don't trigger shortcuts when typing in input fields
       const isInputFocused =
-        document.activeElement?.tagName === "INPUT" ||
-        document.activeElement?.tagName === "TEXTAREA" ||
-        document.activeElement?.getAttribute("contenteditable") === "true";
+        document.activeElement?.tagName === 'INPUT' ||
+        document.activeElement?.tagName === 'TEXTAREA' ||
+        document.activeElement?.getAttribute('contenteditable') === 'true';
 
       // Escape to close dropdown or cancel drag
-      if (event.key === "Escape") {
+      if (event.key === 'Escape') {
         if (isTaskDropdownOpen) {
           setIsTaskDropdownOpen(false);
           return;
@@ -1936,7 +1941,7 @@ export function TimerControls({
           // Note: This won't actually cancel the drag since it's controlled by parent
           // But it provides visual feedback
           toast.info(
-            "Press ESC while dragging to cancel (drag outside to cancel)",
+            'Press ESC while dragging to cancel (drag outside to cancel)'
           );
           return;
         }
@@ -1946,7 +1951,7 @@ export function TimerControls({
       if (isInputFocused) return;
 
       // Ctrl/Cmd + Enter to start/stop timer
-      if ((event.ctrlKey || event.metaKey) && event.key === "Enter") {
+      if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') {
         event.preventDefault();
         if (isRunning) {
           stopTimer();
@@ -1956,7 +1961,7 @@ export function TimerControls({
       }
 
       // Ctrl/Cmd + P to pause/resume
-      if ((event.ctrlKey || event.metaKey) && event.key === "p") {
+      if ((event.ctrlKey || event.metaKey) && event.key === 'p') {
         event.preventDefault();
         if (isRunning) {
           pauseTimer();
@@ -1966,35 +1971,35 @@ export function TimerControls({
       }
 
       // Ctrl/Cmd + T to open task dropdown
-      if ((event.ctrlKey || event.metaKey) && event.key === "t" && !isRunning) {
+      if ((event.ctrlKey || event.metaKey) && event.key === 't' && !isRunning) {
         event.preventDefault();
         setIsTaskDropdownOpen(!isTaskDropdownOpen);
       }
 
       // Ctrl/Cmd + M to switch between task/manual mode
-      if ((event.ctrlKey || event.metaKey) && event.key === "m" && !isRunning) {
+      if ((event.ctrlKey || event.metaKey) && event.key === 'm' && !isRunning) {
         event.preventDefault();
-        setSessionMode(sessionMode === "task" ? "manual" : "task");
+        setSessionMode(sessionMode === 'task' ? 'manual' : 'task');
         toast.success(
-          `Switched to ${sessionMode === "task" ? "manual" : "task"} mode`,
+          `Switched to ${sessionMode === 'task' ? 'manual' : 'task'} mode`
         );
       }
 
       // Arrow keys for task navigation when dropdown is open
       if (
         isTaskDropdownOpen &&
-        (event.key === "ArrowDown" || event.key === "ArrowUp")
+        (event.key === 'ArrowDown' || event.key === 'ArrowUp')
       ) {
         event.preventDefault();
         // filteredTasks is already memoized
         if (filteredTasks.length === 0) return;
 
         const currentIndex = filteredTasks.findIndex(
-          (task) => task.id === selectedTaskId,
+          (task) => task.id === selectedTaskId
         );
         let nextIndex;
 
-        if (event.key === "ArrowDown") {
+        if (event.key === 'ArrowDown') {
           nextIndex =
             currentIndex < filteredTasks.length - 1 ? currentIndex + 1 : 0;
         } else {
@@ -2011,15 +2016,15 @@ export function TimerControls({
       // Enter to select highlighted task when dropdown is open
       if (
         isTaskDropdownOpen &&
-        event.key === "Enter" &&
-        selectedTaskId !== "none"
+        event.key === 'Enter' &&
+        selectedTaskId !== 'none'
       ) {
         event.preventDefault();
         handleTaskSelectionChange(selectedTaskId);
       }
 
       // Space to start timer with current selection
-      if (event.key === " " && !isRunning && !isInputFocused) {
+      if (event.key === ' ' && !isRunning && !isInputFocused) {
         event.preventDefault();
         if (newSessionTitle.trim()) {
           startTimer();
@@ -2027,8 +2032,8 @@ export function TimerControls({
       }
     };
 
-    document.addEventListener("keydown", handleKeyDown);
-    return () => document.removeEventListener("keydown", handleKeyDown);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
   }, [
     isRunning,
     newSessionTitle,
@@ -2058,7 +2063,7 @@ export function TimerControls({
           </DialogHeader>
           <div className="space-y-4">
             {/* Timer Type Specific Settings */}
-            {customTimerSettings.type === "enhanced-stopwatch" && (
+            {customTimerSettings.type === 'enhanced-stopwatch' && (
               <div className="space-y-3">
                 <h4 className="font-medium text-sm">
                   Enhanced Stopwatch Settings
@@ -2139,7 +2144,7 @@ export function TimerControls({
               </div>
             )}
 
-            {customTimerSettings.type === "traditional-countdown" && (
+            {customTimerSettings.type === 'traditional-countdown' && (
               <div className="space-y-3">
                 <h4 className="font-medium text-sm">
                   Traditional Countdown Settings
@@ -2265,7 +2270,7 @@ export function TimerControls({
                 variant="outline"
                 onClick={() =>
                   setCustomTimerSettings({
-                    type: "enhanced-stopwatch",
+                    type: 'enhanced-stopwatch',
 
                     // Enhanced Stopwatch defaults
                     targetDuration: 60, // 1 hour goal
@@ -2608,9 +2613,9 @@ export function TimerControls({
       </Dialog>
       <Card
         className={cn(
-          "relative transition-all duration-300",
+          'relative transition-all duration-300',
           isDraggingTask &&
-            "bg-blue-50/30 shadow-blue-500/20 shadow-lg ring-2 ring-blue-500/50 dark:bg-blue-950/20",
+            'bg-blue-50/30 shadow-blue-500/20 shadow-lg ring-2 ring-blue-500/50 dark:bg-blue-950/20'
         )}
       >
         <CardHeader>
@@ -2631,10 +2636,10 @@ export function TimerControls({
                     value="stopwatch"
                     disabled={sessionProtection.isActive}
                     className={cn(
-                      "flex items-center gap-1 text-xs px-2 py-1",
+                      'flex items-center gap-1 text-xs px-2 py-1',
                       sessionProtection.isActive &&
-                        "cursor-not-allowed opacity-50",
-                      "data-[state=active]:bg-background data-[state=active]:shadow-sm",
+                        'cursor-not-allowed opacity-50',
+                      'data-[state=active]:bg-background data-[state=active]:shadow-sm'
                     )}
                   >
                     <Timer className="h-3 w-3" />
@@ -2644,10 +2649,10 @@ export function TimerControls({
                     value="pomodoro"
                     disabled={sessionProtection.isActive}
                     className={cn(
-                      "flex items-center gap-1 text-xs px-2 py-1",
+                      'flex items-center gap-1 text-xs px-2 py-1',
                       sessionProtection.isActive &&
-                        "cursor-not-allowed opacity-50",
-                      "data-[state=active]:bg-background data-[state=active]:shadow-sm",
+                        'cursor-not-allowed opacity-50',
+                      'data-[state=active]:bg-background data-[state=active]:shadow-sm'
                     )}
                   >
                     <Icon iconNode={fruit} className="h-3 w-3" />
@@ -2657,10 +2662,10 @@ export function TimerControls({
                     value="custom"
                     disabled={sessionProtection.isActive}
                     className={cn(
-                      "flex items-center gap-1 text-xs px-2 py-1",
+                      'flex items-center gap-1 text-xs px-2 py-1',
                       sessionProtection.isActive &&
-                        "cursor-not-allowed opacity-50",
-                      "data-[state=active]:bg-background data-[state=active]:shadow-sm",
+                        'cursor-not-allowed opacity-50',
+                      'data-[state=active]:bg-background data-[state=active]:shadow-sm'
                     )}
                   >
                     <Settings2 className="h-3 w-3" />
@@ -2673,96 +2678,96 @@ export function TimerControls({
                   🔒 Active Session
                 </div>
               )}
-              {timerMode === "stopwatch" && (
+              {timerMode === 'stopwatch' && (
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={() => {
                     if (sessionProtection.isActive) {
                       toast.error(
-                        "Cannot modify settings during active session",
+                        'Cannot modify settings during active session',
                         {
-                          description: "Please stop or pause your timer first.",
+                          description: 'Please stop or pause your timer first.',
                           duration: 3000,
-                        },
+                        }
                       );
                       return;
                     }
                     setShowStopwatchSettings(true);
                   }}
                   className={cn(
-                    "h-8 w-8 p-0",
+                    'h-8 w-8 p-0',
                     sessionProtection.isActive &&
-                      "cursor-not-allowed opacity-50",
+                      'cursor-not-allowed opacity-50'
                   )}
                   title={
                     sessionProtection.isActive
-                      ? "Settings locked during active session"
-                      : "Stopwatch Settings"
+                      ? 'Settings locked during active session'
+                      : 'Stopwatch Settings'
                   }
                   disabled={sessionProtection.isActive}
                 >
                   <Settings className="h-3 w-3 text-muted-foreground" />
                 </Button>
               )}
-              {timerMode === "pomodoro" && (
+              {timerMode === 'pomodoro' && (
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={() => {
                     if (sessionProtection.isActive) {
                       toast.error(
-                        "Cannot modify settings during active session",
+                        'Cannot modify settings during active session',
                         {
-                          description: "Please stop or pause your timer first.",
+                          description: 'Please stop or pause your timer first.',
                           duration: 3000,
-                        },
+                        }
                       );
                       return;
                     }
                     setShowPomodoroSettings(true);
                   }}
                   className={cn(
-                    "h-8 w-8 p-0",
+                    'h-8 w-8 p-0',
                     sessionProtection.isActive &&
-                      "cursor-not-allowed opacity-50",
+                      'cursor-not-allowed opacity-50'
                   )}
                   title={
                     sessionProtection.isActive
-                      ? "Settings locked during active session"
-                      : "Pomodoro Settings"
+                      ? 'Settings locked during active session'
+                      : 'Pomodoro Settings'
                   }
                   disabled={sessionProtection.isActive}
                 >
                   <Settings className="h-3 w-3 text-muted-foreground" />
                 </Button>
               )}
-              {timerMode === "custom" && (
+              {timerMode === 'custom' && (
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={() => {
                     if (sessionProtection.isActive) {
                       toast.error(
-                        "Cannot modify settings during active session",
+                        'Cannot modify settings during active session',
                         {
-                          description: "Please stop or pause your timer first.",
+                          description: 'Please stop or pause your timer first.',
                           duration: 3000,
-                        },
+                        }
                       );
                       return;
                     }
                     setShowCustomSettings(true);
                   }}
                   className={cn(
-                    "h-8 w-8 p-0",
+                    'h-8 w-8 p-0',
                     sessionProtection.isActive &&
-                      "cursor-not-allowed opacity-50",
+                      'cursor-not-allowed opacity-50'
                   )}
                   title={
                     sessionProtection.isActive
-                      ? "Settings locked during active session"
-                      : "Custom Timer Settings"
+                      ? 'Settings locked during active session'
+                      : 'Custom Timer Settings'
                   }
                   disabled={sessionProtection.isActive}
                 >
@@ -2773,16 +2778,16 @@ export function TimerControls({
           </CardTitle>
           <div className="space-y-1 text-muted-foreground text-sm">
             <span>
-              {timerMode === "stopwatch" &&
-                "Track your time with detailed analytics"}
-              {timerMode === "pomodoro" &&
+              {timerMode === 'stopwatch' &&
+                'Track your time with detailed analytics'}
+              {timerMode === 'pomodoro' &&
                 `Focus for ${pomodoroSettings.focusTime}min, break for ${pomodoroSettings.shortBreakTime}min`}
-              {timerMode === "custom" &&
-                customTimerSettings.type === "enhanced-stopwatch" &&
-                `Enhanced stopwatch with ${customTimerSettings.targetDuration}min target${customTimerSettings.enableIntervalBreaks ? `, breaks every ${customTimerSettings.intervalFrequency}min` : ""}`}
-              {timerMode === "custom" &&
-                customTimerSettings.type === "traditional-countdown" &&
-                `Traditional countdown for ${customTimerSettings.countdownDuration}min${customTimerSettings.autoRestart ? " (auto-restart)" : ""}`}
+              {timerMode === 'custom' &&
+                customTimerSettings.type === 'enhanced-stopwatch' &&
+                `Enhanced stopwatch with ${customTimerSettings.targetDuration}min target${customTimerSettings.enableIntervalBreaks ? `, breaks every ${customTimerSettings.intervalFrequency}min` : ''}`}
+              {timerMode === 'custom' &&
+                customTimerSettings.type === 'traditional-countdown' &&
+                `Traditional countdown for ${customTimerSettings.countdownDuration}min${customTimerSettings.autoRestart ? ' (auto-restart)' : ''}`}
             </span>
             <div className="flex flex-wrap gap-2 text-xs">
               <span className="rounded bg-muted px-1.5 py-0.5">
@@ -2804,12 +2809,12 @@ export function TimerControls({
         </CardHeader>
 
         {/* Custom Timer Configuration - Prominently Displayed */}
-        {timerMode === "custom" && (
+        {timerMode === 'custom' && (
           <div className="mx-6 mb-4 space-y-4 rounded-lg border border-border/60 bg-card/30 p-4 shadow-sm">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-purple-100 dark:bg-purple-900/20">
-                  {customTimerSettings.type === "enhanced-stopwatch" ? (
+                  {customTimerSettings.type === 'enhanced-stopwatch' ? (
                     <Timer className="h-5 w-5" />
                   ) : (
                     <ClockFading className="h-5 w-5" />
@@ -2817,14 +2822,14 @@ export function TimerControls({
                 </div>
                 <div>
                   <h3 className="font-medium text-sm">
-                    {customTimerSettings.type === "enhanced-stopwatch"
-                      ? "Enhanced Stopwatch"
-                      : "Traditional Countdown"}
+                    {customTimerSettings.type === 'enhanced-stopwatch'
+                      ? 'Enhanced Stopwatch'
+                      : 'Traditional Countdown'}
                   </h3>
                   <p className="text-muted-foreground text-xs">
-                    {customTimerSettings.type === "enhanced-stopwatch"
-                      ? "Target-based with interval breaks"
-                      : "Simple countdown timer"}
+                    {customTimerSettings.type === 'enhanced-stopwatch'
+                      ? 'Target-based with interval breaks'
+                      : 'Simple countdown timer'}
                   </p>
                 </div>
               </div>
@@ -2834,72 +2839,72 @@ export function TimerControls({
             <div className="flex gap-2">
               <Button
                 variant={
-                  customTimerSettings.type === "enhanced-stopwatch"
-                    ? "default"
-                    : "outline"
+                  customTimerSettings.type === 'enhanced-stopwatch'
+                    ? 'default'
+                    : 'outline'
                 }
                 size="sm"
                 onClick={() => {
                   if (sessionProtection.isActive) {
                     toast.error(
-                      "Cannot switch timer types during active session",
+                      'Cannot switch timer types during active session',
                       {
-                        description: "Please stop or pause your timer first.",
+                        description: 'Please stop or pause your timer first.',
                         duration: 3000,
-                      },
+                      }
                     );
                     return;
                   }
                   setCustomTimerSettings((prev) => ({
                     ...prev,
-                    type: "enhanced-stopwatch",
+                    type: 'enhanced-stopwatch',
                   }));
                 }}
                 className={cn(
-                  "flex-1 text-xs",
-                  sessionProtection.isActive && "cursor-not-allowed opacity-50",
+                  'flex-1 text-xs',
+                  sessionProtection.isActive && 'cursor-not-allowed opacity-50'
                 )}
                 disabled={sessionProtection.isActive}
                 title={
                   sessionProtection.isActive
-                    ? "Type switching locked during active session"
-                    : "Enhanced Stopwatch"
+                    ? 'Type switching locked during active session'
+                    : 'Enhanced Stopwatch'
                 }
               >
                 <Timer className="h-5 w-5" /> Stopwatch
               </Button>
               <Button
                 variant={
-                  customTimerSettings.type === "traditional-countdown"
-                    ? "default"
-                    : "outline"
+                  customTimerSettings.type === 'traditional-countdown'
+                    ? 'default'
+                    : 'outline'
                 }
                 size="sm"
                 onClick={() => {
                   if (sessionProtection.isActive) {
                     toast.error(
-                      "Cannot switch timer types during active session",
+                      'Cannot switch timer types during active session',
                       {
-                        description: "Please stop or pause your timer first.",
+                        description: 'Please stop or pause your timer first.',
                         duration: 3000,
-                      },
+                      }
                     );
                     return;
                   }
                   setCustomTimerSettings((prev) => ({
                     ...prev,
-                    type: "traditional-countdown",
+                    type: 'traditional-countdown',
                   }));
                 }}
                 className={cn(
-                  "flex-1 text-xs",
-                  sessionProtection.isActive && "cursor-not-allowed opacity-50",
+                  'flex-1 text-xs',
+                  sessionProtection.isActive && 'cursor-not-allowed opacity-50'
                 )}
                 disabled={sessionProtection.isActive}
                 title={
                   sessionProtection.isActive
-                    ? "Type switching locked during active session"
-                    : "Traditional Countdown"
+                    ? 'Type switching locked during active session'
+                    : 'Traditional Countdown'
                 }
               >
                 <ClockFading className="h-5 w-5" /> Countdown
@@ -2907,7 +2912,7 @@ export function TimerControls({
             </div>
 
             {/* Essential Settings Only - Interval Breaks for Enhanced Stopwatch */}
-            {customTimerSettings.type === "enhanced-stopwatch" && (
+            {customTimerSettings.type === 'enhanced-stopwatch' && (
               <div className="rounded-md bg-muted/30 p-3">
                 <div className="flex items-center justify-between">
                   <span className="text-muted-foreground text-xs">
@@ -2920,12 +2925,12 @@ export function TimerControls({
                       onChange={(e) => {
                         if (sessionProtection.isActive) {
                           toast.error(
-                            "Cannot modify break settings during active session",
+                            'Cannot modify break settings during active session',
                             {
                               description:
-                                "Please stop or pause your timer first.",
+                                'Please stop or pause your timer first.',
                               duration: 3000,
-                            },
+                            }
                           );
                           return;
                         }
@@ -2935,15 +2940,15 @@ export function TimerControls({
                         }));
                       }}
                       className={cn(
-                        "h-3 w-3 rounded",
+                        'h-3 w-3 rounded',
                         sessionProtection.isActive &&
-                          "cursor-not-allowed opacity-50",
+                          'cursor-not-allowed opacity-50'
                       )}
                       disabled={sessionProtection.isActive}
                       title={
                         sessionProtection.isActive
-                          ? "Settings locked during active session"
-                          : "Enable interval breaks"
+                          ? 'Settings locked during active session'
+                          : 'Enable interval breaks'
                       }
                     />
                     {customTimerSettings.enableIntervalBreaks && (
@@ -2964,64 +2969,64 @@ export function TimerControls({
               {/* Enhanced Active Session Display */}
               <div
                 className={cn(
-                  "relative overflow-hidden rounded-lg p-6",
-                  timerMode === "pomodoro" &&
-                    countdownState.sessionType === "focus"
-                    ? "bg-gradient-to-br from-green-50 to-emerald-100 dark:from-green-950/20 dark:to-emerald-900/20"
-                    : timerMode === "pomodoro" &&
-                        countdownState.sessionType !== "focus"
-                      ? "bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950/20 dark:to-blue-900/20"
-                      : timerMode === "custom"
-                        ? "bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-950/20 dark:to-purple-900/20"
-                        : "bg-gradient-to-br from-red-50 to-red-100 dark:from-red-950/20 dark:to-red-900/20",
+                  'relative overflow-hidden rounded-lg p-6',
+                  timerMode === 'pomodoro' &&
+                    countdownState.sessionType === 'focus'
+                    ? 'bg-gradient-to-br from-green-50 to-emerald-100 dark:from-green-950/20 dark:to-emerald-900/20'
+                    : timerMode === 'pomodoro' &&
+                        countdownState.sessionType !== 'focus'
+                      ? 'bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950/20 dark:to-blue-900/20'
+                      : timerMode === 'custom'
+                        ? 'bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-950/20 dark:to-purple-900/20'
+                        : 'bg-gradient-to-br from-red-50 to-red-100 dark:from-red-950/20 dark:to-red-900/20'
                 )}
               >
                 <div
                   className={cn(
-                    "absolute inset-0 animate-pulse bg-gradient-to-r opacity-30",
-                    timerMode === "pomodoro" &&
-                      countdownState.sessionType === "focus"
-                      ? "from-green-500/10 to-transparent"
-                      : timerMode === "pomodoro" &&
-                          countdownState.sessionType !== "focus"
-                        ? "from-blue-500/10 to-transparent"
-                        : timerMode === "custom"
-                          ? "from-purple-500/10 to-transparent"
-                          : "from-red-500/10 to-transparent",
+                    'absolute inset-0 animate-pulse bg-gradient-to-r opacity-30',
+                    timerMode === 'pomodoro' &&
+                      countdownState.sessionType === 'focus'
+                      ? 'from-green-500/10 to-transparent'
+                      : timerMode === 'pomodoro' &&
+                          countdownState.sessionType !== 'focus'
+                        ? 'from-blue-500/10 to-transparent'
+                        : timerMode === 'custom'
+                          ? 'from-purple-500/10 to-transparent'
+                          : 'from-red-500/10 to-transparent'
                   )}
                 ></div>
                 <div className="relative">
                   <div
                     className={cn(
-                      "font-bold font-mono text-4xl transition-all duration-300",
-                      timerMode === "pomodoro" &&
-                        countdownState.sessionType === "focus"
-                        ? "text-green-600 dark:text-green-400"
-                        : timerMode === "pomodoro" &&
-                            countdownState.sessionType !== "focus"
-                          ? "text-blue-600 dark:text-blue-400"
-                          : timerMode === "custom"
-                            ? "text-purple-600 dark:text-purple-400"
-                            : "text-red-600 dark:text-red-400",
+                      'font-bold font-mono text-4xl transition-all duration-300',
+                      timerMode === 'pomodoro' &&
+                        countdownState.sessionType === 'focus'
+                        ? 'text-green-600 dark:text-green-400'
+                        : timerMode === 'pomodoro' &&
+                            countdownState.sessionType !== 'focus'
+                          ? 'text-blue-600 dark:text-blue-400'
+                          : timerMode === 'custom'
+                            ? 'text-purple-600 dark:text-purple-400'
+                            : 'text-red-600 dark:text-red-400'
                     )}
                   >
-                    {timerMode === "pomodoro" ||
-                    (timerMode === "custom" &&
-                      customTimerSettings.type === "traditional-countdown")
+                    {timerMode === 'pomodoro' ||
+                    (timerMode === 'custom' &&
+                      customTimerSettings.type === 'traditional-countdown')
                       ? formatTime(countdownState.remainingTime)
                       : formatTime(elapsedTime)}
                   </div>
 
                   {/* Pomodoro Progress Indicator */}
-                  {timerMode === "pomodoro" && (
+                  {timerMode === 'pomodoro' && (
                     <div className="mt-3 space-y-2">
                       <div className="flex items-center justify-center gap-2 text-sm">
                         <span className="font-medium">
-                          {countdownState.sessionType === "focus"
+                          {countdownState.sessionType === 'focus'
                             ? `🍅 Focus ${countdownState.pomodoroSession}`
-                            : countdownState.sessionType === "short-break"
-                              ? "☕ Short Break"
-                              : "🌟 Long Break"}
+                            : countdownState.sessionType === 'short-break'
+                              ? '☕ Short Break'
+                              : '🌟 Long Break'}
                         </span>
                       </div>
 
@@ -3029,10 +3034,10 @@ export function TimerControls({
                       <div className="h-2 w-full rounded-full bg-white/30">
                         <div
                           className={cn(
-                            "h-2 rounded-full transition-all duration-1000",
-                            countdownState.sessionType === "focus"
-                              ? "bg-green-500"
-                              : "bg-blue-500",
+                            'h-2 rounded-full transition-all duration-1000',
+                            countdownState.sessionType === 'focus'
+                              ? 'bg-green-500'
+                              : 'bg-blue-500'
                           )}
                           style={{
                             width: `${countdownState.targetTime > 0 ? ((countdownState.targetTime - countdownState.remainingTime) / countdownState.targetTime) * 100 : 0}%`,
@@ -3041,7 +3046,7 @@ export function TimerControls({
                       </div>
 
                       {/* Pomodoro sessions indicator */}
-                      {countdownState.sessionType === "focus" && (
+                      {countdownState.sessionType === 'focus' && (
                         <div className="mt-2 flex justify-center gap-1">
                           {Array.from(
                             { length: pomodoroSettings.sessionsUntilLongBreak },
@@ -3049,15 +3054,15 @@ export function TimerControls({
                               <div
                                 key={i}
                                 className={cn(
-                                  "h-3 w-3 rounded-full",
+                                  'h-3 w-3 rounded-full',
                                   i < countdownState.pomodoroSession - 1
-                                    ? "bg-green-500"
+                                    ? 'bg-green-500'
                                     : i === countdownState.pomodoroSession - 1
-                                      ? "animate-pulse bg-green-400"
-                                      : "bg-white/30",
+                                      ? 'animate-pulse bg-green-400'
+                                      : 'bg-white/30'
                                 )}
                               />
-                            ),
+                            )
                           )}
                         </div>
                       )}
@@ -3066,59 +3071,59 @@ export function TimerControls({
 
                   <div
                     className={cn(
-                      "mt-2 flex items-center justify-center gap-2 text-sm",
-                      timerMode === "pomodoro" &&
-                        countdownState.sessionType === "focus"
-                        ? "text-green-600/70 dark:text-green-400/70"
-                        : timerMode === "pomodoro" &&
-                            countdownState.sessionType !== "focus"
-                          ? "text-blue-600/70 dark:text-blue-400/70"
-                          : timerMode === "custom"
-                            ? "text-purple-600/70 dark:text-purple-400/70"
-                            : "text-red-600/70 dark:text-red-400/70",
+                      'mt-2 flex items-center justify-center gap-2 text-sm',
+                      timerMode === 'pomodoro' &&
+                        countdownState.sessionType === 'focus'
+                        ? 'text-green-600/70 dark:text-green-400/70'
+                        : timerMode === 'pomodoro' &&
+                            countdownState.sessionType !== 'focus'
+                          ? 'text-blue-600/70 dark:text-blue-400/70'
+                          : timerMode === 'custom'
+                            ? 'text-purple-600/70 dark:text-purple-400/70'
+                            : 'text-red-600/70 dark:text-red-400/70'
                     )}
                   >
                     <div
                       className={cn(
-                        "h-2 w-2 animate-pulse rounded-full",
-                        timerMode === "pomodoro" &&
-                          countdownState.sessionType === "focus"
-                          ? "bg-green-500"
-                          : timerMode === "pomodoro" &&
-                              countdownState.sessionType !== "focus"
-                            ? "bg-blue-500"
-                            : timerMode === "custom"
-                              ? "bg-purple-500"
-                              : "bg-red-500",
+                        'h-2 w-2 animate-pulse rounded-full',
+                        timerMode === 'pomodoro' &&
+                          countdownState.sessionType === 'focus'
+                          ? 'bg-green-500'
+                          : timerMode === 'pomodoro' &&
+                              countdownState.sessionType !== 'focus'
+                            ? 'bg-blue-500'
+                            : timerMode === 'custom'
+                              ? 'bg-purple-500'
+                              : 'bg-red-500'
                       )}
                     ></div>
-                    {timerMode === "pomodoro" ? (
+                    {timerMode === 'pomodoro' ? (
                       <span>
                         {countdownState.remainingTime > 0
-                          ? `${Math.floor(countdownState.remainingTime / 60)}:${(countdownState.remainingTime % 60).toString().padStart(2, "0")} remaining`
-                          : "Session complete!"}
+                          ? `${Math.floor(countdownState.remainingTime / 60)}:${(countdownState.remainingTime % 60).toString().padStart(2, '0')} remaining`
+                          : 'Session complete!'}
                       </span>
-                    ) : timerMode === "custom" ? (
+                    ) : timerMode === 'custom' ? (
                       <span>
-                        {customTimerSettings.type === "traditional-countdown"
+                        {customTimerSettings.type === 'traditional-countdown'
                           ? countdownState.remainingTime > 0
-                            ? `⏲️ ${Math.floor(countdownState.remainingTime / 60)}:${(countdownState.remainingTime % 60).toString().padStart(2, "0")} remaining`
-                            : "Countdown complete!"
-                          : customTimerSettings.type === "enhanced-stopwatch"
+                            ? `⏲️ ${Math.floor(countdownState.remainingTime / 60)}:${(countdownState.remainingTime % 60).toString().padStart(2, '0')} remaining`
+                            : 'Countdown complete!'
+                          : customTimerSettings.type === 'enhanced-stopwatch'
                             ? hasReachedTarget
                               ? `🎯 Target achieved! (${customTimerSettings.targetDuration || 60}min)`
-                              : `⏱️ Enhanced Stopwatch ${customTimerSettings.targetDuration ? `(target: ${customTimerSettings.targetDuration}min)` : ""}`
-                            : "⏱️ Custom Timer"}
+                              : `⏱️ Enhanced Stopwatch ${customTimerSettings.targetDuration ? `(target: ${customTimerSettings.targetDuration}min)` : ''}`
+                            : '⏱️ Custom Timer'}
                       </span>
                     ) : (
                       <>
-                        Started at{" "}
+                        Started at{' '}
                         {new Date(
-                          currentSession.start_time,
+                          currentSession.start_time
                         ).toLocaleTimeString()}
                         {elapsedTime > 1800 && (
                           <span className="ml-2 rounded-full bg-red-100 px-2 py-0.5 font-medium text-red-700 text-xs dark:bg-red-900/30 dark:text-red-300">
-                            {elapsedTime > 3600 ? "Long session!" : "Deep work"}
+                            {elapsedTime > 3600 ? 'Long session!' : 'Deep work'}
                           </span>
                         )}
                       </>
@@ -3138,10 +3143,10 @@ export function TimerControls({
                   {currentSession.category && (
                     <Badge
                       className={cn(
-                        "text-sm",
+                        'text-sm',
                         getCategoryColor(
-                          currentSession.category.color || "BLUE",
-                        ),
+                          currentSession.category.color || 'BLUE'
+                        )
                       )}
                     >
                       {currentSession.category.name}
@@ -3168,7 +3173,7 @@ export function TimerControls({
                 {currentSession.task &&
                   (() => {
                     const taskWithDetails = tasks.find(
-                      (t) => t.id === currentSession.task?.id,
+                      (t) => t.id === currentSession.task?.id
                     );
                     return taskWithDetails?.board_name &&
                       taskWithDetails?.list_name ? (
@@ -3203,20 +3208,20 @@ export function TimerControls({
                         <span className="font-medium">Duration:</span>
                         <span className="ml-1">
                           {elapsedTime < 1500
-                            ? "Warming up"
+                            ? 'Warming up'
                             : elapsedTime < 3600
-                              ? "Focused session"
-                              : "Deep work zone!"}
+                              ? 'Focused session'
+                              : 'Deep work zone!'}
                         </span>
                       </div>
                       <div>
                         <span className="font-medium">Productivity:</span>
                         <span className="ml-1">
                           {elapsedTime < 900
-                            ? "Getting started"
+                            ? 'Getting started'
                             : elapsedTime < 2700
-                              ? "In the flow"
-                              : "Exceptional focus"}
+                              ? 'In the flow'
+                              : 'Exceptional focus'}
                         </span>
                       </div>
                     </div>
@@ -3276,19 +3281,19 @@ export function TimerControls({
                       Paused at {pauseStartTime?.toLocaleTimeString()}
                       {pauseStartTime && (
                         <span className="ml-2">
-                          • Break:{" "}
+                          • Break:{' '}
                           {formatDuration(
                             Math.floor(
                               (new Date().getTime() -
                                 pauseStartTime.getTime()) /
-                                1000,
-                            ),
+                                1000
+                            )
                           )}
                         </span>
                       )}
                     </div>
                     <div className="text-xs">
-                      Session was running for{" "}
+                      Session was running for{' '}
                       {formatDuration(pausedElapsedTime)} before pause
                     </div>
                   </div>
@@ -3306,10 +3311,8 @@ export function TimerControls({
                   {pausedSession.category && (
                     <Badge
                       className={cn(
-                        "text-sm",
-                        getCategoryColor(
-                          pausedSession.category.color || "BLUE",
-                        ),
+                        'text-sm',
+                        getCategoryColor(pausedSession.category.color || 'BLUE')
                       )}
                     >
                       {pausedSession.category.name}
@@ -3430,7 +3433,7 @@ export function TimerControls({
                               onGoToTasksTab();
                             } else {
                               toast.info(
-                                "Redirecting to Tasks tab to create a task...",
+                                'Redirecting to Tasks tab to create a task...'
                               );
                             }
                           }}
@@ -3453,25 +3456,25 @@ export function TimerControls({
                         >
                           {/* Display Mode: Show Selected Task */}
                           {selectedTaskId &&
-                            selectedTaskId !== "none" &&
+                            selectedTaskId !== 'none' &&
                             !isSearchMode &&
                             (() => {
                               const selectedTask = tasks.find(
-                                (t) => t.id === selectedTaskId,
+                                (t) => t.id === selectedTaskId
                               );
                               return selectedTask ? (
                                 <div
                                   className={cn(
-                                    "flex min-h-[2.5rem] cursor-text items-center gap-2 rounded-md border px-3 py-2 transition-all duration-200",
+                                    'flex min-h-[2.5rem] cursor-text items-center gap-2 rounded-md border px-3 py-2 transition-all duration-200',
                                     isDragOver
-                                      ? "border-blue-500 bg-blue-50/50 dark:bg-blue-950/20"
+                                      ? 'border-blue-500 bg-blue-50/50 dark:bg-blue-950/20'
                                       : isDraggingTask
-                                        ? "border-blue-400/60 bg-blue-50/20 dark:bg-blue-950/10"
-                                        : "",
+                                        ? 'border-blue-400/60 bg-blue-50/20 dark:bg-blue-950/10'
+                                        : ''
                                   )}
                                   onClick={() => {
                                     setIsSearchMode(true);
-                                    setTaskSearchQuery("");
+                                    setTaskSearchQuery('');
                                     openDropdown();
                                   }}
                                 >
@@ -3503,10 +3506,10 @@ export function TimerControls({
                                       onClick={(e) => {
                                         e.preventDefault();
                                         e.stopPropagation();
-                                        setSelectedTaskId("none");
+                                        setSelectedTaskId('none');
                                         setIsSearchMode(true);
-                                        setTaskSearchQuery("");
-                                        toast.success("Task selection cleared");
+                                        setTaskSearchQuery('');
+                                        toast.success('Task selection cleared');
                                       }}
                                       className="rounded p-1 transition-colors hover:bg-red-100 hover:text-red-600 dark:hover:bg-red-900/20 dark:hover:text-red-400"
                                       title="Remove selected task"
@@ -3541,11 +3544,11 @@ export function TimerControls({
                                     >
                                       <svg
                                         className={cn(
-                                          "h-4 w-4 transition-transform",
+                                          'h-4 w-4 transition-transform',
                                           isTaskDropdownOpen &&
-                                            (dropdownPosition === "above"
-                                              ? "rotate-0"
-                                              : "rotate-180"),
+                                            (dropdownPosition === 'above'
+                                              ? 'rotate-0'
+                                              : 'rotate-180')
                                         )}
                                         fill="none"
                                         stroke="currentColor"
@@ -3567,15 +3570,15 @@ export function TimerControls({
                           {/* Search Mode: Show Input Field */}
                           {(isSearchMode ||
                             !selectedTaskId ||
-                            selectedTaskId === "none") && (
+                            selectedTaskId === 'none') && (
                             <div className="relative">
                               <Input
                                 placeholder={
                                   isDragOver
-                                    ? "Drop task here to select"
+                                    ? 'Drop task here to select'
                                     : isDraggingTask
-                                      ? "Drop here or press ESC to cancel"
-                                      : "Search tasks or create new..."
+                                      ? 'Drop here or press ESC to cancel'
+                                      : 'Search tasks or create new...'
                                 }
                                 value={taskSearchQuery}
                                 onChange={(e) =>
@@ -3586,12 +3589,12 @@ export function TimerControls({
                                   openDropdown();
                                 }}
                                 className={cn(
-                                  "h-auto min-h-[2.5rem] pr-10 transition-all duration-200",
+                                  'h-auto min-h-[2.5rem] pr-10 transition-all duration-200',
                                   isDragOver
-                                    ? "border-blue-500 bg-blue-50/50 dark:bg-blue-950/20"
+                                    ? 'border-blue-500 bg-blue-50/50 dark:bg-blue-950/20'
                                     : isDraggingTask
-                                      ? "border-blue-400/60 bg-blue-50/20 dark:bg-blue-950/10"
-                                      : "",
+                                      ? 'border-blue-400/60 bg-blue-50/20 dark:bg-blue-950/10'
+                                      : ''
                                 )}
                                 autoFocus={isSearchMode}
                               />
@@ -3611,11 +3614,11 @@ export function TimerControls({
                               >
                                 <svg
                                   className={cn(
-                                    "h-4 w-4 transition-transform",
+                                    'h-4 w-4 transition-transform',
                                     isTaskDropdownOpen &&
-                                      (dropdownPosition === "above"
-                                        ? "rotate-0"
-                                        : "rotate-180"),
+                                      (dropdownPosition === 'above'
+                                        ? 'rotate-0'
+                                        : 'rotate-180')
                                   )}
                                   fill="none"
                                   stroke="currentColor"
@@ -3637,10 +3640,10 @@ export function TimerControls({
                             <div
                               ref={dropdownContentRef}
                               className={cn(
-                                "absolute right-0 left-0 z-[100] rounded-md border bg-popover shadow-lg transition-all duration-200",
-                                dropdownPosition === "above"
-                                  ? "bottom-full mb-1"
-                                  : "top-full mt-1",
+                                'absolute right-0 left-0 z-[100] rounded-md border bg-popover shadow-lg transition-all duration-200',
+                                dropdownPosition === 'above'
+                                  ? 'bottom-full mb-1'
+                                  : 'top-full mt-1'
                               )}
                               onClick={(e) => {
                                 e.stopPropagation();
@@ -3662,16 +3665,16 @@ export function TimerControls({
                                       setTaskFilters((prev) => ({
                                         ...prev,
                                         assignee:
-                                          prev.assignee === "mine"
-                                            ? "all"
-                                            : "mine",
+                                          prev.assignee === 'mine'
+                                            ? 'all'
+                                            : 'mine',
                                       }));
                                     }}
                                     className={cn(
-                                      "flex items-center gap-1.5 rounded-md border px-2 py-1 font-medium text-xs transition-colors",
-                                      taskFilters.assignee === "mine"
-                                        ? "border-blue-200 bg-blue-100 text-blue-700 dark:border-blue-800 dark:bg-blue-900/30 dark:text-blue-300"
-                                        : "border-border bg-background hover:bg-muted",
+                                      'flex items-center gap-1.5 rounded-md border px-2 py-1 font-medium text-xs transition-colors',
+                                      taskFilters.assignee === 'mine'
+                                        ? 'border-blue-200 bg-blue-100 text-blue-700 dark:border-blue-800 dark:bg-blue-900/30 dark:text-blue-300'
+                                        : 'border-border bg-background hover:bg-muted'
                                     )}
                                   >
                                     <CheckCircle className="h-3 w-3" />
@@ -3690,16 +3693,16 @@ export function TimerControls({
                                       setTaskFilters((prev) => ({
                                         ...prev,
                                         assignee:
-                                          prev.assignee === "unassigned"
-                                            ? "all"
-                                            : "unassigned",
+                                          prev.assignee === 'unassigned'
+                                            ? 'all'
+                                            : 'unassigned',
                                       }));
                                     }}
                                     className={cn(
-                                      "flex items-center gap-1.5 rounded-md border px-2 py-1 font-medium text-xs transition-colors",
-                                      taskFilters.assignee === "unassigned"
-                                        ? "border-orange-200 bg-orange-100 text-orange-700 dark:border-orange-800 dark:bg-orange-900/30 dark:text-orange-300"
-                                        : "border-border bg-background hover:bg-muted",
+                                      'flex items-center gap-1.5 rounded-md border px-2 py-1 font-medium text-xs transition-colors',
+                                      taskFilters.assignee === 'unassigned'
+                                        ? 'border-orange-200 bg-orange-100 text-orange-700 dark:border-orange-800 dark:bg-orange-900/30 dark:text-orange-300'
+                                        : 'border-border bg-background hover:bg-muted'
                                     )}
                                   >
                                     <svg
@@ -3733,14 +3736,14 @@ export function TimerControls({
                                       e.stopPropagation();
                                       setTaskFilters((prev) => ({
                                         ...prev,
-                                        board: "all",
+                                        board: 'all',
                                       }));
                                     }}
                                     className={cn(
-                                      "rounded-md border px-2 py-1 text-xs transition-colors",
-                                      taskFilters.board === "all"
-                                        ? "border-primary bg-primary text-primary-foreground"
-                                        : "border-border bg-background hover:bg-muted",
+                                      'rounded-md border px-2 py-1 text-xs transition-colors',
+                                      taskFilters.board === 'all'
+                                        ? 'border-primary bg-primary text-primary-foreground'
+                                        : 'border-border bg-background hover:bg-muted'
                                     )}
                                   >
                                     All Boards
@@ -3758,10 +3761,10 @@ export function TimerControls({
                                         }));
                                       }}
                                       className={cn(
-                                        "rounded-md border px-2 py-1 text-xs transition-colors",
+                                        'rounded-md border px-2 py-1 text-xs transition-colors',
                                         taskFilters.board === board
-                                          ? "border-primary bg-primary text-primary-foreground"
-                                          : "border-border bg-background hover:bg-muted",
+                                          ? 'border-primary bg-primary text-primary-foreground'
+                                          : 'border-border bg-background hover:bg-muted'
                                       )}
                                     >
                                       {board}
@@ -3777,14 +3780,14 @@ export function TimerControls({
                                       e.stopPropagation();
                                       setTaskFilters((prev) => ({
                                         ...prev,
-                                        list: "all",
+                                        list: 'all',
                                       }));
                                     }}
                                     className={cn(
-                                      "rounded-md border px-2 py-1 text-xs transition-colors",
-                                      taskFilters.list === "all"
-                                        ? "border-secondary bg-secondary text-secondary-foreground"
-                                        : "border-border bg-background hover:bg-muted",
+                                      'rounded-md border px-2 py-1 text-xs transition-colors',
+                                      taskFilters.list === 'all'
+                                        ? 'border-secondary bg-secondary text-secondary-foreground'
+                                        : 'border-border bg-background hover:bg-muted'
                                     )}
                                   >
                                     All Lists
@@ -3802,10 +3805,10 @@ export function TimerControls({
                                         }));
                                       }}
                                       className={cn(
-                                        "rounded-md border px-2 py-1 text-xs transition-colors",
+                                        'rounded-md border px-2 py-1 text-xs transition-colors',
                                         taskFilters.list === list
-                                          ? "border-secondary bg-secondary text-secondary-foreground"
-                                          : "border-border bg-background hover:bg-muted",
+                                          ? 'border-secondary bg-secondary text-secondary-foreground'
+                                          : 'border-border bg-background hover:bg-muted'
                                       )}
                                     >
                                       {list}
@@ -3814,12 +3817,12 @@ export function TimerControls({
                                 </div>
 
                                 {(taskSearchQuery ||
-                                  taskFilters.board !== "all" ||
-                                  taskFilters.list !== "all" ||
-                                  taskFilters.assignee !== "all") && (
+                                  taskFilters.board !== 'all' ||
+                                  taskFilters.list !== 'all' ||
+                                  taskFilters.assignee !== 'all') && (
                                   <div className="flex items-center justify-between text-xs">
                                     <span className="text-muted-foreground">
-                                      {filteredTasks.length} of {tasks.length}{" "}
+                                      {filteredTasks.length} of {tasks.length}{' '}
                                       tasks
                                     </span>
                                     <button
@@ -3827,13 +3830,13 @@ export function TimerControls({
                                       onClick={(e) => {
                                         e.preventDefault();
                                         e.stopPropagation();
-                                        setTaskSearchQuery("");
+                                        setTaskSearchQuery('');
                                         setTaskFilters({
-                                          board: "all",
-                                          list: "all",
-                                          priority: "all",
-                                          status: "all",
-                                          assignee: "all",
+                                          board: 'all',
+                                          list: 'all',
+                                          priority: 'all',
+                                          status: 'all',
+                                          assignee: 'all',
                                         });
                                       }}
                                       className="text-muted-foreground hover:text-foreground"
@@ -3849,9 +3852,9 @@ export function TimerControls({
                                 {filteredTasks.length === 0 ? (
                                   <div className="p-6 text-center text-muted-foreground text-sm">
                                     {taskSearchQuery ||
-                                    taskFilters.board !== "all" ||
-                                    taskFilters.list !== "all" ||
-                                    taskFilters.assignee !== "all" ? (
+                                    taskFilters.board !== 'all' ||
+                                    taskFilters.list !== 'all' ||
+                                    taskFilters.assignee !== 'all' ? (
                                       <>
                                         <div className="mb-2">
                                           No tasks found matching your criteria
@@ -3861,13 +3864,13 @@ export function TimerControls({
                                           onClick={(e) => {
                                             e.preventDefault();
                                             e.stopPropagation();
-                                            setTaskSearchQuery("");
+                                            setTaskSearchQuery('');
                                             setTaskFilters({
-                                              board: "all",
-                                              list: "all",
-                                              priority: "all",
-                                              status: "all",
-                                              assignee: "all",
+                                              board: 'all',
+                                              list: 'all',
+                                              priority: 'all',
+                                              status: 'all',
+                                              assignee: 'all',
                                             });
                                           }}
                                           className="text-primary text-xs hover:underline"
@@ -3876,7 +3879,7 @@ export function TimerControls({
                                         </button>
                                       </>
                                     ) : (
-                                      "No tasks available"
+                                      'No tasks available'
                                     )}
                                   </div>
                                 ) : (
@@ -3895,25 +3898,25 @@ export function TimerControls({
                                     >
                                       <div
                                         className={cn(
-                                          "flex w-full items-start gap-3 p-3 hover:bg-muted/30",
+                                          'flex w-full items-start gap-3 p-3 hover:bg-muted/30',
                                           task.is_assigned_to_current_user &&
-                                            "bg-blue-50/50 dark:bg-blue-950/20",
+                                            'bg-blue-50/50 dark:bg-blue-950/20'
                                         )}
                                       >
                                         <div
                                           className={cn(
-                                            "flex h-8 w-8 items-center justify-center rounded-lg border",
+                                            'flex h-8 w-8 items-center justify-center rounded-lg border',
                                             task.is_assigned_to_current_user
-                                              ? "border-blue-400/50 bg-gradient-to-br from-blue-100 to-blue-200 dark:border-blue-600 dark:from-blue-800 dark:to-blue-700"
-                                              : "border-dynamic-blue/30 bg-gradient-to-br from-dynamic-blue/20 to-dynamic-blue/10",
+                                              ? 'border-blue-400/50 bg-gradient-to-br from-blue-100 to-blue-200 dark:border-blue-600 dark:from-blue-800 dark:to-blue-700'
+                                              : 'border-dynamic-blue/30 bg-gradient-to-br from-dynamic-blue/20 to-dynamic-blue/10'
                                           )}
                                         >
                                           <CheckCircle
                                             className={cn(
-                                              "h-4 w-4",
+                                              'h-4 w-4',
                                               task.is_assigned_to_current_user
-                                                ? "text-blue-700 dark:text-blue-300"
-                                                : "text-dynamic-blue",
+                                                ? 'text-blue-700 dark:text-blue-300'
+                                                : 'text-dynamic-blue'
                                             )}
                                           />
                                         </div>
@@ -3921,9 +3924,9 @@ export function TimerControls({
                                           <div className="flex items-center gap-2">
                                             <span
                                               className={cn(
-                                                "font-medium text-sm",
+                                                'font-medium text-sm',
                                                 task.is_assigned_to_current_user &&
-                                                  "text-blue-900 dark:text-blue-100",
+                                                  'text-blue-900 dark:text-blue-100'
                                               )}
                                             >
                                               {task.name}
@@ -3965,14 +3968,14 @@ export function TimerControls({
                                                             alt={
                                                               assignee.display_name ||
                                                               assignee.email ||
-                                                              ""
+                                                              ''
                                                             }
                                                             className="h-full w-full rounded-full object-cover"
                                                           />
                                                         ) : (
                                                           <div className="flex h-full w-full items-center justify-center font-medium text-[8px] text-gray-600 dark:text-gray-300">
                                                             {generateAssigneeInitials(
-                                                              assignee,
+                                                              assignee
                                                             )}
                                                           </div>
                                                         )}
@@ -3988,7 +3991,7 @@ export function TimerControls({
                                                   )}
                                                 </div>
                                                 <span className="text-muted-foreground text-xs">
-                                                  {task.assignees.length}{" "}
+                                                  {task.assignees.length}{' '}
                                                   assigned
                                                 </span>
                                               </div>
@@ -4021,7 +4024,7 @@ export function TimerControls({
                           )}
                         </div>
 
-                        {(selectedTaskId === "none" || !selectedTaskId) && (
+                        {(selectedTaskId === 'none' || !selectedTaskId) && (
                           <div className="text-center">
                             <p className="mb-2 text-muted-foreground text-sm">
                               No task selected? We'll help you create one!
@@ -4062,8 +4065,8 @@ export function TimerControls({
                             <div className="flex items-center gap-2">
                               <div
                                 className={cn(
-                                  "h-3 w-3 rounded-full",
-                                  getCategoryColor(category.color || "BLUE"),
+                                  'h-3 w-3 rounded-full',
+                                  getCategoryColor(category.color || 'BLUE')
                                 )}
                               />
                               {category.name}
@@ -4081,9 +4084,9 @@ export function TimerControls({
                     size="lg"
                   >
                     <Play className="mr-2 h-4 w-4" />
-                    {selectedTaskId && selectedTaskId !== "none"
-                      ? "Start Timer"
-                      : "Create Task & Start Timer"}
+                    {selectedTaskId && selectedTaskId !== 'none'
+                      ? 'Start Timer'
+                      : 'Create Task & Start Timer'}
                   </Button>
                 </TabsContent>
 
@@ -4102,7 +4105,7 @@ export function TimerControls({
                       value={newSessionTitle}
                       onChange={(e) => handleManualTitleChange(e.target.value)}
                       className="mt-1"
-                      autoFocus={sessionMode === "manual"}
+                      autoFocus={sessionMode === 'manual'}
                     />
 
                     {/* Task suggestion */}
@@ -4137,7 +4140,7 @@ export function TimerControls({
 
                     {/* Show selected task info */}
                     {selectedTaskId &&
-                      selectedTaskId !== "none" &&
+                      selectedTaskId !== 'none' &&
                       !showTaskSuggestion && (
                         <div className="rounded-lg border border-dynamic-green/30 bg-gradient-to-r from-dynamic-green/5 to-dynamic-green/3 p-4 shadow-sm">
                           <div className="flex items-start gap-3">
@@ -4162,9 +4165,9 @@ export function TimerControls({
                                   variant="ghost"
                                   size="sm"
                                   onClick={() => {
-                                    setSelectedTaskId("none");
+                                    setSelectedTaskId('none');
                                     setShowTaskSuggestion(
-                                      newSessionTitle.length > 2,
+                                      newSessionTitle.length > 2
                                     );
                                   }}
                                   className="h-7 px-2 text-muted-foreground text-xs hover:text-foreground"
@@ -4174,7 +4177,7 @@ export function TimerControls({
                               </div>
                               {(() => {
                                 const selectedTask = tasks.find(
-                                  (t) => t.id === selectedTaskId,
+                                  (t) => t.id === selectedTaskId
                                 );
                                 return selectedTask ? (
                                   <div className="mt-2 space-y-2">
@@ -4246,8 +4249,8 @@ export function TimerControls({
                             <div className="flex items-center gap-2">
                               <div
                                 className={cn(
-                                  "h-3 w-3 rounded-full",
-                                  getCategoryColor(category.color || "BLUE"),
+                                  'h-3 w-3 rounded-full',
+                                  getCategoryColor(category.color || 'BLUE')
                                 )}
                               />
                               {category.name}
@@ -4360,7 +4363,7 @@ export function TimerControls({
                 value={selectedBoardId}
                 onValueChange={(value) => {
                   setSelectedBoardId(value);
-                  setSelectedListId(""); // Reset list when board changes
+                  setSelectedListId(''); // Reset list when board changes
                 }}
               >
                 <SelectTrigger>
@@ -4391,8 +4394,8 @@ export function TimerControls({
                         <div className="flex items-center gap-2">
                           <div
                             className={cn(
-                              "h-3 w-3 rounded-full",
-                              getCategoryColor(list.color.toUpperCase()),
+                              'h-3 w-3 rounded-full',
+                              getCategoryColor(list.color.toUpperCase())
                             )}
                           />
                           {list.name}
@@ -4408,10 +4411,10 @@ export function TimerControls({
                 variant="outline"
                 onClick={() => {
                   setShowTaskCreation(false);
-                  setNewTaskName("");
-                  setNewTaskDescription("");
-                  setSelectedBoardId("");
-                  setSelectedListId("");
+                  setNewTaskName('');
+                  setNewTaskDescription('');
+                  setSelectedBoardId('');
+                  setSelectedListId('');
                 }}
                 className="flex-1"
                 disabled={isCreatingTask}
