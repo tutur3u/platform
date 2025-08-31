@@ -2760,11 +2760,6 @@ export function TimerControls({
                   })}
                 </TabsList>
               </Tabs>
-              {sessionProtection.isActive && (
-                <div className="text-muted-foreground text-xs">
-                  🔒 Active Session
-                </div>
-              )}
               {timerMode === TimerMode.stopwatch && (
                 <Button
                   variant="ghost"
