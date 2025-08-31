@@ -1,5 +1,5 @@
 import '@tuturuuu/ui/globals.css';
-import { Analytics } from '@vercel/analytics/next';
+import { VercelAnalytics } from '@tuturuuu/vercel';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
@@ -16,7 +16,7 @@ export default function RootLayout({
     <html lang="en">
       <body>
         {children}
-        <Analytics />
+        <VercelAnalytics />
       </body>
     </html>
   );

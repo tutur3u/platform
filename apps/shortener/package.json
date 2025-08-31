@@ -28,7 +28,7 @@
     "@tuturuuu/types": "workspace:*",
     "@tuturuuu/ui": "workspace:*",
     "@tuturuuu/utils": "workspace:*",
-    "@vercel/analytics": "^1.5.0",
+    "@tuturuuu/vercel": "workspace:*",
     "dayjs": "^1.11.18",
     "nanoid": "^5.1.5",
     "next": "^15.5.2",

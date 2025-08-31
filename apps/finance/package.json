@@ -23,14 +23,13 @@
     "ui:diff": "bunx shadcn-ui@latest diff"
   },
   "dependencies": {
-    "@tanstack/react-query": "^5.85.5",
+    "@tanstack/react-query": "^5.85.6",
     "@tuturuuu/ai": "workspace:*",
     "@tuturuuu/apis": "workspace:*",
     "@tuturuuu/supabase": "workspace:*",
     "@tuturuuu/types": "workspace:*",
     "@tuturuuu/ui": "workspace:*",
     "@tuturuuu/utils": "workspace:*",
-    "@vercel/analytics": "^1.5.0",
     "dayjs": "^1.11.18",
     "nanoid": "^5.1.5",
     "next": "^15.5.2",
