@@ -79,8 +79,8 @@ export default async function TasksAssignedToMe({
   };
 
   return (
-    <Card className="overflow-hidden border-dynamic-orange/20 transition-all duration-300 hover:shadow-lg">
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 border-dynamic-orange/10 border-b bg-gradient-to-r from-dynamic-orange/5 to-dynamic-red/5 pb-3">
+    <Card className="overflow-hidden border-dynamic-orange/20 transition-all duration-300">
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 border-dynamic-orange/20 border-b bg-gradient-to-r from-dynamic-orange/5 to-dynamic-red/5 pb-3">
         <CardTitle className="flex items-center gap-2 font-semibold text-base">
           <div className="rounded-lg bg-dynamic-orange/10 p-1.5 text-dynamic-orange">
             <UserStar className="h-4 w-4" />
@@ -104,7 +104,7 @@ export default async function TasksAssignedToMe({
             {assignedTasks.map((task) => (
               <div
                 key={task.id}
-                className="group rounded-xl border border-dynamic-orange/10 bg-gradient-to-br from-dynamic-orange/5 to-dynamic-red/5 p-4 transition-all duration-300 hover:shadow-dynamic-orange/10 hover:shadow-md"
+                className="group rounded-xl border border-dynamic-orange/10 bg-gradient-to-br from-dynamic-orange/5 to-dynamic-red/5 p-4 transition-all duration-300"
               >
                 <div className="flex items-start justify-between">
                   <div className="flex-1 space-y-2">

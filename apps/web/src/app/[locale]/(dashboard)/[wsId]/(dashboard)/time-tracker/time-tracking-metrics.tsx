@@ -154,8 +154,8 @@ export default async function TimeTrackingMetrics({
   };
 
   return (
-    <Card className="overflow-hidden border-dynamic-purple/20 transition-all duration-300 hover:shadow-lg">
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 border-dynamic-purple/10 border-b bg-gradient-to-r from-dynamic-purple/5 to-dynamic-blue/5 pb-3">
+    <Card className="overflow-hidden border-dynamic-purple/20 transition-all duration-300">
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 border-dynamic-purple/20 border-b bg-gradient-to-r from-dynamic-purple/5 to-dynamic-blue/5 pb-3">
         <CardTitle className="flex items-center gap-2 font-semibold text-base">
           <div className="rounded-lg bg-dynamic-purple/10 p-1.5 text-dynamic-purple">
             <ClockFading className="h-4 w-4" />
@@ -176,10 +176,10 @@ export default async function TimeTrackingMetrics({
       <CardContent className="space-y-6 p-6">
         {/* Currently Running Session */}
         {!noData && runningSession && (
-          <div className="relative rounded-xl border border-dynamic-green/20 bg-gradient-to-r from-dynamic-green/5 to-dynamic-emerald/5 p-4 shadow-sm">
+          <div className="relative rounded-xl border border-dynamic-green/20 bg-gradient-to-r from-dynamic-green/5 to-dynamic-emerald/5 p-4">
             <div className="absolute top-3 right-3">
               <div className="flex items-center gap-1">
-                <div className="h-2 w-2 animate-pulse rounded-full bg-dynamic-green shadow-dynamic-green/30 shadow-lg" />
+                <div className="h-2 w-2 animate-pulse rounded-full bg-dynamic-green" />
                 <div className="h-1 w-1 animate-pulse rounded-full bg-dynamic-green/60" />
               </div>
             </div>
@@ -205,7 +205,7 @@ export default async function TimeTrackingMetrics({
         {/* Key Metrics */}
         {!noData && (
           <div className="grid gap-4 lg:grid-cols-2">
-            <div className="group rounded-xl border border-dynamic-blue/10 bg-gradient-to-br from-dynamic-blue/5 to-dynamic-cyan/5 p-4 transition-all duration-300 hover:shadow-dynamic-blue/10 hover:shadow-md">
+            <div className="group rounded-xl border border-dynamic-blue/10 bg-gradient-to-br from-dynamic-blue/5 to-dynamic-cyan/5 p-4 transition-all duration-300">
               <div className="mb-2 flex items-center gap-2">
                 <div className="rounded-lg bg-dynamic-blue/10 p-1.5 text-dynamic-blue transition-colors group-hover:bg-dynamic-blue/20">
                   <Clock className="h-3.5 w-3.5" />
@@ -219,7 +219,7 @@ export default async function TimeTrackingMetrics({
               </p>
             </div>
 
-            <div className="group rounded-xl border border-dynamic-red/10 bg-gradient-to-br from-dynamic-red/5 to-dynamic-pink/5 p-4 transition-all duration-300 hover:shadow-dynamic-red/10 hover:shadow-md">
+            <div className="group rounded-xl border border-dynamic-red/10 bg-gradient-to-br from-dynamic-red/5 to-dynamic-pink/5 p-4 transition-all duration-300">
               <div className="mb-2 flex items-center gap-2">
                 <div className="rounded-lg bg-dynamic-red/10 p-1.5 text-dynamic-red transition-colors group-hover:bg-dynamic-red/20">
                   <TrendingUp className="h-3.5 w-3.5" />
@@ -233,7 +233,7 @@ export default async function TimeTrackingMetrics({
               </p>
             </div>
 
-            <div className="group rounded-xl border border-dynamic-orange/10 bg-gradient-to-br from-dynamic-orange/5 to-dynamic-yellow/5 p-4 transition-all duration-300 hover:shadow-dynamic-orange/10 hover:shadow-md">
+            <div className="group rounded-xl border border-dynamic-orange/10 bg-gradient-to-br from-dynamic-orange/5 to-dynamic-yellow/5 p-4 transition-all duration-300">
               <div className="mb-2 flex items-center gap-2">
                 <div className="rounded-lg bg-dynamic-orange/10 p-1.5 text-dynamic-orange transition-colors group-hover:bg-dynamic-orange/20">
                   <Target className="h-3.5 w-3.5" />
@@ -247,7 +247,7 @@ export default async function TimeTrackingMetrics({
               </p>
             </div>
 
-            <div className="group rounded-xl border border-dynamic-green/10 bg-gradient-to-br from-dynamic-green/5 to-dynamic-teal/5 p-4 transition-all duration-300 hover:shadow-dynamic-green/10 hover:shadow-md">
+            <div className="group rounded-xl border border-dynamic-green/10 bg-gradient-to-br from-dynamic-green/5 to-dynamic-teal/5 p-4 transition-all duration-300">
               <div className="mb-2 flex items-center gap-2">
                 <div className="rounded-lg bg-dynamic-green/10 p-1.5 text-dynamic-green transition-colors group-hover:bg-dynamic-green/20">
                   <Zap className="h-3.5 w-3.5" />
