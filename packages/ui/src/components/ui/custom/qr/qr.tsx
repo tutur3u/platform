@@ -9,7 +9,7 @@ import { Label } from '@tuturuuu/ui/label';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import html2canvas from 'html2canvas-pro';
 import { useTranslations } from 'next-intl';
-import { useId, useRef, useState } from 'react';
+import { useCallback, useId, useRef, useState } from 'react';
 
 export default function QR() {
   const t = useTranslations();
@@ -25,6 +25,39 @@ export default function QR() {
   const [color, setColor] = useState('#000000');
   const [bgColor, setBgColor] = useState('#FFFFFF');
   const qrId = useId();
+
+  const handleDownload = useCallback(async () => {
+    const qrDisplayElement = document.getElementById(qrId);
+    if (!qrDisplayElement) return;
+
+    try {
+      const canvas = await html2canvas(qrDisplayElement, {
+        backgroundColor: null,
+        scale: 2, // Higher quality
+        useCORS: true,
+        logging: false,
+      });
+
+      const link = document.createElement('a');
+      link.download = `Tuturuuu-${style}-${Date.now()}.${format}`;
+      link.href = canvas.toDataURL(`image/${format}`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (error) {
+      console.error('Failed to export QR code:', error);
+      // Fallback to canvas export for default style
+      if (style === 'default' && ref.current) {
+        const canvas = ref.current;
+        const link = document.createElement('a');
+        link.download = `Tuturuuu.${format}`;
+        link.href = canvas.toDataURL(`image/${format}`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      }
+    }
+  }, [style, format, qrId]);
 
   return (
     <div className="flex flex-col items-center justify-between gap-8 md:flex-row md:items-start">
@@ -77,38 +110,7 @@ export default function QR() {
           </Button>
           <Button
             className="w-full"
-            onClick={async () => {
-              const qrDisplayElement = document.getElementById(qrId);
-              if (!qrDisplayElement) return;
-
-              try {
-                const canvas = await html2canvas(qrDisplayElement, {
-                  backgroundColor: null,
-                  scale: 2, // Higher quality
-                  useCORS: true,
-                  logging: false,
-                });
-
-                const link = document.createElement('a');
-                link.download = `Tuturuuu-${style}-${Date.now()}.${format}`;
-                link.href = canvas.toDataURL(`image/${format}`);
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-              } catch (error) {
-                console.error('Failed to export QR code:', error);
-                // Fallback to canvas export for default style
-                if (style === 'default' && ref.current) {
-                  const canvas = ref.current;
-                  const link = document.createElement('a');
-                  link.download = `Tuturuuu.${format}`;
-                  link.href = canvas.toDataURL(`image/${format}`);
-                  document.body.appendChild(link);
-                  link.click();
-                  document.body.removeChild(link);
-                }
-              }
-            }}
+            onClick={handleDownload}
           >
             {t('common.download')}
           </Button>

@@ -1,4 +1,4 @@
-import { LogoTitle } from '@tuturuuu/ui/custom/logo-title';
+import { QRWorkspaceTitle } from '@tuturuuu/ui/custom/qr/workspace-title';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import { QRCodeCanvas } from 'qrcode.react';
@@ -25,9 +25,7 @@ function QRDisplay({
       id={id}
       className={cn(
         'rounded-lg border p-2 text-center font-bold text-2xl uppercase',
-        style === 'brand' || style === 'scan-me' 
-          ? 'bg-black text-white' 
-          : 'bg-white text-black'
+        style === 'brand' || style === 'scan-me' ? 'bg-black text-white' : ''
       )}
     >
       <div
@@ -42,11 +40,12 @@ function QRDisplay({
           className="rounded-lg"
           fgColor={color}
           bgColor={bgColor}
+          level="H"
         />
       </div>
       {style === 'brand' && (
         <div className="mt-1 uppercase">
-          <LogoTitle forceShow={true} />
+          <QRWorkspaceTitle />
         </div>
       )}
       {style === 'scan-me' && (

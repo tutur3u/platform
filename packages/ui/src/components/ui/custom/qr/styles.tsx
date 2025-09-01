@@ -1,4 +1,4 @@
-import { LogoTitle } from '@tuturuuu/ui/custom/logo-title';
+import { QRWorkspaceTitle } from '@tuturuuu/ui/custom/qr/workspace-title';
 import { X } from '@tuturuuu/ui/icons';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
@@ -25,7 +25,17 @@ function QRStyles({
           )}
           onClick={() => setStyle('default')}
         >
-          <X className="h-8 w-8" />
+          <div className="rounded-lg border bg-white p-2 font-bold text-white">
+            <div className="aspect-square w-full rounded bg-white p-2 pb-0">
+              <QRCodeCanvas
+                value="..."
+                size={256}
+                marginSize={2}
+                className="rounded-lg"
+                level="H"
+              />
+            </div>
+          </div>
         </button>
         <button
           type="button"
@@ -39,13 +49,14 @@ function QRStyles({
             <div className="aspect-square w-full rounded bg-white p-2 pb-0">
               <QRCodeCanvas
                 value="..."
-                size={128}
+                size={256}
                 marginSize={2}
                 className="rounded-lg"
+                level="H"
               />
             </div>
             <div className="mt-1 uppercase">
-              <LogoTitle className="text-base" />
+              <QRWorkspaceTitle className="text-base" />
             </div>
           </div>
         </button>
@@ -61,9 +72,11 @@ function QRStyles({
             <div className="aspect-square w-full rounded bg-white p-2 pb-0">
               <QRCodeCanvas
                 value="..."
-                size={128}
+                size={256}
                 marginSize={2}
                 className="rounded-lg"
+                level="H"
+                includeMargin={false}
               />
             </div>
             <div className="mt-1 uppercase">{t('common.scan_me')}</div>
