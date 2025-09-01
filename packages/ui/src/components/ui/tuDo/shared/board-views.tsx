@@ -22,6 +22,7 @@ interface Props {
 export function BoardViews({ workspace, board }: Props) {
   const [currentView, setCurrentView] = useState<ViewType>('kanban');
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [isSummaryCollapsed, setIsSummaryCollapsed] = useState(true); // Start collapsed
   const queryClient = useQueryClient();
 
   // Helper function to create board with filtered tasks
@@ -116,6 +117,8 @@ export function BoardViews({ workspace, board }: Props) {
       />
       <BoardSummary
         board={createBoardWithFilteredTasks(board, filteredTasks)}
+        collapsed={isSummaryCollapsed}
+        onToggleCollapsed={() => setIsSummaryCollapsed(!isSummaryCollapsed)}
       />
       <div className="flex-1 overflow-hidden">{renderView()}</div>
     </div>

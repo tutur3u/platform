@@ -850,12 +850,12 @@ export const TaskCard = React.memo(function TaskCard({
                 Due {formatSmartDate(endDate)}
                 {isOverdue && !task.archived && (
                   <Badge className="ml-1 h-4 bg-dynamic-red/80 px-1 text-[9px] text-white">
-                    OVERDUE
+                    OVERDUE - {format(endDate, "MMM dd 'at' h:mm a")}
                   </Badge>
                 )}
-                {endDate && !isOverdue && !task.archived && (
+                {!isOverdue && !task.archived && endDate && (
                   <span className="ml-1 text-[10px] text-muted-foreground">
-                    ({format(endDate, 'MMM dd')})
+                    ({format(endDate, "MMM dd 'at' h:mm a")})
                   </span>
                 )}
               </span>

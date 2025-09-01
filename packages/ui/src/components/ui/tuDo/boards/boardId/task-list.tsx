@@ -928,7 +928,7 @@ export const BoardColumn = React.memo(function BoardColumn({
         </div>
       )}
 
-      <div className="max-h-[32rem] flex-1 space-y-2 overflow-y-auto p-3">
+      <div className="h-full flex-1 space-y-2 overflow-y-auto p-3">
         {filteredAndSortedTasks.length === 0 ? (
           <div className="flex h-32 items-center justify-center text-muted-foreground">
             <div className="text-center">
@@ -973,7 +973,7 @@ export const BoardColumn = React.memo(function BoardColumn({
 
 export function BoardContainer({ children }: { children: React.ReactNode }) {
   return (
-    <div className="scrollbar-none relative flex h-full w-full gap-4 overflow-x-auto pb-6">
+    <div className="scrollbar-none relative flex h-full w-full gap-4 overflow-x-auto">
       {children}
     </div>
   );

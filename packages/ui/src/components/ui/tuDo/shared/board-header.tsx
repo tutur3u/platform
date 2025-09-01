@@ -144,13 +144,13 @@ export function BoardHeader({ board, currentView, onViewChange }: Props) {
   };
 
   return (
-    <div className="mb-4 border-b pb-4">
+    <div className="mb-2 border-b pb-4">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         {/* Board Info */}
         <div className="flex items-start gap-3">
           <div className="flex-1">
             <div className="flex items-center gap-2">
-              <h1 className="text-2xl font-bold text-foreground">
+              <h1 className="font-bold text-2xl text-foreground">
                 {board.name}
               </h1>
               <Dialog
@@ -213,7 +213,7 @@ export function BoardHeader({ board, currentView, onViewChange }: Props) {
                 </DialogContent>
               </Dialog>
             </div>
-            <div className="mt-2 flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
+            <div className="mt-2 flex flex-wrap items-center gap-3 text-muted-foreground text-sm">
               <div className="flex items-center gap-2">
                 <LayoutGrid className="h-4 w-4" />
                 <span>{stats.totalLists} lists</span>
