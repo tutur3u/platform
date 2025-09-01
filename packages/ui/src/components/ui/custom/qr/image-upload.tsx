@@ -103,7 +103,7 @@ function QRImageUpload({
 
       // Create a rounded rectangle clipping path
       ctx.beginPath();
-      
+
       // Check if roundRect is available, otherwise use manual path
       if (typeof ctx.roundRect === 'function') {
         ctx.roundRect(0, 0, img.width, img.height, borderRadius);
@@ -113,14 +113,19 @@ function QRImageUpload({
         ctx.lineTo(img.width - borderRadius, 0);
         ctx.quadraticCurveTo(img.width, 0, img.width, borderRadius);
         ctx.lineTo(img.width, img.height - borderRadius);
-        ctx.quadraticCurveTo(img.width, img.height, img.width - borderRadius, img.height);
+        ctx.quadraticCurveTo(
+          img.width,
+          img.height,
+          img.width - borderRadius,
+          img.height
+        );
         ctx.lineTo(borderRadius, img.height);
         ctx.quadraticCurveTo(0, img.height, 0, img.height - borderRadius);
         ctx.lineTo(0, borderRadius);
         ctx.quadraticCurveTo(0, 0, borderRadius, 0);
         ctx.closePath();
       }
-      
+
       ctx.clip();
 
       // Draw the image
