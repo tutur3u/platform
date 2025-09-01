@@ -364,7 +364,8 @@
     "grid": "Lưới",
     "list": "Danh sách",
     "grid_view": "Xem dạng lưới",
-    "list_view": "Xem dạng danh sách"
+    "list_view": "Xem dạng danh sách",
+    "or": "hoặc"
   },
   "date_helper": {
     "time-unit": "Đơn vị thời gian",
@@ -4080,6 +4081,28 @@
     "contracted": "Hợp đồng",
     "loading": "Đang tải...",
     "error": "Lỗi",
-    "no_data": "Không có dữ liệu"
+    "no_data": "Không có dữ liệu",
+    "or": "hoặc",
+    "scan_me": "Quét mã QR"
+  },
+  "qr": {
+    "image_upload": {
+      "title": "Tải lên Logo/Hình ảnh",
+      "drop_files": "Thả tệp vào đây",
+      "browse": "duyệt tệp",
+      "supported_formats": "Định dạng được hỗ trợ",
+      "max_size": "Kích thước tối đa",
+      "dimensions": "Kích thước",
+      "recommended": "Khuyên dùng",
+      "image_uploaded": "Hình ảnh đã tải lên",
+      "processing": "Đang xử lý",
+      "rounded_logo": "Logo tròn",
+      "invalid_type": "Loại tệp không hợp lệ. Vui lòng tải lên tệp JPG, PNG, WebP hoặc SVG.",
+      "file_too_large": "Tệp quá lớn. Kích thước tối đa là 5MB.",
+      "dimensions_too_small": "Kích thước hình ảnh quá nhỏ. Kích thước tối thiểu là 32x32px.",
+      "dimensions_too_large": "Kích thước hình ảnh quá lớn. Kích thước tối đa là 512x512px.",
+      "invalid_image": "Tệp hình ảnh không hợp lệ.",
+      "upload_failed": "Tải lên thất bại. Vui lòng thử lại."
+    }
   }
 }

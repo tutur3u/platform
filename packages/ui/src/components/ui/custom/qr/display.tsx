@@ -3,12 +3,23 @@ import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import { QRCodeCanvas } from 'qrcode.react';
 
+interface ImageSettings {
+  src: string;
+  originalSrc: string;
+  width: number;
+  height: number;
+  excavate: boolean;
+  opacity?: number;
+  rounded?: boolean;
+}
+
 function QRDisplay({
   ref,
   value,
   color,
   bgColor,
   style,
+  imageSettings,
   id,
 }: {
   ref: React.RefObject<HTMLCanvasElement>;
@@ -16,6 +27,7 @@ function QRDisplay({
   color: string;
   bgColor: string;
   style: 'default' | 'brand' | 'scan-me';
+  imageSettings?: ImageSettings | null;
   id: string;
 }) {
   const t = useTranslations();
@@ -41,6 +53,17 @@ function QRDisplay({
           fgColor={color}
           bgColor={bgColor}
           level="H"
+          imageSettings={
+            imageSettings
+              ? {
+                  src: imageSettings.src,
+                  width: imageSettings.width,
+                  height: imageSettings.height,
+                  excavate: imageSettings.excavate,
+                  opacity: imageSettings.opacity || 1,
+                }
+              : undefined
+          }
         />
       </div>
       {style === 'brand' && (

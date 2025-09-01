@@ -4,12 +4,23 @@ import { Button } from '@tuturuuu/ui/button';
 import QRColorPicker from '@tuturuuu/ui/custom/qr/color';
 import QRDisplay from '@tuturuuu/ui/custom/qr/display';
 import QRFormats from '@tuturuuu/ui/custom/qr/formats';
+import QRImageUpload from '@tuturuuu/ui/custom/qr/image-upload';
 import QRStyles from '@tuturuuu/ui/custom/qr/styles';
 import { Label } from '@tuturuuu/ui/label';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import html2canvas from 'html2canvas-pro';
 import { useTranslations } from 'next-intl';
 import { useCallback, useId, useRef, useState } from 'react';
+
+interface ImageSettings {
+  src: string;
+  originalSrc: string;
+  width: number;
+  height: number;
+  excavate: boolean;
+  opacity?: number;
+  rounded?: boolean;
+}
 
 export default function QR() {
   const t = useTranslations();
@@ -21,6 +32,9 @@ export default function QR() {
     'default'
   );
   const [format, setFormat] = useState<'png' | 'jpg' | 'webp'>('png');
+  const [imageSettings, setImageSettings] = useState<ImageSettings | null>(
+    null
+  );
 
   const [color, setColor] = useState('#000000');
   const [bgColor, setBgColor] = useState('#FFFFFF');
@@ -78,7 +92,16 @@ export default function QR() {
           setBgColor={setBgColor}
         />
 
-        <QRStyles style={style} setStyle={setStyle} />
+        <QRImageUpload
+          imageSettings={imageSettings}
+          setImageSettings={setImageSettings}
+        />
+
+        <QRStyles
+          style={style}
+          setStyle={setStyle}
+          imageSettings={imageSettings}
+        />
         <QRFormats format={format} setFormat={setFormat} />
       </div>
       <div>
@@ -88,6 +111,7 @@ export default function QR() {
           color={color}
           bgColor={bgColor}
           style={style}
+          imageSettings={imageSettings}
           id={qrId}
         />
         <div className="mt-2 flex gap-2">
@@ -98,20 +122,19 @@ export default function QR() {
               setColor('#000000');
               setBgColor('#FFFFFF');
               setStyle('default');
+              setImageSettings(null);
             }}
             disabled={
               !value &&
               color === '#000000' &&
               bgColor === '#FFFFFF' &&
-              style === 'default'
+              style === 'default' &&
+              !imageSettings
             }
           >
             {t('common.reset')}
           </Button>
-          <Button
-            className="w-full"
-            onClick={handleDownload}
-          >
+          <Button className="w-full" onClick={handleDownload}>
             {t('common.download')}
           </Button>
         </div>

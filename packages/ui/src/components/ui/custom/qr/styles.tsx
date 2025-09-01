@@ -1,15 +1,26 @@
 import { QRWorkspaceTitle } from '@tuturuuu/ui/custom/qr/workspace-title';
-import { X } from '@tuturuuu/ui/icons';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import { QRCodeCanvas } from 'qrcode.react';
 
+interface ImageSettings {
+  src: string;
+  originalSrc: string;
+  width: number;
+  height: number;
+  excavate: boolean;
+  opacity?: number;
+  rounded?: boolean;
+}
+
 function QRStyles({
   style,
   setStyle,
+  imageSettings,
 }: {
   style: 'default' | 'brand' | 'scan-me';
   setStyle: (style: 'default' | 'brand' | 'scan-me') => void;
+  imageSettings?: ImageSettings | null;
 }) {
   const t = useTranslations();
 
@@ -33,6 +44,17 @@ function QRStyles({
                 marginSize={2}
                 className="rounded-lg"
                 level="H"
+                imageSettings={
+                  imageSettings
+                    ? {
+                        src: imageSettings.src,
+                        width: imageSettings.width,
+                        height: imageSettings.height,
+                        excavate: imageSettings.excavate,
+                        opacity: imageSettings.opacity || 1,
+                      }
+                    : undefined
+                }
               />
             </div>
           </div>
@@ -53,6 +75,17 @@ function QRStyles({
                 marginSize={2}
                 className="rounded-lg"
                 level="H"
+                imageSettings={
+                  imageSettings
+                    ? {
+                        src: imageSettings.src,
+                        width: imageSettings.width,
+                        height: imageSettings.height,
+                        excavate: imageSettings.excavate,
+                        opacity: imageSettings.opacity || 1,
+                      }
+                    : undefined
+                }
               />
             </div>
             <div className="mt-1 uppercase">
@@ -76,7 +109,17 @@ function QRStyles({
                 marginSize={2}
                 className="rounded-lg"
                 level="H"
-                includeMargin={false}
+                imageSettings={
+                  imageSettings
+                    ? {
+                        src: imageSettings.src,
+                        width: imageSettings.width,
+                        height: imageSettings.height,
+                        excavate: imageSettings.excavate,
+                        opacity: imageSettings.opacity || 1,
+                      }
+                    : undefined
+                }
               />
             </div>
             <div className="mt-1 uppercase">{t('common.scan_me')}</div>
