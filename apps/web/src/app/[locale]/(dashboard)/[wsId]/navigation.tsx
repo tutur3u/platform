@@ -1,3 +1,5 @@
+import type { NavLink } from '@/components/navigation';
+import { DEV_MODE } from '@/constants/common';
 import {
   Activity,
   Archive,
@@ -5,6 +7,7 @@ import {
   Blocks,
   Bolt,
   BookKey,
+  BookText,
   BookUser,
   Box,
   Boxes,
@@ -13,6 +16,7 @@ import {
   Cctv,
   ChartArea,
   ChartColumnStacked,
+  ChartGantt,
   CircleCheck,
   CircleDollarSign,
   ClipboardClock,
@@ -29,7 +33,10 @@ import {
   IdCardLanyard,
   KeyRound,
   LayoutDashboard,
+  LayoutList,
   Link,
+  ListCheck,
+  ListTodo,
   Logs,
   Mail,
   MessageCircleIcon,
@@ -41,7 +48,6 @@ import {
   ReceiptText,
   RulerDimensionLine,
   ScanSearch,
-  ScrollText,
   Send,
   Settings,
   ShieldUser,
@@ -49,6 +55,7 @@ import {
   SquaresIntersect,
   SquareUserRound,
   Star,
+  SwatchBook,
   Tags,
   TextSelect,
   TicketPercent,
@@ -65,14 +72,8 @@ import {
   Warehouse,
 } from '@tuturuuu/ui/icons';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
-import {
-  checkTuturuuuAdmin,
-  getPermissions,
-  verifySecret,
-} from '@tuturuuu/utils/workspace-helper';
+import { getPermissions, verifySecret } from '@tuturuuu/utils/workspace-helper';
 import { getTranslations } from 'next-intl/server';
-import type { NavLink } from '@/components/navigation';
-import { DEV_MODE } from '@/constants/common';
 
 export async function WorkspaceNavigationLinks({
   wsId,
@@ -392,6 +393,39 @@ export async function WorkspaceNavigationLinks({
           title: t('sidebar_tabs.education'),
           href: `/${personalOrWsId}/education`,
           icon: <GraduationCap className="h-5 w-5" />,
+          children: [
+            {
+              title: t('workspace-education-tabs.overview'),
+              href: `/${wsId}/education`,
+              icon: <LayoutDashboard className="h-5 w-5" />,
+              matchExact: true,
+            },
+            {
+              title: t('workspace-education-tabs.courses'),
+              href: `/${wsId}/education/courses`,
+              icon: <BookText className="h-5 w-5" />,
+            },
+            {
+              title: t('workspace-education-tabs.flashcards'),
+              href: `/${wsId}/education/flashcards`,
+              icon: <SwatchBook className="h-5 w-5" />,
+            },
+            {
+              title: t('workspace-education-tabs.quiz-sets'),
+              href: `/${wsId}/education/quiz-sets`,
+              icon: <LayoutList className="h-5 w-5" />,
+            },
+            {
+              title: t('workspace-education-tabs.quizzes'),
+              href: `/${wsId}/education/quizzes`,
+              icon: <ListTodo className="h-5 w-5" />,
+            },
+            {
+              title: t('workspace-education-tabs.attempts'),
+              href: `/${wsId}/education/attempts`,
+              icon: <ListCheck className="h-5 w-5" />,
+            },
+          ],
           disabled:
             ENABLE_AI_ONLY ||
             !(await verifySecret({
@@ -449,17 +483,16 @@ export async function WorkspaceNavigationLinks({
               icon: <Goal className="h-5 w-5" />,
             },
             {
+              title: t('sidebar_tabs.time_tracker_management'),
+              href: `/${personalOrWsId}/time-tracker/management`,
+              icon: <ChartGantt className="h-5 w-5" />,
+              requireRootWorkspace: true,
+              requireRootMember: true,
+            },
+            {
               title: t('sidebar_tabs.settings'),
               href: `/${personalOrWsId}/time-tracker/settings`,
               icon: <Settings className="h-5 w-5" />,
-            },
-            {
-              title: t('sidebar_tabs.time_tracker_management'),
-              href: `/${personalOrWsId}/time-tracker/management`,
-              icon: <Users className="h-5 w-5" />,
-              disabled: !(await checkTuturuuuAdmin()),
-              requireRootWorkspace: true,
-              requireRootMember: true,
             },
           ],
           icon: <ClockFading className="h-5 w-5" />,
@@ -499,7 +532,6 @@ export async function WorkspaceNavigationLinks({
             `/${personalOrWsId}/users/groups`,
             `/${personalOrWsId}/users/group-tags`,
             `/${personalOrWsId}/users/reports`,
-            `/${personalOrWsId}/users/fields`,
             `/${personalOrWsId}/users/structure`,
           ],
           icon: <Users className="h-5 w-5" />,
@@ -539,12 +571,6 @@ export async function WorkspaceNavigationLinks({
               title: t('workspace-users-tabs.reports'),
               href: `/${personalOrWsId}/users/reports`,
               icon: <ClipboardList className="h-5 w-5" />,
-              disabled: withoutPermission('manage_users'),
-            },
-            {
-              title: t('workspace-users-tabs.fields'),
-              href: `/${personalOrWsId}/users/fields`,
-              icon: <PencilLine className="h-5 w-5" />,
               disabled: withoutPermission('manage_users'),
             },
             {
@@ -717,7 +743,6 @@ export async function WorkspaceNavigationLinks({
         `/${personalOrWsId}/secrets`,
         `/${personalOrWsId}/infrastructure`,
         `/${personalOrWsId}/migrations`,
-        `/${personalOrWsId}/activities`,
       ],
       children: [
         {
@@ -803,14 +828,6 @@ export async function WorkspaceNavigationLinks({
           href: `/${personalOrWsId}/migrations`,
           icon: <FolderSync className="h-5 w-5" />,
           disabled: withoutPermission('manage_external_migrations'),
-          requireRootWorkspace: true,
-          requireRootMember: true,
-        },
-        {
-          title: t('workspace-settings-layout.activities'),
-          href: `/${personalOrWsId}/activities`,
-          icon: <ScrollText className="h-5 w-5" />,
-          disabled: withoutPermission('manage_workspace_audit_logs'),
           requireRootWorkspace: true,
           requireRootMember: true,
         },

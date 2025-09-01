@@ -7,10 +7,15 @@ import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
 import { Calendar, SquaresIntersect, Users } from '@tuturuuu/ui/icons';
+import { cn } from '@tuturuuu/utils/format';
 import { format } from 'date-fns';
 import Link from 'next/link';
 
-export default async function RecentTumeetPlans() {
+export default async function RecentTumeetPlans({
+  className,
+}: {
+  className?: string;
+}) {
   const supabase = await createClient();
 
   const {
@@ -114,8 +119,13 @@ export default async function RecentTumeetPlans() {
   }
 
   return (
-    <Card className="col-span-full overflow-hidden border-dynamic-pink/20 transition-all duration-300 hover:shadow-lg">
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 border-dynamic-pink/10 border-b bg-gradient-to-r from-dynamic-pink/5 to-dynamic-purple/5 pb-3">
+    <Card
+      className={cn(
+        'overflow-hidden border-dynamic-pink/20 transition-all duration-300',
+        className
+      )}
+    >
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 border-dynamic-pink/20 border-b bg-gradient-to-r from-dynamic-pink/5 to-dynamic-purple/5 pb-3">
         <CardTitle className="flex items-center gap-2 font-semibold text-base">
           <div className="rounded-lg bg-dynamic-pink/10 p-1.5 text-dynamic-pink">
             <SquaresIntersect className="h-4 w-4" />
@@ -140,7 +150,7 @@ export default async function RecentTumeetPlans() {
               href={`/meet-together/plans/${plan.id?.replace(/-/g, '')}`}
               key={plan.id}
             >
-              <div className="group rounded-xl border border-dynamic-pink/10 bg-gradient-to-br from-dynamic-pink/5 to-dynamic-purple/5 p-4 transition-all duration-300 hover:shadow-dynamic-pink/10 hover:shadow-md">
+              <div className="group h-full rounded-xl border border-dynamic-pink/10 bg-gradient-to-br from-dynamic-pink/5 to-dynamic-purple/5 p-4 transition-all duration-300">
                 <div className="flex items-start justify-between">
                   <div className="flex-1 space-y-2">
                     <div className="flex items-start gap-2">

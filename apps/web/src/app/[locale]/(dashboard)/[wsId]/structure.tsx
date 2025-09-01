@@ -1,5 +1,10 @@
 'use client';
 
+import { ActiveTimerIndicator } from '@/components/active-timer-indicator';
+import type { NavLink } from '@/components/navigation';
+import { PROD_MODE, SIDEBAR_COLLAPSED_COOKIE_NAME } from '@/constants/common';
+import { useSidebar } from '@/context/sidebar-context';
+import { useActiveTimerSession } from '@/hooks/use-active-timer-session';
 import { useQuery } from '@tanstack/react-query';
 import type { Workspace } from '@tuturuuu/types/db';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
@@ -10,10 +15,10 @@ import { ArrowLeft } from '@tuturuuu/ui/icons';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { cn } from '@tuturuuu/utils/format';
 import { setCookie } from 'cookies-next';
+import { useTranslations } from 'next-intl';
 import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useTranslations } from 'next-intl';
 import {
   type ReactNode,
   Suspense,
@@ -21,9 +26,6 @@ import {
   useEffect,
   useState,
 } from 'react';
-import type { NavLink } from '@/components/navigation';
-import { PROD_MODE, SIDEBAR_COLLAPSED_COOKIE_NAME } from '@/constants/common';
-import { useSidebar } from '@/context/sidebar-context';
 import { Nav } from './nav';
 
 interface MailProps {
@@ -54,6 +56,9 @@ export function Structure({
   const { behavior, handleBehaviorChange } = useSidebar();
   const [initialized, setInitialized] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(defaultCollapsed);
+
+  // Fetch active timer session
+  const { data: activeTimerSession } = useActiveTimerSession(wsId);
 
   useEffect(() => {
     setInitialized(true);
@@ -280,8 +285,32 @@ export function Structure({
   };
 
   const isHoverMode = behavior === 'hover';
-  const onMouseEnter = isHoverMode ? () => setIsCollapsed(false) : undefined;
-  const onMouseLeave = isHoverMode ? () => setIsCollapsed(true) : undefined;
+
+  // Helper function to check if any dialogs are currently open
+  const hasOpenDialogs = useCallback(() => {
+    const hasDialogs =
+      document.querySelector('[data-state="open"][role="dialog"]') !== null;
+    const hasAlertDialogs =
+      document.querySelector('[data-state="open"][role="alertdialog"]') !==
+      null;
+    return hasDialogs || hasAlertDialogs;
+  }, []);
+
+  const onMouseEnter = isHoverMode
+    ? () => {
+        if (!hasOpenDialogs()) {
+          setIsCollapsed(false);
+        }
+      }
+    : undefined;
+
+  const onMouseLeave = isHoverMode
+    ? () => {
+        if (!hasOpenDialogs()) {
+          setIsCollapsed(true);
+        }
+      }
+    : undefined;
 
   const isRootWorkspace = wsId === ROOT_WORKSPACE_ID;
 
@@ -381,13 +410,26 @@ export function Structure({
 
   const sidebarContent = (
     <div className="relative h-full overflow-hidden">
+      {/* Active Timer Indicator */}
+      {activeTimerSession && (
+        <div className="p-2 pt-0">
+          <ActiveTimerIndicator
+            wsId={wsId}
+            session={activeTimerSession}
+            isCollapsed={isCollapsed}
+          />
+        </div>
+      )}
+
       <div
         key={navState.history.length}
         className={cn(
           'absolute flex h-full w-full flex-col transition-transform duration-300 ease-in-out',
           navState.direction === 'forward'
             ? 'slide-in-from-right animate-in'
-            : 'slide-in-from-left animate-in'
+            : 'slide-in-from-left animate-in',
+          // Adjust top position when timer is active
+          activeTimerSession && (!isCollapsed ? 'top-21' : 'top-8')
         )}
       >
         {navState.history.length === 0 ? (

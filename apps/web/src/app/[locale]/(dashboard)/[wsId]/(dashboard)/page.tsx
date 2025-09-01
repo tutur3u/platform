@@ -2,7 +2,7 @@ import LoadingStatisticCard from '@/components/loading-statistic-card';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import type { AuroraForecast } from '@tuturuuu/types/db';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
-import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
+import { getPermissions, getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import { notFound } from 'next/navigation';
 import { Suspense } from 'react';
 import UpcomingCalendarEvents from './calendar/upcoming-events';
@@ -35,10 +35,19 @@ export default async function WorkspaceHomePage({ params }: Props) {
 
   const wsId = workspace?.id;
 
+  const { withoutPermission } = await getPermissions({
+    wsId,
+  });
+
+  const disableCalendar =
+    withoutPermission('manage_calendar') ||
+    (!currentUser?.email?.endsWith('@tuturuuu.com') &&
+      !currentUser?.email?.endsWith('@xwf.tuturuuu.com'));
+
   return (
     <>
       {currentUser && (
-        <div className="mb-6 grid gap-4 md:grid-cols-2">
+        <div className="grid gap-4 pb-4 md:grid-cols-2">
           <Suspense fallback={<DashboardCardSkeleton />}>
             <NewlyCreatedTasks wsId={wsId} />
           </Suspense>
@@ -51,9 +60,11 @@ export default async function WorkspaceHomePage({ params }: Props) {
             />
           </Suspense>
 
-          <Suspense fallback={<DashboardCardSkeleton />}>
-            <UpcomingCalendarEvents wsId={wsId} />
-          </Suspense>
+          {disableCalendar ? null : (
+            <Suspense fallback={<DashboardCardSkeleton />}>
+              <UpcomingCalendarEvents wsId={wsId} />
+            </Suspense>
+          )}
 
           <Suspense fallback={<DashboardCardSkeleton />}>
             <TimeTrackingMetrics
@@ -64,7 +75,9 @@ export default async function WorkspaceHomePage({ params }: Props) {
           </Suspense>
 
           <Suspense fallback={<DashboardCardSkeleton />}>
-            <RecentTumeetPlans />
+            <RecentTumeetPlans
+              className={disableCalendar ? 'col-span-1' : 'col-span-full'}
+            />
           </Suspense>
         </div>
       )}

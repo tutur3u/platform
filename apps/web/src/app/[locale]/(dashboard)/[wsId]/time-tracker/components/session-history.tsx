@@ -1,5 +1,6 @@
 'use client';
 
+import { useQueryClient } from '@tanstack/react-query';
 import type { TimeTrackingCategory, WorkspaceTask } from '@tuturuuu/types/db';
 import {
   AlertDialog,
@@ -46,6 +47,7 @@ import {
   Layers,
   MapPin,
   MoreHorizontal,
+  Plus,
   RefreshCw,
   RotateCcw,
   Search,
@@ -278,6 +280,35 @@ const StackedSessionItem = ({
                   {stackedSession?.sessions.length} sessions
                 </Badge>
               )}
+              {/* Show manual entry badge if any session in the stack is a manual entry */}
+              {stackedSession?.sessions.some(
+                (s) =>
+                  s.start_time &&
+                  s.end_time &&
+                  !s.is_running &&
+                  s.duration_seconds
+              ) &&
+                stackedSession?.sessions.some((s) => {
+                  const sessionStart = s.start_time
+                    ? dayjs(s.start_time)
+                    : null;
+                  const sessionEnd = s.end_time ? dayjs(s.end_time) : null;
+                  const sessionCreated = dayjs(s.created_at);
+
+                  // If session was created after it ended, it's likely a manual entry
+                  return (
+                    sessionEnd &&
+                    !sessionStart?.isSame(sessionCreated, 'minute')
+                  );
+                }) && (
+                  <Badge
+                    variant="outline"
+                    className="border-dynamic-orange/20 bg-dynamic-orange/10 font-medium text-dynamic-orange text-xs"
+                  >
+                    <Edit className="mr-1 h-3 w-3" />
+                    Manual Entry
+                  </Badge>
+                )}
             </div>
 
             {stackedSession?.description && (
@@ -467,10 +498,7 @@ const StackedSessionItem = ({
                         Edit Session
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />
-                      <DropdownMenuItem
-                        onClick={() => onDelete(latestSession)}
-                        className="text-destructive focus:text-destructive"
-                      >
+                      <DropdownMenuItem onClick={() => onDelete(latestSession)}>
                         <Trash2 className="mr-2 h-4 w-4" />
                         Delete Session
                       </DropdownMenuItem>
@@ -664,14 +692,13 @@ const StackedSessionItem = ({
                             </div>
                           </div>
                           <div className="flex items-center gap-3">
-                            <div className="text-right">
+                            <div className="flex h-full flex-col items-center justify-center text-right">
                               <span className="font-medium text-sm">
-                                {session.duration_seconds
-                                  ? formatDuration(session.duration_seconds)
-                                  : '-'}
+                                {session.duration_seconds &&
+                                  formatDuration(session.duration_seconds)}
                               </span>
                               {session.is_running && (
-                                <div className="mt-1">
+                                <div>
                                   <Badge
                                     variant="secondary"
                                     className="text-xs"
@@ -702,7 +729,6 @@ const StackedSessionItem = ({
                                 <DropdownMenuSeparator />
                                 <DropdownMenuItem
                                   onClick={() => onDelete(session)}
-                                  className="text-destructive focus:text-destructive"
                                 >
                                   <Trash2 className="mr-2 h-3 w-3" />
                                   Delete
@@ -766,6 +792,7 @@ export function SessionHistory({
   tasks,
 }: SessionHistoryProps) {
   const router = useRouter();
+  const queryClient = useQueryClient();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [filterCategoryId, setFilterCategoryId] = useState<string>('all');
@@ -788,6 +815,16 @@ export function SessionHistory({
   );
   const [viewMode, setViewMode] = useState<ViewMode>('week');
   const [currentDate, setCurrentDate] = useState(dayjs());
+
+  // Missed entry state
+  const [showMissedEntryDialog, setShowMissedEntryDialog] = useState(false);
+  const [missedEntryTitle, setMissedEntryTitle] = useState('');
+  const [missedEntryDescription, setMissedEntryDescription] = useState('');
+  const [missedEntryCategoryId, setMissedEntryCategoryId] = useState('none');
+  const [missedEntryTaskId, setMissedEntryTaskId] = useState('none');
+  const [missedEntryStartTime, setMissedEntryStartTime] = useState('');
+  const [missedEntryEndTime, setMissedEntryEndTime] = useState('');
+  const [isCreatingMissedEntry, setIsCreatingMissedEntry] = useState(false);
 
   const userTimezone = dayjs.tz.guess();
   const today = dayjs().tz(userTimezone);
@@ -1051,6 +1088,12 @@ export function SessionHistory({
         `/api/v1/workspaces/${wsId}/time-tracking/sessions/${session.id}`,
         { method: 'PATCH', body: JSON.stringify({ action: 'resume' }) }
       );
+
+      // Invalidate the running session query to update sidebar
+      queryClient.invalidateQueries({
+        queryKey: ['running-time-session', wsId],
+      });
+
       router.refresh();
       toast.success(`Started new session: "${session.title}"`);
     } catch (error) {
@@ -1217,6 +1260,12 @@ export function SessionHistory({
         `/api/v1/workspaces/${wsId}/time-tracking/sessions/${sessionToDelete.id}`,
         { method: 'DELETE' }
       );
+
+      // Invalidate the running session query to update sidebar in case an active session was deleted
+      queryClient.invalidateQueries({
+        queryKey: ['running-time-session', wsId],
+      });
+
       setSessionToDelete(null);
       router.refresh();
       toast.success('Session deleted successfully');
@@ -1225,6 +1274,99 @@ export function SessionHistory({
       toast.error('Failed to delete session');
     } finally {
       setIsDeleting(false);
+    }
+  };
+
+  const openMissedEntryDialog = () => {
+    // Pre-fill with current date and time for convenience
+    const now = dayjs();
+    const oneHourAgo = now.subtract(1, 'hour');
+
+    setMissedEntryTitle('');
+    setMissedEntryDescription('');
+    setMissedEntryCategoryId('none');
+    setMissedEntryTaskId('none');
+    setMissedEntryStartTime(oneHourAgo.format('YYYY-MM-DDTHH:mm'));
+    setMissedEntryEndTime(now.format('YYYY-MM-DDTHH:mm'));
+    setShowMissedEntryDialog(true);
+  };
+
+  const closeMissedEntryDialog = () => {
+    setShowMissedEntryDialog(false);
+    setMissedEntryTitle('');
+    setMissedEntryDescription('');
+    setMissedEntryCategoryId('none');
+    setMissedEntryTaskId('none');
+    setMissedEntryStartTime('');
+    setMissedEntryEndTime('');
+  };
+
+  const createMissedEntry = async () => {
+    if (!missedEntryTitle.trim()) {
+      toast.error('Please enter a title for the session');
+      return;
+    }
+
+    if (!missedEntryStartTime || !missedEntryEndTime) {
+      toast.error('Please enter both start and end times');
+      return;
+    }
+
+    const startTime = dayjs(missedEntryStartTime);
+    const endTime = dayjs(missedEntryEndTime);
+
+    if (endTime.isBefore(startTime)) {
+      toast.error('End time cannot be before start time');
+      return;
+    }
+
+    if (endTime.diff(startTime, 'minutes') < 1) {
+      toast.error('Session must be at least 1 minute long');
+      return;
+    }
+
+    setIsCreatingMissedEntry(true);
+
+    try {
+      const userTz = dayjs.tz.guess();
+      const response = await fetch(
+        `/api/v1/workspaces/${wsId}/time-tracking/sessions`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            title: missedEntryTitle,
+            description: missedEntryDescription || null,
+            categoryId:
+              missedEntryCategoryId === 'none' ? null : missedEntryCategoryId,
+            taskId: missedEntryTaskId === 'none' ? null : missedEntryTaskId,
+            startTime: dayjs
+              .tz(missedEntryStartTime, userTz)
+              .utc()
+              .toISOString(),
+            endTime: dayjs.tz(missedEntryEndTime, userTz).utc().toISOString(),
+            isManualEntry: true, // Flag to indicate this is a manually created entry
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to create session');
+      }
+
+      router.refresh();
+      closeMissedEntryDialog();
+      toast.success('Missed entry added successfully');
+    } catch (error) {
+      console.error('Error creating missed entry:', error);
+      const errorMessage =
+        error instanceof Error ? error.message : 'Failed to create session';
+      toast.error(errorMessage);
+    } finally {
+      setIsCreatingMissedEntry(false);
     }
   };
 
@@ -1262,6 +1404,15 @@ export function SessionHistory({
             </CardTitle>
 
             <div className="flex flex-col gap-3 md:flex-row md:items-center">
+              <Button
+                onClick={openMissedEntryDialog}
+                size="sm"
+                className="flex items-center gap-2"
+              >
+                <Plus className="h-4 w-4" />
+                Add Missed Entry
+              </Button>
+
               <div className="flex flex-wrap items-center gap-2">
                 <div className="relative">
                   <Search className="-translate-y-1/2 absolute top-1/2 left-3 h-4 w-4 text-muted-foreground" />
@@ -2169,6 +2320,256 @@ export function SessionHistory({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Add Missed Entry Dialog */}
+      <Dialog
+        open={showMissedEntryDialog}
+        onOpenChange={closeMissedEntryDialog}
+      >
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Add Missed Time Entry</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="missed-entry-title">Title *</Label>
+              <Input
+                id="missed-entry-title"
+                value={missedEntryTitle}
+                onChange={(e) => setMissedEntryTitle(e.target.value)}
+                placeholder="What were you working on?"
+              />
+            </div>
+            <div>
+              <Label htmlFor="missed-entry-description">Description</Label>
+              <Textarea
+                id="missed-entry-description"
+                value={missedEntryDescription}
+                onChange={(e) => setMissedEntryDescription(e.target.value)}
+                placeholder="Optional details about the work"
+                rows={2}
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <Label htmlFor="missed-entry-category">Category</Label>
+                <Select
+                  value={missedEntryCategoryId}
+                  onValueChange={setMissedEntryCategoryId}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">No category</SelectItem>
+                    {categories?.map((category) => (
+                      <SelectItem key={category.id} value={category.id}>
+                        <div className="flex items-center gap-2">
+                          <div
+                            className={cn(
+                              'h-3 w-3 rounded-full',
+                              getCategoryColor(category.color || 'BLUE')
+                            )}
+                          />
+                          {category.name}
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label htmlFor="missed-entry-task">Task</Label>
+                <Select
+                  value={missedEntryTaskId}
+                  onValueChange={setMissedEntryTaskId}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select task" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">No task</SelectItem>
+                    {tasks?.map(
+                      (task) =>
+                        task.id && (
+                          <SelectItem key={task.id} value={task.id}>
+                            {task.name}
+                          </SelectItem>
+                        )
+                    )}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <Label htmlFor="missed-entry-start-time">Start Time *</Label>
+                <Input
+                  id="missed-entry-start-time"
+                  type="datetime-local"
+                  value={missedEntryStartTime}
+                  onChange={(e) => setMissedEntryStartTime(e.target.value)}
+                />
+              </div>
+              <div>
+                <Label htmlFor="missed-entry-end-time">End Time *</Label>
+                <Input
+                  id="missed-entry-end-time"
+                  type="datetime-local"
+                  value={missedEntryEndTime}
+                  onChange={(e) => setMissedEntryEndTime(e.target.value)}
+                />
+              </div>
+            </div>
+
+            {/* Quick time presets */}
+            <div className="rounded-lg border p-3">
+              <Label className="text-muted-foreground text-xs">
+                Quick Presets
+              </Label>
+              <div className="mt-2 flex flex-wrap gap-2">
+                {[
+                  { label: 'Last hour', minutes: 60 },
+                  { label: 'Last 2 hours', minutes: 120 },
+                  {
+                    label: 'Morning (9-12)',
+                    isCustom: true,
+                    start: '09:00',
+                    end: '12:00',
+                  },
+                  {
+                    label: 'Afternoon (13-17)',
+                    isCustom: true,
+                    start: '13:00',
+                    end: '17:00',
+                  },
+                  {
+                    label: 'Yesterday',
+                    isCustom: true,
+                    start: 'yesterday-9',
+                    end: 'yesterday-17',
+                  },
+                ].map((preset) => (
+                  <Button
+                    key={preset.label}
+                    variant="outline"
+                    size="sm"
+                    className="h-7 text-xs"
+                    type="button"
+                    onClick={() => {
+                      const now = dayjs();
+                      if (preset.isCustom) {
+                        if (preset.start === 'yesterday-9') {
+                          const yesterday = now.subtract(1, 'day');
+                          setMissedEntryStartTime(
+                            yesterday
+                              .hour(9)
+                              .minute(0)
+                              .format('YYYY-MM-DDTHH:mm')
+                          );
+                          setMissedEntryEndTime(
+                            yesterday
+                              .hour(17)
+                              .minute(0)
+                              .format('YYYY-MM-DDTHH:mm')
+                          );
+                        } else if (preset.start && preset.end) {
+                          const today = now.startOf('day');
+                          const startParts = preset.start.split(':');
+                          const endParts = preset.end.split(':');
+                          const startHour = parseInt(startParts[0] || '9', 10);
+                          const startMin = parseInt(startParts[1] || '0', 10);
+                          const endHour = parseInt(endParts[0] || '17', 10);
+                          const endMin = parseInt(endParts[1] || '0', 10);
+                          setMissedEntryStartTime(
+                            today
+                              .hour(startHour)
+                              .minute(startMin)
+                              .format('YYYY-MM-DDTHH:mm')
+                          );
+                          setMissedEntryEndTime(
+                            today
+                              .hour(endHour)
+                              .minute(endMin)
+                              .format('YYYY-MM-DDTHH:mm')
+                          );
+                        }
+                      } else if (preset.minutes) {
+                        const endTime = now;
+                        const startTime = endTime.subtract(
+                          preset.minutes,
+                          'minutes'
+                        );
+                        setMissedEntryStartTime(
+                          startTime.format('YYYY-MM-DDTHH:mm')
+                        );
+                        setMissedEntryEndTime(
+                          endTime.format('YYYY-MM-DDTHH:mm')
+                        );
+                      }
+                    }}
+                  >
+                    {preset.label}
+                  </Button>
+                ))}
+              </div>
+            </div>
+
+            {/* Show calculated duration */}
+            {missedEntryStartTime && missedEntryEndTime && (
+              <div className="rounded-lg bg-muted/30 p-3">
+                <div className="flex items-center gap-2 text-muted-foreground text-sm">
+                  <Clock className="h-4 w-4" />
+                  <span>Duration: </span>
+                  <span className="font-medium text-foreground">
+                    {(() => {
+                      const start = dayjs(missedEntryStartTime);
+                      const end = dayjs(missedEntryEndTime);
+                      if (end.isBefore(start)) return 'Invalid time range';
+                      const durationMs = end.diff(start);
+                      const duration = Math.floor(durationMs / 1000);
+                      return formatDuration(duration);
+                    })()}
+                  </span>
+                </div>
+              </div>
+            )}
+
+            <div className="flex gap-2 pt-4">
+              <Button
+                variant="outline"
+                onClick={closeMissedEntryDialog}
+                className="flex-1"
+                disabled={isCreatingMissedEntry}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={createMissedEntry}
+                disabled={
+                  isCreatingMissedEntry ||
+                  !missedEntryTitle.trim() ||
+                  !missedEntryStartTime ||
+                  !missedEntryEndTime
+                }
+                className="flex-1"
+              >
+                {isCreatingMissedEntry ? (
+                  <>
+                    <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                    Adding...
+                  </>
+                ) : (
+                  <>
+                    <Plus className="mr-2 h-4 w-4" />
+                    Add Entry
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

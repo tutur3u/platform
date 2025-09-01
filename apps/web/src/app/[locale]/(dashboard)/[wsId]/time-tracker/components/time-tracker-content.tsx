@@ -1,6 +1,7 @@
 /** biome-ignore-all lint/a11y/noSvgWithoutTitle: <> */
 'use client';
 
+import { priorityCompare } from '@/lib/task-helper';
 import { useQuery } from '@tanstack/react-query';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { TimeTrackingCategory } from '@tuturuuu/types/db';
@@ -37,7 +38,6 @@ import timezone from 'dayjs/plugin/timezone';
 import utc from 'dayjs/plugin/utc';
 import Link from 'next/link';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { priorityCompare } from '@/lib/task-helper';
 import type {
   ExtendedWorkspaceTask,
   SessionWithRelations,
@@ -124,7 +124,7 @@ export default function TimeTrackerContent({
 
   // Sync React Query data with local state
   useEffect(() => {
-    if (!currentUserId && runningSessionFromQuery !== undefined) {
+    if (currentUserId && runningSessionFromQuery !== undefined) {
       setCurrentSession(runningSessionFromQuery);
       setIsRunning(!!runningSessionFromQuery);
       if (runningSessionFromQuery) {
@@ -367,24 +367,29 @@ export default function TimeTrackerContent({
         );
 
         // Process results with fallbacks for failed calls
-        const [categoriesRes, runningRes, recentRes, tasksRes] = results.map(
-          (result, index) => {
-            if (result.status === 'fulfilled') {
-              return result.value;
-            } else {
-              if (!apiCalls[index]) return null;
-              const { name, fallback } = apiCalls[index];
-              console.warn(`API call for ${name} failed:`, result.reason);
-              // Only show error toast for critical failures, not for tasks
-              if (name !== 'tasks') {
-                toast.error(
-                  `Failed to load ${name}: ${result.reason.message || 'Unknown error'}`
-                );
-              }
-              return fallback;
+        const [
+          categoriesRes,
+          runningRes,
+          recentRes,
+          _statsRes,
+          _goalsRes,
+          tasksRes,
+        ] = results.map((result, index) => {
+          if (result.status === 'fulfilled') {
+            return result.value;
+          } else {
+            if (!apiCalls[index]) return null;
+            const { name, fallback } = apiCalls[index];
+            console.warn(`API call for ${name} failed:`, result.reason);
+            // Only show error toast for critical failures, not for tasks
+            if (name !== 'tasks') {
+              toast.error(
+                `Failed to load ${name}: ${result.reason.message || 'Unknown error'}`
+              );
             }
+            return fallback;
           }
-        );
+        });
 
         if (!isMountedRef.current) return;
 
@@ -509,7 +514,7 @@ export default function TimeTrackerContent({
         clearInterval(refreshIntervalRef.current);
       }
     };
-  }, [isLoading, retryCount, fetchData]); // Remove fetchData dependency
+  }, [isLoading, retryCount, fetchData]);
 
   // Timer effect with better cleanup
   useEffect(() => {
