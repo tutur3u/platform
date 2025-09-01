@@ -846,7 +846,8 @@
     "goals": "Goals",
     "overview": "Overview",
     "timer": "Timer",
-    "time_tracker_management": "Management"
+    "time_tracker_management": "Management",
+    "all_boards": "All Boards"
   },
   "usage": {
     "description": "Monitor workspace activity, feature usage, and system metrics across your organization",
