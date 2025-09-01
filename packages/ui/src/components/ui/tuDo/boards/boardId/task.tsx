@@ -252,7 +252,7 @@ export const TaskCard = React.memo(function TaskCard({
     );
   }
 
-  async function handlePriorityChange(priority: TaskPriority) {
+  async function handlePriorityChange(priority: TaskPriority | null) {
     setIsLoading(true);
     updateTaskMutation.mutate(
       { taskId: task.id, updates: { priority } },
@@ -780,6 +780,17 @@ export const TaskCard = React.memo(function TaskCard({
                       >
                         <Flag className="h-4 w-4 text-dynamic-blue/80" />
                         Low Priority
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem
+                        onClick={() => {
+                          handlePriorityChange(null);
+                          setMenuOpen(false);
+                        }}
+                        className="cursor-pointer text-muted-foreground"
+                      >
+                        <X className="h-4 w-4" />
+                        Remove Priority
                       </DropdownMenuItem>
                     </DropdownMenuSubContent>
                   </DropdownMenuSub>
