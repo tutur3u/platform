@@ -28,6 +28,7 @@ import {
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
 import {
+  Copy,
   Edit,
   LayoutGrid,
   MoreHorizontal,
@@ -47,7 +48,8 @@ import { toast } from '@tuturuuu/ui/sonner';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { cn } from '@tuturuuu/utils/format';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useId, useState } from 'react';
+import { CopyFromWorkspaceDialog } from './copy-from-workspace-dialog';
 
 interface CategoryManagerProps {
   wsId: string;
@@ -69,9 +71,14 @@ const CATEGORY_COLORS = [
 
 export function CategoryManager({ wsId, categories }: CategoryManagerProps) {
   const router = useRouter();
+  const categoryNameId = useId();
+  const categoryDescriptionId = useId();
+  const editCategoryNameId = useId();
+  const editCategoryDescriptionId = useId();
 
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isCopyDialogOpen, setIsCopyDialogOpen] = useState(false);
   const [categoryToDelete, setCategoryToDelete] =
     useState<TimeTrackingCategory | null>(null);
   const [categoryToEdit, setCategoryToEdit] =
@@ -200,19 +207,31 @@ export function CategoryManager({ wsId, categories }: CategoryManagerProps) {
     <>
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
             <CardTitle className="flex items-center gap-2">
-              <LayoutGrid className="h-5 w-5" />
-              Category Management
+              <LayoutGrid className="h-5 w-5 flex-shrink-0" />
+              <span>Category Management</span>
             </CardTitle>
-            <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-              <DialogTrigger asChild>
-                <Button onClick={openAddDialog}>
-                  <Plus className="mr-2 h-4 w-4" />
-                  Add Category
-                </Button>
-              </DialogTrigger>
-            </Dialog>
+            <div className="flex flex-wrap gap-2">
+              <Button
+                variant="outline"
+                onClick={() => setIsCopyDialogOpen(true)}
+                className="flex-shrink-0"
+              >
+                <Copy className="mr-2 h-4 w-4" />
+                <span className="hidden sm:inline">Copy from Workspace</span>
+                <span className="sm:hidden">Copy</span>
+              </Button>
+              <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button onClick={openAddDialog} className="flex-shrink-0">
+                    <Plus className="mr-2 h-4 w-4" />
+                    <span className="hidden sm:inline">Add Category</span>
+                    <span className="sm:hidden">Add</span>
+                  </Button>
+                </DialogTrigger>
+              </Dialog>
+            </div>
           </div>
         </CardHeader>
         <CardContent>
@@ -306,20 +325,20 @@ export function CategoryManager({ wsId, categories }: CategoryManagerProps) {
           </DialogHeader>
           <div className="space-y-4">
             <div>
-              <Label htmlFor="category-name">Name</Label>
+              <Label htmlFor={categoryNameId}>Name</Label>
               <Input
-                id="category-name"
+                id={categoryNameId}
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="Enter category name"
               />
             </div>
             <div>
-              <Label htmlFor="category-description">
+              <Label htmlFor={categoryDescriptionId}>
                 Description (optional)
               </Label>
               <Textarea
-                id="category-description"
+                id={categoryDescriptionId}
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder="Enter category description"
@@ -383,20 +402,20 @@ export function CategoryManager({ wsId, categories }: CategoryManagerProps) {
           </DialogHeader>
           <div className="space-y-4">
             <div>
-              <Label htmlFor="edit-category-name">Name</Label>
+              <Label htmlFor={editCategoryNameId}>Name</Label>
               <Input
-                id="edit-category-name"
+                id={editCategoryNameId}
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="Enter category name"
               />
             </div>
             <div>
-              <Label htmlFor="edit-category-description">
+              <Label htmlFor={editCategoryDescriptionId}>
                 Description (optional)
               </Label>
               <Textarea
-                id="edit-category-description"
+                id={editCategoryDescriptionId}
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder="Enter category description"
@@ -475,6 +494,13 @@ export function CategoryManager({ wsId, categories }: CategoryManagerProps) {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Copy from Workspace Dialog */}
+      <CopyFromWorkspaceDialog
+        wsId={wsId}
+        open={isCopyDialogOpen}
+        onOpenChange={setIsCopyDialogOpen}
+      />
     </>
   );
 }
