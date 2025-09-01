@@ -650,6 +650,7 @@ export function KanbanBoard({ workspace, boardId, tasks, isLoading }: Props) {
                         column={column}
                         boardId={boardId}
                         tasks={columnTasks}
+                        isPersonalWorkspace={workspace.personal}
                         onTaskCreated={handleTaskCreated}
                         onListUpdated={handleTaskCreated}
                         selectedTasks={selectedTasks}

@@ -90,6 +90,7 @@ export function BoardViews({ workspace, board }: Props) {
             board={createBoardWithFilteredTasks(board, filteredTasks)}
             selectedTags={selectedTags}
             onTagsChange={setSelectedTags}
+            isPersonalWorkspace={workspace.personal}
           />
         );
       default:
