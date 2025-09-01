@@ -1,7 +1,7 @@
+import { groupSessions } from '@/lib/time-tracking-helper';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { notFound } from 'next/navigation';
-import { groupSessions } from '@/lib/time-tracking-helper';
 import TimeTrackerManagementClient from './client';
 
 interface Props {
@@ -10,7 +10,6 @@ interface Props {
 
 export default async function TimeTrackerManagementPage({ params }: Props) {
   const { wsId } = await params;
-
   const supabase = await createClient();
 
   const {
@@ -41,9 +40,6 @@ export default async function TimeTrackerManagementPage({ params }: Props) {
     `)
     .eq('ws_id', wsId);
 
-  console.log(sessions);
-
   const groupedSessions = groupSessions(sessions || []);
-
   return <TimeTrackerManagementClient groupedSessions={groupedSessions} />;
 }

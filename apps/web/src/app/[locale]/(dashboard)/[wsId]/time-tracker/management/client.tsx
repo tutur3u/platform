@@ -147,7 +147,7 @@ export default function TimeTrackerManagementClient({
   return (
     <div className="space-y-4">
       {/* Header */}
-      <div className="space-y-4 border-dynamic-border/20 border-b p-4">
+      <div className="space-y-4 border-dynamic-border/20 border-b">
         <h2 className="mb-6 font-semibold text-2xl text-dynamic-foreground">
           Time Tracker Management
         </h2>
@@ -199,8 +199,8 @@ export default function TimeTrackerManagementClient({
       </div>
 
       {/* Main content */}
-      <div className="overflow-y-auto bg-dynamic-background p-6">
-        <div className="container mx-auto max-w-7xl space-y-4">
+      <div>
+        <div className="space-y-4">
           <div className="relative w-full max-w-sm">
             <Search className="-translate-y-1/2 absolute top-1/2 left-3 size-4 transform text-dynamic-muted" />
             <Input
@@ -212,7 +212,7 @@ export default function TimeTrackerManagementClient({
           </div>
 
           {/* Sessions Table */}
-          <Card className="border-dynamic-border/20 bg-background">
+          <Card className="border-dynamic-border/20">
             <CardHeader className="border-dynamic-border/10 border-b">
               <CardTitle className="text-dynamic-foreground text-xl">
                 All Sessions
