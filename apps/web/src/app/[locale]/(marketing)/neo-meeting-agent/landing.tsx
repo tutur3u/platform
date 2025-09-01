@@ -25,7 +25,7 @@ export default function NeoMeetingAgentLanding() {
         <Dropzone
           accept={{ 'video/*': [] }}
           maxFiles={1}
-          maxSize={1024 * 1024 * 1024 * 2} // 2GB, subject to change
+          maxSize={1024 * 1024 * 50} // 50MB
           minSize={1024}
           src={files}
           onDrop={handleDrop}
@@ -44,7 +44,7 @@ export default function NeoMeetingAgentLanding() {
                 Drag 'n' drop meeting video, or click to select a file
               </p>
               <p className="mt-2 text-sm text-muted-foreground/70">
-                You can upload a file up to 2 GB
+                You can upload a file up to 50MB
               </p>
             </div>
           </DropzoneEmptyState>
