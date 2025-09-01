@@ -9,20 +9,25 @@ function QRDisplay({
   color,
   bgColor,
   style,
+  id,
 }: {
   ref: React.RefObject<HTMLCanvasElement>;
   value: string;
   color: string;
   bgColor: string;
   style: 'default' | 'brand' | 'scan-me';
+  id: string;
 }) {
   const t = useTranslations();
 
   return (
     <div
+      id={id}
       className={cn(
-        'rounded-lg border p-2 text-center text-2xl font-bold text-white uppercase',
-        style === 'brand' || style === 'scan-me' ? 'bg-black' : ''
+        'rounded-lg border p-2 text-center font-bold text-2xl uppercase',
+        style === 'brand' || style === 'scan-me' 
+          ? 'bg-black text-white' 
+          : 'bg-white text-black'
       )}
     >
       <div
@@ -41,7 +46,7 @@ function QRDisplay({
       </div>
       {style === 'brand' && (
         <div className="mt-1 uppercase">
-          <LogoTitle />
+          <LogoTitle forceShow={true} />
         </div>
       )}
       {style === 'scan-me' && (
