@@ -1,6 +1,7 @@
 'use client';
 
 import { LanguageSelect } from './language-select';
+import { MeetingHistory } from './meeting-history';
 import { Button } from '@ncthub/ui/button';
 import {
   Dropzone,
@@ -59,7 +60,9 @@ export default function NeoMeetingAgentLanding() {
       </div>
 
       {/* right column */}
-      <div></div>
+      <div>
+        <MeetingHistory />
+      </div>
     </div>
   );
 }
