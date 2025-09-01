@@ -23,6 +23,9 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
@@ -732,46 +735,54 @@ export const TaskCard = React.memo(function TaskCard({
                   {canMoveToCompletion && <DropdownMenuSeparator />}
 
                   {/* Priority Actions */}
-                  <DropdownMenuItem
-                    onClick={() => {
-                      handlePriorityChange('critical');
-                      setMenuOpen(false);
-                    }}
-                    className="cursor-pointer"
-                  >
-                    <Flag className="h-4 w-4 text-dynamic-red/80" />
-                    Urgent Priority
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={() => {
-                      handlePriorityChange('high');
-                      setMenuOpen(false);
-                    }}
-                    className="cursor-pointer"
-                  >
-                    <Flag className="h-4 w-4 text-dynamic-orange/80" />
-                    High Priority
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={() => {
-                      handlePriorityChange('normal');
-                      setMenuOpen(false);
-                    }}
-                    className="cursor-pointer"
-                  >
-                    <Flag className="h-4 w-4 text-dynamic-yellow/80" />
-                    Medium Priority
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={() => {
-                      handlePriorityChange('low');
-                      setMenuOpen(false);
-                    }}
-                    className="cursor-pointer"
-                  >
-                    <Flag className="h-4 w-4 text-dynamic-blue/80" />
-                    Low Priority
-                  </DropdownMenuItem>
+                  <DropdownMenuSub>
+                    <DropdownMenuSubTrigger>
+                      <Flag className="h-4 w-4" />
+                      Set Priority
+                    </DropdownMenuSubTrigger>
+                    <DropdownMenuSubContent>
+                      <DropdownMenuItem
+                        onClick={() => {
+                          handlePriorityChange('critical');
+                          setMenuOpen(false);
+                        }}
+                        className="cursor-pointer"
+                      >
+                        <Flag className="h-4 w-4 text-dynamic-red/80" />
+                        Urgent Priority
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => {
+                          handlePriorityChange('high');
+                          setMenuOpen(false);
+                        }}
+                        className="cursor-pointer"
+                      >
+                        <Flag className="h-4 w-4 text-dynamic-orange/80" />
+                        High Priority
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => {
+                          handlePriorityChange('normal');
+                          setMenuOpen(false);
+                        }}
+                        className="cursor-pointer"
+                      >
+                        <Flag className="h-4 w-4 text-dynamic-yellow/80" />
+                        Medium Priority
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => {
+                          handlePriorityChange('low');
+                          setMenuOpen(false);
+                        }}
+                        className="cursor-pointer"
+                      >
+                        <Flag className="h-4 w-4 text-dynamic-blue/80" />
+                        Low Priority
+                      </DropdownMenuItem>
+                    </DropdownMenuSubContent>
+                  </DropdownMenuSub>
 
                   {task.end_date && (
                     <>
