@@ -19,6 +19,7 @@ import {
 } from '@dnd-kit/sortable';
 import { useQueryClient } from '@tanstack/react-query';
 import { createClient } from '@tuturuuu/supabase/next/client';
+import type { Workspace } from '@tuturuuu/types/db';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import { Button } from '@tuturuuu/ui/button';
@@ -35,12 +36,13 @@ import { hasDraggableData } from '@tuturuuu/utils/task-helpers';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 interface Props {
+  workspace: Workspace;
   boardId: string;
   tasks: Task[];
   isLoading: boolean;
 }
 
-export function KanbanBoard({ boardId, tasks, isLoading }: Props) {
+export function KanbanBoard({ workspace, boardId, tasks, isLoading }: Props) {
   const [columns, setColumns] = useState<TaskList[]>([]);
   const [activeColumn, setActiveColumn] = useState<TaskList | null>(null);
   const [activeTask, setActiveTask] = useState<Task | null>(null);
@@ -351,6 +353,7 @@ export function KanbanBoard({ boardId, tasks, isLoading }: Props) {
     // Single task overlay
     return <LightweightTaskCard task={activeTask} />;
   }, [activeTask, isMultiSelectMode, selectedTasks]);
+
   const MemoizedColumnOverlay = useMemo(
     () =>
       activeColumn ? (
@@ -359,11 +362,12 @@ export function KanbanBoard({ boardId, tasks, isLoading }: Props) {
           boardId={boardId}
           tasks={tasks.filter((task) => task.list_id === activeColumn.id)}
           isOverlay
+          isPersonalWorkspace={workspace.personal}
           onTaskCreated={handleTaskCreated}
           onListUpdated={handleTaskCreated}
         />
       ) : null,
-    [activeColumn, tasks, boardId, handleTaskCreated]
+    [activeColumn, tasks, boardId, workspace.personal, handleTaskCreated]
   );
 
   async function onDragEnd(event: DragEndEvent) {

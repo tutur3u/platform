@@ -60,6 +60,7 @@ interface Props {
   onListUpdated?: () => void;
   selectedTasks?: Set<string>;
   isMultiSelectMode?: boolean;
+  isPersonalWorkspace?: boolean;
   onTaskSelect?: (taskId: string, event: React.MouseEvent) => void;
 }
 
@@ -115,6 +116,7 @@ export const BoardColumn = React.memo(function BoardColumn({
   selectedTasks,
   onTaskSelect,
   isMultiSelectMode,
+  isPersonalWorkspace,
 }: Props) {
   const params = useParams();
   const wsId = params.wsId as string;
@@ -955,6 +957,7 @@ export const BoardColumn = React.memo(function BoardColumn({
               onUpdate={handleUpdate}
               isSelected={isMultiSelectMode && selectedTasks?.has(task.id)}
               isMultiSelectMode={isMultiSelectMode}
+              isPersonalWorkspace={isPersonalWorkspace}
               onSelect={onTaskSelect}
             />
           ))

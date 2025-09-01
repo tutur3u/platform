@@ -5,6 +5,7 @@ import {
   getTaskLists,
   getTasks,
 } from '@tuturuuu/utils/task-helper';
+import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import { notFound, redirect } from 'next/navigation';
 
 interface Props {
@@ -15,6 +16,7 @@ interface Props {
 export default async function TaskBoardPage({ wsId, boardId }: Props) {
   const supabase = await createClient();
 
+  const workspace = await getWorkspace(wsId);
   const board = await getTaskBoard(supabase, boardId);
 
   // If board doesn't exist, redirect to boards list page
@@ -32,6 +34,7 @@ export default async function TaskBoardPage({ wsId, boardId }: Props) {
 
   return (
     <BoardClient
+      workspace={workspace}
       initialBoard={board}
       initialTasks={tasks}
       initialLists={lists}

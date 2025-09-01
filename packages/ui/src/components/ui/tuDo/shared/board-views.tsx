@@ -1,6 +1,7 @@
 'use client';
 
 import { useQueryClient } from '@tanstack/react-query';
+import type { Workspace } from '@tuturuuu/types/db';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskBoard } from '@tuturuuu/types/primitives/TaskBoard';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
@@ -14,10 +15,11 @@ import { useMemo, useState } from 'react';
 export type ViewType = 'kanban' | 'status-grouped' | 'list';
 
 interface Props {
+  workspace: Workspace;
   board: TaskBoard & { tasks: Task[]; lists: TaskList[] };
 }
 
-export function BoardViews({ board }: Props) {
+export function BoardViews({ workspace, board }: Props) {
   const [currentView, setCurrentView] = useState<ViewType>('kanban');
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const queryClient = useQueryClient();
@@ -70,11 +72,13 @@ export function BoardViews({ board }: Props) {
             boardId={board.id}
             onUpdate={handleUpdate}
             hideTasksMode={true}
+            isPersonalWorkspace={workspace.personal}
           />
         );
       case 'kanban':
         return (
           <KanbanBoard
+            workspace={workspace}
             boardId={board.id}
             tasks={filteredTasks}
             isLoading={false}
@@ -96,6 +100,7 @@ export function BoardViews({ board }: Props) {
             boardId={board.id}
             onUpdate={handleUpdate}
             hideTasksMode={true}
+            isPersonalWorkspace={workspace.personal}
           />
         );
     }

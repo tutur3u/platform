@@ -75,6 +75,7 @@ interface Props {
   availableLists?: TaskList[]; // Optional: pass from parent to avoid redundant API calls
   isSelected?: boolean;
   isMultiSelectMode?: boolean;
+  isPersonalWorkspace?: boolean;
   onSelect?: (taskId: string, event: React.MouseEvent) => void;
 }
 
@@ -118,6 +119,7 @@ export const TaskCard = React.memo(function TaskCard({
   availableLists: propAvailableLists,
   isSelected = false,
   isMultiSelectMode = false,
+  isPersonalWorkspace = false,
   onSelect,
 }: Props) {
   const [isLoading, setIsLoading] = useState(false);
@@ -841,13 +843,15 @@ export const TaskCard = React.memo(function TaskCard({
         {/* Bottom Row: Three-column layout for assignee, priority/tags, and checkbox, with only one tag visible and +N tooltip for extras */}
         <div className="flex h-8 min-w-0 items-center gap-x-1 overflow-hidden whitespace-nowrap">
           {/* Assignee: left, not cut off */}
-          <div className="min-w-0 max-w-[120px] flex-shrink-0 overflow-hidden truncate">
-            <AssigneeSelect
-              taskId={task.id}
-              assignees={task.assignees}
-              onUpdate={onUpdate}
-            />
-          </div>
+          {!isPersonalWorkspace && (
+            <div className="min-w-0 max-w-[120px] flex-shrink-0 overflow-hidden truncate">
+              <AssigneeSelect
+                taskId={task.id}
+                assignees={task.assignees}
+                onUpdate={onUpdate}
+              />
+            </div>
+          )}
           {/* Priority */}
           {!task.archived && task.priority && (
             <div className="min-w-0 max-w-[80px] overflow-hidden">
