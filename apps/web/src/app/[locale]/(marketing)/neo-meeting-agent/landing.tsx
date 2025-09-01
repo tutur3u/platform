@@ -11,7 +11,23 @@ import {
 import { UploadIcon } from 'lucide-react';
 import { useState } from 'react';
 
-export default function NeoMeetingAgentLanding() {
+type LandingTranslations = {
+  dropzoneTitle: string;
+  dropzoneCaption: string;
+  generateButton: string;
+  historyTitle: string;
+  historyViewMore: string;
+  languageLabels: {
+    english: string;
+    vietnamese: string;
+  };
+};
+
+export default function NeoMeetingAgentLanding({
+  translations,
+}: {
+  translations: LandingTranslations;
+}) {
   const [files, setFiles] = useState<File[] | undefined>();
   const [language, setLanguage] = useState<string>('english');
 
@@ -42,26 +58,33 @@ export default function NeoMeetingAgentLanding() {
                 />
               </div>
               <p className="mt-4 font-medium text-muted-foreground">
-                Drag 'n' drop meeting video, or click to select a file
+                {translations.dropzoneTitle}
               </p>
               <p className="mt-2 text-sm text-muted-foreground/70">
-                You can upload a file up to 50MB
+                {translations.dropzoneCaption}
               </p>
             </div>
           </DropzoneEmptyState>
         </Dropzone>
 
         <div className="grid w-full grid-cols-2 items-center gap-4">
-          <LanguageSelect onValueChange={setLanguage} defaultValue={language} />
+          <LanguageSelect
+            onValueChange={setLanguage}
+            defaultValue={language}
+            languageLabels={translations.languageLabels}
+          />
           <Button className="bg-gradient-to-r from-orange-500 to-yellow-400 bg-[length:200%_auto] text-base font-bold text-white transition-all duration-500 ease-in-out hover:bg-[position:100%_0%]">
-            Generate Minutes
+            {translations.generateButton}
           </Button>
         </div>
       </div>
 
       {/* right column */}
       <div>
-        <MeetingHistory />
+        <MeetingHistory
+          title={translations.historyTitle}
+          viewMoreText={translations.historyViewMore}
+        />
       </div>
     </div>
   );

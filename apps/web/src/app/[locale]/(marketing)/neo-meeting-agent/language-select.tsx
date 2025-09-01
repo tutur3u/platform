@@ -9,11 +9,16 @@ import {
 interface LanguageSelectProps {
   onValueChange: (value: string) => void;
   defaultValue: string;
+  languageLabels: {
+    english: string;
+    vietnamese: string;
+  };
 }
 
 export function LanguageSelect({
   onValueChange,
   defaultValue,
+  languageLabels,
 }: LanguageSelectProps) {
   return (
     <Select onValueChange={onValueChange} defaultValue={defaultValue}>
@@ -21,8 +26,8 @@ export function LanguageSelect({
         <SelectValue placeholder="Language" />
       </SelectTrigger>
       <SelectContent className="border-color bg-[#18181B] text-white">
-        <SelectItem value="english">English</SelectItem>
-        <SelectItem value="vietnamese">Vietnamese</SelectItem>
+        <SelectItem value="english">{languageLabels.english}</SelectItem>
+        <SelectItem value="vietnamese">{languageLabels.vietnamese}</SelectItem>
       </SelectContent>
     </Select>
   );

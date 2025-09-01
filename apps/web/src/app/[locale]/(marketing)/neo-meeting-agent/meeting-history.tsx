@@ -15,13 +15,17 @@ const MOCK_MEETINGS = [
   { id: '6', name: 'Marketing Strategy Brainstorm' },
 ];
 
-export function MeetingHistory() {
+export function MeetingHistory({
+  title,
+  viewMoreText,
+}: {
+  title: string;
+  viewMoreText: string;
+}) {
   return (
     <Card className="border-muted-foreground/25 bg-card text-white">
       <CardHeader className="px-6 pt-3 pb-2">
-        <CardTitle className="text-center text-lg font-bold">
-          Summarized Meeting History
-        </CardTitle>
+        <CardTitle className="text-center text-lg font-bold">{title}</CardTitle>
       </CardHeader>
 
       <CardContent className="px-0 pt-0 pb-2">
@@ -45,7 +49,7 @@ export function MeetingHistory() {
             variant="secondary"
             className="h-10 w-full bg-white/10 text-gray-200 transition-colors hover:bg-white/20"
           >
-            View More
+            {viewMoreText}
           </Button>
         </div>
       </CardContent>

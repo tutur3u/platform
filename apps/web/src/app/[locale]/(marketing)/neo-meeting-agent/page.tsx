@@ -6,6 +6,18 @@ import { getTranslations } from 'next-intl/server';
 export default async function NeoMeetingAgentPage() {
   const t = await getTranslations('neo-meeting-agent');
 
+  const clientTranslations = {
+    dropzoneTitle: t('dropzone.title'),
+    dropzoneCaption: t('dropzone.caption', { size: 50 }),
+    generateButton: t('actions.generate'),
+    historyTitle: t('history.title'),
+    historyViewMore: t('history.view_more'),
+    languageLabels: {
+      english: t('languages.english'),
+      vietnamese: t('languages.vietnamese'),
+    },
+  };
+
   return (
     <div className="flex w-full flex-col items-center">
       <div className="container mx-auto mt-8 flex max-w-6xl flex-col gap-6 px-3 py-16 lg:gap-14 lg:py-24">
@@ -19,7 +31,7 @@ export default async function NeoMeetingAgentPage() {
         </div>
 
         <div className="mt-12">
-          <NeoMeetingAgentLanding />
+          <NeoMeetingAgentLanding translations={clientTranslations} />
         </div>
       </div>
       <Separator className="mt-8 mb-4 md:mt-16" />

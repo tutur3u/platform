@@ -415,7 +415,22 @@
   },
   "neo-meeting-agent": {
     "headline-p1": "Tóm tắt ngay cuộc họp của bạn chỉ bằng",
-    "headline-p2": "vài cú nhấp chuột"
+    "headline-p2": "vài cú nhấp chuột",
+    "dropzone": {
+      "title": "Kéo thả video cuộc họp, hoặc nhấn để chọn tệp",
+      "caption": "Bạn có thể tải lên tệp có dung lượng tối đa {size}MB"
+    },
+    "actions": {
+      "generate": "Tạo biên bản"
+    },
+    "history": {
+      "title": "Lịch sử cuộc họp đã tóm tắt",
+      "view_more": "Xem thêm"
+    },
+    "languages": {
+      "english": "Tiếng Anh",
+      "vietnamese": "Tiếng Việt"
+    }
   },
   "invite": {
     "invited-to": "Bạn được mời vào",
