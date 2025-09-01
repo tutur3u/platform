@@ -82,13 +82,6 @@ interface FileUploaderProps extends HTMLAttributes<HTMLDivElement> {
   multiple?: boolean;
 
   /**
-   * Whether to hide the default "Clear Files" button.
-   * @type boolean
-   * @default false
-   */
-  hideClearButton?: boolean;
-
-  /**
    * Whether the uploader is disabled.
    * @type boolean
    * @default false
@@ -106,7 +99,6 @@ export function FileUploader(props: FileUploaderProps) {
     maxSize = 1024 * 1024 * 2,
     maxFileCount = 1,
     multiple = false,
-    hideClearButton = false,
     disabled = false,
     className,
     ...dropzoneProps
@@ -245,24 +237,22 @@ export function FileUploader(props: FileUploaderProps) {
       <Separator className={files?.length ? 'mb-4' : 'my-4'} />
 
       <div className="flex gap-2">
-        {!hideClearButton && (
-          <Button
-            type="button"
-            className="w-fit"
-            onClick={() => {
-              setFiles([]);
-            }}
-            variant="ghost"
-            disabled={
-              uploading ||
-              (files?.length ?? 0) === 0 ||
-              ((files?.length ?? 0) > 0 &&
-                files?.every((file) => file.status === 'uploaded'))
-            }
-          >
-            Clear Files
-          </Button>
-        )}
+        <Button
+          type="button"
+          className="w-fit"
+          onClick={() => {
+            setFiles([]);
+          }}
+          variant="ghost"
+          disabled={
+            uploading ||
+            (files?.length ?? 0) === 0 ||
+            ((files?.length ?? 0) > 0 &&
+              files?.every((file) => file.status === 'uploaded'))
+          }
+        >
+          Clear Files
+        </Button>
         <Button
           type="button"
           className="w-full"
