@@ -47,6 +47,7 @@ import {
   Layers,
   MapPin,
   MoreHorizontal,
+  Move,
   Plus,
   RefreshCw,
   RotateCcw,
@@ -78,6 +79,7 @@ import utc from 'dayjs/plugin/utc';
 import { useRouter } from 'next/navigation';
 import { useCallback, useMemo, useState } from 'react';
 import type { SessionWithRelations } from '../types';
+import { WorkspaceSelectDialog } from './workspace-select-dialog';
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -225,6 +227,7 @@ const StackedSessionItem = ({
   onResume,
   onEdit,
   onDelete,
+  onMove,
   actionStates,
   tasks,
 }: {
@@ -232,6 +235,7 @@ const StackedSessionItem = ({
   onResume: (session: SessionWithRelations) => void;
   onEdit: (session: SessionWithRelations) => void;
   onDelete: (session: SessionWithRelations) => void;
+  onMove: (session: SessionWithRelations) => void;
   actionStates: { [key: string]: boolean };
   tasks:
     | (Partial<WorkspaceTask> & {
@@ -497,6 +501,10 @@ const StackedSessionItem = ({
                         <Edit className="mr-2 h-4 w-4" />
                         Edit Session
                       </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => onMove(latestSession)}>
+                        <Move className="mr-2 h-4 w-4" />
+                        Move to Another Workspace
+                      </DropdownMenuItem>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem onClick={() => onDelete(latestSession)}>
                         <Trash2 className="mr-2 h-4 w-4" />
@@ -726,6 +734,12 @@ const StackedSessionItem = ({
                                   <Edit className="mr-2 h-3 w-3" />
                                   Edit
                                 </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  onClick={() => onMove(session)}
+                                >
+                                  <Move className="mr-2 h-3 w-3" />
+                                  Move
+                                </DropdownMenuItem>
                                 <DropdownMenuSeparator />
                                 <DropdownMenuItem
                                   onClick={() => onDelete(session)}
@@ -808,8 +822,11 @@ export function SessionHistory({
     useState<SessionWithRelations | null>(null);
   const [sessionToEdit, setSessionToEdit] =
     useState<SessionWithRelations | null>(null);
+  const [sessionToMove, setSessionToMove] =
+    useState<SessionWithRelations | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
+  const [isMoving, setIsMoving] = useState(false);
   const [actionStates, setActionStates] = useState<{ [key: string]: boolean }>(
     {}
   );
@@ -1142,6 +1159,55 @@ export function SessionHistory({
       startTime: startTimeFormatted,
       endTime: endTimeFormatted,
     });
+  };
+
+  const openMoveDialog = (session: SessionWithRelations | undefined) => {
+    if (!session) return;
+    if (session.is_running) {
+      toast.error(
+        'Cannot move running sessions. Please stop the session first.'
+      );
+      return;
+    }
+    setSessionToMove(session);
+  };
+
+  const handleMoveSession = async (targetWorkspaceId: string) => {
+    if (!sessionToMove) return;
+
+    setIsMoving(true);
+    try {
+      const response = await fetch(
+        `/api/v1/workspaces/${wsId}/time-tracking/sessions/${sessionToMove.id}/move`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            targetWorkspaceId,
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to move session');
+      }
+
+      const result = await response.json();
+
+      router.refresh();
+      setSessionToMove(null);
+      toast.success(result.message || 'Session moved successfully');
+    } catch (error) {
+      console.error('Error moving session:', error);
+      const errorMessage =
+        error instanceof Error ? error.message : 'Failed to move session';
+      toast.error(errorMessage);
+    } finally {
+      setIsMoving(false);
+    }
   };
 
   const closeEditDialog = () => {
@@ -2044,6 +2110,20 @@ export function SessionHistory({
                                 >
                                   <Edit className="h-3 w-3" />
                                 </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-7 px-2"
+                                  onClick={() =>
+                                    openMoveDialog(
+                                      session.sessions[
+                                        session.sessions.length - 1
+                                      ]
+                                    )
+                                  }
+                                >
+                                  <Move className="h-3 w-3" />
+                                </Button>
                               </div>
                             </div>
                           ))}
@@ -2141,6 +2221,7 @@ export function SessionHistory({
                               onResume={resumeSession}
                               onEdit={openEditDialog}
                               onDelete={setSessionToDelete}
+                              onMove={openMoveDialog}
                               actionStates={actionStates}
                               tasks={tasks}
                             />
@@ -2570,6 +2651,16 @@ export function SessionHistory({
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Move Session Dialog */}
+      <WorkspaceSelectDialog
+        isOpen={!!sessionToMove}
+        onClose={() => setSessionToMove(null)}
+        onConfirm={handleMoveSession}
+        sessionTitle={sessionToMove?.title || ''}
+        currentWorkspaceId={wsId}
+        isMoving={isMoving}
+      />
     </>
   );
 }
