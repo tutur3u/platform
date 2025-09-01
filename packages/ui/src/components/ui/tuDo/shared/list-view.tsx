@@ -5,7 +5,6 @@ import { createClient } from '@tuturuuu/supabase/next/client';
 import type { TaskPriority } from '@tuturuuu/types/primitives/Priority';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
-import type { Json } from '@tuturuuu/types/supabase';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -141,14 +140,6 @@ interface Member {
   avatar_url?: string | null;
 }
 
-interface TaskBulkUpdate {
-  id: string;
-  priority?: TaskPriority | null;
-  archived?: boolean;
-  tags?: string[];
-  [key: string]: Json | string[] | number | boolean | null | undefined;
-}
-
 // Priority labels constant - defined once outside component for performance
 const priorityLabels = {
   critical: 'Urgent',
@@ -247,32 +238,36 @@ export function ListView({
       const supabase = createClient();
       const taskIds = Array.from(selectedTasks);
 
-      // Prepare updates array for RPC
-      const updates: TaskBulkUpdate[] = taskIds.map((id) => {
-        const updateObj: TaskBulkUpdate = { id };
-        if (bulkEditData.priority !== 'keep') {
-          updateObj.priority = bulkEditData.priority as TaskPriority | null;
-        }
-        if (bulkEditData.status !== 'keep') {
-          updateObj.archived = bulkEditData.status === 'completed';
-        }
-        if (bulkEditData.tags.length > 0) {
-          updateObj.tags = bulkEditData.tags;
-        }
-        return updateObj;
-      });
+      // Build update object with only the fields that need to be updated
+      const updateData: {
+        priority?: TaskPriority | null;
+        archived?: boolean;
+        tags?: string[];
+      } = {};
+      let hasUpdates = false;
 
-      // Check if any updates have meaningful changes (more than just the id field)
-      const hasUpdates = updates.some(
-        (obj) =>
-          obj.priority !== undefined ||
-          obj.archived !== undefined ||
-          obj.tags !== undefined
-      );
+      if (bulkEditData.priority !== 'keep') {
+        updateData.priority = bulkEditData.priority as TaskPriority | null;
+        hasUpdates = true;
+      }
+
+      if (bulkEditData.status !== 'keep') {
+        updateData.archived = bulkEditData.status === 'completed';
+        hasUpdates = true;
+      }
+
+      if (bulkEditData.tags.length > 0) {
+        updateData.tags = bulkEditData.tags;
+        hasUpdates = true;
+      }
 
       if (hasUpdates) {
-        // Only call RPC if at least one field is being updated
-        const { error } = await supabase.rpc('update_many_tasks', { updates });
+        // Use normal Supabase update query instead of RPC
+        const { error } = await supabase
+          .from('tasks')
+          .update(updateData)
+          .in('id', taskIds);
+
         if (error) throw error;
       }
 
