@@ -1,6 +1,7 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { notFound } from 'next/navigation';
+import { groupSessions } from '@/lib/time-tracking-helper';
 import TimeTrackerManagementClient from './client';
 
 interface Props {
@@ -31,5 +32,18 @@ export default async function TimeTrackerManagementPage({ params }: Props) {
     .single();
   if (!workspaceMember) notFound();
 
-  return <TimeTrackerManagementClient />;
+  const { data: sessions } = await supabase
+    .from('time_tracking_sessions')
+    .select(`
+      *,
+      category:time_tracking_categories(name, color),
+      user:users(display_name, avatar_url)
+    `)
+    .eq('ws_id', wsId);
+
+  console.log(sessions);
+
+  const groupedSessions = groupSessions(sessions || []);
+
+  return <TimeTrackerManagementClient groupedSessions={groupedSessions} />;
 }

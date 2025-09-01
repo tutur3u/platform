@@ -76,7 +76,7 @@ import isoWeek from 'dayjs/plugin/isoWeek';
 import timezone from 'dayjs/plugin/timezone';
 import utc from 'dayjs/plugin/utc';
 import { useRouter } from 'next/navigation';
-import { type FC, useCallback, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import type { SessionWithRelations } from '../types';
 
 dayjs.extend(utc);
@@ -97,20 +97,16 @@ interface SessionHistoryProps {
 
 type ViewMode = 'day' | 'week' | 'month';
 
-// New interface for stacked sessions
 interface StackedSession {
-  id: string; // Use the first session's ID as the stack ID
+  id: string;
   title: string;
   description?: string;
   category: TimeTrackingCategory | null;
-  category_id: string | null;
   task: WorkspaceTask | null;
-  task_id: string | null;
   sessions: SessionWithRelations[]; // All sessions in this stack
   totalDuration: number; // Sum of all durations
   firstStartTime: string; // Earliest start time
   lastEndTime: string | null; // Latest end time
-  isStacked: boolean; // Whether this represents multiple sessions
 }
 
 // Utility function to stack sessions by day/month, name, and category
@@ -200,14 +196,11 @@ const createStackedSession = (
     title: firstSession.title,
     description: firstSession.description || undefined,
     category: firstSession.category,
-    category_id: firstSession.category_id,
     task: firstSession.task,
-    task_id: firstSession.task_id,
     sessions: sortedSessions,
     totalDuration,
     firstStartTime: firstSession.start_time,
     lastEndTime: lastSession.end_time,
-    isStacked: sessions.length > 1,
   };
 };
 
@@ -227,7 +220,14 @@ const getCategoryColor = (color: string) => {
   return colorMap[color] || 'bg-blue-500';
 };
 
-const StackedSessionItem: FC<{
+const StackedSessionItem = ({
+  stackedSession,
+  onResume,
+  onEdit,
+  onDelete,
+  actionStates,
+  tasks,
+}: {
   stackedSession: StackedSession | null;
   onResume: (session: SessionWithRelations) => void;
   onEdit: (session: SessionWithRelations) => void;
@@ -239,7 +239,7 @@ const StackedSessionItem: FC<{
         list_name?: string;
       })[]
     | null;
-}> = ({ stackedSession, onResume, onEdit, onDelete, actionStates, tasks }) => {
+}) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [showAllSessions, setShowAllSessions] = useState(false);
   const userTimezone = dayjs.tz.guess();
@@ -274,7 +274,7 @@ const StackedSessionItem: FC<{
               <h4 className="truncate font-semibold text-base">
                 {stackedSession?.title}
               </h4>
-              {stackedSession?.isStacked && (
+              {stackedSession?.sessions.length > 1 && (
                 <Badge variant="secondary" className="font-medium text-xs">
                   <Layers className="mr-1 h-3 w-3" />
                   {stackedSession?.sessions.length} sessions
@@ -347,8 +347,7 @@ const StackedSessionItem: FC<{
               <div className="flex items-center gap-1 text-muted-foreground text-xs">
                 <Clock className="h-3 w-3" />
                 <span>
-                  {stackedSession?.isStacked &&
-                  stackedSession?.sessions.length > 1 ? (
+                  {stackedSession?.sessions.length > 1 ? (
                     <>
                       {firstStartTime.format('MMM D')}
                       {lastEndTime &&
@@ -409,37 +408,32 @@ const StackedSessionItem: FC<{
               <p className="font-bold text-primary text-xl">
                 {formatDuration(stackedSession?.totalDuration)}
               </p>
-              {stackedSession?.isStacked && (
+              {stackedSession?.sessions.length > 1 && (
                 <p className="font-medium text-muted-foreground text-xs">
                   Total time • {stackedSession?.sessions.length} sessions
-                  {stackedSession?.sessions.length > 1 && (
-                    <span className="ml-1">
-                      across{' '}
-                      {
-                        new Set(
-                          stackedSession?.sessions.map((s) =>
-                            dayjs
-                              .utc(s.start_time)
-                              .tz(userTimezone)
-                              .format('MMM D')
-                          )
-                        ).size
-                      }{' '}
-                      {new Set(
+                  <span className="ml-1">
+                    across{' '}
+                    {
+                      new Set(
                         stackedSession?.sessions.map((s) =>
                           dayjs
                             .utc(s.start_time)
                             .tz(userTimezone)
                             .format('MMM D')
                         )
-                      ).size === 1
-                        ? 'day'
-                        : 'days'}
-                    </span>
-                  )}
+                      ).size
+                    }{' '}
+                    {new Set(
+                      stackedSession?.sessions.map((s) =>
+                        dayjs.utc(s.start_time).tz(userTimezone).format('MMM D')
+                      )
+                    ).size === 1
+                      ? 'day'
+                      : 'days'}
+                  </span>
                 </p>
               )}
-              {lastEndTime && !stackedSession?.isStacked && (
+              {lastEndTime && stackedSession?.sessions.length <= 1 && (
                 <p className="text-muted-foreground text-xs">
                   Ended at {lastEndTime.format('h:mm A')}
                 </p>
@@ -455,7 +449,7 @@ const StackedSessionItem: FC<{
             </div>
 
             <div className="flex items-center gap-1">
-              {stackedSession?.isStacked && (
+              {stackedSession?.sessions.length > 1 && (
                 <Button
                   variant="ghost"
                   size="sm"
@@ -497,7 +491,7 @@ const StackedSessionItem: FC<{
                     )}
                     Start New Session
                   </DropdownMenuItem>
-                  {!stackedSession?.isStacked && (
+                  {stackedSession?.sessions.length <= 1 && (
                     <>
                       <DropdownMenuItem onClick={() => onEdit(latestSession)}>
                         <Edit className="mr-2 h-4 w-4" />
@@ -517,7 +511,7 @@ const StackedSessionItem: FC<{
         </div>
       </div>
 
-      {stackedSession?.isStacked && (
+      {stackedSession?.sessions.length > 1 && (
         <Collapsible open={isExpanded}>
           <CollapsibleContent>
             <div className="border-t bg-muted/30 p-4">
@@ -2012,7 +2006,7 @@ export function SessionHistory({
                                   <div className="font-semibold text-sm">
                                     {formatDuration(session.totalDuration)}
                                   </div>
-                                  {session.isStacked && (
+                                  {session.sessions.length > 1 && (
                                     <div className="text-muted-foreground text-xs">
                                       {session.sessions.length} sessions
                                     </div>

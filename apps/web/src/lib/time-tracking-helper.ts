@@ -1,11 +1,51 @@
-'use server';
-
-import { transformAssignees } from '@/lib/task-helper';
 import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
+import { transformAssignees } from '@/lib/task-helper';
 import 'server-only';
+
+export const groupSessions = (sessions: any[]) => {
+  // Your grouping logic here
+  const grouped = new Map();
+
+  sessions.forEach((session) => {
+    const key = `${session.title}-${session.category_id || 'none'}-${session.user_id}`;
+
+    if (!grouped.has(key)) {
+      grouped.set(key, {
+        title: session.title,
+        category: session.category,
+        sessions: [],
+        totalDuration: 0,
+        firstStartTime: session.start_time,
+        lastEndTime: session.end_time,
+        status: session.is_running ? 'active' : 'completed',
+        user: {
+          displayName: session.user?.display_name,
+          avatarUrl: session.user?.avatar_url,
+        },
+      });
+    }
+
+    const group = grouped.get(key);
+    group.sessions.push(session);
+    group.totalDuration += session.duration_seconds || 0;
+
+    // Update time ranges
+    if (session.start_time < group.firstStartTime) {
+      group.firstStartTime = session.start_time;
+    }
+    if (
+      session.end_time &&
+      (!group.lastEndTime || session.end_time > group.lastEndTime)
+    ) {
+      group.lastEndTime = session.end_time;
+    }
+  });
+
+  return Array.from(grouped.values());
+};
 
 export const getTimeTrackingData = async (wsId: string, userId: string) => {
   const supabase = await createClient();
