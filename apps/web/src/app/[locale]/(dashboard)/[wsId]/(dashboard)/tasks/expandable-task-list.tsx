@@ -2,7 +2,7 @@
 
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
-import { ChevronDown, ChevronUp } from '@tuturuuu/ui/icons';
+import { ChevronDown, ChevronUp, UserRound } from '@tuturuuu/ui/icons';
 import { cn } from '@tuturuuu/utils/format';
 import Link from 'next/link';
 import { useState } from 'react';
@@ -92,14 +92,17 @@ export default function ExpandableTaskList({
                       <>
                         <Link
                           href={`/${task.list.board.ws_id}`}
-                          className="font-semibold text-dynamic-blue transition-colors hover:text-dynamic-blue/80 hover:underline"
+                          className={cn(
+                            'font-semibold transition-colors hover:underline',
+                            task.list?.board?.workspaces?.personal
+                              ? 'text-dynamic-purple hover:text-dynamic-purple/80'
+                              : 'text-dynamic-blue hover:text-dynamic-blue/80'
+                          )}
                         >
                           {task.list?.board?.workspaces?.personal ? (
-                            <span className="flex items-center gap-1">
-                              <span>Personal</span>
-                            </span>
+                            <UserRound className="h-3 w-3" />
                           ) : (
-                            task.list?.board?.workspaces?.name || 'Workspace'
+                            task.list?.board?.workspaces?.name
                           )}
                         </Link>
                         <span>•</span>
