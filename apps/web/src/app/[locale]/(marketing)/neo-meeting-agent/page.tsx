@@ -9,13 +9,16 @@ export default async function NeoMeetingAgentPage() {
   return (
     <div className="flex w-full flex-col items-center">
       <div className="container mx-auto mt-8 flex max-w-6xl flex-col gap-6 px-3 py-16 lg:gap-14 lg:py-24">
-        <div className="flex flex-col items-center">
-          <h1 className="mx-auto mb-2 text-center text-2xl leading-tight! font-bold tracking-tight text-balance text-foreground md:text-4xl lg:text-6xl">
+        <div className="flex flex-col items-center gap-4">
+          <h1 className="mx-auto text-center text-2xl font-bold text-foreground md:text-4xl lg:text-6xl">
+            NEO Meeting Agent
+          </h1>
+          <p className="mx-auto max-w-2xl text-2xl font-semibold">
             {t('headline-p1')}{' '}
             <GradientHeadline gradient="yellow-orange">
               {t('headline-p2')}
             </GradientHeadline>
-          </h1>
+          </p>
         </div>
 
         <div className="mt-12">
