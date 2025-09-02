@@ -1,22 +1,10 @@
+import GradientHeadline from '../gradient-headline';
 import NeoMeetingAgentLanding from './landing';
-import GradientHeadline from '@/app/[locale]/(marketing)/gradient-headline';
 import { Separator } from '@ncthub/ui/separator';
 import { getTranslations } from 'next-intl/server';
 
 export default async function NeoMeetingAgentPage() {
   const t = await getTranslations('neo-meeting-agent');
-
-  const clientTranslations = {
-    dropzoneTitle: t('dropzone.title'),
-    dropzoneCaption: t('dropzone.caption', { size: 50 }),
-    generateButton: t('actions.generate'),
-    historyTitle: t('history.title'),
-    historyViewMore: t('history.view_more'),
-    languageLabels: {
-      english: t('languages.english'),
-      vietnamese: t('languages.vietnamese'),
-    },
-  };
 
   return (
     <div className="flex w-full flex-col items-center">
@@ -31,7 +19,7 @@ export default async function NeoMeetingAgentPage() {
         </div>
 
         <div className="mt-12">
-          <NeoMeetingAgentLanding translations={clientTranslations} />
+          <NeoMeetingAgentLanding />
         </div>
       </div>
       <Separator className="mt-8 mb-4 md:mt-16" />

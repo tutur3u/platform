@@ -9,25 +9,12 @@ import {
   DropzoneEmptyState,
 } from '@ncthub/ui/dropzone';
 import { UploadIcon } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 
-type LandingTranslations = {
-  dropzoneTitle: string;
-  dropzoneCaption: string;
-  generateButton: string;
-  historyTitle: string;
-  historyViewMore: string;
-  languageLabels: {
-    english: string;
-    vietnamese: string;
-  };
-};
+export default function NeoMeetingAgentLanding() {
+  const t = useTranslations('neo-meeting-agent');
 
-export default function NeoMeetingAgentLanding({
-  translations,
-}: {
-  translations: LandingTranslations;
-}) {
   const [files, setFiles] = useState<File[] | undefined>();
   const [language, setLanguage] = useState<string>('english');
 
@@ -58,10 +45,10 @@ export default function NeoMeetingAgentLanding({
                 />
               </div>
               <p className="mt-4 font-medium text-muted-foreground">
-                {translations.dropzoneTitle}
+                {t('dropzone.title')}
               </p>
               <p className="mt-2 text-sm text-muted-foreground/70">
-                {translations.dropzoneCaption}
+                {t('dropzone.caption', { size: 50 })}
               </p>
             </div>
           </DropzoneEmptyState>
@@ -71,10 +58,13 @@ export default function NeoMeetingAgentLanding({
           <LanguageSelect
             onValueChange={setLanguage}
             defaultValue={language}
-            languageLabels={translations.languageLabels}
+            languageLabels={{
+              english: t('languages.english'),
+              vietnamese: t('languages.vietnamese'),
+            }}
           />
           <Button className="bg-gradient-to-r from-orange-500 to-yellow-400 bg-[length:200%_auto] text-base font-bold text-white transition-all duration-500 ease-in-out hover:bg-[position:100%_0%]">
-            {translations.generateButton}
+            {t('actions.generate')}
           </Button>
         </div>
       </div>
@@ -82,8 +72,8 @@ export default function NeoMeetingAgentLanding({
       {/* right column */}
       <div>
         <MeetingHistory
-          title={translations.historyTitle}
-          viewMoreText={translations.historyViewMore}
+          title={t('history.title')}
+          viewMoreText={t('history.view_more')}
         />
       </div>
     </div>
