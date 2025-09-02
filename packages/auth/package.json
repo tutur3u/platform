@@ -23,10 +23,10 @@
     "react": "^19.1.1"
   },
   "devDependencies": {
-    "@types/node": "^22.17.2",
-    "@types/react": "^19.1.10",
-    "@types/react-dom": "^19.1.7",
-    "eslint": "^9.33.0",
+    "@types/node": "^22.18.0",
+    "@types/react": "^19.1.12",
+    "@types/react-dom": "^19.1.9",
+    "eslint": "^9.34.0",
     "typescript": "^5.9.2"
   }
 }
