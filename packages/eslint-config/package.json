@@ -22,5 +22,5 @@
     "eslint-plugin-only-warn": "^1.1.0",
     "typescript": "^5.9.2"
   },
-  "packageManager": "bun@1.2.18"
+  "packageManager": "bun@1.2.21"
 }

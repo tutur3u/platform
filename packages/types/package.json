@@ -8,7 +8,7 @@
   "scripts": {
     "lint": "eslint ."
   },
-  "packageManager": "bun@1.2.18",
+  "packageManager": "bun@1.2.21",
   "dependencies": {
     "eslint": "^9.34.0",
     "react": "^19.1.1",

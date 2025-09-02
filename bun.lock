@@ -225,7 +225,7 @@
       "version": "0.0.7",
       "dependencies": {
         "@ncthub/types": "workspace:*",
-        "@supabase/ssr": "^0.6.1",
+        "@supabase/ssr": "^0.7.0",
         "@supabase/supabase-js": "^2.56.1",
         "eslint": "^9.34.0",
         "next": "15.3.3",
@@ -387,7 +387,7 @@
       "dependencies": {
         "@ncthub/supabase": "workspace:*",
         "clsx": "^2.1.1",
-        "eslint": "^9.33.0",
+        "eslint": "^9.34.0",
         "next": "15.3.3",
         "react": "^19.1.1",
         "react-dom": "^19.1.1",
@@ -397,14 +397,14 @@
       },
       "devDependencies": {
         "@eslint/eslintrc": "^3.3.1",
-        "@eslint/js": "^9.33.0",
+        "@eslint/js": "^9.34.0",
         "@ncthub/eslint-config": "workspace:*",
         "@ncthub/types": "workspace:*",
         "@ncthub/typescript-config": "workspace:*",
-        "@types/node": "^22.17.2",
-        "@types/react": "^19.1.10",
-        "@typescript-eslint/eslint-plugin": "^8.40.0",
-        "@typescript-eslint/parser": "^8.40.0",
+        "@types/node": "^22.18.0",
+        "@types/react": "^19.1.12",
+        "@typescript-eslint/eslint-plugin": "^8.41.0",
+        "@typescript-eslint/parser": "^8.41.0",
         "typescript": "^5.9.2",
       },
     },
@@ -1270,7 +1270,7 @@
 
     "@supabase/realtime-js": ["@supabase/realtime-js@2.15.4", "", { "dependencies": { "@supabase/node-fetch": "^2.6.13", "@types/phoenix": "^1.6.6", "@types/ws": "^8.18.1", "ws": "^8.18.2" } }, "sha512-e/FYIWjvQJHOCNACWehnKvg26zosju3694k0NMUNb+JGLdvHJzEa29ZVVLmawd2kvx4hdbv8mxSqfttRnH3+DA=="],
 
-    "@supabase/ssr": ["@supabase/ssr@0.6.1", "", { "dependencies": { "cookie": "^1.0.1" }, "peerDependencies": { "@supabase/supabase-js": "^2.43.4" } }, "sha512-QtQgEMvaDzr77Mk3vZ3jWg2/y+D8tExYF7vcJT+wQ8ysuvOeGGjYbZlvj5bHYsj/SpC0bihcisnwPrM4Gp5G4g=="],
+    "@supabase/ssr": ["@supabase/ssr@0.7.0", "", { "dependencies": { "cookie": "^1.0.2" }, "peerDependencies": { "@supabase/supabase-js": "^2.43.4" } }, "sha512-G65t5EhLSJ5c8hTCcXifSL9Q/ZRXvqgXeNo+d3P56f4U1IxwTqjB64UfmfixvmMcjuxnq2yGqEWVJqUcO+AzAg=="],
 
     "@supabase/storage-js": ["@supabase/storage-js@2.10.5", "", { "dependencies": { "@supabase/node-fetch": "^2.6.14" } }, "sha512-9O7DfVI+v+exwPIKFGlCn2gigx441ojHnJ5QpHPegvblPdZQnnmCrL+A0JHj7wD/e+f9fnLu/DBKAtLYrLtftw=="],
 

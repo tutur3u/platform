@@ -10,9 +10,9 @@
     "test": "vitest run",
     "test:watch": "vitest"
   },
-  "packageManager": "bun@1.2.18",
+  "packageManager": "bun@1.2.21",
   "dependencies": {
-    "@supabase/ssr": "^0.6.1",
+    "@supabase/ssr": "^0.7.0",
     "@supabase/supabase-js": "^2.56.1",
     "@ncthub/types": "workspace:*",
     "eslint": "^9.34.0",
