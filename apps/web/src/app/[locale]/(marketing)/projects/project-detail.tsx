@@ -1,7 +1,8 @@
 import { Project } from './data';
 import { motion } from 'framer-motion';
-import { Code, ExternalLink, Github, Play, X } from 'lucide-react';
+import { Code, Component, ExternalLink, Github, Play, X } from 'lucide-react';
 import Image from 'next/image';
+import { useRouter } from "next/navigation";
 
 interface ProjectDetailProps {
   onClose: () => void;
@@ -42,6 +43,8 @@ const BACKDROP_VARIANTS = {
 };
 
 export default function ProjectDetail({ onClose, data }: ProjectDetailProps) {
+  const router = useRouter(); 
+  
   if (!data) {
     return null;
   }
@@ -58,6 +61,7 @@ export default function ProjectDetail({ onClose, data }: ProjectDetailProps) {
     githubUrl,
     demoUrl,
     image,
+    modelFile,
   } = data;
 
   const handleBackdropClick = () => {
@@ -83,6 +87,7 @@ export default function ProjectDetail({ onClose, data }: ProjectDetailProps) {
         transition={{ type: 'spring', stiffness: 300, damping: 25 }}
         onClick={handleModalClick}
       >
+
         {/* Header */}
         <div className="relative p-8">
           <button
@@ -152,6 +157,19 @@ export default function ProjectDetail({ onClose, data }: ProjectDetailProps) {
                     <Play size={20} />
                     <span>View Demo</span>
                   </motion.a>
+                )}
+                {modelFile && (
+                  <motion.button
+                    onClick={() => {
+                       router.push(`/projects/3dview?src=${modelFile}`)
+                    }}
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#24a4db] to-[#1AF4E6] px-6 py-3 font-medium text-black transition-all duration-200 hover:shadow-lg hover:shadow-[#24a4db]/30"
+                  >
+                    <Component size={20} />
+                    <span>View Model</span>
+                  </motion.button>
                 )}
               </div>
             )}
