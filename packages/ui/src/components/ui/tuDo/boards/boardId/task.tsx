@@ -252,7 +252,7 @@ export const TaskCard = React.memo(function TaskCard({
     );
   }
 
-  async function handlePriorityChange(priority: TaskPriority) {
+  async function handlePriorityChange(priority: TaskPriority | null) {
     setIsLoading(true);
     updateTaskMutation.mutate(
       { taskId: task.id, updates: { priority } },
@@ -781,6 +781,17 @@ export const TaskCard = React.memo(function TaskCard({
                         <Flag className="h-4 w-4 text-dynamic-blue/80" />
                         Low Priority
                       </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem
+                        onClick={() => {
+                          handlePriorityChange(null);
+                          setMenuOpen(false);
+                        }}
+                        className="cursor-pointer text-muted-foreground"
+                      >
+                        <X className="h-4 w-4" />
+                        Remove Priority
+                      </DropdownMenuItem>
                     </DropdownMenuSubContent>
                   </DropdownMenuSub>
 
@@ -839,12 +850,12 @@ export const TaskCard = React.memo(function TaskCard({
                 Due {formatSmartDate(endDate)}
                 {isOverdue && !task.archived && (
                   <Badge className="ml-1 h-4 bg-dynamic-red/80 px-1 text-[9px] text-white">
-                    OVERDUE
+                    OVERDUE - {format(endDate, "MMM dd 'at' h:mm a")}
                   </Badge>
                 )}
-                {endDate && !isOverdue && !task.archived && (
+                {!isOverdue && !task.archived && endDate && (
                   <span className="ml-1 text-[10px] text-muted-foreground">
-                    ({format(endDate, 'MMM dd')})
+                    ({format(endDate, "MMM dd 'at' h:mm a")})
                   </span>
                 )}
               </span>
