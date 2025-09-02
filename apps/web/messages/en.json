@@ -205,6 +205,7 @@
     "background": "Background",
     "scan_me": "Scan me",
     "qr_code": "QR Code",
+    "or": "or",
     "current_plan": "Current plan",
     "incomplete": "Incomplete",
     "file-name": "File Name",
@@ -366,7 +367,10 @@
     "grid": "Grid",
     "list": "List",
     "grid_view": "Grid view",
-    "list_view": "List view"
+    "list_view": "List view",
+    "title": "Title",
+    "optional": "optional",
+    "characters": "characters"
   },
   "date_helper": {
     "time-unit": "Time unit",
@@ -4168,5 +4172,25 @@
     "loading": "Loading...",
     "error": "Error",
     "no_data": "No data available"
+  },
+  "qr": {
+    "image_upload": {
+      "title": "Logo/Image Upload",
+      "drop_files": "Drop files here",
+      "browse": "browse files",
+      "supported_formats": "Supported formats",
+      "max_size": "Max size",
+      "dimensions": "Dimensions",
+      "recommended": "Recommended",
+      "image_uploaded": "Image uploaded",
+      "processing": "Processing",
+      "rounded_logo": "Rounded logo",
+      "invalid_type": "Invalid file type. Please upload JPG, PNG, WebP, or SVG files.",
+      "file_too_large": "File is too large. Maximum size is 5MB.",
+      "dimensions_too_small": "Image dimensions are too small. Minimum size is 32x32px.",
+      "dimensions_too_large": "Image dimensions are too large. Maximum size is 512x512px.",
+      "invalid_image": "Invalid image file.",
+      "upload_failed": "Upload failed. Please try again."
+    }
   }
 }
