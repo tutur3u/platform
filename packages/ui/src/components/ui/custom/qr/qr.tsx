@@ -22,12 +22,15 @@ interface ImageSettings {
   rounded?: boolean;
 }
 
+const MAX_CUSTOM_TITLE_LENGTH = 50;
+
 export default function QR() {
   const t = useTranslations();
 
   const ref = useRef<HTMLCanvasElement>(null);
 
   const [value, setValue] = useState('');
+  const [customTitle, setCustomTitle] = useState('');
   const [style, setStyle] = useState<'default' | 'brand' | 'scan-me'>(
     'default'
   );
@@ -47,7 +50,7 @@ export default function QR() {
     try {
       const canvas = await html2canvas(qrDisplayElement, {
         backgroundColor: null,
-        scale: 2, // Higher quality
+        scale: 4, // Higher quality
         useCORS: true,
         logging: false,
       });
@@ -84,7 +87,27 @@ export default function QR() {
             onChange={(e) => setValue(e.target.value)}
           />
         </div>
-
+        {style === 'brand' && (
+          <div className="mt-4 grid gap-2">
+            <div className="flex items-center justify-between">
+              <Label>
+                {t('common.title')} ({t('common.optional')})
+              </Label>
+              <span className="text-muted-foreground text-xs">
+                {customTitle.length}/{MAX_CUSTOM_TITLE_LENGTH}{' '}
+                {t('common.characters')}
+              </span>
+            </div>
+            <Textarea
+              placeholder={t('common.title')}
+              value={customTitle}
+              onChange={(e) => setCustomTitle(e.target.value)}
+              rows={2}
+              maxLength={MAX_CUSTOM_TITLE_LENGTH}
+              className="resize-none"
+            />
+          </div>
+        )}
         <QRColorPicker
           color={color}
           setColor={setColor}
@@ -106,12 +129,13 @@ export default function QR() {
       </div>
       <div>
         <QRDisplay
-          ref={ref as React.RefObject<HTMLCanvasElement>}
+          canvasRef={ref as React.RefObject<HTMLCanvasElement>}
           value={value}
           color={color}
           bgColor={bgColor}
           style={style}
           imageSettings={imageSettings}
+          customTitle={customTitle}
           id={qrId}
         />
         <div className="mt-2 flex gap-2">
@@ -119,6 +143,7 @@ export default function QR() {
             variant="destructive"
             onClick={() => {
               setValue('');
+              setCustomTitle('');
               setColor('#000000');
               setBgColor('#FFFFFF');
               setStyle('default');
@@ -126,6 +151,7 @@ export default function QR() {
             }}
             disabled={
               !value &&
+              !customTitle &&
               color === '#000000' &&
               bgColor === '#FFFFFF' &&
               style === 'default' &&

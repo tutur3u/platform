@@ -365,7 +365,10 @@
     "list": "Danh sách",
     "grid_view": "Xem dạng lưới",
     "list_view": "Xem dạng danh sách",
-    "or": "hoặc"
+    "or": "hoặc",
+    "title": "Tiêu đề",
+    "optional": "tùy chọn",
+    "characters": "kí tự"
   },
   "date_helper": {
     "time-unit": "Đơn vị thời gian",

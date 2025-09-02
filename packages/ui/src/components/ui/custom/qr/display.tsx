@@ -1,6 +1,5 @@
 import { QRWorkspaceTitle } from '@tuturuuu/ui/custom/qr/workspace-title';
 import { cn } from '@tuturuuu/utils/format';
-import { useTranslations } from 'next-intl';
 import { QRCodeCanvas } from 'qrcode.react';
 
 interface ImageSettings {
@@ -13,25 +12,25 @@ interface ImageSettings {
   rounded?: boolean;
 }
 
-function QRDisplay({
-  ref,
+export default function QRDisplay({
+  canvasRef,
   value,
   color,
   bgColor,
   style,
   imageSettings,
+  customTitle,
   id,
 }: {
-  ref: React.RefObject<HTMLCanvasElement>;
+  canvasRef: React.RefObject<HTMLCanvasElement>;
   value: string;
   color: string;
   bgColor: string;
   style: 'default' | 'brand' | 'scan-me';
   imageSettings?: ImageSettings | null;
+  customTitle?: string;
   id: string;
 }) {
-  const t = useTranslations();
-
   return (
     <div
       id={id}
@@ -45,7 +44,7 @@ function QRDisplay({
         style={{ backgroundColor: bgColor }}
       >
         <QRCodeCanvas
-          ref={ref}
+          ref={canvasRef}
           value={value}
           size={256}
           marginSize={2}
@@ -68,14 +67,16 @@ function QRDisplay({
       </div>
       {style === 'brand' && (
         <div className="mt-1 uppercase">
-          <QRWorkspaceTitle />
+          {customTitle ? (
+            <div className="mx-auto w-64 text-balance break-all px-2 text-center font-bold text-2xl uppercase leading-tight">
+              {customTitle}
+            </div>
+          ) : (
+            <QRWorkspaceTitle />
+          )}
         </div>
       )}
-      {style === 'scan-me' && (
-        <div className="mt-1 uppercase">{t('common.scan_me')}</div>
-      )}
+      {style === 'scan-me' && <div className="mt-1 uppercase">Scan Me</div>}
     </div>
   );
 }
-
-export default QRDisplay;

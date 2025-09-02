@@ -10,9 +10,9 @@ interface Workspace {
   personal?: boolean;
 }
 
-async function fetchWorkspaces(): Promise<Workspace[]> {
+async function fetchWorkspaces(signal?: AbortSignal): Promise<Workspace[]> {
   try {
-    const response = await fetch('/api/v1/workspaces');
+    const response = await fetch('/api/v1/workspaces', { signal });
     if (!response.ok) {
       throw new Error('Failed to fetch workspaces');
     }
@@ -24,26 +24,24 @@ async function fetchWorkspaces(): Promise<Workspace[]> {
 }
 
 export function QRWorkspaceTitle({ className }: { className?: string }) {
-  const params = useParams();
-  const wsId = params.wsId as string | undefined;
+  const { wsId } = useParams<{ wsId?: string | string[] }>();
+  const wsIdString = Array.isArray(wsId) ? wsId[0] : wsId;
 
-  const { data: workspaces } = useQuery({
+  const { data: currentWorkspace } = useQuery({
     queryKey: ['workspaces'],
-    queryFn: fetchWorkspaces,
-    enabled: !!wsId,
+    queryFn: ({ signal }) => fetchWorkspaces(signal),
+    enabled: !!wsIdString,
+    select: (data) => data.find((ws) => ws.id === wsIdString),
   });
 
-  // Find the current workspace
-  const currentWorkspace = workspaces?.find((ws) => ws.id === wsId);
-
   // If not in a workspace context or no workspace data, return empty
-  if (!wsId || !currentWorkspace) {
+  if (!wsIdString || !currentWorkspace) {
     return null;
   }
 
   return (
-    <div className={cn('font-bold text-2xl uppercase', className)}>
-      {currentWorkspace.name}
+    <div className={cn('text-center font-bold text-2xl uppercase', className)}>
+      {currentWorkspace?.name}
     </div>
   );
 }

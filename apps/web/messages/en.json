@@ -367,7 +367,10 @@
     "grid": "Grid",
     "list": "List",
     "grid_view": "Grid view",
-    "list_view": "List view"
+    "list_view": "List view",
+    "title": "Title",
+    "optional": "optional",
+    "characters": "characters"
   },
   "date_helper": {
     "time-unit": "Time unit",
