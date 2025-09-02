@@ -1,8 +1,8 @@
-import { transformAssignees } from '@/lib/task-helper';
 import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
+import type { TimeTrackingSession } from '@tuturuuu/types/db';
 import 'server-only';
 
 // Enhanced pagination interface
@@ -26,7 +26,7 @@ export interface PaginatedResult<T> {
 export interface GroupedSession {
   title: string;
   category: null;
-  sessions: any[];
+  sessions: TimeTrackingSession[];
   totalDuration: number;
   firstStartTime: string;
   lastEndTime: string | null;
@@ -89,7 +89,7 @@ export const getGroupedSessionsPaginated = async (
         p_period: period,
         p_page: page,
         p_limit: limit,
-        p_search: search || null,
+        p_search: search || undefined,
       }
     );
 
@@ -99,7 +99,7 @@ export const getGroupedSessionsPaginated = async (
     }
 
     return (
-      (data as PaginatedResult<GroupedSession>) || {
+      (data as unknown as PaginatedResult<GroupedSession>) || {
         data: [],
         pagination: { page, limit, total: 0, pages: 0 },
       }
@@ -169,7 +169,7 @@ export const getTimeTrackingStats = async (
   try {
     const { data, error } = await supabase.rpc('get_time_tracking_stats', {
       p_ws_id: wsId,
-      p_user_id: userId || null,
+      p_user_id: userId || undefined,
     });
 
     if (error) {
@@ -178,7 +178,7 @@ export const getTimeTrackingStats = async (
     }
 
     return (
-      (data as TimeTrackingStats) || {
+      (data as unknown as TimeTrackingStats) || {
         totalSessions: 0,
         activeSessions: 0,
         activeUsers: 0,
@@ -226,7 +226,7 @@ export const getPeriodSummaryStats = async (
       throw new Error('Failed to fetch period summary statistics');
     }
 
-    return (data as PeriodSummary[]) || [];
+    return (data as unknown as PeriodSummary[]) || [];
   } catch (error) {
     console.error(
       'RPC not available for period summary, returning empty array:',
@@ -247,7 +247,7 @@ export const getDailyActivityHeatmap = async (
   try {
     const { data, error } = await supabase.rpc('get_daily_activity_heatmap', {
       p_ws_id: wsId,
-      p_user_id: userId || null,
+      p_user_id: userId || undefined,
       p_days_back: daysBack,
     });
 
@@ -256,7 +256,7 @@ export const getDailyActivityHeatmap = async (
       throw new Error('Failed to fetch daily activity data');
     }
 
-    return (data as DailyActivity[]) || [];
+    return (data as unknown as DailyActivity[]) || [];
   } catch (error) {
     console.error(
       'RPC not available for heatmap, returning empty array:',
@@ -268,7 +268,9 @@ export const getDailyActivityHeatmap = async (
 
 // Legacy function - now calls the paginated function for backwards compatibility
 export const groupSessions = (
-  sessions: any[],
+  sessions: (TimeTrackingSession & {
+    user?: { display_name?: string | null; avatar_url?: string | null };
+  })[],
   period: 'day' | 'week' | 'month' = 'day'
 ): GroupedSession[] => {
   // Group sessions by period and user for management view
@@ -560,7 +562,7 @@ export const getTimeTrackingData = async (wsId: string, userId: string) => {
   };
 
   // Transform tasks to match the ExtendedWorkspaceTask interface expected by the time tracker
-  const transformedTasks = (tasks || []).map((task: any) => ({
+  const transformedTasks = (tasks || []).map((task) => ({
     ...task,
     // Flatten nested data for easier access
     board_id: task.list?.board?.id,
@@ -568,15 +570,22 @@ export const getTimeTrackingData = async (wsId: string, userId: string) => {
     list_id: task.list?.id,
     list_name: task.list?.name,
     list_status: task.list?.status,
-    // Transform assignees to match expected format
-    assignees: transformAssignees(task.assignees || []).map((user: any) => ({
-      ...user,
-      // Extract email from nested user_private_details
-      email: user?.user_private_details?.[0]?.email || null,
-    })),
+    // Transform assignees to match expected format - extract users directly from assignees
+    assignees: (task.assignees || [])
+      .map((assignee) => assignee.user)
+      .filter((user) => user?.id)
+      .map((user) => ({
+        ...user,
+        // Extract email from nested user_private_details
+        email:
+          Array.isArray(user?.user_private_details) &&
+          user.user_private_details.length > 0
+            ? user.user_private_details[0]?.email || null
+            : null,
+      })),
     // Add current user assignment flag
     is_assigned_to_current_user:
-      task.assignees?.some((a: any) => a.user?.id === userId) || false,
+      task.assignees?.some((a) => a.user?.id === userId) || false,
     // Ensure task is available for time tracking
     completed: false, // Since we filtered out archived tasks, none should be completed
   }));
