@@ -423,7 +423,7 @@
       "generate": "Generate Minutes"
     },
     "history": {
-      "title": "Summarized Meeting History",
+      "title": "Meeting History",
       "view_more": "View More"
     },
     "languages": {

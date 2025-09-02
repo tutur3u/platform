@@ -5,29 +5,27 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@ncthub/ui/select';
+import { useTranslations } from 'next-intl';
 
 interface LanguageSelectProps {
   onValueChange: (value: string) => void;
   defaultValue: string;
-  languageLabels: {
-    english: string;
-    vietnamese: string;
-  };
 }
 
 export function LanguageSelect({
   onValueChange,
   defaultValue,
-  languageLabels,
 }: LanguageSelectProps) {
+  const t = useTranslations('neo-meeting-agent');
+
   return (
     <Select onValueChange={onValueChange} defaultValue={defaultValue}>
-      <SelectTrigger className="w-full border bg-[#18181B] text-white transition-colors duration-300 hover:bg-muted/40">
+      <SelectTrigger className="w-full border bg-card text-foreground transition-colors duration-300 hover:bg-muted/40">
         <SelectValue placeholder="Language" />
       </SelectTrigger>
-      <SelectContent className="border-color bg-[#18181B] text-white">
-        <SelectItem value="english">{languageLabels.english}</SelectItem>
-        <SelectItem value="vietnamese">{languageLabels.vietnamese}</SelectItem>
+      <SelectContent className="border-color bg-card text-foreground">
+        <SelectItem value="english">{t('languages.english')}</SelectItem>
+        <SelectItem value="vietnamese">{t('languages.vietnamese')}</SelectItem>
       </SelectContent>
     </Select>
   );

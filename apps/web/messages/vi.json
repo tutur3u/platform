@@ -26,7 +26,7 @@
     "back-to-home": "Quay lại trang chủ",
     "back-to-login": "Quay lại đăng nhập",
     "home": "Trang chủ",
-    "about": "Về chúng tôi",
+    "about": "Giới thiệu",
     "projects": "Các dự án",
     "docs": "Tài liệu",
     "dashboard": "Bảng điều khiển",
@@ -169,7 +169,6 @@
     "products": "Các sản phẩm",
     "solutions": "Giải pháp",
     "pricing": "Bảng giá",
-    "about": "Giới thiệu",
     "contact": "Liên hệ",
     "ai-assistant": "Trợ lý AI",
     "lms": "LMS",
@@ -424,7 +423,7 @@
       "generate": "Tạo biên bản"
     },
     "history": {
-      "title": "Lịch sử cuộc họp đã tóm tắt",
+      "title": "Lịch sử cuộc họp",
       "view_more": "Xem thêm"
     },
     "languages": {

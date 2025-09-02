@@ -55,14 +55,7 @@ export default function NeoMeetingAgentLanding() {
         </Dropzone>
 
         <div className="grid w-full grid-cols-2 items-center gap-4">
-          <LanguageSelect
-            onValueChange={setLanguage}
-            defaultValue={language}
-            languageLabels={{
-              english: t('languages.english'),
-              vietnamese: t('languages.vietnamese'),
-            }}
-          />
+          <LanguageSelect onValueChange={setLanguage} defaultValue={language} />
           <Button className="bg-gradient-to-r from-orange-500 to-yellow-400 bg-[length:200%_auto] text-base font-bold text-white transition-all duration-500 ease-in-out hover:bg-[position:100%_0%]">
             {t('actions.generate')}
           </Button>

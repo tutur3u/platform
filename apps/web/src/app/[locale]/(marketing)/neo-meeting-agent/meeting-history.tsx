@@ -23,7 +23,7 @@ export function MeetingHistory({
   viewMoreText: string;
 }) {
   return (
-    <Card className="border-muted-foreground/25 bg-card text-white">
+    <Card className="border-muted-foreground/25 bg-card text-foreground">
       <CardHeader className="px-6 pt-3 pb-2">
         <CardTitle className="text-center text-lg font-bold">{title}</CardTitle>
       </CardHeader>
@@ -32,7 +32,7 @@ export function MeetingHistory({
         <div>
           {MOCK_MEETINGS.map((meeting, index) => (
             <div key={meeting.id}>
-              <button className="flex w-full items-center justify-between px-3 py-4 text-left text-sm text-gray-200 transition-colors hover:bg-white/5">
+              <button className="flex w-full items-center justify-between px-3 py-4 text-left text-sm text-foreground transition-colors hover:bg-muted/50">
                 <span>{meeting.name}</span>
                 <ChevronRight className="size-4 text-muted-foreground" />
               </button>
@@ -45,10 +45,7 @@ export function MeetingHistory({
         </div>
 
         <div className="mt-2 px-2">
-          <Button
-            variant="secondary"
-            className="h-10 w-full bg-white/10 text-gray-200 transition-colors hover:bg-white/20"
-          >
+          <Button variant="secondary" className="h-10 w-full">
             {viewMoreText}
           </Button>
         </div>
