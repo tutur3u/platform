@@ -599,20 +599,6 @@ export default async function TimeTrackingMetrics({
                   Start Your First Session
                 </Button>
               </Link>
-              <div className="flex items-center justify-center gap-4 text-dynamic-gray/60 text-xs">
-                <div className="flex items-center gap-1">
-                  <Target className="h-3 w-3" />
-                  Set goals
-                </div>
-                <div className="flex items-center gap-1">
-                  <BarChart3 className="h-3 w-3" />
-                  Track progress
-                </div>
-                <div className="flex items-center gap-1">
-                  <Zap className="h-3 w-3" />
-                  Boost focus
-                </div>
-              </div>
             </div>
           </div>
         )}

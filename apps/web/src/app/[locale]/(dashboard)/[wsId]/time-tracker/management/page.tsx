@@ -1,15 +1,35 @@
-import { groupSessions } from '@/lib/time-tracking-helper';
+import {
+  getGroupedSessionsPaginated,
+  getTimeTrackingStats,
+} from '@/lib/time-tracking-helper';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
+import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import TimeTrackerManagementClient from './client';
 
 interface Props {
   params: Promise<{ wsId: string }>;
+  searchParams: Promise<{
+    period?: string;
+    page?: string;
+    limit?: string;
+    search?: string;
+  }>;
 }
 
-export default async function TimeTrackerManagementPage({ params }: Props) {
+export const metadata: Metadata = {
+  title: 'Time Tracker Management',
+  description:
+    'Comprehensive time tracking analytics and session management dashboard',
+};
+
+export default async function TimeTrackerManagementPage({
+  params,
+  searchParams,
+}: Props) {
   const { wsId } = await params;
+  const searchParamsResolved = await searchParams;
   const supabase = await createClient();
 
   const {
@@ -31,15 +51,25 @@ export default async function TimeTrackerManagementPage({ params }: Props) {
     .single();
   if (!workspaceMember) notFound();
 
-  const { data: sessions } = await supabase
-    .from('time_tracking_sessions')
-    .select(`
-      *,
-      category:time_tracking_categories(name, color),
-      user:users(display_name, avatar_url)
-    `)
-    .eq('ws_id', wsId);
+  // Parse search parameters
+  const period =
+    (searchParamsResolved?.period as 'day' | 'week' | 'month') || 'day';
+  const page = parseInt(searchParamsResolved?.page || '1', 10);
+  const limit = parseInt(searchParamsResolved?.limit || '20', 10);
+  const search = searchParamsResolved?.search || '';
 
-  const groupedSessions = groupSessions(sessions || []);
-  return <TimeTrackerManagementClient groupedSessions={groupedSessions} />;
+  // Get paginated sessions and stats
+  const [groupedSessionsResult, stats] = await Promise.all([
+    getGroupedSessionsPaginated(wsId, period, { page, limit, search }),
+    getTimeTrackingStats(wsId),
+  ]);
+
+  return (
+    <TimeTrackerManagementClient
+      groupedSessions={groupedSessionsResult.data}
+      pagination={groupedSessionsResult.pagination}
+      stats={stats}
+      currentPeriod={period}
+    />
+  );
 }

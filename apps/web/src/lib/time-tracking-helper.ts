@@ -1,21 +1,304 @@
+import { transformAssignees } from '@/lib/task-helper';
 import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
-import { transformAssignees } from '@/lib/task-helper';
 import 'server-only';
 
-export const groupSessions = (sessions: any[]) => {
-  // Your grouping logic here
+// Enhanced pagination interface
+export interface PaginationParams {
+  page?: number;
+  limit?: number;
+  search?: string;
+}
+
+export interface PaginatedResult<T> {
+  data: T[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    pages: number;
+  };
+}
+
+// Type definitions for time tracking data
+export interface GroupedSession {
+  title: string;
+  category: null;
+  sessions: any[];
+  totalDuration: number;
+  firstStartTime: string;
+  lastEndTime: string | null;
+  status: 'active' | 'paused' | 'completed';
+  user: {
+    displayName: string | null;
+    avatarUrl: string | null;
+  };
+  period: string;
+  sessionCount: number;
+  sessionTitles: string[];
+}
+
+export interface TimeTrackingStats {
+  totalSessions: number;
+  activeSessions: number;
+  activeUsers: number;
+  todayTime: number;
+  weekTime: number;
+  monthTime: number;
+  todaySessions: number;
+  weekSessions: number;
+  monthSessions: number;
+  streak: number;
+}
+
+export interface PeriodSummary {
+  period: string;
+  uniqueUsers: number;
+  totalSessions: number;
+  totalDuration: number;
+  avgDuration: number;
+  earliestSession: string;
+  latestSession: string;
+  activeSessions: number;
+}
+
+export interface DailyActivity {
+  date: string;
+  duration: number;
+  sessions: number;
+  users: number;
+}
+
+// Get paginated grouped sessions using database RPC
+export const getGroupedSessionsPaginated = async (
+  wsId: string,
+  period: 'day' | 'week' | 'month' = 'day',
+  params: PaginationParams = {}
+): Promise<PaginatedResult<GroupedSession>> => {
+  const { page = 1, limit = 50, search } = params;
+  const supabase = await createClient();
+
+  // Since the RPC might not be available in types yet, we'll call it directly
+  try {
+    const { data, error } = await supabase.rpc(
+      'get_time_tracking_sessions_paginated',
+      {
+        p_ws_id: wsId,
+        p_period: period,
+        p_page: page,
+        p_limit: limit,
+        p_search: search || null,
+      }
+    );
+
+    if (error) {
+      console.error('Error fetching paginated sessions:', error);
+      throw new Error('Failed to fetch time tracking sessions');
+    }
+
+    return (
+      (data as PaginatedResult<GroupedSession>) || {
+        data: [],
+        pagination: { page, limit, total: 0, pages: 0 },
+      }
+    );
+  } catch (error) {
+    console.error('RPC not available, falling back to legacy method:', error);
+    // Fallback to legacy method if RPC is not available
+    return await getFallbackGroupedSessions(wsId, period, params);
+  }
+};
+
+// Fallback method for when RPC is not available
+const getFallbackGroupedSessions = async (
+  wsId: string,
+  period: 'day' | 'week' | 'month' = 'day',
+  params: PaginationParams = {}
+): Promise<PaginatedResult<GroupedSession>> => {
+  const { page = 1, limit = 50, search } = params;
+  const supabase = await createClient();
+
+  let query = supabase
+    .from('time_tracking_sessions')
+    .select(`
+      *,
+      category:time_tracking_categories(name, color),
+      user:users(display_name, avatar_url)
+    `)
+    .eq('ws_id', wsId)
+    .order('start_time', { ascending: false });
+
+  if (search) {
+    query = query.or(
+      `title.ilike.%${search}%,user.display_name.ilike.%${search}%`
+    );
+  }
+
+  const { data: sessions, error } = await query.limit(limit * 10); // Get more to account for grouping
+
+  if (error) {
+    throw new Error('Failed to fetch time tracking sessions');
+  }
+
+  const groupedSessions = groupSessions(sessions || [], period);
+  const total = groupedSessions.length;
+  const startIndex = (page - 1) * limit;
+  const endIndex = startIndex + limit;
+  const paginatedData = groupedSessions.slice(startIndex, endIndex);
+
+  return {
+    data: paginatedData,
+    pagination: {
+      page,
+      limit,
+      total,
+      pages: Math.ceil(total / limit),
+    },
+  };
+};
+
+// Get time tracking statistics using database RPC
+export const getTimeTrackingStats = async (
+  wsId: string,
+  userId?: string
+): Promise<TimeTrackingStats> => {
+  const supabase = await createClient();
+
+  try {
+    const { data, error } = await supabase.rpc('get_time_tracking_stats', {
+      p_ws_id: wsId,
+      p_user_id: userId || null,
+    });
+
+    if (error) {
+      console.error('Error fetching time tracking stats:', error);
+      throw new Error('Failed to fetch time tracking statistics');
+    }
+
+    return (
+      (data as TimeTrackingStats) || {
+        totalSessions: 0,
+        activeSessions: 0,
+        activeUsers: 0,
+        todayTime: 0,
+        weekTime: 0,
+        monthTime: 0,
+        todaySessions: 0,
+        weekSessions: 0,
+        monthSessions: 0,
+        streak: 0,
+      }
+    );
+  } catch (error) {
+    console.error('RPC not available for stats, returning defaults:', error);
+    return {
+      totalSessions: 0,
+      activeSessions: 0,
+      activeUsers: 0,
+      todayTime: 0,
+      weekTime: 0,
+      monthTime: 0,
+      todaySessions: 0,
+      weekSessions: 0,
+      monthSessions: 0,
+      streak: 0,
+    };
+  }
+};
+
+// Get period summary statistics
+export const getPeriodSummaryStats = async (
+  wsId: string,
+  period: 'day' | 'week' | 'month' = 'day'
+): Promise<PeriodSummary[]> => {
+  const supabase = await createClient();
+
+  try {
+    const { data, error } = await supabase.rpc('get_period_summary_stats', {
+      p_ws_id: wsId,
+      p_period: period,
+    });
+
+    if (error) {
+      console.error('Error fetching period summary stats:', error);
+      throw new Error('Failed to fetch period summary statistics');
+    }
+
+    return (data as PeriodSummary[]) || [];
+  } catch (error) {
+    console.error(
+      'RPC not available for period summary, returning empty array:',
+      error
+    );
+    return [];
+  }
+};
+
+// Get daily activity heatmap data
+export const getDailyActivityHeatmap = async (
+  wsId: string,
+  userId?: string,
+  daysBack: number = 365
+): Promise<DailyActivity[]> => {
+  const supabase = await createClient();
+
+  try {
+    const { data, error } = await supabase.rpc('get_daily_activity_heatmap', {
+      p_ws_id: wsId,
+      p_user_id: userId || null,
+      p_days_back: daysBack,
+    });
+
+    if (error) {
+      console.error('Error fetching daily activity heatmap:', error);
+      throw new Error('Failed to fetch daily activity data');
+    }
+
+    return (data as DailyActivity[]) || [];
+  } catch (error) {
+    console.error(
+      'RPC not available for heatmap, returning empty array:',
+      error
+    );
+    return [];
+  }
+};
+
+// Legacy function - now calls the paginated function for backwards compatibility
+export const groupSessions = (
+  sessions: any[],
+  period: 'day' | 'week' | 'month' = 'day'
+): GroupedSession[] => {
+  // Group sessions by period and user for management view
   const grouped = new Map();
 
+  const getPeriodKey = (startTime: string) => {
+    const date = new Date(startTime);
+
+    if (period === 'day') {
+      return date.toISOString().split('T')[0]; // YYYY-MM-DD
+    } else if (period === 'week') {
+      // Use ISO week calculation (Monday-based)
+      const startOfWeek = new Date(date);
+      const dayOfWeek = date.getDay();
+      const daysToSubtract = dayOfWeek === 0 ? 6 : dayOfWeek - 1; // Monday = 0, Sunday = 6
+      startOfWeek.setDate(date.getDate() - daysToSubtract);
+      return startOfWeek.toISOString().split('T')[0]; // Return Monday's date as week key
+    } else {
+      return `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}`;
+    }
+  };
+
   sessions.forEach((session) => {
-    const key = `${session.title}-${session.category_id || 'none'}-${session.user_id}`;
+    const periodKey = getPeriodKey(session.start_time);
+    const key = `${periodKey}-${session.user_id}`;
 
     if (!grouped.has(key)) {
       grouped.set(key, {
-        title: session.title,
-        category: session.category,
+        title: `${session.user?.display_name || 'Unknown User'} - ${periodKey}`,
+        category: null, // Not used in management view
         sessions: [],
         totalDuration: 0,
         firstStartTime: session.start_time,
@@ -25,12 +308,21 @@ export const groupSessions = (sessions: any[]) => {
           displayName: session.user?.display_name,
           avatarUrl: session.user?.avatar_url,
         },
+        period: periodKey,
+        sessionCount: 0,
+        sessionTitles: [],
       });
     }
 
     const group = grouped.get(key);
     group.sessions.push(session);
     group.totalDuration += session.duration_seconds || 0;
+    group.sessionCount = group.sessions.length;
+
+    // Update session titles
+    if (session.title && !group.sessionTitles.includes(session.title)) {
+      group.sessionTitles.push(session.title);
+    }
 
     // Update time ranges
     if (session.start_time < group.firstStartTime) {
@@ -42,9 +334,14 @@ export const groupSessions = (sessions: any[]) => {
     ) {
       group.lastEndTime = session.end_time;
     }
+
+    // Update status - if any session is running, mark group as active
+    if (session.is_running) {
+      group.status = 'active';
+    }
   });
 
-  return Array.from(grouped.values());
+  return Array.from(grouped.values()) as GroupedSession[];
 };
 
 export const getTimeTrackingData = async (wsId: string, userId: string) => {

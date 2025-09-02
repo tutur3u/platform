@@ -328,6 +328,14 @@ export type Database = {
         };
         Returns: number;
       };
+      get_daily_activity_heatmap: {
+        Args: {
+          p_days_back?: number;
+          p_user_id?: string;
+          p_ws_id: string;
+        };
+        Returns: Json;
+      };
       get_daily_income_expense: {
         Args: {
           _ws_id: string;
@@ -502,6 +510,13 @@ export type Database = {
         };
         Returns: number;
       };
+      get_period_summary_stats: {
+        Args: {
+          p_period?: string;
+          p_ws_id: string;
+        };
+        Returns: Json;
+      };
       get_possible_excluded_groups: {
         Args: {
           _ws_id: string;
@@ -563,6 +578,23 @@ export type Database = {
           total_count: number;
           unique_users_count: number;
         }[];
+      };
+      get_time_tracking_sessions_paginated: {
+        Args: {
+          p_limit?: number;
+          p_page?: number;
+          p_period?: string;
+          p_search?: string;
+          p_ws_id: string;
+        };
+        Returns: Json;
+      };
+      get_time_tracking_stats: {
+        Args: {
+          p_user_id?: string;
+          p_ws_id: string;
+        };
+        Returns: Json;
       };
       get_top_cities: {
         Args: {
@@ -6488,6 +6520,7 @@ export type Database = {
         Insert: {
           category_id?: null | string;
           created_at?: null | string;
+          date?: null | string;
           description?: null | string;
           duration_seconds?: null | number;
           end_time?: null | string;
@@ -6564,6 +6597,7 @@ export type Database = {
         Row: {
           category_id: null | string;
           created_at: null | string;
+          date: null | string;
           description: null | string;
           duration_seconds: null | number;
           end_time: null | string;
@@ -6582,6 +6616,7 @@ export type Database = {
         Update: {
           category_id?: null | string;
           created_at?: null | string;
+          date?: null | string;
           description?: null | string;
           duration_seconds?: null | number;
           end_time?: null | string;
