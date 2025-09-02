@@ -24,16 +24,38 @@ import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent } from '@tuturuuu/ui/card';
+import { useHorizontalScroll } from '@tuturuuu/ui/hooks/useHorizontalScroll';
 import { LightweightTaskCard } from '@tuturuuu/ui/tuDo/boards/boardId/task';
-import {
-  BoardColumn,
-  BoardContainer,
-} from '@tuturuuu/ui/tuDo/boards/boardId/task-list';
+import { BoardColumn } from '@tuturuuu/ui/tuDo/boards/boardId/task-list';
 import { TaskListForm } from '@tuturuuu/ui/tuDo/boards/boardId/task-list-form';
 import { coordinateGetter } from '@tuturuuu/utils/keyboard-preset';
 import { getTaskLists, useMoveTask } from '@tuturuuu/utils/task-helper';
 import { hasDraggableData } from '@tuturuuu/utils/task-helpers';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+
+// Wrapper for BoardContainer with horizontal scroll functionality
+function ScrollableBoardContainer({
+  children,
+  isDragActive,
+}: {
+  children: React.ReactNode;
+  isDragActive?: () => boolean;
+}) {
+  const { scrollContainerRef } = useHorizontalScroll({
+    enableTouchScroll: true,
+    enableMouseWheel: true,
+    isDragActive,
+  });
+
+  return (
+    <div
+      ref={scrollContainerRef}
+      className="scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent relative flex h-full w-full gap-4 overflow-x-auto"
+    >
+      {children}
+    </div>
+  );
+}
 
 interface Props {
   workspace: Workspace;
@@ -540,7 +562,7 @@ export function KanbanBoard({ workspace, boardId, tasks, isLoading }: Props) {
         </Card>
 
         {/* Loading skeleton for kanban columns */}
-        <div className="flex-1 overflow-hidden">
+        <div className="flex-1 overflow-x-auto overflow-y-hidden">
           <div className="flex h-full gap-4 p-4">
             {[1, 2, 3, 4].map((i) => (
               <Card key={i} className="h-full w-[350px] animate-pulse">
@@ -589,7 +611,7 @@ export function KanbanBoard({ workspace, boardId, tasks, isLoading }: Props) {
       )}
 
       {/* Kanban Board */}
-      <div className="flex-1 overflow-hidden">
+      <div className="flex-1 overflow-x-auto overflow-y-hidden">
         <DndContext
           sensors={sensors}
           collisionDetection={closestCorners}
@@ -618,7 +640,9 @@ export function KanbanBoard({ workspace, boardId, tasks, isLoading }: Props) {
             },
           ]}
         >
-          <BoardContainer>
+          <ScrollableBoardContainer
+            isDragActive={() => activeColumn !== null || activeTask !== null}
+          >
             <SortableContext
               items={columnsId}
               strategy={horizontalListSortingStrategy}
@@ -665,7 +689,7 @@ export function KanbanBoard({ workspace, boardId, tasks, isLoading }: Props) {
                 />
               </div>
             </SortableContext>
-          </BoardContainer>
+          </ScrollableBoardContainer>
           <DragOverlay
             wrapperElement="div"
             style={{
