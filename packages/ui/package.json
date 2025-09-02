@@ -9,7 +9,7 @@
     "ui": "bunx shadcn-ui@latest",
     "lint": "eslint ."
   },
-  "packageManager": "bun@1.2.21",
+  "packageManager": "bun@1.2.18",
   "dependencies": {
     "@hookform/resolvers": "^5.2.1",
     "@ncthub/ai": "workspace:*",

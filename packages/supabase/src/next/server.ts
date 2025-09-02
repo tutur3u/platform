@@ -1,6 +1,7 @@
 import { SupabaseCookie, checkEnvVariables } from './common';
 import { Database } from '@ncthub/types/supabase';
-import { createBrowserClient, createServerClient } from '@supabase/ssr';
+import { createServerClient } from '@supabase/ssr';
+import type { SupabaseClient } from '@supabase/supabase-js';
 import type { ReadonlyRequestCookies } from 'next/dist/server/web/spec-extension/adapters/request-cookies';
 import { cookies } from 'next/headers';
 
@@ -39,24 +40,21 @@ async function createGenericClient(isAdmin: boolean) {
   });
 }
 
-export function createAdminClient({
-  noCookie = false,
-}: {
-  noCookie?: boolean;
-} = {}) {
-  if (noCookie) {
-    const { url, key } = checkEnvVariables({ useServiceKey: true });
-    return createBrowserClient<Database>(url, key);
-  }
-
+export function createAdminClient(): Promise<
+  SupabaseClient<Database, 'public', Database['public']>
+> {
   return createGenericClient(true);
 }
 
-export function createClient() {
+export function createClient(): Promise<
+  SupabaseClient<Database, 'public', Database['public']>
+> {
   return createGenericClient(false);
 }
 
-export async function createDynamicClient() {
+export async function createDynamicClient(): Promise<
+  SupabaseClient<any, 'public', any>
+> {
   const { url, key } = checkEnvVariables({ useServiceKey: false });
   const cookieStore = await cookies();
   return createServerClient(url, key, {
