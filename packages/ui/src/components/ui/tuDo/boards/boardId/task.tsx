@@ -23,6 +23,9 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
@@ -75,6 +78,7 @@ interface Props {
   availableLists?: TaskList[]; // Optional: pass from parent to avoid redundant API calls
   isSelected?: boolean;
   isMultiSelectMode?: boolean;
+  isPersonalWorkspace?: boolean;
   onSelect?: (taskId: string, event: React.MouseEvent) => void;
 }
 
@@ -118,6 +122,7 @@ export const TaskCard = React.memo(function TaskCard({
   availableLists: propAvailableLists,
   isSelected = false,
   isMultiSelectMode = false,
+  isPersonalWorkspace = false,
   onSelect,
 }: Props) {
   const [isLoading, setIsLoading] = useState(false);
@@ -247,7 +252,7 @@ export const TaskCard = React.memo(function TaskCard({
     );
   }
 
-  async function handlePriorityChange(priority: TaskPriority) {
+  async function handlePriorityChange(priority: TaskPriority | null) {
     setIsLoading(true);
     updateTaskMutation.mutate(
       { taskId: task.id, updates: { priority } },
@@ -730,46 +735,65 @@ export const TaskCard = React.memo(function TaskCard({
                   {canMoveToCompletion && <DropdownMenuSeparator />}
 
                   {/* Priority Actions */}
-                  <DropdownMenuItem
-                    onClick={() => {
-                      handlePriorityChange('critical');
-                      setMenuOpen(false);
-                    }}
-                    className="cursor-pointer"
-                  >
-                    <Flag className="h-4 w-4 text-dynamic-red/80" />
-                    Urgent Priority
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={() => {
-                      handlePriorityChange('high');
-                      setMenuOpen(false);
-                    }}
-                    className="cursor-pointer"
-                  >
-                    <Flag className="h-4 w-4 text-dynamic-orange/80" />
-                    High Priority
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={() => {
-                      handlePriorityChange('normal');
-                      setMenuOpen(false);
-                    }}
-                    className="cursor-pointer"
-                  >
-                    <Flag className="h-4 w-4 text-dynamic-yellow/80" />
-                    Medium Priority
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={() => {
-                      handlePriorityChange('low');
-                      setMenuOpen(false);
-                    }}
-                    className="cursor-pointer"
-                  >
-                    <Flag className="h-4 w-4 text-dynamic-blue/80" />
-                    Low Priority
-                  </DropdownMenuItem>
+                  <DropdownMenuSub>
+                    <DropdownMenuSubTrigger>
+                      <Flag className="h-4 w-4" />
+                      Set Priority
+                    </DropdownMenuSubTrigger>
+                    <DropdownMenuSubContent>
+                      <DropdownMenuItem
+                        onClick={() => {
+                          handlePriorityChange('critical');
+                          setMenuOpen(false);
+                        }}
+                        className="cursor-pointer"
+                      >
+                        <Flag className="h-4 w-4 text-dynamic-red/80" />
+                        Urgent Priority
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => {
+                          handlePriorityChange('high');
+                          setMenuOpen(false);
+                        }}
+                        className="cursor-pointer"
+                      >
+                        <Flag className="h-4 w-4 text-dynamic-orange/80" />
+                        High Priority
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => {
+                          handlePriorityChange('normal');
+                          setMenuOpen(false);
+                        }}
+                        className="cursor-pointer"
+                      >
+                        <Flag className="h-4 w-4 text-dynamic-yellow/80" />
+                        Medium Priority
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => {
+                          handlePriorityChange('low');
+                          setMenuOpen(false);
+                        }}
+                        className="cursor-pointer"
+                      >
+                        <Flag className="h-4 w-4 text-dynamic-blue/80" />
+                        Low Priority
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem
+                        onClick={() => {
+                          handlePriorityChange(null);
+                          setMenuOpen(false);
+                        }}
+                        className="cursor-pointer text-muted-foreground"
+                      >
+                        <X className="h-4 w-4" />
+                        Remove Priority
+                      </DropdownMenuItem>
+                    </DropdownMenuSubContent>
+                  </DropdownMenuSub>
 
                   {task.end_date && (
                     <>
@@ -826,12 +850,12 @@ export const TaskCard = React.memo(function TaskCard({
                 Due {formatSmartDate(endDate)}
                 {isOverdue && !task.archived && (
                   <Badge className="ml-1 h-4 bg-dynamic-red/80 px-1 text-[9px] text-white">
-                    OVERDUE
+                    OVERDUE - {format(endDate, "MMM dd 'at' h:mm a")}
                   </Badge>
                 )}
-                {endDate && !isOverdue && !task.archived && (
+                {!isOverdue && !task.archived && endDate && (
                   <span className="ml-1 text-[10px] text-muted-foreground">
-                    ({format(endDate, 'MMM dd')})
+                    ({format(endDate, "MMM dd 'at' h:mm a")})
                   </span>
                 )}
               </span>
@@ -841,13 +865,15 @@ export const TaskCard = React.memo(function TaskCard({
         {/* Bottom Row: Three-column layout for assignee, priority/tags, and checkbox, with only one tag visible and +N tooltip for extras */}
         <div className="flex h-8 min-w-0 items-center gap-x-1 overflow-hidden whitespace-nowrap">
           {/* Assignee: left, not cut off */}
-          <div className="min-w-0 max-w-[120px] flex-shrink-0 overflow-hidden truncate">
-            <AssigneeSelect
-              taskId={task.id}
-              assignees={task.assignees}
-              onUpdate={onUpdate}
-            />
-          </div>
+          {!isPersonalWorkspace && (
+            <div className="min-w-0 max-w-[120px] flex-shrink-0 overflow-hidden truncate">
+              <AssigneeSelect
+                taskId={task.id}
+                assignees={task.assignees}
+                onUpdate={onUpdate}
+              />
+            </div>
+          )}
           {/* Priority */}
           {!task.archived && task.priority && (
             <div className="min-w-0 max-w-[80px] overflow-hidden">

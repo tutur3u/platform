@@ -23,21 +23,15 @@ const formatDuration = (seconds: number | undefined): string => {
   return `${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
 };
 
-export default async function TimeTrackerPage({
-  params,
-}: {
-  params: Promise<{ wsId: string }>;
-}) {
+export default async function TimeTrackerPage() {
   const user = await getCurrentSupabaseUser();
   const supabase = await createClient();
-  const { wsId } = await params;
 
   if (!user) return notFound();
 
   const { data: sessions } = await supabase
     .from('time_tracking_sessions')
     .select('start_time, duration_seconds')
-    .eq('ws_id', wsId)
     .eq('user_id', user.id)
     .not('duration_seconds', 'is', null);
 

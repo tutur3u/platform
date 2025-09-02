@@ -45,6 +45,7 @@ interface Props {
   onUpdate: () => void;
   isOverlay?: boolean;
   hideTasksMode?: boolean;
+  isPersonalWorkspace?: boolean;
 }
 
 const colorClasses: Record<SupportedColor, string> = {
@@ -88,6 +89,7 @@ export function EnhancedTaskList({
   onUpdate,
   isOverlay = false,
   hideTasksMode = false,
+  isPersonalWorkspace = false,
 }: Props) {
   const [isEditing, setIsEditing] = useState(false);
   const [editName, setEditName] = useState(list.name);
@@ -421,6 +423,7 @@ export function EnhancedTaskList({
                 task={task}
                 taskList={list}
                 boardId={boardId}
+                isPersonalWorkspace={isPersonalWorkspace}
                 onUpdate={onUpdate}
               />
             ))}

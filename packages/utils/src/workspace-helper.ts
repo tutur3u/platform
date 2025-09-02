@@ -1,5 +1,3 @@
-import { ROOT_WORKSPACE_ID } from './constants';
-import { permissions as rolePermissions } from './permissions';
 import {
   createAdminClient,
   createClient,
@@ -11,6 +9,8 @@ import type {
 } from '@tuturuuu/types/db';
 import type { WorkspaceSecret } from '@tuturuuu/types/primitives/WorkspaceSecret';
 import { notFound, redirect } from 'next/navigation';
+import { ROOT_WORKSPACE_ID } from './constants';
+import { permissions as rolePermissions } from './permissions';
 
 const isValidTuturuuuEmail = (email: string): boolean => {
   if (!email) return false;

@@ -5,7 +5,6 @@ import { createClient } from '@tuturuuu/supabase/next/client';
 import type { TaskPriority } from '@tuturuuu/types/primitives/Priority';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
-import type { Json } from '@tuturuuu/types/supabase';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -102,6 +101,7 @@ interface Props {
   board: { id: string; tasks: Task[]; lists?: TaskList[] };
   selectedTags?: string[];
   onTagsChange?: (tags: string[]) => void;
+  isPersonalWorkspace?: boolean;
 }
 
 type SortField =
@@ -141,14 +141,6 @@ interface Member {
   avatar_url?: string | null;
 }
 
-interface TaskBulkUpdate {
-  id: string;
-  priority?: TaskPriority | null;
-  archived?: boolean;
-  tags?: string[];
-  [key: string]: Json | string[] | number | boolean | null | undefined;
-}
-
 // Priority labels constant - defined once outside component for performance
 const priorityLabels = {
   critical: 'Urgent',
@@ -174,6 +166,7 @@ export function ListView({
   board,
   selectedTags = [],
   onTagsChange = () => {},
+  isPersonalWorkspace = false,
 }: Props) {
   const queryClient = useQueryClient();
   const params = useParams();
@@ -218,7 +211,7 @@ export function ListView({
     priority: true,
     start_date: true,
     end_date: true,
-    assignees: true,
+    assignees: !isPersonalWorkspace,
     tags: true,
     actions: true,
   });
@@ -247,32 +240,36 @@ export function ListView({
       const supabase = createClient();
       const taskIds = Array.from(selectedTasks);
 
-      // Prepare updates array for RPC
-      const updates: TaskBulkUpdate[] = taskIds.map((id) => {
-        const updateObj: TaskBulkUpdate = { id };
-        if (bulkEditData.priority !== 'keep') {
-          updateObj.priority = bulkEditData.priority as TaskPriority | null;
-        }
-        if (bulkEditData.status !== 'keep') {
-          updateObj.archived = bulkEditData.status === 'completed';
-        }
-        if (bulkEditData.tags.length > 0) {
-          updateObj.tags = bulkEditData.tags;
-        }
-        return updateObj;
-      });
+      // Build update object with only the fields that need to be updated
+      const updateData: {
+        priority?: TaskPriority | null;
+        archived?: boolean;
+        tags?: string[];
+      } = {};
+      let hasUpdates = false;
 
-      // Check if any updates have meaningful changes (more than just the id field)
-      const hasUpdates = updates.some(
-        (obj) =>
-          obj.priority !== undefined ||
-          obj.archived !== undefined ||
-          obj.tags !== undefined
-      );
+      if (bulkEditData.priority !== 'keep') {
+        updateData.priority = bulkEditData.priority as TaskPriority | null;
+        hasUpdates = true;
+      }
+
+      if (bulkEditData.status !== 'keep') {
+        updateData.archived = bulkEditData.status === 'completed';
+        hasUpdates = true;
+      }
+
+      if (bulkEditData.tags.length > 0) {
+        updateData.tags = bulkEditData.tags;
+        hasUpdates = true;
+      }
 
       if (hasUpdates) {
-        // Only call RPC if at least one field is being updated
-        const { error } = await supabase.rpc('update_many_tasks', { updates });
+        // Use normal Supabase update query instead of RPC
+        const { error } = await supabase
+          .from('tasks')
+          .update(updateData)
+          .in('id', taskIds);
+
         if (error) throw error;
       }
 
@@ -1118,90 +1115,41 @@ export function ListView({
             </DropdownMenu>
 
             {/* Assignee Filter */}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className={cn(
-                    'h-8 gap-1.5 px-3 text-xs',
-                    filters.assignees.size > 0 &&
-                      'border-primary bg-primary/5 text-primary hover:bg-primary/10'
-                  )}
-                >
-                  <Users className="h-3.5 w-3.5" />
-                  Assignees
-                  {filters.assignees.size > 0 && (
-                    <Badge
-                      variant="secondary"
-                      className="ml-1 h-4 w-4 rounded-full p-0 text-xs"
-                    >
-                      {filters.assignees.size}
-                    </Badge>
-                  )}
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="start" className="max-h-64 w-56">
-                <div className="max-h-48 overflow-y-auto">
-                  {/* All option */}
-                  <DropdownMenuItem
-                    onClick={() => {
-                      const newAssignees = new Set(filters.assignees);
-                      if (newAssignees.has('all')) {
-                        newAssignees.delete('all');
-                      } else {
-                        newAssignees.clear();
-                        newAssignees.add('all');
-                      }
-                      setFilters((prev) => ({
-                        ...prev,
-                        assignees: newAssignees,
-                      }));
-                    }}
-                    className="cursor-pointer"
+            {!isPersonalWorkspace && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className={cn(
+                      'h-8 gap-1.5 px-3 text-xs',
+                      filters.assignees.size > 0 &&
+                        'border-primary bg-primary/5 text-primary hover:bg-primary/10'
+                    )}
                   >
-                    <Checkbox
-                      checked={filters.assignees.has('all')}
-                      className="mr-2 h-3.5 w-3.5"
-                    />
-                    <span>All tasks</span>
-                  </DropdownMenuItem>
-
-                  {/* Unassigned option */}
-                  <DropdownMenuItem
-                    onClick={() => {
-                      const newAssignees = new Set(filters.assignees);
-                      if (newAssignees.has('unassigned')) {
-                        newAssignees.delete('unassigned');
-                      } else {
-                        newAssignees.add('unassigned');
-                      }
-                      setFilters((prev) => ({
-                        ...prev,
-                        assignees: newAssignees,
-                      }));
-                    }}
-                    className="cursor-pointer"
-                  >
-                    <Checkbox
-                      checked={filters.assignees.has('unassigned')}
-                      className="mr-2 h-3.5 w-3.5"
-                    />
-                    <span>Unassigned</span>
-                  </DropdownMenuItem>
-
-                  <DropdownMenuSeparator />
-
-                  {/* Individual members */}
-                  {members.map((member: Member) => (
+                    <Users className="h-3.5 w-3.5" />
+                    Assignees
+                    {filters.assignees.size > 0 && (
+                      <Badge
+                        variant="secondary"
+                        className="ml-1 h-4 w-4 rounded-full p-0 text-xs"
+                      >
+                        {filters.assignees.size}
+                      </Badge>
+                    )}
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" className="max-h-64 w-56">
+                  <div className="max-h-48 overflow-y-auto">
+                    {/* All option */}
                     <DropdownMenuItem
-                      key={member.id}
                       onClick={() => {
                         const newAssignees = new Set(filters.assignees);
-                        if (newAssignees.has(member.id)) {
-                          newAssignees.delete(member.id);
+                        if (newAssignees.has('all')) {
+                          newAssignees.delete('all');
                         } else {
-                          newAssignees.add(member.id);
+                          newAssignees.clear();
+                          newAssignees.add('all');
                         }
                         setFilters((prev) => ({
                           ...prev,
@@ -1211,42 +1159,93 @@ export function ListView({
                       className="cursor-pointer"
                     >
                       <Checkbox
-                        checked={filters.assignees.has(member.id)}
+                        checked={filters.assignees.has('all')}
                         className="mr-2 h-3.5 w-3.5"
                       />
-                      <div className="flex items-center gap-2">
-                        <div className="flex h-5 w-5 items-center justify-center rounded-full bg-muted font-medium text-xs">
-                          {member.display_name?.trim()?.[0]?.toUpperCase() ||
-                            member.email?.trim()?.[0]?.toUpperCase() ||
-                            '?'}
-                        </div>
-                        <span className="truncate">
-                          {member.display_name?.trim() ||
-                            member.email?.trim() ||
-                            'Unknown'}
-                        </span>
-                      </div>
+                      <span>All tasks</span>
                     </DropdownMenuItem>
-                  ))}
-                </div>
-                {filters.assignees.size > 0 && (
-                  <>
-                    <DropdownMenuSeparator />
+
+                    {/* Unassigned option */}
                     <DropdownMenuItem
-                      onClick={() =>
+                      onClick={() => {
+                        const newAssignees = new Set(filters.assignees);
+                        if (newAssignees.has('unassigned')) {
+                          newAssignees.delete('unassigned');
+                        } else {
+                          newAssignees.add('unassigned');
+                        }
                         setFilters((prev) => ({
                           ...prev,
-                          assignees: new Set(),
-                        }))
-                      }
-                      className="cursor-pointer text-muted-foreground"
+                          assignees: newAssignees,
+                        }));
+                      }}
+                      className="cursor-pointer"
                     >
-                      Clear assignee filters
+                      <Checkbox
+                        checked={filters.assignees.has('unassigned')}
+                        className="mr-2 h-3.5 w-3.5"
+                      />
+                      <span>Unassigned</span>
                     </DropdownMenuItem>
-                  </>
-                )}
-              </DropdownMenuContent>
-            </DropdownMenu>
+
+                    <DropdownMenuSeparator />
+
+                    {/* Individual members */}
+                    {members.map((member: Member) => (
+                      <DropdownMenuItem
+                        key={member.id}
+                        onClick={() => {
+                          const newAssignees = new Set(filters.assignees);
+                          if (newAssignees.has(member.id)) {
+                            newAssignees.delete(member.id);
+                          } else {
+                            newAssignees.add(member.id);
+                          }
+                          setFilters((prev) => ({
+                            ...prev,
+                            assignees: newAssignees,
+                          }));
+                        }}
+                        className="cursor-pointer"
+                      >
+                        <Checkbox
+                          checked={filters.assignees.has(member.id)}
+                          className="mr-2 h-3.5 w-3.5"
+                        />
+                        <div className="flex items-center gap-2">
+                          <div className="flex h-5 w-5 items-center justify-center rounded-full bg-muted font-medium text-xs">
+                            {member.display_name?.trim()?.[0]?.toUpperCase() ||
+                              member.email?.trim()?.[0]?.toUpperCase() ||
+                              '?'}
+                          </div>
+                          <span className="truncate">
+                            {member.display_name?.trim() ||
+                              member.email?.trim() ||
+                              'Unknown'}
+                          </span>
+                        </div>
+                      </DropdownMenuItem>
+                    ))}
+                  </div>
+                  {filters.assignees.size > 0 && (
+                    <>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem
+                        onClick={() =>
+                          setFilters((prev) => ({
+                            ...prev,
+                            assignees: new Set(),
+                          }))
+                        }
+                        className="cursor-pointer text-muted-foreground"
+                      >
+                        Clear assignee filters
+                      </DropdownMenuItem>
+                    </>
+                  )}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
 
             {/* Date Filter */}
             <Select
@@ -1322,17 +1321,19 @@ export function ListView({
                 >
                   Due Date
                 </DropdownMenuCheckboxItem>
-                <DropdownMenuCheckboxItem
-                  checked={columnVisibility.assignees}
-                  onCheckedChange={(checked) =>
-                    setColumnVisibility({
-                      ...columnVisibility,
-                      assignees: checked,
-                    })
-                  }
-                >
-                  Assignees
-                </DropdownMenuCheckboxItem>
+                {!isPersonalWorkspace && (
+                  <DropdownMenuCheckboxItem
+                    checked={columnVisibility.assignees}
+                    onCheckedChange={(checked) =>
+                      setColumnVisibility({
+                        ...columnVisibility,
+                        assignees: checked,
+                      })
+                    }
+                  >
+                    Assignees
+                  </DropdownMenuCheckboxItem>
+                )}
                 <DropdownMenuCheckboxItem
                   checked={columnVisibility.tags}
                   onCheckedChange={(checked) =>

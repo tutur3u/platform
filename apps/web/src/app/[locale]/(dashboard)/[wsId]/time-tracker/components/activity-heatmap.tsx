@@ -168,19 +168,48 @@ export function ActivityHeatmap({ dailyActivity }: ActivityHeatmapProps) {
         ) >= 14);
 
     return isNewUser || changedViewMode || isPeriodicReminder;
-  }, [settings.showOnboardingTips, onboardingState, settings.viewMode]);
+  }, [
+    settings.showOnboardingTips,
+    settings.viewMode,
+    onboardingState.showTips,
+    onboardingState.viewCount,
+    onboardingState.lastViewMode,
+    onboardingState.dismissedAt,
+  ]);
 
   // Track view mode changes and update count
   useEffect(() => {
-    if (settings.viewMode !== onboardingState.lastViewMode) {
+    setOnboardingState((currentState) => {
+      if (settings.viewMode !== currentState.lastViewMode) {
+        const newState = {
+          ...currentState,
+          viewCount: currentState.viewCount + 1,
+          lastViewMode: settings.viewMode,
+          showTips: true, // Reset to show tips when view mode changes
+          dismissedAt: null,
+        };
+
+        if (typeof window !== 'undefined') {
+          localStorage.setItem(
+            'time-tracker-onboarding',
+            JSON.stringify(newState)
+          );
+        }
+
+        return newState;
+      }
+      return currentState;
+    });
+  }, [settings.viewMode]);
+
+  // Handle tip dismissal
+  const handleDismissTips = useCallback(() => {
+    setOnboardingState((currentState) => {
       const newState = {
-        ...onboardingState,
-        viewCount: onboardingState.viewCount + 1,
-        lastViewMode: settings.viewMode,
-        showTips: true, // Reset to show tips when view mode changes
-        dismissedAt: null,
+        ...currentState,
+        showTips: false,
+        dismissedAt: new Date().toISOString(),
       };
-      setOnboardingState(newState);
 
       if (typeof window !== 'undefined') {
         localStorage.setItem(
@@ -188,30 +217,19 @@ export function ActivityHeatmap({ dailyActivity }: ActivityHeatmapProps) {
           JSON.stringify(newState)
         );
       }
-    }
-  }, [settings.viewMode, onboardingState]);
 
-  // Handle tip dismissal
-  const handleDismissTips = useCallback(() => {
-    const newState = {
-      ...onboardingState,
-      showTips: false,
-      dismissedAt: new Date().toISOString(),
-    };
-    setOnboardingState(newState);
-
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('time-tracker-onboarding', JSON.stringify(newState));
-    }
+      return newState;
+    });
 
     // Clear auto-hide timer if active
     if (tipAutoHideTimer) {
       clearTimeout(tipAutoHideTimer);
       setTipAutoHideTimer(null);
     }
-  }, [onboardingState, tipAutoHideTimer]);
+  }, [tipAutoHideTimer]);
 
   // Set up auto-hide timer when tips are shown (optional - can be disabled)
+  // biome-ignore lint/correctness/useExhaustiveDependencies(handleDismissTips): suppress dependency array linting
   useEffect(() => {
     if (shouldShowOnboardingTips && onboardingState.viewCount >= 5) {
       // Only auto-hide for users who've seen tips multiple times
@@ -225,7 +243,7 @@ export function ActivityHeatmap({ dailyActivity }: ActivityHeatmapProps) {
         clearTimeout(timer);
       };
     }
-  }, [shouldShowOnboardingTips, onboardingState.viewCount, handleDismissTips]);
+  }, [shouldShowOnboardingTips, onboardingState.viewCount]);
 
   // Cleanup timer on unmount
   useEffect(() => {
@@ -504,7 +522,7 @@ export function ActivityHeatmap({ dailyActivity }: ActivityHeatmapProps) {
                       {day.date.format('dddd, MMMM D, YYYY')}
                       {settings.timeReference === 'smart' && (
                         <div className="mt-1 text-gray-500 text-xs dark:text-gray-400">
-                          {day.date.fromNow()} • {day.date.format('MMM D')}
+                          {day.date.fromNow()}
                         </div>
                       )}
                     </div>
@@ -968,7 +986,7 @@ export function ActivityHeatmap({ dailyActivity }: ActivityHeatmapProps) {
         },
       };
     },
-    [monthlyData]
+    []
   );
 
   // Card components
@@ -1014,14 +1032,6 @@ export function ActivityHeatmap({ dailyActivity }: ActivityHeatmapProps) {
           </div>
         </div>
       </div>
-
-      <div className="border-blue-200 border-t pt-2 dark:border-blue-800">
-        <p className="text-blue-700 text-xs dark:text-blue-300">
-          {data.activeDays < 7
-            ? `Great start! Building momentum.`
-            : `Avg session: ${formatDuration(Math.round(data.avgSession))}`}
-        </p>
-      </div>
     </div>
   );
 
@@ -1038,14 +1048,6 @@ export function ActivityHeatmap({ dailyActivity }: ActivityHeatmapProps) {
   }) => {
     const avgDailyDuration =
       data.activeDays > 0 ? data.totalDuration / data.activeDays : 0;
-    const avgSessionLength =
-      data.totalSessions > 0 ? data.totalDuration / data.totalSessions : 0;
-    const focusScore =
-      avgSessionLength > 0
-        ? Math.min(100, Math.round((avgSessionLength / 3600) * 25))
-        : 0;
-    const consistencyScore =
-      data.activeDays > 0 ? Math.round((data.activeDays / 31) * 100) : 0;
 
     return (
       <div className="group relative overflow-hidden rounded-lg border bg-gradient-to-br from-green-50 to-emerald-50 p-3 shadow-sm transition-all hover:shadow-md dark:border-green-800/30 dark:from-green-950/20 dark:to-emerald-950/20">
@@ -1070,9 +1072,6 @@ export function ActivityHeatmap({ dailyActivity }: ActivityHeatmapProps) {
                 </span>
               )}
             </div>
-          </div>
-          <div className="rounded-full bg-green-100 px-2 py-1 font-medium text-green-700 text-xs dark:bg-green-900/50 dark:text-green-300">
-            {focusScore}%
           </div>
         </div>
 
@@ -1137,16 +1136,6 @@ export function ActivityHeatmap({ dailyActivity }: ActivityHeatmapProps) {
               );
             })}
           </div>
-        </div>
-
-        <div className="border-green-200 border-t pt-2 dark:border-green-800">
-          <p className="text-green-700 text-xs dark:text-green-300">
-            {consistencyScore >= 80
-              ? 'Excellent consistency!'
-              : consistencyScore >= 50
-                ? 'Good habits forming'
-                : 'Building momentum'}
-          </p>
         </div>
       </div>
     );
@@ -1371,6 +1360,7 @@ export function ActivityHeatmap({ dailyActivity }: ActivityHeatmapProps) {
               (_, i) => (
                 <button
                   key={i}
+                  type="button"
                   onClick={() => setCurrentIndex(i * maxVisibleCards)}
                   className={cn(
                     'h-2 w-2 rounded-full transition-all',
@@ -1445,7 +1435,7 @@ export function ActivityHeatmap({ dailyActivity }: ActivityHeatmapProps) {
 
       return allCards;
     },
-    [calculateMonthlyStats]
+    []
   );
 
   // Rename and lift hooks into a proper React component

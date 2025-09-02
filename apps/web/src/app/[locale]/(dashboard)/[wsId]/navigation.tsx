@@ -1,5 +1,6 @@
 import type { NavLink } from '@/components/navigation';
 import { DEV_MODE } from '@/constants/common';
+import { createClient } from '@tuturuuu/supabase/next/server';
 import {
   Activity,
   Archive,
@@ -7,6 +8,7 @@ import {
   Blocks,
   Bolt,
   BookKey,
+  BookText,
   BookUser,
   Box,
   Boxes,
@@ -15,6 +17,7 @@ import {
   Cctv,
   ChartArea,
   ChartColumnStacked,
+  ChartGantt,
   CircleCheck,
   CircleDollarSign,
   ClipboardClock,
@@ -31,7 +34,10 @@ import {
   IdCardLanyard,
   KeyRound,
   LayoutDashboard,
+  LayoutList,
   Link,
+  ListCheck,
+  ListTodo,
   Logs,
   Mail,
   MessageCircleIcon,
@@ -43,7 +49,6 @@ import {
   ReceiptText,
   RulerDimensionLine,
   ScanSearch,
-  ScrollText,
   Send,
   Settings,
   ShieldUser,
@@ -51,6 +56,7 @@ import {
   SquaresIntersect,
   SquareUserRound,
   Star,
+  SwatchBook,
   Tags,
   TextSelect,
   TicketPercent,
@@ -92,6 +98,14 @@ export async function WorkspaceNavigationLinks({
     name: 'ENABLE_AI_ONLY',
     value: 'true',
   });
+
+  // Fetch task boards for navigation
+  const taskBoardsData: {
+    boards: { id: string; name: string | null }[];
+    hasMore: boolean;
+    totalCount: number;
+  } = await getTaskBoards(wsId, withoutPermission('manage_projects'));
+  const { boards: taskBoards } = taskBoardsData;
 
   const navLinks: (NavLink | null)[] = [
     {
@@ -285,6 +299,31 @@ export async function WorkspaceNavigationLinks({
           icon: <CircleCheck className="h-5 w-5" />,
           disabled: ENABLE_AI_ONLY || withoutPermission('manage_projects'),
           experimental: 'beta',
+          children:
+            taskBoards.length > 0
+              ? [
+                  // Always show "All Boards" as the first option
+                  {
+                    title: t('sidebar_tabs.all_boards'),
+                    href: `/${personalOrWsId}/tasks/boards`,
+                    icon: <ListTodo className="h-4 w-4" />,
+                    matchExact: true,
+                  },
+                  // Individual board links
+                  ...taskBoards.map((board) => ({
+                    title: board.name || t('common.untitled'),
+                    href: `/${personalOrWsId}/tasks/boards/${board.id}`,
+                    icon: <CircleCheck className="h-4 w-4" />,
+                  })),
+                ]
+              : [
+                  // Show only "All Boards" when no individual boards exist
+                  {
+                    title: t('sidebar_tabs.all_boards'),
+                    href: `/${personalOrWsId}/tasks/boards`,
+                    icon: <ListTodo className="h-4 w-4" />,
+                  },
+                ],
         },
         {
           title: t('sidebar_tabs.mail'),
@@ -388,6 +427,39 @@ export async function WorkspaceNavigationLinks({
           title: t('sidebar_tabs.education'),
           href: `/${personalOrWsId}/education`,
           icon: <GraduationCap className="h-5 w-5" />,
+          children: [
+            {
+              title: t('workspace-education-tabs.overview'),
+              href: `/${wsId}/education`,
+              icon: <LayoutDashboard className="h-5 w-5" />,
+              matchExact: true,
+            },
+            {
+              title: t('workspace-education-tabs.courses'),
+              href: `/${wsId}/education/courses`,
+              icon: <BookText className="h-5 w-5" />,
+            },
+            {
+              title: t('workspace-education-tabs.flashcards'),
+              href: `/${wsId}/education/flashcards`,
+              icon: <SwatchBook className="h-5 w-5" />,
+            },
+            {
+              title: t('workspace-education-tabs.quiz-sets'),
+              href: `/${wsId}/education/quiz-sets`,
+              icon: <LayoutList className="h-5 w-5" />,
+            },
+            {
+              title: t('workspace-education-tabs.quizzes'),
+              href: `/${wsId}/education/quizzes`,
+              icon: <ListTodo className="h-5 w-5" />,
+            },
+            {
+              title: t('workspace-education-tabs.attempts'),
+              href: `/${wsId}/education/attempts`,
+              icon: <ListCheck className="h-5 w-5" />,
+            },
+          ],
           disabled:
             ENABLE_AI_ONLY ||
             !(await verifySecret({
@@ -445,6 +517,13 @@ export async function WorkspaceNavigationLinks({
               icon: <Goal className="h-5 w-5" />,
             },
             {
+              title: t('sidebar_tabs.time_tracker_management'),
+              href: `/${personalOrWsId}/time-tracker/management`,
+              icon: <ChartGantt className="h-5 w-5" />,
+              requireRootWorkspace: true,
+              requireRootMember: true,
+            },
+            {
               title: t('sidebar_tabs.settings'),
               href: `/${personalOrWsId}/time-tracker/settings`,
               icon: <Settings className="h-5 w-5" />,
@@ -487,7 +566,6 @@ export async function WorkspaceNavigationLinks({
             `/${personalOrWsId}/users/groups`,
             `/${personalOrWsId}/users/group-tags`,
             `/${personalOrWsId}/users/reports`,
-            `/${personalOrWsId}/users/fields`,
             `/${personalOrWsId}/users/structure`,
           ],
           icon: <Users className="h-5 w-5" />,
@@ -527,12 +605,6 @@ export async function WorkspaceNavigationLinks({
               title: t('workspace-users-tabs.reports'),
               href: `/${personalOrWsId}/users/reports`,
               icon: <ClipboardList className="h-5 w-5" />,
-              disabled: withoutPermission('manage_users'),
-            },
-            {
-              title: t('workspace-users-tabs.fields'),
-              href: `/${personalOrWsId}/users/fields`,
-              icon: <PencilLine className="h-5 w-5" />,
               disabled: withoutPermission('manage_users'),
             },
             {
@@ -705,7 +777,6 @@ export async function WorkspaceNavigationLinks({
         `/${personalOrWsId}/secrets`,
         `/${personalOrWsId}/infrastructure`,
         `/${personalOrWsId}/migrations`,
-        `/${personalOrWsId}/activities`,
       ],
       children: [
         {
@@ -795,14 +866,6 @@ export async function WorkspaceNavigationLinks({
           requireRootMember: true,
         },
         {
-          title: t('workspace-settings-layout.activities'),
-          href: `/${personalOrWsId}/activities`,
-          icon: <ScrollText className="h-5 w-5" />,
-          disabled: withoutPermission('manage_workspace_audit_logs'),
-          requireRootWorkspace: true,
-          requireRootMember: true,
-        },
-        {
           title: t('sidebar_tabs.inquiries'),
           href: `/${personalOrWsId}/inquiries`,
           icon: <MessageCircleIcon className="h-5 w-5" />,
@@ -814,4 +877,46 @@ export async function WorkspaceNavigationLinks({
   ];
 
   return (navLinks satisfies (NavLink | null)[]).filter(Boolean) as NavLink[];
+}
+
+async function getTaskBoards(
+  wsId: string,
+  hasNoPermission: boolean
+): Promise<{
+  boards: { id: string; name: string | null }[];
+  hasMore: boolean;
+  totalCount: number;
+}> {
+  if (hasNoPermission) {
+    return { boards: [], hasMore: false, totalCount: 0 };
+  }
+
+  try {
+    const supabase = await createClient();
+
+    // Fetch first 11 boards to check if there are more than 10
+    const { data, error, count } = await supabase
+      .from('workspace_boards')
+      .select('id, name', { count: 'exact' })
+      .eq('ws_id', wsId)
+      .eq('deleted', false)
+      .order('name', { ascending: true })
+      .limit(11);
+
+    if (error) {
+      console.error('Error fetching task boards for navigation:', error);
+      return { boards: [], hasMore: false, totalCount: 0 };
+    }
+
+    const boards = data || [];
+    const totalCount = count || 0;
+    const hasMore = totalCount > 10;
+    // Return only first 10 boards for navigation
+    const limitedBoards = boards.slice(0, 10);
+
+    return { boards: limitedBoards, hasMore, totalCount };
+  } catch (error) {
+    console.error('Error fetching task boards:', error);
+    return { boards: [], hasMore: false, totalCount: 0 };
+  }
 }

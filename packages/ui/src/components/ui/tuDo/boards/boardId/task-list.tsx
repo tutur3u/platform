@@ -1,4 +1,3 @@
-import { statusIcons } from './status-section';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { useQuery } from '@tanstack/react-query';
@@ -37,14 +36,20 @@ import { ListActions } from '@tuturuuu/ui/tuDo/boards/boardId/list-actions';
 import { TaskCard } from '@tuturuuu/ui/tuDo/boards/boardId/task';
 import { TaskForm } from '@tuturuuu/ui/tuDo/boards/boardId/task-form';
 import { TaskTagInput } from '@tuturuuu/ui/tuDo/shared/task-tag-input';
-import { DEV_MODE } from '@tuturuuu/utils/common/common';
+import { DEV_MODE } from '@tuturuuu/utils/constants';
 import { cn } from '@tuturuuu/utils/format';
 import { priorityCompare } from '@tuturuuu/utils/task-helper';
 import { debounce } from 'lodash';
 import Image from 'next/image';
 import { useParams } from 'next/navigation';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import React from 'react';
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
+import { statusIcons } from './status-section';
 
 interface Props {
   column: TaskList;
@@ -55,6 +60,7 @@ interface Props {
   onListUpdated?: () => void;
   selectedTasks?: Set<string>;
   isMultiSelectMode?: boolean;
+  isPersonalWorkspace?: boolean;
   onTaskSelect?: (taskId: string, event: React.MouseEvent) => void;
 }
 
@@ -97,7 +103,7 @@ const colorClasses: Record<SupportedColor, string> = {
 };
 
 const FilterLabel = ({ children }: { children: React.ReactNode }) => (
-  <div className="text-xs font-medium">{children}</div>
+  <div className="font-medium text-xs">{children}</div>
 );
 
 export const BoardColumn = React.memo(function BoardColumn({
@@ -110,6 +116,7 @@ export const BoardColumn = React.memo(function BoardColumn({
   selectedTasks,
   onTaskSelect,
   isMultiSelectMode,
+  isPersonalWorkspace,
 }: Props) {
   const params = useParams();
   const wsId = params.wsId as string;
@@ -382,7 +389,7 @@ export const BoardColumn = React.memo(function BoardColumn({
         {...listeners}
         className={cn(
           '-ml-2 h-auto cursor-grab p-1 opacity-40 transition-all',
-          'group-hover:opacity-70 hover:bg-black/5',
+          'hover:bg-black/5 group-hover:opacity-70',
           isDragging && 'opacity-100',
           isOverlay && 'cursor-grabbing'
         )}
@@ -401,10 +408,10 @@ export const BoardColumn = React.memo(function BoardColumn({
       style={style}
       className={cn(
         'group flex h-full w-[350px] flex-col rounded-xl transition-all duration-200',
-        'touch-none border-l-4 select-none',
+        'touch-none select-none border-l-4',
         colorClass,
         isDragging &&
-          'scale-[1.02] rotate-1 opacity-90 shadow-xl ring-2 ring-primary/20',
+          'rotate-1 scale-[1.02] opacity-90 shadow-xl ring-2 ring-primary/20',
         isOverlay && 'shadow-2xl ring-2 ring-primary/30',
         'hover:shadow-md',
         // Visual feedback for invalid drop (dev only)
@@ -415,13 +422,13 @@ export const BoardColumn = React.memo(function BoardColumn({
         {DragHandle}
         <div className="flex flex-1 items-center gap-2">
           <span className="text-sm">{statusIcon}</span>
-          <h3 className="text-sm font-semibold text-foreground/90">
+          <h3 className="font-semibold text-foreground/90 text-sm">
             {column.name}
           </h3>
           <Badge
             variant="secondary"
             className={cn(
-              'px-2 py-0.5 text-xs font-medium',
+              'px-2 py-0.5 font-medium text-xs',
               filteredAndSortedTasks.length === 0
                 ? 'text-muted-foreground'
                 : 'text-foreground'
@@ -654,7 +661,7 @@ export const BoardColumn = React.memo(function BoardColumn({
               >
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
-                    <h4 className="text-sm font-medium">Filters</h4>
+                    <h4 className="font-medium text-sm">Filters</h4>
                     {hasActiveFilters && (
                       <Button
                         variant="ghost"
@@ -790,7 +797,7 @@ export const BoardColumn = React.memo(function BoardColumn({
                               </CommandItem>
 
                               {members.length > 0 && (
-                                <div className="my-1 border-t border-border" />
+                                <div className="my-1 border-border border-t" />
                               )}
 
                               {members.map((member: WorkspaceMember) => {
@@ -921,7 +928,7 @@ export const BoardColumn = React.memo(function BoardColumn({
         </div>
       )}
 
-      <div className="max-h-[32rem] flex-1 space-y-2 overflow-y-auto p-3">
+      <div className="h-full flex-1 space-y-2 overflow-y-auto p-3">
         {filteredAndSortedTasks.length === 0 ? (
           <div className="flex h-32 items-center justify-center text-muted-foreground">
             <div className="text-center">
@@ -950,6 +957,7 @@ export const BoardColumn = React.memo(function BoardColumn({
               onUpdate={handleUpdate}
               isSelected={isMultiSelectMode && selectedTasks?.has(task.id)}
               isMultiSelectMode={isMultiSelectMode}
+              isPersonalWorkspace={isPersonalWorkspace}
               onSelect={onTaskSelect}
             />
           ))
@@ -965,7 +973,7 @@ export const BoardColumn = React.memo(function BoardColumn({
 
 export function BoardContainer({ children }: { children: React.ReactNode }) {
   return (
-    <div className="relative scrollbar-none flex h-full w-full gap-4 overflow-x-auto pb-6">
+    <div className="scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent relative flex h-full w-full gap-4 overflow-x-auto">
       {children}
     </div>
   );

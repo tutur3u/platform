@@ -1,5 +1,6 @@
 'use client';
 
+import { useQueryClient } from '@tanstack/react-query';
 import type { TimeTrackingCategory, WorkspaceTask } from '@tuturuuu/types/db';
 import {
   AlertDialog,
@@ -29,6 +30,7 @@ import {
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
 import {
+  AlertTriangle,
   BarChart2,
   Brain,
   Briefcase,
@@ -45,6 +47,8 @@ import {
   Layers,
   MapPin,
   MoreHorizontal,
+  Move,
+  Plus,
   RefreshCw,
   RotateCcw,
   Search,
@@ -73,8 +77,9 @@ import isoWeek from 'dayjs/plugin/isoWeek';
 import timezone from 'dayjs/plugin/timezone';
 import utc from 'dayjs/plugin/utc';
 import { useRouter } from 'next/navigation';
-import { type FC, useCallback, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import type { SessionWithRelations } from '../types';
+import { WorkspaceSelectDialog } from './workspace-select-dialog';
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -94,20 +99,16 @@ interface SessionHistoryProps {
 
 type ViewMode = 'day' | 'week' | 'month';
 
-// New interface for stacked sessions
 interface StackedSession {
-  id: string; // Use the first session's ID as the stack ID
+  id: string;
   title: string;
   description?: string;
   category: TimeTrackingCategory | null;
-  category_id: string | null;
   task: WorkspaceTask | null;
-  task_id: string | null;
   sessions: SessionWithRelations[]; // All sessions in this stack
   totalDuration: number; // Sum of all durations
   firstStartTime: string; // Earliest start time
   lastEndTime: string | null; // Latest end time
-  isStacked: boolean; // Whether this represents multiple sessions
 }
 
 // Utility function to stack sessions by day/month, name, and category
@@ -197,14 +198,11 @@ const createStackedSession = (
     title: firstSession.title,
     description: firstSession.description || undefined,
     category: firstSession.category,
-    category_id: firstSession.category_id,
     task: firstSession.task,
-    task_id: firstSession.task_id,
     sessions: sortedSessions,
     totalDuration,
     firstStartTime: firstSession.start_time,
     lastEndTime: lastSession.end_time,
-    isStacked: sessions.length > 1,
   };
 };
 
@@ -224,11 +222,20 @@ const getCategoryColor = (color: string) => {
   return colorMap[color] || 'bg-blue-500';
 };
 
-const StackedSessionItem: FC<{
+const StackedSessionItem = ({
+  stackedSession,
+  onResume,
+  onEdit,
+  onDelete,
+  onMove,
+  actionStates,
+  tasks,
+}: {
   stackedSession: StackedSession | null;
   onResume: (session: SessionWithRelations) => void;
   onEdit: (session: SessionWithRelations) => void;
   onDelete: (session: SessionWithRelations) => void;
+  onMove: (session: SessionWithRelations) => void;
   actionStates: { [key: string]: boolean };
   tasks:
     | (Partial<WorkspaceTask> & {
@@ -236,7 +243,7 @@ const StackedSessionItem: FC<{
         list_name?: string;
       })[]
     | null;
-}> = ({ stackedSession, onResume, onEdit, onDelete, actionStates, tasks }) => {
+}) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [showAllSessions, setShowAllSessions] = useState(false);
   const userTimezone = dayjs.tz.guess();
@@ -271,12 +278,41 @@ const StackedSessionItem: FC<{
               <h4 className="truncate font-semibold text-base">
                 {stackedSession?.title}
               </h4>
-              {stackedSession?.isStacked && (
+              {stackedSession?.sessions.length > 1 && (
                 <Badge variant="secondary" className="font-medium text-xs">
                   <Layers className="mr-1 h-3 w-3" />
                   {stackedSession?.sessions.length} sessions
                 </Badge>
               )}
+              {/* Show manual entry badge if any session in the stack is a manual entry */}
+              {stackedSession?.sessions.some(
+                (s) =>
+                  s.start_time &&
+                  s.end_time &&
+                  !s.is_running &&
+                  s.duration_seconds
+              ) &&
+                stackedSession?.sessions.some((s) => {
+                  const sessionStart = s.start_time
+                    ? dayjs(s.start_time)
+                    : null;
+                  const sessionEnd = s.end_time ? dayjs(s.end_time) : null;
+                  const sessionCreated = dayjs(s.created_at);
+
+                  // If session was created after it ended, it's likely a manual entry
+                  return (
+                    sessionEnd &&
+                    !sessionStart?.isSame(sessionCreated, 'minute')
+                  );
+                }) && (
+                  <Badge
+                    variant="outline"
+                    className="border-dynamic-orange/20 bg-dynamic-orange/10 font-medium text-dynamic-orange text-xs"
+                  >
+                    <Edit className="mr-1 h-3 w-3" />
+                    Manual Entry
+                  </Badge>
+                )}
             </div>
 
             {stackedSession?.description && (
@@ -315,8 +351,7 @@ const StackedSessionItem: FC<{
               <div className="flex items-center gap-1 text-muted-foreground text-xs">
                 <Clock className="h-3 w-3" />
                 <span>
-                  {stackedSession?.isStacked &&
-                  stackedSession?.sessions.length > 1 ? (
+                  {stackedSession?.sessions.length > 1 ? (
                     <>
                       {firstStartTime.format('MMM D')}
                       {lastEndTime &&
@@ -377,37 +412,32 @@ const StackedSessionItem: FC<{
               <p className="font-bold text-primary text-xl">
                 {formatDuration(stackedSession?.totalDuration)}
               </p>
-              {stackedSession?.isStacked && (
+              {stackedSession?.sessions.length > 1 && (
                 <p className="font-medium text-muted-foreground text-xs">
                   Total time • {stackedSession?.sessions.length} sessions
-                  {stackedSession?.sessions.length > 1 && (
-                    <span className="ml-1">
-                      across{' '}
-                      {
-                        new Set(
-                          stackedSession?.sessions.map((s) =>
-                            dayjs
-                              .utc(s.start_time)
-                              .tz(userTimezone)
-                              .format('MMM D')
-                          )
-                        ).size
-                      }{' '}
-                      {new Set(
+                  <span className="ml-1">
+                    across{' '}
+                    {
+                      new Set(
                         stackedSession?.sessions.map((s) =>
                           dayjs
                             .utc(s.start_time)
                             .tz(userTimezone)
                             .format('MMM D')
                         )
-                      ).size === 1
-                        ? 'day'
-                        : 'days'}
-                    </span>
-                  )}
+                      ).size
+                    }{' '}
+                    {new Set(
+                      stackedSession?.sessions.map((s) =>
+                        dayjs.utc(s.start_time).tz(userTimezone).format('MMM D')
+                      )
+                    ).size === 1
+                      ? 'day'
+                      : 'days'}
+                  </span>
                 </p>
               )}
-              {lastEndTime && !stackedSession?.isStacked && (
+              {lastEndTime && stackedSession?.sessions.length <= 1 && (
                 <p className="text-muted-foreground text-xs">
                   Ended at {lastEndTime.format('h:mm A')}
                 </p>
@@ -423,7 +453,7 @@ const StackedSessionItem: FC<{
             </div>
 
             <div className="flex items-center gap-1">
-              {stackedSession?.isStacked && (
+              {stackedSession?.sessions.length > 1 && (
                 <Button
                   variant="ghost"
                   size="sm"
@@ -465,17 +495,18 @@ const StackedSessionItem: FC<{
                     )}
                     Start New Session
                   </DropdownMenuItem>
-                  {!stackedSession?.isStacked && (
+                  {stackedSession?.sessions.length <= 1 && (
                     <>
                       <DropdownMenuItem onClick={() => onEdit(latestSession)}>
                         <Edit className="mr-2 h-4 w-4" />
                         Edit Session
                       </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => onMove(latestSession)}>
+                        <Move className="mr-2 h-4 w-4" />
+                        Move to Another Workspace
+                      </DropdownMenuItem>
                       <DropdownMenuSeparator />
-                      <DropdownMenuItem
-                        onClick={() => onDelete(latestSession)}
-                        className="text-destructive focus:text-destructive"
-                      >
+                      <DropdownMenuItem onClick={() => onDelete(latestSession)}>
                         <Trash2 className="mr-2 h-4 w-4" />
                         Delete Session
                       </DropdownMenuItem>
@@ -488,7 +519,7 @@ const StackedSessionItem: FC<{
         </div>
       </div>
 
-      {stackedSession?.isStacked && (
+      {stackedSession?.sessions.length > 1 && (
         <Collapsible open={isExpanded}>
           <CollapsibleContent>
             <div className="border-t bg-muted/30 p-4">
@@ -669,14 +700,13 @@ const StackedSessionItem: FC<{
                             </div>
                           </div>
                           <div className="flex items-center gap-3">
-                            <div className="text-right">
+                            <div className="flex h-full flex-col items-center justify-center text-right">
                               <span className="font-medium text-sm">
-                                {session.duration_seconds
-                                  ? formatDuration(session.duration_seconds)
-                                  : '-'}
+                                {session.duration_seconds &&
+                                  formatDuration(session.duration_seconds)}
                               </span>
                               {session.is_running && (
-                                <div className="mt-1">
+                                <div>
                                   <Badge
                                     variant="secondary"
                                     className="text-xs"
@@ -704,10 +734,15 @@ const StackedSessionItem: FC<{
                                   <Edit className="mr-2 h-3 w-3" />
                                   Edit
                                 </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  onClick={() => onMove(session)}
+                                >
+                                  <Move className="mr-2 h-3 w-3" />
+                                  Move
+                                </DropdownMenuItem>
                                 <DropdownMenuSeparator />
                                 <DropdownMenuItem
                                   onClick={() => onDelete(session)}
-                                  className="text-destructive focus:text-destructive"
                                 >
                                   <Trash2 className="mr-2 h-3 w-3" />
                                   Delete
@@ -757,6 +792,13 @@ const StackedSessionItem: FC<{
   );
 };
 
+// Helper function to check if a session is older than one week
+const isSessionOlderThanOneWeek = (session: SessionWithRelations): boolean => {
+  const sessionStartTime = dayjs.utc(session.start_time);
+  const oneWeekAgo = dayjs().utc().subtract(1, 'week');
+  return sessionStartTime.isBefore(oneWeekAgo);
+};
+
 export function SessionHistory({
   wsId,
   sessions,
@@ -764,6 +806,7 @@ export function SessionHistory({
   tasks,
 }: SessionHistoryProps) {
   const router = useRouter();
+  const queryClient = useQueryClient();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [filterCategoryId, setFilterCategoryId] = useState<string>('all');
@@ -779,13 +822,26 @@ export function SessionHistory({
     useState<SessionWithRelations | null>(null);
   const [sessionToEdit, setSessionToEdit] =
     useState<SessionWithRelations | null>(null);
+  const [sessionToMove, setSessionToMove] =
+    useState<SessionWithRelations | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
+  const [isMoving, setIsMoving] = useState(false);
   const [actionStates, setActionStates] = useState<{ [key: string]: boolean }>(
     {}
   );
   const [viewMode, setViewMode] = useState<ViewMode>('week');
   const [currentDate, setCurrentDate] = useState(dayjs());
+
+  // Missed entry state
+  const [showMissedEntryDialog, setShowMissedEntryDialog] = useState(false);
+  const [missedEntryTitle, setMissedEntryTitle] = useState('');
+  const [missedEntryDescription, setMissedEntryDescription] = useState('');
+  const [missedEntryCategoryId, setMissedEntryCategoryId] = useState('none');
+  const [missedEntryTaskId, setMissedEntryTaskId] = useState('none');
+  const [missedEntryStartTime, setMissedEntryStartTime] = useState('');
+  const [missedEntryEndTime, setMissedEntryEndTime] = useState('');
+  const [isCreatingMissedEntry, setIsCreatingMissedEntry] = useState(false);
 
   const userTimezone = dayjs.tz.guess();
   const today = dayjs().tz(userTimezone);
@@ -1049,6 +1105,12 @@ export function SessionHistory({
         `/api/v1/workspaces/${wsId}/time-tracking/sessions/${session.id}`,
         { method: 'PATCH', body: JSON.stringify({ action: 'resume' }) }
       );
+
+      // Invalidate the running session query to update sidebar
+      queryClient.invalidateQueries({
+        queryKey: ['running-time-session', wsId],
+      });
+
       router.refresh();
       toast.success(`Started new session: "${session.title}"`);
     } catch (error) {
@@ -1065,52 +1127,192 @@ export function SessionHistory({
   const openEditDialog = (session: SessionWithRelations | undefined) => {
     if (!session) return;
     setSessionToEdit(session);
-    setEditTitle(session.title);
-    setEditDescription(session.description || '');
-    setEditCategoryId(session.category_id || 'none');
-    setEditTaskId(session.task_id || 'none');
+
     const userTz = dayjs.tz.guess();
-    setEditStartTime(
-      dayjs.utc(session.start_time).tz(userTz).format('YYYY-MM-DDTHH:mm')
-    );
-    setEditEndTime(
-      session.end_time
-        ? dayjs.utc(session.end_time).tz(userTz).format('YYYY-MM-DDTHH:mm')
-        : ''
-    );
+    const startTimeFormatted = dayjs
+      .utc(session.start_time)
+      .tz(userTz)
+      .format('YYYY-MM-DDTHH:mm');
+    const endTimeFormatted = session.end_time
+      ? dayjs.utc(session.end_time).tz(userTz).format('YYYY-MM-DDTHH:mm')
+      : '';
+
+    const title = session.title;
+    const description = session.description || '';
+    const categoryId = session.category_id || 'none';
+    const taskId = session.task_id || 'none';
+
+    // Set current edit values
+    setEditTitle(title);
+    setEditDescription(description);
+    setEditCategoryId(categoryId);
+    setEditTaskId(taskId);
+    setEditStartTime(startTimeFormatted);
+    setEditEndTime(endTimeFormatted);
+
+    // Store original values for comparison
+    setOriginalValues({
+      title,
+      description,
+      categoryId,
+      taskId,
+      startTime: startTimeFormatted,
+      endTime: endTimeFormatted,
+    });
   };
 
-  const saveEdit = async () => {
-    if (!sessionToEdit) return;
-    setIsEditing(true);
+  const openMoveDialog = (session: SessionWithRelations | undefined) => {
+    if (!session) return;
+    if (session.is_running) {
+      toast.error(
+        'Cannot move running sessions. Please stop the session first.'
+      );
+      return;
+    }
+    setSessionToMove(session);
+  };
+
+  const handleMoveSession = async (targetWorkspaceId: string) => {
+    if (!sessionToMove) return;
+
+    setIsMoving(true);
     try {
-      const userTz = dayjs.tz.guess();
-      await fetch(
-        `/api/v1/workspaces/${wsId}/time-tracking/sessions/${sessionToEdit.id}`,
+      const response = await fetch(
+        `/api/v1/workspaces/${wsId}/time-tracking/sessions/${sessionToMove.id}/move`,
         {
-          method: 'PATCH',
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
           body: JSON.stringify({
-            action: 'edit',
-            title: editTitle,
-            description: editDescription,
-            categoryId:
-              editCategoryId === 'none' ? null : editCategoryId || null,
-            taskId: editTaskId === 'none' ? null : editTaskId || null,
-            startTime: editStartTime
-              ? dayjs.tz(editStartTime, userTz).utc().toISOString()
-              : undefined,
-            endTime: editEndTime
-              ? dayjs.tz(editEndTime, userTz).utc().toISOString()
-              : undefined,
+            targetWorkspaceId,
           }),
         }
       );
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to move session');
+      }
+
+      const result = await response.json();
+
       router.refresh();
-      setSessionToEdit(null);
+      setSessionToMove(null);
+      toast.success(result.message || 'Session moved successfully');
+    } catch (error) {
+      console.error('Error moving session:', error);
+      const errorMessage =
+        error instanceof Error ? error.message : 'Failed to move session';
+      toast.error(errorMessage);
+    } finally {
+      setIsMoving(false);
+    }
+  };
+
+  const closeEditDialog = () => {
+    setSessionToEdit(null);
+    setOriginalValues(null);
+  };
+
+  const saveEdit = async () => {
+    if (!sessionToEdit || !originalValues) return;
+    setIsEditing(true);
+    try {
+      const userTz = dayjs.tz.guess();
+
+      // Build only the fields that have changed
+      const changes: {
+        action: string;
+        title?: string;
+        description?: string;
+        categoryId?: string | null;
+        taskId?: string | null;
+        startTime?: string;
+        endTime?: string;
+      } = {
+        action: 'edit',
+      };
+
+      // Check each field for changes and only include dirty fields
+      if (editTitle !== originalValues.title) {
+        changes.title = editTitle;
+      }
+
+      if (editDescription !== originalValues.description) {
+        changes.description = editDescription;
+      }
+
+      const currentCategoryId =
+        editCategoryId === 'none' ? null : editCategoryId || null;
+      const originalCategoryId =
+        originalValues.categoryId === 'none'
+          ? null
+          : originalValues.categoryId || null;
+      if (currentCategoryId !== originalCategoryId) {
+        changes.categoryId = currentCategoryId;
+      }
+
+      const currentTaskId = editTaskId === 'none' ? null : editTaskId || null;
+      const originalTaskId =
+        originalValues.taskId === 'none' ? null : originalValues.taskId || null;
+      if (currentTaskId !== originalTaskId) {
+        changes.taskId = currentTaskId;
+      }
+
+      if (editStartTime !== originalValues.startTime) {
+        changes.startTime = editStartTime
+          ? dayjs.tz(editStartTime, userTz).utc().toISOString()
+          : undefined;
+      }
+
+      if (editEndTime !== originalValues.endTime) {
+        changes.endTime = editEndTime
+          ? dayjs.tz(editEndTime, userTz).utc().toISOString()
+          : undefined;
+      }
+
+      // Basic temporal guard: end >= start when both provided
+      if (changes.startTime && changes.endTime) {
+        if (dayjs(changes.endTime).isBefore(dayjs(changes.startTime))) {
+          toast.error('End time cannot be before start time');
+          setIsEditing(false);
+          return;
+        }
+      }
+
+      // Only make the request if there are actual changes
+      if (Object.keys(changes).length === 1) {
+        // Only the 'action' field is present, no actual changes
+        closeEditDialog();
+        toast.info('No changes detected');
+        return;
+      }
+
+      const response = await fetch(
+        `/api/v1/workspaces/${wsId}/time-tracking/sessions/${sessionToEdit.id}`,
+        {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(changes),
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to update session');
+      }
+
+      router.refresh();
+      closeEditDialog();
       toast.success('Session updated successfully');
     } catch (error) {
       console.error('Error updating session:', error);
-      toast.error('Failed to update session');
+      const errorMessage =
+        error instanceof Error ? error.message : 'Failed to update session';
+      toast.error(errorMessage);
     } finally {
       setIsEditing(false);
     }
@@ -1124,6 +1326,12 @@ export function SessionHistory({
         `/api/v1/workspaces/${wsId}/time-tracking/sessions/${sessionToDelete.id}`,
         { method: 'DELETE' }
       );
+
+      // Invalidate the running session query to update sidebar in case an active session was deleted
+      queryClient.invalidateQueries({
+        queryKey: ['running-time-session', wsId],
+      });
+
       setSessionToDelete(null);
       router.refresh();
       toast.success('Session deleted successfully');
@@ -1135,6 +1343,99 @@ export function SessionHistory({
     }
   };
 
+  const openMissedEntryDialog = () => {
+    // Pre-fill with current date and time for convenience
+    const now = dayjs();
+    const oneHourAgo = now.subtract(1, 'hour');
+
+    setMissedEntryTitle('');
+    setMissedEntryDescription('');
+    setMissedEntryCategoryId('none');
+    setMissedEntryTaskId('none');
+    setMissedEntryStartTime(oneHourAgo.format('YYYY-MM-DDTHH:mm'));
+    setMissedEntryEndTime(now.format('YYYY-MM-DDTHH:mm'));
+    setShowMissedEntryDialog(true);
+  };
+
+  const closeMissedEntryDialog = () => {
+    setShowMissedEntryDialog(false);
+    setMissedEntryTitle('');
+    setMissedEntryDescription('');
+    setMissedEntryCategoryId('none');
+    setMissedEntryTaskId('none');
+    setMissedEntryStartTime('');
+    setMissedEntryEndTime('');
+  };
+
+  const createMissedEntry = async () => {
+    if (!missedEntryTitle.trim()) {
+      toast.error('Please enter a title for the session');
+      return;
+    }
+
+    if (!missedEntryStartTime || !missedEntryEndTime) {
+      toast.error('Please enter both start and end times');
+      return;
+    }
+
+    const startTime = dayjs(missedEntryStartTime);
+    const endTime = dayjs(missedEntryEndTime);
+
+    if (endTime.isBefore(startTime)) {
+      toast.error('End time cannot be before start time');
+      return;
+    }
+
+    if (endTime.diff(startTime, 'minutes') < 1) {
+      toast.error('Session must be at least 1 minute long');
+      return;
+    }
+
+    setIsCreatingMissedEntry(true);
+
+    try {
+      const userTz = dayjs.tz.guess();
+      const response = await fetch(
+        `/api/v1/workspaces/${wsId}/time-tracking/sessions`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            title: missedEntryTitle,
+            description: missedEntryDescription || null,
+            categoryId:
+              missedEntryCategoryId === 'none' ? null : missedEntryCategoryId,
+            taskId: missedEntryTaskId === 'none' ? null : missedEntryTaskId,
+            startTime: dayjs
+              .tz(missedEntryStartTime, userTz)
+              .utc()
+              .toISOString(),
+            endTime: dayjs.tz(missedEntryEndTime, userTz).utc().toISOString(),
+            isManualEntry: true, // Flag to indicate this is a manually created entry
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to create session');
+      }
+
+      router.refresh();
+      closeMissedEntryDialog();
+      toast.success('Missed entry added successfully');
+    } catch (error) {
+      console.error('Error creating missed entry:', error);
+      const errorMessage =
+        error instanceof Error ? error.message : 'Failed to create session';
+      toast.error(errorMessage);
+    } finally {
+      setIsCreatingMissedEntry(false);
+    }
+  };
+
   // Edit form state
   const [editTitle, setEditTitle] = useState('');
   const [editDescription, setEditDescription] = useState('');
@@ -1142,6 +1443,16 @@ export function SessionHistory({
   const [editTaskId, setEditTaskId] = useState('');
   const [editStartTime, setEditStartTime] = useState('');
   const [editEndTime, setEditEndTime] = useState('');
+
+  // Original values to track changes
+  const [originalValues, setOriginalValues] = useState<{
+    title: string;
+    description: string;
+    categoryId: string;
+    taskId: string;
+    startTime: string;
+    endTime: string;
+  } | null>(null);
 
   return (
     <>
@@ -1159,6 +1470,15 @@ export function SessionHistory({
             </CardTitle>
 
             <div className="flex flex-col gap-3 md:flex-row md:items-center">
+              <Button
+                onClick={openMissedEntryDialog}
+                size="sm"
+                className="flex items-center gap-2"
+              >
+                <Plus className="h-4 w-4" />
+                Add Missed Entry
+              </Button>
+
               <div className="flex flex-wrap items-center gap-2">
                 <div className="relative">
                   <Search className="-translate-y-1/2 absolute top-1/2 left-3 h-4 w-4 text-muted-foreground" />
@@ -1752,7 +2072,7 @@ export function SessionHistory({
                                   <div className="font-semibold text-sm">
                                     {formatDuration(session.totalDuration)}
                                   </div>
-                                  {session.isStacked && (
+                                  {session.sessions.length > 1 && (
                                     <div className="text-muted-foreground text-xs">
                                       {session.sessions.length} sessions
                                     </div>
@@ -1789,6 +2109,20 @@ export function SessionHistory({
                                   }
                                 >
                                   <Edit className="h-3 w-3" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-7 px-2"
+                                  onClick={() =>
+                                    openMoveDialog(
+                                      session.sessions[
+                                        session.sessions.length - 1
+                                      ]
+                                    )
+                                  }
+                                >
+                                  <Move className="h-3 w-3" />
                                 </Button>
                               </div>
                             </div>
@@ -1887,6 +2221,7 @@ export function SessionHistory({
                               onResume={resumeSession}
                               onEdit={openEditDialog}
                               onDelete={setSessionToDelete}
+                              onMove={openMoveDialog}
                               actionStates={actionStates}
                               tasks={tasks}
                             />
@@ -1903,10 +2238,7 @@ export function SessionHistory({
       </Card>
 
       {/* Edit Session Dialog */}
-      <Dialog
-        open={!!sessionToEdit}
-        onOpenChange={() => setSessionToEdit(null)}
-      >
+      <Dialog open={!!sessionToEdit} onOpenChange={() => closeEditDialog()}>
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>Edit Session</DialogTitle>
@@ -1979,32 +2311,54 @@ export function SessionHistory({
                 </Select>
               </div>
             </div>
-            {sessionToEdit && !sessionToEdit.is_running && (
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <Label htmlFor="edit-start-time">Start Time</Label>
-                  <Input
-                    id="edit-start-time"
-                    type="datetime-local"
-                    value={editStartTime}
-                    onChange={(e) => setEditStartTime(e.target.value)}
-                  />
+            {sessionToEdit &&
+              !sessionToEdit.is_running &&
+              (isSessionOlderThanOneWeek(sessionToEdit) ? (
+                <div className="rounded-lg border border-orange-200 bg-orange-50 p-4 dark:border-orange-800 dark:bg-orange-950/50">
+                  <div className="flex items-center gap-2 text-orange-700 dark:text-orange-300">
+                    <AlertTriangle className="h-4 w-4" />
+                    <span className="font-medium text-sm">
+                      Time Editing Restricted
+                    </span>
+                  </div>
+                  <p className="mt-2 text-orange-600 text-sm dark:text-orange-400">
+                    Start time and end time cannot be edited for sessions older
+                    than one week. This session is from{' '}
+                    <span className="font-medium">
+                      {dayjs
+                        .utc(sessionToEdit.start_time)
+                        .tz(dayjs.tz.guess())
+                        .format('MMM D, YYYY')}
+                    </span>
+                    .
+                  </p>
                 </div>
-                <div>
-                  <Label htmlFor="edit-end-time">End Time</Label>
-                  <Input
-                    id="edit-end-time"
-                    type="datetime-local"
-                    value={editEndTime}
-                    onChange={(e) => setEditEndTime(e.target.value)}
-                  />
+              ) : (
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <Label htmlFor="edit-start-time">Start Time</Label>
+                    <Input
+                      id="edit-start-time"
+                      type="datetime-local"
+                      value={editStartTime}
+                      onChange={(e) => setEditStartTime(e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="edit-end-time">End Time</Label>
+                    <Input
+                      id="edit-end-time"
+                      type="datetime-local"
+                      value={editEndTime}
+                      onChange={(e) => setEditEndTime(e.target.value)}
+                    />
+                  </div>
                 </div>
-              </div>
-            )}
+              ))}
             <div className="flex gap-2 pt-4">
               <Button
                 variant="outline"
-                onClick={() => setSessionToEdit(null)}
+                onClick={() => closeEditDialog()}
                 className="flex-1"
               >
                 Cancel
@@ -2047,6 +2401,266 @@ export function SessionHistory({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Add Missed Entry Dialog */}
+      <Dialog
+        open={showMissedEntryDialog}
+        onOpenChange={closeMissedEntryDialog}
+      >
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Add Missed Time Entry</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="missed-entry-title">Title *</Label>
+              <Input
+                id="missed-entry-title"
+                value={missedEntryTitle}
+                onChange={(e) => setMissedEntryTitle(e.target.value)}
+                placeholder="What were you working on?"
+              />
+            </div>
+            <div>
+              <Label htmlFor="missed-entry-description">Description</Label>
+              <Textarea
+                id="missed-entry-description"
+                value={missedEntryDescription}
+                onChange={(e) => setMissedEntryDescription(e.target.value)}
+                placeholder="Optional details about the work"
+                rows={2}
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <Label htmlFor="missed-entry-category">Category</Label>
+                <Select
+                  value={missedEntryCategoryId}
+                  onValueChange={setMissedEntryCategoryId}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">No category</SelectItem>
+                    {categories?.map((category) => (
+                      <SelectItem key={category.id} value={category.id}>
+                        <div className="flex items-center gap-2">
+                          <div
+                            className={cn(
+                              'h-3 w-3 rounded-full',
+                              getCategoryColor(category.color || 'BLUE')
+                            )}
+                          />
+                          {category.name}
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label htmlFor="missed-entry-task">Task</Label>
+                <Select
+                  value={missedEntryTaskId}
+                  onValueChange={setMissedEntryTaskId}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select task" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">No task</SelectItem>
+                    {tasks?.map(
+                      (task) =>
+                        task.id && (
+                          <SelectItem key={task.id} value={task.id}>
+                            {task.name}
+                          </SelectItem>
+                        )
+                    )}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <Label htmlFor="missed-entry-start-time">Start Time *</Label>
+                <Input
+                  id="missed-entry-start-time"
+                  type="datetime-local"
+                  value={missedEntryStartTime}
+                  onChange={(e) => setMissedEntryStartTime(e.target.value)}
+                />
+              </div>
+              <div>
+                <Label htmlFor="missed-entry-end-time">End Time *</Label>
+                <Input
+                  id="missed-entry-end-time"
+                  type="datetime-local"
+                  value={missedEntryEndTime}
+                  onChange={(e) => setMissedEntryEndTime(e.target.value)}
+                />
+              </div>
+            </div>
+
+            {/* Quick time presets */}
+            <div className="rounded-lg border p-3">
+              <Label className="text-muted-foreground text-xs">
+                Quick Presets
+              </Label>
+              <div className="mt-2 flex flex-wrap gap-2">
+                {[
+                  { label: 'Last hour', minutes: 60 },
+                  { label: 'Last 2 hours', minutes: 120 },
+                  {
+                    label: 'Morning (9-12)',
+                    isCustom: true,
+                    start: '09:00',
+                    end: '12:00',
+                  },
+                  {
+                    label: 'Afternoon (13-17)',
+                    isCustom: true,
+                    start: '13:00',
+                    end: '17:00',
+                  },
+                  {
+                    label: 'Yesterday',
+                    isCustom: true,
+                    start: 'yesterday-9',
+                    end: 'yesterday-17',
+                  },
+                ].map((preset) => (
+                  <Button
+                    key={preset.label}
+                    variant="outline"
+                    size="sm"
+                    className="h-7 text-xs"
+                    type="button"
+                    onClick={() => {
+                      const now = dayjs();
+                      if (preset.isCustom) {
+                        if (preset.start === 'yesterday-9') {
+                          const yesterday = now.subtract(1, 'day');
+                          setMissedEntryStartTime(
+                            yesterday
+                              .hour(9)
+                              .minute(0)
+                              .format('YYYY-MM-DDTHH:mm')
+                          );
+                          setMissedEntryEndTime(
+                            yesterday
+                              .hour(17)
+                              .minute(0)
+                              .format('YYYY-MM-DDTHH:mm')
+                          );
+                        } else if (preset.start && preset.end) {
+                          const today = now.startOf('day');
+                          const startParts = preset.start.split(':');
+                          const endParts = preset.end.split(':');
+                          const startHour = parseInt(startParts[0] || '9', 10);
+                          const startMin = parseInt(startParts[1] || '0', 10);
+                          const endHour = parseInt(endParts[0] || '17', 10);
+                          const endMin = parseInt(endParts[1] || '0', 10);
+                          setMissedEntryStartTime(
+                            today
+                              .hour(startHour)
+                              .minute(startMin)
+                              .format('YYYY-MM-DDTHH:mm')
+                          );
+                          setMissedEntryEndTime(
+                            today
+                              .hour(endHour)
+                              .minute(endMin)
+                              .format('YYYY-MM-DDTHH:mm')
+                          );
+                        }
+                      } else if (preset.minutes) {
+                        const endTime = now;
+                        const startTime = endTime.subtract(
+                          preset.minutes,
+                          'minutes'
+                        );
+                        setMissedEntryStartTime(
+                          startTime.format('YYYY-MM-DDTHH:mm')
+                        );
+                        setMissedEntryEndTime(
+                          endTime.format('YYYY-MM-DDTHH:mm')
+                        );
+                      }
+                    }}
+                  >
+                    {preset.label}
+                  </Button>
+                ))}
+              </div>
+            </div>
+
+            {/* Show calculated duration */}
+            {missedEntryStartTime && missedEntryEndTime && (
+              <div className="rounded-lg bg-muted/30 p-3">
+                <div className="flex items-center gap-2 text-muted-foreground text-sm">
+                  <Clock className="h-4 w-4" />
+                  <span>Duration: </span>
+                  <span className="font-medium text-foreground">
+                    {(() => {
+                      const start = dayjs(missedEntryStartTime);
+                      const end = dayjs(missedEntryEndTime);
+                      if (end.isBefore(start)) return 'Invalid time range';
+                      const durationMs = end.diff(start);
+                      const duration = Math.floor(durationMs / 1000);
+                      return formatDuration(duration);
+                    })()}
+                  </span>
+                </div>
+              </div>
+            )}
+
+            <div className="flex gap-2 pt-4">
+              <Button
+                variant="outline"
+                onClick={closeMissedEntryDialog}
+                className="flex-1"
+                disabled={isCreatingMissedEntry}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={createMissedEntry}
+                disabled={
+                  isCreatingMissedEntry ||
+                  !missedEntryTitle.trim() ||
+                  !missedEntryStartTime ||
+                  !missedEntryEndTime
+                }
+                className="flex-1"
+              >
+                {isCreatingMissedEntry ? (
+                  <>
+                    <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                    Adding...
+                  </>
+                ) : (
+                  <>
+                    <Plus className="mr-2 h-4 w-4" />
+                    Add Entry
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Move Session Dialog */}
+      <WorkspaceSelectDialog
+        isOpen={!!sessionToMove}
+        onClose={() => setSessionToMove(null)}
+        onConfirm={handleMoveSession}
+        sessionTitle={sessionToMove?.title || ''}
+        currentWorkspaceId={wsId}
+        isMoving={isMoving}
+      />
     </>
   );
 }

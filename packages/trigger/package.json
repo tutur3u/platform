@@ -14,16 +14,16 @@
     "trigger:deploy": "bunx trigger.dev@latest deploy"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.56.0",
-    "@trigger.dev/sdk": "^4.0.1",
+    "@supabase/supabase-js": "^2.56.1",
+    "@trigger.dev/sdk": "^4.0.2",
     "@tuturuuu/supabase": "workspace:*",
     "@tuturuuu/types": "workspace:*",
     "@tuturuuu/google": "workspace:*",
     "@tuturuuu/utils": "workspace:*",
-    "dayjs": "^1.11.13"
+    "dayjs": "^1.11.18"
   },
   "devDependencies": {
-    "@trigger.dev/build": "^4.0.1",
+    "@trigger.dev/build": "^4.0.2",
     "@tuturuuu/typescript-config": "workspace:*"
   },
   "packageManager": "bun@1.2.21"

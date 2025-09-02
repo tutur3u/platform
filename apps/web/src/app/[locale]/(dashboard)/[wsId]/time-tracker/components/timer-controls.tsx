@@ -1,5 +1,6 @@
 'use client';
 
+import { useQueryClient } from '@tanstack/react-query';
 import type { TimeTrackingCategory, WorkspaceTask } from '@tuturuuu/types/db';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
@@ -41,9 +42,12 @@ import {
   SelectValue,
 } from '@tuturuuu/ui/select';
 import { toast } from '@tuturuuu/ui/sonner';
+import { Switch } from '@tuturuuu/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { cn } from '@tuturuuu/utils/format';
+import Link from 'next/link';
+import type { ComponentProps, ElementType } from 'react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type {
   ExtendedWorkspaceTask,
@@ -97,7 +101,6 @@ interface TimerControlsProps {
   formatDuration: (seconds: number) => string;
   apiCall: (url: string, options?: RequestInit) => Promise<any>;
   isDraggingTask?: boolean;
-  onGoToTasksTab?: () => void;
   currentUserId?: string;
 }
 
@@ -114,7 +117,11 @@ interface PomodoroSettings {
   enableMovementReminder: boolean;
 }
 
-type TimerMode = 'stopwatch' | 'pomodoro' | 'custom';
+enum TimerMode {
+  stopwatch = 'stopwatch',
+  pomodoro = 'pomodoro',
+  custom = 'custom',
+}
 type SessionType = 'focus' | 'short-break' | 'long-break';
 type CustomTimerType = 'enhanced-stopwatch' | 'traditional-countdown';
 
@@ -198,6 +205,33 @@ interface PausedSessionData {
   timerMode: TimerMode;
 }
 
+// Tab metadata for timer mode selector
+type TimerModeTab = {
+  value: TimerMode;
+  label: string;
+  icon: ElementType<{ className?: string }>;
+};
+
+const TIMER_MODE_TABS: readonly TimerModeTab[] = [
+  {
+    value: TimerMode.stopwatch,
+    label: 'Stopwatch',
+    icon: Timer,
+  },
+  {
+    value: TimerMode.pomodoro,
+    label: 'Pomodoro',
+    icon: (props: ComponentProps<'svg'>) => (
+      <Icon iconNode={fruit} {...props} />
+    ),
+  },
+  {
+    value: TimerMode.custom,
+    label: 'Custom',
+    icon: Settings2,
+  },
+] as const;
+
 // Default Pomodoro settings
 const DEFAULT_POMODORO_SETTINGS: PomodoroSettings = {
   focusTime: 25,
@@ -237,9 +271,9 @@ export function TimerControls({
   formatDuration,
   apiCall,
   isDraggingTask = false,
-  onGoToTasksTab,
   currentUserId,
 }: TimerControlsProps) {
+  const queryClient = useQueryClient();
   const [isLoading, setIsLoading] = useState(false);
   const [newSessionTitle, setNewSessionTitle] = useState('');
   const [newSessionDescription, setNewSessionDescription] = useState('');
@@ -258,7 +292,7 @@ export function TimerControls({
   const [pauseStartTime, setPauseStartTime] = useState<Date | null>(null);
 
   // Pomodoro and timer mode state
-  const [timerMode, setTimerMode] = useState<TimerMode>('stopwatch');
+  const [timerMode, setTimerMode] = useState<TimerMode>(TimerMode.stopwatch);
   const [pomodoroSettings, setPomodoroSettings] = useState<PomodoroSettings>(
     DEFAULT_POMODORO_SETTINGS
   );
@@ -310,7 +344,7 @@ export function TimerControls({
   const [sessionProtection, setSessionProtection] = useState<SessionProtection>(
     {
       isActive: false,
-      currentMode: 'stopwatch',
+      currentMode: TimerMode.stopwatch,
       canSwitchModes: true,
       canModifySettings: true,
     }
@@ -343,9 +377,9 @@ export function TimerControls({
   const [timerModeSessions, setTimerModeSessions] = useState<{
     [key in TimerMode]: TimerModeSession | null;
   }>({
-    stopwatch: null,
-    pomodoro: null,
-    custom: null,
+    [TimerMode.stopwatch]: null,
+    [TimerMode.pomodoro]: null,
+    [TimerMode.custom]: null,
   });
 
   // Legacy break reminders state (kept for lastNotificationTime only)
@@ -457,11 +491,11 @@ export function TimerControls({
 
   const getCurrentBreakState = useCallback(() => {
     switch (timerMode) {
-      case 'stopwatch':
+      case TimerMode.stopwatch:
         return stopwatchBreakState;
-      case 'pomodoro':
+      case TimerMode.pomodoro:
         return pomodoroBreakState;
-      case 'custom':
+      case TimerMode.custom:
         return customBreakState;
       default:
         return stopwatchBreakState;
@@ -471,13 +505,13 @@ export function TimerControls({
   const updateCurrentBreakState = useCallback(
     (updates: Partial<BreakTimeState>) => {
       switch (timerMode) {
-        case 'stopwatch':
+        case TimerMode.stopwatch:
           setStopwatchBreakState((prev) => ({ ...prev, ...updates }));
           break;
-        case 'pomodoro':
+        case TimerMode.pomodoro:
           setPomodoroBreakState((prev) => ({ ...prev, ...updates }));
           break;
-        case 'custom':
+        case TimerMode.custom:
           setCustomBreakState((prev) => ({ ...prev, ...updates }));
           break;
       }
@@ -487,7 +521,9 @@ export function TimerControls({
 
   // Safe timer mode switching with validation
   const handleTimerModeChange = useCallback(
-    (newMode: TimerMode) => {
+    (modeValue: string) => {
+      if (!Object.values(TimerMode).includes(modeValue as TimerMode)) return;
+      const newMode: TimerMode = TimerMode[modeValue as keyof typeof TimerMode];
       // Prevent mode switching if session is active
       if (sessionProtection.isActive) {
         toast.error('Cannot switch timer modes during an active session', {
@@ -508,9 +544,10 @@ export function TimerControls({
             : null,
           elapsedTime: elapsedTime,
           breakTimeState: currentBreakState,
-          pomodoroState: timerMode === 'pomodoro' ? countdownState : undefined,
+          pomodoroState:
+            timerMode === TimerMode.pomodoro ? countdownState : undefined,
           customTimerState:
-            timerMode === 'custom'
+            timerMode === TimerMode.custom
               ? {
                   hasReachedTarget,
                   targetProgress:
@@ -537,16 +574,16 @@ export function TimerControls({
 
         // Restore break state for new mode
         switch (newMode) {
-          case 'stopwatch':
+          case TimerMode.stopwatch:
             setStopwatchBreakState(previousSession.breakTimeState);
             break;
-          case 'pomodoro':
+          case TimerMode.pomodoro:
             setPomodoroBreakState(previousSession.breakTimeState);
             if (previousSession.pomodoroState) {
               setCountdownState(previousSession.pomodoroState);
             }
             break;
-          case 'custom':
+          case TimerMode.custom:
             setCustomBreakState(previousSession.breakTimeState);
             if (previousSession.customTimerState) {
               setHasReachedTarget(
@@ -679,7 +716,9 @@ export function TimerControls({
           key.replace('paused-session-', 'paused-elapsed-'),
           key.replace('paused-session-', 'pause-time-'),
         ];
-        relatedKeys.forEach((k) => localStorage.removeItem(k));
+        relatedKeys.forEach((k) => {
+          localStorage.removeItem(k);
+        });
       });
     };
   }, [wsId, currentUserId]);
@@ -1438,6 +1477,11 @@ export function TimerControls({
       setSelectedCategoryId('none');
       setSelectedTaskId('none');
 
+      // Invalidate the running session query to update sidebar
+      queryClient.invalidateQueries({
+        queryKey: ['running-time-session', wsId],
+      });
+
       onSessionUpdate();
       toast.success('Timer started!');
     } catch (error) {
@@ -1533,6 +1577,11 @@ export function TimerControls({
       setSelectedCategoryId('none');
       setSelectedTaskId('none');
 
+      // Invalidate the running session query to update sidebar
+      queryClient.invalidateQueries({
+        queryKey: ['running-time-session', wsId],
+      });
+
       onSessionUpdate();
       toast.success(
         `Timer started${timerMode === 'pomodoro' ? ' - Focus time!' : ''}`
@@ -1580,6 +1629,11 @@ export function TimerControls({
 
       // Show completion celebration
       setTimeout(() => setJustCompleted(null), 3000);
+
+      // Invalidate the running session query to update sidebar
+      queryClient.invalidateQueries({
+        queryKey: ['running-time-session', wsId],
+      });
 
       onSessionUpdate();
       toast.success(
@@ -1673,6 +1727,11 @@ export function TimerControls({
       const pauseDuration = pauseStartTime
         ? Math.floor((new Date().getTime() - pauseStartTime.getTime()) / 1000)
         : 0;
+
+      // Invalidate the running session query to update sidebar
+      queryClient.invalidateQueries({
+        queryKey: ['running-time-session', wsId],
+      });
 
       onSessionUpdate();
       toast.success('Timer resumed!', {
@@ -2111,29 +2170,35 @@ export function TimerControls({
                   />
                 </div>
                 <div className="flex items-center justify-between">
-                  <Label>Auto-stop at target</Label>
-                  <input
-                    type="checkbox"
+                  <Label htmlFor="auto-stop-target">Auto-stop at target</Label>
+                  <Switch
+                    id="auto-stop-target"
                     checked={customTimerSettings.autoStopAtTarget}
-                    onChange={(e) =>
+                    onCheckedChange={(checked) =>
                       setCustomTimerSettings((prev) => ({
                         ...prev,
-                        autoStopAtTarget: e.target.checked,
+                        autoStopAtTarget: checked,
                       }))
                     }
+                    role="switch"
+                    aria-checked={customTimerSettings.autoStopAtTarget}
                   />
                 </div>
                 <div className="flex items-center justify-between">
-                  <Label>Target notifications</Label>
-                  <input
-                    type="checkbox"
+                  <Label htmlFor="target-notifications">
+                    Target notifications
+                  </Label>
+                  <Switch
+                    id="target-notifications"
                     checked={customTimerSettings.enableTargetNotification}
-                    onChange={(e) =>
+                    onCheckedChange={(checked) =>
                       setCustomTimerSettings((prev) => ({
                         ...prev,
-                        enableTargetNotification: e.target.checked,
+                        enableTargetNotification: checked,
                       }))
                     }
+                    role="switch"
+                    aria-checked={customTimerSettings.enableTargetNotification}
                   />
                 </div>
               </div>
@@ -2160,29 +2225,35 @@ export function TimerControls({
                   />
                 </div>
                 <div className="flex items-center justify-between">
-                  <Label>Auto-restart</Label>
-                  <input
-                    type="checkbox"
+                  <Label htmlFor="auto-restart">Auto-restart</Label>
+                  <Switch
+                    id="auto-restart"
                     checked={customTimerSettings.autoRestart}
-                    onChange={(e) =>
+                    onCheckedChange={(checked) =>
                       setCustomTimerSettings((prev) => ({
                         ...prev,
-                        autoRestart: e.target.checked,
+                        autoRestart: checked,
                       }))
                     }
+                    role="switch"
+                    aria-checked={customTimerSettings.autoRestart}
                   />
                 </div>
                 <div className="flex items-center justify-between">
-                  <Label>Show time remaining</Label>
-                  <input
-                    type="checkbox"
+                  <Label htmlFor="show-time-remaining">
+                    Show time remaining
+                  </Label>
+                  <Switch
+                    id="show-time-remaining"
                     checked={customTimerSettings.showTimeRemaining}
-                    onChange={(e) =>
+                    onCheckedChange={(checked) =>
                       setCustomTimerSettings((prev) => ({
                         ...prev,
-                        showTimeRemaining: e.target.checked,
+                        showTimeRemaining: checked,
                       }))
                     }
+                    role="switch"
+                    aria-checked={customTimerSettings.showTimeRemaining}
                   />
                 </div>
               </div>
@@ -2191,16 +2262,20 @@ export function TimerControls({
             <div className="space-y-3">
               <h4 className="font-medium text-sm">Break Reminders</h4>
               <div className="flex items-center justify-between">
-                <Label>Enable break reminders</Label>
-                <input
-                  type="checkbox"
+                <Label htmlFor="enable-break-reminders">
+                  Enable break reminders
+                </Label>
+                <Switch
+                  id="enable-break-reminders"
                   checked={customTimerSettings.enableBreakReminders}
-                  onChange={(e) =>
+                  onCheckedChange={(checked) =>
                     setCustomTimerSettings((prev) => ({
                       ...prev,
-                      enableBreakReminders: e.target.checked,
+                      enableBreakReminders: checked,
                     }))
                   }
+                  role="switch"
+                  aria-checked={customTimerSettings.enableBreakReminders}
                 />
               </div>
               <p className="text-muted-foreground text-xs">
@@ -2212,29 +2287,37 @@ export function TimerControls({
             <div className="space-y-3">
               <h4 className="font-medium text-sm">Audio & Notifications</h4>
               <div className="flex items-center justify-between">
-                <Label>Play completion sound</Label>
-                <input
-                  type="checkbox"
+                <Label htmlFor="play-completion-sound">
+                  Play completion sound
+                </Label>
+                <Switch
+                  id="play-completion-sound"
                   checked={customTimerSettings.playCompletionSound}
-                  onChange={(e) =>
+                  onCheckedChange={(checked) =>
                     setCustomTimerSettings((prev) => ({
                       ...prev,
-                      playCompletionSound: e.target.checked,
+                      playCompletionSound: checked,
                     }))
                   }
+                  role="switch"
+                  aria-checked={customTimerSettings.playCompletionSound}
                 />
               </div>
               <div className="flex items-center justify-between">
-                <Label>Browser notifications</Label>
-                <input
-                  type="checkbox"
+                <Label htmlFor="browser-notifications">
+                  Browser notifications
+                </Label>
+                <Switch
+                  id="browser-notifications"
                   checked={customTimerSettings.showNotifications}
-                  onChange={(e) =>
+                  onCheckedChange={(checked) =>
                     setCustomTimerSettings((prev) => ({
                       ...prev,
-                      showNotifications: e.target.checked,
+                      showNotifications: checked,
                     }))
                   }
+                  role="switch"
+                  aria-checked={customTimerSettings.showNotifications}
                 />
               </div>
             </div>
@@ -2242,16 +2325,20 @@ export function TimerControls({
             <div className="space-y-3">
               <h4 className="font-medium text-sm">Motivation & Feedback</h4>
               <div className="flex items-center justify-between">
-                <Label>Motivational messages</Label>
-                <input
-                  type="checkbox"
+                <Label htmlFor="motivational-messages">
+                  Motivational messages
+                </Label>
+                <Switch
+                  id="motivational-messages"
                   checked={customTimerSettings.enableMotivationalMessages}
-                  onChange={(e) =>
+                  onCheckedChange={(checked) =>
                     setCustomTimerSettings((prev) => ({
                       ...prev,
-                      enableMotivationalMessages: e.target.checked,
+                      enableMotivationalMessages: checked,
                     }))
                   }
+                  role="switch"
+                  aria-checked={customTimerSettings.enableMotivationalMessages}
                 />
               </div>
               <p className="text-muted-foreground text-xs">
@@ -2384,72 +2471,86 @@ export function TimerControls({
 
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <Label>Auto-start breaks</Label>
-                <input
-                  type="checkbox"
+                <Label htmlFor="auto-start-breaks">Auto-start breaks</Label>
+                <Switch
+                  id="auto-start-breaks"
                   checked={pomodoroSettings.autoStartBreaks}
-                  onChange={(e) =>
+                  onCheckedChange={(checked) =>
                     setPomodoroSettings((prev) => ({
                       ...prev,
-                      autoStartBreaks: e.target.checked,
+                      autoStartBreaks: checked,
                     }))
                   }
+                  role="switch"
+                  aria-checked={pomodoroSettings.autoStartBreaks}
                 />
               </div>
 
               <div className="flex items-center justify-between">
-                <Label>Auto-start focus</Label>
-                <input
-                  type="checkbox"
+                <Label htmlFor="auto-start-focus">Auto-start focus</Label>
+                <Switch
+                  id="auto-start-focus"
                   checked={pomodoroSettings.autoStartFocus}
-                  onChange={(e) =>
+                  onCheckedChange={(checked) =>
                     setPomodoroSettings((prev) => ({
                       ...prev,
-                      autoStartFocus: e.target.checked,
+                      autoStartFocus: checked,
                     }))
                   }
+                  role="switch"
+                  aria-checked={pomodoroSettings.autoStartFocus}
                 />
               </div>
 
               <div className="flex items-center justify-between">
-                <Label>Enable notifications</Label>
-                <input
-                  type="checkbox"
+                <Label htmlFor="enable-notifications">
+                  Enable notifications
+                </Label>
+                <Switch
+                  id="enable-notifications"
                   checked={pomodoroSettings.enableNotifications}
-                  onChange={(e) =>
+                  onCheckedChange={(checked) =>
                     setPomodoroSettings((prev) => ({
                       ...prev,
-                      enableNotifications: e.target.checked,
+                      enableNotifications: checked,
                     }))
                   }
+                  role="switch"
+                  aria-checked={pomodoroSettings.enableNotifications}
                 />
               </div>
 
               <div className="flex items-center justify-between">
-                <Label>20-20-20 eye breaks</Label>
-                <input
-                  type="checkbox"
+                <Label htmlFor="enable-2020-rule">20-20-20 eye breaks</Label>
+                <Switch
+                  id="enable-2020-rule"
                   checked={pomodoroSettings.enable2020Rule}
-                  onChange={(e) =>
+                  onCheckedChange={(checked) =>
                     setPomodoroSettings((prev) => ({
                       ...prev,
-                      enable2020Rule: e.target.checked,
+                      enable2020Rule: checked,
                     }))
                   }
+                  role="switch"
+                  aria-checked={pomodoroSettings.enable2020Rule}
                 />
               </div>
 
               <div className="flex items-center justify-between">
-                <Label>Movement reminders</Label>
-                <input
-                  type="checkbox"
+                <Label htmlFor="enable-movement-reminder">
+                  Movement reminders
+                </Label>
+                <Switch
+                  id="enable-movement-reminder"
                   checked={pomodoroSettings.enableMovementReminder}
-                  onChange={(e) =>
+                  onCheckedChange={(checked) =>
                     setPomodoroSettings((prev) => ({
                       ...prev,
-                      enableMovementReminder: e.target.checked,
+                      enableMovementReminder: checked,
                     }))
                   }
+                  role="switch"
+                  aria-checked={pomodoroSettings.enableMovementReminder}
                 />
               </div>
             </div>
@@ -2490,100 +2591,126 @@ export function TimerControls({
           <div className="space-y-4">
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <Label>Break reminders</Label>
-                <input
-                  type="checkbox"
+                <Label htmlFor="break-reminders-stopwatch">
+                  Break reminders
+                </Label>
+                <Switch
+                  id="break-reminders-stopwatch"
                   checked={stopwatchSettings.enableBreakReminders}
-                  onChange={(e) =>
+                  onCheckedChange={(checked) =>
                     setStopwatchSettings((prev) => ({
                       ...prev,
-                      enableBreakReminders: e.target.checked,
+                      enableBreakReminders: checked,
                     }))
                   }
+                  role="switch"
+                  aria-checked={stopwatchSettings.enableBreakReminders}
                 />
               </div>
 
               <div className="flex items-center justify-between">
-                <Label>20-20-20 eye breaks</Label>
-                <input
-                  type="checkbox"
+                <Label htmlFor="eye-breaks-stopwatch">
+                  20-20-20 eye breaks
+                </Label>
+                <Switch
+                  id="eye-breaks-stopwatch"
                   checked={stopwatchSettings.enable2020Rule}
-                  onChange={(e) =>
+                  onCheckedChange={(checked) =>
                     setStopwatchSettings((prev) => ({
                       ...prev,
-                      enable2020Rule: e.target.checked,
+                      enable2020Rule: checked,
                     }))
                   }
+                  role="switch"
+                  aria-checked={stopwatchSettings.enable2020Rule}
                 />
               </div>
 
               <div className="flex items-center justify-between">
-                <Label>Movement reminders</Label>
-                <input
-                  type="checkbox"
+                <Label htmlFor="movement-reminders-stopwatch">
+                  Movement reminders
+                </Label>
+                <Switch
+                  id="movement-reminders-stopwatch"
                   checked={stopwatchSettings.enableMovementReminder}
-                  onChange={(e) =>
+                  onCheckedChange={(checked) =>
                     setStopwatchSettings((prev) => ({
                       ...prev,
-                      enableMovementReminder: e.target.checked,
+                      enableMovementReminder: checked,
                     }))
                   }
+                  role="switch"
+                  aria-checked={stopwatchSettings.enableMovementReminder}
                 />
               </div>
 
               <div className="flex items-center justify-between">
-                <Label>Productivity insights</Label>
-                <input
-                  type="checkbox"
+                <Label htmlFor="productivity-insights">
+                  Productivity insights
+                </Label>
+                <Switch
+                  id="productivity-insights"
                   checked={stopwatchSettings.showProductivityInsights}
-                  onChange={(e) =>
+                  onCheckedChange={(checked) =>
                     setStopwatchSettings((prev) => ({
                       ...prev,
-                      showProductivityInsights: e.target.checked,
+                      showProductivityInsights: checked,
                     }))
                   }
+                  role="switch"
+                  aria-checked={stopwatchSettings.showProductivityInsights}
                 />
               </div>
 
               <div className="flex items-center justify-between">
-                <Label>Enable notifications</Label>
-                <input
-                  type="checkbox"
+                <Label htmlFor="enable-notifications-stopwatch">
+                  Enable notifications
+                </Label>
+                <Switch
+                  id="enable-notifications-stopwatch"
                   checked={stopwatchSettings.enableNotifications}
-                  onChange={(e) =>
+                  onCheckedChange={(checked) =>
                     setStopwatchSettings((prev) => ({
                       ...prev,
-                      enableNotifications: e.target.checked,
+                      enableNotifications: checked,
                     }))
                   }
+                  role="switch"
+                  aria-checked={stopwatchSettings.enableNotifications}
                 />
               </div>
 
               <div className="flex items-center justify-between">
-                <Label>Session milestones</Label>
-                <input
-                  type="checkbox"
+                <Label htmlFor="session-milestones">Session milestones</Label>
+                <Switch
+                  id="session-milestones"
                   checked={stopwatchSettings.enableSessionMilestones}
-                  onChange={(e) =>
+                  onCheckedChange={(checked) =>
                     setStopwatchSettings((prev) => ({
                       ...prev,
-                      enableSessionMilestones: e.target.checked,
+                      enableSessionMilestones: checked,
                     }))
                   }
+                  role="switch"
+                  aria-checked={stopwatchSettings.enableSessionMilestones}
                 />
               </div>
 
               <div className="flex items-center justify-between">
-                <Label>Completion sound</Label>
-                <input
-                  type="checkbox"
+                <Label htmlFor="completion-sound-stopwatch">
+                  Completion sound
+                </Label>
+                <Switch
+                  id="completion-sound-stopwatch"
                   checked={stopwatchSettings.playCompletionSound}
-                  onChange={(e) =>
+                  onCheckedChange={(checked) =>
                     setStopwatchSettings((prev) => ({
                       ...prev,
-                      playCompletionSound: e.target.checked,
+                      playCompletionSound: checked,
                     }))
                   }
+                  role="switch"
+                  aria-checked={stopwatchSettings.playCompletionSound}
                 />
               </div>
             </div>
@@ -2621,49 +2748,41 @@ export function TimerControls({
             </div>
             {/* Timer Mode Selector */}
             <div className="flex items-center gap-2">
-              <Select
+              <Tabs
                 value={timerMode}
-                onValueChange={(value: TimerMode) =>
-                  handleTimerModeChange(value)
+                onValueChange={(value) =>
+                  handleTimerModeChange(value as TimerMode)
                 }
-                disabled={sessionProtection.isActive}
+                className="w-auto"
               >
-                <SelectTrigger
-                  className={cn(
-                    'h-8 w-32 text-xs',
-                    sessionProtection.isActive &&
-                      'cursor-not-allowed opacity-50'
-                  )}
-                >
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem
-                    value="stopwatch"
-                    disabled={sessionProtection.isActive}
-                  >
-                    <Timer className="h-5 w-5" /> Stopwatch
-                  </SelectItem>
-                  <SelectItem
-                    value="pomodoro"
-                    disabled={sessionProtection.isActive}
-                  >
-                    <Icon iconNode={fruit} className="h-5 w-5" /> Pomodoro
-                  </SelectItem>
-                  <SelectItem
-                    value="custom"
-                    disabled={sessionProtection.isActive}
-                  >
-                    <Settings2 className="h-5 w-5" /> Custom
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-              {sessionProtection.isActive && (
-                <div className="text-muted-foreground text-xs">
-                  🔒 Active Session
-                </div>
-              )}
-              {timerMode === 'stopwatch' && (
+                <TabsList className="grid h-8 grid-cols-3 bg-muted/50 p-1">
+                  {TIMER_MODE_TABS.map((tab) => {
+                    const IconComponent = tab.icon;
+                    return (
+                      <TabsTrigger
+                        key={tab.value}
+                        value={tab.value}
+                        disabled={sessionProtection.isActive}
+                        className={cn(
+                          'flex items-center gap-1 px-2 py-1 text-xs',
+                          sessionProtection.isActive &&
+                            'cursor-not-allowed opacity-50',
+                          'data-[state=active]:bg-background data-[state=active]:shadow-sm'
+                        )}
+                        title={
+                          sessionProtection.isActive
+                            ? 'Settings locked during active session'
+                            : tab.label
+                        }
+                      >
+                        <IconComponent className="h-3 w-3" />
+                        {tab.label}
+                      </TabsTrigger>
+                    );
+                  })}
+                </TabsList>
+              </Tabs>
+              {timerMode === TimerMode.stopwatch && (
                 <Button
                   variant="ghost"
                   size="sm"
@@ -2695,7 +2814,7 @@ export function TimerControls({
                   <Settings className="h-3 w-3 text-muted-foreground" />
                 </Button>
               )}
-              {timerMode === 'pomodoro' && (
+              {timerMode === TimerMode.pomodoro && (
                 <Button
                   variant="ghost"
                   size="sm"
@@ -2727,7 +2846,7 @@ export function TimerControls({
                   <Settings className="h-3 w-3 text-muted-foreground" />
                 </Button>
               )}
-              {timerMode === 'custom' && (
+              {timerMode === TimerMode.custom && (
                 <Button
                   variant="ghost"
                   size="sm"
@@ -2763,18 +2882,18 @@ export function TimerControls({
           </CardTitle>
           <div className="space-y-1 text-muted-foreground text-sm">
             <span>
-              {timerMode === 'stopwatch' &&
+              {timerMode === TimerMode.stopwatch &&
                 'Track your time with detailed analytics'}
-              {timerMode === 'pomodoro' &&
+              {timerMode === TimerMode.pomodoro &&
                 `Focus for ${pomodoroSettings.focusTime}min, break for ${pomodoroSettings.shortBreakTime}min`}
-              {timerMode === 'custom' &&
+              {timerMode === TimerMode.custom &&
                 customTimerSettings.type === 'enhanced-stopwatch' &&
                 `Enhanced stopwatch with ${customTimerSettings.targetDuration}min target${customTimerSettings.enableIntervalBreaks ? `, breaks every ${customTimerSettings.intervalFrequency}min` : ''}`}
-              {timerMode === 'custom' &&
+              {timerMode === TimerMode.custom &&
                 customTimerSettings.type === 'traditional-countdown' &&
                 `Traditional countdown for ${customTimerSettings.countdownDuration}min${customTimerSettings.autoRestart ? ' (auto-restart)' : ''}`}
             </span>
-            <div className="flex flex-wrap gap-2 text-xs">
+            <div className="mt-2 flex flex-wrap gap-2 text-xs">
               <span className="rounded bg-muted px-1.5 py-0.5">
                 ⌘/Ctrl + Enter
               </span>
@@ -2794,7 +2913,7 @@ export function TimerControls({
         </CardHeader>
 
         {/* Custom Timer Configuration - Prominently Displayed */}
-        {timerMode === 'custom' && (
+        {timerMode === TimerMode.custom && (
           <div className="mx-6 mb-4 space-y-4 rounded-lg border border-border/60 bg-card/30 p-4 shadow-sm">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
@@ -2900,14 +3019,22 @@ export function TimerControls({
             {customTimerSettings.type === 'enhanced-stopwatch' && (
               <div className="rounded-md bg-muted/30 p-3">
                 <div className="flex items-center justify-between">
-                  <span className="text-muted-foreground text-xs">
+                  <Label
+                    htmlFor="enable-interval-breaks"
+                    className="text-muted-foreground text-xs"
+                  >
                     Interval Breaks:
-                  </span>
+                  </Label>
                   <div className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
+                    {customTimerSettings.enableIntervalBreaks && (
+                      <span className="text-muted-foreground text-xs">
+                        every {customTimerSettings.intervalFrequency}min
+                      </span>
+                    )}
+                    <Switch
+                      id="enable-interval-breaks"
                       checked={customTimerSettings.enableIntervalBreaks}
-                      onChange={(e) => {
+                      onCheckedChange={(checked) => {
                         if (sessionProtection.isActive) {
                           toast.error(
                             'Cannot modify break settings during active session',
@@ -2921,26 +3048,18 @@ export function TimerControls({
                         }
                         setCustomTimerSettings((prev) => ({
                           ...prev,
-                          enableIntervalBreaks: e.target.checked,
+                          enableIntervalBreaks: checked,
                         }));
                       }}
-                      className={cn(
-                        'h-3 w-3 rounded',
-                        sessionProtection.isActive &&
-                          'cursor-not-allowed opacity-50'
-                      )}
                       disabled={sessionProtection.isActive}
+                      role="switch"
+                      aria-checked={customTimerSettings.enableIntervalBreaks}
                       title={
                         sessionProtection.isActive
                           ? 'Settings locked during active session'
                           : 'Enable interval breaks'
                       }
                     />
-                    {customTimerSettings.enableIntervalBreaks && (
-                      <span className="text-muted-foreground text-xs">
-                        every {customTimerSettings.intervalFrequency}min
-                      </span>
-                    )}
                   </div>
                 </div>
               </div>
@@ -2955,13 +3074,13 @@ export function TimerControls({
               <div
                 className={cn(
                   'relative overflow-hidden rounded-lg p-6',
-                  timerMode === 'pomodoro' &&
+                  timerMode === TimerMode.pomodoro &&
                     countdownState.sessionType === 'focus'
                     ? 'bg-gradient-to-br from-green-50 to-emerald-100 dark:from-green-950/20 dark:to-emerald-900/20'
-                    : timerMode === 'pomodoro' &&
+                    : timerMode === TimerMode.pomodoro &&
                         countdownState.sessionType !== 'focus'
                       ? 'bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950/20 dark:to-blue-900/20'
-                      : timerMode === 'custom'
+                      : timerMode === TimerMode.custom
                         ? 'bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-950/20 dark:to-purple-900/20'
                         : 'bg-gradient-to-br from-red-50 to-red-100 dark:from-red-950/20 dark:to-red-900/20'
                 )}
@@ -2969,13 +3088,13 @@ export function TimerControls({
                 <div
                   className={cn(
                     'absolute inset-0 animate-pulse bg-gradient-to-r opacity-30',
-                    timerMode === 'pomodoro' &&
+                    timerMode === TimerMode.pomodoro &&
                       countdownState.sessionType === 'focus'
                       ? 'from-green-500/10 to-transparent'
-                      : timerMode === 'pomodoro' &&
+                      : timerMode === TimerMode.pomodoro &&
                           countdownState.sessionType !== 'focus'
                         ? 'from-blue-500/10 to-transparent'
-                        : timerMode === 'custom'
+                        : timerMode === TimerMode.custom
                           ? 'from-purple-500/10 to-transparent'
                           : 'from-red-500/10 to-transparent'
                   )}
@@ -2984,26 +3103,26 @@ export function TimerControls({
                   <div
                     className={cn(
                       'font-bold font-mono text-4xl transition-all duration-300',
-                      timerMode === 'pomodoro' &&
+                      timerMode === TimerMode.pomodoro &&
                         countdownState.sessionType === 'focus'
                         ? 'text-green-600 dark:text-green-400'
-                        : timerMode === 'pomodoro' &&
+                        : timerMode === TimerMode.pomodoro &&
                             countdownState.sessionType !== 'focus'
                           ? 'text-blue-600 dark:text-blue-400'
-                          : timerMode === 'custom'
+                          : timerMode === TimerMode.custom
                             ? 'text-purple-600 dark:text-purple-400'
                             : 'text-red-600 dark:text-red-400'
                     )}
                   >
-                    {timerMode === 'pomodoro' ||
-                    (timerMode === 'custom' &&
+                    {timerMode === TimerMode.pomodoro ||
+                    (timerMode === TimerMode.custom &&
                       customTimerSettings.type === 'traditional-countdown')
                       ? formatTime(countdownState.remainingTime)
                       : formatTime(elapsedTime)}
                   </div>
 
                   {/* Pomodoro Progress Indicator */}
-                  {timerMode === 'pomodoro' && (
+                  {timerMode === TimerMode.pomodoro && (
                     <div className="mt-3 space-y-2">
                       <div className="flex items-center justify-center gap-2 text-sm">
                         <span className="font-medium">
@@ -3063,7 +3182,7 @@ export function TimerControls({
                         : timerMode === 'pomodoro' &&
                             countdownState.sessionType !== 'focus'
                           ? 'text-blue-600/70 dark:text-blue-400/70'
-                          : timerMode === 'custom'
+                          : timerMode === TimerMode.custom
                             ? 'text-purple-600/70 dark:text-purple-400/70'
                             : 'text-red-600/70 dark:text-red-400/70'
                     )}
@@ -3071,24 +3190,24 @@ export function TimerControls({
                     <div
                       className={cn(
                         'h-2 w-2 animate-pulse rounded-full',
-                        timerMode === 'pomodoro' &&
+                        timerMode === TimerMode.pomodoro &&
                           countdownState.sessionType === 'focus'
                           ? 'bg-green-500'
-                          : timerMode === 'pomodoro' &&
+                          : timerMode === TimerMode.pomodoro &&
                               countdownState.sessionType !== 'focus'
                             ? 'bg-blue-500'
-                            : timerMode === 'custom'
+                            : timerMode === TimerMode.custom
                               ? 'bg-purple-500'
                               : 'bg-red-500'
                       )}
                     ></div>
-                    {timerMode === 'pomodoro' ? (
+                    {timerMode === TimerMode.pomodoro ? (
                       <span>
                         {countdownState.remainingTime > 0
                           ? `${Math.floor(countdownState.remainingTime / 60)}:${(countdownState.remainingTime % 60).toString().padStart(2, '0')} remaining`
                           : 'Session complete!'}
                       </span>
-                    ) : timerMode === 'custom' ? (
+                    ) : timerMode === TimerMode.custom ? (
                       <span>
                         {customTimerSettings.type === 'traditional-countdown'
                           ? countdownState.remainingTime > 0
@@ -3401,7 +3520,7 @@ export function TimerControls({
                     </Label>
 
                     {tasks.length === 0 ? (
-                      <div className="rounded-lg border-2 border-muted-foreground/25 border-dashed p-4 text-center">
+                      <div className="mt-2 rounded-lg border-2 border-muted-foreground/25 border-dashed p-4 text-center">
                         <CheckCircle className="mx-auto mb-2 h-8 w-8 text-muted-foreground" />
                         <p className="mb-2 font-medium text-muted-foreground text-sm">
                           No tasks available
@@ -3410,22 +3529,15 @@ export function TimerControls({
                           Create tasks in your project boards to start tracking
                           time
                         </p>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => {
-                            if (onGoToTasksTab) {
-                              onGoToTasksTab();
-                            } else {
-                              toast.info(
-                                'Redirecting to Tasks tab to create a task...'
-                              );
-                            }
-                          }}
-                          className="text-xs"
-                        >
-                          Go to Tasks Tab
-                        </Button>
+                        <Link href={`/${wsId}/tasks/boards`}>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="text-xs"
+                          >
+                            Go to Tasks Tab
+                          </Button>
+                        </Link>
                       </div>
                     ) : (
                       <>
@@ -4011,7 +4123,7 @@ export function TimerControls({
 
                         {(selectedTaskId === 'none' || !selectedTaskId) && (
                           <div className="text-center">
-                            <p className="mb-2 text-muted-foreground text-sm">
+                            <p className="text-muted-foreground text-sm">
                               No task selected? We'll help you create one!
                             </p>
                           </div>
@@ -4264,20 +4376,27 @@ export function TimerControls({
                   <Label className="text-muted-foreground text-sm">
                     Quick Start:
                   </Label>
-                  <div className="space-y-2">
-                    {templates.slice(0, 3).map((template, idx) => (
+                  <div className="mt-1 space-y-2">
+                    {templates.slice(0, 3).map((template) => (
                       <Button
-                        key={idx}
+                        key={template.title}
                         variant="outline"
                         size="sm"
                         onClick={() => startFromTemplate(template)}
-                        className="w-full justify-start text-sm"
+                        className="h-auto min-h-[2rem] w-full justify-start p-2 text-sm"
                       >
-                        <Copy className="mr-2 h-3 w-3" />
-                        {template.title}
-                        <Badge variant="secondary" className="ml-auto text-xs">
-                          {template.usage_count}×
-                        </Badge>
+                        <div className="flex w-full min-w-0 items-center">
+                          <Copy className="mr-2 h-3 w-3 flex-shrink-0" />
+                          <span className="flex-1 truncate text-left">
+                            {template.title}
+                          </span>
+                          <Badge
+                            variant="secondary"
+                            className="ml-2 flex-shrink-0 text-xs"
+                          >
+                            {template.usage_count}×
+                          </Badge>
+                        </div>
                       </Button>
                     ))}
                   </div>
