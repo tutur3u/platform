@@ -1,9 +1,9 @@
 {
   "$schema": "https://mintlify.com/schema.json",
-  "name": "Tuturuuu Docs",
+  "name": "NCT Docs",
   "logo": {
-    "dark": "/logo/dark.svg",
-    "light": "/logo/light.svg",
+    "dark": "https://rmitnct.club/media/logos/transparent.png",
+    "light": "https://rmitnct.club/media/logos/transparent.png",
     "href": "https://tuturuuu.com"
   },
   "favicon": "/favicon.svg",
@@ -48,47 +48,19 @@
       ]
     },
     {
-      "group": "Features",
-      "pages": ["features/meet-together"]
-    },
-    {
-      "group": "AI Features",
-      "pages": ["ai-structured-data"]
-    },
-    {
       "group": "Personalization",
       "pages": ["personalization/themes", "personalization/language"]
     },
     {
-      "group": "Experiments",
-      "pages": [
-        "experiments/form-builder",
-        "experiments/calendar",
-        "experiments/finance",
-        "experiments/project-management",
-        "experiments/ai-chat"
-      ]
-    },
-    {
-      "group": "Prompt Engineering",
-      "pages": [
-        "prompt-engineering/introduction",
-        "prompt-engineering/prompt-design-strategies/prompt-design-strategies",
-        "prompt-engineering/prompt-design-strategies/01-clear-instructions",
-        "prompt-engineering/prompt-design-strategies/02-few-shot-examples",
-        "prompt-engineering/prompt-design-strategies/03-context-strategies",
-        "prompt-engineering/prompt-design-strategies/04-prefixes-and-patterns",
-        "prompt-engineering/prompt-design-strategies/05-modular-prompts",
-        "prompt-engineering/prompt-design-strategies/06-parameters-and-iteration",
-        "prompt-engineering/prompt-design-strategies/07-fallback-caution"
-      ]
+      "group": "Features",
+      "pages": ["features/neo-chess", "features/neo-crush"]
     }
   ],
   "footerSocials": {
-    "facebook": "https://www.facebook.com/tuturuuu",
+    "facebook": "https://www.facebook.com/rmit.nct",
     "x": "https://x.com/rmit-nct",
     "github": "https://github.com/rmit-nct",
-    "linkedin": "https://www.linkedin.com/company/tuturuuu"
+    "linkedin": "https://www.linkedin.com/company/rmit-nct"
   },
   "feedback": {
     "thumbsRating": true,

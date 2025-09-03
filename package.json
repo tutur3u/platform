@@ -32,7 +32,9 @@
     "sb:up": "cd apps/db && bun sb:up && bun sb:typegen",
     "sb:typegen": "cd apps/db && bun sb:typegen",
     "ui:add": "bun --filter ui ui:add",
-    "ui:diff": "bun --filter ui ui:diff"
+    "ui:diff": "bun --filter ui ui:diff",
+    "docs:dev": "cd apps/docs && mintlify dev --port 3333",
+    "docs:build": "cd apps/docs && mintlify build"
   },
   "dependencies": {
     "react-scan": "^0.3.6"
