@@ -2,9 +2,11 @@ import { createClient } from '@tuturuuu/supabase/next/server';
 import type { Transaction } from '@tuturuuu/types/primitives/Transaction';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { CustomDataTable } from '@tuturuuu/ui/custom/tables/custom-data-table';
+import { CategoryFilterWrapper } from '@tuturuuu/ui/finance/transactions/category-filter-wrapper';
 import { transactionColumns } from '@tuturuuu/ui/finance/transactions/columns';
 import ExportDialogContent from '@tuturuuu/ui/finance/transactions/export-dialog-content';
 import { TransactionForm } from '@tuturuuu/ui/finance/transactions/form';
+import { UserFilterWrapper } from '@tuturuuu/ui/finance/transactions/user-filter-wrapper';
 import { Separator } from '@tuturuuu/ui/separator';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { getTranslations } from 'next-intl/server';
@@ -15,6 +17,8 @@ interface Props {
     q: string;
     page: string;
     pageSize: string;
+    userIds?: string | string[];
+    categoryIds?: string | string[];
   };
 }
 
@@ -46,6 +50,10 @@ export default async function TransactionsPage({ wsId, searchParams }: Props) {
       <CustomDataTable
         data={data}
         columnGenerator={transactionColumns}
+        filters={[
+          <UserFilterWrapper key="user-filter" wsId={wsId} />,
+          <CategoryFilterWrapper key="category-filter" wsId={wsId} />,
+        ]}
         toolbarExportContent={
           containsPermission('export_finance_data') && (
             <ExportDialogContent
@@ -73,14 +81,27 @@ async function getData(
     q,
     page = '1',
     pageSize = '10',
-  }: { q?: string; page?: string; pageSize?: string }
+    userIds,
+    categoryIds,
+  }: {
+    q?: string;
+    page?: string;
+    pageSize?: string;
+    userIds?: string | string[];
+    categoryIds?: string | string[];
+  }
 ) {
   const supabase = await createClient();
 
   const queryBuilder = supabase
     .from('wallet_transactions')
     .select(
-      '*, workspace_wallets!inner(name, ws_id), transaction_categories(name)',
+      `*, workspace_wallets!inner(name, ws_id), transaction_categories(name),       workspace_users!wallet_transactions_creator_id_fkey(
+        id,
+        full_name,
+        avatar_url,
+        email
+      )`,
       {
         count: 'exact',
       }
@@ -90,6 +111,24 @@ async function getData(
     .order('created_at', { ascending: false });
 
   if (q) queryBuilder.ilike('description', `%${q}%`);
+
+  // Filter by user IDs if provided
+  if (userIds) {
+    const userIdArray = Array.isArray(userIds) ? userIds : [userIds];
+    if (userIdArray.length > 0) {
+      queryBuilder.in('creator_id', userIdArray);
+    }
+  }
+
+  // Filter by category IDs if provided
+  if (categoryIds) {
+    const categoryIdArray = Array.isArray(categoryIds)
+      ? categoryIds
+      : [categoryIds];
+    if (categoryIdArray.length > 0) {
+      queryBuilder.in('category_id', categoryIdArray);
+    }
+  }
 
   if (page && pageSize) {
     const parsedPage = parseInt(page);
@@ -103,10 +142,20 @@ async function getData(
   if (error) throw error;
 
   const data = rawData.map(
-    ({ workspace_wallets, transaction_categories, ...rest }) => ({
+    ({
+      workspace_wallets,
+      transaction_categories,
+      workspace_users,
+      ...rest
+    }) => ({
       ...rest,
       wallet: workspace_wallets?.name,
       category: transaction_categories?.name,
+      user: {
+        full_name: workspace_users?.full_name ?? '',
+        email: workspace_users?.email ?? '',
+        avatar_url: workspace_users?.avatar_url ?? '',
+      },
     })
   );
 

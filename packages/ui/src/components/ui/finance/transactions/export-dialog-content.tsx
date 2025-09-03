@@ -21,7 +21,7 @@ import {
   SelectValue,
 } from '@tuturuuu/ui/select';
 import { useTranslations } from 'next-intl';
-import { useState } from 'react';
+import { useId, useState } from 'react';
 import { jsonToCSV } from 'react-papaparse';
 import * as XLSX from 'xlsx';
 
@@ -32,7 +32,12 @@ export default function ExportDialogContent({
 }: {
   wsId: string;
   exportType: string;
-  searchParams: { q?: string; page?: string; pageSize?: string };
+  searchParams: {
+    q?: string;
+    page?: string;
+    pageSize?: string;
+    userIds?: string | string[];
+  };
 }) {
   const t = useTranslations();
 
@@ -40,6 +45,9 @@ export default function ExportDialogContent({
   const [progress, setProgress] = useState(0);
   const [isExporting, setIsExporting] = useState(false);
   const [filename, setFilename] = useState('');
+
+  const filenameId = useId();
+  const fileTypeId = useId();
 
   const defaultFilename = `${exportType}_export.${getFileExtension(exportFileType)}`;
 
@@ -87,6 +95,7 @@ export default function ExportDialogContent({
         q: searchParams.q,
         page: currentPage.toString(),
         pageSize: pageSize.toString(),
+        userIds: searchParams.userIds,
       });
 
       allData.push(...data);
@@ -143,10 +152,10 @@ export default function ExportDialogContent({
 
       <div className="grid gap-1">
         <div className="grid w-full max-w-sm items-center gap-2">
-          <Label htmlFor="filename">{t('common.file-name')}</Label>
+          <Label htmlFor={filenameId}>{t('common.file-name')}</Label>
           <Input
             type="text"
-            id="filename"
+            id={filenameId}
             value={filename}
             placeholder={defaultFilename}
             onChange={(e) => setFilename(e.target.value)}
@@ -156,13 +165,13 @@ export default function ExportDialogContent({
         </div>
 
         <div className="mt-2 grid w-full max-w-sm items-center gap-2">
-          <Label htmlFor="fileType">{t('common.file-type')}</Label>
+          <Label htmlFor={fileTypeId}>{t('common.file-type')}</Label>
           <Select
             value={exportFileType}
             onValueChange={setExportFileType}
             disabled={isExporting}
           >
-            <SelectTrigger className="w-full">
+            <SelectTrigger className="w-full" id={fileTypeId}>
               <SelectValue placeholder="File type" />
             </SelectTrigger>
             <SelectContent>
@@ -199,7 +208,13 @@ async function getData(
     q,
     page = '1',
     pageSize = '10',
-  }: { q?: string; page?: string; pageSize?: string }
+    userIds,
+  }: {
+    q?: string;
+    page?: string;
+    pageSize?: string;
+    userIds?: string | string[];
+  }
 ) {
   const supabase = createClient();
 
@@ -216,6 +231,14 @@ async function getData(
     .order('created_at', { ascending: false });
 
   if (q) queryBuilder.ilike('description', `%${q}%`);
+
+  // Filter by user IDs if provided
+  if (userIds) {
+    const userIdArray = Array.isArray(userIds) ? userIds : [userIds];
+    if (userIdArray.length > 0) {
+      queryBuilder.in('creator_id', userIdArray);
+    }
+  }
 
   if (page && pageSize) {
     const parsedPage = parseInt(page);

@@ -1274,7 +1274,8 @@
     "income": "Income",
     "expense": "Expense",
     "daily_total_from_14_recent_days": "Daily total from 14 most recent days",
-    "monthly_total_from_12_recent_months": "Monthly total from 12 most recent months"
+    "monthly_total_from_12_recent_months": "Monthly total from 12 most recent months",
+    "user": "User"
   },
   "transaction-category-data-table": {
     "id": "ID",

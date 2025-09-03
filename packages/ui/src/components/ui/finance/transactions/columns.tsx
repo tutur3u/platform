@@ -1,13 +1,18 @@
 'use client';
 
-import { DataTableColumnHeader } from '../../custom/tables/data-table-column-header';
-import { Check, X } from '../../icons';
 import type { ColumnDef } from '@tanstack/react-table';
 import type { Transaction } from '@tuturuuu/types/primitives/Transaction';
+import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { TransactionRowActions } from '@tuturuuu/ui/finance/transactions/row-actions';
 import moment from 'moment';
+import { DataTableColumnHeader } from '../../custom/tables/data-table-column-header';
+import { Check, X } from '../../icons';
 import 'moment/locale/vi';
 import { useLocale } from 'next-intl';
+
+function getAvatarPlaceholder(name: string) {
+  return `https://ui-avatars.com/api/?name=${name}`;
+}
 
 export const transactionColumns = (
   t: any,
@@ -82,6 +87,64 @@ export const transactionColumns = (
           )}
         </div>
       ),
+    },
+    {
+      accessorKey: 'user',
+      header: ({ column }) => (
+        <DataTableColumnHeader
+          t={t}
+          column={column}
+          title={t(`${namespace}.user`) || 'User'}
+        />
+      ),
+      cell: ({ row }) => {
+        const user = row.original.user;
+        if (!user) {
+          return (
+            <div className="flex min-w-48 items-center gap-2">
+              <Avatar className="h-8 w-8 border">
+                <AvatarImage
+                  src={getAvatarPlaceholder('Unknown User')}
+                  alt="Unknown User"
+                />
+                <AvatarFallback>U</AvatarFallback>
+              </Avatar>
+              <div className="flex flex-col">
+                <span className="font-semibold">-</span>
+                <span className="text-xs opacity-70">-</span>
+              </div>
+            </div>
+          );
+        }
+
+        const initials = user.full_name
+          ? user.full_name
+              .split(' ')
+              .map((n: string) => n[0])
+              .join('')
+              .toUpperCase()
+          : user.email && user.email.length > 0
+            ? user.email[0]?.toUpperCase()
+            : 'U';
+        return (
+          <div className="flex min-w-48 items-center gap-2">
+            <Avatar className="h-8 w-8 border">
+              <AvatarImage
+                src={
+                  user.avatar_url ||
+                  getAvatarPlaceholder(user.full_name || user.email || 'User')
+                }
+                alt={user.full_name || user.email || 'User'}
+              />
+              <AvatarFallback>{initials}</AvatarFallback>
+            </Avatar>
+            <div className="flex flex-col">
+              <span className="font-semibold">{user.full_name || '-'}</span>
+              <span className="text-xs opacity-70">{user.email || '-'}</span>
+            </div>
+          </div>
+        );
+      },
     },
     {
       accessorKey: 'amount',

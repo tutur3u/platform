@@ -11,4 +11,9 @@ export interface Transaction {
   taken_at?: string;
   report_opt_in?: boolean;
   created_at?: string;
+  user?: {
+    full_name?: string;
+    email?: string;
+    avatar_url?: string;
+  };
 }
