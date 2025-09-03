@@ -5,6 +5,7 @@ import { CustomDataTable } from '@tuturuuu/ui/custom/tables/custom-data-table';
 import { transactionColumns } from '@tuturuuu/ui/finance/transactions/columns';
 import ExportDialogContent from '@tuturuuu/ui/finance/transactions/export-dialog-content';
 import { TransactionForm } from '@tuturuuu/ui/finance/transactions/form';
+import { UserFilterWrapper } from '@tuturuuu/ui/finance/transactions/user-filter-wrapper';
 import { Separator } from '@tuturuuu/ui/separator';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { getTranslations } from 'next-intl/server';
@@ -15,6 +16,7 @@ interface Props {
     q: string;
     page: string;
     pageSize: string;
+    userIds?: string | string[];
   };
 }
 
@@ -46,6 +48,7 @@ export default async function TransactionsPage({ wsId, searchParams }: Props) {
       <CustomDataTable
         data={data}
         columnGenerator={transactionColumns}
+        filters={[<UserFilterWrapper key="user-filter" wsId={wsId} />]}
         toolbarExportContent={
           containsPermission('export_finance_data') && (
             <ExportDialogContent
@@ -73,7 +76,13 @@ async function getData(
     q,
     page = '1',
     pageSize = '10',
-  }: { q?: string; page?: string; pageSize?: string }
+    userIds,
+  }: {
+    q?: string;
+    page?: string;
+    pageSize?: string;
+    userIds?: string | string[];
+  }
 ) {
   const supabase = await createClient();
 
@@ -95,6 +104,14 @@ async function getData(
     .order('created_at', { ascending: false });
 
   if (q) queryBuilder.ilike('description', `%${q}%`);
+
+  // Filter by user IDs if provided
+  if (userIds) {
+    const userIdArray = Array.isArray(userIds) ? userIds : [userIds];
+    if (userIdArray.length > 0) {
+      queryBuilder.in('creator_id', userIdArray);
+    }
+  }
 
   if (page && pageSize) {
     const parsedPage = parseInt(page);
@@ -120,7 +137,7 @@ async function getData(
       user: {
         full_name: workspace_users?.full_name ?? '',
         email: workspace_users?.email ?? '',
-        avatar: workspace_users?.avatar_url ?? '',
+        avatar_url: workspace_users?.avatar_url ?? '',
       },
     })
   );
