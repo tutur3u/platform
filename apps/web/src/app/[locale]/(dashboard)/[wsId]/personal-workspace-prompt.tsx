@@ -17,6 +17,7 @@ import {
 } from '@tuturuuu/ui/select';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
+import { useTranslations } from 'next-intl';
 
 interface EligibleWorkspace {
   id: string;
@@ -43,6 +44,7 @@ export default function PersonalWorkspacePrompt({
   const router = useRouter();
   const [selectedId, setSelectedId] = useState<string | undefined>();
   const [submitting, setSubmitting] = useState(false);
+  const t = useTranslations('personal-workspace');
 
   const onCreate = async () => {
     setSubmitting(true);
@@ -95,7 +97,7 @@ export default function PersonalWorkspacePrompt({
             <div className="border-dynamic-foreground/10 rounded-md border bg-background/40 p-4">
               <div className="mb-2 text-sm font-medium">{createLabel}</div>
               <div className="mb-4 text-sm text-muted-foreground">
-                Create a new personal workspace just for you.
+                {t('create_new_personal_workspace')}
               </div>
               <Button
                 className="w-full"
@@ -149,7 +151,7 @@ export default function PersonalWorkspacePrompt({
             )}
 
             <div className="mt-2 text-xs text-muted-foreground">
-              You can change this later in Workspace settings.
+              {t('change_prompt')}
             </div>
           </div>
         </div>
