@@ -862,7 +862,11 @@
     "overview": "Tổng quan",
     "timer": "Hẹn giờ",
     "time_tracker_management": "Quản lý",
-    "all_boards": "Tất cả các bảng"
+    "all_boards": "Tất cả các bảng",
+    "my_tasks": "Nhiệm vụ của tôi",
+    "initiatives": "Sáng kiến",
+    "teams": "Đội",
+    "members": "Thành viên"
   },
   "usage": {
     "description": "Theo dõi hoạt động workspace, sử dụng tính năng và các số liệu hệ thống trong tổ chức của bạn",

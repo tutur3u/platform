@@ -1,6 +1,3 @@
-import type { NavLink } from '@/components/navigation';
-import { DEV_MODE } from '@/constants/common';
-import { createClient } from '@tuturuuu/supabase/next/server';
 import {
   Activity,
   Archive,
@@ -52,6 +49,7 @@ import {
   Send,
   Settings,
   ShieldUser,
+  Sparkle,
   Sparkles,
   SquaresIntersect,
   SquareUserRound,
@@ -64,8 +62,10 @@ import {
   Trash,
   TriangleAlert,
   Truck,
+  User,
   UserCheck,
   UserLock,
+  UserRound,
   Users,
   VectorSquare,
   Vote,
@@ -75,6 +75,8 @@ import {
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { getPermissions, verifySecret } from '@tuturuuu/utils/workspace-helper';
 import { getTranslations } from 'next-intl/server';
+import type { NavLink } from '@/components/navigation';
+import { DEV_MODE } from '@/constants/common';
 
 export async function WorkspaceNavigationLinks({
   wsId,
@@ -98,14 +100,6 @@ export async function WorkspaceNavigationLinks({
     name: 'ENABLE_AI_ONLY',
     value: 'true',
   });
-
-  // Fetch task boards for navigation
-  const taskBoardsData: {
-    boards: { id: string; name: string | null }[];
-    hasMore: boolean;
-    totalCount: number;
-  } = await getTaskBoards(wsId, withoutPermission('manage_projects'));
-  const { boards: taskBoards } = taskBoardsData;
 
   const navLinks: (NavLink | null)[] = [
     {
@@ -299,31 +293,44 @@ export async function WorkspaceNavigationLinks({
           icon: <CircleCheck className="h-5 w-5" />,
           disabled: ENABLE_AI_ONLY || withoutPermission('manage_projects'),
           experimental: 'beta',
-          children:
-            taskBoards.length > 0
-              ? [
-                  // Always show "All Boards" as the first option
-                  {
-                    title: t('sidebar_tabs.all_boards'),
-                    href: `/${personalOrWsId}/tasks/boards`,
-                    icon: <ListTodo className="h-4 w-4" />,
-                    matchExact: true,
-                  },
-                  // Individual board links
-                  ...taskBoards.map((board) => ({
-                    title: board.name || t('common.untitled'),
-                    href: `/${personalOrWsId}/tasks/boards/${board.id}`,
-                    icon: <CircleCheck className="h-4 w-4" />,
-                  })),
-                ]
-              : [
-                  // Show only "All Boards" when no individual boards exist
-                  {
-                    title: t('sidebar_tabs.all_boards'),
-                    href: `/${personalOrWsId}/tasks/boards`,
-                    icon: <ListTodo className="h-4 w-4" />,
-                  },
-                ],
+          children: [
+            {
+              title: t('sidebar_tabs.all_boards'),
+              href: `/${personalOrWsId}/tasks/boards`,
+              icon: <ListTodo className="h-4 w-4" />,
+              matchExact: true,
+            },
+            {
+              title: t('sidebar_tabs.my_tasks'),
+              icon: <UserRound className="h-4 w-4" />,
+              tempDisabled: true,
+              matchExact: true,
+            },
+            {
+              title: t('sidebar_tabs.initiatives'),
+              icon: <Sparkle className="h-4 w-4" />,
+              tempDisabled: true,
+              matchExact: true,
+            },
+            {
+              title: t('sidebar_tabs.projects'),
+              icon: <Box className="h-4 w-4" />,
+              tempDisabled: true,
+              matchExact: true,
+            },
+            {
+              title: t('sidebar_tabs.teams'),
+              icon: <SquareUserRound className="h-4 w-4" />,
+              tempDisabled: true,
+              matchExact: true,
+            },
+            {
+              title: t('sidebar_tabs.members'),
+              icon: <Users className="h-4 w-4" />,
+              tempDisabled: true,
+              matchExact: true,
+            },
+          ],
         },
         {
           title: t('sidebar_tabs.mail'),
@@ -877,46 +884,4 @@ export async function WorkspaceNavigationLinks({
   ];
 
   return (navLinks satisfies (NavLink | null)[]).filter(Boolean) as NavLink[];
-}
-
-async function getTaskBoards(
-  wsId: string,
-  hasNoPermission: boolean
-): Promise<{
-  boards: { id: string; name: string | null }[];
-  hasMore: boolean;
-  totalCount: number;
-}> {
-  if (hasNoPermission) {
-    return { boards: [], hasMore: false, totalCount: 0 };
-  }
-
-  try {
-    const supabase = await createClient();
-
-    // Fetch first 11 boards to check if there are more than 10
-    const { data, error, count } = await supabase
-      .from('workspace_boards')
-      .select('id, name', { count: 'exact' })
-      .eq('ws_id', wsId)
-      .eq('deleted', false)
-      .order('name', { ascending: true })
-      .limit(11);
-
-    if (error) {
-      console.error('Error fetching task boards for navigation:', error);
-      return { boards: [], hasMore: false, totalCount: 0 };
-    }
-
-    const boards = data || [];
-    const totalCount = count || 0;
-    const hasMore = totalCount > 10;
-    // Return only first 10 boards for navigation
-    const limitedBoards = boards.slice(0, 10);
-
-    return { boards: limitedBoards, hasMore, totalCount };
-  } catch (error) {
-    console.error('Error fetching task boards:', error);
-    return { boards: [], hasMore: false, totalCount: 0 };
-  }
 }

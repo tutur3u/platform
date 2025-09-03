@@ -851,7 +851,11 @@
     "overview": "Overview",
     "timer": "Timer",
     "time_tracker_management": "Management",
-    "all_boards": "All Boards"
+    "all_boards": "All Boards",
+    "my_tasks": "My tasks",
+    "initiatives": "Initiatives",
+    "teams": "Teams",
+    "members": "Members"
   },
   "usage": {
     "description": "Monitor workspace activity, feature usage, and system metrics across your organization",
