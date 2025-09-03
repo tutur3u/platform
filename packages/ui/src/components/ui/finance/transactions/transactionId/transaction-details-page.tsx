@@ -1,13 +1,14 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
-import { CalendarIcon, DollarSign, Wallet } from '@tuturuuu/ui/icons';
+import { CalendarIcon, DollarSign, User, Wallet } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
 import { joinPath } from '@tuturuuu/utils/path-helper';
 import 'dayjs/locale/vi';
 import moment from 'moment';
-import { getTranslations } from 'next-intl/server';
+import Image from 'next/image';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import { getTranslations } from 'next-intl/server';
 import { Card } from '../../../card';
 import { Bill } from './bill';
 import { DetailObjects } from './objects';
@@ -60,6 +61,44 @@ export default async function TransactionDetailsPage({
                 style: 'currency',
                 currency: 'VND',
               }).format(transaction.amount || 0)}
+            />
+            <DetailItem
+              icon={<User className="h-5 w-5" />}
+              label={t('transaction-data-table.user')}
+              value={
+                transaction.workspace_users ? (
+                  <div className="inline-flex items-center gap-2 rounded-full border bg-muted/50 px-3 py-1.5">
+                    {transaction.workspace_users.avatar_url && (
+                      <Image
+                        src={
+                          transaction.workspace_users.avatar_url ||
+                          '/placeholder.svg'
+                        }
+                        alt={
+                          transaction.workspace_users.full_name || 'User avatar'
+                        }
+                        width={20}
+                        height={20}
+                        className="rounded-full object-cover ring-1 ring-border"
+                      />
+                    )}
+                    <div className="flex min-w-0 flex-col">
+                      {transaction.workspace_users.full_name && (
+                        <span className="truncate font-medium text-sm leading-tight">
+                          {transaction.workspace_users.full_name}
+                        </span>
+                      )}
+                      {transaction.workspace_users.email && (
+                        <span className="truncate text-muted-foreground text-xs leading-tight">
+                          {transaction.workspace_users.email}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                ) : (
+                  '-'
+                )
+              }
             />
             <DetailItem
               icon={<CalendarIcon className="h-5 w-5" />}
@@ -131,10 +170,12 @@ async function getData(wsId: string, transactionId: string) {
   const { data: transaction, error: transactionError } = await supabase
     .from('wallet_transactions')
     .select(
-      '*, ...transaction_categories(category:name), ...workspace_wallets(wallet_name:name)'
+      '*, ...transaction_categories(category:name), ...workspace_wallets(wallet_name:name), workspace_users!wallet_transactions_creator_id_fkey(id, full_name, avatar_url, email)'
     )
     .eq('id', transactionId)
     .single();
+
+  console.log('TRANSACTION DETAILS: ', transaction);
 
   if (transactionError) throw transactionError;
 
