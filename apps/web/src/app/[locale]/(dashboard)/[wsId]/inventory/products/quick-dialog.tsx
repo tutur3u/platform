@@ -213,7 +213,6 @@ export function ProductQuickDialog({
     setShowDeleteDialog(true);
   };
 
-
   const handleAddStock = async (data: z.infer<typeof AddStockSchema>) => {
     if (!product?.id) return;
 
@@ -596,10 +595,11 @@ export function ProductQuickDialog({
                                   change.creator.email}
                               </p>{' '}
                               <span
-                                className={`inline-flex items-center rounded px-2 py-1 font-medium text-sm ${change.amount > 0
-                                  ? 'border border-green-800 bg-green-900/50 text-green-400'
-                                  : 'border border-red-800 bg-red-900/50 text-red-400'
-                                  }`}
+                                className={`inline-flex items-center rounded px-2 py-1 font-medium text-sm ${
+                                  change.amount > 0
+                                    ? 'border border-green-800 bg-green-900/50 text-green-400'
+                                    : 'border border-red-800 bg-red-900/50 text-red-400'
+                                }`}
                               >
                                 {change.amount > 0 ? '+' : ''}
                                 {change.amount}
@@ -608,8 +608,8 @@ export function ProductQuickDialog({
                             <p className="text-slate-400 text-xs">
                               {change.created_at
                                 ? new Date(
-                                  change.created_at
-                                ).toLocaleDateString()
+                                    change.created_at
+                                  ).toLocaleDateString()
                                 : 'Recently'}
                             </p>
                           </div>
@@ -818,6 +818,5 @@ export function ProductQuickDialog({
         </AlertDialogContent>
       </AlertDialog>
     </>
-  )
+  );
 }
-

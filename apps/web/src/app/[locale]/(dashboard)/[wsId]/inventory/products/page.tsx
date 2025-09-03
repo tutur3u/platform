@@ -95,7 +95,6 @@ async function getData(
 
   const { data: rawData, error, count } = await queryBuilder;
 
-
   if (error) throw error;
 
   const data = rawData.map((item) => ({
