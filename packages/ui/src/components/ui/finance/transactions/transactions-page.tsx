@@ -80,7 +80,12 @@ async function getData(
   const queryBuilder = supabase
     .from('wallet_transactions')
     .select(
-      '*, workspace_wallets!inner(name, ws_id), transaction_categories(name)',
+      `*, workspace_wallets!inner(name, ws_id), transaction_categories(name),       workspace_users!wallet_transactions_creator_id_fkey(
+        id,
+        full_name,
+        avatar_url,
+        email
+      )`,
       {
         count: 'exact',
       }
@@ -103,10 +108,20 @@ async function getData(
   if (error) throw error;
 
   const data = rawData.map(
-    ({ workspace_wallets, transaction_categories, ...rest }) => ({
+    ({
+      workspace_wallets,
+      transaction_categories,
+      workspace_users,
+      ...rest
+    }) => ({
       ...rest,
       wallet: workspace_wallets?.name,
       category: transaction_categories?.name,
+      user: {
+        full_name: workspace_users?.full_name ?? '',
+        email: workspace_users?.email ?? '',
+        avatar: workspace_users?.avatar_url ?? '',
+      },
     })
   );
 
