@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
 import { User, UserRoundCheck, UserStar } from '@tuturuuu/ui/icons';
 import Link from 'next/link';
 import ExpandableTaskList from './expandable-task-list';
+import { getTranslations } from 'next-intl/server';
 
 interface TasksAssignedToMeProps {
   wsId: string;
@@ -17,7 +18,7 @@ export default async function TasksAssignedToMe({
   isPersonal = false,
 }: TasksAssignedToMeProps) {
   const supabase = await createClient();
-
+  const t = await getTranslations('dashboard');
   // Get tasks assigned to the current user
   const queryBuilder = supabase
     .from('tasks')
@@ -66,7 +67,7 @@ export default async function TasksAssignedToMe({
           <div className="rounded-lg bg-dynamic-orange/10 p-1.5 text-dynamic-orange">
             <UserStar className="h-4 w-4" />
           </div>
-          <div className="line-clamp-1">My Tasks</div>
+          <div className="line-clamp-1">{t('my_tasks')}</div>
         </CardTitle>
         <Link href={`/${wsId}/tasks/boards`}>
           <Button
@@ -75,7 +76,7 @@ export default async function TasksAssignedToMe({
             className="h-8 px-2 transition-colors hover:bg-dynamic-orange/10 hover:text-dynamic-orange"
           >
             <UserRoundCheck className="mr-1 h-3 w-3" />
-            View All
+            {t('view_all')}
           </Button>
         </Link>
       </CardHeader>
@@ -93,10 +94,10 @@ export default async function TasksAssignedToMe({
             </div>
             <div className="space-y-2">
               <h3 className="font-semibold text-base text-dynamic-gray">
-                No tasks assigned to you
+                {t('no_tasks_personal')}
               </h3>
               <p className="mx-auto max-w-xs text-dynamic-gray/60 text-sm">
-                Your assigned tasks will appear here
+                {t('no_tasks_assigned_personal')}
               </p>
             </div>
             <div className="mt-6">
@@ -107,7 +108,7 @@ export default async function TasksAssignedToMe({
                   className="border-dynamic-orange/20 text-dynamic-orange transition-all duration-200 hover:border-dynamic-orange/30 hover:bg-dynamic-orange/10"
                 >
                   <User className="mr-2 h-4 w-4" />
-                  View Tasks
+                  {t('view_tasks')}
                 </Button>
               </Link>
             </div>

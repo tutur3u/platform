@@ -7,6 +7,7 @@ import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import Link from 'next/link';
 import UpcomingEventDetails from './upcoming-event-details';
+import { getTranslations } from 'next-intl/server';
 
 interface UpcomingCalendarEventsProps {
   wsId: string;
@@ -16,6 +17,7 @@ export default async function UpcomingCalendarEvents({
   wsId,
 }: UpcomingCalendarEventsProps) {
   const supabase = await createClient();
+  const t = await getTranslations('dashboard');
 
   dayjs.extend(relativeTime);
 
@@ -49,7 +51,7 @@ export default async function UpcomingCalendarEvents({
           <div className="rounded-lg bg-dynamic-cyan/10 p-1.5 text-dynamic-cyan">
             <Calendar className="h-4 w-4" />
           </div>
-          <div className="line-clamp-1">Next Up on Calendar</div>
+          <div className="line-clamp-1">{t('next_up_on_calendar')}</div>
         </CardTitle>
         <Link href={`/${wsId}/calendar`}>
           <Button
@@ -58,7 +60,7 @@ export default async function UpcomingCalendarEvents({
             className="h-8 px-2 transition-colors hover:bg-dynamic-cyan/10 hover:text-dynamic-cyan"
           >
             <Calendar className="mr-1 h-3 w-3" />
-            View Calendar
+            {t('view_calendar')}
           </Button>
         </Link>
       </CardHeader>
@@ -106,10 +108,10 @@ export default async function UpcomingCalendarEvents({
             </div>
             <div className="space-y-2">
               <h3 className="font-semibold text-base text-dynamic-gray">
-                No upcoming events
+                {t('no_upcoming_events')}
               </h3>
               <p className="mx-auto max-w-xs text-dynamic-gray/60 text-sm">
-                Your calendar events for the next 7 days will appear here
+                {t('no_upcoming_events_description')}
               </p>
             </div>
             <div className="mt-6">
@@ -120,7 +122,7 @@ export default async function UpcomingCalendarEvents({
                   className="border-dynamic-cyan/20 text-dynamic-cyan transition-all duration-200 hover:border-dynamic-cyan/30 hover:bg-dynamic-cyan/10"
                 >
                   <Calendar className="mr-2 h-4 w-4" />
-                  View Calendar
+                  {t('view_calendar')}
                 </Button>
               </Link>
             </div>

@@ -7,6 +7,7 @@ import { CheckCircle, Eye, Plus } from '@tuturuuu/ui/icons';
 import { cn } from '@tuturuuu/utils/format';
 import Link from 'next/link';
 import TaskCreationDate from './task-creation-date';
+import { getTranslations } from 'next-intl/server';
 
 interface NewlyCreatedTasksProps {
   wsId: string;
@@ -16,7 +17,7 @@ export default async function NewlyCreatedTasks({
   wsId,
 }: NewlyCreatedTasksProps) {
   const supabase = await createClient();
-
+  const t = await getTranslations('dashboard');
   // Get recently created tasks (last 7 days)
   const sevenDaysAgo = new Date();
   sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
@@ -77,7 +78,7 @@ export default async function NewlyCreatedTasks({
           <div className="rounded-lg bg-dynamic-green/10 p-1.5 text-dynamic-green">
             <CheckCircle className="h-4 w-4" />
           </div>
-          <div className="line-clamp-1">Recently Created Tasks</div>
+          <div className="line-clamp-1">{t('recently_created_tasks')}</div>
         </CardTitle>
         <Link href={`/${wsId}/tasks/boards`}>
           <Button
@@ -86,7 +87,7 @@ export default async function NewlyCreatedTasks({
             className="h-8 px-2 transition-colors hover:bg-dynamic-green/10 hover:text-dynamic-green"
           >
             <Eye className="mr-1 h-3 w-3" />
-            View All
+            {t('view_all')}
           </Button>
         </Link>
       </CardHeader>
@@ -184,10 +185,10 @@ export default async function NewlyCreatedTasks({
             </div>
             <div className="space-y-2">
               <h3 className="font-semibold text-base text-dynamic-gray">
-                No new tasks created recently
+                {t('no_recently')}
               </h3>
               <p className="mx-auto max-w-xs text-dynamic-gray/60 text-sm">
-                Tasks created in the last 7 days will appear here
+                {t('no_recently_created_tasks_description')}
               </p>
             </div>
             <div className="mt-6">
@@ -198,7 +199,7 @@ export default async function NewlyCreatedTasks({
                   className="border-dynamic-green/20 text-dynamic-green transition-all duration-200 hover:border-dynamic-green/30 hover:bg-dynamic-green/10"
                 >
                   <Plus className="mr-2 h-4 w-4" />
-                  Create Task
+                  {t('create_task')}
                 </Button>
               </Link>
             </div>
