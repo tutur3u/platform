@@ -2,6 +2,7 @@ import { createClient } from '@tuturuuu/supabase/next/server';
 import type { Transaction } from '@tuturuuu/types/primitives/Transaction';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { CustomDataTable } from '@tuturuuu/ui/custom/tables/custom-data-table';
+import { CategoryFilterWrapper } from '@tuturuuu/ui/finance/transactions/category-filter-wrapper';
 import { transactionColumns } from '@tuturuuu/ui/finance/transactions/columns';
 import ExportDialogContent from '@tuturuuu/ui/finance/transactions/export-dialog-content';
 import { TransactionForm } from '@tuturuuu/ui/finance/transactions/form';
@@ -17,6 +18,7 @@ interface Props {
     page: string;
     pageSize: string;
     userIds?: string | string[];
+    categoryIds?: string | string[];
   };
 }
 
@@ -48,7 +50,10 @@ export default async function TransactionsPage({ wsId, searchParams }: Props) {
       <CustomDataTable
         data={data}
         columnGenerator={transactionColumns}
-        filters={[<UserFilterWrapper key="user-filter" wsId={wsId} />]}
+        filters={[
+          <UserFilterWrapper key="user-filter" wsId={wsId} />,
+          <CategoryFilterWrapper key="category-filter" wsId={wsId} />,
+        ]}
         toolbarExportContent={
           containsPermission('export_finance_data') && (
             <ExportDialogContent
@@ -77,11 +82,13 @@ async function getData(
     page = '1',
     pageSize = '10',
     userIds,
+    categoryIds,
   }: {
     q?: string;
     page?: string;
     pageSize?: string;
     userIds?: string | string[];
+    categoryIds?: string | string[];
   }
 ) {
   const supabase = await createClient();
@@ -110,6 +117,16 @@ async function getData(
     const userIdArray = Array.isArray(userIds) ? userIds : [userIds];
     if (userIdArray.length > 0) {
       queryBuilder.in('creator_id', userIdArray);
+    }
+  }
+
+  // Filter by category IDs if provided
+  if (categoryIds) {
+    const categoryIdArray = Array.isArray(categoryIds)
+      ? categoryIds
+      : [categoryIds];
+    if (categoryIdArray.length > 0) {
+      queryBuilder.in('category_id', categoryIdArray);
     }
   }
 
