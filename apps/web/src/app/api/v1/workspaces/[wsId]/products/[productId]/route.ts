@@ -1,6 +1,5 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
 import type { Product2 } from '@tuturuuu/types/primitives/Product';
-import type { ProductInventory } from '@tuturuuu/types/primitives/ProductInventory';
 import { NextResponse } from 'next/server';
 
 interface Params {
@@ -10,18 +9,15 @@ interface Params {
   }>;
 }
 
-export async function PUT(req: Request, { params }: Params) {
+export async function PATCH(req: Request, { params }: Params) {
   const supabase = await createClient();
-  const data = (await req.json()) as Product2 & {
-    inventory: ProductInventory[];
-  };
+  const data = (await req.json()) as Product2;
   const { productId } = await params;
 
   const product = await supabase
     .from('workspace_products')
     .update({
       ...data,
-      inventory: undefined,
     })
     .eq('id', productId);
 
@@ -34,20 +30,20 @@ export async function PUT(req: Request, { params }: Params) {
     );
   }
 
-  const inventory = await supabase.from('inventory_products').upsert(
-    data.inventory.map((inventory) => ({
-      ...inventory,
-      product_id: productId,
-    }))
-  );
+  // // const inventory = await supabase.from('inventory_products').upsert(
+  // //   data.inventory.map((inventory) => ({
+  // //     ...inventory,
+  // //     product_id: productId,
+  // //   }))
+  // // );
 
-  if (inventory.error) {
-    console.log(inventory.error);
-    return NextResponse.json(
-      { message: 'Error creating inventory' },
-      { status: 500 }
-    );
-  }
+  // if (inventory.error) {
+  //   console.log(inventory.error);
+  //   return NextResponse.json(
+  //     { message: 'Error creating inventory' },
+  //     { status: 500 }
+  //   );
+  // }
 
   return NextResponse.json({ message: 'success' });
 }
