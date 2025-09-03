@@ -62,7 +62,6 @@ import {
   Trash,
   TriangleAlert,
   Truck,
-  User,
   UserCheck,
   UserLock,
   UserRound,

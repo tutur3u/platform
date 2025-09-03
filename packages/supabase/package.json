@@ -12,7 +12,7 @@
   },
   "dependencies": {
     "@supabase/ssr": "^0.7.0",
-    "@supabase/supabase-js": "^2.56.1",
+    "@supabase/supabase-js": "^2.57.0",
     "@tuturuuu/types": "workspace:*",
     "next": "^15.5.2",
     "react": "^19.1.1",
