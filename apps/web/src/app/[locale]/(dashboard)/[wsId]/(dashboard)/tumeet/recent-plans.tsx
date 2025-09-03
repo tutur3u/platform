@@ -10,6 +10,7 @@ import { Calendar, SquaresIntersect, Users } from '@tuturuuu/ui/icons';
 import { cn } from '@tuturuuu/utils/format';
 import { format } from 'date-fns';
 import Link from 'next/link';
+import { getTranslations } from 'next-intl/server';
 
 export default async function RecentTumeetPlans({
   className,
@@ -17,6 +18,7 @@ export default async function RecentTumeetPlans({
   className?: string;
 }) {
   const supabase = await createClient();
+  const t = await getTranslations('dashboard');
 
   const {
     data: { user },
@@ -130,7 +132,7 @@ export default async function RecentTumeetPlans({
           <div className="rounded-lg bg-dynamic-pink/10 p-1.5 text-dynamic-pink">
             <SquaresIntersect className="h-4 w-4" />
           </div>
-          <div className="line-clamp-1">TuMeet Plans</div>
+          <div className="line-clamp-1">{t('tu_meet_plans')}</div>
         </CardTitle>
         <Link href="/meet-together">
           <Button
@@ -139,7 +141,7 @@ export default async function RecentTumeetPlans({
             className="h-8 px-2 transition-colors hover:bg-dynamic-pink/10 hover:text-dynamic-pink"
           >
             <Calendar className="mr-1 h-3 w-3" />
-            View All
+            {t('view_all')}
           </Button>
         </Link>
       </CardHeader>
@@ -156,7 +158,7 @@ export default async function RecentTumeetPlans({
                     <div className="flex items-start gap-2">
                       <div className="flex flex-1 flex-col items-start justify-start">
                         <h4 className="line-clamp-2 font-semibold text-sm">
-                          {plan.name || 'Untitled Plan'}
+                          {plan.name || t('untitled_plan')}
                         </h4>
                         <div className="mt-2 flex items-center gap-2 text-dynamic-pink text-xs">
                           <span className="font-medium">
@@ -223,10 +225,10 @@ export default async function RecentTumeetPlans({
             </div>
             <div className="space-y-2">
               <h3 className="font-semibold text-base text-dynamic-gray">
-                No recent plans
+                {t('no_recent_plans_title')}
               </h3>
               <p className="mx-auto max-w-xs text-dynamic-gray/60 text-sm">
-                Your latest TuMeet plans will appear here
+                {t('no_recent_plans_desc')}
               </p>
             </div>
             <div className="mt-6">
@@ -237,7 +239,7 @@ export default async function RecentTumeetPlans({
                   className="border-dynamic-pink/20 text-dynamic-pink transition-all duration-200 hover:border-dynamic-pink/30 hover:bg-dynamic-pink/10"
                 >
                   <SquaresIntersect className="mr-2 h-4 w-4" />
-                  Create Plan
+                  {t('create_plan')}
                 </Button>
               </Link>
             </div>

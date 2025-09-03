@@ -21,6 +21,7 @@ import { Progress } from '@tuturuuu/ui/progress';
 import { Separator } from '@tuturuuu/ui/separator';
 import { cn } from '@tuturuuu/utils/format';
 import Link from 'next/link';
+import { getTranslations } from 'next-intl/server';
 
 interface TimeTrackingMetricsProps {
   wsId: string;
@@ -34,6 +35,7 @@ export default async function TimeTrackingMetrics({
   // isPersonal = false,
 }: TimeTrackingMetricsProps) {
   const supabase = await createClient();
+  const t = await getTranslations('dashboard');
 
   // Get time tracking data for the current user
   const now = new Date();
@@ -218,13 +220,13 @@ export default async function TimeTrackingMetrics({
           <div className="rounded-lg bg-dynamic-purple/10 p-1.5 text-dynamic-purple">
             <ClockFading className="h-4 w-4" />
           </div>
-          <div className="line-clamp-1">Time Tracking</div>
+          <div className="line-clamp-1">{t('time_tracking')}</div>
         </CardTitle>
         <div className="flex items-center gap-2">
           {runningSession && (
             <Badge className="animate-pulse border-dynamic-green/20 bg-dynamic-green/10 text-dynamic-green">
               <div className="mr-1 h-1.5 w-1.5 rounded-full bg-dynamic-green" />
-              Active
+              {t('active')}
             </Badge>
           )}
           <Link href={`/${wsId}/time-tracker`}>
@@ -234,7 +236,7 @@ export default async function TimeTrackingMetrics({
               className="h-8 px-2 transition-colors hover:bg-dynamic-purple/10 hover:text-dynamic-purple"
             >
               <Timer className="mr-1 h-3 w-3" />
-              Open Tracker
+              {t('open_tracker')}
             </Button>
           </Link>
         </div>
@@ -254,13 +256,13 @@ export default async function TimeTrackingMetrics({
                 <PlayCircle className="h-4 w-4" />
               </div>
               <span className="font-semibold text-dynamic-green text-sm">
-                Currently Active
+                {t('active')}
               </span>
             </div>
             <p className="font-medium text-dynamic-green/80 text-sm">
               {runningSession.task?.name ||
                 runningSession.category?.name ||
-                'Untitled Session'}
+                t('untitled_session')}
             </p>
             <div className="mt-3 flex items-center justify-between">
               <div className="text-dynamic-green/60 text-xs">
@@ -274,7 +276,7 @@ export default async function TimeTrackingMetrics({
                   className="h-6 px-2 text-dynamic-green/70 text-xs hover:bg-dynamic-green/10 hover:text-dynamic-green"
                 >
                   <PauseCircle className="mr-1 h-3 w-3" />
-                  Stop
+                  {t('stop')}
                 </Button>
               </Link>
             </div>
@@ -289,7 +291,7 @@ export default async function TimeTrackingMetrics({
                 <Target className="h-4 w-4" />
               </div>
               <h4 className="font-semibold text-dynamic-indigo text-sm">
-                Goal Progress
+                {t('goal_progress')}
               </h4>
             </div>
 
@@ -297,7 +299,7 @@ export default async function TimeTrackingMetrics({
               {/* Daily Goal */}
               <div className="space-y-2">
                 <div className="flex items-center justify-between text-xs">
-                  <span className="text-dynamic-indigo/70">Today</span>
+                  <span className="text-dynamic-indigo/70">{t('today')}</span>
                   <span className="font-medium text-dynamic-indigo">
                     {formatDuration(todayTime)} / {Math.floor(dailyGoal / 60)}h{' '}
                     {dailyGoal % 60}m
@@ -309,12 +311,12 @@ export default async function TimeTrackingMetrics({
                 />
                 <div className="flex items-center justify-between text-xs">
                   <span className="text-dynamic-indigo/60">
-                    {Math.round(dailyProgress)}% complete
+                    {Math.round(dailyProgress)}% {t('complete')}
                   </span>
                   {dailyProgress >= 100 && (
                     <span className="flex items-center gap-1 text-dynamic-green">
                       <Flag className="h-3 w-3" />
-                      Goal achieved!
+                      {t('goal_achieved')}
                     </span>
                   )}
                 </div>
@@ -324,7 +326,9 @@ export default async function TimeTrackingMetrics({
               <Separator className="bg-dynamic-indigo/10" />
               <div className="space-y-2">
                 <div className="flex items-center justify-between text-xs">
-                  <span className="text-dynamic-indigo/70">This Week</span>
+                  <span className="text-dynamic-indigo/70">
+                    {t('this_week')}
+                  </span>
                   <span className="font-medium text-dynamic-indigo">
                     {formatDuration(weekTime)} / {Math.floor(weeklyGoal / 60)}h
                   </span>
@@ -335,12 +339,12 @@ export default async function TimeTrackingMetrics({
                 />
                 <div className="flex items-center justify-between text-xs">
                   <span className="text-dynamic-indigo/60">
-                    {Math.round(weeklyProgress)}% complete
+                    {Math.round(weeklyProgress)}% {t('complete')}
                   </span>
                   {weeklyProgress >= 100 && (
                     <span className="flex items-center gap-1 text-dynamic-green">
                       <Flag className="h-3 w-3" />
-                      Goal achieved!
+                      {t('goal_achieved')}
                     </span>
                   )}
                 </div>
@@ -359,7 +363,7 @@ export default async function TimeTrackingMetrics({
                     <Clock className="h-3.5 w-3.5" />
                   </div>
                   <span className="font-medium text-dynamic-blue/70 text-xs">
-                    Today
+                    {t('today')}
                   </span>
                 </div>
                 {timeChange !== 'neutral' && (
@@ -384,7 +388,9 @@ export default async function TimeTrackingMetrics({
                 {todayTime > 0 ? formatDuration(todayTime) : '0m'}
               </p>
               <div className="mt-1 text-dynamic-blue/60 text-xs">
-                Avg: {formatDuration(avgDailyTime)} daily
+                {t('avg_per_session', {
+                  duration: formatDuration(avgDailyTime),
+                })}
               </div>
             </div>
 
@@ -394,14 +400,14 @@ export default async function TimeTrackingMetrics({
                   <Calendar className="h-3.5 w-3.5" />
                 </div>
                 <span className="font-medium text-dynamic-red/70 text-xs">
-                  This Week
+                  {t('this_week')}
                 </span>
               </div>
               <p className="font-bold text-dynamic-red text-lg">
                 {weekTime > 0 ? formatDuration(weekTime) : '0m'}
               </p>
               <div className="mt-1 text-dynamic-red/60 text-xs">
-                {Math.round(weekTime / 3600)} hours total
+                {t('hours_total', { hours: Math.round(weekTime / 3600) })}
               </div>
             </div>
 
@@ -411,14 +417,14 @@ export default async function TimeTrackingMetrics({
                   <BarChart3 className="h-3.5 w-3.5" />
                 </div>
                 <span className="font-medium text-dynamic-purple/70 text-xs">
-                  This Month
+                  {t('this_month')}
                 </span>
               </div>
               <p className="font-bold text-dynamic-purple text-lg">
                 {monthTime > 0 ? formatDuration(monthTime) : '0m'}
               </p>
               <div className="mt-1 text-dynamic-purple/60 text-xs">
-                {Math.round(monthTime / 3600)} hours this month
+                {t('hours_monthly', { hours: Math.round(monthTime / 3600) })}
               </div>
             </div>
 
@@ -428,14 +434,14 @@ export default async function TimeTrackingMetrics({
                   <Target className="h-3.5 w-3.5" />
                 </div>
                 <span className="font-medium text-dynamic-orange/70 text-xs">
-                  Streak
+                  {t('streak')}
                 </span>
               </div>
               <p className="font-bold text-dynamic-orange text-lg">
-                {streak} day{streak !== 1 ? 's' : ''}
+                {streak} {t('day', { count: streak })}
               </p>
               <div className="mt-1 text-dynamic-orange/60 text-xs">
-                {streak > 7 ? 'Great consistency!' : 'Keep it up!'}
+                {streak > 7 ? t('great_consistency') : t('keep_it_up')}
               </div>
             </div>
 
@@ -445,7 +451,7 @@ export default async function TimeTrackingMetrics({
                   <Zap className="h-3.5 w-3.5" />
                 </div>
                 <span className="font-medium text-dynamic-green/70 text-xs">
-                  Focus Score
+                  {t('focus_score')}
                 </span>
               </div>
               <div className="flex items-center gap-2">
@@ -461,10 +467,10 @@ export default async function TimeTrackingMetrics({
               </div>
               <div className="mt-1 text-dynamic-green/60 text-xs">
                 {productivityScore >= 80
-                  ? 'Excellent focus!'
+                  ? t('excellent_focus')
                   : productivityScore >= 60
-                    ? 'Good focus'
-                    : 'Room for improvement'}
+                    ? t('good_focus')
+                    : t('room_for_improvement')}
               </div>
             </div>
           </div>
@@ -479,7 +485,7 @@ export default async function TimeTrackingMetrics({
                   <Activity className="h-4 w-4" />
                 </div>
                 <h4 className="font-semibold text-dynamic-pink text-sm">
-                  Today's Focus
+                  {t('today_focus')}
                 </h4>
               </div>
               <Link href={`/${wsId}/time-tracker`}>
@@ -489,7 +495,7 @@ export default async function TimeTrackingMetrics({
                   className="h-6 px-2 text-dynamic-pink/70 text-xs hover:bg-dynamic-pink/10 hover:text-dynamic-pink"
                 >
                   <BarChart3 className="mr-1 h-3 w-3" />
-                  View Analytics
+                  {t('view_analytics')}
                 </Button>
               </Link>
             </div>
@@ -506,7 +512,7 @@ export default async function TimeTrackingMetrics({
                     session
                   ) => {
                     const categoryName =
-                      session.category?.name || 'Uncategorized';
+                      session.category?.name || t('uncategorized');
                     const existing = acc.find(
                       (item) => item.name === categoryName
                     );
@@ -582,11 +588,10 @@ export default async function TimeTrackingMetrics({
             </div>
             <div className="space-y-3">
               <h3 className="font-bold text-dynamic-gray text-lg">
-                Ready to boost your productivity?
+                {t('no_data_title')}
               </h3>
               <p className="mx-auto max-w-md text-dynamic-gray/60 text-sm">
-                Start tracking your time to unlock detailed insights about your
-                work patterns, productivity trends, and goal progress.
+                {t('no_data_description')}
               </p>
             </div>
             <div className="mt-8 space-y-3">
@@ -596,7 +601,7 @@ export default async function TimeTrackingMetrics({
                   className="bg-gradient-to-r from-dynamic-purple to-dynamic-blue text-white hover:from-dynamic-purple/90 hover:to-dynamic-blue/90"
                 >
                   <PlayCircle className="mr-2 h-5 w-5" />
-                  Start Your First Session
+                  {t('start_your_first_timer')}
                 </Button>
               </Link>
             </div>
