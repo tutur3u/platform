@@ -47,6 +47,9 @@ export interface DataTableProps<TData, TValue> {
   defaultVisibility?: VisibilityState;
   disableSearch?: boolean;
   isEmpty?: boolean;
+  enableServerSideSorting?: boolean;
+  currentSortBy?: string;
+  currentSortOrder?: 'asc' | 'desc';
   toolbarImportContent?: ReactNode;
   toolbarExportContent?: ReactNode;
   className?: string;
@@ -58,7 +61,7 @@ export interface DataTableProps<TData, TValue> {
   onRowClick?: (row: TData) => void;
   onRowDoubleClick?: (row: TData) => void;
   // eslint-disable-next-line no-unused-vars
-  setParams?: (params: { page?: number; pageSize?: string }) => void;
+  setParams?: (params: { page?: number; pageSize?: string; sortBy?: string; sortOrder?: string }) => void;
   resetParams?: () => void;
   // biome-ignore lint/suspicious/noExplicitAny: <t type is not known ahead of time>
   t?: any;
@@ -93,6 +96,9 @@ export function DataTable<TData, TValue>({
   defaultVisibility = {},
   disableSearch,
   isEmpty,
+  enableServerSideSorting = false,
+  currentSortBy,
+  currentSortOrder,
   t,
   toolbarImportContent,
   toolbarExportContent,
@@ -110,7 +116,11 @@ export function DataTable<TData, TValue>({
   const [columnVisibility, setColumnVisibility] =
     useState<VisibilityState>(defaultVisibility);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
-  const [sorting, setSorting] = useState<SortingState>([]);
+  const [sorting, setSorting] = useState<SortingState>(
+    enableServerSideSorting && currentSortBy && currentSortOrder
+      ? [{ id: currentSortBy, desc: currentSortOrder === 'desc' }]
+      : []
+  );
 
   const table = useReactTable({
     data: data || [],
@@ -135,12 +145,37 @@ export function DataTable<TData, TValue>({
     enableRowSelection: true,
     autoResetPageIndex: true,
     onRowSelectionChange: setRowSelection,
-    onSortingChange: setSorting,
+    onSortingChange: enableServerSideSorting 
+      ? (updaterOrValue) => {
+          const newSorting = typeof updaterOrValue === 'function' 
+            ? updaterOrValue(sorting) 
+            : updaterOrValue;
+          
+          setSorting(newSorting);
+          
+          if (setParams && newSorting.length > 0) {
+            const sortColumn = newSorting[0];
+            setParams({
+              page: 1, // Reset to first page when sorting changes
+              sortBy: sortColumn?.id,
+              sortOrder: sortColumn?.desc ? 'desc' : 'asc'
+            });
+          } else if (setParams) {
+            // Clear sorting
+            setParams({
+              page: 1,
+              sortBy: undefined,
+              sortOrder: undefined
+            });
+          }
+        }
+      : setSorting,
     onColumnFiltersChange: setColumnFilters,
     onColumnVisibilityChange: setColumnVisibility,
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
-    getSortedRowModel: getSortedRowModel(),
+    getSortedRowModel: enableServerSideSorting ? undefined : getSortedRowModel(),
+    manualSorting: enableServerSideSorting,
     getFacetedRowModel: getFacetedRowModel(),
     getFacetedUniqueValues: getFacetedUniqueValues(),
   });

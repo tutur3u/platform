@@ -31,7 +31,7 @@ import {
   FormLabel,
   FormMessage,
 } from '@tuturuuu/ui/form';
-import { useForm } from '@tuturuuu/ui/hooks/use-form';
+import { useFieldArray, useForm } from '@tuturuuu/ui/hooks/use-form';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import {
   Edit,
@@ -39,6 +39,7 @@ import {
   History,
   Loader2,
   Package,
+  Plus,
   Save,
   ShoppingBag,
   Store,
@@ -55,6 +56,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@tuturuuu/ui/select';
+import { Switch } from '@tuturuuu/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import Link from 'next/link';
@@ -71,12 +73,21 @@ const AddStockSchema = z.object({
   note: z.string().optional(),
 });
 
+const InventorySchema = z.object({
+  unit_id: z.string(),
+  warehouse_id: z.string(),
+  amount: z.coerce.number(),
+  min_amount: z.coerce.number(),
+  price: z.coerce.number(),
+});
+
 const EditProductSchema = z.object({
   name: z.string().min(1, 'Product name is required'),
   manufacturer: z.string().optional(),
   description: z.string().optional(),
   usage: z.string().optional(),
   category_id: z.string().optional(),
+  inventory: z.array(InventorySchema).optional(),
 });
 
 interface Props {
@@ -102,9 +113,10 @@ export function ProductQuickDialog({
   const [isDeleting, setIsDeleting] = useState(false);
   const [activeTab, setActiveTab] = useState('details');
   const [isSaving, setIsSaving] = useState(false);
+  const computeUnlimitedStock = (p?: Product) => !p?.stock || p.stock.length === 0 || p.stock.some((s) => s.amount == null);
+  const [hasUnlimitedStock, setHasUnlimitedStock] = useState(computeUnlimitedStock(product));
   const router = useRouter();
   const t = useTranslations();
-  console.log(product);
 
   const editForm = useForm({
     resolver: zodResolver(EditProductSchema),
@@ -114,20 +126,87 @@ export function ProductQuickDialog({
       description: product?.description || '',
       usage: product?.usage || '',
       category_id: product?.category_id || '',
+      inventory: hasUnlimitedStock
+        ? []
+        : (product?.inventory && product.inventory.length > 0
+            ? product.inventory
+            : [{
+                unit_id: '',
+                warehouse_id: '',
+                min_amount: product?.min_amount || 0,
+                amount: 0,
+                price: 0,
+              }]),
     },
+  });
+
+  const { fields, append, remove } = useFieldArray({
+    name: 'inventory',
+    control: editForm.control,
   });
 
   useEffect(() => {
     if (product) {
+      const isUnlimited = computeUnlimitedStock(product);
+      setHasUnlimitedStock(isUnlimited);
       editForm.reset({
         name: product.name || '',
         manufacturer: product.manufacturer || '',
         description: product.description || '',
         usage: product.usage || '',
         category_id: product.category_id || '',
+        inventory: isUnlimited
+          ? []
+          : (product.inventory && product.inventory.length > 0
+              ? product.inventory
+              : [{
+                  unit_id: '',
+                  warehouse_id: '',
+                  min_amount: product.min_amount || 0,
+                  amount: 0,
+                  price: 0,
+                }]),
       });
     }
   }, [product, editForm]);
+
+  function addStock() {
+    append({
+      unit_id: '',
+      warehouse_id: '',
+      min_amount: 0,
+      amount: 0,
+      price: 0,
+    });
+  }
+
+  function removeStock(index: number) {
+    remove(index);
+  }
+
+  function toggleUnlimitedStock(unlimited: boolean) {
+    setHasUnlimitedStock(unlimited);
+    if (unlimited) {
+      // Clear all inventory when switching to unlimited
+      editForm.setValue('inventory', [], { shouldDirty: true });
+    } else {
+      // Add default inventory when switching from unlimited
+      const currentValues = editForm.getValues();
+      const newValues = {
+        ...currentValues,
+        inventory: [{
+          unit_id: '',
+          warehouse_id: '',
+          min_amount: product?.min_amount || 0,
+          amount: 0,
+          price: 0,
+        }]
+      };
+      
+      // Reset the form with the new values to properly clear dirty state
+      editForm.reset(newValues);
+    }
+  }
 
   const addStockForm = useForm({
     resolver: zodResolver(AddStockSchema),
@@ -143,70 +222,126 @@ export function ProductQuickDialog({
   const handleEditSave = async (data: z.infer<typeof EditProductSchema>) => {
     if (!product?.id) return;
 
-    // Only send fields that have changed
-    const changedData: Partial<z.infer<typeof EditProductSchema>> = {};
-
-    if (data.name !== (product.name || '')) {
-      changedData.name = data.name;
-    }
-    if (data.manufacturer !== (product.manufacturer || '')) {
-      changedData.manufacturer = data.manufacturer;
-    }
-    if (data.description !== (product.description || '')) {
-      changedData.description = data.description;
-    }
-    if (data.usage !== (product.usage || '')) {
-      changedData.usage = data.usage;
-    }
-    if (data.category_id !== (product.category_id || '')) {
-      changedData.category_id = data.category_id;
-    }
-
-    // If no fields have changed, don't make the API call
-    if (Object.keys(changedData).length === 0) {
-      toast({
-        title: t('common.error'),
-        description: 'No changes to save',
-      });
-      return;
-    }
-
     setIsSaving(true);
+
     try {
-      const response = await fetch(
-        `/api/v1/workspaces/${wsId}/products/${product.id}`,
-        {
+      // Reset payloads to empty objects for existing products
+      let productPayload: any = {};
+      let hasProductChanges = false;
+      let hasInventoryChanges = false;
+      
+      // Compare product fields and only include if changed
+      if (data.name !== (product.name || '')) {
+        productPayload.name = data.name;
+        hasProductChanges = true;
+      }
+      
+      if (data.manufacturer !== (product.manufacturer || '')) {
+        productPayload.manufacturer = data.manufacturer;
+        hasProductChanges = true;
+      }
+      
+      if (data.description !== (product.description || '')) {
+        productPayload.description = data.description;
+        hasProductChanges = true;
+      }
+      
+      if (data.usage !== (product.usage || '')) {
+        productPayload.usage = data.usage;
+        hasProductChanges = true;
+      }
+      
+      if (data.category_id !== (product.category_id || '')) {
+        productPayload.category_id = data.category_id;
+        hasProductChanges = true;
+      }
+
+      // Check for inventory changes by comparing with original inventory
+      const originalInventory = (product as any).inventory || [];
+      const newInventory = data.inventory || [];
+
+      // Detect toggle between unlimited and tracked stock
+      const originalIsUnlimited = originalInventory.length === 0 || computeUnlimitedStock(product);
+      const newIsUnlimited = newInventory.length === 0;
+      if (originalIsUnlimited !== newIsUnlimited) {
+        hasInventoryChanges = true;
+      }
+
+      // Compare arrays item-by-item for field changes
+      const changedInventoryItems = newInventory.filter((newItem, index) => {
+        const originalItem = originalInventory[index];
+        if (!originalItem) return true; // new item added
+        return (
+          newItem.unit_id !== originalItem.unit_id ||
+          newItem.warehouse_id !== originalItem.warehouse_id ||
+          Number(newItem.amount) !== Number(originalItem.amount) ||
+          Number(newItem.min_amount) !== Number(originalItem.min_amount) ||
+          Number(newItem.price) !== Number(originalItem.price)
+        );
+      });
+      const hasRemovedItems = originalInventory.length > newInventory.length;
+      if (changedInventoryItems.length > 0 || hasRemovedItems) {
+        hasInventoryChanges = true;
+      }
+
+      // If no fields have changed, don't make any API calls
+      if (!hasProductChanges && !hasInventoryChanges) {
+        console.log('No changes detected, skipping API calls');
+        setIsSaving(false);
+        toast({
+          title: t('common.error'),
+          description: 'No changes to save',
+        });
+        return;
+      }
+
+      // Update product details if there are changes
+      if (hasProductChanges) {
+        const productRes = await fetch(`/api/v1/workspaces/${wsId}/products/${product.id}`, {
           method: 'PATCH',
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify(changedData),
-        }
-      );
+          body: JSON.stringify(productPayload),
+        });
 
-      if (response.ok) {
-        toast({
-          title: t('common.success'),
-          description: 'Product updated successfully',
-        });
-        setIsSaving(false);
-        router.refresh();
-      } else {
-        const errorData = await response.json();
-        toast({
-          title: t('common.error'),
-          description: errorData.message || 'Failed to update product',
-          variant: 'destructive',
-        });
+        if (!productRes.ok) {
+          throw new Error('Failed to update product details');
+        }
       }
-    } catch {
+
+      // Update inventory if there are changes
+      if (hasInventoryChanges) {
+        const inventoryRes = await fetch(`/api/v1/workspaces/${wsId}/products/${product.id}/inventory`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ inventory: newInventory }),
+        });
+
+        if (!inventoryRes.ok) {
+          const errText = await inventoryRes.text();
+          throw new Error(`Failed to update product inventory: ${errText}`);
+        }
+      }
+
+      // Success
+      setIsSaving(false);
+      toast({
+        title: t('common.success'),
+        description: 'Product updated successfully',
+      });
+      router.refresh();
+    } catch (error) {
+      setIsSaving(false);
+      console.error('Error updating product:', error);
       toast({
         title: t('common.error'),
-        description: 'Failed to update product',
+        description: error instanceof Error ? error.message : 'Failed to update product',
         variant: 'destructive',
       });
     }
-    setIsSaving(false);
   };
 
   const handleDeleteClick = () => {
@@ -310,13 +445,13 @@ export function ProductQuickDialog({
             className="w-full"
           >
             <TabsList
-              className={`grid w-full ${product.stock != null ? 'grid-cols-4' : 'grid-cols-3'}`}
+              className={`grid w-full ${ hasUnlimitedStock ? 'grid-cols-3' : 'grid-cols-4'}`}
             >
               <TabsTrigger value="details" className="flex items-center gap-2">
                 <Eye className="h-4 w-4" />
                 Details
               </TabsTrigger>
-              {product.stock != null && (
+              {!hasUnlimitedStock && (
                 <TabsTrigger
                   value="inventory"
                   className="flex items-center gap-2"
@@ -365,19 +500,10 @@ export function ProductQuickDialog({
                         <p className="mt-1 text-sm">{product.category}</p>
                       </div>
                     )}
-                    {product.stock != null ? (
+                    {hasUnlimitedStock && (
                       <div>
                         <Label className="font-medium text-muted-foreground text-sm">
-                          Current Stock
-                        </Label>
-                        <p className="mt-1 text-sm">
-                          {product.stock} {product.unit ?? 'units'}
-                        </p>
-                      </div>
-                    ) : (
-                      <div>
-                        <Label className="font-medium text-muted-foreground text-sm">
-                          Current Stock
+                          Stock
                         </Label>
                         <p className="mt-1 text-sm">Unlimited stock</p>
                       </div>
@@ -413,161 +539,191 @@ export function ProductQuickDialog({
               </Card>
             </TabsContent>
 
-            {product.stock != null && (
+            {!hasUnlimitedStock && (
               <TabsContent value="inventory" className="space-y-4">
                 <div className="flex items-center justify-between">
                   <h3 className="font-semibold text-lg">Current Stock</h3>
                 </div>
-                <div className="space-y-3">
-                  <div className="flex items-center gap-2">
-                    <Package className="h-4 w-4" />
-                    {product.stock} {product.unit ?? 'units'}
-                  </div>
-                  {product.min_amount != null && (
-                    <div className="flex items-center gap-2">
-                      <Store className="h-4 w-4" />
-                      Min amount: {product.min_amount} {product.unit ?? 'units'}
-                    </div>
-                  )}
-                  {product.warehouse && (
-                    <div className="flex items-center gap-2">
-                      <Warehouse className="h-4 w-4" />
-                      {product.warehouse}
-                    </div>
-                  )}
-                </div>
+
+                {/* Inventory Management (for tracked stock) */}
                 <Card className="border-primary/20">
                   <CardHeader className="pb-4">
                     <div className="flex items-center justify-between">
-                      <CardTitle className="text-lg">Add Stock</CardTitle>
+                      <CardTitle className="text-lg">Manage Inventory</CardTitle>
                     </div>
                   </CardHeader>
                   <CardContent>
-                    <Form {...addStockForm}>
-                      <form
-                        onSubmit={addStockForm.handleSubmit(handleAddStock)}
-                        className="space-y-4"
-                      >
-                        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                          <FormField
-                            control={addStockForm.control}
-                            name="warehouse_id"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>Warehouse</FormLabel>
-                                <Select
-                                  onValueChange={field.onChange}
-                                  value={field.value}
+                    <Form {...editForm}>
+                      <div className="space-y-4">
+                        {fields.map((_, i) => (
+                          <div key={i} className="space-y-4 rounded-lg border p-4">
+                            <div className="grid grid-cols-2 gap-4">
+                              <FormField
+                                control={editForm.control}
+                                name={`inventory.${i}.warehouse_id`}
+                                render={({ field }) => (
+                                  <FormItem>
+                                    <FormLabel>Warehouse</FormLabel>
+                                    <Select
+                                      onValueChange={field.onChange}
+                                      value={field.value}
+                                    >
+                                      <FormControl>
+                                        <SelectTrigger>
+                                          <SelectValue placeholder="Select warehouse" />
+                                        </SelectTrigger>
+                                      </FormControl>
+                                      <SelectContent>
+                                        {warehouses.map((warehouse) => (
+                                          <SelectItem
+                                            key={warehouse.id}
+                                            value={warehouse.id}
+                                          >
+                                            {warehouse.name}
+                                          </SelectItem>
+                                        ))}
+                                      </SelectContent>
+                                    </Select>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
+
+                              <FormField
+                                control={editForm.control}
+                                name={`inventory.${i}.price`}
+                                render={({ field }) => (
+                                  <FormItem>
+                                    <FormLabel>Price per unit</FormLabel>
+                                    <FormControl>
+                                      <Input
+                                        type="number"
+                                        step="0.01"
+                                        placeholder="Enter price"
+                                        {...field}
+                                        value={String(field.value || '')}
+                                        onChange={(e) => field.onChange(e.target.value)}
+                                      />
+                                    </FormControl>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
+                            </div>
+
+                            <div className="grid grid-cols-3 gap-4">
+                              <FormField
+                                control={editForm.control}
+                                name={`inventory.${i}.min_amount`}
+                                render={({ field }) => (
+                                  <FormItem>
+                                    <FormLabel>Min amount</FormLabel>
+                                    <FormControl>
+                                      <Input
+                                        type="number"
+                                        placeholder="Min amount"
+                                        {...field}
+                                        value={String(field.value || '')}
+                                        onChange={(e) => field.onChange(e.target.value)}
+                                      />
+                                    </FormControl>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
+
+                              <FormField
+                                control={editForm.control}
+                                name={`inventory.${i}.amount`}
+                                render={({ field }) => (
+                                  <FormItem>
+                                    <FormLabel>Current amount</FormLabel>
+                                    <FormControl>
+                                      <Input
+                                        type="number"
+                                        placeholder="Current amount"
+                                        {...field}
+                                        value={String(field.value || '')}
+                                        onChange={(e) => field.onChange(e.target.value)}
+                                      />
+                                    </FormControl>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
+
+                              <FormField
+                                control={editForm.control}
+                                name={`inventory.${i}.unit_id`}
+                                render={({ field }) => (
+                                  <FormItem>
+                                    <FormLabel>Unit</FormLabel>
+                                    <Select
+                                      onValueChange={field.onChange}
+                                      value={field.value}
+                                    >
+                                      <FormControl>
+                                        <SelectTrigger>
+                                          <SelectValue placeholder="Select unit" />
+                                        </SelectTrigger>
+                                      </FormControl>
+                                      <SelectContent>
+                                        {units.map((unit) => (
+                                          <SelectItem key={unit.id} value={unit.id}>
+                                            {unit.name}
+                                          </SelectItem>
+                                        ))}
+                                      </SelectContent>
+                                    </Select>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
+                            </div>
+
+                            {fields.length > 1 && (
+                              <div className="text-right">
+                                <Button
+                                  type="button"
+                                  size="sm"
+                                  variant="destructive"
+                                  onClick={() => removeStock(i)}
                                 >
-                                  <FormControl>
-                                    <SelectTrigger>
-                                      <SelectValue placeholder="Select warehouse" />
-                                    </SelectTrigger>
-                                  </FormControl>
-                                  <SelectContent>
-                                    {warehouses.map((warehouse) => (
-                                      <SelectItem
-                                        key={warehouse.id}
-                                        value={warehouse.id}
-                                      >
-                                        {warehouse.name}
-                                      </SelectItem>
-                                    ))}
-                                  </SelectContent>
-                                </Select>
-                                <FormMessage />
-                              </FormItem>
+                                  <Trash className="h-4 w-4" />
+                                  Remove
+                                </Button>
+                              </div>
                             )}
-                          />
-                          <FormField
-                            control={addStockForm.control}
-                            name="unit_id"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>Unit</FormLabel>
-                                <Select
-                                  onValueChange={field.onChange}
-                                  value={field.value}
-                                >
-                                  <FormControl>
-                                    <SelectTrigger>
-                                      <SelectValue placeholder="Select unit" />
-                                    </SelectTrigger>
-                                  </FormControl>
-                                  <SelectContent>
-                                    {units.map((unit) => (
-                                      <SelectItem key={unit.id} value={unit.id}>
-                                        {unit.name}
-                                      </SelectItem>
-                                    ))}
-                                  </SelectContent>
-                                </Select>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                          <FormField
-                            control={addStockForm.control}
-                            name="amount"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>Amount</FormLabel>
-                                <FormControl>
-                                  <Input
-                                    type="number"
-                                    placeholder="Enter amount"
-                                    {...field}
-                                    onChange={(e) =>
-                                      field.onChange(Number(e.target.value))
-                                    }
-                                  />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                          <FormField
-                            control={addStockForm.control}
-                            name="price"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>Price per unit</FormLabel>
-                                <FormControl>
-                                  <Input
-                                    type="number"
-                                    step="0.01"
-                                    placeholder="Enter price"
-                                    {...field}
-                                    onChange={(e) =>
-                                      field.onChange(Number(e.target.value))
-                                    }
-                                  />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                        </div>
-                        <FormField
-                          control={addStockForm.control}
-                          name="note"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Note (optional)</FormLabel>
-                              <FormControl>
-                                <Input
-                                  placeholder="Add a note for this stock entry"
-                                  {...field}
-                                />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
+                          </div>
+                        ))}
+
                         <div className="flex gap-2">
-                          <Button type="submit">Add Stock</Button>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            onClick={addStock}
+                            className="w-full"
+                          >
+                            <Plus className="mr-2 h-4 w-4" />
+                            Add Stock Entry
+                          </Button>
+                          <Button
+                            type="button"
+                            onClick={editForm.handleSubmit(handleEditSave)}
+                            disabled={isSaving}
+                            className="w-full"
+                          >
+                            {isSaving ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                              <>
+                                <Save className="h-4 w-4" />
+                                Save Inventory Changes
+                              </>
+                            )}
+                          </Button>
                         </div>
-                      </form>
+                      </div>
                     </Form>
                   </CardContent>
                 </Card>
@@ -753,6 +909,33 @@ export function ProductQuickDialog({
                         />
                       </div>
 
+                      {/* Stock Management Section */}
+                      <div className="space-y-4">
+                        <div className="flex items-center justify-between">
+                          <h4 className="font-medium text-lg">Stock Management</h4>
+                          <div className="flex items-center space-x-2">
+                            <Switch
+                              id="unlimited-stock"
+                              checked={hasUnlimitedStock}
+                              onCheckedChange={toggleUnlimitedStock}
+                            />
+                            <label htmlFor="unlimited-stock" className="text-sm font-medium">
+                              Unlimited Stock
+                            </label>
+                          </div>
+                        </div>
+
+                        {hasUnlimitedStock ? (
+                          <div className="text-sm text-muted-foreground">
+                            This product has unlimited stock available.
+                          </div>
+                        ) : (
+                          <div className="text-sm text-muted-foreground">
+                            Manage tracked stock in the Stock tab.
+                          </div>
+                        )}
+                      </div>
+
                       <div className="flex items-center justify-between pt-4">
                         <Button
                           type="button"
@@ -774,7 +957,7 @@ export function ProductQuickDialog({
                           </Button>
                           <Button
                             type="submit"
-                            disabled={isSaving}
+                            disabled={isSaving || !editForm.formState.isDirty}
                             className="flex items-center gap-2"
                           >
                             {isSaving ? (

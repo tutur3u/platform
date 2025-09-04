@@ -4,7 +4,21 @@ export interface Product {
   manufacturer?: string;
   description?: string;
   usage?: string;
-  stock?: number | string;
+  stock?: {
+    amount: number | null;
+    unit?: string;
+    warehouse?: string;
+    price?: number;
+    min_amount?: number;
+  }[];
+  // Inventory entries with ids for editing
+  inventory?: {
+    unit_id: string;
+    warehouse_id: string;
+    amount: number;
+    min_amount: number;
+    price: number;
+  }[];
   min_amount?: number | string;
   price?: number | string;
   unit?: string;

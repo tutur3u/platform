@@ -22,28 +22,12 @@ export async function PATCH(req: Request, { params }: Params) {
     .eq('id', productId);
 
   if (product.error) {
-    // TODO: logging
     console.log(product.error);
     return NextResponse.json(
       { message: 'Error creating product' },
       { status: 500 }
     );
   }
-
-  // // const inventory = await supabase.from('inventory_products').upsert(
-  // //   data.inventory.map((inventory) => ({
-  // //     ...inventory,
-  // //     product_id: productId,
-  // //   }))
-  // // );
-
-  // if (inventory.error) {
-  //   console.log(inventory.error);
-  //   return NextResponse.json(
-  //     { message: 'Error creating inventory' },
-  //     { status: 500 }
-  //   );
-  // }
 
   return NextResponse.json({ message: 'success' });
 }

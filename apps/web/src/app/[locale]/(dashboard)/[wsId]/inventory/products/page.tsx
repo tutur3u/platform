@@ -19,6 +19,8 @@ interface Props {
     q: string;
     page: string;
     pageSize: string;
+    sortBy?: string;
+    sortOrder?: 'asc' | 'desc';
   }>;
 }
 
@@ -69,14 +71,16 @@ async function getData(
     q,
     page = '1',
     pageSize = '10',
-  }: { q?: string; page?: string; pageSize?: string }
+    sortBy,
+    sortOrder,
+  }: { q?: string; page?: string; pageSize?: string; sortBy?: string; sortOrder?: 'asc' | 'desc' }
 ) {
   const supabase = await createClient();
 
   const queryBuilder = supabase
     .from('workspace_products')
     .select(
-      '*, product_categories(name), inventory_products!inventory_products_product_id_fkey(amount, min_amount, inventory_warehouses!inventory_products_warehouse_id_fkey(name), inventory_units!inventory_products_unit_id_fkey(name)), product_stock_changes!product_stock_changes_product_id_fkey(amount, created_at, beneficiary:workspace_users!product_stock_changes_beneficiary_id_fkey(full_name, email), creator:workspace_users!product_stock_changes_creator_id_fkey(full_name, email))',
+      '*, product_categories(name), inventory_products!inventory_products_product_id_fkey(amount, min_amount, price, unit_id, warehouse_id, inventory_warehouses!inventory_products_warehouse_id_fkey(name), inventory_units!inventory_products_unit_id_fkey(name)), product_stock_changes!product_stock_changes_product_id_fkey(amount, created_at, beneficiary:workspace_users!product_stock_changes_beneficiary_id_fkey(full_name, email), creator:workspace_users!product_stock_changes_creator_id_fkey(full_name, email))',
       {
         count: 'exact',
       }
@@ -93,6 +97,14 @@ async function getData(
     queryBuilder.range(start, end).limit(parsedSize);
   }
 
+  // Apply sorting - default to created_at desc for consistent ordering
+  if (sortBy && sortOrder) {
+    queryBuilder.order(sortBy, { ascending: sortOrder === 'asc' });
+  } else {
+    // Default ordering to ensure consistent results
+    queryBuilder.order('created_at', { ascending: false });
+  }
+
   const { data: rawData, error, count } = await queryBuilder;
 
   if (error) throw error;
@@ -104,7 +116,21 @@ async function getData(
     description: item.description,
     usage: item.usage,
     unit: item.inventory_products?.[0]?.inventory_units?.name,
-    stock: item.inventory_products?.[0]?.amount,
+    stock: (item.inventory_products || []).map((inventory) => ({
+      amount: inventory.amount,
+      min_amount: inventory.min_amount,
+      unit: inventory.inventory_units?.name,
+      warehouse: inventory.inventory_warehouses?.name,
+      price: inventory.price,
+    })),
+    // Inventory with ids for editing
+    inventory: (item.inventory_products || []).map((inventory) => ({
+      unit_id: inventory.unit_id,
+      warehouse_id: inventory.warehouse_id,
+      amount: inventory.amount,
+      min_amount: inventory.min_amount,
+      price: inventory.price,
+    })),
     min_amount: item.inventory_products?.[0]?.min_amount || 0,
     warehouse: item.inventory_products?.[0]?.inventory_warehouses?.name,
     category: item.product_categories?.name,
@@ -119,6 +145,7 @@ async function getData(
         created_at: change.created_at,
       })) || [],
   }));
+
 
   return { data, count } as { data: Product[]; count: number };
 }

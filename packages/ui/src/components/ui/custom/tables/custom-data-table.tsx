@@ -16,6 +16,7 @@ function CustomDataTableInner<TData, TValue>({
   rowWrapper,
   onRowClick,
   onRowDoubleClick,
+  enableServerSideSorting,
   ...props
 }: DataTableProps<TData, TValue>) {
   const [mounted, setMounted] = useState(false);
@@ -31,6 +32,8 @@ function CustomDataTableInner<TData, TValue>({
   const pageSize = mounted ? Number(searchParams.get('pageSize') || 10) : 10;
   const page = mounted ? Number(searchParams.get('page') || 0) : 0;
   const pageIndex = page > 0 ? page - 1 : 0;
+  const currentSortBy = mounted ? searchParams.get('sortBy') || undefined : undefined;
+  const currentSortOrder = mounted ? (searchParams.get('sortOrder') as 'asc' | 'desc') || undefined : undefined;
 
   const handleSearch = useCallback(
     (query: string) => {
@@ -51,13 +54,15 @@ function CustomDataTableInner<TData, TValue>({
   );
 
   const handleSetParams = useCallback(
-    (params: { page?: number; pageSize?: string }) => {
+    (params: { page?: number; pageSize?: string; sortBy?: string; sortOrder?: string }) => {
       if (!mounted) return;
 
       const urlParams = new URLSearchParams(searchParams);
       Object.entries(params).forEach(([key, value]) => {
         if (value !== undefined) {
           urlParams.set(key, value.toString());
+        } else {
+          urlParams.delete(key);
         }
       });
       router.push(`${pathname}?${urlParams.toString()}`);
@@ -92,6 +97,9 @@ function CustomDataTableInner<TData, TValue>({
       rowWrapper={rowWrapper}
       onRowClick={onRowClick}
       onRowDoubleClick={onRowDoubleClick}
+      enableServerSideSorting={enableServerSideSorting}
+      currentSortBy={currentSortBy}
+      currentSortOrder={currentSortOrder}
       {...props}
     />
   );

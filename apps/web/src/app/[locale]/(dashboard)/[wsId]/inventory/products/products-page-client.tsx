@@ -49,6 +49,7 @@ export function ProductsPageClient({
         namespace="product-data-table"
         count={count}
         onRowClick={handleRowClick}
+        enableServerSideSorting={true}
         defaultVisibility={{
           id: false,
           manufacturer: false,
