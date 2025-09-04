@@ -32,8 +32,12 @@ function CustomDataTableInner<TData, TValue>({
   const pageSize = mounted ? Number(searchParams.get('pageSize') || 10) : 10;
   const page = mounted ? Number(searchParams.get('page') || 0) : 0;
   const pageIndex = page > 0 ? page - 1 : 0;
-  const currentSortBy = mounted ? searchParams.get('sortBy') || undefined : undefined;
-  const currentSortOrder = mounted ? (searchParams.get('sortOrder') as 'asc' | 'desc') || undefined : undefined;
+  const currentSortBy = mounted
+    ? searchParams.get('sortBy') || undefined
+    : undefined;
+  const currentSortOrder = mounted
+    ? (searchParams.get('sortOrder') as 'asc' | 'desc') || undefined
+    : undefined;
 
   const handleSearch = useCallback(
     (query: string) => {
@@ -54,7 +58,12 @@ function CustomDataTableInner<TData, TValue>({
   );
 
   const handleSetParams = useCallback(
-    (params: { page?: number; pageSize?: string; sortBy?: string; sortOrder?: string }) => {
+    (params: {
+      page?: number;
+      pageSize?: string;
+      sortBy?: string;
+      sortOrder?: string;
+    }) => {
       if (!mounted) return;
 
       const urlParams = new URLSearchParams(searchParams);

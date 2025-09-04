@@ -61,7 +61,12 @@ export interface DataTableProps<TData, TValue> {
   onRowClick?: (row: TData) => void;
   onRowDoubleClick?: (row: TData) => void;
   // eslint-disable-next-line no-unused-vars
-  setParams?: (params: { page?: number; pageSize?: string; sortBy?: string; sortOrder?: string }) => void;
+  setParams?: (params: {
+    page?: number;
+    pageSize?: string;
+    sortBy?: string;
+    sortOrder?: string;
+  }) => void;
   resetParams?: () => void;
   // biome-ignore lint/suspicious/noExplicitAny: <t type is not known ahead of time>
   t?: any;
@@ -145,27 +150,28 @@ export function DataTable<TData, TValue>({
     enableRowSelection: true,
     autoResetPageIndex: true,
     onRowSelectionChange: setRowSelection,
-    onSortingChange: enableServerSideSorting 
+    onSortingChange: enableServerSideSorting
       ? (updaterOrValue) => {
-          const newSorting = typeof updaterOrValue === 'function' 
-            ? updaterOrValue(sorting) 
-            : updaterOrValue;
-          
+          const newSorting =
+            typeof updaterOrValue === 'function'
+              ? updaterOrValue(sorting)
+              : updaterOrValue;
+
           setSorting(newSorting);
-          
+
           if (setParams && newSorting.length > 0) {
             const sortColumn = newSorting[0];
             setParams({
               page: 1, // Reset to first page when sorting changes
               sortBy: sortColumn?.id,
-              sortOrder: sortColumn?.desc ? 'desc' : 'asc'
+              sortOrder: sortColumn?.desc ? 'desc' : 'asc',
             });
           } else if (setParams) {
             // Clear sorting
             setParams({
               page: 1,
               sortBy: undefined,
-              sortOrder: undefined
+              sortOrder: undefined,
             });
           }
         }
@@ -174,7 +180,9 @@ export function DataTable<TData, TValue>({
     onColumnVisibilityChange: setColumnVisibility,
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
-    getSortedRowModel: enableServerSideSorting ? undefined : getSortedRowModel(),
+    getSortedRowModel: enableServerSideSorting
+      ? undefined
+      : getSortedRowModel(),
     manualSorting: enableServerSideSorting,
     getFacetedRowModel: getFacetedRowModel(),
     getFacetedUniqueValues: getFacetedUniqueValues(),

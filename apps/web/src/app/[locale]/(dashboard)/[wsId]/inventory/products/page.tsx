@@ -73,7 +73,13 @@ async function getData(
     pageSize = '10',
     sortBy,
     sortOrder,
-  }: { q?: string; page?: string; pageSize?: string; sortBy?: string; sortOrder?: 'asc' | 'desc' }
+  }: {
+    q?: string;
+    page?: string;
+    pageSize?: string;
+    sortBy?: string;
+    sortOrder?: 'asc' | 'desc';
+  }
 ) {
   const supabase = await createClient();
 
@@ -145,7 +151,6 @@ async function getData(
         created_at: change.created_at,
       })) || [],
   }));
-
 
   return { data, count } as { data: Product[]; count: number };
 }
