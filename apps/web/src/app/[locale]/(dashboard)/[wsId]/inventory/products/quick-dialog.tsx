@@ -44,7 +44,6 @@ import {
   ShoppingBag,
   Store,
   Trash,
-  Warehouse,
 } from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
@@ -64,14 +63,6 @@ import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
 import * as z from 'zod';
-
-const AddStockSchema = z.object({
-  warehouse_id: z.string().min(1, 'Please select a warehouse'),
-  unit_id: z.string().min(1, 'Please select a unit'),
-  amount: z.number().min(1, 'Amount must be greater than 0'),
-  price: z.number().min(0, 'Price must be 0 or greater'),
-  note: z.string().optional(),
-});
 
 const InventorySchema = z.object({
   unit_id: z.string(),
@@ -208,16 +199,6 @@ export function ProductQuickDialog({
     }
   }
 
-  const addStockForm = useForm({
-    resolver: zodResolver(AddStockSchema),
-    defaultValues: {
-      warehouse_id: '',
-      unit_id: '',
-      amount: 0,
-      price: 0,
-      note: '',
-    },
-  });
 
   const handleEditSave = async (data: z.infer<typeof EditProductSchema>) => {
     if (!product?.id) return;
@@ -348,43 +329,7 @@ export function ProductQuickDialog({
     setShowDeleteDialog(true);
   };
 
-  const handleAddStock = async (data: z.infer<typeof AddStockSchema>) => {
-    if (!product?.id) return;
 
-    try {
-      const response = await fetch(
-        `/api/v1/workspaces/${wsId}/products/${product.id}/inventory`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(data),
-        }
-      );
-
-      if (response.ok) {
-        toast({
-          title: t('common.success'),
-          description: 'Stock added successfully',
-        });
-        addStockForm.reset();
-      } else {
-        const errorData = await response.json();
-        toast({
-          title: t('common.error'),
-          description: errorData.message || 'Failed to add stock',
-          variant: 'destructive',
-        });
-      }
-    } catch {
-      toast({
-        title: t('common.error'),
-        description: 'Failed to add stock',
-        variant: 'destructive',
-      });
-    }
-  };
 
   const handleDelete = async () => {
     if (!product?.id) return;
