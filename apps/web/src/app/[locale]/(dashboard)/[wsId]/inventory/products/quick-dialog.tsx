@@ -208,7 +208,6 @@ export function ProductQuickDialog({
     }
   }
 
-
   const handleEditSave = async (data: z.infer<typeof EditProductSchema>) => {
     if (!product?.id) return;
 
@@ -345,8 +344,6 @@ export function ProductQuickDialog({
   const handleDeleteClick = () => {
     setShowDeleteDialog(true);
   };
-
-
 
   const handleDelete = async () => {
     if (!product?.id) return;
