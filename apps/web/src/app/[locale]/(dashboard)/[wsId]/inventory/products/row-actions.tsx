@@ -12,9 +12,9 @@ import {
 } from '@tuturuuu/ui/dropdown-menu';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import { Ellipsis, Eye } from '@tuturuuu/ui/icons';
-import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 
 interface ProductRowActionsProps {
   row: Row<Product>;
@@ -52,7 +52,7 @@ export function ProductRowActions({ row, href }: ProductRowActionsProps) {
   return (
     <div className="flex items-center justify-end gap-2">
       {href && (
-        <Link href={href}>
+        <Link href={href} onClick={(e) => e.stopPropagation()}>
           <Button>
             <Eye className="mr-1 h-5 w-5" />
             {t('common.view')}
@@ -65,6 +65,7 @@ export function ProductRowActions({ row, href }: ProductRowActionsProps) {
           <Button
             variant="ghost"
             className="flex h-8 w-8 p-0 data-[state=open]:bg-muted"
+            onClick={(e) => e.stopPropagation()}
           >
             <Ellipsis className="h-4 w-4" />
             <span className="sr-only">Open menu</span>
