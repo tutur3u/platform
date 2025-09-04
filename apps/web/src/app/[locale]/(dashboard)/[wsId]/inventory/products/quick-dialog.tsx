@@ -113,8 +113,11 @@ export function ProductQuickDialog({
   const [isDeleting, setIsDeleting] = useState(false);
   const [activeTab, setActiveTab] = useState('details');
   const [isSaving, setIsSaving] = useState(false);
-  const computeUnlimitedStock = (p?: Product) => !p?.stock || p.stock.length === 0 || p.stock.some((s) => s.amount == null);
-  const [hasUnlimitedStock, setHasUnlimitedStock] = useState(computeUnlimitedStock(product));
+  const computeUnlimitedStock = (p?: Product) =>
+    !p?.stock || p.stock.length === 0 || p.stock.some((s) => s.amount == null);
+  const [hasUnlimitedStock, setHasUnlimitedStock] = useState(
+    computeUnlimitedStock(product)
+  );
   const router = useRouter();
   const t = useTranslations();
 
@@ -128,15 +131,17 @@ export function ProductQuickDialog({
       category_id: product?.category_id || '',
       inventory: hasUnlimitedStock
         ? []
-        : (product?.inventory && product.inventory.length > 0
-            ? product.inventory
-            : [{
+        : product?.inventory && product.inventory.length > 0
+          ? product.inventory
+          : [
+              {
                 unit_id: '',
                 warehouse_id: '',
                 min_amount: product?.min_amount || 0,
                 amount: 0,
                 price: 0,
-              }]),
+              },
+            ],
     },
   });
 
@@ -157,15 +162,17 @@ export function ProductQuickDialog({
         category_id: product.category_id || '',
         inventory: isUnlimited
           ? []
-          : (product.inventory && product.inventory.length > 0
-              ? product.inventory
-              : [{
+          : product.inventory && product.inventory.length > 0
+            ? product.inventory
+            : [
+                {
                   unit_id: '',
                   warehouse_id: '',
                   min_amount: product.min_amount || 0,
                   amount: 0,
                   price: 0,
-                }]),
+                },
+              ],
       });
     }
   }, [product, editForm]);
@@ -194,15 +201,17 @@ export function ProductQuickDialog({
       const currentValues = editForm.getValues();
       const newValues = {
         ...currentValues,
-        inventory: [{
-          unit_id: '',
-          warehouse_id: '',
-          min_amount: product?.min_amount || 0,
-          amount: 0,
-          price: 0,
-        }]
+        inventory: [
+          {
+            unit_id: '',
+            warehouse_id: '',
+            min_amount: product?.min_amount || 0,
+            amount: 0,
+            price: 0,
+          },
+        ],
       };
-      
+
       // Reset the form with the new values to properly clear dirty state
       editForm.reset(newValues);
     }
@@ -229,28 +238,28 @@ export function ProductQuickDialog({
       let productPayload: any = {};
       let hasProductChanges = false;
       let hasInventoryChanges = false;
-      
+
       // Compare product fields and only include if changed
       if (data.name !== (product.name || '')) {
         productPayload.name = data.name;
         hasProductChanges = true;
       }
-      
+
       if (data.manufacturer !== (product.manufacturer || '')) {
         productPayload.manufacturer = data.manufacturer;
         hasProductChanges = true;
       }
-      
+
       if (data.description !== (product.description || '')) {
         productPayload.description = data.description;
         hasProductChanges = true;
       }
-      
+
       if (data.usage !== (product.usage || '')) {
         productPayload.usage = data.usage;
         hasProductChanges = true;
       }
-      
+
       if (data.category_id !== (product.category_id || '')) {
         productPayload.category_id = data.category_id;
         hasProductChanges = true;
@@ -261,7 +270,8 @@ export function ProductQuickDialog({
       const newInventory = data.inventory || [];
 
       // Detect toggle between unlimited and tracked stock
-      const originalIsUnlimited = originalInventory.length === 0 || computeUnlimitedStock(product);
+      const originalIsUnlimited =
+        originalInventory.length === 0 || computeUnlimitedStock(product);
       const newIsUnlimited = newInventory.length === 0;
       if (originalIsUnlimited !== newIsUnlimited) {
         hasInventoryChanges = true;
@@ -297,13 +307,16 @@ export function ProductQuickDialog({
 
       // Update product details if there are changes
       if (hasProductChanges) {
-        const productRes = await fetch(`/api/v1/workspaces/${wsId}/products/${product.id}`, {
-          method: 'PATCH',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(productPayload),
-        });
+        const productRes = await fetch(
+          `/api/v1/workspaces/${wsId}/products/${product.id}`,
+          {
+            method: 'PATCH',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(productPayload),
+          }
+        );
 
         if (!productRes.ok) {
           throw new Error('Failed to update product details');
@@ -312,13 +325,16 @@ export function ProductQuickDialog({
 
       // Update inventory if there are changes
       if (hasInventoryChanges) {
-        const inventoryRes = await fetch(`/api/v1/workspaces/${wsId}/products/${product.id}/inventory`, {
-          method: 'PATCH',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ inventory: newInventory }),
-        });
+        const inventoryRes = await fetch(
+          `/api/v1/workspaces/${wsId}/products/${product.id}/inventory`,
+          {
+            method: 'PATCH',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ inventory: newInventory }),
+          }
+        );
 
         if (!inventoryRes.ok) {
           const errText = await inventoryRes.text();
@@ -338,7 +354,8 @@ export function ProductQuickDialog({
       console.error('Error updating product:', error);
       toast({
         title: t('common.error'),
-        description: error instanceof Error ? error.message : 'Failed to update product',
+        description:
+          error instanceof Error ? error.message : 'Failed to update product',
         variant: 'destructive',
       });
     }
@@ -445,7 +462,7 @@ export function ProductQuickDialog({
             className="w-full"
           >
             <TabsList
-              className={`grid w-full ${ hasUnlimitedStock ? 'grid-cols-3' : 'grid-cols-4'}`}
+              className={`grid w-full ${hasUnlimitedStock ? 'grid-cols-3' : 'grid-cols-4'}`}
             >
               <TabsTrigger value="details" className="flex items-center gap-2">
                 <Eye className="h-4 w-4" />
@@ -549,14 +566,19 @@ export function ProductQuickDialog({
                 <Card className="border-primary/20">
                   <CardHeader className="pb-4">
                     <div className="flex items-center justify-between">
-                      <CardTitle className="text-lg">Manage Inventory</CardTitle>
+                      <CardTitle className="text-lg">
+                        Manage Inventory
+                      </CardTitle>
                     </div>
                   </CardHeader>
                   <CardContent>
                     <Form {...editForm}>
                       <div className="space-y-4">
                         {fields.map((_, i) => (
-                          <div key={i} className="space-y-4 rounded-lg border p-4">
+                          <div
+                            key={i}
+                            className="space-y-4 rounded-lg border p-4"
+                          >
                             <div className="grid grid-cols-2 gap-4">
                               <FormField
                                 control={editForm.control}
@@ -602,7 +624,9 @@ export function ProductQuickDialog({
                                         placeholder="Enter price"
                                         {...field}
                                         value={String(field.value || '')}
-                                        onChange={(e) => field.onChange(e.target.value)}
+                                        onChange={(e) =>
+                                          field.onChange(e.target.value)
+                                        }
                                       />
                                     </FormControl>
                                     <FormMessage />
@@ -624,7 +648,9 @@ export function ProductQuickDialog({
                                         placeholder="Min amount"
                                         {...field}
                                         value={String(field.value || '')}
-                                        onChange={(e) => field.onChange(e.target.value)}
+                                        onChange={(e) =>
+                                          field.onChange(e.target.value)
+                                        }
                                       />
                                     </FormControl>
                                     <FormMessage />
@@ -644,7 +670,9 @@ export function ProductQuickDialog({
                                         placeholder="Current amount"
                                         {...field}
                                         value={String(field.value || '')}
-                                        onChange={(e) => field.onChange(e.target.value)}
+                                        onChange={(e) =>
+                                          field.onChange(e.target.value)
+                                        }
                                       />
                                     </FormControl>
                                     <FormMessage />
@@ -669,7 +697,10 @@ export function ProductQuickDialog({
                                       </FormControl>
                                       <SelectContent>
                                         {units.map((unit) => (
-                                          <SelectItem key={unit.id} value={unit.id}>
+                                          <SelectItem
+                                            key={unit.id}
+                                            value={unit.id}
+                                          >
                                             {unit.name}
                                           </SelectItem>
                                         ))}
@@ -912,14 +943,19 @@ export function ProductQuickDialog({
                       {/* Stock Management Section */}
                       <div className="space-y-4">
                         <div className="flex items-center justify-between">
-                          <h4 className="font-medium text-lg">Stock Management</h4>
+                          <h4 className="font-medium text-lg">
+                            Stock Management
+                          </h4>
                           <div className="flex items-center space-x-2">
                             <Switch
                               id="unlimited-stock"
                               checked={hasUnlimitedStock}
                               onCheckedChange={toggleUnlimitedStock}
                             />
-                            <label htmlFor="unlimited-stock" className="text-sm font-medium">
+                            <label
+                              htmlFor="unlimited-stock"
+                              className="text-sm font-medium"
+                            >
                               Unlimited Stock
                             </label>
                           </div>

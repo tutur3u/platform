@@ -87,7 +87,9 @@ export function ProductForm({
   const [loading, setLoading] = useState(false);
   const [showCategoryDialog, setCategoryDialog] = useState(false);
   const [showWarehouseDialog, setWarehouseDialog] = useState(false);
-  const [hasUnlimitedStock, setHasUnlimitedStock] = useState((data?.inventory || []).length === 0);
+  const [hasUnlimitedStock, setHasUnlimitedStock] = useState(
+    (data?.inventory || []).length === 0
+  );
 
   const form = useForm({
     resolver: zodResolver(FormSchema),
@@ -96,13 +98,19 @@ export function ProductForm({
       manufacturer: data?.manufacturer ?? '',
       description: data?.description ?? '',
       usage: data?.usage ?? '',
-      inventory: data?.inventory || (hasUnlimitedStock ? [] : [{
-        unit_id: '',
-        warehouse_id: '',
-        min_amount: 0,
-        amount: 0,
-        price: 0,
-      }]),
+      inventory:
+        data?.inventory ||
+        (hasUnlimitedStock
+          ? []
+          : [
+              {
+                unit_id: '',
+                warehouse_id: '',
+                min_amount: 0,
+                amount: 0,
+                price: 0,
+              },
+            ]),
     },
   });
 
@@ -136,9 +144,9 @@ export function ProductForm({
       const currentValues = form.getValues();
       const newValues = {
         ...currentValues,
-        inventory: originalInventory
+        inventory: originalInventory,
       };
-      
+
       // Reset the form with the new values to properly clear dirty state
       form.reset(newValues);
     }
@@ -165,28 +173,28 @@ export function ProductForm({
         productPayload = {};
         let hasProductChanges = false;
         let hasInventoryChanges = false;
-        
+
         // Compare product fields and only include if changed
         if (formData.name !== data.name) {
           productPayload.name = formData.name;
           hasProductChanges = true;
         }
-        
+
         if (formData.manufacturer !== (data.manufacturer || '')) {
           productPayload.manufacturer = formData.manufacturer;
           hasProductChanges = true;
         }
-        
+
         if (formData.description !== (data.description || '')) {
           productPayload.description = formData.description;
           hasProductChanges = true;
         }
-        
+
         if (formData.usage !== (data.usage || '')) {
           productPayload.usage = formData.usage;
           hasProductChanges = true;
         }
-        
+
         if (formData.category_id !== data.category_id) {
           productPayload.category_id = formData.category_id;
           hasProductChanges = true;
@@ -195,12 +203,12 @@ export function ProductForm({
         // Compare inventory arrays and only send changed items
         const originalInventory = data.inventory || [];
         const newInventory = formData.inventory || [];
-        
+
         // Find inventory items that have actually changed
         const changedInventoryItems = newInventory.filter((newItem, index) => {
           const originalItem = originalInventory[index];
           if (!originalItem) return true; // New item
-          
+
           // Compare each field individually
           return (
             newItem.unit_id !== originalItem.unit_id ||
@@ -210,10 +218,10 @@ export function ProductForm({
             newItem.price !== originalItem.price
           );
         });
-        
+
         // Also check if any original items were removed
         const hasRemovedItems = originalInventory.length > newInventory.length;
-        
+
         if (changedInventoryItems.length > 0 || hasRemovedItems) {
           inventoryPayload = newInventory; // Send the entire new inventory array
           hasInventoryChanges = true;
@@ -229,13 +237,16 @@ export function ProductForm({
 
         // Update product details if there are changes
         if (hasProductChanges) {
-          const productRes = await fetch(`/api/v1/workspaces/${wsId}/products/${data.id}`, {
-            method: 'PATCH',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(productPayload),
-          });
+          const productRes = await fetch(
+            `/api/v1/workspaces/${wsId}/products/${data.id}`,
+            {
+              method: 'PATCH',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify(productPayload),
+            }
+          );
 
           if (!productRes.ok) {
             throw new Error('Failed to update product details');
@@ -244,13 +255,16 @@ export function ProductForm({
 
         // Update inventory if there are changes
         if (hasInventoryChanges) {
-          const inventoryRes = await fetch(`/api/v1/workspaces/${wsId}/products/${data.id}/inventory`, {
-            method: 'PATCH',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ inventory: inventoryPayload }),
-          });
+          const inventoryRes = await fetch(
+            `/api/v1/workspaces/${wsId}/products/${data.id}/inventory`,
+            {
+              method: 'PATCH',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({ inventory: inventoryPayload }),
+            }
+          );
 
           if (!inventoryRes.ok) {
             throw new Error('Failed to update product inventory');
@@ -275,13 +289,16 @@ export function ProductForm({
 
         // Add inventory if not unlimited stock
         if (inventoryPayload.length > 0) {
-          const inventoryRes = await fetch(`/api/v1/workspaces/${wsId}/products/${productId}/inventory`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ inventory: inventoryPayload }),
-          });
+          const inventoryRes = await fetch(
+            `/api/v1/workspaces/${wsId}/products/${productId}/inventory`,
+            {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({ inventory: inventoryPayload }),
+            }
+          );
 
           if (!inventoryRes.ok) {
             throw new Error('Failed to create product inventory');
@@ -297,7 +314,10 @@ export function ProductForm({
     } catch (error) {
       setLoading(false);
       console.error('Error saving product:', error);
-      toast('Error saving product: ' + (error instanceof Error ? error.message : 'Unknown error'));
+      toast(
+        'Error saving product: ' +
+          (error instanceof Error ? error.message : 'Unknown error')
+      );
     }
   }
 
@@ -399,23 +419,24 @@ export function ProductForm({
             </Card>
 
             <Card>
-              <CardHeader className='flex flex-row justify-between'>
+              <CardHeader className="flex flex-row justify-between">
                 <CardTitle>{t('ws-inventory-products.form.stock')}</CardTitle>
-                                  <div className="flex items-center space-x-2">
-                    <Switch
-                      id="unlimited-stock"
-                      checked={hasUnlimitedStock}
-                      onCheckedChange={toggleUnlimitedStock}
-                    />
-                    <label htmlFor="unlimited-stock" className="text-sm font-medium">
-                      Unlimited Stock
-                    </label>
-                  </div>
+                <div className="flex items-center space-x-2">
+                  <Switch
+                    id="unlimited-stock"
+                    checked={hasUnlimitedStock}
+                    onCheckedChange={toggleUnlimitedStock}
+                  />
+                  <label
+                    htmlFor="unlimited-stock"
+                    className="text-sm font-medium"
+                  >
+                    Unlimited Stock
+                  </label>
+                </div>
               </CardHeader>
               <CardContent>
                 <div className="grid gap-4">
-
-
                   {hasUnlimitedStock ? (
                     <div className="text-sm text-muted-foreground">
                       This product has unlimited stock available.
@@ -519,7 +540,9 @@ export function ProductForm({
                                     )}
                                     {...field}
                                     value={String(field.value || '')}
-                                    onChange={(e) => field.onChange(e.target.value)}
+                                    onChange={(e) =>
+                                      field.onChange(e.target.value)
+                                    }
                                   />
                                 </FormControl>
                                 <FormMessage />
@@ -544,7 +567,9 @@ export function ProductForm({
                                       )}
                                       {...field}
                                       value={String(field.value || '')}
-                                      onChange={(e) => field.onChange(e.target.value)}
+                                      onChange={(e) =>
+                                        field.onChange(e.target.value)
+                                      }
                                     />
                                   </FormControl>
                                   <FormMessage />
@@ -568,7 +593,9 @@ export function ProductForm({
                                       )}
                                       {...field}
                                       value={String(field.value || '')}
-                                      onChange={(e) => field.onChange(e.target.value)}
+                                      onChange={(e) =>
+                                        field.onChange(e.target.value)
+                                      }
                                     />
                                   </FormControl>
                                   <FormMessage />
@@ -604,7 +631,10 @@ export function ProductForm({
                                     </FormControl>
                                     <SelectContent>
                                       {units.map((unit) => (
-                                        <SelectItem value={unit.id} key={unit.id}>
+                                        <SelectItem
+                                          value={unit.id}
+                                          key={unit.id}
+                                        >
                                           {unit.name}
                                         </SelectItem>
                                       ))}
@@ -627,7 +657,9 @@ export function ProductForm({
                                 }}
                               >
                                 <Trash />
-                                <span className="sr-only">Remove stock option</span>
+                                <span className="sr-only">
+                                  Remove stock option
+                                </span>
                               </Button>
                             </div>
                           )}
@@ -737,7 +769,11 @@ export function ProductForm({
               </CardContent>
             </Card>
 
-            <Button type="submit" className="w-full" disabled={loading || !form.formState.isDirty}>
+            <Button
+              type="submit"
+              className="w-full"
+              disabled={loading || !form.formState.isDirty}
+            >
               {loading
                 ? t('common.processing')
                 : data?.id
