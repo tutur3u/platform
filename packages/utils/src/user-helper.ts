@@ -124,8 +124,6 @@ export async function updateUserDefaultWorkspace(workspaceId: string) {
   return { success: true };
 }
 
-
-
 // Function to fetch workspace users
 export async function fetchWorkspaceUsers(
   wsId: string

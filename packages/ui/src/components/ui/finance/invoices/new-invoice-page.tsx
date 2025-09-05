@@ -26,7 +26,7 @@ import {
   ArrowUp,
   ArrowDown,
   Calculator,
-  Loader2
+  Loader2,
 } from '@tuturuuu/ui/icons';
 import { Label } from '@tuturuuu/ui/label';
 import { Textarea } from '@tuturuuu/ui/textarea';
@@ -86,8 +86,6 @@ interface Promotion {
   creator_id: string | null;
   description: string | null;
 }
-
-
 
 interface Props {
   wsId: string;
@@ -169,7 +167,6 @@ const usePromotions = (wsId: string) => {
   });
 };
 
-
 const useWallets = (wsId: string) => {
   return useQuery({
     queryKey: ['wallets', wsId],
@@ -221,11 +218,14 @@ const useUserTransactions = (wsId: string, userId: string) => {
 
       if (error) throw error;
 
-      const data = rawData?.map(({ workspace_wallets, transaction_categories, ...rest }) => ({
-        ...rest,
-        wallet: workspace_wallets?.name,
-        category: transaction_categories?.name,
-      })) || [];
+      const data =
+        rawData?.map(
+          ({ workspace_wallets, transaction_categories, ...rest }) => ({
+            ...rest,
+            wallet: workspace_wallets?.name,
+            category: transaction_categories?.name,
+          })
+        ) || [];
 
       return data as Transaction[];
     },
@@ -258,35 +258,52 @@ export default function NewInvoicePage({ wsId }: Props) {
   // Data queries
   const { data: users = [], isLoading: usersLoading } = useUsers(wsId);
   const { data: products = [], isLoading: productsLoading } = useProducts(wsId);
-  const { data: promotions = [], isLoading: promotionsLoading } = usePromotions(wsId);
+  const { data: promotions = [], isLoading: promotionsLoading } =
+    usePromotions(wsId);
   const { data: wallets = [], isLoading: walletsLoading } = useWallets(wsId);
-  const { data: categories = [], isLoading: categoriesLoading } = useCategories(wsId);
+  const { data: categories = [], isLoading: categoriesLoading } =
+    useCategories(wsId);
 
   // State management
   const [selectedUserId, setSelectedUserId] = useState<string>('');
-  const [selectedProducts, setSelectedProducts] = useState<SelectedProductItem[]>([]);
+  const [selectedProducts, setSelectedProducts] = useState<
+    SelectedProductItem[]
+  >([]);
   const [selectedWalletId, setSelectedWalletId] = useState<string>('');
-  const [selectedPromotionId, setSelectedPromotionId] = useState<string>('none');
+  const [selectedPromotionId, setSelectedPromotionId] =
+    useState<string>('none');
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>('');
   const [invoiceContent, setInvoiceContent] = useState<string>('');
   const [invoiceNotes, setInvoiceNotes] = useState<string>('');
   const [isCreating, setIsCreating] = useState(false);
 
   // User history queries
-  const { data: userTransactions = [], isLoading: userTransactionsLoading } = useUserTransactions(wsId, selectedUserId);
-  const { data: userInvoices = [], isLoading: userInvoicesLoading } = useUserInvoices(wsId, selectedUserId);
+  const { data: userTransactions = [], isLoading: userTransactionsLoading } =
+    useUserTransactions(wsId, selectedUserId);
+  const { data: userInvoices = [], isLoading: userInvoicesLoading } =
+    useUserInvoices(wsId, selectedUserId);
 
-  const selectedUser = users.find((user: WorkspaceUser) => user.id === selectedUserId);
-  const selectedPromotion = selectedPromotionId === 'none' ? null : promotions.find((promotion: Promotion) => promotion.id === selectedPromotionId);
+  const selectedUser = users.find(
+    (user: WorkspaceUser) => user.id === selectedUserId
+  );
+  const selectedPromotion =
+    selectedPromotionId === 'none'
+      ? null
+      : promotions.find(
+          (promotion: Promotion) => promotion.id === selectedPromotionId
+        );
   const isLoadingUserHistory = userTransactionsLoading || userInvoicesLoading;
-  const isLoadingData = usersLoading || productsLoading || promotionsLoading || walletsLoading || categoriesLoading;
-
-
+  const isLoadingData =
+    usersLoading ||
+    productsLoading ||
+    promotionsLoading ||
+    walletsLoading ||
+    categoriesLoading;
 
   // Calculate totals
   const subtotal = useMemo(() => {
     return selectedProducts.reduce(
-      (total, item) => total + (item.inventory.price * item.quantity),
+      (total, item) => total + item.inventory.price * item.quantity,
       0
     );
   }, [selectedProducts]);
@@ -328,18 +345,29 @@ export default function NewInvoicePage({ wsId }: Props) {
     }
 
     if (selectedProducts.length === 1) {
-      const productName = selectedProducts[0]?.product.name || 'Unknown Product';
+      const productName =
+        selectedProducts[0]?.product.name || 'Unknown Product';
       setInvoiceContent(`Invoice for ${productName}`);
     } else {
-      const firstProductName = selectedProducts[0]?.product.name || 'Unknown Product';
+      const firstProductName =
+        selectedProducts[0]?.product.name || 'Unknown Product';
       const additionalCount = selectedProducts.length - 1;
-      setInvoiceContent(`Invoice for ${firstProductName} and ${additionalCount} more product${additionalCount > 1 ? 's' : ''}`);
+      setInvoiceContent(
+        `Invoice for ${firstProductName} and ${additionalCount} more product${additionalCount > 1 ? 's' : ''}`
+      );
     }
   }, [selectedProducts]);
 
   const handleCreateInvoice = async () => {
-    if (!selectedUser || selectedProducts.length === 0 || !selectedWalletId || !selectedCategoryId) {
-      alert('Please select a customer, add products, choose a wallet, and select a transaction category before creating the invoice.');
+    if (
+      !selectedUser ||
+      selectedProducts.length === 0 ||
+      !selectedWalletId ||
+      !selectedCategoryId
+    ) {
+      alert(
+        'Please select a customer, add products, choose a wallet, and select a transaction category before creating the invoice.'
+      );
       return;
     }
 
@@ -351,8 +379,9 @@ export default function NewInvoicePage({ wsId }: Props) {
         content: invoiceContent,
         notes: invoiceNotes,
         wallet_id: selectedWalletId,
-        promotion_id: selectedPromotionId !== 'none' ? selectedPromotionId : undefined,
-        products: selectedProducts.map(item => ({
+        promotion_id:
+          selectedPromotionId !== 'none' ? selectedPromotionId : undefined,
+        products: selectedProducts.map((item) => ({
           product_id: item.product.id,
           unit_id: item.inventory.unit_id,
           warehouse_id: item.inventory.warehouse_id,
@@ -367,20 +396,22 @@ export default function NewInvoicePage({ wsId }: Props) {
       };
 
       // Call the API endpoint
-      const response = await fetch(`/api/v1/workspaces/${wsId}/finance/invoices`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(requestPayload),
-      });
+      const response = await fetch(
+        `/api/v1/workspaces/${wsId}/finance/invoices`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(requestPayload),
+        }
+      );
 
       const result = await response.json();
 
       if (!response.ok) {
         throw new Error(result.message || 'Failed to create invoice');
       }
-
 
       // Reset form after successful creation
       setSelectedProducts([]);
@@ -392,15 +423,15 @@ export default function NewInvoicePage({ wsId }: Props) {
       setSelectedWalletId('');
       setSelectedCategoryId('');
 
-
       // For example: toast.success('Invoice created successfully!');
       // Or: router.push(`/invoices/${result.invoice_id}`);
-
     } catch (error: any) {
       console.error('Error creating invoice:', error);
 
       // Show error message
-      alert(`Error creating invoice: ${error.message || 'Failed to create invoice'}`);
+      alert(
+        `Error creating invoice: ${error.message || 'Failed to create invoice'}`
+      );
 
       // You might want to show an error toast here
       // For example: toast.error(error.message || 'Failed to create invoice');
@@ -459,10 +490,12 @@ export default function NewInvoicePage({ wsId }: Props) {
                     <Label htmlFor="customer-select">Customer</Label>
                     <Combobox
                       t={t}
-                      options={users.map((user): ComboboxOptions => ({
-                        value: user.id,
-                        label: `${user.display_name || user.full_name || 'No name'} (${user.email || user.phone || '-'})`
-                      }))}
+                      options={users.map(
+                        (user): ComboboxOptions => ({
+                          value: user.id,
+                          label: `${user.display_name || user.full_name || 'No name'} (${user.email || user.phone || '-'})`,
+                        })
+                      )}
                       selected={selectedUserId}
                       onChange={(value) => setSelectedUserId(value as string)}
                       placeholder="Search customers..."
@@ -474,9 +507,12 @@ export default function NewInvoicePage({ wsId }: Props) {
                     <div className="mt-4">
                       {isLoadingUserHistory ? (
                         <div className="text-center py-4">
-                          <p className="text-muted-foreground text-sm">Loading user history...</p>
+                          <p className="text-muted-foreground text-sm">
+                            Loading user history...
+                          </p>
                         </div>
-                      ) : userTransactions.length > 0 || userInvoices.length > 0 ? (
+                      ) : userTransactions.length > 0 ||
+                        userInvoices.length > 0 ? (
                         <Accordion type="single" collapsible className="w-full">
                           {userTransactions && userTransactions.length > 0 && (
                             <AccordionItem value="transactions">
@@ -499,29 +535,32 @@ export default function NewInvoicePage({ wsId }: Props) {
                                               'No description'}
                                           </p>
                                           <p className="text-muted-foreground text-sm">
-                                            {transaction.category || 'No category'} •{' '}
+                                            {transaction.category ||
+                                              'No category'}{' '}
+                                            •{' '}
                                             {transaction.wallet || 'No wallet'}
                                           </p>
                                           <p className="text-muted-foreground text-xs">
                                             {transaction.taken_at
                                               ? new Date(
-                                                transaction.taken_at
-                                              ).toLocaleDateString()
+                                                  transaction.taken_at
+                                                ).toLocaleDateString()
                                               : 'No date'}
                                           </p>
                                         </div>
                                         <div className="text-right">
                                           <p
-                                            className={`font-semibold ${(transaction.amount || 0) >= 0
-                                              ? 'text-green-600'
-                                              : 'text-red-600'
-                                              }`}
+                                            className={`font-semibold ${
+                                              (transaction.amount || 0) >= 0
+                                                ? 'text-green-600'
+                                                : 'text-red-600'
+                                            }`}
                                           >
                                             {transaction.amount !== undefined
                                               ? Intl.NumberFormat('vi-VN', {
-                                                style: 'currency',
-                                                currency: 'VND',
-                                              }).format(transaction.amount)
+                                                  style: 'currency',
+                                                  currency: 'VND',
+                                                }).format(transaction.amount)
                                               : '-'}
                                           </p>
                                         </div>
@@ -541,60 +580,63 @@ export default function NewInvoicePage({ wsId }: Props) {
                           {userInvoices && userInvoices.length > 0 && (
                             <AccordionItem value="invoices">
                               <AccordionTrigger>
-                                {t('ws-invoices.plural')} ({userInvoices.length})
+                                {t('ws-invoices.plural')} ({userInvoices.length}
+                                )
                               </AccordionTrigger>
                               <AccordionContent>
                                 <div className="space-y-3">
-                                  {userInvoices.slice(0, 5).map((invoice: Invoice) => (
-                                    <div
-                                      key={invoice.id}
-                                      className="flex items-center justify-between rounded-lg border p-3"
-                                    >
-                                      <div className="flex-1">
-                                        <p className="font-medium">
-                                          Invoice #{invoice.id.slice(-8)}
-                                        </p>
-                                        <p className="text-muted-foreground text-sm">
-                                          Status:{' '}
-                                          {invoice.completed_at
-                                            ? 'Completed'
-                                            : 'Pending'}
-                                        </p>
-                                        <p className="text-muted-foreground text-xs">
-                                          {invoice.created_at
-                                            ? new Date(
-                                              invoice.created_at
-                                            ).toLocaleDateString()
-                                            : 'No date'}
-                                        </p>
-                                        {invoice.note && (
-                                          <p className="truncate text-muted-foreground text-xs">
-                                            Note: {invoice.note}
+                                  {userInvoices
+                                    .slice(0, 5)
+                                    .map((invoice: Invoice) => (
+                                      <div
+                                        key={invoice.id}
+                                        className="flex items-center justify-between rounded-lg border p-3"
+                                      >
+                                        <div className="flex-1">
+                                          <p className="font-medium">
+                                            Invoice #{invoice.id.slice(-8)}
                                           </p>
-                                        )}
-                                      </div>
-                                      <div className="text-right">
-                                        <p className="font-semibold text-blue-600">
-                                          {invoice.price !== undefined
-                                            ? Intl.NumberFormat('vi-VN', {
-                                              style: 'currency',
-                                              currency: 'VND',
-                                            }).format(invoice.price)
-                                            : '-'}
-                                        </p>
-                                        {invoice.total_diff !== undefined &&
-                                          invoice.total_diff !== 0 && (
-                                            <p className="text-muted-foreground text-xs">
-                                              Diff:{' '}
-                                              {Intl.NumberFormat('vi-VN', {
-                                                style: 'currency',
-                                                currency: 'VND',
-                                              }).format(invoice.total_diff)}
+                                          <p className="text-muted-foreground text-sm">
+                                            Status:{' '}
+                                            {invoice.completed_at
+                                              ? 'Completed'
+                                              : 'Pending'}
+                                          </p>
+                                          <p className="text-muted-foreground text-xs">
+                                            {invoice.created_at
+                                              ? new Date(
+                                                  invoice.created_at
+                                                ).toLocaleDateString()
+                                              : 'No date'}
+                                          </p>
+                                          {invoice.note && (
+                                            <p className="truncate text-muted-foreground text-xs">
+                                              Note: {invoice.note}
                                             </p>
                                           )}
+                                        </div>
+                                        <div className="text-right">
+                                          <p className="font-semibold text-blue-600">
+                                            {invoice.price !== undefined
+                                              ? Intl.NumberFormat('vi-VN', {
+                                                  style: 'currency',
+                                                  currency: 'VND',
+                                                }).format(invoice.price)
+                                              : '-'}
+                                          </p>
+                                          {invoice.total_diff !== undefined &&
+                                            invoice.total_diff !== 0 && (
+                                              <p className="text-muted-foreground text-xs">
+                                                Diff:{' '}
+                                                {Intl.NumberFormat('vi-VN', {
+                                                  style: 'currency',
+                                                  currency: 'VND',
+                                                }).format(invoice.total_diff)}
+                                              </p>
+                                            )}
+                                        </div>
                                       </div>
-                                    </div>
-                                  ))}
+                                    ))}
                                   {userInvoices.length > 5 && (
                                     <p className="text-center text-muted-foreground text-sm">
                                       And {userInvoices.length - 5} more
@@ -608,7 +650,10 @@ export default function NewInvoicePage({ wsId }: Props) {
                         </Accordion>
                       ) : (
                         <div className="text-center py-4">
-                          <p className="text-muted-foreground text-sm">No transaction or invoice history found for this user.</p>
+                          <p className="text-muted-foreground text-sm">
+                            No transaction or invoice history found for this
+                            user.
+                          </p>
                         </div>
                       )}
                     </div>
@@ -634,16 +679,18 @@ export default function NewInvoicePage({ wsId }: Props) {
                     Invoice Configuration
                   </CardTitle>
                   <CardDescription>
-                    Configure invoice details, payment settings, and review totals.
+                    Configure invoice details, payment settings, and review
+                    totals.
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
                   {/* Invoice Information Section */}
                   <div className="space-y-4">
-
                     {/* Invoice Content */}
                     <div className="space-y-2">
-                      <Label htmlFor="invoice-content">{t('ws-invoices.content')}</Label>
+                      <Label htmlFor="invoice-content">
+                        {t('ws-invoices.content')}
+                      </Label>
                       <Textarea
                         id="invoice-content"
                         placeholder={t('ws-invoices.content_placeholder')}
@@ -655,7 +702,9 @@ export default function NewInvoicePage({ wsId }: Props) {
 
                     {/* Invoice Notes */}
                     <div className="space-y-2">
-                      <Label htmlFor="invoice-notes">{t('ws-invoices.notes')}</Label>
+                      <Label htmlFor="invoice-notes">
+                        {t('ws-invoices.notes')}
+                      </Label>
                       <Textarea
                         id="invoice-notes"
                         placeholder={t('ws-invoices.notes_placeholder')}
@@ -677,7 +726,10 @@ export default function NewInvoicePage({ wsId }: Props) {
 
                     {/* Wallet Selection */}
                     <div className="space-y-2">
-                      <Label htmlFor="wallet-select">{t('ws-wallets.wallet')} <span className="text-red-500">*</span></Label>
+                      <Label htmlFor="wallet-select">
+                        {t('ws-wallets.wallet')}{' '}
+                        <span className="text-red-500">*</span>
+                      </Label>
                       <Select
                         value={selectedWalletId}
                         onValueChange={setSelectedWalletId}
@@ -687,13 +739,19 @@ export default function NewInvoicePage({ wsId }: Props) {
                         </SelectTrigger>
                         <SelectContent>
                           {wallets.map((wallet) => (
-                            <SelectItem key={wallet.id} value={wallet.id || 'invalid'}>
+                            <SelectItem
+                              key={wallet.id}
+                              value={wallet.id || 'invalid'}
+                            >
                               <div className="flex items-center gap-2">
                                 <CreditCard className="h-4 w-4" />
                                 <div className="flex flex-row gap-2">
-                                  <p className="font-medium">{wallet.name || 'Unnamed Wallet'}</p>
+                                  <p className="font-medium">
+                                    {wallet.name || 'Unnamed Wallet'}
+                                  </p>
                                   <p className="text-sm text-muted-foreground">
-                                    {wallet.type || 'STANDARD'} - {wallet.currency || 'VND'}
+                                    {wallet.type || 'STANDARD'} -{' '}
+                                    {wallet.currency || 'VND'}
                                   </p>
                                 </div>
                               </div>
@@ -705,38 +763,53 @@ export default function NewInvoicePage({ wsId }: Props) {
 
                     {/* Transaction Category Selection */}
                     <div className="space-y-2">
-                      <Label htmlFor="category-select">Transaction Category <span className="text-red-500">*</span></Label>
+                      <Label htmlFor="category-select">
+                        Transaction Category{' '}
+                        <span className="text-red-500">*</span>
+                      </Label>
                       <Combobox
                         t={t}
-                        options={categories.map((category): ComboboxOptions => ({
-                          value: category.id || '',
-                          label: category.name || 'Unnamed Category'
-                        }))}
+                        options={categories.map(
+                          (category): ComboboxOptions => ({
+                            value: category.id || '',
+                            label: category.name || 'Unnamed Category',
+                          })
+                        )}
                         selected={selectedCategoryId}
-                        onChange={(value) => setSelectedCategoryId(value as string)}
+                        onChange={(value) =>
+                          setSelectedCategoryId(value as string)
+                        }
                         placeholder="Select a category (required)..."
                       />
                     </div>
 
                     {/* Promotion Selection */}
                     <div className="space-y-2">
-                      <Label htmlFor="promotion-select">{t('invoices.add_promotion')}</Label>
+                      <Label htmlFor="promotion-select">
+                        {t('invoices.add_promotion')}
+                      </Label>
                       <Combobox
                         t={t}
                         options={[
                           { value: 'none', label: 'No promotion' },
-                          ...promotions.map((promotion): ComboboxOptions => ({
-                            value: promotion.id,
-                            label: `${promotion.name || 'Unnamed Promotion'} (${promotion.use_ratio
-                              ? `${promotion.value}%`
-                              : Intl.NumberFormat('vi-VN', {
-                                style: 'currency',
-                                currency: 'VND',
-                              }).format(promotion.value)})`
-                          }))
+                          ...promotions.map(
+                            (promotion): ComboboxOptions => ({
+                              value: promotion.id,
+                              label: `${promotion.name || 'Unnamed Promotion'} (${
+                                promotion.use_ratio
+                                  ? `${promotion.value}%`
+                                  : Intl.NumberFormat('vi-VN', {
+                                      style: 'currency',
+                                      currency: 'VND',
+                                    }).format(promotion.value)
+                              })`,
+                            })
+                          ),
                         ]}
                         selected={selectedPromotionId}
-                        onChange={(value) => setSelectedPromotionId(value as string)}
+                        onChange={(value) =>
+                          setSelectedPromotionId(value as string)
+                        }
                         placeholder="Search promotions..."
                       />
                     </div>
@@ -756,7 +829,9 @@ export default function NewInvoicePage({ wsId }: Props) {
                         {/* Summary */}
                         <div className="space-y-2">
                           <div className="flex justify-between">
-                            <span className="text-muted-foreground">Subtotal</span>
+                            <span className="text-muted-foreground">
+                              Subtotal
+                            </span>
                             <span>
                               {Intl.NumberFormat('vi-VN', {
                                 style: 'currency',
@@ -768,10 +843,12 @@ export default function NewInvoicePage({ wsId }: Props) {
                           {selectedPromotion && (
                             <div className="flex justify-between">
                               <span className="text-muted-foreground">
-                                Discount ({selectedPromotion.name || 'Unnamed Promotion'})
+                                Discount (
+                                {selectedPromotion.name || 'Unnamed Promotion'})
                               </span>
                               <span className="text-green-600">
-                                -{Intl.NumberFormat('vi-VN', {
+                                -
+                                {Intl.NumberFormat('vi-VN', {
                                   style: 'currency',
                                   currency: 'VND',
                                 }).format(discountAmount)}
@@ -791,7 +868,8 @@ export default function NewInvoicePage({ wsId }: Props) {
                             </span>
                           </div>
 
-                          {Math.abs(roundedTotal - totalBeforeRounding) > 0.01 && (
+                          {Math.abs(roundedTotal - totalBeforeRounding) >
+                            0.01 && (
                             <div className="flex justify-between text-sm text-muted-foreground">
                               <span>Adjustment</span>
                               <span>
@@ -831,7 +909,10 @@ export default function NewInvoicePage({ wsId }: Props) {
                               variant="outline"
                               size="sm"
                               onClick={resetRounding}
-                              disabled={Math.abs(roundedTotal - totalBeforeRounding) < 0.01}
+                              disabled={
+                                Math.abs(roundedTotal - totalBeforeRounding) <
+                                0.01
+                              }
                             >
                               Reset
                             </Button>
@@ -842,7 +923,13 @@ export default function NewInvoicePage({ wsId }: Props) {
                         <Button
                           className="w-full"
                           onClick={handleCreateInvoice}
-                          disabled={!selectedUser || selectedProducts.length === 0 || !selectedWalletId || !selectedCategoryId || isCreating}
+                          disabled={
+                            !selectedUser ||
+                            selectedProducts.length === 0 ||
+                            !selectedWalletId ||
+                            !selectedCategoryId ||
+                            isCreating
+                          }
                         >
                           {isCreating ? (
                             <>
