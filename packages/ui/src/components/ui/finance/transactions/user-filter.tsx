@@ -27,9 +27,7 @@ interface UserFilterProps {
   className?: string;
 }
 
-async function fetchWorkspaceUsers(
-  wsId: string
-): Promise<WorkspaceUser[]> {
+async function fetchWorkspaceUsers(wsId: string): Promise<WorkspaceUser[]> {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from('workspace_users')

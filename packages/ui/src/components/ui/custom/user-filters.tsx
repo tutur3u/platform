@@ -80,7 +80,6 @@ export function Filter({
   hideSelected = false,
   onSet,
 }: FilterProps) {
-
   const searchParams = useSearchParams();
   const router = useRouter();
 

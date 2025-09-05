@@ -51,7 +51,11 @@ interface Props {
   onSelectedProductsChange: (products: SelectedProductItem[]) => void;
 }
 
-export function ProductSelection({ products, selectedProducts, onSelectedProductsChange }: Props) {
+export function ProductSelection({
+  products,
+  selectedProducts,
+  onSelectedProductsChange,
+}: Props) {
   const t = useTranslations();
   const [selectedProductId, setSelectedProductId] = useState<string>('');
 
@@ -80,9 +84,10 @@ export function ProductSelection({ products, selectedProducts, onSelectedProduct
       const updated = [...selectedProducts];
       const existingItem = updated[existingIndex];
       if (existingItem) {
-        existingItem.quantity = inventory.amount === null
-          ? existingItem.quantity + quantity
-          : Math.min(existingItem.quantity + quantity, inventory.amount);
+        existingItem.quantity =
+          inventory.amount === null
+            ? existingItem.quantity + quantity
+            : Math.min(existingItem.quantity + quantity, inventory.amount);
         onSelectedProductsChange(updated);
       }
     } else {
@@ -111,9 +116,10 @@ export function ProductSelection({ products, selectedProducts, onSelectedProduct
     const updated = [...selectedProducts];
     const item = updated[index];
     if (item) {
-      item.quantity = item.inventory.amount === null
-        ? newQuantity
-        : Math.min(newQuantity, item.inventory.amount);
+      item.quantity =
+        item.inventory.amount === null
+          ? newQuantity
+          : Math.min(newQuantity, item.inventory.amount);
       onSelectedProductsChange(updated);
     }
   };
@@ -133,10 +139,12 @@ export function ProductSelection({ products, selectedProducts, onSelectedProduct
             <Label htmlFor="product-select">Select Product</Label>
             <Combobox
               t={t}
-              options={products.map((product): ComboboxOptions => ({
-                value: product.id,
-                label: `${product.name || 'No name'}${product.category ? ` (${product.category})` : ''}${product.manufacturer ? ` - ${product.manufacturer}` : ''}`
-              }))}
+              options={products.map(
+                (product): ComboboxOptions => ({
+                  value: product.id,
+                  label: `${product.name || 'No name'}${product.category ? ` (${product.category})` : ''}${product.manufacturer ? ` - ${product.manufacturer}` : ''}`,
+                })
+              )}
               selected={selectedProductId}
               onChange={(value) => setSelectedProductId(value as string)}
               placeholder="Search products..."
@@ -193,7 +201,11 @@ export function ProductSelection({ products, selectedProducts, onSelectedProduct
                       {item.inventory.unit_name}
                     </p>
                     <p className="text-muted-foreground text-sm">
-                      Available: {item.inventory.amount === null ? 'Unlimited' : item.inventory.amount} • Price:{' '}
+                      Available:{' '}
+                      {item.inventory.amount === null
+                        ? 'Unlimited'
+                        : item.inventory.amount}{' '}
+                      • Price:{' '}
                       {Intl.NumberFormat('vi-VN', {
                         style: 'currency',
                         currency: 'VND',
@@ -217,13 +229,18 @@ export function ProductSelection({ products, selectedProducts, onSelectedProduct
                       }
                       className="w-20 text-center"
                       min="1"
-                      {...(item.inventory.amount !== null && { max: item.inventory.amount })}
+                      {...(item.inventory.amount !== null && {
+                        max: item.inventory.amount,
+                      })}
                     />
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={() => updateQuantity(index, item.quantity + 1)}
-                      disabled={item.inventory.amount !== null && item.quantity >= item.inventory.amount}
+                      disabled={
+                        item.inventory.amount !== null &&
+                        item.quantity >= item.inventory.amount
+                      }
                     >
                       <Plus className="h-4 w-4" />
                     </Button>
@@ -271,7 +288,10 @@ function StockItem({ inventory, onAdd }: StockItemProps) {
   const [quantity, setQuantity] = useState(1);
 
   const handleAdd = () => {
-    if (quantity > 0 && (inventory.amount === null || quantity <= inventory.amount)) {
+    if (
+      quantity > 0 &&
+      (inventory.amount === null || quantity <= inventory.amount)
+    ) {
       onAdd(quantity);
       setQuantity(1); // Reset quantity after adding
     }
@@ -284,18 +304,21 @@ function StockItem({ inventory, onAdd }: StockItemProps) {
         <div>
           <p className="font-medium">{inventory.warehouse_name}</p>
           <p className="text-muted-foreground text-sm">
-            Available: {inventory.amount === null ? 'Unlimited' : inventory.amount} {inventory.unit_name} •{' '}
+            Available:{' '}
+            {inventory.amount === null ? 'Unlimited' : inventory.amount}{' '}
+            {inventory.unit_name} •{' '}
             {Intl.NumberFormat('vi-VN', {
               style: 'currency',
               currency: 'VND',
             }).format(inventory.price)}{' '}
             each
           </p>
-          {inventory.amount !== null && inventory.amount <= inventory.min_amount && (
-            <Badge variant="destructive" className="text-xs">
-              Low Stock
-            </Badge>
-          )}
+          {inventory.amount !== null &&
+            inventory.amount <= inventory.min_amount && (
+              <Badge variant="destructive" className="text-xs">
+                Low Stock
+              </Badge>
+            )}
         </div>
       </div>
       <div className="flex items-center gap-2">
@@ -309,7 +332,10 @@ function StockItem({ inventory, onAdd }: StockItemProps) {
         />
         <Button
           onClick={handleAdd}
-          disabled={(inventory.amount !== null && quantity > inventory.amount) || quantity <= 0}
+          disabled={
+            (inventory.amount !== null && quantity > inventory.amount) ||
+            quantity <= 0
+          }
         >
           Add
         </Button>
