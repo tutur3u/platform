@@ -277,7 +277,6 @@ export default function NewInvoicePage({ wsId }: Props) {
   const { data: userInvoices = [], isLoading: userInvoicesLoading } = useUserInvoices(wsId, selectedUserId);
 
   const selectedUser = users.find((user: WorkspaceUser) => user.id === selectedUserId);
-  const selectedWallet = wallets.find((wallet: Wallet) => wallet.id === selectedWalletId);
   const selectedPromotion = selectedPromotionId === 'none' ? null : promotions.find((promotion: Promotion) => promotion.id === selectedPromotionId);
   const selectedCategory = categories.find((category: TransactionCategory) => category.id === selectedCategoryId);
   const isLoadingUserHistory = userTransactionsLoading || userInvoicesLoading;
