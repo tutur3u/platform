@@ -26,8 +26,7 @@ import {
   ArrowUp,
   ArrowDown,
   Calculator,
-  Loader2,
-  Tag
+  Loader2
 } from '@tuturuuu/ui/icons';
 import { Label } from '@tuturuuu/ui/label';
 import { Textarea } from '@tuturuuu/ui/textarea';
