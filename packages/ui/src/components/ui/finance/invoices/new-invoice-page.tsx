@@ -278,7 +278,6 @@ export default function NewInvoicePage({ wsId }: Props) {
 
   const selectedUser = users.find((user: WorkspaceUser) => user.id === selectedUserId);
   const selectedPromotion = selectedPromotionId === 'none' ? null : promotions.find((promotion: Promotion) => promotion.id === selectedPromotionId);
-  const selectedCategory = categories.find((category: TransactionCategory) => category.id === selectedCategoryId);
   const isLoadingUserHistory = userTransactionsLoading || userInvoicesLoading;
   const isLoadingData = usersLoading || productsLoading || promotionsLoading || walletsLoading || categoriesLoading;
 
@@ -710,7 +709,7 @@ export default function NewInvoicePage({ wsId }: Props) {
                       <Combobox
                         t={t}
                         options={categories.map((category): ComboboxOptions => ({
-                          value: category.id,
+                          value: category.id || '',
                           label: category.name || 'Unnamed Category'
                         }))}
                         selected={selectedCategoryId}

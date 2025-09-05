@@ -120,7 +120,7 @@ export async function POST(req: Request, { params }: Params) {
         // Insert invoice products with correct field mapping
         // First, deduplicate products by creating a unique key and combining quantities if duplicates exist
         const productMap = new Map();
-        
+
         products.forEach(product => {
             const key = `${product.product_id}-${product.unit_id}-${product.warehouse_id}-${product.price}`;
             if (productMap.has(key)) {
@@ -148,7 +148,6 @@ export async function POST(req: Request, { params }: Params) {
         }
 
         const unitIds = Array.from(productMap.values()).map(product => product.unit_id)
-        console.log('Unit IDs:', unitIds);
 
         // Get unit from inventory_units
         const { data: unitsData, error: unitsError } = await supabase
@@ -156,7 +155,7 @@ export async function POST(req: Request, { params }: Params) {
             .select('name, id')
             .in('id', unitIds)
             .eq('ws_id', wsId);
-            
+
         if (unitsError) {
             console.error('Error getting units information:', unitsError);
             return NextResponse.json(
@@ -164,21 +163,19 @@ export async function POST(req: Request, { params }: Params) {
                 { status: 500 }
             );
         }
-        console.log('Units Data:', unitsData);
-            
+
 
         const invoiceProducts = Array.from(productMap.values()).map(product => ({
             invoice_id: invoiceId,
-            product_name: productsData.find(p => p.id === product.product_id)?.name,
-            product_unit: unitsData.find(unit => unit.id === product.unit_id)?.name,
+            product_name: productsData.find(p => p.id === product.product_id)?.name || '',
+            product_unit: unitsData.find(unit => unit.id === product.unit_id)?.name || '',
             product_id: product.product_id,
             unit_id: product.unit_id,
             warehouse_id: product.warehouse_id,
-            amount: product.quantity, // Using 'amount' instead of 'quantity' based on schema
+            amount: product.quantity,
             price: product.price,
         }));
 
-        console.log('Inserting invoice products:', JSON.stringify(invoiceProducts, null, 2));
 
         const { error: invoiceProductsError } = await supabase
             .from('finance_invoice_products')
@@ -207,7 +204,6 @@ export async function POST(req: Request, { params }: Params) {
 
             if (promotionFetchError) {
                 console.error('Error getting promotion:', promotionFetchError);
-                // Don't fail the entire invoice creation if promotion fetch fails
                 console.warn('Continuing without promotion due to fetch error');
             }
             // Only insert promotion if we successfully fetched promotion data or use default
@@ -216,8 +212,8 @@ export async function POST(req: Request, { params }: Params) {
                     .from('finance_invoice_promotions')
                     .insert({
                         invoice_id: invoiceId,
-                        promo_id: promotion_id, // Using 'promo_id' instead of 'promotion_id' based on schema
-                        value: discount_amount, // Using 'value' instead of 'discount_amount' based on schema
+                        promo_id: promotion_id,
+                        value: discount_amount,
                         use_ratio: promotion?.use_ratio || true,
                     });
 
@@ -232,9 +228,9 @@ export async function POST(req: Request, { params }: Params) {
                         { message: 'Error applying promotion to invoice', details: promotionError.message },
                         { status: 500 }
                     );
-                                 }
-             }
-         }
+                }
+            }
+        }
 
         // Create stock changes for each product (using deduplicated products)
         const stockChanges = Array.from(productMap.values()).map(product => ({
@@ -242,7 +238,7 @@ export async function POST(req: Request, { params }: Params) {
             unit_id: product.unit_id,
             warehouse_id: product.warehouse_id,
             amount: -product.quantity, // Negative because it's being sold
-            creator_id: workspaceUserId,
+            creator_id: workspaceUserId || '',
             beneficiary_id: customer_id,
         }));
 
