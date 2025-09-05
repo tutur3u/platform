@@ -9,7 +9,7 @@
   },
   "dependencies": {
     "@formatjs/intl-localematcher": "^0.6.1",
-    "@tanstack/react-query": "^5.86.0",
+    "@tanstack/react-query": "^5.87.1",
     "@tuturuuu/ai": "workspace:*",
     "@tuturuuu/auth": "workspace:*",
     "@tuturuuu/supabase": "workspace:*",
