@@ -1816,7 +1816,14 @@
     "edit_description": "Edit an existing slide"
   },
   "ws-wallets": {
-    "wallet": "Payment Method"
+    "wallet": "Payment Method",
+    "singular": "Wallet",
+    "plural": "Wallets",
+    "description": "Wallets are used to store and manage the financial activities of your workspace.",
+    "create": "Create wallet",
+    "edit": "Edit wallet",
+    "create_description": "Create a new wallet",
+    "edit_description": "Edit an existing wallet"
   },
   "ws-transactions": {
     "singular": "Transaction",
