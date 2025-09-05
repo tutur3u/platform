@@ -81,7 +81,6 @@ export function Filter({
   hideSelected = false,
   onSet,
 }: FilterProps) {
-  const t = useTranslations('user-data-table');
 
   const searchParams = useSearchParams();
   const router = useRouter();
