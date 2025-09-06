@@ -1,8 +1,9 @@
+import { GLBViewerCanvas } from './3d-model';
 import { Project } from './data';
-import { motion } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
 import { Code, Component, ExternalLink, Github, Play, X } from 'lucide-react';
 import Image from 'next/image';
-import { useRouter } from "next/navigation";
+import { useState } from 'react';
 
 interface ProjectDetailProps {
   onClose: () => void;
@@ -43,8 +44,8 @@ const BACKDROP_VARIANTS = {
 };
 
 export default function ProjectDetail({ onClose, data }: ProjectDetailProps) {
-  const router = useRouter(); 
-  
+  const [is3DViewOpen, setIs3DViewOpen] = useState(false);
+
   if (!data) {
     return null;
   }
@@ -87,7 +88,6 @@ export default function ProjectDetail({ onClose, data }: ProjectDetailProps) {
         transition={{ type: 'spring', stiffness: 300, damping: 25 }}
         onClick={handleModalClick}
       >
-
         {/* Header */}
         <div className="relative p-8">
           <button
@@ -161,14 +161,14 @@ export default function ProjectDetail({ onClose, data }: ProjectDetailProps) {
                 {modelFile && (
                   <motion.button
                     onClick={() => {
-                       router.push(`/projects/3dview?src=${modelFile}`)
+                      setIs3DViewOpen((prev) => !prev);
                     }}
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                     className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#24a4db] to-[#1AF4E6] px-6 py-3 font-medium text-black transition-all duration-200 hover:shadow-lg hover:shadow-[#24a4db]/30"
                   >
                     <Component size={20} />
-                    <span>View Model</span>
+                    <span>{is3DViewOpen ? 'Close Model' : 'View Model'}</span>
                   </motion.button>
                 )}
               </div>
@@ -178,6 +178,33 @@ export default function ProjectDetail({ onClose, data }: ProjectDetailProps) {
 
         {/* Content */}
         <div className="space-y-8 px-8 pb-8">
+          
+          {/* 3D Model Viewer */}
+          <AnimatePresence initial={false} mode="popLayout">
+            {is3DViewOpen && modelFile && (
+              <motion.div
+                key="viewer"
+                layout
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: 'auto', opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={{
+                  height: { type: 'spring', stiffness: 260, damping: 30 },
+                  opacity: { duration: 0.2 },
+                }}
+                style={{ overflow: 'hidden' }}
+                className="rounded-2xl"
+              >
+                <GLBViewerCanvas
+                  modelUrl={modelFile}
+                  enableControls
+                  autoRotate
+                  scale={0.5}
+                />
+              </motion.div>
+            )}
+          </AnimatePresence>
+
           {/* Project Stats */}
           <div className="mb-8 grid grid-cols-3 gap-4">
             {[
@@ -214,7 +241,6 @@ export default function ProjectDetail({ onClose, data }: ProjectDetailProps) {
               </motion.div>
             ))}
           </div>
-
           {/* Description */}
           {description && (
             <div className="rounded-2xl border border-border bg-muted/50 p-6">
@@ -226,7 +252,6 @@ export default function ProjectDetail({ onClose, data }: ProjectDetailProps) {
               </p>
             </div>
           )}
-
           {/* Purpose */}
           {purpose && (
             <div className="rounded-2xl border border-border bg-muted/50 p-6">
@@ -238,7 +263,6 @@ export default function ProjectDetail({ onClose, data }: ProjectDetailProps) {
               </p>
             </div>
           )}
-
           {/* Tech Stack */}
           {techStack && techStack.length > 0 && (
             <div className="rounded-2xl border border-border bg-muted/50 p-6">
@@ -260,7 +284,6 @@ export default function ProjectDetail({ onClose, data }: ProjectDetailProps) {
               </div>
             </div>
           )}
-
           {/* Team Members */}
           {members && members.length > 0 && (
             <div className="rounded-2xl border border-border bg-muted/50 p-6">
