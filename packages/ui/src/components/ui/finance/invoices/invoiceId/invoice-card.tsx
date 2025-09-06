@@ -141,7 +141,6 @@ export default function InvoiceCard({
     }
   }, [invoice.id]);
 
-
   const subtotal = products.reduce((total, product) => {
     return total + product.price * product.amount;
   }, 0);
@@ -269,10 +268,7 @@ export default function InvoiceCard({
           <div className="text-right">
             <p className="mb-2">
               <span className="font-semibold">{t('invoices.subtotal')}:</span>{' '}
-              {formatCurrency(
-                subtotal,
-                'VND'
-              )}
+              {formatCurrency(subtotal, 'VND')}
             </p>
             {promotions.length > 0 && (
               <p className="mb-2">
@@ -280,10 +276,7 @@ export default function InvoiceCard({
                   {t('invoices.discounts')}:
                 </span>
                 {'-'}
-                {formatCurrency(
-                  discount_amount,
-                  'VND'
-                )}
+                {formatCurrency(discount_amount, 'VND')}
               </p>
             )}
             <p className="mb-2">

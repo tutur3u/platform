@@ -47,7 +47,12 @@ import { createClient } from '@tuturuuu/supabase/next/client';
 import { ProductSelection } from './product-selection';
 import { toast } from '@tuturuuu/ui/sonner';
 import { Switch } from '@tuturuuu/ui/switch';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@tuturuuu/ui/tooltip';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@tuturuuu/ui/tooltip';
 import { Info } from '@tuturuuu/ui/icons';
 import { useRouter } from 'next/navigation';
 
@@ -295,8 +300,8 @@ export default function NewInvoicePage({ wsId }: Props) {
     selectedPromotionId === 'none'
       ? null
       : promotions.find(
-        (promotion: Promotion) => promotion.id === selectedPromotionId
-      );
+          (promotion: Promotion) => promotion.id === selectedPromotionId
+        );
   const isLoadingUserHistory = userTransactionsLoading || userInvoicesLoading;
   const isLoadingData =
     usersLoading ||
@@ -422,12 +427,13 @@ export default function NewInvoicePage({ wsId }: Props) {
       // Show notification if values were recalculated
       if (result.data?.values_recalculated) {
         const { calculated_values, frontend_values } = result.data;
-        const roundingInfo = calculated_values.rounding_applied !== 0
-          ? ` | Rounding: ${Intl.NumberFormat('vi-VN', {
-            style: 'currency',
-            currency: 'VND',
-          }).format(calculated_values.rounding_applied)}`
-          : '';
+        const roundingInfo =
+          calculated_values.rounding_applied !== 0
+            ? ` | Rounding: ${Intl.NumberFormat('vi-VN', {
+                style: 'currency',
+                currency: 'VND',
+              }).format(calculated_values.rounding_applied)}`
+            : '';
 
         toast(
           `Invoice created successfully! Values were recalculated on the server.`,
@@ -435,7 +441,9 @@ export default function NewInvoicePage({ wsId }: Props) {
             description: `Server calculated: ${Intl.NumberFormat('vi-VN', {
               style: 'currency',
               currency: 'VND',
-            }).format(calculated_values.total)} | Frontend calculated: ${Intl.NumberFormat('vi-VN', {
+            }).format(
+              calculated_values.total
+            )} | Frontend calculated: ${Intl.NumberFormat('vi-VN', {
               style: 'currency',
               currency: 'VND',
             }).format(frontend_values?.total || 0)}${roundingInfo}`,
@@ -500,7 +508,7 @@ export default function NewInvoicePage({ wsId }: Props) {
       />
       <Separator className="my-4" />
       <Tabs defaultValue="standard" className="w-full">
-        <div className='flex justify-between'>
+        <div className="flex justify-between">
           <TabsList className="grid w-fit grid-cols-2">
             <TabsTrigger value="standard">
               {t('ws-invoices.standard')}
@@ -510,16 +518,24 @@ export default function NewInvoicePage({ wsId }: Props) {
             </TabsTrigger>
           </TabsList>
           {/* Create multiple invoices */}
-          <div className='flex items-center gap-2'>
-            <Label htmlFor="create-multiple-invoices">Create multiple invoices</Label>
-            <Switch checked={createMultipleInvoices} onCheckedChange={setCreateMultipleInvoices} />
+          <div className="flex items-center gap-2">
+            <Label htmlFor="create-multiple-invoices">
+              Create multiple invoices
+            </Label>
+            <Switch
+              checked={createMultipleInvoices}
+              onCheckedChange={setCreateMultipleInvoices}
+            />
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger>
                   <Info className="h-4 w-4" />
                 </TooltipTrigger>
                 <TooltipContent>
-                  <p>You can create multiple invoices at once by selecting this option.</p>
+                  <p>
+                    You can create multiple invoices at once by selecting this
+                    option.
+                  </p>
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
@@ -594,23 +610,24 @@ export default function NewInvoicePage({ wsId }: Props) {
                                           <p className="text-muted-foreground text-xs">
                                             {transaction.taken_at
                                               ? new Date(
-                                                transaction.taken_at
-                                              ).toLocaleDateString()
+                                                  transaction.taken_at
+                                                ).toLocaleDateString()
                                               : 'No date'}
                                           </p>
                                         </div>
                                         <div className="text-right">
                                           <p
-                                            className={`font-semibold ${(transaction.amount || 0) >= 0
-                                              ? 'text-green-600'
-                                              : 'text-red-600'
-                                              }`}
+                                            className={`font-semibold ${
+                                              (transaction.amount || 0) >= 0
+                                                ? 'text-green-600'
+                                                : 'text-red-600'
+                                            }`}
                                           >
                                             {transaction.amount !== undefined
                                               ? Intl.NumberFormat('vi-VN', {
-                                                style: 'currency',
-                                                currency: 'VND',
-                                              }).format(transaction.amount)
+                                                  style: 'currency',
+                                                  currency: 'VND',
+                                                }).format(transaction.amount)
                                               : '-'}
                                           </p>
                                         </div>
@@ -655,8 +672,8 @@ export default function NewInvoicePage({ wsId }: Props) {
                                           <p className="text-muted-foreground text-xs">
                                             {invoice.created_at
                                               ? new Date(
-                                                invoice.created_at
-                                              ).toLocaleDateString()
+                                                  invoice.created_at
+                                                ).toLocaleDateString()
                                               : 'No date'}
                                           </p>
                                           {invoice.note && (
@@ -669,9 +686,9 @@ export default function NewInvoicePage({ wsId }: Props) {
                                           <p className="font-semibold text-blue-600">
                                             {invoice.price !== undefined
                                               ? Intl.NumberFormat('vi-VN', {
-                                                style: 'currency',
-                                                currency: 'VND',
-                                              }).format(invoice.price)
+                                                  style: 'currency',
+                                                  currency: 'VND',
+                                                }).format(invoice.price)
                                               : '-'}
                                           </p>
                                           {invoice.total_diff !== undefined &&
@@ -845,13 +862,14 @@ export default function NewInvoicePage({ wsId }: Props) {
                           ...promotions.map(
                             (promotion): ComboboxOptions => ({
                               value: promotion.id,
-                              label: `${promotion.name || 'Unnamed Promotion'} (${promotion.use_ratio
-                                ? `${promotion.value}%`
-                                : Intl.NumberFormat('vi-VN', {
-                                  style: 'currency',
-                                  currency: 'VND',
-                                }).format(promotion.value)
-                                })`,
+                              label: `${promotion.name || 'Unnamed Promotion'} (${
+                                promotion.use_ratio
+                                  ? `${promotion.value}%`
+                                  : Intl.NumberFormat('vi-VN', {
+                                      style: 'currency',
+                                      currency: 'VND',
+                                    }).format(promotion.value)
+                              })`,
                             })
                           ),
                         ]}
@@ -919,17 +937,17 @@ export default function NewInvoicePage({ wsId }: Props) {
 
                           {Math.abs(roundedTotal - totalBeforeRounding) >
                             0.01 && (
-                              <div className="flex justify-between text-sm text-muted-foreground">
-                                <span>Adjustment</span>
-                                <span>
-                                  {roundedTotal > totalBeforeRounding ? '+' : ''}
-                                  {Intl.NumberFormat('vi-VN', {
-                                    style: 'currency',
-                                    currency: 'VND',
-                                  }).format(roundedTotal - totalBeforeRounding)}
-                                </span>
-                              </div>
-                            )}
+                            <div className="flex justify-between text-sm text-muted-foreground">
+                              <span>Adjustment</span>
+                              <span>
+                                {roundedTotal > totalBeforeRounding ? '+' : ''}
+                                {Intl.NumberFormat('vi-VN', {
+                                  style: 'currency',
+                                  currency: 'VND',
+                                }).format(roundedTotal - totalBeforeRounding)}
+                              </span>
+                            </div>
+                          )}
                         </div>
 
                         {/* Rounding Controls */}

@@ -52,9 +52,9 @@ async function calculateInvoiceValues(
 ): Promise<CalculatedValues> {
   // Calculate subtotal from products
   let subtotal = 0;
-  const productIds = products.map(p => p.product_id);
-  const unitIds = products.map(p => p.unit_id);
-  const warehouseIds = products.map(p => p.warehouse_id);
+  const productIds = products.map((p) => p.product_id);
+  const unitIds = products.map((p) => p.unit_id);
+  const warehouseIds = products.map((p) => p.warehouse_id);
 
   // Get current product prices and validate products exist
   const { data: productData, error: productError } = await supabase
@@ -86,9 +86,11 @@ async function calculateInvoiceValues(
   for (const product of products) {
     const key = `${product.product_id}-${product.unit_id}-${product.warehouse_id}`;
     const productInfo = productMap.get(key);
-    
+
     if (!productInfo) {
-      throw new Error(`Product not found or not available: ${product.product_id}`);
+      throw new Error(
+        `Product not found or not available: ${product.product_id}`
+      );
     }
     console.log(productInfo.workspace_products.name);
     console.log(productInfo.price);
@@ -120,11 +122,11 @@ async function calculateInvoiceValues(
   }
 
   const total_before_rounding = subtotal - discount_amount;
-  
+
   // Use frontend's rounded total if provided, otherwise use calculated total
   let total: number;
   let rounding_applied: number;
-  
+
   if (frontendValues?.total !== undefined) {
     // Use frontend's rounding decision
     total = frontendValues.total;
@@ -136,17 +138,17 @@ async function calculateInvoiceValues(
   }
 
   // Check if values were recalculated (excluding rounding)
-  const values_recalculated = frontendValues ? (
-    Math.abs(subtotal - (frontendValues.subtotal || 0)) > 0.01 ||
-    Math.abs(discount_amount - (frontendValues.discount_amount || 0)) > 0.01
-  ) : true;
+  const values_recalculated = frontendValues
+    ? Math.abs(subtotal - (frontendValues.subtotal || 0)) > 0.01 ||
+      Math.abs(discount_amount - (frontendValues.discount_amount || 0)) > 0.01
+    : true;
 
   return {
     subtotal,
     discount_amount,
     total,
     values_recalculated,
-    rounding_applied
+    rounding_applied,
   };
 }
 
@@ -198,7 +200,13 @@ export async function POST(req: Request, { params }: Params) {
       }
     );
 
-    const { subtotal, discount_amount, total, values_recalculated, rounding_applied } = calculatedValues;
+    const {
+      subtotal,
+      discount_amount,
+      total,
+      values_recalculated,
+      rounding_applied,
+    } = calculatedValues;
 
     // Get current user
     const {
@@ -302,9 +310,7 @@ export async function POST(req: Request, { params }: Params) {
       );
     }
 
-    const unitIds = productValues.map(
-      (product) => product.unit_id
-    );
+    const unitIds = productValues.map((product) => product.unit_id);
 
     // Get unit from inventory_units
     const { data: unitsData, error: unitsError } = await supabase
@@ -458,13 +464,18 @@ export async function POST(req: Request, { params }: Params) {
           total,
           rounding_applied,
         },
-        ...(values_recalculated && frontend_subtotal && frontend_discount_amount && frontend_total ? {
-          frontend_values: {
-            subtotal: frontend_subtotal,
-            discount_amount: frontend_discount_amount,
-            total: frontend_total,
-          }
-        } : {}),
+        ...(values_recalculated &&
+        frontend_subtotal &&
+        frontend_discount_amount &&
+        frontend_total
+          ? {
+              frontend_values: {
+                subtotal: frontend_subtotal,
+                discount_amount: frontend_discount_amount,
+                total: frontend_total,
+              },
+            }
+          : {}),
       },
     });
   } catch (error) {
