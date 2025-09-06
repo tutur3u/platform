@@ -45,6 +45,11 @@ import { useState, useEffect, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import { ProductSelection } from './product-selection';
+import { toast } from '@tuturuuu/ui/sonner';
+import { Switch } from '@tuturuuu/ui/switch';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@tuturuuu/ui/tooltip';
+import { Info } from '@tuturuuu/ui/icons';
+import { useRouter } from 'next/navigation';
 
 interface ProductInventory {
   unit_id: string;
@@ -254,7 +259,7 @@ const useUserInvoices = (wsId: string, userId: string) => {
 
 export default function NewInvoicePage({ wsId }: Props) {
   const t = useTranslations();
-
+  const router = useRouter();
   // Data queries
   const { data: users = [], isLoading: usersLoading } = useUsers(wsId);
   const { data: products = [], isLoading: productsLoading } = useProducts(wsId);
@@ -276,7 +281,7 @@ export default function NewInvoicePage({ wsId }: Props) {
   const [invoiceContent, setInvoiceContent] = useState<string>('');
   const [invoiceNotes, setInvoiceNotes] = useState<string>('');
   const [isCreating, setIsCreating] = useState(false);
-
+  const [createMultipleInvoices, setCreateMultipleInvoices] = useState(false);
   // User history queries
   const { data: userTransactions = [], isLoading: userTransactionsLoading } =
     useUserTransactions(wsId, selectedUserId);
@@ -290,8 +295,8 @@ export default function NewInvoicePage({ wsId }: Props) {
     selectedPromotionId === 'none'
       ? null
       : promotions.find(
-          (promotion: Promotion) => promotion.id === selectedPromotionId
-        );
+        (promotion: Promotion) => promotion.id === selectedPromotionId
+      );
   const isLoadingUserHistory = userTransactionsLoading || userInvoicesLoading;
   const isLoadingData =
     usersLoading ||
@@ -365,7 +370,7 @@ export default function NewInvoicePage({ wsId }: Props) {
       !selectedWalletId ||
       !selectedCategoryId
     ) {
-      alert(
+      toast(
         'Please select a customer, add products, choose a wallet, and select a transaction category before creating the invoice.'
       );
       return;
@@ -423,13 +428,14 @@ export default function NewInvoicePage({ wsId }: Props) {
       setSelectedWalletId('');
       setSelectedCategoryId('');
 
-      // For example: toast.success('Invoice created successfully!');
-      // Or: router.push(`/invoices/${result.invoice_id}`);
+      if (!createMultipleInvoices) {
+        router.push(`/${wsId}/finance/invoices/${result.invoice_id}`);
+      }
     } catch (error: any) {
       console.error('Error creating invoice:', error);
 
       // Show error message
-      alert(
+      toast(
         `Error creating invoice: ${error.message || 'Failed to create invoice'}`
       );
 
@@ -466,14 +472,31 @@ export default function NewInvoicePage({ wsId }: Props) {
       />
       <Separator className="my-4" />
       <Tabs defaultValue="standard" className="w-full">
-        <TabsList className="grid w-fit grid-cols-2">
-          <TabsTrigger value="standard">
-            {t('ws-invoices.standard')}
-          </TabsTrigger>
-          <TabsTrigger value="subscription">
-            {t('ws-invoices.subscription')}
-          </TabsTrigger>
-        </TabsList>
+        <div className='flex justify-between'>
+          <TabsList className="grid w-fit grid-cols-2">
+            <TabsTrigger value="standard">
+              {t('ws-invoices.standard')}
+            </TabsTrigger>
+            <TabsTrigger value="subscription">
+              {t('ws-invoices.subscription')}
+            </TabsTrigger>
+          </TabsList>
+          {/* Create multiple invoices */}
+          <div className='flex items-center gap-2'>
+            <Label htmlFor="create-multiple-invoices">Create multiple invoices</Label>
+            <Switch checked={createMultipleInvoices} onCheckedChange={setCreateMultipleInvoices} />
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger>
+                  <Info className="h-4 w-4" />
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>You can create multiple invoices at once by selecting this option.</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
+        </div>
         <TabsContent value="standard" className="w-full">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Left Column - Customer Information and Products */}
@@ -543,24 +566,23 @@ export default function NewInvoicePage({ wsId }: Props) {
                                           <p className="text-muted-foreground text-xs">
                                             {transaction.taken_at
                                               ? new Date(
-                                                  transaction.taken_at
-                                                ).toLocaleDateString()
+                                                transaction.taken_at
+                                              ).toLocaleDateString()
                                               : 'No date'}
                                           </p>
                                         </div>
                                         <div className="text-right">
                                           <p
-                                            className={`font-semibold ${
-                                              (transaction.amount || 0) >= 0
-                                                ? 'text-green-600'
-                                                : 'text-red-600'
-                                            }`}
+                                            className={`font-semibold ${(transaction.amount || 0) >= 0
+                                              ? 'text-green-600'
+                                              : 'text-red-600'
+                                              }`}
                                           >
                                             {transaction.amount !== undefined
                                               ? Intl.NumberFormat('vi-VN', {
-                                                  style: 'currency',
-                                                  currency: 'VND',
-                                                }).format(transaction.amount)
+                                                style: 'currency',
+                                                currency: 'VND',
+                                              }).format(transaction.amount)
                                               : '-'}
                                           </p>
                                         </div>
@@ -605,8 +627,8 @@ export default function NewInvoicePage({ wsId }: Props) {
                                           <p className="text-muted-foreground text-xs">
                                             {invoice.created_at
                                               ? new Date(
-                                                  invoice.created_at
-                                                ).toLocaleDateString()
+                                                invoice.created_at
+                                              ).toLocaleDateString()
                                               : 'No date'}
                                           </p>
                                           {invoice.note && (
@@ -619,9 +641,9 @@ export default function NewInvoicePage({ wsId }: Props) {
                                           <p className="font-semibold text-blue-600">
                                             {invoice.price !== undefined
                                               ? Intl.NumberFormat('vi-VN', {
-                                                  style: 'currency',
-                                                  currency: 'VND',
-                                                }).format(invoice.price)
+                                                style: 'currency',
+                                                currency: 'VND',
+                                              }).format(invoice.price)
                                               : '-'}
                                           </p>
                                           {invoice.total_diff !== undefined &&
@@ -795,14 +817,13 @@ export default function NewInvoicePage({ wsId }: Props) {
                           ...promotions.map(
                             (promotion): ComboboxOptions => ({
                               value: promotion.id,
-                              label: `${promotion.name || 'Unnamed Promotion'} (${
-                                promotion.use_ratio
-                                  ? `${promotion.value}%`
-                                  : Intl.NumberFormat('vi-VN', {
-                                      style: 'currency',
-                                      currency: 'VND',
-                                    }).format(promotion.value)
-                              })`,
+                              label: `${promotion.name || 'Unnamed Promotion'} (${promotion.use_ratio
+                                ? `${promotion.value}%`
+                                : Intl.NumberFormat('vi-VN', {
+                                  style: 'currency',
+                                  currency: 'VND',
+                                }).format(promotion.value)
+                                })`,
                             })
                           ),
                         ]}
@@ -870,17 +891,17 @@ export default function NewInvoicePage({ wsId }: Props) {
 
                           {Math.abs(roundedTotal - totalBeforeRounding) >
                             0.01 && (
-                            <div className="flex justify-between text-sm text-muted-foreground">
-                              <span>Adjustment</span>
-                              <span>
-                                {roundedTotal > totalBeforeRounding ? '+' : ''}
-                                {Intl.NumberFormat('vi-VN', {
-                                  style: 'currency',
-                                  currency: 'VND',
-                                }).format(roundedTotal - totalBeforeRounding)}
-                              </span>
-                            </div>
-                          )}
+                              <div className="flex justify-between text-sm text-muted-foreground">
+                                <span>Adjustment</span>
+                                <span>
+                                  {roundedTotal > totalBeforeRounding ? '+' : ''}
+                                  {Intl.NumberFormat('vi-VN', {
+                                    style: 'currency',
+                                    currency: 'VND',
+                                  }).format(roundedTotal - totalBeforeRounding)}
+                                </span>
+                              </div>
+                            )}
                         </div>
 
                         {/* Rounding Controls */}
