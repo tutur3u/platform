@@ -141,6 +141,18 @@ export default function InvoiceCard({
     }
   }, [invoice.id]);
 
+
+  const subtotal = products.reduce((total, product) => {
+    return total + product.price * product.amount;
+  }, 0);
+
+  const discount_amount = promotions.reduce((total, promo) => {
+    if (promo.use_ratio) {
+      return total + (subtotal * promo.value) / 100;
+    }
+    return total + promo.value;
+  }, 0);
+
   return (
     <div className="overflow-x-auto xl:flex-none">
       <div className="mx-auto h-fit w-full max-w-4xl flex-none rounded-xl shadow-lg dark:bg-foreground/10 print:bg-white print:text-black print:shadow-none">
@@ -258,13 +270,7 @@ export default function InvoiceCard({
             <p className="mb-2">
               <span className="font-semibold">{t('invoices.subtotal')}:</span>{' '}
               {formatCurrency(
-                invoice.price +
-                  promotions.reduce((total, promo) => {
-                    if (promo.use_ratio) {
-                      return total + (invoice.price * promo.value) / 100;
-                    }
-                    return total + promo.value;
-                  }, 0),
+                subtotal,
                 'VND'
               )}
             </p>
@@ -272,14 +278,10 @@ export default function InvoiceCard({
               <p className="mb-2">
                 <span className="font-semibold">
                   {t('invoices.discounts')}:
-                </span>{' '}
+                </span>
+                {'-'}
                 {formatCurrency(
-                  promotions.reduce((total, promo) => {
-                    if (promo.use_ratio) {
-                      return total + (invoice.price * promo.value) / 100;
-                    }
-                    return total + promo.value;
-                  }, 0),
+                  discount_amount,
                   'VND'
                 )}
               </p>

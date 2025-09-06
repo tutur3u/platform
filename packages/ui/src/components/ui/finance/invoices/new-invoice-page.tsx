@@ -395,9 +395,10 @@ export default function NewInvoicePage({ wsId }: Props) {
           category_id: item.product.category_id,
         })),
         category_id: selectedCategoryId,
-        subtotal,
-        discount_amount: discountAmount,
-        total: roundedTotal,
+        // Send frontend calculated values for comparison (optional)
+        frontend_subtotal: subtotal,
+        frontend_discount_amount: discountAmount,
+        frontend_total: roundedTotal,
       };
 
       // Call the API endpoint
@@ -416,6 +417,33 @@ export default function NewInvoicePage({ wsId }: Props) {
 
       if (!response.ok) {
         throw new Error(result.message || 'Failed to create invoice');
+      }
+
+      // Show notification if values were recalculated
+      if (result.data?.values_recalculated) {
+        const { calculated_values, frontend_values } = result.data;
+        const roundingInfo = calculated_values.rounding_applied !== 0
+          ? ` | Rounding: ${Intl.NumberFormat('vi-VN', {
+            style: 'currency',
+            currency: 'VND',
+          }).format(calculated_values.rounding_applied)}`
+          : '';
+
+        toast(
+          `Invoice created successfully! Values were recalculated on the server.`,
+          {
+            description: `Server calculated: ${Intl.NumberFormat('vi-VN', {
+              style: 'currency',
+              currency: 'VND',
+            }).format(calculated_values.total)} | Frontend calculated: ${Intl.NumberFormat('vi-VN', {
+              style: 'currency',
+              currency: 'VND',
+            }).format(frontend_values?.total || 0)}${roundingInfo}`,
+            duration: 5000,
+          }
+        );
+      } else {
+        toast(`Invoice ${result.invoice_id} created successfully`);
       }
 
       // Reset form after successful creation

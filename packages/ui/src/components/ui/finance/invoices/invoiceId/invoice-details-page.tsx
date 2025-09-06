@@ -3,12 +3,12 @@ import { createClient } from '@tuturuuu/supabase/next/server';
 import type { WorkspaceConfig } from '@tuturuuu/types/primitives/WorkspaceConfig';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import {
-  Box,
   Calendar,
   DollarSign,
   FileText,
-  Percent,
   ShoppingCart,
+  Box,
+  Percent,
 } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
 import { availableConfigs } from '@tuturuuu/utils/configs/reports';
@@ -16,6 +16,8 @@ import 'dayjs/locale/vi';
 import moment from 'moment';
 import { getTranslations } from 'next-intl/server';
 import { notFound } from 'next/navigation';
+import { ProductCard } from '@tuturuuu/ui/finance/invoices/invoiceId/product-card';
+import { PromotionCard } from '@tuturuuu/ui/finance/invoices/invoiceId/promotion-card';
 
 interface Props {
   wsId: string;
@@ -54,39 +56,42 @@ export default async function InvoiceDetailsPage({
               {t('invoices.basic-info')}
             </div>
             <Separator />
-            <DetailItem
-              icon={<FileText className="h-5 w-5" />}
-              label={t('invoice-data-table.id')}
-              value={invoice.id}
-            />
-            <DetailItem
-              icon={<DollarSign className="h-5 w-5" />}
-              label={t('invoice-data-table.final_price')}
-              value={`${Intl.NumberFormat(locale, {
-                style: 'currency',
-                currency: 'VND',
-              }).format(invoice.price)} + ${Intl.NumberFormat(locale, {
-                style: 'currency',
-                currency: 'VND',
-              }).format(invoice.total_diff)} = ${Intl.NumberFormat(locale, {
-                style: 'currency',
-                currency: 'VND',
-              }).format(invoice.price + invoice.total_diff)}`}
-            />
-            <DetailItem
-              icon={<Calendar className="h-5 w-5" />}
-              label={t('invoice-data-table.created_at')}
-              value={
-                invoice.created_at
-                  ? moment(invoice.created_at).format('DD/MM/YYYY, HH:mm:ss')
-                  : '-'
-              }
-            />
-            <DetailItem
-              icon={<ShoppingCart className="h-5 w-5" />}
-              label={t('invoices.products')}
-              value={products.reduce((acc, product) => acc + product.amount, 0)}
-            />
+            <div className="flex flex-col gap-2">
+              <DetailItem
+                icon={<FileText className="h-5 w-5" />}
+                label={t('invoice-data-table.id')}
+                value={invoice.id}
+              />
+              <DetailItem
+                icon={<DollarSign className="h-5 w-5" />}
+                label={t('invoice-data-table.final_price')}
+                value={`${Intl.NumberFormat(locale, {
+                  style: 'currency',
+                  currency: 'VND',
+                }).format(invoice.price)} + ${Intl.NumberFormat(locale, {
+                  style: 'currency',
+                  currency: 'VND',
+                }).format(invoice.total_diff)} = ${Intl.NumberFormat(locale, {
+                  style: 'currency',
+                  currency: 'VND',
+                }).format(invoice.price + invoice.total_diff)}`}
+              />
+              <DetailItem
+                icon={<Calendar className="h-5 w-5" />}
+                label={t('invoice-data-table.created_at')}
+                value={
+                  invoice.created_at
+                    ? moment(invoice.created_at).format('DD/MM/YYYY, HH:mm:ss')
+                    : '-'
+                }
+              />
+              <DetailItem
+                icon={<ShoppingCart className="h-5 w-5" />}
+                label={t('invoices.products')}
+                value={products.reduce((acc, product) => acc + product.amount, 0)}
+              />
+            </div>
+
           </div>
 
           <InvoiceCard
@@ -105,22 +110,16 @@ export default async function InvoiceDetailsPage({
             </div>
             <Separator />
             {products.length > 0 ? (
-              products.map((product, index) => (
-                <DetailItem
-                  key={index}
-                  icon={<Box className="h-5 w-5" />}
-                  label={`[${product.product_name}]`}
-                  value={`${product.amount} ${product.product_unit} x ${Intl.NumberFormat(
-                    locale,
-                    {
-                      style: 'currency',
-                      currency: 'VND',
-                    }
-                  ).format(product.price)}`}
-                />
-              ))
+              <div className="flex flex-col gap-2">
+                {products.map((product, index) => (
+                  <ProductCard key={index} product={product} locale={locale} workspaceId={wsId} />
+                ))}
+              </div>
             ) : (
-              <p>{t('common.empty')}</p>
+              <div className="text-center py-8 text-muted-foreground">
+                <Box className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                <p>{t("common.empty")}</p>
+              </div>
             )}
           </div>
           <div className="h-fit rounded-lg border p-4">
@@ -130,23 +129,16 @@ export default async function InvoiceDetailsPage({
               </div>
               <Separator />
               {promotions.length > 0 ? (
-                promotions.map((promotion, index) => (
-                  <DetailItem
-                    key={index}
-                    icon={<Percent className="h-5 w-5" />}
-                    label={promotion.name || promotion.code}
-                    value={`${
-                      promotion.use_ratio
-                        ? `${promotion.value}%`
-                        : `-${Intl.NumberFormat(locale, {
-                            style: 'currency',
-                            currency: 'VND',
-                          }).format(promotion.value)}`
-                    }`}
-                  />
-                ))
+                <div className="space-y-3">
+                  {promotions.map((promotion, index) => (
+                    <PromotionCard key={index} promotion={promotion} locale={locale} />
+                  ))}
+                </div>
               ) : (
-                <p>{t('common.empty')}</p>
+                <div className="text-center py-8 text-muted-foreground">
+                  <Percent className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                  <p>{t("common.empty")}</p>
+                </div>
               )}
             </div>
           </div>
