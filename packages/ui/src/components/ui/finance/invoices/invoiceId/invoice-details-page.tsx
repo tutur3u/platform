@@ -88,10 +88,12 @@ export default async function InvoiceDetailsPage({
               <DetailItem
                 icon={<ShoppingCart className="h-5 w-5" />}
                 label={t('invoices.products')}
-                value={products.reduce((acc, product) => acc + product.amount, 0)}
+                value={products.reduce(
+                  (acc, product) => acc + product.amount,
+                  0
+                )}
               />
             </div>
-
           </div>
 
           <InvoiceCard
@@ -112,13 +114,18 @@ export default async function InvoiceDetailsPage({
             {products.length > 0 ? (
               <div className="flex flex-col gap-2">
                 {products.map((product, index) => (
-                  <ProductCard key={index} product={product} locale={locale} workspaceId={wsId} />
+                  <ProductCard
+                    key={index}
+                    product={product}
+                    locale={locale}
+                    workspaceId={wsId}
+                  />
                 ))}
               </div>
             ) : (
               <div className="text-center py-8 text-muted-foreground">
                 <Box className="h-12 w-12 mx-auto mb-3 opacity-50" />
-                <p>{t("common.empty")}</p>
+                <p>{t('common.empty')}</p>
               </div>
             )}
           </div>
@@ -131,13 +138,17 @@ export default async function InvoiceDetailsPage({
               {promotions.length > 0 ? (
                 <div className="space-y-3">
                   {promotions.map((promotion, index) => (
-                    <PromotionCard key={index} promotion={promotion} locale={locale} />
+                    <PromotionCard
+                      key={index}
+                      promotion={promotion}
+                      locale={locale}
+                    />
                   ))}
                 </div>
               ) : (
                 <div className="text-center py-8 text-muted-foreground">
                   <Percent className="h-12 w-12 mx-auto mb-3 opacity-50" />
-                  <p>{t("common.empty")}</p>
+                  <p>{t('common.empty')}</p>
                 </div>
               )}
             </div>
