@@ -1831,13 +1831,7 @@
     "edit_description": "Sửa trang trình bày hiện có"
   },
   "ws-wallets": {
-    "singular": "Ví",
-    "plural": "Ví",
-    "description": "Ví giúp bạn theo dõi tất cả các giao dịch tài chính trong không gian làm việc của bạn.",
-    "create": "Tạo ví",
-    "edit": "Sửa ví",
-    "create_description": "Tạo một ví mới",
-    "edit_description": "Sửa ví hiện có"
+    "wallet": "Phương thức thanh toán"
   },
   "ws-transactions": {
     "singular": "Giao dịch",
@@ -1846,7 +1840,8 @@
     "create": "Tạo giao dịch",
     "edit": "Sửa giao dịch",
     "create_description": "Tạo một giao dịch mới",
-    "edit_description": "Sửa giao dịch hiện có"
+    "edit_description": "Sửa giao dịch hiện có",
+    "category": "Loại giao dịch"
   },
   "ws-transaction-categories": {
     "singular": "Danh mục giao dịch",
@@ -2692,7 +2687,14 @@
     "edit_description": "Chỉnh sửa hóa đơn hiện có",
     "new_invoice": "Hóa đơn mới",
     "standard": "Hóa đơn tiêu chuẩn",
-    "subscription": "Hóa đơn định kỳ"
+    "subscription": "Hóa đơn định kỳ",
+    "user_history": "Lịch sử khách hàng",
+    "invoice_information": "Thông tin hóa đơn",
+    "payment_settings": "Cài đặt thanh toán",
+    "content": "Nội dung",
+    "content_placeholder": "Nhập mô tả hoặc chi tiết hóa đơn...",
+    "notes": "Ghi chú",
+    "notes_placeholder": "Ghi chú bổ sung hoặc bình luận..."
   },
   "ws-inventory-products": {
     "plural": "Sản phẩm",

@@ -1,7 +1,6 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { createClient } from '@tuturuuu/supabase/next/client';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -15,15 +14,11 @@ import {
 } from '@tuturuuu/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
 import { cn } from '@tuturuuu/utils/format';
+import { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
+import { getAvatarPlaceholder, getInitials } from '@tuturuuu/utils/name-helper';
 import { Check, Users, X } from 'lucide-react';
 import { useState } from 'react';
-
-interface WorkspaceUser {
-  id: string;
-  full_name: string | null;
-  email: string | null;
-  avatar_url: string | null;
-}
+import { createClient } from '@tuturuuu/supabase/next/client';
 
 interface UserFilterProps {
   wsId: string;
@@ -32,22 +27,8 @@ interface UserFilterProps {
   className?: string;
 }
 
-function getAvatarPlaceholder(name: string) {
-  return `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}`;
-}
-
-function getInitials(name: string): string {
-  return name
-    .split(' ')
-    .map((n) => n[0])
-    .join('')
-    .toUpperCase()
-    .slice(0, 2);
-}
-
-// Function to fetch workspace users
 async function fetchWorkspaceUsers(wsId: string): Promise<WorkspaceUser[]> {
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data, error } = await supabase
     .from('workspace_users')
     .select('id, full_name, email, avatar_url')

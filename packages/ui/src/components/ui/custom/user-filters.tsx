@@ -1,5 +1,6 @@
 'use client';
 
+import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -17,7 +18,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
 import { ScrollArea } from '@tuturuuu/ui/scroll-area';
 import { Separator } from '@tuturuuu/ui/separator';
 import { cn } from '@tuturuuu/utils/format';
-import { useTranslations } from 'next-intl';
+import { getAvatarPlaceholder, getInitials } from '@tuturuuu/utils/name-helper';
 import { useRouter } from 'next/navigation';
 import { type ReactNode, useEffect, useMemo, useState } from 'react';
 
@@ -79,8 +80,6 @@ export function Filter({
   hideSelected = false,
   onSet,
 }: FilterProps) {
-  const t = useTranslations('user-data-table');
-
   const searchParams = useSearchParams();
   const router = useRouter();
 
@@ -161,20 +160,23 @@ export function Filter({
         <Button
           variant={
             variant
-              ? 'outline'
+              ? variant
               : !hideSelected &&
                   selectedSize > 0 &&
                   options
                     .map((option) => option.value)
                     .some((value) => selectedValues.has(value))
-                ? undefined
+                ? 'secondary' // Use secondary variant instead of undefined for better contrast
                 : 'outline'
           }
           className={cn('h-8 border-dashed px-1', className)}
           disabled={disabled}
         >
-          {icon}
-          {title}
+          {selectedSize > 0 ? null : (
+            <>
+              {icon} {title}
+            </>
+          )}
           {!hideSelected &&
             selectedSize > 0 &&
             options
@@ -182,35 +184,85 @@ export function Filter({
               .some((value) => selectedValues.has(value)) && (
               <>
                 <Separator orientation="vertical" className="mx-1 h-4" />
-                <Badge
-                  variant="secondary"
-                  className="rounded-sm bg-background/80 px-1 font-normal text-foreground hover:bg-background/80 lg:hidden"
-                >
-                  {selectedSize}
-                </Badge>
-                <div className="hidden space-x-1 lg:flex">
-                  {(multiple && selectedSize > 2) || alwaysShowNumber ? (
+                {!multiple ? (
+                  options
+                    .filter((option) => selectedValues.has(option.value))
+                    .slice(0, 1)
+                    .map((option) => {
+                      const displayName = option.label;
+                      const email = option.description || '';
+                      return (
+                        <div
+                          key={option.value}
+                          className="group flex items-center gap-2.5 rounded-full border border-border bg-secondary px-3 py-1.5 text-sm transition-all duration-200 hover:bg-secondary/80 hover:shadow-md"
+                        >
+                          <div className="relative">
+                            <Avatar className="h-6 w-6 ring-2 ring-primary/30 transition-all duration-200 group-hover:ring-primary/50">
+                              <AvatarImage
+                                src={
+                                  getAvatarPlaceholder(displayName) ||
+                                  '/placeholder.svg'
+                                }
+                                alt={displayName}
+                                className="object-cover"
+                              />
+                              <AvatarFallback className="bg-primary font-semibold text-primary-foreground text-xs">
+                                {getInitials(displayName)}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div className="-top-0.5 -right-0.5 absolute h-2.5 w-2.5 rounded-full bg-green-500 ring-2 ring-background" />
+                          </div>
+                          <div className="flex min-w-0 flex-col">
+                            <span className="max-w-[120px] truncate font-semibold text-secondary-foreground leading-none">
+                              {displayName}
+                            </span>
+                            {email && (
+                              <span className="mt-0.5 max-w-[120px] truncate text-muted-foreground text-xs leading-none">
+                                {email}
+                              </span>
+                            )}
+                          </div>
+                          <div className="h-4 w-px bg-border transition-colors duration-200" />
+                          <div className="flex h-4 w-4 items-center justify-center rounded-full bg-primary/20 transition-colors duration-200">
+                            <Check className="h-2.5 w-2.5 text-primary" />
+                          </div>
+                        </div>
+                      );
+                    })
+                ) : (
+                  // Multiple selection mode - show badges as before
+                  <>
                     <Badge
                       variant="secondary"
-                      className="rounded-sm bg-background/80 px-1 font-normal text-foreground hover:bg-background/80"
+                      className="rounded-sm bg-background/80 px-1 font-normal text-foreground hover:bg-background/80 lg:hidden"
                     >
-                      {selectedSize} {t('selected')}
+                      {selectedSize}
                     </Badge>
-                  ) : (
-                    options
-                      .filter((option) => selectedValues.has(option.value))
-                      .slice(0, multiple ? 2 : 1)
-                      .map((option) => (
+                    <div className="hidden space-x-1 lg:flex">
+                      {(multiple && selectedSize > 2) || alwaysShowNumber ? (
                         <Badge
                           variant="secondary"
-                          key={option.value}
                           className="rounded-sm bg-background/80 px-1 font-normal text-foreground hover:bg-background/80"
                         >
-                          {option.label}
+                          {selectedSize} selected
                         </Badge>
-                      ))
-                  )}
-                </div>
+                      ) : (
+                        options
+                          .filter((option) => selectedValues.has(option.value))
+                          .slice(0, multiple ? 2 : 1)
+                          .map((option) => (
+                            <Badge
+                              variant="secondary"
+                              key={option.value}
+                              className="rounded-sm bg-background/80 px-1 font-normal text-foreground hover:bg-background/80"
+                            >
+                              {option.label}
+                            </Badge>
+                          ))
+                      )}
+                    </div>
+                  </>
+                )}
               </>
             )}
         </Button>
@@ -241,15 +293,39 @@ export function Filter({
                       <CommandItem
                         key={option.value}
                         onSelect={() => {
-                          if (!multiple) selectedValues.clear();
-
-                          if (isSelected && multiple) {
-                            selectedValues.delete(option.value);
+                          if (!multiple) {
+                            // For single selection mode, toggle the selection
+                            if (isSelected) {
+                              selectedValues.clear();
+                            } else {
+                              selectedValues.clear();
+                              selectedValues.add(option.value);
+                            }
                           } else {
-                            selectedValues.add(option.value);
+                            // For multiple selection mode, toggle the selection
+                            if (isSelected) {
+                              selectedValues.delete(option.value);
+                            } else {
+                              selectedValues.add(option.value);
+                            }
                           }
 
                           setSelectedValues(new Set(selectedValues));
+
+                          // For single selection mode, apply changes immediately
+                          if (!multiple) {
+                            const newValues = Array.from(selectedValues);
+                            if (onSet) {
+                              onSet(newValues);
+                            } else if (tag) {
+                              if (extraQueryOnSet)
+                                searchParams.set(extraQueryOnSet, false);
+                              searchParams.set({
+                                [tag]: newValues,
+                              });
+                            }
+                            setOpen(false);
+                          }
                         }}
                         disabled={
                           applying ||
@@ -285,82 +361,88 @@ export function Filter({
               </CommandGroup>
             </ScrollArea>
 
-            <CommandSeparator alwaysRender />
-            <CommandGroup>
-              <div className="grid items-center gap-1 md:flex">
-                <CommandItem
-                  onSelect={() => {
-                    if (selectedSize === 0 && multiple)
-                      return setSelectedValues(
-                        new Set(options.map((option) => option.value))
-                      );
+            {multiple && (
+              <>
+                <CommandSeparator />
+                <CommandGroup>
+                  <div className="grid items-center gap-1 md:flex">
+                    <CommandItem
+                      onSelect={() => {
+                        if (selectedSize === 0 && multiple)
+                          return setSelectedValues(
+                            new Set(options.map((option) => option.value))
+                          );
 
-                    if (hasChanges) return setSelectedValues(oldValues);
+                        if (hasChanges) return setSelectedValues(oldValues);
 
-                    setSelectedValues(new Set());
-                    setSearchQuery('');
-                  }}
-                  className="w-full justify-center text-center"
-                  disabled={
-                    applying ||
-                    (!multiple && oldValues.size === 0 && selectedSize === 0) ||
-                    options.every((option) => option.checked && option.disabled)
-                  }
-                >
-                  {selectedSize === 0 && multiple ? (
-                    <>
-                      <CheckCheck className="mr-2 h-4 w-4" />
-                      <span className="line-clamp-1">{t('select_all')}</span>
-                    </>
-                  ) : hasChanges && oldValues.size > 0 ? (
-                    <>
-                      <Undo className="mr-2 h-4 w-4" />
+                        setSelectedValues(new Set());
+                        setSearchQuery('');
+                      }}
+                      className="w-full justify-center text-center"
+                      disabled={
+                        applying ||
+                        (!multiple &&
+                          oldValues.size === 0 &&
+                          selectedSize === 0) ||
+                        options.every(
+                          (option) => option.checked && option.disabled
+                        )
+                      }
+                    >
+                      {selectedSize === 0 && multiple ? (
+                        <>
+                          <CheckCheck className="mr-2 h-4 w-4" />
+                          <span className="line-clamp-1">Select All</span>
+                        </>
+                      ) : hasChanges && oldValues.size > 0 ? (
+                        <>
+                          <Undo className="mr-2 h-4 w-4" />
+                          <span className="line-clamp-1">Revert Changes</span>
+                        </>
+                      ) : (
+                        <>
+                          <Trash className="mr-2 h-4 w-4" />
+                          <span className="line-clamp-1">Clear Selection</span>
+                        </>
+                      )}
+                    </CommandItem>
+                    <CommandSeparator className="md:hidden" />
+                    <CommandItem
+                      onSelect={async () => {
+                        setApplying(true);
+
+                        if (onSet) {
+                          await onSet(Array.from(selectedValues));
+                          setSelectedValues(new Set());
+                          setApplying(false);
+                          setOpen(false);
+                          return;
+                        }
+
+                        if (!multiple && href)
+                          router.push(
+                            `${href}/${Array.from(selectedValues)[0]}`
+                          );
+                        else if (tag) {
+                          if (extraQueryOnSet)
+                            searchParams.set(extraQueryOnSet, false);
+                          searchParams.set({
+                            [tag]: Array.from(selectedValues),
+                          });
+                        }
+                      }}
+                      className="w-full justify-center text-center"
+                      disabled={!hasChanges || applying}
+                    >
+                      <Check className="mr-2 h-4 w-4" />
                       <span className="line-clamp-1">
-                        {t('revert_changes')}
+                        {applying ? 'Applying...' : 'Apply Changes'}
                       </span>
-                    </>
-                  ) : (
-                    <>
-                      <Trash className="mr-2 h-4 w-4" />
-                      <span className="line-clamp-1">
-                        {t('clear_selection')}
-                      </span>
-                    </>
-                  )}
-                </CommandItem>
-                <CommandSeparator className="md:hidden" alwaysRender />
-                <CommandItem
-                  onSelect={async () => {
-                    setApplying(true);
-
-                    if (onSet) {
-                      await onSet(Array.from(selectedValues));
-                      setSelectedValues(new Set());
-                      setApplying(false);
-                      setOpen(false);
-                      return;
-                    }
-
-                    if (!multiple && href)
-                      router.push(`${href}/${Array.from(selectedValues)[0]}`);
-                    else if (tag) {
-                      if (extraQueryOnSet)
-                        searchParams.set(extraQueryOnSet, false);
-                      searchParams.set({
-                        [tag]: Array.from(selectedValues),
-                      });
-                    }
-                  }}
-                  className="w-full justify-center text-center"
-                  disabled={!hasChanges || applying}
-                >
-                  <Check className="mr-2 h-4 w-4" />
-                  <span className="line-clamp-1">
-                    {applying ? t('applying') : t('apply_changes')}
-                  </span>
-                </CommandItem>
-              </div>
-            </CommandGroup>
+                    </CommandItem>
+                  </div>
+                </CommandGroup>
+              </>
+            )}
           </CommandList>
         </Command>
       </PopoverContent>

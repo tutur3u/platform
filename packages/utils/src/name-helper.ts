@@ -37,6 +37,10 @@ export const getInitials = (name?: string | null): string => {
   ).toUpperCase();
 };
 
+export function getAvatarPlaceholder(name: string) {
+  return `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}`;
+}
+
 /**
  * Generates a consistent fun name from a user ID
  */
