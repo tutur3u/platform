@@ -298,18 +298,18 @@ export function Structure({
 
   const onMouseEnter = isHoverMode
     ? () => {
-        if (!hasOpenDialogs()) {
-          setIsCollapsed(false);
-        }
+      if (!hasOpenDialogs()) {
+        setIsCollapsed(false);
       }
+    }
     : undefined;
 
   const onMouseLeave = isHoverMode
     ? () => {
-        if (!hasOpenDialogs()) {
-          setIsCollapsed(true);
-        }
+      if (!hasOpenDialogs()) {
+        setIsCollapsed(true);
       }
+    }
     : undefined;
 
   const isRootWorkspace = wsId === ROOT_WORKSPACE_ID;
