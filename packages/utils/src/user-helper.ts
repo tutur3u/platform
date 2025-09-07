@@ -123,3 +123,18 @@ export async function updateUserDefaultWorkspace(workspaceId: string) {
 
   return { success: true };
 }
+
+// Function to fetch workspace users
+export async function fetchWorkspaceUsers(
+  wsId: string
+): Promise<WorkspaceUser[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from('workspace_users')
+    .select('id, full_name, email, avatar_url')
+    .eq('ws_id', wsId)
+    .order('full_name', { ascending: true });
+
+  if (error) throw error;
+  return data || [];
+}

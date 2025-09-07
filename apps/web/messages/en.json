@@ -1816,6 +1816,7 @@
     "edit_description": "Edit an existing slide"
   },
   "ws-wallets": {
+    "wallet": "Payment Method",
     "singular": "Wallet",
     "plural": "Wallets",
     "description": "Wallets are used to store and manage the financial activities of your workspace.",
@@ -1831,7 +1832,8 @@
     "create": "Create transaction",
     "edit": "Edit transaction",
     "create_description": "Create a new transaction",
-    "edit_description": "Edit an existing transaction"
+    "edit_description": "Edit an existing transaction",
+    "category": "Transaction type"
   },
   "ws-transaction-categories": {
     "singular": "Transaction Category",
@@ -2626,6 +2628,13 @@
     "description": "View mailing history that belongs to your workspace."
   },
   "ws-invoices": {
+    "invoice_information": "Invoice Information",
+    "payment_settings": "Payment Settings",
+    "content": "Content",
+    "content_placeholder": "Enter invoice description or details...",
+    "notes": "Notes",
+    "notes_placeholder": "Additional notes or comments...",
+    "user_history": "Customer History",
     "plural": "Invoices",
     "singular": "Invoice",
     "description": "Invoices are used to link finance transactions and purchased products with applied promotions from your workspace's inventory.",
