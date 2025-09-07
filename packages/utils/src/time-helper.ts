@@ -14,7 +14,7 @@ export const parseTimeFromTimetz = (
   const hour = parseInt(timePart, 10);
 
   // Validate hour is a valid number and in expected range
-  if (isNaN(hour) || hour < 0 || hour > 23) return undefined;
+  if (Number.isNaN(hour) || hour < 0 || hour > 23) return undefined;
 
   // Convert 0 to 24 for comparison (which uses 1-24 format)
   return hour === 0 ? 24 : hour;

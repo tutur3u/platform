@@ -32,7 +32,7 @@ function BoardItem({ board, onSelect, getBoardColor }: BoardItemProps) {
     <CommandItem
       key={board.id}
       onSelect={() => onSelect(board.id)}
-      className="command-item group cursor-pointer border-l-2 border-transparent transition-all duration-200 hover:border-dynamic-blue/30 hover:bg-gradient-to-r hover:from-dynamic-blue/5 hover:to-dynamic-purple/5"
+      className="command-item group cursor-pointer border-transparent border-l-2 transition-all duration-200 hover:border-dynamic-blue/30 hover:bg-gradient-to-r hover:from-dynamic-blue/5 hover:to-dynamic-purple/5"
     >
       <div className="flex w-full items-center gap-4">
         <div className="relative">
@@ -50,7 +50,7 @@ function BoardItem({ board, onSelect, getBoardColor }: BoardItemProps) {
             </span>
             <ExternalLink className="h-3 w-3 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
           </div>
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          <div className="flex items-center gap-2 text-muted-foreground text-xs">
             <div className="flex items-center gap-1">
               <Tag className="h-3 w-3" />
               <span>{board.task_lists?.length || 0} lists</span>
@@ -62,7 +62,7 @@ function BoardItem({ board, onSelect, getBoardColor }: BoardItemProps) {
             </div>
           </div>
         </div>
-        <div className="text-xs text-dynamic-blue/60 opacity-0 transition-opacity group-hover:opacity-100">
+        <div className="text-dynamic-blue/60 text-xs opacity-0 transition-opacity group-hover:opacity-100">
           Navigate
         </div>
       </div>
@@ -85,13 +85,13 @@ export function BoardNavigation({ wsId, setOpen }: BoardNavigationProps) {
   // Early return if no workspace ID
   if (!wsId || wsId === 'undefined') {
     return (
-      <div className="border-b border-border/50 pb-2">
+      <div className="border-border/50 border-b pb-2">
         <div className="flex items-center justify-between px-3 py-2">
           <div className="flex items-center gap-2">
-            <span className="text-sm font-medium text-foreground">
+            <span className="font-medium text-foreground text-sm">
               📋 Board Navigation
             </span>
-            <div className="rounded-md bg-dynamic-orange/10 px-2 py-0.5 text-xs font-medium text-dynamic-orange">
+            <div className="rounded-md bg-dynamic-orange/10 px-2 py-0.5 font-medium text-dynamic-orange text-xs">
               No workspace
             </div>
           </div>
@@ -104,7 +104,7 @@ export function BoardNavigation({ wsId, setOpen }: BoardNavigationProps) {
             <p className="font-semibold text-foreground">
               No workspace selected
             </p>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-muted-foreground text-xs">
               Navigate to a workspace to view and manage boards
             </p>
           </div>
@@ -217,10 +217,10 @@ export function BoardNavigation({ wsId, setOpen }: BoardNavigationProps) {
   // Loading state
   if (boardsLoading) {
     return (
-      <div className="border-b border-border/50 pb-2">
+      <div className="border-border/50 border-b pb-2">
         <div className="flex items-center justify-between px-3 py-2">
           <div className="flex items-center gap-2">
-            <span className="text-sm font-medium text-foreground">
+            <span className="font-medium text-foreground text-sm">
               📋 Board Navigation
             </span>
             <Loader className="h-3 w-3 animate-spin text-dynamic-blue" />
@@ -229,7 +229,7 @@ export function BoardNavigation({ wsId, setOpen }: BoardNavigationProps) {
         <div className="flex items-center justify-center p-6">
           <div className="flex items-center gap-2">
             <Loader className="h-4 w-4 animate-spin text-dynamic-blue" />
-            <span className="text-sm text-muted-foreground">
+            <span className="text-muted-foreground text-sm">
               Loading boards...
             </span>
           </div>
@@ -241,13 +241,13 @@ export function BoardNavigation({ wsId, setOpen }: BoardNavigationProps) {
   // Error state
   if (boardsError) {
     return (
-      <div className="border-b border-border/50 pb-2">
+      <div className="border-border/50 border-b pb-2">
         <div className="flex items-center justify-between px-3 py-2">
           <div className="flex items-center gap-2">
-            <span className="text-sm font-medium text-foreground">
+            <span className="font-medium text-foreground text-sm">
               📋 Board Navigation
             </span>
-            <div className="rounded-md bg-dynamic-red/10 px-2 py-0.5 text-xs font-medium text-dynamic-red">
+            <div className="rounded-md bg-dynamic-red/10 px-2 py-0.5 font-medium text-dynamic-red text-xs">
               Error
             </div>
           </div>
@@ -260,7 +260,7 @@ export function BoardNavigation({ wsId, setOpen }: BoardNavigationProps) {
             <p className="font-semibold text-foreground">
               Failed to load boards
             </p>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-muted-foreground text-xs">
               {boardsError instanceof Error
                 ? boardsError.message
                 : 'Unable to fetch boards at the moment'}
@@ -298,13 +298,13 @@ export function BoardNavigation({ wsId, setOpen }: BoardNavigationProps) {
   // No boards state
   if (!boards || boards.length === 0) {
     return (
-      <div className="border-b border-border/50 pb-2">
+      <div className="border-border/50 border-b pb-2">
         <div className="flex items-center justify-between px-3 py-2">
           <div className="flex items-center gap-2">
-            <span className="text-sm font-medium text-foreground">
+            <span className="font-medium text-foreground text-sm">
               📋 Board Navigation
             </span>
-            <div className="rounded-md bg-dynamic-orange/10 px-2 py-0.5 text-xs font-medium text-dynamic-orange">
+            <div className="rounded-md bg-dynamic-orange/10 px-2 py-0.5 font-medium text-dynamic-orange text-xs">
               0 boards
             </div>
           </div>
@@ -315,7 +315,7 @@ export function BoardNavigation({ wsId, setOpen }: BoardNavigationProps) {
           </div>
           <div className="space-y-1">
             <p className="font-semibold text-foreground">No boards found</p>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-muted-foreground text-xs">
               Create your first board to get started with task management
             </p>
           </div>
@@ -337,14 +337,14 @@ export function BoardNavigation({ wsId, setOpen }: BoardNavigationProps) {
   }
 
   return (
-    <div className="border-b border-border/50 pb-2">
+    <div className="border-border/50 border-b pb-2">
       {/* Collapsible Header */}
       <div className="flex items-center justify-between px-3 py-2">
         <div className="flex items-center gap-2">
-          <span className="text-sm font-medium text-foreground">
+          <span className="font-medium text-foreground text-sm">
             📋 Board Navigation
           </span>
-          <div className="rounded-md bg-dynamic-blue/10 px-2 py-0.5 text-xs font-medium text-dynamic-blue">
+          <div className="rounded-md bg-dynamic-blue/10 px-2 py-0.5 font-medium text-dynamic-blue text-xs">
             {boards.length} boards
           </div>
         </div>
@@ -411,8 +411,8 @@ export function BoardNavigation({ wsId, setOpen }: BoardNavigationProps) {
 
           {/* Additional Info Footer */}
           {boards.length > 10 && (
-            <div className="border-t border-border/30 px-4 py-2 text-center">
-              <p className="text-xs text-muted-foreground">
+            <div className="border-border/30 border-t px-4 py-2 text-center">
+              <p className="text-muted-foreground text-xs">
                 Showing all {boards.length} boards.
               </p>
             </div>

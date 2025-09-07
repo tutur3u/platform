@@ -15,7 +15,7 @@ export function EmptyState() {
         </div>
         <div className="space-y-2">
           <p className="font-semibold text-foreground">No results found</p>
-          <p className="max-w-sm text-sm text-muted-foreground">
+          <p className="max-w-sm text-muted-foreground text-sm">
             Try a different search term or explore the quick actions below
           </p>
         </div>

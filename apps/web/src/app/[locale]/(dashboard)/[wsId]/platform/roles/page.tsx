@@ -144,7 +144,7 @@ export default async function PlatformRolesPage({
         <div className="rounded-lg border bg-card p-3 shadow-sm">
           <div className="flex items-center gap-2">
             <UserCheck className="h-4 w-4 text-dynamic-green" />
-            <div className="text-2xl font-bold text-dynamic-green">
+            <div className="font-bold text-2xl text-dynamic-green">
               {roleStats.active}
             </div>
           </div>
@@ -154,7 +154,7 @@ export default async function PlatformRolesPage({
         <div className="rounded-lg border bg-card p-3 shadow-sm">
           <div className="flex items-center gap-2">
             <Crown className="h-4 w-4 text-dynamic-red" />
-            <div className="text-2xl font-bold text-dynamic-red">
+            <div className="font-bold text-2xl text-dynamic-red">
               {roleStats.admins}
             </div>
           </div>
@@ -164,7 +164,7 @@ export default async function PlatformRolesPage({
         <div className="rounded-lg border bg-card p-3 shadow-sm">
           <div className="flex items-center gap-2">
             <Globe className="h-4 w-4 text-dynamic-blue" />
-            <div className="text-2xl font-bold text-dynamic-blue">
+            <div className="font-bold text-2xl text-dynamic-blue">
               {roleStats.globalManagers}
             </div>
           </div>
@@ -176,7 +176,7 @@ export default async function PlatformRolesPage({
         <div className="rounded-lg border bg-card p-3 shadow-sm">
           <div className="flex items-center gap-2">
             <Shield className="h-4 w-4 text-dynamic-purple" />
-            <div className="text-2xl font-bold text-dynamic-purple">
+            <div className="font-bold text-2xl text-dynamic-purple">
               {roleStats.challengeManagers}
             </div>
           </div>
@@ -188,7 +188,7 @@ export default async function PlatformRolesPage({
         <div className="rounded-lg border bg-card p-3 shadow-sm">
           <div className="flex items-center gap-2">
             <Building className="h-4 w-4 text-dynamic-green" />
-            <div className="text-2xl font-bold text-dynamic-green">
+            <div className="font-bold text-2xl text-dynamic-green">
               {roleStats.workspaceCreators}
             </div>
           </div>
@@ -199,16 +199,16 @@ export default async function PlatformRolesPage({
 
         <div className="rounded-lg border bg-card p-3 shadow-sm">
           <div className="flex items-center gap-2">
-            <Users className="text-dynamic-muted-foreground h-4 w-4" />
-            <div className="text-2xl font-bold">{roleStats.members}</div>
+            <Users className="h-4 w-4 text-dynamic-muted-foreground" />
+            <div className="font-bold text-2xl">{roleStats.members}</div>
           </div>
           <p className="text-dynamic-muted-foreground text-xs">Members</p>
         </div>
 
         <div className="rounded-lg border bg-card p-3 shadow-sm">
           <div className="flex items-center gap-2">
-            <div className="bg-dynamic-muted h-4 w-4 rounded-full" />
-            <div className="text-dynamic-muted-foreground text-2xl font-bold">
+            <div className="h-4 w-4 rounded-full bg-dynamic-muted" />
+            <div className="font-bold text-2xl text-dynamic-muted-foreground">
               {roleStats.inactive}
             </div>
           </div>

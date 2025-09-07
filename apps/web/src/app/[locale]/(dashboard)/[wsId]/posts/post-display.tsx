@@ -60,7 +60,7 @@ export function PostDisplay({ postEmail }: PostDisplayProps) {
       <div className="flex h-full items-center justify-center bg-muted/20">
         <div className="text-center text-muted-foreground">
           <Send className="mx-auto mb-4 h-12 w-12 opacity-50" />
-          <p className="text-lg font-medium">Post Email Details</p>
+          <p className="font-medium text-lg">Post Email Details</p>
           <p className="text-sm">
             Select a post email to view its details and manage actions
           </p>
@@ -73,7 +73,7 @@ export function PostDisplay({ postEmail }: PostDisplayProps) {
     <div className="flex h-fit flex-col rounded-lg border">
       <div className="flex h-16 items-center justify-between rounded-t-lg border-b px-4 backdrop-blur-sm">
         <div className="flex items-center gap-2">
-          <h3 className="text-lg font-semibold">Post Email Details</h3>
+          <h3 className="font-semibold text-lg">Post Email Details</h3>
         </div>
 
         <div className="flex items-center gap-2">
@@ -90,7 +90,7 @@ export function PostDisplay({ postEmail }: PostDisplayProps) {
                 <AvatarImage
                   alt={postEmail.recipient ?? postEmail.email ?? ''}
                 />
-                <AvatarFallback className="bg-primary/10 text-sm font-semibold text-primary">
+                <AvatarFallback className="bg-primary/10 font-semibold text-primary text-sm">
                   {(postEmail.recipient ?? postEmail.email ?? 'U')
                     .split(' ')
                     .map((chunk: string) => chunk[0])
@@ -102,16 +102,16 @@ export function PostDisplay({ postEmail }: PostDisplayProps) {
 
               <div className="min-w-0 flex-1 space-y-2">
                 <div>
-                  <h4 className="text-base font-semibold text-foreground">
+                  <h4 className="font-semibold text-base text-foreground">
                     {postEmail.recipient || 'Unknown Recipient'}
                   </h4>
-                  <p className="flex items-center gap-1 text-sm text-muted-foreground">
+                  <p className="flex items-center gap-1 text-muted-foreground text-sm">
                     <Mail className="h-3 w-3" />
                     {postEmail.email}
                   </p>
                 </div>
 
-                <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
+                <div className="flex flex-wrap gap-3 text-muted-foreground text-xs">
                   <div className="flex items-center gap-1">
                     <Users className="h-3 w-3" />
                     <Link
@@ -137,7 +137,7 @@ export function PostDisplay({ postEmail }: PostDisplayProps) {
           {/* Post Information */}
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <h5 className="flex items-center gap-2 text-base font-semibold">
+              <h5 className="flex items-center gap-2 font-semibold text-base">
                 <Send className="h-4 w-4" />
                 Post Details
               </h5>
@@ -156,20 +156,20 @@ export function PostDisplay({ postEmail }: PostDisplayProps) {
 
             <div className="space-y-3">
               <div>
-                <span className="text-sm font-medium text-muted-foreground">
+                <span className="font-medium text-muted-foreground text-sm">
                   Title
                 </span>
-                <p className="mt-1 text-sm font-medium">
+                <p className="mt-1 font-medium text-sm">
                   {postEmail.post_title || 'No title'}
                 </p>
               </div>
 
               <div>
-                <span className="text-sm font-medium text-muted-foreground">
+                <span className="font-medium text-muted-foreground text-sm">
                   Content
                 </span>
                 <div className="mt-1 rounded-lg border bg-muted/30 p-3">
-                  <p className="text-sm leading-relaxed whitespace-pre-wrap">
+                  <p className="whitespace-pre-wrap text-sm leading-relaxed">
                     {postEmail.post_content || 'No content'}
                   </p>
                 </div>
@@ -177,10 +177,10 @@ export function PostDisplay({ postEmail }: PostDisplayProps) {
 
               {postEmail.subject && (
                 <div>
-                  <span className="text-sm font-medium text-muted-foreground">
+                  <span className="font-medium text-muted-foreground text-sm">
                     Email Subject
                   </span>
-                  <p className="mt-1 text-sm font-medium">
+                  <p className="mt-1 font-medium text-sm">
                     {postEmail.subject}
                   </p>
                 </div>
@@ -192,14 +192,14 @@ export function PostDisplay({ postEmail }: PostDisplayProps) {
 
           {/* Email Status */}
           <div className="space-y-4">
-            <h5 className="flex items-center gap-2 text-base font-semibold">
+            <h5 className="flex items-center gap-2 font-semibold text-base">
               <MailCheck className="h-4 w-4" />
               Email Status
             </h5>
 
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div className="space-y-2">
-                <span className="text-sm font-medium text-muted-foreground">
+                <span className="font-medium text-muted-foreground text-sm">
                   Status
                 </span>
                 <div className="flex items-center gap-2">
@@ -232,7 +232,7 @@ export function PostDisplay({ postEmail }: PostDisplayProps) {
               </div>
 
               <div className="space-y-2">
-                <span className="text-sm font-medium text-muted-foreground">
+                <span className="font-medium text-muted-foreground text-sm">
                   Completion
                 </span>
                 <div className="flex items-center gap-2">
@@ -263,12 +263,12 @@ export function PostDisplay({ postEmail }: PostDisplayProps) {
             <>
               <Separator />
               <div className="space-y-3">
-                <h5 className="flex items-center gap-2 text-base font-semibold">
+                <h5 className="flex items-center gap-2 font-semibold text-base">
                   <User className="h-4 w-4" />
                   Notes
                 </h5>
                 <div className="rounded-lg border bg-muted/30 p-3">
-                  <p className="text-sm leading-relaxed whitespace-pre-wrap">
+                  <p className="whitespace-pre-wrap text-sm leading-relaxed">
                     {postEmail.notes}
                   </p>
                 </div>

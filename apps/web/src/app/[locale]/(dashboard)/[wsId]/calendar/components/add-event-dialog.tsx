@@ -1,5 +1,5 @@
 import { createClient } from '@tuturuuu/supabase/next/client';
-import { SupabaseUser } from '@tuturuuu/supabase/next/user';
+import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
 import { Button } from '@tuturuuu/ui/button';
 import { Calendar } from '@tuturuuu/ui/calendar';
 import { Checkbox } from '@tuturuuu/ui/checkbox';
@@ -23,7 +23,8 @@ import {
 } from '@tuturuuu/ui/select';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import dayjs from 'dayjs';
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import type React from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 interface AddEventDialogProps {
   isOpen?: boolean;
@@ -353,12 +354,12 @@ export default function AddEventDialog({
           <div className="space-y-2">
             <div className="flex items-center gap-2">
               <PlusIcon className="h-5 w-5 text-blue-500" />
-              <DialogTitle className="text-lg font-semibold">
+              <DialogTitle className="font-semibold text-lg">
                 Create Task
               </DialogTitle>
             </div>
 
-            <div className="flex w-fit items-center gap-2 rounded-md bg-blue-50 p-2 text-xs text-blue-800 dark:bg-blue-950 dark:text-blue-200">
+            <div className="flex w-fit items-center gap-2 rounded-md bg-blue-50 p-2 text-blue-800 text-xs dark:bg-blue-950 dark:text-blue-200">
               <span>📧</span>
               <span>For {user?.email || 'your account'}</span>
             </div>
@@ -371,7 +372,7 @@ export default function AddEventDialog({
             <div className="space-y-1">
               <Label
                 htmlFor="task-title"
-                className="text-xs font-medium text-zinc-600 dark:text-zinc-300"
+                className="font-medium text-xs text-zinc-600 dark:text-zinc-300"
               >
                 Task Name <span className="text-destructive">*</span>
               </Label>
@@ -383,14 +384,14 @@ export default function AddEventDialog({
                 className={`h-9 rounded-lg border-zinc-200 text-sm transition-all focus:ring-2 focus:ring-blue-300 dark:border-zinc-700 ${errors.name ? 'border-destructive' : ''}`}
               />
               {errors.name && (
-                <p className="mt-0.5 text-xs text-destructive">{errors.name}</p>
+                <p className="mt-0.5 text-destructive text-xs">{errors.name}</p>
               )}
             </div>
 
             <div className="space-y-1">
               <Label
                 htmlFor="task-description"
-                className="text-xs font-medium text-zinc-600 dark:text-zinc-300"
+                className="font-medium text-xs text-zinc-600 dark:text-zinc-300"
               >
                 Description
               </Label>
@@ -407,7 +408,7 @@ export default function AddEventDialog({
 
           {/* Compact Horizontal Priority Slider */}
           <div className="space-y-3 rounded-xl border border-zinc-100 bg-white p-4 shadow-md transition-shadow hover:shadow-lg dark:border-zinc-800 dark:bg-zinc-900">
-            <Label className="text-xs font-semibold text-zinc-700 dark:text-zinc-200">
+            <Label className="font-semibold text-xs text-zinc-700 dark:text-zinc-200">
               Priority
             </Label>
             {/* Slider container */}
@@ -425,7 +426,7 @@ export default function AddEventDialog({
                   'Normal'
                 }
                 tabIndex={0}
-                className="relative h-8 cursor-pointer rounded select-none focus:ring-2 focus:ring-blue-300 focus:ring-offset-2 focus:outline-none"
+                className="relative h-8 cursor-pointer select-none rounded focus:outline-none focus:ring-2 focus:ring-blue-300 focus:ring-offset-2"
                 onMouseDown={handleSliderMouseDown}
                 onMouseMove={handleSliderMouseMove}
                 onMouseUp={handleSliderMouseUp}
@@ -487,7 +488,7 @@ export default function AddEventDialog({
                     className="flex w-10 flex-col items-center"
                   >
                     <span
-                      className={`transition-all ${formData.priority === opt?.value ? 'text-lg font-bold' : 'text-base opacity-40'}`}
+                      className={`transition-all ${formData.priority === opt?.value ? 'font-bold text-lg' : 'text-base opacity-40'}`}
                     >
                       {opt?.icon ?? '❓'}
                     </span>
@@ -521,7 +522,7 @@ export default function AddEventDialog({
                   className={`h-9 rounded-lg border-zinc-200 text-sm transition-all focus:ring-2 focus:ring-blue-300 dark:border-zinc-700 ${errors.total_duration ? 'border-destructive' : ''}`}
                 />
                 {errors.total_duration && (
-                  <p className="mt-0.5 text-xs text-destructive">
+                  <p className="mt-0.5 text-destructive text-xs">
                     {errors.total_duration}
                   </p>
                 )}
@@ -534,7 +535,7 @@ export default function AddEventDialog({
                     updateFormData('is_splittable', checked)
                   }
                 />
-                <Label htmlFor="split-up" className="text-xs font-normal">
+                <Label htmlFor="split-up" className="font-normal text-xs">
                   Splittable
                 </Label>
               </div>
@@ -561,7 +562,7 @@ export default function AddEventDialog({
                     className={`h-9 rounded-lg border-zinc-200 text-sm transition-all focus:ring-2 focus:ring-blue-300 dark:border-zinc-700 ${errors.min_split_duration_minutes ? 'border-destructive' : ''}`}
                   />
                   {errors.min_split_duration_minutes && (
-                    <p className="mt-0.5 text-xs text-destructive">
+                    <p className="mt-0.5 text-destructive text-xs">
                       {errors.min_split_duration_minutes}
                     </p>
                   )}
@@ -586,7 +587,7 @@ export default function AddEventDialog({
                     className={`h-9 rounded-lg border-zinc-200 text-sm transition-all focus:ring-2 focus:ring-blue-300 dark:border-zinc-700 ${errors.max_split_duration_minutes ? 'border-destructive' : ''}`}
                   />
                   {errors.max_split_duration_minutes && (
-                    <p className="mt-0.5 text-xs text-destructive">
+                    <p className="mt-0.5 text-destructive text-xs">
                       {errors.max_split_duration_minutes}
                     </p>
                   )}
@@ -599,7 +600,7 @@ export default function AddEventDialog({
           <div className="space-y-3 rounded-xl border border-zinc-100 bg-white p-4 shadow-md transition-shadow hover:shadow-lg dark:border-zinc-800 dark:bg-zinc-900">
             <div className="mb-1 flex items-center gap-2">
               <ClockIcon className="h-4 w-4 text-blue-400" />
-              <Label className="text-xs font-semibold text-zinc-700 dark:text-zinc-200">
+              <Label className="font-semibold text-xs text-zinc-700 dark:text-zinc-200">
                 Working Hours
               </Label>
             </div>
@@ -724,7 +725,7 @@ export default function AddEventDialog({
                     </Popover>
                   </div>
                   {errors.end_date && (
-                    <p className="mt-0.5 text-xs text-destructive">
+                    <p className="mt-0.5 text-destructive text-xs">
                       {errors.end_date}
                     </p>
                   )}
@@ -734,7 +735,7 @@ export default function AddEventDialog({
           </div>
 
           {errors.submit && (
-            <div className="rounded-lg bg-destructive/10 p-2 text-xs text-destructive">
+            <div className="rounded-lg bg-destructive/10 p-2 text-destructive text-xs">
               {errors.submit}
             </div>
           )}
@@ -751,7 +752,7 @@ export default function AddEventDialog({
             </Button>
             <Button
               type="submit"
-              className="h-9 rounded-lg bg-blue-500 px-5 text-sm font-semibold text-white shadow-md transition-all hover:bg-blue-600 focus:ring-2 focus:ring-blue-300"
+              className="h-9 rounded-lg bg-blue-500 px-5 font-semibold text-sm text-white shadow-md transition-all hover:bg-blue-600 focus:ring-2 focus:ring-blue-300"
               disabled={isLoading}
             >
               {isLoading ? (

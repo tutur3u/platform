@@ -429,7 +429,7 @@ export function ProductForm({
                   />
                   <label
                     htmlFor="unlimited-stock"
-                    className="text-sm font-medium"
+                    className="font-medium text-sm"
                   >
                     Unlimited Stock
                   </label>
@@ -438,7 +438,7 @@ export function ProductForm({
               <CardContent>
                 <div className="grid gap-4">
                   {hasUnlimitedStock ? (
-                    <div className="text-sm text-muted-foreground">
+                    <div className="text-muted-foreground text-sm">
                       This product has unlimited stock available.
                     </div>
                   ) : (

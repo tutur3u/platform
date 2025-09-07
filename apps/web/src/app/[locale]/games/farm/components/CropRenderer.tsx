@@ -1,4 +1,4 @@
-import { Crop, CropType, GrowthStage } from '../engine/crop';
+import { type Crop, CropType, GrowthStage } from '../engine/crop';
 
 interface CropRendererProps {
   crop: Crop;

@@ -215,7 +215,7 @@ export default async function TimeTrackingMetrics({
 
   return (
     <Card className="overflow-hidden border-dynamic-purple/20 transition-all duration-300">
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 border-dynamic-purple/20 border-b bg-gradient-to-r from-dynamic-purple/5 to-dynamic-blue/5 pb-3">
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 border-dynamic-purple/20 border-b bg-gradient-to-r from-dynamic-purple/5 to-dynamic-blue/5 p-4">
         <CardTitle className="flex items-center gap-2 font-semibold text-base">
           <div className="rounded-lg bg-dynamic-purple/10 p-1.5 text-dynamic-purple">
             <ClockFading className="h-4 w-4" />

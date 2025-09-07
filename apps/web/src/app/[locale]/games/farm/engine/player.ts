@@ -1,4 +1,4 @@
-import { Position } from './position';
+import type { Position } from './position';
 
 export class Player {
   private position: Position;

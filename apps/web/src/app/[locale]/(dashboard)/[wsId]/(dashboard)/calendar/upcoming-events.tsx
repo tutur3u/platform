@@ -6,8 +6,8 @@ import { Calendar, MapPin } from '@tuturuuu/ui/icons';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import Link from 'next/link';
-import UpcomingEventDetails from './upcoming-event-details';
 import { getTranslations } from 'next-intl/server';
+import UpcomingEventDetails from './upcoming-event-details';
 
 interface UpcomingCalendarEventsProps {
   wsId: string;
@@ -46,7 +46,7 @@ export default async function UpcomingCalendarEvents({
 
   return (
     <Card className="overflow-hidden border-dynamic-cyan/20 transition-all duration-300">
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 border-dynamic-cyan/20 border-b bg-gradient-to-r from-dynamic-cyan/5 to-dynamic-blue/5 pb-3">
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 border-dynamic-cyan/20 border-b bg-gradient-to-r from-dynamic-cyan/5 to-dynamic-blue/5 p-4">
         <CardTitle className="flex items-center gap-2 font-semibold text-base">
           <div className="rounded-lg bg-dynamic-cyan/10 p-1.5 text-dynamic-cyan">
             <Calendar className="h-4 w-4" />

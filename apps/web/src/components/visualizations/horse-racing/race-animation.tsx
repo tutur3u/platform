@@ -61,7 +61,7 @@ export function RaceAnimation({
 
   return (
     <div className="mt-2 mb-4 rounded-lg border bg-linear-to-r from-green-50 to-blue-50 p-4 dark:from-green-950/30 dark:to-blue-950/30">
-      <div className="mb-2 text-sm font-medium">Race Animation</div>
+      <div className="mb-2 font-medium text-sm">Race Animation</div>
 
       {/* Race track */}
       <div className="relative h-[240px] w-full overflow-hidden rounded-lg bg-neutral-800 dark:bg-black/70">
@@ -89,20 +89,20 @@ export function RaceAnimation({
           return (
             <div
               key={horseId}
-              className="absolute right-0 left-0 border-t border-white/10"
+              className="absolute right-0 left-0 border-white/10 border-t"
               style={{
                 top: `${yPosition}px`,
                 height: `${laneHeight}px`,
               }}
             >
               {/* Lane number */}
-              <div className="absolute top-[50%] left-[2%] flex h-5 w-5 -translate-y-1/2 items-center justify-center rounded-full bg-white/20 text-xs text-white">
+              <div className="-translate-y-1/2 absolute top-[50%] left-[2%] flex h-5 w-5 items-center justify-center rounded-full bg-white/20 text-white text-xs">
                 {index + 1}
               </div>
 
               {/* Horse */}
               <motion.div
-                className="absolute top-[50%] flex -translate-y-1/2 items-center gap-1"
+                className="-translate-y-1/2 absolute top-[50%] flex items-center gap-1"
                 initial={{ left: '10%' }}
                 animate={{
                   left: raceCompleted ? '95%' : ['10%', '95%'],
@@ -115,7 +115,7 @@ export function RaceAnimation({
               >
                 {/* Horse circle */}
                 <div
-                  className="flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold text-white"
+                  className="flex h-8 w-8 items-center justify-center rounded-full font-bold text-white text-xs"
                   style={{ backgroundColor: horse.color }}
                 >
                   {horseId}

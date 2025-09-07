@@ -178,7 +178,7 @@ export function ExecutionDetailDialog({
       blockquote({ children, ...props }: { children?: React.ReactNode }) {
         return (
           <blockquote
-            className="border-l-4 border-foreground/30 pl-2 text-foreground/80"
+            className="border-foreground/30 border-l-4 pl-2 text-foreground/80"
             {...props}
           >
             {children}
@@ -198,7 +198,7 @@ export function ExecutionDetailDialog({
 
         return match ? (
           <pre
-            className="overflow-x-auto rounded-lg border bg-foreground/5 p-4 break-words whitespace-pre-wrap"
+            className="overflow-x-auto whitespace-pre-wrap break-words rounded-lg border bg-foreground/5 p-4"
             {...props}
           >
             <code className={`language-${match[1]} break-words`}>
@@ -208,7 +208,7 @@ export function ExecutionDetailDialog({
         ) : (
           <code
             className={cn(
-              'font-semibold break-words text-foreground',
+              'break-words font-semibold text-foreground',
               className
             )}
             {...props}
@@ -236,7 +236,7 @@ export function ExecutionDetailDialog({
       pre({ children, ...props }: { children?: React.ReactNode }) {
         return (
           <pre
-            className="overflow-x-auto rounded-lg border bg-foreground/5 break-words whitespace-pre-wrap"
+            className="overflow-x-auto whitespace-pre-wrap break-words rounded-lg border bg-foreground/5"
             {...props}
           >
             {children}
@@ -278,19 +278,19 @@ export function ExecutionDetailDialog({
             <CardContent className="space-y-4">
               <div className="grid gap-4 md:grid-cols-2">
                 <div>
-                  <label className="text-sm font-medium text-muted-foreground">
+                  <label className="font-medium text-muted-foreground text-sm">
                     {t('execution_id') || 'Execution ID'}
                   </label>
                   <p className="mt-1 font-mono text-sm">{execution.id}</p>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-muted-foreground">
+                  <label className="font-medium text-muted-foreground text-sm">
                     {t('model') || 'Model'}
                   </label>
                   <p className="mt-1 font-medium">{execution.model_id}</p>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-muted-foreground">
+                  <label className="font-medium text-muted-foreground text-sm">
                     {t('finish_reason') || 'Finish Reason'}
                   </label>
                   <div className="mt-1">
@@ -303,7 +303,7 @@ export function ExecutionDetailDialog({
                   </div>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-muted-foreground">
+                  <label className="font-medium text-muted-foreground text-sm">
                     {t('created_at') || 'Created At'}
                   </label>
                   <p className="mt-1 flex items-center gap-2">
@@ -326,34 +326,34 @@ export function ExecutionDetailDialog({
             <CardContent>
               <div className="grid gap-4 md:grid-cols-4">
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-primary">
+                  <div className="font-bold text-2xl text-primary">
                     {execution.input_tokens.toLocaleString()}
                   </div>
-                  <div className="text-sm text-muted-foreground">
+                  <div className="text-muted-foreground text-sm">
                     {t('input_tokens') || 'Input Tokens'}
                   </div>
                 </div>
                 <div className="text-center">
-                  <div className="text-success text-2xl font-bold">
+                  <div className="font-bold text-2xl text-success">
                     {execution.output_tokens.toLocaleString()}
                   </div>
-                  <div className="text-sm text-muted-foreground">
+                  <div className="text-muted-foreground text-sm">
                     {t('output_tokens') || 'Output Tokens'}
                   </div>
                 </div>
                 <div className="text-center">
-                  <div className="text-warning text-2xl font-bold">
+                  <div className="font-bold text-2xl text-warning">
                     {execution.reasoning_tokens.toLocaleString()}
                   </div>
-                  <div className="text-sm text-muted-foreground">
+                  <div className="text-muted-foreground text-sm">
                     {t('reasoning_tokens') || 'Reasoning Tokens'}
                   </div>
                 </div>
                 <div className="text-center">
-                  <div className="text-info text-2xl font-bold">
+                  <div className="font-bold text-2xl text-info">
                     {execution.total_tokens.toLocaleString()}
                   </div>
-                  <div className="text-sm text-muted-foreground">
+                  <div className="text-muted-foreground text-sm">
                     {t('total_tokens') || 'Total Tokens'}
                   </div>
                 </div>
@@ -373,26 +373,26 @@ export function ExecutionDetailDialog({
               <div className="space-y-4">
                 <div className="grid gap-4 md:grid-cols-3">
                   <div className="text-center">
-                    <div className="text-2xl font-bold text-primary">
+                    <div className="font-bold text-2xl text-primary">
                       {cost != null ? formatCost(cost.inputCost) : 'N/A'}
                     </div>
-                    <div className="text-sm text-muted-foreground">
+                    <div className="text-muted-foreground text-sm">
                       {t('input_cost') || 'Input Cost'}
                     </div>
                   </div>
                   <div className="text-center">
-                    <div className="text-success text-2xl font-bold">
+                    <div className="font-bold text-2xl text-success">
                       {cost != null ? formatCost(cost.outputCost) : 'N/A'}
                     </div>
-                    <div className="text-sm text-muted-foreground">
+                    <div className="text-muted-foreground text-sm">
                       {t('output_cost') || 'Output Cost'}
                     </div>
                   </div>
                   <div className="text-center">
-                    <div className="text-warning text-2xl font-bold">
+                    <div className="font-bold text-2xl text-warning">
                       {cost != null ? formatCost(cost.reasoningCost) : 'N/A'}
                     </div>
-                    <div className="text-sm text-muted-foreground">
+                    <div className="text-muted-foreground text-sm">
                       {t('reasoning_cost') || 'Reasoning Cost'}
                     </div>
                   </div>
@@ -400,10 +400,10 @@ export function ExecutionDetailDialog({
                 <Separator />
                 <div className="flex items-center justify-between">
                   <div>
-                    <div className="text-2xl font-bold">
+                    <div className="font-bold text-2xl">
                       {cost != null ? formatCost(cost.totalCostUSD) : 'N/A'}
                     </div>
-                    <div className="text-sm text-muted-foreground">
+                    <div className="text-muted-foreground text-sm">
                       {cost != null
                         ? formatCost(cost.totalCostVND, 'VND')
                         : 'N/A'}
@@ -448,13 +448,13 @@ export function ExecutionDetailDialog({
                 <div
                   className={cn(
                     'flex-1 space-y-2',
-                    'prose w-full min-w-full break-words text-foreground dark:prose-invert',
-                    'prose-p:leading-relaxed prose-p:break-words prose-p:before:hidden prose-p:after:hidden',
+                    'prose dark:prose-invert w-full min-w-full break-words text-foreground',
+                    'prose-p:break-words prose-p:leading-relaxed prose-p:before:hidden prose-p:after:hidden',
                     'prose-code:break-words prose-code:before:hidden prose-code:after:hidden',
-                    'prose-pre:p-2 prose-pre:break-words prose-li:marker:text-foreground/80',
-                    'prose-tr:border-border prose-th:border prose-th:border-b-4',
+                    'prose-pre:break-words prose-pre:p-2 prose-li:marker:text-foreground/80',
+                    'prose-th:border prose-tr:border-border prose-th:border-b-4',
                     'prose-th:border-foreground/20 prose-th:p-2 prose-th:text-center',
-                    'prose-th:text-lg prose-td:border prose-td:p-2 prose-td:break-words'
+                    'prose-td:break-words prose-td:border prose-td:p-2 prose-th:text-lg'
                   )}
                 >
                   <MemoizedReactMarkdown
@@ -472,7 +472,7 @@ export function ExecutionDetailDialog({
           </Card>
 
           {/* Input and Output */}
-          <div className="grid gap-4 @md:grid-cols-2">
+          <div className="grid @md:grid-cols-2 gap-4">
             <Card>
               <CardHeader
                 className="cursor-pointer"
@@ -507,13 +507,13 @@ export function ExecutionDetailDialog({
                     <div
                       className={cn(
                         'flex-1 space-y-2',
-                        'prose w-full min-w-full break-words text-foreground dark:prose-invert',
-                        'prose-p:leading-relaxed prose-p:break-words prose-p:before:hidden prose-p:after:hidden',
+                        'prose dark:prose-invert w-full min-w-full break-words text-foreground',
+                        'prose-p:break-words prose-p:leading-relaxed prose-p:before:hidden prose-p:after:hidden',
                         'prose-code:break-words prose-code:before:hidden prose-code:after:hidden',
-                        'prose-pre:p-2 prose-pre:break-words prose-li:marker:text-foreground/80',
-                        'prose-tr:border-border prose-th:border prose-th:border-b-4',
+                        'prose-pre:break-words prose-pre:p-2 prose-li:marker:text-foreground/80',
+                        'prose-th:border prose-tr:border-border prose-th:border-b-4',
                         'prose-th:border-foreground/20 prose-th:p-2 prose-th:text-center',
-                        'prose-th:text-lg prose-td:border prose-td:p-2 prose-td:break-words'
+                        'prose-td:break-words prose-td:border prose-td:p-2 prose-th:text-lg'
                       )}
                     >
                       <MemoizedReactMarkdown
@@ -565,13 +565,13 @@ export function ExecutionDetailDialog({
                     <div
                       className={cn(
                         'flex-1 space-y-2',
-                        'prose w-full min-w-full break-words text-foreground dark:prose-invert',
-                        'prose-p:leading-relaxed prose-p:break-words prose-p:before:hidden prose-p:after:hidden',
+                        'prose dark:prose-invert w-full min-w-full break-words text-foreground',
+                        'prose-p:break-words prose-p:leading-relaxed prose-p:before:hidden prose-p:after:hidden',
                         'prose-code:break-words prose-code:before:hidden prose-code:after:hidden',
-                        'prose-pre:p-2 prose-pre:break-words prose-li:marker:text-foreground/80',
-                        'prose-tr:border-border prose-th:border prose-th:border-b-4',
+                        'prose-pre:break-words prose-pre:p-2 prose-li:marker:text-foreground/80',
+                        'prose-th:border prose-tr:border-border prose-th:border-b-4',
                         'prose-th:border-foreground/20 prose-th:p-2 prose-th:text-center',
-                        'prose-th:text-lg prose-td:border prose-td:p-2 prose-td:break-words'
+                        'prose-td:break-words prose-td:border prose-td:p-2 prose-th:text-lg'
                       )}
                     >
                       <MemoizedReactMarkdown
@@ -601,7 +601,7 @@ export function ExecutionDetailDialog({
             <CardContent>
               <div className="grid gap-4 md:grid-cols-2">
                 <div>
-                  <label className="text-sm font-medium text-muted-foreground">
+                  <label className="font-medium text-muted-foreground text-sm">
                     {t('api_key_id') || 'API Key ID'}
                   </label>
                   <p className="mt-1 font-mono text-sm">
@@ -609,7 +609,7 @@ export function ExecutionDetailDialog({
                   </p>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-muted-foreground">
+                  <label className="font-medium text-muted-foreground text-sm">
                     {t('workspace_id') || 'Workspace ID'}
                   </label>
                   <p className="mt-1 font-mono text-sm">{execution.ws_id}</p>

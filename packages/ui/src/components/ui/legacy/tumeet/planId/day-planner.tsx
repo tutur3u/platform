@@ -48,7 +48,7 @@ function DayPlanner({
     <div>
       {!hideHeaders && (
         <div
-          className={`pointer-events-none flex flex-col justify-center border border-b-0 border-transparent p-1 select-none ${
+          className={`pointer-events-none flex select-none flex-col justify-center border border-transparent border-b-0 p-1 ${
             stickyHeader
               ? 'sticky top-0 z-10 bg-root-background/70 backdrop-blur-md'
               : ''

@@ -49,16 +49,16 @@ export function EvaluationProgress({
       {/* Overall Progress */}
       <div className="space-y-2">
         <div className="flex items-center justify-between">
-          <h3 className="text-sm font-medium">
+          <h3 className="font-medium text-sm">
             {isComplete ? 'Evaluation Complete' : 'Evaluating Prompt...'}
           </h3>
-          <span className="text-sm text-muted-foreground">
+          <span className="text-muted-foreground text-sm">
             {Math.round(overall_progress)}%
           </span>
         </div>
         <Progress value={overall_progress} className="h-2" />
         {error && (
-          <div className="flex items-center gap-2 text-sm text-red-600">
+          <div className="flex items-center gap-2 text-red-600 text-sm">
             <AlertCircle className="h-4 w-4" />
             {error}
           </div>
@@ -92,7 +92,7 @@ export function EvaluationProgress({
 
               <div className="min-w-0 flex-1">
                 <div className="mb-1 flex items-center justify-between">
-                  <p className="text-sm font-medium">{stage.name}</p>
+                  <p className="font-medium text-sm">{stage.name}</p>
                   <Badge
                     variant={
                       stage.status === 'complete'
@@ -115,21 +115,21 @@ export function EvaluationProgress({
                   </Badge>
                 </div>
 
-                <p className="mb-2 text-sm text-muted-foreground">
+                <p className="mb-2 text-muted-foreground text-sm">
                   {stage.description}
                 </p>
 
                 {stage.message && (
-                  <p className="mb-2 text-sm text-blue-600">{stage.message}</p>
+                  <p className="mb-2 text-blue-600 text-sm">{stage.message}</p>
                 )}
 
                 {stage.error && (
-                  <p className="mb-2 text-sm text-red-600">{stage.error}</p>
+                  <p className="mb-2 text-red-600 text-sm">{stage.error}</p>
                 )}
 
                 {stage.status === 'active' && stage.progress !== undefined && (
                   <div className="space-y-1">
-                    <div className="flex justify-between text-xs text-muted-foreground">
+                    <div className="flex justify-between text-muted-foreground text-xs">
                       <span>Progress</span>
                       <span>{Math.round(stage.progress)}%</span>
                     </div>

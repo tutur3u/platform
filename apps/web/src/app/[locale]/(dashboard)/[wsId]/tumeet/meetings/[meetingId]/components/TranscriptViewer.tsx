@@ -1,6 +1,6 @@
 'use client';
 
-import { RecordingTranscript } from '@tuturuuu/types/db';
+import type { RecordingTranscript } from '@tuturuuu/types/db';
 import { Button } from '@tuturuuu/ui/button';
 import {
   Dialog,
@@ -158,7 +158,7 @@ export function TranscriptViewer({
                   <span className="font-medium text-muted-foreground">
                     Language:
                   </span>
-                  <span className="rounded bg-dynamic-blue/10 px-2 py-1 text-xs font-medium text-dynamic-blue uppercase">
+                  <span className="rounded bg-dynamic-blue/10 px-2 py-1 font-medium text-dynamic-blue text-xs uppercase">
                     {transcript.language}
                   </span>
                 </div>
@@ -177,7 +177,7 @@ export function TranscriptViewer({
             {/* Search Bar */}
             {validSegments.length > 0 && (
               <div className="relative">
-                <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transform text-muted-foreground" />
+                <Search className="-translate-y-1/2 absolute top-1/2 left-3 h-4 w-4 transform text-muted-foreground" />
                 <Input
                   placeholder="Search transcript..."
                   value={searchQuery}
@@ -188,7 +188,7 @@ export function TranscriptViewer({
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="absolute top-1/2 right-1 h-7 w-7 -translate-y-1/2 transform p-0"
+                    className="-translate-y-1/2 absolute top-1/2 right-1 h-7 w-7 transform p-0"
                     onClick={() => setSearchQuery('')}
                   >
                     <X className="h-3 w-3" />
@@ -204,10 +204,10 @@ export function TranscriptViewer({
                 <div className="space-y-3">
                   <div className="mb-4 flex items-center justify-between">
                     <div className="flex items-center gap-4">
-                      <h4 className="text-sm font-medium text-muted-foreground">
+                      <h4 className="font-medium text-muted-foreground text-sm">
                         Transcript with Timestamps
                       </h4>
-                      <div className="text-xs text-muted-foreground">
+                      <div className="text-muted-foreground text-xs">
                         {searchQuery
                           ? `${filteredSegments.length} of ${validSegments.length} segments`
                           : `${validSegments.length} segments`}
@@ -231,7 +231,7 @@ export function TranscriptViewer({
                             className="group flex gap-4 rounded-lg border bg-background p-3 transition-colors hover:bg-muted/20"
                           >
                             {/* Timestamp */}
-                            <div className="w-24 flex-shrink-0 font-mono text-xs text-muted-foreground">
+                            <div className="w-24 flex-shrink-0 font-mono text-muted-foreground text-xs">
                               <div className="sticky top-0">
                                 <div className="font-medium">
                                   {formatTime(segment.start)}
@@ -261,13 +261,13 @@ export function TranscriptViewer({
                 /* Full Text Transcript */
                 <div className="space-y-3">
                   <div className="mb-4 flex items-center justify-between">
-                    <h4 className="text-sm font-medium text-muted-foreground">
+                    <h4 className="font-medium text-muted-foreground text-sm">
                       Full Transcript
                     </h4>
                     {/* Search Bar for Full Text */}
                     <div className="ml-4 max-w-sm flex-1">
                       <div className="relative">
-                        <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transform text-muted-foreground" />
+                        <Search className="-translate-y-1/2 absolute top-1/2 left-3 h-4 w-4 transform text-muted-foreground" />
                         <Input
                           placeholder="Search transcript..."
                           value={searchQuery}
@@ -278,7 +278,7 @@ export function TranscriptViewer({
                           <Button
                             variant="ghost"
                             size="sm"
-                            className="absolute top-1/2 right-1 h-6 w-6 -translate-y-1/2 transform p-0"
+                            className="-translate-y-1/2 absolute top-1/2 right-1 h-6 w-6 transform p-0"
                             onClick={() => setSearchQuery('')}
                           >
                             <X className="h-3 w-3" />
@@ -288,7 +288,7 @@ export function TranscriptViewer({
                     </div>
                   </div>
                   <div className="rounded-lg border bg-muted/20 p-4">
-                    <div className="text-sm leading-relaxed whitespace-pre-wrap">
+                    <div className="whitespace-pre-wrap text-sm leading-relaxed">
                       {searchQuery
                         ? highlightSearchMatches(transcript.text, searchQuery)
                         : transcript.text}
@@ -300,7 +300,7 @@ export function TranscriptViewer({
 
             {/* Actions */}
             <div className="flex items-center justify-between border-t pt-3">
-              <div className="text-xs text-muted-foreground">
+              <div className="text-muted-foreground text-xs">
                 Transcript generated by AI • Review for accuracy
               </div>
               <div className="flex gap-2">
@@ -327,7 +327,7 @@ export function TranscriptViewer({
           <div className="flex flex-1 items-center justify-center py-12">
             <div className="space-y-3 text-center">
               <FileText className="mx-auto h-12 w-12 text-muted-foreground" />
-              <h3 className="text-lg font-semibold">No Transcript Available</h3>
+              <h3 className="font-semibold text-lg">No Transcript Available</h3>
               <p className="max-w-sm text-muted-foreground">
                 No transcript is available for this recording session. You can
                 generate one by clicking the &quot;Transcribe&quot; button.

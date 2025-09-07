@@ -67,7 +67,7 @@ export default async function LinkAnalyticsPage({ params }: Props) {
                 <Activity className="h-12 w-12 text-dynamic-red" />
               </div>
             </div>
-            <h1 className="text-2xl font-bold text-dynamic-red">
+            <h1 className="font-bold text-2xl text-dynamic-red">
               {t('link-shortener.analytics.not_found')}
             </h1>
             <p className="mb-6 text-dynamic-red/80">
@@ -130,10 +130,10 @@ export default async function LinkAnalyticsPage({ params }: Props) {
                   <Clock className="h-5 w-5 text-dynamic-blue" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-semibold">
+                  <h3 className="font-semibold text-lg">
                     {t('link-shortener.analytics.activity_by_hour')}
                   </h3>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-muted-foreground text-sm">
                     {t('link-shortener.analytics.hourly_distribution')}
                   </p>
                 </div>

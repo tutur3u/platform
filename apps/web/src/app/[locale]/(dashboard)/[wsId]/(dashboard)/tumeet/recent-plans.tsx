@@ -127,7 +127,7 @@ export default async function RecentTumeetPlans({
         className
       )}
     >
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 border-dynamic-pink/20 border-b bg-gradient-to-r from-dynamic-pink/5 to-dynamic-purple/5 pb-3">
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 border-dynamic-pink/20 border-b bg-gradient-to-r from-dynamic-pink/5 to-dynamic-purple/5 p-4">
         <CardTitle className="flex items-center gap-2 font-semibold text-base">
           <div className="rounded-lg bg-dynamic-pink/10 p-1.5 text-dynamic-pink">
             <SquaresIntersect className="h-4 w-4" />

@@ -1,6 +1,6 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { notFound } from 'next/navigation';
-import React from 'react';
+import type React from 'react';
 
 export default async function FarmGameLayout({
   children,

@@ -232,7 +232,7 @@ export function HoursSettings({ wsId }: HoursSettingsProps) {
       <div className="rounded-md bg-muted/30 p-4">
         <div className="flex items-start gap-2">
           <Clock className="mt-0.5 h-4 w-4 text-muted-foreground" />
-          <div className="text-sm text-muted-foreground">
+          <div className="text-muted-foreground text-sm">
             <p>
               Configure your available hours for different activities. These
               settings help the calendar optimize scheduling and provide better
@@ -265,11 +265,11 @@ export function HoursSettings({ wsId }: HoursSettingsProps) {
           <Card>
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
-                <CardTitle className="flex items-center gap-2 text-base font-medium">
+                <CardTitle className="flex items-center gap-2 font-medium text-base">
                   <Briefcase className="h-4 w-4" />
                   Work Hours
                 </CardTitle>
-                <Badge variant="outline" className="text-xs font-normal">
+                <Badge variant="outline" className="font-normal text-xs">
                   {getActiveDaysSummary(value?.workHours)}
                 </Badge>
               </div>
@@ -291,11 +291,11 @@ export function HoursSettings({ wsId }: HoursSettingsProps) {
           <Card>
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
-                <CardTitle className="flex items-center gap-2 text-base font-medium">
+                <CardTitle className="flex items-center gap-2 font-medium text-base">
                   <Calendar className="h-4 w-4" />
                   Meeting Hours
                 </CardTitle>
-                <Badge variant="outline" className="text-xs font-normal">
+                <Badge variant="outline" className="font-normal text-xs">
                   {getActiveDaysSummary(value?.meetingHours)}
                 </Badge>
               </div>
@@ -317,11 +317,11 @@ export function HoursSettings({ wsId }: HoursSettingsProps) {
           <Card>
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
-                <CardTitle className="flex items-center gap-2 text-base font-medium">
+                <CardTitle className="flex items-center gap-2 font-medium text-base">
                   <User className="h-4 w-4" />
                   Personal Hours
                 </CardTitle>
-                <Badge variant="outline" className="text-xs font-normal">
+                <Badge variant="outline" className="font-normal text-xs">
                   {getActiveDaysSummary(value?.personalHours)}
                 </Badge>
               </div>

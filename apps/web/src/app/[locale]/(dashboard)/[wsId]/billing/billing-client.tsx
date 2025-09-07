@@ -136,21 +136,21 @@ export function BillingClient({
 
   return (
     <>
-      <h1 className="mb-2 text-3xl font-bold tracking-tight">{t('billing')}</h1>
+      <h1 className="mb-2 font-bold text-3xl tracking-tight">{t('billing')}</h1>
       <p className="mb-8 text-muted-foreground">{t('billing-info')}</p>
 
       {/* Current Plan Card */}
       <div className="mb-8 rounded-lg border border-border bg-card p-8 shadow-sm dark:bg-card/80">
         <div className="mb-6 flex items-center justify-between">
           <div>
-            <h2 className="text-2xl font-semibold tracking-tight text-card-foreground">
+            <h2 className="font-semibold text-2xl text-card-foreground tracking-tight">
               {t('current-plan')}
             </h2>
             <p className="text-muted-foreground">{t('current-plan-details')}</p>
           </div>
           <div className="flex items-center">
             <span
-              className={`rounded-full px-3 py-1 text-sm font-medium ${
+              className={`rounded-full px-3 py-1 font-medium text-sm ${
                 currentPlan.status === 'active'
                   ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
                   : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400'
@@ -164,12 +164,12 @@ export function BillingClient({
         <div className="grid grid-cols-1 gap-8">
           <div>
             <div className="mb-6">
-              <h3 className="mb-1 text-xl font-bold text-card-foreground">
+              <h3 className="mb-1 font-bold text-card-foreground text-xl">
                 {currentPlan.name}
               </h3>
-              <p className="text-2xl font-bold text-primary">
+              <p className="font-bold text-2xl text-primary">
                 {currentPlan.price}
-                <span className="text-sm text-muted-foreground">
+                <span className="text-muted-foreground text-sm">
                   /{currentPlan.billingCycle}
                 </span>
               </p>
@@ -177,7 +177,7 @@ export function BillingClient({
 
             <div className="mb-6 grid grid-cols-2 gap-6 md:grid-cols-4">
               <div>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-muted-foreground text-sm">
                   {t('start-date')}
                 </p>
                 <p className="font-medium text-card-foreground">
@@ -185,7 +185,7 @@ export function BillingClient({
                 </p>
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-muted-foreground text-sm">
                   {t('next-billing')}
                 </p>
                 <p className="font-medium text-card-foreground">
@@ -250,7 +250,7 @@ export function BillingClient({
       {/* Upgrade Options */}
       {showUpgradeOptions && (
         <div className="mb-8 rounded-lg border-2 border-primary/20 bg-card p-8 shadow-sm dark:bg-card/80">
-          <h2 className="mb-6 text-2xl font-semibold text-card-foreground">
+          <h2 className="mb-6 font-semibold text-2xl text-card-foreground">
             {t('upgrade-plan')}
           </h2>
           {isAdmin && (
@@ -283,17 +283,17 @@ export function BillingClient({
                 }`}
               >
                 {plan.popular && (
-                  <div className="absolute top-0 right-0 rounded-tr-md rounded-bl-lg bg-primary px-3 py-1 text-xs text-primary-foreground">
+                  <div className="absolute top-0 right-0 rounded-tr-md rounded-bl-lg bg-primary px-3 py-1 text-primary-foreground text-xs">
                     {t('recommend')}
                   </div>
                 )}
                 <div className="p-6">
-                  <h3 className="mb-1 text-xl font-bold text-card-foreground">
+                  <h3 className="mb-1 font-bold text-card-foreground text-xl">
                     {plan.name}
                   </h3>
-                  <p className="mb-4 text-2xl font-bold text-primary">
+                  <p className="mb-4 font-bold text-2xl text-primary">
                     {plan.price}
-                    <span className="text-sm text-muted-foreground">
+                    <span className="text-muted-foreground text-sm">
                       /{plan.billingCycle}
                     </span>
                   </p>
@@ -331,7 +331,7 @@ export function BillingClient({
                     </Button>
                   )}
                   {plan.isEnterprise && (
-                    <p className="mt-2 text-center text-xs text-muted-foreground">
+                    <p className="mt-2 text-center text-muted-foreground text-xs">
                       {t('contact-sales-desc')}
                     </p>
                   )}
@@ -339,7 +339,7 @@ export function BillingClient({
               </div>
             ))}
           </div>
-          <p className="mt-6 text-sm text-muted-foreground">{t('plan-desc')}</p>
+          <p className="mt-6 text-muted-foreground text-sm">{t('plan-desc')}</p>
         </div>
       )}
     </>

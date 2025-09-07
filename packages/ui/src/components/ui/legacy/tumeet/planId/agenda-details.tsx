@@ -5,7 +5,7 @@ import { Button } from '@tuturuuu/ui/button';
 import { useTimeBlocking } from '@tuturuuu/ui/hooks/time-blocking-provider';
 import { ClipboardList, Pencil, Plus } from '@tuturuuu/ui/icons';
 import { RichTextEditor } from '@tuturuuu/ui/text-editor/editor';
-import { type JSONContent } from '@tuturuuu/ui/tiptap';
+import type { JSONContent } from '@tuturuuu/ui/tiptap';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useCallback, useState } from 'react';
@@ -72,7 +72,7 @@ export default function AgendaDetails({ plan }: AgendaDetailsProps) {
     <div className="w-full space-y-8">
       <div className="flex flex-col items-start justify-between gap-4 md:flex-row">
         <div className="space-y-4">
-          <p className="text-4xl font-semibold">{t('agenda')}</p>
+          <p className="font-semibold text-4xl">{t('agenda')}</p>
           <p className="text-md text-muted-foreground">
             {t('agenda_description')}
           </p>
@@ -120,8 +120,8 @@ export default function AgendaDetails({ plan }: AgendaDetailsProps) {
               <ClipboardList size={48} className="text-muted-foreground" />
             </div>
             <div className="space-y-2">
-              <h3 className="text-lg font-medium">No Agenda Content Yet</h3>
-              <p className="max-w-md text-sm text-muted-foreground">
+              <h3 className="font-medium text-lg">No Agenda Content Yet</h3>
+              <p className="max-w-md text-muted-foreground text-sm">
                 Start organizing your meeting by creating a structured outline
                 to keep everyone on track to make your meeting more productive.
               </p>

@@ -3,7 +3,7 @@ import { ExecutionsTable } from './components/executions-table';
 import { PerformanceMetrics } from './components/performance-metrics';
 import { AIExecutionAnalyticsService } from './services/analytics-service';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
-import { type WorkspaceAIExecution } from '@tuturuuu/types/db';
+import type { WorkspaceAIExecution } from '@tuturuuu/types/db';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Separator } from '@tuturuuu/ui/separator';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';

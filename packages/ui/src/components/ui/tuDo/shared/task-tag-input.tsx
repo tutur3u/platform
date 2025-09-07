@@ -208,7 +208,7 @@ export function TaskTagInput({
                 key={tag}
                 variant="outline"
                 className={cn(
-                  'flex h-6 items-center gap-1 rounded-full border px-2 py-1 text-xs font-medium transition-all duration-200 hover:scale-105',
+                  'flex h-6 items-center gap-1 rounded-full border px-2 py-1 font-medium text-xs transition-all duration-200 hover:scale-105',
                   tagClassName
                 )}
                 style={style}
@@ -259,7 +259,7 @@ export function TaskTagInput({
 
           {/* Tag Count */}
           {value.length > 0 && (
-            <span className="ml-auto text-xs text-muted-foreground">
+            <span className="ml-auto text-muted-foreground text-xs">
               {value.length}/{maxTags}
             </span>
           )}
@@ -291,7 +291,7 @@ export function TaskTagInput({
         !isDisabled &&
         !isFocused && (
           <div className="mt-2">
-            <p className="mb-1.5 text-xs text-muted-foreground">
+            <p className="mb-1.5 text-muted-foreground text-xs">
               Popular tags:
             </p>
             <div className="flex flex-wrap gap-1.5">
@@ -304,7 +304,7 @@ export function TaskTagInput({
                     type="button"
                     onClick={() => handleSuggestionClick(suggestion)}
                     className={cn(
-                      'inline-flex cursor-pointer items-center rounded-full border px-2 py-1 text-xs font-medium transition-all duration-200 hover:scale-105',
+                      'inline-flex cursor-pointer items-center rounded-full border px-2 py-1 font-medium text-xs transition-all duration-200 hover:scale-105',
                       tagClassName
                     )}
                     style={style}
@@ -320,22 +320,22 @@ export function TaskTagInput({
 
       {/* Status Messages */}
       {isLoading && (
-        <p className="mt-1 text-xs text-muted-foreground">
+        <p className="mt-1 text-muted-foreground text-xs">
           Loading tag suggestions...
         </p>
       )}
       {error && (
-        <p className="mt-1 text-xs text-red-500">
+        <p className="mt-1 text-red-500 text-xs">
           Error loading suggestions: {error.message || 'Unknown error'}
         </p>
       )}
       {migrationStatus === 'not-applied' && (
-        <p className="mt-1 text-xs text-amber-600">
+        <p className="mt-1 text-amber-600 text-xs">
           Tags feature not available yet. Database migration pending.
         </p>
       )}
       {value.length >= maxTags && (
-        <p className="mt-1 text-xs text-muted-foreground">
+        <p className="mt-1 text-muted-foreground text-xs">
           Maximum {maxTags} tags reached
         </p>
       )}

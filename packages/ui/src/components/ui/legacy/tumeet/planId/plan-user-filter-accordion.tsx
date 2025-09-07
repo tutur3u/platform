@@ -178,7 +178,7 @@ export default function PlanUserFilterAccordion({
                   <div className="flex items-center gap-2">
                     <div className="font-medium">{user.display_name}</div>
                     {user.is_guest ? (
-                      <div className="rounded bg-foreground px-2 py-0.5 text-xs text-background">
+                      <div className="rounded bg-foreground px-2 py-0.5 text-background text-xs">
                         {t('guest')}
                       </div>
                     ) : (
@@ -186,7 +186,7 @@ export default function PlanUserFilterAccordion({
                     )}
                   </div>
                   <div className="flex items-center gap-2">
-                    <div className="text-sm font-medium text-foreground/70">
+                    <div className="font-medium text-foreground/70 text-sm">
                       {user.timeblock_count} {t('timeblocks')}
                     </div>
                     {(() => {

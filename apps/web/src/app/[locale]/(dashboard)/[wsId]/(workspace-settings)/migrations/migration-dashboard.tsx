@@ -266,7 +266,7 @@ export default function MigrationDashboard() {
 
           <div className="flex gap-1">
             {getData('external', module) !== null ? (
-              <div className="flex items-center justify-center rounded border px-2 py-0.5 text-sm font-semibold">
+              <div className="flex items-center justify-center rounded border px-2 py-0.5 font-semibold text-sm">
                 {getCount('external', module)}
               </div>
             ) : null}
@@ -414,13 +414,13 @@ export default function MigrationDashboard() {
           </div>
         </div>
 
-        <h2 className="mt-4 flex items-center gap-1 text-2xl font-semibold">
+        <h2 className="mt-4 flex items-center gap-1 font-semibold text-2xl">
           <div className="mr-1">Migrate data</div>
           {Object.values(migrationData ?? {}).reduce(
             (acc, v) => acc + (v?.externalTotal ?? 0),
             0
           ) !== 0 && (
-            <div className="rounded border px-2 py-0.5 text-sm font-semibold">
+            <div className="rounded border px-2 py-0.5 font-semibold text-sm">
               {Object.values(migrationData ?? {}).reduce(
                 (acc, v) => acc + (v?.externalData?.length ?? 0),
                 0

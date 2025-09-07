@@ -66,7 +66,7 @@ export function MailList({
             <div className="flex w-full min-w-0 flex-1 flex-col gap-1">
               <div className="flex items-start justify-between gap-3">
                 <div className="flex min-w-0 flex-1 items-center gap-2">
-                  <span className="truncate text-sm font-semibold text-foreground">
+                  <span className="truncate font-semibold text-foreground text-sm">
                     {confidentialMode
                       ? t('confidential_sender')
                       : formatEmailAddresses(item.source_email)
@@ -74,12 +74,12 @@ export function MailList({
                           .join(', ')}
                   </span>
                 </div>
-                <time className="text-xs font-medium whitespace-nowrap text-muted-foreground">
+                <time className="whitespace-nowrap font-medium text-muted-foreground text-xs">
                   {dayjs(item.created_at).fromNow()}
                 </time>
               </div>
 
-              <div className="truncate text-xs font-medium text-muted-foreground/80">
+              <div className="truncate font-medium text-muted-foreground/80 text-xs">
                 <span className="text-muted-foreground">{t('to_label')}</span>{' '}
                 <span className="text-foreground/60">
                   {confidentialMode
@@ -90,7 +90,7 @@ export function MailList({
                 </span>
               </div>
 
-              <div className="line-clamp-2 text-sm leading-relaxed font-medium break-words text-foreground/80 transition-colors group-hover:text-foreground/95">
+              <div className="line-clamp-2 break-words font-medium text-foreground/80 text-sm leading-relaxed transition-colors group-hover:text-foreground/95">
                 {confidentialMode ? t('confidential_subject') : item.subject}
               </div>
             </div>
@@ -102,7 +102,7 @@ export function MailList({
         <div className="flex items-center justify-center p-6">
           <div className="flex items-center gap-3 text-muted-foreground">
             <Loader2 className="h-4 w-4 animate-spin" />
-            <span className="text-sm font-medium">
+            <span className="font-medium text-sm">
               {t('loading_more_emails')}
             </span>
           </div>
@@ -110,7 +110,7 @@ export function MailList({
       )}
 
       {!hasMore && items.length > 0 && (
-        <div className="flex items-center justify-center p-6 text-sm font-medium text-muted-foreground">
+        <div className="flex items-center justify-center p-6 font-medium text-muted-foreground text-sm">
           {t('no_more_emails')}
         </div>
       )}
@@ -118,7 +118,7 @@ export function MailList({
       {!loading && items.length === 0 && (
         <div className="flex flex-col items-center justify-center p-12 text-center">
           <div className="mb-4 text-4xl opacity-20">📮</div>
-          <p className="text-sm font-medium text-muted-foreground">
+          <p className="font-medium text-muted-foreground text-sm">
             {t('no_emails_found')}
           </p>
         </div>

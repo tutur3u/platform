@@ -39,7 +39,7 @@ export function PurposeSection() {
       viewport={{ once: true }}
       className="relative text-center"
     >
-      <div className="absolute inset-0 -z-10">
+      <div className="-z-10 absolute inset-0">
         <motion.div
           animate={{
             opacity: [0.1, 0.15, 0.1],
@@ -99,7 +99,7 @@ export function PurposeSection() {
             <Heart className="h-8 w-8 text-primary transition-transform duration-300 group-hover:scale-110" />
           </motion.div>
           <motion.h2
-            className="mb-4 text-4xl font-bold text-foreground"
+            className="mb-4 font-bold text-4xl text-foreground"
             whileHover={{
               scale: 1.02,
             }}
@@ -113,13 +113,13 @@ export function PurposeSection() {
                 repeat: Infinity,
                 ease: 'linear',
               }}
-              className="relative bg-linear-to-r from-primary via-orange-500 to-red-500 bg-size-[200%_auto] bg-clip-text text-transparent"
+              className="relative bg-linear-to-r bg-size-[200%_auto] from-primary via-orange-500 to-red-500 bg-clip-text text-transparent"
             >
               Our Purpose
             </motion.span>
           </motion.h2>
           <motion.p
-            className="mx-auto max-w-2xl text-lg text-foreground/60"
+            className="mx-auto max-w-2xl text-foreground/60 text-lg"
             whileHover={{
               scale: 1.01,
             }}
@@ -163,7 +163,7 @@ export function PurposeSection() {
                     repeat: Infinity,
                     ease: 'linear',
                   }}
-                  className="absolute -top-8 -right-8 h-24 w-24 rounded-xl bg-linear-to-br from-orange-500/20 via-red-500/10 to-transparent blur-2xl"
+                  className="-top-8 -right-8 absolute h-24 w-24 rounded-xl bg-linear-to-br from-orange-500/20 via-red-500/10 to-transparent blur-2xl"
                 />
                 <div className="pointer-events-none relative p-8">
                   <motion.div
@@ -192,7 +192,7 @@ export function PurposeSection() {
                     </div>
                   </motion.div>
                   <motion.h3
-                    className="relative mb-4 text-xl font-bold text-foreground"
+                    className="relative mb-4 font-bold text-foreground text-xl"
                     whileHover={{
                       scale: 1.05,
                       color: 'hsl(var(--primary))',

@@ -3,7 +3,7 @@ import type { Transaction } from '@tuturuuu/types/primitives/Transaction';
 import { CustomDataTable } from '@tuturuuu/ui/custom/tables/custom-data-table';
 import { Filter } from '@tuturuuu/ui/finance/shared/filter';
 import LoadingStatisticCard from '@tuturuuu/ui/finance/shared/loaders/statistics';
-import { FinanceDashboardSearchParams } from '@tuturuuu/ui/finance/shared/metrics';
+import type { FinanceDashboardSearchParams } from '@tuturuuu/ui/finance/shared/metrics';
 import ExpenseStatistics from '@tuturuuu/ui/finance/statistics/expense';
 import IncomeStatistics from '@tuturuuu/ui/finance/statistics/income';
 import InvoicesStatistics from '@tuturuuu/ui/finance/statistics/invoices';

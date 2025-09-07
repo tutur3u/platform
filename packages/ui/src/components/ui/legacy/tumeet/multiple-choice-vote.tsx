@@ -99,7 +99,7 @@ function VoterList({
         <Button
           variant="ghost"
           size="sm"
-          className="flex h-auto w-full touch-manipulation justify-start gap-1 p-2 text-xs text-muted-foreground hover:text-foreground"
+          className="flex h-auto w-full touch-manipulation justify-start gap-1 p-2 text-muted-foreground text-xs hover:text-foreground"
         >
           <Users className="h-3 w-3" />
           <span>
@@ -119,7 +119,7 @@ function VoterList({
             {allVoters.map((voter, index) => (
               <div
                 key={index}
-                className="flex items-center gap-2 py-0.5 text-xs text-muted-foreground"
+                className="flex items-center gap-2 py-0.5 text-muted-foreground text-xs"
               >
                 <div className="flex h-2 w-2 flex-shrink-0 rounded-full bg-dynamic-purple/60" />
                 <span className="min-w-0 truncate">
@@ -353,11 +353,11 @@ export default function MultipleChoiceVote({
       {!hideHeader && (
         <div className="flex items-center justify-between">
           <div>
-            <h3 className="text-lg font-semibold text-dynamic-purple">
+            <h3 className="font-semibold text-dynamic-purple text-lg">
               {pollName}
             </h3>
             {uniqueVoters > 0 && (
-              <p className="text-xs text-muted-foreground">
+              <p className="text-muted-foreground text-xs">
                 {uniqueVoters} {uniqueVoters === 1 ? t('voter') : t('voters')}
               </p>
             )}
@@ -365,7 +365,7 @@ export default function MultipleChoiceVote({
         </div>
       )}
       {!isDisplayMode && (
-        <div className="text-sm text-foreground">{t('select_options')}</div>
+        <div className="text-foreground text-sm">{t('select_options')}</div>
       )}
       <div className="space-y-2">
         {sortedOptions.map((option) => {
@@ -406,7 +406,7 @@ export default function MultipleChoiceVote({
                     <label
                       htmlFor={`option-${option.id}`}
                       className={cn(
-                        'block cursor-pointer text-sm font-medium',
+                        'block cursor-pointer font-medium text-sm',
                         isSelected && !isDisplayMode && 'text-dynamic-purple'
                       )}
                     >
@@ -418,7 +418,7 @@ export default function MultipleChoiceVote({
                 <div className="ml-2 flex min-w-[80px] flex-shrink-0 flex-col items-end justify-between sm:min-w-[90px]">
                   <span
                     className={cn(
-                      'w-full text-center text-xs text-dynamic-purple'
+                      'w-full text-center text-dynamic-purple text-xs'
                     )}
                   >
                     {option.totalVotes} {t('votes')}

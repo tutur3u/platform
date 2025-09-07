@@ -32,7 +32,7 @@ export const DayCell: React.FC<{
         className={cn(
           'flex flex-none justify-center rounded border bg-foreground/5 p-2 font-semibold transition duration-300 hover:cursor-pointer md:rounded-lg dark:bg-foreground/10',
           isAfter(day, today) &&
-            '!cursor-not-allowed opacity-50 hover:!cursor-not-allowed',
+            '!cursor-not-allowed hover:!cursor-not-allowed opacity-50',
           !isInCurrentMonth &&
             'bg-foreground/3 text-foreground/40 dark:bg-foreground/5',
           isInCurrentMonth && 'text-foreground/40'
@@ -66,7 +66,7 @@ export const DayCell: React.FC<{
           {getAttendanceGroupNames(day, attendanceData).map(
             (groupName, idx) => (
               <div key={groupName + idx} className="flex items-center gap-1">
-                <span className="text-xs font-semibold">{groupName}</span>
+                <span className="font-semibold text-xs">{groupName}</span>
               </div>
             )
           )}

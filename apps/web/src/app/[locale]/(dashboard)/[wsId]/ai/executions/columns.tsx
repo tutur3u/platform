@@ -144,7 +144,7 @@ export const getColumns = (
       return (
         <div className="min-w-32">
           <div className="font-medium">{formatCost(cost.totalCostUSD)}</div>
-          <div className="text-xs text-muted-foreground">
+          <div className="text-muted-foreground text-xs">
             {formatCost(cost.totalCostVND, 'VND')}
           </div>
         </div>

@@ -69,7 +69,7 @@ export function TagInput({
               {tag}
               {!disabled && (
                 <button
-                  className="ml-1 rounded-full ring-offset-background outline-hidden focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                  className="ml-1 rounded-full outline-hidden ring-offset-background focus:ring-2 focus:ring-ring focus:ring-offset-2"
                   onKeyDown={(e) => {
                     if (e.key === 'Enter') {
                       handleRemoveTag(tag);
@@ -119,7 +119,7 @@ export function TagInput({
       </div>
       <div className="relative mt-2">
         {open && filteredSuggestions.length > 0 && (
-          <div className="absolute top-0 z-10 w-full rounded-md border bg-popover text-popover-foreground shadow-md outline-hidden animate-in">
+          <div className="absolute top-0 z-10 w-full animate-in rounded-md border bg-popover text-popover-foreground shadow-md outline-hidden">
             <CommandGroup className="h-full overflow-auto">
               {filteredSuggestions.map((suggestion) => (
                 <CommandItem

@@ -22,7 +22,7 @@ export function NavLink({
       <div
         data-collapsed={isCollapsed}
         className={cn(
-          'group flex w-full items-center justify-between rounded-md px-3 py-2 text-sm font-medium',
+          'group flex w-full items-center justify-between rounded-md px-3 py-2 font-medium text-sm',
           'data-[collapsed=true]:justify-center data-[collapsed=true]:px-2.5',
           'cursor-not-allowed opacity-50'
         )}
@@ -51,7 +51,7 @@ export function NavLink({
     <div
       data-collapsed={isCollapsed}
       className={cn(
-        'group flex w-full items-center justify-between rounded-md px-3 py-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground',
+        'group flex w-full items-center justify-between rounded-md px-3 py-2 font-medium text-sm hover:bg-accent hover:text-accent-foreground',
         'data-[collapsed=true]:justify-center data-[collapsed=true]:px-2.5'
       )}
       {...props}

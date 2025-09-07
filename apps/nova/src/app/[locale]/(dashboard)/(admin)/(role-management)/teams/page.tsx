@@ -68,7 +68,7 @@ async function getTeamsData({
   if (q) queryBuilder.ilike('name', `%${q}%`);
 
   if (page && pageSize) {
-    const parsedPage = parseInt(page);
+    const parsedPage = parseInt(page, 10);
     const parsedSize = parseInt(pageSize);
     const start = (parsedPage - 1) * parsedSize;
     const end = parsedPage * parsedSize;

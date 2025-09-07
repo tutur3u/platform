@@ -22,7 +22,7 @@ export default function ToastNotification({
           className="fixed top-4 left-1/2 z-50 flex items-center gap-2 rounded-lg border border-primary/20 bg-primary/10 px-4 py-2 text-primary shadow-lg backdrop-blur-sm"
         >
           <Sparkles className="h-5 w-5 animate-pulse" />
-          <span className="text-sm font-medium">{message}</span>
+          <span className="font-medium text-sm">{message}</span>
           <motion.div
             className="absolute bottom-0 left-0 h-[2px] bg-primary"
             initial={{ width: '100%' }}

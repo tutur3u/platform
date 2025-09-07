@@ -107,7 +107,7 @@ export default function EditableReportPreview({
       <div className="grid h-fit gap-4">
         {isNew || (
           <div className="grid h-fit gap-2 rounded-lg border p-4">
-            <div className="text-lg font-semibold">User Data</div>
+            <div className="font-semibold text-lg">User Data</div>
             <Separator />
 
             <div>

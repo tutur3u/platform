@@ -126,7 +126,7 @@ export default function WhiteboardsList({
         <div className="flex items-center gap-4">
           {/* Search */}
           <div className="relative">
-            <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transform text-muted-foreground" />
+            <Search className="-translate-y-1/2 absolute top-1/2 left-3 h-4 w-4 transform text-muted-foreground" />
             <Input
               placeholder="Search whiteboards..."
               value={searchQuery}
@@ -197,7 +197,7 @@ export default function WhiteboardsList({
           <div className="mx-auto mb-4 flex h-24 w-24 items-center justify-center rounded-full bg-muted">
             <Search className="h-8 w-8 text-muted-foreground" />
           </div>
-          <h3 className="mb-2 text-lg font-semibold">No whiteboards found</h3>
+          <h3 className="mb-2 font-semibold text-lg">No whiteboards found</h3>
           <p className="mb-4 text-muted-foreground">
             {searchQuery
               ? `No whiteboards match "${searchQuery}"`
@@ -215,7 +215,7 @@ export default function WhiteboardsList({
               <Card className="group cursor-pointer transition-shadow hover:shadow-md">
                 <CardHeader className="pb-3">
                   <div className="flex items-start justify-between">
-                    <CardTitle className="text-md line-clamp-1">
+                    <CardTitle className="line-clamp-1 text-md">
                       {whiteboard.title}
                     </CardTitle>
 
@@ -235,7 +235,7 @@ export default function WhiteboardsList({
                       />
                     ) : (
                       <div className="flex h-full items-center justify-center bg-muted">
-                        <div className="text-sm text-muted-foreground">
+                        <div className="text-muted-foreground text-sm">
                           No preview
                         </div>
                       </div>
@@ -243,12 +243,12 @@ export default function WhiteboardsList({
                   </div>
 
                   {whiteboard.description && (
-                    <p className="mb-3 line-clamp-2 text-sm text-muted-foreground">
+                    <p className="mb-3 line-clamp-2 text-muted-foreground text-sm">
                       {whiteboard.description}
                     </p>
                   )}
 
-                  <div className="flex items-center justify-between text-xs text-muted-foreground">
+                  <div className="flex items-center justify-between text-muted-foreground text-xs">
                     <div className="flex items-center gap-2">
                       <UserIcon className="h-3 w-3" />
                       {whiteboard.creatorName}
@@ -286,7 +286,7 @@ export default function WhiteboardsList({
                       />
                     ) : (
                       <div className="flex h-full items-center justify-center bg-muted">
-                        <div className="text-sm text-muted-foreground">
+                        <div className="text-muted-foreground text-sm">
                           <ImageIcon className="h-4 w-4" />
                         </div>
                       </div>
@@ -299,14 +299,14 @@ export default function WhiteboardsList({
                       {whiteboard.title}
                     </h3>
                     {whiteboard.description && (
-                      <p className="truncate text-sm text-muted-foreground">
+                      <p className="truncate text-muted-foreground text-sm">
                         {whiteboard.description}
                       </p>
                     )}
                   </div>
 
                   {/* Metadata */}
-                  <div className="flex items-center gap-6 text-sm text-muted-foreground">
+                  <div className="flex items-center gap-6 text-muted-foreground text-sm">
                     <div className="flex items-center gap-1">
                       <UserIcon className="h-3 w-3" />
                       {whiteboard.creatorName}

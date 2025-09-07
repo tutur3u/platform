@@ -35,10 +35,10 @@ export function DailyActivityChart({ clicksByDay }: DailyActivityChartProps) {
               <BarChart3 className="h-5 w-5 text-dynamic-blue" />
             </div>
             <div>
-              <h3 className="text-lg font-semibold">
+              <h3 className="font-semibold text-lg">
                 {t('link-shortener.analytics.clicks_over_time')}
               </h3>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-muted-foreground text-sm">
                 {t('link-shortener.analytics.last_30_days_activity')}
               </p>
             </div>
@@ -81,32 +81,32 @@ export function DailyActivityChart({ clicksByDay }: DailyActivityChartProps) {
             <BarChart3 className="h-5 w-5 text-dynamic-blue" />
           </div>
           <div className="flex-1">
-            <h3 className="text-lg font-semibold">
+            <h3 className="font-semibold text-lg">
               {t('link-shortener.analytics.clicks_over_time')}
             </h3>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-muted-foreground text-sm">
               {t('link-shortener.analytics.last_30_days_activity')}
             </p>
           </div>
           {/* Summary Stats in Header */}
           <div className="hidden items-center gap-6 sm:flex">
             <div className="text-center">
-              <div className="text-lg font-bold text-dynamic-blue">
+              <div className="font-bold text-dynamic-blue text-lg">
                 {totalClicks.toLocaleString()}
               </div>
-              <div className="text-xs text-muted-foreground">Total</div>
+              <div className="text-muted-foreground text-xs">Total</div>
             </div>
             <div className="text-center">
-              <div className="text-lg font-bold text-dynamic-green">
+              <div className="font-bold text-dynamic-green text-lg">
                 {avgClicks}
               </div>
-              <div className="text-xs text-muted-foreground">Avg/Day</div>
+              <div className="text-muted-foreground text-xs">Avg/Day</div>
             </div>
             <div className="text-center">
-              <div className="text-lg font-bold text-dynamic-orange">
+              <div className="font-bold text-dynamic-orange text-lg">
                 {maxClicks}
               </div>
-              <div className="text-xs text-muted-foreground">Peak</div>
+              <div className="text-muted-foreground text-xs">Peak</div>
             </div>
           </div>
         </CardTitle>
@@ -192,22 +192,22 @@ export function DailyActivityChart({ clicksByDay }: DailyActivityChartProps) {
           {/* Mobile Summary Stats */}
           <div className="grid grid-cols-3 gap-4 sm:hidden">
             <div className="rounded-lg bg-gradient-to-br from-dynamic-blue/5 to-dynamic-blue/10 p-3 text-center">
-              <div className="text-lg font-bold text-dynamic-blue">
+              <div className="font-bold text-dynamic-blue text-lg">
                 {totalClicks.toLocaleString()}
               </div>
-              <div className="text-xs text-muted-foreground">Total Clicks</div>
+              <div className="text-muted-foreground text-xs">Total Clicks</div>
             </div>
             <div className="rounded-lg bg-gradient-to-br from-dynamic-green/5 to-dynamic-green/10 p-3 text-center">
-              <div className="text-lg font-bold text-dynamic-green">
+              <div className="font-bold text-dynamic-green text-lg">
                 {avgClicks}
               </div>
-              <div className="text-xs text-muted-foreground">Avg/Day</div>
+              <div className="text-muted-foreground text-xs">Avg/Day</div>
             </div>
             <div className="rounded-lg bg-gradient-to-br from-dynamic-orange/5 to-dynamic-orange/10 p-3 text-center">
-              <div className="text-lg font-bold text-dynamic-orange">
+              <div className="font-bold text-dynamic-orange text-lg">
                 {maxClicks}
               </div>
-              <div className="text-xs text-muted-foreground">Peak Day</div>
+              <div className="text-muted-foreground text-xs">Peak Day</div>
             </div>
           </div>
 
@@ -216,7 +216,7 @@ export function DailyActivityChart({ clicksByDay }: DailyActivityChartProps) {
             <div className="rounded-lg bg-gradient-to-br from-dynamic-orange/5 to-dynamic-orange/10 p-3">
               <div className="flex items-center gap-2">
                 <div className="h-2 w-2 rounded-full bg-dynamic-orange"></div>
-                <span className="text-sm font-medium text-dynamic-orange">
+                <span className="font-medium text-dynamic-orange text-sm">
                   Peak Day:{' '}
                   {new Date(maxClicksDay.date).toLocaleDateString('en-US', {
                     weekday: 'long',

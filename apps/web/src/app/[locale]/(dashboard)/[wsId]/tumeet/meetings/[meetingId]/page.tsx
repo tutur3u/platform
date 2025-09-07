@@ -76,7 +76,7 @@ export default async function MeetingDetailPage({
 
         <div className="flex items-start justify-between">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">
+            <h1 className="font-bold text-3xl tracking-tight">
               {meeting.name}
             </h1>
             <div className="mt-2 flex items-center gap-4 text-muted-foreground">

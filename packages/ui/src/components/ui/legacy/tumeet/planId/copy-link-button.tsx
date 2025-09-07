@@ -140,7 +140,7 @@ export default function CopyLinkButton({
         align="end"
         className="w-80 border-dynamic-purple/20 p-4 shadow-xl backdrop-blur-sm"
       >
-        <div className="mb-4 border-b border-dynamic-purple/20 px-1 py-2 pb-3 text-sm font-semibold text-dynamic-purple">
+        <div className="mb-4 border-dynamic-purple/20 border-b px-1 py-2 pb-3 font-semibold text-dynamic-purple text-sm">
           <div className="flex items-center gap-2">
             <LinkIcon className="h-4 w-4" />
             Choose link format
@@ -151,7 +151,7 @@ export default function CopyLinkButton({
           return (
             <div key={format.name}>
               {index > 0 && (
-                <div className="my-3 border-t border-dynamic-purple/10" />
+                <div className="my-3 border-dynamic-purple/10 border-t" />
               )}
               <DropdownMenuItem
                 onClick={() => handleCopy(format)}
@@ -165,7 +165,7 @@ export default function CopyLinkButton({
                   <div className="flex items-center gap-2">
                     <div
                       className={cn(
-                        'flex h-8 w-8 items-center justify-center rounded-full text-sm font-bold',
+                        'flex h-8 w-8 items-center justify-center rounded-full font-bold text-sm',
                         isDefault
                           ? 'bg-dynamic-purple text-white'
                           : 'bg-dynamic-purple/10 text-dynamic-purple'
@@ -178,7 +178,7 @@ export default function CopyLinkButton({
                         {format.name}
                       </span>
                       {isDefault && (
-                        <span className="rounded-full border border-dynamic-purple/30 bg-dynamic-purple/20 px-2 py-0.5 text-xs font-medium text-dynamic-purple">
+                        <span className="rounded-full border border-dynamic-purple/30 bg-dynamic-purple/20 px-2 py-0.5 font-medium text-dynamic-purple text-xs">
                           Default
                         </span>
                       )}
@@ -187,11 +187,11 @@ export default function CopyLinkButton({
                   <Copy className="h-4 w-4 text-muted-foreground opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
                 </div>
                 <div className="w-full">
-                  <div className="mb-2 text-xs font-medium text-muted-foreground">
+                  <div className="mb-2 font-medium text-muted-foreground text-xs">
                     Full URL:
                   </div>
                   <div className="flex items-center gap-2 rounded-md border border-dynamic-purple/20 bg-muted/30 p-3 transition-colors duration-200 group-hover:border-dynamic-purple/40 group-hover:bg-muted/50">
-                    <span className="font-mono text-xs break-all text-foreground">
+                    <span className="break-all font-mono text-foreground text-xs">
                       {format.domain}
                       {format.path}
                       {planId}
@@ -199,15 +199,15 @@ export default function CopyLinkButton({
                     <ExternalLink className="h-3 w-3 flex-shrink-0 text-muted-foreground" />
                   </div>
                 </div>
-                <div className="w-full text-xs font-medium text-dynamic-purple">
+                <div className="w-full font-medium text-dynamic-purple text-xs">
                   Click to copy to clipboard
                 </div>
               </DropdownMenuItem>
             </div>
           );
         })}
-        <div className="mt-4 border-t border-dynamic-purple/20 pt-3">
-          <div className="flex items-center gap-2 px-1 text-xs text-muted-foreground">
+        <div className="mt-4 border-dynamic-purple/20 border-t pt-3">
+          <div className="flex items-center gap-2 px-1 text-muted-foreground text-xs">
             <ExternalLink className="h-3 w-3" />
             Links will open in a new tab when shared
           </div>

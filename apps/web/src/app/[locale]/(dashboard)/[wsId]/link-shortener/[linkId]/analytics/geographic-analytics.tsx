@@ -32,10 +32,10 @@ export function GeographicAnalytics({
                 <TrendingUp className="h-5 w-5 text-dynamic-orange" />
               </div>
               <div>
-                <h3 className="text-lg font-semibold">
+                <h3 className="font-semibold text-lg">
                   {t('link-shortener.analytics.top_referrers')}
                 </h3>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-muted-foreground text-sm">
                   {t('link-shortener.analytics.traffic_sources')}
                 </p>
               </div>
@@ -62,7 +62,7 @@ export function GeographicAnalytics({
                             >
                               {index + 1}
                             </Badge>
-                            <span className="truncate text-sm font-medium">
+                            <span className="truncate font-medium text-sm">
                               {referrer.domain}
                             </span>
                           </div>
@@ -96,10 +96,10 @@ export function GeographicAnalytics({
                 <Globe className="h-5 w-5 text-dynamic-green" />
               </div>
               <div>
-                <h3 className="text-lg font-semibold">
+                <h3 className="font-semibold text-lg">
                   {t('link-shortener.analytics.top_countries')}
                 </h3>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-muted-foreground text-sm">
                   {t('link-shortener.analytics.geographic_distribution')}
                 </p>
               </div>
@@ -126,7 +126,7 @@ export function GeographicAnalytics({
                             >
                               {index + 1}
                             </Badge>
-                            <span className="truncate text-sm font-medium">
+                            <span className="truncate font-medium text-sm">
                               {decodeURIComponent(country.country)}
                             </span>
                           </div>
@@ -162,10 +162,10 @@ export function GeographicAnalytics({
                 <MapPin className="h-5 w-5 text-dynamic-purple" />
               </div>
               <div>
-                <h3 className="text-lg font-semibold">
+                <h3 className="font-semibold text-lg">
                   {t('link-shortener.analytics.top_cities')}
                 </h3>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-muted-foreground text-sm">
                   {t('link-shortener.analytics.city_distribution')}
                 </p>
               </div>
@@ -192,10 +192,10 @@ export function GeographicAnalytics({
                           {index + 1}
                         </Badge>
                         <div className="min-w-0 flex-1">
-                          <div className="truncate text-sm font-medium">
+                          <div className="truncate font-medium text-sm">
                             {decodeURIComponent(city.city)}
                           </div>
-                          <div className="truncate text-xs text-muted-foreground">
+                          <div className="truncate text-muted-foreground text-xs">
                             {decodeURIComponent(city.country)}
                           </div>
                         </div>

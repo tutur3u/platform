@@ -64,7 +64,7 @@ export default function ReauthenticateForm({
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
         <div className="text-center">
-          <p className="text-sm text-muted-foreground">
+          <p className="text-muted-foreground text-sm">
             For security, please enter the verification code sent to your email
             to continue with the password change.
           </p>

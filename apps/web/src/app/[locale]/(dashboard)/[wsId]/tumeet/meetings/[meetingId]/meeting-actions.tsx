@@ -2,7 +2,7 @@
 
 import { AudioRecorder } from './audio-recorder';
 import { useQueryClient } from '@tanstack/react-query';
-import { RecordingStatus } from '@tuturuuu/types/db';
+import type { RecordingStatus } from '@tuturuuu/types/db';
 import { Button } from '@tuturuuu/ui/button';
 import {
   Dialog,

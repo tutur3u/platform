@@ -68,7 +68,7 @@ export function CourseCardView({ courses }: CourseCardViewProps) {
         <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-purple-100 to-blue-100">
           <BookOpen className="h-8 w-8 text-purple-600" />
         </div>
-        <p className="text-lg font-medium text-gray-900 dark:text-gray-100">
+        <p className="font-medium text-gray-900 text-lg dark:text-gray-100">
           {t('ws-courses.no_courses_found')}
         </p>
       </div>
@@ -138,25 +138,25 @@ export function CourseCardView({ courses }: CourseCardViewProps) {
               <CardContent className="flex flex-grow flex-col gap-4 p-6">
                 {/* Category badge and title */}
                 <div className="flex items-start justify-between">
-                  <h3 className="line-clamp-2 flex-grow pr-2 text-lg leading-tight font-semibold text-gray-900 dark:text-gray-100">
+                  <h3 className="line-clamp-2 flex-grow pr-2 font-semibold text-gray-900 text-lg leading-tight dark:text-gray-100">
                     {course.name}
                   </h3>
                   <div className="flex flex-shrink-0 items-center">
                     <Star className="mr-1 h-4 w-4 fill-yellow-400 text-yellow-400" />
-                    <span className="mr-1 text-sm font-medium">4.5</span>
+                    <span className="mr-1 font-medium text-sm">4.5</span>
                     {/* TODO: Add rating if the schema supports later on*/}
-                    <span className="text-sm font-light">(123)</span>
+                    <span className="font-light text-sm">(123)</span>
                     {/* TODO: Add number of reviews if the schema supports later on*/}
                   </div>
                 </div>
 
-                <p className="line-clamp-2 flex-grow text-sm leading-relaxed text-gray-600 dark:text-gray-400">
+                <p className="line-clamp-2 flex-grow text-gray-600 text-sm leading-relaxed dark:text-gray-400">
                   {course.description ||
                     t('ws-courses.no_description_provided')}
                 </p>
 
                 {/* Bottom section with modules info */}
-                <div className="flex items-center justify-between text-sm text-gray-500 dark:text-gray-400">
+                <div className="flex items-center justify-between text-gray-500 text-sm dark:text-gray-400">
                   <div className="flex items-center">
                     <Layers className="mr-1 h-4 w-4" />
                     <span>

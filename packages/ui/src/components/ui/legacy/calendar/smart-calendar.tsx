@@ -2,7 +2,7 @@
 
 import { CalendarContent } from './calendar-content';
 import {
-  CalendarSettings,
+  type CalendarSettings,
   CalendarSettingsProvider,
 } from './settings/settings-context';
 import type {

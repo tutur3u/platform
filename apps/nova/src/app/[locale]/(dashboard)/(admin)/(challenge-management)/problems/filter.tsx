@@ -72,7 +72,7 @@ export default function ChallengeFilter({
 
   return (
     <div className="flex items-center gap-3">
-      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+      <div className="flex items-center gap-2 text-muted-foreground text-sm">
         <Filter className="h-4 w-4" />
         <span>{label}:</span>
       </div>

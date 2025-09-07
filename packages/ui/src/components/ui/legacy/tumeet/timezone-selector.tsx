@@ -31,7 +31,7 @@ export default function TimezoneSelector({ value, onValueChange }: Props) {
           variant="outline"
           role="combobox"
           aria-expanded={open}
-          className="w-full justify-between bg-background/50 transition hover:bg-background/80 @md:min-w-72 @lg:min-w-96"
+          className="w-full @lg:min-w-96 @md:min-w-72 justify-between bg-background/50 transition hover:bg-background/80"
         >
           {value ? value.text : t('select-time-zone')}
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />

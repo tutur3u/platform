@@ -95,7 +95,7 @@ export default function WorkflowsProductPage() {
         <Badge variant="secondary" className="mb-4">
           Coming Soon
         </Badge>
-        <h1 className="mb-4 text-4xl font-bold">Workflow Automation</h1>
+        <h1 className="mb-4 font-bold text-4xl">Workflow Automation</h1>
         <p className="mx-auto max-w-2xl text-lg text-muted-foreground">
           Transform your business processes with intelligent workflow
           automation. Design, automate, and optimize your workflows with our
@@ -116,7 +116,7 @@ export default function WorkflowsProductPage() {
         <Card className="border-primary bg-primary/5 p-8">
           <div className="mx-auto flex max-w-4xl flex-col items-center gap-4 text-center">
             <ShieldCheck className="h-12 w-12 text-primary" />
-            <h2 className="text-2xl font-bold">Enterprise-Grade Security</h2>
+            <h2 className="font-bold text-2xl">Enterprise-Grade Security</h2>
             <p className="text-muted-foreground">
               Your workflows and business processes are protected with advanced
               security measures and compliance controls, ensuring safe and
@@ -128,7 +128,7 @@ export default function WorkflowsProductPage() {
 
       {/* Features Grid */}
       <section className="mb-24">
-        <h2 className="mb-12 text-center text-3xl font-bold">
+        <h2 className="mb-12 text-center font-bold text-3xl">
           Powerful Features
         </h2>
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
@@ -136,7 +136,7 @@ export default function WorkflowsProductPage() {
             <Card key={feature.title} className="p-6">
               <div className="mb-4 flex items-center gap-3">
                 <div className="text-primary">{feature.icon}</div>
-                <h3 className="text-xl font-semibold">{feature.title}</h3>
+                <h3 className="font-semibold text-xl">{feature.title}</h3>
               </div>
               <p className="text-muted-foreground">{feature.description}</p>
             </Card>
@@ -146,12 +146,12 @@ export default function WorkflowsProductPage() {
 
       {/* Use Cases */}
       <section className="mb-24">
-        <h2 className="mb-12 text-center text-3xl font-bold">Use Cases</h2>
+        <h2 className="mb-12 text-center font-bold text-3xl">Use Cases</h2>
         <div className="grid gap-8 md:grid-cols-3">
           {useCases.map((useCase) => (
             <Card key={useCase.title} className="p-6">
               <Workflow className="mb-4 h-8 w-8 text-primary" />
-              <h3 className="mb-4 text-xl font-semibold">{useCase.title}</h3>
+              <h3 className="mb-4 font-semibold text-xl">{useCase.title}</h3>
               <ul className="space-y-2 text-muted-foreground">
                 {useCase.items.map((item) => (
                   <li key={item} className="flex items-center gap-2">
@@ -169,9 +169,9 @@ export default function WorkflowsProductPage() {
       <section className="mb-24">
         <Card className="overflow-hidden">
           <div className="grid md:grid-cols-2">
-            <div className="flex flex-col justify-center gap-4 border-b border-border p-8 md:border-r md:border-b-0">
+            <div className="flex flex-col justify-center gap-4 border-border border-b p-8 md:border-r md:border-b-0">
               <PlayCircle className="h-8 w-8 text-primary" />
-              <h3 className="text-2xl font-bold">One-Click Automation</h3>
+              <h3 className="font-bold text-2xl">One-Click Automation</h3>
               <p className="text-muted-foreground">
                 Deploy and run workflows with a single click, monitoring their
                 execution in real-time with detailed analytics.
@@ -179,7 +179,7 @@ export default function WorkflowsProductPage() {
             </div>
             <div className="flex flex-col justify-center gap-4 p-8">
               <TimerReset className="h-8 w-8 text-primary" />
-              <h3 className="text-2xl font-bold">Scheduled Triggers</h3>
+              <h3 className="font-bold text-2xl">Scheduled Triggers</h3>
               <p className="text-muted-foreground">
                 Schedule workflows to run automatically based on time, events,
                 or custom conditions with advanced timing controls.
@@ -191,13 +191,13 @@ export default function WorkflowsProductPage() {
 
       {/* Additional Features Section */}
       <section className="mb-24">
-        <h2 className="mb-12 text-center text-3xl font-bold">
+        <h2 className="mb-12 text-center font-bold text-3xl">
           Process Management
         </h2>
         <div className="grid gap-6 md:grid-cols-2">
           <Card className="p-6">
             <Settings className="mb-4 h-8 w-8 text-primary" />
-            <h3 className="mb-2 text-xl font-bold">Advanced Configuration</h3>
+            <h3 className="mb-2 font-bold text-xl">Advanced Configuration</h3>
             <p className="text-muted-foreground">
               Fine-tune your workflows with detailed configuration options and
               custom parameters for maximum flexibility.
@@ -205,7 +205,7 @@ export default function WorkflowsProductPage() {
           </Card>
           <Card className="p-6">
             <History className="mb-4 h-8 w-8 text-primary" />
-            <h3 className="mb-2 text-xl font-bold">Execution History</h3>
+            <h3 className="mb-2 font-bold text-xl">Execution History</h3>
             <p className="text-muted-foreground">
               Track and audit workflow executions with comprehensive logs and
               performance metrics for optimization.

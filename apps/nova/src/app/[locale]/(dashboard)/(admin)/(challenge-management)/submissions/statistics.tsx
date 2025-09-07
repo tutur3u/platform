@@ -35,7 +35,7 @@ export function SubmissionStatistics({
     <div className="mb-6 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">
+          <CardTitle className="font-medium text-sm">
             Total Submissions
           </CardTitle>
           <Users className="h-4 w-4 text-muted-foreground" />
@@ -44,55 +44,55 @@ export function SubmissionStatistics({
           {statsLoading ? (
             <Skeleton className="h-8 w-20" />
           ) : (
-            <div className="text-2xl font-bold">{stats?.totalCount || 0}</div>
+            <div className="font-bold text-2xl">{stats?.totalCount || 0}</div>
           )}
         </CardContent>
       </Card>
 
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Average Score</CardTitle>
+          <CardTitle className="font-medium text-sm">Average Score</CardTitle>
           <Calendar className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
           {statsLoading ? (
             <Skeleton className="h-8 w-20" />
           ) : (
-            <div className="text-2xl font-bold">
+            <div className="font-bold text-2xl">
               {stats ? stats.averageScore.toFixed(1) : '0.0'}
             </div>
           )}
-          <p className="text-xs text-muted-foreground">Out of 10.0 points</p>
+          <p className="text-muted-foreground text-xs">Out of 10.0 points</p>
         </CardContent>
       </Card>
 
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Highest Score</CardTitle>
+          <CardTitle className="font-medium text-sm">Highest Score</CardTitle>
           <Calendar className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
           {statsLoading ? (
             <Skeleton className="h-8 w-20" />
           ) : (
-            <div className="text-2xl font-bold">
+            <div className="font-bold text-2xl">
               {stats ? stats.highestScore.toFixed(1) : '0.0'}
             </div>
           )}
-          <p className="text-xs text-muted-foreground">Out of 10.0 points</p>
+          <p className="text-muted-foreground text-xs">Out of 10.0 points</p>
         </CardContent>
       </Card>
 
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Last Submission</CardTitle>
+          <CardTitle className="font-medium text-sm">Last Submission</CardTitle>
           <Clock className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
           {statsLoading ? (
             <Skeleton className="h-8 w-20" />
           ) : (
-            <div className="text-md font-bold">
+            <div className="font-bold text-md">
               {stats?.lastSubmissionDate
                 ? formatDate(stats.lastSubmissionDate)
                 : 'No submissions yet'}

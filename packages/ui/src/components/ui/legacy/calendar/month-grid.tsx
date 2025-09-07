@@ -89,7 +89,7 @@ export function Month({ hasGrid, month, year }: MonthProps) {
       {hasGrid || <div>{months[month]}</div>}
       <div
         className={`${
-          hasGrid ? `border-t border-l border-zinc-800` : ``
+          hasGrid ? `border-zinc-800 border-t border-l` : ``
         } grid grid-cols-7`}
       >
         {Array.from({ length: getMonthDaysLength() + 1 }).map((_, index) => (

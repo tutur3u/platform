@@ -316,7 +316,7 @@ export function StorageObjectForm({
                               />
                             ) : (
                               <div
-                                className="line-clamp-1 max-w-[400px] text-sm break-all opacity-70"
+                                className="line-clamp-1 max-w-[400px] break-all text-sm opacity-70"
                                 onClick={() => {
                                   setNewFileName(file.name);
                                   setEditingFile(file);
@@ -326,7 +326,7 @@ export function StorageObjectForm({
                               </div>
                             )}
 
-                            <div className="text-xs font-semibold">
+                            <div className="font-semibold text-xs">
                               {fileStatuses[file.name] === 'uploading' ? (
                                 <span className="opacity-70">
                                   {t('common.uploading')}...

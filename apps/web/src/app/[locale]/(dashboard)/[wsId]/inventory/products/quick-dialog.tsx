@@ -215,7 +215,7 @@ export function ProductQuickDialog({
 
     try {
       // Reset payloads to empty objects for existing products
-      let productPayload: any = {};
+      const productPayload: any = {};
       let hasProductChanges = false;
       let hasInventoryChanges = false;
 
@@ -896,7 +896,7 @@ export function ProductQuickDialog({
                             />
                             <label
                               htmlFor="unlimited-stock"
-                              className="text-sm font-medium"
+                              className="font-medium text-sm"
                             >
                               Unlimited Stock
                             </label>
@@ -904,11 +904,11 @@ export function ProductQuickDialog({
                         </div>
 
                         {hasUnlimitedStock ? (
-                          <div className="text-sm text-muted-foreground">
+                          <div className="text-muted-foreground text-sm">
                             This product has unlimited stock available.
                           </div>
                         ) : (
-                          <div className="text-sm text-muted-foreground">
+                          <div className="text-muted-foreground text-sm">
                             Manage tracked stock in the Stock tab.
                           </div>
                         )}

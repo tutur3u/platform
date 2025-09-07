@@ -42,7 +42,7 @@ export function TaskTagsDisplay({
               key={tag}
               variant="outline"
               className={cn(
-                'block h-auto max-w-[80px] min-w-0 truncate overflow-hidden rounded-full border px-1.5 py-0.5 text-[10px] font-medium transition-all duration-200 hover:scale-105',
+                'block h-auto min-w-0 max-w-[80px] overflow-hidden truncate rounded-full border px-1.5 py-0.5 font-medium text-[10px] transition-all duration-200 hover:scale-105',
                 tagClassName,
                 clickable && 'cursor-pointer hover:brightness-110'
               )}
@@ -50,7 +50,7 @@ export function TaskTagsDisplay({
               onClick={() => clickable && onTagClick?.(tag)}
               title={tag.length > 15 ? `#${tag}` : undefined}
             >
-              <span className="block w-full truncate overflow-hidden whitespace-nowrap">
+              <span className="block w-full overflow-hidden truncate whitespace-nowrap">
                 #{tag}
               </span>
             </Badge>
@@ -75,7 +75,7 @@ export function TaskTagsDisplay({
               sideOffset={8}
             >
               <div className="space-y-3 p-4">
-                <p className="text-sm font-semibold text-gray-200">All tags:</p>
+                <p className="font-semibold text-gray-200 text-sm">All tags:</p>
                 <hr className="my-3 border-white/10" />
                 <div
                   className={cn(
@@ -91,13 +91,13 @@ export function TaskTagsDisplay({
                         key={tag}
                         variant="outline"
                         className={cn(
-                          'block h-auto max-w-[110px] rounded-full border px-2 py-0.5 text-xs font-medium transition-all duration-200 hover:scale-105 hover:brightness-110',
+                          'block h-auto max-w-[110px] rounded-full border px-2 py-0.5 font-medium text-xs transition-all duration-200 hover:scale-105 hover:brightness-110',
                           tagClassName
                         )}
                         style={style}
                         title={tag.length > 18 ? `#${tag}` : undefined}
                       >
-                        <span className="block w-full truncate overflow-hidden whitespace-nowrap">
+                        <span className="block w-full overflow-hidden truncate whitespace-nowrap">
                           #{tag}
                         </span>
                       </Badge>

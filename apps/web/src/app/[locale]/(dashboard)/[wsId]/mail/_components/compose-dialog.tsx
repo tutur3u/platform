@@ -10,7 +10,7 @@ import Superscript from '@tiptap/extension-superscript';
 import TextAlign from '@tiptap/extension-text-align';
 import Underline from '@tiptap/extension-underline';
 import { generateHTML } from '@tiptap/html';
-import { type JSONContent } from '@tiptap/react';
+import type { JSONContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -89,12 +89,12 @@ function EmailChips({
         {value.map((email) => (
           <span
             key={email}
-            className="flex items-center gap-1 rounded-full bg-accent px-2 py-0.5 text-xs font-medium text-accent-foreground"
+            className="flex items-center gap-1 rounded-full bg-accent px-2 py-0.5 font-medium text-accent-foreground text-xs"
           >
             {email}
             <button
               type="button"
-              className="ml-1 text-xs text-muted-foreground hover:text-destructive"
+              className="ml-1 text-muted-foreground text-xs hover:text-destructive"
               onClick={() => onChange(value.filter((e) => e !== email))}
               disabled={disabled}
               aria-label={`Remove ${email}`}
@@ -435,11 +435,11 @@ export function ComposeDialog({
         {/* User info and warning */}
         <div className="mb-2 flex flex-col gap-1">
           {userLoading ? (
-            <div className="text-xs text-muted-foreground">
+            <div className="text-muted-foreground text-xs">
               {t('common.loading')}
             </div>
           ) : user?.display_name && user?.email ? (
-            <div className="text-xs text-muted-foreground">
+            <div className="text-muted-foreground text-xs">
               {t('mail.send_as')}:{' '}
               <span className="font-semibold text-foreground">
                 {user.display_name}{' '}
@@ -447,7 +447,7 @@ export function ComposeDialog({
               </span>
             </div>
           ) : (
-            <div className="text-xs font-semibold text-destructive">
+            <div className="font-semibold text-destructive text-xs">
               {t('mail.display_name_required', {
                 default: t('mail.display_name_required_message'),
               })}
@@ -503,7 +503,7 @@ export function ComposeDialog({
                   </div>
                   <button
                     type="button"
-                    className="px-1 text-xs text-muted-foreground underline hover:text-foreground"
+                    className="px-1 text-muted-foreground text-xs underline hover:text-foreground"
                     onClick={() => setShowCc((v) => !v)}
                     tabIndex={-1}
                   >
@@ -511,7 +511,7 @@ export function ComposeDialog({
                   </button>
                   <button
                     type="button"
-                    className="px-1 text-xs text-muted-foreground underline hover:text-foreground"
+                    className="px-1 text-muted-foreground text-xs underline hover:text-foreground"
                     onClick={() => setShowBcc((v) => !v)}
                     tabIndex={-1}
                   >
@@ -622,17 +622,17 @@ export function ComposeDialog({
                 <TabsContent value="preview">
                   <div className="min-h-[200px] flex-1 rounded border bg-background p-4">
                     {previewLoading ? (
-                      <div className="text-xs text-muted-foreground">
+                      <div className="text-muted-foreground text-xs">
                         {t('common.loading')}
                       </div>
                     ) : sanitizedHtml.trim().length > 0 ? (
                       <div
-                        className="prose max-w-full break-words text-foreground prose-h1:text-foreground prose-h2:text-foreground prose-h3:text-foreground prose-h4:text-foreground prose-h5:text-foreground prose-h6:text-foreground prose-a:text-dynamic-blue prose-a:underline prose-blockquote:text-foreground prose-strong:text-foreground"
+                        className="prose max-w-full break-words prose-a:text-dynamic-blue prose-blockquote:text-foreground prose-h1:text-foreground prose-h2:text-foreground prose-h3:text-foreground prose-h4:text-foreground prose-h5:text-foreground prose-h6:text-foreground prose-strong:text-foreground text-foreground prose-a:underline"
                         // biome-ignore lint/security/noDangerouslySetInnerHtml: <html content is sanitized>
                         dangerouslySetInnerHTML={{ __html: sanitizedHtml }}
                       />
                     ) : (
-                      <div className="text-sm text-muted-foreground">
+                      <div className="text-muted-foreground text-sm">
                         No content to preview
                       </div>
                     )}
@@ -652,7 +652,7 @@ export function ComposeDialog({
                         type="button"
                         variant="ghost"
                         size="sm"
-                        className="flex w-full items-center justify-between rounded-lg border bg-muted/20 px-3 py-2.5 text-left text-sm font-medium text-muted-foreground transition-all hover:bg-muted/40 hover:text-foreground"
+                        className="flex w-full items-center justify-between rounded-lg border bg-muted/20 px-3 py-2.5 text-left font-medium text-muted-foreground text-sm transition-all hover:bg-muted/40 hover:text-foreground"
                       >
                         <span className="flex items-center gap-2">
                           <div className="flex h-5 w-5 items-center justify-center rounded-sm bg-primary/10">
@@ -673,13 +673,13 @@ export function ComposeDialog({
                     </CollapsibleTrigger>
                     <CollapsibleContent className="mt-2">
                       <div className="rounded-lg border bg-muted/10 p-4">
-                        <pre className="text-xs leading-relaxed whitespace-pre-wrap text-muted-foreground">
+                        <pre className="whitespace-pre-wrap text-muted-foreground text-xs leading-relaxed">
                           {quotedContent}
                         </pre>
                       </div>
                     </CollapsibleContent>
                   </Collapsible>
-                  <div className="mt-2 flex items-center gap-1 text-xs text-muted-foreground">
+                  <div className="mt-2 flex items-center gap-1 text-muted-foreground text-xs">
                     <span className="inline-block h-1 w-1 rounded-full bg-green-500"></span>
                     <span>
                       {initialData?.isReply

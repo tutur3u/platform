@@ -217,12 +217,12 @@ export const getPlatformRoleColumns = (
                   src={user.avatar_url || ''}
                   alt={user?.display_name || ''}
                 />
-                <AvatarFallback className="text-xs font-medium">
+                <AvatarFallback className="font-medium text-xs">
                   {getInitials(user.display_name || '?')}
                 </AvatarFallback>
               </Avatar>
               <div
-                className={`absolute -right-0.5 -bottom-0.5 h-3 w-3 rounded-full border-2 border-background ${
+                className={`-right-0.5 -bottom-0.5 absolute h-3 w-3 rounded-full border-2 border-background ${
                   isActive ? 'bg-dynamic-green' : 'bg-dynamic-muted'
                 }`}
               />
@@ -292,7 +292,7 @@ export const getPlatformRoleColumns = (
               />
               {isLoading && (
                 <div className="absolute inset-0 flex items-center justify-center">
-                  <Loader2 className="text-dynamic-muted-foreground h-3 w-3 animate-spin" />
+                  <Loader2 className="h-3 w-3 animate-spin text-dynamic-muted-foreground" />
                 </div>
               )}
             </div>
@@ -300,14 +300,14 @@ export const getPlatformRoleColumns = (
               {enabled ? (
                 <div className="flex items-center gap-1.5">
                   <div className="h-2 w-2 animate-pulse rounded-full bg-dynamic-green" />
-                  <span className="text-xs font-medium text-dynamic-green">
+                  <span className="font-medium text-dynamic-green text-xs">
                     Active
                   </span>
                 </div>
               ) : (
                 <div className="flex items-center gap-1.5">
-                  <div className="bg-dynamic-muted h-2 w-2 rounded-full" />
-                  <span className="text-dynamic-muted-foreground text-xs font-medium">
+                  <div className="h-2 w-2 rounded-full bg-dynamic-muted" />
+                  <span className="font-medium text-dynamic-muted-foreground text-xs">
                     Inactive
                   </span>
                 </div>
@@ -362,7 +362,7 @@ export const getPlatformRoleColumns = (
               ))}
             </div>
             {!isActive && (
-              <div className="text-dynamic-muted-foreground flex items-center gap-1 text-xs">
+              <div className="flex items-center gap-1 text-dynamic-muted-foreground text-xs">
                 <EyeOff className="h-3 w-3" />
                 <span>User inactive</span>
               </div>
@@ -441,7 +441,7 @@ export const getPlatformRoleColumns = (
                         : 'Grant complete platform control and user management'}
                     </p>
                     {!isActive && (
-                      <p className="flex items-center gap-1 text-xs text-dynamic-orange">
+                      <p className="flex items-center gap-1 text-dynamic-orange text-xs">
                         <AlertTriangle className="h-3 w-3" />
                         User must be active first
                       </p>
@@ -513,7 +513,7 @@ export const getPlatformRoleColumns = (
                         : 'Grant access to manage all challenges across the platform'}
                     </p>
                     {!isActive && (
-                      <p className="flex items-center gap-1 text-xs text-dynamic-orange">
+                      <p className="flex items-center gap-1 text-dynamic-orange text-xs">
                         <AlertTriangle className="h-3 w-3" />
                         User must be active first
                       </p>
@@ -585,7 +585,7 @@ export const getPlatformRoleColumns = (
                         : 'Grant access to manage challenges and competitions'}
                     </p>
                     {!isActive && (
-                      <p className="flex items-center gap-1 text-xs text-dynamic-orange">
+                      <p className="flex items-center gap-1 text-dynamic-orange text-xs">
                         <AlertTriangle className="h-3 w-3" />
                         User must be active first
                       </p>
@@ -657,7 +657,7 @@ export const getPlatformRoleColumns = (
                         : 'Grant ability to create new workspaces'}
                     </p>
                     {!isActive && (
-                      <p className="flex items-center gap-1 text-xs text-dynamic-orange">
+                      <p className="flex items-center gap-1 text-dynamic-orange text-xs">
                         <AlertTriangle className="h-3 w-3" />
                         User must be active first
                       </p>
@@ -681,7 +681,7 @@ export const getPlatformRoleColumns = (
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
-                <div className="text-dynamic-muted-foreground flex items-center gap-2 text-sm">
+                <div className="flex items-center gap-2 text-dynamic-muted-foreground text-sm">
                   <Clock className="h-3 w-3" />
                   <span>{moment(createdAt).fromNow()}</span>
                 </div>
@@ -777,7 +777,7 @@ export const getPlatformRoleColumns = (
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <div className="text-dynamic-muted-foreground p-2">
+                    <div className="p-2 text-dynamic-muted-foreground">
                       <MoreHorizontal className="h-4 w-4 opacity-30" />
                     </div>
                   </TooltipTrigger>
@@ -797,7 +797,7 @@ export const getPlatformRoleColumns = (
             <DropdownMenuTrigger asChild>
               <Button
                 variant="ghost"
-                className="hover:bg-dynamic-accent h-8 w-8 p-0"
+                className="h-8 w-8 p-0 hover:bg-dynamic-accent"
                 disabled={isLoading}
               >
                 <span className="sr-only">Manage user permissions</span>
@@ -809,7 +809,7 @@ export const getPlatformRoleColumns = (
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-72">
-              <DropdownMenuLabel className="text-sm font-medium">
+              <DropdownMenuLabel className="font-medium text-sm">
                 Manage Permissions
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
@@ -817,7 +817,7 @@ export const getPlatformRoleColumns = (
               {/* Admin Permission */}
               <DropdownMenuItem
                 onClick={() => togglePermission('admin', allowRoleManagement)}
-                className="focus:bg-dynamic-accent/50 flex items-center justify-between p-3"
+                className="flex items-center justify-between p-3 focus:bg-dynamic-accent/50"
               >
                 <div className="flex items-center gap-3">
                   <Crown className="h-4 w-4 text-dynamic-red" />
@@ -846,7 +846,7 @@ export const getPlatformRoleColumns = (
                 onClick={() =>
                   togglePermission('global_manager', allowManageAllChallenges)
                 }
-                className="focus:bg-dynamic-accent/50 flex items-center justify-between p-3"
+                className="flex items-center justify-between p-3 focus:bg-dynamic-accent/50"
               >
                 <div className="flex items-center gap-3">
                   <Globe className="h-4 w-4 text-dynamic-blue" />
@@ -881,7 +881,7 @@ export const getPlatformRoleColumns = (
                     allowChallengeManagement
                   )
                 }
-                className="focus:bg-dynamic-accent/50 flex items-center justify-between p-3"
+                className="flex items-center justify-between p-3 focus:bg-dynamic-accent/50"
               >
                 <div className="flex items-center gap-3">
                   <Shield className="h-4 w-4 text-dynamic-purple" />
@@ -913,7 +913,7 @@ export const getPlatformRoleColumns = (
                 onClick={() =>
                   togglePermission('workspace_creator', allowWorkspaceCreation)
                 }
-                className="focus:bg-dynamic-accent/50 flex items-center justify-between p-3"
+                className="flex items-center justify-between p-3 focus:bg-dynamic-accent/50"
               >
                 <div className="flex items-center gap-3">
                   <Building className="h-4 w-4 text-dynamic-green" />
@@ -945,7 +945,7 @@ export const getPlatformRoleColumns = (
               {/* Quick Actions */}
               <DropdownMenuItem
                 onClick={clearAllPermissions}
-                className="text-dynamic-muted-foreground hover:text-dynamic-foreground focus:bg-dynamic-accent/50 flex items-center gap-3 p-3"
+                className="flex items-center gap-3 p-3 text-dynamic-muted-foreground hover:text-dynamic-foreground focus:bg-dynamic-accent/50"
                 disabled={
                   !allowRoleManagement &&
                   !allowManageAllChallenges &&

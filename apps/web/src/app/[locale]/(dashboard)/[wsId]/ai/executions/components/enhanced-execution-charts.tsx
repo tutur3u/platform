@@ -322,10 +322,10 @@ export function EnhancedExecutionCharts({
   }) => (
     <div className="flex flex-col items-center justify-center py-12 text-center">
       <BarChart3 className="mb-4 h-12 w-12 text-muted-foreground/50" />
-      <h3 className="mb-2 text-lg font-semibold text-muted-foreground">
+      <h3 className="mb-2 font-semibold text-lg text-muted-foreground">
         {title}
       </h3>
-      <p className="max-w-md text-sm text-muted-foreground">{description}</p>
+      <p className="max-w-md text-muted-foreground text-sm">{description}</p>
     </div>
   );
 
@@ -375,16 +375,16 @@ export function EnhancedExecutionCharts({
       <div className="grid gap-4 md:grid-cols-4">
         <Card className="relative overflow-hidden">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="flex items-center gap-2 text-sm font-medium">
+            <CardTitle className="flex items-center gap-2 font-medium text-sm">
               <Zap className="h-4 w-4 text-primary" />
               {t('total_executions') || 'Total Executions'}
             </CardTitle>
             {trends && (
               <div className="flex items-center gap-1">
                 {trends.isExecutionIncreasing ? (
-                  <ArrowUp className="text-success h-3 w-3" />
+                  <ArrowUp className="h-3 w-3 text-success" />
                 ) : (
-                  <ArrowDown className="text-danger h-3 w-3" />
+                  <ArrowDown className="h-3 w-3 text-danger" />
                 )}
                 <span
                   className={`text-xs ${trends.isExecutionIncreasing ? 'text-success' : 'text-danger'}`}
@@ -395,10 +395,10 @@ export function EnhancedExecutionCharts({
             )}
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
+            <div className="font-bold text-2xl">
               {totalExecutions.toLocaleString()}
             </div>
-            <p className="mt-1 text-xs text-muted-foreground">
+            <p className="mt-1 text-muted-foreground text-xs">
               {t('total_executions_description') ||
                 'Total number of AI executions'}
             </p>
@@ -408,16 +408,16 @@ export function EnhancedExecutionCharts({
 
         <Card className="relative overflow-hidden">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="flex items-center gap-2 text-sm font-medium">
-              <DollarSign className="text-success h-4 w-4" />
+            <CardTitle className="flex items-center gap-2 font-medium text-sm">
+              <DollarSign className="h-4 w-4 text-success" />
               {t('total_cost') || 'Total Cost'}
             </CardTitle>
             {trends && (
               <div className="flex items-center gap-1">
                 {trends.isCostIncreasing ? (
-                  <ArrowUp className="text-danger h-3 w-3" />
+                  <ArrowUp className="h-3 w-3 text-danger" />
                 ) : (
-                  <ArrowDown className="text-success h-3 w-3" />
+                  <ArrowDown className="h-3 w-3 text-success" />
                 )}
                 <span
                   className={`text-xs ${trends.isCostIncreasing ? 'text-danger' : 'text-success'}`}
@@ -428,48 +428,48 @@ export function EnhancedExecutionCharts({
             )}
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{formatCost(totalCost)}</div>
-            <p className="mt-1 text-xs text-muted-foreground">
+            <div className="font-bold text-2xl">{formatCost(totalCost)}</div>
+            <p className="mt-1 text-muted-foreground text-xs">
               {formatCost(totalCost * 26000, 'VND')}
             </p>
           </CardContent>
-          <div className="from-success/5 pointer-events-none absolute inset-0 bg-gradient-to-r to-transparent" />
+          <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-success/5 to-transparent" />
         </Card>
 
         <Card className="relative overflow-hidden">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="flex items-center gap-2 text-sm font-medium">
-              <TrendingUp className="text-warning h-4 w-4" />
+            <CardTitle className="flex items-center gap-2 font-medium text-sm">
+              <TrendingUp className="h-4 w-4 text-warning" />
               {t('total_tokens') || 'Total Tokens'}
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
+            <div className="font-bold text-2xl">
               {totalTokens.toLocaleString()}
             </div>
-            <p className="mt-1 text-xs text-muted-foreground">
+            <p className="mt-1 text-muted-foreground text-xs">
               {t('total_tokens_description') || 'Total tokens processed'}
             </p>
           </CardContent>
-          <div className="from-warning/5 pointer-events-none absolute inset-0 bg-gradient-to-r to-transparent" />
+          <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-warning/5 to-transparent" />
         </Card>
 
         <Card className="relative overflow-hidden">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="flex items-center gap-2 text-sm font-medium">
-              <Clock className="text-info h-4 w-4" />
+            <CardTitle className="flex items-center gap-2 font-medium text-sm">
+              <Clock className="h-4 w-4 text-info" />
               {t('avg_per_execution') || 'Avg per Execution'}
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
+            <div className="font-bold text-2xl">
               {formatCost(avgCostPerExecution)}
             </div>
-            <p className="mt-1 text-xs text-muted-foreground">
+            <p className="mt-1 text-muted-foreground text-xs">
               {avgTokensPerExecution.toLocaleString()} {t('tokens') || 'tokens'}
             </p>
           </CardContent>
-          <div className="from-info/5 pointer-events-none absolute inset-0 bg-gradient-to-r to-transparent" />
+          <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-info/5 to-transparent" />
         </Card>
       </div>
 
@@ -477,7 +477,7 @@ export function EnhancedExecutionCharts({
       {insights.length > 0 && (
         <Card className="border-warning/20 bg-warning/5">
           <CardHeader>
-            <CardTitle className="text-warning flex items-center gap-2">
+            <CardTitle className="flex items-center gap-2 text-warning">
               <Info className="h-5 w-5" />
               {t('performance_insights') || 'Performance Insights'}
             </CardTitle>
@@ -499,7 +499,7 @@ export function EnhancedExecutionCharts({
                   <AlertDescription className="flex items-start justify-between">
                     <div>
                       <div className="font-medium">{insight.title}</div>
-                      <div className="text-sm text-muted-foreground">
+                      <div className="text-muted-foreground text-sm">
                         {insight.description}
                       </div>
                     </div>
@@ -547,7 +547,7 @@ export function EnhancedExecutionCharts({
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <DollarSign className="text-success h-5 w-5" />
+                  <DollarSign className="h-5 w-5 text-success" />
                   {t('cost_trend_overview') || 'Cost & Execution Trend'}
                 </CardTitle>
                 <CardDescription>
@@ -634,7 +634,7 @@ export function EnhancedExecutionCharts({
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <BarChart3 className="text-info h-5 w-5" />
+                  <BarChart3 className="h-5 w-5 text-info" />
                   {t('model_distribution') || 'Model Distribution'}
                 </CardTitle>
                 <CardDescription>
@@ -697,7 +697,7 @@ export function EnhancedExecutionCharts({
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <DollarSign className="text-success h-5 w-5" />
+                <DollarSign className="h-5 w-5 text-success" />
                 {t('detailed_cost_analysis') || 'Detailed Cost Analysis'}
               </CardTitle>
               <CardDescription>
@@ -866,7 +866,7 @@ export function EnhancedExecutionCharts({
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Zap className="text-info h-5 w-5" />
+                <Zap className="h-5 w-5 text-info" />
                 {t('model_performance_analysis') ||
                   'Model Performance Analysis'}
               </CardTitle>

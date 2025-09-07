@@ -1,5 +1,5 @@
 import FinancePage from '@tuturuuu/ui/finance/finance-page';
-import { FinanceDashboardSearchParams } from '@tuturuuu/ui/finance/shared/metrics';
+import type { FinanceDashboardSearchParams } from '@tuturuuu/ui/finance/shared/metrics';
 
 interface Props {
   params: Promise<{

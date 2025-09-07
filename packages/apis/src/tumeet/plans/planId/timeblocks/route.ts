@@ -2,7 +2,7 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
-import { Timeblock } from '@tuturuuu/types/primitives/Timeblock';
+import type { Timeblock } from '@tuturuuu/types/primitives/Timeblock';
 import { NextResponse } from 'next/server';
 
 interface Params {

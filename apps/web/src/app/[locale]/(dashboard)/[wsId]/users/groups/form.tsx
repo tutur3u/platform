@@ -113,19 +113,19 @@ export default function UserGroupForm({ wsId, data, onFinish }: Props) {
                     />
                   </FormControl>
                   <div className="flex-1 space-y-2">
-                    <FormLabel className="text-base leading-none font-medium peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                    <FormLabel className="font-medium text-base leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
                       Guest Group
                     </FormLabel>
                     <p
                       id="guest-group-description"
-                      className="text-sm leading-relaxed text-muted-foreground"
+                      className="text-muted-foreground text-sm leading-relaxed"
                     >
                       Mark this group as a guest group. Guest users will have
                       limited access permissions and restricted functionality
                       within the workspace.
                     </p>
                     {field.value && (
-                      <div className="flex items-center space-x-2 rounded bg-amber-50 px-2 py-1 text-xs text-amber-600 dark:bg-amber-900/20 dark:text-amber-400">
+                      <div className="flex items-center space-x-2 rounded bg-amber-50 px-2 py-1 text-amber-600 text-xs dark:bg-amber-900/20 dark:text-amber-400">
                         <svg
                           className="h-3 w-3"
                           fill="currentColor"

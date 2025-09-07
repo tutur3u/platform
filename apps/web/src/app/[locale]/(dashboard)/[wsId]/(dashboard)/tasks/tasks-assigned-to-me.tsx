@@ -3,8 +3,8 @@ import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
 import { User, UserRoundCheck, UserStar } from '@tuturuuu/ui/icons';
 import Link from 'next/link';
-import ExpandableTaskList from './expandable-task-list';
 import { getTranslations } from 'next-intl/server';
+import ExpandableTaskList from './expandable-task-list';
 
 interface TasksAssignedToMeProps {
   wsId: string;
@@ -22,7 +22,8 @@ export default async function TasksAssignedToMe({
   // Get tasks assigned to the current user
   const queryBuilder = supabase
     .from('tasks')
-    .select(`
+    .select(
+      `
       *,
       list:task_lists!inner(
         id,
@@ -42,7 +43,8 @@ export default async function TasksAssignedToMe({
           avatar_url
         )
       )
-    `)
+    `
+    )
     .eq('assignees.user_id', userId)
     .eq('deleted', false)
     .in('list.status', ['not_started', 'active']) // Only active tasks
@@ -62,7 +64,7 @@ export default async function TasksAssignedToMe({
 
   return (
     <Card className="overflow-hidden border-dynamic-orange/20 transition-all duration-300">
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 border-dynamic-orange/20 border-b bg-gradient-to-r from-dynamic-orange/5 to-dynamic-red/5 pb-3">
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 border-dynamic-orange/20 border-b bg-gradient-to-r from-dynamic-orange/5 to-dynamic-red/5 p-4">
         <CardTitle className="flex items-center gap-2 font-semibold text-base">
           <div className="rounded-lg bg-dynamic-orange/10 p-1.5 text-dynamic-orange">
             <UserStar className="h-4 w-4" />

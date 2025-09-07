@@ -162,7 +162,7 @@ export function CalendarSyncDashboard({ syncLogs }: { syncLogs: SyncLog[] }) {
               <Calendar className="h-5 w-5 text-white" />
             </div>
             <div>
-              <h1 className="text-xl font-semibold">Calendar Sync Dashboard</h1>
+              <h1 className="font-semibold text-xl">Calendar Sync Dashboard</h1>
               <p className="text-sm opacity-70">
                 Monitor workspace calendar synchronization
               </p>

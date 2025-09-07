@@ -219,7 +219,7 @@ export async function POST(req: Request, { params }: Params) {
 
     // Get user workspace ID
     let workspaceUserId: string | null = null;
-    let workspaceUserGroup: string | null = null;
+    const workspaceUserGroup: string | null = null;
     if (user) {
       const { data: workspaceUser } = await supabase
         .from('workspace_user_linked_users')

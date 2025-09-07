@@ -121,8 +121,8 @@ export function MonthlyOverview({
         <CardContent className="grid gap-4">
           <div className="flex flex-col gap-2">
             <div className="flex items-center justify-between">
-              <span className="text-sm font-medium">Tasks Progress</span>
-              <span className="text-sm text-muted-foreground">
+              <span className="font-medium text-sm">Tasks Progress</span>
+              <span className="text-muted-foreground text-sm">
                 {stats.completedTasks}/{stats.totalTasks} tasks
               </span>
             </div>
@@ -131,8 +131,8 @@ export function MonthlyOverview({
 
           <div className="flex flex-col gap-2">
             <div className="flex items-center justify-between">
-              <span className="text-sm font-medium">Hours Progress</span>
-              <span className="text-sm text-muted-foreground">
+              <span className="font-medium text-sm">Hours Progress</span>
+              <span className="text-muted-foreground text-sm">
                 {stats.completedHours}/{stats.totalHours} hours
               </span>
             </div>
@@ -141,18 +141,18 @@ export function MonthlyOverview({
 
           {currentMilestone && (
             <div className="mt-4">
-              <h4 className="mb-2 text-sm font-medium">Current Milestone</h4>
+              <h4 className="mb-2 font-medium text-sm">Current Milestone</h4>
               <div className="rounded-md border bg-card/50 p-3">
                 <div className="flex items-center justify-between">
                   <span className="font-medium">{currentMilestone.title}</span>
                   <Badge variant="outline">Q{currentMilestone.quarter}</Badge>
                 </div>
                 {currentMilestone.description && (
-                  <p className="mt-1 text-sm text-muted-foreground">
+                  <p className="mt-1 text-muted-foreground text-sm">
                     {currentMilestone.description}
                   </p>
                 )}
-                <div className="mt-2 flex items-center gap-2 text-xs text-muted-foreground">
+                <div className="mt-2 flex items-center gap-2 text-muted-foreground text-xs">
                   <Calendar className="h-3 w-3" />
                   {format(parseISO(currentMilestone.start_date), 'MMM d')} -{' '}
                   {format(parseISO(currentMilestone.end_date), 'MMM d, yyyy')}
@@ -160,10 +160,10 @@ export function MonthlyOverview({
                 {currentMilestone.progress !== undefined && (
                   <div className="mt-3 flex flex-col gap-2">
                     <div className="flex items-center justify-between">
-                      <span className="text-xs text-muted-foreground">
+                      <span className="text-muted-foreground text-xs">
                         Progress
                       </span>
-                      <span className="text-xs font-medium">
+                      <span className="font-medium text-xs">
                         {currentMilestone.progress}%
                       </span>
                     </div>

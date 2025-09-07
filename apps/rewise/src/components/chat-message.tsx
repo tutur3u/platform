@@ -105,9 +105,9 @@ const MermaidRenderer = ({ content }: { content: string }) => {
 
   if (error) {
     return (
-      <div className="rounded-lg border border-dynamic-red/20 bg-dynamic-red/10 p-4 text-sm text-dynamic-red">
+      <div className="rounded-lg border border-dynamic-red/20 bg-dynamic-red/10 p-4 text-dynamic-red text-sm">
         <p className="font-semibold">Failed to render diagram:</p>
-        <pre className="mt-2 font-mono text-xs whitespace-pre-wrap">
+        <pre className="mt-2 whitespace-pre-wrap font-mono text-xs">
           {error}
         </pre>
       </div>
@@ -170,7 +170,7 @@ const QuizComponent = ({
 
   return (
     <div className="mt-4 flex w-full flex-col items-center justify-center rounded-lg border bg-foreground/5 p-4">
-      <div className="text-lg font-bold text-foreground">{question}</div>
+      <div className="font-bold text-foreground text-lg">{question}</div>
       <Separator className="my-2" />
       <div
         className={`grid w-full gap-2 md:grid-cols-2 ${
@@ -214,7 +214,7 @@ const QuizComponent = ({
             <span className="opacity-70">.</span>
           </div>
           <Separator className="my-4" />
-          <div className="w-full rounded border border-dynamic-purple/20 bg-dynamic-purple/10 p-1 text-center text-sm font-semibold text-dynamic-purple">
+          <div className="w-full rounded border border-dynamic-purple/20 bg-dynamic-purple/10 p-1 text-center font-semibold text-dynamic-purple text-sm">
             {t('experimental_disclaimer')}
           </div>
         </>
@@ -245,7 +245,7 @@ const FlashcardComponent = ({
 
   return (
     <div className="mt-4 flex w-full flex-col items-center justify-center rounded-lg border bg-foreground/5 p-4">
-      <div className="text-lg font-bold text-foreground">{question}</div>
+      <div className="font-bold text-foreground text-lg">{question}</div>
       <Separator className="mt-2 mb-4" />
       <button
         type="button"
@@ -260,7 +260,7 @@ const FlashcardComponent = ({
           <>
             <div className="text-dynamic-yellow">{answer}</div>
             <Separator className="my-4" />
-            <div className="w-full rounded border border-dynamic-purple/20 bg-dynamic-purple/10 p-1 text-center text-sm text-dynamic-purple">
+            <div className="w-full rounded border border-dynamic-purple/20 bg-dynamic-purple/10 p-1 text-center text-dynamic-purple text-sm">
               {t('experimental_disclaimer')}
             </div>
           </>
@@ -537,7 +537,7 @@ export function ChatMessage({
       blockquote({ children, ...props }: { children: React.ReactNode }) {
         return (
           <blockquote
-            className="border-l-4 border-foreground/30 pl-2 text-foreground/80"
+            className="border-foreground/30 border-l-4 pl-2 text-foreground/80"
             {...props}
           >
             {children}
@@ -629,7 +629,7 @@ export function ChatMessage({
       {...props}
     >
       <div className="flex h-fit flex-wrap justify-between gap-2">
-        <div className="flex h-fit w-fit items-center space-x-2 rounded-lg select-none">
+        <div className="flex h-fit w-fit select-none items-center space-x-2 rounded-lg">
           <div
             className={cn(
               'flex h-10 w-10 shrink-0 items-center justify-center rounded-md border bg-foreground/10 text-foreground shadow'
@@ -674,7 +674,7 @@ export function ChatMessage({
               message.role === 'user' ? '' : 'h-8 justify-between'
             }`}
           >
-            <span className="line-clamp-1 h-fit overflow-hidden text-xs font-bold">
+            <span className="line-clamp-1 h-fit overflow-hidden font-bold text-xs">
               {message.role === 'user'
                 ? anonymize
                   ? t('anonymous')
@@ -682,7 +682,7 @@ export function ChatMessage({
                 : 'Mira'}
             </span>
 
-            <div className="flex flex-wrap items-center gap-1 text-xs font-semibold">
+            <div className="flex flex-wrap items-center gap-1 font-semibold text-xs">
               <span className="text-xs opacity-50">
                 {capitalize(dayjs(message?.created_at).fromNow())}
               </span>
@@ -696,7 +696,7 @@ export function ChatMessage({
       <div
         className={cn(
           'flex-1 space-y-2',
-          'text-md prose w-[calc(100vw-8rem)] min-w-full break-words text-foreground md:w-152 lg:w-full dark:prose-invert prose-p:leading-relaxed prose-p:before:hidden prose-p:after:hidden prose-code:before:hidden prose-code:after:hidden prose-pre:p-2 prose-li:marker:text-foreground/80 prose-tr:border-border prose-th:border prose-th:border-b-4 prose-th:border-foreground/20 prose-th:p-2 prose-th:text-center prose-th:text-lg prose-td:border prose-td:p-2'
+          'prose dark:prose-invert w-[calc(100vw-8rem)] min-w-full break-words prose-td:border prose-th:border prose-th:border-foreground/20 prose-tr:border-border prose-th:border-b-4 prose-pre:p-2 prose-td:p-2 prose-th:p-2 prose-th:text-center prose-th:text-lg text-foreground text-md prose-p:leading-relaxed prose-li:marker:text-foreground/80 prose-code:before:hidden prose-p:before:hidden prose-code:after:hidden prose-p:after:hidden md:w-152 lg:w-full'
         )}
       >
         <MemoizedReactMarkdown

@@ -74,7 +74,7 @@ function ShortUrlDisplay({ slug, t }: { slug: string; t: any }) {
         href={shortUrl}
         target="_blank"
         rel="noopener noreferrer"
-        className="flex-1 truncate font-mono text-sm text-dynamic-blue transition-colors hover:text-dynamic-blue/80 hover:underline"
+        className="flex-1 truncate font-mono text-dynamic-blue text-sm transition-colors hover:text-dynamic-blue/80 hover:underline"
       >
         {shortUrl}
       </Link>
@@ -131,11 +131,11 @@ function CreatorDisplay({
                 src={creator.avatar_url || undefined}
                 alt={displayName}
               />
-              <AvatarFallback className="bg-dynamic-blue/10 text-xs text-dynamic-blue">
+              <AvatarFallback className="bg-dynamic-blue/10 text-dynamic-blue text-xs">
                 {initials}
               </AvatarFallback>
             </Avatar>
-            <span className="max-w-32 truncate text-sm font-medium">
+            <span className="max-w-32 truncate font-medium text-sm">
               {displayName}
             </span>
           </div>
@@ -144,7 +144,7 @@ function CreatorDisplay({
           <div className="space-y-1">
             <p className="font-medium">{displayName}</p>
             {creator.email && (
-              <p className="text-xs text-muted-foreground">{creator.email}</p>
+              <p className="text-muted-foreground text-xs">{creator.email}</p>
             )}
           </div>
         </TooltipContent>
@@ -182,12 +182,12 @@ export const linkShortenerColumns = (
       <div className="group flex items-center gap-3">
         <div className="min-w-0 flex-1">
           <div
-            className="max-w-96 truncate text-sm font-medium"
+            className="max-w-96 truncate font-medium text-sm"
             title={row.getValue('link')}
           >
             {row.getValue('link')}
           </div>
-          <div className="text-xs text-muted-foreground">
+          <div className="text-muted-foreground text-xs">
             {new URL(row.getValue('link')).hostname}
           </div>
         </div>
@@ -245,13 +245,13 @@ export const linkShortenerColumns = (
 
       return (
         <div className="flex items-center gap-2">
-          <div className="text-sm text-muted-foreground">
+          <div className="text-muted-foreground text-sm">
             {formatDistanceToNow(date, { addSuffix: true })}
           </div>
           {isRecent && (
             <Badge
               variant="secondary"
-              className="border-dynamic-green/20 bg-dynamic-green/10 px-2 py-0.5 text-xs text-dynamic-green"
+              className="border-dynamic-green/20 bg-dynamic-green/10 px-2 py-0.5 text-dynamic-green text-xs"
             >
               {t('link-shortener.new')}
             </Badge>
@@ -277,7 +277,7 @@ export const linkShortenerColumns = (
           <div className="rounded-md bg-dynamic-purple/10 p-1">
             <MousePointerClick className="h-3 w-3 text-dynamic-purple" />
           </div>
-          <span className="text-sm font-medium">
+          <span className="font-medium text-sm">
             {clickCount?.toLocaleString() || '0'}
           </span>
         </div>

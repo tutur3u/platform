@@ -20,30 +20,30 @@ export function PromotionCard({ promotion, locale }: PromotionCardProps) {
     : promotion.value > 100000;
 
   return (
-    <Card className="bg-card border-border shadow-sm hover:shadow-md transition-shadow duration-200">
+    <Card className="border-border bg-card shadow-sm transition-shadow duration-200 hover:shadow-md">
       <CardContent className="p-4">
         <div className="flex items-start justify-between gap-3">
-          <div className="flex items-center gap-3 flex-1">
-            <div className="p-2 bg-accent/10 rounded-lg">
+          <div className="flex flex-1 items-center gap-3">
+            <div className="rounded-lg bg-accent/10 p-2">
               {isPercentage ? (
                 <Percent className="h-5 w-5 text-foreground" />
               ) : (
                 <DollarSign className="h-5 w-5 text-foreground" />
               )}
             </div>
-            <div className="flex-1 min-w-0">
-              <h4 className="font-semibold text-card-foreground text-sm truncate">
+            <div className="min-w-0 flex-1">
+              <h4 className="truncate font-semibold text-card-foreground text-sm">
                 {displayName}
               </h4>
-              <div className="flex items-center gap-2 mt-1">
+              <div className="mt-1 flex items-center gap-2">
                 <Badge
                   variant={isPercentage ? 'default' : 'secondary'}
-                  className="text-xs px-2 py-0.5"
+                  className="px-2 py-0.5 text-xs"
                 >
                   {isPercentage ? 'Percentage' : 'Fixed Amount'}
                 </Badge>
                 {isHighValue && (
-                  <Badge variant="destructive" className="text-xs px-2 py-0.5">
+                  <Badge variant="destructive" className="px-2 py-0.5 text-xs">
                     High Value
                   </Badge>
                 )}
@@ -51,7 +51,7 @@ export function PromotionCard({ promotion, locale }: PromotionCardProps) {
             </div>
           </div>
           <div className="text-right">
-            <div className="font-bold text-lg text-foreground">
+            <div className="font-bold text-foreground text-lg">
               {isPercentage
                 ? `${promotion.value}%`
                 : `-${Intl.NumberFormat(locale, {
@@ -59,7 +59,7 @@ export function PromotionCard({ promotion, locale }: PromotionCardProps) {
                     currency: 'VND',
                   }).format(promotion.value)}`}
             </div>
-            <div className="text-xs text-muted-foreground">
+            <div className="text-muted-foreground text-xs">
               {isPercentage ? 'Discount' : 'Off'}
             </div>
           </div>

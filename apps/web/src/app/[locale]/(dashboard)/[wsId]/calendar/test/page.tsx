@@ -116,7 +116,7 @@ export default function Page() {
   return (
     <div className="container max-w-4xl py-10">
       <div className="mb-8 space-y-2">
-        <h1 className="text-3xl font-bold">Create Calendar Event</h1>
+        <h1 className="font-bold text-3xl">Create Calendar Event</h1>
         <p className="text-muted-foreground">
           Generate calendar events using AI or create them manually
         </p>
@@ -240,7 +240,7 @@ export default function Page() {
                   {/* Date and Time */}
                   <div className="space-y-4">
                     <div>
-                      <h3 className="mb-1 text-sm font-medium text-muted-foreground">
+                      <h3 className="mb-1 font-medium text-muted-foreground text-sm">
                         Start Time
                       </h3>
                       <div className="flex items-center gap-2">
@@ -254,7 +254,7 @@ export default function Page() {
                     </div>
 
                     <div>
-                      <h3 className="mb-1 text-sm font-medium text-muted-foreground">
+                      <h3 className="mb-1 font-medium text-muted-foreground text-sm">
                         End Time
                       </h3>
                       <div className="flex items-center gap-2">
@@ -278,7 +278,7 @@ export default function Page() {
                   <div className="space-y-4">
                     {generatedEvent.location && (
                       <div>
-                        <h3 className="mb-1 text-sm font-medium text-muted-foreground">
+                        <h3 className="mb-1 font-medium text-muted-foreground text-sm">
                           Location
                         </h3>
                         <p>{generatedEvent.location}</p>
@@ -287,7 +287,7 @@ export default function Page() {
 
                     {generatedEvent.description && (
                       <div>
-                        <h3 className="mb-1 text-sm font-medium text-muted-foreground">
+                        <h3 className="mb-1 font-medium text-muted-foreground text-sm">
                           Description
                         </h3>
                         <p>{generatedEvent.description}</p>

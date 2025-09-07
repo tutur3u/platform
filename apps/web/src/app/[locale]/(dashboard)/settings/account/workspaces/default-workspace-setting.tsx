@@ -159,7 +159,7 @@ export default function DefaultWorkspaceSetting({
 
   if (!workspaces || workspaces.length === 0) {
     return (
-      <div className="text-sm text-muted-foreground">
+      <div className="text-muted-foreground text-sm">
         No workspaces available
       </div>
     );
@@ -189,7 +189,7 @@ export default function DefaultWorkspaceSetting({
           </SelectItem>
           {/* Group: Personal */}
           <SelectItem value="__header-personal__" disabled>
-            <span className="text-xs text-muted-foreground">
+            <span className="text-muted-foreground text-xs">
               {t('personal_account')}
             </span>
           </SelectItem>
@@ -200,7 +200,7 @@ export default function DefaultWorkspaceSetting({
                 <div className="flex items-center">
                   <Crown className="mr-2 h-3.5 w-3.5 opacity-70" />
                   <span>{workspace.name}</span>
-                  <span className="ml-2 text-xs text-muted-foreground">
+                  <span className="ml-2 text-muted-foreground text-xs">
                     ({workspace.role})
                   </span>
                 </div>
@@ -208,7 +208,7 @@ export default function DefaultWorkspaceSetting({
             ))}
           {/* Group: Other Workspaces */}
           <SelectItem value="__header-workspaces__" disabled>
-            <span className="text-xs text-muted-foreground">
+            <span className="text-muted-foreground text-xs">
               {t('workspaces')}
             </span>
           </SelectItem>
@@ -218,7 +218,7 @@ export default function DefaultWorkspaceSetting({
               <SelectItem key={workspace.id} value={workspace.id}>
                 <div className="flex items-center">
                   <span>{workspace.name}</span>
-                  <span className="ml-2 text-xs text-muted-foreground">
+                  <span className="ml-2 text-muted-foreground text-xs">
                     ({workspace.role})
                   </span>
                 </div>

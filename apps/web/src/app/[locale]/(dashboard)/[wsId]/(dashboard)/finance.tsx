@@ -1,7 +1,7 @@
 import { FinanceCategoryStatistics } from './categories/finance';
 import FinanceToggle from './finance-toggle';
 import LoadingStatisticCard from '@tuturuuu/ui/finance/shared/loaders/statistics';
-import { FinanceDashboardSearchParams } from '@tuturuuu/ui/finance/shared/metrics';
+import type { FinanceDashboardSearchParams } from '@tuturuuu/ui/finance/shared/metrics';
 import ExpenseStatistics from '@tuturuuu/ui/finance/statistics/expense';
 import IncomeStatistics from '@tuturuuu/ui/finance/statistics/income';
 import InvoicesStatistics from '@tuturuuu/ui/finance/statistics/invoices';

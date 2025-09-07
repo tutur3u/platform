@@ -6,8 +6,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
 import { CheckCircle, Eye, Plus } from '@tuturuuu/ui/icons';
 import { cn } from '@tuturuuu/utils/format';
 import Link from 'next/link';
-import TaskCreationDate from './task-creation-date';
 import { getTranslations } from 'next-intl/server';
+import TaskCreationDate from './task-creation-date';
 
 interface NewlyCreatedTasksProps {
   wsId: string;
@@ -24,7 +24,8 @@ export default async function NewlyCreatedTasks({
 
   const { data: recentTasks, error } = await supabase
     .from('tasks')
-    .select(`
+    .select(
+      `
       *,
       list:task_lists!inner(
         id,
@@ -43,7 +44,8 @@ export default async function NewlyCreatedTasks({
           avatar_url
         )
       )
-    `)
+    `
+    )
     .eq('list.board.ws_id', wsId)
     .eq('deleted', false)
     .gte('created_at', sevenDaysAgo.toISOString())
@@ -73,7 +75,7 @@ export default async function NewlyCreatedTasks({
 
   return (
     <Card className="overflow-hidden border-dynamic-green/20 transition-all duration-300">
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 border-dynamic-green/20 border-b bg-gradient-to-r from-dynamic-green/5 to-dynamic-blue/5 pb-3">
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 border-dynamic-green/20 border-b bg-gradient-to-r from-dynamic-green/5 to-dynamic-blue/5 p-4">
         <CardTitle className="flex items-center gap-2 font-semibold text-base">
           <div className="rounded-lg bg-dynamic-green/10 p-1.5 text-dynamic-green">
             <CheckCircle className="h-4 w-4" />

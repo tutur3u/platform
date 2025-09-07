@@ -71,7 +71,7 @@ export function LiveScoresDisplay({
           <div className="absolute top-3 right-3">
             <Badge
               variant="outline"
-              className="border border-dynamic-purple/40 bg-dynamic-purple/15 text-xs font-medium text-dynamic-purple"
+              className="border border-dynamic-purple/40 bg-dynamic-purple/15 font-medium text-dynamic-purple text-xs"
             >
               <div className="flex items-center gap-1">
                 <Sparkles className="h-3 w-3" />
@@ -86,9 +86,9 @@ export function LiveScoresDisplay({
                 <div className="flex h-16 w-16 items-center justify-center rounded-full bg-dynamic-purple/20 shadow-lg">
                   <Brain className="h-8 w-8 text-dynamic-purple" />
                 </div>
-                <div className="absolute -inset-2">
+                <div className="-inset-2 absolute">
                   <svg
-                    className="h-20 w-20 -rotate-90 transform"
+                    className="-rotate-90 h-20 w-20 transform"
                     viewBox="0 0 100 100"
                   >
                     <circle
@@ -116,27 +116,27 @@ export function LiveScoresDisplay({
                     />
                   </svg>
                 </div>
-                <div className="absolute -inset-1">
+                <div className="-inset-1 absolute">
                   <div className="h-18 w-18 animate-pulse rounded-full border-2 border-dynamic-purple/20 opacity-60" />
                 </div>
               </div>
               <div>
-                <div className="text-lg font-bold text-dynamic-purple">
+                <div className="font-bold text-dynamic-purple text-lg">
                   Criteria
                 </div>
-                <div className="text-sm font-medium text-foreground/70">
+                <div className="font-medium text-foreground/70 text-sm">
                   Quality Score
                 </div>
               </div>
             </div>
             <div className="text-right">
-              <div className="text-3xl font-bold text-dynamic-purple">
+              <div className="font-bold text-3xl text-dynamic-purple">
                 {evaluationPreview.criteriaScores.totalScore.toFixed(1)}
-                <span className="text-xl text-foreground/60">
+                <span className="text-foreground/60 text-xl">
                   /{evaluationPreview.criteriaScores.maxScore}
                 </span>
               </div>
-              <div className="text-sm font-medium text-dynamic-purple/80">
+              <div className="font-medium text-dynamic-purple/80 text-sm">
                 {evaluationPreview.criteriaScores.percentage}% quality
               </div>
             </div>
@@ -193,23 +193,23 @@ export function LiveResultsPreview({
             <div className="rounded-lg border border-dynamic-purple/20 bg-dynamic-purple/5 p-3">
               <div className="mb-2 flex items-center gap-2">
                 <Brain className="h-4 w-4 text-dynamic-purple" />
-                <span className="text-sm font-medium text-foreground">
+                <span className="font-medium text-foreground text-sm">
                   Criteria ({evaluationPreview.criteriaEvaluation.length})
                 </span>
                 {evaluationPreview.criteriaScores && (
                   <Badge
                     variant="outline"
-                    className="ml-auto border-dynamic-purple/30 bg-dynamic-purple/10 text-xs text-dynamic-purple"
+                    className="ml-auto border-dynamic-purple/30 bg-dynamic-purple/10 text-dynamic-purple text-xs"
                   >
                     {evaluationPreview.criteriaScores.percentage}%
                   </Badge>
                 )}
               </div>
-              <div className="text-xs text-foreground/60">
+              <div className="text-foreground/60 text-xs">
                 Evaluation criteria being assessed in real-time
               </div>
               {evaluationPreview.criteriaScores && (
-                <div className="mt-2 text-xs text-dynamic-purple/80">
+                <div className="mt-2 text-dynamic-purple/80 text-xs">
                   Score:{' '}
                   {evaluationPreview.criteriaScores.totalScore.toFixed(1)}/
                   {evaluationPreview.criteriaScores.maxScore}
@@ -222,13 +222,13 @@ export function LiveResultsPreview({
             <div className="rounded-lg border border-dynamic-indigo/20 bg-dynamic-indigo/5 p-3">
               <div className="mb-2 flex items-center gap-2">
                 <FlaskConical className="h-4 w-4 text-dynamic-indigo" />
-                <span className="text-sm font-medium text-foreground">
+                <span className="font-medium text-foreground text-sm">
                   Test Cases ({evaluationPreview.testCaseResults.length})
                 </span>
                 {evaluationPreview.testCaseScores && (
                   <Badge
                     variant="outline"
-                    className="ml-auto border-dynamic-indigo/30 bg-dynamic-indigo/10 text-xs text-dynamic-indigo"
+                    className="ml-auto border-dynamic-indigo/30 bg-dynamic-indigo/10 text-dynamic-indigo text-xs"
                   >
                     {evaluationPreview.generationPhase
                       ? `${evaluationPreview.testCaseResults.length}/${evaluationPreview.testCaseScores.total}`
@@ -236,7 +236,7 @@ export function LiveResultsPreview({
                   </Badge>
                 )}
               </div>
-              <div className="text-xs text-foreground/60">
+              <div className="text-foreground/60 text-xs">
                 {evaluationPreview.generationPhase
                   ? 'Test case outputs being generated'
                   : 'Test case outputs being evaluated'}
@@ -245,7 +245,7 @@ export function LiveResultsPreview({
                 evaluationPreview.testCaseScores.total > 0 && (
                   <div className="mt-2 space-y-1">
                     {!evaluationPreview.generationPhase && (
-                      <div className="text-xs text-dynamic-indigo/80">
+                      <div className="text-dynamic-indigo/80 text-xs">
                         Pass Rate: {evaluationPreview.testCaseScores.percentage}
                         %
                       </div>
@@ -302,7 +302,7 @@ export function LiveResultsPreview({
                                         : hasMatchData
                                           ? 'bg-dynamic-red'
                                           : isProcessing
-                                            ? 'bg-dynamic-amber animate-pulse'
+                                            ? 'animate-pulse bg-dynamic-amber'
                                             : 'bg-foreground/20'
                                   )}
                                   title={

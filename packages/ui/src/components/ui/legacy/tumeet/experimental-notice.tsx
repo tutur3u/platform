@@ -24,11 +24,11 @@ export default function ExperimentalNotice() {
         className={`${isDark ? 'bg-orange-300/20' : 'bg-amber-600/20 dark:bg-orange-300/20'} my-4`}
       />
 
-      <p className="mb-2 text-center text-xl font-bold md:text-3xl">
+      <p className="mb-2 text-center font-bold text-xl md:text-3xl">
         {t('experimental_feature')}
       </p>
       <p
-        className={`text-center text-xs font-semibold md:text-sm ${
+        className={`text-center font-semibold text-xs md:text-sm ${
           isDark ? 'opacity-70' : 'opacity-80'
         }`}
       >

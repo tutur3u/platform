@@ -111,10 +111,10 @@ export default async function LinkShortenerPage({
               </div>
             </div>
             <div className="space-y-2">
-              <h1 className="bg-gradient-to-r from-foreground via-foreground to-foreground/60 bg-clip-text text-5xl font-bold tracking-tight">
+              <h1 className="bg-gradient-to-r from-foreground via-foreground to-foreground/60 bg-clip-text font-bold text-5xl tracking-tight">
                 {t('link-shortener.plural')}
               </h1>
-              <p className="max-w-2xl text-xl text-muted-foreground">
+              <p className="max-w-2xl text-muted-foreground text-xl">
                 {t('link-shortener.description')}
               </p>
             </div>
@@ -126,7 +126,7 @@ export default async function LinkShortenerPage({
           <Card className="group relative overflow-hidden border-0 bg-gradient-to-br from-dynamic-blue/5 via-dynamic-blue/10 to-dynamic-blue/5 shadow-lg transition-all duration-300 hover:scale-105 hover:shadow-xl">
             <div className="absolute inset-0 bg-gradient-to-br from-dynamic-blue/10 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
             <CardHeader className="relative pb-3">
-              <CardTitle className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+              <CardTitle className="flex items-center gap-2 font-medium text-muted-foreground text-sm">
                 <div className="rounded-md bg-dynamic-blue/10 p-1.5 transition-colors group-hover:bg-dynamic-blue/20">
                   <LinkIcon className="h-4 w-4 text-dynamic-blue" />
                 </div>
@@ -134,10 +134,10 @@ export default async function LinkShortenerPage({
               </CardTitle>
             </CardHeader>
             <CardContent className="relative">
-              <div className="mb-1 text-3xl font-bold text-dynamic-blue">
+              <div className="mb-1 font-bold text-3xl text-dynamic-blue">
                 {count?.toLocaleString()}
               </div>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-muted-foreground text-xs">
                 {t('link-shortener.all_time')}
               </p>
             </CardContent>
@@ -146,7 +146,7 @@ export default async function LinkShortenerPage({
           <Card className="group relative overflow-hidden border-0 bg-gradient-to-br from-dynamic-green/5 via-dynamic-green/10 to-dynamic-green/5 shadow-lg transition-all duration-300 hover:scale-105 hover:shadow-xl">
             <div className="absolute inset-0 bg-gradient-to-br from-dynamic-green/10 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
             <CardHeader className="relative pb-3">
-              <CardTitle className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+              <CardTitle className="flex items-center gap-2 font-medium text-muted-foreground text-sm">
                 <div className="rounded-md bg-dynamic-green/10 p-1.5 transition-colors group-hover:bg-dynamic-green/20">
                   <Clock className="h-4 w-4 text-dynamic-green" />
                 </div>
@@ -154,10 +154,10 @@ export default async function LinkShortenerPage({
               </CardTitle>
             </CardHeader>
             <CardContent className="relative">
-              <div className="mb-1 text-3xl font-bold text-dynamic-green">
+              <div className="mb-1 font-bold text-3xl text-dynamic-green">
                 {linksThisMonth.toLocaleString()}
               </div>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-muted-foreground text-xs">
                 {t('link-shortener.new_links')}
               </p>
             </CardContent>
@@ -166,7 +166,7 @@ export default async function LinkShortenerPage({
           <Card className="group relative overflow-hidden border-0 bg-gradient-to-br from-dynamic-orange/5 via-dynamic-orange/10 to-dynamic-orange/5 shadow-lg transition-all duration-300 hover:scale-105 hover:shadow-xl">
             <div className="absolute inset-0 bg-gradient-to-br from-dynamic-orange/10 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
             <CardHeader className="relative pb-3">
-              <CardTitle className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+              <CardTitle className="flex items-center gap-2 font-medium text-muted-foreground text-sm">
                 <div className="rounded-md bg-dynamic-orange/10 p-1.5 transition-colors group-hover:bg-dynamic-orange/20">
                   <Users className="h-4 w-4 text-dynamic-orange" />
                 </div>
@@ -174,10 +174,10 @@ export default async function LinkShortenerPage({
               </CardTitle>
             </CardHeader>
             <CardContent className="relative">
-              <div className="mb-1 text-3xl font-bold text-dynamic-orange">
+              <div className="mb-1 font-bold text-3xl text-dynamic-orange">
                 {uniqueCreators.toLocaleString()}
               </div>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-muted-foreground text-xs">
                 {t('link-shortener.unique_users')}
               </p>
             </CardContent>
@@ -186,7 +186,7 @@ export default async function LinkShortenerPage({
           <Card className="group relative overflow-hidden border-0 bg-gradient-to-br from-dynamic-purple/5 via-dynamic-purple/10 to-dynamic-purple/5 shadow-lg transition-all duration-300 hover:scale-105 hover:shadow-xl">
             <div className="absolute inset-0 bg-gradient-to-br from-dynamic-purple/10 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
             <CardHeader className="relative pb-3">
-              <CardTitle className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+              <CardTitle className="flex items-center gap-2 font-medium text-muted-foreground text-sm">
                 <div className="rounded-md bg-dynamic-purple/10 p-1.5 transition-colors group-hover:bg-dynamic-purple/20">
                   <MousePointerClick className="h-4 w-4 text-dynamic-purple" />
                 </div>
@@ -194,10 +194,10 @@ export default async function LinkShortenerPage({
               </CardTitle>
             </CardHeader>
             <CardContent className="relative">
-              <div className="mb-1 text-3xl font-bold text-dynamic-purple">
+              <div className="mb-1 font-bold text-3xl text-dynamic-purple">
                 {analytics.totalClicks.toLocaleString()}
               </div>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-muted-foreground text-xs">
                 {t('link-shortener.analytics.all_links_combined')}
               </p>
             </CardContent>
@@ -206,7 +206,7 @@ export default async function LinkShortenerPage({
           <Card className="group relative overflow-hidden border-0 bg-gradient-to-br from-dynamic-pink/5 via-dynamic-pink/10 to-dynamic-pink/5 shadow-lg transition-all duration-300 hover:scale-105 hover:shadow-xl">
             <div className="absolute inset-0 bg-gradient-to-br from-dynamic-pink/10 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
             <CardHeader className="relative pb-3">
-              <CardTitle className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+              <CardTitle className="flex items-center gap-2 font-medium text-muted-foreground text-sm">
                 <div className="rounded-md bg-dynamic-pink/10 p-1.5 transition-colors group-hover:bg-dynamic-pink/20">
                   <BarChart3 className="h-4 w-4 text-dynamic-pink" />
                 </div>
@@ -214,10 +214,10 @@ export default async function LinkShortenerPage({
               </CardTitle>
             </CardHeader>
             <CardContent className="relative">
-              <div className="mb-1 text-3xl font-bold text-dynamic-pink">
+              <div className="mb-1 font-bold text-3xl text-dynamic-pink">
                 {analytics.uniqueVisitors.toLocaleString()}
               </div>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-muted-foreground text-xs">
                 {t('link-shortener.analytics.unique_ip_addresses')}
               </p>
             </CardContent>
@@ -242,10 +242,10 @@ export default async function LinkShortenerPage({
                   <TrendingUp className="h-5 w-5 text-dynamic-blue" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-semibold">
+                  <h3 className="font-semibold text-lg">
                     {t('link-shortener.recent_links')}
                   </h3>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-muted-foreground text-sm">
                     {count}{' '}
                     {count === 1
                       ? t('link-shortener.singular')

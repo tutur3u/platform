@@ -1,7 +1,7 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { RecordingStatus } from '@tuturuuu/types/db';
+import type { RecordingStatus } from '@tuturuuu/types/db';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -304,7 +304,7 @@ export function MeetingsContent({
           <div className="flex items-center justify-center p-8">
             <div className="text-center">
               <Calendar className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
-              <h3 className="mb-2 text-lg font-semibold">No meetings found</h3>
+              <h3 className="mb-2 font-semibold text-lg">No meetings found</h3>
               <p className="mb-4 text-muted-foreground">
                 Create your first meeting to get started with video conferencing
                 and AI-powered features.
@@ -340,7 +340,7 @@ export function MeetingsContent({
 
                 <CardContent className="space-y-4">
                   {/* Creator Info */}
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <div className="flex items-center gap-2 text-muted-foreground text-sm">
                     <Users className="h-3 w-3" />
                     <span>{meeting.creator.display_name}</span>
                   </div>
@@ -399,7 +399,7 @@ export function MeetingsContent({
               Previous
             </Button>
 
-            <span className="text-sm text-muted-foreground">
+            <span className="text-muted-foreground text-sm">
               Page {currentPage} of {totalPages}
             </span>
 
@@ -453,7 +453,7 @@ export function MeetingsContent({
               />
             </div>
             {formError && (
-              <div className="text-sm text-red-600">{formError}</div>
+              <div className="text-red-600 text-sm">{formError}</div>
             )}
             <DialogFooter>
               <Button type="submit" disabled={creating} className="w-full">
@@ -496,7 +496,7 @@ export function MeetingsContent({
               />
             </div>
             {editFormError && (
-              <div className="text-sm text-red-600">{editFormError}</div>
+              <div className="text-red-600 text-sm">{editFormError}</div>
             )}
             <DialogFooter>
               <Button type="submit" disabled={editing} className="w-full">

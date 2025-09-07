@@ -194,7 +194,7 @@ export default function StorageObjectsTable({
     <div className="space-y-6">
       {/* View Mode Toggle */}
       <div className="flex items-center justify-between">
-        <div className="text-sm text-muted-foreground">
+        <div className="text-muted-foreground text-sm">
           {t('ws-storage-objects.view_mode')}
         </div>
         <div className="flex rounded-lg border">
@@ -342,7 +342,7 @@ export default function StorageObjectsTable({
           {path && path !== '/' && (
             <button
               type="button"
-              className="group border-dynamic-border relative w-full cursor-pointer rounded-lg border bg-card p-4 text-left transition-all hover:shadow-lg hover:shadow-dynamic-blue/10"
+              className="group relative w-full cursor-pointer rounded-lg border border-dynamic-border bg-card p-4 text-left transition-all hover:shadow-dynamic-blue/10 hover:shadow-lg"
               onClick={() => {
                 const basePath = searchParams.get('path') ?? '';
                 const newPath = popPath(basePath);
@@ -363,10 +363,10 @@ export default function StorageObjectsTable({
                   <ArrowLeft />
                 </div>
               </div>
-              <h3 className="truncate text-sm font-medium">
+              <h3 className="truncate font-medium text-sm">
                 {t('common.back')}
               </h3>
-              <p className="mt-1 text-xs text-muted-foreground">
+              <p className="mt-1 text-muted-foreground text-xs">
                 {t('ws-storage-objects.go_back')}
               </p>
             </button>
@@ -378,7 +378,7 @@ export default function StorageObjectsTable({
               <ContextMenuTrigger asChild>
                 <button
                   type="button"
-                  className="group border-dynamic-border relative w-full cursor-pointer rounded-lg border bg-card p-4 text-left transition-all hover:shadow-lg hover:shadow-dynamic-blue/10 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="group relative w-full cursor-pointer rounded-lg border border-dynamic-border bg-card p-4 text-left transition-all hover:shadow-dynamic-blue/10 hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-50"
                   onClick={() => handleGridItemClick(item)}
                   disabled={!item.id && !item.name}
                 >
@@ -388,13 +388,13 @@ export default function StorageObjectsTable({
                       {item.id ? <FileText /> : <Folder />}
                     </div>
                   </div>
-                  <h3 className="truncate text-sm font-medium">
+                  <h3 className="truncate font-medium text-sm">
                     {item.name?.replace(
                       /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}_/i,
                       ''
                     )}
                   </h3>
-                  <p className="mt-1 text-xs text-muted-foreground">
+                  <p className="mt-1 text-muted-foreground text-xs">
                     {item.metadata?.size &&
                       `${Math.round(item.metadata.size / 1024)} KB`}
                   </p>
@@ -417,7 +417,7 @@ export default function StorageObjectsTable({
           {data.length === 0 && (
             <div className="col-span-full flex flex-col items-center justify-center py-12 text-center">
               <div className="mb-4 text-6xl">📁</div>
-              <h3 className="mb-2 text-lg font-medium">
+              <h3 className="mb-2 font-medium text-lg">
                 {t('ws-storage-objects.no_files_found')}
               </h3>
               <p className="text-muted-foreground">

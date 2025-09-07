@@ -60,7 +60,7 @@ export default async function Navbar({
       }
       separator={<NavbarSeparator />}
       onlyOnMobile={onlyOnMobile}
-      className="border-b border-gray-200 bg-white/80 backdrop-blur-sm dark:border-gray-700 dark:bg-gray-900/80"
+      className="border-gray-200 border-b bg-white/80 backdrop-blur-sm dark:border-gray-700 dark:bg-gray-900/80"
     />
   );
 }

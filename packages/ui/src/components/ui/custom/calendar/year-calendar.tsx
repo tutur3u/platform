@@ -34,7 +34,7 @@ export const YearCalendar: React.FC<YearCalendarProps> = ({
 
   return (
     <div>
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-x-4 gap-y-1 rounded-lg border bg-foreground/5 p-4 text-xl font-bold md:text-2xl">
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-x-4 gap-y-1 rounded-lg border bg-foreground/5 p-4 font-bold text-xl md:text-2xl">
         <div className="flex items-center gap-1">{currentYear}</div>
         <div className="flex items-center gap-1">
           <Button size="xs" variant="secondary" onClick={handlePrevYear}>

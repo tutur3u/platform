@@ -124,7 +124,7 @@ export default function GroupTagForm({ wsId, data, onFinish }: Props) {
                   text={form.watch('name')}
                   value={field.value}
                   onChange={field.onChange}
-                  className="line-clamp-1 w-full grow-0 break-all text-ellipsis whitespace-nowrap"
+                  className="line-clamp-1 w-full grow-0 text-ellipsis whitespace-nowrap break-all"
                 />
               </FormControl>
               <FormMessage />

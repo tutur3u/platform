@@ -1,6 +1,6 @@
 'use client';
 
-import { ExtendedWorkspaceTask } from '../../time-tracker/types';
+import type { ExtendedWorkspaceTask } from '../../time-tracker/types';
 import ActionsDropdown from './actions-dropdown';
 import PriorityDropdown from './priority-dropdown';
 import { getAssignedTasks } from './task-fetcher';
@@ -195,11 +195,11 @@ export default function PriorityView({
             />
           </div>
           {isSearchFocused && (
-            <div className="absolute inset-0 -z-10 animate-pulse bg-gradient-to-r from-blue-500/5 to-purple-500/5" />
+            <div className="-z-10 absolute inset-0 animate-pulse bg-gradient-to-r from-blue-500/5 to-purple-500/5" />
           )}
         </div>
         {searchError && (
-          <div className="mt-2 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600 dark:bg-red-900/20 dark:text-red-400">
+          <div className="mt-2 rounded-lg bg-red-50 px-3 py-2 text-red-600 text-sm dark:bg-red-900/20 dark:text-red-400">
             {searchError}
           </div>
         )}
@@ -216,13 +216,13 @@ export default function PriorityView({
           return (
             <div
               key={key}
-              className="group duration-300 animate-in slide-in-from-bottom-2"
+              className="group slide-in-from-bottom-2 animate-in duration-300"
               style={{ animationDelay: `${index * 100}ms` }}
             >
               <div className="mb-3 flex items-center gap-2">
                 <span className="text-lg">{icon}</span>
                 <h3 className="font-semibold text-foreground">{label}</h3>
-                <span className="rounded-full bg-muted px-2 py-1 text-xs text-muted-foreground transition-colors duration-200 group-hover:bg-accent">
+                <span className="rounded-full bg-muted px-2 py-1 text-muted-foreground text-xs transition-colors duration-200 group-hover:bg-accent">
                   {tasks.length}
                 </span>
               </div>
@@ -244,7 +244,7 @@ export default function PriorityView({
                           className="group/task relative overflow-hidden rounded-lg border border-border/50 bg-background/60 p-3 transition-all duration-200 hover:border-border hover:bg-background/80 hover:shadow-sm"
                           style={{ animationDelay: `${taskIndex * 50}ms` }}
                         >
-                          <div className="absolute inset-0 -z-10 bg-gradient-to-r from-accent/5 to-accent/10 opacity-0 transition-opacity duration-200 group-hover/task:opacity-100" />
+                          <div className="-z-10 absolute inset-0 bg-gradient-to-r from-accent/5 to-accent/10 opacity-0 transition-opacity duration-200 group-hover/task:opacity-100" />
                           <div className="flex h-full min-h-[64px] flex-col">
                             <div className="flex w-full items-start justify-between">
                               <div className="min-w-0 flex-1">
@@ -257,7 +257,7 @@ export default function PriorityView({
                                 </div>
                                 {/* Due date (if present) */}
                                 {task.due_date && (
-                                  <div className="mt-1 inline-flex items-center gap-1 rounded bg-red-100 px-2 py-0.5 text-xs text-red-700 dark:bg-red-900/30 dark:text-red-300">
+                                  <div className="mt-1 inline-flex items-center gap-1 rounded bg-red-100 px-2 py-0.5 text-red-700 text-xs dark:bg-red-900/30 dark:text-red-300">
                                     <Calendar className="h-3 w-3" />
                                     Due {formatDueDate(task.due_date)}
                                   </div>
@@ -285,12 +285,12 @@ export default function PriorityView({
                             </div>
                             {/* Bottom row: Ready left, time right */}
                             <div className="mt-2 flex items-center justify-between">
-                              <div className="inline-flex items-center gap-1 rounded-md bg-green-100 px-2 py-1 text-xs text-green-700 dark:bg-green-900/30 dark:text-green-400">
+                              <div className="inline-flex items-center gap-1 rounded-md bg-green-100 px-2 py-1 text-green-700 text-xs dark:bg-green-900/30 dark:text-green-400">
                                 <CheckCircle2 className="h-3 w-3" />
                                 Ready
                               </div>
                               {task.total_duration && (
-                                <div className="rounded-md bg-accent/50 px-2 py-1 font-mono text-xs text-muted-foreground transition-colors duration-200 group-hover/task:bg-accent">
+                                <div className="rounded-md bg-accent/50 px-2 py-1 font-mono text-muted-foreground text-xs transition-colors duration-200 group-hover/task:bg-accent">
                                   {Math.floor(task.total_duration || 0)}h{' '}
                                   {((task.total_duration || 0) * 60) % 60}m
                                 </div>
@@ -303,8 +303,8 @@ export default function PriorityView({
                   </div>
                 </div>
               ) : (
-                <div className="rounded-lg border border-dashed border-border/50 p-6 text-center transition-all duration-200 hover:border-border">
-                  <div className="text-sm text-muted-foreground">
+                <div className="rounded-lg border border-border/50 border-dashed p-6 text-center transition-all duration-200 hover:border-border">
+                  <div className="text-muted-foreground text-sm">
                     No tasks found
                   </div>
                 </div>

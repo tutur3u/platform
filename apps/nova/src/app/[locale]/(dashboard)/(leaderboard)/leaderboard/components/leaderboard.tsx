@@ -131,7 +131,7 @@ export function Leaderboard({
       className="relative overflow-hidden rounded-xl border bg-white shadow-lg dark:border-slate-800 dark:bg-slate-900 dark:shadow-[0_0_25px_rgba(0,0,0,0.3)]"
     >
       {/* Enhanced gradient border effect */}
-      <div className="absolute -inset-px -z-10 rounded-xl bg-linear-to-r from-transparent via-transparent to-transparent dark:from-blue-500/10 dark:via-violet-500/10 dark:to-blue-500/10 dark:p-px">
+      <div className="-inset-px -z-10 absolute rounded-xl bg-linear-to-r from-transparent via-transparent to-transparent dark:from-blue-500/10 dark:via-violet-500/10 dark:to-blue-500/10 dark:p-px">
         <motion.div
           className="absolute inset-0 rounded-xl opacity-0 dark:opacity-30"
           style={{
@@ -153,7 +153,7 @@ export function Leaderboard({
       </div>
 
       <div className="flex items-center justify-between bg-gray-50 px-4 py-2 dark:bg-slate-800/30">
-        <h3 className="text-sm font-semibold text-gray-700 dark:text-slate-200">
+        <h3 className="font-semibold text-gray-700 text-sm dark:text-slate-200">
           {t('title')}
         </h3>
         <TooltipProvider>
@@ -163,20 +163,20 @@ export function Leaderboard({
                 variant="ghost"
                 size="sm"
                 onClick={toggleSortOrder}
-                className="h-8 gap-1 text-xs text-muted-foreground transition-all duration-200 hover:bg-gray-100 hover:text-gray-800 dark:text-slate-300 dark:hover:bg-slate-700/50 dark:hover:text-slate-100"
+                className="h-8 gap-1 text-muted-foreground text-xs transition-all duration-200 hover:bg-gray-100 hover:text-gray-800 dark:text-slate-300 dark:hover:bg-slate-700/50 dark:hover:text-slate-100"
               >
                 <ArrowDownUp className="h-3.5 w-3.5" />
                 {sortOrder === 'desc' ? t('highest-first') : t('lowest-first')}
               </Button>
             </TooltipTrigger>
-            <TooltipContent className="bg-white text-xs text-gray-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">
+            <TooltipContent className="bg-white text-gray-700 text-xs dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">
               <p>{t('hover-info')}</p>
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
       </div>
 
-      <div className="scrollbar-thin overflow-auto scrollbar-thumb-gray-300 scrollbar-track-transparent dark:scrollbar-thumb-slate-700">
+      <div className="scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent dark:scrollbar-thumb-slate-700 overflow-auto">
         <Table>
           <TableHeader className="sticky top-0 z-10 bg-gray-50 dark:bg-slate-800/30">
             <TableRow className="border-b hover:bg-transparent dark:border-slate-700/50 dark:hover:bg-transparent">
@@ -247,7 +247,7 @@ export function Leaderboard({
                           }}
                         />
 
-                        <span className="relative z-10 text-sm font-bold">
+                        <span className="relative z-10 font-bold text-sm">
                           {entry.rank}
                         </span>
                       </div>
@@ -286,7 +286,7 @@ export function Leaderboard({
                           !prefersReducedMotion && (
                             <motion.div
                               className={cn(
-                                'absolute -inset-1 rounded-full blur-md',
+                                '-inset-1 absolute rounded-full blur-md',
                                 entry.rank === 1
                                   ? 'bg-yellow-400/30 dark:bg-yellow-400/40'
                                   : entry.rank === 2
@@ -358,7 +358,7 @@ export function Leaderboard({
                           {currentEntryId === entry.id && (
                             <Badge
                               variant="outline"
-                              className="w-fit border-blue-200 bg-blue-50 text-xs text-blue-600 dark:border-blue-500/30 dark:bg-blue-950/60 dark:text-blue-400"
+                              className="w-fit border-blue-200 bg-blue-50 text-blue-600 text-xs dark:border-blue-500/30 dark:bg-blue-950/60 dark:text-blue-400"
                             >
                               {t('you')}
                             </Badge>
@@ -367,7 +367,7 @@ export function Leaderboard({
                             getBestChallengeForUser(entry) && (
                               <Badge
                                 variant="outline"
-                                className="h-5 border-purple-200 bg-purple-50 px-1.5 py-0 text-[10px] font-normal text-purple-700 transition-all duration-300 group-hover:bg-purple-100 dark:border-purple-900/30 dark:bg-purple-900/20 dark:text-purple-400 dark:group-hover:bg-purple-900/30"
+                                className="h-5 border-purple-200 bg-purple-50 px-1.5 py-0 font-normal text-[10px] text-purple-700 transition-all duration-300 group-hover:bg-purple-100 dark:border-purple-900/30 dark:bg-purple-900/20 dark:text-purple-400 dark:group-hover:bg-purple-900/30"
                               >
                                 <Sparkles className="mr-1 h-2.5 w-2.5" />
                                 {t('best-in')}{' '}
@@ -380,7 +380,7 @@ export function Leaderboard({
                                 variant="ghost"
                                 size="sm"
                                 onClick={() => toggleRowExpand(entry.id)}
-                                className="ml-1 h-5 p-0 text-[10px] font-normal text-gray-500 hover:bg-transparent hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400"
+                                className="ml-1 h-5 p-0 font-normal text-[10px] text-gray-500 hover:bg-transparent hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400"
                               >
                                 <Sparkles className="mr-1 h-2.5 w-2.5" />
                                 {expandedRows.has(entry.id)
@@ -394,7 +394,7 @@ export function Leaderboard({
                                 variant="ghost"
                                 size="sm"
                                 onClick={() => toggleRowExpand(entry.id)}
-                                className="ml-1 h-5 p-0 text-[10px] font-normal text-gray-500 hover:bg-transparent hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400"
+                                className="ml-1 h-5 p-0 font-normal text-[10px] text-gray-500 hover:bg-transparent hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400"
                               >
                                 <Sparkles className="mr-1 h-2.5 w-2.5" />
                                 {expandedRows.has(entry.id)
@@ -459,7 +459,7 @@ export function Leaderboard({
                           transition={{ duration: 0.3, delay: 0.1 }}
                           className="space-y-3"
                         >
-                          <h4 className="text-xs font-medium text-gray-500 dark:text-slate-400">
+                          <h4 className="font-medium text-gray-500 text-xs dark:text-slate-400">
                             {selectedChallenge !== 'all'
                               ? t('problem-breakdown')
                               : t('challenge-breakdown')}
@@ -562,13 +562,13 @@ export function Leaderboard({
                                         <div
                                           className={`h-2.5 w-2.5 rounded-full ${bgColorClass}`}
                                         />
-                                        <span className="text-xs font-medium text-gray-700 dark:text-slate-300">
+                                        <span className="font-medium text-gray-700 text-xs dark:text-slate-300">
                                           {challenge.title}
                                         </span>
-                                        <span className="text-xs text-gray-500 dark:text-slate-400">
+                                        <span className="text-gray-500 text-xs dark:text-slate-400">
                                           {score.toFixed(2)} {t('pts')}
                                         </span>
-                                        <span className="text-xs text-gray-400 dark:text-slate-500">
+                                        <span className="text-gray-400 text-xs dark:text-slate-500">
                                           ({percentage.toFixed(1)}%)
                                         </span>
                                       </div>
@@ -692,14 +692,14 @@ export function Leaderboard({
                                               <div
                                                 className={`h-2.5 w-2.5 rounded-full ${bgColorClass}`}
                                               />
-                                              <span className="text-xs font-medium text-gray-700 dark:text-slate-300">
+                                              <span className="font-medium text-gray-700 text-xs dark:text-slate-300">
                                                 {problem.title}
                                               </span>
-                                              <span className="text-xs text-gray-500 dark:text-slate-400">
+                                              <span className="text-gray-500 text-xs dark:text-slate-400">
                                                 {problemScore.toFixed(2)}{' '}
                                                 {t('pts')}
                                               </span>
-                                              <span className="text-xs text-gray-400 dark:text-slate-500">
+                                              <span className="text-gray-400 text-xs dark:text-slate-500">
                                                 ({percentage.toFixed(1)}%)
                                               </span>
                                             </div>

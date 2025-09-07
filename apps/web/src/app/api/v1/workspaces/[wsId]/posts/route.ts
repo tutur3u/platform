@@ -1,6 +1,6 @@
 import type { PostEmail } from '@/app/[locale]/(dashboard)/[wsId]/posts/types';
 import { createClient } from '@tuturuuu/supabase/next/server';
-import { NextRequest } from 'next/server';
+import type { NextRequest } from 'next/server';
 
 export async function GET(
   req: NextRequest,

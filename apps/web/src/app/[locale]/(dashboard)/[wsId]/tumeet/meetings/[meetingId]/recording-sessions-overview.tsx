@@ -2,7 +2,7 @@
 
 import { RecordingSessionActions } from './recording-session-actions';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { RecordingStatus, RecordingTranscript } from '@tuturuuu/types/db';
+import type { RecordingStatus, RecordingTranscript } from '@tuturuuu/types/db';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
 import { Calendar, Clock, FileText, Mic } from '@tuturuuu/ui/icons';
@@ -123,7 +123,7 @@ export function RecordingSessionsOverview({
       <Card>
         <CardContent className="flex flex-col items-center justify-center py-8">
           <p className="text-dynamic-red">Failed to load recordings</p>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-muted-foreground text-sm">
             {error instanceof Error ? error.message : 'Unknown error'}
           </p>
         </CardContent>
@@ -136,7 +136,7 @@ export function RecordingSessionsOverview({
       <Card>
         <CardContent className="flex flex-col items-center justify-center py-8">
           <Mic className="mb-4 h-12 w-12 text-muted-foreground" />
-          <h3 className="mb-2 text-lg font-semibold">No Recordings Yet</h3>
+          <h3 className="mb-2 font-semibold text-lg">No Recordings Yet</h3>
           <p className="text-center text-muted-foreground">
             Start recording this meeting to capture audio and generate
             transcripts.
@@ -149,7 +149,7 @@ export function RecordingSessionsOverview({
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold">Recording Sessions</h3>
+        <h3 className="font-semibold text-lg">Recording Sessions</h3>
         <Badge variant="outline">
           {sessions.length} session{sessions.length !== 1 ? 's' : ''}
         </Badge>
@@ -174,7 +174,7 @@ export function RecordingSessionsOverview({
                 <div className="flex items-center gap-2">
                   <Calendar className="h-4 w-4 text-muted-foreground" />
                   <span className="text-muted-foreground">Started:</span>
-                  <span className="text-xs font-medium">
+                  <span className="font-medium text-xs">
                     {formatDistanceToNow(new Date(session.created_at), {
                       addSuffix: true,
                     })}

@@ -73,7 +73,7 @@ export function PostEmailStatus({
       <div
         ref={ref}
         className={cn(
-          'flex w-fit items-center gap-1 rounded border border-dynamic-purple/15 bg-dynamic-purple/15 px-2 py-1 text-xs font-semibold text-dynamic-purple'
+          'flex w-fit items-center gap-1 rounded border border-dynamic-purple/15 bg-dynamic-purple/15 px-2 py-1 font-semibold text-dynamic-purple text-xs'
         )}
       >
         {data?.sent ?? '-'}/{data?.count || 0} <Send className="h-4 w-4" />
@@ -81,7 +81,7 @@ export function PostEmailStatus({
       <div
         ref={ref}
         className={cn(
-          'flex w-fit items-center gap-1 rounded border border-dynamic-green/15 bg-dynamic-green/15 px-2 py-1 text-xs font-semibold text-dynamic-green'
+          'flex w-fit items-center gap-1 rounded border border-dynamic-green/15 bg-dynamic-green/15 px-2 py-1 font-semibold text-dynamic-green text-xs'
         )}
       >
         {data?.checked ?? '-'} <Check className="h-4 w-4" />
@@ -89,7 +89,7 @@ export function PostEmailStatus({
       <div
         ref={ref}
         className={cn(
-          'flex w-fit items-center gap-1 rounded border border-dynamic-red/15 bg-dynamic-red/15 px-2 py-1 text-xs font-semibold text-dynamic-red'
+          'flex w-fit items-center gap-1 rounded border border-dynamic-red/15 bg-dynamic-red/15 px-2 py-1 font-semibold text-dynamic-red text-xs'
         )}
       >
         {data?.failed ?? '-'} <X className="h-4 w-4" />
@@ -97,7 +97,7 @@ export function PostEmailStatus({
       <div
         ref={ref}
         className={cn(
-          'flex w-fit items-center gap-1 rounded border border-dynamic-blue/15 bg-dynamic-blue/15 px-2 py-1 text-xs font-semibold text-dynamic-blue'
+          'flex w-fit items-center gap-1 rounded border border-dynamic-blue/15 bg-dynamic-blue/15 px-2 py-1 font-semibold text-dynamic-blue text-xs'
         )}
       >
         {data?.tenative ?? '-'} <CircleHelp className="h-4 w-4" />

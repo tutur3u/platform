@@ -25,7 +25,7 @@ export function DetailObjects({
 
   return (
     <div className="h-fit space-y-2 rounded-lg border p-4">
-      <div className="flex justify-between text-lg font-semibold">
+      <div className="flex justify-between font-semibold text-lg">
         {t('invoices.files')}
         <div className="flex gap-2">
           <Button variant="ghost" size="xs" asChild>

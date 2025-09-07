@@ -69,10 +69,10 @@ export default async function NotificationsCard() {
               className="flex items-center justify-between rounded-lg border p-4 transition-colors hover:bg-muted/50"
             >
               <div className="space-y-0.5">
-                <p className="text-sm font-medium">
+                <p className="font-medium text-sm">
                   {t(option.titleKey as any)}
                 </p>
-                <p className="text-xs text-muted-foreground">
+                <p className="text-muted-foreground text-xs">
                   {t(option.descriptionKey as any)}
                 </p>
               </div>

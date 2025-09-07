@@ -74,7 +74,7 @@ export function DefaultWherePollContent({
   else if (isCreator) {
     return (
       <div className="flex flex-col gap-4">
-        <p className="text-sm text-gray-500">{t('enable_where_poll_desc')}</p>
+        <p className="text-gray-500 text-sm">{t('enable_where_poll_desc')}</p>
         <button
           className="rounded border border-dynamic-purple bg-dynamic-purple/20 px-4 py-2 font-medium text-foreground shadow transition hover:bg-dynamic-purple/40"
           onClick={async () => await onToggleWhereToMeet(true)}

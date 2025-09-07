@@ -400,7 +400,7 @@ export function SubmissionTable({
                           router.push(`/submissions/${submission.id}`)
                         }
                       >
-                        <span className="text-sm text-muted-foreground">
+                        <span className="text-muted-foreground text-sm">
                           {submission.user?.email || 'No email available'}
                         </span>
                       </TableCell>
@@ -414,7 +414,7 @@ export function SubmissionTable({
                         <p className="font-medium">
                           {submission.problem?.title || 'Unknown Problem'}
                         </p>
-                        <p className="text-xs text-muted-foreground">
+                        <p className="text-muted-foreground text-xs">
                           {submission.problem?.challenge?.title ||
                             'Unknown Challenge'}
                         </p>

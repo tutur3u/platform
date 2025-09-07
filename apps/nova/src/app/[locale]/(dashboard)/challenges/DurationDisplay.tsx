@@ -28,7 +28,7 @@ export function DurationDisplay({
   return (
     <div className={`flex items-center ${className}`}>
       <div className="flex items-baseline gap-1">
-        <span className={`text-lg font-semibold ${getTimeColor()}`}>
+        <span className={`font-semibold text-lg ${getTimeColor()}`}>
           {formatDuration(seconds)}
         </span>
       </div>
@@ -36,18 +36,18 @@ export function DurationDisplay({
       <div className="ml-3 flex gap-2">
         {hours > 0 && (
           <div className="flex flex-col items-center rounded bg-muted px-2 py-1">
-            <span className="text-sm font-medium">{hours}</span>
-            <span className="text-xs text-muted-foreground">hrs</span>
+            <span className="font-medium text-sm">{hours}</span>
+            <span className="text-muted-foreground text-xs">hrs</span>
           </div>
         )}
         <div className="flex flex-col items-center rounded bg-muted px-2 py-1">
-          <span className="text-sm font-medium">{minutes}</span>
-          <span className="text-xs text-muted-foreground">min</span>
+          <span className="font-medium text-sm">{minutes}</span>
+          <span className="text-muted-foreground text-xs">min</span>
         </div>
         {(hours === 0 || remainingSeconds > 0) && (
           <div className="flex flex-col items-center rounded bg-muted px-2 py-1">
-            <span className="text-sm font-medium">{remainingSeconds}</span>
-            <span className="text-xs text-muted-foreground">sec</span>
+            <span className="font-medium text-sm">{remainingSeconds}</span>
+            <span className="text-muted-foreground text-xs">sec</span>
           </div>
         )}
       </div>

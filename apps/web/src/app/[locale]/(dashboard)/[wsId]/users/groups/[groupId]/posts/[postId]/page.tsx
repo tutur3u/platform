@@ -66,7 +66,7 @@ export default async function HomeworkCheck({ params, searchParams }: Props) {
           <>
             <Link
               href={`/${wsId}/users/groups/${groupId}`}
-              className="text-2xl font-bold hover:underline"
+              className="font-bold text-2xl hover:underline"
             >
               {group.name}
             </Link>
@@ -83,7 +83,7 @@ export default async function HomeworkCheck({ params, searchParams }: Props) {
           post?.title || post?.content ? (
             <div className="flex flex-col gap-2">
               {post?.title && (
-                <h2 className="w-fit rounded border border-dynamic-blue/15 bg-dynamic-blue/15 px-2 text-xl font-semibold text-dynamic-blue uppercase">
+                <h2 className="w-fit rounded border border-dynamic-blue/15 bg-dynamic-blue/15 px-2 font-semibold text-dynamic-blue text-xl uppercase">
                   {post?.title?.trim() || t('common.unknown')}
                 </h2>
               )}
@@ -126,45 +126,45 @@ export default async function HomeworkCheck({ params, searchParams }: Props) {
       <Separator className="my-4" />
       <div className="gird-cols-1 grid grid-cols-2 gap-2 lg:grid-cols-4">
         <div className="flex w-full flex-col items-center gap-1 rounded border border-dynamic-purple/15 bg-dynamic-purple/15 p-4 text-dynamic-purple">
-          <div className="flex items-center gap-2 text-xl font-bold">
+          <div className="flex items-center gap-2 font-bold text-xl">
             <Send />
             {t('ws-post-emails.sent_emails')}
           </div>
           <Separator className="my-1 bg-dynamic-purple/15" />
-          <div className="text-xl font-semibold md:text-3xl">
+          <div className="font-semibold text-xl md:text-3xl">
             {status.sent?.length}
             <span className="opacity-50">/{status.count}</span>
           </div>
         </div>
         <div className="flex w-full flex-col items-center gap-1 rounded border border-dynamic-green/15 bg-dynamic-green/15 p-4 text-dynamic-green">
-          <div className="flex items-center gap-2 text-xl font-bold">
+          <div className="flex items-center gap-2 font-bold text-xl">
             <Check />
             {t('common.completed')}
           </div>
           <Separator className="my-1 bg-dynamic-green/15" />
-          <div className="text-3xl font-semibold">
+          <div className="font-semibold text-3xl">
             {status.checked}
             <span className="opacity-50">/{status.count}</span>
           </div>
         </div>
         <div className="flex w-full flex-col items-center gap-1 rounded border border-dynamic-red/15 bg-dynamic-red/15 p-4 text-dynamic-red">
-          <div className="flex items-center gap-2 text-xl font-bold">
+          <div className="flex items-center gap-2 font-bold text-xl">
             <X />
             {t('common.incomplete')}
           </div>
           <Separator className="my-1 bg-dynamic-red/15" />
-          <div className="text-3xl font-semibold">
+          <div className="font-semibold text-3xl">
             {status.failed}
             <span className="opacity-50">/{status.count}</span>
           </div>
         </div>
         <div className="flex w-full flex-col items-center gap-1 rounded border border-dynamic-blue/15 bg-dynamic-blue/15 p-4 text-dynamic-blue">
-          <div className="flex items-center gap-2 text-xl font-bold">
+          <div className="flex items-center gap-2 font-bold text-xl">
             <CircleHelp />
             {t('common.unknown')}
           </div>
           <Separator className="my-1 bg-dynamic-blue/15" />
-          <div className="text-3xl font-semibold">
+          <div className="font-semibold text-3xl">
             {status.tenative}
             <span className="opacity-50">/{status.count}</span>
           </div>
@@ -178,7 +178,7 @@ export default async function HomeworkCheck({ params, searchParams }: Props) {
             className="relative"
           >
             {isGuestGroup && (user.attendance_count ?? 0) < 2 && (
-              <div className="absolute -top-2 -right-2 z-10 flex items-center gap-1 rounded-full border border-amber-200 bg-amber-100 px-2 py-1 text-xs font-medium text-amber-800">
+              <div className="-top-2 -right-2 absolute z-10 flex items-center gap-1 rounded-full border border-amber-200 bg-amber-100 px-2 py-1 font-medium text-amber-800 text-xs">
                 <UserCheck className="h-3 w-3" />
                 {t('common.requires_attendance', { count: 2 })}
               </div>

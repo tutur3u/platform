@@ -220,7 +220,7 @@ export function ImageCropper({
 
         <div className="space-y-4">
           {/* Cropper Container */}
-          <div className="bg-dynamic-muted/20 relative h-[500px] w-full overflow-hidden rounded-lg border">
+          <div className="relative h-[500px] w-full overflow-hidden rounded-lg border bg-dynamic-muted/20">
             <Cropper
               image={image}
               crop={crop}
@@ -257,7 +257,7 @@ export function ImageCropper({
           <div className="space-y-2">
             <label
               htmlFor="zoom-slider"
-              className="text-dynamic-foreground text-sm font-medium"
+              className="font-medium text-dynamic-foreground text-sm"
             >
               Zoom
             </label>
@@ -273,7 +273,7 @@ export function ImageCropper({
           </div>
 
           {/* Instructions */}
-          <div className="text-dynamic-muted-foreground text-center text-sm">
+          <div className="text-center text-dynamic-muted-foreground text-sm">
             Drag to reposition • Use slider to zoom •{' '}
             {aspectRatio === 1 ? 'Square' : 'Custom'} crop
           </div>

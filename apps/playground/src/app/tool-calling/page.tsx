@@ -25,7 +25,7 @@ function ToolCallingPage() {
         <div>Loading...</div>
       ) : (
         <div>
-          <pre className="mb-4 rounded border p-2 whitespace-pre-wrap">
+          <pre className="mb-4 whitespace-pre-wrap rounded border p-2">
             {toolCallingData?.text}
           </pre>
           <pre className="whitespace-pre-wrap">

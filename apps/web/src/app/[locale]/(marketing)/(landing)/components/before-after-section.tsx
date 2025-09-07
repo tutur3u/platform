@@ -174,15 +174,15 @@ export function BeforeAfterSection() {
   return (
     <section
       ref={sectionRef}
-      className="relative container hidden w-full px-0 py-24 md:block md:py-40"
+      className="container relative hidden w-full px-0 py-24 md:block md:py-40"
     >
       <div className="before-after-title-wrapper mb-10 text-center">
-        <h2 className="before-after-title mb-6 text-4xl font-bold md:text-5xl">
+        <h2 className="before-after-title mb-6 font-bold text-4xl md:text-5xl">
           <span className="bg-gradient-to-r from-dynamic-light-purple to-dynamic-light-cyan bg-clip-text text-transparent">
             {t('before_and_after_tuturuuu')}
           </span>
         </h2>
-        <p className="mx-auto max-w-3xl text-xl leading-relaxed text-balance text-muted-foreground">
+        <p className="mx-auto max-w-3xl text-balance text-muted-foreground text-xl leading-relaxed">
           {t(
             'see_the_transformation_in_your_calendar_and_life_when_you_switch_to_ai_powered_scheduling'
           )}
@@ -193,7 +193,7 @@ export function BeforeAfterSection() {
       <div className="comparison-tabs mb-10 flex justify-center">
         <div className="inline-flex rounded-full bg-white/90 p-1.5 shadow-md backdrop-blur-sm dark:bg-foreground/5">
           <button
-            className={`relative rounded-full px-6 py-2.5 text-sm font-medium transition-all duration-300 ${
+            className={`relative rounded-full px-6 py-2.5 font-medium text-sm transition-all duration-300 ${
               activeView === 'split'
                 ? 'bg-gradient-to-r from-dynamic-light-red to-dynamic-light-green text-white'
                 : 'text-muted-foreground hover:text-foreground'
@@ -202,11 +202,11 @@ export function BeforeAfterSection() {
           >
             {t('split_view')}
             {activeView === 'split' && (
-              <div className="absolute inset-0 -z-10 animate-pulse rounded-full bg-gradient-to-r from-dynamic-light-red/80 to-dynamic-light-green/80 blur-sm"></div>
+              <div className="-z-10 absolute inset-0 animate-pulse rounded-full bg-gradient-to-r from-dynamic-light-red/80 to-dynamic-light-green/80 blur-sm"></div>
             )}
           </button>
           <button
-            className={`relative rounded-full px-6 py-2.5 text-sm font-medium transition-all duration-300 ${
+            className={`relative rounded-full px-6 py-2.5 font-medium text-sm transition-all duration-300 ${
               activeView === 'before'
                 ? 'bg-gradient-to-r from-dynamic-light-red to-dynamic-red text-white'
                 : 'text-muted-foreground hover:text-foreground'
@@ -215,11 +215,11 @@ export function BeforeAfterSection() {
           >
             {t('before')}
             {activeView === 'before' && (
-              <div className="absolute inset-0 -z-10 animate-pulse rounded-full bg-gradient-to-r from-dynamic-light-red/80 to-dynamic-red/80 blur-sm"></div>
+              <div className="-z-10 absolute inset-0 animate-pulse rounded-full bg-gradient-to-r from-dynamic-light-red/80 to-dynamic-red/80 blur-sm"></div>
             )}
           </button>
           <button
-            className={`relative rounded-full px-6 py-2.5 text-sm font-medium transition-all duration-300 ${
+            className={`relative rounded-full px-6 py-2.5 font-medium text-sm transition-all duration-300 ${
               activeView === 'after'
                 ? 'bg-gradient-to-r from-dynamic-light-green to-dynamic-green text-white'
                 : 'text-muted-foreground hover:text-foreground'
@@ -228,7 +228,7 @@ export function BeforeAfterSection() {
           >
             {t('after')}
             {activeView === 'after' && (
-              <div className="absolute inset-0 -z-10 animate-pulse rounded-full bg-gradient-to-r from-dynamic-light-green/80 to-dynamic-green/80 blur-sm"></div>
+              <div className="-z-10 absolute inset-0 animate-pulse rounded-full bg-gradient-to-r from-dynamic-light-green/80 to-dynamic-green/80 blur-sm"></div>
             )}
           </button>
         </div>
@@ -264,7 +264,7 @@ export function BeforeAfterSection() {
                   {t('before')}: {t('traditional_calendar')}
                 </h3>
               </div>
-              <span className="rounded-full bg-white/20 px-3 py-1 text-xs font-medium text-white">
+              <span className="rounded-full bg-white/20 px-3 py-1 font-medium text-white text-xs">
                 {t('chaotic')}
               </span>
             </div>
@@ -319,13 +319,13 @@ export function BeforeAfterSection() {
                   ).map((day, i) => (
                     <div
                       key={i}
-                      className="text-center text-xs font-medium text-muted-foreground"
+                      className="text-center font-medium text-muted-foreground text-xs"
                     >
                       {day}
                     </div>
                   ))}
                 </div>
-                <div className="text-semibold grid grid-cols-7 gap-1">
+                <div className="grid grid-cols-7 gap-1 text-semibold">
                   {Array.from({ length: 35 }).map((_, i) => {
                     const isOverbooked = [3, 8, 15, 22].includes(i);
                     const hasConflict = [10, 17, 24].includes(i);
@@ -401,7 +401,7 @@ export function BeforeAfterSection() {
                   {t('after')}: {t('tuturuuu_ai_calendar')}
                 </h3>
               </div>
-              <span className="rounded-full bg-white/20 px-3 py-1 text-xs font-medium text-white">
+              <span className="rounded-full bg-white/20 px-3 py-1 font-medium text-white text-xs">
                 {t('optimized')}
               </span>
             </div>
@@ -462,7 +462,7 @@ export function BeforeAfterSection() {
                   ).map((day, i) => (
                     <div
                       key={i}
-                      className="text-center text-xs font-medium text-muted-foreground"
+                      className="text-center font-medium text-muted-foreground text-xs"
                     >
                       {day}
                     </div>
@@ -521,7 +521,7 @@ export function BeforeAfterSection() {
           <div className="flex h-16 w-16 items-center justify-center rounded-full bg-calendar-bg-red">
             <CalendarX className="h-8 w-8 text-dynamic-red" />
           </div>
-          <h3 className="mt-4 mb-2 text-2xl font-bold text-dynamic-red">85%</h3>
+          <h3 className="mt-4 mb-2 font-bold text-2xl text-dynamic-red">85%</h3>
           <p className="text-muted-foreground">
             {t('time_spent_on_manual_scheduling')}
           </p>
@@ -531,7 +531,7 @@ export function BeforeAfterSection() {
           <div className="flex h-16 w-16 items-center justify-center rounded-full bg-calendar-bg-purple">
             <Workflow className="h-8 w-8 text-dynamic-purple" />
           </div>
-          <h3 className="mt-4 mb-2 text-2xl font-bold text-dynamic-purple">
+          <h3 className="mt-4 mb-2 font-bold text-2xl text-dynamic-purple">
             10+
           </h3>
           <p className="text-muted-foreground">
@@ -543,7 +543,7 @@ export function BeforeAfterSection() {
           <div className="flex h-16 w-16 items-center justify-center rounded-full bg-calendar-bg-green">
             <UserCheck className="h-8 w-8 text-dynamic-green" />
           </div>
-          <h3 className="mt-4 mb-2 text-2xl font-bold text-dynamic-green">
+          <h3 className="mt-4 mb-2 font-bold text-2xl text-dynamic-green">
             96%
           </h3>
           <p className="text-muted-foreground">

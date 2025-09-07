@@ -1,4 +1,4 @@
-import { Crop, CropType, GrowthStage } from './crop';
+import { Crop, type CropType, GrowthStage } from './crop';
 import { Inventory } from './inventory';
 import { Player } from './player';
 import { Position } from './position';

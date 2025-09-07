@@ -30,7 +30,7 @@ export const YearView: React.FC<{
 
   return (
     <div>
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-x-4 gap-y-1 text-xl font-bold md:text-2xl">
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-x-4 gap-y-1 font-bold text-xl md:text-2xl">
         <div className="flex items-center gap-1">{thisYear}</div>
         <div className="flex items-center gap-1">
           <Button size="xs" variant="secondary" onClick={handlePrev}>

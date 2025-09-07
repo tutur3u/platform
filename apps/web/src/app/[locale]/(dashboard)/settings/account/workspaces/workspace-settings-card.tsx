@@ -38,7 +38,7 @@ export default async function WorkspaceSettingsCard({
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="space-y-3">
-          <label className="text-sm font-medium">
+          <label className="font-medium text-sm">
             {t('default-workspace')}
           </label>
           <Suspense fallback={<Skeleton className="h-10 w-full" />}>
@@ -46,7 +46,7 @@ export default async function WorkspaceSettingsCard({
               defaultWorkspaceId={user?.default_workspace_id}
             />
           </Suspense>
-          <p className="text-xs text-muted-foreground">
+          <p className="text-muted-foreground text-xs">
             {t('default-workspace-description')}
           </p>
         </div>

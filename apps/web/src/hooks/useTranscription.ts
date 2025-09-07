@@ -1,7 +1,7 @@
 'use client';
 
 import { useQueryClient } from '@tanstack/react-query';
-import { RecordingStatus } from '@tuturuuu/types/db';
+import type { RecordingStatus } from '@tuturuuu/types/db';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useState } from 'react';
 

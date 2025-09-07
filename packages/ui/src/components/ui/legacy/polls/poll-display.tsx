@@ -2,7 +2,7 @@ import MultipleChoiceVote from '../tumeet/multiple-choice-vote';
 import { DefaultWherePollContent } from './where-tu-meet';
 import type { MeetTogetherPlan } from '@tuturuuu/types/primitives/MeetTogetherPlan';
 import type { GetPollsForPlanResult } from '@tuturuuu/types/primitives/Poll';
-import { User } from '@tuturuuu/types/primitives/User';
+import type { User } from '@tuturuuu/types/primitives/User';
 import {
   Accordion,
   AccordionContent,
@@ -233,7 +233,7 @@ export function PlanDetailsPollContent({
       {otherPolls.length > 0 && (
         <div className="mt-8 space-y-4">
           <div className="flex items-center justify-between">
-            <h4 className="text-base font-semibold text-foreground">
+            <h4 className="font-semibold text-base text-foreground">
               {/* {t('other_polls')} */}
               Other Polls
             </h4>
@@ -286,11 +286,11 @@ export function PlanDetailsPollContent({
                     <div className="flex w-full items-center justify-between">
                       <div className="flex items-center gap-3">
                         <div>
-                          <span className="text-lg font-semibold text-dynamic-purple">
+                          <span className="font-semibold text-dynamic-purple text-lg">
                             {poll.name}
                           </span>
                           {uniqueVoters > 0 && (
-                            <p className="text-xs text-muted-foreground">
+                            <p className="text-muted-foreground text-xs">
                               {uniqueVoters}{' '}
                               {uniqueVoters === 1 ? 'voter' : 'voters'}
                             </p>
@@ -298,7 +298,7 @@ export function PlanDetailsPollContent({
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
-                        <span className="text-sm text-muted-foreground">
+                        <span className="text-muted-foreground text-sm">
                           {poll.options.length} options
                         </span>
                         {isCreator && !plan.is_confirmed && (
@@ -347,7 +347,7 @@ export function PlanDetailsPollContent({
       )}
       {isCreator && !plan.is_confirmed && (
         <div className="mt-8 space-y-2">
-          <h4 className="mb-2 text-base font-semibold text-foreground">
+          <h4 className="mb-2 font-semibold text-base text-foreground">
             {/* {t('add_new_poll')} */}
             Add New Poll
           </h4>

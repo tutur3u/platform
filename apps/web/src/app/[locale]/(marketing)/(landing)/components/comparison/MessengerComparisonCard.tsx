@@ -50,7 +50,7 @@ export function MessengerComparisonCard() {
           </div>
         </div>
         <div className="rounded-xl border p-5 shadow-md transition-all duration-300 hover:shadow-lg">
-          <div className="mb-4 flex items-center gap-2 border-b border-dynamic-light-purple/30 pb-3">
+          <div className="mb-4 flex items-center gap-2 border-dynamic-light-purple/30 border-b pb-3">
             <MessageSquare className="h-5 w-5 text-dynamic-purple" />
             <h4 className="font-medium">TuChat</h4>
           </div>

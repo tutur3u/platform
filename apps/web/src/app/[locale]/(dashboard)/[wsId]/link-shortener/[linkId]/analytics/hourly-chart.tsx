@@ -109,7 +109,7 @@ export function HourlyChart({ clicksByHour }: HourlyChartProps) {
               <div className="absolute top-2 right-2 rounded-lg bg-dynamic-blue/10 px-2 py-1 backdrop-blur-sm">
                 <div className="flex items-center gap-1">
                   <div className="h-2 w-2 rounded-full bg-dynamic-blue"></div>
-                  <span className="text-xs font-medium text-dynamic-blue">
+                  <span className="font-medium text-dynamic-blue text-xs">
                     {t('link-shortener.analytics.peak_hour')}:{' '}
                     {peakHour.hour.toString().padStart(2, '0')}:00
                   </span>
@@ -138,34 +138,34 @@ export function HourlyChart({ clicksByHour }: HourlyChartProps) {
           return (
             <>
               <div className="rounded-lg bg-gradient-to-br from-dynamic-blue/5 to-dynamic-blue/10 p-3 text-center">
-                <div className="text-lg font-bold text-dynamic-blue">
+                <div className="font-bold text-dynamic-blue text-lg">
                   {peakClicks}
                 </div>
-                <div className="text-xs text-muted-foreground">
+                <div className="text-muted-foreground text-xs">
                   {t('link-shortener.analytics.peak_hour')}
                 </div>
               </div>
               <div className="rounded-lg bg-gradient-to-br from-dynamic-green/5 to-dynamic-green/10 p-3 text-center">
-                <div className="text-lg font-bold text-dynamic-green">
+                <div className="font-bold text-dynamic-green text-lg">
                   {avgClicks}
                 </div>
-                <div className="text-xs text-muted-foreground">
+                <div className="text-muted-foreground text-xs">
                   {t('link-shortener.analytics.avg_per_hour')}
                 </div>
               </div>
               <div className="rounded-lg bg-gradient-to-br from-dynamic-orange/5 to-dynamic-orange/10 p-3 text-center">
-                <div className="text-lg font-bold text-dynamic-orange">
+                <div className="font-bold text-dynamic-orange text-lg">
                   {activeHours}
                 </div>
-                <div className="text-xs text-muted-foreground">
+                <div className="text-muted-foreground text-xs">
                   {t('link-shortener.analytics.active_hours')}
                 </div>
               </div>
               <div className="rounded-lg bg-gradient-to-br from-dynamic-purple/5 to-dynamic-purple/10 p-3 text-center">
-                <div className="text-lg font-bold text-dynamic-purple">
+                <div className="font-bold text-dynamic-purple text-lg">
                   {totalClicks}
                 </div>
-                <div className="text-xs text-muted-foreground">
+                <div className="text-muted-foreground text-xs">
                   {t('link-shortener.analytics.total_clicks_summary')}
                 </div>
               </div>

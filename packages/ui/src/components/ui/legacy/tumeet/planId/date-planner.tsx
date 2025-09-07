@@ -213,7 +213,7 @@ function DatePlanner({
                   <ChevronLeft size={16} />
                 </button>
 
-                <div className="text-sm text-foreground/60">
+                <div className="text-foreground/60 text-sm">
                   {currentPage + 1} of {totalPages}
                 </div>
 

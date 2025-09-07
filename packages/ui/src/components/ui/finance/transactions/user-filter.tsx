@@ -14,7 +14,7 @@ import {
 } from '@tuturuuu/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
 import { cn } from '@tuturuuu/utils/format';
-import { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
+import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { getAvatarPlaceholder, getInitials } from '@tuturuuu/utils/name-helper';
 import { Check, Users, X } from 'lucide-react';
 import { useState } from 'react';

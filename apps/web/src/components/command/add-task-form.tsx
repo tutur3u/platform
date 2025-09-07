@@ -72,7 +72,7 @@ export function AddTaskForm({
         </div>
         <div>
           <p className="font-semibold text-foreground">No workspace selected</p>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-muted-foreground text-sm">
             Navigate to a workspace to create tasks
           </p>
         </div>
@@ -281,7 +281,7 @@ export function AddTaskForm({
       <div className="flex items-center justify-center p-8">
         <div className="flex items-center gap-3">
           <Loader className="h-5 w-5 animate-spin text-dynamic-blue" />
-          <span className="text-sm text-muted-foreground">
+          <span className="text-muted-foreground text-sm">
             Loading boards...
           </span>
         </div>
@@ -297,7 +297,7 @@ export function AddTaskForm({
         </div>
         <div>
           <p className="font-semibold text-foreground">Failed to load boards</p>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-muted-foreground text-sm">
             {boardsError.message || 'Unable to fetch boards at the moment'}
           </p>
         </div>
@@ -321,7 +321,7 @@ export function AddTaskForm({
         </div>
         <div>
           <p className="font-semibold text-foreground">No boards found</p>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-muted-foreground text-sm">
             Create a board first to add tasks
           </p>
         </div>
@@ -344,7 +344,7 @@ export function AddTaskForm({
     <div className="space-y-4 p-4">
       {/* Board Selection */}
       <div className="space-y-2">
-        <label className="text-sm font-medium text-foreground">Board</label>
+        <label className="font-medium text-foreground text-sm">Board</label>
         <Select
           value={selectedBoardId}
           onValueChange={(value) => {
@@ -380,14 +380,14 @@ export function AddTaskForm({
       {/* List Selection */}
       {selectedBoardId && (
         <div className="space-y-2">
-          <label className="text-sm font-medium text-foreground">List</label>
+          <label className="font-medium text-foreground text-sm">List</label>
           {availableLists.length === 0 ? (
             <div className="rounded-md border border-dynamic-orange/20 bg-dynamic-orange/5 p-3 text-center">
-              <div className="flex items-center justify-center gap-2 text-sm text-dynamic-orange">
+              <div className="flex items-center justify-center gap-2 text-dynamic-orange text-sm">
                 <AlertTriangle className="h-4 w-4" />
                 <span>This board has no lists</span>
               </div>
-              <p className="mt-1 text-xs text-muted-foreground">
+              <p className="mt-1 text-muted-foreground text-xs">
                 Create a list in the board first to add tasks
               </p>
             </div>
@@ -437,7 +437,7 @@ export function AddTaskForm({
               <div className="flex items-center justify-center py-4">
                 <div className="flex items-center gap-2">
                   <Loader className="h-4 w-4 animate-spin text-dynamic-blue" />
-                  <span className="text-xs text-muted-foreground">
+                  <span className="text-muted-foreground text-xs">
                     Loading tasks...
                   </span>
                 </div>
@@ -445,10 +445,10 @@ export function AddTaskForm({
             ) : tasksError ? (
               <div className="flex flex-col items-center gap-2 py-4 text-center">
                 <AlertTriangle className="h-4 w-4 text-dynamic-red" />
-                <div className="text-xs text-dynamic-red">
+                <div className="text-dynamic-red text-xs">
                   Failed to load tasks
                 </div>
-                <div className="text-xs text-muted-foreground">
+                <div className="text-muted-foreground text-xs">
                   {tasksError.message || 'Unable to fetch tasks'}
                 </div>
               </div>
@@ -490,10 +490,10 @@ export function AddTaskForm({
               </div>
             ) : (
               <div className="py-4 text-center">
-                <div className="text-xs text-muted-foreground">
+                <div className="text-muted-foreground text-xs">
                   No tasks in this list yet
                 </div>
-                <div className="mt-1 text-xs text-muted-foreground/70">
+                <div className="mt-1 text-muted-foreground/70 text-xs">
                   Perfect time to add the first one!
                 </div>
               </div>
@@ -505,11 +505,11 @@ export function AddTaskForm({
       {/* Task Name Input */}
       {selectedBoardId && selectedListId && (
         <div className="space-y-2">
-          <label className="text-sm font-medium text-foreground">
+          <label className="font-medium text-foreground text-sm">
             Task Name
           </label>
           <div className="relative">
-            <Type className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Type className="-translate-y-1/2 absolute top-1/2 left-3 h-4 w-4 text-muted-foreground" />
             <Input
               ref={taskInputRef}
               value={taskName}
@@ -536,10 +536,10 @@ export function AddTaskForm({
               <Check className="h-4 w-4 text-dynamic-green" />
             </div>
             <div>
-              <p className="text-sm font-medium text-dynamic-green">
+              <p className="font-medium text-dynamic-green text-sm">
                 Task created successfully!
               </p>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-muted-foreground text-xs">
                 "{lastCreatedTask}" has been added to your board.
               </p>
             </div>
@@ -574,10 +574,10 @@ export function AddTaskForm({
               <AlertTriangle className="h-4 w-4 text-dynamic-red" />
             </div>
             <div>
-              <p className="text-sm font-medium text-dynamic-red">
+              <p className="font-medium text-dynamic-red text-sm">
                 Failed to create task
               </p>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-muted-foreground text-xs">
                 {createTaskMutation.error?.message ||
                   'An unexpected error occurred. Please try again.'}
               </p>
@@ -636,31 +636,31 @@ export function AddTaskForm({
       {!showSuccessOptions && !createTaskMutation.isError && (
         <div className="space-y-1">
           {!selectedBoardId && (
-            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <div className="flex items-center gap-2 text-muted-foreground text-xs">
               <div className="h-1.5 w-1.5 rounded-full bg-dynamic-blue" />
               <span>Step 1: Select a board</span>
             </div>
           )}
           {selectedBoardId && !selectedListId && availableLists.length > 0 && (
-            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <div className="flex items-center gap-2 text-muted-foreground text-xs">
               <div className="h-1.5 w-1.5 rounded-full bg-dynamic-blue" />
               <span>Step 2: Select a list</span>
             </div>
           )}
           {selectedBoardId && selectedListId && !taskName.trim() && (
-            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <div className="flex items-center gap-2 text-muted-foreground text-xs">
               <div className="h-1.5 w-1.5 rounded-full bg-dynamic-blue" />
               <span>Step 3: Enter a task name</span>
             </div>
           )}
           {selectedBoardId && selectedListId && taskName.trim() && (
-            <div className="flex items-center gap-2 text-xs text-dynamic-green">
+            <div className="flex items-center gap-2 text-dynamic-green text-xs">
               <Check className="h-3 w-3" />
               <span>Ready to create task!</span>
             </div>
           )}
           {selectedBoardId && availableLists.length === 0 && (
-            <div className="flex items-center gap-2 text-xs text-dynamic-orange">
+            <div className="flex items-center gap-2 text-dynamic-orange text-xs">
               <AlertTriangle className="h-3 w-3" />
               <span>The selected board has no lists. Create a list first.</span>
             </div>

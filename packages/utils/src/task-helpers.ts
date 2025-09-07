@@ -2,7 +2,7 @@
  * Utility functions for task management and calculations
  */
 import type { Active, Over } from '@dnd-kit/core';
-import { TaskPriority } from '@tuturuuu/types/primitives/Priority';
+import type { TaskPriority } from '@tuturuuu/types/primitives/Priority';
 
 interface Task {
   id: string;

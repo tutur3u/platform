@@ -208,32 +208,32 @@ export function AudioRecorder({
   }, [cleanup]);
 
   return (
-    <div className="border-dynamic-border flex flex-col items-center gap-4 rounded-lg border bg-muted/20 p-4">
+    <div className="flex flex-col items-center gap-4 rounded-lg border border-dynamic-border bg-muted/20 p-4">
       {/* Recording Status Display */}
       {isUploading && (
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+        <div className="flex items-center gap-2 text-muted-foreground text-sm">
           <Loader2 className="h-4 w-4 animate-spin" />
           Uploading...
         </div>
       )}
 
       {error && (
-        <div className="rounded bg-dynamic-red/10 px-3 py-2 text-sm text-dynamic-red">
+        <div className="rounded bg-dynamic-red/10 px-3 py-2 text-dynamic-red text-sm">
           {error}
         </div>
       )}
 
       {isRecording ? (
         <div className="text-center">
-          <div className="font-mono text-2xl font-bold text-dynamic-red">
+          <div className="font-bold font-mono text-2xl text-dynamic-red">
             {formatTime(recordingTime)}
           </div>
-          <div className="text-sm text-muted-foreground">
+          <div className="text-muted-foreground text-sm">
             Recording in progress...
           </div>
         </div>
       ) : (
-        <div className="text-md max-w-md text-center text-muted-foreground">
+        <div className="max-w-md text-center text-md text-muted-foreground">
           {`Ready to record. Click 'Start Recording' to begin.`}
         </div>
       )}

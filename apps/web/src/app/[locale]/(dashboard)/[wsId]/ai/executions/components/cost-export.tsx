@@ -212,7 +212,7 @@ export function CostExport({ executions }: CostExportProps) {
             <Table className="h-5 w-5" />
             <div className="text-center">
               <div className="font-medium">{t('export_csv')}</div>
-              <div className="text-xs text-muted-foreground">
+              <div className="text-muted-foreground text-xs">
                 {t('export_csv_description')}
               </div>
             </div>
@@ -226,7 +226,7 @@ export function CostExport({ executions }: CostExportProps) {
             <FileText className="h-5 w-5" />
             <div className="text-center">
               <div className="font-medium">{t('export_json')}</div>
-              <div className="text-xs text-muted-foreground">
+              <div className="text-muted-foreground text-xs">
                 {t('export_json_description')}
               </div>
             </div>
@@ -240,14 +240,14 @@ export function CostExport({ executions }: CostExportProps) {
             <FileText className="h-5 w-5" />
             <div className="text-center">
               <div className="font-medium">{t('export_summary')}</div>
-              <div className="text-xs text-muted-foreground">
+              <div className="text-muted-foreground text-xs">
                 {t('export_summary_description')}
               </div>
             </div>
           </Button>
         </div>
 
-        <div className="text-sm text-muted-foreground">
+        <div className="text-muted-foreground text-sm">
           {t('export_note', { count: executions.length })}
         </div>
       </CardContent>

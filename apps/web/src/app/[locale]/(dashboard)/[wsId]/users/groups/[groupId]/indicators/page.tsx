@@ -38,7 +38,7 @@ export default async function UserGroupIndicatorsPage({ params }: Props) {
       <FeatureSummary
         title={
           <>
-            <h1 className="w-full text-2xl font-bold">
+            <h1 className="w-full font-bold text-2xl">
               {group.name || t('ws-user-groups.singular')}
             </h1>
             <Separator className="my-2" />

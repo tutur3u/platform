@@ -113,7 +113,7 @@ export function CrawlerContent({
                 <TabsTrigger value="urls">
                   URLs ({relatedUrls.length}){' '}
                   {uncrawledCount > 0 && (
-                    <span className="ml-1 text-xs text-blue-500">
+                    <span className="ml-1 text-blue-500 text-xs">
                       • {uncrawledCount} uncrawled
                     </span>
                   )}
@@ -148,7 +148,7 @@ export function CrawlerContent({
                   <div
                     className={cn(
                       'p-4',
-                      'prose w-[calc(100vw-8rem)] min-w-full break-words text-foreground md:w-152 lg:w-full dark:prose-invert prose-p:leading-relaxed prose-p:before:hidden prose-p:after:hidden prose-code:before:hidden prose-code:after:hidden prose-pre:p-2 prose-li:marker:text-foreground/80 prose-tr:border-border prose-th:border prose-th:border-b-4 prose-th:border-foreground/20 prose-th:p-2 prose-th:text-center prose-th:text-lg prose-td:border prose-td:p-2'
+                      'prose dark:prose-invert w-[calc(100vw-8rem)] min-w-full break-words prose-td:border prose-th:border prose-th:border-foreground/20 prose-tr:border-border prose-th:border-b-4 prose-pre:p-2 prose-td:p-2 prose-th:p-2 prose-th:text-center prose-th:text-lg text-foreground prose-p:leading-relaxed prose-li:marker:text-foreground/80 prose-code:before:hidden prose-p:before:hidden prose-code:after:hidden prose-p:after:hidden md:w-152 lg:w-full'
                     )}
                   >
                     {crawledUrl.markdown ? (
@@ -190,7 +190,7 @@ export function CrawlerContent({
                   </div>
                   <div className="overflow-x-auto p-4">
                     {crawledUrl.html ? (
-                      <pre className="text-sm whitespace-pre">
+                      <pre className="whitespace-pre text-sm">
                         <code>{formatHTML(crawledUrl.html)}</code>
                       </pre>
                     ) : (
@@ -258,7 +258,7 @@ export function CrawlerContent({
                                   {relatedUrl.skipped ? 'Skipped' : 'Kept'}
                                 </span>
                                 {isCrawled ? (
-                                  <span className="text-xs text-blue-500">
+                                  <span className="text-blue-500 text-xs">
                                     Crawled{' '}
                                     {formatDistance(
                                       new Date(crawledData!.created_at),
@@ -268,7 +268,7 @@ export function CrawlerContent({
                                   </span>
                                 ) : (
                                   !relatedUrl.skipped && (
-                                    <span className="text-xs text-blue-500">
+                                    <span className="text-blue-500 text-xs">
                                       Not yet crawled
                                     </span>
                                   )

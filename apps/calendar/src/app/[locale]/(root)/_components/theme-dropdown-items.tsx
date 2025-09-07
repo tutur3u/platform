@@ -57,7 +57,7 @@ export function ThemeDropdownItems() {
   return (
     <>
       <DropdownMenuItem
-        className="cursor-pointer rounded-md px-3 py-2 text-sm font-medium transition-all duration-200 hover:bg-blue-50 hover:text-blue-700 dark:hover:bg-blue-950/20 dark:hover:text-blue-300"
+        className="cursor-pointer rounded-md px-3 py-2 font-medium text-sm transition-all duration-200 hover:bg-blue-50 hover:text-blue-700 dark:hover:bg-blue-950/20 dark:hover:text-blue-300"
         onClick={() => updateTheme({ primary: 'light' })}
         disabled={primaryTheme === 'light'}
       >
@@ -76,7 +76,7 @@ export function ThemeDropdownItems() {
       </DropdownMenuItem>
 
       <DropdownMenuItem
-        className="cursor-pointer rounded-md px-3 py-2 text-sm font-medium transition-all duration-200 hover:bg-blue-50 hover:text-blue-700 dark:hover:bg-blue-950/20 dark:hover:text-blue-300"
+        className="cursor-pointer rounded-md px-3 py-2 font-medium text-sm transition-all duration-200 hover:bg-blue-50 hover:text-blue-700 dark:hover:bg-blue-950/20 dark:hover:text-blue-300"
         onClick={() => updateTheme({ primary: 'dark' })}
         disabled={primaryTheme === 'dark'}
       >
@@ -190,7 +190,7 @@ export function ThemeDropdownItems() {
       <DropdownMenuSeparator className="my-2 bg-gray-200 dark:bg-gray-700" />
 
       <DropdownMenuItem
-        className="cursor-pointer rounded-md px-3 py-2 text-sm font-medium transition-all duration-200 hover:bg-blue-50 hover:text-blue-700 dark:hover:bg-blue-950/20 dark:hover:text-blue-300"
+        className="cursor-pointer rounded-md px-3 py-2 font-medium text-sm transition-all duration-200 hover:bg-blue-50 hover:text-blue-700 dark:hover:bg-blue-950/20 dark:hover:text-blue-300"
         onClick={() => setTheme('system')}
         disabled={isSystem}
       >

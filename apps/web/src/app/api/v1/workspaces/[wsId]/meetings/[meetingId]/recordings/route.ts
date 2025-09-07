@@ -1,5 +1,5 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
-import { type RecordingStatus } from '@tuturuuu/types/db';
+import type { RecordingStatus } from '@tuturuuu/types/db';
 import { type NextRequest, NextResponse } from 'next/server';
 
 export async function GET(

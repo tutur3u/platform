@@ -19,7 +19,7 @@ const GuestEmailTemplate = ({
     <Html>
       <Head />
       <Tailwind>
-        <div className="m-4 rounded-lg border bg-white p-6 font-sans text-[14px] leading-6 text-black">
+        <div className="m-4 rounded-lg border bg-white p-6 font-sans text-[14px] text-black leading-6">
           {/* Header */}
           <div className="text-center">
             <Img
@@ -29,7 +29,7 @@ const GuestEmailTemplate = ({
               alt="Easy Logo"
               className="mx-auto"
             />
-            <div className="mt-2 text-lg font-bold">
+            <div className="mt-2 font-bold text-lg">
               EASY APPLIED LANGUAGE CENTER
             </div>
             <div className="text-sm">
@@ -40,7 +40,7 @@ const GuestEmailTemplate = ({
           </div>
 
           {/* Title */}
-          <div className="mt-4 text-center text-lg font-bold text-blue-700 uppercase">
+          <div className="mt-4 text-center font-bold text-blue-700 text-lg uppercase">
             BÁO CÁO KẾT QUẢ HỌC THỬ
           </div>
 
@@ -67,7 +67,7 @@ const GuestEmailTemplate = ({
             </thead>
             <tbody>
               <tr>
-                <td className="border border-black p-4 align-top whitespace-pre-line">
+                <td className="whitespace-pre-line border border-black p-4 align-top">
                   {comments ||
                     '...........................................................'}
                 </td>

@@ -157,7 +157,7 @@ export function MailClient({
         <ResizablePanel defaultSize={defaultLayout[0]} minSize={30}>
           <div className="flex h-16 items-center justify-between border-b bg-background/50 px-4 backdrop-blur-sm">
             <div className="flex items-center gap-4">
-              <h1 className="text-xl font-bold">{t('mail.sent')}</h1>
+              <h1 className="font-bold text-xl">{t('mail.sent')}</h1>
               <div className="flex items-center gap-2">
                 <Switch
                   id="confidential-mode"
@@ -167,7 +167,7 @@ export function MailClient({
                 />
                 <label
                   htmlFor="confidential-mode"
-                  className="text-xs font-medium text-muted-foreground"
+                  className="font-medium text-muted-foreground text-xs"
                 >
                   {t('confidential_mode')}
                 </label>

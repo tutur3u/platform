@@ -211,7 +211,7 @@ export function CommandPalette({
                 <p className="font-semibold text-foreground">
                   No workspace found
                 </p>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-muted-foreground text-sm">
                   Please navigate to a workspace to use the command palette
                 </p>
               </div>
@@ -252,16 +252,16 @@ class CommandPaletteErrorBoundary extends React.Component<
             <h3 className="font-semibold text-foreground">
               Something went wrong
             </h3>
-            <p className="max-w-sm text-sm text-muted-foreground">
+            <p className="max-w-sm text-muted-foreground text-sm">
               The command palette encountered an unexpected error. Please try
               again.
             </p>
             {process.env.NODE_ENV === 'development' && this.state.error && (
               <details className="mt-4 text-left">
-                <summary className="cursor-pointer text-xs text-muted-foreground">
+                <summary className="cursor-pointer text-muted-foreground text-xs">
                   Error details (development)
                 </summary>
-                <pre className="mt-2 rounded bg-dynamic-red/5 p-2 text-xs text-dynamic-red">
+                <pre className="mt-2 rounded bg-dynamic-red/5 p-2 text-dynamic-red text-xs">
                   {this.state.error.message}
                 </pre>
               </details>

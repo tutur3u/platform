@@ -52,7 +52,7 @@ export default async function InvoiceDetailsPage({
       <div className="grid h-fit gap-4 md:grid-cols-2">
         <div className="flex h-full flex-col gap-4">
           <div className="grid h-fit gap-2 rounded-lg border p-4">
-            <div className="text-lg font-semibold">
+            <div className="font-semibold text-lg">
               {t('invoices.basic-info')}
             </div>
             <Separator />
@@ -107,7 +107,7 @@ export default async function InvoiceDetailsPage({
 
         <div className="flex h-full flex-col gap-4">
           <div className="grid h-fit gap-2 rounded-lg border p-4">
-            <div className="text-lg font-semibold">
+            <div className="font-semibold text-lg">
               {t('invoices.products')}
             </div>
             <Separator />
@@ -123,15 +123,15 @@ export default async function InvoiceDetailsPage({
                 ))}
               </div>
             ) : (
-              <div className="text-center py-8 text-muted-foreground">
-                <Box className="h-12 w-12 mx-auto mb-3 opacity-50" />
+              <div className="py-8 text-center text-muted-foreground">
+                <Box className="mx-auto mb-3 h-12 w-12 opacity-50" />
                 <p>{t('common.empty')}</p>
               </div>
             )}
           </div>
           <div className="h-fit rounded-lg border p-4">
             <div className="grid h-full content-start gap-2">
-              <div className="text-lg font-semibold">
+              <div className="font-semibold text-lg">
                 {t('workspace-inventory-tabs.promotions')}
               </div>
               <Separator />
@@ -146,8 +146,8 @@ export default async function InvoiceDetailsPage({
                   ))}
                 </div>
               ) : (
-                <div className="text-center py-8 text-muted-foreground">
-                  <Percent className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                <div className="py-8 text-center text-muted-foreground">
+                  <Percent className="mx-auto mb-3 h-12 w-12 opacity-50" />
                   <p>{t('common.empty')}</p>
                 </div>
               )}
@@ -155,7 +155,7 @@ export default async function InvoiceDetailsPage({
           </div>
           <div className="h-fit rounded-lg border p-4">
             <div className="grid h-fit content-start gap-2">
-              <div className="text-lg font-semibold">{t('invoices.note')}</div>
+              <div className="font-semibold text-lg">{t('invoices.note')}</div>
               <Separator />
               <p>{invoice.note || t('common.empty')}</p>
             </div>

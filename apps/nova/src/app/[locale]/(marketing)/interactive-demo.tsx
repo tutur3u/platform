@@ -67,10 +67,10 @@ export default function InteractiveDemo() {
       <div className="relative mx-auto max-w-3xl">
         <Card className="overflow-hidden border-primary/10 bg-background/10 backdrop-blur-sm">
           {/* Demo header */}
-          <div className="flex items-center gap-2 border-b border-primary/10 bg-primary/5 p-4">
+          <div className="flex items-center gap-2 border-primary/10 border-b bg-primary/5 p-4">
             <Bot className="h-5 w-5 text-primary" />
             <span className="font-semibold">{t('title')}</span>
-            <span className="ml-auto flex items-center gap-1 rounded-full bg-primary/10 px-2 py-1 text-xs text-primary">
+            <span className="ml-auto flex items-center gap-1 rounded-full bg-primary/10 px-2 py-1 text-primary text-xs">
               <Sparkles className="h-3 w-3" />
               {t('badge')}
             </span>
@@ -137,15 +137,15 @@ export default function InteractiveDemo() {
           </div>
 
           {/* Input area */}
-          <div className="flex items-center gap-2 border-t border-primary/10 bg-background/10 p-4">
+          <div className="flex items-center gap-2 border-primary/10 border-t bg-background/10 p-4">
             <div className="relative flex-1">
               <input
                 type="text"
                 placeholder={t('input-place-holder')}
-                className="w-full rounded-lg border border-primary/10 bg-background/10 px-4 py-2 pr-10 text-sm placeholder:text-muted-foreground focus:ring-2 focus:ring-primary/20 focus:outline-none"
+                className="w-full rounded-lg border border-primary/10 bg-background/10 px-4 py-2 pr-10 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20"
                 disabled
               />
-              <MessageSquare className="absolute top-1/2 right-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <MessageSquare className="-translate-y-1/2 absolute top-1/2 right-3 h-4 w-4 text-muted-foreground" />
             </div>
             <Button size="icon" disabled>
               <Send className="h-4 w-4" />

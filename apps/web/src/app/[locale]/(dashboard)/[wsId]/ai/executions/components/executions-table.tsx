@@ -3,7 +3,7 @@
 import { getColumns } from '../columns';
 import { ExecutionDetailDialog } from './execution-detail-dialog';
 import { CustomDataTable } from '@/components/custom-data-table';
-import { type WorkspaceAIExecution } from '@tuturuuu/types/db';
+import type { WorkspaceAIExecution } from '@tuturuuu/types/db';
 import { useState } from 'react';
 
 interface ExecutionsTableProps {

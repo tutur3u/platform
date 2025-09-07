@@ -23,14 +23,14 @@ export const MonthHeader: React.FC<{
 }) => (
   <div
     className={cn(
-      'flex flex-wrap items-center justify-between gap-x-4 gap-y-1 text-xl font-bold md:text-2xl',
+      'flex flex-wrap items-center justify-between gap-x-4 gap-y-1 font-bold text-xl md:text-2xl',
       hideControls || 'mb-4'
     )}
   >
     <div className="flex items-center gap-1">
       {hideYear || thisYear}
       {hideYear || <div className="mx-2 h-4 w-px rotate-30 bg-foreground/20" />}
-      <span className="text-lg font-semibold md:text-xl">{thisMonth}</span>
+      <span className="font-semibold text-lg md:text-xl">{thisMonth}</span>
     </div>
     {!hideControls && (
       <div className="flex items-center gap-1">

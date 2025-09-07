@@ -1,11 +1,12 @@
-import LoadingStatisticCard from '@/components/loading-statistic-card';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import type { AuroraForecast } from '@tuturuuu/types/db';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
 import { getPermissions, getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import { notFound } from 'next/navigation';
 import { Suspense } from 'react';
+import LoadingStatisticCard from '@/components/loading-statistic-card';
 import UpcomingCalendarEvents from './calendar/upcoming-events';
+import Countdown from './countdown';
 import DashboardCardSkeleton from './dashboard-card-skeleton';
 import NewlyCreatedTasks from './tasks/newly-created-tasks';
 import TasksAssignedToMe from './tasks/tasks-assigned-to-me';
@@ -39,13 +40,16 @@ export default async function WorkspaceHomePage({ params }: Props) {
     wsId,
   });
 
+  const isInternalUser =
+    currentUser?.email?.endsWith('@tuturuuu.com') ||
+    currentUser?.email?.endsWith('@xwf.tuturuuu.com');
+
   const disableCalendar =
-    withoutPermission('manage_calendar') ||
-    (!currentUser?.email?.endsWith('@tuturuuu.com') &&
-      !currentUser?.email?.endsWith('@xwf.tuturuuu.com'));
+    withoutPermission('manage_calendar') || !isInternalUser;
 
   return (
     <>
+      {isInternalUser && <Countdown />}
       {currentUser && (
         <div className="grid gap-4 pb-4 md:grid-cols-2">
           <Suspense fallback={<DashboardCardSkeleton />}>

@@ -1,4 +1,4 @@
-import { WeatherSystem } from '../engine/weather';
+import type { WeatherSystem } from '../engine/weather';
 
 interface WeatherDisplayProps {
   weather: WeatherSystem;
@@ -20,17 +20,17 @@ export function WeatherDisplay({ weather }: WeatherDisplayProps) {
             {weather.getWeatherIcon(currentWeather.type)}
           </span>
           <div>
-            <div className="text-sm font-semibold">
+            <div className="font-semibold text-sm">
               {weather.getWeatherName(currentWeather.type)}
             </div>
-            <div className="text-xs text-dynamic-gray/70">
+            <div className="text-dynamic-gray/70 text-xs">
               {weather.getWeatherDescription(currentWeather.type)}
             </div>
           </div>
         </div>
         <div className="text-right">
-          <div className="text-xs text-dynamic-gray/70">Time Left</div>
-          <div className="text-sm font-semibold">
+          <div className="text-dynamic-gray/70 text-xs">Time Left</div>
+          <div className="font-semibold text-sm">
             {Math.ceil(timeRemaining / 1000)}s
           </div>
         </div>

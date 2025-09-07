@@ -58,7 +58,7 @@ export default async function SecuritySettingsCard({
             <Shield className="h-5 w-5 text-dynamic-green" />
           </div>
           <div className="space-y-1">
-            <CardTitle className="text-xl font-semibold">
+            <CardTitle className="font-semibold text-xl">
               {t('security-settings')}
             </CardTitle>
             <CardDescription className="text-sm">
@@ -99,18 +99,18 @@ export default async function SecuritySettingsCard({
                 <Mail className="h-4 w-4 text-dynamic-blue" />
               </div>
               <div className="flex-1">
-                <p className="text-sm font-medium">{t('email-verification')}</p>
+                <p className="font-medium text-sm">{t('email-verification')}</p>
                 <div className="flex items-center gap-2">
                   {user.email ? (
                     <>
                       <CheckCircle2 className="h-4 w-4 text-dynamic-green" />
-                      <span className="text-xs text-dynamic-green">
+                      <span className="text-dynamic-green text-xs">
                         {t('verified')}
                       </span>
                     </>
                   ) : (
                     <>
-                      <AlertTriangle className="text-dynamic-amber h-4 w-4" />
+                      <AlertTriangle className="h-4 w-4 text-dynamic-amber" />
                       <span className="text-dynamic-amber text-xs">
                         {t('unverified')}
                       </span>
@@ -128,20 +128,20 @@ export default async function SecuritySettingsCard({
                 <Lock className="h-4 w-4 text-dynamic-blue" />
               </div>
               <div className="flex-1">
-                <p className="text-sm font-medium">
+                <p className="font-medium text-sm">
                   {t('password-protection')}
                 </p>
                 <div className="flex items-center gap-2">
                   {hasPassword ? (
                     <>
                       <CheckCircle2 className="h-4 w-4 text-dynamic-green" />
-                      <span className="text-xs text-dynamic-green">
+                      <span className="text-dynamic-green text-xs">
                         {t('protected')}
                       </span>
                     </>
                   ) : (
                     <>
-                      <AlertTriangle className="text-dynamic-amber h-4 w-4" />
+                      <AlertTriangle className="h-4 w-4 text-dynamic-amber" />
                       <span className="text-dynamic-amber text-xs">
                         {t('weak')}
                       </span>
@@ -159,10 +159,10 @@ export default async function SecuritySettingsCard({
                 <Calendar className="h-4 w-4 text-dynamic-blue" />
               </div>
               <div className="flex-1">
-                <p className="text-sm font-medium">{t('account-age')}</p>
+                <p className="font-medium text-sm">{t('account-age')}</p>
                 <div className="flex items-center gap-2">
                   <UserCheck className="h-4 w-4 text-dynamic-green" />
-                  <span className="text-xs text-dynamic-green">
+                  <span className="text-dynamic-green text-xs">
                     {t('days-old', { days: accountAgeDays })}
                   </span>
                 </div>
@@ -173,7 +173,7 @@ export default async function SecuritySettingsCard({
 
         {/* Security Actions */}
         <div className="space-y-4">
-          <h4 className="text-sm font-medium text-foreground">
+          <h4 className="font-medium text-foreground text-sm">
             {t('security-actions')}
           </h4>
 
@@ -223,14 +223,14 @@ export default async function SecuritySettingsCard({
               <AlertTriangle className="mt-0.5 h-5 w-5 flex-shrink-0 text-dynamic-yellow" />
               <div className="space-y-2">
                 <div>
-                  <p className="text-sm font-medium text-dynamic-yellow">
+                  <p className="font-medium text-dynamic-yellow text-sm">
                     {t('security-recommendations')}
                   </p>
-                  <p className="text-sm text-dynamic-yellow">
+                  <p className="text-dynamic-yellow text-sm">
                     {t('security-recommendations-description')}
                   </p>
                 </div>
-                <ul className="space-y-1 text-sm text-dynamic-yellow">
+                <ul className="space-y-1 text-dynamic-yellow text-sm">
                   {!user.email && <li>• {t('verify-email-recommendation')}</li>}
                   <li>• {t('link-additional-accounts-recommendation')}</li>
                   <li>• {t('enable-2fa-recommendation')}</li>
@@ -246,14 +246,14 @@ export default async function SecuritySettingsCard({
             <Shield className="mt-0.5 h-5 w-5 flex-shrink-0 text-dynamic-blue" />
             <div className="space-y-2">
               <div>
-                <p className="text-sm font-medium text-dynamic-blue">
+                <p className="font-medium text-dynamic-blue text-sm">
                   {t('security-tips')}
                 </p>
-                <p className="text-sm text-dynamic-blue">
+                <p className="text-dynamic-blue text-sm">
                   {t('security-tips-description')}
                 </p>
               </div>
-              <ul className="space-y-1 text-sm text-dynamic-blue">
+              <ul className="space-y-1 text-dynamic-blue text-sm">
                 <li>• {t('use-strong-passwords-tip')}</li>
                 <li>• {t('avoid-public-wifi-tip')}</li>
                 <li>• {t('regular-logout-tip')}</li>

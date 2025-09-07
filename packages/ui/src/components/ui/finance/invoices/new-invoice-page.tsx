@@ -542,7 +542,7 @@ export default function NewInvoicePage({ wsId }: Props) {
           </div>
         </div>
         <TabsContent value="standard" className="w-full">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
             {/* Left Column - Customer Information and Products */}
             <div className="space-y-6">
               <Card>
@@ -573,7 +573,7 @@ export default function NewInvoicePage({ wsId }: Props) {
                   {selectedUser && (
                     <div className="mt-4">
                       {isLoadingUserHistory ? (
-                        <div className="text-center py-4">
+                        <div className="py-4 text-center">
                           <p className="text-muted-foreground text-sm">
                             Loading user history...
                           </p>
@@ -716,7 +716,7 @@ export default function NewInvoicePage({ wsId }: Props) {
                           )}
                         </Accordion>
                       ) : (
-                        <div className="text-center py-4">
+                        <div className="py-4 text-center">
                           <p className="text-muted-foreground text-sm">
                             No transaction or invoice history found for this
                             user.
@@ -786,7 +786,7 @@ export default function NewInvoicePage({ wsId }: Props) {
 
                   {/* Payment Settings Section */}
                   <div className="space-y-4">
-                    <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                    <div className="flex items-center gap-2 font-medium text-muted-foreground text-sm">
                       <CreditCard className="h-4 w-4" />
                       Payment Settings
                     </div>
@@ -816,7 +816,7 @@ export default function NewInvoicePage({ wsId }: Props) {
                                   <p className="font-medium">
                                     {wallet.name || 'Unnamed Wallet'}
                                   </p>
-                                  <p className="text-sm text-muted-foreground">
+                                  <p className="text-muted-foreground text-sm">
                                     {wallet.type || 'STANDARD'} -{' '}
                                     {wallet.currency || 'VND'}
                                   </p>
@@ -888,7 +888,7 @@ export default function NewInvoicePage({ wsId }: Props) {
                       <Separator />
 
                       <div className="space-y-4">
-                        <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                        <div className="flex items-center gap-2 font-medium text-muted-foreground text-sm">
                           <Calculator className="h-4 w-4" />
                           Checkout
                         </div>
@@ -937,7 +937,7 @@ export default function NewInvoicePage({ wsId }: Props) {
 
                           {Math.abs(roundedTotal - totalBeforeRounding) >
                             0.01 && (
-                            <div className="flex justify-between text-sm text-muted-foreground">
+                            <div className="flex justify-between text-muted-foreground text-sm">
                               <span>Adjustment</span>
                               <span>
                                 {roundedTotal > totalBeforeRounding ? '+' : ''}
@@ -960,7 +960,7 @@ export default function NewInvoicePage({ wsId }: Props) {
                               onClick={roundUp}
                               className="flex-1"
                             >
-                              <ArrowUp className="h-4 w-4 mr-1" />
+                              <ArrowUp className="mr-1 h-4 w-4" />
                               Round Up
                             </Button>
                             <Button
@@ -969,7 +969,7 @@ export default function NewInvoicePage({ wsId }: Props) {
                               onClick={roundDown}
                               className="flex-1"
                             >
-                              <ArrowDown className="h-4 w-4 mr-1" />
+                              <ArrowDown className="mr-1 h-4 w-4" />
                               Round Down
                             </Button>
                             <Button

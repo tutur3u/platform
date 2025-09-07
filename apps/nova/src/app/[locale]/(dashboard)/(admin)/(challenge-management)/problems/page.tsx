@@ -40,7 +40,7 @@ export default async function Page({ searchParams }: Props) {
   return (
     <div className="container mx-auto p-6">
       <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-center md:justify-between md:gap-0">
-        <h1 className="text-3xl font-bold">{t('problems')}</h1>
+        <h1 className="font-bold text-3xl">{t('problems')}</h1>
         <CreateProblemDialog
           trigger={
             <Button className="gap-2">
@@ -125,8 +125,8 @@ async function getProblemsData({
   // Add filter by challenge ID if provided
 
   if (page && pageSize) {
-    const parsedPage = parseInt(page);
-    const parsedSize = parseInt(pageSize);
+    const parsedPage = parseInt(page, 10);
+    const parsedSize = parseInt(pageSize, 10);
     const start = (parsedPage - 1) * parsedSize;
     const end = parsedPage * parsedSize - 1;
     queryBuilder.range(start, end);

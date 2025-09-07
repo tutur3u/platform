@@ -317,12 +317,12 @@ function AvatarChip({
   const initials = getInitials(name || email);
 
   return (
-    <span className="flex items-center gap-1 rounded-full bg-accent px-2 py-0.5 text-xs font-medium text-accent-foreground shadow-sm">
+    <span className="flex items-center gap-1 rounded-full bg-accent px-2 py-0.5 font-medium text-accent-foreground text-xs shadow-sm">
       <Avatar className="mr-1 h-5 w-5">
         {avatarUrl ? (
           <AvatarImage src={avatarUrl} alt={name || email} />
         ) : (
-          <AvatarFallback className="bg-primary/10 text-xs font-bold text-primary">
+          <AvatarFallback className="bg-primary/10 font-bold text-primary text-xs">
             {initials ||
               (email ? (
                 email.charAt(0).toUpperCase()
@@ -365,7 +365,7 @@ function ThreadMessageItem({
   return (
     <div
       className={cn(
-        'border-l-2 border-muted/30 px-4 pt-3',
+        'border-muted/30 border-l-2 px-4 pt-3',
         message.isOriginal && 'border-l-primary/50 bg-primary/5',
         !isLast && 'mb-6',
         'rounded-r-xl'
@@ -380,25 +380,25 @@ function ThreadMessageItem({
                 src={member.avatar_url}
               />
             ) : (
-              <AvatarFallback className="bg-primary/10 text-xs font-semibold text-primary">
+              <AvatarFallback className="bg-primary/10 font-semibold text-primary text-xs">
                 {getInitials(parsedFrom?.name || parsedFrom?.email || from)}
               </AvatarFallback>
             )}
           </Avatar>
           <div className="flex flex-col">
             <div className="flex items-center gap-2">
-              <span className="text-sm font-medium text-foreground">
+              <span className="font-medium text-foreground text-sm">
                 {confidentialMode
                   ? t('confidential_sender')
                   : parsedFrom?.name || parsedFrom?.email || from}
               </span>
               {message.isOriginal && (
-                <span className="rounded bg-primary/20 px-1.5 py-0.5 text-xs font-medium text-primary">
+                <span className="rounded bg-primary/20 px-1.5 py-0.5 font-medium text-primary text-xs">
                   Latest
                 </span>
               )}
             </div>
-            <span className="text-xs text-muted-foreground">
+            <span className="text-muted-foreground text-xs">
               {confidentialMode
                 ? t('confidential_email')
                 : parsedFrom?.email &&
@@ -408,7 +408,7 @@ function ThreadMessageItem({
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <time className="text-xs whitespace-nowrap text-muted-foreground">
+          <time className="whitespace-nowrap text-muted-foreground text-xs">
             {message.isOriginal
               ? dayjs(date).format('LLLL')
               : date || 'Unknown date'}
@@ -436,16 +436,16 @@ function ThreadMessageItem({
           isCollapsed ? 'max-h-12' : 'max-h-none'
         )}
       >
-        <div className="text-sm leading-relaxed text-foreground">
+        <div className="text-foreground text-sm leading-relaxed">
           {confidentialMode ? (
             <div className="py-4 text-center text-muted-foreground">
               <div className="mb-2 text-2xl opacity-20">🔒</div>
-              <p className="text-sm font-medium">{t('confidential_content')}</p>
+              <p className="font-medium text-sm">{t('confidential_content')}</p>
               <p className="text-xs">{t('confidential_content_desc')}</p>
             </div>
           ) : message.isOriginal && mail.html_payload ? (
             <div
-              className="prose prose-sm max-w-full break-words text-foreground prose-a:text-dynamic-blue prose-a:underline prose-blockquote:text-foreground prose-strong:text-foreground"
+              className="prose prose-sm max-w-full break-words prose-a:text-dynamic-blue prose-blockquote:text-foreground prose-strong:text-foreground text-foreground prose-a:underline"
               // biome-ignore lint/security/noDangerouslySetInnerHtml: content is sanitized
               dangerouslySetInnerHTML={{
                 __html: DOMPurify.sanitize(message.content),
@@ -454,7 +454,7 @@ function ThreadMessageItem({
           ) : message.content.includes('<') && message.content.includes('>') ? (
             // Handle HTML content in threaded messages
             <div
-              className="prose prose-sm max-w-full break-words text-foreground prose-a:text-dynamic-blue prose-a:underline prose-blockquote:text-foreground prose-strong:text-foreground"
+              className="prose prose-sm max-w-full break-words prose-a:text-dynamic-blue prose-blockquote:text-foreground prose-strong:text-foreground text-foreground prose-a:underline"
               // biome-ignore lint/security/noDangerouslySetInnerHtml: content is sanitized
               dangerouslySetInnerHTML={{
                 __html: DOMPurify.sanitize(
@@ -465,7 +465,7 @@ function ThreadMessageItem({
               }}
             />
           ) : (
-            <pre className="font-sans text-sm whitespace-pre-wrap">
+            <pre className="whitespace-pre-wrap font-sans text-sm">
               {isCollapsed
                 ? `${message.content.slice(0, 150)}${message.content.length > 150 ? '...' : ''}`
                 : message.content}
@@ -474,7 +474,7 @@ function ThreadMessageItem({
           {!confidentialMode && isCollapsed && message.content.length > 150 && (
             <button
               onClick={() => setIsCollapsed(false)}
-              className="mt-2 text-xs font-medium text-primary hover:text-primary/80"
+              className="mt-2 font-medium text-primary text-xs hover:text-primary/80"
             >
               Show more
             </button>
@@ -504,7 +504,7 @@ function AddressChips({
         {label.replace(/:/g, '')}:
       </span>
       {parsed.length === 0 ? (
-        <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground opacity-70 shadow-sm">
+        <span className="rounded-full bg-muted px-2 py-0.5 font-medium text-muted-foreground text-xs opacity-70 shadow-sm">
           {t('none')}
         </span>
       ) : (
@@ -521,7 +521,7 @@ function AddressChips({
           ) : (
             <span
               key={key}
-              className="flex items-center gap-1 rounded-full bg-accent px-2 py-0.5 text-xs font-medium text-accent-foreground shadow-sm"
+              className="flex items-center gap-1 rounded-full bg-accent px-2 py-0.5 font-medium text-accent-foreground text-xs shadow-sm"
             >
               {name && <span>{name}</span>}
               <span className="break-words opacity-50">{`<${email}>`}</span>
@@ -890,7 +890,7 @@ export function MailDisplay({
                       src={sourceMember?.avatar_url}
                     />
                   ) : (
-                    <AvatarFallback className="bg-primary/10 text-sm font-semibold text-primary">
+                    <AvatarFallback className="bg-primary/10 font-semibold text-primary text-sm">
                       {(() => {
                         const parsed = formatEmailAddresses(mail.source_email);
                         const name = parsed[0]?.name || '';
@@ -901,12 +901,12 @@ export function MailDisplay({
                   )}
                 </Avatar>
                 <div className="grid gap-0.5">
-                  <h2 className="truncate text-base leading-tight font-semibold text-foreground">
+                  <h2 className="truncate font-semibold text-base text-foreground leading-tight">
                     {confidentialMode
                       ? t('confidential_subject')
                       : mail.subject}
                   </h2>
-                  <p className="truncate text-sm font-medium text-foreground/80">
+                  <p className="truncate font-medium text-foreground/80 text-sm">
                     {confidentialMode
                       ? t('confidential_sender')
                       : formatEmailAddresses(mail.source_email).map(
@@ -923,7 +923,7 @@ export function MailDisplay({
 
               <div className="flex items-center gap-2">
                 {mail.created_at && (
-                  <time className="text-xs font-medium whitespace-nowrap text-muted-foreground">
+                  <time className="whitespace-nowrap font-medium text-muted-foreground text-xs">
                     {dayjs(mail.created_at).format('LLLL')}
                   </time>
                 )}
@@ -949,14 +949,14 @@ export function MailDisplay({
                   : 'max-h-96 pt-3 opacity-100'
               )}
             >
-              <div className="flex flex-col items-start gap-1 text-xs text-muted-foreground">
+              <div className="flex flex-col items-start gap-1 text-muted-foreground text-xs">
                 {confidentialMode ? (
                   <>
                     <div className="flex flex-wrap items-center gap-2 text-xs">
                       <span className="min-w-[40px] font-medium text-muted-foreground">
                         {t('from_label').replace(/:/g, '')}:
                       </span>
-                      <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground opacity-70 shadow-sm">
+                      <span className="rounded-full bg-muted px-2 py-0.5 font-medium text-muted-foreground text-xs opacity-70 shadow-sm">
                         {t('confidential_sender')}
                       </span>
                     </div>
@@ -964,7 +964,7 @@ export function MailDisplay({
                       <span className="min-w-[40px] font-medium text-muted-foreground">
                         {t('to_label').replace(/:/g, '')}:
                       </span>
-                      <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground opacity-70 shadow-sm">
+                      <span className="rounded-full bg-muted px-2 py-0.5 font-medium text-muted-foreground text-xs opacity-70 shadow-sm">
                         {t('confidential_recipients')}
                       </span>
                     </div>
@@ -1020,8 +1020,8 @@ export function MailDisplay({
             ) : threadMessages.length > 1 ? (
               // Threaded view - multiple messages in conversation
               <div className="space-y-0 p-6">
-                <div className="mb-4 flex items-center gap-2 text-sm text-muted-foreground">
-                  <span className="rounded-full bg-primary/10 px-2 py-1 text-xs font-medium text-primary">
+                <div className="mb-4 flex items-center gap-2 text-muted-foreground text-sm">
+                  <span className="rounded-full bg-primary/10 px-2 py-1 font-medium text-primary text-xs">
                     {threadMessages.length} messages
                   </span>
                   <span>in this conversation</span>
@@ -1045,7 +1045,7 @@ export function MailDisplay({
               <>
                 <style>{`.prose a { word-break: break-all; }`}</style>
                 <div
-                  className="prose max-w-full bg-background break-words text-foreground prose-a:text-dynamic-blue prose-a:underline prose-blockquote:text-foreground prose-strong:text-foreground"
+                  className="prose max-w-full break-words bg-background prose-a:text-dynamic-blue prose-blockquote:text-foreground prose-strong:text-foreground text-foreground prose-a:underline"
                   style={{ padding: '1.5rem' }}
                   // biome-ignore lint/security/noDangerouslySetInnerHtml: <html content is sanitized>
                   dangerouslySetInnerHTML={{
@@ -1062,14 +1062,14 @@ export function MailDisplay({
             ) : (
               // Single message - plain text
               <div
-                className="bg-background text-sm text-foreground"
+                className="bg-background text-foreground text-sm"
                 style={{ padding: '1.5rem' }}
                 data-testid="mail-plain-content"
               >
                 {confidentialMode ? (
                   <div className="py-8 text-center text-muted-foreground">
                     <div className="mb-4 text-4xl opacity-20">🔒</div>
-                    <p className="text-lg font-medium">
+                    <p className="font-medium text-lg">
                       {t('confidential_content')}
                     </p>
                     <p className="text-sm">{t('confidential_content_desc')}</p>
@@ -1089,10 +1089,10 @@ export function MailDisplay({
             <div className="rounded-full bg-primary/10 p-4">
               <MoreVertical className="h-8 w-8 text-primary" />
             </div>
-            <p className="mt-4 text-lg font-medium text-foreground">
+            <p className="mt-4 font-medium text-foreground text-lg">
               {t('no_email_selected')}
             </p>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-muted-foreground text-sm">
               {t('choose_email_message')}
             </p>
           </div>

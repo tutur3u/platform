@@ -125,7 +125,7 @@ export function ProgressIndicator({
       )}
     >
       <CardHeader className="pb-4">
-        <CardTitle className="flex items-center gap-3 text-xl text-foreground">
+        <CardTitle className="flex items-center gap-3 text-foreground text-xl">
           {isEvaluationComplete ? (
             <div className="flex items-center gap-3">
               <div className="relative">
@@ -136,7 +136,7 @@ export function ProgressIndicator({
                   <div className="h-8 w-8 rounded-full bg-dynamic-green/60" />
                 </div>
               </div>
-              <span className="to-dynamic-emerald bg-gradient-to-r from-dynamic-green bg-clip-text font-bold text-transparent">
+              <span className="bg-gradient-to-r from-dynamic-green to-dynamic-emerald bg-clip-text font-bold text-transparent">
                 ✨ Evaluation Complete!
               </span>
             </div>
@@ -164,7 +164,7 @@ export function ProgressIndicator({
                 'AI models are analyzing your prompt...'}
           </span>
           {currentStepInfo.timestamp && (
-            <span className="text-xs text-foreground/50">
+            <span className="text-foreground/50 text-xs">
               {currentStepInfo.timestamp}
             </span>
           )}
@@ -176,7 +176,7 @@ export function ProgressIndicator({
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <div className="text-2xl font-bold text-foreground">
+              <div className="font-bold text-2xl text-foreground">
                 {Math.round(overallProgress)}%
               </div>
             </div>
@@ -256,7 +256,7 @@ export function ProgressIndicator({
                   )}
                 >
                   {currentStepInfo.currentStep.step === 'parsing_error' ? (
-                    <AlertCircle className="text-dynamic-amber h-5 w-5" />
+                    <AlertCircle className="h-5 w-5 text-dynamic-amber" />
                   ) : currentStepInfo.currentStep.step === 'error' ? (
                     <AlertCircle className="h-5 w-5 text-dynamic-red" />
                   ) : (
@@ -282,7 +282,7 @@ export function ProgressIndicator({
                   </div>
                   {STEP_CONFIG[currentStepInfo.currentStep.step]
                     ?.description && (
-                    <div className="mt-1 text-xs text-foreground/60">
+                    <div className="mt-1 text-foreground/60 text-xs">
                       {
                         STEP_CONFIG[currentStepInfo.currentStep.step]
                           ?.description
@@ -291,9 +291,9 @@ export function ProgressIndicator({
                   )}
                   {currentStepInfo.currentStep.step === 'parsing_error' && (
                     <div className="mt-2 flex items-center gap-2">
-                      <div className="bg-dynamic-amber h-1 w-1 animate-pulse rounded-full" />
-                      <div className="bg-dynamic-amber animation-delay-200 h-1 w-1 animate-pulse rounded-full" />
-                      <div className="bg-dynamic-amber animation-delay-400 h-1 w-1 animate-pulse rounded-full" />
+                      <div className="h-1 w-1 animate-pulse rounded-full bg-dynamic-amber" />
+                      <div className="animation-delay-200 h-1 w-1 animate-pulse rounded-full bg-dynamic-amber" />
+                      <div className="animation-delay-400 h-1 w-1 animate-pulse rounded-full bg-dynamic-amber" />
                       <span className="text-dynamic-amber/70 text-xs">
                         Evaluation is continuing despite communication issues
                       </span>
@@ -364,7 +364,7 @@ export function ProgressIndicator({
                           </div>
                           <div>
                             <div className="flex items-center gap-2">
-                              <span className="text-sm font-medium text-foreground">
+                              <span className="font-medium text-foreground text-sm">
                                 {categoryConfig.label}
                               </span>
                             </div>

@@ -6,10 +6,10 @@ export default function FarmGamePage() {
       <div className="flex w-full max-w-7xl flex-col items-center justify-center">
         {/* Header */}
         <div className="mb-6 text-center">
-          <div className="mb-2 bg-gradient-to-r from-dynamic-green to-dynamic-blue bg-clip-text text-3xl font-bold text-transparent">
+          <div className="mb-2 bg-gradient-to-r from-dynamic-green to-dynamic-blue bg-clip-text font-bold text-3xl text-transparent">
             🌾 Farm Game
           </div>
-          <div className="text-sm text-dynamic-gray/70">
+          <div className="text-dynamic-gray/70 text-sm">
             Grow crops, manage your farm, and become a farming master!
           </div>
         </div>
@@ -18,7 +18,7 @@ export default function FarmGamePage() {
         <GameBoard />
 
         {/* Footer */}
-        <div className="mt-6 text-center text-xs text-dynamic-gray/60">
+        <div className="mt-6 text-center text-dynamic-gray/60 text-xs">
           <div className="space-x-4">
             <span>🎮 Use arrow keys or WASD to move</span>
             <span>🌱 Select tools and press SPACE to use them</span>

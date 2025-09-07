@@ -64,7 +64,7 @@ export class AIExecutionAnalyticsService {
     endDate?: Date,
     options?: PricingOptions
   ): Promise<AIExecutionSummary | null> {
-    const client = await this.getClient();
+    const client = await AIExecutionAnalyticsService.getClient();
 
     if (!startDate || !endDate) {
       return null;
@@ -104,7 +104,7 @@ export class AIExecutionAnalyticsService {
     endDate?: Date,
     options?: PricingOptions
   ): Promise<AIExecutionDailyStats[]> {
-    const client = await this.getClient();
+    const client = await AIExecutionAnalyticsService.getClient();
 
     if (!startDate || !endDate) {
       return [];
@@ -141,7 +141,7 @@ export class AIExecutionAnalyticsService {
     endDate?: Date,
     options?: PricingOptions
   ): Promise<AIExecutionModelStats[]> {
-    const client = await this.getClient();
+    const client = await AIExecutionAnalyticsService.getClient();
 
     if (!startDate || !endDate) {
       return [];
@@ -178,7 +178,7 @@ export class AIExecutionAnalyticsService {
     month?: number,
     options?: PricingOptions
   ): Promise<AIExecutionMonthlyCost | null> {
-    const client = await this.getClient();
+    const client = await AIExecutionAnalyticsService.getClient();
 
     const params: Record<string, unknown> = {
       p_ws_id: wsId,
@@ -226,10 +226,14 @@ export class AIExecutionAnalyticsService {
     );
 
     const [summary, dailyStats, modelStats, monthlyCost] = await Promise.all([
-      this.getSummary(wsId, startOfMonth, endOfMonth),
-      this.getDailyStats(wsId, startOfMonth, endOfMonth),
-      this.getModelStats(wsId, startOfMonth, endOfMonth),
-      this.getMonthlyCost(wsId, now.getFullYear(), now.getMonth() + 1),
+      AIExecutionAnalyticsService.getSummary(wsId, startOfMonth, endOfMonth),
+      AIExecutionAnalyticsService.getDailyStats(wsId, startOfMonth, endOfMonth),
+      AIExecutionAnalyticsService.getModelStats(wsId, startOfMonth, endOfMonth),
+      AIExecutionAnalyticsService.getMonthlyCost(
+        wsId,
+        now.getFullYear(),
+        now.getMonth() + 1
+      ),
     ]);
 
     return {
@@ -249,9 +253,9 @@ export class AIExecutionAnalyticsService {
     const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
 
     const [summary, dailyStats, modelStats] = await Promise.all([
-      this.getSummary(wsId, thirtyDaysAgo, now),
-      this.getDailyStats(wsId, thirtyDaysAgo, now),
-      this.getModelStats(wsId, thirtyDaysAgo, now),
+      AIExecutionAnalyticsService.getSummary(wsId, thirtyDaysAgo, now),
+      AIExecutionAnalyticsService.getDailyStats(wsId, thirtyDaysAgo, now),
+      AIExecutionAnalyticsService.getModelStats(wsId, thirtyDaysAgo, now),
     ]);
 
     return {
@@ -270,9 +274,9 @@ export class AIExecutionAnalyticsService {
     const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
 
     const [summary, dailyStats, modelStats] = await Promise.all([
-      this.getSummary(wsId, sevenDaysAgo, now),
-      this.getDailyStats(wsId, sevenDaysAgo, now),
-      this.getModelStats(wsId, sevenDaysAgo, now),
+      AIExecutionAnalyticsService.getSummary(wsId, sevenDaysAgo, now),
+      AIExecutionAnalyticsService.getDailyStats(wsId, sevenDaysAgo, now),
+      AIExecutionAnalyticsService.getModelStats(wsId, sevenDaysAgo, now),
     ]);
 
     return {
@@ -287,7 +291,7 @@ export class AIExecutionAnalyticsService {
     dailyStats: AIExecutionDailyStats[];
     modelStats: AIExecutionModelStats[];
   }> {
-    const client = await this.getClient();
+    const client = await AIExecutionAnalyticsService.getClient();
 
     const [summary, dailyStats, modelStats] = await Promise.all([
       // Call v2 database functions directly with NULL dates for all-time data

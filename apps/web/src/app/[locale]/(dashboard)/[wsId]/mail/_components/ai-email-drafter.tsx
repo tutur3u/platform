@@ -215,7 +215,7 @@ export function AIEmailDrafter({
           type="button"
           variant="outline"
           size="sm"
-          className="flex w-full items-center justify-between rounded-lg border bg-muted/20 px-3 py-2.5 text-left text-sm font-medium text-muted-foreground transition-all hover:bg-muted/40 hover:text-foreground"
+          className="flex w-full items-center justify-between rounded-lg border bg-muted/20 px-3 py-2.5 text-left font-medium text-muted-foreground text-sm transition-all hover:bg-muted/40 hover:text-foreground"
           disabled={disabled}
         >
           <span className="flex items-center gap-2">
@@ -256,7 +256,7 @@ export function AIEmailDrafter({
                 onChange={(e) => setContext(e.target.value)}
                 disabled={isLoading}
                 minRows={3}
-                className="w-full resize-none rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+                className="w-full resize-none rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
               />
             </div>
 
@@ -348,7 +348,7 @@ export function AIEmailDrafter({
 
             {/* Error Display */}
             {error && (
-              <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">
+              <div className="rounded-md bg-destructive/10 p-3 text-destructive text-sm">
                 {t('mail.ai_error', {
                   default: 'Failed to generate email draft. Please try again.',
                 })}
@@ -359,7 +359,7 @@ export function AIEmailDrafter({
             {object && (
               <div className="space-y-3 rounded-md border bg-muted/20 p-3">
                 <div className="space-y-2">
-                  <Label className="text-sm font-medium">
+                  <Label className="font-medium text-sm">
                     {t('mail.generated_subject', {
                       default: 'Generated Subject',
                     })}
@@ -370,22 +370,22 @@ export function AIEmailDrafter({
                 </div>
 
                 <div className="space-y-2">
-                  <Label className="text-sm font-medium">
+                  <Label className="font-medium text-sm">
                     {t('mail.generated_content', {
                       default: 'Generated Content',
                     })}
                   </Label>
-                  <div className="rounded bg-background p-2 text-sm whitespace-pre-wrap">
+                  <div className="whitespace-pre-wrap rounded bg-background p-2 text-sm">
                     {object.content}
                   </div>
                 </div>
 
                 {object.suggestions && object.suggestions.length > 0 && (
                   <div className="space-y-2">
-                    <Label className="text-sm font-medium">
+                    <Label className="font-medium text-sm">
                       {t('mail.suggestions', { default: 'Suggestions' })}
                     </Label>
-                    <ul className="space-y-1 text-xs text-muted-foreground">
+                    <ul className="space-y-1 text-muted-foreground text-xs">
                       {object.suggestions
                         ?.filter((s): s is string => Boolean(s))
                         .map((suggestion, index) => (
@@ -409,7 +409,7 @@ export function AIEmailDrafter({
 
                 {/* Revision Section */}
                 <div className="mt-4 space-y-3 border-t pt-4">
-                  <Label className="text-sm font-medium">
+                  <Label className="font-medium text-sm">
                     {t('mail.revise_email', { default: 'Revise Email' })}
                   </Label>
                   <Textarea
@@ -420,7 +420,7 @@ export function AIEmailDrafter({
                     onChange={(e) => setRevisionInstructions(e.target.value)}
                     disabled={isRevising}
                     minRows={2}
-                    className="w-full resize-none rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+                    className="w-full resize-none rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                   />
                   <Button
                     type="button"

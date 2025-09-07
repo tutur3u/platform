@@ -24,13 +24,13 @@ export function SummaryCards({
     <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
       <Card className="border-0 bg-foreground/10 shadow-sm backdrop-blur-sm">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-          <CardTitle className="text-sm font-medium">Total Syncs</CardTitle>
+          <CardTitle className="font-medium text-sm">Total Syncs</CardTitle>
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-dynamic-blue/10">
             <Activity className="h-4 w-4 text-dynamic-blue" />
           </div>
         </CardHeader>
         <CardContent className="pt-0">
-          <div className="text-3xl font-bold">{totalSyncs}</div>
+          <div className="font-bold text-3xl">{totalSyncs}</div>
           <div className="mt-2 flex items-center gap-4 text-xs">
             <span className="font-medium text-dynamic-green">
               {successRate}% success
@@ -46,13 +46,13 @@ export function SummaryCards({
 
       <Card className="border-0 bg-foreground/10 shadow-sm backdrop-blur-sm">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-          <CardTitle className="text-sm font-medium">Events Added</CardTitle>
+          <CardTitle className="font-medium text-sm">Events Added</CardTitle>
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-dynamic-green/10">
             <Plus className="h-4 w-4 text-dynamic-green" />
           </div>
         </CardHeader>
         <CardContent className="pt-0">
-          <div className="text-3xl font-bold text-dynamic-green">
+          <div className="font-bold text-3xl text-dynamic-green">
             {totalEvents.added}
           </div>
           <p className="mt-2 text-xs opacity-70">New calendar events</p>
@@ -61,13 +61,13 @@ export function SummaryCards({
 
       <Card className="border-0 bg-foreground/10 shadow-sm backdrop-blur-sm">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-          <CardTitle className="text-sm font-medium">Events Updated</CardTitle>
+          <CardTitle className="font-medium text-sm">Events Updated</CardTitle>
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-dynamic-blue/10">
             <Edit className="h-4 w-4 text-dynamic-blue" />
           </div>
         </CardHeader>
         <CardContent className="pt-0">
-          <div className="text-3xl font-bold text-dynamic-blue">
+          <div className="font-bold text-3xl text-dynamic-blue">
             {totalEvents.updated}
           </div>
           <p className="mt-2 text-xs opacity-70">Modified events</p>
@@ -76,13 +76,13 @@ export function SummaryCards({
 
       <Card className="border-0 bg-foreground/10 shadow-sm backdrop-blur-sm">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-          <CardTitle className="text-sm font-medium">Events Deleted</CardTitle>
+          <CardTitle className="font-medium text-sm">Events Deleted</CardTitle>
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-dynamic-red/10">
             <Trash2 className="h-4 w-4 text-dynamic-red" />
           </div>
         </CardHeader>
         <CardContent className="pt-0">
-          <div className="text-3xl font-bold text-dynamic-red">
+          <div className="font-bold text-3xl text-dynamic-red">
             {totalEvents.deleted}
           </div>
           <p className="mt-2 text-xs opacity-70">Removed events</p>

@@ -366,18 +366,18 @@ export function AudioPlayer({
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="font-semibold">Complete Recording</h3>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-muted-foreground text-sm">
                   Duration: {formatTime(totalDuration)}
                 </p>
                 {audioRecording?.createdAt && (
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-muted-foreground text-xs">
                     Recorded:{' '}
                     {new Date(audioRecording.createdAt).toLocaleString()}
                   </p>
                 )}
               </div>
               <div className="text-right">
-                <div className="text-sm font-medium text-dynamic-green">
+                <div className="font-medium text-dynamic-green text-sm">
                   Ready to play
                 </div>
               </div>
@@ -390,8 +390,8 @@ export function AudioPlayer({
               <div className="flex items-center gap-3">
                 <div className="h-4 w-4 animate-spin rounded-full border-2 border-dynamic-blue border-t-transparent" />
                 <div>
-                  <p className="text-sm font-medium">Loading recording...</p>
-                  <p className="text-xs text-muted-foreground">Please wait</p>
+                  <p className="font-medium text-sm">Loading recording...</p>
+                  <p className="text-muted-foreground text-xs">Please wait</p>
                 </div>
               </div>
             </div>
@@ -402,10 +402,10 @@ export function AudioPlayer({
             <div className="rounded-lg border border-dynamic-red/20 bg-dynamic-red/10 p-4">
               <div className="flex items-start justify-between">
                 <div className="flex-1">
-                  <h4 className="text-sm font-medium text-dynamic-red">
+                  <h4 className="font-medium text-dynamic-red text-sm">
                     Failed to load recording
                   </h4>
-                  <p className="mt-1 text-xs text-dynamic-red/80">
+                  <p className="mt-1 text-dynamic-red/80 text-xs">
                     {loadError}
                   </p>
                 </div>
@@ -427,7 +427,7 @@ export function AudioPlayer({
             <div className="space-y-4">
               {/* Progress Bar */}
               <div className="space-y-2">
-                <div className="flex items-center justify-between text-xs text-muted-foreground">
+                <div className="flex items-center justify-between text-muted-foreground text-xs">
                   <span>{formatTime(currentTime)}</span>
                   <span>{formatTime(totalDuration)}</span>
                 </div>

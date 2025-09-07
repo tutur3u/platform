@@ -24,7 +24,7 @@ export default async function AccountStatusSection({
       </div>
       <div className="grid gap-3 sm:grid-cols-2">
         <div className="flex items-center justify-between">
-          <span className="text-sm text-muted-foreground">{t('status')}</span>
+          <span className="text-muted-foreground text-sm">{t('status')}</span>
           <Badge
             variant="default"
             className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
@@ -33,17 +33,17 @@ export default async function AccountStatusSection({
           </Badge>
         </div>
         <div className="flex items-center justify-between">
-          <span className="text-sm text-muted-foreground">
+          <span className="text-muted-foreground text-sm">
             {t('email-verified')}
           </span>
           <Badge variant="secondary">{t('verified')}</Badge>
         </div>
         {user?.created_at && (
           <div className="flex items-center justify-between sm:col-span-2">
-            <span className="text-sm text-muted-foreground">
+            <span className="text-muted-foreground text-sm">
               {t('member-since')}
             </span>
-            <span className="text-sm font-medium">
+            <span className="font-medium text-sm">
               {new Date(user.created_at).toLocaleDateString()}
             </span>
           </div>

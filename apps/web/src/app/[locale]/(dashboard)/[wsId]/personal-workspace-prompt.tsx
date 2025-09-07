@@ -91,12 +91,12 @@ export default function PersonalWorkspacePrompt({
           </DialogHeader>
 
           <div className="space-y-6">
-            <div className="border-dynamic-foreground/10 rounded-md border bg-background/40 p-3 text-xs text-muted-foreground">
+            <div className="rounded-md border border-dynamic-foreground/10 bg-background/40 p-3 text-muted-foreground text-xs">
               {nameRule}
             </div>
-            <div className="border-dynamic-foreground/10 rounded-md border bg-background/40 p-4">
-              <div className="mb-2 text-sm font-medium">{createLabel}</div>
-              <div className="mb-4 text-sm text-muted-foreground">
+            <div className="rounded-md border border-dynamic-foreground/10 bg-background/40 p-4">
+              <div className="mb-2 font-medium text-sm">{createLabel}</div>
+              <div className="mb-4 text-muted-foreground text-sm">
                 {t('create_new_personal_workspace')}
               </div>
               <Button
@@ -113,13 +113,13 @@ export default function PersonalWorkspacePrompt({
               <>
                 <div className="relative flex items-center justify-center">
                   <div className="h-px w-full bg-muted-foreground/20" />
-                  <span className="absolute bg-card px-2 text-xs tracking-wide text-muted-foreground uppercase">
+                  <span className="absolute bg-card px-2 text-muted-foreground text-xs uppercase tracking-wide">
                     or
                   </span>
                 </div>
-                <div className="border-dynamic-foreground/10 rounded-md border bg-background/40 p-4">
-                  <div className="mb-2 text-sm font-medium">{markLabel}</div>
-                  <div className="mb-4 text-sm text-muted-foreground">
+                <div className="rounded-md border border-dynamic-foreground/10 bg-background/40 p-4">
+                  <div className="mb-2 font-medium text-sm">{markLabel}</div>
+                  <div className="mb-4 text-muted-foreground text-sm">
                     Choose one of your existing workspaces (must be owned by you
                     and have exactly one member).
                   </div>
@@ -150,7 +150,7 @@ export default function PersonalWorkspacePrompt({
               </>
             )}
 
-            <div className="mt-2 text-xs text-muted-foreground">
+            <div className="mt-2 text-muted-foreground text-xs">
               {t('change_prompt')}
             </div>
           </div>

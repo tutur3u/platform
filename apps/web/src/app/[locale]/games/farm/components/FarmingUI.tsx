@@ -66,31 +66,31 @@ export function FarmingUI({
     <div className="flex min-w-[320px] flex-col gap-4 rounded-lg border border-dynamic-gray/20 bg-dynamic-gray/5 p-4">
       {/* Money Display */}
       <div className="text-center">
-        <div className="text-2xl font-bold text-dynamic-green">
+        <div className="font-bold text-2xl text-dynamic-green">
           ${inventory.getMoney().toLocaleString()}
         </div>
-        <div className="text-xs text-dynamic-gray/70">Available Money</div>
+        <div className="text-dynamic-gray/70 text-xs">Available Money</div>
       </div>
 
       {/* Quick Stats */}
       <div className="grid grid-cols-3 gap-2 text-center">
         <div className="rounded bg-dynamic-blue/10 p-2">
-          <div className="text-sm font-semibold text-dynamic-blue">
+          <div className="font-semibold text-dynamic-blue text-sm">
             {totalSeeds}
           </div>
-          <div className="text-xs text-dynamic-gray/70">Seeds</div>
+          <div className="text-dynamic-gray/70 text-xs">Seeds</div>
         </div>
         <div className="rounded bg-dynamic-orange/10 p-2">
-          <div className="text-sm font-semibold text-dynamic-orange">
+          <div className="font-semibold text-dynamic-orange text-sm">
             {totalCrops}
           </div>
-          <div className="text-xs text-dynamic-gray/70">Crops</div>
+          <div className="text-dynamic-gray/70 text-xs">Crops</div>
         </div>
         <div className="rounded bg-dynamic-green/10 p-2">
-          <div className="text-sm font-semibold text-dynamic-green">
+          <div className="font-semibold text-dynamic-green text-sm">
             ${totalValue}
           </div>
-          <div className="text-xs text-dynamic-gray/70">Value</div>
+          <div className="text-dynamic-gray/70 text-xs">Value</div>
         </div>
       </div>
 
@@ -98,7 +98,7 @@ export function FarmingUI({
       <div className="flex gap-1 rounded bg-dynamic-gray/10 p-1">
         <button
           onClick={() => setActiveTab('tools')}
-          className={`flex-1 rounded px-2 py-1 text-xs font-medium transition-colors ${
+          className={`flex-1 rounded px-2 py-1 font-medium text-xs transition-colors ${
             activeTab === 'tools'
               ? 'bg-white text-dynamic-gray shadow-sm'
               : 'text-dynamic-gray/70 hover:text-dynamic-gray'
@@ -108,7 +108,7 @@ export function FarmingUI({
         </button>
         <button
           onClick={() => setActiveTab('seeds')}
-          className={`flex-1 rounded px-2 py-1 text-xs font-medium transition-colors ${
+          className={`flex-1 rounded px-2 py-1 font-medium text-xs transition-colors ${
             activeTab === 'seeds'
               ? 'bg-white text-dynamic-gray shadow-sm'
               : 'text-dynamic-gray/70 hover:text-dynamic-gray'
@@ -118,7 +118,7 @@ export function FarmingUI({
         </button>
         <button
           onClick={() => setActiveTab('crops')}
-          className={`flex-1 rounded px-2 py-1 text-xs font-medium transition-colors ${
+          className={`flex-1 rounded px-2 py-1 font-medium text-xs transition-colors ${
             activeTab === 'crops'
               ? 'bg-white text-dynamic-gray shadow-sm'
               : 'text-dynamic-gray/70 hover:text-dynamic-gray'
@@ -128,7 +128,7 @@ export function FarmingUI({
         </button>
         <button
           onClick={() => setActiveTab('stats')}
-          className={`flex-1 rounded px-2 py-1 text-xs font-medium transition-colors ${
+          className={`flex-1 rounded px-2 py-1 font-medium text-xs transition-colors ${
             activeTab === 'stats'
               ? 'bg-white text-dynamic-gray shadow-sm'
               : 'text-dynamic-gray/70 hover:text-dynamic-gray'
@@ -142,7 +142,7 @@ export function FarmingUI({
       <div className="min-h-[300px]">
         {activeTab === 'tools' && (
           <div className="space-y-3">
-            <div className="text-sm font-semibold">Farming Tools</div>
+            <div className="font-semibold text-sm">Farming Tools</div>
             <div className="grid grid-cols-1 gap-2">
               {(['plant', 'water', 'harvest'] as const).map((tool) => (
                 <button
@@ -173,7 +173,7 @@ export function FarmingUI({
 
         {activeTab === 'seeds' && (
           <div className="space-y-3">
-            <div className="text-sm font-semibold">Seed Inventory</div>
+            <div className="font-semibold text-sm">Seed Inventory</div>
             <div className="space-y-2">
               {seedData.map((seed) => (
                 <div
@@ -196,7 +196,7 @@ export function FarmingUI({
                         <div className="font-medium">
                           {cropNames[seed.type]}
                         </div>
-                        <div className="text-xs text-dynamic-gray/70">
+                        <div className="text-dynamic-gray/70 text-xs">
                           ${seed.cost} per seed
                         </div>
                       </div>
@@ -210,7 +210,7 @@ export function FarmingUI({
                           e.stopPropagation();
                           onBuySeeds(seed.type, 1);
                         }}
-                        className="rounded bg-dynamic-green/20 px-2 py-1 text-xs text-dynamic-green hover:bg-dynamic-green/30"
+                        className="rounded bg-dynamic-green/20 px-2 py-1 text-dynamic-green text-xs hover:bg-dynamic-green/30"
                       >
                         Buy
                       </button>
@@ -224,7 +224,7 @@ export function FarmingUI({
 
         {activeTab === 'crops' && (
           <div className="space-y-3">
-            <div className="text-sm font-semibold">Harvested Crops</div>
+            <div className="font-semibold text-sm">Harvested Crops</div>
             <div className="space-y-2">
               {Object.values(CropType).map((cropType) => {
                 const quantity = inventory.getHarvestedCrops(cropType);
@@ -241,7 +241,7 @@ export function FarmingUI({
                       />
                       <div>
                         <div className="font-medium">{cropNames[cropType]}</div>
-                        <div className="text-xs text-dynamic-gray/70">
+                        <div className="text-dynamic-gray/70 text-xs">
                           $
                           {cropType === CropType.WHEAT
                             ? 8
@@ -258,7 +258,7 @@ export function FarmingUI({
                       <div className="font-semibold">{quantity}</div>
                       <button
                         onClick={() => onSellCrops(cropType, 1)}
-                        className="rounded bg-dynamic-orange/20 px-2 py-1 text-xs text-dynamic-orange hover:bg-dynamic-orange/30"
+                        className="rounded bg-dynamic-orange/20 px-2 py-1 text-dynamic-orange text-xs hover:bg-dynamic-orange/30"
                       >
                         Sell
                       </button>
@@ -269,7 +269,7 @@ export function FarmingUI({
               {Object.values(CropType).every(
                 (type) => inventory.getHarvestedCrops(type) === 0
               ) && (
-                <div className="py-8 text-center text-sm text-dynamic-gray/70">
+                <div className="py-8 text-center text-dynamic-gray/70 text-sm">
                   No harvested crops yet
                 </div>
               )}
@@ -279,7 +279,7 @@ export function FarmingUI({
 
         {activeTab === 'stats' && (
           <div className="space-y-3">
-            <div className="text-sm font-semibold">Farming Statistics</div>
+            <div className="font-semibold text-sm">Farming Statistics</div>
             <div className="space-y-2 text-sm">
               <div className="flex justify-between">
                 <span>Total Seeds:</span>
@@ -302,10 +302,10 @@ export function FarmingUI({
             </div>
 
             <div className="mt-4 rounded bg-dynamic-blue/10 p-3">
-              <div className="mb-2 text-xs font-semibold text-dynamic-blue">
+              <div className="mb-2 font-semibold text-dynamic-blue text-xs">
                 Tips
               </div>
-              <div className="space-y-1 text-xs text-dynamic-gray/70">
+              <div className="space-y-1 text-dynamic-gray/70 text-xs">
                 <div>• Water crops regularly to prevent death</div>
                 <div>• Harvest mature crops for maximum profit</div>
                 <div>• Different crops have different growth times</div>
@@ -317,8 +317,8 @@ export function FarmingUI({
       </div>
 
       {/* Quick Actions */}
-      <div className="border-t border-dynamic-gray/20 pt-3">
-        <div className="mb-2 text-xs font-semibold">Quick Actions</div>
+      <div className="border-dynamic-gray/20 border-t pt-3">
+        <div className="mb-2 font-semibold text-xs">Quick Actions</div>
         <div className="flex gap-2">
           <button
             onClick={() => {
@@ -327,7 +327,7 @@ export function FarmingUI({
                 if (quantity > 0) onSellCrops(type, quantity);
               });
             }}
-            className="flex-1 rounded bg-dynamic-orange/20 px-2 py-1 text-xs text-dynamic-orange hover:bg-dynamic-orange/30"
+            className="flex-1 rounded bg-dynamic-orange/20 px-2 py-1 text-dynamic-orange text-xs hover:bg-dynamic-orange/30"
           >
             Sell All
           </button>
@@ -337,7 +337,7 @@ export function FarmingUI({
                 onBuySeeds(type, 1);
               });
             }}
-            className="flex-1 rounded bg-dynamic-green/20 px-2 py-1 text-xs text-dynamic-green hover:bg-dynamic-green/30"
+            className="flex-1 rounded bg-dynamic-green/20 px-2 py-1 text-dynamic-green text-xs hover:bg-dynamic-green/30"
           >
             Buy All
           </button>

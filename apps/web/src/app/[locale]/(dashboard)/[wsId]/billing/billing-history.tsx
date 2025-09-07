@@ -58,7 +58,7 @@ export default function BillingHistory({
   return (
     <div>
       <div className="rounded-lg border border-border bg-card p-8 shadow-sm dark:bg-card/80">
-        <h2 className="mb-6 text-2xl font-semibold text-card-foreground">
+        <h2 className="mb-6 font-semibold text-2xl text-card-foreground">
           {t('subscription-history')}
         </h2>
         {billingHistory.length === 0 ? (
@@ -69,23 +69,23 @@ export default function BillingHistory({
           <div className="overflow-x-auto">
             <table className="min-w-full">
               <thead>
-                <tr className="border-b border-border bg-muted/50">
-                  <th className="px-4 py-3 text-left text-sm font-medium tracking-wider text-muted-foreground uppercase">
+                <tr className="border-border border-b bg-muted/50">
+                  <th className="px-4 py-3 text-left font-medium text-muted-foreground text-sm uppercase tracking-wider">
                     Subscription #
                   </th>
-                  <th className="px-4 py-3 text-left text-sm font-medium tracking-wider text-muted-foreground uppercase">
+                  <th className="px-4 py-3 text-left font-medium text-muted-foreground text-sm uppercase tracking-wider">
                     Date
                   </th>
-                  <th className="px-4 py-3 text-left text-sm font-medium tracking-wider text-muted-foreground uppercase">
+                  <th className="px-4 py-3 text-left font-medium text-muted-foreground text-sm uppercase tracking-wider">
                     Plan
                   </th>
-                  <th className="px-4 py-3 text-left text-sm font-medium tracking-wider text-muted-foreground uppercase">
+                  <th className="px-4 py-3 text-left font-medium text-muted-foreground text-sm uppercase tracking-wider">
                     Amount
                   </th>
-                  <th className="px-4 py-3 text-left text-sm font-medium tracking-wider text-muted-foreground uppercase">
+                  <th className="px-4 py-3 text-left font-medium text-muted-foreground text-sm uppercase tracking-wider">
                     Status
                   </th>
-                  <th className="px-4 py-3 text-left text-sm font-medium tracking-wider text-muted-foreground uppercase">
+                  <th className="px-4 py-3 text-left font-medium text-muted-foreground text-sm uppercase tracking-wider">
                     Actions
                   </th>
                 </tr>
@@ -93,26 +93,26 @@ export default function BillingHistory({
               <tbody className="divide-y divide-border">
                 {billingHistory.map((subscription) => (
                   <tr key={subscription.id}>
-                    <td className="px-4 py-3 whitespace-nowrap text-card-foreground">
+                    <td className="whitespace-nowrap px-4 py-3 text-card-foreground">
                       {subscription.id}
                     </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-card-foreground">
+                    <td className="whitespace-nowrap px-4 py-3 text-card-foreground">
                       {getDisplayDate(subscription)}
                     </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-card-foreground">
+                    <td className="whitespace-nowrap px-4 py-3 text-card-foreground">
                       <div>
                         <div className="font-medium">
                           {subscription.product?.name || 'Unknown Plan'}
                         </div>
                       </div>
                     </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-card-foreground">
+                    <td className="whitespace-nowrap px-4 py-3 text-card-foreground">
                       {subscription.product ? (
                         <div>
                           <div className="font-medium">
                             ${subscription.product.price}
                           </div>
-                          <div className="text-sm text-muted-foreground">
+                          <div className="text-muted-foreground text-sm">
                             per {subscription.product.recurring_interval}
                           </div>
                         </div>
@@ -120,16 +120,16 @@ export default function BillingHistory({
                         'N/A'
                       )}
                     </td>
-                    <td className="px-4 py-3 whitespace-nowrap">
+                    <td className="whitespace-nowrap px-4 py-3">
                       <span
-                        className={`inline-flex rounded-full px-2 text-xs leading-5 font-semibold ${getStatusColor(subscription.status)}`}
+                        className={`inline-flex rounded-full px-2 font-semibold text-xs leading-5 ${getStatusColor(subscription.status)}`}
                       >
                         {subscription.status.charAt(0).toUpperCase() +
                           subscription.status.slice(1)}
                         {subscription.cancel_at_period_end && ' (Ending)'}
                       </span>
                     </td>
-                    <td className="px-4 py-3 whitespace-nowrap">
+                    <td className="whitespace-nowrap px-4 py-3">
                       <p
                         className="text-primary hover:text-primary/80"
                         title="Download Receipt"

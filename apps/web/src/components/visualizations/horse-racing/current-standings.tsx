@@ -84,9 +84,9 @@ export function CurrentStandings({
           {knownPositions.length > 0 && (
             <Card className="overflow-hidden">
               <div className="space-y-2 p-4">
-                <h4 className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                <h4 className="flex items-center gap-2 font-medium text-muted-foreground text-sm">
                   <span>Determined Ranking</span>
-                  <span className="rounded-full bg-emerald-500/10 px-2 py-0.5 text-xs font-semibold text-emerald-500">
+                  <span className="rounded-full bg-emerald-500/10 px-2 py-0.5 font-semibold text-emerald-500 text-xs">
                     {Math.round((knownPositions.length / horses.length) * 100)}%
                     Complete
                   </span>
@@ -104,17 +104,17 @@ export function CurrentStandings({
                         transition={{ duration: 0.3, delay: position * 0.1 }}
                         className="flex flex-col items-center"
                       >
-                        <div className="mb-1 text-xs font-semibold">
+                        <div className="mb-1 font-semibold text-xs">
                           #{position + 1}
                         </div>
                         <div
-                          className="group relative flex h-12 w-12 items-center justify-center rounded-full border-2 border-white text-sm font-bold text-white shadow-md transition-transform hover:scale-110 dark:border-gray-800"
+                          className="group relative flex h-12 w-12 items-center justify-center rounded-full border-2 border-white font-bold text-sm text-white shadow-md transition-transform hover:scale-110 dark:border-gray-800"
                           style={{
                             backgroundColor: horse.color,
                           }}
                         >
                           {horse.id}
-                          <div className="absolute -bottom-6 left-1/2 z-20 -translate-x-1/2 rounded border bg-background px-2 py-1 text-xs whitespace-nowrap opacity-0 shadow-sm transition-opacity group-hover:opacity-100">
+                          <div className="-bottom-6 -translate-x-1/2 absolute left-1/2 z-20 whitespace-nowrap rounded border bg-background px-2 py-1 text-xs opacity-0 shadow-sm transition-opacity group-hover:opacity-100">
                             Speed: {horse.speed.toFixed(1)}
                           </div>
                         </div>
@@ -130,9 +130,9 @@ export function CurrentStandings({
           {unknownPositions.length > 0 && (
             <Card className="overflow-hidden">
               <div className="space-y-2 p-4">
-                <h4 className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                <h4 className="flex items-center gap-2 font-medium text-muted-foreground text-sm">
                   <span>Undetermined Positions</span>
-                  <span className="rounded-full bg-blue-500/10 px-2 py-0.5 text-xs font-semibold text-blue-500">
+                  <span className="rounded-full bg-blue-500/10 px-2 py-0.5 font-semibold text-blue-500 text-xs">
                     {unknownPositions.length} remaining
                   </span>
                 </h4>
@@ -156,7 +156,7 @@ export function CurrentStandings({
                           Range: #{range?.min}-#{range?.max}
                         </div>
                         <div
-                          className="flex h-10 w-10 items-center justify-center rounded-full border-2 border-white text-sm font-bold text-white shadow-sm dark:border-gray-800"
+                          className="flex h-10 w-10 items-center justify-center rounded-full border-2 border-white font-bold text-sm text-white shadow-sm dark:border-gray-800"
                           style={{ backgroundColor: horse.color }}
                         >
                           {horse.id}
@@ -175,7 +175,7 @@ export function CurrentStandings({
                         </div>
 
                         {/* Relationship tooltip */}
-                        <div className="absolute -bottom-2 left-1/2 z-20 w-48 -translate-x-1/2 translate-y-full rounded border bg-background px-2 py-1.5 text-xs opacity-0 shadow-sm transition-opacity group-hover:opacity-100">
+                        <div className="-bottom-2 -translate-x-1/2 absolute left-1/2 z-20 w-48 translate-y-full rounded border bg-background px-2 py-1.5 text-xs opacity-0 shadow-sm transition-opacity group-hover:opacity-100">
                           <div className="grid grid-cols-2 gap-1">
                             <div>
                               <span className="text-green-500">
@@ -203,26 +203,26 @@ export function CurrentStandings({
       {horses.length > 0 && (
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
           <Card className="p-3">
-            <div className="text-xs font-medium text-muted-foreground">
+            <div className="font-medium text-muted-foreground text-xs">
               Known Positions
             </div>
-            <div className="mt-1 text-xl font-bold text-emerald-500">
+            <div className="mt-1 font-bold text-emerald-500 text-xl">
               {knownPositions.length}
             </div>
           </Card>
           <Card className="p-3">
-            <div className="text-xs font-medium text-muted-foreground">
+            <div className="font-medium text-muted-foreground text-xs">
               Unknown Positions
             </div>
-            <div className="mt-1 text-xl font-bold text-blue-500">
+            <div className="mt-1 font-bold text-blue-500 text-xl">
               {unknownPositions.length}
             </div>
           </Card>
           <Card className="p-3">
-            <div className="text-xs font-medium text-muted-foreground">
+            <div className="font-medium text-muted-foreground text-xs">
               Average Confidence
             </div>
-            <div className="mt-1 text-xl font-bold text-amber-500">
+            <div className="mt-1 font-bold text-amber-500 text-xl">
               {Math.round(
                 (unknownPositions.reduce(
                   (acc, id) => acc + calculateConfidence(id),
@@ -235,10 +235,10 @@ export function CurrentStandings({
             </div>
           </Card>
           <Card className="p-3">
-            <div className="text-xs font-medium text-muted-foreground">
+            <div className="font-medium text-muted-foreground text-xs">
               Known Relationships
             </div>
-            <div className="mt-1 text-xl font-bold text-indigo-500">
+            <div className="mt-1 font-bold text-indigo-500 text-xl">
               {Array.from(fasterThanRelationships.values()).reduce(
                 (acc, set) => acc + set.size,
                 0

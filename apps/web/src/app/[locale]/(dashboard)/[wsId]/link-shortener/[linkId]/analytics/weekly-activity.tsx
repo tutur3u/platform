@@ -79,18 +79,18 @@ export function WeeklyActivity({ clicksByDayOfWeek }: WeeklyActivityProps) {
           <div className="flex-1">
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="text-lg font-semibold">
+                <h3 className="font-semibold text-lg">
                   {t('link-shortener.analytics.activity_by_day')}
                 </h3>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-muted-foreground text-sm">
                   {t('link-shortener.analytics.weekly_pattern')}
                 </p>
               </div>
               <div className="text-right">
-                <div className="text-2xl font-bold text-dynamic-green">
+                <div className="font-bold text-2xl text-dynamic-green">
                   {totalClicks}
                 </div>
-                <div className="text-xs text-muted-foreground">
+                <div className="text-muted-foreground text-xs">
                   {t('link-shortener.analytics.total_clicks')}
                 </div>
               </div>
@@ -138,7 +138,7 @@ export function WeeklyActivity({ clicksByDayOfWeek }: WeeklyActivityProps) {
             {/* Summary Statistics */}
             <div className="grid grid-cols-2 gap-4 border-t pt-4">
               <div className="text-center">
-                <div className="text-sm text-muted-foreground">
+                <div className="text-muted-foreground text-sm">
                   {t('link-shortener.analytics.avg_per_day')}
                 </div>
                 <div className="font-semibold text-dynamic-green">
@@ -146,7 +146,7 @@ export function WeeklyActivity({ clicksByDayOfWeek }: WeeklyActivityProps) {
                 </div>
               </div>
               <div className="text-center">
-                <div className="text-sm text-muted-foreground">
+                <div className="text-muted-foreground text-sm">
                   {t('link-shortener.analytics.peak_day')}
                 </div>
                 <div className="font-semibold text-dynamic-green">

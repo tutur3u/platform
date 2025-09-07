@@ -107,7 +107,7 @@ export default function PlanDetailsClient({
           <UtilityButtons plan={plan} handlePNG={downloadAsPNG} />
 
           <div id="plan-ref" className="flex w-full flex-col items-center">
-            <p className="my-4 flex max-w-xl items-center gap-2 text-center text-2xl leading-tight! font-semibold text-balance md:mb-4 lg:text-3xl">
+            <p className="my-4 flex max-w-xl items-center gap-2 text-balance text-center font-semibold text-2xl leading-tight! md:mb-4 lg:text-3xl">
               {plan.name}{' '}
               {user?.id === plan.creator_id ? (
                 <EditPlanDialog
@@ -151,7 +151,7 @@ export default function PlanDetailsClient({
                           groups).
                         </li>
                       </ul>
-                      <div className="mt-2 text-xs text-muted-foreground">
+                      <div className="mt-2 text-muted-foreground text-xs">
                         We&apos;re always tweaking this feature for clarity and
                         usefulness. Let us know if you have feedback!
                       </div>

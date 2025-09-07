@@ -165,7 +165,7 @@ export function CategoryColorsSettings({
       >
         <div
           className={cn(
-            'w-full rounded-md px-2 py-1 text-center text-xs font-medium',
+            'w-full rounded-md px-2 py-1 text-center font-medium text-xs',
             colorInfo.bg,
             colorInfo.text
           )}
@@ -209,7 +209,7 @@ export function CategoryColorsSettings({
       <div className="rounded-md bg-muted/30 p-4">
         <div className="flex items-start gap-2">
           <InfoIcon className="mt-0.5 h-4 w-4 text-muted-foreground" />
-          <div className="text-sm text-muted-foreground">
+          <div className="text-muted-foreground text-sm">
             <p>
               Categories help organize your events by color. The AI will
               automatically assign colors to events based on their title and
@@ -348,7 +348,7 @@ export function CategoryColorsSettings({
                             <Button
                               variant="ghost"
                               size="sm"
-                              className="h-7 text-xs text-muted-foreground"
+                              className="h-7 text-muted-foreground text-xs"
                               onClick={() => setEditingCategory(index)}
                             >
                               Edit
@@ -362,7 +362,7 @@ export function CategoryColorsSettings({
                     {editingCategory === index ? (
                       <div className="mt-3">
                         <div className="mb-2 flex items-center justify-between">
-                          <div className="text-sm font-medium">
+                          <div className="font-medium text-sm">
                             Select a color:
                           </div>
                           <div className="pr-2.5">

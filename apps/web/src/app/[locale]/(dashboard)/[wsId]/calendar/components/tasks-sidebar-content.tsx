@@ -51,7 +51,7 @@ export default function TasksSidebarContent({
           className="group relative overflow-hidden rounded-lg transition-all duration-200 hover:scale-105 hover:bg-accent/60"
         >
           <PanelLeftClose className="h-5 w-5 text-foreground transition-transform duration-200 group-hover:rotate-12" />
-          <div className="absolute inset-0 -z-10 bg-gradient-to-r from-blue-500/20 to-purple-500/20 opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
+          <div className="-z-10 absolute inset-0 bg-gradient-to-r from-blue-500/20 to-purple-500/20 opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
         </Button>
       </div>
     );
@@ -59,9 +59,9 @@ export default function TasksSidebarContent({
 
   return (
     <Dialog>
-      <div className="@container ml-2 flex h-full max-h-[100vh] w-1/3 flex-col rounded-lg border border-border bg-background/60 text-foreground shadow-xl backdrop-blur-md transition-all duration-500 ease-out slide-in-from-right-5 xl:flex">
+      <div className="@container slide-in-from-right-5 ml-2 flex h-full max-h-[100vh] w-1/3 flex-col rounded-lg border border-border bg-background/60 text-foreground shadow-xl backdrop-blur-md transition-all duration-500 ease-out xl:flex">
         {/* Header */}
-        <div className="@container flex items-center justify-between rounded-t-lg border-b border-border/50 bg-gradient-to-r from-background/80 to-background/60 px-4 py-3 backdrop-blur-sm">
+        <div className="@container flex items-center justify-between rounded-t-lg border-border/50 border-b bg-gradient-to-r from-background/80 to-background/60 px-4 py-3 backdrop-blur-sm">
           <div className="flex w-full items-center justify-between gap-1">
             <div className="transition-all duration-300 hover:scale-105">
               <TimeTracker wsId={wsId} tasks={tasks} />
@@ -73,8 +73,8 @@ export default function TasksSidebarContent({
               aria-label="Collapse sidebar"
               className="group relative overflow-hidden rounded-lg transition-all duration-200 hover:scale-105 hover:bg-accent/60"
             >
-              <PanelRightClose className="h-5 w-5 text-foreground transition-transform duration-200 group-hover:-rotate-12" />
-              <div className="absolute inset-0 -z-10 bg-gradient-to-r from-red-500/20 to-orange-500/20 opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
+              <PanelRightClose className="group-hover:-rotate-12 h-5 w-5 text-foreground transition-transform duration-200" />
+              <div className="-z-10 absolute inset-0 bg-gradient-to-r from-red-500/20 to-orange-500/20 opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
             </Button>
           </div>
         </div>
@@ -85,18 +85,18 @@ export default function TasksSidebarContent({
           onValueChange={setActiveTab}
           className="flex min-h-0 flex-1 flex-col gap-0"
         >
-          <div className="border-b border-border/50 bg-muted/10 p-2">
+          <div className="border-border/50 border-b bg-muted/10 p-2">
             <TabsList className="grid h-auto w-full grid-cols-2 gap-2 bg-transparent p-0">
               <TabsTrigger
                 value="tasks"
                 className="group @container relative overflow-hidden rounded-lg border border-transparent transition-all duration-300 hover:border-border/50 hover:bg-accent/60 data-[state=active]:border-border/50 data-[state=active]:bg-background data-[state=active]:shadow-md"
               >
-                <div className="absolute inset-0 -z-10 bg-gradient-to-r from-blue-500/10 to-cyan-500/10 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+                <div className="-z-10 absolute inset-0 bg-gradient-to-r from-blue-500/10 to-cyan-500/10 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
                 <LayoutDashboard className="h-4 w-4 transition-transform duration-200 group-hover:scale-110" />
-                <span className="hidden transition-all duration-200 @[80px]:inline">
+                <span className="@[80px]:inline hidden transition-all duration-200">
                   Tasks
                 </span>
-                <span className="transition-all duration-200 @[80px]:hidden">
+                <span className="@[80px]:hidden transition-all duration-200">
                   T
                 </span>
               </TabsTrigger>
@@ -104,12 +104,12 @@ export default function TasksSidebarContent({
                 value="ai-chat"
                 className="group @container relative overflow-hidden rounded-lg border border-transparent transition-all duration-300 hover:border-border/50 hover:bg-accent/60 data-[state=active]:border-border/50 data-[state=active]:bg-background data-[state=active]:shadow-md"
               >
-                <div className="absolute inset-0 -z-10 bg-gradient-to-r from-purple-500/10 to-pink-500/10 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
-                <Bot className="h-4 w-4 transition-transform duration-200 group-hover:scale-110 group-hover:rotate-12" />
-                <span className="hidden transition-all duration-200 @[80px]:inline">
+                <div className="-z-10 absolute inset-0 bg-gradient-to-r from-purple-500/10 to-pink-500/10 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+                <Bot className="h-4 w-4 transition-transform duration-200 group-hover:rotate-12 group-hover:scale-110" />
+                <span className="@[80px]:inline hidden transition-all duration-200">
                   AI Chat
                 </span>
-                <span className="transition-all duration-200 @[80px]:hidden">
+                <span className="@[80px]:hidden transition-all duration-200">
                   AI
                 </span>
               </TabsTrigger>
@@ -119,7 +119,7 @@ export default function TasksSidebarContent({
           {/* Tasks Tab Content */}
           <TabsContent
             value="tasks"
-            className="m-0 flex min-h-0 flex-1 flex-col space-y-4 overflow-y-auto p-4 pb-2 duration-300 animate-in fade-in-50"
+            className="fade-in-50 m-0 flex min-h-0 flex-1 animate-in flex-col space-y-4 overflow-y-auto p-4 pb-2 duration-300"
           >
             <div className="mx-auto w-full max-w-lg p-0">
               <PriorityView
@@ -134,7 +134,7 @@ export default function TasksSidebarContent({
           {hasAiChatAccess && (
             <TabsContent
               value="ai-chat"
-              className="m-0 min-h-0 flex-1 overflow-y-auto px-2 duration-300 animate-in fade-in-50"
+              className="fade-in-50 m-0 min-h-0 flex-1 animate-in overflow-y-auto px-2 duration-300"
             >
               <div className="relative h-full min-h-0 overflow-y-auto py-2">
                 <Chat

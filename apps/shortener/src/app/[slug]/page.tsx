@@ -23,7 +23,7 @@ export default async function RedirectPage({ params }: RedirectPageProps) {
       <div className="min-h-screen bg-gradient-to-br from-red-50 to-red-100 px-4 py-12 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-md">
           <div className="text-center">
-            <h1 className="mb-4 text-2xl font-bold text-red-900">
+            <h1 className="mb-4 font-bold text-2xl text-red-900">
               Link Not Found
             </h1>
             <p className="mb-6 text-red-600">
@@ -32,7 +32,7 @@ export default async function RedirectPage({ params }: RedirectPageProps) {
             </p>
             <a
               href="/"
-              className="inline-block rounded-md bg-red-600 px-4 py-2 text-white transition-colors hover:bg-red-700 focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:outline-none"
+              className="inline-block rounded-md bg-red-600 px-4 py-2 text-white transition-colors hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
             >
               Go to Homepage
             </a>
@@ -47,7 +47,7 @@ export default async function RedirectPage({ params }: RedirectPageProps) {
       <div className="min-h-screen bg-gradient-to-br from-red-50 to-red-100 px-4 py-12 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-md">
           <div className="text-center">
-            <h1 className="mb-4 text-2xl font-bold text-red-900">
+            <h1 className="mb-4 font-bold text-2xl text-red-900">
               Invalid URL
             </h1>
             <p className="mb-6 text-red-600">
@@ -55,7 +55,7 @@ export default async function RedirectPage({ params }: RedirectPageProps) {
             </p>
             <a
               href="/"
-              className="inline-block rounded-md bg-red-600 px-4 py-2 text-white transition-colors hover:bg-red-700 focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:outline-none"
+              className="inline-block rounded-md bg-red-600 px-4 py-2 text-white transition-colors hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
             >
               Go to Homepage
             </a>

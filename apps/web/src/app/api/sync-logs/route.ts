@@ -39,7 +39,7 @@ export async function GET(request: Request) {
     const workspaceIds = workspaceMemberships.map((w) => w.ws_id);
     console.log('User has access to workspaces:', workspaceIds);
 
-    let { data: syncLogs, error } = await supabase
+    const { data: syncLogs, error } = await supabase
       .from('calendar_sync_dashboard')
       .select(
         `

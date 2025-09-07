@@ -124,7 +124,7 @@ export const getColumns = (
         <div className="flex min-w-32 flex-col">
           <span>{schedule || '-'}</span>
           {schedule && (
-            <span className="text-xs text-muted-foreground">
+            <span className="text-muted-foreground text-xs">
               {cronstrue.toString(schedule)}
             </span>
           )}

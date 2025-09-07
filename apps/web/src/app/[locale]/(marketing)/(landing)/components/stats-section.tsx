@@ -85,16 +85,16 @@ export function StatsSection() {
       className="container px-0 pt-20"
     >
       <div className="mb-16 text-center">
-        <h2 className="stats-title mb-4 text-3xl font-bold md:text-4xl">
+        <h2 className="stats-title mb-4 font-bold text-3xl md:text-4xl">
           <span>
             {t('stats.the')}{' '}
-            <span className="bg-gradient-to-r from-dynamic-light-indigo from-10% via-dynamic-light-orange via-30% to-dynamic-light-green to-90% bg-clip-text text-transparent">
+            <span className="bg-gradient-to-r from-10% from-dynamic-light-indigo via-30% via-dynamic-light-orange to-90% to-dynamic-light-green bg-clip-text text-transparent">
               Tuturuuu
             </span>{' '}
             {t('stats.impact')}
           </span>
         </h2>
-        <p className="stats-title mx-auto max-w-3xl text-xl text-muted-foreground">
+        <p className="stats-title mx-auto max-w-3xl text-muted-foreground text-xl">
           {t(
             'stats.real_results_from_real_users_who_have_transformed_their_productivity'
           )}
@@ -117,12 +117,12 @@ export function StatsSection() {
             >
               {stat.icon}
             </div>
-            <div className="text-center text-balance">
-              <div className={cn('mb-2 text-4xl font-bold', stat.text)}>
+            <div className="text-balance text-center">
+              <div className={cn('mb-2 font-bold text-4xl', stat.text)}>
                 {stat.value}
               </div>
-              <h3 className="mb-2 text-lg font-semibold">{stat.label}</h3>
-              <p className="text-sm text-muted-foreground">
+              <h3 className="mb-2 font-semibold text-lg">{stat.label}</h3>
+              <p className="text-muted-foreground text-sm">
                 {stat.description}
               </p>
             </div>

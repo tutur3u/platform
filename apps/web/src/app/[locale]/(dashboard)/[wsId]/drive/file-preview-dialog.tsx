@@ -258,7 +258,7 @@ export function FilePreviewDialog({
           )}
           <div className="z-10 flex flex-col items-center justify-center">
             <Loader2 className="mb-4 h-10 w-10 animate-spin text-dynamic-blue" />
-            <span className="text-sm font-medium text-muted-foreground">
+            <span className="font-medium text-muted-foreground text-sm">
               {t('common.loading')}...
             </span>
           </div>
@@ -271,7 +271,7 @@ export function FilePreviewDialog({
         <div className={previewAreaClass}>
           <div className="space-y-2 text-center">
             <FileText className="mx-auto h-12 w-12 text-muted-foreground" />
-            <p className="text-sm text-muted-foreground">
+            <p className="text-muted-foreground text-sm">
               {t('ws-storage-objects.no_preview')}
             </p>
           </div>
@@ -357,7 +357,7 @@ export function FilePreviewDialog({
       case 'code':
         return (
           <div className={cn(previewAreaClass, 'h-[60vh] overflow-auto')}>
-            <pre className="rounded-lg bg-muted/50 p-4 font-mono text-sm whitespace-pre-wrap">
+            <pre className="whitespace-pre-wrap rounded-lg bg-muted/50 p-4 font-mono text-sm">
               {textContent || t('ws-storage-objects.no_preview')}
             </pre>
           </div>
@@ -370,7 +370,7 @@ export function FilePreviewDialog({
               {getFileIcon(fileType)}
               <div>
                 <h3 className="mb-2 font-medium">{cleanFileName}</h3>
-                <p className="mb-4 text-sm text-muted-foreground">
+                <p className="mb-4 text-muted-foreground text-sm">
                   {t('ws-storage-objects.no_preview')}
                 </p>
                 <div className="flex justify-center gap-2">
@@ -399,7 +399,7 @@ export function FilePreviewDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        className="!sm:max-w-6xl flex h-[90vh] w-full !max-w-[90vw] flex-col overflow-y-auto"
+        className="!max-w-[90vw] flex h-[90vh] w-full !sm:max-w-6xl flex-col overflow-y-auto"
         showXIcon={false}
       >
         <DialogHeader>

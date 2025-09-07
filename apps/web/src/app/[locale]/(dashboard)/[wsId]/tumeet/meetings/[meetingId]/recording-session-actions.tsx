@@ -5,7 +5,7 @@ import { DeleteConfirmation } from './components/DeleteConfirmation';
 import { TranscriptViewer } from './components/TranscriptViewer';
 import { useRecordingLoader } from '@/hooks/useRecordingLoader';
 import { useTranscription } from '@/hooks/useTranscription';
-import { RecordingStatus, RecordingTranscript } from '@tuturuuu/types/db';
+import type { RecordingStatus, RecordingTranscript } from '@tuturuuu/types/db';
 import { Button } from '@tuturuuu/ui/button';
 import { EyeIcon, FileText, Headphones } from '@tuturuuu/ui/icons';
 import { useState } from 'react';

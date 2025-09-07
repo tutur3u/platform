@@ -79,7 +79,7 @@ export function ApologyModal() {
               animate={{ y: 0, opacity: 1 }}
               transition={{ duration: 0.5, delay: 0.1 }}
             >
-              <DialogTitle className="flex items-center gap-2 text-center text-xl font-bold sm:text-left">
+              <DialogTitle className="flex items-center gap-2 text-center font-bold text-xl sm:text-left">
                 <AlertTriangle className="h-6 w-6 text-dynamic-red" />
                 {t('title')}
               </DialogTitle>
@@ -156,7 +156,7 @@ export function ApologyModal() {
                             </Badge>
                           </div>
                           <p>{t('ai_scoring_description')}</p>
-                          <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                          <div className="flex items-center gap-1 text-muted-foreground text-sm">
                             <Bug className="h-4 w-4" />
                             <span>
                               {t('issue_tracked')}{' '}
@@ -171,7 +171,7 @@ export function ApologyModal() {
                                 </span>
                                 <Badge
                                   variant="outline"
-                                  className="ml-1 h-5 border-dynamic-green/30 bg-dynamic-green/10 px-1.5 py-0 text-xs font-normal text-green-600 dark:text-dynamic-green"
+                                  className="ml-1 h-5 border-dynamic-green/30 bg-dynamic-green/10 px-1.5 py-0 font-normal text-green-600 text-xs dark:text-dynamic-green"
                                 >
                                   <CheckCircle className="mr-1 h-3 w-3" />
                                   {t('fixed')}
@@ -207,7 +207,7 @@ export function ApologyModal() {
                             </Badge>
                           </div>
                           <p>{t('leaderboard_description')}</p>
-                          <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                          <div className="flex items-center gap-1 text-muted-foreground text-sm">
                             <CheckCircle className="h-4 w-4 text-dynamic-green" />
                             <span>
                               {t('issue_tracked')}{' '}
@@ -222,7 +222,7 @@ export function ApologyModal() {
                                 </span>
                                 <Badge
                                   variant="outline"
-                                  className="ml-1 h-5 border-dynamic-green/30 bg-dynamic-green/10 px-1.5 py-0 text-xs font-normal text-green-600 dark:text-dynamic-green"
+                                  className="ml-1 h-5 border-dynamic-green/30 bg-dynamic-green/10 px-1.5 py-0 font-normal text-green-600 text-xs dark:text-dynamic-green"
                                 >
                                   <CheckCircle className="mr-1 h-3 w-3" />
                                   {t('fixed')}
@@ -315,7 +315,7 @@ export function ApologyModal() {
 
             <div className="flex flex-col items-center justify-between gap-4 border-t bg-muted/10 px-6 py-4 sm:flex-row">
               <motion.div
-                className="flex items-center gap-1 text-sm text-muted-foreground"
+                className="flex items-center gap-1 text-muted-foreground text-sm"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.6 }}

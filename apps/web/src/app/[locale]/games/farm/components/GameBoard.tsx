@@ -1,6 +1,6 @@
 'use client';
 
-import { CropType } from '../engine/crop';
+import type { CropType } from '../engine/crop';
 import { GameStateManager } from '../engine/gameState';
 import { CropRenderer } from './CropRenderer';
 import { FarmingUI } from './FarmingUI';
@@ -138,11 +138,11 @@ export function GameBoard() {
       <div className="flex flex-col items-center gap-4">
         {/* Status Bar */}
         <div className="flex items-center gap-6">
-          <div className="text-lg font-semibold">
+          <div className="font-semibold text-lg">
             Position: ({playerPos.getX()}, {playerPos.getY()})
           </div>
           <div
-            className={`rounded px-3 py-1 text-sm font-medium ${
+            className={`rounded px-3 py-1 font-medium text-sm ${
               gameState.isGameRunning
                 ? 'bg-dynamic-green/20 text-dynamic-green'
                 : 'bg-dynamic-red/20 text-dynamic-red'
@@ -151,12 +151,12 @@ export function GameBoard() {
             {gameState.isGameRunning ? 'Playing' : 'Paused'}
           </div>
           {gameState.selectedTool && (
-            <div className="rounded bg-dynamic-blue/20 px-3 py-1 text-sm font-medium text-dynamic-blue">
+            <div className="rounded bg-dynamic-blue/20 px-3 py-1 font-medium text-dynamic-blue text-sm">
               Tool: {gameState.selectedTool}
             </div>
           )}
           {gameState.selectedSeed && (
-            <div className="rounded bg-dynamic-orange/20 px-3 py-1 text-sm font-medium text-dynamic-orange">
+            <div className="rounded bg-dynamic-orange/20 px-3 py-1 font-medium text-dynamic-orange text-sm">
               Seed: {gameState.selectedSeed}
             </div>
           )}
@@ -165,8 +165,8 @@ export function GameBoard() {
         {/* Current Cell Info */}
         {currentCrop && (
           <div className="rounded bg-dynamic-gray/10 p-3 text-center">
-            <div className="text-sm font-semibold">Current Cell</div>
-            <div className="text-xs text-dynamic-gray/70">
+            <div className="font-semibold text-sm">Current Cell</div>
+            <div className="text-dynamic-gray/70 text-xs">
               {currentCrop.isHarvestable()
                 ? 'Ready to harvest!'
                 : currentCrop.isDead()
@@ -246,7 +246,7 @@ export function GameBoard() {
         </div>
 
         {/* Instructions */}
-        <div className="space-y-1 text-center text-sm text-dynamic-gray/70">
+        <div className="space-y-1 text-center text-dynamic-gray/70 text-sm">
           <div>Use arrow keys or WASD to move</div>
           <div>Press SPACE to use selected tool</div>
           <div>Press ESC to clear selection</div>

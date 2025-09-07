@@ -49,12 +49,12 @@ export async function checkTuturuuuAdmin() {
 // Structured logging utility
 const logWorkspaceError = (
   context: string,
-  error: any,
-  metadata?: Record<string, any>
+  error: unknown,
+  metadata?: Record<string, unknown>
 ) => {
   const logData = {
     context,
-    error: error?.message || error,
+    error: error instanceof Error ? error.message : error,
     timestamp: new Date().toISOString(),
     ...metadata,
   };

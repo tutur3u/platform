@@ -18,7 +18,7 @@ const ProgressBar = memo(({ totalUserCount }: { totalUserCount: number }) => {
           width: `calc(100% / ${totalUserCount || 1} )`,
         }}
         className={`h-full ${
-          i < (totalUserCount || 1) ? 'border-r border-foreground/50' : ''
+          i < (totalUserCount || 1) ? 'border-foreground/50 border-r' : ''
         }`}
       >
         <div

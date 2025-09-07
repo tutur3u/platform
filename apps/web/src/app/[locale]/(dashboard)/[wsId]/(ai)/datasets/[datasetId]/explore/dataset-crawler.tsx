@@ -577,11 +577,11 @@ export function DatasetCrawler({
           {processedData.length > 0 && (
             <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <div className="flex items-center gap-2 text-muted-foreground text-sm">
                   <span className="i-lucide-table h-4 w-4" />
                   Preview Data
                 </div>
-                <div className="text-sm text-muted-foreground">
+                <div className="text-muted-foreground text-sm">
                   {processedData.length > 0 &&
                     `Showing ${processedData.length - 1} preview rows of ${
                       workbook && 'SheetNames' in workbook && workbook.Sheets
@@ -639,7 +639,7 @@ export function DatasetCrawler({
           </div>
         </div>
         <div className="space-y-2">
-          <p className="text-lg font-medium">{syncStatus}</p>
+          <p className="font-medium text-lg">{syncStatus}</p>
           {syncProgress > 0 && (
             <div className="space-y-1">
               <div className="h-2 w-48 overflow-hidden rounded-full bg-muted">
@@ -648,7 +648,7 @@ export function DatasetCrawler({
                   style={{ width: `${syncProgress}%` }}
                 />
               </div>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-muted-foreground text-sm">
                 {syncProgress.toFixed(0)}% Complete
               </p>
             </div>
@@ -663,7 +663,7 @@ export function DatasetCrawler({
       <div className="space-y-4 rounded-lg border bg-card p-4 shadow-sm transition-colors hover:bg-accent/5">
         <div className="flex items-center gap-2">
           <span className="i-lucide-hard-drive h-5 w-5 text-primary" />
-          <h3 className="text-sm font-medium">Upload Local File</h3>
+          <h3 className="font-medium text-sm">Upload Local File</h3>
         </div>
         <div className="flex items-center gap-2">
           <Input
@@ -674,7 +674,7 @@ export function DatasetCrawler({
             className="cursor-pointer transition-colors file:cursor-pointer file:bg-primary/10 file:text-primary hover:bg-accent/50"
           />
         </div>
-        <p className="text-xs text-muted-foreground">
+        <p className="text-muted-foreground text-xs">
           Supported formats: .xlsx, .xls, .csv (max 10MB)
         </p>
       </div>
@@ -682,7 +682,7 @@ export function DatasetCrawler({
       <div className="space-y-4 rounded-lg border bg-card p-4 shadow-sm transition-colors hover:bg-accent/5">
         <div className="flex items-center gap-2">
           <span className="i-lucide-link h-5 w-5 text-primary" />
-          <h3 className="text-sm font-medium">Import from URL</h3>
+          <h3 className="font-medium text-sm">Import from URL</h3>
         </div>
         <div className="flex items-center gap-2">
           <div className="flex-1">
@@ -695,7 +695,7 @@ export function DatasetCrawler({
               className="transition-colors hover:bg-accent/50"
             />
             {form.formState.errors.url && (
-              <p className="mt-1 text-xs text-destructive">
+              <p className="mt-1 text-destructive text-xs">
                 {form.formState.errors.url.message}
               </p>
             )}
@@ -721,7 +721,7 @@ export function DatasetCrawler({
             )}
           </Button>
         </div>
-        <p className="text-xs text-muted-foreground">
+        <p className="text-muted-foreground text-xs">
           URL must point to a publicly accessible Excel or CSV file
         </p>
       </div>
@@ -731,7 +731,7 @@ export function DatasetCrawler({
   const renderErrorAlert = () => (
     <Alert
       variant="destructive"
-      className="duration-300 animate-in fade-in slide-in-from-top-2"
+      className="fade-in slide-in-from-top-2 animate-in duration-300"
     >
       <AlertTitle className="flex items-center gap-2 text-lg">
         <span className="i-lucide-alert-circle h-5 w-5" />
@@ -775,7 +775,7 @@ export function DatasetCrawler({
   );
 
   const renderStatusAlert = () => (
-    <Alert className="duration-300 animate-in fade-in slide-in-from-top-2">
+    <Alert className="fade-in slide-in-from-top-2 animate-in duration-300">
       <AlertTitle className="flex items-center gap-2">
         <Info className="h-4 w-4" />
         Status
@@ -790,7 +790,7 @@ export function DatasetCrawler({
                 style={{ width: `${syncProgress}%` }}
               />
             </div>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-muted-foreground text-xs">
               {syncProgress.toFixed(0)}% Complete
             </p>
           </div>
@@ -807,7 +807,7 @@ export function DatasetCrawler({
             <FormItem>
               <FormLabel>Sheet</FormLabel>
               <select
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground hover:bg-accent/50 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background transition-colors file:border-0 file:bg-transparent file:font-medium file:text-sm placeholder:text-muted-foreground hover:bg-accent/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                 value={selectedSheet}
                 onChange={(e) => handleSheetChange(e.target.value)}
               >
@@ -888,7 +888,7 @@ export function DatasetCrawler({
                   {processedData[0]?.map((header: string, index: number) => (
                     <th
                       key={index}
-                      className="border-b p-2 text-left text-sm font-medium"
+                      className="border-b p-2 text-left font-medium text-sm"
                       style={{ minWidth: '150px', maxWidth: '200px' }}
                     >
                       <div className="truncate">{header}</div>

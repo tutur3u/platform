@@ -1,4 +1,4 @@
-import { TaskPriority } from '@tuturuuu/types/primitives/Priority';
+import type { TaskPriority } from '@tuturuuu/types/primitives/Priority';
 import type dayjs from 'dayjs';
 
 export interface DateRange {

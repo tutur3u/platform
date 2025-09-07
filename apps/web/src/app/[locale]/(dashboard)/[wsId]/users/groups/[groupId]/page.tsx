@@ -79,7 +79,7 @@ export default async function UserGroupDetailsPage({
       <FeatureSummary
         title={
           <>
-            <h1 className="w-full text-2xl font-bold">
+            <h1 className="w-full font-bold text-2xl">
               {group.name || t('ws-user-groups.singular')}
             </h1>
             <Separator className="my-2" />
@@ -163,7 +163,7 @@ export default async function UserGroupDetailsPage({
       <div className="grid w-full grid-cols-1 gap-4 lg:grid-cols-2">
         {excludedUserGroups.length ? (
           <div className="flex flex-col rounded-lg border border-border bg-foreground/5 p-4">
-            <div className="mb-2 text-xl font-semibold">
+            <div className="mb-2 font-semibold text-xl">
               {t('ws-roles.members')}
             </div>
             <ExternalGroupMembers
@@ -175,7 +175,7 @@ export default async function UserGroupDetailsPage({
         ) : null}
 
         <div className="flex flex-col rounded-lg border border-border bg-foreground/5 p-4">
-          <div className="mb-2 text-xl font-semibold">
+          <div className="mb-2 font-semibold text-xl">
             {t('ws-user-group-details.schedule')}
           </div>
           <GroupSchedule wsId={wsId} groupId={groupId} />
@@ -192,7 +192,7 @@ export default async function UserGroupDetailsPage({
 
         {lpCount ? (
           <div className="flex flex-col rounded-lg border border-border bg-foreground/5 p-4">
-            <div className="mb-2 text-xl font-semibold">
+            <div className="mb-2 font-semibold text-xl">
               {t('user-data-table.linked_products')}
               {!!lpCount && ` (${lpCount})`}
             </div>
@@ -204,7 +204,7 @@ export default async function UserGroupDetailsPage({
                 >
                   <Box className="mr-2 h-8 w-8" />
                   <div>
-                    <div className="text-lg font-semibold">{product.name}</div>
+                    <div className="font-semibold text-lg">{product.name}</div>
                     {product.description && (
                       <div className="text-sm">{product.description}</div>
                     )}

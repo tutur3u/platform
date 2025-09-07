@@ -18,7 +18,7 @@ export default function AnimatedTimeline({ events }: AnimatedTimelineProps) {
   return (
     <div className="relative mt-12">
       {/* Timeline line */}
-      <div className="absolute left-1/2 hidden h-full w-0.5 -translate-x-1/2 bg-primary/20 md:block" />
+      <div className="-translate-x-1/2 absolute left-1/2 hidden h-full w-0.5 bg-primary/20 md:block" />
 
       <div className="space-y-12">
         {events.map((event, index) => (
@@ -40,15 +40,15 @@ export default function AnimatedTimeline({ events }: AnimatedTimelineProps) {
               <Card className="overflow-hidden border-foreground/10 bg-foreground/5 p-6">
                 <div className="flex items-start justify-between gap-4">
                   <div>
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-muted-foreground text-sm">
                       {event.date}
                     </p>
-                    <h3 className="mb-2 text-lg font-bold">{event.title}</h3>
-                    <p className="text-sm text-muted-foreground">
+                    <h3 className="mb-2 font-bold text-lg">{event.title}</h3>
+                    <p className="text-muted-foreground text-sm">
                       {event.description}
                     </p>
                   </div>
-                  <span className="flex-none rounded-full bg-primary/10 px-3 py-1 text-xs text-primary">
+                  <span className="flex-none rounded-full bg-primary/10 px-3 py-1 text-primary text-xs">
                     {event.type}
                   </span>
                 </div>

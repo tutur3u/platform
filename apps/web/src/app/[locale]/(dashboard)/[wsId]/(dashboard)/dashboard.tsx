@@ -188,7 +188,7 @@ const Dashboard = ({ data }: { data: AuroraForecast }) => {
               </Select>
 
               {insights && (
-                <div className="text-sm text-muted-foreground">
+                <div className="text-muted-foreground text-sm">
                   {t('aurora.last_updated')}:{' '}
                   {formatDate(
                     locale,
@@ -208,22 +208,22 @@ const Dashboard = ({ data }: { data: AuroraForecast }) => {
                 />
                 <Card>
                   <CardHeader className="pb-2">
-                    <CardTitle className="text-sm font-medium">
+                    <CardTitle className="font-medium text-sm">
                       {t('aurora.forecast_range')}
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-1">
                       <div className="flex items-center justify-between">
-                        <span className="text-sm text-muted-foreground">
+                        <span className="text-muted-foreground text-sm">
                           {t('aurora.high')}
                         </span>
-                        <span className="text-success font-medium">
+                        <span className="font-medium text-success">
                           {formatCurrency(insights.high)}
                         </span>
                       </div>
                       <div className="flex items-center justify-between">
-                        <span className="text-sm text-muted-foreground">
+                        <span className="text-muted-foreground text-sm">
                           {t('aurora.low')}
                         </span>
                         <span className="font-medium text-destructive">
@@ -231,7 +231,7 @@ const Dashboard = ({ data }: { data: AuroraForecast }) => {
                         </span>
                       </div>
                       <div className="flex items-center justify-between">
-                        <span className="text-sm text-muted-foreground">
+                        <span className="text-muted-foreground text-sm">
                           {t('aurora.average')}
                         </span>
                         <span className="font-medium">
@@ -244,14 +244,14 @@ const Dashboard = ({ data }: { data: AuroraForecast }) => {
 
                 <Card>
                   <CardHeader className="pb-2">
-                    <CardTitle className="text-sm font-medium">
+                    <CardTitle className="font-medium text-sm">
                       {t('aurora.trend')}
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
                     <div className="flex items-center gap-2">
                       {insights.trend > 0 ? (
-                        <ArrowUpIcon className="text-success h-4 w-4" />
+                        <ArrowUpIcon className="h-4 w-4 text-success" />
                       ) : (
                         <ArrowDownIcon className="h-4 w-4 text-destructive" />
                       )}
@@ -270,13 +270,13 @@ const Dashboard = ({ data }: { data: AuroraForecast }) => {
 
                 <Card>
                   <CardHeader className="pb-2">
-                    <CardTitle className="text-sm font-medium">
+                    <CardTitle className="font-medium text-sm">
                       {t('aurora.volatility')}
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
                     <div className="flex items-center gap-2">
-                      <span className="text-lg font-medium">
+                      <span className="font-medium text-lg">
                         {formatCurrency(insights.volatility)}
                       </span>
                     </div>
@@ -506,11 +506,11 @@ const MetricCard = ({
     <Card className="transition-all duration-200 hover:shadow-md">
       <CardContent className="pt-6">
         <div className="flex items-center justify-between">
-          <h3 className="text-sm font-medium text-muted-foreground">{title}</h3>
+          <h3 className="font-medium text-muted-foreground text-sm">{title}</h3>
           {calculatedTrend && (
             <div
               className={cn(
-                'flex items-center gap-1 text-sm font-medium',
+                'flex items-center gap-1 font-medium text-sm',
                 calculatedTrend.direction === 'up'
                   ? 'text-success'
                   : calculatedTrend.direction === 'down'
@@ -530,7 +530,7 @@ const MetricCard = ({
 
         <div className="mt-4">
           <div
-            className="text-2xl font-bold"
+            className="font-bold text-2xl"
             style={{ color: color || colors.primary }}
           >
             {formattedValue}

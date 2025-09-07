@@ -431,7 +431,7 @@ export const CalendarContent = ({
         <WeekdayBar locale={locale} view={view} dates={dates} />
       )}
 
-      <div className="relative scrollbar-none flex-1 overflow-auto bg-background/50">
+      <div className="scrollbar-none relative flex-1 overflow-auto bg-background/50">
         {view === 'month' && dates?.[0] ? (
           <MonthCalendar
             date={dates[0]}

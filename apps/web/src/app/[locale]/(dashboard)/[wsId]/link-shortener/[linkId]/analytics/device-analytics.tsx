@@ -32,10 +32,10 @@ export function DeviceAnalytics({
               <Monitor className="h-5 w-5 text-dynamic-purple" />
             </div>
             <div>
-              <h3 className="text-lg font-semibold">
+              <h3 className="font-semibold text-lg">
                 {t('link-shortener.analytics.device_types')}
               </h3>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-muted-foreground text-sm">
                 {t('link-shortener.analytics.device_breakdown')}
               </p>
             </div>
@@ -57,7 +57,7 @@ export function DeviceAnalytics({
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
                           <DeviceIcon className="h-4 w-4 text-dynamic-purple" />
-                          <span className="text-sm font-medium capitalize">
+                          <span className="font-medium text-sm capitalize">
                             {device.device_type}
                           </span>
                         </div>
@@ -65,7 +65,7 @@ export function DeviceAnalytics({
                           <span className="font-semibold text-dynamic-purple">
                             {device.count}
                           </span>
-                          <span className="text-xs text-muted-foreground">
+                          <span className="text-muted-foreground text-xs">
                             (
                             {(
                               (device.count / (totalClicks || 1)) *
@@ -101,10 +101,10 @@ export function DeviceAnalytics({
               <Wifi className="h-5 w-5 text-dynamic-blue" />
             </div>
             <div>
-              <h3 className="text-lg font-semibold">
+              <h3 className="font-semibold text-lg">
                 {t('link-shortener.analytics.top_browsers')}
               </h3>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-muted-foreground text-sm">
                 {t('link-shortener.analytics.browser_distribution')}
               </p>
             </div>
@@ -129,7 +129,7 @@ export function DeviceAnalytics({
                           >
                             {index + 1}
                           </Badge>
-                          <span className="text-sm font-medium">
+                          <span className="font-medium text-sm">
                             {browser.browser}
                           </span>
                         </div>
@@ -137,7 +137,7 @@ export function DeviceAnalytics({
                           <span className="font-semibold text-dynamic-blue">
                             {browser.count}
                           </span>
-                          <span className="text-xs text-muted-foreground">
+                          <span className="text-muted-foreground text-xs">
                             (
                             {(
                               (browser.count / (totalClicks || 1)) *
@@ -173,10 +173,10 @@ export function DeviceAnalytics({
               <Monitor className="h-5 w-5 text-dynamic-orange" />
             </div>
             <div>
-              <h3 className="text-lg font-semibold">
+              <h3 className="font-semibold text-lg">
                 {t('link-shortener.analytics.operating_systems')}
               </h3>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-muted-foreground text-sm">
                 {t('link-shortener.analytics.os_distribution')}
               </p>
             </div>
@@ -203,13 +203,13 @@ export function DeviceAnalytics({
                           >
                             {index + 1}
                           </Badge>
-                          <span className="text-sm font-medium">{os.os}</span>
+                          <span className="font-medium text-sm">{os.os}</span>
                         </div>
                         <div className="flex items-center gap-2">
                           <span className="font-semibold text-dynamic-orange">
                             {os.count}
                           </span>
-                          <span className="text-xs text-muted-foreground">
+                          <span className="text-muted-foreground text-xs">
                             (
                             {((os.count / (totalClicks || 1)) * 100).toFixed(1)}
                             %)

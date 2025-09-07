@@ -1,6 +1,6 @@
 'use client';
 
-import { TASK_PRIORITIES } from './priority-view';
+import type { TASK_PRIORITIES } from './priority-view';
 import {
   DropdownMenu,
   DropdownMenuContent,

@@ -38,7 +38,7 @@ export function AnalyticsHeader({ link }: AnalyticsHeaderProps) {
       </div>
       <div className="flex-1 space-y-2">
         <div className="flex items-center gap-3">
-          <h1 className="bg-gradient-to-r from-foreground via-foreground to-foreground/60 bg-clip-text text-4xl font-bold tracking-tight">
+          <h1 className="bg-gradient-to-r from-foreground via-foreground to-foreground/60 bg-clip-text font-bold text-4xl tracking-tight">
             {t('link-shortener.analytics.title')}
           </h1>
           <Badge
@@ -51,7 +51,7 @@ export function AnalyticsHeader({ link }: AnalyticsHeaderProps) {
         </div>
         <div className="space-y-1">
           <div className="flex items-center gap-2">
-            <p className="font-mono text-lg text-dynamic-blue">/{link.slug}</p>
+            <p className="font-mono text-dynamic-blue text-lg">/{link.slug}</p>
             <Button
               variant="ghost"
               size="sm"
@@ -62,7 +62,7 @@ export function AnalyticsHeader({ link }: AnalyticsHeaderProps) {
             </Button>
           </div>
           <div className="flex items-center gap-2">
-            <p className="truncate text-sm text-muted-foreground">
+            <p className="truncate text-muted-foreground text-sm">
               {link.link}
             </p>
             <Button

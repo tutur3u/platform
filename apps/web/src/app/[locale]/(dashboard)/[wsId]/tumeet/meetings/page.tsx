@@ -53,7 +53,7 @@ export default async function MeetingsPage({
       <div className="mb-8">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">Meetings</h1>
+            <h1 className="font-bold text-3xl tracking-tight">Meetings</h1>
             <p className="text-muted-foreground">
               Integrated video conferencing with AI-powered features to make
               your meetings more productive.

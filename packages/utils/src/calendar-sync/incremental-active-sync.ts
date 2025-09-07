@@ -1,4 +1,4 @@
-import { calendar_v3, google } from '@tuturuuu/google';
+import { type calendar_v3, google } from '@tuturuuu/google';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import {
   clearSyncToken,
@@ -286,7 +286,6 @@ export async function performIncrementalActiveSync(
 
           // Retry the same page with date range parameters
           pageCount--;
-          continue;
         } else {
           // Re-throw other errors
           throw apiError;

@@ -1,6 +1,6 @@
 'use client';
 
-import { User } from '@tuturuuu/types/db';
+import type { User } from '@tuturuuu/types/db';
 import type { Timezone } from '@tuturuuu/types/primitives/Timezone';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -199,7 +199,7 @@ export default function CreatePlanDialog({ plan, user }: Props) {
         >
           <div
             className={cn(
-              'animate-tilt absolute -inset-px rounded-lg bg-linear-to-r from-dynamic-light-red/80 via-dynamic-light-pink/80 to-dynamic-light-blue/80 opacity-70 blur-lg transition-all',
+              '-inset-px absolute animate-tilt rounded-lg bg-linear-to-r from-dynamic-light-red/80 via-dynamic-light-pink/80 to-dynamic-light-blue/80 opacity-70 blur-lg transition-all',
               missingFields ||
                 creating ||
                 'group-hover:-inset-1 group-hover:opacity-100 group-hover:duration-200'
@@ -240,11 +240,11 @@ export default function CreatePlanDialog({ plan, user }: Props) {
             <div className="space-y-4">
               <div className="flex items-center gap-2">
                 <SparklesIcon className="h-4 w-4 text-dynamic-purple" />
-                <h3 className="text-sm font-semibold text-foreground">
+                <h3 className="font-semibold text-foreground text-sm">
                   Extra Features
                 </h3>
               </div>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-muted-foreground text-xs">
                 Enhance your meeting plan with additional features to make
                 coordination easier.
               </p>
@@ -292,13 +292,13 @@ export default function CreatePlanDialog({ plan, user }: Props) {
                               Where TuMeet?
                             </FormLabel>
                           </div>
-                          <p className="text-xs leading-relaxed text-muted-foreground">
+                          <p className="text-muted-foreground text-xs leading-relaxed">
                             Enable location suggestions and voting. Participants
                             can propose meeting locations and vote on their
                             preferred spots, making it easier to find the
                             perfect place for everyone.
                           </p>
-                          <div className="flex items-center gap-1 text-xs text-dynamic-blue">
+                          <div className="flex items-center gap-1 text-dynamic-blue text-xs">
                             <SparklesIcon className="h-3 w-3" />
                             <span>Popular feature</span>
                           </div>
@@ -353,12 +353,12 @@ export default function CreatePlanDialog({ plan, user }: Props) {
                               {t('agenda')}
                             </FormLabel>
                           </div>
-                          <p className="text-xs leading-relaxed text-muted-foreground">
+                          <p className="text-muted-foreground text-xs leading-relaxed">
                             Add an agenda to keep your meeting organized and on
                             track. Share the plan with participants beforehand
                             so everyone knows what to expect.
                           </p>
-                          <div className="flex items-center gap-1 text-xs text-dynamic-green">
+                          <div className="flex items-center gap-1 text-dynamic-green text-xs">
                             <SparklesIcon className="h-3 w-3" />
                             <span>Stay organized</span>
                           </div>
@@ -372,7 +372,7 @@ export default function CreatePlanDialog({ plan, user }: Props) {
 
               {/* Agenda content editor - only shown when enabled */}
               {form.watch('agenda_enabled') && (
-                <div className="duration-300 animate-in slide-in-from-top-2">
+                <div className="slide-in-from-top-2 animate-in duration-300">
                   <FormField
                     control={form.control}
                     name="agenda_content"
