@@ -459,7 +459,7 @@
         "@ai-sdk/fireworks": "^1.0.15",
         "@ai-sdk/gladia": "^1.0.8",
         "@ai-sdk/google": "^2.0.12",
-        "@ai-sdk/google-vertex": "^3.0.20",
+        "@ai-sdk/google-vertex": "^3.0.21",
         "@ai-sdk/groq": "^2.0.17",
         "@ai-sdk/hume": "^1.0.8",
         "@ai-sdk/lmnt": "^1.0.8",
@@ -860,7 +860,7 @@
 
     "@ai-sdk/google": ["@ai-sdk/google@2.0.12", "", { "dependencies": { "@ai-sdk/provider": "2.0.0", "@ai-sdk/provider-utils": "3.0.8" }, "peerDependencies": { "zod": "^3.25.76 || ^4" } }, "sha512-BH3w0hPddNo82okuF/UmCZreKibUSDTW/SED0sBWlrj16S9/H/Urzf4mBwwT419kVenb8XvO55KJ6Byc8ONNXQ=="],
 
-    "@ai-sdk/google-vertex": ["@ai-sdk/google-vertex@3.0.20", "", { "dependencies": { "@ai-sdk/anthropic": "2.0.12", "@ai-sdk/google": "2.0.12", "@ai-sdk/provider": "2.0.0", "@ai-sdk/provider-utils": "3.0.8", "google-auth-library": "^9.15.0" }, "peerDependencies": { "zod": "^3.25.76 || ^4" } }, "sha512-erL1vCeXCDmKr1XBjuXgSnhw4VWpqZRYks5jLGaRYH5u7sm6zGutzfBa3WbJI/cRhSctpXnLBcYsjGS3ZytNKQ=="],
+    "@ai-sdk/google-vertex": ["@ai-sdk/google-vertex@3.0.21", "", { "dependencies": { "@ai-sdk/anthropic": "2.0.12", "@ai-sdk/google": "2.0.12", "@ai-sdk/provider": "2.0.0", "@ai-sdk/provider-utils": "3.0.8", "google-auth-library": "^9.15.0" }, "peerDependencies": { "zod": "^3.25.76 || ^4" } }, "sha512-AsgYJ7e0P+yHZhhXP4dIC9WVivmR2y8twau0RrwFlyN4vAI+4+Orzx5lH+eFvaTKJVWRYhyciCB7u9RFwc5irA=="],
 
     "@ai-sdk/groq": ["@ai-sdk/groq@2.0.17", "", { "dependencies": { "@ai-sdk/provider": "2.0.0", "@ai-sdk/provider-utils": "3.0.8" }, "peerDependencies": { "zod": "^3.25.76 || ^4" } }, "sha512-Oh6Fk988KNvqy4w1crBhBQU8JIkfqhxSiYCbBZFqZSeDsagZ8SHsS2ni9+7pq6e0DR/XGp6fDGDFsm+01kmsmg=="],
 
