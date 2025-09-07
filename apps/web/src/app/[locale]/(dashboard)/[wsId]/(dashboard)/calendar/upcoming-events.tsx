@@ -5,16 +5,18 @@ import { isAllDayEvent } from '@tuturuuu/ui/hooks/calendar-utils';
 import { Calendar, MapPin } from '@tuturuuu/ui/icons';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
-import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
+import Link from 'next/link';
 import UpcomingEventDetails from './upcoming-event-details';
 
 interface UpcomingCalendarEventsProps {
   wsId: string;
+  showNavigation?: boolean;
 }
 
 export default async function UpcomingCalendarEvents({
   wsId,
+  showNavigation = false,
 }: UpcomingCalendarEventsProps) {
   const supabase = await createClient();
   const t = await getTranslations('dashboard');
@@ -53,16 +55,18 @@ export default async function UpcomingCalendarEvents({
           </div>
           <div className="line-clamp-1">{t('next_up_on_calendar')}</div>
         </CardTitle>
-        <Link href={`/${wsId}/calendar`}>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-8 px-2 transition-colors hover:bg-dynamic-cyan/10 hover:text-dynamic-cyan"
-          >
-            <Calendar className="mr-1 h-3 w-3" />
-            {t('view_calendar')}
-          </Button>
-        </Link>
+        {showNavigation && (
+          <Link href={`/${wsId}/calendar`}>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-8 px-2 transition-colors hover:bg-dynamic-cyan/10 hover:text-dynamic-cyan"
+            >
+              <Calendar className="mr-1 h-3 w-3" />
+              {t('view_calendar')}
+            </Button>
+          </Link>
+        )}
       </CardHeader>
       <CardContent className="h-full space-y-6 p-6">
         {upcomingEvents && upcomingEvents.length > 0 ? (

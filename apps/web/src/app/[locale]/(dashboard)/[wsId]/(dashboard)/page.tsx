@@ -1,10 +1,10 @@
+import LoadingStatisticCard from '@/components/loading-statistic-card';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import type { AuroraForecast } from '@tuturuuu/types/db';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
 import { getPermissions, getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import { notFound } from 'next/navigation';
 import { Suspense } from 'react';
-import LoadingStatisticCard from '@/components/loading-statistic-card';
 import UpcomingCalendarEvents from './calendar/upcoming-events';
 import Countdown from './countdown';
 import DashboardCardSkeleton from './dashboard-card-skeleton';
@@ -44,8 +44,7 @@ export default async function WorkspaceHomePage({ params }: Props) {
     currentUser?.email?.endsWith('@tuturuuu.com') ||
     currentUser?.email?.endsWith('@xwf.tuturuuu.com');
 
-  const disableCalendar =
-    withoutPermission('manage_calendar') || !isInternalUser;
+  const disableCalendar = withoutPermission('manage_calendar');
 
   return (
     <>
@@ -64,11 +63,12 @@ export default async function WorkspaceHomePage({ params }: Props) {
             />
           </Suspense>
 
-          {disableCalendar ? null : (
-            <Suspense fallback={<DashboardCardSkeleton />}>
-              <UpcomingCalendarEvents wsId={wsId} />
-            </Suspense>
-          )}
+          <Suspense fallback={<DashboardCardSkeleton />}>
+            <UpcomingCalendarEvents
+              wsId={wsId}
+              showNavigation={!disableCalendar}
+            />
+          </Suspense>
 
           <Suspense fallback={<DashboardCardSkeleton />}>
             <TimeTrackingMetrics
