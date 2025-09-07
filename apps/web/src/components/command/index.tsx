@@ -143,7 +143,7 @@ export function CommandPalette(props: CommandPaletteProps & LegacyProps) {
     try {
       const key = `cmdk_chat_id:${workspaceId ?? 'root'}`;
       window.sessionStorage.setItem(key, currentChatId);
-    } catch { }
+    } catch {}
     setChatId(currentChatId);
   }, [currentChatId, chatId, workspaceId]);
 
@@ -166,7 +166,7 @@ export function CommandPalette(props: CommandPaletteProps & LegacyProps) {
         try {
           const key = `cmdk_chat_id:${workspaceId ?? 'root'}`;
           window.sessionStorage.setItem(key, id);
-        } catch { }
+        } catch {}
         setChatId(id);
         return id;
       } catch (e) {
@@ -185,7 +185,7 @@ export function CommandPalette(props: CommandPaletteProps & LegacyProps) {
     // Stop any ongoing stream
     try {
       stop?.();
-    } catch { }
+    } catch {}
   }, [stop]);
 
   // Focus input shortly after open
@@ -200,7 +200,7 @@ export function CommandPalette(props: CommandPaletteProps & LegacyProps) {
         setInputValue('');
         try {
           stop?.();
-        } catch { }
+        } catch {}
       }, 200);
       return () => clearTimeout(timeout);
     }
@@ -343,8 +343,8 @@ export function CommandPalette(props: CommandPaletteProps & LegacyProps) {
           <div className="flex items-center justify-between border-b bg-muted/30 px-6 py-4 backdrop-blur-sm">
             <div className="flex items-center gap-3">
               <div className="relative">
-                <Sparkles className='h-5 w-5 animate-pulse text-primary' />
-                <div className='-inset-1 absolute rounded-full bg-primary/20 blur-sm' />
+                <Sparkles className="h-5 w-5 animate-pulse text-primary" />
+                <div className="-inset-1 absolute rounded-full bg-primary/20 blur-sm" />
               </div>
               <div className="flex flex-col">
                 <p className="font-semibold text-lg">Jarvis</p>
@@ -356,8 +356,8 @@ export function CommandPalette(props: CommandPaletteProps & LegacyProps) {
               </div>
               {currentChatId && (
                 <div className="ml-4 flex items-center gap-2">
-                  <div className='h-2 w-2 animate-pulse rounded-full bg-green-500' />
-                  <span className='rounded-full bg-primary/10 px-3 py-1 font-medium text-[10px] text-primary'>
+                  <div className="h-2 w-2 animate-pulse rounded-full bg-green-500" />
+                  <span className="rounded-full bg-primary/10 px-3 py-1 font-medium text-[10px] text-primary">
                     Thread {currentChatId.slice(0, 8)}
                   </span>
                 </div>
@@ -367,7 +367,7 @@ export function CommandPalette(props: CommandPaletteProps & LegacyProps) {
               {workspaceId ? (
                 <div className="flex items-center gap-2">
                   <div className="h-2 w-2 rounded-full bg-green-500" />
-                  <span className='rounded-full bg-green-100 px-3 py-1 font-medium text-green-800 text-xs dark:bg-green-900/30 dark:text-green-400'>
+                  <span className="rounded-full bg-green-100 px-3 py-1 font-medium text-green-800 text-xs dark:bg-green-900/30 dark:text-green-400">
                     {workspaceId === ROOT_WORKSPACE_ID
                       ? 'Root Workspace'
                       : `Workspace: ${workspaceId.slice(0, 8)}`}
@@ -376,7 +376,7 @@ export function CommandPalette(props: CommandPaletteProps & LegacyProps) {
               ) : (
                 <div className="flex items-center gap-2 rounded-full bg-orange-100 px-3 py-1 dark:bg-orange-900/30">
                   <AlertTriangle className="h-3 w-3 text-orange-600 dark:text-orange-400" />
-                  <span className='font-medium text-orange-800 text-xs dark:text-orange-400'>
+                  <span className="font-medium text-orange-800 text-xs dark:text-orange-400">
                     Limited Context
                   </span>
                 </div>
@@ -389,7 +389,7 @@ export function CommandPalette(props: CommandPaletteProps & LegacyProps) {
                   try {
                     const key = `cmdk_chat_id:${workspaceId ?? 'root'}`;
                     window.sessionStorage.removeItem(key);
-                  } catch { }
+                  } catch {}
                   setChatId(undefined);
                   setPendingPrompt(null);
                 }}
@@ -403,19 +403,19 @@ export function CommandPalette(props: CommandPaletteProps & LegacyProps) {
           </div>
 
           {/* Enhanced Messages Area */}
-          <div className='flex-1 space-y-6 overflow-y-auto scroll-smooth px-6 py-6'>
+          <div className="flex-1 space-y-6 overflow-y-auto scroll-smooth px-6 py-6">
             {/* Loading indicator */}
             {isLoading && (
               <div className="flex items-center gap-3">
                 <div className="relative">
-                  <div className='flex h-6 w-6 items-center justify-center rounded-full bg-primary/10'>
-                    <Bot className='h-3.5 w-3.5 animate-pulse text-primary' />
+                  <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/10">
+                    <Bot className="h-3.5 w-3.5 animate-pulse text-primary" />
                   </div>
-                  <div className='absolute inset-0 animate-spin rounded-full border-2 border-primary/30 border-t-primary' />
+                  <div className="absolute inset-0 animate-spin rounded-full border-2 border-primary/30 border-t-primary" />
                 </div>
                 <div className="flex flex-col gap-2">
-                  <div className='h-3 w-32 animate-pulse rounded bg-muted' />
-                  <div className='h-3 w-24 animate-pulse rounded bg-muted' />
+                  <div className="h-3 w-32 animate-pulse rounded bg-muted" />
+                  <div className="h-3 w-24 animate-pulse rounded bg-muted" />
                 </div>
               </div>
             )}
@@ -423,10 +423,11 @@ export function CommandPalette(props: CommandPaletteProps & LegacyProps) {
             {aiMessages.map((m, index) => (
               <div
                 key={m.id}
-                className={`flex items-start gap-4 transition-all duration-300 ${index === aiMessages.length - 1
+                className={`flex items-start gap-4 transition-all duration-300 ${
+                  index === aiMessages.length - 1
                     ? 'slide-in-from-bottom-4 animate-in'
                     : ''
-                  }`}
+                }`}
               >
                 <div className="w-full">
                   {(() => {
@@ -463,7 +464,7 @@ export function CommandPalette(props: CommandPaletteProps & LegacyProps) {
             {aiMessages.length === 0 && !isLoading && (
               <div className="space-y-6">
                 <div className="text-center">
-                  <h3 className='mb-2 font-medium text-foreground'>
+                  <h3 className="mb-2 font-medium text-foreground">
                     Quick Actions
                   </h3>
                   <p className="text-muted-foreground text-sm">
@@ -476,10 +477,11 @@ export function CommandPalette(props: CommandPaletteProps & LegacyProps) {
                       key={suggestion}
                       onClick={() => handleSend(suggestion)}
                       type="button"
-                      className={`group relative overflow-hidden rounded-xl border border-border/50 bg-gradient-to-br from-muted/30 to-muted/10 p-4 text-left transition-all duration-200 hover:scale-[1.02] hover:border-primary/30 hover:shadow-lg hover:shadow-primary/10 focus:outline-none focus:ring-2 focus:ring-primary/50 active:scale-[0.98] ${index % 2 === 0
+                      className={`group relative overflow-hidden rounded-xl border border-border/50 bg-gradient-to-br from-muted/30 to-muted/10 p-4 text-left transition-all duration-200 hover:scale-[1.02] hover:border-primary/30 hover:shadow-lg hover:shadow-primary/10 focus:outline-none focus:ring-2 focus:ring-primary/50 active:scale-[0.98] ${
+                        index % 2 === 0
                           ? 'slide-in-from-left-4 animate-in'
                           : 'slide-in-from-right-4 animate-in'
-                        }`}
+                      }`}
                       style={{ animationDelay: `${index * 100}ms` }}
                       aria-label={`Try suggestion: ${suggestion}`}
                     >
@@ -488,11 +490,11 @@ export function CommandPalette(props: CommandPaletteProps & LegacyProps) {
                         <div className="mt-1 flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 transition-colors group-hover:bg-primary/20">
                           <Sparkles className="h-4 w-4 text-primary transition-all group-hover:scale-110" />
                         </div>
-                        <div className='min-w-0 flex-1'>
-                          <p className='font-medium text-foreground text-sm transition-colors group-hover:text-primary'>
+                        <div className="min-w-0 flex-1">
+                          <p className="font-medium text-foreground text-sm transition-colors group-hover:text-primary">
                             {suggestion}
                           </p>
-                          <p className='mt-1 text-muted-foreground text-xs opacity-0 transition-opacity group-hover:opacity-100'>
+                          <p className="mt-1 text-muted-foreground text-xs opacity-0 transition-opacity group-hover:opacity-100">
                             Click to try this action
                           </p>
                         </div>
@@ -505,19 +507,19 @@ export function CommandPalette(props: CommandPaletteProps & LegacyProps) {
 
             {/* Enhanced Welcome message when no messages yet */}
             {open && aiMessages.length === 0 && !isLoading && (
-              <div className='slide-in-from-bottom-4 flex animate-in items-start gap-4'>
+              <div className="slide-in-from-bottom-4 flex animate-in items-start gap-4">
                 <div className="relative mt-1">
                   <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-primary/20 to-primary/10 shadow-lg">
                     <Bot className="h-4 w-4 text-primary" />
                   </div>
-                  <div className='-inset-1 absolute animate-pulse rounded-full bg-primary/10 blur-sm' />
+                  <div className="-inset-1 absolute animate-pulse rounded-full bg-primary/10 blur-sm" />
                 </div>
                 <div className="max-w-[85%] space-y-3">
                   <div className="rounded-2xl bg-gradient-to-br from-muted/80 to-muted/40 px-4 py-3 shadow-sm backdrop-blur-sm">
                     <p className="text-foreground text-sm leading-relaxed">
                       👋 <strong>Welcome to Jarvis!</strong>
                     </p>
-                    <p className='mt-2 text-foreground/80 text-sm leading-relaxed'>
+                    <p className="mt-2 text-foreground/80 text-sm leading-relaxed">
                       I'm your intelligent workspace assistant. I can help you
                       create tasks, summarize updates, start timers, navigate
                       your workspace, and much more—all without any setup
@@ -557,22 +559,23 @@ export function CommandPalette(props: CommandPaletteProps & LegacyProps) {
                       : 'Ask me to create, find, summarize, or help with anything...'
                   }
                   disabled={isLoading}
-                  className={`max-h-40 w-full resize-none rounded-xl border bg-background/80 px-4 py-3 text-sm shadow-sm backdrop-blur-sm transition-all duration-200 placeholder:text-muted-foreground/60 focus-visible:border-primary/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 ${isLoading
+                  className={`max-h-40 w-full resize-none rounded-xl border bg-background/80 px-4 py-3 text-sm shadow-sm backdrop-blur-sm transition-all duration-200 placeholder:text-muted-foreground/60 focus-visible:border-primary/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 ${
+                    isLoading
                       ? 'cursor-not-allowed opacity-75'
                       : 'hover:border-primary/30'
-                    }`}
+                  }`}
                   aria-label="Chat with Jarvis"
                 />
                 <div className="pointer-events-none absolute right-3 bottom-3 flex items-center gap-2 text-muted-foreground/60">
                   <div className="flex items-center gap-1">
-                    <kbd className='pointer-events-none inline-flex h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-medium font-mono text-[10px] text-muted-foreground'>
+                    <kbd className="pointer-events-none inline-flex h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-medium font-mono text-[10px] text-muted-foreground">
                       ⏎
                     </kbd>
                     <span className="text-[10px]">send</span>
                   </div>
                   <div className="h-3 w-px bg-border" />
                   <div className="flex items-center gap-1">
-                    <kbd className='pointer-events-none inline-flex h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-medium font-mono text-[10px] text-muted-foreground'>
+                    <kbd className="pointer-events-none inline-flex h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-medium font-mono text-[10px] text-muted-foreground">
                       ⇧⏎
                     </kbd>
                     <span className="text-[10px]">new line</span>
@@ -582,15 +585,15 @@ export function CommandPalette(props: CommandPaletteProps & LegacyProps) {
                   <div className="absolute right-16 bottom-3">
                     <div className="flex items-center gap-1">
                       <div
-                        className='h-1 w-1 animate-bounce rounded-full bg-primary'
+                        className="h-1 w-1 animate-bounce rounded-full bg-primary"
                         style={{ animationDelay: '0ms' }}
                       />
                       <div
-                        className='h-1 w-1 animate-bounce rounded-full bg-primary'
+                        className="h-1 w-1 animate-bounce rounded-full bg-primary"
                         style={{ animationDelay: '150ms' }}
                       />
                       <div
-                        className='h-1 w-1 animate-bounce rounded-full bg-primary'
+                        className="h-1 w-1 animate-bounce rounded-full bg-primary"
                         style={{ animationDelay: '300ms' }}
                       />
                     </div>
@@ -601,10 +604,11 @@ export function CommandPalette(props: CommandPaletteProps & LegacyProps) {
                 size="lg"
                 onClick={() => handleSend()}
                 disabled={!inputValue.trim() || isLoading}
-                className={`h-12 gap-2 px-6 font-medium transition-all duration-200 ${inputValue.trim() && !isLoading
+                className={`h-12 gap-2 px-6 font-medium transition-all duration-200 ${
+                  inputValue.trim() && !isLoading
                     ? 'shadow-lg hover:scale-105 hover:shadow-primary/20 hover:shadow-xl active:scale-95'
                     : ''
-                  }`}
+                }`}
                 aria-label={isLoading ? 'Sending message...' : 'Send message'}
               >
                 {isLoading ? (
@@ -616,7 +620,7 @@ export function CommandPalette(props: CommandPaletteProps & LegacyProps) {
               </Button>
             </div>
             {/* Character count and helpful tips */}
-            <div className='mt-3 flex items-center justify-between text-muted-foreground text-xs'>
+            <div className="mt-3 flex items-center justify-between text-muted-foreground text-xs">
               <div className="flex items-center gap-4">
                 <span>{inputValue.length} characters</span>
                 {inputValue.length > 1000 && (
@@ -667,10 +671,10 @@ class CommandPaletteErrorBoundary extends React.Component<
             <div className="rounded-full bg-red-100 p-6 dark:bg-red-900/20">
               <AlertTriangle className="h-12 w-12 text-red-600 dark:text-red-400" />
             </div>
-            <div className='-inset-2 absolute animate-pulse rounded-full bg-red-500/10 blur-xl' />
+            <div className="-inset-2 absolute animate-pulse rounded-full bg-red-500/10 blur-xl" />
           </div>
-          <div className='max-w-md space-y-3'>
-            <h3 className='font-semibold text-foreground text-xl'>
+          <div className="max-w-md space-y-3">
+            <h3 className="font-semibold text-foreground text-xl">
               Oops! Something went wrong
             </h3>
             <p className="text-muted-foreground leading-relaxed">
@@ -680,11 +684,11 @@ class CommandPaletteErrorBoundary extends React.Component<
             </p>
             {process.env.NODE_ENV === 'development' && this.state.error && (
               <details className="mt-6 text-left">
-                <summary className='cursor-pointer text-muted-foreground text-sm transition-colors hover:text-foreground'>
+                <summary className="cursor-pointer text-muted-foreground text-sm transition-colors hover:text-foreground">
                   🔍 Technical details (development mode)
                 </summary>
                 <div className="mt-3 rounded-lg bg-red-50 p-4 dark:bg-red-950/20">
-                  <pre className='whitespace-pre-wrap font-mono text-red-700 text-xs dark:text-red-300'>
+                  <pre className="whitespace-pre-wrap font-mono text-red-700 text-xs dark:text-red-300">
                     {this.state.error.message}
                     {this.state.error.stack && (
                       <>
@@ -697,7 +701,7 @@ class CommandPaletteErrorBoundary extends React.Component<
               </details>
             )}
           </div>
-          <div className='flex flex-col gap-3 sm:flex-row'>
+          <div className="flex flex-col gap-3 sm:flex-row">
             <Button
               size="lg"
               onClick={() => {
@@ -719,7 +723,7 @@ class CommandPaletteErrorBoundary extends React.Component<
               Reload Page
             </Button>
           </div>
-          <div className='mt-4 rounded-lg bg-muted/50 p-4 text-muted-foreground text-sm'>
+          <div className="mt-4 rounded-lg bg-muted/50 p-4 text-muted-foreground text-sm">
             <p className="flex items-center gap-2">
               <span>💡</span>
               <span>
