@@ -24,7 +24,8 @@ export interface NavCategory {
 }
 
 export const useNavigation = (
-  t: (key: string) => string
+  // biome-ignore lint/suspicious/noExplicitAny: <>
+  t: any
 ): { categories: NavCategory[] } => {
   const products: NavItem[] = [
     {
