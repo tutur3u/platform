@@ -279,14 +279,14 @@ export const TaskCard = React.memo(function TaskCard({
 
   async function handleDueDateChange(days: number | null) {
     let newDate: string | null = null;
-    
+
     if (days !== null) {
       const targetDate = addDays(new Date(), days);
       // Set time to 11:59 PM (23:59:59) for quick date selections
       targetDate.setHours(23, 59, 59, 999);
       newDate = targetDate.toISOString();
     }
-    
+
     setIsLoading(true);
     updateTaskMutation.mutate(
       { taskId: task.id, updates: { end_date: newDate } },
@@ -301,22 +301,24 @@ export const TaskCard = React.memo(function TaskCard({
 
   async function handleCustomDateChange(date: Date | undefined) {
     let newDate: string | null = null;
-    
+
     if (date) {
       const selectedDate = new Date(date);
-      
+
       // If the selected time is 00:00:00 (midnight), it likely means the user
       // only selected a date without specifying a time, so default to 11:59 PM
-      if (selectedDate.getHours() === 0 && 
-          selectedDate.getMinutes() === 0 && 
-          selectedDate.getSeconds() === 0 &&
-          selectedDate.getMilliseconds() === 0) {
+      if (
+        selectedDate.getHours() === 0 &&
+        selectedDate.getMinutes() === 0 &&
+        selectedDate.getSeconds() === 0 &&
+        selectedDate.getMilliseconds() === 0
+      ) {
         selectedDate.setHours(23, 59, 59, 999);
       }
-      
+
       newDate = selectedDate.toISOString();
     }
-    
+
     setIsLoading(true);
     updateTaskMutation.mutate(
       { taskId: task.id, updates: { end_date: newDate } },
