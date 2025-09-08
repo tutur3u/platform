@@ -346,7 +346,27 @@ export async function moveTask(
   console.log('📋 Task ID:', taskId);
   console.log('🎯 New List ID:', newListId);
 
-  // First, get the target list to check its status
+  // First, get the current task details including its current archived status and source list
+  console.log('🔍 Fetching current task details...');
+  const { data: currentTask, error: taskError } = await supabase
+    .from('tasks')
+    .select(`
+      id,
+      list_id,
+      archived,
+      task_lists!inner(status, name)
+    `)
+    .eq('id', taskId)
+    .single();
+
+  if (taskError) {
+    console.log('❌ Error fetching current task:', taskError);
+    throw taskError;
+  }
+
+  console.log('📊 Current task details:', currentTask);
+
+  // Get the target list to check its status
   console.log('🔍 Fetching target list details...');
   const { data: targetList, error: listError } = await supabase
     .from('task_lists')
@@ -361,14 +381,37 @@ export async function moveTask(
 
   console.log('📊 Target list details:', targetList);
 
-  // Determine task completion status based on list status
-  // - not_started, active: task is available for work (archived = false)
-  // - done, closed: task is completed/archived (archived = true)
-  const shouldArchive =
-    targetList.status === 'done' || targetList.status === 'closed';
+  // Determine task completion status based on improved logic:
+  // 1. If moving TO a "done"/"closed" list: archive the task
+  // 2. If moving FROM a "done"/"closed" list to any other list: unarchive the task
+  // 3. If moving between non-done lists: preserve current archived status
+  const sourceListStatus = currentTask.task_lists.status;
+  const targetListStatus = targetList.status;
+  const currentlyArchived = currentTask.archived;
 
-  console.log('📦 Should archive task:', shouldArchive);
-  console.log('📊 Target list status:', targetList.status);
+  let shouldArchive: boolean;
+
+  if (targetListStatus === 'done' || targetListStatus === 'closed') {
+    // Moving TO a completion list - always archive
+    shouldArchive = true;
+    console.log('📦 Moving to completion list, will archive task');
+  } else if (sourceListStatus === 'done' || sourceListStatus === 'closed') {
+    // Moving FROM a completion list to a non-completion list - always unarchive
+    shouldArchive = false;
+    console.log('📦 Moving from completion list, will unarchive task');
+  } else {
+    // Moving between non-completion lists - preserve current status
+    shouldArchive = currentlyArchived;
+    console.log(
+      '📦 Moving between non-completion lists, preserving current status:',
+      currentlyArchived
+    );
+  }
+
+  console.log('📊 Source list status:', sourceListStatus);
+  console.log('📊 Target list status:', targetListStatus);
+  console.log('📊 Currently archived:', currentlyArchived);
+  console.log('📦 Will archive:', shouldArchive);
 
   console.log('🔄 Updating task in database...');
   const { data, error } = await supabase
