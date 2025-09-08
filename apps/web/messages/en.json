@@ -1684,7 +1684,17 @@
     "features": "Features",
     "features_description": "Manage the features of your workspace.",
     "delete": "Delete Workspace",
-    "deleting": "Deleting Workspace"
+    "deleting": "Deleting Workspace",
+    "cancel": "Cancel",
+    "leaving": "Leaving",
+    "leave_workspace": "Leave Workspace",
+    "leave_workspace_confirmation": "Are you sure you want to leave this workspace? You will lose access to all data and need to be re-invited to rejoin",
+    "type_workspace_name_to_confirm": "Please type",
+    "to_confirm": "to confirm",
+    "leave_workspace_warning": "Once you leave this workspace, you will need to be re-invited by an admin to rejoin.",
+    "danger_zone": "Danger Zone",
+    "leave_workspace_description": "Remove yourself from this workspace. You will lose access to all data and need to be re-invited to rejoin.",
+    "delete_workspace_warning": "Once you delete a workspace, there is no going back. Please be certain."
   },
   "ws-secrets": {
     "secrets": "Secrets",

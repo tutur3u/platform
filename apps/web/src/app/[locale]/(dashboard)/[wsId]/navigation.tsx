@@ -298,7 +298,6 @@ export async function WorkspaceNavigationLinks({
               title: t('sidebar_tabs.all_boards'),
               href: `/${personalOrWsId}/tasks/boards`,
               icon: <ListTodo className="h-4 w-4" />,
-              matchExact: true,
             },
             {
               title: t('sidebar_tabs.my_tasks'),

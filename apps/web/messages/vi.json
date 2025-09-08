@@ -1688,7 +1688,17 @@
     "features": "Các tính năng",
     "features_description": "Quản lý các tính năng của không gian làm việc.",
     "delete": "Xóa không gian làm việc",
-    "deleting": "Đang xóa"
+    "deleting": "Đang xóa",
+    "cancel": "Hủy bỏ",
+    "leaving": "Đang rời đi",
+    "leave_workspace": "Rời không gian làm việc",
+    "leave_workspace_confirmation": "Bạn có chắc là bạn muốn rời khỏi không gian làm việc này? \nBạn sẽ mất quyền truy cập vào tất cả dữ liệu và cần được tham gia lại để gia nhập lại",
+    "type_workspace_name_to_confirm": "Vui lòng nhập",
+    "to_confirm": "để xác nhận",
+    "leave_workspace_warning": "Một khi bạn rời khỏi không gian làm việc này, bạn sẽ cần phải được quản trị viên mời lại.",
+    "danger_zone": "Vùng nguy hiểm",
+    "leave_workspace_description": "Loại bỏ bản thân khỏi không gian làm việc này. \nBạn sẽ mất quyền truy cập vào tất cả dữ liệu và cần được mời lại để gia nhập lại.",
+    "delete_workspace_warning": "Khi bạn xóa một không gian làm việc, sẽ không thể hoàn tác. Xin hãy cẩn thận."
   },
   "ws-secrets": {
     "secrets": "Mã bí mật",

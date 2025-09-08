@@ -1,6 +1,6 @@
 'use client';
 
-import type { Workspace } from '@tuturuuu/types/db';
+import type { Workspace, WorkspaceUserRole } from '@tuturuuu/types/db';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -13,60 +13,96 @@ import {
 } from '@tuturuuu/ui/alert-dialog';
 import { Button } from '@tuturuuu/ui/button';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
-import { AlertTriangle, Trash2 } from '@tuturuuu/ui/icons';
+import { AlertTriangle, UserMinus } from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 interface Props {
-  workspace?: Workspace | null;
+  workspace?:
+    | (Workspace & {
+        role: WorkspaceUserRole;
+        joined: boolean;
+      })
+    | null;
 }
 
-export default function Security({ workspace }: Props) {
+export default function RemoveYourself({ workspace }: Props) {
   const isSystemWs = workspace?.id === ROOT_WORKSPACE_ID;
 
   const t = useTranslations('ws-settings');
   const router = useRouter();
 
-  const [isDeleting, setIsDeleting] = useState(false);
-  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [isLeaving, setIsLeaving] = useState(false);
+  const [showLeaveDialog, setShowLeaveDialog] = useState(false);
   const [confirmationInput, setConfirmationInput] = useState('');
 
-  const handleDeleteClick = () => {
-    if (isSystemWs || !workspace) return;
-    setShowDeleteDialog(true);
+  // Get current user ID on component mount
+  useEffect(() => {
+    const getUser = async () => {
+      try {
+        const { createClient } = await import('@tuturuuu/supabase/next/client');
+        const supabase = createClient();
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+        setCurrentUserId(user?.id || null);
+      } catch (error) {
+        console.error('Error getting current user:', error);
+        setCurrentUserId(null);
+      }
+    };
+
+    getUser();
+  }, []);
+
+  const handleLeaveClick = () => {
+    if (isSystemWs || !workspace || !currentUserId) return;
+    setShowLeaveDialog(true);
     setConfirmationInput('');
   };
 
-  const handleConfirmDelete = async () => {
-    if (isSystemWs || !workspace || confirmationInput !== workspace.name)
+  const handleConfirmLeave = async () => {
+    if (
+      isSystemWs ||
+      !workspace ||
+      !currentUserId ||
+      confirmationInput !== workspace.name
+    )
       return;
-    setIsDeleting(true);
 
-    await deleteWorkspace(workspace.id, {
+    setIsLeaving(true);
+
+    await removeMemberFromWorkspace(workspace.id, currentUserId, {
       onSuccess: () => {
-        router.push('/onboarding');
+        router.push('/');
         router.refresh();
       },
       onError: () => {
-        setIsDeleting(false);
-        setShowDeleteDialog(false);
+        setIsLeaving(false);
+        setShowLeaveDialog(false);
       },
     });
   };
 
-  const isDeleteDisabled = confirmationInput !== workspace?.name || isDeleting;
+  const isLeaveDisabled = confirmationInput !== workspace?.name || isLeaving;
+
+  // Don't render if it's a system workspace
+  if (isSystemWs || !currentUserId) {
+    return null;
+  }
 
   return (
     <>
       <div className="flex flex-col rounded-lg border border-border bg-foreground/5 p-6">
         <div className="mb-2 font-bold text-2xl text-foreground">
-          {t('security')}
+          {t('leave_workspace')}
         </div>
         <div className="mb-6 text-foreground/80">
-          {t('security_description')}
+          {t('leave_workspace_description')}
         </div>
 
         <div className="space-y-4">
@@ -78,38 +114,38 @@ export default function Security({ workspace }: Props) {
                   {t('danger_zone')}
                 </h3>
                 <p className="mt-1 text-foreground/70 text-sm">
-                  {t('delete_workspace_warning')}
+                  {t('leave_workspace_warning')}
                 </p>
               </div>
             </div>
           </div>
 
           <Button
-            onClick={handleDeleteClick}
+            onClick={handleLeaveClick}
             variant="destructive"
             className="w-full"
-            disabled={!workspace || isSystemWs || isDeleting}
+            disabled={!workspace || isSystemWs || isLeaving}
           >
-            <Trash2 className="mr-2 h-4 w-4" />
-            {isDeleting ? `${t('deleting')}...` : t('delete')}
+            <UserMinus className="mr-2 h-4 w-4" />
+            {isLeaving ? `${t('leaving')}...` : t('leave_workspace')}
           </Button>
         </div>
       </div>
 
-      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+      <AlertDialog open={showLeaveDialog} onOpenChange={setShowLeaveDialog}>
         <AlertDialogContent className="max-w-md">
           <AlertDialogHeader>
             <AlertDialogTitle className="flex items-center gap-2 text-dynamic-red">
               <AlertTriangle className="h-5 w-5" />
-              Delete Workspace
+              {t('leave_workspace')}
             </AlertDialogTitle>
             <AlertDialogDescription>
-              This action <strong>cannot be undone</strong>. This will
-              permanently delete the <strong>{workspace?.name}</strong>{' '}
-              workspace and all of its data.
+              {t('leave_workspace_confirmation')}{' '}
+              <strong className="underline">{workspace?.name}</strong>.
             </AlertDialogDescription>
             <div className="mt-3 text-foreground/80 text-sm">
-              Please type <strong>{workspace?.name}</strong> to confirm.
+              {t('type_workspace_name_to_confirm')}{' '}
+              <strong>{workspace?.name}</strong> {t('to_confirm')}.
             </div>
           </AlertDialogHeader>
 
@@ -119,25 +155,27 @@ export default function Security({ workspace }: Props) {
               value={confirmationInput}
               onChange={(e) => setConfirmationInput(e.target.value)}
               className="w-full"
-              disabled={isDeleting}
+              disabled={isLeaving}
             />
           </div>
 
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel disabled={isLeaving}>
+              {t('cancel')}
+            </AlertDialogCancel>
             <AlertDialogAction
-              onClick={handleConfirmDelete}
-              disabled={isDeleteDisabled}
+              onClick={handleConfirmLeave}
+              disabled={isLeaveDisabled}
             >
-              {isDeleting ? (
+              {isLeaving ? (
                 <>
                   <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                  Deleting...
+                  {t('leaving')}...
                 </>
               ) : (
                 <>
-                  <Trash2 className="mr-2 h-4 w-4" />
-                  Delete workspace
+                  <UserMinus className="mr-2 h-4 w-4" />
+                  {t('leave_workspace')}
                 </>
               )}
             </AlertDialogAction>
@@ -148,8 +186,9 @@ export default function Security({ workspace }: Props) {
   );
 }
 
-const deleteWorkspace = async (
+const removeMemberFromWorkspace = async (
   wsId: string,
+  userId: string,
   options?: {
     onSuccess?: () => void;
     onError?: () => void;
@@ -157,14 +196,14 @@ const deleteWorkspace = async (
   }
 ) => {
   try {
-    const res = await fetch(`/api/workspaces/${wsId}`, {
+    const res = await fetch(`/api/workspaces/${wsId}/members?id=${userId}`, {
       method: 'DELETE',
     });
 
     if (!res.ok) {
       if (options?.onError) options.onError();
       toast({
-        title: 'Failed to delete workspace',
+        title: 'Failed to leave workspace',
         content: 'Please try again later.',
         color: 'red',
       });
@@ -172,10 +211,15 @@ const deleteWorkspace = async (
     }
 
     if (options?.onSuccess) options.onSuccess();
+    toast({
+      title: 'Left workspace successfully',
+      content: 'You have been removed from the workspace.',
+      color: 'green',
+    });
   } catch (_) {
     if (options?.onError) options.onError();
     toast({
-      title: 'Failed to delete workspace',
+      title: 'Failed to leave workspace',
       content: 'Please try again later.',
       color: 'red',
     });

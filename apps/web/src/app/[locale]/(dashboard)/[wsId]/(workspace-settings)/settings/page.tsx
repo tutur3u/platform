@@ -1,7 +1,3 @@
-import WorkspaceAvatarSettings from './avatar';
-import BasicInfo from './basic-info';
-import WorkspaceLogoSettings from './logo';
-import Security from './security';
 import { Button } from '@tuturuuu/ui/button';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { UserPlus } from '@tuturuuu/ui/icons';
@@ -13,8 +9,13 @@ import {
   getWorkspace,
   verifyHasSecrets,
 } from '@tuturuuu/utils/workspace-helper';
-import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';
+import { getTranslations } from 'next-intl/server';
+import WorkspaceAvatarSettings from './avatar';
+import BasicInfo from './basic-info';
+import WorkspaceLogoSettings from './logo';
+import RemoveYourself from './remove-yourself';
+import Security from './security';
 
 interface Props {
   params: Promise<{
@@ -105,6 +106,7 @@ export default async function WorkspaceSettingsPage({ params }: Props) {
         )}
 
         {id !== 'personal' && enableSecurity && <Security workspace={ws} />}
+        {id !== 'personal' && <RemoveYourself workspace={ws} />}
       </div>
     </>
   );
