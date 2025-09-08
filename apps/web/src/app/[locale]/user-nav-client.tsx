@@ -141,16 +141,19 @@ export default function UserNavClient({
           <DropdownMenuSeparator />
           <DropdownMenuGroup>
             {wsId && (
-              <DropdownMenuItem onSelect={() => setCommandPaletteOpen(true)}>
-                <Terminal className="h-4 w-4" />
-                <span>Command Palette</span>
-                <DropdownMenuShortcut>⌘K</DropdownMenuShortcut>
-              </DropdownMenuItem>
+              <>
+                <DropdownMenuItem onSelect={() => setCommandPaletteOpen(true)}>
+                  <Terminal className="h-4 w-4 text-dynamic-blue" />
+                  <span>Command Palette</span>
+                  <DropdownMenuShortcut>⌘K</DropdownMenuShortcut>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+              </>
             )}
             {sidebar && (
               <DropdownMenuSub>
                 <DropdownMenuSubTrigger className="hidden md:flex">
-                  <PanelLeft className="h-4 w-4" />
+                  <PanelLeft className="h-4 w-4 text-dynamic-purple" />
                   <span>{t('common.sidebar')}</span>
                 </DropdownMenuSubTrigger>
                 <DropdownMenuPortal>
@@ -159,7 +162,7 @@ export default function UserNavClient({
                       onClick={() => sidebar.handleBehaviorChange('expanded')}
                       disabled={sidebar.behavior === 'expanded'}
                     >
-                      <PanelLeftOpen className="h-4 w-4" />
+                      <PanelLeftOpen className="h-4 w-4 text-dynamic-purple" />
                       <span>{t('common.expanded')}</span>
                       {sidebar.behavior === 'expanded' && (
                         <Check className="ml-auto h-4 w-4" />
@@ -169,7 +172,7 @@ export default function UserNavClient({
                       onClick={() => sidebar.handleBehaviorChange('collapsed')}
                       disabled={sidebar.behavior === 'collapsed'}
                     >
-                      <PanelLeftClose className="h-4 w-4" />
+                      <PanelLeftClose className="h-4 w-4 text-dynamic-purple" />
                       <span>{t('common.collapsed')}</span>
                       {sidebar.behavior === 'collapsed' && (
                         <Check className="ml-auto h-4 w-4" />
@@ -179,7 +182,7 @@ export default function UserNavClient({
                       onClick={() => sidebar.handleBehaviorChange('hover')}
                       disabled={sidebar.behavior === 'hover'}
                     >
-                      <SquareMousePointer className="h-4 w-4" />
+                      <SquareMousePointer className="h-4 w-4 text-dynamic-purple" />
                       <span>{t('common.expand_on_hover')}</span>
                       {sidebar.behavior === 'hover' && (
                         <Check className="ml-auto h-4 w-4" />
@@ -191,18 +194,7 @@ export default function UserNavClient({
             )}
             <DropdownMenuSub>
               <DropdownMenuSubTrigger>
-                <Palette className="h-4 w-4" />
-                <span>{t('common.theme')}</span>
-              </DropdownMenuSubTrigger>
-              <DropdownMenuPortal>
-                <DropdownMenuSubContent sideOffset={4}>
-                  <ThemeDropdownItems />
-                </DropdownMenuSubContent>
-              </DropdownMenuPortal>
-            </DropdownMenuSub>
-            <DropdownMenuSub>
-              <DropdownMenuSubTrigger>
-                <Globe className="h-4 w-4" />
+                <Globe className="h-4 w-4 text-dynamic-indigo" />
                 <span>{t('common.language')}</span>
               </DropdownMenuSubTrigger>
               <DropdownMenuPortal>
@@ -222,6 +214,18 @@ export default function UserNavClient({
                 </DropdownMenuSubContent>
               </DropdownMenuPortal>
             </DropdownMenuSub>
+            <DropdownMenuSub>
+              <DropdownMenuSubTrigger>
+                <Palette className="h-4 w-4 text-dynamic-cyan" />
+                <span>{t('common.theme')}</span>
+              </DropdownMenuSubTrigger>
+              <DropdownMenuPortal>
+                <DropdownMenuSubContent sideOffset={4}>
+                  <ThemeDropdownItems />
+                </DropdownMenuSubContent>
+              </DropdownMenuPortal>
+            </DropdownMenuSub>
+            <ReportProblemMenuItem />
             <DropdownMenuItem
               className="cursor-pointer"
               onClick={() => setOpen(true)}
@@ -229,7 +233,6 @@ export default function UserNavClient({
               <Settings className="h-4 w-4" />
               <span>{t('common.settings')}</span>
             </DropdownMenuItem>
-            <ReportProblemMenuItem />
           </DropdownMenuGroup>
           <InviteMembersMenuItem />
           <DropdownMenuSeparator />

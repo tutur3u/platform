@@ -62,9 +62,9 @@ export function ThemeDropdownItems() {
         disabled={primaryTheme === 'light'}
       >
         {primaryTheme === 'light' ? (
-          <Check className="h-4 w-4" />
+          <Check className="h-4 w-4 text-dynamic-yellow" />
         ) : (
-          <Sun className="h-4 w-4" />
+          <Sun className="h-4 w-4 text-dynamic-yellow" />
         )}
 
         {t('light')}
@@ -76,9 +76,9 @@ export function ThemeDropdownItems() {
         disabled={primaryTheme === 'dark'}
       >
         {primaryTheme === 'dark' ? (
-          <Check className="h-4 w-4" />
+          <Check className="h-4 w-4 text-dynamic-purple" />
         ) : (
-          <Moon className="h-4 w-4" />
+          <Moon className="h-4 w-4 text-dynamic-purple" />
         )}
 
         {t('dark')}

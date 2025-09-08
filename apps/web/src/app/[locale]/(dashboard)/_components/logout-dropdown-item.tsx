@@ -18,7 +18,7 @@ export function LogoutDropdownItem() {
 
   return (
     <DropdownMenuItem onClick={logout} className="cursor-pointer">
-      <LogOut className="h-4 w-4" />
+      <LogOut className="h-4 w-4 text-dynamic-red" />
       <span>{t('logout')}</span>
     </DropdownMenuItem>
   );

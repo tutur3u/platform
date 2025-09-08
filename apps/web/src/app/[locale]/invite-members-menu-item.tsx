@@ -24,13 +24,13 @@ export default function InviteMembersMenuItem() {
       <DropdownMenuGroup>
         {pathname === `/${wsId}/members` ? (
           <DropdownMenuItem disabled>
-            <UserPlus className="h-4 w-4" />
+            <UserPlus className="h-4 w-4 text-dynamic-sky" />
             <span>{t('invite_users')}</span>
           </DropdownMenuItem>
         ) : (
           <Link href={`/${wsId}/members`}>
             <DropdownMenuItem className="cursor-pointer">
-              <UserPlus className="h-4 w-4" />
+              <UserPlus className="h-4 w-4 text-dynamic-sky" />
               <span>{t('invite_users')}</span>
             </DropdownMenuItem>
           </Link>

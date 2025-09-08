@@ -26,7 +26,7 @@ export default function DashboardMenuItem() {
       <DropdownMenuGroup>
         <Link href={`/${defaultWorkspace?.id || 'onboarding'}`}>
           <DropdownMenuItem className="cursor-pointer">
-            <ActivitySquare className="h-4 w-4" />
+            <ActivitySquare className="h-4 w-4 text-dynamic-green" />
             <span>{t('dashboard')}</span>
           </DropdownMenuItem>
         </Link>
@@ -36,7 +36,7 @@ export default function DashboardMenuItem() {
             target="_blank"
           >
             <DropdownMenuItem className="cursor-pointer">
-              <Database className="h-4 w-4" />
+              <Database className="h-4 w-4 text-dynamic-yellow" />
               <span>{t('local_database')}</span>
             </DropdownMenuItem>
           </Link>

@@ -17,13 +17,13 @@ export default function MeetTogetherMenuItem() {
     <DropdownMenuGroup>
       {pathname === `/meet-together` ? (
         <DropdownMenuItem disabled>
-          <CalendarClock className="h-4 w-4" />
+          <CalendarClock className="h-4 w-4 text-dynamic-pink" />
           <span>{t('meet-together')}</span>
         </DropdownMenuItem>
       ) : (
         <Link href="/meet-together">
           <DropdownMenuItem className="cursor-pointer">
-            <CalendarClock className="h-4 w-4" />
+            <CalendarClock className="h-4 w-4 text-dynamic-pink" />
             <span>{t('meet-together')}</span>
           </DropdownMenuItem>
         </Link>
