@@ -45,7 +45,7 @@ import { Separator } from '@tuturuuu/ui/separator';
 import { cn } from '@tuturuuu/utils/format';
 import { useRouter } from 'next/navigation';
 import { useMemo, useState } from 'react';
-import type { ViewType } from 'src/components/ui/tu-do/shared/board-views';
+import type { ViewType } from './board-views';
 
 interface Props {
   board: TaskBoard & { tasks: Task[]; lists: TaskList[] };

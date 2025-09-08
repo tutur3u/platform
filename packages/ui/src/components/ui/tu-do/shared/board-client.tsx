@@ -13,7 +13,7 @@ import {
 } from '@tuturuuu/utils/task-helper';
 import { useParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { BoardViews } from 'src/components/ui/tu-do/shared/board-views';
+import { BoardViews } from './board-views';
 
 interface Props {
   workspace: Workspace;

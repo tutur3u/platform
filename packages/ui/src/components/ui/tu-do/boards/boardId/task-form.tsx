@@ -29,7 +29,7 @@ import { createTask } from '@tuturuuu/utils/task-helper';
 import { format } from 'date-fns';
 import { useParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { TaskTagInput } from 'src/components/ui/tu-do/shared/task-tag-input';
+import { TaskTagInput } from '../../shared/task-tag-input';
 
 interface Props {
   listId: string;

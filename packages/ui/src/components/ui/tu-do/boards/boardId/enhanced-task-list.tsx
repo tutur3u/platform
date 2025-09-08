@@ -35,8 +35,8 @@ import { Input } from '@tuturuuu/ui/input';
 import { cn } from '@tuturuuu/utils/format';
 import { useState } from 'react';
 import { toast } from 'sonner';
-import { TaskCard } from 'src/components/ui/tu-do/boards/boardId/task';
-import { TaskForm } from 'src/components/ui/tu-do/boards/boardId/task-form';
+import { TaskCard } from './task';
+import { TaskForm } from './task-form';
 
 interface Props {
   list: TaskList;

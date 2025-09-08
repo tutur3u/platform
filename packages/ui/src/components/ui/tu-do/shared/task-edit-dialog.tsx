@@ -41,7 +41,7 @@ import {
 import { format } from 'date-fns';
 import { useParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { TaskTagInput } from 'src/components/ui/tu-do/shared/task-tag-input';
+import { TaskTagInput } from './task-tag-input';
 
 interface TaskEditDialogProps {
   task: Task;
@@ -204,7 +204,6 @@ export function TaskEditDialog({
           <div className="space-y-2">
             <Label htmlFor="task-name">Task Name</Label>
             <Input
-              id="task-name"
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="Enter task name"
@@ -262,7 +261,6 @@ export function TaskEditDialog({
           <div className="space-y-2">
             <Label htmlFor="task-description">Description</Label>
             <Textarea
-              id="task-description"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Add a description..."

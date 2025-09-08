@@ -6,7 +6,7 @@ import {
 } from '@tuturuuu/utils/task-helper';
 import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import { notFound, redirect } from 'next/navigation';
-import { BoardClient } from 'src/components/ui/tu-do/shared/board-client';
+import { BoardClient } from '../../shared/board-client';
 
 interface Props {
   wsId: string;

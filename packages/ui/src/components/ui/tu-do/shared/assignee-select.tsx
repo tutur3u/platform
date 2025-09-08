@@ -280,19 +280,14 @@ export function AssigneeSelect({ taskId, assignees = [], onUpdate }: Props) {
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <Button
-          variant="ghost"
+          variant="link"
           aria-expanded={open}
           disabled={isLoading}
-          className={cn(
-            'h-6 justify-start px-0.5 py-0.5 text-[10px] transition-all duration-200',
-            'hover:bg-gray-100 dark:hover:bg-gray-800',
-            'border border-transparent hover:border-gray-300 dark:hover:border-gray-600',
-            'min-w-0 rounded-lg'
-          )}
+          size="xs"
         >
           {uniqueAssignees.length > 0 ? (
-            <div className="flex min-w-0 items-center gap-x-0.5">
-              <div className="flex items-center gap-x-0.5">
+            <div className="flex min-w-0 items-center gap-1">
+              <div className="flex items-center gap-1">
                 {uniqueAssignees.slice(0, 2).map((assignee) => (
                   <div
                     key={assignee.id}
@@ -337,29 +332,20 @@ export function AssigneeSelect({ taskId, assignees = [], onUpdate }: Props) {
               <span className="truncate text-[10px] text-gray-600 dark:text-gray-400">
                 {uniqueAssignees.length === 1
                   ? uniqueAssignees[0]?.display_name ||
-                  uniqueAssignees[0]?.email?.split('@')[0] ||
-                  'User'
+                    uniqueAssignees[0]?.email?.split('@')[0] ||
+                    'User'
                   : `${uniqueAssignees.length} assigned`}
               </span>
             </div>
           ) : (
-            <div className="flex items-center gap-x-0.5 text-gray-500 dark:text-gray-400">
+            <div className="flex items-center gap-1 text-gray-500 dark:text-gray-400">
               <Users className="h-3 w-3" />
               <span className="text-[10px]">Assign</span>
             </div>
           )}
           {isLoading ? (
             <Loader2 className="ml-1 h-2 w-2 animate-spin text-gray-500" />
-          ) : (
-            (open || uniqueAssignees.length !== 1) && (
-              <ChevronsUpDown
-                className={cn(
-                  'ml-1 h-2 w-2 shrink-0 opacity-50 transition-all duration-200',
-                  'group-hover:opacity-100'
-                )}
-              />
-            )
-          )}
+          ) : undefined}
         </Button>
       </PopoverTrigger>
       <PopoverContent
@@ -475,12 +461,6 @@ export function AssigneeSelect({ taskId, assignees = [], onUpdate }: Props) {
                             </Badge>
                           </div>
                         )}
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <div className="h-2 w-2 rounded-full bg-gray-300 dark:bg-gray-600"></div>
-                        <span className="text-gray-500 text-xs dark:text-gray-400">
-                          Available
-                        </span>
                       </div>
                     </CommandItem>
                   ))}

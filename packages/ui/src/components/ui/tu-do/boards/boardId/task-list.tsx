@@ -45,11 +45,11 @@ import React, {
   useRef,
   useState,
 } from 'react';
-import { ListActions } from 'src/components/ui/tu-do/boards/boardId/list-actions';
-import { TaskCard } from 'src/components/ui/tu-do/boards/boardId/task';
-import { TaskForm } from 'src/components/ui/tu-do/boards/boardId/task-form';
-import { TaskTagInput } from 'src/components/ui/tu-do/shared/task-tag-input';
+import { TaskTagInput } from '../../shared/task-tag-input';
+import { ListActions } from './list-actions';
 import { statusIcons } from './status-section';
+import { TaskCard } from './task';
+import { TaskForm } from './task-form';
 
 interface Props {
   column: TaskList;

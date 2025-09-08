@@ -27,7 +27,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
-import { TaskBoardForm } from 'src/components/ui/tu-do/boards/form';
+import { TaskBoardForm } from './form';
 
 interface ProjectRowActionsProps {
   row: Row<EnhancedTaskBoard>;

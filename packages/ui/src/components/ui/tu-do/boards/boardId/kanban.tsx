@@ -29,9 +29,9 @@ import { coordinateGetter } from '@tuturuuu/utils/keyboard-preset';
 import { getTaskLists, useMoveTask } from '@tuturuuu/utils/task-helper';
 import { hasDraggableData } from '@tuturuuu/utils/task-helpers';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { LightweightTaskCard } from 'src/components/ui/tu-do/boards/boardId/task';
-import { BoardColumn } from 'src/components/ui/tu-do/boards/boardId/task-list';
-import { TaskListForm } from 'src/components/ui/tu-do/boards/boardId/task-list-form';
+import { LightweightTaskCard } from './task';
+import { BoardColumn } from './task-list';
+import { TaskListForm } from './task-list-form';
 
 // Wrapper for BoardContainer with horizontal scroll functionality
 function ScrollableBoardContainer({

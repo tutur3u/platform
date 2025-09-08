@@ -40,7 +40,7 @@ import { cn } from '@tuturuuu/utils/format';
 import { useDeleteTask, useUpdateTask } from '@tuturuuu/utils/task-helper';
 import { addDays, format, isBefore, isToday, startOfToday } from 'date-fns';
 import { useCallback, useEffect, useId, useState } from 'react';
-import { TaskTagInput } from 'src/components/ui/tu-do/shared/task-tag-input';
+import { TaskTagInput } from '../../shared/task-tag-input';
 
 // Extract to a utility function for better performance and reusability
 const transformTaskData = (data: any): Task => {

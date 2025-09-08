@@ -95,7 +95,7 @@ import {
 } from 'date-fns';
 import { useParams } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
-import { TaskEditDialog } from 'src/components/ui/tu-do/shared/task-edit-dialog';
+import { TaskEditDialog } from './task-edit-dialog';
 
 interface Props {
   board: { id: string; tasks: Task[]; lists?: TaskList[] };

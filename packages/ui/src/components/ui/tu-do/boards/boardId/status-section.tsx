@@ -15,8 +15,8 @@ import {
 } from '@tuturuuu/ui/icons';
 import { cn } from '@tuturuuu/utils/format';
 import { useState } from 'react';
-import { EnhancedTaskList } from 'src/components/ui/tu-do/boards/boardId/enhanced-task-list';
-import { TaskListForm } from 'src/components/ui/tu-do/boards/boardId/task-list-form';
+import { EnhancedTaskList } from './enhanced-task-list';
+import { TaskListForm } from './task-list-form';
 
 interface Props {
   status: TaskBoardStatus;

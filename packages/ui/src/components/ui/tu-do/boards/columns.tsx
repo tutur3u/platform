@@ -6,7 +6,7 @@ import { Badge } from '@tuturuuu/ui/badge';
 import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
 import moment from 'moment';
 import Link from 'next/link';
-import { ProjectRowActions } from 'src/components/ui/tu-do/boards/row-actions';
+import { ProjectRowActions } from './row-actions';
 
 export const projectColumns = (
   t: (key: string) => string,

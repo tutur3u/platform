@@ -47,16 +47,14 @@ import {
   SelectValue,
 } from '@tuturuuu/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
-// Import helper functions
 import { getFilteredMetrics } from '@tuturuuu/utils/task-helpers';
 import { useRouter } from 'next/navigation';
 import { useCallback, useMemo, useState } from 'react';
-// Import new components
-import { GanttChart } from 'src/components/ui/tu-do/shared/GanttChart';
-import { StatusDistribution } from 'src/components/ui/tu-do/shared/StatusDistribution';
-import { TaskCreationAnalytics } from 'src/components/ui/tu-do/shared/TaskCreationAnalytics';
-import { TaskGroup } from 'src/components/ui/tu-do/shared/TaskGroup';
-import { TaskWorkflowAnalytics } from 'src/components/ui/tu-do/shared/TaskWorkflowAnalytics';
+import { GanttChart } from '../shared/GanttChart';
+import { StatusDistribution } from '../shared/StatusDistribution';
+import { TaskCreationAnalytics } from '../shared/TaskCreationAnalytics';
+import { TaskGroup } from '../shared/TaskGroup';
+import { TaskWorkflowAnalytics } from '../shared/TaskWorkflowAnalytics';
 import { projectColumns } from './columns';
 
 interface AnalyticsFilters {
@@ -713,7 +711,6 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
                   Search
                 </label>
                 <input
-                  id="board-search"
                   type="text"
                   placeholder="Search boards..."
                   value={searchQuery}
@@ -726,7 +723,6 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
                   Status
                 </label>
                 <select
-                  id="board-status"
                   value={taskModal.filterType || 'all'}
                   onChange={(e) =>
                     setTaskModal({
@@ -746,7 +742,6 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
                   Sort By
                 </label>
                 <select
-                  id="board-sort"
                   value={sortBy}
                   onChange={(e) => setSortBy(e.target.value)}
                   className="mt-1 w-full rounded-md border bg-background px-3 py-2 text-sm"

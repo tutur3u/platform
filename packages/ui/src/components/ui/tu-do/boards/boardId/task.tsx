@@ -71,10 +71,10 @@ import {
   isYesterday,
 } from 'date-fns';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { TaskActions } from 'src/components/ui/tu-do/boards/boardId/task-actions';
-import { AssigneeSelect } from 'src/components/ui/tu-do/shared/assignee-select';
-import { TaskEditDialog } from 'src/components/ui/tu-do/shared/task-edit-dialog';
-import { TaskTagsDisplay } from 'src/components/ui/tu-do/shared/task-tags-display';
+import { AssigneeSelect } from '../../shared/assignee-select';
+import { TaskEditDialog } from '../../shared/task-edit-dialog';
+import { TaskTagsDisplay } from '../../shared/task-tags-display';
+import { TaskActions } from './task-actions';
 
 interface Props {
   task: Task;
@@ -848,7 +848,9 @@ export const TaskCard = React.memo(function TaskCard({
                   {/* Priority Actions */}
                   <DropdownMenuSub>
                     <DropdownMenuSubTrigger>
-                      <Flag className="h-4 w-4" />
+                      <div className="h-4 w-4">
+                        <Flag className="h-4 w-4" />
+                      </div>
                       <div className="flex w-full items-center justify-between">
                         <span>Priority</span>
                         <span className="ml-auto text-muted-foreground text-xs">
@@ -971,7 +973,9 @@ export const TaskCard = React.memo(function TaskCard({
                   {availableLists.length > 1 && (
                     <DropdownMenuSub>
                       <DropdownMenuSubTrigger>
-                        <Move className="h-4 w-4" />
+                        <div className="h-4 w-4">
+                          <Move className="h-4 w-4" />
+                        </div>
                         <div className="flex w-full items-center justify-between">
                           <span>Move</span>
                         </div>

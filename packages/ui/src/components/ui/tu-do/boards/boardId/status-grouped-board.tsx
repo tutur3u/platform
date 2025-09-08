@@ -27,9 +27,9 @@ import { cn } from '@tuturuuu/utils/format';
 import { useMoveTask } from '@tuturuuu/utils/task-helper';
 import { useState } from 'react';
 import { toast } from 'sonner';
-import { EnhancedTaskList } from 'src/components/ui/tu-do/boards/boardId/enhanced-task-list';
-import { StatusSection } from 'src/components/ui/tu-do/boards/boardId/status-section';
-import { TaskCard } from 'src/components/ui/tu-do/boards/boardId/task';
+import { EnhancedTaskList } from './enhanced-task-list';
+import { StatusSection } from './status-section';
+import { TaskCard } from './task';
 
 interface Props {
   lists: TaskList[];

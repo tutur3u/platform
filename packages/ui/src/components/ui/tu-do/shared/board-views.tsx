@@ -6,11 +6,11 @@ import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskBoard } from '@tuturuuu/types/primitives/TaskBoard';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import { useMemo, useState } from 'react';
-import { KanbanBoard } from 'src/components/ui/tu-do/boards/boardId/kanban';
-import { StatusGroupedBoard } from 'src/components/ui/tu-do/boards/boardId/status-grouped-board';
-import { BoardHeader } from 'src/components/ui/tu-do/shared/board-header';
-import { BoardSummary } from 'src/components/ui/tu-do/shared/board-summary';
-import { ListView } from 'src/components/ui/tu-do/shared/list-view';
+import { KanbanBoard } from '../boards/boardId/kanban';
+import { StatusGroupedBoard } from '../boards/boardId/status-grouped-board';
+import { BoardHeader } from '../shared/board-header';
+import { BoardSummary } from '../shared/board-summary';
+import { ListView } from '../shared/list-view';
 
 export type ViewType = 'kanban' | 'status-grouped' | 'list';
 
