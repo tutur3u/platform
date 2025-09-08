@@ -34,6 +34,7 @@ import {
   Calendar,
   CalendarDays,
   CalendarPlus,
+  Check,
   CheckCircle2,
   Clock,
   Edit3,
@@ -41,7 +42,6 @@ import {
   GripVertical,
   Loader2,
   MoreHorizontal,
-  Sparkles,
   Trash2,
   UserMinus,
   Users,
@@ -810,7 +810,16 @@ export const TaskCard = React.memo(function TaskCard({
                   <DropdownMenuSub>
                     <DropdownMenuSubTrigger>
                       <Flag className="h-4 w-4" />
-                      Priority
+                      <div className='flex w-full items-center justify-between'>
+                        <span>Priority</span>
+                        <span className="ml-auto text-muted-foreground text-xs">
+                          {task.priority === 'critical' && 'Urgent'}
+                          {task.priority === 'high' && 'High'}
+                          {task.priority === 'normal' && 'Medium'}
+                          {task.priority === 'low' && 'Low'}
+                          {!task.priority && 'None'}
+                        </span>
+                      </div>
                     </DropdownMenuSubTrigger>
                     <DropdownMenuSubContent>
                       <DropdownMenuItem
@@ -818,40 +827,84 @@ export const TaskCard = React.memo(function TaskCard({
                           handlePriorityChange('critical');
                           setMenuOpen(false);
                         }}
-                        className="cursor-pointer"
+                        className={cn(
+                          'cursor-pointer',
+                          task.priority === 'critical' &&
+                          'bg-dynamic-red/10 text-dynamic-red'
+                        )}
                       >
-                        <Flag className="h-4 w-4 text-dynamic-red/80" />
-                        Urgent Priority
+                        <div className='flex w-full items-center justify-between'>
+                          <div className="flex items-center gap-2">
+                            <Flag className="h-4 w-4 text-dynamic-red/80" />
+                            Urgent Priority
+                          </div>
+                          {task.priority === 'critical' && (
+                            <Check className="h-4 w-4 text-dynamic-red" />
+                          )}
+                        </div>
                       </DropdownMenuItem>
                       <DropdownMenuItem
                         onClick={() => {
                           handlePriorityChange('high');
                           setMenuOpen(false);
                         }}
-                        className="cursor-pointer"
+                        className={cn(
+                          'cursor-pointer',
+                          task.priority === 'high' &&
+                          'bg-dynamic-orange/10 text-dynamic-orange'
+                        )}
                       >
-                        <Flag className="h-4 w-4 text-dynamic-orange/80" />
-                        High Priority
+                        <div className='flex w-full items-center justify-between'>
+                          <div className="flex items-center gap-2">
+                            <Flag className="h-4 w-4 text-dynamic-orange/80" />
+                            High Priority
+                          </div>
+                          {task.priority === 'high' && (
+                            <Check className="h-4 w-4 text-dynamic-orange" />
+                          )}
+                        </div>
                       </DropdownMenuItem>
                       <DropdownMenuItem
                         onClick={() => {
                           handlePriorityChange('normal');
                           setMenuOpen(false);
                         }}
-                        className="cursor-pointer"
+                        className={cn(
+                          'cursor-pointer',
+                          task.priority === 'normal' &&
+                          'bg-dynamic-yellow/10 text-dynamic-yellow'
+                        )}
                       >
-                        <Flag className="h-4 w-4 text-dynamic-yellow/80" />
-                        Medium Priority
+                        <div className='flex w-full items-center justify-between'>
+                          <div className="flex items-center gap-2">
+                            <Flag className="h-4 w-4 text-dynamic-yellow/80" />
+                            Medium Priority
+                          </div>
+                          {task.priority === 'normal' && (
+                            <Check className="h-4 w-4 text-dynamic-yellow" />
+                          )}
+                        </div>
                       </DropdownMenuItem>
                       <DropdownMenuItem
                         onClick={() => {
                           handlePriorityChange('low');
                           setMenuOpen(false);
                         }}
-                        className="cursor-pointer"
+                        className={cn(
+                          'cursor-pointer',
+                          task.priority === 'low' &&
+                          'bg-dynamic-blue/10 text-dynamic-blue'
+                        )}
                       >
-                        <Flag className="h-4 w-4 text-dynamic-blue/80" />
-                        Low Priority
+                        <div className='flex w-full items-center justify-between'>
+                          <div className="flex items-center gap-2">
+                            <Flag className="h-4 w-4 text-dynamic-blue/80" />
+                            Low Priority
+                          </div>
+                          {task.priority === 'low' && (
+                            <Check className="h-4 w-4 text-dynamic-blue" />
+                          )}
+                        </div>
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem
@@ -859,10 +912,18 @@ export const TaskCard = React.memo(function TaskCard({
                           handlePriorityChange(null);
                           setMenuOpen(false);
                         }}
-                        className="cursor-pointer text-muted-foreground"
+                        className={cn(
+                          'cursor-pointer text-muted-foreground',
+                          !task.priority && 'bg-muted/50'
+                        )}
                       >
-                        <X className="h-4 w-4" />
-                        Remove Priority
+                        <div className='flex w-full items-center justify-between'>
+                          <div className="flex items-center gap-2">
+                            <X className="h-4 w-4" />
+                            No Priority
+                          </div>
+                          {!task.priority && <Check className="h-4 w-4" />}
+                        </div>
                       </DropdownMenuItem>
                     </DropdownMenuSubContent>
                   </DropdownMenuSub>
