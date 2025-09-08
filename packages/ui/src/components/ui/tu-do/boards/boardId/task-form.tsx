@@ -2,7 +2,6 @@ import { useQuery } from '@tanstack/react-query';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { TaskPriority } from '@tuturuuu/types/primitives/Priority';
 import { Button } from '@tuturuuu/ui/button';
-import { Calendar } from '@tuturuuu/ui/calendar';
 import {
   Card,
   CardContent,
@@ -10,23 +9,14 @@ import {
   CardHeader,
   CardTitle,
 } from '@tuturuuu/ui/card';
+import { DateTimePicker } from '@tuturuuu/ui/date-time-picker';
 import { useToast } from '@tuturuuu/ui/hooks/use-toast';
-import {
-  Calendar as CalendarIcon,
-  Clock,
-  Flag,
-  Plus,
-  Sparkles,
-  Users,
-  X,
-} from '@tuturuuu/ui/icons';
+import { Flag, Plus, Sparkles, Users, X } from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
-import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { cn } from '@tuturuuu/utils/format';
 import { createTask } from '@tuturuuu/utils/task-helper';
-import { format } from 'date-fns';
 import { useParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { TaskTagInput } from '../../shared/task-tag-input';
@@ -88,6 +78,28 @@ export function TaskForm({ listId, onTaskCreated }: Props) {
     setTags([]);
     setIsExpanded(false);
     setIsAdding(false);
+  };
+
+  // Helper function to handle end date with default time
+  const handleEndDateChange = (date: Date | undefined) => {
+    if (date) {
+      const selectedDate = new Date(date);
+
+      // If the selected time is 00:00:00 (midnight), it likely means the user
+      // only selected a date without specifying a time, so default to 11:59 PM
+      if (
+        selectedDate.getHours() === 0 &&
+        selectedDate.getMinutes() === 0 &&
+        selectedDate.getSeconds() === 0 &&
+        selectedDate.getMilliseconds() === 0
+      ) {
+        selectedDate.setHours(23, 59, 59, 999);
+      }
+
+      setEndDate(selectedDate);
+    } else {
+      setEndDate(undefined);
+    }
   };
 
   async function handleSubmit(e: React.FormEvent) {
@@ -363,55 +375,21 @@ export function TaskForm({ listId, onTaskCreated }: Props) {
                 {/* Start Date */}
                 <div className="space-y-2">
                   <Label className="font-medium text-xs">Start Date</Label>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        className={cn(
-                          'h-8 justify-start text-left font-normal text-xs',
-                          !startDate && 'text-muted-foreground'
-                        )}
-                      >
-                        <Clock className="mr-2 h-3 w-3" />
-                        {startDate ? format(startDate, 'MMM dd') : 'Start date'}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar
-                        mode="single"
-                        selected={startDate}
-                        onSelect={setStartDate}
-                        initialFocus
-                      />
-                    </PopoverContent>
-                  </Popover>
+                  <DateTimePicker
+                    date={startDate}
+                    setDate={setStartDate}
+                    showTimeSelect={true}
+                  />
                 </div>
 
                 {/* End Date */}
                 <div className="space-y-2">
                   <Label className="font-medium text-xs">Due Date</Label>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        className={cn(
-                          'h-8 justify-start text-left font-normal text-xs',
-                          !endDate && 'text-muted-foreground'
-                        )}
-                      >
-                        <CalendarIcon className="mr-2 h-3 w-3" />
-                        {endDate ? format(endDate, 'MMM dd') : 'Due date'}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar
-                        mode="single"
-                        selected={endDate}
-                        onSelect={setEndDate}
-                        initialFocus
-                      />
-                    </PopoverContent>
-                  </Popover>
+                  <DateTimePicker
+                    date={endDate}
+                    setDate={handleEndDateChange}
+                    showTimeSelect={true}
+                  />
                 </div>
               </div>
             </div>

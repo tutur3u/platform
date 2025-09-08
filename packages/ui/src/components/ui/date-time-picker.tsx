@@ -11,6 +11,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@tuturuuu/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { cn } from '@tuturuuu/utils/format';
 import { format, parse } from 'date-fns';
 import { CalendarIcon, Check, Clock, Edit } from 'lucide-react';
@@ -134,7 +135,7 @@ export function DateTimePicker({
     const hours = parseInt(hourStr, 10);
     const minutes = parseInt(minuteStr, 10);
 
-    if (isNaN(hours) || isNaN(minutes)) return;
+    if (Number.isNaN(hours) || Number.isNaN(minutes)) return;
 
     const newDate = new Date(selectedDate);
     newDate.setHours(hours);
@@ -167,9 +168,9 @@ export function DateTimePicker({
           const [h, m] = manualTimeInput.split(':').map(Number);
           if (
             typeof h === 'number' &&
-            !isNaN(h) &&
+            !Number.isNaN(h) &&
             typeof m === 'number' &&
-            !isNaN(m)
+            !Number.isNaN(m)
           ) {
             const newDate = new Date(date);
             newDate.setHours(h);
@@ -239,30 +240,161 @@ export function DateTimePicker({
   const noValidTimes = filteredTimeOptions.length === 0;
 
   return (
-    <div className="flex w-full max-w-full flex-col gap-2" ref={popoverRef}>
-      <div className="flex flex-col gap-2 sm:flex-row sm:gap-2">
-        <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
-          <PopoverTrigger asChild>
-            <Button
-              ref={pickerButtonRef}
-              variant="outline"
-              className={cn(
-                'w-full min-w-0 justify-start text-left font-normal',
-                !date && 'text-muted-foreground'
-              )}
-            >
-              <CalendarIcon className="mr-2 h-4 w-4" />
-              {date ? format(date, 'PPP') : <span>Pick a date</span>}
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent
-            className="w-auto max-w-[calc(100vw-2rem)] p-0"
-            align="start"
-            side="bottom"
-            sideOffset={4}
-            avoidCollisions={true}
-            collisionPadding={8}
+    <div className="w-full" ref={popoverRef}>
+      <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
+        <PopoverTrigger asChild>
+          <Button
+            ref={pickerButtonRef}
+            variant="outline"
+            className={cn(
+              'w-full justify-start text-left font-normal',
+              !date && 'text-muted-foreground'
+            )}
           >
+            <CalendarIcon className="mr-2 h-4 w-4" />
+            {date ? (
+              <div className="flex items-center gap-2">
+                <span>{format(date, 'PPP')}</span>
+                {showTimeSelect && (
+                  <>
+                    <span className="text-muted-foreground">•</span>
+                    <span className="text-muted-foreground">
+                      {format(date, 'h:mm a')}
+                    </span>
+                  </>
+                )}
+              </div>
+            ) : (
+              <span>Pick a date{showTimeSelect ? ' and time' : ''}</span>
+            )}
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent
+          className="flex max-h-[85vh] w-auto max-w-[calc(100vw-1rem)] flex-col p-0 sm:max-w-[calc(100vw-2rem)]"
+          align="start"
+          side="bottom"
+          sideOffset={4}
+          avoidCollisions={true}
+          collisionPadding={8}
+        >
+          {showTimeSelect ? (
+            <Tabs defaultValue="date" className="w-full">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="date" className="flex items-center gap-1">
+                  <CalendarIcon className="h-3 w-3" />
+                  Date
+                </TabsTrigger>
+                <TabsTrigger value="time" className="flex items-center gap-1">
+                  <Clock className="h-3 w-3" />
+                  Time
+                </TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="date" className="mt-0 p-0">
+                <Calendar
+                  mode="single"
+                  selected={date}
+                  onSelect={handleSelect}
+                  onSubmit={(date) => {
+                    handleSelect(date);
+                  }}
+                  initialFocus
+                  disabled={
+                    minDate
+                      ? {
+                          before: new Date(
+                            minDate.getFullYear(),
+                            minDate.getMonth(),
+                            minDate.getDate()
+                          ),
+                        }
+                      : undefined
+                  }
+                />
+              </TabsContent>
+
+              <TabsContent value="time" className="mt-0 p-0">
+                {selectedDate && (
+                  <div className="space-y-4 p-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Clock className="h-4 w-4 text-muted-foreground" />
+                        <span className="font-medium text-sm">Select time</span>
+                      </div>
+                      <span className="text-muted-foreground text-xs">
+                        {date ? format(date, 'MMM d, yyyy') : ''}
+                      </span>
+                    </div>
+
+                    {isManualTimeEntry ? (
+                      <div className="flex items-center gap-2">
+                        <Input
+                          value={manualTimeInput}
+                          onChange={(e) => setManualTimeInput(e.target.value)}
+                          onKeyDown={handleManualTimeKeyDown}
+                          placeholder="HH:MM"
+                          className="flex-1"
+                        />
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => handleManualTimeSubmit()}
+                        >
+                          <Check className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-2">
+                        <Select
+                          value={
+                            noValidTimes
+                              ? undefined
+                              : date
+                                ? `${format(date, 'HH')}:${format(date, 'mm')}`
+                                : undefined
+                          }
+                          onValueChange={handleTimeChange}
+                          disabled={noValidTimes}
+                        >
+                          <SelectTrigger className="flex-1">
+                            <SelectValue
+                              placeholder={
+                                noValidTimes
+                                  ? 'Invalid time selection'
+                                  : 'Select time'
+                              }
+                            />
+                          </SelectTrigger>
+                          <SelectContent className="max-h-[200px]">
+                            {filteredTimeOptions.map((time) => (
+                              <SelectItem key={time.value} value={time.value}>
+                                {time.display}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => setIsManualTimeEntry(true)}
+                          title="Enter time manually"
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    )}
+
+                    {noValidTimes && (
+                      <div className="text-destructive text-xs">
+                        No valid end times available. Please select an earlier
+                        start time or check your time selection.
+                      </div>
+                    )}
+                  </div>
+                )}
+              </TabsContent>
+            </Tabs>
+          ) : (
             <Calendar
               mode="single"
               selected={date}
@@ -284,86 +416,9 @@ export function DateTimePicker({
                   : undefined
               }
             />
-          </PopoverContent>
-        </Popover>
-
-        {showTimeSelect && (
-          <div className="flex w-full min-w-0 items-center gap-2 sm:w-auto">
-            <Clock className="h-4 w-4 shrink-0 text-muted-foreground" />
-
-            {isManualTimeEntry ? (
-              <div className="flex min-w-0 flex-1 items-center gap-1">
-                <Input
-                  value={manualTimeInput}
-                  onChange={(e) => setManualTimeInput(e.target.value)}
-                  onKeyDown={handleManualTimeKeyDown}
-                  placeholder="HH:MM"
-                  className="w-[90px] min-w-[90px]"
-                />
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  onClick={() => handleManualTimeSubmit()}
-                  className="h-8 w-8 shrink-0"
-                >
-                  <Check className="h-4 w-4" />
-                </Button>
-              </div>
-            ) : (
-              <div className="flex min-w-0 flex-1 items-center gap-1">
-                <Select
-                  value={
-                    noValidTimes
-                      ? undefined
-                      : date
-                        ? `${format(date, 'HH')}:${format(date, 'mm')}`
-                        : undefined
-                  }
-                  onValueChange={handleTimeChange}
-                  disabled={noValidTimes}
-                >
-                  <SelectTrigger className="w-[110px] min-w-0">
-                    <SelectValue
-                      placeholder={
-                        noValidTimes ? 'Invalid time selection' : 'Select time'
-                      }
-                    />
-                  </SelectTrigger>
-                  <SelectContent
-                    className="max-h-[300px] w-[var(--radix-select-trigger-width)] max-w-[calc(100vw-2rem)]"
-                    position="popper"
-                    side="bottom"
-                    sideOffset={4}
-                    avoidCollisions={true}
-                    collisionPadding={8}
-                  >
-                    {filteredTimeOptions.map((time) => (
-                      <SelectItem key={time.value} value={time.value}>
-                        {time.display}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                {noValidTimes && (
-                  <div className="mt-1 break-words text-destructive text-xs">
-                    No valid end times available. Please select an earlier start
-                    time or check your time selection.
-                  </div>
-                )}
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  onClick={() => setIsManualTimeEntry(true)}
-                  className="h-8 w-8 shrink-0"
-                  title="Enter time manually"
-                >
-                  <Edit className="h-3.5 w-3.5" />
-                </Button>
-              </div>
-            )}
-          </div>
-        )}
-      </div>
+          )}
+        </PopoverContent>
+      </Popover>
     </div>
   );
 }

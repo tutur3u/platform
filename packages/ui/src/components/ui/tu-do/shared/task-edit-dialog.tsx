@@ -6,7 +6,7 @@ import type { TaskPriority } from '@tuturuuu/types/primitives/Priority';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import { Button } from '@tuturuuu/ui/button';
-import { Calendar } from '@tuturuuu/ui/calendar';
+import { DateTimePicker } from '@tuturuuu/ui/date-time-picker';
 import {
   Dialog,
   DialogContent,
@@ -22,23 +22,16 @@ import {
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
 import { useToast } from '@tuturuuu/ui/hooks/use-toast';
-import {
-  Calendar as CalendarIcon,
-  Clock,
-  Flag,
-  Loader2,
-  Users,
-} from '@tuturuuu/ui/icons';
+import { Clock, Flag, Loader2, Users } from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
-import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { cn } from '@tuturuuu/utils/format';
 import {
   invalidateTaskCaches,
   useUpdateTask,
 } from '@tuturuuu/utils/task-helper';
-import { format } from 'date-fns';
+import { addDays } from 'date-fns';
 import { useParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { TaskTagInput } from './task-tag-input';
@@ -113,6 +106,80 @@ export function TaskEditDialog({
       setSelectedListId(task.list_id);
     }
   }, [task]);
+
+  // Helper function to handle end date with default time
+  const handleEndDateChange = (date: Date | undefined) => {
+    if (date) {
+      const selectedDate = new Date(date);
+
+      // If the selected time is 00:00:00 (midnight), it likely means the user
+      // only selected a date without specifying a time, so default to 11:59 PM
+      if (
+        selectedDate.getHours() === 0 &&
+        selectedDate.getMinutes() === 0 &&
+        selectedDate.getSeconds() === 0 &&
+        selectedDate.getMilliseconds() === 0
+      ) {
+        selectedDate.setHours(23, 59, 59, 999);
+      }
+
+      setEndDate(selectedDate);
+    } else {
+      setEndDate(undefined);
+    }
+  };
+
+  // Handle quick due date assignment with auto-close
+  const handleQuickDueDate = async (days: number | null) => {
+    let newDate: Date | undefined;
+
+    if (days !== null) {
+      const targetDate = addDays(new Date(), days);
+      // Set time to 11:59 PM for quick date selections
+      targetDate.setHours(23, 59, 59, 999);
+      newDate = targetDate;
+    }
+
+    setEndDate(newDate);
+
+    // Auto-save and close dialog
+    setIsLoading(true);
+
+    const taskUpdates: Partial<Task> = {
+      end_date: newDate?.toISOString(),
+    };
+
+    updateTaskMutation.mutate(
+      {
+        taskId: task.id,
+        updates: taskUpdates,
+      },
+      {
+        onSuccess: () => {
+          invalidateTaskCaches(queryClient, boardId);
+          toast({
+            title: 'Due date updated',
+            description: newDate
+              ? `Due date set to ${newDate.toLocaleDateString()}`
+              : 'Due date removed',
+          });
+          onUpdate();
+          onClose();
+        },
+        onError: (error) => {
+          console.error('Error updating due date:', error);
+          toast({
+            title: 'Error updating due date',
+            description: error.message || 'Please try again later',
+            variant: 'destructive',
+          });
+        },
+        onSettled: () => {
+          setIsLoading(false);
+        },
+      }
+    );
+  };
 
   const handleSave = async () => {
     if (!name.trim()) return;
@@ -191,191 +258,222 @@ export function TaskEditDialog({
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-[600px]">
-        <DialogHeader>
+      <DialogContent className="flex max-h-[85vh] flex-col gap-0 p-0 sm:max-w-[650px]">
+        <DialogHeader className="px-6 pt-6 pb-4">
           <DialogTitle>Edit Task</DialogTitle>
           <DialogDescription>
             Update task details, tags, and assignments.
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-6">
-          {/* Task Name */}
-          <div className="space-y-2">
-            <Label htmlFor="task-name">Task Name</Label>
-            <Input
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Enter task name"
-            />
-          </div>
-
-          {/* Priority Selection */}
-          <div className="space-y-2">
-            <Label>Priority</Label>
-            <div
-              className="flex flex-wrap gap-2"
-              role="radiogroup"
-              aria-label="Task priority selection"
-            >
-              {[
-                { value: 'critical', label: 'Urgent', icon: Flag },
-                { value: 'high', label: 'High', icon: Flag },
-                { value: 'normal', label: 'Medium', icon: Flag },
-                { value: 'low', label: 'Low', icon: Flag },
-              ].map(({ value, label, icon: Icon }) => (
-                <Button
-                  key={value}
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  className={cn(
-                    'h-8 px-3 text-xs transition-all duration-200',
-                    priority === value && getPriorityColor(value)
-                  )}
-                  onClick={() => setPriority(value as TaskPriority)}
-                  role="radio"
-                  aria-checked={priority === value}
-                  aria-label={`Priority: ${label}`}
-                >
-                  {Icon && <Icon className="mr-1 h-3 w-3" />}
-                  {label}
-                </Button>
-              ))}
-            </div>
-          </div>
-
-          {/* Tags */}
-          <div className="space-y-2">
-            <Label>Tags</Label>
-            <TaskTagInput
-              value={tags}
-              onChange={setTags}
-              boardId={boardId}
-              placeholder="Add tags..."
-              maxTags={10}
-            />
-          </div>
-
-          {/* Description */}
-          <div className="space-y-2">
-            <Label htmlFor="task-description">Description</Label>
-            <Textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Add a description..."
-              className="min-h-[80px]"
-            />
-          </div>
-
-          {/* List Selection */}
-          <div className="space-y-2">
-            <Label>Move to List</Label>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" className="w-full justify-start">
-                  {availableLists.find((list) => list.id === selectedListId)
-                    ?.name || 'Select list'}
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent className="w-full">
-                {availableLists.map((list) => (
-                  <DropdownMenuItem
-                    key={list.id}
-                    onClick={() => setSelectedListId(list.id)}
-                    className={cn(
-                      'cursor-pointer',
-                      selectedListId === list.id && 'bg-accent'
-                    )}
-                  >
-                    {list.name}
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-
-          {/* Dates */}
-          <div className="grid grid-cols-2 gap-4">
-            {/* Start Date */}
+        <div className="flex-1 overflow-y-auto px-6 pb-4">
+          <div className="space-y-4">
+            {/* Task Name */}
             <div className="space-y-2">
-              <Label>Start Date</Label>
-              <Popover>
-                <PopoverTrigger asChild>
+              <Label htmlFor="task-name">Task Name</Label>
+              <Input
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Enter task name"
+              />
+            </div>
+
+            {/* Task Description */}
+            <div className="space-y-2">
+              <Label htmlFor="task-description">Description</Label>
+              <Textarea
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="Add description..."
+                className="min-h-[80px] resize-none"
+              />
+            </div>
+
+            {/* Priority Selection */}
+            <div className="space-y-2">
+              <Label>Priority</Label>
+              <div
+                className="flex flex-wrap gap-2"
+                role="radiogroup"
+                aria-label="Task priority selection"
+              >
+                {[
+                  { value: 'critical', label: 'Urgent', icon: Flag },
+                  { value: 'high', label: 'High', icon: Flag },
+                  { value: 'normal', label: 'Medium', icon: Flag },
+                  { value: 'low', label: 'Low', icon: Flag },
+                ].map(({ value, label, icon: Icon }) => (
                   <Button
+                    key={value}
+                    type="button"
                     variant="outline"
+                    size="sm"
                     className={cn(
-                      'w-full justify-start text-left font-normal',
-                      !startDate && 'text-muted-foreground'
+                      'h-7 px-2 text-xs transition-all duration-200',
+                      priority === value && getPriorityColor(value)
                     )}
+                    onClick={() => setPriority(value as TaskPriority)}
+                    role="radio"
+                    aria-checked={priority === value}
+                    aria-label={`Priority: ${label}`}
                   >
-                    <Clock className="mr-2 h-4 w-4" />
-                    {startDate
-                      ? format(startDate, 'MMM dd, yyyy')
-                      : 'Start date'}
+                    {Icon && <Icon className="mr-1 h-3 w-3" />}
+                    {label}
                   </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={startDate}
-                    onSelect={setStartDate}
-                    initialFocus
-                  />
-                </PopoverContent>
-              </Popover>
-            </div>
-
-            {/* End Date */}
-            <div className="space-y-2">
-              <Label>Due Date</Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      'w-full justify-start text-left font-normal',
-                      !endDate && 'text-muted-foreground'
-                    )}
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {endDate ? format(endDate, 'MMM dd, yyyy') : 'Due date'}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={endDate}
-                    onSelect={setEndDate}
-                    initialFocus
-                  />
-                </PopoverContent>
-              </Popover>
-            </div>
-          </div>
-
-          {/* Current Assignees Display */}
-          {task.assignees && task.assignees.length > 0 && (
-            <div className="space-y-2">
-              <Label>Current Assignees</Label>
-              <div className="flex flex-wrap gap-2">
-                {task.assignees.map((assignee) => (
-                  <div
-                    key={assignee.id}
-                    className="flex items-center gap-2 rounded-md border px-2 py-1 text-sm"
-                  >
-                    <Users className="h-3 w-3" />
-                    {assignee.display_name ||
-                      assignee.email?.split('@')[0] ||
-                      'User'}
-                  </div>
                 ))}
               </div>
             </div>
-          )}
+
+            {/* Tags */}
+            <div className="space-y-2">
+              <Label>Tags</Label>
+              <TaskTagInput
+                value={tags}
+                onChange={setTags}
+                boardId={boardId}
+                placeholder="Add tags..."
+                maxTags={10}
+              />
+            </div>
+
+            {/* List Selection */}
+            <div className="space-y-2">
+              <Label>Move to List</Label>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" className="w-full justify-start">
+                    {availableLists.find((list) => list.id === selectedListId)
+                      ?.name || 'Select list'}
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-full">
+                  {availableLists.map((list) => (
+                    <DropdownMenuItem
+                      key={list.id}
+                      onClick={() => setSelectedListId(list.id)}
+                      className={cn(
+                        'cursor-pointer',
+                        selectedListId === list.id && 'bg-accent'
+                      )}
+                    >
+                      {list.name}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+
+            {/* Quick Due Date Assignment */}
+            <div className="space-y-2">
+              <Label className="flex items-center gap-2">
+                <Clock className="h-4 w-4" />
+                Quick Due Date Assignment
+              </Label>
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleQuickDueDate(0)}
+                  disabled={isLoading}
+                  className="h-7 px-2 text-xs"
+                >
+                  Today
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleQuickDueDate(1)}
+                  disabled={isLoading}
+                  className="h-7 px-2 text-xs"
+                >
+                  Tomorrow
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleQuickDueDate(3)}
+                  disabled={isLoading}
+                  className="h-7 px-2 text-xs"
+                >
+                  3 days
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleQuickDueDate(7)}
+                  disabled={isLoading}
+                  className="h-7 px-2 text-xs"
+                >
+                  Next week
+                </Button>
+                {task.end_date && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleQuickDueDate(null)}
+                    disabled={isLoading}
+                    className="h-7 px-2 text-muted-foreground text-xs"
+                  >
+                    Remove
+                  </Button>
+                )}
+              </div>
+              <p className="text-muted-foreground text-xs">
+                Click to quickly set due date and close dialog
+              </p>
+            </div>
+
+            {/* Dates */}
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              {/* Start Date */}
+              <div className="space-y-2">
+                <Label>Start Date</Label>
+                <DateTimePicker
+                  date={startDate}
+                  setDate={setStartDate}
+                  showTimeSelect={true}
+                />
+              </div>
+
+              {/* End Date */}
+              <div className="space-y-2">
+                <Label>Due Date</Label>
+                <DateTimePicker
+                  date={endDate}
+                  setDate={handleEndDateChange}
+                  showTimeSelect={true}
+                />
+              </div>
+            </div>
+
+            {/* Current Assignees Display */}
+            {task.assignees && task.assignees.length > 0 && (
+              <div className="space-y-2">
+                <Label>Current Assignees</Label>
+                <div className="flex flex-wrap gap-2">
+                  {task.assignees.map((assignee) => (
+                    <div
+                      key={assignee.id}
+                      className="flex items-center gap-2 rounded-md border px-2 py-1 text-sm"
+                    >
+                      <Users className="h-3 w-3" />
+                      {assignee.display_name ||
+                        assignee.email?.split('@')[0] ||
+                        'User'}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
         </div>
 
-        <DialogFooter>
+        <DialogFooter className="border-t px-6 py-4">
           <Button variant="outline" onClick={handleClose} disabled={isLoading}>
             Cancel
           </Button>

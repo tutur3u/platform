@@ -446,6 +446,9 @@ export const BoardColumn = React.memo(function BoardColumn({
           <ListActions
             listId={column.id}
             listName={column.name}
+            listStatus={column.status}
+            tasks={filteredAndSortedTasks}
+            boardId={boardId}
             onUpdate={handleUpdate}
           />
         </div>
