@@ -180,9 +180,17 @@ export const TaskCard = React.memo(function TaskCard({
     return doneList || closedList || null;
   };
 
+  // Find specifically the closed list
+  const getTargetClosedList = () => {
+    return availableLists.find((list) => list.status === 'closed') || null;
+  };
+
   const targetCompletionList = getTargetCompletionList();
+  const targetClosedList = getTargetClosedList();
   const canMoveToCompletion =
     targetCompletionList && targetCompletionList.id !== task.list_id;
+  const canMoveToClose =
+    targetClosedList && targetClosedList.id !== task.list_id;
 
   const {
     setNodeRef,
@@ -318,6 +326,34 @@ export const TaskCard = React.memo(function TaskCard({
       toast({
         title: 'Error',
         description: 'Failed to complete task. Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoading(false);
+      setMenuOpen(false);
+    }
+  }
+
+  async function handleMoveToClose() {
+    if (!targetClosedList || !onUpdate) return;
+
+    setIsLoading(true);
+
+    // Use the standard moveTask function to ensure consistent logic
+    const supabase = createClient();
+    try {
+      await moveTask(supabase, task.id, targetClosedList.id);
+      toast({
+        title: 'Success',
+        description: 'Task marked as closed',
+      });
+      // Manually invalidate queries since we're not using the mutation hook
+      onUpdate();
+    } catch (error) {
+      console.error('Failed to move task to closed:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to close task. Please try again.',
         variant: 'destructive',
       });
     } finally {
@@ -828,6 +864,8 @@ export const TaskCard = React.memo(function TaskCard({
                     Edit task
                   </DropdownMenuItem>
 
+                  {<DropdownMenuSeparator />}
+
                   {/* Quick Completion Action */}
                   {canMoveToCompletion && (
                     <DropdownMenuItem
@@ -843,13 +881,28 @@ export const TaskCard = React.memo(function TaskCard({
                     </DropdownMenuItem>
                   )}
 
-                  <DropdownMenuSeparator />
+                  {/* Mark as Closed Action - Only show if closed list exists and is different from the generic completion */}
+                  {canMoveToClose &&
+                    targetClosedList?.id !== targetCompletionList?.id && (
+                      <DropdownMenuItem
+                        onClick={handleMoveToClose}
+                        className="cursor-pointer"
+                        disabled={isLoading}
+                      >
+                        <CircleSlash className="h-4 w-4 text-dynamic-purple" />
+                        Mark as Closed
+                      </DropdownMenuItem>
+                    )}
+
+                  {(canMoveToCompletion || canMoveToClose) && (
+                    <DropdownMenuSeparator />
+                  )}
 
                   {/* Priority Actions */}
                   <DropdownMenuSub>
                     <DropdownMenuSubTrigger>
                       <div className="h-4 w-4">
-                        <Flag className="h-4 w-4" />
+                        <Flag className="h-4 w-4 text-dynamic-orange" />
                       </div>
                       <div className="flex w-full items-center justify-between">
                         <span>Priority</span>
@@ -974,7 +1027,7 @@ export const TaskCard = React.memo(function TaskCard({
                     <DropdownMenuSub>
                       <DropdownMenuSubTrigger>
                         <div className="h-4 w-4">
-                          <Move className="h-4 w-4" />
+                          <Move className="h-4 w-4 text-dynamic-blue" />
                         </div>
                         <div className="flex w-full items-center justify-between">
                           <span>Move</span>
@@ -1030,7 +1083,7 @@ export const TaskCard = React.memo(function TaskCard({
                     task.assignees.length > 0 && (
                       <DropdownMenuSub>
                         <DropdownMenuSubTrigger>
-                          <UserStar className="h-4 w-4" />
+                          <UserStar className="h-4 w-4 text-dynamic-yellow" />
                           Assignees
                         </DropdownMenuSubTrigger>
                         <DropdownMenuSubContent>
@@ -1087,9 +1140,8 @@ export const TaskCard = React.memo(function TaskCard({
                       setDeleteDialogOpen(true);
                       setMenuOpen(false);
                     }}
-                    className="cursor-pointer text-dynamic-red hover:bg-dynamic-red/10 hover:text-dynamic-red/90"
                   >
-                    <Trash2 className="h-4 w-4" />
+                    <Trash2 className="h-4 w-4 text-dynamic-red" />
                     Delete task
                   </DropdownMenuItem>
                 </DropdownMenuContent>

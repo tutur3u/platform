@@ -401,7 +401,7 @@ export async function moveTask(
     console.log('📦 Moving from completion list, will unarchive task');
   } else {
     // Moving between non-completion lists - preserve current status
-    shouldArchive = currentlyArchived;
+    shouldArchive = currentlyArchived || false;
     console.log(
       '📦 Moving between non-completion lists, preserving current status:',
       currentlyArchived

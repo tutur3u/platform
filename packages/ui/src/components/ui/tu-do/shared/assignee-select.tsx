@@ -15,7 +15,6 @@ import {
 } from '@tuturuuu/ui/command';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import {
-  ChevronsUpDown,
   Crown,
   Loader2,
   UserMinus,
