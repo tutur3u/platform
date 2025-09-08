@@ -107,8 +107,8 @@ export function TaskListForm({
   // Legacy mode - show add button first
   return (
     <Button
-      variant="outline"
-      className="flex h-3/4 w-[350px] items-center gap-2 border-dashed"
+      variant="ghost"
+      className="flex h-full w-[350px] items-center gap-2 border-dashed"
       onClick={() => setIsAdding(true)}
     >
       <Plus className="h-4 w-4" />
