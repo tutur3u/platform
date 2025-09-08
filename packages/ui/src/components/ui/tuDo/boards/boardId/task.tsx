@@ -836,7 +836,7 @@ export const TaskCard = React.memo(function TaskCard({
                         <div className='flex w-full items-center justify-between'>
                           <div className="flex items-center gap-2">
                             <Flag className="h-4 w-4 text-dynamic-red/80" />
-                            Urgent Priority
+                            Urgent
                           </div>
                           {task.priority === 'critical' && (
                             <Check className="h-4 w-4 text-dynamic-red" />
@@ -857,7 +857,7 @@ export const TaskCard = React.memo(function TaskCard({
                         <div className='flex w-full items-center justify-between'>
                           <div className="flex items-center gap-2">
                             <Flag className="h-4 w-4 text-dynamic-orange/80" />
-                            High Priority
+                            High
                           </div>
                           {task.priority === 'high' && (
                             <Check className="h-4 w-4 text-dynamic-orange" />
@@ -878,7 +878,7 @@ export const TaskCard = React.memo(function TaskCard({
                         <div className='flex w-full items-center justify-between'>
                           <div className="flex items-center gap-2">
                             <Flag className="h-4 w-4 text-dynamic-yellow/80" />
-                            Medium Priority
+                            Medium
                           </div>
                           {task.priority === 'normal' && (
                             <Check className="h-4 w-4 text-dynamic-yellow" />
@@ -899,7 +899,7 @@ export const TaskCard = React.memo(function TaskCard({
                         <div className='flex w-full items-center justify-between'>
                           <div className="flex items-center gap-2">
                             <Flag className="h-4 w-4 text-dynamic-blue/80" />
-                            Low Priority
+                            Low
                           </div>
                           {task.priority === 'low' && (
                             <Check className="h-4 w-4 text-dynamic-blue" />
