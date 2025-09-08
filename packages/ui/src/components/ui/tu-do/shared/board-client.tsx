@@ -63,7 +63,7 @@ export function BoardClient({
   });
 
   const { data: lists = initialLists } = useQuery({
-    queryKey: ['task-lists', boardId],
+    queryKey: ['task_lists', boardId],
     queryFn: async () => {
       const supabase = createClient();
       return getTaskLists(supabase, boardId);

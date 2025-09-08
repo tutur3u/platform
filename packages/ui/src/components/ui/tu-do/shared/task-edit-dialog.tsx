@@ -83,7 +83,7 @@ export function TaskEditDialog({
 
   // Fetch available task lists for the board (only if not provided as prop)
   const { data: availableLists = [] } = useQuery({
-    queryKey: ['task-lists', boardId],
+    queryKey: ['task_lists', boardId],
     queryFn: async () => {
       const supabase = createClient();
       const { data, error } = await supabase

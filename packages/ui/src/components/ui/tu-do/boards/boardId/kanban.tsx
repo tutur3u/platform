@@ -17,7 +17,7 @@ import {
   horizontalListSortingStrategy,
   SortableContext,
 } from '@dnd-kit/sortable';
-import { useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { Workspace } from '@tuturuuu/types/db';
 import type { Task } from '@tuturuuu/types/primitives/Task';
@@ -26,7 +26,7 @@ import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent } from '@tuturuuu/ui/card';
 import { useHorizontalScroll } from '@tuturuuu/ui/hooks/useHorizontalScroll';
 import { coordinateGetter } from '@tuturuuu/utils/keyboard-preset';
-import { getTaskLists, useMoveTask } from '@tuturuuu/utils/task-helper';
+import { useMoveTask } from '@tuturuuu/utils/task-helper';
 import { hasDraggableData } from '@tuturuuu/utils/task-helpers';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { LightweightTaskCard } from './task';
@@ -65,7 +65,6 @@ interface Props {
 }
 
 export function KanbanBoard({ workspace, boardId, tasks, isLoading }: Props) {
-  const [columns, setColumns] = useState<TaskList[]>([]);
   const [activeColumn, setActiveColumn] = useState<TaskList | null>(null);
   const [activeTask, setActiveTask] = useState<Task | null>(null);
   const [selectedTasks, setSelectedTasks] = useState<Set<string>>(new Set());
@@ -73,6 +72,32 @@ export function KanbanBoard({ workspace, boardId, tasks, isLoading }: Props) {
   const pickedUpTaskColumn = useRef<string | null>(null);
   const queryClient = useQueryClient();
   const moveTaskMutation = useMoveTask(boardId);
+
+  // Fetch task lists using React Query (same key as other components)
+  const { data: columns = [] } = useQuery({
+    queryKey: ['task_lists', boardId],
+    queryFn: async () => {
+      const supabase = createClient();
+      const { data, error } = await supabase
+        .from('task_lists')
+        .select('*')
+        .eq('board_id', boardId)
+        .eq('deleted', false)
+        .order('position')
+        .order('created_at');
+
+      if (error) throw error;
+
+      // Use the full TaskList objects as columns (they extend Column interface)
+      const enhancedColumns: TaskList[] = (data as TaskList[]).map((list) => ({
+        ...list,
+        title: list.name, // Maintain backward compatibility for title property
+      }));
+
+      return enhancedColumns;
+    },
+    staleTime: 30000, // 30 seconds
+  });
   // Ref for the Kanban board container
   const boardRef = useRef<HTMLDivElement>(null);
   const dragStartCardLeft = useRef<number | null>(null);
@@ -137,50 +162,6 @@ export function KanbanBoard({ workspace, boardId, tasks, isLoading }: Props) {
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [clearSelection]);
-
-  useEffect(() => {
-    let mounted = true;
-    const supabase = createClient();
-
-    // Initial data fetch and real-time updates for lists
-    async function loadLists() {
-      try {
-        const lists = await getTaskLists(supabase, boardId);
-        // Use the full TaskList objects as columns (they extend Column interface)
-        const enhancedColumns: TaskList[] = lists.map((list) => ({
-          ...list,
-          title: list.name, // Maintain backward compatibility for title property
-        }));
-
-        if (mounted) {
-          setColumns(enhancedColumns);
-        }
-      } catch (error) {
-        console.error('Failed to load lists:', error);
-      }
-    }
-
-    // Set up real-time subscription for lists
-    const listsSubscription = supabase
-      .channel('lists-channel')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'task_lists',
-        },
-        loadLists
-      )
-      .subscribe();
-
-    loadLists();
-
-    return () => {
-      mounted = false;
-      listsSubscription.unsubscribe();
-    };
-  }, [boardId]);
 
   // Global drag state reset on mouseup/touchend
   useEffect(() => {

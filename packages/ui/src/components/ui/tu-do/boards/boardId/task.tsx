@@ -1,5 +1,6 @@
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import { useQuery } from '@tanstack/react-query';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { TaskPriority } from '@tuturuuu/types/primitives/Priority';
 import type { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
@@ -70,7 +71,7 @@ import {
   isTomorrow,
   isYesterday,
 } from 'date-fns';
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 import { AssigneeSelect } from '../../shared/assignee-select';
 import { TaskEditDialog } from '../../shared/task-edit-dialog';
 import { TaskTagsDisplay } from '../../shared/task-tags-display';
@@ -143,19 +144,14 @@ export const TaskCard = React.memo(function TaskCard({
   const [customDateOpen, setCustomDateOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
-  const [availableLists, setAvailableLists] = useState<TaskList[]>([]);
   const datePickerRef = useRef<HTMLButtonElement>(null);
   const updateTaskMutation = useUpdateTask(boardId);
   const deleteTaskMutation = useDeleteTask(boardId);
 
-  // Fetch available task lists for the board (only if not provided as prop)
-  useEffect(() => {
-    if (propAvailableLists) {
-      setAvailableLists(propAvailableLists);
-      return;
-    }
-
-    const fetchTaskLists = async () => {
+  // Fetch available task lists using React Query (same key as other components)
+  const { data: queryAvailableLists = [] } = useQuery({
+    queryKey: ['task_lists', boardId],
+    queryFn: async () => {
       const supabase = createClient();
       const { data, error } = await supabase
         .from('task_lists')
@@ -165,13 +161,14 @@ export const TaskCard = React.memo(function TaskCard({
         .order('position')
         .order('created_at');
 
-      if (!error && data) {
-        setAvailableLists(data as TaskList[]);
-      }
-    };
+      if (error) throw error;
+      return data as TaskList[];
+    },
+    enabled: !propAvailableLists, // Only fetch if not provided as prop
+  });
 
-    fetchTaskLists();
-  }, [boardId, propAvailableLists]);
+  // Use prop if provided, otherwise use React Query data
+  const availableLists = propAvailableLists || queryAvailableLists;
 
   // Find the first list with 'done' or 'closed' status
   const getTargetCompletionList = () => {

@@ -59,7 +59,7 @@ export function BoardViews({ workspace, board }: Props) {
     // Refresh both tasks and lists
     await Promise.all([
       queryClient.invalidateQueries({ queryKey: ['tasks', board.id] }),
-      queryClient.invalidateQueries({ queryKey: ['task-lists', board.id] }),
+      queryClient.invalidateQueries({ queryKey: ['task_lists', board.id] }),
     ]);
   };
 
