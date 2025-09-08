@@ -43,7 +43,7 @@ export function DateTimePicker({
     const hours = parseInt(hoursStr, 10);
     const minutes = parseInt(minutesStr, 10);
 
-    if (isNaN(hours) || isNaN(minutes)) return;
+    if (Number.isNaN(hours) || Number.isNaN(minutes)) return;
 
     const newDate = new Date(value);
     newDate.setHours(hours);

@@ -549,6 +549,16 @@ export function ListView({
 
     // Sort tasks
     filtered.sort((a, b) => {
+      // Primary sort: Always prioritize uncompleted tasks (non-archived) first
+      const aCompleted = a.archived || false;
+      const bCompleted = b.archived || false;
+
+      if (aCompleted !== bCompleted) {
+        // Uncompleted (false) should come before completed (true)
+        return aCompleted ? 1 : -1;
+      }
+
+      // Secondary sort: Apply the selected sort field
       let comparison = 0;
 
       switch (sortField) {

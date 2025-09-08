@@ -956,7 +956,7 @@ export const BoardColumn = React.memo(function BoardColumn({
         )}
       </div>
 
-      <div className="border-t p-3 backdrop-blur-sm">
+      <div className="rounded-b-xl border-t p-3 backdrop-blur-sm">
         <TaskForm listId={column.id} onTaskCreated={handleTaskCreated} />
       </div>
     </Card>

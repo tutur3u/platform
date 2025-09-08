@@ -9,7 +9,6 @@ import { useMemo, useState } from 'react';
 import { KanbanBoard } from '../boards/boardId/kanban';
 import { StatusGroupedBoard } from '../boards/boardId/status-grouped-board';
 import { BoardHeader } from '../shared/board-header';
-import { BoardSummary } from '../shared/board-summary';
 import { ListView } from '../shared/list-view';
 
 export type ViewType = 'kanban' | 'status-grouped' | 'list';
@@ -22,7 +21,6 @@ interface Props {
 export function BoardViews({ workspace, board }: Props) {
   const [currentView, setCurrentView] = useState<ViewType>('kanban');
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
-  const [isSummaryCollapsed, setIsSummaryCollapsed] = useState(true); // Start collapsed
   const queryClient = useQueryClient();
 
   // Helper function to create board with filtered tasks
@@ -109,18 +107,13 @@ export function BoardViews({ workspace, board }: Props) {
   };
 
   return (
-    <div className="flex h-full flex-col">
+    <div className="-m-2 md:-mx-4 flex h-[calc(100vh-1rem)] flex-1 flex-col">
       <BoardHeader
         board={board}
         currentView={currentView}
         onViewChange={setCurrentView}
       />
-      <BoardSummary
-        board={createBoardWithFilteredTasks(board, filteredTasks)}
-        collapsed={isSummaryCollapsed}
-        onToggleCollapsed={() => setIsSummaryCollapsed(!isSummaryCollapsed)}
-      />
-      <div className="flex-1 overflow-hidden">{renderView()}</div>
+      <div className="h-full flex-1 overflow-hidden">{renderView()}</div>
     </div>
   );
 }

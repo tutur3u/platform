@@ -1,7 +1,12 @@
 'use client';
 
+import { cn } from '@tuturuuu/utils/format';
+import { format } from 'date-fns';
+import dayjs from 'dayjs';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
+import * as React from 'react';
+import { DayPicker } from 'react-day-picker';
 import { buttonVariants } from './button';
-import { DateInput } from './custom/date-input';
 import {
   Select,
   SelectContent,
@@ -9,12 +14,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from './select';
-import { cn } from '@tuturuuu/utils/format';
-import { format } from 'date-fns';
-import dayjs from 'dayjs';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
-import * as React from 'react';
-import { DayPicker } from 'react-day-picker';
 
 export type CalendarProps = React.ComponentProps<typeof DayPicker> & {
   onSubmit?: (date: Date) => void;
@@ -75,17 +74,6 @@ function Calendar({
 
   return (
     <div className="space-y-4">
-      {props.mode === 'single' && (
-        <div className="flex items-center justify-center border-b p-2">
-          <DateInput
-            value={props.selected as Date}
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            onChange={props.onSelect as any}
-            onSubmit={onSubmit}
-          />
-        </div>
-      )}
-
       <div>
         <div className="mb-4 flex items-center justify-between gap-2 border-b px-2 pb-4">
           <button
@@ -111,7 +99,7 @@ function Calendar({
               value={month.getFullYear().toString()}
               onValueChange={(year) => {
                 // Use dayjs for safe date manipulation to avoid issues with month-end dates.
-                const newDate = dayjs(month).year(parseInt(year)).toDate();
+                const newDate = dayjs(month).year(parseInt(year, 10)).toDate();
                 setMonth(newDate);
               }}
             >
@@ -138,10 +126,10 @@ function Calendar({
                   <SelectItem
                     key={year.value}
                     value={year.value}
-                    disabled={isYearDisabled(parseInt(year.value))}
+                    disabled={isYearDisabled(parseInt(year.value, 10))}
                     className={cn(
                       'transition-colors',
-                      parseInt(year.value) === currentYear &&
+                      parseInt(year.value, 10) === currentYear &&
                         'font-medium text-primary'
                     )}
                   >
@@ -156,7 +144,7 @@ function Calendar({
               onValueChange={(monthValue) => {
                 // Use dayjs for safe date manipulation to avoid issues with month-end dates.
                 const newDate = dayjs(month)
-                  .month(parseInt(monthValue))
+                  .month(parseInt(monthValue, 10))
                   .toDate();
                 setMonth(newDate);
               }}
@@ -176,7 +164,7 @@ function Calendar({
                   <SelectItem
                     key={month.value}
                     value={month.value}
-                    disabled={isMonthDisabled(parseInt(month.value))}
+                    disabled={isMonthDisabled(parseInt(month.value, 10))}
                     className="capitalize"
                   >
                     {month.label}
@@ -223,8 +211,7 @@ function Calendar({
             head_row: 'grid grid-cols-7 gap-1',
             weeks: 'flex flex-col gap-1',
             week: 'flex justify-center gap-1',
-            weekdays:
-              'flex justify-evenly justify-center w-full mb-2 border-b pb-2',
+            weekdays: 'flex justify-evenly justify-center w-full mb-2',
             weekday:
               'text-muted-foreground rounded-md font-normal text-[0.8rem] text-center',
             row: 'grid grid-cols-7 gap-1 mt-2',
@@ -245,6 +232,7 @@ function Calendar({
             range_middle: 'aria-selected:bg-foreground/20',
             hidden: 'invisible',
             month_grid: 'w-full',
+            month_caption: 'hidden',
             ...classNames,
           }}
           disabled={minDate ? { before: minDate } : undefined}

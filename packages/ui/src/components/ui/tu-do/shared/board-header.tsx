@@ -144,7 +144,7 @@ export function BoardHeader({ board, currentView, onViewChange }: Props) {
   };
 
   return (
-    <div className="mb-2 border-b pb-4">
+    <div className="mb-2 border-b p-2 md:p-4">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         {/* Board Info */}
         <div className="flex items-start gap-3">

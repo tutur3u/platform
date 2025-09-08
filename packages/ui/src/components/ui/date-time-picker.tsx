@@ -16,6 +16,7 @@ import { cn } from '@tuturuuu/utils/format';
 import { format, parse } from 'date-fns';
 import { CalendarIcon, Check, Clock, Edit } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
+import { Separator } from './separator';
 
 interface DateTimePickerProps {
   date?: Date;
@@ -278,17 +279,23 @@ export function DateTimePicker({
           collisionPadding={8}
         >
           {showTimeSelect ? (
-            <Tabs defaultValue="date" className="w-full">
+            <Tabs defaultValue="date" className="w-full p-2">
               <TabsList className="grid w-full grid-cols-2">
                 <TabsTrigger value="date" className="flex items-center gap-1">
                   <CalendarIcon className="h-3 w-3" />
                   Date
                 </TabsTrigger>
-                <TabsTrigger value="time" className="flex items-center gap-1">
+                <TabsTrigger
+                  value="time"
+                  className="flex items-center gap-1"
+                  disabled={noValidTimes || !date}
+                >
                   <Clock className="h-3 w-3" />
                   Time
                 </TabsTrigger>
               </TabsList>
+
+              <Separator />
 
               <TabsContent value="date" className="mt-0 p-0">
                 <Calendar
@@ -313,7 +320,7 @@ export function DateTimePicker({
                 />
               </TabsContent>
 
-              <TabsContent value="time" className="mt-0 p-0">
+              <TabsContent value="time" className="mt-0 min-w-xs p-0">
                 {selectedDate && (
                   <div className="space-y-4 p-4">
                     <div className="flex items-center justify-between">

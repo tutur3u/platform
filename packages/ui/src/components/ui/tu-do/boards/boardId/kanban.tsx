@@ -628,7 +628,7 @@ export function KanbanBoard({ workspace, boardId, tasks, isLoading }: Props) {
               items={columnsId}
               strategy={horizontalListSortingStrategy}
             >
-              <div ref={boardRef} className="flex h-full gap-4">
+              <div ref={boardRef} className="flex h-full gap-4 p-2 md:px-4">
                 {columns
                   .sort((a, b) => {
                     // First sort by status priority, then by position within status
