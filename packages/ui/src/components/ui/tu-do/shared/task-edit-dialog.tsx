@@ -122,7 +122,7 @@ export function TaskEditDialog({
     // Prepare task updates
     const taskUpdates: Partial<Task> = {
       name: name.trim(),
-      description: description.trim() || undefined,
+      description: description.trim(),
       priority: priority,
       start_date: startDate?.toISOString(),
       end_date: endDate?.toISOString(),

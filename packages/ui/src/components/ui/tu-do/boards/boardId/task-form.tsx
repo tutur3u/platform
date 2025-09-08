@@ -108,7 +108,7 @@ export function TaskForm({ listId, onTaskCreated }: Props) {
         tags?: string[];
       } = {
         name: name.trim(),
-        description: description.trim() || undefined,
+        description: description.trim(),
         priority: priority ?? undefined,
         start_date: startDate?.toISOString(),
         end_date: endDate?.toISOString(),

@@ -251,7 +251,7 @@ export const TaskCard = React.memo(function TaskCard({
         taskId: task.id,
         updates: {
           name: editName.trim(),
-          description: editDescription.trim() || undefined,
+          description: editDescription.trim(),
         },
       },
       {
