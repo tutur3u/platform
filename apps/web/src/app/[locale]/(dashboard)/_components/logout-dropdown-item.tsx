@@ -2,8 +2,8 @@
 
 import { DropdownMenuItem } from '@tuturuuu/ui/dropdown-menu';
 import { LogOut } from '@tuturuuu/ui/icons';
-import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 
 export function LogoutDropdownItem() {
   const t = useTranslations('common');
@@ -18,7 +18,7 @@ export function LogoutDropdownItem() {
 
   return (
     <DropdownMenuItem onClick={logout} className="cursor-pointer">
-      <LogOut className="mr-2 h-4 w-4" />
+      <LogOut className="h-4 w-4" />
       <span>{t('logout')}</span>
     </DropdownMenuItem>
   );

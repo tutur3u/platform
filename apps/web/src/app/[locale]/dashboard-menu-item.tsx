@@ -1,4 +1,3 @@
-import { DEV_MODE } from '@/constants/common';
 import { useQuery } from '@tanstack/react-query';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import {
@@ -7,8 +6,9 @@ import {
   DropdownMenuSeparator,
 } from '@tuturuuu/ui/dropdown-menu';
 import { ActivitySquare, Database } from '@tuturuuu/ui/icons';
-import { useTranslations } from 'next-intl';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
+import { DEV_MODE } from '@/constants/common';
 
 export default function DashboardMenuItem() {
   const t = useTranslations('common');
@@ -26,7 +26,7 @@ export default function DashboardMenuItem() {
       <DropdownMenuGroup>
         <Link href={`/${defaultWorkspace?.id || 'onboarding'}`}>
           <DropdownMenuItem className="cursor-pointer">
-            <ActivitySquare className="mr-2 h-4 w-4" />
+            <ActivitySquare className="h-4 w-4" />
             <span>{t('dashboard')}</span>
           </DropdownMenuItem>
         </Link>
@@ -36,7 +36,7 @@ export default function DashboardMenuItem() {
             target="_blank"
           >
             <DropdownMenuItem className="cursor-pointer">
-              <Database className="mr-2 h-4 w-4" />
+              <Database className="h-4 w-4" />
               <span>{t('local_database')}</span>
             </DropdownMenuItem>
           </Link>

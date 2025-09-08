@@ -19,7 +19,7 @@ export default function ReportProblemMenuItem() {
           setOpen(true);
         }}
       >
-        <AlertTriangle className="mr-2 h-4 w-4" />
+        <AlertTriangle className="h-4 w-4" />
         <span>{t('report-problem')}</span>
       </DropdownMenuItem>
       <ReportProblemDialog

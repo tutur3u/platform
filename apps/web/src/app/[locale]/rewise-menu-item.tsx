@@ -14,7 +14,7 @@ export default function RewiseMenuItem() {
       <DropdownMenuGroup>
         <Link href={DEV_MODE ? 'http://localhost:7804' : 'https://rewise.me'}>
           <DropdownMenuItem className="cursor-pointer">
-            <Sparkles className="mr-2 h-4 w-4" />
+            <Sparkles className="h-4 w-4" />
             <span>Rewise</span>
           </DropdownMenuItem>
         </Link>

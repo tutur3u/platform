@@ -6,9 +6,9 @@ import {
   DropdownMenuSeparator,
 } from '@tuturuuu/ui/dropdown-menu';
 import { UserPlus } from '@tuturuuu/ui/icons';
-import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { useParams, usePathname } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 
 export default function InviteMembersMenuItem() {
   const t = useTranslations('common');
@@ -24,13 +24,13 @@ export default function InviteMembersMenuItem() {
       <DropdownMenuGroup>
         {pathname === `/${wsId}/members` ? (
           <DropdownMenuItem disabled>
-            <UserPlus className="mr-2 h-4 w-4" />
+            <UserPlus className="h-4 w-4" />
             <span>{t('invite_users')}</span>
           </DropdownMenuItem>
         ) : (
           <Link href={`/${wsId}/members`}>
             <DropdownMenuItem className="cursor-pointer">
-              <UserPlus className="mr-2 h-4 w-4" />
+              <UserPlus className="h-4 w-4" />
               <span>{t('invite_users')}</span>
             </DropdownMenuItem>
           </Link>

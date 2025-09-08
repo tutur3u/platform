@@ -130,7 +130,7 @@ export default function UserNavClient({
               >
                 {user?.display_name || user?.handle || t('common.unnamed')}
               </Link>
-              <p className="line-clamp-1 break-all text-muted-foreground text-xs">
+              <p className="line-clamp-1 break-all text-xs opacity-70">
                 {user?.email}
               </p>
             </div>
@@ -142,7 +142,7 @@ export default function UserNavClient({
           <DropdownMenuGroup>
             {wsId && (
               <DropdownMenuItem onSelect={() => setCommandPaletteOpen(true)}>
-                <Terminal className="mr-2 h-4 w-4" />
+                <Terminal className="h-4 w-4" />
                 <span>Command Palette</span>
                 <DropdownMenuShortcut>⌘K</DropdownMenuShortcut>
               </DropdownMenuItem>
@@ -151,7 +151,7 @@ export default function UserNavClient({
               <DropdownMenuSub>
                 <DropdownMenuSubTrigger className="hidden md:flex">
                   <PanelLeft className="h-4 w-4" />
-                  <span className="text-foreground">{t('common.sidebar')}</span>
+                  <span>{t('common.sidebar')}</span>
                 </DropdownMenuSubTrigger>
                 <DropdownMenuPortal>
                   <DropdownMenuSubContent sideOffset={4}>
@@ -191,8 +191,8 @@ export default function UserNavClient({
             )}
             <DropdownMenuSub>
               <DropdownMenuSubTrigger>
-                <Palette className="h-4 w-4 text-muted-foreground" />
-                <span className="text-foreground">{t('common.theme')}</span>
+                <Palette className="h-4 w-4" />
+                <span>{t('common.theme')}</span>
               </DropdownMenuSubTrigger>
               <DropdownMenuPortal>
                 <DropdownMenuSubContent sideOffset={4}>
@@ -202,8 +202,8 @@ export default function UserNavClient({
             </DropdownMenuSub>
             <DropdownMenuSub>
               <DropdownMenuSubTrigger>
-                <Globe className="h-4 w-4 text-muted-foreground" />
-                <span className="text-foreground">{t('common.language')}</span>
+                <Globe className="h-4 w-4" />
+                <span>{t('common.language')}</span>
               </DropdownMenuSubTrigger>
               <DropdownMenuPortal>
                 <DropdownMenuSubContent sideOffset={4}>
@@ -226,7 +226,7 @@ export default function UserNavClient({
               className="cursor-pointer"
               onClick={() => setOpen(true)}
             >
-              <Settings className="mr-2 h-4 w-4" />
+              <Settings className="h-4 w-4" />
               <span>{t('common.settings')}</span>
             </DropdownMenuItem>
             <ReportProblemMenuItem />
