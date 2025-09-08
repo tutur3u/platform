@@ -866,7 +866,8 @@
     "my_tasks": "Nhiệm vụ của tôi",
     "initiatives": "Sáng kiến",
     "teams": "Đội",
-    "members": "Thành viên"
+    "members": "Thành viên",
+    "cycles": "Chu kỳ"
   },
   "usage": {
     "description": "Theo dõi hoạt động workspace, sử dụng tính năng và các số liệu hệ thống trong tổ chức của bạn",

@@ -36,15 +36,20 @@ import {
   CalendarPlus,
   Check,
   CheckCircle2,
+  CircleDashed,
+  CircleFadingArrowUpIcon,
+  CircleSlash,
   Clock,
   Edit3,
   Flag,
   GripVertical,
+  List,
   Loader2,
   MoreHorizontal,
+  Move,
   Trash2,
   UserMinus,
-  Users,
+  UserStar,
   X,
 } from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
@@ -404,6 +409,40 @@ export const TaskCard = React.memo(function TaskCard({
     }
   }
 
+  async function handleMoveToList(targetListId: string) {
+    if (targetListId === task.list_id) {
+      setMenuOpen(false);
+      return; // Already in this list
+    }
+
+    setIsLoading(true);
+    const supabase = createClient();
+
+    try {
+      await moveTask(supabase, task.id, targetListId);
+
+      const targetList = availableLists.find(
+        (list) => list.id === targetListId
+      );
+      toast({
+        title: 'Success',
+        description: `Task moved to ${targetList?.name || 'selected list'}`,
+      });
+
+      onUpdate?.();
+    } catch (error) {
+      console.error('Failed to move task:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to move task. Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoading(false);
+      setMenuOpen(false);
+    }
+  }
+
   // Dynamic color mappings based on task list color
   const getListColorClasses = (color: SupportedColor) => {
     const colorMap: Record<SupportedColor, string> = {
@@ -487,8 +526,8 @@ export const TaskCard = React.memo(function TaskCard({
         {...listeners}
         className={cn(
           'mt-0.5 h-4 w-4 shrink-0 cursor-grab text-muted-foreground/60 transition-all duration-200',
-          'group-hover:text-foreground/80',
-          'hover:scale-110 hover:text-primary/80',
+          'group-hover:text-foreground',
+          'hover:scale-110 hover:text-primary',
           isDragging && 'cursor-grabbing text-primary',
           isOverlay && 'cursor-grabbing'
         )}
@@ -523,23 +562,23 @@ export const TaskCard = React.memo(function TaskCard({
         task.archived && 'opacity-70 saturate-75',
         // Overdue state
         isOverdue &&
-        !task.archived &&
-        'border-dynamic-red/70 bg-dynamic-red/10 ring-1 ring-dynamic-red/20',
+          !task.archived &&
+          'border-dynamic-red/70 bg-dynamic-red/10 ring-1 ring-dynamic-red/20',
         // Hover state
         !isDragging &&
-        'hover:border-primary/30 hover:ring-1 hover:ring-primary/15',
+          'hover:border-primary/30 hover:ring-1 hover:ring-primary/15',
         // Selection state
         isSelected && 'bg-primary/5 shadow-md ring-2 ring-primary/50',
         // Visual feedback for invalid drop (dev only)
         process.env.NODE_ENV === 'development' &&
-        isDragging &&
-        !isOverlay &&
-        'ring-2 ring-red-400/60'
+          isDragging &&
+          !isOverlay &&
+          'ring-2 ring-red-400/60'
       )}
     >
       {/* Overdue indicator */}
       {isOverdue && !task.archived && (
-        <div className="absolute top-0 right-0 h-0 w-0 border-t-[20px] border-t-dynamic-red/80 border-l-[20px] border-l-transparent">
+        <div className="absolute top-0 right-0 h-0 w-0 border-t-[20px] border-t-dynamic-red border-l-[20px] border-l-transparent">
           <AlertCircle className="-top-4 -right-[18px] absolute h-3 w-3" />
         </div>
       )}
@@ -547,7 +586,7 @@ export const TaskCard = React.memo(function TaskCard({
       {/* Selection indicator */}
       {isMultiSelectMode && isSelected && (
         <div className="absolute top-2 left-2 flex h-5 w-5 items-center justify-center rounded-full bg-primary font-bold text-primary-foreground text-xs shadow-sm">
-          ✓
+          <Check className="h-4 w-4" />
         </div>
       )}
 
@@ -624,7 +663,7 @@ export const TaskCard = React.memo(function TaskCard({
                   <div className="mb-1">
                     <button
                       type="button"
-                      className="scrollbar-none group-hover:scrollbar-thin scrollbar-track-transparent scrollbar-thumb-muted-foreground/30 group-hover:scrollbar-thumb-muted-foreground/50 max-h-20 w-full cursor-pointer overflow-y-auto whitespace-pre-line border-none bg-transparent p-0 text-left text-muted-foreground text-xs hover:text-foreground/80 focus:outline-none"
+                      className="scrollbar-none group-hover:scrollbar-thin scrollbar-track-transparent scrollbar-thumb-muted-foreground/30 group-hover:scrollbar-thumb-muted-foreground/50 max-h-20 w-full cursor-pointer overflow-y-auto whitespace-pre-line border-none bg-transparent p-0 text-left text-muted-foreground text-xs hover:text-foreground focus:outline-none"
                       title={task.description}
                       onClick={() => setIsEditing(true)}
                       onKeyDown={(e) => {
@@ -651,12 +690,12 @@ export const TaskCard = React.memo(function TaskCard({
                     size="xs"
                     className={cn(
                       'h-7 w-7 shrink-0 p-0 transition-all duration-200',
-                      'hover:scale-105 hover:bg-dynamic-purple/10 hover:text-dynamic-purple/80',
+                      'hover:scale-105 hover:bg-dynamic-purple/10 hover:text-dynamic-purple',
                       isHovered || customDateOpen
                         ? 'opacity-100'
                         : 'opacity-0 group-hover:opacity-100',
                       customDateOpen &&
-                      'bg-dynamic-purple/10 text-dynamic-purple/80'
+                        'bg-dynamic-purple/10 text-dynamic-purple'
                     )}
                     disabled={isLoading}
                   >
@@ -763,7 +802,7 @@ export const TaskCard = React.memo(function TaskCard({
                     size="xs"
                     className={cn(
                       'h-7 w-7 shrink-0 p-0 transition-all duration-200',
-                      'hover:scale-105 hover:bg-muted/80',
+                      'hover:scale-105 hover:bg-muted',
                       isHovered || menuOpen
                         ? 'opacity-100'
                         : 'opacity-0 group-hover:opacity-100',
@@ -796,7 +835,7 @@ export const TaskCard = React.memo(function TaskCard({
                       className="cursor-pointer"
                       disabled={isLoading}
                     >
-                      <CheckCircle2 className="h-4 w-4 text-dynamic-green/80" />
+                      <CheckCircle2 className="h-4 w-4 text-dynamic-green" />
                       Mark as{' '}
                       {targetCompletionList?.status === 'done'
                         ? 'Done'
@@ -804,13 +843,13 @@ export const TaskCard = React.memo(function TaskCard({
                     </DropdownMenuItem>
                   )}
 
-                  {canMoveToCompletion && <DropdownMenuSeparator />}
+                  <DropdownMenuSeparator />
 
                   {/* Priority Actions */}
                   <DropdownMenuSub>
                     <DropdownMenuSubTrigger>
                       <Flag className="h-4 w-4" />
-                      <div className='flex w-full items-center justify-between'>
+                      <div className="flex w-full items-center justify-between">
                         <span>Priority</span>
                         <span className="ml-auto text-muted-foreground text-xs">
                           {task.priority === 'critical' && 'Urgent'}
@@ -832,10 +871,10 @@ export const TaskCard = React.memo(function TaskCard({
                           !task.priority && 'bg-muted/50'
                         )}
                       >
-                        <div className='flex w-full items-center justify-between'>
+                        <div className="flex w-full items-center justify-between">
                           <div className="flex items-center gap-2">
                             <X className="h-4 w-4" />
-                            No Priority
+                            None
                           </div>
                           {!task.priority && <Check className="h-4 w-4" />}
                         </div>
@@ -849,12 +888,12 @@ export const TaskCard = React.memo(function TaskCard({
                         className={cn(
                           'cursor-pointer',
                           task.priority === 'critical' &&
-                          'bg-dynamic-red/10 text-dynamic-red'
+                            'bg-dynamic-red/10 text-dynamic-red'
                         )}
                       >
-                        <div className='flex w-full items-center justify-between'>
+                        <div className="flex w-full items-center justify-between">
                           <div className="flex items-center gap-2">
-                            <Flag className="h-4 w-4 text-dynamic-red/80" />
+                            <Flag className="h-4 w-4 text-dynamic-red" />
                             Urgent
                           </div>
                           {task.priority === 'critical' && (
@@ -870,12 +909,12 @@ export const TaskCard = React.memo(function TaskCard({
                         className={cn(
                           'cursor-pointer',
                           task.priority === 'high' &&
-                          'bg-dynamic-orange/10 text-dynamic-orange'
+                            'bg-dynamic-orange/10 text-dynamic-orange'
                         )}
                       >
-                        <div className='flex w-full items-center justify-between'>
+                        <div className="flex w-full items-center justify-between">
                           <div className="flex items-center gap-2">
-                            <Flag className="h-4 w-4 text-dynamic-orange/80" />
+                            <Flag className="h-4 w-4 text-dynamic-orange" />
                             High
                           </div>
                           {task.priority === 'high' && (
@@ -891,12 +930,12 @@ export const TaskCard = React.memo(function TaskCard({
                         className={cn(
                           'cursor-pointer',
                           task.priority === 'normal' &&
-                          'bg-dynamic-yellow/10 text-dynamic-yellow'
+                            'bg-dynamic-yellow/10 text-dynamic-yellow'
                         )}
                       >
-                        <div className='flex w-full items-center justify-between'>
+                        <div className="flex w-full items-center justify-between">
                           <div className="flex items-center gap-2">
-                            <Flag className="h-4 w-4 text-dynamic-yellow/80" />
+                            <Flag className="h-4 w-4 text-dynamic-yellow" />
                             Medium
                           </div>
                           {task.priority === 'normal' && (
@@ -912,12 +951,12 @@ export const TaskCard = React.memo(function TaskCard({
                         className={cn(
                           'cursor-pointer',
                           task.priority === 'low' &&
-                          'bg-dynamic-blue/10 text-dynamic-blue'
+                            'bg-dynamic-blue/10 text-dynamic-blue'
                         )}
                       >
-                        <div className='flex w-full items-center justify-between'>
+                        <div className="flex w-full items-center justify-between">
                           <div className="flex items-center gap-2">
-                            <Flag className="h-4 w-4 text-dynamic-blue/80" />
+                            <Flag className="h-4 w-4 text-dynamic-blue" />
                             Low
                           </div>
                           {task.priority === 'low' && (
@@ -928,50 +967,98 @@ export const TaskCard = React.memo(function TaskCard({
                     </DropdownMenuSubContent>
                   </DropdownMenuSub>
 
+                  {/* Move to List Actions */}
+                  {availableLists.length > 1 && (
+                    <DropdownMenuSub>
+                      <DropdownMenuSubTrigger>
+                        <Move className="h-4 w-4" />
+                        <div className="flex w-full items-center justify-between">
+                          <span>Move</span>
+                        </div>
+                      </DropdownMenuSubTrigger>
+                      <DropdownMenuSubContent>
+                        {availableLists
+                          .filter((list) => list.id !== task.list_id)
+                          .map((list) => (
+                            <DropdownMenuItem
+                              key={list.id}
+                              onClick={() => handleMoveToList(list.id)}
+                              className="cursor-pointer"
+                              disabled={isLoading}
+                            >
+                              <div className="flex w-full items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                  {list.status === 'done' && (
+                                    <CheckCircle2 className="h-4 w-4 text-dynamic-green" />
+                                  )}
+                                  {list.status === 'closed' && (
+                                    <CircleSlash className="h-4 w-4 text-dynamic-purple" />
+                                  )}
+                                  {list.status === 'not_started' && (
+                                    <CircleDashed className="h-4 w-4 opacity-70" />
+                                  )}
+                                  {list.status === 'active' && (
+                                    <CircleFadingArrowUpIcon className="h-4 w-4 text-dynamic-blue" />
+                                  )}
+                                  {list.name}
+                                </div>
+                              </div>
+                            </DropdownMenuItem>
+                          ))}
+                        {availableLists.filter(
+                          (list) => list.id !== task.list_id
+                        ).length === 0 && (
+                          <DropdownMenuItem
+                            disabled
+                            className="text-muted-foreground"
+                          >
+                            <List className="h-4 w-4" />
+                            No other lists available
+                          </DropdownMenuItem>
+                        )}
+                      </DropdownMenuSubContent>
+                    </DropdownMenuSub>
+                  )}
+
                   {/* Assignee Actions - Only show if not personal workspace and has assignees */}
                   {!isPersonalWorkspace &&
                     task.assignees &&
                     task.assignees.length > 0 && (
-                      <>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuSub>
-                          <DropdownMenuSubTrigger>
-                            <Users className="h-4 w-4" />
-                            Assignees
-                          </DropdownMenuSubTrigger>
-                          <DropdownMenuSubContent>
-                            {task.assignees.map((assignee) => (
+                      <DropdownMenuSub>
+                        <DropdownMenuSubTrigger>
+                          <UserStar className="h-4 w-4" />
+                          Assignees
+                        </DropdownMenuSubTrigger>
+                        <DropdownMenuSubContent>
+                          {task.assignees.map((assignee) => (
+                            <DropdownMenuItem
+                              key={assignee.id}
+                              onClick={() => handleRemoveAssignee(assignee.id)}
+                              className="cursor-pointer text-muted-foreground"
+                              disabled={isLoading}
+                            >
+                              <X className="h-4 w-4" />
+                              Remove{' '}
+                              {assignee.display_name ||
+                                assignee.email?.split('@')[0] ||
+                                'User'}
+                            </DropdownMenuItem>
+                          ))}
+                          {task.assignees.length > 1 && (
+                            <>
+                              <DropdownMenuSeparator />
                               <DropdownMenuItem
-                                key={assignee.id}
-                                onClick={() =>
-                                  handleRemoveAssignee(assignee.id)
-                                }
-                                className="cursor-pointer text-muted-foreground"
+                                onClick={handleRemoveAllAssignees}
+                                className="cursor-pointer text-dynamic-red hover:bg-dynamic-red/10 hover:text-dynamic-red/90"
                                 disabled={isLoading}
                               >
-                                <X className="h-4 w-4" />
-                                Remove{' '}
-                                {assignee.display_name ||
-                                  assignee.email?.split('@')[0] ||
-                                  'User'}
+                                <UserMinus className="h-4 w-4" />
+                                Remove all assignees
                               </DropdownMenuItem>
-                            ))}
-                            {task.assignees.length > 1 && (
-                              <>
-                                <DropdownMenuSeparator />
-                                <DropdownMenuItem
-                                  onClick={handleRemoveAllAssignees}
-                                  className="cursor-pointer text-dynamic-red/80 hover:bg-dynamic-red/10 hover:text-dynamic-red/90"
-                                  disabled={isLoading}
-                                >
-                                  <UserMinus className="h-4 w-4" />
-                                  Remove all assignees
-                                </DropdownMenuItem>
-                              </>
-                            )}
-                          </DropdownMenuSubContent>
-                        </DropdownMenuSub>
-                      </>
+                            </>
+                          )}
+                        </DropdownMenuSubContent>
+                      </DropdownMenuSub>
                     )}
 
                   {task.end_date && (
@@ -996,7 +1083,7 @@ export const TaskCard = React.memo(function TaskCard({
                       setDeleteDialogOpen(true);
                       setMenuOpen(false);
                     }}
-                    className="cursor-pointer text-dynamic-red/80 hover:bg-dynamic-red/10 hover:text-dynamic-red/90"
+                    className="cursor-pointer text-dynamic-red hover:bg-dynamic-red/10 hover:text-dynamic-red/90"
                   >
                     <Trash2 className="h-4 w-4" />
                     Delete task
@@ -1021,14 +1108,14 @@ export const TaskCard = React.memo(function TaskCard({
                 className={cn(
                   'flex items-center gap-1',
                   isOverdue && !task.archived
-                    ? 'font-medium text-dynamic-red/80'
+                    ? 'font-medium text-dynamic-red'
                     : ''
                 )}
               >
                 <Calendar className="h-2.5 w-2.5 shrink-0" />
                 Due {formatSmartDate(endDate)}
                 {isOverdue && !task.archived && (
-                  <Badge className="ml-1 h-4 bg-dynamic-red/80 px-1 text-[9px] text-white">
+                  <Badge className="ml-1 h-4 bg-dynamic-red px-1 text-[9px] text-white">
                     OVERDUE - {format(endDate, "MMM dd 'at' h:mm a")}
                   </Badge>
                 )}
@@ -1080,16 +1167,16 @@ export const TaskCard = React.memo(function TaskCard({
                 'hover:scale-110 hover:border-primary/50',
                 getListColorClasses(taskList?.color as SupportedColor),
                 isOverdue &&
-                !task.archived &&
-                'border-dynamic-red/70 bg-dynamic-red/10 ring-1 ring-dynamic-red/20'
+                  !task.archived &&
+                  'border-dynamic-red/70 bg-dynamic-red/10 ring-1 ring-dynamic-red/20'
               )}
               style={
                 !task.archived && taskList?.status === 'done'
                   ? {
-                    animation: 'pulse 4s ease-in-out infinite',
-                    borderColor: 'rgb(245 158 11 / 0.3)',
-                    backgroundColor: 'rgb(245 158 11 / 0.6)',
-                  }
+                      animation: 'pulse 4s ease-in-out infinite',
+                      borderColor: 'rgb(245 158 11 / 0.3)',
+                      backgroundColor: 'rgb(245 158 11 / 0.6)',
+                    }
                   : undefined
               }
               disabled={isLoading}

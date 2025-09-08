@@ -396,14 +396,15 @@ export const BoardColumn = React.memo(function BoardColumn({
       style={style}
       className={cn(
         'group flex h-full w-[350px] flex-col rounded-xl transition-all duration-200',
-        'touch-none select-none border-l-4',
+        'touch-none select-none',
         colorClass,
         isDragging &&
-        'rotate-1 scale-[1.02] opacity-90 shadow-xl ring-2 ring-primary/20',
+          'rotate-1 scale-[1.02] opacity-90 shadow-xl ring-2 ring-primary/20',
         isOverlay && 'shadow-2xl ring-2 ring-primary/30',
         'hover:shadow-md',
         // Visual feedback for invalid drop (dev only)
-        DEV_MODE && isDragging && !isOverlay && 'ring-2 ring-red-400/60'
+        DEV_MODE && isDragging && !isOverlay && 'ring-2 ring-red-400/60',
+        'border-0'
       )}
     >
       <div className="flex items-center gap-2 rounded-t-xl border-b p-3">

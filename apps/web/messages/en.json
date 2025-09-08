@@ -855,7 +855,8 @@
     "my_tasks": "My tasks",
     "initiatives": "Initiatives",
     "teams": "Teams",
-    "members": "Members"
+    "members": "Members",
+    "cycles": "Cycles"
   },
   "usage": {
     "description": "Monitor workspace activity, feature usage, and system metrics across your organization",

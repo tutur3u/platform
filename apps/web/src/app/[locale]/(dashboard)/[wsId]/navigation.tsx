@@ -44,6 +44,7 @@ import {
   Presentation,
   QrCodeIcon,
   ReceiptText,
+  RotateCcw,
   RulerDimensionLine,
   ScanSearch,
   Send,
@@ -314,6 +315,12 @@ export async function WorkspaceNavigationLinks({
             {
               title: t('sidebar_tabs.projects'),
               icon: <Box className="h-4 w-4" />,
+              tempDisabled: true,
+              matchExact: true,
+            },
+            {
+              title: t('sidebar_tabs.cycles'),
+              icon: <RotateCcw className="h-4 w-4" />,
               tempDisabled: true,
               matchExact: true,
             },
