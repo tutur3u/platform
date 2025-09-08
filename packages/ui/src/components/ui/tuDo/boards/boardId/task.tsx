@@ -43,6 +43,8 @@ import {
   MoreHorizontal,
   Sparkles,
   Trash2,
+  UserMinus,
+  Users,
   X,
 } from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
@@ -332,6 +334,76 @@ export const TaskCard = React.memo(function TaskCard({
     });
   }
 
+  async function handleRemoveAllAssignees() {
+    if (!task.assignees || task.assignees.length === 0) return;
+
+    setIsLoading(true);
+    const supabase = createClient();
+
+    try {
+      const { error } = await supabase
+        .from('task_assignees')
+        .delete()
+        .eq('task_id', task.id);
+
+      if (error) {
+        throw error;
+      }
+
+      toast({
+        title: 'Success',
+        description: 'All assignees removed from task',
+      });
+
+      onUpdate?.();
+    } catch (error) {
+      console.error('Failed to remove all assignees:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to remove assignees. Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoading(false);
+      setMenuOpen(false);
+    }
+  }
+
+  async function handleRemoveAssignee(assigneeId: string) {
+    setIsLoading(true);
+    const supabase = createClient();
+
+    try {
+      const { error } = await supabase
+        .from('task_assignees')
+        .delete()
+        .eq('task_id', task.id)
+        .eq('user_id', assigneeId);
+
+      if (error) {
+        throw error;
+      }
+
+      const assignee = task.assignees?.find((a) => a.id === assigneeId);
+      toast({
+        title: 'Success',
+        description: `${assignee?.display_name || assignee?.email || 'Assignee'} removed from task`,
+      });
+
+      onUpdate?.();
+    } catch (error) {
+      console.error('Failed to remove assignee:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to remove assignee. Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoading(false);
+      setMenuOpen(false);
+    }
+  }
+
   // Dynamic color mappings based on task list color
   const getListColorClasses = (color: SupportedColor) => {
     const colorMap: Record<SupportedColor, string> = {
@@ -451,18 +523,18 @@ export const TaskCard = React.memo(function TaskCard({
         task.archived && 'opacity-70 saturate-75',
         // Overdue state
         isOverdue &&
-          !task.archived &&
-          'border-dynamic-red/70 bg-dynamic-red/10 ring-1 ring-dynamic-red/20',
+        !task.archived &&
+        'border-dynamic-red/70 bg-dynamic-red/10 ring-1 ring-dynamic-red/20',
         // Hover state
         !isDragging &&
-          'hover:border-primary/30 hover:ring-1 hover:ring-primary/15',
+        'hover:border-primary/30 hover:ring-1 hover:ring-primary/15',
         // Selection state
         isSelected && 'bg-primary/5 shadow-md ring-2 ring-primary/50',
         // Visual feedback for invalid drop (dev only)
         process.env.NODE_ENV === 'development' &&
-          isDragging &&
-          !isOverlay &&
-          'ring-2 ring-red-400/60'
+        isDragging &&
+        !isOverlay &&
+        'ring-2 ring-red-400/60'
       )}
     >
       {/* Overdue indicator */}
@@ -584,7 +656,7 @@ export const TaskCard = React.memo(function TaskCard({
                         ? 'opacity-100'
                         : 'opacity-0 group-hover:opacity-100',
                       customDateOpen &&
-                        'bg-dynamic-purple/10 text-dynamic-purple/80'
+                      'bg-dynamic-purple/10 text-dynamic-purple/80'
                     )}
                     disabled={isLoading}
                   >
@@ -738,7 +810,7 @@ export const TaskCard = React.memo(function TaskCard({
                   <DropdownMenuSub>
                     <DropdownMenuSubTrigger>
                       <Flag className="h-4 w-4" />
-                      Set Priority
+                      Priority
                     </DropdownMenuSubTrigger>
                     <DropdownMenuSubContent>
                       <DropdownMenuItem
@@ -794,6 +866,52 @@ export const TaskCard = React.memo(function TaskCard({
                       </DropdownMenuItem>
                     </DropdownMenuSubContent>
                   </DropdownMenuSub>
+
+                  {/* Assignee Actions - Only show if not personal workspace and has assignees */}
+                  {!isPersonalWorkspace &&
+                    task.assignees &&
+                    task.assignees.length > 0 && (
+                      <>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuSub>
+                          <DropdownMenuSubTrigger>
+                            <Users className="h-4 w-4" />
+                            Assignees
+                          </DropdownMenuSubTrigger>
+                          <DropdownMenuSubContent>
+                            {task.assignees.map((assignee) => (
+                              <DropdownMenuItem
+                                key={assignee.id}
+                                onClick={() =>
+                                  handleRemoveAssignee(assignee.id)
+                                }
+                                className="cursor-pointer text-muted-foreground"
+                                disabled={isLoading}
+                              >
+                                <X className="h-4 w-4" />
+                                Remove{' '}
+                                {assignee.display_name ||
+                                  assignee.email?.split('@')[0] ||
+                                  'User'}
+                              </DropdownMenuItem>
+                            ))}
+                            {task.assignees.length > 1 && (
+                              <>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem
+                                  onClick={handleRemoveAllAssignees}
+                                  className="cursor-pointer text-dynamic-red/80 hover:bg-dynamic-red/10 hover:text-dynamic-red/90"
+                                  disabled={isLoading}
+                                >
+                                  <UserMinus className="h-4 w-4" />
+                                  Remove all assignees
+                                </DropdownMenuItem>
+                              </>
+                            )}
+                          </DropdownMenuSubContent>
+                        </DropdownMenuSub>
+                      </>
+                    )}
 
                   {task.end_date && (
                     <>
@@ -901,16 +1019,16 @@ export const TaskCard = React.memo(function TaskCard({
                 'hover:scale-110 hover:border-primary/50',
                 getListColorClasses(taskList?.color as SupportedColor),
                 isOverdue &&
-                  !task.archived &&
-                  'border-dynamic-red/70 bg-dynamic-red/10 ring-1 ring-dynamic-red/20'
+                !task.archived &&
+                'border-dynamic-red/70 bg-dynamic-red/10 ring-1 ring-dynamic-red/20'
               )}
               style={
                 !task.archived && taskList?.status === 'done'
                   ? {
-                      animation: 'pulse 4s ease-in-out infinite',
-                      borderColor: 'rgb(245 158 11 / 0.3)',
-                      backgroundColor: 'rgb(245 158 11 / 0.6)',
-                    }
+                    animation: 'pulse 4s ease-in-out infinite',
+                    borderColor: 'rgb(245 158 11 / 0.3)',
+                    backgroundColor: 'rgb(245 158 11 / 0.6)',
+                  }
                   : undefined
               }
               disabled={isLoading}
@@ -925,16 +1043,6 @@ export const TaskCard = React.memo(function TaskCard({
           </div>
         </div>
       </div>
-
-      {/* Footer - Enhanced priority indicator */}
-      {!task.archived && task.priority === 'critical' && (
-        <div className="mt-3 flex items-center justify-center border-dynamic-red/20 border-t pt-2">
-          <div className="flex items-center gap-1 text-dynamic-red/80">
-            <Sparkles className="h-3 w-3 animate-pulse" />
-            <span className="font-medium text-[10px]">Urgent Priority</span>
-          </div>
-        </div>
-      )}
 
       {/* Delete Confirmation Dialog */}
       <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
