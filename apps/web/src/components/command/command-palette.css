@@ -104,7 +104,9 @@
 
 .suggestion-card:hover {
   transform: translateY(-2px) scale(1.02);
-  box-shadow: 0 8px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+  box-shadow:
+    0 8px 25px -5px rgba(0, 0, 0, 0.1),
+    0 8px 10px -6px rgba(0, 0, 0, 0.1);
 }
 
 .suggestion-card:active {
@@ -201,7 +203,7 @@
   .command-palette-enter {
     animation: commandPaletteMobileSlideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
   }
-  
+
   @keyframes commandPaletteMobileSlideIn {
     from {
       opacity: 0;
