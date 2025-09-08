@@ -824,6 +824,25 @@ export const TaskCard = React.memo(function TaskCard({
                     <DropdownMenuSubContent>
                       <DropdownMenuItem
                         onClick={() => {
+                          handlePriorityChange(null);
+                          setMenuOpen(false);
+                        }}
+                        className={cn(
+                          'cursor-pointer text-muted-foreground',
+                          !task.priority && 'bg-muted/50'
+                        )}
+                      >
+                        <div className='flex w-full items-center justify-between'>
+                          <div className="flex items-center gap-2">
+                            <X className="h-4 w-4" />
+                            No Priority
+                          </div>
+                          {!task.priority && <Check className="h-4 w-4" />}
+                        </div>
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem
+                        onClick={() => {
                           handlePriorityChange('critical');
                           setMenuOpen(false);
                         }}
@@ -904,25 +923,6 @@ export const TaskCard = React.memo(function TaskCard({
                           {task.priority === 'low' && (
                             <Check className="h-4 w-4 text-dynamic-blue" />
                           )}
-                        </div>
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem
-                        onClick={() => {
-                          handlePriorityChange(null);
-                          setMenuOpen(false);
-                        }}
-                        className={cn(
-                          'cursor-pointer text-muted-foreground',
-                          !task.priority && 'bg-muted/50'
-                        )}
-                      >
-                        <div className='flex w-full items-center justify-between'>
-                          <div className="flex items-center gap-2">
-                            <X className="h-4 w-4" />
-                            No Priority
-                          </div>
-                          {!task.priority && <Check className="h-4 w-4" />}
                         </div>
                       </DropdownMenuItem>
                     </DropdownMenuSubContent>

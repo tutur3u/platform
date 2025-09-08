@@ -1170,9 +1170,10 @@ export function useBoardTaskTags(boardId: string) {
 }
 
 export function priorityCompare(
-  priorityA: TaskPriority | null,
-  priorityB: TaskPriority | null
+  priorityA: TaskPriority | null | undefined,
+  priorityB: TaskPriority | null | undefined
 ) {
+  // Priority order: No priority first (highest value), then critical, high, normal, low
   const priorityOrder = {
     critical: 4,
     high: 3,
@@ -1180,9 +1181,14 @@ export function priorityCompare(
     low: 1,
   };
 
-  if (!priorityA || !priorityB) return 0;
-  if (!priorityA) return -priorityOrder[priorityB];
-  if (!priorityB) return priorityOrder[priorityA];
+  // No priority gets the highest value (5) so it sorts first
+  const getOrderValue = (priority: TaskPriority | null | undefined): number => {
+    return priority ? priorityOrder[priority] : 5;
+  };
 
-  return priorityOrder[priorityA] - priorityOrder[priorityB];
+  const valueA = getOrderValue(priorityA);
+  const valueB = getOrderValue(priorityB);
+
+  // Higher values come first (descending order)
+  return valueB - valueA;
 }

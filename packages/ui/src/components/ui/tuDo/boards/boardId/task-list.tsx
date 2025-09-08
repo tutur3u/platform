@@ -310,27 +310,14 @@ export const BoardColumn = React.memo(function BoardColumn({
     } else {
       // Default sorting when no sort is selected
       filtered.sort((a, b) => {
-        // If both have priority, sort by priority (1 comes first)
-        if (a.priority != null && b.priority != null) {
-          const priorityDiff = priorityCompare(a.priority, b.priority);
-          // If priorities are the same, sort by due date
-          if (priorityDiff === 0) {
-            // Tasks with due dates come before tasks without due dates
-            if (a.end_date && b.end_date) {
-              return (
-                new Date(a.end_date).getTime() - new Date(b.end_date).getTime()
-              );
-            }
-            if (a.end_date && !b.end_date) return -1;
-            if (!a.end_date && b.end_date) return 1;
-            return 0;
-          }
+        // First, sort by priority (no priority first, then urgent, high, medium, low)
+        const priorityDiff = priorityCompare(a.priority, b.priority);
+        if (priorityDiff !== 0) {
           return priorityDiff;
         }
-        // Tasks with priority come before tasks without priority
-        if (a.priority != null && b.priority == null) return -1;
-        if (a.priority == null && b.priority != null) return 1;
-        // If both have no priority, sort by due date
+
+        // If priorities are the same, sort by due date
+        // Tasks with due dates come before tasks without due dates
         if (a.end_date && b.end_date) {
           return (
             new Date(a.end_date).getTime() - new Date(b.end_date).getTime()
@@ -338,7 +325,8 @@ export const BoardColumn = React.memo(function BoardColumn({
         }
         if (a.end_date && !b.end_date) return -1;
         if (!a.end_date && b.end_date) return 1;
-        // If both have no priority and no due date, maintain original order
+
+        // If both have same priority and same due date status, maintain original order
         return 0;
       });
     }
@@ -411,7 +399,7 @@ export const BoardColumn = React.memo(function BoardColumn({
         'touch-none select-none border-l-4',
         colorClass,
         isDragging &&
-          'rotate-1 scale-[1.02] opacity-90 shadow-xl ring-2 ring-primary/20',
+        'rotate-1 scale-[1.02] opacity-90 shadow-xl ring-2 ring-primary/20',
         isOverlay && 'shadow-2xl ring-2 ring-primary/30',
         'hover:shadow-md',
         // Visual feedback for invalid drop (dev only)
