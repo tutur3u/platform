@@ -1,5 +1,4 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
-import { BoardClient } from '@tuturuuu/ui/tuDo/shared/board-client';
 import {
   getTaskBoard,
   getTaskLists,
@@ -7,6 +6,7 @@ import {
 } from '@tuturuuu/utils/task-helper';
 import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import { notFound, redirect } from 'next/navigation';
+import { BoardClient } from 'src/components/ui/tu-do/shared/board-client';
 
 interface Props {
   wsId: string;

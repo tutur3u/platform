@@ -13,10 +13,10 @@ import {
   CircleSlash,
   Plus,
 } from '@tuturuuu/ui/icons';
-import { EnhancedTaskList } from '@tuturuuu/ui/tuDo/boards/boardId/enhanced-task-list';
-import { TaskListForm } from '@tuturuuu/ui/tuDo/boards/boardId/task-list-form';
 import { cn } from '@tuturuuu/utils/format';
 import { useState } from 'react';
+import { EnhancedTaskList } from 'src/components/ui/tu-do/boards/boardId/enhanced-task-list';
+import { TaskListForm } from 'src/components/ui/tu-do/boards/boardId/task-list-form';
 
 interface Props {
   status: TaskBoardStatus;

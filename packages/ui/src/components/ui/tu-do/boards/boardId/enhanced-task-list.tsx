@@ -32,11 +32,11 @@ import {
 } from '@tuturuuu/ui/dropdown-menu';
 import { GripVertical, Lock, MoreVertical, Trash2 } from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
-import { TaskCard } from '@tuturuuu/ui/tuDo/boards/boardId/task';
-import { TaskForm } from '@tuturuuu/ui/tuDo/boards/boardId/task-form';
 import { cn } from '@tuturuuu/utils/format';
 import { useState } from 'react';
 import { toast } from 'sonner';
+import { TaskCard } from 'src/components/ui/tu-do/boards/boardId/task';
+import { TaskForm } from 'src/components/ui/tu-do/boards/boardId/task-form';
 
 interface Props {
   list: TaskList;

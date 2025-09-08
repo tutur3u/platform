@@ -23,11 +23,11 @@ import {
 } from '@tuturuuu/ui/dropdown-menu';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import { Ellipsis, Eye } from '@tuturuuu/ui/icons';
-import { TaskBoardForm } from '@tuturuuu/ui/tuDo/boards/form';
-import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { useState } from 'react';
+import { TaskBoardForm } from 'src/components/ui/tu-do/boards/form';
 
 interface ProjectRowActionsProps {
   row: Row<EnhancedTaskBoard>;

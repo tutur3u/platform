@@ -56,10 +56,6 @@ import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
 import { Textarea } from '@tuturuuu/ui/textarea';
-import { TaskActions } from '@tuturuuu/ui/tuDo/boards/boardId/task-actions';
-import { AssigneeSelect } from '@tuturuuu/ui/tuDo/shared/assignee-select';
-import { TaskEditDialog } from '@tuturuuu/ui/tuDo/shared/task-edit-dialog';
-import { TaskTagsDisplay } from '@tuturuuu/ui/tuDo/shared/task-tags-display';
 import { cn } from '@tuturuuu/utils/format';
 import {
   moveTask,
@@ -75,6 +71,10 @@ import {
   isYesterday,
 } from 'date-fns';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { TaskActions } from 'src/components/ui/tu-do/boards/boardId/task-actions';
+import { AssigneeSelect } from 'src/components/ui/tu-do/shared/assignee-select';
+import { TaskEditDialog } from 'src/components/ui/tu-do/shared/task-edit-dialog';
+import { TaskTagsDisplay } from 'src/components/ui/tu-do/shared/task-tags-display';
 
 interface Props {
   task: Task;

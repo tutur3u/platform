@@ -42,10 +42,10 @@ import {
 } from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
 import { Separator } from '@tuturuuu/ui/separator';
-import type { ViewType } from '@tuturuuu/ui/tuDo/shared/board-views';
 import { cn } from '@tuturuuu/utils/format';
 import { useRouter } from 'next/navigation';
 import { useMemo, useState } from 'react';
+import type { ViewType } from 'src/components/ui/tu-do/shared/board-views';
 
 interface Props {
   board: TaskBoard & { tasks: Task[]; lists: TaskList[] };

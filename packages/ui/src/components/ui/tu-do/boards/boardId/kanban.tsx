@@ -25,13 +25,13 @@ import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent } from '@tuturuuu/ui/card';
 import { useHorizontalScroll } from '@tuturuuu/ui/hooks/useHorizontalScroll';
-import { LightweightTaskCard } from '@tuturuuu/ui/tuDo/boards/boardId/task';
-import { BoardColumn } from '@tuturuuu/ui/tuDo/boards/boardId/task-list';
-import { TaskListForm } from '@tuturuuu/ui/tuDo/boards/boardId/task-list-form';
 import { coordinateGetter } from '@tuturuuu/utils/keyboard-preset';
 import { getTaskLists, useMoveTask } from '@tuturuuu/utils/task-helper';
 import { hasDraggableData } from '@tuturuuu/utils/task-helpers';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { LightweightTaskCard } from 'src/components/ui/tu-do/boards/boardId/task';
+import { BoardColumn } from 'src/components/ui/tu-do/boards/boardId/task-list';
+import { TaskListForm } from 'src/components/ui/tu-do/boards/boardId/task-list-form';
 
 // Wrapper for BoardContainer with horizontal scroll functionality
 function ScrollableBoardContainer({

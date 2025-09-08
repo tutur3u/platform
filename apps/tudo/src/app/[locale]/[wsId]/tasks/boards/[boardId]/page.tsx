@@ -1,4 +1,4 @@
-import TaskBoardPage from '@tuturuuu/ui/tuDo/boards/boardId/task-board-page';
+import TaskBoardPage from '@tuturuuu/ui/tu-do/boards/boardId/task-board-page';
 import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
 
 interface Props {

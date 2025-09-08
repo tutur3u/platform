@@ -82,7 +82,6 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@tuturuuu/ui/tooltip';
-import { TaskEditDialog } from '@tuturuuu/ui/tuDo/shared/task-edit-dialog';
 import { cn } from '@tuturuuu/utils/format';
 import { getTagColorStyling } from '@tuturuuu/utils/tag-utils';
 import { getTasks, priorityCompare } from '@tuturuuu/utils/task-helper';
@@ -96,6 +95,7 @@ import {
 } from 'date-fns';
 import { useParams } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
+import { TaskEditDialog } from 'src/components/ui/tu-do/shared/task-edit-dialog';
 
 interface Props {
   board: { id: string; tasks: Task[]; lists?: TaskList[] };
@@ -165,7 +165,7 @@ const SKELETON_KEYS: string[] = ['a', 'b', 'c', 'd', 'e'];
 export function ListView({
   board,
   selectedTags = [],
-  onTagsChange = () => { },
+  onTagsChange = () => {},
   isPersonalWorkspace = false,
 }: Props) {
   const queryClient = useQueryClient();
@@ -941,7 +941,7 @@ export function ListView({
                   className={cn(
                     'h-8 gap-1.5 px-3 text-xs',
                     selectedTags.length > 0 &&
-                    'border-primary bg-primary/5 text-primary hover:bg-primary/10'
+                      'border-primary bg-primary/5 text-primary hover:bg-primary/10'
                   )}
                 >
                   <Tag className="h-3.5 w-3.5" />
@@ -1012,7 +1012,7 @@ export function ListView({
                   className={cn(
                     'h-8 gap-1.5 px-3 text-xs',
                     filters.priorities.size > 0 &&
-                    'border-primary bg-primary/5 text-primary hover:bg-primary/10'
+                      'border-primary bg-primary/5 text-primary hover:bg-primary/10'
                   )}
                 >
                   <Flag className="h-3.5 w-3.5" />
@@ -1068,7 +1068,7 @@ export function ListView({
                   className={cn(
                     'h-8 gap-1.5 px-3 text-xs',
                     filters.statuses.size > 0 &&
-                    'border-primary bg-primary/5 text-primary hover:bg-primary/10'
+                      'border-primary bg-primary/5 text-primary hover:bg-primary/10'
                   )}
                 >
                   <CheckCircle2 className="h-3.5 w-3.5" />
@@ -1124,7 +1124,7 @@ export function ListView({
                     className={cn(
                       'h-8 gap-1.5 px-3 text-xs',
                       filters.assignees.size > 0 &&
-                      'border-primary bg-primary/5 text-primary hover:bg-primary/10'
+                        'border-primary bg-primary/5 text-primary hover:bg-primary/10'
                     )}
                   >
                     <Users className="h-3.5 w-3.5" />
@@ -1628,7 +1628,7 @@ export function ListView({
                             {task.name}
                           </div>
                           {task.description && (
-                            <p className='scrollbar-none group-hover:scrollbar-thin scrollbar-track-transparent scrollbar-thumb-muted-foreground/30 group-hover:scrollbar-thumb-muted-foreground/50 line-clamp-1 max-h-20 overflow-y-auto whitespace-pre-line text-muted-foreground text-sm leading-relaxed'>
+                            <p className="scrollbar-none group-hover:scrollbar-thin scrollbar-track-transparent scrollbar-thumb-muted-foreground/30 group-hover:scrollbar-thumb-muted-foreground/50 line-clamp-1 max-h-20 overflow-y-auto whitespace-pre-line text-muted-foreground text-sm leading-relaxed">
                               {task.description}
                             </p>
                           )}

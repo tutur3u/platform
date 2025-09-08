@@ -1,6 +1,5 @@
 'use client';
 
-import { projectColumns } from './columns';
 import type { EnhancedTaskBoard } from '@tuturuuu/types/primitives/TaskBoard';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
@@ -48,16 +47,17 @@ import {
   SelectValue,
 } from '@tuturuuu/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
-// Import new components
-import { GanttChart } from '@tuturuuu/ui/tuDo/shared/GanttChart';
-import { StatusDistribution } from '@tuturuuu/ui/tuDo/shared/StatusDistribution';
-import { TaskCreationAnalytics } from '@tuturuuu/ui/tuDo/shared/TaskCreationAnalytics';
-import { TaskGroup } from '@tuturuuu/ui/tuDo/shared/TaskGroup';
-import { TaskWorkflowAnalytics } from '@tuturuuu/ui/tuDo/shared/TaskWorkflowAnalytics';
 // Import helper functions
 import { getFilteredMetrics } from '@tuturuuu/utils/task-helpers';
 import { useRouter } from 'next/navigation';
 import { useCallback, useMemo, useState } from 'react';
+// Import new components
+import { GanttChart } from 'src/components/ui/tu-do/shared/GanttChart';
+import { StatusDistribution } from 'src/components/ui/tu-do/shared/StatusDistribution';
+import { TaskCreationAnalytics } from 'src/components/ui/tu-do/shared/TaskCreationAnalytics';
+import { TaskGroup } from 'src/components/ui/tu-do/shared/TaskGroup';
+import { TaskWorkflowAnalytics } from 'src/components/ui/tu-do/shared/TaskWorkflowAnalytics';
+import { projectColumns } from './columns';
 
 interface AnalyticsFilters {
   timeView: 'week' | 'month' | 'year';

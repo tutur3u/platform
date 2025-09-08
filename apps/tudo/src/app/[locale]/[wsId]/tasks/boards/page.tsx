@@ -1,4 +1,4 @@
-import WorkspaceProjectsPage from '@tuturuuu/ui/tuDo/boards/workspace-projects-page';
+import WorkspaceProjectsPage from '@tuturuuu/ui/tu-do/boards/workspace-projects-page';
 import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
 
 interface Props {

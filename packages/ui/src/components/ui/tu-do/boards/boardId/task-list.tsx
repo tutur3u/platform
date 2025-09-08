@@ -32,10 +32,6 @@ import {
 } from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
-import { ListActions } from '@tuturuuu/ui/tuDo/boards/boardId/list-actions';
-import { TaskCard } from '@tuturuuu/ui/tuDo/boards/boardId/task';
-import { TaskForm } from '@tuturuuu/ui/tuDo/boards/boardId/task-form';
-import { TaskTagInput } from '@tuturuuu/ui/tuDo/shared/task-tag-input';
 import { DEV_MODE } from '@tuturuuu/utils/constants';
 import { cn } from '@tuturuuu/utils/format';
 import { priorityCompare } from '@tuturuuu/utils/task-helper';
@@ -49,6 +45,10 @@ import React, {
   useRef,
   useState,
 } from 'react';
+import { ListActions } from 'src/components/ui/tu-do/boards/boardId/list-actions';
+import { TaskCard } from 'src/components/ui/tu-do/boards/boardId/task';
+import { TaskForm } from 'src/components/ui/tu-do/boards/boardId/task-form';
+import { TaskTagInput } from 'src/components/ui/tu-do/shared/task-tag-input';
 import { statusIcons } from './status-section';
 
 interface Props {

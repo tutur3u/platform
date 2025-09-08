@@ -24,12 +24,12 @@ import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
 import { Textarea } from '@tuturuuu/ui/textarea';
-import { TaskTagInput } from '@tuturuuu/ui/tuDo/shared/task-tag-input';
 import { cn } from '@tuturuuu/utils/format';
 import { createTask } from '@tuturuuu/utils/task-helper';
 import { format } from 'date-fns';
 import { useParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
+import { TaskTagInput } from 'src/components/ui/tu-do/shared/task-tag-input';
 
 interface Props {
   listId: string;
