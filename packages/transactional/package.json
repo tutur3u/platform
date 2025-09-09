@@ -7,10 +7,10 @@
     "export": "email export"
   },
   "dependencies": {
-    "@react-email/components": "^0.5.2",
-    "@react-email/preview-server": "^4.2.8",
+    "@react-email/components": "^0.5.3",
+    "@react-email/preview-server": "^4.2.10",
     "react": "^19.1.1",
-    "react-email": "^4.2.8"
+    "react-email": "^4.2.10"
   },
   "devDependencies": {
     "@tuturuuu/typescript-config": "workspace:*",

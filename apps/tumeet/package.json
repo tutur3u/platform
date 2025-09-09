@@ -34,7 +34,7 @@
     "dayjs": "^1.11.18",
     "nanoid": "^5.1.5",
     "next": "^15.5.2",
-    "next-intl": "^4.3.6",
+    "next-intl": "^4.3.7",
     "qrcode.react": "^4.2.0",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
