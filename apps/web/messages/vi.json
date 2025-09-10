@@ -2705,7 +2705,9 @@
     "content": "Nội dung",
     "content_placeholder": "Nhập mô tả hoặc chi tiết hóa đơn...",
     "notes": "Ghi chú",
-    "notes_placeholder": "Ghi chú bổ sung hoặc bình luận..."
+    "notes_placeholder": "Ghi chú bổ sung hoặc bình luận...",
+    "standard_invoice": "Hóa đơn cơ bản",
+    "subscription_invoice": "Hóa đơn đăng ký"
   },
   "ws-inventory-products": {
     "plural": "Sản phẩm",

@@ -2655,7 +2655,9 @@
     "edit_description": "Edit an existing invoice",
     "new_invoice": "New invoice",
     "standard": "Standard invoice",
-    "subscription": "Subscription invoice"
+    "subscription": "Subscription invoice",
+    "standard_invoice": "Standard Invoice",
+    "subscription_invoice": "Subscription Invoice"
   },
   "ws-inventory-products": {
     "plural": "Products",

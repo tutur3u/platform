@@ -15,35 +15,7 @@ import { Label } from '@tuturuuu/ui/label';
 import { Combobox, type ComboboxOptions } from '@tuturuuu/ui/custom/combobox';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
-
-interface ProductInventory {
-  unit_id: string;
-  warehouse_id: string;
-  amount: number | null; // null means unlimited stock
-  min_amount: number;
-  price: number;
-  unit_name: string | null;
-  warehouse_name: string | null;
-}
-
-interface Product {
-  id: string;
-  name: string | null;
-  manufacturer: string | null;
-  description: string | null;
-  usage: string | null;
-  category: string | null;
-  category_id: string;
-  ws_id: string;
-  created_at: string | null;
-  inventory: ProductInventory[];
-}
-
-export interface SelectedProductItem {
-  product: Product;
-  inventory: ProductInventory;
-  quantity: number;
-}
+import type { Product, ProductInventory, SelectedProductItem } from './types';
 
 interface Props {
   products: Product[];
