@@ -345,7 +345,7 @@ export function SubscriptionInvoice({ wsId, selectedUserId, onSelectedUserIdChan
       month: 'long' 
     });
     
-    let contentParts = [`Subscription invoice for ${groupName} - ${monthName}`];
+    const contentParts = [`Subscription invoice for ${groupName} - ${monthName}`];
     
     if (subscriptionProducts.length > 0) {
       const attendanceDays = subscriptionProducts[0]?.attendanceDays || 0;
