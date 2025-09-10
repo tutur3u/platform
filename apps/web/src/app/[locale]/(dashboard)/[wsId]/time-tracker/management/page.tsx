@@ -76,6 +76,7 @@ export default async function TimeTrackerManagementPage({
 
   return (
     <TimeTrackerManagementClient
+      wsId={wsId}
       groupedSessions={groupedSessionsResult.data}
       pagination={groupedSessionsResult.pagination}
       stats={stats}

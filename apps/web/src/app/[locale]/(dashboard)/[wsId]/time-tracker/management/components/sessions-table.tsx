@@ -5,6 +5,12 @@ import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@tuturuuu/ui/dropdown-menu';
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -16,10 +22,13 @@ import { getInitials } from '@tuturuuu/utils/name-helper';
 import dayjs from 'dayjs';
 import duration from 'dayjs/plugin/duration';
 import {
+  ChevronDown,
   ChevronLeft,
   ChevronRight,
   Clock,
+  Download,
   Eye,
+  FileSpreadsheet,
   Filter,
   Loader2,
   Pause,
@@ -67,6 +76,8 @@ interface SessionsTableProps {
   isLoading?: boolean;
   hasActiveFilters?: boolean;
   onClearFilters?: () => void;
+  onExportCSV?: () => void;
+  onExportExcel?: () => void;
 }
 
 export default function SessionsTable({
@@ -79,6 +90,8 @@ export default function SessionsTable({
   isLoading = false,
   hasActiveFilters = false,
   onClearFilters,
+  onExportCSV,
+  onExportExcel,
 }: SessionsTableProps) {
   // Helper functions
   const formatDuration = (seconds: number) => {
@@ -215,15 +228,55 @@ export default function SessionsTable({
             </div>
           </CardTitle>
 
-          {hasActiveFilters && (
-            <Badge
-              variant="outline"
-              className="border-dynamic-blue/30 bg-dynamic-blue/10 text-dynamic-blue transition-all hover:bg-dynamic-blue/20"
-            >
-              <Filter className="mr-1 size-3" />
-              Filtered
-            </Badge>
-          )}
+          <div className="flex items-center gap-3">
+            {hasActiveFilters && (
+              <Badge
+                variant="outline"
+                className="border-dynamic-blue/30 bg-dynamic-blue/10 text-dynamic-blue transition-all hover:bg-dynamic-blue/20"
+              >
+                <Filter className="mr-1 size-3" />
+                Filtered
+              </Badge>
+            )}
+
+            {/* Export Dropdown */}
+            {(onExportCSV || onExportExcel) && sortedSessions.length > 0 && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={isLoading}
+                    className="border-dynamic-green/20 text-dynamic-green transition-all duration-200 hover:border-dynamic-green/30 hover:bg-dynamic-green/10"
+                  >
+                    <Download className="mr-2 size-4" />
+                    Export
+                    <ChevronDown className="ml-2 size-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-48">
+                  {onExportExcel && (
+                    <DropdownMenuItem
+                      onClick={onExportExcel}
+                      className="cursor-pointer transition-colors hover:bg-dynamic-green/10"
+                    >
+                      <FileSpreadsheet className="mr-2 size-4 text-dynamic-green" />
+                      Export to Excel
+                    </DropdownMenuItem>
+                  )}
+                  {onExportCSV && (
+                    <DropdownMenuItem
+                      onClick={onExportCSV}
+                      className="cursor-pointer transition-colors hover:bg-dynamic-blue/10"
+                    >
+                      <FileSpreadsheet className="mr-2 size-4 text-dynamic-blue" />
+                      Export to CSV
+                    </DropdownMenuItem>
+                  )}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
+          </div>
         </div>
       </CardHeader>
 

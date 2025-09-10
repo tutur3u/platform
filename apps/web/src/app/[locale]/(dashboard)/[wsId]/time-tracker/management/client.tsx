@@ -8,11 +8,13 @@ import {
   DialogTitle,
 } from '@tuturuuu/ui/dialog';
 import { AlertCircle, Clock, Loader2 } from '@tuturuuu/ui/icons';
+import { Progress } from '@tuturuuu/ui/progress';
 import { getInitials } from '@tuturuuu/utils/name-helper';
 import dayjs from 'dayjs';
 import duration from 'dayjs/plugin/duration';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useCallback, useEffect, useState } from 'react';
+import * as XLSX from 'xlsx';
 import FiltersPanel from './components/filters-panel';
 import ManagementCardSkeleton from './components/management-card-skeleton';
 import SessionsTable from './components/sessions-table';
@@ -62,6 +64,7 @@ interface TimeTrackingStats {
 }
 
 export default function TimeTrackerManagementClient({
+  wsId,
   groupedSessions,
   pagination,
   stats,
@@ -69,6 +72,7 @@ export default function TimeTrackerManagementClient({
   currentStartDate,
   currentEndDate,
 }: {
+  wsId: string;
   groupedSessions: GroupedSession[];
   pagination?: PaginationInfo;
   stats?: TimeTrackingStats;
@@ -98,6 +102,14 @@ export default function TimeTrackerManagementClient({
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Export progress states
+  const [isExporting, setIsExporting] = useState(false);
+  const [exportProgress, setExportProgress] = useState(0);
+  const [exportStatus, setExportStatus] = useState('');
+  const [estimatedTimeRemaining, setEstimatedTimeRemaining] =
+    useState<number>(0);
+  const [exportType, setExportType] = useState<'csv' | 'excel' | ''>('');
 
   // Loading and error management
   useEffect(() => {
@@ -178,6 +190,419 @@ export default function TimeTrackerManagementClient({
   const handleViewDetails = (session: GroupedSession) => {
     setSelectedSession(session);
     setIsModalOpen(true);
+  };
+
+  // Helper function to format time remaining
+  const formatTimeRemaining = (seconds: number): string => {
+    if (seconds < 60) {
+      return `${Math.round(seconds)}s`;
+    } else if (seconds < 3600) {
+      const minutes = Math.floor(seconds / 60);
+      const remainingSeconds = Math.round(seconds % 60);
+      return `${minutes}m ${remainingSeconds}s`;
+    } else {
+      const hours = Math.floor(seconds / 3600);
+      const minutes = Math.floor((seconds % 3600) / 60);
+      return `${hours}h ${minutes}m`;
+    }
+  };
+
+  // Fetch all data for export with progress tracking
+  const fetchAllDataForExport = async (): Promise<GroupedSession[]> => {
+    const startTime = Date.now();
+    setIsExporting(true);
+    setExportProgress(0);
+    setExportStatus('Preparing export...');
+    setEstimatedTimeRemaining(0);
+
+    try {
+      // First, get the total count with a small batch size for accurate pagination
+      setExportStatus('Calculating total records...');
+      const initialParams = new URLSearchParams();
+      initialParams.set('wsId', wsId);
+      initialParams.set('period', period);
+      initialParams.set('page', '1');
+      initialParams.set('limit', '10'); // Small batch to get accurate total count
+      if (searchQuery) initialParams.set('search', searchQuery);
+      if (startDate) initialParams.set('startDate', startDate);
+      if (endDate) initialParams.set('endDate', endDate);
+
+      const initialResponse = await fetch(
+        `/api/time-tracking/export?${initialParams}`
+      );
+
+      if (!initialResponse.ok) {
+        throw new Error('Failed to fetch data for export');
+      }
+
+      const initialData = await initialResponse.json();
+      const totalRecords = initialData.pagination?.total || 0;
+
+      if (totalRecords === 0) {
+        setExportStatus('No data to export');
+        setIsExporting(false);
+        return [];
+      }
+
+      setExportStatus(`Found ${totalRecords} records. Fetching data...`);
+
+      const allSessions: GroupedSession[] = [];
+      const batchSize = 100; // Optimal batch size for export
+      const totalPages = Math.ceil(totalRecords / batchSize);
+
+      let processedRecords = 0;
+
+      for (let page = 1; page <= totalPages; page++) {
+        const currentTime = Date.now();
+        const elapsedTime = (currentTime - startTime) / 1000; // in seconds
+
+        // Calculate progress and time estimation
+        const progressPercent = ((page - 1) / totalPages) * 80; // Use 80% for fetching
+        setExportProgress(progressPercent);
+
+        // Estimate time remaining based on current progress
+        if (page > 1) {
+          const recordsPerSecond = processedRecords / elapsedTime;
+          const remainingRecords = totalRecords - processedRecords;
+          const estimatedSeconds = remainingRecords / recordsPerSecond;
+          setEstimatedTimeRemaining(estimatedSeconds);
+        }
+
+        setExportStatus(
+          `Fetching batch ${page} of ${totalPages} (${processedRecords}/${totalRecords} records)...`
+        );
+
+        const params = new URLSearchParams();
+        params.set('wsId', wsId);
+        params.set('period', period);
+        params.set('page', page.toString());
+        params.set('limit', batchSize.toString());
+        if (searchQuery) params.set('search', searchQuery);
+        if (startDate) params.set('startDate', startDate);
+        if (endDate) params.set('endDate', endDate);
+
+        const response = await fetch(`/api/time-tracking/export?${params}`);
+
+        if (!response.ok) {
+          throw new Error(`Failed to fetch page ${page}`);
+        }
+
+        const data = await response.json();
+        const batchData = data.data || [];
+        allSessions.push(...batchData);
+        processedRecords += batchData.length;
+
+        // Small delay to prevent overwhelming the server
+        if (page < totalPages) {
+          await new Promise((resolve) => setTimeout(resolve, 100));
+        }
+      }
+
+      setExportProgress(90);
+      setExportStatus('Processing data for export...');
+      setEstimatedTimeRemaining(2); // Final processing should be quick
+
+      return allSessions;
+    } catch (error) {
+      console.error('Error fetching all data for export:', error);
+      setError('Failed to fetch all data for export. Please try again.');
+      setIsExporting(false);
+      setExportProgress(0);
+      setExportStatus('');
+      setEstimatedTimeRemaining(0);
+      return [];
+    }
+  };
+
+  // Export functionality
+  const formatDurationForExport = (seconds: number) => {
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    const secs = seconds % 60;
+    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  // Create proper XLSX file using SheetJS
+  const createXlsxFile = (data: any[]): ArrayBuffer => {
+    const headers = [
+      'User',
+      'Period',
+      'Period Type',
+      'Session Count',
+      'Total Duration',
+      'Total Duration (Seconds)',
+      'Average Duration',
+      'Status',
+      'First Start Time',
+      'Last End Time',
+      'Session Titles',
+    ];
+
+    // Prepare worksheet data
+    const worksheetData = [
+      headers,
+      ...data.map((row) => [
+        row.user,
+        row.period,
+        row.periodType,
+        row.sessionCount,
+        row.totalDuration,
+        row.totalDurationSeconds,
+        row.averageDuration,
+        row.status,
+        row.firstStartTime,
+        row.lastEndTime,
+        row.sessionTitles,
+      ]),
+    ];
+
+    // Create worksheet
+    const worksheet = XLSX.utils.aoa_to_sheet(worksheetData);
+
+    // Set column widths
+    const columnWidths = [
+      { wch: 20 }, // User
+      { wch: 15 }, // Period
+      { wch: 12 }, // Period Type
+      { wch: 12 }, // Session Count
+      { wch: 15 }, // Total Duration
+      { wch: 18 }, // Total Duration (Seconds)
+      { wch: 15 }, // Average Duration
+      { wch: 10 }, // Status
+      { wch: 20 }, // First Start Time
+      { wch: 20 }, // Last End Time
+      { wch: 30 }, // Session Titles
+    ];
+    worksheet['!cols'] = columnWidths;
+
+    // Style the header row
+    const headerStyle = {
+      font: { bold: true, color: { rgb: '000000' } },
+      fill: { fgColor: { rgb: 'E0E0E0' } },
+      alignment: { horizontal: 'center', vertical: 'center' },
+      border: {
+        top: { style: 'thin', color: { rgb: '000000' } },
+        bottom: { style: 'thin', color: { rgb: '000000' } },
+        left: { style: 'thin', color: { rgb: '000000' } },
+        right: { style: 'thin', color: { rgb: '000000' } },
+      },
+    };
+
+    // Apply header styling
+    for (let i = 0; i < headers.length; i++) {
+      const cellAddress = XLSX.utils.encode_cell({ r: 0, c: i });
+      if (!worksheet[cellAddress]) continue;
+      worksheet[cellAddress].s = headerStyle;
+    }
+
+    // Create workbook and add worksheet
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Time Tracking Sessions');
+
+    // Generate XLSX binary
+    return XLSX.write(workbook, {
+      type: 'array',
+      bookType: 'xlsx',
+      compression: true,
+    });
+  };
+
+  const prepareExportData = (sessions: GroupedSession[]) => {
+    const flattenedData: Array<{
+      user: string;
+      period: string;
+      periodType: string;
+      sessionCount: number;
+      totalDuration: string;
+      totalDurationSeconds: number;
+      averageDuration: string;
+      status: string;
+      firstStartTime: string;
+      lastEndTime: string;
+      sessionTitles: string;
+    }> = [];
+
+    sessions.forEach((session) => {
+      const sessionTitles = Array.from(
+        new Set(session.sessions.map((s) => s.title).filter(Boolean))
+      ).join('; ');
+
+      flattenedData.push({
+        user: session.user.displayName || 'Unknown User',
+        period: session.period,
+        periodType:
+          period === 'day' ? 'Daily' : period === 'week' ? 'Weekly' : 'Monthly',
+        sessionCount: session.sessions.length,
+        totalDuration: formatDurationForExport(session.totalDuration),
+        totalDurationSeconds: session.totalDuration,
+        averageDuration: formatDurationForExport(
+          Math.round(session.totalDuration / session.sessions.length)
+        ),
+        status: session.status,
+        firstStartTime: dayjs(session.firstStartTime).format(
+          'YYYY-MM-DD HH:mm:ss'
+        ),
+        lastEndTime: session.lastEndTime
+          ? dayjs(session.lastEndTime).format('YYYY-MM-DD HH:mm:ss')
+          : 'N/A',
+        sessionTitles: sessionTitles || 'No titles',
+      });
+    });
+
+    return flattenedData;
+  };
+
+  const downloadFile = (
+    content: string | ArrayBuffer,
+    fileName: string,
+    contentType: string
+  ) => {
+    try {
+      const blob = new Blob([content], { type: contentType });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = fileName;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Export failed:', error);
+      setError('Export failed. Please try again.');
+    }
+  };
+
+  const escapeCsvValue = (value: string | number): string => {
+    if (typeof value === 'number') return value.toString();
+    const stringValue = value.toString();
+    if (
+      stringValue.includes(',') ||
+      stringValue.includes('"') ||
+      stringValue.includes('\n')
+    ) {
+      return `"${stringValue.replace(/"/g, '""')}"`;
+    }
+    return stringValue;
+  };
+
+  const handleExportCSV = async () => {
+    try {
+      setExportType('csv');
+      const allSessions = await fetchAllDataForExport();
+      if (allSessions.length === 0) {
+        return;
+      }
+
+      setExportStatus('Preparing CSV file...');
+      setExportProgress(95);
+      setEstimatedTimeRemaining(3);
+
+      const data = prepareExportData(allSessions);
+      const headers = [
+        'User',
+        'Period',
+        'Period Type',
+        'Session Count',
+        'Total Duration',
+        'Total Duration (Seconds)',
+        'Average Duration',
+        'Status',
+        'First Start Time',
+        'Last End Time',
+        'Session Titles',
+      ];
+
+      const csvContent = [
+        headers.join(','),
+        ...data.map((row) =>
+          [
+            escapeCsvValue(row.user),
+            escapeCsvValue(row.period),
+            escapeCsvValue(row.periodType),
+            escapeCsvValue(row.sessionCount),
+            escapeCsvValue(row.totalDuration),
+            escapeCsvValue(row.totalDurationSeconds),
+            escapeCsvValue(row.averageDuration),
+            escapeCsvValue(row.status),
+            escapeCsvValue(row.firstStartTime),
+            escapeCsvValue(row.lastEndTime),
+            escapeCsvValue(row.sessionTitles),
+          ].join(',')
+        ),
+      ].join('\n');
+
+      setExportStatus('Downloading CSV file...');
+      setExportProgress(100);
+      setEstimatedTimeRemaining(1);
+
+      const fileName = `time-tracking-sessions-${dayjs().format('YYYY-MM-DD-HH-mm-ss')}.csv`;
+      downloadFile(csvContent, fileName, 'text/csv;charset=utf-8;');
+
+      // Reset export states after a delay
+      setTimeout(() => {
+        setIsExporting(false);
+        setExportProgress(0);
+        setExportStatus('');
+        setEstimatedTimeRemaining(0);
+        setExportType('');
+      }, 1000);
+    } catch (error) {
+      console.error('CSV export failed:', error);
+      setError('CSV export failed. Please try again.');
+      resetExportState();
+    }
+  };
+
+  const resetExportState = () => {
+    setIsExporting(false);
+    setExportProgress(0);
+    setExportStatus('');
+    setEstimatedTimeRemaining(0);
+    setExportType('');
+  };
+
+  const handleExportExcel = async () => {
+    try {
+      setExportType('excel');
+      const allSessions = await fetchAllDataForExport();
+      if (allSessions.length === 0) {
+        return;
+      }
+
+      setExportStatus('Preparing Excel file...');
+      setExportProgress(95);
+      setEstimatedTimeRemaining(5);
+
+      const data = prepareExportData(allSessions);
+
+      // Create proper XLSX format using our custom function
+      const xlsxContent = createXlsxFile(data);
+
+      setExportStatus('Downloading Excel file...');
+      setExportProgress(100);
+      setEstimatedTimeRemaining(1);
+
+      const fileName = `time-tracking-sessions-${dayjs().format('YYYY-MM-DD-HH-mm-ss')}.xlsx`;
+      downloadFile(
+        xlsxContent,
+        fileName,
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+      );
+
+      // Reset export states after a delay
+      setTimeout(() => {
+        setIsExporting(false);
+        setExportProgress(0);
+        setExportStatus('');
+        setEstimatedTimeRemaining(0);
+        setExportType('');
+      }, 1000);
+    } catch (error) {
+      console.error('Excel export failed:', error);
+      setError('Excel export failed. Please try again.');
+      resetExportState();
+    }
   };
 
   // Use provided stats or calculate from grouped sessions
@@ -298,12 +723,76 @@ export default function TimeTrackerManagementClient({
             onViewDetails={handleViewDetails}
             onPageChange={handlePageChange}
             onLimitChange={handleLimitChange}
-            isLoading={isLoading}
+            isLoading={isLoading || isExporting}
             hasActiveFilters={!!hasActiveFilters}
             onClearFilters={clearAllFilters}
+            onExportCSV={handleExportCSV}
+            onExportExcel={handleExportExcel}
           />
         </Suspense>
       </div>
+
+      {/* Export Progress Dialog */}
+      <Dialog open={isExporting} onOpenChange={() => {}}>
+        <DialogContent className="sm:max-w-md" hideCloseButton>
+          <div className="space-y-6 p-2">
+            {/* Header */}
+            <div className="flex items-center gap-4">
+              <div className="flex size-12 items-center justify-center rounded-full bg-gradient-to-br from-dynamic-green/20 to-dynamic-blue/20 ring-2 ring-dynamic-green/10">
+                <Loader2 className="size-6 animate-spin text-dynamic-green" />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-semibold text-dynamic-foreground text-lg">
+                  Exporting {exportType === 'csv' ? 'CSV' : 'Excel'} File
+                </h3>
+                <p className="text-dynamic-muted text-sm">
+                  Please don't close this window while exporting
+                </p>
+              </div>
+            </div>
+
+            {/* Progress Bar */}
+            <div className="space-y-4">
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-dynamic-foreground">Progress</span>
+                <span className="font-medium font-mono text-dynamic-green">
+                  {Math.round(exportProgress)}%
+                </span>
+              </div>
+
+              <Progress
+                value={exportProgress}
+                className="h-3 bg-dynamic-muted/20"
+              />
+
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-dynamic-muted">{exportStatus}</span>
+                {estimatedTimeRemaining > 0 && (
+                  <span className="text-dynamic-muted">
+                    ~{formatTimeRemaining(estimatedTimeRemaining)} remaining
+                  </span>
+                )}
+              </div>
+            </div>
+
+            {/* Tips */}
+            <div className="rounded-lg border border-dynamic-blue/20 bg-dynamic-blue/5 p-4">
+              <div className="flex items-start gap-3">
+                <div className="mt-0.5 flex size-5 items-center justify-center rounded-full bg-dynamic-blue/20">
+                  <span className="text-dynamic-blue text-xs">💡</span>
+                </div>
+                <div className="flex-1 text-xs">
+                  <p className="font-medium text-dynamic-blue">Export Tips</p>
+                  <p className="mt-1 text-dynamic-blue/80">
+                    Large exports may take a few minutes. The file will download
+                    automatically when complete.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Enhanced Session Details Modal */}
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
