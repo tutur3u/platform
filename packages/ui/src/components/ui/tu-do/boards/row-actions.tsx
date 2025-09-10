@@ -27,6 +27,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
+import { CopyBoardDialog } from './copy-board-dialog';
 import { TaskBoardForm } from './form';
 
 interface ProjectRowActionsProps {
@@ -61,6 +62,7 @@ export function ProjectRowActions({ row }: ProjectRowActionsProps) {
 
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [showCopyDialog, setShowCopyDialog] = useState(false);
 
   if (!data.id || !data.ws_id) return null;
 
@@ -96,6 +98,14 @@ export function ProjectRowActions({ row }: ProjectRowActionsProps) {
             >
               {t('common.edit')}
             </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowCopyDialog(true);
+              }}
+            >
+              Copy
+            </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem
               onClick={(e) => {
@@ -117,6 +127,12 @@ export function ProjectRowActions({ row }: ProjectRowActionsProps) {
           form={<TaskBoardForm wsId={data.ws_id} data={data} />}
         />
       </div>
+
+      <CopyBoardDialog
+        board={data}
+        open={showCopyDialog}
+        onOpenChange={setShowCopyDialog}
+      />
 
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <AlertDialogContent>

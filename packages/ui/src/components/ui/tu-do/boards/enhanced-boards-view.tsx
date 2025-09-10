@@ -25,7 +25,7 @@ import {
   Calendar,
   CheckCircle2,
   Clock,
-  // Users,
+  Copy,
   Eye,
   Filter,
   LayoutGrid,
@@ -56,6 +56,7 @@ import { TaskCreationAnalytics } from '../shared/TaskCreationAnalytics';
 import { TaskGroup } from '../shared/TaskGroup';
 import { TaskWorkflowAnalytics } from '../shared/TaskWorkflowAnalytics';
 import { projectColumns } from './columns';
+import { CopyBoardDialog } from './copy-board-dialog';
 
 interface AnalyticsFilters {
   timeView: 'week' | 'month' | 'year';
@@ -131,6 +132,15 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
     isOpen: false,
     filterType: 'all',
     selectedBoard: null,
+  });
+
+  // Copy board dialog state
+  const [copyBoardModal, setCopyBoardModal] = useState<{
+    isOpen: boolean;
+    board: EnhancedTaskBoard | null;
+  }>({
+    isOpen: false,
+    board: null,
   });
 
   const handleLayoutChange = useCallback(() => {
@@ -327,6 +337,14 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
 
   const closeTaskModal = useCallback(() => {
     setTaskModal((prev) => ({ ...prev, isOpen: false }));
+  }, []);
+
+  const openCopyBoardModal = useCallback((board: EnhancedTaskBoard) => {
+    setCopyBoardModal({ isOpen: true, board });
+  }, []);
+
+  const closeCopyBoardModal = useCallback(() => {
+    setCopyBoardModal({ isOpen: false, board: null });
   }, []);
 
   const handleTaskClick = useCallback((task: (typeof filteredTasks)[0]) => {
@@ -979,17 +997,32 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
                               Archived
                             </span>
                           )}
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-8 w-8 p-0 opacity-0 transition-opacity group-hover:opacity-100"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              window.location.href = board.href;
-                            }}
-                          >
-                            <Eye className="h-4 w-4" />
-                          </Button>
+                          <div className="flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-8 w-8 p-0"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                openCopyBoardModal(board);
+                              }}
+                              title="Copy"
+                            >
+                              <Copy className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-8 w-8 p-0"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                window.location.href = board.href;
+                              }}
+                              title="View board"
+                            >
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                          </div>
                         </div>
                       </div>
 
@@ -1666,6 +1699,15 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Copy Board Dialog */}
+      {copyBoardModal.board && (
+        <CopyBoardDialog
+          board={copyBoardModal.board}
+          open={copyBoardModal.isOpen}
+          onOpenChange={closeCopyBoardModal}
+        />
+      )}
     </>
   );
 }
