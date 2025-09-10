@@ -867,7 +867,10 @@
     "initiatives": "Sáng kiến",
     "teams": "Đội",
     "members": "Thành viên",
-    "cycles": "Chu kỳ"
+    "cycles": "Chu kỳ",
+    "google_workspace": "Không gian làm việc của Google",
+    "groups": "Nhóm",
+    "sites": "Trang web"
   },
   "usage": {
     "description": "Theo dõi hoạt động workspace, sử dụng tính năng và các số liệu hệ thống trong tổ chức của bạn",
