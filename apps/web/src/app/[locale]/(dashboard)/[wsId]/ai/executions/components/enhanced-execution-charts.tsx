@@ -1,11 +1,5 @@
 'use client';
 
-import type {
-  AIExecutionDailyStats,
-  AIExecutionModelStats,
-  AIExecutionSummary,
-} from '../services/analytics-service';
-import { calculateCost, formatCost } from '../utils/cost-calculator';
 import type { WorkspaceAIExecution } from '@tuturuuu/types/db';
 import { Alert, AlertDescription } from '@tuturuuu/ui/alert';
 import { Badge } from '@tuturuuu/ui/badge';
@@ -46,6 +40,12 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
+import type {
+  AIExecutionDailyStats,
+  AIExecutionModelStats,
+  AIExecutionSummary,
+} from '../services/analytics-service';
+import { calculateCost, formatCost } from '../utils/cost-calculator';
 
 interface EnhancedExecutionChartsProps {
   executions: WorkspaceAIExecution[];
@@ -663,9 +663,6 @@ export function EnhancedExecutionCharts({
                           outerRadius={80}
                           fill="#8884d8"
                           dataKey="executions"
-                          label={({ name, percent }) =>
-                            `${name}: ${((percent ?? 0) * 100).toFixed(0)}%`
-                          }
                         >
                           {modelData.map((_, index) => (
                             <Cell
