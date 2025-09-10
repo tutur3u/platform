@@ -1,6 +1,5 @@
 'use client';
 
-import { calculateCost, formatCost } from '../utils/cost-calculator';
 import type { WorkspaceAIExecution } from '@tuturuuu/types/db';
 import { Badge } from '@tuturuuu/ui/badge';
 import {
@@ -38,6 +37,7 @@ import { useMemo, useState } from 'react';
 import rehypeKatex from 'rehype-katex';
 import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
+import { calculateCost, formatCost } from '../utils/cost-calculator';
 
 interface ExecutionDetailDialogProps {
   execution: WorkspaceAIExecution | null;
@@ -429,6 +429,7 @@ export function ExecutionDetailDialog({
                   {t('system_prompt') || 'System Prompt'}
                 </div>
                 <button
+                  type="button"
                   onClick={(e) => {
                     e.stopPropagation();
                     toggleSection('systemPrompt');
@@ -460,8 +461,6 @@ export function ExecutionDetailDialog({
                   <MemoizedReactMarkdown
                     remarkPlugins={[remarkGfm, remarkMath]}
                     rehypePlugins={[rehypeKatex]}
-                    // biome-ignore lint/suspicious/noExplicitAny: <custom components>
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     components={markdownComponents as any}
                   >
                     {execution.system_prompt}
@@ -484,6 +483,7 @@ export function ExecutionDetailDialog({
                     {t('input') || 'Input'}
                   </div>
                   <button
+                    type="button"
                     onClick={(e) => {
                       e.stopPropagation();
                       toggleSection('input');
@@ -519,8 +519,6 @@ export function ExecutionDetailDialog({
                       <MemoizedReactMarkdown
                         remarkPlugins={[remarkGfm, remarkMath]}
                         rehypePlugins={[rehypeKatex]}
-                        // biome-ignore lint/suspicious/noExplicitAny: <custom components>
-                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
                         components={markdownComponents as any}
                       >
                         {execution.input}
@@ -542,6 +540,7 @@ export function ExecutionDetailDialog({
                     {t('output') || 'Output'}
                   </div>
                   <button
+                    type="button"
                     onClick={(e) => {
                       e.stopPropagation();
                       toggleSection('output');
@@ -577,8 +576,6 @@ export function ExecutionDetailDialog({
                       <MemoizedReactMarkdown
                         remarkPlugins={[remarkGfm, remarkMath]}
                         rehypePlugins={[rehypeKatex]}
-                        // biome-ignore lint/suspicious/noExplicitAny: <custom components>
-                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
                         components={markdownComponents as any}
                       >
                         {execution.output}

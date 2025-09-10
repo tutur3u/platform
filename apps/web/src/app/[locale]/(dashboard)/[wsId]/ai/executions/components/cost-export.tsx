@@ -1,6 +1,5 @@
 'use client';
 
-import { calculateCost } from '../utils/cost-calculator';
 import type { WorkspaceAIExecution } from '@tuturuuu/types/db';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -12,6 +11,7 @@ import {
 } from '@tuturuuu/ui/card';
 import { Download, FileText, Table } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import { calculateCost } from '../utils/cost-calculator';
 
 interface CostExportProps {
   executions: WorkspaceAIExecution[];

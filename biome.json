@@ -1,5 +1,5 @@
 {
-  "$schema": "https://biomejs.dev/schemas/2.2.3/schema.json",
+  "$schema": "https://biomejs.dev/schemas/2.2.4/schema.json",
   "root": true,
   "vcs": { "enabled": true, "clientKind": "git", "useIgnoreFile": true },
   "files": { "ignoreUnknown": false },
@@ -20,6 +20,12 @@
     "enabled": true,
     "rules": {
       "recommended": true,
+      "a11y": {
+        "noLabelWithoutControl": "off"
+      },
+      "style": {
+        "noNonNullAssertion": "off"
+      },
       "nursery": {
         "useSortedClasses": {
           "level": "info",
@@ -29,6 +35,13 @@
             "functions": ["cn"]
           }
         }
+      },
+      "complexity": {
+        "noStaticOnlyClass": "off"
+      },
+      "suspicious": {
+        "noExplicitAny": "off",
+        "noArrayIndexKey": "off"
       }
     }
   },

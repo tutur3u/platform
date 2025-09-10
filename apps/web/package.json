@@ -36,7 +36,7 @@
     "@mantine/hooks": "^8.3.1",
     "@octokit/auth-app": "^8.1.0",
     "@octokit/rest": "^22.0.0",
-    "@tanstack/react-query": "^5.87.1",
+    "@tanstack/react-query": "^5.87.4",
     "@tanstack/react-table": "^8.21.3",
     "@testing-library/jest-dom": "^6.8.0",
     "@tiptap/html": "^3.4.2",
@@ -105,7 +105,7 @@
   },
   "devDependencies": {
     "@next/bundle-analyzer": "^15.5.2",
-    "@tanstack/react-query-devtools": "^5.87.3",
+    "@tanstack/react-query-devtools": "^5.87.4",
     "@testing-library/react": "^16.3.0",
     "@tuturuuu/typescript-config": "workspace:*",
     "@types/canvas-confetti": "^1.9.0",
