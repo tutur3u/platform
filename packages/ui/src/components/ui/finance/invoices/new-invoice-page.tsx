@@ -18,10 +18,10 @@ export default function NewInvoicePage({ wsId }: Props) {
 
   return (
     <>
-        <FeatureSummary
+      <FeatureSummary
         pluralTitle={t('ws-invoices.new_invoice')}
         singularTitle={t('ws-invoices.new_invoice')}
-        />
+      />
       <Separator className="my-4" />
       <Tabs defaultValue="standard" className="w-full">
         <TabsList className="grid w-full grid-cols-2">
@@ -32,7 +32,7 @@ export default function NewInvoicePage({ wsId }: Props) {
             {t('ws-invoices.subscription_invoice')}
           </TabsTrigger>
         </TabsList>
-        
+
         <TabsContent value="standard" className="w-full">
           <StandardInvoice
             wsId={wsId}
@@ -40,7 +40,7 @@ export default function NewInvoicePage({ wsId }: Props) {
             onSelectedUserIdChange={setSelectedUserId}
           />
         </TabsContent>
-        
+
         <TabsContent value="subscription" className="w-full">
           <SubscriptionInvoice
             wsId={wsId}

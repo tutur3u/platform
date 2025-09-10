@@ -59,21 +59,30 @@ interface Props {
   onSelectedUserIdChange: (value: string) => void;
 }
 
-export function StandardInvoice({ wsId, selectedUserId, onSelectedUserIdChange }: Props) {
+export function StandardInvoice({
+  wsId,
+  selectedUserId,
+  onSelectedUserIdChange,
+}: Props) {
   const t = useTranslations();
   const router = useRouter();
 
   // Data queries
   const { data: users = [], isLoading: usersLoading } = useUsers(wsId);
   const { data: products = [], isLoading: productsLoading } = useProducts(wsId);
-  const { data: promotions = [], isLoading: promotionsLoading } = usePromotions(wsId);
+  const { data: promotions = [], isLoading: promotionsLoading } =
+    usePromotions(wsId);
   const { data: wallets = [], isLoading: walletsLoading } = useWallets(wsId);
-  const { data: categories = [], isLoading: categoriesLoading } = useCategories(wsId);
+  const { data: categories = [], isLoading: categoriesLoading } =
+    useCategories(wsId);
 
   // State management
-  const [selectedProducts, setSelectedProducts] = useState<SelectedProductItem[]>([]);
+  const [selectedProducts, setSelectedProducts] = useState<
+    SelectedProductItem[]
+  >([]);
   const [selectedWalletId, setSelectedWalletId] = useState<string>('');
-  const [selectedPromotionId, setSelectedPromotionId] = useState<string>('none');
+  const [selectedPromotionId, setSelectedPromotionId] =
+    useState<string>('none');
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>('');
   const [invoiceContent, setInvoiceContent] = useState<string>('');
   const [invoiceNotes, setInvoiceNotes] = useState<string>('');
@@ -81,13 +90,27 @@ export function StandardInvoice({ wsId, selectedUserId, onSelectedUserIdChange }
   const [createMultipleInvoices, setCreateMultipleInvoices] = useState(false);
 
   // User history queries
-  const { data: userTransactions = [], isLoading: userTransactionsLoading } = useUserTransactions(wsId, selectedUserId);
-  const { data: userInvoices = [], isLoading: userInvoicesLoading } = useUserInvoices(wsId, selectedUserId);
+  const { data: userTransactions = [], isLoading: userTransactionsLoading } =
+    useUserTransactions(wsId, selectedUserId);
+  const { data: userInvoices = [], isLoading: userInvoicesLoading } =
+    useUserInvoices(wsId, selectedUserId);
 
-  const selectedUser = users.find((user: WorkspaceUser) => user.id === selectedUserId);
-  const selectedPromotion = selectedPromotionId === 'none' ? null : promotions.find((promotion: Promotion) => promotion.id === selectedPromotionId);
+  const selectedUser = users.find(
+    (user: WorkspaceUser) => user.id === selectedUserId
+  );
+  const selectedPromotion =
+    selectedPromotionId === 'none'
+      ? null
+      : promotions.find(
+          (promotion: Promotion) => promotion.id === selectedPromotionId
+        );
   const isLoadingUserHistory = userTransactionsLoading || userInvoicesLoading;
-  const isLoadingData = usersLoading || productsLoading || promotionsLoading || walletsLoading || categoriesLoading;
+  const isLoadingData =
+    usersLoading ||
+    productsLoading ||
+    promotionsLoading ||
+    walletsLoading ||
+    categoriesLoading;
 
   // Calculate totals
   const subtotal = useMemo(() => {
@@ -134,10 +157,12 @@ export function StandardInvoice({ wsId, selectedUserId, onSelectedUserIdChange }
     }
 
     if (selectedProducts.length === 1) {
-      const productName = selectedProducts[0]?.product.name || 'Unknown Product';
+      const productName =
+        selectedProducts[0]?.product.name || 'Unknown Product';
       setInvoiceContent(`Invoice for ${productName}`);
     } else {
-      const firstProductName = selectedProducts[0]?.product.name || 'Unknown Product';
+      const firstProductName =
+        selectedProducts[0]?.product.name || 'Unknown Product';
       const additionalCount = selectedProducts.length - 1;
       setInvoiceContent(
         `Invoice for ${firstProductName} and ${additionalCount} more product${additionalCount > 1 ? 's' : ''}`
@@ -298,165 +323,158 @@ export function StandardInvoice({ wsId, selectedUserId, onSelectedUserIdChange }
                 placeholder="Search customers..."
               />
             </div>
-                  {/* Conditional User History Accordion */}
-                  {selectedUser && (
-                    <div className="mt-4">
-                      {isLoadingUserHistory ? (
-                        <div className="py-4 text-center">
-                          <p className="text-muted-foreground text-sm">
-                            Loading user history...
-                          </p>
-                        </div>
-                      ) : userTransactions.length > 0 ||
-                        userInvoices.length > 0 ? (
-                        <Accordion type="single" collapsible className="w-full">
-                          {userTransactions && userTransactions.length > 0 && (
-                            <AccordionItem value="transactions">
-                              <AccordionTrigger>
-                                {t('ws-transactions.plural')} (
-                                {userTransactions.length})
-                              </AccordionTrigger>
-                              <AccordionContent>
-                                <div className="space-y-3">
-                                  {userTransactions
-                                    .slice(0, 5)
-                                    .map((transaction: Transaction) => (
-                                      <div
-                                        key={transaction.id}
-                                        className="flex items-center justify-between rounded-lg border p-3"
-                                      >
-                                        <div className="flex-1">
-                                          <p className="font-medium">
-                                            {transaction.description ||
-                                              'No description'}
-                                          </p>
-                                          <p className="text-muted-foreground text-sm">
-                                            {transaction.category ||
-                                              'No category'}{' '}
-                                            •{' '}
-                                            {transaction.wallet || 'No wallet'}
-                                          </p>
-                                          <p className="text-muted-foreground text-xs">
-                                            {transaction.taken_at
-                                              ? new Date(
-                                                  transaction.taken_at
-                                                ).toLocaleDateString()
-                                              : 'No date'}
-                                          </p>
-                                        </div>
-                                        <div className="text-right">
-                                          <p
-                                            className={`font-semibold ${
-                                              (transaction.amount || 0) >= 0
-                                                ? 'text-green-600'
-                                                : 'text-red-600'
-                                            }`}
-                                          >
-                                            {transaction.amount !== undefined
-                                              ? Intl.NumberFormat('vi-VN', {
-                                                  style: 'currency',
-                                                  currency: 'VND',
-                                                }).format(transaction.amount)
-                                              : '-'}
-                                          </p>
-                                        </div>
-                                      </div>
-                                    ))}
-                                  {userTransactions.length > 5 && (
-                                    <p className="text-center text-muted-foreground text-sm">
-                                      And {userTransactions.length - 5} more
-                                      transactions...
+            {/* Conditional User History Accordion */}
+            {selectedUser && (
+              <div className="mt-4">
+                {isLoadingUserHistory ? (
+                  <div className="py-4 text-center">
+                    <p className="text-muted-foreground text-sm">
+                      Loading user history...
+                    </p>
+                  </div>
+                ) : userTransactions.length > 0 || userInvoices.length > 0 ? (
+                  <Accordion type="single" collapsible className="w-full">
+                    {userTransactions && userTransactions.length > 0 && (
+                      <AccordionItem value="transactions">
+                        <AccordionTrigger>
+                          {t('ws-transactions.plural')} (
+                          {userTransactions.length})
+                        </AccordionTrigger>
+                        <AccordionContent>
+                          <div className="space-y-3">
+                            {userTransactions
+                              .slice(0, 5)
+                              .map((transaction: Transaction) => (
+                                <div
+                                  key={transaction.id}
+                                  className="flex items-center justify-between rounded-lg border p-3"
+                                >
+                                  <div className="flex-1">
+                                    <p className="font-medium">
+                                      {transaction.description ||
+                                        'No description'}
                                     </p>
-                                  )}
+                                    <p className="text-muted-foreground text-sm">
+                                      {transaction.category || 'No category'} •{' '}
+                                      {transaction.wallet || 'No wallet'}
+                                    </p>
+                                    <p className="text-muted-foreground text-xs">
+                                      {transaction.taken_at
+                                        ? new Date(
+                                            transaction.taken_at
+                                          ).toLocaleDateString()
+                                        : 'No date'}
+                                    </p>
+                                  </div>
+                                  <div className="text-right">
+                                    <p
+                                      className={`font-semibold ${
+                                        (transaction.amount || 0) >= 0
+                                          ? 'text-green-600'
+                                          : 'text-red-600'
+                                      }`}
+                                    >
+                                      {transaction.amount !== undefined
+                                        ? Intl.NumberFormat('vi-VN', {
+                                            style: 'currency',
+                                            currency: 'VND',
+                                          }).format(transaction.amount)
+                                        : '-'}
+                                    </p>
+                                  </div>
                                 </div>
-                              </AccordionContent>
-                            </AccordionItem>
-                          )}
+                              ))}
+                            {userTransactions.length > 5 && (
+                              <p className="text-center text-muted-foreground text-sm">
+                                And {userTransactions.length - 5} more
+                                transactions...
+                              </p>
+                            )}
+                          </div>
+                        </AccordionContent>
+                      </AccordionItem>
+                    )}
 
-                          {userInvoices && userInvoices.length > 0 && (
-                            <AccordionItem value="invoices">
-                              <AccordionTrigger>
-                                {t('ws-invoices.plural')} ({userInvoices.length}
-                                )
-                              </AccordionTrigger>
-                              <AccordionContent>
-                                <div className="space-y-3">
-                                  {userInvoices
-                                    .slice(0, 5)
-                                    .map((invoice: Invoice) => (
-                                      <div
-                                        key={invoice.id}
-                                        className="flex items-center justify-between rounded-lg border p-3"
-                                      >
-                                        <div className="flex-1">
-                                          <p className="font-medium">
-                                            Invoice #{invoice.id.slice(-8)}
-                                          </p>
-                                          <p className="text-muted-foreground text-sm">
-                                            Status:{' '}
-                                            {invoice.completed_at
-                                              ? 'Completed'
-                                              : 'Pending'}
-                                          </p>
-                                          <p className="text-muted-foreground text-xs">
-                                            {invoice.created_at
-                                              ? new Date(
-                                                  invoice.created_at
-                                                ).toLocaleDateString()
-                                              : 'No date'}
-                                          </p>
-                                          {invoice.note && (
-                                            <p className="truncate text-muted-foreground text-xs">
-                                              Note: {invoice.note}
-                                            </p>
-                                          )}
-                                        </div>
-                                        <div className="text-right">
-                                          <p className="font-semibold text-blue-600">
-                                            {invoice.price !== undefined
-                                              ? Intl.NumberFormat('vi-VN', {
-                                                  style: 'currency',
-                                                  currency: 'VND',
-                                                }).format(invoice.price)
-                                              : '-'}
-                                          </p>
-                                          {invoice.total_diff !== undefined &&
-                                            invoice.total_diff !== 0 && (
-                                              <p className="text-muted-foreground text-xs">
-                                                Diff:{' '}
-                                                {Intl.NumberFormat('vi-VN', {
-                                                  style: 'currency',
-                                                  currency: 'VND',
-                                                }).format(invoice.total_diff)}
-                                              </p>
-                                            )}
-                                        </div>
-                                      </div>
-                                    ))}
-                                  {userInvoices.length > 5 && (
-                                    <p className="text-center text-muted-foreground text-sm">
-                                      And {userInvoices.length - 5} more
-                                      invoices...
+                    {userInvoices && userInvoices.length > 0 && (
+                      <AccordionItem value="invoices">
+                        <AccordionTrigger>
+                          {t('ws-invoices.plural')} ({userInvoices.length})
+                        </AccordionTrigger>
+                        <AccordionContent>
+                          <div className="space-y-3">
+                            {userInvoices
+                              .slice(0, 5)
+                              .map((invoice: Invoice) => (
+                                <div
+                                  key={invoice.id}
+                                  className="flex items-center justify-between rounded-lg border p-3"
+                                >
+                                  <div className="flex-1">
+                                    <p className="font-medium">
+                                      Invoice #{invoice.id.slice(-8)}
                                     </p>
-                                  )}
+                                    <p className="text-muted-foreground text-sm">
+                                      Status:{' '}
+                                      {invoice.completed_at
+                                        ? 'Completed'
+                                        : 'Pending'}
+                                    </p>
+                                    <p className="text-muted-foreground text-xs">
+                                      {invoice.created_at
+                                        ? new Date(
+                                            invoice.created_at
+                                          ).toLocaleDateString()
+                                        : 'No date'}
+                                    </p>
+                                    {invoice.note && (
+                                      <p className="truncate text-muted-foreground text-xs">
+                                        Note: {invoice.note}
+                                      </p>
+                                    )}
+                                  </div>
+                                  <div className="text-right">
+                                    <p className="font-semibold text-blue-600">
+                                      {invoice.price !== undefined
+                                        ? Intl.NumberFormat('vi-VN', {
+                                            style: 'currency',
+                                            currency: 'VND',
+                                          }).format(invoice.price)
+                                        : '-'}
+                                    </p>
+                                    {invoice.total_diff !== undefined &&
+                                      invoice.total_diff !== 0 && (
+                                        <p className="text-muted-foreground text-xs">
+                                          Diff:{' '}
+                                          {Intl.NumberFormat('vi-VN', {
+                                            style: 'currency',
+                                            currency: 'VND',
+                                          }).format(invoice.total_diff)}
+                                        </p>
+                                      )}
+                                  </div>
                                 </div>
-                              </AccordionContent>
-                            </AccordionItem>
-                          )}
-                        </Accordion>
-                      ) : (
-                        <div className="py-4 text-center">
-                          <p className="text-muted-foreground text-sm">
-                            No transaction or invoice history found for this
-                            user.
-                          </p>
-                        </div>
-                      )}
-                    </div>
-                  )}
+                              ))}
+                            {userInvoices.length > 5 && (
+                              <p className="text-center text-muted-foreground text-sm">
+                                And {userInvoices.length - 5} more invoices...
+                              </p>
+                            )}
+                          </div>
+                        </AccordionContent>
+                      </AccordionItem>
+                    )}
+                  </Accordion>
+                ) : (
+                  <div className="py-4 text-center">
+                    <p className="text-muted-foreground text-sm">
+                      No transaction or invoice history found for this user.
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
           </CardContent>
         </Card>
-
 
         {/* Products Section */}
         <ProductSelection
@@ -480,7 +498,9 @@ export function StandardInvoice({ wsId, selectedUserId, onSelectedUserIdChange }
             {/* Multiple Invoices Toggle */}
             <div className="flex items-center justify-between">
               <div className="space-y-1">
-                <Label htmlFor="multiple-invoices">Create Multiple Invoices</Label>
+                <Label htmlFor="multiple-invoices">
+                  Create Multiple Invoices
+                </Label>
                 <p className="text-muted-foreground text-sm">
                   Create separate invoices for each product
                 </p>
@@ -510,9 +530,7 @@ export function StandardInvoice({ wsId, selectedUserId, onSelectedUserIdChange }
 
             {/* Invoice Notes */}
             <div className="space-y-2">
-              <Label htmlFor="invoice-notes">
-                {t('ws-invoices.notes')}
-              </Label>
+              <Label htmlFor="invoice-notes">{t('ws-invoices.notes')}</Label>
               <Textarea
                 id="invoice-notes"
                 placeholder={t('ws-invoices.notes_placeholder')}
@@ -577,8 +595,7 @@ export function StandardInvoice({ wsId, selectedUserId, onSelectedUserIdChange }
               {/* Transaction Category Selection */}
               <div className="space-y-2">
                 <Label htmlFor="category-select">
-                  Transaction Category{' '}
-                  <span className="text-red-500">*</span>
+                  Transaction Category <span className="text-red-500">*</span>
                 </Label>
                 <Combobox
                   t={t}
@@ -650,7 +667,8 @@ export function StandardInvoice({ wsId, selectedUserId, onSelectedUserIdChange }
                     {selectedPromotion && (
                       <div className="flex justify-between">
                         <span className="text-muted-foreground">
-                          Discount ({selectedPromotion.name || 'Unnamed Promotion'})
+                          Discount (
+                          {selectedPromotion.name || 'Unnamed Promotion'})
                         </span>
                         <span className="text-green-600">
                           -
@@ -714,7 +732,9 @@ export function StandardInvoice({ wsId, selectedUserId, onSelectedUserIdChange }
                         variant="outline"
                         size="sm"
                         onClick={resetRounding}
-                        disabled={Math.abs(roundedTotal - totalBeforeRounding) < 0.01}
+                        disabled={
+                          Math.abs(roundedTotal - totalBeforeRounding) < 0.01
+                        }
                       >
                         Reset
                       </Button>
