@@ -1,11 +1,11 @@
-import {
-  getGroupedSessionsPaginated,
-  getTimeTrackingStats,
-} from '@/lib/time-tracking-helper';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
+import {
+  getGroupedSessionsPaginated,
+  getTimeTrackingStats,
+} from '@/lib/time-tracking-helper';
 import TimeTrackerManagementClient from './client';
 
 interface Props {
@@ -15,6 +15,8 @@ interface Props {
     page?: string;
     limit?: string;
     search?: string;
+    startDate?: string;
+    endDate?: string;
   }>;
 }
 
@@ -57,10 +59,18 @@ export default async function TimeTrackerManagementPage({
   const page = parseInt(searchParamsResolved?.page || '1', 10);
   const limit = parseInt(searchParamsResolved?.limit || '20', 10);
   const search = searchParamsResolved?.search || '';
+  const startDate = searchParamsResolved?.startDate || '';
+  const endDate = searchParamsResolved?.endDate || '';
 
   // Get paginated sessions and stats
   const [groupedSessionsResult, stats] = await Promise.all([
-    getGroupedSessionsPaginated(wsId, period, { page, limit, search }),
+    getGroupedSessionsPaginated(wsId, period, {
+      page,
+      limit,
+      search,
+      startDate: startDate || undefined,
+      endDate: endDate || undefined,
+    }),
     getTimeTrackingStats(wsId),
   ]);
 
@@ -70,6 +80,8 @@ export default async function TimeTrackerManagementPage({
       pagination={groupedSessionsResult.pagination}
       stats={stats}
       currentPeriod={period}
+      currentStartDate={startDate}
+      currentEndDate={endDate}
     />
   );
 }
