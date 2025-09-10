@@ -174,7 +174,7 @@ export const useUserGroups = (userId: string) => {
     queryKey: ['user-groups', userId],
     queryFn: async () => {
       if (!userId) return [];
-      
+
       const supabase = createClient();
       const { data, error } = await supabase
         .from('workspace_user_groups_users')
@@ -186,7 +186,7 @@ export const useUserGroups = (userId: string) => {
         console.error('❌ User groups fetch error:', error);
         throw error;
       }
-      
+
       return data || [];
     },
     enabled: !!userId,
@@ -197,18 +197,23 @@ export const useUserGroups = (userId: string) => {
   });
 };
 
-export const useUserAttendance = (groupId: string, userId: string, month: string) => {
+export const useUserAttendance = (
+  groupId: string,
+  userId: string,
+  month: string
+) => {
   return useQuery({
     queryKey: ['user-attendance', groupId, userId, month],
     queryFn: async () => {
       const supabase = createClient();
-      
+
       // Parse the month to get start and end dates
       const startOfMonth = new Date(month + '-01');
       const nextMonth = new Date(startOfMonth);
       nextMonth.setMonth(nextMonth.getMonth() + 1);
-      
-      const { data, error } = await supabase.from('user_group_attendance')
+
+      const { data, error } = await supabase
+        .from('user_group_attendance')
         .select('date')
         .eq('group_id', groupId)
         .eq('user_id', userId)
@@ -220,7 +225,7 @@ export const useUserAttendance = (groupId: string, userId: string, month: string
         console.error('❌ User attendance fetch error:', error);
         throw error;
       }
-      
+
       return data || [];
     },
     enabled: !!groupId && !!userId && !!month,
@@ -237,16 +242,19 @@ export const useUserGroupProducts = (groupId: string) => {
     queryKey: ['user-group-products', groupId],
     queryFn: async () => {
       const supabase = createClient();
-        
-      const { data, error } = await supabase.from('user_group_linked_products')
-        .select('workspace_products(id, name, product_categories(name)), inventory_units(name)')
+
+      const { data, error } = await supabase
+        .from('user_group_linked_products')
+        .select(
+          'workspace_products(id, name, product_categories(name)), inventory_units(name)'
+        )
         .eq('group_id', groupId);
 
       if (error) {
         console.error('❌ Group products fetch error:', error);
         throw error;
       }
-      
+
       return data || [];
     },
     enabled: !!groupId,

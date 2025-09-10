@@ -58,5 +58,3 @@ export interface Promotion {
   creator_id: string | null;
   description: string | null;
 }
-
-
