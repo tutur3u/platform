@@ -3,10 +3,10 @@
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { ChevronDown, ChevronUp, UserRound } from '@tuturuuu/ui/icons';
+import { getDescriptionText } from '@tuturuuu/ui/utils/text-helper';
 import { cn } from '@tuturuuu/utils/format';
 import Link from 'next/link';
 import { useState } from 'react';
-import { getDescriptionText } from '@/utils/text-helper';
 import TaskDueDate from './task-due-date';
 
 interface Task {

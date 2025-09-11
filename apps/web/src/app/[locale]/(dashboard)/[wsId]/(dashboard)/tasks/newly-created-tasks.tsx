@@ -4,10 +4,10 @@ import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
 import { CheckCircle, Eye, Plus } from '@tuturuuu/ui/icons';
+import { getDescriptionText } from '@tuturuuu/ui/utils/text-helper';
 import { cn } from '@tuturuuu/utils/format';
 import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
-import { getDescriptionText } from '@/utils/text-helper';
 import TaskCreationDate from './task-creation-date';
 
 interface NewlyCreatedTasksProps {
