@@ -161,14 +161,15 @@ export function StandardInvoice({
 
     if (selectedProducts.length === 1) {
       const productName =
-        selectedProducts[0]?.product.name || 'Unknown Product';
-      setInvoiceContent(`Invoice for ${productName}`);
+        selectedProducts[0]?.product.name || t('ws-invoices.unknown_product');
+      setInvoiceContent(t('ws-invoices.invoice_for_product', { productName }));
     } else {
       const firstProductName =
-        selectedProducts[0]?.product.name || 'Unknown Product';
+        selectedProducts[0]?.product.name || t('ws-invoices.unknown_product');
       const additionalCount = selectedProducts.length - 1;
+      const translationKey = additionalCount > 1 ? 'invoice_for_product_and_more_plural' : 'invoice_for_product_and_more';
       setInvoiceContent(
-        `Invoice for ${firstProductName} and ${additionalCount} more product${additionalCount > 1 ? 's' : ''}`
+        t(`ws-invoices.${translationKey}`, { productName: firstProductName, count: additionalCount })
       );
     }
   }, [selectedProducts]);
@@ -226,7 +227,7 @@ export function StandardInvoice({
       !selectedCategoryId
     ) {
       toast(
-        'Please select a customer, add products, choose a wallet, and select a transaction category before creating the invoice.'
+        t('ws-invoices.create_invoice_validation')
       );
       return;
     }
@@ -279,21 +280,21 @@ export function StandardInvoice({
         const { calculated_values, frontend_values } = result.data;
         const roundingInfo =
           calculated_values.rounding_applied !== 0
-            ? ` | Rounding: ${Intl.NumberFormat('vi-VN', {
+            ? ` | ${t('ws-invoices.rounding')}: ${Intl.NumberFormat('vi-VN', {
                 style: 'currency',
                 currency: 'VND',
               }).format(calculated_values.rounding_applied)}`
             : '';
 
         toast(
-          `Invoice created successfully! Values were recalculated on the server.`,
+          t('ws-invoices.invoice_created_recalculated'),
           {
-            description: `Server calculated: ${Intl.NumberFormat('vi-VN', {
+            description: `${t('ws-invoices.server_calculated')}: ${Intl.NumberFormat('vi-VN', {
               style: 'currency',
               currency: 'VND',
             }).format(
               calculated_values.total
-            )} | Frontend calculated: ${Intl.NumberFormat('vi-VN', {
+            )} | ${t('ws-invoices.frontend_calculated')}: ${Intl.NumberFormat('vi-VN', {
               style: 'currency',
               currency: 'VND',
             }).format(frontend_values?.total || 0)}${roundingInfo}`,
@@ -301,7 +302,7 @@ export function StandardInvoice({
           }
         );
       } else {
-        toast(`Invoice ${result.invoice_id} created successfully`);
+        toast(t('ws-invoices.invoice_created_success', { invoiceId: result.invoice_id }));
       }
 
       // Reset form after successful creation
@@ -322,7 +323,9 @@ export function StandardInvoice({
 
       // Show error message
       toast(
-        `Error creating invoice: ${error.message || 'Failed to create invoice'}`
+        t('ws-invoices.error_creating_invoice', { 
+          error: error.message || t('ws-invoices.failed_to_create_invoice') 
+        })
       );
 
       // You might want to show an error toast here
@@ -337,7 +340,7 @@ export function StandardInvoice({
       <div className="flex items-center justify-center py-8">
         <div className="flex items-center gap-2">
           <Loader2 className="h-4 w-4 animate-spin" />
-          <p className="text-muted-foreground text-sm">Loading...</p>
+          <p className="text-muted-foreground text-sm">{t('ws-invoices.loading')}</p>
         </div>
       </div>
     );
@@ -352,12 +355,12 @@ export function StandardInvoice({
           <CardHeader>
             <CardTitle>{t('invoice-data-table.customer')}</CardTitle>
             <CardDescription>
-              Select the customer for this invoice.
+              {t('ws-invoices.customer_selection_description')}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-2">
             <div className="space-y-2">
-              <Label htmlFor="customer-select">Customer</Label>
+              <Label htmlFor="customer-select">{t('ws-invoices.customer')}</Label>
               <Combobox
                 t={t}
                 options={users.map(
@@ -368,7 +371,7 @@ export function StandardInvoice({
                 )}
                 selected={selectedUserId}
                 onChange={(value) => onSelectedUserIdChange(value as string)}
-                placeholder="Search customers..."
+                placeholder={t('ws-invoices.search_customers')}
               />
             </div>
             {/* Conditional User History Accordion */}
@@ -377,7 +380,7 @@ export function StandardInvoice({
                 {isLoadingUserHistory ? (
                   <div className="py-4 text-center">
                     <p className="text-muted-foreground text-sm">
-                      Loading user history...
+                      {t('ws-invoices.loading_user_history')}
                     </p>
                   </div>
                 ) : userTransactions.length > 0 || userInvoices.length > 0 ? (
@@ -400,18 +403,18 @@ export function StandardInvoice({
                                   <div className="flex-1">
                                     <p className="font-medium">
                                       {transaction.description ||
-                                        'No description'}
+                                        t('ws-invoices.no_description')}
                                     </p>
                                     <p className="text-muted-foreground text-sm">
-                                      {transaction.category || 'No category'} •{' '}
-                                      {transaction.wallet || 'No wallet'}
+                                      {transaction.category || t('ws-invoices.no_category')} •{' '}
+                                      {transaction.wallet || t('ws-invoices.no_wallet')}
                                     </p>
                                     <p className="text-muted-foreground text-xs">
                                       {transaction.taken_at
                                         ? new Date(
                                             transaction.taken_at
                                           ).toLocaleDateString()
-                                        : 'No date'}
+                                        : t('ws-invoices.no_date')}
                                     </p>
                                   </div>
                                   <div className="text-right">
@@ -434,8 +437,7 @@ export function StandardInvoice({
                               ))}
                             {userTransactions.length > 5 && (
                               <p className="text-center text-muted-foreground text-sm">
-                                And {userTransactions.length - 5} more
-                                transactions...
+                                {t('ws-invoices.and_more_transactions', { count: userTransactions.length - 5 })}
                               </p>
                             )}
                           </div>
@@ -459,24 +461,24 @@ export function StandardInvoice({
                                 >
                                   <div className="flex-1">
                                     <p className="font-medium">
-                                      Invoice #{invoice.id.slice(-8)}
+                                      {t('ws-invoices.invoice_id_short', { id: invoice.id.slice(-8) })}
                                     </p>
                                     <p className="text-muted-foreground text-sm">
-                                      Status:{' '}
+                                      {t('ws-invoices.status')}:{' '}
                                       {invoice.completed_at
-                                        ? 'Completed'
-                                        : 'Pending'}
+                                        ? t('ws-invoices.completed')
+                                        : t('ws-invoices.pending')}
                                     </p>
                                     <p className="text-muted-foreground text-xs">
                                       {invoice.created_at
                                         ? new Date(
                                             invoice.created_at
                                           ).toLocaleDateString()
-                                        : 'No date'}
+                                        : t('ws-invoices.no_date')}
                                     </p>
                                     {invoice.note && (
                                       <p className="truncate text-muted-foreground text-xs">
-                                        Note: {invoice.note}
+                                        {t('ws-invoices.note')}: {invoice.note}
                                       </p>
                                     )}
                                   </div>
@@ -492,7 +494,7 @@ export function StandardInvoice({
                                     {invoice.total_diff !== undefined &&
                                       invoice.total_diff !== 0 && (
                                         <p className="text-muted-foreground text-xs">
-                                          Diff:{' '}
+                                          {t('ws-invoices.diff')}:{' '}
                                           {Intl.NumberFormat('vi-VN', {
                                             style: 'currency',
                                             currency: 'VND',
@@ -504,7 +506,7 @@ export function StandardInvoice({
                               ))}
                             {userInvoices.length > 5 && (
                               <p className="text-center text-muted-foreground text-sm">
-                                And {userInvoices.length - 5} more invoices...
+                                {t('ws-invoices.and_more_invoices', { count: userInvoices.length - 5 })}
                               </p>
                             )}
                           </div>
@@ -515,7 +517,7 @@ export function StandardInvoice({
                 ) : (
                   <div className="py-4 text-center">
                     <p className="text-muted-foreground text-sm">
-                      No transaction or invoice history found for this user.
+                      {t('ws-invoices.no_transaction_or_invoice_history')}
                     </p>
                   </div>
                 )}
@@ -539,7 +541,7 @@ export function StandardInvoice({
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <FileText className="h-5 w-5" />
-              Invoice Configuration
+              {t('ws-invoices.invoice_configuration')}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -574,14 +576,14 @@ export function StandardInvoice({
         {/* Payment Settings and Checkout */}
         <Card>
           <CardHeader>
-            <CardTitle>Payment & Checkout</CardTitle>
+            <CardTitle>{t('ws-invoices.payment_and_checkout')}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             {/* Payment Settings Section */}
             <div className="space-y-4">
               <div className="flex items-center gap-2 font-medium text-muted-foreground text-sm">
                 <CreditCard className="h-4 w-4" />
-                Payment Settings
+                {t('ws-invoices.payment_settings')}
               </div>
 
               {/* Wallet Selection */}
@@ -595,7 +597,7 @@ export function StandardInvoice({
                   onValueChange={setSelectedWalletId}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Select a wallet (required)..." />
+                    <SelectValue placeholder={t('ws-invoices.select_wallet_required')} />
                   </SelectTrigger>
                   <SelectContent>
                     {wallets.map((wallet) => (
@@ -607,7 +609,7 @@ export function StandardInvoice({
                           <CreditCard className="h-4 w-4" />
                           <div className="flex flex-row gap-2">
                             <p className="font-medium">
-                              {wallet.name || 'Unnamed Wallet'}
+                              {wallet.name || t('ws-invoices.unnamed_wallet')}
                             </p>
                             <p className="text-muted-foreground text-sm">
                               {wallet.type || 'STANDARD'} -{' '}
@@ -624,19 +626,19 @@ export function StandardInvoice({
               {/* Transaction Category Selection */}
               <div className="space-y-2">
                 <Label htmlFor="category-select">
-                  Transaction Category <span className="text-red-500">*</span>
+                  {t('ws-invoices.transaction_category')} <span className="text-red-500">*</span>
                 </Label>
                 <Combobox
                   t={t}
                   options={categories.map(
                     (category): ComboboxOptions => ({
                       value: category.id || '',
-                      label: category.name || 'Unnamed Category',
+                      label: category.name || t('ws-invoices.unnamed_category'),
                     })
                   )}
                   selected={selectedCategoryId}
                   onChange={(value) => setSelectedCategoryId(value as string)}
-                  placeholder="Select a category (required)..."
+                  placeholder={t('ws-invoices.select_category_required')}
                 />
               </div>
 
@@ -648,11 +650,11 @@ export function StandardInvoice({
                 <Combobox
                   t={t}
                   options={[
-                    { value: 'none', label: 'No promotion' },
+                    { value: 'none', label: t('ws-invoices.no_promotion') },
                     ...promotions.map(
                       (promotion): ComboboxOptions => ({
                         value: promotion.id,
-                        label: `${promotion.name || 'Unnamed Promotion'} (${
+                        label: `${promotion.name || t('ws-invoices.unnamed_promotion')} (${
                           promotion.use_ratio
                             ? `${promotion.value}%`
                             : Intl.NumberFormat('vi-VN', {
@@ -665,7 +667,7 @@ export function StandardInvoice({
                   ]}
                   selected={selectedPromotionId}
                   onChange={(value) => setSelectedPromotionId(value as string)}
-                  placeholder="Search promotions..."
+                  placeholder={t('ws-invoices.search_promotions')}
                 />
               </div>
             </div>
@@ -678,13 +680,13 @@ export function StandardInvoice({
                 <div className="space-y-4">
                   <div className="flex items-center gap-2 font-medium text-muted-foreground text-sm">
                     <Calculator className="h-4 w-4" />
-                    Checkout
+                    {t('ws-invoices.checkout')}
                   </div>
 
                   {/* Summary */}
                   <div className="space-y-2">
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">Subtotal</span>
+                      <span className="text-muted-foreground">{t('ws-invoices.subtotal')}</span>
                       <span>
                         {Intl.NumberFormat('vi-VN', {
                           style: 'currency',
@@ -696,8 +698,8 @@ export function StandardInvoice({
                     {selectedPromotion && (
                       <div className="flex justify-between">
                         <span className="text-muted-foreground">
-                          Discount (
-                          {selectedPromotion.name || 'Unnamed Promotion'})
+                          {t('ws-invoices.discount')} (
+                          {selectedPromotion.name || t('ws-invoices.unnamed_promotion')})
                         </span>
                         <span className="text-green-600">
                           -
@@ -712,7 +714,7 @@ export function StandardInvoice({
                     <Separator />
 
                     <div className="flex justify-between font-semibold">
-                      <span>Total</span>
+                      <span>{t('ws-invoices.total')}</span>
                       <span>
                         {Intl.NumberFormat('vi-VN', {
                           style: 'currency',
@@ -723,7 +725,7 @@ export function StandardInvoice({
 
                     {Math.abs(roundedTotal - totalBeforeRounding) > 0.01 && (
                       <div className="flex justify-between text-muted-foreground text-sm">
-                        <span>Adjustment</span>
+                        <span>{t('ws-invoices.adjustment')}</span>
                         <span>
                           {roundedTotal > totalBeforeRounding ? '+' : ''}
                           {Intl.NumberFormat('vi-VN', {
@@ -737,7 +739,7 @@ export function StandardInvoice({
 
                   {/* Rounding Controls */}
                   <div className="space-y-2">
-                    <Label>Rounding Options</Label>
+                    <Label>{t('ws-invoices.rounding_options')}</Label>
                     <div className="flex gap-2">
                       <Button
                         variant="outline"
@@ -746,7 +748,7 @@ export function StandardInvoice({
                         className="flex-1"
                       >
                         <ArrowUp className="mr-1 h-4 w-4" />
-                        Round Up
+                        {t('ws-invoices.round_up')}
                       </Button>
                       <Button
                         variant="outline"
@@ -755,7 +757,7 @@ export function StandardInvoice({
                         className="flex-1"
                       >
                         <ArrowDown className="mr-1 h-4 w-4" />
-                        Round Down
+                        {t('ws-invoices.round_down')}
                       </Button>
                       <Button
                         variant="outline"
@@ -765,7 +767,7 @@ export function StandardInvoice({
                           Math.abs(roundedTotal - totalBeforeRounding) < 0.01
                         }
                       >
-                        Reset
+                        {t('ws-invoices.reset')}
                       </Button>
                     </div>
                   </div>
@@ -785,10 +787,10 @@ export function StandardInvoice({
                     {isCreating ? (
                       <>
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Creating Invoice...
+                        {t('ws-invoices.creating_invoice')}
                       </>
                     ) : (
-                      'Create Invoice'
+                      t('ws-invoices.create_invoice')
                     )}
                   </Button>
                 </div>

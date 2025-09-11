@@ -46,7 +46,7 @@ export default function NewInvoicePage({ wsId }: Props) {
           <div className="flex items-center justify-center gap-2">
             <div className="space-y-1 flex items-center gap-2">
               <Label htmlFor="multiple-invoices">
-                Create Multiple Invoices
+                {t('ws-invoices.create_multiple_invoices')}
               </Label>
               <TooltipProvider>
                 <Tooltip>
@@ -55,8 +55,7 @@ export default function NewInvoicePage({ wsId }: Props) {
                   </TooltipTrigger>
                   <TooltipContent>
                     <p>
-                      Allows you to create multiple invoices in a single
-                      session.
+                      {t('ws-invoices.create_multiple_invoices_tooltip')}
                     </p>
                   </TooltipContent>
                 </Tooltip>

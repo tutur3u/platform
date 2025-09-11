@@ -104,31 +104,31 @@ export function ProductSelection({
         <CardHeader>
           <CardTitle>{t('invoices.products')}</CardTitle>
           <CardDescription>
-            Select products and specify quantities for the invoice.
+            {t('ws-invoices.products_selection_description')}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           {/* Product Selection */}
           <div className="space-y-2">
-            <Label htmlFor="product-select">Select Product</Label>
+            <Label htmlFor="product-select">{t('ws-invoices.select_product')}</Label>
             <Combobox
               t={t}
               options={products.map(
                 (product): ComboboxOptions => ({
                   value: product.id,
-                  label: `${product.name || 'No name'}${product.category ? ` (${product.category})` : ''}${product.manufacturer ? ` - ${product.manufacturer}` : ''}`,
+                  label: `${product.name || t('ws-invoices.no_name')}${product.category ? ` (${product.category})` : ''}${product.manufacturer ? ` - ${product.manufacturer}` : ''}`,
                 })
               )}
               selected={selectedProductId}
               onChange={(value) => setSelectedProductId(value as string)}
-              placeholder="Search products..."
+              placeholder={t('ws-invoices.search_products')}
             />
           </div>
 
           {/* Stock Selection */}
           {selectedProduct && availableInventory.length > 0 && (
             <div className="space-y-3">
-              <Label>Available Stock</Label>
+              <Label>{t('ws-invoices.available_stock')}</Label>
               <div className="grid gap-3">
                 {availableInventory.map((inventory, index) => (
                   <StockItem
@@ -137,6 +137,7 @@ export function ProductSelection({
                     onAdd={(quantity) =>
                       addProductToInvoice(inventory, quantity)
                     }
+                    t={t}
                   />
                 ))}
               </div>
@@ -146,7 +147,7 @@ export function ProductSelection({
           {selectedProduct && availableInventory.length === 0 && (
             <div className="py-4 text-center text-muted-foreground">
               <Package className="mx-auto mb-2 h-8 w-8 opacity-50" />
-              <p>No stock available for this product</p>
+              <p>{t('ws-invoices.no_stock_available')}</p>
             </div>
           )}
         </CardContent>
@@ -156,9 +157,9 @@ export function ProductSelection({
       {selectedProducts.length > 0 && (
         <Card className="w-full">
           <CardHeader>
-            <CardTitle>Invoice Items</CardTitle>
+            <CardTitle>{t('ws-invoices.invoice_items')}</CardTitle>
             <CardDescription>
-              Review and adjust quantities for selected products.
+              {t('ws-invoices.invoice_items_description')}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -175,11 +176,11 @@ export function ProductSelection({
                       {item.inventory.unit_name}
                     </p>
                     <p className="text-muted-foreground text-sm">
-                      Available:{' '}
+                      {t('ws-invoices.available')}:{' '}
                       {item.inventory.amount === null
-                        ? 'Unlimited'
+                        ? t('ws-invoices.unlimited')
                         : item.inventory.amount}{' '}
-                      • Price:{' '}
+                      • {t('ws-invoices.price')}:{' '}
                       {Intl.NumberFormat('vi-VN', {
                         style: 'currency',
                         currency: 'VND',
@@ -188,7 +189,7 @@ export function ProductSelection({
                     {groupLinkedProductIds.includes(item.product.id) && (
                       <div className="mt-1">
                         <Badge variant="secondary" className="text-[10px]">
-                          Linked to group
+                          {t('ws-invoices.linked_to_group')}
                         </Badge>
                       </div>
                     )}
@@ -230,7 +231,7 @@ export function ProductSelection({
                       size="sm"
                       onClick={() => removeProductFromInvoice(index)}
                     >
-                      Remove
+                      {t('ws-invoices.remove')}
                     </Button>
                   </div>
                 </div>
@@ -263,9 +264,10 @@ export function ProductSelection({
 interface StockItemProps {
   inventory: ProductInventory;
   onAdd: (quantity: number) => void;
+  t: (key: string) => string;
 }
 
-function StockItem({ inventory, onAdd }: StockItemProps) {
+function StockItem({ inventory, onAdd, t }: StockItemProps) {
   const [quantity, setQuantity] = useState(1);
 
   const handleAdd = () => {
@@ -285,19 +287,19 @@ function StockItem({ inventory, onAdd }: StockItemProps) {
         <div>
           <p className="font-medium">{inventory.warehouse_name}</p>
           <p className="text-muted-foreground text-sm">
-            Available:{' '}
-            {inventory.amount === null ? 'Unlimited' : inventory.amount}{' '}
+            {t('ws-invoices.available')}:{' '}
+            {inventory.amount === null ? t('ws-invoices.unlimited') : inventory.amount}{' '}
             {inventory.unit_name} •{' '}
             {Intl.NumberFormat('vi-VN', {
               style: 'currency',
               currency: 'VND',
             }).format(inventory.price)}{' '}
-            each
+            {t('ws-invoices.each')}
           </p>
           {inventory.amount !== null &&
             inventory.amount <= inventory.min_amount && (
               <Badge variant="destructive" className="text-xs">
-                Low Stock
+                {t('ws-invoices.low_stock')}
               </Badge>
             )}
         </div>
@@ -318,7 +320,7 @@ function StockItem({ inventory, onAdd }: StockItemProps) {
             quantity <= 0
           }
         >
-          Add
+          {t('ws-invoices.add')}
         </Button>
       </div>
     </div>

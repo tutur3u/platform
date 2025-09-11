@@ -29,7 +29,7 @@ import {
   SelectValue,
 } from '@tuturuuu/ui/select';
 import { Combobox, type ComboboxOptions } from '@tuturuuu/ui/custom/combobox';
-import { useTranslations } from 'next-intl';
+import { useTranslations, useLocale } from 'next-intl';
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { ProductSelection } from './product-selection';
@@ -64,6 +64,7 @@ export function SubscriptionInvoice({
   createMultipleInvoices,
 }: Props) {
   const t = useTranslations();
+  const locale = useLocale();
 
   // Data queries
   const { data: users = [], isLoading: usersLoading } = useUsers(wsId);
@@ -282,43 +283,7 @@ export function SubscriptionInvoice({
     });
   }, [selectedGroupId, groupProducts, products, userAttendance?.length]);
 
-  // Enforce max quantity limit based on total sessions for group products
-  useEffect(() => {
-    if (!selectedGroupId || !groupProducts) return;
 
-    const selectedGroup = userGroups.find(
-      (g) => g.workspace_user_groups?.id === selectedGroupId
-    );
-    const sessionsArray = selectedGroup?.workspace_user_groups?.sessions || [];
-    const totalSessions = getSessionsForMonth(sessionsArray, selectedMonth);
-    if (totalSessions === 0) return;
-
-    const groupProductIds = groupProducts
-      .map((item) => item.workspace_products?.id)
-      .filter(Boolean);
-
-    if (groupProductIds.length === 0) return;
-
-    // Cap quantities for group products to not exceed total sessions of the month
-    setSubscriptionSelectedProducts((prev) =>
-      prev.map((item) => {
-        // Only apply limit to group-linked products
-        if (!groupProductIds.includes(item.product.id)) return item;
-
-        // Cap quantity to total sessions in the selected month
-        const cappedQuantity = Math.min(item.quantity, totalSessions);
-        return cappedQuantity === item.quantity
-          ? item
-          : { ...item, quantity: cappedQuantity };
-      })
-    );
-  }, [
-    selectedGroupId,
-    groupProducts,
-    userAttendance?.length,
-    userGroups?.length,
-    selectedMonth,
-  ]);
 
   // Calculate totals for manual product selection
   const subscriptionSubtotal = useMemo(() => {
@@ -595,16 +560,16 @@ export function SubscriptionInvoice({
     );
     const groupName =
       selectedGroup?.workspace_user_groups?.name || 'Unknown Group';
-    const monthName = new Date(selectedMonth + '-01').toLocaleDateString(
-      'en-US',
-      {
-        year: 'numeric',
-        month: 'long',
-      }
-    );
+    const monthName = new Date(selectedMonth + '-01').toLocaleDateString(locale, {
+      year: 'numeric',
+      month: 'long',
+    });
 
     const contentParts = [
-      `Subscription invoice for ${groupName} - ${monthName}`,
+      t('ws-invoices.subscription_invoice_for_group_month', { 
+        groupName, 
+        monthName 
+      }),
     ];
 
     // Build auto-notes for attendance instead of putting it in content
@@ -613,7 +578,13 @@ export function SubscriptionInvoice({
       const attendanceDays = subscriptionProducts[0]?.attendanceDays || 0;
       const totalSessions = subscriptionProducts[0]?.totalSessions || 0;
       const attendanceStats = getAttendanceStats(userAttendance);
-      autoNotes = `Attendance: ${attendanceDays}/${totalSessions} sessions (Present: ${attendanceStats.present}, Late: ${attendanceStats.late}, Absent: ${attendanceStats.absent})`;
+      autoNotes = t('ws-invoices.attendance_summary_note', {
+        attended: attendanceDays,
+        total: totalSessions,
+        present: attendanceStats.present,
+        late: attendanceStats.late,
+        absent: attendanceStats.absent
+      });
     }
 
     // Only count additional products that are NOT associated with the selected group
@@ -628,22 +599,16 @@ export function SubscriptionInvoice({
 
       if (additionalProductCount > 0) {
         contentParts.push(
-          `Additional products: ${additionalProductCount} items`
+          t('ws-invoices.additional_products_count', { count: additionalProductCount })
         );
       }
     }
 
     setInvoiceContent(contentParts.join('\n'));
 
-    // Insert or update the attendance line in notes
-    if (autoNotes) {
-      setInvoiceNotes((prev) => {
-        const lines = prev.split('\n').filter(Boolean);
-        const filtered = lines.filter(
-          (l) => !l.trim().startsWith('Attendance: ')
-        );
-        return [...filtered, autoNotes as string].join('\n');
-      });
+    // Overwrite notes with attendance summary when not already paid
+    if (autoNotes && !isSelectedMonthPaid) {
+      setInvoiceNotes(autoNotes as string);
     }
   }, [
     subscriptionProducts,
@@ -652,6 +617,7 @@ export function SubscriptionInvoice({
     selectedMonth,
     userGroups,
     groupProducts,
+    isSelectedMonthPaid,
   ]);
 
   // Month navigation handlers
@@ -726,7 +692,7 @@ export function SubscriptionInvoice({
       !selectedCategoryId
     ) {
       toast(
-        'Please select a customer, group, add products, choose a wallet, and select a transaction category before creating the invoice.'
+        t('ws-invoices.create_subscription_invoice_validation')
       );
       return;
     }
@@ -742,7 +708,7 @@ export function SubscriptionInvoice({
     }));
 
     if (productsPayload.length === 0) {
-      toast('No products to invoice.');
+      toast(t('ws-invoices.no_products_to_invoice'));
       return;
     }
 
@@ -784,20 +750,20 @@ export function SubscriptionInvoice({
         const { calculated_values, frontend_values } = result.data;
         const roundingInfo =
           calculated_values.rounding_applied !== 0
-            ? ` | Rounding: ${Intl.NumberFormat('vi-VN', {
+            ? ` | ${t('ws-invoices.rounding')}: ${Intl.NumberFormat('vi-VN', {
                 style: 'currency',
                 currency: 'VND',
               }).format(calculated_values.rounding_applied)}`
             : '';
         toast(
-          `Subscription invoice created successfully! Values were recalculated on the server.`,
+          t('ws-invoices.subscription_invoice_created_recalculated'),
           {
-            description: `Server calculated: ${Intl.NumberFormat('vi-VN', {
+            description: `${t('ws-invoices.server_calculated')}: ${Intl.NumberFormat('vi-VN', {
               style: 'currency',
               currency: 'VND',
             }).format(
               calculated_values.total
-            )} | Frontend calculated: ${Intl.NumberFormat('vi-VN', {
+            )} | ${t('ws-invoices.frontend_calculated')}: ${Intl.NumberFormat('vi-VN', {
               style: 'currency',
               currency: 'VND',
             }).format(frontend_values?.total || 0)}${roundingInfo}`,
@@ -805,7 +771,7 @@ export function SubscriptionInvoice({
           }
         );
       } else {
-        toast(`Subscription invoice ${result.invoice_id} created successfully`);
+        toast(t('ws-invoices.subscription_invoice_created_success', { invoiceId: result.invoice_id }));
       }
 
       // Reset form
@@ -825,7 +791,9 @@ export function SubscriptionInvoice({
     } catch (error) {
       console.error('Error creating subscription invoice:', error);
       toast(
-        `Error creating subscription invoice: ${error instanceof Error ? error.message : 'Failed to create invoice'}`
+        t('ws-invoices.error_creating_subscription_invoice', { 
+          error: error instanceof Error ? error.message : t('ws-invoices.failed_to_create_subscription_invoice') 
+        })
       );
     } finally {
       setIsCreating(false);
@@ -837,7 +805,7 @@ export function SubscriptionInvoice({
       <div className="flex items-center justify-center py-8">
         <div className="flex items-center gap-2">
           <Loader2 className="h-4 w-4 animate-spin" />
-          <p className="text-muted-foreground text-sm">Loading...</p>
+          <p className="text-muted-foreground text-sm">{t('ws-invoices.loading')}</p>
         </div>
       </div>
     );
@@ -852,12 +820,12 @@ export function SubscriptionInvoice({
           <CardHeader>
             <CardTitle>{t('invoice-data-table.customer')}</CardTitle>
             <CardDescription>
-              Select the customer for this subscription invoice.
+              {t('ws-invoices.subscription_customer_selection_description')}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-2">
             <div className="space-y-2">
-              <Label htmlFor="customer-select">Customer</Label>
+              <Label htmlFor="customer-select">{t('ws-invoices.customer')}</Label>
               <Combobox
                 t={t}
                 options={users.map(
@@ -868,7 +836,7 @@ export function SubscriptionInvoice({
                 )}
                 selected={selectedUserId}
                 onChange={(value) => onSelectedUserIdChange(value as string)}
-                placeholder="Search customers..."
+                placeholder={t('ws-invoices.search_customers')}
               />
             </div>
           </CardContent>
@@ -878,10 +846,10 @@ export function SubscriptionInvoice({
         {selectedUserId && (
           <Card>
             <CardHeader>
-              <CardTitle>User Groups</CardTitle>
-              <CardDescription>
-                Select the group for subscription billing.
-              </CardDescription>
+            <CardTitle>{t('ws-invoices.user_groups')}</CardTitle>
+            <CardDescription>
+              {t('ws-invoices.user_groups_description')}
+            </CardDescription>
             </CardHeader>
             <CardContent>
               {userGroupsLoading ? (
@@ -889,14 +857,14 @@ export function SubscriptionInvoice({
                   <div className="flex items-center gap-2">
                     <Loader2 className="h-4 w-4 animate-spin" />
                     <p className="text-muted-foreground text-sm">
-                      Loading groups...
+                      {t('ws-invoices.loading_groups')}
                     </p>
                   </div>
                 </div>
               ) : userGroups.length === 0 ? (
                 <div className="py-8 text-center">
                   <p className="text-muted-foreground text-sm">
-                    No groups found for this user.
+                    {t('ws-invoices.no_groups_found')}
                   </p>
                 </div>
               ) : (
@@ -926,20 +894,20 @@ export function SubscriptionInvoice({
                             </div>
                             <div className="mt-1 space-y-1">
                               {group.starting_date && (
-                                <p className="text-muted-foreground text-sm">
-                                  Started:{' '}
-                                  {new Date(
-                                    group.starting_date
-                                  ).toLocaleDateString()}
-                                </p>
+                                    <p className="text-muted-foreground text-sm">
+                                      {t('ws-invoices.started')}:{' '}
+                                      {new Date(
+                                        group.starting_date
+                                      ).toLocaleDateString(locale)}
+                                    </p>
                               )}
                               {group.ending_date && (
-                                <p className="text-muted-foreground text-sm">
-                                  Ends:{' '}
-                                  {new Date(
-                                    group.ending_date
-                                  ).toLocaleDateString()}
-                                </p>
+                                    <p className="text-muted-foreground text-sm">
+                                      {t('ws-invoices.ends')}:{' '}
+                                      {new Date(
+                                        group.ending_date
+                                      ).toLocaleDateString(locale)}
+                                    </p>
                               )}
                             </div>
                           </div>
@@ -963,36 +931,7 @@ export function SubscriptionInvoice({
             products={availableProducts}
             selectedProducts={subscriptionSelectedProducts}
             onSelectedProductsChange={(newProducts) => {
-              // Apply attendance limit for group products
-              if (!selectedGroupId || !groupProducts) {
-                setSubscriptionSelectedProducts(newProducts);
-                return;
-              }
-              const selectedGroup = userGroups.find(
-                (g) => g.workspace_user_groups?.id === selectedGroupId
-              );
-              const sessionsArray =
-                selectedGroup?.workspace_user_groups?.sessions || [];
-              const totalSessions = getSessionsForMonth(
-                sessionsArray,
-                selectedMonth
-              );
-              const groupProductIds = groupProducts
-                .map((item) => item.workspace_products?.id)
-                .filter(Boolean);
-
-              const limitedProducts = newProducts.map((item) => {
-                // Only apply limit to group-linked products
-                if (!groupProductIds.includes(item.product.id)) return item;
-
-                // Cap quantity to total sessions in the selected month
-                const cappedQuantity = Math.min(item.quantity, totalSessions);
-                return cappedQuantity === item.quantity
-                  ? item
-                  : { ...item, quantity: cappedQuantity };
-              });
-
-              setSubscriptionSelectedProducts(limitedProducts);
+              setSubscriptionSelectedProducts(newProducts);
             }}
             groupLinkedProductIds={(groupProducts || [])
               .map((item) => item.workspace_products?.id)
@@ -1009,18 +948,19 @@ export function SubscriptionInvoice({
             <CardHeader className="flex items-center justify-between flex-row">
               <div className="flex flex-col gap-1">
                 <div className="flex items-center gap-2">
-                  <CardTitle>Attendance Summary</CardTitle>
+                  <CardTitle>{t('ws-invoices.attendance_summary')}</CardTitle>
                   {isSelectedMonthPaid && (
                     <span className="rounded-full bg-green-100 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-green-700">
-                      Paid
+                      {t('ws-invoices.paid')}
                     </span>
                   )}
                 </div>
                 <CardDescription>
-                  Attendance for{' '}
-                  {new Date(selectedMonth + '-01').toLocaleDateString('en-US', {
-                    year: 'numeric',
-                    month: 'long',
+                  {t('ws-invoices.attendance_for_month', {
+                    month: new Date(selectedMonth + '-01').toLocaleDateString(locale, {
+                      year: 'numeric',
+                      month: 'long',
+                    })
                   })}
                 </CardDescription>
               </div>
@@ -1031,13 +971,13 @@ export function SubscriptionInvoice({
                   className="h-8 w-8"
                   onClick={() => navigateMonth('prev')}
                   disabled={!canNavigateMonth('prev')}
-                  aria-label="Previous month"
+                  aria-label={t('ws-invoices.previous_month')}
                 >
                   <ChevronLeft className="h-4 w-4" />
                 </Button>
                 <Select value={selectedMonth} onValueChange={setSelectedMonth}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Select month..." />
+                    <SelectValue placeholder={t('ws-invoices.select_month')} />
                   </SelectTrigger>
                   <SelectContent>
                     {(() => {
@@ -1063,7 +1003,7 @@ export function SubscriptionInvoice({
 
                       while (currentDate <= endDate) {
                         const value = currentDate.toISOString().slice(0, 7);
-                        const label = currentDate.toLocaleDateString('en-US', {
+                        const label = currentDate.toLocaleDateString(locale, {
                           year: 'numeric',
                           month: 'long',
                         });
@@ -1082,7 +1022,7 @@ export function SubscriptionInvoice({
                               <span>{label}</span>
                               {isPaidItem && (
                                 <span className="rounded bg-green-100 px-1.5 py-0.5 text-[10px] font-medium text-green-700">
-                                  Paid
+                                  {t('ws-invoices.paid')}
                                 </span>
                               )}
                             </span>
@@ -1103,7 +1043,7 @@ export function SubscriptionInvoice({
                   className="h-8 w-8"
                   onClick={() => navigateMonth('next')}
                   disabled={!canNavigateMonth('next')}
-                  aria-label="Next month"
+                  aria-label={t('ws-invoices.next_month')}
                 >
                   <ChevronRight className="h-4 w-4" />
                 </Button>
@@ -1115,14 +1055,14 @@ export function SubscriptionInvoice({
                   <div className="flex items-center gap-2">
                     <Loader2 className="h-4 w-4 animate-spin" />
                     <p className="text-muted-foreground text-sm">
-                      Loading attendance...
+                      {t('ws-invoices.loading_attendance')}
                     </p>
                   </div>
                 </div>
               ) : userAttendanceError ? (
                 <div className="flex items-center justify-center py-8">
                   <p className="text-destructive text-sm">
-                    Error loading attendance data. Please try again.
+                    {t('ws-invoices.error_loading_attendance')}
                   </p>
                 </div>
               ) : (
@@ -1145,7 +1085,7 @@ export function SubscriptionInvoice({
                         <div className="grid grid-cols-2 gap-4">
                           <div className="rounded-lg border p-3">
                             <p className="text-muted-foreground text-sm">
-                              Days Attended
+                              {t('ws-invoices.days_attended')}
                             </p>
                             <p className="text-2xl font-bold text-green-600">
                               {attendanceStats.present + attendanceStats.late}
@@ -1153,7 +1093,7 @@ export function SubscriptionInvoice({
                           </div>
                           <div className="rounded-lg border p-3">
                             <p className="text-muted-foreground text-sm">
-                              Total Sessions
+                              {t('ws-invoices.total_sessions')}
                             </p>
                             <p className="text-2xl font-bold">
                               {totalSessions}
@@ -1165,7 +1105,7 @@ export function SubscriptionInvoice({
                         <div className="grid grid-cols-3 gap-3">
                           <div className="rounded-lg border p-3">
                             <p className="text-muted-foreground text-sm">
-                              Present
+                              {t('ws-invoices.present')}
                             </p>
                             <p className="text-xl font-bold text-green-600">
                               {attendanceStats.present}
@@ -1173,7 +1113,7 @@ export function SubscriptionInvoice({
                           </div>
                           <div className="rounded-lg border p-3">
                             <p className="text-muted-foreground text-sm">
-                              Late
+                              {t('ws-invoices.late')}
                             </p>
                             <p className="text-xl font-bold text-yellow-600">
                               {attendanceStats.late}
@@ -1181,7 +1121,7 @@ export function SubscriptionInvoice({
                           </div>
                           <div className="rounded-lg border p-3">
                             <p className="text-muted-foreground text-sm">
-                              Absent
+                              {t('ws-invoices.absent')}
                             </p>
                             <p className="text-xl font-bold text-red-600">
                               {attendanceStats.absent}
@@ -1213,7 +1153,7 @@ export function SubscriptionInvoice({
                     return (
                       <div className="space-y-2">
                         <div className="flex justify-between text-sm">
-                          <span>Attendance Rate</span>
+                          <span>{t('ws-invoices.attendance_rate')}</span>
                           <span className="font-medium">
                             {attendanceRate.toFixed(1)}%
                           </span>
@@ -1233,31 +1173,31 @@ export function SubscriptionInvoice({
                   {/* Attendance Calendar */}
                   {userAttendance && userAttendance.length > 0 && (
                     <div className="space-y-2">
-                      <Label>Attendance Calendar</Label>
+                      <Label>{t('ws-invoices.attendance_calendar')}</Label>
                       <AttendanceCalendar
                         userAttendance={userAttendance}
                         selectedMonth={selectedMonth}
                         selectedGroup={userGroups.find(
                           (g) => g.workspace_user_groups?.id === selectedGroupId
                         )}
-                        locale="en-US"
+                        locale={locale}
                       />
                       <div className="flex items-center gap-4 text-xs text-muted-foreground">
                         <div className="flex items-center gap-1">
                           <div className="h-2 w-2 rounded-full bg-green-500"></div>
-                          <span>Present</span>
+                          <span>{t('ws-invoices.present')}</span>
                         </div>
                         <div className="flex items-center gap-1">
                           <div className="h-2 w-2 rounded-full bg-yellow-500"></div>
-                          <span>Late</span>
+                          <span>{t('ws-invoices.late')}</span>
                         </div>
                         <div className="flex items-center gap-1">
                           <div className="h-2 w-2 rounded-full bg-red-500"></div>
-                          <span>Absent</span>
+                          <span>{t('ws-invoices.absent')}</span>
                         </div>
                         <div className="flex items-center gap-1">
                           <div className="h-2 w-2 rounded-full bg-gray-300"></div>
-                          <span>No Session</span>
+                          <span>{t('ws-invoices.no_session')}</span>
                         </div>
                       </div>
                     </div>
@@ -1276,7 +1216,7 @@ export function SubscriptionInvoice({
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <FileText className="h-5 w-5" />
-                  Subscription Invoice Configuration
+                  {t('ws-invoices.subscription_invoice_configuration')}
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -1287,7 +1227,7 @@ export function SubscriptionInvoice({
                   </Label>
                   <Textarea
                     id="subscription-invoice-content"
-                    placeholder="Subscription invoice content..."
+                    placeholder={t('ws-invoices.subscription_invoice_content_placeholder')}
                     className="min-h-[80px]"
                     value={invoiceContent}
                     onChange={(e) => setInvoiceContent(e.target.value)}
@@ -1301,7 +1241,7 @@ export function SubscriptionInvoice({
                   </Label>
                   <Textarea
                     id="subscription-invoice-notes"
-                    placeholder="Additional notes..."
+                    placeholder={t('ws-invoices.additional_notes_placeholder')}
                     className="min-h-[60px]"
                     value={invoiceNotes}
                     onChange={(e) => setInvoiceNotes(e.target.value)}
@@ -1314,7 +1254,7 @@ export function SubscriptionInvoice({
                 <div className="space-y-4">
                   <div className="flex items-center gap-2 font-medium text-muted-foreground text-sm">
                     <CreditCard className="h-4 w-4" />
-                    Payment Settings
+                    {t('ws-invoices.payment_settings')}
                   </div>
 
                   {/* Wallet Selection */}
@@ -1328,7 +1268,7 @@ export function SubscriptionInvoice({
                       onValueChange={setSelectedWalletId}
                     >
                       <SelectTrigger>
-                        <SelectValue placeholder="Select a wallet (required)..." />
+                        <SelectValue placeholder={t('ws-invoices.select_wallet_required')} />
                       </SelectTrigger>
                       <SelectContent>
                         {wallets.map((wallet) => (
@@ -1340,7 +1280,7 @@ export function SubscriptionInvoice({
                               <CreditCard className="h-4 w-4" />
                               <div className="flex flex-row gap-2">
                                 <p className="font-medium">
-                                  {wallet.name || 'Unnamed Wallet'}
+                                  {wallet.name || t('ws-invoices.unnamed_wallet')}
                                 </p>
                                 <p className="text-muted-foreground text-sm">
                                   {wallet.type || 'STANDARD'} -{' '}
@@ -1357,7 +1297,7 @@ export function SubscriptionInvoice({
                   {/* Transaction Category Selection */}
                   <div className="space-y-2">
                     <Label htmlFor="subscription-category-select">
-                      Transaction Category{' '}
+                      {t('ws-invoices.transaction_category')}{' '}
                       <span className="text-red-500">*</span>
                     </Label>
                     <Combobox
@@ -1365,14 +1305,14 @@ export function SubscriptionInvoice({
                       options={categories.map(
                         (category): ComboboxOptions => ({
                           value: category.id || '',
-                          label: category.name || 'Unnamed Category',
+                          label: category.name || t('ws-invoices.unnamed_category'),
                         })
                       )}
                       selected={selectedCategoryId}
                       onChange={(value) =>
                         setSelectedCategoryId(value as string)
                       }
-                      placeholder="Select a category (required)..."
+                      placeholder={t('ws-invoices.select_category_required')}
                     />
                   </div>
 
@@ -1384,11 +1324,11 @@ export function SubscriptionInvoice({
                     <Combobox
                       t={t}
                       options={[
-                        { value: 'none', label: 'No promotion' },
+                        { value: 'none', label: t('ws-invoices.no_promotion') },
                         ...promotions.map(
                           (promotion): ComboboxOptions => ({
                             value: promotion.id,
-                            label: `${promotion.name || 'Unnamed Promotion'} (${
+                            label: `${promotion.name || t('ws-invoices.unnamed_promotion')} (${
                               promotion.use_ratio
                                 ? `${promotion.value}%`
                                 : Intl.NumberFormat('vi-VN', {
@@ -1403,7 +1343,7 @@ export function SubscriptionInvoice({
                       onChange={(value) =>
                         setSelectedPromotionId(value as string)
                       }
-                      placeholder="Search promotions..."
+                      placeholder={t('ws-invoices.search_promotions')}
                     />
                   </div>
                 </div>
@@ -1416,14 +1356,14 @@ export function SubscriptionInvoice({
                     <div className="space-y-4">
                       <div className="flex items-center gap-2 font-medium text-muted-foreground text-sm">
                         <Calculator className="h-4 w-4" />
-                        Additional Products Checkout
+                        {t('ws-invoices.additional_products_checkout')}
                       </div>
 
                       {/* Summary */}
                       <div className="space-y-2">
                         <div className="flex justify-between">
                           <span className="text-muted-foreground">
-                            Subtotal
+                            {t('ws-invoices.subtotal')}
                           </span>
                           <span>
                             {Intl.NumberFormat('vi-VN', {
@@ -1436,8 +1376,8 @@ export function SubscriptionInvoice({
                         {selectedPromotion && (
                           <div className="flex justify-between">
                             <span className="text-muted-foreground">
-                              Discount (
-                              {selectedPromotion.name || 'Unnamed Promotion'})
+                              {t('ws-invoices.discount')} (
+                              {selectedPromotion.name || t('ws-invoices.unnamed_promotion')})
                             </span>
                             <span className="text-green-600">
                               -
@@ -1452,7 +1392,7 @@ export function SubscriptionInvoice({
                         <Separator />
 
                         <div className="flex justify-between font-semibold">
-                          <span>Total</span>
+                          <span>{t('ws-invoices.total')}</span>
                           <span>
                             {Intl.NumberFormat('vi-VN', {
                               style: 'currency',
@@ -1466,7 +1406,7 @@ export function SubscriptionInvoice({
                             subscriptionTotalBeforeRounding
                         ) > 0.01 && (
                           <div className="flex justify-between text-muted-foreground text-sm">
-                            <span>Adjustment</span>
+                            <span>{t('ws-invoices.adjustment')}</span>
                             <span>
                               {subscriptionRoundedTotal >
                               subscriptionTotalBeforeRounding
@@ -1486,7 +1426,7 @@ export function SubscriptionInvoice({
 
                       {/* Rounding Controls */}
                       <div className="space-y-2">
-                        <Label>Rounding Options</Label>
+                        <Label>{t('ws-invoices.rounding_options')}</Label>
                         <div className="flex gap-2">
                           <Button
                             variant="outline"
@@ -1495,7 +1435,7 @@ export function SubscriptionInvoice({
                             className="flex-1"
                           >
                             <ArrowUp className="mr-1 h-4 w-4" />
-                            Round Up
+                            {t('ws-invoices.round_up')}
                           </Button>
                           <Button
                             variant="outline"
@@ -1504,7 +1444,7 @@ export function SubscriptionInvoice({
                             className="flex-1"
                           >
                             <ArrowDown className="mr-1 h-4 w-4" />
-                            Round Down
+                            {t('ws-invoices.round_down')}
                           </Button>
                           <Button
                             variant="outline"
@@ -1517,7 +1457,7 @@ export function SubscriptionInvoice({
                               ) < 0.01
                             }
                           >
-                            Reset
+                            {t('ws-invoices.reset')}
                           </Button>
                         </div>
                       </div>
@@ -1545,10 +1485,10 @@ export function SubscriptionInvoice({
                   {isCreating ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Creating Subscription Invoice...
+                      {t('ws-invoices.creating_subscription_invoice')}
                     </>
                   ) : (
-                    'Create Subscription Invoice'
+                    t('ws-invoices.create_subscription_invoice')
                   )}
                 </Button>
               </CardContent>
