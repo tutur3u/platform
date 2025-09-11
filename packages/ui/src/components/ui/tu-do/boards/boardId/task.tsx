@@ -10,6 +10,7 @@ import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Card } from '@tuturuuu/ui/card';
 import { Checkbox } from '@tuturuuu/ui/checkbox';
+import { ColorPicker } from '@tuturuuu/ui/color-picker';
 import { DateTimePicker } from '@tuturuuu/ui/date-time-picker';
 import {
   Dialog,
@@ -47,6 +48,7 @@ import {
   Loader2,
   MoreHorizontal,
   Move,
+  Plus,
   Tag,
   Timer,
   Trash2,
@@ -54,6 +56,7 @@ import {
   UserStar,
   X,
 } from '@tuturuuu/ui/icons';
+import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
 import { cn } from '@tuturuuu/utils/format';
@@ -119,7 +122,7 @@ export function LightweightTaskCard({ task }: { task: Task }) {
           )}
           {/* Labels */}
           {task.labels && task.labels.length > 0 && (
-            <TaskLabelsDisplay labels={task.labels} maxDisplay={2} size="sm" />
+            <TaskLabelsDisplay labels={task.labels} size="sm" />
           )}
           {/* Estimation */}
           <TaskEstimationDisplay
@@ -158,6 +161,11 @@ export const TaskCard = React.memo(function TaskCard({
   const [labelsLoading, setLabelsLoading] = useState(false);
   const [estimationSaving, setEstimationSaving] = useState(false);
   const [labelsSaving, setLabelsSaving] = useState<string | null>(null);
+  // New label creation state
+  const [newLabelDialogOpen, setNewLabelDialogOpen] = useState(false);
+  const [newLabelName, setNewLabelName] = useState('');
+  const [newLabelColor, setNewLabelColor] = useState('#3b82f6');
+  const [creatingLabel, setCreatingLabel] = useState(false);
   const datePickerRef = useRef<HTMLButtonElement>(null);
   const updateTaskMutation = useUpdateTask(boardId);
   const deleteTaskMutation = useDeleteTask(boardId);
@@ -620,6 +628,55 @@ export const TaskCard = React.memo(function TaskCard({
     }
   }
 
+  // Create a new label
+  async function createNewLabel() {
+    if (!newLabelName.trim() || !boardConfig?.ws_id) return;
+
+    setCreatingLabel(true);
+    try {
+      const response = await fetch(
+        `/api/v1/workspaces/${boardConfig.ws_id}/labels`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            name: newLabelName.trim(),
+            color: newLabelColor,
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error('Failed to create label');
+      }
+
+      const newLabel = await response.json();
+
+      // Add the new label to the workspace labels list
+      setWorkspaceLabels((prev) => [newLabel, ...prev]);
+
+      // Reset form and close dialog
+      setNewLabelName('');
+      setNewLabelColor('#3b82f6');
+      setNewLabelDialogOpen(false);
+
+      toast({
+        title: 'Label created',
+        description: `"${newLabel.name}" label has been created successfully`,
+      });
+    } catch (e: any) {
+      toast({
+        title: 'Failed to create label',
+        description: e.message || 'Unable to create new label',
+        variant: 'destructive',
+      });
+    } finally {
+      setCreatingLabel(false);
+    }
+  }
+
   // Dynamic color mappings based on task list color
   const getListColorClasses = (color: SupportedColor) => {
     const colorMap: Record<SupportedColor, string> = {
@@ -742,15 +799,14 @@ export const TaskCard = React.memo(function TaskCard({
           !task.archived &&
           'border-dynamic-red/70 bg-dynamic-red/10 ring-1 ring-dynamic-red/20',
         // Hover state
-        !isDragging &&
-          'hover:border-primary/30 hover:ring-1 hover:ring-primary/15',
+        !isDragging && 'hover:ring-1 hover:ring-primary/15',
         // Selection state
         isSelected && 'bg-primary/5 shadow-md ring-2 ring-primary/50',
         // Visual feedback for invalid drop (dev only)
         process.env.NODE_ENV === 'development' &&
           isDragging &&
           !isOverlay &&
-          'ring-2 ring-red-400/60'
+          'ring-2 ring-dynamic-red'
       )}
     >
       {/* Overdue indicator */}
@@ -759,14 +815,12 @@ export const TaskCard = React.memo(function TaskCard({
           <AlertCircle className="-top-4 -right-[18px] absolute h-3 w-3" />
         </div>
       )}
-
       {/* Selection indicator */}
       {isMultiSelectMode && isSelected && (
         <div className="absolute top-2 left-2 flex h-5 w-5 items-center justify-center rounded-full bg-primary font-bold text-primary-foreground text-xs shadow-sm">
           <Check className="h-4 w-4" />
         </div>
       )}
-
       <div className="p-4">
         {/* Header */}
         <div className="flex items-start gap-1">
@@ -780,7 +834,7 @@ export const TaskCard = React.memo(function TaskCard({
                   'w-full cursor-pointer text-left font-semibold text-xs leading-tight transition-colors duration-200',
                   task.archived
                     ? 'text-muted-foreground line-through'
-                    : '-mx-1 -my-0.5 rounded-sm px-1 py-0.5 text-foreground hover:bg-muted/30 hover:text-primary active:bg-muted/50 group-hover:text-foreground/90'
+                    : '-mx-1 -my-0.5 rounded-sm px-1 py-0.5 text-foreground active:bg-muted/50'
                 )}
                 onClick={(e) => {
                   // Don't allow editing when Shift is held (multi-select mode)
@@ -1201,19 +1255,25 @@ export const TaskCard = React.memo(function TaskCard({
                   )}
 
                   {/* Labels Submenu */}
-                  {workspaceLabels.length > 0 && (
-                    <DropdownMenuSub>
-                      <DropdownMenuSubTrigger>
-                        <Tag className="h-4 w-4 text-dynamic-purple" />
-                        Labels
-                      </DropdownMenuSubTrigger>
-                      <DropdownMenuSubContent className="w-52">
-                        {labelsLoading && (
-                          <div className="px-2 py-1 text-muted-foreground text-xs">
-                            Loading...
-                          </div>
-                        )}
+                  <DropdownMenuSub>
+                    <DropdownMenuSubTrigger>
+                      <Tag className="h-4 w-4 text-dynamic-cyan" />
+                      Labels
+                    </DropdownMenuSubTrigger>
+                    <DropdownMenuSubContent>
+                      {labelsLoading && (
+                        <div className="px-2 py-1 text-muted-foreground text-xs">
+                          Loading...
+                        </div>
+                      )}
+                      {!labelsLoading && workspaceLabels.length === 0 && (
+                        <div className="px-2 py-2 text-center text-muted-foreground text-xs">
+                          No labels yet. Create your first label below.
+                        </div>
+                      )}
+                      <div className="grid gap-1">
                         {!labelsLoading &&
+                          workspaceLabels.length > 0 &&
                           workspaceLabels.map((label) => {
                             const active = task.labels?.some(
                               (l) => l.id === label.id
@@ -1226,7 +1286,7 @@ export const TaskCard = React.memo(function TaskCard({
                                 className={cn(
                                   'flex cursor-pointer items-center justify-between',
                                   active &&
-                                    'bg-dynamic-purple/10 text-dynamic-purple'
+                                    'bg-dynamic-cyan/10 text-dynamic-cyan'
                                 )}
                               >
                                 <span className="truncate">{label.name}</span>
@@ -1234,19 +1294,34 @@ export const TaskCard = React.memo(function TaskCard({
                               </DropdownMenuItem>
                             );
                           })}
-                        {!labelsLoading &&
-                          task.labels &&
-                          task.labels.length > 0 && (
-                            <>
-                              <DropdownMenuSeparator />
-                              <div className="px-2 pt-1 pb-1 text-[10px] text-muted-foreground">
-                                {task.labels.length} applied
-                              </div>
-                            </>
-                          )}
-                      </DropdownMenuSubContent>
-                    </DropdownMenuSub>
-                  )}
+                      </div>
+                      {!labelsLoading &&
+                        task.labels &&
+                        task.labels.length > 0 && (
+                          <>
+                            <DropdownMenuSeparator />
+                            <div className="px-2 pt-1 pb-1 text-[10px] text-muted-foreground">
+                              {task.labels.length} applied
+                            </div>
+                          </>
+                        )}
+                      {!labelsLoading && (
+                        <>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem
+                            onClick={() => {
+                              setNewLabelDialogOpen(true);
+                              setMenuOpen(false);
+                            }}
+                            className="flex cursor-pointer items-center gap-2 text-muted-foreground hover:text-foreground"
+                          >
+                            <Plus className="h-4 w-4" />
+                            Add New Label
+                          </DropdownMenuItem>
+                        </>
+                      )}
+                    </DropdownMenuSubContent>
+                  </DropdownMenuSub>
 
                   <DropdownMenuSeparator />
 
@@ -1432,12 +1507,8 @@ export const TaskCard = React.memo(function TaskCard({
           )}
           {/* Labels */}
           {!task.archived && task.labels && task.labels.length > 0 && (
-            <div className="min-w-0 max-w-[140px] overflow-hidden">
-              <TaskLabelsDisplay
-                labels={task.labels}
-                maxDisplay={1}
-                size="sm"
-              />
+            <div className="flex min-w-0 flex-shrink-0 flex-wrap gap-1">
+              <TaskLabelsDisplay labels={task.labels} size="sm" />
             </div>
           )}
           {/* Estimation Points */}
@@ -1485,8 +1556,6 @@ export const TaskCard = React.memo(function TaskCard({
           </div>
         </div>
       </div>
-
-      {/* Delete Confirmation Dialog */}
       <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
@@ -1523,8 +1592,6 @@ export const TaskCard = React.memo(function TaskCard({
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
-      {/* Task Edit Dialog */}
       <TaskEditDialog
         task={task}
         isOpen={editDialogOpen}
@@ -1532,7 +1599,75 @@ export const TaskCard = React.memo(function TaskCard({
         onUpdate={onUpdate}
         availableLists={availableLists}
       />
-
+      <Dialog open={newLabelDialogOpen} onOpenChange={setNewLabelDialogOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Create New Label</DialogTitle>
+            <DialogDescription>
+              Add a new label to organize your tasks. Give it a descriptive name
+              and choose a color.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label>Label Name</Label>
+              <Input
+                value={newLabelName}
+                onChange={(e) => setNewLabelName(e.target.value)}
+                placeholder="e.g., Bug, Feature, Priority"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && newLabelName.trim()) {
+                    createNewLabel();
+                  }
+                }}
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label>Color</Label>
+              <div className="flex items-center gap-3">
+                <ColorPicker
+                  value={newLabelColor}
+                  onChange={setNewLabelColor}
+                />
+                <Badge
+                  style={{
+                    backgroundColor: `color-mix(in srgb, ${newLabelColor} 15%, transparent)`,
+                    borderColor: `color-mix(in srgb, ${newLabelColor} 30%, transparent)`,
+                    color: newLabelColor,
+                  }}
+                  className="border"
+                >
+                  {newLabelName.trim() || 'Preview'}
+                </Badge>
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setNewLabelDialogOpen(false)}
+              disabled={creatingLabel}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              onClick={createNewLabel}
+              disabled={!newLabelName.trim() || creatingLabel}
+            >
+              {creatingLabel ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Creating...
+                </>
+              ) : (
+                'Create Label'
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
       {!isOverlay && (
         <TaskActions taskId={task.id} boardId={boardId} onUpdate={onUpdate} />
       )}

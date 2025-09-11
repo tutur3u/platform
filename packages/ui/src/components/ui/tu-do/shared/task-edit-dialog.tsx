@@ -435,13 +435,9 @@ export function TaskEditDialog({
   // Build estimation options per config
   const estimationOptions = (() => {
     if (!boardConfig?.estimation_type) return [] as (number | null)[];
-    const max = boardConfig.extended_estimation ? 8 : 5;
+    const max = boardConfig.extended_estimation ? 7 : 5;
     const allowZero = boardConfig.allow_zero_estimates;
     switch (boardConfig.estimation_type) {
-      case 'fibonacci':
-      case 'exponential':
-      case 't-shirt':
-      case 'linear':
       default: {
         // All estimation types use the same 0-7 storage format
         // The difference is in how they're displayed to the user
