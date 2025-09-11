@@ -265,9 +265,11 @@ export const useUserGroupProducts = (groupId: string) => {
   });
 };
 
-
-// Get User's Latest Subscription Invoice 
-export const useUserLatestSubscriptionInvoice = (userId: string, groupId: string) => {
+// Get User's Latest Subscription Invoice
+export const useUserLatestSubscriptionInvoice = (
+  userId: string,
+  groupId: string
+) => {
   return useQuery({
     queryKey: ['user-latest-subscription-invoice', userId, groupId],
     queryFn: async () => {
@@ -281,7 +283,10 @@ export const useUserLatestSubscriptionInvoice = (userId: string, groupId: string
         .limit(1);
 
       if (error) {
-        console.error('❌ User latest subscription invoice fetch error:', error);
+        console.error(
+          '❌ User latest subscription invoice fetch error:',
+          error
+        );
         throw error;
       }
 
@@ -294,7 +299,6 @@ export const useUserLatestSubscriptionInvoice = (userId: string, groupId: string
     retry: 3,
   });
 };
-
 
 // Get User's Linked Promotion
 export const useUserLinkedPromotions = (userId: string) => {

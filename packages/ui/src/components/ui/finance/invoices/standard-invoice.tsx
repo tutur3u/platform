@@ -74,9 +74,8 @@ export function StandardInvoice({
   const { data: products = [], isLoading: productsLoading } = useProducts(wsId);
   const { data: promotions = [], isLoading: promotionsLoading } =
     usePromotions(wsId);
-  const { data: linkedPromotions = [] } = useUserLinkedPromotions(
-    selectedUserId
-  );
+  const { data: linkedPromotions = [] } =
+    useUserLinkedPromotions(selectedUserId);
   const { data: wallets = [], isLoading: walletsLoading } = useWallets(wsId);
   const { data: categories = [], isLoading: categoriesLoading } =
     useCategories(wsId);
@@ -106,8 +105,8 @@ export function StandardInvoice({
     selectedPromotionId === 'none'
       ? null
       : promotions.find(
-        (promotion: Promotion) => promotion.id === selectedPromotionId
-      );
+          (promotion: Promotion) => promotion.id === selectedPromotionId
+        );
   const isLoadingUserHistory = userTransactionsLoading || userInvoicesLoading;
   const isLoadingData =
     usersLoading ||
@@ -196,9 +195,7 @@ export function StandardInvoice({
     if (candidatePromotions.length === 0) return;
 
     const computeDiscount = (p: Promotion) =>
-      p.use_ratio
-        ? subtotal * (p.value / 100)
-        : Math.min(p.value, subtotal);
+      p.use_ratio ? subtotal * (p.value / 100) : Math.min(p.value, subtotal);
 
     let best: Promotion | null = null;
     let bestAmount = -1;
@@ -283,9 +280,9 @@ export function StandardInvoice({
         const roundingInfo =
           calculated_values.rounding_applied !== 0
             ? ` | Rounding: ${Intl.NumberFormat('vi-VN', {
-              style: 'currency',
-              currency: 'VND',
-            }).format(calculated_values.rounding_applied)}`
+                style: 'currency',
+                currency: 'VND',
+              }).format(calculated_values.rounding_applied)}`
             : '';
 
         toast(
@@ -412,23 +409,24 @@ export function StandardInvoice({
                                     <p className="text-muted-foreground text-xs">
                                       {transaction.taken_at
                                         ? new Date(
-                                          transaction.taken_at
-                                        ).toLocaleDateString()
+                                            transaction.taken_at
+                                          ).toLocaleDateString()
                                         : 'No date'}
                                     </p>
                                   </div>
                                   <div className="text-right">
                                     <p
-                                      className={`font-semibold ${(transaction.amount || 0) >= 0
-                                        ? 'text-green-600'
-                                        : 'text-red-600'
-                                        }`}
+                                      className={`font-semibold ${
+                                        (transaction.amount || 0) >= 0
+                                          ? 'text-green-600'
+                                          : 'text-red-600'
+                                      }`}
                                     >
                                       {transaction.amount !== undefined
                                         ? Intl.NumberFormat('vi-VN', {
-                                          style: 'currency',
-                                          currency: 'VND',
-                                        }).format(transaction.amount)
+                                            style: 'currency',
+                                            currency: 'VND',
+                                          }).format(transaction.amount)
                                         : '-'}
                                     </p>
                                   </div>
@@ -472,8 +470,8 @@ export function StandardInvoice({
                                     <p className="text-muted-foreground text-xs">
                                       {invoice.created_at
                                         ? new Date(
-                                          invoice.created_at
-                                        ).toLocaleDateString()
+                                            invoice.created_at
+                                          ).toLocaleDateString()
                                         : 'No date'}
                                     </p>
                                     {invoice.note && (
@@ -486,9 +484,9 @@ export function StandardInvoice({
                                     <p className="font-semibold text-blue-600">
                                       {invoice.price !== undefined
                                         ? Intl.NumberFormat('vi-VN', {
-                                          style: 'currency',
-                                          currency: 'VND',
-                                        }).format(invoice.price)
+                                            style: 'currency',
+                                            currency: 'VND',
+                                          }).format(invoice.price)
                                         : '-'}
                                     </p>
                                     {invoice.total_diff !== undefined &&
@@ -654,13 +652,14 @@ export function StandardInvoice({
                     ...promotions.map(
                       (promotion): ComboboxOptions => ({
                         value: promotion.id,
-                        label: `${promotion.name || 'Unnamed Promotion'} (${promotion.use_ratio
-                          ? `${promotion.value}%`
-                          : Intl.NumberFormat('vi-VN', {
-                            style: 'currency',
-                            currency: 'VND',
-                          }).format(promotion.value)
-                          })`,
+                        label: `${promotion.name || 'Unnamed Promotion'} (${
+                          promotion.use_ratio
+                            ? `${promotion.value}%`
+                            : Intl.NumberFormat('vi-VN', {
+                                style: 'currency',
+                                currency: 'VND',
+                              }).format(promotion.value)
+                        })`,
                       })
                     ),
                   ]}

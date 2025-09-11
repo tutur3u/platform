@@ -9,7 +9,12 @@ import { Separator } from '@tuturuuu/ui/separator';
 import { useState } from 'react';
 import { Label } from '@tuturuuu/ui/label';
 import { Switch } from '@tuturuuu/ui/switch';
-import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from '@tuturuuu/ui/tooltip';
+import {
+  TooltipProvider,
+  Tooltip,
+  TooltipTrigger,
+  TooltipContent,
+} from '@tuturuuu/ui/tooltip';
 import { Info } from '@tuturuuu/ui/icons';
 
 interface Props {
@@ -50,13 +55,18 @@ export default function NewInvoicePage({ wsId }: Props) {
                   </TooltipTrigger>
                   <TooltipContent>
                     <p>
-                      Allows you to create multiple invoices in a single session.
+                      Allows you to create multiple invoices in a single
+                      session.
                     </p>
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
             </div>
-            <Switch id="multiple-invoices" checked={multipleInvoices} onCheckedChange={setMultipleInvoices} />
+            <Switch
+              id="multiple-invoices"
+              checked={multipleInvoices}
+              onCheckedChange={setMultipleInvoices}
+            />
           </div>
         </div>
 
@@ -77,7 +87,7 @@ export default function NewInvoicePage({ wsId }: Props) {
             createMultipleInvoices={multipleInvoices}
           />
         </TabsContent>
-      </Tabs >
+      </Tabs>
     </>
   );
 }
