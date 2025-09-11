@@ -1,5 +1,3 @@
-import { MeetingActions } from './meeting-actions';
-import { RecordingSessionsOverview } from './recording-sessions-overview';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -14,6 +12,8 @@ import { getCurrentUser } from '@tuturuuu/utils/user-helper';
 import { format } from 'date-fns';
 import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
+import { MeetingActions } from './meeting-actions';
+import { RecordingSessionsOverview } from './recording-sessions-overview';
 
 interface MeetingDetailPageProps {
   params: Promise<{

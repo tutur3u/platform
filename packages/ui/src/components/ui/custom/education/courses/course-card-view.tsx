@@ -19,8 +19,8 @@ import {
   PenTool,
   Star,
 } from '@tuturuuu/ui/icons';
-import { useTranslations } from 'next-intl';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 
 interface CourseCardViewProps {
   courses: (WorkspaceCourse & {

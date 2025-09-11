@@ -1,6 +1,3 @@
-import InviteMemberButton from './_components/invite-member-button';
-import MemberList from './_components/member-list';
-import MemberTabs from './_components/member-tabs';
 import {
   createAdminClient,
   createClient,
@@ -13,8 +10,11 @@ import {
   getWorkspace,
   verifyHasSecrets,
 } from '@tuturuuu/utils/workspace-helper';
-import { getTranslations } from 'next-intl/server';
 import { redirect } from 'next/navigation';
+import { getTranslations } from 'next-intl/server';
+import InviteMemberButton from './_components/invite-member-button';
+import MemberList from './_components/member-list';
+import MemberTabs from './_components/member-tabs';
 
 interface Props {
   params: Promise<{

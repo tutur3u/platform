@@ -1,4 +1,3 @@
-import PlanDetailsClient from './plan-details-client';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { PlanUser } from '@tuturuuu/types/primitives/MeetTogetherPlan';
 import type {
@@ -9,6 +8,7 @@ import type {
 import { TimeBlockingProvider } from '@tuturuuu/ui/hooks/time-blocking-provider';
 import { getPlan } from '@tuturuuu/ui/utils/plan-helpers';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
+import PlanDetailsClient from './plan-details-client';
 import 'dayjs/locale/vi';
 import { notFound } from 'next/navigation';
 import { Suspense } from 'react';

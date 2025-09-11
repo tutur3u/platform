@@ -1,7 +1,7 @@
-import { DEV_MODE } from '@/constants/common';
 import { CommonFooter } from '@tuturuuu/ui/custom/common-footer';
 import { getTranslations } from 'next-intl/server';
 import type React from 'react';
+import { DEV_MODE } from '@/constants/common';
 
 interface LayoutProps {
   children: React.ReactNode;

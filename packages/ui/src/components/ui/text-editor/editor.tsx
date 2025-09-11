@@ -1,6 +1,5 @@
 'use client';
 
-import { ToolBar } from './tool-bar';
 import Highlight from '@tiptap/extension-highlight';
 import Link from '@tiptap/extension-link';
 import Placeholder from '@tiptap/extension-placeholder';
@@ -12,6 +11,7 @@ import { EditorContent, type JSONContent, useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import { debounce } from 'lodash';
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { ToolBar } from './tool-bar';
 
 const hasTextContent = (node: JSONContent): boolean => {
   if (node.text && node.text.trim().length > 0) return true;

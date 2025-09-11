@@ -1,6 +1,5 @@
 'use client';
 
-import type { TASK_PRIORITIES } from './priority-view';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -8,6 +7,7 @@ import {
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
 import { Flag } from '@tuturuuu/ui/icons';
+import type { TASK_PRIORITIES } from './priority-view';
 
 interface PriorityDropdownProps {
   taskId: string;

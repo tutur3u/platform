@@ -1,5 +1,3 @@
-import { getColumns } from '../../executions/columns';
-import { CustomDataTable } from '@/components/custom-data-table';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import type {
   WorkspaceCronExecution,
@@ -22,6 +20,8 @@ import {
 } from '@tuturuuu/ui/icons';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import { CustomDataTable } from '@/components/custom-data-table';
+import { getColumns } from '../../executions/columns';
 
 interface SearchParams {
   q?: string;

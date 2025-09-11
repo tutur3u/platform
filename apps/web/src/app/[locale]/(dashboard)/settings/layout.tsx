@@ -1,7 +1,7 @@
-import Navbar from '../../navbar';
-import NavbarPadding from '../../navbar-padding';
 import { Separator } from '@tuturuuu/ui/separator';
 import type React from 'react';
+import Navbar from '../../navbar';
+import NavbarPadding from '../../navbar-padding';
 
 interface LayoutProps {
   children: React.ReactNode;

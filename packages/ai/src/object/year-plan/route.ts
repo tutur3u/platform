@@ -1,4 +1,3 @@
-import { yearPlanSchema } from '../types';
 import { vertex } from '@ai-sdk/google-vertex/edge';
 import {
   createAdminClient,
@@ -6,6 +5,7 @@ import {
 } from '@tuturuuu/supabase/next/server';
 import { streamObject } from 'ai';
 import { NextResponse } from 'next/server';
+import { yearPlanSchema } from '../types';
 
 interface PlanRequest {
   wsId: string;

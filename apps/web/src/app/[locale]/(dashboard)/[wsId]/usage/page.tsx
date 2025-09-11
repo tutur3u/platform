@@ -1,13 +1,13 @@
-import StatisticCard from '@/components/cards/StatisticCard';
-import LoadingStatisticCard from '@/components/loading-statistic-card';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Activity, Brain, HardDrive, Users } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
 import { getPermissions, getWorkspace } from '@tuturuuu/utils/workspace-helper';
-import { getTranslations } from 'next-intl/server';
 import { notFound } from 'next/navigation';
+import { getTranslations } from 'next-intl/server';
 import { Suspense } from 'react';
+import StatisticCard from '@/components/cards/StatisticCard';
+import LoadingStatisticCard from '@/components/loading-statistic-card';
 
 interface PageProps {
   params: Promise<{

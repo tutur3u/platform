@@ -1,4 +1,4 @@
-import { OAuth2Client, google } from '@tuturuuu/google';
+import { google, OAuth2Client } from '@tuturuuu/google';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { convertGoogleAllDayEvent } from '@tuturuuu/ui/hooks/calendar-utils';
 import { NextResponse } from 'next/server';

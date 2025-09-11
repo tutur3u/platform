@@ -1,6 +1,5 @@
 'use client';
 
-import { AIEmailDrafter } from './ai-email-drafter';
 import { zodResolver } from '@hookform/resolvers/zod';
 import Highlight from '@tiptap/extension-highlight';
 import Link from '@tiptap/extension-link';
@@ -39,11 +38,12 @@ import { toast } from '@tuturuuu/ui/sonner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { RichTextEditor } from '@tuturuuu/ui/text-editor/editor';
 import DOMPurify from 'dompurify';
-import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { useEffect, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
+import { AIEmailDrafter } from './ai-email-drafter';
 
 function EmailChips({
   label,

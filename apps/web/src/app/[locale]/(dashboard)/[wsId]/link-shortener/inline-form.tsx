@@ -13,8 +13,8 @@ import {
 } from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
-import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 
 interface ShortenedLinkResult {

@@ -4,8 +4,8 @@ import LinkButton from '@tuturuuu/ui/custom/education/modules/link-button';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Box, Eye, Paperclip } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
-import { getTranslations } from 'next-intl/server';
 import { notFound } from 'next/navigation';
+import { getTranslations } from 'next-intl/server';
 import type { ReactNode } from 'react';
 
 interface Props {

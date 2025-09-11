@@ -1,11 +1,7 @@
 'use client';
 
-import { ChatList } from '@/components/chat-list';
-import { ChatPanel } from '@/components/chat-panel';
-import { ChatScrollAnchor } from '@/components/chat-scroll-anchor';
-import { EmptyScreen } from '@/components/empty-screen';
 import { DefaultChatTransport } from '@tuturuuu/ai/core';
-import { type Model, defaultModel, models } from '@tuturuuu/ai/models';
+import { defaultModel, type Model, models } from '@tuturuuu/ai/models';
 import { useChat } from '@tuturuuu/ai/react';
 import type { UIMessage } from '@tuturuuu/ai/types';
 import { createClient } from '@tuturuuu/supabase/next/client';
@@ -14,10 +10,14 @@ import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { cn } from '@tuturuuu/utils/format';
 import { generateRandomUUID } from '@tuturuuu/utils/uuid-helper';
-import { useTranslations } from 'next-intl';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import type React from 'react';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { ChatList } from '@/components/chat-list';
+import { ChatPanel } from '@/components/chat-panel';
+import { ChatScrollAnchor } from '@/components/chat-scroll-anchor';
+import { EmptyScreen } from '@/components/empty-screen';
 
 export interface ChatProps extends React.ComponentProps<'div'> {
   inputModel?: Model;

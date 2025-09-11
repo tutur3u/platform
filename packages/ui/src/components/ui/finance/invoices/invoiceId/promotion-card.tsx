@@ -1,6 +1,6 @@
 import { Badge } from '@tuturuuu/ui/badge';
 import { Card, CardContent } from '@tuturuuu/ui/card';
-import { Percent, DollarSign } from '@tuturuuu/ui/icons';
+import { DollarSign, Percent } from '@tuturuuu/ui/icons';
 
 interface PromotionCardProps {
   promotion: {

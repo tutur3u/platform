@@ -1,8 +1,5 @@
 'use client';
 
-import { Popover, PopoverContent, PopoverTrigger } from '../../popover';
-import { getColorHighlight } from './color-highlights';
-import { useCalendarSettings } from './settings/settings-context';
 import type { Workspace } from '@tuturuuu/types/db';
 import type { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
 import { Button } from '@tuturuuu/ui/button';
@@ -30,6 +27,9 @@ import isSameOrAfter from 'dayjs/plugin/isSameOrAfter';
 import timezone from 'dayjs/plugin/timezone';
 import { Clock, Plus } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
+import { Popover, PopoverContent, PopoverTrigger } from '../../popover';
+import { getColorHighlight } from './color-highlights';
+import { useCalendarSettings } from './settings/settings-context';
 
 dayjs.extend(timezone);
 dayjs.extend(isSameOrAfter);

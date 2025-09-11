@@ -1,6 +1,6 @@
-import { BASE_URL, DEV_MODE } from '@/constants/common';
 import MeetTogetherPlanDetailsPage from '@tuturuuu/ui/legacy/tumeet/planId/page';
 import { redirect } from 'next/navigation';
+import { BASE_URL, DEV_MODE } from '@/constants/common';
 
 interface PlanPageProps {
   params: Promise<{

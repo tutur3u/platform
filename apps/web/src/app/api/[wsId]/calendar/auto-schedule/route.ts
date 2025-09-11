@@ -1,4 +1,3 @@
-import { createCalendarOptimizer } from './tools';
 import {
   promoteEventToTask,
   scheduleWithFlexibleEvents,
@@ -9,6 +8,7 @@ import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import type dayjs from 'dayjs';
 import { type NextRequest, NextResponse } from 'next/server';
+import { createCalendarOptimizer } from './tools';
 
 export interface DateRange {
   start: dayjs.Dayjs;

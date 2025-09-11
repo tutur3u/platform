@@ -1,9 +1,9 @@
 'use client';
 
-import { Button } from '../button';
-import { LoadingIndicator } from './loading-indicator';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
+import { Button } from '../button';
+import { LoadingIndicator } from './loading-indicator';
 
 export function LanguageToggle({
   forceDisplay = false,

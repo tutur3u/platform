@@ -1,9 +1,9 @@
-import PostEmailTemplate from '@/app/[locale]/(dashboard)/[wsId]/mail/default-email-template';
-import GuestEmailTemplate from '@/app/[locale]/(dashboard)/[wsId]/mail/guest-email-template';
-import type { UserGroupPost } from '@/app/[locale]/(dashboard)/[wsId]/users/groups/[groupId]/posts';
 import { atom, useAtom } from 'jotai';
 import { useState } from 'react';
 import ReactDOMServer from 'react-dom/server';
+import PostEmailTemplate from '@/app/[locale]/(dashboard)/[wsId]/mail/default-email-template';
+import GuestEmailTemplate from '@/app/[locale]/(dashboard)/[wsId]/mail/guest-email-template';
+import type { UserGroupPost } from '@/app/[locale]/(dashboard)/[wsId]/users/groups/[groupId]/posts';
 
 interface EmailState {
   loading: boolean;

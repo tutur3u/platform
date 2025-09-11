@@ -12,8 +12,8 @@ import { Button } from '@tuturuuu/ui/button';
 import { Mail, Users } from '@tuturuuu/ui/icons';
 import { Skeleton } from '@tuturuuu/ui/skeleton';
 import moment from 'moment';
-import { useTranslations } from 'next-intl';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 
 interface Member {

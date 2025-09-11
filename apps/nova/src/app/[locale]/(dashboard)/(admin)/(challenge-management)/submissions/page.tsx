@@ -1,7 +1,7 @@
-import SubmissionsListFallback from './fallback';
-import SubmissionsList from './server-component';
 import { getTranslations } from 'next-intl/server';
 import { Suspense } from 'react';
+import SubmissionsListFallback from './fallback';
+import SubmissionsList from './server-component';
 
 export default async function Page({
   searchParams,

@@ -1,13 +1,13 @@
 'use client';
 
-import AllAvailabilities from './all-availabilities';
-import AvailabilityPlanner from './availability-planner';
 import type { MeetTogetherPlan } from '@tuturuuu/types/primitives/MeetTogetherPlan';
 import type { Timeblock } from '@tuturuuu/types/primitives/Timeblock';
 import { Button } from '@tuturuuu/ui/button';
 import { useTimeBlocking } from '@tuturuuu/ui/hooks/time-blocking-provider';
 import { Calendar, Save, Users } from '@tuturuuu/ui/icons';
 import { useEffect, useState } from 'react';
+import AllAvailabilities from './all-availabilities';
+import AvailabilityPlanner from './availability-planner';
 
 interface UnifiedAvailabilityProps {
   plan: MeetTogetherPlan;

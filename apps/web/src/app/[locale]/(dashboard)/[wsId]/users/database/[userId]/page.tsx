@@ -1,5 +1,3 @@
-import UserMonthAttendance from '../../attendance/user-month-attendance';
-import { CustomDataTable } from '@/components/custom-data-table';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import type { WorkspaceUserReport } from '@tuturuuu/types/db';
 import type { Invoice } from '@tuturuuu/types/primitives/Invoice';
@@ -9,10 +7,12 @@ import { invoiceColumns } from '@tuturuuu/ui/finance/invoices/columns';
 import { TicketCheck, Users } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
 import moment from 'moment';
-import { getTranslations } from 'next-intl/server';
 import Image from 'next/image';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import { getTranslations } from 'next-intl/server';
+import { CustomDataTable } from '@/components/custom-data-table';
+import UserMonthAttendance from '../../attendance/user-month-attendance';
 
 interface Props {
   params: Promise<{

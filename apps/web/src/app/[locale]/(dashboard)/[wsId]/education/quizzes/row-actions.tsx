@@ -1,6 +1,5 @@
 'use client';
 
-import WorkspaceQuizForm from './form';
 import type { Row } from '@tanstack/react-table';
 import type { WorkspaceQuiz } from '@tuturuuu/types/db';
 import { Button } from '@tuturuuu/ui/button';
@@ -14,9 +13,10 @@ import {
 } from '@tuturuuu/ui/dropdown-menu';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import { Ellipsis } from '@tuturuuu/ui/icons';
-import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { useState } from 'react';
+import WorkspaceQuizForm from './form';
 
 interface WorkspaceQuizRowActionsProps {
   row: Row<WorkspaceQuiz>;

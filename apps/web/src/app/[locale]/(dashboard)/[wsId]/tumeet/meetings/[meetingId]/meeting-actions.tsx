@@ -1,6 +1,5 @@
 'use client';
 
-import { AudioRecorder } from './audio-recorder';
 import { useQueryClient } from '@tanstack/react-query';
 import type { RecordingStatus } from '@tuturuuu/types/db';
 import { Button } from '@tuturuuu/ui/button';
@@ -17,6 +16,7 @@ import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useCallback, useEffect, useState } from 'react';
+import { AudioRecorder } from './audio-recorder';
 
 interface MeetingActionsProps {
   wsId: string;

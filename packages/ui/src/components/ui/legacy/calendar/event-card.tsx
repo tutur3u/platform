@@ -1,17 +1,5 @@
-import {
-  ContextMenu,
-  ContextMenuContent,
-  ContextMenuItem,
-  ContextMenuSeparator,
-  ContextMenuSub,
-  ContextMenuSubContent,
-  ContextMenuSubTrigger,
-  ContextMenuTrigger,
-} from '../../context-menu';
-import { GRID_SNAP, HOUR_HEIGHT, MAX_HOURS, MIN_EVENT_HEIGHT } from './config';
-import { useCalendarSettings } from './settings/settings-context';
-import type { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
 import type { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
+import type { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
 import { useCalendar } from '@tuturuuu/ui/hooks/use-calendar';
 import { getEventStyles } from '@tuturuuu/utils/color-helper';
 import { cn } from '@tuturuuu/utils/format';
@@ -31,6 +19,18 @@ import {
   Unlock,
 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
+import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuSeparator,
+  ContextMenuSub,
+  ContextMenuSubContent,
+  ContextMenuSubTrigger,
+  ContextMenuTrigger,
+} from '../../context-menu';
+import { GRID_SNAP, HOUR_HEIGHT, MAX_HOURS, MIN_EVENT_HEIGHT } from './config';
+import { useCalendarSettings } from './settings/settings-context';
 
 dayjs.extend(timezone);
 

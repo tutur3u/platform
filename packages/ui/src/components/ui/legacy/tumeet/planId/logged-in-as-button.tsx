@@ -1,8 +1,8 @@
-import AccountBadge from './account-badge';
 import { Button } from '@tuturuuu/ui/button';
 import { useTimeBlocking } from '@tuturuuu/ui/hooks/time-blocking-provider';
 import { Separator } from '@tuturuuu/ui/separator';
 import { useTranslations } from 'next-intl';
+import AccountBadge from './account-badge';
 
 export default function LoggedInAsButton() {
   const t = useTranslations();

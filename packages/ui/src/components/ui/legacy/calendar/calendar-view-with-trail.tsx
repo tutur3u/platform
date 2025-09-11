@@ -1,10 +1,10 @@
+import dayjs from 'dayjs';
+import timezone from 'dayjs/plugin/timezone';
+import { useEffect, useRef, useState } from 'react';
 import { CalendarView } from './calendar-view';
 import { HOUR_HEIGHT } from './config';
 import { useCalendarSettings } from './settings/settings-context';
 import { TimeTrail } from './time-trail';
-import dayjs from 'dayjs';
-import timezone from 'dayjs/plugin/timezone';
-import { useEffect, useRef, useState } from 'react';
 
 dayjs.extend(timezone);
 

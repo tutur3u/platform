@@ -1,7 +1,7 @@
-import PostsClient from './client';
-import type { PostEmail } from './types';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
+import PostsClient from './client';
+import type { PostEmail } from './types';
 
 interface SearchParams {
   page?: string;

@@ -1,9 +1,5 @@
 'use client';
 
-import Chat from '../../chat/chat';
-import type { ExtendedWorkspaceTask } from '../../time-tracker/types';
-import PriorityView from './priority-view';
-import TimeTracker from './time-tracker';
 import type { AIChat } from '@tuturuuu/types/db';
 import { Button } from '@tuturuuu/ui/button';
 import { Dialog } from '@tuturuuu/ui/dialog';
@@ -15,6 +11,10 @@ import {
 } from '@tuturuuu/ui/icons';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { useState } from 'react';
+import Chat from '../../chat/chat';
+import type { ExtendedWorkspaceTask } from '../../time-tracker/types';
+import PriorityView from './priority-view';
+import TimeTracker from './time-tracker';
 
 interface TasksSidebarContentProps {
   wsId: string;

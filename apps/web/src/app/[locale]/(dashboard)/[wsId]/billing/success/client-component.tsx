@@ -10,8 +10,8 @@ import {
   Download,
 } from '@tuturuuu/ui/icons';
 import { addHours, format, isAfter } from 'date-fns';
-import { useTranslations } from 'next-intl';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
 
 interface PaymentDetails {

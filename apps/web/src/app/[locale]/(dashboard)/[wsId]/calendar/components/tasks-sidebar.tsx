@@ -1,11 +1,11 @@
-import { getChats } from '../../chat/helper';
-import { getAssignedTasks } from './task-fetcher';
-import TasksSidebarContent from './tasks-sidebar-content';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
 import {
   getPermissions,
   verifyHasSecrets,
 } from '@tuturuuu/utils/workspace-helper';
+import { getChats } from '../../chat/helper';
+import { getAssignedTasks } from './task-fetcher';
+import TasksSidebarContent from './tasks-sidebar-content';
 
 interface TasksSidebarProps {
   wsId: string;

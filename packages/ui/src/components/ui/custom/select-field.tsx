@@ -1,3 +1,7 @@
+import type { Root } from '@radix-ui/react-select';
+import { cn } from '@tuturuuu/utils/format';
+import type React from 'react';
+import { forwardRef } from 'react';
 import { Label } from '../label';
 import {
   Select,
@@ -6,10 +10,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '../select';
-import type { Root } from '@radix-ui/react-select';
-import { cn } from '@tuturuuu/utils/format';
-import type React from 'react';
-import { forwardRef } from 'react';
 
 type SelectOption = {
   value: string;

@@ -1,6 +1,11 @@
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { useQuery } from '@tanstack/react-query';
+import Highlight from '@tiptap/extension-highlight';
+import Link from '@tiptap/extension-link';
+import type { JSONContent } from '@tiptap/react';
+import { EditorContent, useEditor } from '@tiptap/react';
+import StarterKit from '@tiptap/starter-kit';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { TaskPriority } from '@tuturuuu/types/primitives/Priority';
 import type { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
@@ -85,6 +90,66 @@ interface Props {
   isMultiSelectMode?: boolean;
   isPersonalWorkspace?: boolean;
   onSelect?: (taskId: string, event: React.MouseEvent) => void;
+}
+
+// Helper function to parse description content
+const parseDescription = (description?: string): JSONContent | null => {
+  if (!description) return null;
+
+  try {
+    return JSON.parse(description);
+  } catch {
+    // If it's not valid JSON, treat it as plain text
+    return {
+      type: 'doc',
+      content: [
+        {
+          type: 'paragraph',
+          content: [{ type: 'text', text: description }],
+        },
+      ],
+    };
+  }
+};
+
+// Rich text description display component
+function TaskDescriptionDisplay({ description }: { description?: string }) {
+  const descriptionContent = parseDescription(description);
+
+  const editor = useEditor({
+    extensions: [
+      StarterKit.configure({
+        bulletList: { HTMLAttributes: { class: 'list-disc ml-3' } },
+        orderedList: { HTMLAttributes: { class: 'list-decimal ml-3' } },
+      }),
+      Link.configure({
+        openOnClick: true,
+        HTMLAttributes: {
+          class: 'text-blue-600 hover:text-blue-800 underline cursor-pointer',
+          rel: 'noopener noreferrer',
+          target: '_blank',
+        },
+      }),
+      Highlight,
+    ],
+    content: descriptionContent,
+    editable: false,
+    immediatelyRender: false,
+    editorProps: {
+      attributes: {
+        class:
+          'prose dark:prose-invert prose-sm max-w-none [&_*]:text-xs [&_p]:my-0.5 [&_ul]:my-1 [&_ol]:my-1 [&_li]:my-0',
+      },
+    },
+  });
+
+  if (!descriptionContent || !description) return null;
+
+  return (
+    <div className="max-h-20 w-full overflow-y-auto whitespace-normal text-muted-foreground text-xs">
+      <EditorContent editor={editor} />
+    </div>
+  );
 }
 
 // Lightweight drag overlay version
@@ -644,13 +709,12 @@ export const TaskCard = React.memo(function TaskCard({
                 {task.name}
               </button>
             </div>
-            {/* Description (truncated, tooltip on hover) */}
+            {/* Description (rich text display) */}
             {task.description && (
               <div className="mb-1">
                 <button
                   type="button"
-                  className="scrollbar-none group-hover:scrollbar-thin scrollbar-track-transparent scrollbar-thumb-muted-foreground/30 group-hover:scrollbar-thumb-muted-foreground/50 -mx-1 -my-0.5 max-h-20 w-full cursor-pointer overflow-y-auto whitespace-pre-line rounded-sm border-none bg-transparent p-0 px-1 py-0.5 text-left text-muted-foreground text-xs transition-colors duration-200 hover:bg-muted/20 hover:text-foreground focus:outline-none active:bg-muted/40"
-                  title={`${task.description}\n\nClick to edit task`}
+                  className="scrollbar-none group-hover:scrollbar-thin scrollbar-track-transparent scrollbar-thumb-muted-foreground/30 group-hover:scrollbar-thumb-muted-foreground/50 -mx-1 -my-0.5 max-h-20 w-full cursor-pointer overflow-y-auto rounded-sm border-none bg-transparent p-0 px-1 py-0.5 text-left transition-colors duration-200 hover:bg-muted/20 focus:bg-muted/20 active:bg-muted/40"
                   onClick={(e) => {
                     // Don't allow editing when Shift is held (multi-select mode)
                     if (!e.shiftKey) {
@@ -663,8 +727,9 @@ export const TaskCard = React.memo(function TaskCard({
                     }
                   }}
                   aria-label="Edit task description"
+                  title="Click to edit task"
                 >
-                  {task.description}
+                  <TaskDescriptionDisplay description={task.description} />
                 </button>
               </div>
             )}

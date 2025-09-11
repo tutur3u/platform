@@ -1,4 +1,4 @@
-import { DeepgramError, createClient } from '@deepgram/sdk';
+import { createClient, DeepgramError } from '@deepgram/sdk';
 import { type NextRequest, NextResponse } from 'next/server';
 
 export const revalidate = 0;

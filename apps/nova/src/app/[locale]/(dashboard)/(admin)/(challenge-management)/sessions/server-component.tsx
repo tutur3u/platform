@@ -1,8 +1,8 @@
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import type { NovaChallenge } from '@tuturuuu/types/db';
 import { SessionFilters } from './filters';
 import { SessionOverview } from './overview';
 import { SessionTable } from './session-table';
-import { createAdminClient } from '@tuturuuu/supabase/next/server';
-import type { NovaChallenge } from '@tuturuuu/types/db';
 
 type SessionWithDetails = {
   id: string;

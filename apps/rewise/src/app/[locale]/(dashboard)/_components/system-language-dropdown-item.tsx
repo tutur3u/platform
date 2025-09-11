@@ -2,8 +2,8 @@
 
 import { DropdownMenuItem } from '@tuturuuu/ui/dropdown-menu';
 import { Check, Monitor } from '@tuturuuu/ui/icons';
-import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 
 interface Props {
   selected?: boolean;

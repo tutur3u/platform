@@ -1,8 +1,8 @@
 'use client';
 
-import LogoTab from './logo-tab';
 import { Badge } from '@tuturuuu/ui/badge';
 import { motion } from 'framer-motion';
+import LogoTab from './logo-tab';
 
 const BrandingPage = () => {
   const brandValues = [

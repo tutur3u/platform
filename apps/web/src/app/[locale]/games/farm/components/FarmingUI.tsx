@@ -1,8 +1,8 @@
 'use client';
 
+import { useState } from 'react';
 import { CropType } from '../engine/crop';
 import { Inventory } from '../engine/inventory';
-import { useState } from 'react';
 
 interface FarmingUIProps {
   inventory: Inventory;

@@ -1,6 +1,5 @@
 'use client';
 
-import { priorityCompare } from '@/lib/task-helper';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { TaskPriority } from '@tuturuuu/types/primitives/Priority';
 import { Button } from '@tuturuuu/ui/button';
@@ -26,6 +25,7 @@ import { cn } from '@tuturuuu/utils/format';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { priorityCompare } from '@/lib/task-helper';
 import { prioritizeTasks, type Task } from '../../utils/task-prioritization';
 
 interface QuickTimeTrackerProps {

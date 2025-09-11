@@ -1,7 +1,7 @@
-import { emailDraftSchema } from './schema';
 import { google } from '@ai-sdk/google';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { generateObject } from 'ai';
+import { emailDraftSchema } from './schema';
 
 export const maxDuration = 30;
 

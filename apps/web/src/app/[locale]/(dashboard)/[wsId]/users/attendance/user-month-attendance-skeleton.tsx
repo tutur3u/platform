@@ -1,11 +1,11 @@
 'use client';
 
-import useSearchParams from '@/hooks/useSearchParams';
 import { Button } from '@tuturuuu/ui/button';
 import { ChevronLeft, ChevronRight } from '@tuturuuu/ui/icons';
 import { format, parse } from 'date-fns';
 import { useLocale } from 'next-intl';
 import { Fragment, useMemo } from 'react';
+import useSearchParams from '@/hooks/useSearchParams';
 
 export default function UserMonthAttendanceSkeleton() {
   const locale = useLocale();

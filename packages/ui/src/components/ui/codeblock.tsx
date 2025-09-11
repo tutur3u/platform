@@ -1,8 +1,5 @@
 'use client';
 
-import { useCopyToClipboard } from '../../hooks/use-copy-to-clipboard';
-import { Button } from './button';
-import { CheckIcon, CopyIcon, Download } from './icons';
 import { useTheme } from 'next-themes';
 import { type FC, memo } from 'react';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
@@ -10,6 +7,9 @@ import {
   coldarkCold,
   coldarkDark,
 } from 'react-syntax-highlighter/dist/cjs/styles/prism';
+import { useCopyToClipboard } from '../../hooks/use-copy-to-clipboard';
+import { Button } from './button';
+import { CheckIcon, CopyIcon, Download } from './icons';
 
 // Inspired by Chatbot-UI and modified to fit the needs of this project
 // @see https://github.com/mckaywrigley/chatbot-ui/blob/main/components/Markdown/CodeBlock.tsx

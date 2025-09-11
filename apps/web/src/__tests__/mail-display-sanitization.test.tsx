@@ -1,5 +1,5 @@
-import { MailDisplay } from '../app/[locale]/(dashboard)/[wsId]/mail/_components/mail-display';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { MailDisplay } from '../app/[locale]/(dashboard)/[wsId]/mail/_components/mail-display';
 import '@testing-library/jest-dom/vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import type { InternalEmail } from '@tuturuuu/types/db';

@@ -1,9 +1,5 @@
 'use client';
 
-import { formatTimezoneOffset } from '../../../../utils/date-helper';
-import EditPlanDialog from './edit-plan-dialog';
-import type { MeetTogetherPlanWithParticipants } from './page';
-import UserTime from './user-time';
 import dayjs from 'dayjs';
 import {
   Calendar,
@@ -13,6 +9,10 @@ import {
   Users,
 } from 'lucide-react';
 import Link from 'next/link';
+import { formatTimezoneOffset } from '../../../../utils/date-helper';
+import EditPlanDialog from './edit-plan-dialog';
+import type { MeetTogetherPlanWithParticipants } from './page';
+import UserTime from './user-time';
 
 // Plans list view component
 export function PlansListView({

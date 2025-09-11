@@ -1,9 +1,5 @@
 'use client';
 
-import ProfileCompletionScreen from './profile-completion-screen';
-import type { OnboardingProgress, OnboardingStep } from './types';
-import { ONBOARDING_STEPS } from './types';
-import { WelcomeScreen } from './welcome-screen';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { LoadingIndicator } from '@tuturuuu/ui/custom/loading-indicator';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
@@ -11,9 +7,13 @@ import {
   completeOnboardingStep,
   updateOnboardingProgress,
 } from '@tuturuuu/utils/onboarding-helper';
-import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { useState } from 'react';
+import ProfileCompletionScreen from './profile-completion-screen';
+import type { OnboardingProgress, OnboardingStep } from './types';
+import { ONBOARDING_STEPS } from './types';
+import { WelcomeScreen } from './welcome-screen';
 
 interface OnboardingFlowProps {
   user: WorkspaceUser;

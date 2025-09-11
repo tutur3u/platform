@@ -1,7 +1,3 @@
-import NewActions from './new-actions';
-import StorageObjectsTable from './table';
-import { formatBytes } from '@/utils/file-helper';
-import { joinPath } from '@/utils/path-helper';
 import {
   createClient,
   createDynamicClient,
@@ -35,9 +31,13 @@ import {
 } from '@tuturuuu/ui/tooltip';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { getPermissions, getWorkspace } from '@tuturuuu/utils/workspace-helper';
-import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
+import { getTranslations } from 'next-intl/server';
+import { formatBytes } from '@/utils/file-helper';
+import { joinPath } from '@/utils/path-helper';
+import NewActions from './new-actions';
+import StorageObjectsTable from './table';
 
 interface Props {
   params: Promise<{

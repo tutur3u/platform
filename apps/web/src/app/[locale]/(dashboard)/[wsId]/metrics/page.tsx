@@ -1,7 +1,7 @@
 import { GradientHeadline } from '@tuturuuu/ui/custom/gradient-headline';
 import { getPermissions, getWorkspace } from '@tuturuuu/utils/workspace-helper';
-import { getTranslations } from 'next-intl/server';
 import { redirect } from 'next/navigation';
+import { getTranslations } from 'next-intl/server';
 
 interface PageProps {
   params: Promise<{

@@ -1,6 +1,5 @@
 'use client';
 
-import { joinPath } from '@/utils/path-helper';
 import type { Row } from '@tanstack/react-table';
 import { createDynamicClient } from '@tuturuuu/supabase/next/client';
 import type { StorageObject } from '@tuturuuu/types/primitives/StorageObject';
@@ -27,8 +26,9 @@ import {
   Share,
   Trash,
 } from '@tuturuuu/ui/icons';
-import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
+import { joinPath } from '@/utils/path-helper';
 
 interface Props {
   wsId: string;

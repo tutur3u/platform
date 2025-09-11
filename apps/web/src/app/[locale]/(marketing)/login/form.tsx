@@ -1,7 +1,5 @@
 'use client';
 
-import { DEV_MODE, PORT } from '@/constants/common';
-import { trpc } from '@/trpc/client';
 import { generateCrossAppToken, mapUrlToApp } from '@tuturuuu/auth/cross-app';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
@@ -25,11 +23,13 @@ import { InputOTP, InputOTPGroup, InputOTPSlot } from '@tuturuuu/ui/input-otp';
 import { zodResolver } from '@tuturuuu/ui/resolvers';
 import { Separator } from '@tuturuuu/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
-import { useLocale, useTranslations } from 'next-intl';
 import Image from 'next/image';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { useLocale, useTranslations } from 'next-intl';
 import { useCallback, useEffect, useState } from 'react';
 import * as z from 'zod';
+import { DEV_MODE, PORT } from '@/constants/common';
+import { trpc } from '@/trpc/client';
 
 // Constants
 const COOLDOWN_DURATION = 60;

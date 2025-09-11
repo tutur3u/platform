@@ -1,7 +1,7 @@
-import { createSessionSchema } from '../schemas';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
 import { ZodError } from 'zod';
+import { createSessionSchema } from '../schemas';
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);

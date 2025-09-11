@@ -1,6 +1,7 @@
 'use client';
 
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import type { JSONContent } from '@tiptap/react';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { TaskPriority } from '@tuturuuu/types/primitives/Priority';
 import type { Task } from '@tuturuuu/types/primitives/Task';
@@ -25,7 +26,7 @@ import { useToast } from '@tuturuuu/ui/hooks/use-toast';
 import { Clock, Flag, Loader2, Users } from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
-import { Textarea } from '@tuturuuu/ui/textarea';
+import { RichTextEditor } from '@tuturuuu/ui/text-editor/editor';
 import { cn } from '@tuturuuu/utils/format';
 import {
   invalidateTaskCaches,
@@ -33,7 +34,7 @@ import {
 } from '@tuturuuu/utils/task-helper';
 import { addDays } from 'date-fns';
 import { useParams } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { TaskTagInput } from './task-tag-input';
 
 interface TaskEditDialogProps {
@@ -54,7 +55,26 @@ export function TaskEditDialog({
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [name, setName] = useState(task.name);
-  const [description, setDescription] = useState(task.description || '');
+  const [description, setDescription] = useState<JSONContent | null>(() => {
+    // Try to parse existing description as JSON, fallback to creating simple text content
+    if (task.description) {
+      try {
+        return JSON.parse(task.description);
+      } catch {
+        // If it's not valid JSON, treat it as plain text and convert to JSONContent
+        return {
+          type: 'doc',
+          content: [
+            {
+              type: 'paragraph',
+              content: [{ type: 'text', text: task.description }],
+            },
+          ],
+        };
+      }
+    }
+    return null;
+  });
   const [priority, setPriority] = useState<TaskPriority | null>(
     task.priority || null
   );
@@ -94,18 +114,38 @@ export function TaskEditDialog({
     initialData: propAvailableLists,
   });
 
+  // Helper function to convert description to JSONContent
+  const parseDescription = useCallback((desc?: string): JSONContent | null => {
+    if (!desc) return null;
+
+    try {
+      return JSON.parse(desc);
+    } catch {
+      // If it's not valid JSON, treat it as plain text and convert to JSONContent
+      return {
+        type: 'doc',
+        content: [
+          {
+            type: 'paragraph',
+            content: [{ type: 'text', text: desc }],
+          },
+        ],
+      };
+    }
+  }, []);
+
   // Reset form when task changes
   useEffect(() => {
     if (task) {
       setName(task.name);
-      setDescription(task.description || '');
+      setDescription(parseDescription(task.description));
       setPriority(task.priority || null);
       setStartDate(task.start_date ? new Date(task.start_date) : undefined);
       setEndDate(task.end_date ? new Date(task.end_date) : undefined);
       setTags(task.tags || []);
       setSelectedListId(task.list_id);
     }
-  }, [task]);
+  }, [task, parseDescription]);
 
   // Helper function to handle end date with default time
   const handleEndDateChange = (date: Date | undefined) => {
@@ -186,10 +226,15 @@ export function TaskEditDialog({
 
     setIsLoading(true);
 
+    // Convert JSONContent to string for storage
+    const descriptionString = description
+      ? JSON.stringify(description)
+      : undefined;
+
     // Prepare task updates
     const taskUpdates: Partial<Task> = {
       name: name.trim(),
-      description: description.trim(),
+      description: descriptionString,
       priority: priority,
       start_date: startDate?.toISOString(),
       end_date: endDate?.toISOString(),
@@ -281,12 +326,15 @@ export function TaskEditDialog({
             {/* Task Description */}
             <div className="space-y-2">
               <Label htmlFor="task-description">Description</Label>
-              <Textarea
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                placeholder="Add description..."
-                className="min-h-[80px] resize-none"
-              />
+              <div className="min-h-[120px]">
+                <RichTextEditor
+                  content={description}
+                  onChange={setDescription}
+                  writePlaceholder="Add task description..."
+                  titlePlaceholder="Task details..."
+                  className="min-h-[100px]"
+                />
+              </div>
             </div>
 
             {/* Priority Selection */}

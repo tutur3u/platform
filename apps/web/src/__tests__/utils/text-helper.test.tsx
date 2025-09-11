@@ -1,5 +1,5 @@
-import { removeAccents } from '@/utils/text-helper';
 import { expect, it } from 'vitest';
+import { removeAccents } from '@/utils/text-helper';
 
 it('should remove accents from a string', () => {
   expect(removeAccents('áéíóú')).toBe('aeiou');

@@ -33,8 +33,8 @@ import {
 } from '@tuturuuu/ui/table';
 import { cn } from '@tuturuuu/utils/format';
 import { generateFunName } from '@tuturuuu/utils/name-helper';
-import { useLocale, useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
+import { useLocale, useTranslations } from 'next-intl';
 
 type SessionWithDetails = {
   id: string;

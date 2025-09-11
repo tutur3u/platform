@@ -1,5 +1,13 @@
 'use client';
 
+import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
+import { MailWarning, Send } from '@tuturuuu/ui/icons';
+import { Separator } from '@tuturuuu/ui/separator';
+import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
+import { useEffect, useState } from 'react';
+import { CustomDataTable } from '@/components/custom-data-table';
+import useEmail from '@/hooks/useEmail';
 import { getPostEmailColumns } from './columns';
 import PostsFilters from './filters';
 import { PostDisplay } from './post-display';
@@ -12,14 +20,6 @@ import {
   useOptimisticSentEmails,
   usePosts,
 } from './use-posts';
-import { CustomDataTable } from '@/components/custom-data-table';
-import useEmail from '@/hooks/useEmail';
-import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
-import { MailWarning, Send } from '@tuturuuu/ui/icons';
-import { Separator } from '@tuturuuu/ui/separator';
-import { useTranslations } from 'next-intl';
-import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
 
 interface SearchParams {
   page?: string;

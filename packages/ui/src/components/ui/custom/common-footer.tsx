@@ -1,6 +1,6 @@
-import { Separator } from '../separator';
 import Image from 'next/image';
 import Link from 'next/link';
+import { Separator } from '../separator';
 
 // biome-ignore lint/suspicious/noExplicitAny: <translations are not typed>
 export function CommonFooter({ t, devMode }: { t: any; devMode: boolean }) {

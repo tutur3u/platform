@@ -1,6 +1,5 @@
 'use client';
 
-import type { Task, YearPlan } from '../../types';
 import { Badge } from '@tuturuuu/ui/badge';
 import {
   Card,
@@ -19,6 +18,7 @@ import {
   startOfMonth,
 } from 'date-fns';
 import { useMemo } from 'react';
+import type { Task, YearPlan } from '../../types';
 
 interface MonthlyOverviewProps {
   tasks: Task[];

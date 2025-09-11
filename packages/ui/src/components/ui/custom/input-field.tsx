@@ -1,7 +1,7 @@
-import { Input } from '../input';
-import { Label } from '../label';
 import type React from 'react';
 import { forwardRef } from 'react';
+import { Input } from '../input';
+import { Label } from '../label';
 
 interface InputFieldProps {
   id: string;

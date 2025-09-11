@@ -28,7 +28,7 @@ import {
   Utensils,
   Wallet,
 } from '@tuturuuu/ui/icons';
-import { type Variants, motion } from 'framer-motion';
+import { motion, type Variants } from 'framer-motion';
 import Link from 'next/link';
 
 export default function RestaurantsPage() {

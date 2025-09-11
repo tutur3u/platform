@@ -1,10 +1,10 @@
 'use client';
 
-import { Badge } from './badge';
-import { Command, CommandGroup, CommandItem } from './command';
 import { Command as CommandPrimitive } from 'cmdk';
 import { X } from 'lucide-react';
 import * as React from 'react';
+import { Badge } from './badge';
+import { Command, CommandGroup, CommandItem } from './command';
 
 interface TagInputProps {
   placeholder?: string;

@@ -1,7 +1,7 @@
 'use client';
 
-import type { SessionWithRelations } from '@/app/[locale]/(dashboard)/[wsId]/time-tracker/types';
 import { useQuery } from '@tanstack/react-query';
+import type { SessionWithRelations } from '@/app/[locale]/(dashboard)/[wsId]/time-tracker/types';
 
 export function useActiveTimerSession(wsId: string | null) {
   return useQuery({

@@ -1,9 +1,9 @@
-import { MagicLinkEmail } from './_templates/magic-link.js';
-import { SignUpEmail } from './_templates/sign-up.js';
 import { Webhook } from 'https://esm.sh/standardwebhooks@1.0.0';
 import { SESClient, SendEmailCommand } from 'npm:@aws-sdk/client-ses@3.716.0';
 import { renderAsync } from 'npm:@react-email/components@0.0.34';
 import React from 'npm:react@18.3.1';
+import { MagicLinkEmail } from './_templates/magic-link.js';
+import { SignUpEmail } from './_templates/sign-up.js';
 
 const sesClient = new SESClient({
   region: Deno.env.get('AWS_REGION') as string,

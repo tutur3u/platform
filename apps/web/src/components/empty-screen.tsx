@@ -18,8 +18,8 @@ import { capitalize, cn } from '@tuturuuu/utils/format';
 import dayjs from 'dayjs';
 import 'dayjs/locale/vi';
 import relativeTime from 'dayjs/plugin/relativeTime';
-import { useTranslations } from 'next-intl';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 
 export function EmptyScreen({
   wsId,

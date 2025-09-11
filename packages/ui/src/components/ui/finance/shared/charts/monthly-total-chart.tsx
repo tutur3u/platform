@@ -1,5 +1,8 @@
 'use client';
 
+import { cn } from '@tuturuuu/utils/format';
+import { useLocale, useTranslations } from 'next-intl';
+import { Bar, BarChart, CartesianGrid, Legend, XAxis, YAxis } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle } from '../../../ui/card';
 import {
   type ChartConfig,
@@ -7,9 +10,6 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from '../../../ui/chart';
-import { cn } from '@tuturuuu/utils/format';
-import { useLocale, useTranslations } from 'next-intl';
-import { Bar, BarChart, CartesianGrid, Legend, XAxis, YAxis } from 'recharts';
 
 export function MonthlyTotalChart({
   data,

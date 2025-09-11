@@ -1,13 +1,13 @@
 'use client';
 
+import { useTheme } from 'next-themes';
+import { forwardRef, useMemo, useState } from 'react';
+import { HexColorPicker } from 'react-colorful';
 import { useForwardedRef } from '../../hooks/use-forwarded-ref';
 import type { ButtonProps } from './button';
 import { Button } from './button';
 import { Input } from './input';
 import { Popover, PopoverContent, PopoverTrigger } from './popover';
-import { useTheme } from 'next-themes';
-import { forwardRef, useMemo, useState } from 'react';
-import { HexColorPicker } from 'react-colorful';
 
 interface ColorPickerProps {
   text?: string;

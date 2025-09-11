@@ -1,6 +1,5 @@
 'use client';
 
-import type { SyncLog } from './types';
 import type { Workspace } from '@tuturuuu/types/db';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Badge } from '@tuturuuu/ui/badge';
@@ -41,6 +40,7 @@ import {
   Zap,
 } from 'lucide-react';
 import { useState } from 'react';
+import type { SyncLog } from './types';
 
 interface SyncLogsTableProps {
   syncLogs: SyncLog[];

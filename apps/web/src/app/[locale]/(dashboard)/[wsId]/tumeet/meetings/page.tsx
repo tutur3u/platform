@@ -1,10 +1,10 @@
-import { MeetingsContent } from './meetings-content';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { Card, CardContent, CardHeader } from '@tuturuuu/ui/card';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
 import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import { redirect } from 'next/navigation';
 import { Suspense } from 'react';
+import { MeetingsContent } from './meetings-content';
 
 interface MeetingsPageProps {
   params: Promise<{

@@ -1,6 +1,3 @@
-import { Filter } from '../filters';
-import { getUserReportColumns } from './columns';
-import { CustomDataTable } from '@/components/custom-data-table';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import type { WorkspaceUserReport } from '@tuturuuu/types/db';
 import type { UserGroup } from '@tuturuuu/types/primitives/UserGroup';
@@ -9,8 +6,11 @@ import { Button } from '@tuturuuu/ui/button';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Plus, PlusCircle, User } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
-import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';
+import { getTranslations } from 'next-intl/server';
+import { CustomDataTable } from '@/components/custom-data-table';
+import { Filter } from '../filters';
+import { getUserReportColumns } from './columns';
 
 interface SearchParams {
   page?: string;

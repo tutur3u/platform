@@ -1,9 +1,9 @@
 'use client';
 
-import { verifyRouteToken } from '.';
 import { LoadingIndicator } from '@tuturuuu/ui/custom/loading-indicator';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect } from 'react';
+import { verifyRouteToken } from '.';
 
 export function TokenVerifierCore({ devMode }: { devMode: boolean }) {
   const searchParams = useSearchParams();

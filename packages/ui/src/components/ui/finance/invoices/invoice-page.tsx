@@ -6,8 +6,8 @@ import { CustomDataTable } from '@tuturuuu/ui/custom/tables/custom-data-table';
 import { Plus } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
 import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
-import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';
+import { getTranslations } from 'next-intl/server';
 import { invoiceColumns } from './columns';
 
 interface Props {

@@ -1,13 +1,5 @@
 'use client';
 
-import PostsRowActions from './row-actions';
-import type { PostEmail } from './types';
-import {
-  isOptimisticallyLoading,
-  isOptimisticallySent,
-  useOptimisticLoadingEmails,
-  useOptimisticSentEmails,
-} from './use-posts';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
@@ -27,9 +19,17 @@ import {
 import { ScrollArea } from '@tuturuuu/ui/scroll-area';
 import { Separator } from '@tuturuuu/ui/separator';
 import dayjs from 'dayjs';
-import { useLocale } from 'next-intl';
 import Link from 'next/link';
+import { useLocale } from 'next-intl';
 import { useEffect } from 'react';
+import PostsRowActions from './row-actions';
+import type { PostEmail } from './types';
+import {
+  isOptimisticallyLoading,
+  isOptimisticallySent,
+  useOptimisticLoadingEmails,
+  useOptimisticSentEmails,
+} from './use-posts';
 
 interface PostDisplayProps {
   postEmail: PostEmail | null;

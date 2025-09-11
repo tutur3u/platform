@@ -1,5 +1,7 @@
 'use client';
 
+import { useQuery } from '@tanstack/react-query';
+import { createClient } from '@tuturuuu/supabase/next/client';
 import type { Invoice } from '@tuturuuu/types/primitives/Invoice';
 import type { Transaction } from '@tuturuuu/types/primitives/Transaction';
 import type { TransactionCategory } from '@tuturuuu/types/primitives/TransactionCategory';
@@ -19,19 +21,18 @@ import {
   CardHeader,
   CardTitle,
 } from '@tuturuuu/ui/card';
+import { Combobox, type ComboboxOptions } from '@tuturuuu/ui/custom/combobox';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import {
+  ArrowDown,
+  ArrowUp,
+  Calculator,
   CreditCard,
   FileText,
-  ArrowUp,
-  ArrowDown,
-  Calculator,
+  Info,
   Loader2,
 } from '@tuturuuu/ui/icons';
 import { Label } from '@tuturuuu/ui/label';
-import { Textarea } from '@tuturuuu/ui/textarea';
-import { Separator } from '@tuturuuu/ui/separator';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import {
   Select,
   SelectContent,
@@ -39,22 +40,21 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@tuturuuu/ui/select';
-import { Combobox, type ComboboxOptions } from '@tuturuuu/ui/custom/combobox';
-import { useTranslations } from 'next-intl';
-import { useState, useEffect, useMemo } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { createClient } from '@tuturuuu/supabase/next/client';
-import { ProductSelection } from './product-selection';
+import { Separator } from '@tuturuuu/ui/separator';
 import { toast } from '@tuturuuu/ui/sonner';
 import { Switch } from '@tuturuuu/ui/switch';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
+import { Textarea } from '@tuturuuu/ui/textarea';
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from '@tuturuuu/ui/tooltip';
-import { Info } from '@tuturuuu/ui/icons';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
+import { useEffect, useMemo, useState } from 'react';
+import { ProductSelection } from './product-selection';
 
 interface ProductInventory {
   unit_id: string;

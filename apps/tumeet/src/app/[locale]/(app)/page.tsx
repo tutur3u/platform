@@ -1,6 +1,6 @@
-import { DEV_MODE } from '@/constants/common';
 import { MeetTogetherPage } from '@tuturuuu/ui/legacy/tumeet/page';
 import { redirect } from 'next/navigation';
+import { DEV_MODE } from '@/constants/common';
 
 interface TumeetPageProps {
   searchParams: Promise<{
