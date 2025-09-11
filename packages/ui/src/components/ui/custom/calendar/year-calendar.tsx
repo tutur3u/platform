@@ -12,6 +12,10 @@ interface YearCalendarProps {
   attendanceData?: WorkspaceUserAttendance[];
   // eslint-disable-next-line no-unused-vars
   onDateClick?: (date: Date) => void;
+  // eslint-disable-next-line no-unused-vars
+  onDayHeaderClick?: (dayIndex: number, monthDate: Date) => void;
+  /** When true, hides days from previous and next months to reduce visual clutter */
+  hideOutsideMonthDays?: boolean;
 }
 
 export const YearCalendar: React.FC<YearCalendarProps> = ({
@@ -19,6 +23,8 @@ export const YearCalendar: React.FC<YearCalendarProps> = ({
   initialDate,
   attendanceData,
   onDateClick,
+  onDayHeaderClick,
+  hideOutsideMonthDays = false,
 }) => {
   const [currentYear, setCurrentYear] = useState(
     initialDate?.getFullYear() || new Date().getFullYear()
@@ -54,7 +60,9 @@ export const YearCalendar: React.FC<YearCalendarProps> = ({
               initialDate={month}
               attendanceData={attendanceData}
               onDateClick={onDateClick}
+              onDayHeaderClick={onDayHeaderClick}
               hideControls
+              hideOutsideMonthDays={hideOutsideMonthDays}
             />
           </div>
         ))}

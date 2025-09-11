@@ -13,18 +13,24 @@ export const MonthView: React.FC<{
   attendanceData?: WorkspaceUserAttendance[];
   // eslint-disable-next-line no-unused-vars
   onDateClick?: (date: Date) => void;
+  // eslint-disable-next-line no-unused-vars
+  onDayHeaderClick?: (dayIndex: number, monthDate: Date) => void;
   onYearViewClick: () => void;
   hideControls?: boolean;
   hideYear?: boolean;
+  /** When true, hides days from previous and next months to reduce visual clutter */
+  hideOutsideMonthDays?: boolean;
 }> = ({
   locale,
   currentDate,
   setCurrentDate,
   attendanceData,
   onDateClick,
+  onDayHeaderClick,
   onYearViewClick,
   hideControls = false,
   hideYear = false,
+  hideOutsideMonthDays = false,
 }) => {
   const thisYear = currentDate.getFullYear();
   const thisMonth = currentDate.toLocaleString(locale, {
@@ -83,7 +89,12 @@ export const MonthView: React.FC<{
           {days.map((day, idx) => (
             <div
               key={`day-${idx}`}
-              className="flex flex-none cursor-default justify-center rounded bg-foreground/5 p-2 font-semibold transition duration-300 md:rounded-lg"
+              className={`flex flex-none justify-center rounded bg-foreground/5 p-2 font-semibold transition duration-300 md:rounded-lg ${
+                onDayHeaderClick
+                  ? 'cursor-pointer hover:bg-foreground/10'
+                  : 'cursor-default'
+              }`}
+              onClick={() => onDayHeaderClick?.(idx, currentDate)}
             >
               {day}
             </div>
@@ -100,6 +111,7 @@ export const MonthView: React.FC<{
                 today={today}
                 attendanceData={attendanceData}
                 onDateClick={onDateClick}
+                hideOutsideMonthDays={hideOutsideMonthDays}
               />
             ))}
           </TooltipProvider>

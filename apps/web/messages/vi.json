@@ -368,7 +368,8 @@
     "or": "hoặc",
     "title": "Tiêu đề",
     "optional": "tùy chọn",
-    "characters": "kí tự"
+    "characters": "kí tự",
+    "no_changes_to_save": "Không có thay đổi để lưu"
   },
   "date_helper": {
     "time-unit": "Đơn vị thời gian",
@@ -2921,7 +2922,8 @@
     "schedule": "Lịch nhóm",
     "attendance": "Điểm danh nhóm",
     "reports": "Báo cáo nhóm",
-    "metrics": "Số liệu nhóm"
+    "metrics": "Số liệu nhóm",
+    "modify_schedule": "Chỉnh sửa lịch trình"
   },
   "workspace-education-tabs": {
     "overview": "Tổng quan",

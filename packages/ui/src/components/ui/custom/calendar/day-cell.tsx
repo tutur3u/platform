@@ -17,8 +17,22 @@ export const DayCell: React.FC<{
   attendanceData?: WorkspaceUserAttendance[];
   // eslint-disable-next-line no-unused-vars
   onDateClick?: (date: Date) => void;
-}> = ({ day, currentDate, today, attendanceData, onDateClick }) => {
+  /** When true, hides days from previous and next months to reduce visual clutter */
+  hideOutsideMonthDays?: boolean;
+}> = ({
+  day,
+  currentDate,
+  today,
+  attendanceData,
+  onDateClick,
+  hideOutsideMonthDays = false,
+}) => {
   const isInCurrentMonth = isCurrentMonth(day, currentDate);
+
+  // If hideOutsideMonthDays is true and day is not in current month, don't render anything
+  if (hideOutsideMonthDays && !isInCurrentMonth) {
+    return <div className="flex flex-none justify-center p-2"></div>;
+  }
 
   // Cache attendance checks
   const isAttended = isDateAttended(day, attendanceData);
