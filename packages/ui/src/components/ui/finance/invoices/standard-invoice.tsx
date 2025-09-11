@@ -50,6 +50,7 @@ import {
   useCategories,
   useUserTransactions,
   useUserInvoices,
+  useUserLinkedPromotions,
 } from './hooks';
 
 interface Props {
@@ -73,6 +74,9 @@ export function StandardInvoice({
   const { data: products = [], isLoading: productsLoading } = useProducts(wsId);
   const { data: promotions = [], isLoading: promotionsLoading } =
     usePromotions(wsId);
+  const { data: linkedPromotions = [] } = useUserLinkedPromotions(
+    selectedUserId
+  );
   const { data: wallets = [], isLoading: walletsLoading } = useWallets(wsId);
   const { data: categories = [], isLoading: categoriesLoading } =
     useCategories(wsId);
@@ -169,6 +173,53 @@ export function StandardInvoice({
       );
     }
   }, [selectedProducts]);
+
+  // Auto-select user's best linked promotion based on current subtotal
+  useEffect(() => {
+    if (
+      !selectedUserId ||
+      !Array.isArray(promotions) ||
+      promotions.length === 0 ||
+      !Array.isArray(linkedPromotions) ||
+      linkedPromotions.length === 0 ||
+      selectedPromotionId !== 'none' ||
+      subtotal <= 0
+    ) {
+      return;
+    }
+
+    const linkedIds = new Set(
+      linkedPromotions.map((p: any) => p.promo_id).filter(Boolean)
+    );
+
+    const candidatePromotions = promotions.filter((p) => linkedIds.has(p.id));
+    if (candidatePromotions.length === 0) return;
+
+    const computeDiscount = (p: Promotion) =>
+      p.use_ratio
+        ? subtotal * (p.value / 100)
+        : Math.min(p.value, subtotal);
+
+    let best: Promotion | null = null;
+    let bestAmount = -1;
+    for (const p of candidatePromotions) {
+      const amount = computeDiscount(p);
+      if (amount > bestAmount) {
+        best = p;
+        bestAmount = amount;
+      }
+    }
+
+    if (best && best.id) {
+      setSelectedPromotionId(best.id);
+    }
+  }, [
+    selectedUserId,
+    promotions,
+    linkedPromotions,
+    selectedPromotionId,
+    subtotal,
+  ]);
 
   const handleCreateInvoice = async () => {
     if (

@@ -294,3 +294,30 @@ export const useUserLatestSubscriptionInvoice = (userId: string, groupId: string
     retry: 3,
   });
 };
+
+
+// Get User's Linked Promotion
+export const useUserLinkedPromotions = (userId: string) => {
+  return useQuery({
+    queryKey: ['user-linked-promotions', userId],
+    queryFn: async () => {
+      const supabase = createClient();
+      const { data, error } = await supabase
+        .from('user_linked_promotions')
+        .select('promo_id, workspace_promotions(name, code, value, use_ratio)')
+        .eq('user_id', userId);
+
+      if (error) {
+        console.error('❌ User linked promotions fetch error:', error);
+        throw error;
+      }
+
+      return data || [];
+    },
+    enabled: !!userId,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes
+    refetchOnWindowFocus: false,
+    retry: 3,
+  });
+};

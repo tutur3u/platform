@@ -46,6 +46,7 @@ import {
   useUserAttendance,
   useUserGroupProducts,
   useUserLatestSubscriptionInvoice,
+  useUserLinkedPromotions,
 } from './hooks';
 import { AttendanceCalendar } from '@tuturuuu/ui/finance/invoices/attendance-calendar';
 
@@ -71,6 +72,9 @@ export function SubscriptionInvoice({
   const { data: products = [], isLoading: productsLoading } = useProducts(wsId);
   const { data: promotions = [], isLoading: promotionsLoading } =
     usePromotions(wsId);
+  const { data: linkedPromotions = [] } = useUserLinkedPromotions(
+    selectedUserId
+  );
   const { data: wallets = [], isLoading: walletsLoading } = useWallets(wsId);
   const { data: categories = [], isLoading: categoriesLoading } =
     useCategories(wsId);
@@ -304,6 +308,52 @@ export function SubscriptionInvoice({
     setSubscriptionRoundedTotal(subscriptionTotalBeforeRounding);
   };
 
+  // Auto-select user's best linked promotion based on current subscription subtotal
+  useEffect(() => {
+    if (
+      !selectedUserId ||
+      !Array.isArray(promotions) ||
+      promotions.length === 0 ||
+      !Array.isArray(linkedPromotions) ||
+      linkedPromotions.length === 0 ||
+      selectedPromotionId !== 'none' ||
+      subscriptionSubtotal <= 0
+    ) {
+      return;
+    }
+
+    const linkedIds = new Set(
+      linkedPromotions.map((p: any) => p.promo_id).filter(Boolean)
+    );
+    const candidatePromotions = promotions.filter((p) => linkedIds.has(p.id));
+    if (candidatePromotions.length === 0) return;
+
+    const computeDiscount = (p: Promotion) =>
+      p.use_ratio
+        ? subscriptionSubtotal * (p.value / 100)
+        : Math.min(p.value, subscriptionSubtotal);
+
+    let best: Promotion | null = null;
+    let bestAmount = -1;
+    for (const p of candidatePromotions) {
+      const amount = computeDiscount(p);
+      if (amount > bestAmount) {
+        best = p;
+        bestAmount = amount;
+      }
+    }
+
+    if (best && best.id) {
+      setSelectedPromotionId(best.id);
+    }
+  }, [
+    selectedUserId,
+    promotions,
+    linkedPromotions,
+    selectedPromotionId,
+    subscriptionSubtotal,
+  ]);
+
   // Helper function to filter sessions by month
   const getSessionsForMonth = (
     sessionsArray: string[] | null,
@@ -497,13 +547,13 @@ export function SubscriptionInvoice({
       `Subscription invoice for ${groupName} - ${monthName}`,
     ];
 
+    // Build auto-notes for attendance instead of putting it in content
+    let autoNotes: string | null = null;
     if (subscriptionProducts.length > 0) {
       const attendanceDays = subscriptionProducts[0]?.attendanceDays || 0;
       const totalSessions = subscriptionProducts[0]?.totalSessions || 0;
       const attendanceStats = getAttendanceStats(userAttendance);
-      contentParts.push(
-        `Attendance: ${attendanceDays}/${totalSessions} sessions (Present: ${attendanceStats.present}, Late: ${attendanceStats.late}, Absent: ${attendanceStats.absent})`
-      );
+      autoNotes = `Attendance: ${attendanceDays}/${totalSessions} sessions (Present: ${attendanceStats.present}, Late: ${attendanceStats.late}, Absent: ${attendanceStats.absent})`;
     }
 
     // Only count additional products that are NOT associated with the selected group
@@ -524,6 +574,15 @@ export function SubscriptionInvoice({
     }
 
     setInvoiceContent(contentParts.join('\n'));
+
+    // Insert or update the attendance line in notes
+    if (autoNotes) {
+      setInvoiceNotes((prev) => {
+        const lines = prev.split('\n').filter(Boolean);
+        const filtered = lines.filter((l) => !l.trim().startsWith('Attendance: '));
+        return [...filtered, autoNotes as string].join('\n');
+      });
+    }
   }, [
     subscriptionProducts,
     subscriptionSelectedProducts,
