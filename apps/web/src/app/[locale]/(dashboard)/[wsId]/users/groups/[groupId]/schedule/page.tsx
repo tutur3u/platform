@@ -1,7 +1,6 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
 import type { UserGroup } from '@tuturuuu/types/primitives/UserGroup';
 import { Button } from '@tuturuuu/ui/button';
-import { YearCalendar } from '@tuturuuu/ui/custom/calendar/year-calendar';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import {
   CalendarIcon,
@@ -11,11 +10,10 @@ import {
 } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
 import { cn } from '@tuturuuu/utils/format';
-import dayjs from 'dayjs';
-import 'dayjs/locale/vi';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
+import ScheduleCalendar from './schedule-calendar';
 
 interface Props {
   params: Promise<{
@@ -116,20 +114,12 @@ export default async function UserGroupDetailsPage({ params }: Props) {
         createDescription={t('ws-user-groups.add_user_description')}
       />
       <Separator className="my-4" />
-      <YearCalendar
+      <ScheduleCalendar
         locale={locale}
-        attendanceData={
-          group.sessions?.map((s) => ({
-            date: s,
-            status: 'PRESENT',
-            groups: [
-              {
-                id: s,
-                name: dayjs(s).locale(locale).format('D MMMM YYYY'),
-              },
-            ],
-          })) || []
-        }
+        wsId={wsId}
+        groupId={groupId}
+        initialSessions={group.sessions || []}
+        hideOutsideMonthDays={true}
       />
     </>
   );

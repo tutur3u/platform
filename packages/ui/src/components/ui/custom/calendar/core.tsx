@@ -11,8 +11,12 @@ interface CalendarProps {
   attendanceData?: WorkspaceUserAttendance[];
   // eslint-disable-next-line no-unused-vars
   onDateClick?: (date: Date) => void;
+  // eslint-disable-next-line no-unused-vars
+  onDayHeaderClick?: (dayIndex: number, monthDate: Date) => void;
   hideControls?: boolean;
   hideYear?: boolean;
+  /** When true, hides days from previous and next months to reduce visual clutter */
+  hideOutsideMonthDays?: boolean;
 }
 
 export const Calendar: React.FC<CalendarProps> = ({
@@ -20,8 +24,10 @@ export const Calendar: React.FC<CalendarProps> = ({
   initialDate,
   attendanceData,
   onDateClick,
+  onDayHeaderClick,
   hideControls = false,
   hideYear = false,
+  hideOutsideMonthDays = false,
 }) => {
   const [currentDate, setCurrentDate] = useState(initialDate || new Date());
   const [viewMode, setViewMode] = useState<'month' | 'year'>('month');
@@ -46,9 +52,11 @@ export const Calendar: React.FC<CalendarProps> = ({
       setCurrentDate={setCurrentDate}
       attendanceData={attendanceData}
       onDateClick={onDateClick}
+      onDayHeaderClick={onDayHeaderClick}
       onYearViewClick={handleYearViewClick}
       hideControls={hideControls}
       hideYear={hideYear}
+      hideOutsideMonthDays={hideOutsideMonthDays}
     />
   ) : (
     <YearView

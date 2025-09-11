@@ -370,7 +370,8 @@
     "list_view": "List view",
     "title": "Title",
     "optional": "optional",
-    "characters": "characters"
+    "characters": "characters",
+    "no_changes_to_save": "No changes to save"
   },
   "date_helper": {
     "time-unit": "Time unit",
@@ -2871,7 +2872,8 @@
     "schedule": "Group Schedule",
     "attendance": "Group Attendance",
     "reports": "Group Reports",
-    "metrics": "Group Metrics"
+    "metrics": "Group Metrics",
+    "modify_schedule": "Modify Schedule"
   },
   "workspace-education-tabs": {
     "overview": "Overview",

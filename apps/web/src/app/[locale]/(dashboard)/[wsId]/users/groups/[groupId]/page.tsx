@@ -10,6 +10,7 @@ import {
   ChartColumn,
   FileUser,
   MinusCircle,
+  CalendarPlus,
   UserCheck,
 } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
@@ -175,9 +176,18 @@ export default async function UserGroupDetailsPage({
         ) : null}
 
         <div className="flex flex-col rounded-lg border border-border bg-foreground/5 p-4">
-          <div className="mb-2 font-semibold text-xl">
-            {t('ws-user-group-details.schedule')}
+          <div className="flex flex-row items-center justify-between mb-2">
+            <div className="font-semibold text-xl">
+              {t('ws-user-group-details.schedule')}
+            </div>
+            <Link href={`/${wsId}/users/groups/${groupId}/schedule`}>
+              <Button variant="default">
+                <CalendarPlus className="h-5 w-5" />
+                {t('ws-user-group-details.modify_schedule')}
+              </Button>
+            </Link>
           </div>
+
           <GroupSchedule wsId={wsId} groupId={groupId} />
         </div>
 
@@ -327,13 +337,13 @@ async function getUserData(
         ?.map((item) =>
           'user_id' in item
             ? {
-                id: item.user_id,
-                full_name: item.full_name,
-                email: item.email,
-                gender: item.gender,
-                phone: item.phone,
-                attendance_count: item.attendance_count,
-              }
+              id: item.user_id,
+              full_name: item.full_name,
+              email: item.email,
+              gender: item.gender,
+              phone: item.phone,
+              attendance_count: item.attendance_count,
+            }
             : null
         )
         .filter((item) => item !== null) || [];
