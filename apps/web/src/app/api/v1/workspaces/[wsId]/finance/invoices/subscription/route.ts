@@ -1,5 +1,6 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
+import { calculateInvoiceValues } from '../route';
 
 interface Params {
   params: Promise<{
@@ -16,140 +17,19 @@ interface InvoiceProduct {
   category_id: string;
 }
 
-interface CreateInvoiceRequest {
+interface CreateSubscriptionInvoiceRequest {
   customer_id: string;
+  group_id: string;
+  selected_month: string; // YYYY-MM
   content: string;
   notes?: string;
   wallet_id: string;
   promotion_id?: string;
   products: InvoiceProduct[];
   category_id: string;
-  // Optional frontend calculated values for comparison
   frontend_subtotal?: number;
   frontend_discount_amount?: number;
   frontend_total?: number;
-}
-
-export interface CalculatedValues {
-  subtotal: number;
-  discount_amount: number;
-  total: number;
-  values_recalculated: boolean;
-  rounding_applied: number;
-}
-
-// Backend calculation functions
-export async function calculateInvoiceValues(
-  supabase: any,
-  wsId: string,
-  products: InvoiceProduct[],
-  promotion_id?: string,
-  frontendValues?: {
-    subtotal?: number;
-    discount_amount?: number;
-    total?: number;
-  }
-): Promise<CalculatedValues> {
-  // Calculate subtotal from products
-  let subtotal = 0;
-  const productIds = products.map((p) => p.product_id);
-  const unitIds = products.map((p) => p.unit_id);
-  const warehouseIds = products.map((p) => p.warehouse_id);
-
-  // Get current product prices and validate products exist
-  const { data: productData, error: productError } = await supabase
-    .from('inventory_products')
-    .select(`
-      product_id,
-      unit_id,
-      warehouse_id,
-      price,
-      workspace_products!inner(name, ws_id)
-    `)
-    .in('product_id', productIds)
-    .in('unit_id', unitIds)
-    .in('warehouse_id', warehouseIds)
-    .eq('workspace_products.ws_id', wsId);
-
-  if (productError) {
-    throw new Error(`Error fetching product data: ${productError.message}`);
-  }
-
-  // Create a map for quick lookup
-  const productMap = new Map();
-  productData.forEach((item: any) => {
-    const key = `${item.product_id}-${item.unit_id}-${item.warehouse_id}`;
-    productMap.set(key, item);
-  });
-
-  // Calculate subtotal using backend prices
-  for (const product of products) {
-    const key = `${product.product_id}-${product.unit_id}-${product.warehouse_id}`;
-    const productInfo = productMap.get(key);
-
-    if (!productInfo) {
-      throw new Error(
-        `Product not found or not available: ${product.product_id}`
-      );
-    }
-    console.log(productInfo.workspace_products.name);
-    console.log(productInfo.price);
-    console.log(product.quantity);
-    subtotal += productInfo.price * product.quantity;
-  }
-
-  // Calculate discount amount
-  let discount_amount = 0;
-  if (promotion_id && promotion_id !== 'none') {
-    const { data: promotion, error: promotionError } = await supabase
-      .from('workspace_promotions')
-      .select('value, use_ratio')
-      .eq('id', promotion_id)
-      .eq('ws_id', wsId)
-      .single();
-
-    if (promotionError) {
-      throw new Error(`Invalid promotion: ${promotionError.message}`);
-    }
-
-    if (promotion) {
-      if (promotion.use_ratio) {
-        discount_amount = subtotal * (promotion.value / 100);
-      } else {
-        discount_amount = Math.min(promotion.value, subtotal);
-      }
-    }
-  }
-
-  const total_before_rounding = subtotal - discount_amount;
-
-  // Use frontend's rounded total if provided, otherwise use calculated total
-  let total: number;
-  let rounding_applied: number;
-
-  if (frontendValues?.total !== undefined) {
-    // Use frontend's rounding decision
-    total = frontendValues.total;
-    rounding_applied = total - total_before_rounding;
-  } else {
-    // No frontend rounding, use exact calculation
-    total = total_before_rounding;
-    rounding_applied = 0;
-  }
-
-  // Check if values were recalculated (excluding rounding)
-  const values_recalculated = frontendValues
-    ? Math.abs(subtotal - (frontendValues.subtotal || 0)) > 0.01 ||
-      Math.abs(discount_amount - (frontendValues.discount_amount || 0)) > 0.01
-    : true;
-
-  return {
-    subtotal,
-    discount_amount,
-    total,
-    values_recalculated,
-    rounding_applied,
-  };
 }
 
 export async function POST(req: Request, { params }: Params) {
@@ -159,6 +39,8 @@ export async function POST(req: Request, { params }: Params) {
   try {
     const {
       customer_id,
+      group_id,
+      selected_month,
       content,
       notes,
       wallet_id,
@@ -168,11 +50,12 @@ export async function POST(req: Request, { params }: Params) {
       frontend_subtotal,
       frontend_discount_amount,
       frontend_total,
-    }: CreateInvoiceRequest = await req.json();
+    }: CreateSubscriptionInvoiceRequest = await req.json();
 
-    // Validate required fields
     if (
       !customer_id ||
+      !group_id ||
+      !selected_month ||
       !products ||
       products.length === 0 ||
       !wallet_id ||
@@ -181,13 +64,13 @@ export async function POST(req: Request, { params }: Params) {
       return NextResponse.json(
         {
           message:
-            'Missing required fields: customer_id, products, wallet_id, and category_id',
+            'Missing required fields: customer_id, group_id, selected_month, products, wallet_id, and category_id',
         },
         { status: 400 }
       );
     }
 
-    // Calculate values using backend logic
+    // Calculate values using backend logic (shared)
     const calculatedValues = await calculateInvoiceValues(
       supabase,
       wsId,
@@ -217,9 +100,8 @@ export async function POST(req: Request, { params }: Params) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }
 
-    // Get user workspace ID
+    // Map platform user to workspace virtual user
     let workspaceUserId: string | null = null;
-    const workspaceUserGroup: string | null = null;
     if (user) {
       const { data: workspaceUser } = await supabase
         .from('workspace_user_linked_users')
@@ -231,28 +113,28 @@ export async function POST(req: Request, { params }: Params) {
       workspaceUserId = workspaceUser?.virtual_user_id || null;
     }
 
+    // Compute valid_until as the first day of the next month after selected_month
+    const startOfMonth = new Date(`${selected_month}-01T00:00:00.000Z`);
+    const validUntil = new Date(startOfMonth);
+    validUntil.setMonth(validUntil.getMonth() + 1);
+
     const invoiceData: any = {
       ws_id: wsId,
       customer_id,
-      price: Math.round(total - rounding_applied), // Convert to integer (VND smallest unit)
-      total_diff: Math.round(rounding_applied), // Store the rounding applied
+      user_group_id: group_id,
+      price: Math.round(total - rounding_applied),
+      total_diff: Math.round(rounding_applied),
       note: notes,
       notice: content,
       wallet_id,
       category_id,
       completed_at: new Date().toISOString(),
-      valid_until: new Date(
-        Date.now() + 1000 * 60 * 60 * 24 * 30
-      ).toISOString(),
-      paid_amount: Math.round(total), // Convert to integer
+      valid_until: validUntil.toISOString(),
+      paid_amount: Math.round(total),
     };
 
-    // Only add optional fields if they have values
     if (workspaceUserId) {
       invoiceData.creator_id = workspaceUserId;
-    }
-    if (workspaceUserGroup) {
-      invoiceData.user_group_id = workspaceUserGroup;
     }
 
     const { data: invoice, error: invoiceError } = await supabase
@@ -262,34 +144,33 @@ export async function POST(req: Request, { params }: Params) {
       .single();
 
     if (invoiceError) {
-      console.error('Error creating invoice:', invoiceError);
+      console.error('Error creating subscription invoice:', invoiceError);
       return NextResponse.json(
-        { message: 'Error creating invoice', details: invoiceError.message },
+        {
+          message: 'Error creating subscription invoice',
+          details: invoiceError.message,
+        },
         { status: 500 }
       );
     }
 
     const invoiceId = invoice.id;
 
-    // Insert invoice products with correct field mapping
-    // First, deduplicate products by creating a unique key and combining quantities if duplicates exist
+    // Deduplicate products
     const productMap = new Map<string, InvoiceProduct>();
-
     products.forEach((product) => {
       const key = `${product.product_id}-${product.unit_id}-${product.warehouse_id}-${product.price}`;
       if (productMap.has(key)) {
-        // If duplicate exists, combine quantities
         const existing = productMap.get(key);
-        if (existing) {
-          existing.quantity += product.quantity;
-        }
+        if (existing) existing.quantity += product.quantity;
       } else {
         productMap.set(key, { ...product });
       }
     });
 
-    // Get product name  from workspace_products
     const productValues = Array.from(productMap.values());
+
+    // Fetch product and unit names
     const { data: productsData, error: productsError } = await supabase
       .from('workspace_products')
       .select('name, id')
@@ -311,8 +192,6 @@ export async function POST(req: Request, { params }: Params) {
     }
 
     const unitIds = productValues.map((product) => product.unit_id);
-
-    // Get unit from inventory_units
     const { data: unitsData, error: unitsError } = await supabase
       .from('inventory_units')
       .select('name, id')
@@ -340,7 +219,7 @@ export async function POST(req: Request, { params }: Params) {
       unit_id: product.unit_id,
       warehouse_id: product.warehouse_id,
       amount: product.quantity,
-      price: Math.round(product.price), // Convert to integer
+      price: Math.round(product.price),
     }));
 
     const { error: invoiceProductsError } = await supabase
@@ -348,8 +227,10 @@ export async function POST(req: Request, { params }: Params) {
       .insert(invoiceProducts);
 
     if (invoiceProductsError) {
-      console.error('Error creating invoice products:', invoiceProductsError);
-      // Rollback: delete the created invoice and transaction
+      console.error(
+        'Error creating subscription invoice products:',
+        invoiceProductsError
+      );
       await Promise.all([
         supabase.from('finance_invoices').delete().eq('id', invoiceId),
       ]);
@@ -362,27 +243,21 @@ export async function POST(req: Request, { params }: Params) {
       );
     }
 
-    // Insert promotion if provided
+    // Promotion linkage
     if (promotion_id && promotion_id !== 'none' && discount_amount > 0) {
-      // Get Promotion use-ratio from workspace_promotions
       const { data: promotion, error: promotionFetchError } = await supabase
         .from('workspace_promotions')
         .select('use_ratio, value, name, code, description')
         .eq('id', promotion_id)
         .single();
 
-      if (promotionFetchError) {
-        console.error('Error getting promotion:', promotionFetchError);
-        console.warn('Continuing without promotion due to fetch error');
-      }
-      // Only insert promotion if we successfully fetched promotion data or use default
       if (!promotionFetchError || promotion) {
         const { error: promotionError } = await supabase
           .from('finance_invoice_promotions')
           .insert({
             invoice_id: invoiceId,
             promo_id: promotion_id,
-            value: promotion?.value || discount_amount, // Convert to integer
+            value: promotion?.value || discount_amount,
             use_ratio: promotion?.use_ratio || true,
             name: promotion?.name || '',
             code: promotion?.code || '',
@@ -391,7 +266,6 @@ export async function POST(req: Request, { params }: Params) {
 
         if (promotionError) {
           console.error('Error creating invoice promotion:', promotionError);
-          // Rollback: delete all created records
           await Promise.all([
             supabase
               .from('finance_invoice_products')
@@ -410,12 +284,12 @@ export async function POST(req: Request, { params }: Params) {
       }
     }
 
-    // Create stock changes for each product (using deduplicated products)
+    // Stock changes (sell)
     const stockChanges = productValues.map((product) => ({
       product_id: product.product_id,
       unit_id: product.unit_id,
       warehouse_id: product.warehouse_id,
-      amount: -product.quantity, // Negative because it's being sold
+      amount: -product.quantity,
       creator_id: workspaceUserId || '',
       beneficiary_id: customer_id,
     }));
@@ -426,7 +300,6 @@ export async function POST(req: Request, { params }: Params) {
 
     if (stockError) {
       console.error('Error creating stock changes:', stockError);
-      // Rollback: delete all created records
       await Promise.all([
         supabase
           .from('finance_invoice_promotions')
@@ -448,11 +321,13 @@ export async function POST(req: Request, { params }: Params) {
     }
 
     return NextResponse.json({
-      message: 'Invoice created successfully',
+      message: 'Subscription invoice created successfully',
       invoice_id: invoiceId,
       data: {
         id: invoiceId,
         customer_id,
+        group_id,
+        selected_month,
         total,
         subtotal,
         discount_amount,
@@ -479,7 +354,7 @@ export async function POST(req: Request, { params }: Params) {
       },
     });
   } catch (error) {
-    console.error('Unexpected error creating invoice:', error);
+    console.error('Unexpected error creating subscription invoice:', error);
     return NextResponse.json(
       { message: 'Internal server error' },
       { status: 500 }
