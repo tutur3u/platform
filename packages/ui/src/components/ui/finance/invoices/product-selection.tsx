@@ -139,7 +139,6 @@ export function ProductSelection({
                     onAdd={(quantity) =>
                       addProductToInvoice(inventory, quantity)
                     }
-                    t={t}
                   />
                 ))}
               </div>
@@ -266,10 +265,10 @@ export function ProductSelection({
 interface StockItemProps {
   inventory: ProductInventory;
   onAdd: (quantity: number) => void;
-  t: (key: string) => string;
 }
 
-function StockItem({ inventory, onAdd, t }: StockItemProps) {
+function StockItem({ inventory, onAdd}: StockItemProps) {
+  const t = useTranslations();
   const [quantity, setQuantity] = useState(1);
 
   const handleAdd = () => {
