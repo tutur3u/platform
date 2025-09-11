@@ -1055,25 +1055,6 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
                           </div>
                         </div>
                       </div>
-
-                      {/* Tags */}
-                      {board.tags && board.tags.length > 0 && (
-                        <div className="flex flex-wrap gap-1">
-                          {board.tags.slice(0, 2).map((tag: string) => (
-                            <span
-                              key={tag}
-                              className="inline-flex items-center rounded-md bg-primary/10 px-2 py-1 font-medium text-primary text-xs"
-                            >
-                              {tag}
-                            </span>
-                          ))}
-                          {board.tags.length > 2 && (
-                            <span className="inline-flex items-center rounded-md bg-muted px-2 py-1 font-medium text-muted-foreground text-xs">
-                              +{board.tags.length - 2}
-                            </span>
-                          )}
-                        </div>
-                      )}
                     </div>
 
                     {/* Progress Section */}
@@ -1175,12 +1156,14 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
 
                     {/* Footer */}
                     <div className="flex items-center justify-between border-t pt-3 text-muted-foreground text-xs">
-                      <div className="flex items-center gap-1">
-                        <Calendar className="h-3 w-3" />
-                        <span>
-                          {new Date(board.created_at).toLocaleDateString()}
-                        </span>
-                      </div>
+                      {board.created_at && (
+                        <div className="flex items-center gap-1">
+                          <Calendar className="h-3 w-3" />
+                          <span>
+                            {new Date(board.created_at).toLocaleDateString()}
+                          </span>
+                        </div>
+                      )}
                       <div className="flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
                         <span className="font-medium text-primary">
                           View Details
@@ -1469,21 +1452,6 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
                   <h3 className="mb-2 line-clamp-2 font-semibold text-lg">
                     {selectedBoardData?.name || 'N/A'}
                   </h3>
-
-                  {/* Tags */}
-                  {selectedBoardData?.tags &&
-                    selectedBoardData.tags.length > 0 && (
-                      <div className="flex flex-wrap gap-1">
-                        {selectedBoardData.tags.map((tag: string) => (
-                          <span
-                            key={tag}
-                            className="inline-flex items-center rounded-md bg-primary/10 px-2 py-1 font-medium text-primary text-xs"
-                          >
-                            {tag}
-                          </span>
-                        ))}
-                      </div>
-                    )}
                 </div>
 
                 {/* Progress Overview */}

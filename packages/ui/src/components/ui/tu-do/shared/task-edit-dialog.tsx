@@ -35,7 +35,6 @@ import {
 import { addDays } from 'date-fns';
 import { useParams } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
-import { TaskTagInput } from './task-tag-input';
 
 interface TaskEditDialogProps {
   task: Task;
@@ -84,7 +83,6 @@ export function TaskEditDialog({
   const [endDate, setEndDate] = useState<Date | undefined>(
     task.end_date ? new Date(task.end_date) : undefined
   );
-  const [tags, setTags] = useState<string[]>(task.tags || []);
   const [selectedListId, setSelectedListId] = useState<string>(task.list_id);
 
   const params = useParams();
@@ -142,7 +140,6 @@ export function TaskEditDialog({
       setPriority(task.priority || null);
       setStartDate(task.start_date ? new Date(task.start_date) : undefined);
       setEndDate(task.end_date ? new Date(task.end_date) : undefined);
-      setTags(task.tags || []);
       setSelectedListId(task.list_id);
     }
   }, [task, parseDescription]);
@@ -241,13 +238,6 @@ export function TaskEditDialog({
       list_id: selectedListId,
     };
 
-    // Always include tags to allow clearing
-    taskUpdates.tags = tags.filter((tag) => tag && tag.trim() !== '');
-    // Ensure tags is always an array, never undefined
-    if (taskUpdates.tags.length === 0) {
-      taskUpdates.tags = [];
-    }
-
     updateTaskMutation.mutate(
       {
         taskId: task.id,
@@ -307,7 +297,7 @@ export function TaskEditDialog({
         <DialogHeader className="px-6 pt-6 pb-4">
           <DialogTitle>Edit Task</DialogTitle>
           <DialogDescription>
-            Update task details, tags, and assignments.
+            Update task details, labels, and assignments.
           </DialogDescription>
         </DialogHeader>
 
@@ -370,18 +360,6 @@ export function TaskEditDialog({
                   </Button>
                 ))}
               </div>
-            </div>
-
-            {/* Tags */}
-            <div className="space-y-2">
-              <Label>Tags</Label>
-              <TaskTagInput
-                value={tags}
-                onChange={setTags}
-                boardId={boardId}
-                placeholder="Add tags..."
-                maxTags={10}
-              />
             </div>
 
             {/* List Selection */}

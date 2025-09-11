@@ -2,7 +2,6 @@
 
 import type { ColumnDef } from '@tanstack/react-table';
 import type { EnhancedTaskBoard } from '@tuturuuu/types/primitives/TaskBoard';
-import { Badge } from '@tuturuuu/ui/badge';
 import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
 import moment from 'moment';
 import Link from 'next/link';
@@ -66,27 +65,6 @@ export const projectColumns = (
         >
           {row.getValue('name') || '-'}
         </Link>
-        {row.original.tags && row.original.tags.length > 0 && (
-          <div className="flex flex-wrap gap-1">
-            {row.original.tags.slice(0, 3).map((tag) => (
-              <Badge
-                key={tag}
-                variant="secondary"
-                className="px-1.5 py-0.5 text-xs"
-              >
-                {tag}
-              </Badge>
-            ))}
-            {row.original.tags.length > 3 && (
-              <Badge
-                variant="outline"
-                className="px-1.5 py-0.5 text-muted-foreground text-xs"
-              >
-                +{row.original.tags.length - 3}
-              </Badge>
-            )}
-          </div>
-        )}
       </div>
     ),
   },

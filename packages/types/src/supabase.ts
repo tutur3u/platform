@@ -90,13 +90,6 @@ export type Database = {
         | 'view_infrastructure';
     };
     Functions: {
-      add_board_tags: {
-        Args: {
-          board_id: string;
-          new_tags: string[];
-        };
-        Returns: Json;
-      };
       atomic_sync_token_operation: {
         Args: {
           p_calendar_id?: string;
@@ -267,12 +260,6 @@ export type Database = {
           total_reasoning_tokens: number;
           total_tokens: number;
         }[];
-      };
-      get_board_task_tags: {
-        Args: {
-          board_id: string;
-        };
-        Returns: string[];
       };
       get_browsers: {
         Args: {
@@ -948,12 +935,6 @@ export type Database = {
         };
         Returns: boolean;
       };
-      normalize_task_tags: {
-        Args: {
-          tags: string[];
-        };
-        Returns: string[];
-      };
       nova_get_all_challenges_with_user_stats: {
         Args: {
           user_id: string;
@@ -991,13 +972,6 @@ export type Database = {
           os: string;
         }[];
       };
-      remove_board_tags: {
-        Args: {
-          board_id: string;
-          tags_to_remove: string[];
-        };
-        Returns: Json;
-      };
       revoke_all_cross_app_tokens: {
         Args: {
           p_user_id: string;
@@ -1016,34 +990,6 @@ export type Database = {
           target_user_id: string;
         };
         Returns: boolean;
-      };
-      search_boards_by_tags: {
-        Args: {
-          match_all?: boolean;
-          search_tags: string[];
-          workspace_id: string;
-        };
-        Returns: {
-          board_id: string;
-          board_name: string;
-          board_tags: Json;
-        }[];
-      };
-      search_tasks_by_tags: {
-        Args: {
-          search_tags: string[];
-        };
-        Returns: {
-          created_at: string;
-          description: string;
-          end_date: string;
-          id: string;
-          list_id: string;
-          name: string;
-          priority: number;
-          start_date: string;
-          tags: string[];
-        }[];
       };
       search_users: {
         Args: {
@@ -1147,18 +1093,6 @@ export type Database = {
           events: Json;
         };
         Returns: Json;
-      };
-      validate_and_normalize_board_tags: {
-        Args: {
-          tags: Json;
-        };
-        Returns: Json;
-      };
-      validate_board_tags: {
-        Args: {
-          tags: Json;
-        };
-        Returns: boolean;
       };
       validate_cross_app_token: {
         Args: {
@@ -6278,7 +6212,6 @@ export type Database = {
           name: string;
           priority?: Database['public']['Enums']['task_priority'] | null;
           start_date?: null | string;
-          tags?: null | string[];
           total_duration?: null | number;
         };
         Relationships: [
@@ -6336,7 +6269,6 @@ export type Database = {
           name: string;
           priority: Database['public']['Enums']['task_priority'] | null;
           start_date: null | string;
-          tags: null | string[];
           total_duration: null | number;
         };
         Update: {
@@ -6357,7 +6289,6 @@ export type Database = {
           name?: string;
           priority?: Database['public']['Enums']['task_priority'] | null;
           start_date?: null | string;
-          tags?: null | string[];
           total_duration?: null | number;
         };
       };
@@ -7945,7 +7876,6 @@ export type Database = {
           extended_estimation?: boolean;
           id?: string;
           name?: null | string;
-          tags?: Json | null;
           template_id?: null | string;
           ws_id: string;
         };
@@ -8013,7 +7943,6 @@ export type Database = {
           extended_estimation: boolean;
           id: string;
           name: null | string;
-          tags: Json | null;
           template_id: null | string;
           ws_id: string;
         };
@@ -8030,7 +7959,6 @@ export type Database = {
           extended_estimation?: boolean;
           id?: string;
           name?: null | string;
-          tags?: Json | null;
           template_id?: null | string;
           ws_id?: string;
         };

@@ -39,8 +39,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { cn } from '@tuturuuu/utils/format';
 import { useDeleteTask, useUpdateTask } from '@tuturuuu/utils/task-helper';
 import { addDays, format, isBefore, isToday, startOfToday } from 'date-fns';
-import { useCallback, useEffect, useId, useState } from 'react';
-import { TaskTagInput } from '../../shared/task-tag-input';
+import { useEffect, useId, useState } from 'react';
 
 // Extract to a utility function for better performance and reusability
 const transformTaskData = (data: any): Task => {
@@ -50,7 +49,6 @@ const transformTaskData = (data: any): Task => {
     priority: data.priority || undefined,
     start_date: data.start_date || undefined,
     end_date: data.end_date || undefined,
-    tags: data.tags || undefined,
     assignees:
       data.assignees
         ?.map((a: any) => ({
@@ -116,17 +114,11 @@ export function TaskActions({ taskId, boardId, onUpdate }: Props) {
   const [newStartDate, setNewStartDate] = useState<Date | undefined>(undefined);
   const [newEndDate, setNewEndDate] = useState<Date | undefined>(undefined);
   const [newPriority, setNewPriority] = useState<TaskPriority | null>(null);
-  const [newTags, setNewTags] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
 
   const updateTaskMutation = useUpdateTask(boardId);
   const deleteTaskMutation = useDeleteTask(boardId);
-
-  // Memoize the onChange handler to prevent stale closures
-  const handleTagsChange = useCallback((tags: string[]) => {
-    setNewTags(tags);
-  }, []); // Remove newTags from dependencies to prevent recreation
 
   // Update local state when task data changes
   useEffect(() => {
@@ -136,7 +128,6 @@ export function TaskActions({ taskId, boardId, onUpdate }: Props) {
       setNewStartDate(task.start_date ? new Date(task.start_date) : undefined);
       setNewEndDate(task.end_date ? new Date(task.end_date) : undefined);
       setNewPriority(task.priority || null);
-      setNewTags(task.tags || []);
     }
   }, [task]);
 
@@ -150,26 +141,15 @@ export function TaskActions({ taskId, boardId, onUpdate }: Props) {
     const hasEndDateChange =
       (newEndDate?.toISOString() || null) !== task.end_date;
     const hasPriorityChange = newPriority !== task.priority;
-    const hasTagsChange =
-      JSON.stringify(newTags) !== JSON.stringify(task.tags || []);
 
     setHasChanges(
       hasNameChange ||
         hasDescriptionChange ||
         hasStartDateChange ||
         hasEndDateChange ||
-        hasPriorityChange ||
-        hasTagsChange
+        hasPriorityChange
     );
-  }, [
-    newName,
-    newDescription,
-    newStartDate,
-    newEndDate,
-    newPriority,
-    newTags,
-    task,
-  ]);
+  }, [newName, newDescription, newStartDate, newEndDate, newPriority, task]);
 
   async function handleDelete() {
     setIsLoading(true);
@@ -210,12 +190,6 @@ export function TaskActions({ taskId, boardId, onUpdate }: Props) {
           start_date: newStartDate?.toISOString() ?? undefined,
           end_date: newEndDate?.toISOString() ?? undefined,
           priority: newPriority,
-          tags: (() => {
-            const filteredTags = newTags.filter(
-              (tag) => tag && tag.trim() !== ''
-            );
-            return filteredTags.length === 0 ? [] : filteredTags;
-          })(),
         },
       },
       {
@@ -250,7 +224,6 @@ export function TaskActions({ taskId, boardId, onUpdate }: Props) {
     setNewStartDate(task.start_date ? new Date(task.start_date) : undefined);
     setNewEndDate(task.end_date ? new Date(task.end_date) : undefined);
     setNewPriority(task.priority || null);
-    setNewTags(task.tags || []);
   }
 
   const today = startOfToday();
@@ -387,16 +360,6 @@ export function TaskActions({ taskId, boardId, onUpdate }: Props) {
                 onChange={(e) => setNewDescription(e.target.value)}
                 placeholder="Enter task description"
                 className="resize-none"
-              />
-            </div>
-            <div className="grid gap-2">
-              <Label>Tags</Label>
-              <TaskTagInput
-                value={newTags}
-                onChange={handleTagsChange}
-                boardId={boardId}
-                placeholder="Add tags..."
-                maxTags={10}
               />
             </div>
             <div className="grid gap-2">

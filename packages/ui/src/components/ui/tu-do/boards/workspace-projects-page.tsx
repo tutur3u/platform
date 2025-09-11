@@ -5,8 +5,8 @@ import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import { Button } from '@tuturuuu/ui/button';
 import { Plus } from '@tuturuuu/ui/icons';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
-import { redirect } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
+import { redirect } from 'next/navigation';
 import { EnhancedBoardsView } from './enhanced-boards-view';
 import { TaskBoardForm } from './form';
 
@@ -115,11 +115,6 @@ export default async function WorkspaceProjectsPage({
 
       return {
         ...board,
-        tags: board.tags
-          ? typeof board.tags === 'string'
-            ? JSON.parse(board.tags)
-            : board.tags
-          : [],
         href: `/${wsId}/tasks/boards/${board.id}`,
         // Task metrics
         totalTasks,

@@ -45,7 +45,6 @@ import React, {
   useRef,
   useState,
 } from 'react';
-import { TaskTagInput } from '../../shared/task-tag-input';
 import { ListActions } from './list-actions';
 import { statusIcons } from './status-section';
 import { TaskCard } from './task';
@@ -83,7 +82,6 @@ interface TaskListFilters {
   search: string;
   priorities: Set<TaskPriority>;
   assignees: Set<string>;
-  tags: Set<string>;
   overdue: boolean;
   dueSoon: boolean;
 }
@@ -141,7 +139,6 @@ export const BoardColumn = React.memo(function BoardColumn({
     search: '',
     priorities: new Set(),
     assignees: new Set(),
-    tags: new Set(),
     overdue: false,
     dueSoon: false,
   });
@@ -231,13 +228,6 @@ export const BoardColumn = React.memo(function BoardColumn({
           );
           if (!hasMatchingAssignee) return false;
         }
-      }
-
-      // Tags filter
-      if (filters.tags.size > 0) {
-        if (!task.tags || task.tags.length === 0) return false;
-        const hasMatchingTag = task.tags.some((tag) => filters.tags.has(tag));
-        if (!hasMatchingTag) return false;
       }
 
       // Overdue filter
@@ -340,7 +330,6 @@ export const BoardColumn = React.memo(function BoardColumn({
       search: '',
       priorities: new Set(),
       assignees: new Set(),
-      tags: new Set(),
       overdue: false,
       dueSoon: false,
     });
@@ -351,7 +340,6 @@ export const BoardColumn = React.memo(function BoardColumn({
     filters.search ||
     filters.priorities.size > 0 ||
     filters.assignees.size > 0 ||
-    filters.tags.size > 0 ||
     filters.overdue ||
     filters.dueSoon ||
     sortBy !== 'none';
@@ -850,23 +838,6 @@ export const BoardColumn = React.memo(function BoardColumn({
                         </Command>
                       </PopoverContent>
                     </Popover>
-                  </div>
-
-                  {/* Tags Filter */}
-                  <div className="space-y-2">
-                    <FilterLabel>Tags</FilterLabel>
-                    <TaskTagInput
-                      value={Array.from(filters.tags)}
-                      onChange={(tags) => {
-                        setFilters((prev) => ({
-                          ...prev,
-                          tags: new Set(tags),
-                        }));
-                      }}
-                      boardId={boardId}
-                      placeholder="Filter by tags..."
-                      maxTags={5}
-                    />
                   </div>
 
                   {/* Quick Filters */}

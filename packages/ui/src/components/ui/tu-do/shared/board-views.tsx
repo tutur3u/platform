@@ -5,7 +5,7 @@ import type { Workspace } from '@tuturuuu/types/db';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskBoard } from '@tuturuuu/types/primitives/TaskBoard';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { KanbanBoard } from '../boards/boardId/kanban';
 import { StatusGroupedBoard } from '../boards/boardId/status-grouped-board';
 import { BoardHeader } from '../shared/board-header';
@@ -20,7 +20,6 @@ interface Props {
 
 export function BoardViews({ workspace, board }: Props) {
   const [currentView, setCurrentView] = useState<ViewType>('kanban');
-  const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const queryClient = useQueryClient();
 
   // Helper function to create board with filtered tasks
@@ -32,24 +31,6 @@ export function BoardViews({ workspace, board }: Props) {
       ...board,
       tasks: filteredTasks,
     }) as TaskBoard & { tasks: Task[]; lists: TaskList[] };
-
-  // Filter tasks based on selected tags
-  const filteredTasks = useMemo(() => {
-    if (selectedTags.length === 0) {
-      return board.tasks;
-    }
-
-    return board.tasks.filter((task) => {
-      if (!task.tags || task.tags.length === 0) {
-        return false;
-      }
-
-      // Check if task has any of the selected tags
-      return selectedTags.some((selectedTag) =>
-        task.tags?.includes(selectedTag)
-      );
-    });
-  }, [board.tasks, selectedTags]);
 
   const handleUpdate = async () => {
     // const supabase = createClient(); // Not needed for current implementation
@@ -67,7 +48,7 @@ export function BoardViews({ workspace, board }: Props) {
         return (
           <StatusGroupedBoard
             lists={board.lists}
-            tasks={filteredTasks}
+            tasks={board.tasks}
             boardId={board.id}
             onUpdate={handleUpdate}
             hideTasksMode={true}
@@ -79,16 +60,14 @@ export function BoardViews({ workspace, board }: Props) {
           <KanbanBoard
             workspace={workspace}
             boardId={board.id}
-            tasks={filteredTasks}
+            tasks={board.tasks}
             isLoading={false}
           />
         );
       case 'list':
         return (
           <ListView
-            board={createBoardWithFilteredTasks(board, filteredTasks)}
-            selectedTags={selectedTags}
-            onTagsChange={setSelectedTags}
+            board={createBoardWithFilteredTasks(board, board.tasks)}
             isPersonalWorkspace={workspace.personal}
           />
         );
@@ -96,7 +75,7 @@ export function BoardViews({ workspace, board }: Props) {
         return (
           <StatusGroupedBoard
             lists={board.lists}
-            tasks={filteredTasks}
+            tasks={board.tasks}
             boardId={board.id}
             onUpdate={handleUpdate}
             hideTasksMode={true}

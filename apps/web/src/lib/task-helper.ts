@@ -63,6 +63,14 @@ export async function getTasks(supabase: SupabaseClient, boardId: string) {
             display_name,
             avatar_url
           )
+        ),
+        labels:task_labels(
+          label:workspace_task_labels(
+            id,
+            name,
+            color,
+            created_at
+          )
         )
       `
       )
@@ -78,13 +86,14 @@ export async function getTasks(supabase: SupabaseClient, boardId: string) {
       throw error;
     }
 
-    // Transform the nested assignees data and ensure tags field exists
     const transformedTasks = data.map((task) => ({
       ...task,
-      tags: task.tags || [], // Ensure tags field exists
       assignees: transformAssignees(
         task.assignees as (TaskAssignee & { user: User })[]
       ),
+      labels:
+        task.labels?.map((taskLabel: any) => taskLabel.label).filter(Boolean) ||
+        [],
     }));
 
     return transformedTasks as Task[];
@@ -173,7 +182,6 @@ export async function createTask(
     end_date: string | null;
     archived: boolean;
     created_at: string;
-    tags?: string[];
   } = {
     name: task.name.trim(),
     description: task.description || null,
@@ -184,18 +192,6 @@ export async function createTask(
     archived: false,
     created_at: new Date().toISOString(),
   };
-
-  // Handle tags separately to ensure proper formatting
-  if (task.tags && Array.isArray(task.tags)) {
-    // Filter out empty tags and trim whitespace
-    const filteredTags = task.tags
-      .filter((tag) => tag && typeof tag === 'string' && tag.trim().length > 0)
-      .map((tag) => tag.trim());
-
-    if (filteredTags.length > 0) {
-      taskData.tags = filteredTags;
-    }
-  }
 
   // Now try the normal insert with the fixed database
   const { data, error } = await supabase
@@ -795,8 +791,7 @@ export async function createBoardWithTemplate(
   supabase: SupabaseClient,
   wsId: string,
   name: string,
-  templateId?: string,
-  tags?: string[]
+  templateId?: string
 ) {
   const { data, error } = await supabase
     .from('workspace_boards')
@@ -804,7 +799,6 @@ export async function createBoardWithTemplate(
       ws_id: wsId,
       name,
       template_id: templateId,
-      tags: tags || [],
     })
     .select()
     .single();
@@ -922,14 +916,12 @@ export function useCreateBoardWithTemplate(wsId: string) {
     mutationFn: async ({
       name,
       templateId,
-      tags,
     }: {
       name: string;
       templateId?: string;
-      tags?: string[];
     }) => {
       const supabase = createClient();
-      return createBoardWithTemplate(supabase, wsId, name, templateId, tags);
+      return createBoardWithTemplate(supabase, wsId, name, templateId);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['workspace-boards', wsId] });
@@ -983,146 +975,6 @@ export function useUpdateTaskListStatus(boardId: string) {
         variant: 'destructive',
       });
     },
-  });
-}
-
-// Tag-related helper functions
-export async function getBoardTaskTags(
-  supabase: SupabaseClient,
-  boardId: string
-) {
-  try {
-    const { data, error } = await (
-      supabase as SupabaseClient & {
-        rpc: (
-          functionName: string,
-          params: Record<string, unknown>
-        ) => Promise<{
-          data: unknown;
-          error: { message: string } | null;
-        }>;
-      }
-    ).rpc('get_board_task_tags', {
-      board_id: boardId,
-    });
-
-    if (error) {
-      // If the RPC function doesn't exist (migration not applied), return empty array
-      if (
-        error.message.includes('function "get_board_task_tags" does not exist')
-      ) {
-        console.warn(
-          'Tags migration not applied yet, returning empty tags array'
-        );
-        return [];
-      }
-      throw error;
-    }
-    return data || [];
-  } catch (err) {
-    console.warn('Error getting board task tags:', err);
-    return [];
-  }
-}
-
-export async function searchTasksByTags(
-  supabase: SupabaseClient,
-  searchTags: string[]
-) {
-  try {
-    const { data, error } = await (
-      supabase as SupabaseClient & {
-        rpc: (
-          functionName: string,
-          params: Record<string, unknown>
-        ) => Promise<{
-          data: unknown;
-          error: { message: string } | null;
-        }>;
-      }
-    ).rpc('search_tasks_by_tags', {
-      search_tags: searchTags,
-    });
-
-    if (error) {
-      // If the RPC function doesn't exist (migration not applied), return empty array
-      if (
-        error.message.includes('function "search_tasks_by_tags" does not exist')
-      ) {
-        console.warn(
-          'Tags migration not applied yet, returning empty search results'
-        );
-        return [];
-      }
-      throw error;
-    }
-    return data || [];
-  } catch (err) {
-    console.warn('Error searching tasks by tags:', err);
-    return [];
-  }
-}
-
-export async function getTasksWithTagFilter(
-  supabase: SupabaseClient,
-  boardId: string,
-  tags: string[]
-) {
-  const { data: lists } = await supabase
-    .from('task_lists')
-    .select('id')
-    .eq('board_id', boardId)
-    .eq('deleted', false);
-
-  if (!lists?.length) return [];
-
-  const { data, error } = await supabase
-    .from('tasks')
-    .select(
-      `
-      *,
-      assignees:task_assignees(
-        user:users(
-          id,
-          display_name,
-          avatar_url
-        )
-      )
-    `
-    )
-    .in(
-      'list_id',
-      lists.map((list) => list.id)
-    )
-    .eq('deleted', false)
-    .overlaps('tags', tags) // Filter tasks that have any of the specified tags
-    .order('created_at');
-
-  if (error) throw error;
-
-  // Transform the nested assignees data
-  const transformedTasks = data.map((task) => ({
-    ...task,
-    assignees: task.assignees
-      ?.map((a) => a.user)
-      .filter(
-        (user: User, index: number, self: User[]) =>
-          user?.id && self.findIndex((u: User) => u.id === user.id) === index
-      ),
-  }));
-
-  return transformedTasks as Task[];
-}
-
-// React hooks for tag management
-export function useBoardTaskTags(boardId: string) {
-  return useQuery({
-    queryKey: ['board-task-tags', boardId],
-    queryFn: async () => {
-      const supabase = createClient();
-      return getBoardTaskTags(supabase, boardId);
-    },
-    staleTime: 5 * 60 * 1000, // 5 minutes
   });
 }
 

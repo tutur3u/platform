@@ -10,7 +10,13 @@ export interface Task {
   end_date?: string | null;
   archived: boolean;
   created_at: string;
-  tags?: string[];
+  estimation_points?: number | null;
+  labels?: {
+    id: string;
+    name: string;
+    color: string;
+    created_at: string;
+  }[];
   assignees?: {
     id: string;
     display_name?: string;

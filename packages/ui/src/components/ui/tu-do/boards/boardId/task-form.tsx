@@ -19,7 +19,8 @@ import { cn } from '@tuturuuu/utils/format';
 import { createTask } from '@tuturuuu/utils/task-helper';
 import { useParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { TaskTagInput } from '../../shared/task-tag-input';
+import { TaskEstimationPicker } from '../../shared/task-estimation-picker';
+import { TaskLabelSelector } from '../../shared/task-label-selector';
 
 interface Props {
   listId: string;
@@ -32,15 +33,15 @@ export function TaskForm({ listId, onTaskCreated }: Props) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Form state
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [priority, setPriority] = useState<TaskPriority | null>(null);
   const [startDate, setStartDate] = useState<Date | undefined>();
   const [endDate, setEndDate] = useState<Date | undefined>();
   const [selectedAssignees, setSelectedAssignees] = useState<string[]>([]);
-  const [tags, setTags] = useState<string[]>([]);
   const [isPersonal, setIsPersonal] = useState(false);
+  const [selectedLabels, setSelectedLabels] = useState<any[]>([]);
+  const [estimationPoints, setEstimationPoints] = useState<number | null>(null);
 
   const params = useParams();
   const wsId = params.wsId as string;
@@ -75,7 +76,8 @@ export function TaskForm({ listId, onTaskCreated }: Props) {
     setStartDate(undefined);
     setEndDate(undefined);
     setSelectedAssignees([]);
-    setTags([]);
+    setSelectedLabels([]);
+    setEstimationPoints(null);
     setIsExpanded(false);
     setIsAdding(false);
   };
@@ -117,18 +119,15 @@ export function TaskForm({ listId, onTaskCreated }: Props) {
         priority?: TaskPriority;
         start_date?: string;
         end_date?: string;
-        tags?: string[];
+        estimation_points?: number | null;
       } = {
         name: name.trim(),
         description: description.trim(),
         priority: priority ?? undefined,
         start_date: startDate?.toISOString(),
         end_date: endDate?.toISOString(),
+        estimation_points: estimationPoints,
       };
-
-      if (tags?.filter((tag) => tag && tag.trim() !== '').length > 0) {
-        taskData.tags = tags.filter((tag) => tag && tag.trim() !== '');
-      }
 
       const newTask = await createTask(supabase, listId, taskData);
 
@@ -146,6 +145,18 @@ export function TaskForm({ listId, onTaskCreated }: Props) {
             await supabase.from('task_assignees').insert({
               task_id: newTask.id,
               user_id: userId,
+            });
+          })
+        );
+      }
+
+      // Add label assignments if any selected
+      if (selectedLabels.length > 0) {
+        await Promise.all(
+          selectedLabels.map(async (label) => {
+            await supabase.from('task_labels').insert({
+              task_id: newTask.id,
+              label_id: label.id,
             });
           })
         );
@@ -358,15 +369,23 @@ export function TaskForm({ listId, onTaskCreated }: Props) {
                 />
               </div>
 
-              {/* Tags */}
+              {/* Labels */}
               <div className="space-y-2">
-                <Label className="font-medium text-xs">Tags</Label>
-                <TaskTagInput
-                  value={tags}
-                  onChange={setTags}
+                <Label className="font-medium text-xs">Labels</Label>
+                <TaskLabelSelector
+                  wsId={wsId}
+                  selectedLabels={selectedLabels}
+                  onLabelsChange={setSelectedLabels}
+                />
+              </div>
+
+              {/* Estimation */}
+              <div className="space-y-2">
+                <TaskEstimationPicker
+                  wsId={wsId}
                   boardId={params.boardId as string}
-                  placeholder="Add tags..."
-                  maxTags={10}
+                  selectedPoints={estimationPoints}
+                  onPointsChange={setEstimationPoints}
                 />
               </div>
 

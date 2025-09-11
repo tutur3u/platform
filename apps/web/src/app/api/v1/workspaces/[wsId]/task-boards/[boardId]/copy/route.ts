@@ -96,8 +96,7 @@ export async function POST(req: NextRequest, { params }: Params) {
             start_date,
             end_date,
             created_at,
-            creator_id,
-            tags
+            creator_id
           )
         )
       `)
@@ -131,7 +130,6 @@ export async function POST(req: NextRequest, { params }: Params) {
       archived: false,
       deleted: false,
       created_at: new Date().toISOString(),
-      tags: sourceBoard.tags,
       template_id: sourceBoard.template_id,
     };
 
@@ -257,7 +255,6 @@ export async function POST(req: NextRequest, { params }: Params) {
           completed: task.completed || false,
           created_at: new Date().toISOString(),
           creator_id: user.id,
-          tags: task.tags || null,
         }));
 
         allTasksToCreate.push(...tasksToCreate);

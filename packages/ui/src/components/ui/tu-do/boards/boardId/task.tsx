@@ -72,7 +72,8 @@ import {
 import React, { useMemo, useRef, useState } from 'react';
 import { AssigneeSelect } from '../../shared/assignee-select';
 import { TaskEditDialog } from '../../shared/task-edit-dialog';
-import { TaskTagsDisplay } from '../../shared/task-tags-display';
+import { TaskEstimationDisplay } from '../../shared/task-estimation-display';
+import { TaskLabelsDisplay } from '../../shared/task-labels-display';
 import { TaskActions } from './task-actions';
 
 interface Props {
@@ -101,15 +102,15 @@ const getDescriptionText = (description?: string): string => {
       }
       if (content.type === 'paragraph') {
         const text = content.content?.map(extractText).join('') || '';
-        return text + '\n';
+        return `${text}\n`;
       }
       if (content.type === 'heading') {
         const text = content.content?.map(extractText).join('') || '';
-        return text + '\n';
+        return `${text}\n`;
       }
       if (content.type === 'listItem') {
         const text = content.content?.map(extractText).join('') || '';
-        return '• ' + text + '\n';
+        return `• ${text}\n`;
       }
       if (content.type === 'bulletList' || content.type === 'orderedList') {
         return content.content?.map(extractText).join('') || '';
@@ -154,11 +155,6 @@ export function LightweightTaskCard({ task }: { task: Task }) {
             <Badge variant="secondary" className="text-xs">
               {labels[task.priority as keyof typeof labels]}
             </Badge>
-          )}
-          {task.tags && task.tags.length > 0 && (
-            <span className="text-muted-foreground text-xs">
-              +{task.tags.length} tags
-            </span>
           )}
         </div>
       </div>
@@ -1177,7 +1173,7 @@ export const TaskCard = React.memo(function TaskCard({
             )}
           </div>
         )}
-        {/* Bottom Row: Three-column layout for assignee, priority/tags, and checkbox, with only one tag visible and +N tooltip for extras */}
+        {/* Bottom Row: Three-column layout for assignee, priority, and checkbox, with only one tag visible and +N tooltip for extras */}
         <div className="flex h-8 min-w-0 items-center gap-x-1 overflow-hidden whitespace-nowrap">
           {/* Assignee: left, not cut off */}
           {!isPersonalWorkspace && (
@@ -1195,14 +1191,23 @@ export const TaskCard = React.memo(function TaskCard({
               {getPriorityIndicator()}
             </div>
           )}
-          {/* Tags and +N: do NOT shrink */}
-          {!task.archived && task.tags && task.tags.length > 0 && (
-            <div className="min-w-0 max-w-[180px]">
-              <TaskTagsDisplay
-                tags={task.tags}
+          {/* Labels */}
+          {!task.archived && task.labels && task.labels.length > 0 && (
+            <div className="min-w-0 max-w-[140px] overflow-hidden">
+              <TaskLabelsDisplay
+                labels={task.labels}
                 maxDisplay={1}
-                className="mt-0 h-6 truncate rounded-full px-1.5 py-0.5 font-medium text-[10px]"
-                clickable={false}
+                size="sm"
+              />
+            </div>
+          )}
+          {/* Estimation Points */}
+          {!task.archived && task.estimation_points && (
+            <div className="min-w-0 flex-shrink-0">
+              <TaskEstimationDisplay
+                points={task.estimation_points}
+                size="sm"
+                showIcon={false}
               />
             </div>
           )}
