@@ -856,7 +856,10 @@
     "initiatives": "Initiatives",
     "teams": "Teams",
     "members": "Members",
-    "cycles": "Cycles"
+    "cycles": "Cycles",
+    "google_workspace": "Google Workspace",
+    "groups": "Groups",
+    "sites": "Sites"
   },
   "usage": {
     "description": "Monitor workspace activity, feature usage, and system metrics across your organization",

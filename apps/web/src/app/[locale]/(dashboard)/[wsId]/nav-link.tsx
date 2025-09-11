@@ -1,11 +1,11 @@
 'use client';
 
-import type { NavLink as NavLinkType } from '@/components/navigation';
 import { ChevronRight } from '@tuturuuu/ui/icons';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { cn } from '@tuturuuu/utils/format';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import type { NavLink as NavLinkType } from '@/components/navigation';
 
 interface NavLinkProps {
   wsId: string;
@@ -22,7 +22,7 @@ export function NavLink({
   onClick,
 }: NavLinkProps) {
   const pathname = usePathname();
-  const { title, icon, href, children, onClick: onLinkClick } = link;
+  const { title, icon, href, children, newTab, onClick: onLinkClick } = link;
   const hasChildren = children && children.length > 0;
 
   // Recursive function to check if any nested child matches the pathname
@@ -88,7 +88,7 @@ export function NavLink({
   };
 
   const linkElement = href ? (
-    <Link href={href} {...commonProps}>
+    <Link href={href} {...commonProps} target={newTab ? '_blank' : '_self'}>
       {content}
     </Link>
   ) : (

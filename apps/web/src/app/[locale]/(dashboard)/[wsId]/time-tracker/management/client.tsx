@@ -1,51 +1,24 @@
 'use client';
 
 import type { TimeTrackingSession } from '@tuturuuu/types/db';
-import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
-import { Badge } from '@tuturuuu/ui/badge';
-import { Button } from '@tuturuuu/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
 } from '@tuturuuu/ui/dialog';
-import { Input } from '@tuturuuu/ui/input';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@tuturuuu/ui/select';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@tuturuuu/ui/table';
+import { AlertCircle, Clock, Loader2 } from '@tuturuuu/ui/icons';
+import { Progress } from '@tuturuuu/ui/progress';
 import { getInitials } from '@tuturuuu/utils/name-helper';
 import dayjs from 'dayjs';
 import duration from 'dayjs/plugin/duration';
-import {
-  Calendar,
-  ChevronLeft,
-  ChevronRight,
-  Clock,
-  Eye,
-  Filter,
-  Pause,
-  Play,
-  Search,
-  Target,
-  TrendingUp,
-  Users,
-} from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useState } from 'react';
+import { Suspense, useCallback, useEffect, useState } from 'react';
+import * as XLSX from 'xlsx';
+import FiltersPanel from './components/filters-panel';
+import ManagementCardSkeleton from './components/management-card-skeleton';
+import SessionsTable from './components/sessions-table';
+import StatsOverview from './components/stats-overview';
 
 // Extend dayjs with duration plugin
 dayjs.extend(duration);
@@ -56,10 +29,10 @@ interface GroupedSession {
     name: string;
     color: string;
   } | null;
-  sessions: TimeTrackingSession[]; // All sessions in this stack
-  totalDuration: number; // Sum of all durations
-  firstStartTime: string; // Earliest start time (dd/mm/yyyy HH:mm:ss)
-  lastEndTime: string | null; // Latest end time (dd/mm/yyyy HH:mm:ss)
+  sessions: TimeTrackingSession[];
+  totalDuration: number;
+  firstStartTime: string;
+  lastEndTime: string | null;
   status: 'active' | 'paused' | 'completed';
   user: {
     displayName: string | null;
@@ -90,37 +63,22 @@ interface TimeTrackingStats {
   streak: number;
 }
 
-interface DayGroup {
-  label: string;
-  sessions: TimeTrackingSession[];
-}
-
-interface WeekGroup {
-  label: string;
-  days?: Record<string, DayGroup>;
-  sessions?: TimeTrackingSession[];
-}
-
-interface MonthGroup {
-  label: string;
-  weeks?: Record<string, WeekGroup>;
-  sessions?: TimeTrackingSession[];
-}
-
-interface GroupedSessionsHierarchy {
-  [month: string]: MonthGroup;
-}
-
 export default function TimeTrackerManagementClient({
+  wsId,
   groupedSessions,
   pagination,
   stats,
   currentPeriod,
+  currentStartDate,
+  currentEndDate,
 }: {
+  wsId: string;
   groupedSessions: GroupedSession[];
   pagination?: PaginationInfo;
   stats?: TimeTrackingStats;
   currentPeriod?: 'day' | 'week' | 'month';
+  currentStartDate?: string;
+  currentEndDate?: string;
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -132,155 +90,93 @@ export default function TimeTrackerManagementClient({
   const [searchQuery, setSearchQuery] = useState(
     searchParams.get('search') || ''
   );
+  const [startDate, setStartDate] = useState(
+    currentStartDate || searchParams.get('startDate') || ''
+  );
+  const [endDate, setEndDate] = useState(
+    currentEndDate || searchParams.get('endDate') || ''
+  );
   const [selectedSession, setSelectedSession] = useState<GroupedSession | null>(
     null
   );
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  // Helper function to format duration in HH:MM:SS
-  const formatDuration = (seconds: number) => {
-    const dur = dayjs.duration(seconds, 'seconds');
-    const hours = Math.floor(dur.asHours());
-    const minutes = dur.minutes();
-    const secs = dur.seconds();
-    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-  };
+  // Export progress states
+  const [isExporting, setIsExporting] = useState(false);
+  const [exportProgress, setExportProgress] = useState(0);
+  const [exportStatus, setExportStatus] = useState('');
+  const [estimatedTimeRemaining, setEstimatedTimeRemaining] =
+    useState<number>(0);
+  const [exportType, setExportType] = useState<'csv' | 'excel' | ''>('');
 
-  // Helper function to format time
-  const formatTime = (timeString: string) => {
-    return dayjs(timeString).format('DD/MM/YYYY, HH:mm:ss');
-  };
-
-  // Helper function to format period display
-  const formatPeriodDisplay = (
-    period: string,
-    periodType: 'day' | 'week' | 'month'
-  ) => {
-    if (periodType === 'day') {
-      return dayjs(period).format('DD MMM YYYY');
-    } else if (periodType === 'week') {
-      // For week, the period is the Monday date
-      const weekStart = dayjs(period);
-      const weekEnd = weekStart.add(6, 'days');
-      return `${weekStart.format('DD MMM')} - ${weekEnd.format('DD MMM YYYY')}`;
-    } else {
-      // For month, period is YYYY-MM format
-      return dayjs(period + '-01').format('MMMM YYYY');
+  // Loading and error management
+  useEffect(() => {
+    if (error) {
+      const timer = setTimeout(() => {
+        setError(null);
+      }, 5000);
+      return () => clearTimeout(timer);
     }
-  };
-
-  // Helper function to group sessions hierarchically based on period
-  const groupSessionsHierarchically = (
-    sessions: TimeTrackingSession[]
-  ): GroupedSessionsHierarchy => {
-    if (!sessions || sessions.length === 0) return {};
-
-    const grouped: GroupedSessionsHierarchy = {};
-
-    sessions.forEach((session) => {
-      const sessionDate = dayjs(session.start_time);
-
-      if (period === 'day') {
-        // For daily mode: group by day, then by week, then by month
-        const day = sessionDate.format('YYYY-MM-DD');
-        const weekStart = sessionDate
-          .startOf('week')
-          .add(1, 'day')
-          .format('YYYY-MM-DD'); // Monday start
-        const month = sessionDate.format('YYYY-MM');
-
-        // Initialize month if it doesn't exist
-        if (!grouped[month]) {
-          grouped[month] = {
-            label: sessionDate.format('MMMM YYYY'),
-            weeks: {},
-          };
-        }
-
-        // Initialize week if it doesn't exist
-        if (grouped[month].weeks && !grouped[month].weeks[weekStart]) {
-          const weekEnd = dayjs(weekStart).add(6, 'days');
-          grouped[month].weeks[weekStart] = {
-            label: `${dayjs(weekStart).format('DD MMM')} - ${weekEnd.format('DD MMM')}`,
-            days: {},
-          };
-        }
-
-        // Initialize day if it doesn't exist
-        const weekData = grouped[month].weeks?.[weekStart];
-        if (weekData?.days && !weekData.days[day]) {
-          weekData.days[day] = {
-            label: sessionDate.format('DD MMM YYYY'),
-            sessions: [],
-          };
-        }
-
-        // Add session to day
-        weekData?.days?.[day]?.sessions.push(session);
-      } else if (period === 'week') {
-        // For weekly mode: group by month
-        const month = sessionDate.format('YYYY-MM');
-        const weekStart = sessionDate
-          .startOf('week')
-          .add(1, 'day')
-          .format('YYYY-MM-DD');
-
-        if (!grouped[month]) {
-          grouped[month] = {
-            label: sessionDate.format('MMMM YYYY'),
-            weeks: {},
-          };
-        }
-
-        if (grouped[month].weeks && !grouped[month].weeks[weekStart]) {
-          const weekEnd = dayjs(weekStart).add(6, 'days');
-          grouped[month].weeks[weekStart] = {
-            label: `${dayjs(weekStart).format('DD MMM')} - ${weekEnd.format('DD MMM')}`,
-            sessions: [],
-          };
-        }
-
-        grouped[month].weeks?.[weekStart]?.sessions?.push(session);
-      } else {
-        // For monthly mode: group by month
-        const month = sessionDate.format('YYYY-MM');
-
-        if (!grouped[month]) {
-          grouped[month] = {
-            label: sessionDate.format('MMMM YYYY'),
-            sessions: [],
-          };
-        }
-
-        grouped[month].sessions?.push(session);
-      }
-    });
-
-    return grouped;
-  };
+  }, [error]);
 
   // Navigation helper functions
-  const updateSearchParams = (updates: Record<string, string | null>) => {
-    const params = new URLSearchParams(searchParams);
+  const updateSearchParams = useCallback(
+    (updates: Record<string, string | null>) => {
+      setIsLoading(true);
+      setError(null);
 
-    Object.entries(updates).forEach(([key, value]) => {
-      if (value === null) {
-        params.delete(key);
-      } else {
-        params.set(key, value);
-      }
-    });
+      const params = new URLSearchParams(searchParams);
 
-    router.push(`?${params.toString()}`);
-  };
+      Object.entries(updates).forEach(([key, value]) => {
+        if (value === null) {
+          params.delete(key);
+        } else {
+          params.set(key, value);
+        }
+      });
+
+      router.push(`?${params.toString()}`);
+
+      setTimeout(() => setIsLoading(false), 500);
+    },
+    [router, searchParams]
+  );
 
   const handlePeriodChange = (newPeriod: 'day' | 'week' | 'month') => {
-    updateSearchParams({ period: newPeriod, page: '1' }); // Reset to page 1 when changing period
+    updateSearchParams({ period: newPeriod, page: '1' });
   };
 
   const handleSearchChange = (query: string) => {
     setSearchQuery(query);
-    updateSearchParams({ search: query || null, page: '1' }); // Reset to page 1 when searching
+    updateSearchParams({ search: query || null, page: '1' });
+  };
+
+  const handleDateRangeChange = (newStartDate: string, newEndDate: string) => {
+    setStartDate(newStartDate);
+    setEndDate(newEndDate);
+    updateSearchParams({
+      startDate: newStartDate || null,
+      endDate: newEndDate || null,
+      page: '1',
+    });
+  };
+
+  const handleStartDateChange = (date: string) => {
+    setStartDate(date);
+    updateSearchParams({ startDate: date || null, page: '1' });
+  };
+
+  const handleEndDateChange = (date: string) => {
+    setEndDate(date);
+    updateSearchParams({ endDate: date || null, page: '1' });
+  };
+
+  const handleClearDateFilters = () => {
+    setStartDate('');
+    setEndDate('');
+    updateSearchParams({ startDate: null, endDate: null, page: '1' });
   };
 
   const handlePageChange = (newPage: number) => {
@@ -288,7 +184,425 @@ export default function TimeTrackerManagementClient({
   };
 
   const handleLimitChange = (newLimit: string) => {
-    updateSearchParams({ limit: newLimit, page: '1' }); // Reset to page 1 when changing limit
+    updateSearchParams({ limit: newLimit, page: '1' });
+  };
+
+  const handleViewDetails = (session: GroupedSession) => {
+    setSelectedSession(session);
+    setIsModalOpen(true);
+  };
+
+  // Helper function to format time remaining
+  const formatTimeRemaining = (seconds: number): string => {
+    if (seconds < 60) {
+      return `${Math.round(seconds)}s`;
+    } else if (seconds < 3600) {
+      const minutes = Math.floor(seconds / 60);
+      const remainingSeconds = Math.round(seconds % 60);
+      return `${minutes}m ${remainingSeconds}s`;
+    } else {
+      const hours = Math.floor(seconds / 3600);
+      const minutes = Math.floor((seconds % 3600) / 60);
+      return `${hours}h ${minutes}m`;
+    }
+  };
+
+  // Fetch all data for export with progress tracking
+  const fetchAllDataForExport = async (): Promise<GroupedSession[]> => {
+    const startTime = Date.now();
+    setIsExporting(true);
+    setExportProgress(0);
+    setExportStatus('Preparing export...');
+    setEstimatedTimeRemaining(0);
+
+    try {
+      // First, get the total count with a small batch size for accurate pagination
+      setExportStatus('Calculating total records...');
+      const initialParams = new URLSearchParams();
+      initialParams.set('wsId', wsId);
+      initialParams.set('period', period);
+      initialParams.set('page', '1');
+      initialParams.set('limit', '10'); // Small batch to get accurate total count
+      if (searchQuery) initialParams.set('search', searchQuery);
+      if (startDate) initialParams.set('startDate', startDate);
+      if (endDate) initialParams.set('endDate', endDate);
+
+      const initialResponse = await fetch(
+        `/api/time-tracking/export?${initialParams}`
+      );
+
+      if (!initialResponse.ok) {
+        throw new Error('Failed to fetch data for export');
+      }
+
+      const initialData = await initialResponse.json();
+      const totalRecords = initialData.pagination?.total || 0;
+
+      if (totalRecords === 0) {
+        setExportStatus('No data to export');
+        setIsExporting(false);
+        return [];
+      }
+
+      setExportStatus(`Found ${totalRecords} records. Fetching data...`);
+
+      const allSessions: GroupedSession[] = [];
+      const batchSize = 100; // Optimal batch size for export
+      const totalPages = Math.ceil(totalRecords / batchSize);
+
+      let processedRecords = 0;
+
+      for (let page = 1; page <= totalPages; page++) {
+        const currentTime = Date.now();
+        const elapsedTime = (currentTime - startTime) / 1000; // in seconds
+
+        // Calculate progress and time estimation
+        const progressPercent = ((page - 1) / totalPages) * 80; // Use 80% for fetching
+        setExportProgress(progressPercent);
+
+        // Estimate time remaining based on current progress
+        if (page > 1) {
+          const recordsPerSecond = processedRecords / elapsedTime;
+          const remainingRecords = totalRecords - processedRecords;
+          const estimatedSeconds = remainingRecords / recordsPerSecond;
+          setEstimatedTimeRemaining(estimatedSeconds);
+        }
+
+        setExportStatus(
+          `Fetching batch ${page} of ${totalPages} (${processedRecords}/${totalRecords} records)...`
+        );
+
+        const params = new URLSearchParams();
+        params.set('wsId', wsId);
+        params.set('period', period);
+        params.set('page', page.toString());
+        params.set('limit', batchSize.toString());
+        if (searchQuery) params.set('search', searchQuery);
+        if (startDate) params.set('startDate', startDate);
+        if (endDate) params.set('endDate', endDate);
+
+        const response = await fetch(`/api/time-tracking/export?${params}`);
+
+        if (!response.ok) {
+          throw new Error(`Failed to fetch page ${page}`);
+        }
+
+        const data = await response.json();
+        const batchData = data.data || [];
+        allSessions.push(...batchData);
+        processedRecords += batchData.length;
+
+        // Small delay to prevent overwhelming the server
+        if (page < totalPages) {
+          await new Promise((resolve) => setTimeout(resolve, 100));
+        }
+      }
+
+      setExportProgress(90);
+      setExportStatus('Processing data for export...');
+      setEstimatedTimeRemaining(2); // Final processing should be quick
+
+      return allSessions;
+    } catch (error) {
+      console.error('Error fetching all data for export:', error);
+      setError('Failed to fetch all data for export. Please try again.');
+      setIsExporting(false);
+      setExportProgress(0);
+      setExportStatus('');
+      setEstimatedTimeRemaining(0);
+      return [];
+    }
+  };
+
+  // Export functionality
+  const formatDurationForExport = (seconds: number) => {
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    const secs = seconds % 60;
+    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  // Create proper XLSX file using SheetJS
+  const createXlsxFile = (data: any[]): ArrayBuffer => {
+    const headers = [
+      'User',
+      'Period',
+      'Period Type',
+      'Session Count',
+      'Total Duration',
+      'Total Duration (Seconds)',
+      'Average Duration',
+      'Status',
+      'First Start Time',
+      'Last End Time',
+      'Session Titles',
+    ];
+
+    // Prepare worksheet data
+    const worksheetData = [
+      headers,
+      ...data.map((row) => [
+        row.user,
+        row.period,
+        row.periodType,
+        row.sessionCount,
+        row.totalDuration,
+        row.totalDurationSeconds,
+        row.averageDuration,
+        row.status,
+        row.firstStartTime,
+        row.lastEndTime,
+        row.sessionTitles,
+      ]),
+    ];
+
+    // Create worksheet
+    const worksheet = XLSX.utils.aoa_to_sheet(worksheetData);
+
+    // Set column widths
+    const columnWidths = [
+      { wch: 20 }, // User
+      { wch: 15 }, // Period
+      { wch: 12 }, // Period Type
+      { wch: 12 }, // Session Count
+      { wch: 15 }, // Total Duration
+      { wch: 18 }, // Total Duration (Seconds)
+      { wch: 15 }, // Average Duration
+      { wch: 10 }, // Status
+      { wch: 20 }, // First Start Time
+      { wch: 20 }, // Last End Time
+      { wch: 30 }, // Session Titles
+    ];
+    worksheet['!cols'] = columnWidths;
+
+    // Style the header row
+    const headerStyle = {
+      font: { bold: true, color: { rgb: '000000' } },
+      fill: { fgColor: { rgb: 'E0E0E0' } },
+      alignment: { horizontal: 'center', vertical: 'center' },
+      border: {
+        top: { style: 'thin', color: { rgb: '000000' } },
+        bottom: { style: 'thin', color: { rgb: '000000' } },
+        left: { style: 'thin', color: { rgb: '000000' } },
+        right: { style: 'thin', color: { rgb: '000000' } },
+      },
+    };
+
+    // Apply header styling
+    for (let i = 0; i < headers.length; i++) {
+      const cellAddress = XLSX.utils.encode_cell({ r: 0, c: i });
+      if (!worksheet[cellAddress]) continue;
+      worksheet[cellAddress].s = headerStyle;
+    }
+
+    // Create workbook and add worksheet
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Time Tracking Sessions');
+
+    // Generate XLSX binary
+    return XLSX.write(workbook, {
+      type: 'array',
+      bookType: 'xlsx',
+      compression: true,
+    });
+  };
+
+  const prepareExportData = (sessions: GroupedSession[]) => {
+    const flattenedData: Array<{
+      user: string;
+      period: string;
+      periodType: string;
+      sessionCount: number;
+      totalDuration: string;
+      totalDurationSeconds: number;
+      averageDuration: string;
+      status: string;
+      firstStartTime: string;
+      lastEndTime: string;
+      sessionTitles: string;
+    }> = [];
+
+    sessions.forEach((session) => {
+      const sessionTitles = Array.from(
+        new Set(session.sessions.map((s) => s.title).filter(Boolean))
+      ).join('; ');
+
+      flattenedData.push({
+        user: session.user.displayName || 'Unknown User',
+        period: session.period,
+        periodType:
+          period === 'day' ? 'Daily' : period === 'week' ? 'Weekly' : 'Monthly',
+        sessionCount: session.sessions.length,
+        totalDuration: formatDurationForExport(session.totalDuration),
+        totalDurationSeconds: session.totalDuration,
+        averageDuration: formatDurationForExport(
+          Math.round(session.totalDuration / session.sessions.length)
+        ),
+        status: session.status,
+        firstStartTime: dayjs(session.firstStartTime).format(
+          'YYYY-MM-DD HH:mm:ss'
+        ),
+        lastEndTime: session.lastEndTime
+          ? dayjs(session.lastEndTime).format('YYYY-MM-DD HH:mm:ss')
+          : 'N/A',
+        sessionTitles: sessionTitles || 'No titles',
+      });
+    });
+
+    return flattenedData;
+  };
+
+  const downloadFile = (
+    content: string | ArrayBuffer,
+    fileName: string,
+    contentType: string
+  ) => {
+    try {
+      const blob = new Blob([content], { type: contentType });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = fileName;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Export failed:', error);
+      setError('Export failed. Please try again.');
+    }
+  };
+
+  const escapeCsvValue = (value: string | number): string => {
+    if (typeof value === 'number') return value.toString();
+    const stringValue = value.toString();
+    if (
+      stringValue.includes(',') ||
+      stringValue.includes('"') ||
+      stringValue.includes('\n')
+    ) {
+      return `"${stringValue.replace(/"/g, '""')}"`;
+    }
+    return stringValue;
+  };
+
+  const handleExportCSV = async () => {
+    try {
+      setExportType('csv');
+      const allSessions = await fetchAllDataForExport();
+      if (allSessions.length === 0) {
+        return;
+      }
+
+      setExportStatus('Preparing CSV file...');
+      setExportProgress(95);
+      setEstimatedTimeRemaining(3);
+
+      const data = prepareExportData(allSessions);
+      const headers = [
+        'User',
+        'Period',
+        'Period Type',
+        'Session Count',
+        'Total Duration',
+        'Total Duration (Seconds)',
+        'Average Duration',
+        'Status',
+        'First Start Time',
+        'Last End Time',
+        'Session Titles',
+      ];
+
+      const csvContent = [
+        headers.join(','),
+        ...data.map((row) =>
+          [
+            escapeCsvValue(row.user),
+            escapeCsvValue(row.period),
+            escapeCsvValue(row.periodType),
+            escapeCsvValue(row.sessionCount),
+            escapeCsvValue(row.totalDuration),
+            escapeCsvValue(row.totalDurationSeconds),
+            escapeCsvValue(row.averageDuration),
+            escapeCsvValue(row.status),
+            escapeCsvValue(row.firstStartTime),
+            escapeCsvValue(row.lastEndTime),
+            escapeCsvValue(row.sessionTitles),
+          ].join(',')
+        ),
+      ].join('\n');
+
+      setExportStatus('Downloading CSV file...');
+      setExportProgress(100);
+      setEstimatedTimeRemaining(1);
+
+      const fileName = `time-tracking-sessions-${dayjs().format('YYYY-MM-DD-HH-mm-ss')}.csv`;
+      downloadFile(csvContent, fileName, 'text/csv;charset=utf-8;');
+
+      // Reset export states after a delay
+      setTimeout(() => {
+        setIsExporting(false);
+        setExportProgress(0);
+        setExportStatus('');
+        setEstimatedTimeRemaining(0);
+        setExportType('');
+      }, 1000);
+    } catch (error) {
+      console.error('CSV export failed:', error);
+      setError('CSV export failed. Please try again.');
+      resetExportState();
+    }
+  };
+
+  const resetExportState = () => {
+    setIsExporting(false);
+    setExportProgress(0);
+    setExportStatus('');
+    setEstimatedTimeRemaining(0);
+    setExportType('');
+  };
+
+  const handleExportExcel = async () => {
+    try {
+      setExportType('excel');
+      const allSessions = await fetchAllDataForExport();
+      if (allSessions.length === 0) {
+        return;
+      }
+
+      setExportStatus('Preparing Excel file...');
+      setExportProgress(95);
+      setEstimatedTimeRemaining(5);
+
+      const data = prepareExportData(allSessions);
+
+      // Create proper XLSX format using our custom function
+      const xlsxContent = createXlsxFile(data);
+
+      setExportStatus('Downloading Excel file...');
+      setExportProgress(100);
+      setEstimatedTimeRemaining(1);
+
+      const fileName = `time-tracking-sessions-${dayjs().format('YYYY-MM-DD-HH-mm-ss')}.xlsx`;
+      downloadFile(
+        xlsxContent,
+        fileName,
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+      );
+
+      // Reset export states after a delay
+      setTimeout(() => {
+        setIsExporting(false);
+        setExportProgress(0);
+        setExportStatus('');
+        setEstimatedTimeRemaining(0);
+        setExportType('');
+      }, 1000);
+    } catch (error) {
+      console.error('Excel export failed:', error);
+      setError('Excel export failed. Please try again.');
+      resetExportState();
+    }
   };
 
   // Use provided stats or calculate from grouped sessions
@@ -307,535 +621,191 @@ export default function TimeTrackerManagementClient({
     streak: 0,
   };
 
-  const sortedSessions = [...groupedSessions].sort((a, b) =>
-    b.period.localeCompare(a.period)
-  );
-
-  const getStatusColor = (status: 'active' | 'paused' | 'completed') => {
-    switch (status) {
-      case 'active':
-        return 'bg-dynamic-green/20 text-dynamic-green border-dynamic-green/30';
-      case 'paused':
-        return 'bg-dynamic-yellow/20 text-dynamic-yellow border-dynamic-yellow/30';
-      case 'completed':
-        return 'bg-dynamic-blue/20 text-dynamic-blue border-dynamic-blue/30';
-      default:
-        return 'bg-dynamic-gray/20 text-dynamic-gray border-dynamic-gray/30';
-    }
-  };
-
-  const getStatusIcon = (status: 'active' | 'paused' | 'completed') => {
-    switch (status) {
-      case 'active':
-        return <Play className="size-3" />;
-      case 'paused':
-        return <Pause className="size-3" />;
-      case 'completed':
-        return <Clock className="size-3" />;
-      default:
-        return <Clock className="size-3" />;
-    }
-  };
-
-  const handleViewDetails = (session: GroupedSession) => {
-    setSelectedSession(session);
-    setIsModalOpen(true);
+  const hasActiveFilters = searchQuery || startDate || endDate;
+  const clearAllFilters = () => {
+    handleSearchChange('');
+    handleClearDateFilters();
   };
 
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="space-y-4 border-dynamic-border/20 border-b pb-6">
+      <div className="space-y-6 rounded-xl border border-dynamic-border/20 bg-gradient-to-r from-dynamic-blue/5 via-dynamic-purple/5 to-dynamic-green/5 p-8">
         <div className="flex items-center justify-between">
-          <div>
-            <h2 className="font-semibold text-2xl text-dynamic-foreground">
-              Time Tracker Management
-            </h2>
-            <p className="mt-1 text-dynamic-muted text-sm">
-              Monitor and analyze team productivity across time periods
-            </p>
-          </div>
-          <div className="flex items-center gap-2 text-dynamic-muted text-sm">
-            <div className="flex items-center gap-1 rounded-full bg-dynamic-green/10 px-3 py-1">
-              <div className="size-2 animate-pulse rounded-full bg-dynamic-green" />
-              Live Dashboard
+          <div className="space-y-3">
+            <div className="flex items-center gap-4">
+              <div className="rounded-lg bg-gradient-to-br from-dynamic-blue/20 to-dynamic-purple/20 p-3 ring-2 ring-dynamic-blue/10">
+                <Clock className="size-8 text-dynamic-blue" />
+              </div>
+              <div>
+                <h1 className="bg-gradient-to-r from-dynamic-blue to-dynamic-purple bg-clip-text font-bold text-3xl text-transparent">
+                  Time Tracker Management
+                </h1>
+                <p className="mt-1 text-base text-dynamic-muted">
+                  Monitor and analyze team productivity across time periods
+                </p>
+              </div>
             </div>
           </div>
-        </div>
-
-        {/* Enhanced Stats Cards */}
-        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-          <Card className="border-dynamic-blue/20 bg-gradient-to-br from-dynamic-blue/5 to-dynamic-blue/10">
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="font-medium text-dynamic-muted text-sm">
-                Total{' '}
-                {period === 'day'
-                  ? 'Daily'
-                  : period === 'week'
-                    ? 'Weekly'
-                    : 'Monthly'}{' '}
-                Sessions
-              </CardTitle>
-              <div className="rounded-full bg-dynamic-blue/20 p-2">
-                <Calendar className="size-4 text-dynamic-blue" />
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="font-bold text-2xl text-dynamic-blue">
-                {displayStats.totalSessions}
-              </div>
-              <p className="mt-1 text-dynamic-muted text-xs">
-                {displayStats.totalSessions > 0
-                  ? `Across ${displayStats.activeUsers} user${displayStats.activeUsers === 1 ? '' : 's'}`
-                  : 'No sessions yet'}
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card className="border-dynamic-green/20 bg-gradient-to-br from-dynamic-green/5 to-dynamic-green/10">
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="font-medium text-dynamic-muted text-sm">
-                Active Sessions
-              </CardTitle>
-              <div className="rounded-full bg-dynamic-green/20 p-2">
-                <Play className="size-4 text-dynamic-green" />
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="font-bold text-2xl text-dynamic-green">
-                {displayStats.activeSessions}
-              </div>
-              <p className="mt-1 text-dynamic-muted text-xs">
-                {displayStats.activeSessions > 0
-                  ? 'Currently in progress'
-                  : 'No active sessions'}
-              </p>
-              {displayStats.activeSessions > 0 && (
-                <div className="mt-2">
-                  <div className="flex items-center gap-1">
-                    <div className="size-2 animate-pulse rounded-full bg-dynamic-green" />
-                    <span className="text-dynamic-green text-xs">
-                      Live tracking
-                    </span>
-                  </div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          <Card className="border-dynamic-yellow/20 bg-gradient-to-br from-dynamic-yellow/5 to-dynamic-yellow/10">
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="font-medium text-dynamic-muted text-sm">
-                Today's Work
-              </CardTitle>
-              <div className="rounded-full bg-dynamic-yellow/20 p-2">
-                <Target className="size-4 text-dynamic-yellow" />
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="font-bold text-2xl text-dynamic-yellow">
-                {formatDuration(displayStats.todayTime)}
-              </div>
-              <p className="mt-1 text-dynamic-muted text-xs">
-                {displayStats.todaySessions} session
-                {displayStats.todaySessions !== 1 ? 's' : ''} today
-              </p>
-              <div className="mt-2 h-1 rounded-full bg-dynamic-yellow/20">
-                <div
-                  className="h-1 rounded-full bg-dynamic-yellow transition-all duration-500"
-                  style={{
-                    width: `${Math.min(100, (displayStats.todayTime / (8 * 3600)) * 100)}%`,
-                  }}
-                />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="border-dynamic-purple/20 bg-gradient-to-br from-dynamic-purple/5 to-dynamic-purple/10">
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="font-medium text-dynamic-muted text-sm">
-                {period === 'day'
-                  ? 'Daily Average'
-                  : period === 'week'
-                    ? 'This Week'
-                    : 'This Month'}
-              </CardTitle>
-              <div className="rounded-full bg-dynamic-purple/20 p-2">
-                <TrendingUp className="size-4 text-dynamic-purple" />
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="font-bold text-2xl text-dynamic-purple">
-                {period === 'day'
-                  ? formatDuration(
-                      displayStats.totalSessions > 0
-                        ? groupedSessions.reduce(
-                            (sum, s) => sum + s.totalDuration,
-                            0
-                          ) / displayStats.totalSessions
-                        : 0
-                    )
-                  : period === 'week'
-                    ? formatDuration(displayStats.weekTime)
-                    : formatDuration(displayStats.monthTime)}
-              </div>
-              <p className="mt-1 text-dynamic-muted text-xs">
-                {period === 'day'
-                  ? 'Per session average'
-                  : `Current ${period} total`}
-              </p>
-            </CardContent>
-          </Card>
         </div>
       </div>
 
-      {/* Main content */}
-      <div>
-        <div className="space-y-4">
-          {/* Enhanced Filters and Controls */}
-          <div className="mb-6 flex flex-col items-start gap-4 sm:flex-row sm:items-center">
-            <div className="relative w-full max-w-sm">
-              <Search className="-translate-y-1/2 absolute top-1/2 left-3 size-4 transform text-dynamic-muted" />
-              <Input
-                placeholder="Search by user, category, or session title..."
-                value={searchQuery}
-                onChange={(e) => handleSearchChange(e.target.value)}
-                className="border-dynamic-border/20 bg-dynamic-muted/5 pl-10"
-              />
+      {/* Error Display */}
+      {error && (
+        <div className="overflow-hidden rounded-xl border border-dynamic-red/20 bg-gradient-to-r from-dynamic-red/10 to-dynamic-orange/10 p-6 transition-all duration-300">
+          <div className="flex items-center gap-4">
+            <div className="rounded-lg bg-dynamic-red/20 p-2 ring-2 ring-dynamic-red/10">
+              <AlertCircle className="size-5 text-dynamic-red" />
             </div>
-            <div className="flex items-center gap-2">
-              <Filter className="size-4 text-dynamic-muted" />
-              <Select value={period} onValueChange={handlePeriodChange}>
-                <SelectTrigger className="w-36">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="day">Daily View</SelectItem>
-                  <SelectItem value="week">Weekly View</SelectItem>
-                  <SelectItem value="month">Monthly View</SelectItem>
-                </SelectContent>
-              </Select>
+            <div>
+              <h4 className="font-semibold text-base text-dynamic-red">
+                Error Loading Data
+              </h4>
+              <p className="mt-1 text-dynamic-red/80 text-sm">{error}</p>
             </div>
+          </div>
+        </div>
+      )}
 
-            <div className="flex items-center gap-2 text-dynamic-muted text-sm">
-              <Users className="size-4" />
-              <span>
-                {displayStats.activeUsers} active user
-                {displayStats.activeUsers === 1 ? '' : 's'}
+      {/* Loading Overlay */}
+      {isLoading && (
+        <div className="overflow-hidden rounded-xl border border-dynamic-blue/20 bg-gradient-to-r from-dynamic-blue/10 to-dynamic-purple/10 p-6 transition-all duration-300">
+          <div className="flex items-center gap-4">
+            <div className="rounded-lg bg-dynamic-blue/20 p-2 ring-2 ring-dynamic-blue/10">
+              <Loader2 className="size-5 animate-spin text-dynamic-blue" />
+            </div>
+            <div>
+              <span className="font-medium text-base text-dynamic-blue">
+                Applying filters and loading data...
               </span>
+              <p className="mt-1 text-dynamic-blue/80 text-sm">
+                Please wait while we refresh your data
+              </p>
             </div>
           </div>
+        </div>
+      )}
 
-          {/* Pagination and Results Info */}
-          {pagination && (
-            <div className="mb-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-              <div className="text-dynamic-muted text-sm">
-                Showing {(pagination.page - 1) * pagination.limit + 1} to{' '}
-                {Math.min(pagination.page * pagination.limit, pagination.total)}{' '}
-                of {pagination.total} results
+      {/* Dashboard Layout */}
+      <div className="grid gap-6 pb-4">
+        {/* Statistics Overview */}
+        <Suspense fallback={<ManagementCardSkeleton />}>
+          <StatsOverview
+            stats={displayStats}
+            period={period}
+            groupedSessions={groupedSessions}
+          />
+        </Suspense>
+
+        {/* Filters Panel */}
+        <Suspense fallback={<ManagementCardSkeleton />}>
+          <FiltersPanel
+            searchQuery={searchQuery}
+            onSearchChange={handleSearchChange}
+            startDate={startDate}
+            endDate={endDate}
+            onStartDateChange={handleStartDateChange}
+            onEndDateChange={handleEndDateChange}
+            onClearDateFilters={handleClearDateFilters}
+            period={period}
+            onPeriodChange={handlePeriodChange}
+            isLoading={isLoading}
+            onDateRangeChange={handleDateRangeChange}
+          />
+        </Suspense>
+
+        {/* Sessions Table */}
+        <Suspense fallback={<ManagementCardSkeleton />}>
+          <SessionsTable
+            sessions={groupedSessions}
+            pagination={pagination}
+            period={period}
+            onViewDetails={handleViewDetails}
+            onPageChange={handlePageChange}
+            onLimitChange={handleLimitChange}
+            isLoading={isLoading || isExporting}
+            hasActiveFilters={!!hasActiveFilters}
+            onClearFilters={clearAllFilters}
+            onExportCSV={handleExportCSV}
+            onExportExcel={handleExportExcel}
+          />
+        </Suspense>
+      </div>
+
+      {/* Export Progress Dialog */}
+      <Dialog open={isExporting} onOpenChange={() => {}}>
+        <DialogContent className="sm:max-w-md" showXIcon={false}>
+          <div className="space-y-6 p-2">
+            {/* Header */}
+            <div className="flex items-center gap-4">
+              <div className="flex size-12 items-center justify-center rounded-full bg-gradient-to-br from-dynamic-green/20 to-dynamic-blue/20 ring-2 ring-dynamic-green/10">
+                <Loader2 className="size-6 animate-spin text-dynamic-green" />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-semibold text-dynamic-foreground text-lg">
+                  Exporting {exportType === 'csv' ? 'CSV' : 'Excel'} File
+                </h3>
+                <p className="text-dynamic-muted text-sm">
+                  Please don't close this window while exporting
+                </p>
+              </div>
+            </div>
+
+            {/* Progress Bar */}
+            <div className="space-y-4">
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-dynamic-foreground">Progress</span>
+                <span className="font-medium font-mono text-dynamic-green">
+                  {Math.round(exportProgress)}%
+                </span>
               </div>
 
-              <div className="flex items-center gap-4">
-                {/* Items per page selector */}
-                <div className="flex items-center gap-2">
-                  <span className="text-dynamic-muted text-sm">Per page:</span>
-                  <Select
-                    value={pagination.limit.toString()}
-                    onValueChange={handleLimitChange}
-                  >
-                    <SelectTrigger className="w-20">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="10">10</SelectItem>
-                      <SelectItem value="20">20</SelectItem>
-                      <SelectItem value="50">50</SelectItem>
-                      <SelectItem value="100">100</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+              <Progress
+                value={exportProgress}
+                className="h-3 bg-dynamic-muted/20"
+              />
 
-                {/* Page navigation */}
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handlePageChange(pagination.page - 1)}
-                    disabled={pagination.page <= 1}
-                  >
-                    <ChevronLeft className="size-4" />
-                  </Button>
-
-                  <span className="text-dynamic-muted text-sm">
-                    Page {pagination.page} of {pagination.pages}
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-dynamic-muted">{exportStatus}</span>
+                {estimatedTimeRemaining > 0 && (
+                  <span className="text-dynamic-muted">
+                    ~{formatTimeRemaining(estimatedTimeRemaining)} remaining
                   </span>
+                )}
+              </div>
+            </div>
 
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handlePageChange(pagination.page + 1)}
-                    disabled={pagination.page >= pagination.pages}
-                  >
-                    <ChevronRight className="size-4" />
-                  </Button>
+            {/* Tips */}
+            <div className="rounded-lg border border-dynamic-blue/20 bg-dynamic-blue/5 p-4">
+              <div className="flex items-start gap-3">
+                <div className="mt-0.5 flex size-5 items-center justify-center rounded-full bg-dynamic-blue/20">
+                  <span className="text-dynamic-blue text-xs">💡</span>
+                </div>
+                <div className="flex-1 text-xs">
+                  <p className="font-medium text-dynamic-blue">Export Tips</p>
+                  <p className="mt-1 text-dynamic-blue/80">
+                    Large exports may take a few minutes. The file will download
+                    automatically when complete.
+                  </p>
                 </div>
               </div>
             </div>
-          )}
-
-          {/* Sessions Table */}
-          <Card className="border-dynamic-border/20">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-dynamic-foreground">
-                <Clock className="size-5" />
-                Time Tracking Sessions
-                <Badge variant="secondary" className="ml-2">
-                  {sortedSessions.length}{' '}
-                  {period === 'day'
-                    ? 'days'
-                    : period === 'week'
-                      ? 'weeks'
-                      : 'months'}
-                </Badge>
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-0">
-              <Table>
-                <TableHeader>
-                  <TableRow className="border-dynamic-border/20 bg-dynamic-muted/5">
-                    <TableHead className="text-dynamic-muted">
-                      User & Period
-                    </TableHead>
-                    <TableHead className="text-dynamic-muted">
-                      Sessions & Activities
-                    </TableHead>
-                    <TableHead className="text-dynamic-muted">
-                      Duration & Progress
-                    </TableHead>
-                    <TableHead className="text-dynamic-muted">
-                      Time Range
-                    </TableHead>
-                    <TableHead className="text-dynamic-muted">Status</TableHead>
-                    <TableHead className="w-16 text-dynamic-muted">
-                      Actions
-                    </TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {sortedSessions.map((session, index) => (
-                    <TableRow
-                      // biome-ignore lint: false positive
-                      key={`grouped-session-${index}`}
-                      className="group hover:bg-dynamic-muted/3"
-                    >
-                      {/* Period & User */}
-                      <TableCell className="py-4">
-                        <div className="flex items-center gap-3">
-                          <Avatar className="size-10">
-                            <AvatarImage
-                              src={
-                                session.user.avatarUrl ||
-                                `https://i.pravatar.cc/40?u=${session.user.displayName}`
-                              }
-                              alt={session.user.displayName || 'User'}
-                            />
-                            <AvatarFallback>
-                              {getInitials(
-                                session.user.displayName || 'Unknown User'
-                              )}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div>
-                            <p className="font-semibold text-dynamic-foreground">
-                              {session.user.displayName}
-                            </p>
-                            <p className="text-dynamic-muted text-sm">
-                              {formatPeriodDisplay(session.period, period)}
-                            </p>
-                          </div>
-                        </div>
-                      </TableCell>
-
-                      {/* Session Summary */}
-                      <TableCell>
-                        <div className="space-y-2">
-                          <div className="flex items-center gap-2">
-                            <span className="font-medium text-dynamic-foreground">
-                              {session.sessions.length} session
-                              {session.sessions.length !== 1 ? 's' : ''}
-                            </span>
-                          </div>
-                          <div className="flex flex-wrap gap-1">
-                            {Array.from(
-                              new Set(
-                                session.sessions
-                                  .map((s) => s.title)
-                                  .filter(Boolean)
-                              )
-                            )
-                              .slice(0, 2)
-                              .map((title) => (
-                                <Badge
-                                  key={title}
-                                  variant="outline"
-                                  className="border-dynamic-border/30 bg-dynamic-muted/20 text-xs"
-                                >
-                                  {title}
-                                </Badge>
-                              ))}
-                            {Array.from(
-                              new Set(
-                                session.sessions
-                                  .map((s) => s.title)
-                                  .filter(Boolean)
-                              )
-                            ).length > 2 && (
-                              <Badge
-                                variant="outline"
-                                className="border-dynamic-border/30 bg-dynamic-muted/20 text-xs"
-                              >
-                                +
-                                {Array.from(
-                                  new Set(
-                                    session.sessions
-                                      .map((s) => s.title)
-                                      .filter(Boolean)
-                                  )
-                                ).length - 2}{' '}
-                                more
-                              </Badge>
-                            )}
-                          </div>
-                        </div>
-                      </TableCell>
-
-                      {/* Duration & Progress */}
-                      <TableCell>
-                        <div className="space-y-2">
-                          <div className="font-medium font-mono text-dynamic-foreground text-lg">
-                            {formatDuration(session.totalDuration)}
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <div className="h-2 w-20 rounded-full bg-dynamic-muted/20">
-                              <div
-                                className="h-2 rounded-full bg-dynamic-blue transition-all duration-300"
-                                style={{
-                                  width: `${Math.min(100, (session.totalDuration / (8 * 3600)) * 100)}%`,
-                                }}
-                              />
-                            </div>
-                            <span className="text-dynamic-muted text-xs">
-                              {Math.round(
-                                (session.totalDuration / (8 * 3600)) * 100
-                              )}
-                              %
-                            </span>
-                          </div>
-                          <p className="text-dynamic-muted text-xs">
-                            Avg:{' '}
-                            {formatDuration(
-                              session.totalDuration / session.sessions.length
-                            )}
-                          </p>
-                        </div>
-                      </TableCell>
-
-                      {/* Time Range */}
-                      <TableCell>
-                        <div className="space-y-1">
-                          <div className="flex items-center gap-1 text-dynamic-foreground text-sm">
-                            <Play className="size-3 text-dynamic-green" />
-                            {formatTime(session.firstStartTime)}
-                          </div>
-                          {session.lastEndTime && (
-                            <div className="flex items-center gap-1 text-dynamic-foreground text-sm">
-                              <Pause className="size-3 text-dynamic-red" />
-                              {formatTime(session.lastEndTime)}
-                            </div>
-                          )}
-                        </div>
-                      </TableCell>
-
-                      {/* Status */}
-                      <TableCell>
-                        <Badge
-                          variant="outline"
-                          className={getStatusColor(session.status)}
-                        >
-                          {getStatusIcon(session.status)}
-                          {session.status}
-                        </Badge>
-                      </TableCell>
-
-                      {/* Actions */}
-                      <TableCell>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="size-8 text-dynamic-blue opacity-0 transition-opacity hover:bg-dynamic-blue/10 hover:text-dynamic-blue group-hover:opacity-100"
-                          onClick={() => handleViewDetails(session)}
-                        >
-                          <Eye className="size-4" />
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-              {sortedSessions.length === 0 && (
-                <div className="p-12 text-center">
-                  <div className="mx-auto mb-4 flex size-16 items-center justify-center rounded-full bg-dynamic-muted/10">
-                    <Clock className="size-8 text-dynamic-muted" />
-                  </div>
-                  <h3 className="mb-2 font-semibold text-dynamic-foreground text-lg">
-                    No sessions found
-                  </h3>
-                  <p className="mx-auto max-w-sm text-dynamic-muted">
-                    {searchQuery ? (
-                      <>
-                        No sessions match your search criteria. Try adjusting
-                        your filters or search terms.
-                      </>
-                    ) : (
-                      <>
-                        No time tracking sessions have been recorded yet.
-                        Sessions will appear here once users start tracking
-                        their time.
-                      </>
-                    )}
-                  </p>
-                  {searchQuery && (
-                    <Button
-                      variant="outline"
-                      onClick={() => setSearchQuery('')}
-                      className="mt-4"
-                    >
-                      Clear search
-                    </Button>
-                  )}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-      </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Enhanced Session Details Modal */}
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
         <DialogContent className="flex h-[90vh] w-[95vw] max-w-2xl flex-col overflow-hidden sm:max-w-4xl md:max-w-5xl lg:max-w-6xl xl:max-w-7xl">
           <DialogHeader className="flex-shrink-0 border-dynamic-border/20 border-b pb-4">
             <div className="flex items-center gap-3">
-              <Avatar className="size-10 border border-dynamic-border/20 sm:size-12">
-                <AvatarImage
-                  src={selectedSession?.user.avatarUrl || undefined}
-                  alt={selectedSession?.user.displayName || 'User'}
-                />
-                <AvatarFallback className="bg-dynamic-muted/10 font-medium text-dynamic-foreground text-sm">
+              <div className="flex size-10 items-center justify-center rounded-full border border-dynamic-border/20 bg-dynamic-muted/10 sm:size-12">
+                <span className="font-medium text-dynamic-foreground text-sm">
                   {getInitials(
                     selectedSession?.user.displayName || 'Unknown User'
                   )}
-                </AvatarFallback>
-              </Avatar>
+                </span>
+              </div>
               <div>
                 <DialogTitle className="text-dynamic-foreground text-lg sm:text-xl">
                   {selectedSession?.user.displayName || 'Unknown User'} - Time
@@ -843,360 +813,111 @@ export default function TimeTrackerManagementClient({
                 </DialogTitle>
                 <p className="text-dynamic-muted text-sm">
                   {selectedSession &&
-                    formatPeriodDisplay(selectedSession.period, period)}
+                    `${selectedSession.sessions.length} sessions in ${period} period`}
                 </p>
               </div>
             </div>
           </DialogHeader>
 
           {selectedSession && (
-            <div className="flex-1 space-y-6 overflow-y-auto p-1">
-              {/* Session Overview Cards */}
-              <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-                <Card className="border-dynamic-blue/20 bg-gradient-to-br from-dynamic-blue/5 to-dynamic-blue/10 p-4">
-                  <div className="text-center">
+            <div className="flex-1 overflow-y-auto p-1">
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+                  <div className="rounded-lg border border-dynamic-blue/20 bg-dynamic-blue/5 p-4 text-center">
                     <div className="font-bold text-2xl text-dynamic-blue">
                       {selectedSession.sessions.length}
                     </div>
-                    <div className="text-dynamic-muted text-sm">
-                      Total Sessions
-                    </div>
+                    <div className="text-dynamic-muted text-sm">Sessions</div>
                   </div>
-                </Card>
-                <Card className="border-dynamic-green/20 bg-gradient-to-br from-dynamic-green/5 to-dynamic-green/10 p-4">
-                  <div className="text-center">
+
+                  <div className="rounded-lg border border-dynamic-green/20 bg-dynamic-green/5 p-4 text-center">
                     <div className="font-bold text-2xl text-dynamic-green">
-                      {formatDuration(selectedSession.totalDuration)}
+                      {dayjs
+                        .duration(selectedSession.totalDuration, 'seconds')
+                        .format('H:mm')}
                     </div>
                     <div className="text-dynamic-muted text-sm">Total Time</div>
                   </div>
-                </Card>
-                <Card className="border-dynamic-yellow/20 bg-gradient-to-br from-dynamic-yellow/5 to-dynamic-yellow/10 p-4">
-                  <div className="text-center">
+
+                  <div className="rounded-lg border border-dynamic-yellow/20 bg-dynamic-yellow/5 p-4 text-center">
                     <div className="font-bold text-2xl text-dynamic-yellow">
-                      {formatDuration(
-                        selectedSession.totalDuration /
-                          selectedSession.sessions.length
-                      )}
+                      {dayjs
+                        .duration(
+                          selectedSession.totalDuration /
+                            selectedSession.sessions.length,
+                          'seconds'
+                        )
+                        .format('H:mm')}
                     </div>
                     <div className="text-dynamic-muted text-sm">
                       Avg Session
                     </div>
                   </div>
-                </Card>
-                <Card className="border-dynamic-purple/20 bg-gradient-to-br from-dynamic-purple/5 to-dynamic-purple/10 p-4">
-                  <div className="text-center">
+
+                  <div className="rounded-lg border border-dynamic-purple/20 bg-dynamic-purple/5 p-4 text-center">
                     <div className="font-bold text-2xl text-dynamic-purple">
                       {
                         selectedSession.sessions.filter((s) => s.is_running)
                           .length
                       }
                     </div>
-                    <div className="text-dynamic-muted text-sm">Active Now</div>
+                    <div className="text-dynamic-muted text-sm">Active</div>
                   </div>
-                </Card>
-              </div>
+                </div>
 
-              {/* Session Summary */}
-              <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-                <Card className="border-dynamic-border/20 p-4">
+                <div className="rounded-lg border border-dynamic-border/20 p-4">
                   <h4 className="mb-3 font-semibold text-dynamic-foreground">
-                    Session Breakdown
+                    Session List
                   </h4>
                   <div className="space-y-3">
-                    <div className="flex justify-between">
-                      <span className="text-dynamic-muted">Period:</span>
-                      <span className="font-medium text-dynamic-foreground">
-                        {formatPeriodDisplay(selectedSession.period, period)}
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-dynamic-muted">First Session:</span>
-                      <span className="font-medium text-dynamic-foreground">
-                        {formatTime(selectedSession.firstStartTime)}
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-dynamic-muted">Last Session:</span>
-                      <span className="font-medium text-dynamic-foreground">
-                        {selectedSession.lastEndTime
-                          ? formatTime(selectedSession.lastEndTime)
-                          : 'In Progress'}
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-dynamic-muted">Status:</span>
-                      <Badge
-                        variant="outline"
-                        className={getStatusColor(selectedSession.status)}
-                      >
-                        {getStatusIcon(selectedSession.status)}
-                        {selectedSession.status}
-                      </Badge>
-                    </div>
-                  </div>
-                </Card>
-
-                <Card className="border-dynamic-border/20 p-4">
-                  <h4 className="mb-3 font-semibold text-dynamic-foreground">
-                    Productivity Insights
-                  </h4>
-                  <div className="space-y-3">
-                    <div>
-                      <div className="mb-1 flex justify-between text-sm">
-                        <span className="text-dynamic-muted">
-                          Daily Goal Progress
-                        </span>
-                        <span className="text-dynamic-foreground">
-                          {Math.round(
-                            (selectedSession.totalDuration / (8 * 3600)) * 100
-                          )}
-                          %
-                        </span>
-                      </div>
-                      <div className="h-2 rounded-full bg-dynamic-muted/20">
+                    {selectedSession.sessions
+                      .sort(
+                        (a, b) =>
+                          new Date(b.start_time).getTime() -
+                          new Date(a.start_time).getTime()
+                      )
+                      .map((session) => (
                         <div
-                          className="h-2 rounded-full bg-dynamic-blue transition-all duration-300"
-                          style={{
-                            width: `${Math.min(100, (selectedSession.totalDuration / (8 * 3600)) * 100)}%`,
-                          }}
-                        />
-                      </div>
-                    </div>
-                    <div className="space-y-2 pt-2">
-                      <div className="flex justify-between text-sm">
-                        <span className="text-dynamic-muted">
-                          Shortest Session:
-                        </span>
-                        <span className="text-dynamic-foreground">
-                          {formatDuration(
-                            Math.min(
-                              ...selectedSession.sessions
-                                .filter((s) => s.duration_seconds)
-                                .map((s) => s.duration_seconds || 0)
-                            )
-                          )}
-                        </span>
-                      </div>
-                      <div className="flex justify-between text-sm">
-                        <span className="text-dynamic-muted">
-                          Longest Session:
-                        </span>
-                        <span className="text-dynamic-foreground">
-                          {formatDuration(
-                            Math.max(
-                              ...selectedSession.sessions
-                                .filter((s) => s.duration_seconds)
-                                .map((s) => s.duration_seconds || 0)
-                            )
-                          )}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </Card>
-              </div>
-
-              {/* Hierarchical Sessions Display */}
-              <div>
-                <h4 className="mb-3 font-semibold text-dynamic-foreground">
-                  Individual Sessions ({selectedSession.sessions.length})
-                </h4>
-
-                {(() => {
-                  const groupedData = groupSessionsHierarchically(
-                    selectedSession.sessions
-                  );
-
-                  return (
-                    <div className="space-y-4">
-                      {Object.entries(groupedData).map(
-                        ([monthKey, monthData]) => (
-                          <div
-                            key={monthKey}
-                            className="rounded-lg border border-dynamic-border/20 bg-dynamic-muted/5 p-4"
-                          >
-                            <h5 className="mb-3 font-medium text-dynamic-foreground">
-                              {monthData.label}
-                            </h5>
-
-                            {period === 'month' && monthData.sessions ? (
-                              /* Monthly view - show sessions directly */
-                              <div className="space-y-2">
-                                {monthData.sessions
-                                  .sort(
-                                    (a, b) =>
-                                      new Date(b.start_time).getTime() -
-                                      new Date(a.start_time).getTime()
-                                  )
-                                  .map((session) => (
-                                    <div
-                                      key={session.id}
-                                      className="flex items-center justify-between rounded-md border border-dynamic-border/10 bg-dynamic-background p-3"
-                                    >
-                                      <div className="flex-1">
-                                        <div className="font-medium text-dynamic-foreground">
-                                          {session.title}
-                                        </div>
-                                        <div className="text-dynamic-muted text-sm">
-                                          {session.description ||
-                                            'No description'}
-                                        </div>
-                                      </div>
-                                      <div className="text-right">
-                                        <div className="font-mono text-dynamic-foreground text-sm">
-                                          {session.duration_seconds
-                                            ? formatDuration(
-                                                session.duration_seconds
-                                              )
-                                            : 'Running...'}
-                                        </div>
-                                        <div className="text-dynamic-muted text-xs">
-                                          {formatTime(session.start_time)}
-                                        </div>
-                                      </div>
-                                    </div>
-                                  ))}
+                          key={session.id}
+                          className="flex items-center justify-between rounded-md border border-dynamic-border/10 bg-dynamic-muted/5 p-3"
+                        >
+                          <div className="flex-1">
+                            <div className="font-medium text-dynamic-foreground">
+                              {session.title || 'Untitled Session'}
+                            </div>
+                            <div className="text-dynamic-muted text-sm">
+                              {dayjs(session.start_time).format(
+                                'MMM D, YYYY HH:mm'
+                              )}
+                            </div>
+                            {session.description && (
+                              <div className="text-dynamic-muted text-sm">
+                                {session.description}
                               </div>
-                            ) : period === 'week' && monthData.weeks ? (
-                              /* Weekly view - show weeks then sessions */
-                              <div className="space-y-3">
-                                {Object.entries(monthData.weeks).map(
-                                  ([weekKey, weekData]) => (
-                                    <div
-                                      key={weekKey}
-                                      className="rounded-md border border-dynamic-border/10 bg-dynamic-background p-3"
-                                    >
-                                      <h6 className="mb-2 font-medium text-dynamic-foreground text-sm">
-                                        {weekData.label}
-                                      </h6>
-                                      {weekData.sessions && (
-                                        <div className="space-y-2">
-                                          {weekData.sessions
-                                            .sort(
-                                              (a, b) =>
-                                                new Date(
-                                                  b.start_time
-                                                ).getTime() -
-                                                new Date(a.start_time).getTime()
-                                            )
-                                            .map((session) => (
-                                              <div
-                                                key={session.id}
-                                                className="flex items-center justify-between rounded border border-dynamic-border/5 bg-dynamic-muted/10 p-2"
-                                              >
-                                                <div className="flex-1">
-                                                  <div className="font-medium text-dynamic-foreground text-sm">
-                                                    {session.title}
-                                                  </div>
-                                                  <div className="text-dynamic-muted text-xs">
-                                                    {session.description ||
-                                                      'No description'}
-                                                  </div>
-                                                </div>
-                                                <div className="text-right">
-                                                  <div className="font-mono text-dynamic-foreground text-xs">
-                                                    {session.duration_seconds
-                                                      ? formatDuration(
-                                                          session.duration_seconds
-                                                        )
-                                                      : 'Running...'}
-                                                  </div>
-                                                  <div className="text-dynamic-muted text-xs">
-                                                    {formatTime(
-                                                      session.start_time
-                                                    )}
-                                                  </div>
-                                                </div>
-                                              </div>
-                                            ))}
-                                        </div>
-                                      )}
-                                    </div>
-                                  )
-                                )}
-                              </div>
-                            ) : monthData.weeks ? (
-                              /* Daily view - show weeks, then days, then sessions */
-                              <div className="space-y-3">
-                                {Object.entries(monthData.weeks).map(
-                                  ([weekKey, weekData]) => (
-                                    <div
-                                      key={weekKey}
-                                      className="rounded-md border border-dynamic-border/10 bg-dynamic-background p-3"
-                                    >
-                                      <h6 className="mb-2 font-medium text-dynamic-foreground text-sm">
-                                        {weekData.label}
-                                      </h6>
-                                      {weekData.days && (
-                                        <div className="space-y-2">
-                                          {Object.entries(weekData.days).map(
-                                            ([dayKey, dayData]) => (
-                                              <div
-                                                key={dayKey}
-                                                className="rounded border border-dynamic-border/5 bg-dynamic-muted/10 p-2"
-                                              >
-                                                <div className="mb-2 font-medium text-dynamic-foreground text-sm">
-                                                  {dayData.label}
-                                                </div>
-                                                <div className="space-y-1">
-                                                  {dayData.sessions
-                                                    .sort(
-                                                      (a, b) =>
-                                                        new Date(
-                                                          b.start_time
-                                                        ).getTime() -
-                                                        new Date(
-                                                          a.start_time
-                                                        ).getTime()
-                                                    )
-                                                    .map((session) => (
-                                                      <div
-                                                        key={session.id}
-                                                        className="flex items-center justify-between rounded bg-dynamic-background p-2"
-                                                      >
-                                                        <div className="flex-1">
-                                                          <div className="font-medium text-dynamic-foreground text-sm">
-                                                            {session.title}
-                                                          </div>
-                                                          <div className="text-dynamic-muted text-xs">
-                                                            {session.description ||
-                                                              'No description'}
-                                                          </div>
-                                                        </div>
-                                                        <div className="text-right">
-                                                          <div className="font-mono text-dynamic-foreground text-xs">
-                                                            {session.duration_seconds
-                                                              ? formatDuration(
-                                                                  session.duration_seconds
-                                                                )
-                                                              : 'Running...'}
-                                                          </div>
-                                                          <div className="text-dynamic-muted text-xs">
-                                                            {formatTime(
-                                                              session.start_time
-                                                            )}
-                                                          </div>
-                                                        </div>
-                                                      </div>
-                                                    ))}
-                                                </div>
-                                              </div>
-                                            )
-                                          )}
-                                        </div>
-                                      )}
-                                    </div>
-                                  )
-                                )}
-                              </div>
-                            ) : null}
+                            )}
                           </div>
-                        )
-                      )}
-                    </div>
-                  );
-                })()}
+                          <div className="text-right">
+                            <div className="font-mono text-dynamic-foreground text-sm">
+                              {session.duration_seconds
+                                ? dayjs
+                                    .duration(
+                                      session.duration_seconds,
+                                      'seconds'
+                                    )
+                                    .format('H:mm:ss')
+                                : 'Running...'}
+                            </div>
+                            {session.is_running && (
+                              <div className="flex items-center justify-end gap-1 text-dynamic-green text-xs">
+                                <div className="size-2 animate-pulse rounded-full bg-dynamic-green" />
+                                Active
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                  </div>
+                </div>
               </div>
             </div>
           )}

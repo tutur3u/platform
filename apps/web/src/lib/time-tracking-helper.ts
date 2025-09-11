@@ -10,6 +10,8 @@ export interface PaginationParams {
   page?: number;
   limit?: number;
   search?: string;
+  startDate?: string; // ISO date string (YYYY-MM-DD)
+  endDate?: string; // ISO date string (YYYY-MM-DD)
 }
 
 export interface PaginatedResult<T> {
@@ -77,86 +79,120 @@ export const getGroupedSessionsPaginated = async (
   period: 'day' | 'week' | 'month' = 'day',
   params: PaginationParams = {}
 ): Promise<PaginatedResult<GroupedSession>> => {
-  const { page = 1, limit = 50, search } = params;
+  const { page = 1, limit = 50, search, startDate, endDate } = params;
   const supabase = await createClient();
 
-  // Since the RPC might not be available in types yet, we'll call it directly
-  try {
-    const { data, error } = await supabase.rpc(
-      'get_time_tracking_sessions_paginated',
-      {
-        p_ws_id: wsId,
-        p_period: period,
-        p_page: page,
-        p_limit: limit,
-        p_search: search || undefined,
-      }
-    );
+  // Try RPC first, but fall back if date filtering is needed or RPC fails
+  if (!startDate && !endDate) {
+    try {
+      const { data, error } = await supabase.rpc(
+        'get_time_tracking_sessions_paginated',
+        {
+          p_ws_id: wsId,
+          p_period: period,
+          p_page: page,
+          p_limit: limit,
+          p_search: search || undefined,
+        }
+      );
 
-    if (error) {
-      console.error('Error fetching paginated sessions:', error);
-      throw new Error('Failed to fetch time tracking sessions');
+      if (error) {
+        console.error('Error fetching paginated sessions:', error);
+        throw new Error('RPC function failed');
+      }
+
+      return (
+        (data as unknown as PaginatedResult<GroupedSession>) || {
+          data: [],
+          pagination: { page, limit, total: 0, pages: 0 },
+        }
+      );
+    } catch (error) {
+      console.error('RPC not available, falling back to legacy method:', error);
     }
-
-    return (
-      (data as unknown as PaginatedResult<GroupedSession>) || {
-        data: [],
-        pagination: { page, limit, total: 0, pages: 0 },
-      }
-    );
-  } catch (error) {
-    console.error('RPC not available, falling back to legacy method:', error);
-    // Fallback to legacy method if RPC is not available
-    return await getFallbackGroupedSessions(wsId, period, params);
   }
+
+  // Use fallback method for date filtering or when RPC fails
+  return await getFallbackGroupedSessions(wsId, period, params);
 };
 
-// Fallback method for when RPC is not available
+// Fallback method for when RPC is not available or date filtering is needed
 const getFallbackGroupedSessions = async (
   wsId: string,
   period: 'day' | 'week' | 'month' = 'day',
   params: PaginationParams = {}
 ): Promise<PaginatedResult<GroupedSession>> => {
-  const { page = 1, limit = 50, search } = params;
+  const { page = 1, limit = 50, search, startDate, endDate } = params;
   const supabase = await createClient();
 
-  let query = supabase
-    .from('time_tracking_sessions')
-    .select(`
-      *,
-      category:time_tracking_categories(name, color),
-      user:users(display_name, avatar_url)
-    `)
-    .eq('ws_id', wsId)
-    .order('start_time', { ascending: false });
+  try {
+    let query = supabase
+      .from('time_tracking_sessions')
+      .select(`
+        *,
+        category:time_tracking_categories(name, color),
+        user:users(display_name, avatar_url)
+      `)
+      .eq('ws_id', wsId)
+      .order('start_time', { ascending: false });
 
-  if (search) {
-    query = query.or(
-      `title.ilike.%${search}%,user.display_name.ilike.%${search}%`
-    );
+    // Add search filtering
+    if (search?.trim()) {
+      query = query.or(
+        `title.ilike.%${search}%,user.display_name.ilike.%${search}%`
+      );
+    }
+
+    // Add date range filtering with proper timezone handling
+    if (startDate) {
+      query = query.gte('start_time', `${startDate}T00:00:00.000Z`);
+    }
+    if (endDate) {
+      query = query.lte('start_time', `${endDate}T23:59:59.999Z`);
+    }
+
+    // Fetch a reasonable amount of data for grouping
+    const multiplier = Math.max(3, limit / 10); // Ensure we get enough data for grouping
+    const { data: sessions, error } = await query.limit(limit * multiplier);
+
+    if (error) {
+      console.error('Fallback query error:', error);
+      throw new Error(
+        `Failed to fetch time tracking sessions: ${error.message}`
+      );
+    }
+
+    if (!sessions || sessions.length === 0) {
+      return {
+        data: [],
+        pagination: { page, limit, total: 0, pages: 0 },
+      };
+    }
+
+    // Group sessions and handle pagination
+    const groupedSessions = groupSessions(sessions, period);
+    const total = groupedSessions.length;
+    const startIndex = (page - 1) * limit;
+    const endIndex = startIndex + limit;
+    const paginatedData = groupedSessions.slice(startIndex, endIndex);
+
+    return {
+      data: paginatedData,
+      pagination: {
+        page,
+        limit,
+        total,
+        pages: Math.ceil(total / limit),
+      },
+    };
+  } catch (error) {
+    console.error('Fallback method failed:', error);
+    // Return empty result instead of throwing to prevent complete UI failure
+    return {
+      data: [],
+      pagination: { page, limit, total: 0, pages: 0 },
+    };
   }
-
-  const { data: sessions, error } = await query.limit(limit * 10); // Get more to account for grouping
-
-  if (error) {
-    throw new Error('Failed to fetch time tracking sessions');
-  }
-
-  const groupedSessions = groupSessions(sessions || [], period);
-  const total = groupedSessions.length;
-  const startIndex = (page - 1) * limit;
-  const endIndex = startIndex + limit;
-  const paginatedData = groupedSessions.slice(startIndex, endIndex);
-
-  return {
-    data: paginatedData,
-    pagination: {
-      page,
-      limit,
-      total,
-      pages: Math.ceil(total / limit),
-    },
-  };
 };
 
 // Get time tracking statistics using database RPC
