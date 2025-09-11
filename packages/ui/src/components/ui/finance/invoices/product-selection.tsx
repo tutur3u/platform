@@ -187,7 +187,9 @@ export function ProductSelection({
                     </p>
                     {groupLinkedProductIds.includes(item.product.id) && (
                       <div className="mt-1">
-                        <Badge variant="secondary" className="text-[10px]">Linked to group</Badge>
+                        <Badge variant="secondary" className="text-[10px]">
+                          Linked to group
+                        </Badge>
                       </div>
                     )}
                   </div>

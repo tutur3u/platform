@@ -50,8 +50,6 @@ import {
 } from './hooks';
 import { AttendanceCalendar } from '@tuturuuu/ui/finance/invoices/attendance-calendar';
 
-
-
 interface Props {
   wsId: string;
   selectedUserId: string;
@@ -72,9 +70,8 @@ export function SubscriptionInvoice({
   const { data: products = [], isLoading: productsLoading } = useProducts(wsId);
   const { data: promotions = [], isLoading: promotionsLoading } =
     usePromotions(wsId);
-  const { data: linkedPromotions = [] } = useUserLinkedPromotions(
-    selectedUserId
-  );
+  const { data: linkedPromotions = [] } =
+    useUserLinkedPromotions(selectedUserId);
   const { data: wallets = [], isLoading: walletsLoading } = useWallets(wsId);
   const { data: categories = [], isLoading: categoriesLoading } =
     useCategories(wsId);
@@ -121,7 +118,8 @@ export function SubscriptionInvoice({
     useUserGroupProducts(selectedGroupId);
 
   // Latest subscription invoice for paid state
-  const { data: latestSubscriptionInvoice = [] } = useUserLatestSubscriptionInvoice(selectedUserId, selectedGroupId);
+  const { data: latestSubscriptionInvoice = [] } =
+    useUserLatestSubscriptionInvoice(selectedUserId, selectedGroupId);
   const latestValidUntil: Date | null = useMemo(() => {
     const raw = (latestSubscriptionInvoice as any[])[0]?.valid_until;
     const d = raw ? new Date(raw) : null;
@@ -143,8 +141,8 @@ export function SubscriptionInvoice({
     selectedPromotionId === 'none'
       ? null
       : promotions.find(
-        (promotion: Promotion) => promotion.id === selectedPromotionId
-      );
+          (promotion: Promotion) => promotion.id === selectedPromotionId
+        );
   const isLoadingSubscriptionData =
     userGroupsLoading || userAttendanceLoading || groupProductsLoading;
   const isLoadingData =
@@ -308,7 +306,13 @@ export function SubscriptionInvoice({
           : { ...item, quantity: cappedQuantity };
       })
     );
-  }, [selectedGroupId, groupProducts, userAttendance?.length, userGroups?.length, selectedMonth]);
+  }, [
+    selectedGroupId,
+    groupProducts,
+    userAttendance?.length,
+    userGroups?.length,
+    selectedMonth,
+  ]);
 
   // Calculate totals for manual product selection
   const subscriptionSubtotal = useMemo(() => {
@@ -428,7 +432,9 @@ export function SubscriptionInvoice({
   };
 
   // Helper functions for attendance status counting
-  const getAttendanceStats = (attendance: { status: string, date: string }[]) => {
+  const getAttendanceStats = (
+    attendance: { status: string; date: string }[]
+  ) => {
     if (!attendance || !Array.isArray(attendance)) {
       return { present: 0, late: 0, absent: 0, total: 0 };
     }
@@ -458,7 +464,9 @@ export function SubscriptionInvoice({
     );
   };
 
-  const getEffectiveAttendanceDays = (attendance: { status: string, date: string }[]) => {
+  const getEffectiveAttendanceDays = (
+    attendance: { status: string; date: string }[]
+  ) => {
     const stats = getAttendanceStats(attendance);
     // Count both PRESENT and LATE as effective attendance
     return stats.present + stats.late;
@@ -625,7 +633,9 @@ export function SubscriptionInvoice({
     if (autoNotes) {
       setInvoiceNotes((prev) => {
         const lines = prev.split('\n').filter(Boolean);
-        const filtered = lines.filter((l) => !l.trim().startsWith('Attendance: '));
+        const filtered = lines.filter(
+          (l) => !l.trim().startsWith('Attendance: ')
+        );
         return [...filtered, autoNotes as string].join('\n');
       });
     }
@@ -704,7 +714,8 @@ export function SubscriptionInvoice({
     if (
       !selectedUser ||
       !selectedGroupId ||
-      (subscriptionSelectedProducts.length === 0 && subscriptionProducts.length === 0) ||
+      (subscriptionSelectedProducts.length === 0 &&
+        subscriptionProducts.length === 0) ||
       !selectedWalletId ||
       !selectedCategoryId
     ) {
@@ -738,7 +749,8 @@ export function SubscriptionInvoice({
         content: invoiceContent,
         notes: invoiceNotes,
         wallet_id: selectedWalletId,
-        promotion_id: selectedPromotionId !== 'none' ? selectedPromotionId : undefined,
+        promotion_id:
+          selectedPromotionId !== 'none' ? selectedPromotionId : undefined,
         products: productsPayload,
         category_id: selectedCategoryId,
         frontend_subtotal: subscriptionSubtotal,
@@ -757,7 +769,9 @@ export function SubscriptionInvoice({
 
       const result = await response.json();
       if (!response.ok) {
-        throw new Error(result.message || 'Failed to create subscription invoice');
+        throw new Error(
+          result.message || 'Failed to create subscription invoice'
+        );
       }
 
       if (result.data?.values_recalculated) {
@@ -765,20 +779,25 @@ export function SubscriptionInvoice({
         const roundingInfo =
           calculated_values.rounding_applied !== 0
             ? ` | Rounding: ${Intl.NumberFormat('vi-VN', {
+                style: 'currency',
+                currency: 'VND',
+              }).format(calculated_values.rounding_applied)}`
+            : '';
+        toast(
+          `Subscription invoice created successfully! Values were recalculated on the server.`,
+          {
+            description: `Server calculated: ${Intl.NumberFormat('vi-VN', {
               style: 'currency',
               currency: 'VND',
-            }).format(calculated_values.rounding_applied)}`
-            : '';
-        toast(`Subscription invoice created successfully! Values were recalculated on the server.`, {
-          description: `Server calculated: ${Intl.NumberFormat('vi-VN', {
-            style: 'currency',
-            currency: 'VND',
-          }).format(calculated_values.total)} | Frontend calculated: ${Intl.NumberFormat('vi-VN', {
-            style: 'currency',
-            currency: 'VND',
-          }).format(frontend_values?.total || 0)}${roundingInfo}`,
-          duration: 5000,
-        });
+            }).format(
+              calculated_values.total
+            )} | Frontend calculated: ${Intl.NumberFormat('vi-VN', {
+              style: 'currency',
+              currency: 'VND',
+            }).format(frontend_values?.total || 0)}${roundingInfo}`,
+            duration: 5000,
+          }
+        );
       } else {
         toast(`Subscription invoice ${result.invoice_id} created successfully`);
       }
@@ -799,7 +818,9 @@ export function SubscriptionInvoice({
       }
     } catch (error: any) {
       console.error('Error creating subscription invoice:', error);
-      toast(`Error creating subscription invoice: ${error.message || 'Failed to create invoice'}`);
+      toast(
+        `Error creating subscription invoice: ${error.message || 'Failed to create invoice'}`
+      );
     } finally {
       setIsCreating(false);
     }
@@ -881,10 +902,11 @@ export function SubscriptionInvoice({
                     return (
                       <div
                         key={group.id}
-                        className={`cursor-pointer rounded-lg border p-4 transition-colors ${selectedGroupId === group.id
-                          ? 'border-primary bg-primary/5'
-                          : 'hover:bg-muted/50'
-                          }`}
+                        className={`cursor-pointer rounded-lg border p-4 transition-colors ${
+                          selectedGroupId === group.id
+                            ? 'border-primary bg-primary/5'
+                            : 'hover:bg-muted/50'
+                        }`}
                         onClick={() => setSelectedGroupId(group.id)}
                       >
                         <div className="flex items-center justify-between">
@@ -979,7 +1001,7 @@ export function SubscriptionInvoice({
         {selectedGroupId && selectedMonth && (
           <Card>
             <CardHeader className="flex items-center justify-between flex-row">
-              <div className='flex flex-col gap-1'>
+              <div className="flex flex-col gap-1">
                 <div className="flex items-center gap-2">
                   <CardTitle>Attendance Summary</CardTitle>
                   {isSelectedMonthPaid && (
@@ -1166,7 +1188,8 @@ export function SubscriptionInvoice({
 
                   {/* Attendance Rate */}
                   {(() => {
-                    const attendanceDays = getEffectiveAttendanceDays(userAttendance);
+                    const attendanceDays =
+                      getEffectiveAttendanceDays(userAttendance);
                     const selectedGroup = userGroups.find(
                       (g) => g.workspace_user_groups?.id === selectedGroupId
                     );
@@ -1241,7 +1264,8 @@ export function SubscriptionInvoice({
 
         {/* Invoice Configuration for Subscription */}
         {(subscriptionProducts.length > 0 ||
-          subscriptionSelectedProducts.length > 0) && !isSelectedMonthPaid && (
+          subscriptionSelectedProducts.length > 0) &&
+          !isSelectedMonthPaid && (
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -1327,7 +1351,8 @@ export function SubscriptionInvoice({
                   {/* Transaction Category Selection */}
                   <div className="space-y-2">
                     <Label htmlFor="subscription-category-select">
-                      Transaction Category <span className="text-red-500">*</span>
+                      Transaction Category{' '}
+                      <span className="text-red-500">*</span>
                     </Label>
                     <Combobox
                       t={t}
@@ -1338,7 +1363,9 @@ export function SubscriptionInvoice({
                         })
                       )}
                       selected={selectedCategoryId}
-                      onChange={(value) => setSelectedCategoryId(value as string)}
+                      onChange={(value) =>
+                        setSelectedCategoryId(value as string)
+                      }
                       placeholder="Select a category (required)..."
                     />
                   </div>
@@ -1355,13 +1382,14 @@ export function SubscriptionInvoice({
                         ...promotions.map(
                           (promotion): ComboboxOptions => ({
                             value: promotion.id,
-                            label: `${promotion.name || 'Unnamed Promotion'} (${promotion.use_ratio
-                              ? `${promotion.value}%`
-                              : Intl.NumberFormat('vi-VN', {
-                                style: 'currency',
-                                currency: 'VND',
-                              }).format(promotion.value)
-                              })`,
+                            label: `${promotion.name || 'Unnamed Promotion'} (${
+                              promotion.use_ratio
+                                ? `${promotion.value}%`
+                                : Intl.NumberFormat('vi-VN', {
+                                    style: 'currency',
+                                    currency: 'VND',
+                                  }).format(promotion.value)
+                            })`,
                           })
                         ),
                       ]}
@@ -1388,7 +1416,9 @@ export function SubscriptionInvoice({
                       {/* Summary */}
                       <div className="space-y-2">
                         <div className="flex justify-between">
-                          <span className="text-muted-foreground">Subtotal</span>
+                          <span className="text-muted-foreground">
+                            Subtotal
+                          </span>
                           <span>
                             {Intl.NumberFormat('vi-VN', {
                               style: 'currency',
@@ -1427,25 +1457,25 @@ export function SubscriptionInvoice({
 
                         {Math.abs(
                           subscriptionRoundedTotal -
-                          subscriptionTotalBeforeRounding
+                            subscriptionTotalBeforeRounding
                         ) > 0.01 && (
-                            <div className="flex justify-between text-muted-foreground text-sm">
-                              <span>Adjustment</span>
-                              <span>
-                                {subscriptionRoundedTotal >
+                          <div className="flex justify-between text-muted-foreground text-sm">
+                            <span>Adjustment</span>
+                            <span>
+                              {subscriptionRoundedTotal >
+                              subscriptionTotalBeforeRounding
+                                ? '+'
+                                : ''}
+                              {Intl.NumberFormat('vi-VN', {
+                                style: 'currency',
+                                currency: 'VND',
+                              }).format(
+                                subscriptionRoundedTotal -
                                   subscriptionTotalBeforeRounding
-                                  ? '+'
-                                  : ''}
-                                {Intl.NumberFormat('vi-VN', {
-                                  style: 'currency',
-                                  currency: 'VND',
-                                }).format(
-                                  subscriptionRoundedTotal -
-                                  subscriptionTotalBeforeRounding
-                                )}
-                              </span>
-                            </div>
-                          )}
+                              )}
+                            </span>
+                          </div>
+                        )}
                       </div>
 
                       {/* Rounding Controls */}
@@ -1477,7 +1507,7 @@ export function SubscriptionInvoice({
                             disabled={
                               Math.abs(
                                 subscriptionRoundedTotal -
-                                subscriptionTotalBeforeRounding
+                                  subscriptionTotalBeforeRounding
                               ) < 0.01
                             }
                           >

@@ -146,7 +146,10 @@ export async function POST(req: Request, { params }: Params) {
     if (invoiceError) {
       console.error('Error creating subscription invoice:', invoiceError);
       return NextResponse.json(
-        { message: 'Error creating subscription invoice', details: invoiceError.message },
+        {
+          message: 'Error creating subscription invoice',
+          details: invoiceError.message,
+        },
         { status: 500 }
       );
     }
@@ -198,15 +201,20 @@ export async function POST(req: Request, { params }: Params) {
     if (unitsError) {
       console.error('Error getting units information:', unitsError);
       return NextResponse.json(
-        { message: 'Error getting units information', details: unitsError.message },
+        {
+          message: 'Error getting units information',
+          details: unitsError.message,
+        },
         { status: 500 }
       );
     }
 
     const invoiceProducts = productValues.map((product) => ({
       invoice_id: invoiceId,
-      product_name: productsData.find((p) => p.id === product.product_id)?.name || '',
-      product_unit: unitsData.find((unit) => unit.id === product.unit_id)?.name || '',
+      product_name:
+        productsData.find((p) => p.id === product.product_id)?.name || '',
+      product_unit:
+        unitsData.find((unit) => unit.id === product.unit_id)?.name || '',
       product_id: product.product_id,
       unit_id: product.unit_id,
       warehouse_id: product.warehouse_id,
@@ -219,12 +227,18 @@ export async function POST(req: Request, { params }: Params) {
       .insert(invoiceProducts);
 
     if (invoiceProductsError) {
-      console.error('Error creating subscription invoice products:', invoiceProductsError);
+      console.error(
+        'Error creating subscription invoice products:',
+        invoiceProductsError
+      );
       await Promise.all([
         supabase.from('finance_invoices').delete().eq('id', invoiceId),
       ]);
       return NextResponse.json(
-        { message: 'Error creating invoice products', details: invoiceProductsError.message },
+        {
+          message: 'Error creating invoice products',
+          details: invoiceProductsError.message,
+        },
         { status: 500 }
       );
     }
@@ -253,11 +267,17 @@ export async function POST(req: Request, { params }: Params) {
         if (promotionError) {
           console.error('Error creating invoice promotion:', promotionError);
           await Promise.all([
-            supabase.from('finance_invoice_products').delete().eq('invoice_id', invoiceId),
+            supabase
+              .from('finance_invoice_products')
+              .delete()
+              .eq('invoice_id', invoiceId),
             supabase.from('finance_invoices').delete().eq('id', invoiceId),
           ]);
           return NextResponse.json(
-            { message: 'Error applying promotion to invoice', details: promotionError.message },
+            {
+              message: 'Error applying promotion to invoice',
+              details: promotionError.message,
+            },
             { status: 500 }
           );
         }
@@ -281,12 +301,21 @@ export async function POST(req: Request, { params }: Params) {
     if (stockError) {
       console.error('Error creating stock changes:', stockError);
       await Promise.all([
-        supabase.from('finance_invoice_promotions').delete().eq('invoice_id', invoiceId),
-        supabase.from('finance_invoice_products').delete().eq('invoice_id', invoiceId),
+        supabase
+          .from('finance_invoice_promotions')
+          .delete()
+          .eq('invoice_id', invoiceId),
+        supabase
+          .from('finance_invoice_products')
+          .delete()
+          .eq('invoice_id', invoiceId),
         supabase.from('finance_invoices').delete().eq('id', invoiceId),
       ]);
       return NextResponse.json(
-        { message: 'Error updating product stock', details: stockError.message },
+        {
+          message: 'Error updating product stock',
+          details: stockError.message,
+        },
         { status: 500 }
       );
     }
@@ -332,5 +361,3 @@ export async function POST(req: Request, { params }: Params) {
     );
   }
 }
-
-
