@@ -19,7 +19,14 @@ export const DayCell: React.FC<{
   onDateClick?: (date: Date) => void;
   /** When true, hides days from previous and next months to reduce visual clutter */
   hideOutsideMonthDays?: boolean;
-}> = ({ day, currentDate, today, attendanceData, onDateClick, hideOutsideMonthDays = false }) => {
+}> = ({
+  day,
+  currentDate,
+  today,
+  attendanceData,
+  onDateClick,
+  hideOutsideMonthDays = false,
+}) => {
   const isInCurrentMonth = isCurrentMonth(day, currentDate);
 
   // If hideOutsideMonthDays is true and day is not in current month, don't render anything
@@ -39,9 +46,9 @@ export const DayCell: React.FC<{
         className={cn(
           'flex flex-none justify-center rounded border bg-foreground/5 p-2 font-semibold transition duration-300 hover:cursor-pointer md:rounded-lg dark:bg-foreground/10',
           isAfter(day, today) &&
-          '!cursor-not-allowed hover:!cursor-not-allowed opacity-50',
+            '!cursor-not-allowed hover:!cursor-not-allowed opacity-50',
           !isInCurrentMonth &&
-          'bg-foreground/3 text-foreground/40 dark:bg-foreground/5',
+            'bg-foreground/3 text-foreground/40 dark:bg-foreground/5',
           isInCurrentMonth && 'text-foreground/40'
         )}
       >

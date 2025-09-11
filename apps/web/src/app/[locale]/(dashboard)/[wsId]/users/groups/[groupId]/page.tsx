@@ -337,13 +337,13 @@ async function getUserData(
         ?.map((item) =>
           'user_id' in item
             ? {
-              id: item.user_id,
-              full_name: item.full_name,
-              email: item.email,
-              gender: item.gender,
-              phone: item.phone,
-              attendance_count: item.attendance_count,
-            }
+                id: item.user_id,
+                full_name: item.full_name,
+                email: item.email,
+                gender: item.gender,
+                phone: item.phone,
+                attendance_count: item.attendance_count,
+              }
             : null
         )
         .filter((item) => item !== null) || [];
