@@ -5,11 +5,18 @@ import type { Workspace } from '@tuturuuu/types/db';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskBoard } from '@tuturuuu/types/primitives/TaskBoard';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { KanbanBoard } from '../boards/boardId/kanban';
 import { StatusGroupedBoard } from '../boards/boardId/status-grouped-board';
 import { BoardHeader } from '../shared/board-header';
 import { ListView } from '../shared/list-view';
+
+interface TaskLabel {
+  id: string;
+  name: string;
+  color: string;
+  created_at: string;
+}
 
 export type ViewType = 'kanban' | 'status-grouped' | 'list';
 
@@ -20,7 +27,27 @@ interface Props {
 
 export function BoardViews({ workspace, board }: Props) {
   const [currentView, setCurrentView] = useState<ViewType>('kanban');
+  const [selectedLabels, setSelectedLabels] = useState<TaskLabel[]>([]);
   const queryClient = useQueryClient();
+
+  // Filter tasks based on selected labels
+  const filteredTasks = useMemo(() => {
+    if (selectedLabels.length === 0) {
+      return board.tasks;
+    }
+
+    return board.tasks.filter((task) => {
+      // If task has no labels, exclude it from results
+      if (!task.labels || task.labels.length === 0) {
+        return false;
+      }
+
+      // Check if task has any of the selected labels
+      return selectedLabels.some((selectedLabel) =>
+        task.labels?.some((taskLabel) => taskLabel.id === selectedLabel.id)
+      );
+    });
+  }, [board.tasks, selectedLabels]);
 
   // Helper function to create board with filtered tasks
   const createBoardWithFilteredTasks = (
@@ -48,7 +75,7 @@ export function BoardViews({ workspace, board }: Props) {
         return (
           <StatusGroupedBoard
             lists={board.lists}
-            tasks={board.tasks}
+            tasks={filteredTasks}
             boardId={board.id}
             onUpdate={handleUpdate}
             hideTasksMode={true}
@@ -60,14 +87,14 @@ export function BoardViews({ workspace, board }: Props) {
           <KanbanBoard
             workspace={workspace}
             boardId={board.id}
-            tasks={board.tasks}
+            tasks={filteredTasks}
             isLoading={false}
           />
         );
       case 'list':
         return (
           <ListView
-            board={createBoardWithFilteredTasks(board, board.tasks)}
+            board={createBoardWithFilteredTasks(board, filteredTasks)}
             isPersonalWorkspace={workspace.personal}
           />
         );
@@ -75,7 +102,7 @@ export function BoardViews({ workspace, board }: Props) {
         return (
           <StatusGroupedBoard
             lists={board.lists}
-            tasks={board.tasks}
+            tasks={filteredTasks}
             boardId={board.id}
             onUpdate={handleUpdate}
             hideTasksMode={true}
@@ -91,6 +118,8 @@ export function BoardViews({ workspace, board }: Props) {
         board={board}
         currentView={currentView}
         onViewChange={setCurrentView}
+        selectedLabels={selectedLabels}
+        onLabelsChange={setSelectedLabels}
       />
       <div className="h-full flex-1 overflow-hidden">{renderView()}</div>
     </div>
