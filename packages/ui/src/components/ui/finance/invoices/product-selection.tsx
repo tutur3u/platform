@@ -267,7 +267,7 @@ interface StockItemProps {
   onAdd: (quantity: number) => void;
 }
 
-function StockItem({ inventory, onAdd}: StockItemProps) {
+function StockItem({ inventory, onAdd }: StockItemProps) {
   const t = useTranslations();
   const [quantity, setQuantity] = useState(1);
 
