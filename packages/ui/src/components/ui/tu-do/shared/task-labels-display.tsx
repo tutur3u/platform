@@ -25,7 +25,7 @@ export function TaskLabelsDisplay({
   maxDisplay,
   className,
   size = 'sm',
-  showIcon = false,
+  showIcon = true,
 }: TaskLabelsDisplayProps) {
   if (!labels || labels.length === 0) return null;
 
@@ -146,7 +146,7 @@ export function TaskLabelsDisplay({
             variant="outline"
             className={cn(
               'inline-flex items-center gap-1 truncate border font-medium',
-              'border border-dynamic-gray/20 text-dynamic-gray',
+              'border border-dynamic-purple/20 bg-dynamic-purple/10 text-dynamic-purple',
               sizeClasses[size]
             )}
             // style={{

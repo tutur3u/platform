@@ -12,6 +12,7 @@ import { Card } from '@tuturuuu/ui/card';
 import { Checkbox } from '@tuturuuu/ui/checkbox';
 import { ColorPicker } from '@tuturuuu/ui/color-picker';
 import { DateTimePicker } from '@tuturuuu/ui/date-time-picker';
+
 import {
   Dialog,
   DialogContent,
@@ -34,8 +35,6 @@ import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import {
   AlertCircle,
   Calendar,
-  CalendarDays,
-  CalendarPlus,
   Check,
   CheckCircle2,
   CircleDashed,
@@ -64,6 +63,7 @@ import {
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
+
 import { cn } from '@tuturuuu/utils/format';
 import {
   moveTask,
@@ -78,7 +78,7 @@ import {
   isTomorrow,
   isYesterday,
 } from 'date-fns';
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { getDescriptionText } from '../../../../../utils/text-helper';
 import { AssigneeSelect } from '../../shared/assignee-select';
 import { TaskEditDialog } from '../../shared/task-edit-dialog';
@@ -171,7 +171,6 @@ export const TaskCard = React.memo(function TaskCard({
   const [newLabelName, setNewLabelName] = useState('');
   const [newLabelColor, setNewLabelColor] = useState('#3b82f6');
   const [creatingLabel, setCreatingLabel] = useState(false);
-  const datePickerRef = useRef<HTMLButtonElement>(null);
   const updateTaskMutation = useUpdateTask(boardId);
   const deleteTaskMutation = useDeleteTask(boardId);
 
@@ -528,7 +527,6 @@ export const TaskCard = React.memo(function TaskCard({
         },
         onSettled: () => {
           setIsLoading(false);
-          setCustomDateOpen(false);
         },
       }
     );
@@ -854,122 +852,9 @@ export const TaskCard = React.memo(function TaskCard({
               </button>
             </div>
           </div>
-          {/* Actions (date picker, menu) remain unchanged */}
+          {/* Actions menu only */}
           <div className="flex items-center justify-end gap-1">
-            {/* Custom Date Picker - Separate from Dropdown */}
-            {!isOverlay && (
-              <Popover open={customDateOpen} onOpenChange={setCustomDateOpen}>
-                <PopoverTrigger asChild>
-                  <Button
-                    ref={datePickerRef}
-                    variant="ghost"
-                    size="xs"
-                    className={cn(
-                      'h-7 w-7 shrink-0 p-0 transition-all duration-200',
-                      'hover:scale-105 hover:bg-dynamic-purple/10 hover:text-dynamic-purple',
-                      isHovered || customDateOpen
-                        ? 'opacity-100'
-                        : 'opacity-0 group-hover:opacity-100',
-                      customDateOpen &&
-                        'bg-dynamic-purple/10 text-dynamic-purple'
-                    )}
-                    disabled={isLoading}
-                  >
-                    <CalendarPlus className="h-3 w-3" />
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent
-                  className="w-auto p-0"
-                  side="top"
-                  sideOffset={8}
-                  align="end"
-                >
-                  <div className="min-w-[320px] space-y-4 p-4">
-                    <div className="flex items-center justify-between">
-                      <Label className="font-semibold text-sm">
-                        Set Due Date
-                      </Label>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-6 w-6 p-0 hover:bg-muted"
-                        onClick={() => setCustomDateOpen(false)}
-                      >
-                        <X className="h-3 w-3" />
-                      </Button>
-                    </div>
-
-                    {/* Quick Date Options */}
-                    <div className="grid grid-cols-2 gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleDueDateChange(0)}
-                        className="justify-start text-xs"
-                      >
-                        <CalendarDays className="h-3 w-3" />
-                        Today
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleDueDateChange(1)}
-                        className="justify-start text-xs"
-                      >
-                        <CalendarDays className="h-3 w-3" />
-                        Tomorrow
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleDueDateChange(7)}
-                        className="justify-start text-xs"
-                      >
-                        <CalendarDays className="h-3 w-3" />
-                        Next Week
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleDueDateChange(30)}
-                        className="justify-start text-xs"
-                      >
-                        <CalendarDays className="h-3 w-3" />
-                        Next Month
-                      </Button>
-                    </div>
-
-                    <div className="border-t pt-3">
-                      <Label className="mb-2 block text-muted-foreground text-xs">
-                        Or pick a specific date:
-                      </Label>
-                      <DateTimePicker
-                        date={
-                          task.end_date ? new Date(task.end_date) : undefined
-                        }
-                        setDate={handleCustomDateChange}
-                        showTimeSelect={true}
-                        minDate={new Date()}
-                      />
-                    </div>
-
-                    {task.end_date && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="w-full text-muted-foreground hover:text-foreground"
-                        onClick={() => handleCustomDateChange(undefined)}
-                      >
-                        <X className="h-4 w-4" />
-                        Remove Due Date
-                      </Button>
-                    )}
-                  </div>
-                </PopoverContent>
-              </Popover>
-            )}
-
-            {/* Main Actions Menu - Simplified */}
+            {/* Main Actions Menu - With integrated date picker */}
             {!isOverlay && (
               <DropdownMenu open={menuOpen} onOpenChange={setMenuOpen}>
                 <DropdownMenuTrigger asChild>
@@ -1075,7 +960,10 @@ export const TaskCard = React.memo(function TaskCard({
                       >
                         <div className="flex w-full items-center justify-between">
                           <div className="flex items-center gap-2">
-                            <Flag className="h-4 w-4 text-dynamic-red" />
+                            <Icon
+                              iconNode={unicornHead}
+                              className="h-4 w-4 text-dynamic-red"
+                            />
                             Urgent
                           </div>
                           {task.priority === 'critical' && (
@@ -1096,7 +984,10 @@ export const TaskCard = React.memo(function TaskCard({
                       >
                         <div className="flex w-full items-center justify-between">
                           <div className="flex items-center gap-2">
-                            <Flag className="h-4 w-4 text-dynamic-orange" />
+                            <Icon
+                              iconNode={horseHead}
+                              className="h-4 w-4 text-dynamic-orange"
+                            />
                             High
                           </div>
                           {task.priority === 'high' && (
@@ -1117,7 +1008,7 @@ export const TaskCard = React.memo(function TaskCard({
                       >
                         <div className="flex w-full items-center justify-between">
                           <div className="flex items-center gap-2">
-                            <Flag className="h-4 w-4 text-dynamic-yellow" />
+                            <Rabbit className="h-4 w-4 text-dynamic-yellow" />
                             Medium
                           </div>
                           {task.priority === 'normal' && (
@@ -1138,7 +1029,7 @@ export const TaskCard = React.memo(function TaskCard({
                       >
                         <div className="flex w-full items-center justify-between">
                           <div className="flex items-center gap-2">
-                            <Flag className="h-4 w-4 text-dynamic-blue" />
+                            <Turtle className="h-4 w-4 text-dynamic-blue" />
                             Low
                           </div>
                           {task.priority === 'low' && (
@@ -1146,6 +1037,136 @@ export const TaskCard = React.memo(function TaskCard({
                           )}
                         </div>
                       </DropdownMenuItem>
+                    </DropdownMenuSubContent>
+                  </DropdownMenuSub>
+
+                  {/* Due Date Actions */}
+                  <DropdownMenuSub>
+                    <DropdownMenuSubTrigger>
+                      <div className="h-4 w-4">
+                        <Calendar className="h-4 w-4 text-dynamic-purple" />
+                      </div>
+                      <div className="flex w-full items-center justify-between">
+                        <span>Due Date</span>
+                        <span className="ml-auto text-muted-foreground text-xs">
+                          {task.end_date
+                            ? formatSmartDate(new Date(task.end_date))
+                            : 'None'}
+                        </span>
+                      </div>
+                    </DropdownMenuSubTrigger>
+                    <DropdownMenuSubContent>
+                      <DropdownMenuItem
+                        onClick={() => {
+                          handleDueDateChange(0);
+                          setMenuOpen(false);
+                        }}
+                        className="cursor-pointer"
+                      >
+                        <div className="flex items-center gap-2">Today</div>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => {
+                          handleDueDateChange(1);
+                          setMenuOpen(false);
+                        }}
+                        className="cursor-pointer"
+                      >
+                        <div className="flex items-center gap-2">Tomorrow</div>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => {
+                          handleDueDateChange(7);
+                          setMenuOpen(false);
+                        }}
+                        className="cursor-pointer"
+                      >
+                        <div className="flex items-center gap-2">Next Week</div>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => {
+                          handleDueDateChange(30);
+                          setMenuOpen(false);
+                        }}
+                        className="cursor-pointer"
+                      >
+                        <div className="flex items-center gap-2">
+                          Next Month
+                        </div>
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <Popover
+                        open={customDateOpen}
+                        onOpenChange={setCustomDateOpen}
+                      >
+                        <PopoverTrigger asChild>
+                          <DropdownMenuItem
+                            onSelect={(e) => e.preventDefault()}
+                            className="cursor-pointer"
+                          >
+                            <div className="flex items-center gap-2">
+                              <Calendar className="h-4 w-4" />
+                              Custom Date
+                            </div>
+                          </DropdownMenuItem>
+                        </PopoverTrigger>
+                        <PopoverContent
+                          className="w-auto p-0"
+                          side="right"
+                          sideOffset={8}
+                          align="start"
+                        >
+                          <div className="min-w-[300px] space-y-4 p-4">
+                            <div className="flex items-center justify-between">
+                              <Label className="font-semibold text-sm">
+                                Set Custom Date
+                              </Label>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-6 w-6 p-0 hover:bg-muted"
+                                onClick={() => setCustomDateOpen(false)}
+                              >
+                                <X className="h-3 w-3" />
+                              </Button>
+                            </div>
+
+                            <div className="space-y-3">
+                              <Label className="block text-muted-foreground text-xs">
+                                Pick a specific date and time:
+                              </Label>
+                              <DateTimePicker
+                                date={
+                                  task.end_date
+                                    ? new Date(task.end_date)
+                                    : undefined
+                                }
+                                setDate={(date) => {
+                                  handleCustomDateChange(date);
+                                  setMenuOpen(false);
+                                }}
+                                showTimeSelect={true}
+                                minDate={new Date()}
+                              />
+                            </div>
+                          </div>
+                        </PopoverContent>
+                      </Popover>
+                      {task.end_date && (
+                        <>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem
+                            onClick={() => {
+                              handleDueDateChange(null);
+                              setMenuOpen(false);
+                            }}
+                            className="cursor-pointer text-muted-foreground"
+                          >
+                            <X className="h-4 w-4" />
+                            Remove Due Date
+                          </DropdownMenuItem>
+                        </>
+                      )}
                     </DropdownMenuSubContent>
                   </DropdownMenuSub>
 
@@ -1399,22 +1420,6 @@ export const TaskCard = React.memo(function TaskCard({
                         </DropdownMenuSubContent>
                       </DropdownMenuSub>
                     )}
-
-                  {task.end_date && (
-                    <>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem
-                        onClick={() => {
-                          handleDueDateChange(null);
-                          setMenuOpen(false);
-                        }}
-                        className="cursor-pointer text-muted-foreground"
-                      >
-                        <X className="h-4 w-4" />
-                        Remove Due Date
-                      </DropdownMenuItem>
-                    </>
-                  )}
 
                   <DropdownMenuSeparator />
                   <DropdownMenuItem
