@@ -99,9 +99,9 @@ export function SubscriptionInvoice({
         id: string;
         name: string | null;
         product_categories: {
-            name: string | null;
+          name: string | null;
         };
-    };
+      };
       attendanceDays: number;
       totalSessions: number;
       pricePerSession: number;
