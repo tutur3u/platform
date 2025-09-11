@@ -1568,3 +1568,230 @@ export function priorityCompare(
   // Higher values come first (descending order)
   return valueB - valueA;
 }
+
+// Bulk operations for moving all tasks from a list
+export async function moveAllTasksFromList(
+  supabase: SupabaseClient,
+  sourceListId: string,
+  targetListId: string,
+  targetBoardId?: string
+) {
+  console.log('🗄️ moveAllTasksFromList function called');
+  console.log('📋 Source List ID:', sourceListId);
+  console.log('🎯 Target List ID:', targetListId);
+  console.log('📊 Target Board ID:', targetBoardId);
+
+  // First, get all tasks in the source list
+  const { data: tasksToMove, error: fetchError } = await supabase
+    .from('tasks')
+    .select('id, list_id, task_lists!inner(board_id)')
+    .eq('list_id', sourceListId)
+    .eq('deleted', false);
+
+  if (fetchError) {
+    console.log('❌ Error fetching tasks from source list:', fetchError);
+    throw new Error(`Failed to fetch tasks: ${fetchError.message}`);
+  }
+
+  if (!tasksToMove || tasksToMove.length === 0) {
+    console.log('ℹ️ No tasks to move from source list');
+    return { success: true, movedCount: 0 };
+  }
+
+  console.log('📋 Found tasks to move:', tasksToMove.length);
+
+  // Move all tasks in parallel for better performance
+  const movePromises = tasksToMove.map(async (task) => {
+    try {
+      await moveTaskToBoard(supabase, task.id, targetListId, targetBoardId);
+      return { success: true, taskId: task.id };
+    } catch (error) {
+      console.error('❌ Failed to move task:', task.id, error);
+      return { success: false, taskId: task.id, error };
+    }
+  });
+
+  const results = await Promise.allSettled(movePromises);
+
+  const successful = results.filter(
+    (result) => result.status === 'fulfilled' && result.value.success
+  ).length;
+
+  const failed = results.length - successful;
+
+  console.log(
+    `✅ Bulk list move completed: ${successful} successful, ${failed} failed`
+  );
+
+  if (failed > 0) {
+    throw new Error(`Failed to move ${failed} out of ${results.length} tasks`);
+  }
+
+  return { success: true, movedCount: successful };
+}
+
+export function useMoveAllTasksFromList(currentBoardId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      sourceListId,
+      targetListId,
+      targetBoardId,
+    }: {
+      sourceListId: string;
+      targetListId: string;
+      targetBoardId?: string;
+    }) => {
+      console.log('🚀 Starting bulk list move mutation');
+      console.log('📋 Source List ID:', sourceListId);
+      console.log('🎯 Target List ID:', targetListId);
+      console.log('📊 Target Board ID:', targetBoardId);
+
+      const supabase = createClient();
+      const result = await moveAllTasksFromList(
+        supabase,
+        sourceListId,
+        targetListId,
+        targetBoardId
+      );
+
+      console.log('✅ Bulk list move completed successfully');
+      return result;
+    },
+    onMutate: async ({ sourceListId, targetListId, targetBoardId }) => {
+      console.log('🔄 Optimistic update for bulk list move');
+
+      // Cancel any outgoing refetches to avoid conflicts
+      await queryClient.cancelQueries({ queryKey: ['tasks', currentBoardId] });
+      if (targetBoardId && targetBoardId !== currentBoardId) {
+        await queryClient.cancelQueries({ queryKey: ['tasks', targetBoardId] });
+      }
+
+      // Snapshot the previous values
+      const previousSourceTasks = queryClient.getQueryData([
+        'tasks',
+        currentBoardId,
+      ]);
+      const previousTargetTasks =
+        targetBoardId && targetBoardId !== currentBoardId
+          ? queryClient.getQueryData(['tasks', targetBoardId])
+          : null;
+
+      // Get tasks to move from source list
+      const sourceTasks = previousSourceTasks as Task[] | undefined;
+      const tasksToMove =
+        sourceTasks?.filter((task) => task.list_id === sourceListId) || [];
+
+      if (tasksToMove.length === 0) {
+        return { previousSourceTasks, previousTargetTasks, targetBoardId };
+      }
+
+      // If moving to a different board
+      if (targetBoardId && targetBoardId !== currentBoardId) {
+        // Remove tasks from source board
+        queryClient.setQueryData(
+          ['tasks', currentBoardId],
+          (oldData: Task[] | undefined) => {
+            if (!oldData) return oldData;
+            return oldData.filter((task) => task.list_id !== sourceListId);
+          }
+        );
+
+        // Add tasks to target board
+        queryClient.setQueryData(
+          ['tasks', targetBoardId],
+          (oldData: Task[] | undefined) => {
+            const updatedTasks = tasksToMove.map((task) => ({
+              ...task,
+              list_id: targetListId,
+            }));
+
+            if (!oldData) return updatedTasks;
+
+            // Remove any existing tasks with same IDs, then add updated versions
+            const filteredOldData = oldData.filter(
+              (task) =>
+                !tasksToMove.some((movingTask) => movingTask.id === task.id)
+            );
+            return [...filteredOldData, ...updatedTasks];
+          }
+        );
+      } else {
+        // Same board move - just update list_id for all tasks
+        queryClient.setQueryData(
+          ['tasks', currentBoardId],
+          (oldData: Task[] | undefined) => {
+            if (!oldData) return oldData;
+            return oldData.map((task) =>
+              task.list_id === sourceListId
+                ? { ...task, list_id: targetListId }
+                : task
+            );
+          }
+        );
+      }
+
+      return { previousSourceTasks, previousTargetTasks, targetBoardId };
+    },
+    onError: (err, _variables, context) => {
+      // Rollback optimistic updates on error
+      if (context?.previousSourceTasks) {
+        queryClient.setQueryData(
+          ['tasks', currentBoardId],
+          context.previousSourceTasks
+        );
+      }
+      if (
+        context?.previousTargetTasks &&
+        context.targetBoardId &&
+        context.targetBoardId !== currentBoardId
+      ) {
+        queryClient.setQueryData(
+          ['tasks', context.targetBoardId],
+          context.previousTargetTasks
+        );
+      }
+
+      console.error('❌ Bulk list move failed:', err);
+      toast({
+        title: 'Error',
+        description: `Failed to move all tasks from list: ${err instanceof Error ? err.message : 'Unknown error'}`,
+        variant: 'destructive',
+      });
+    },
+    onSuccess: (data, variables) => {
+      console.log('✅ Bulk list move mutation succeeded');
+      console.log('📊 Moved task count:', data.movedCount);
+
+      // Invalidate affected queries to ensure consistency
+      queryClient.invalidateQueries({ queryKey: ['tasks', currentBoardId] });
+      if (
+        variables.targetBoardId &&
+        variables.targetBoardId !== currentBoardId
+      ) {
+        queryClient.invalidateQueries({
+          queryKey: ['tasks', variables.targetBoardId],
+        });
+      }
+
+      // Invalidate task lists in case task counts changed
+      queryClient.invalidateQueries({
+        queryKey: ['task_lists', currentBoardId],
+      });
+      if (
+        variables.targetBoardId &&
+        variables.targetBoardId !== currentBoardId
+      ) {
+        queryClient.invalidateQueries({
+          queryKey: ['task_lists', variables.targetBoardId],
+        });
+      }
+
+      toast({
+        title: 'Success',
+        description: `Moved ${data.movedCount} task${data.movedCount !== 1 ? 's' : ''} successfully`,
+      });
+    },
+  });
+}

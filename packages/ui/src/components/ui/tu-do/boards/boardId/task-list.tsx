@@ -449,6 +449,7 @@ export const BoardColumn = React.memo(function BoardColumn({
             listStatus={column.status}
             tasks={filteredAndSortedTasks}
             boardId={boardId}
+            wsId={wsId}
             onUpdate={handleUpdate}
           />
         </div>

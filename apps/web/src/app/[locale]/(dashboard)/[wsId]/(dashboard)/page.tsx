@@ -1,5 +1,6 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
 import type { AuroraForecast } from '@tuturuuu/types/db';
+import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
 import { getPermissions, getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import { notFound } from 'next/navigation';
@@ -48,7 +49,7 @@ export default async function WorkspaceHomePage({ params }: Props) {
 
   return (
     <>
-      {isInternalUser && <Countdown />}
+      {isInternalUser && wsId === ROOT_WORKSPACE_ID && <Countdown />}
       {currentUser && (
         <div className="grid gap-4 pb-4 md:grid-cols-2">
           <Suspense fallback={<DashboardCardSkeleton />}>

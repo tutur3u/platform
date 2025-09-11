@@ -17,10 +17,21 @@ import {
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
-import { Archive, MoreHorizontal, Pencil, Trash } from '@tuturuuu/ui/icons';
+import {
+  Archive,
+  ArrowRightLeft,
+  MoreHorizontal,
+  Pencil,
+  Trash,
+} from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
-import { deleteTaskList, useMoveTask } from '@tuturuuu/utils/task-helper';
+import {
+  deleteTaskList,
+  useMoveAllTasksFromList,
+  useMoveTask,
+} from '@tuturuuu/utils/task-helper';
 import { useState } from 'react';
+import { BoardSelector } from '../board-selector';
 
 interface Props {
   listId: string;
@@ -28,6 +39,7 @@ interface Props {
   listStatus?: string;
   tasks?: Task[];
   boardId?: string;
+  wsId?: string;
   onUpdate: () => void;
 }
 
@@ -37,15 +49,18 @@ export function ListActions({
   listStatus,
   tasks = [],
   boardId = '',
+  wsId = '',
   onUpdate,
 }: Props) {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isArchiveDialogOpen, setIsArchiveDialogOpen] = useState(false);
+  const [isMoveAllDialogOpen, setIsMoveAllDialogOpen] = useState(false);
   const [isArchiving, setIsArchiving] = useState(false);
   const [newName, setNewName] = useState(listName);
 
   const moveTaskMutation = useMoveTask(boardId);
+  const moveAllTasksFromListMutation = useMoveAllTasksFromList(boardId);
 
   async function handleDelete() {
     const supabase = createClient();
@@ -147,6 +162,39 @@ export function ListActions({
     }
   }
 
+  // Handler for bulk moving all tasks from this list
+  function handleMoveAllTasks() {
+    if (tasks.length === 0) {
+      toast({
+        title: 'No tasks to move',
+        description: 'This list is empty.',
+        variant: 'default',
+      });
+      return;
+    }
+    setIsMoveAllDialogOpen(true);
+  }
+
+  // Handle the actual bulk move operation
+  async function handleBulkMove(targetBoardId: string, targetListId: string) {
+    if (tasks.length === 0) return;
+
+    try {
+      await moveAllTasksFromListMutation.mutateAsync({
+        sourceListId: listId,
+        targetListId,
+        targetBoardId: targetBoardId !== boardId ? targetBoardId : undefined,
+      });
+
+      // Close dialog and refresh
+      setIsMoveAllDialogOpen(false);
+      onUpdate();
+    } catch (error) {
+      console.error('Failed to move all tasks:', error);
+      // Don't close dialog on error so user can retry
+    }
+  }
+
   return (
     <>
       <DropdownMenu>
@@ -163,6 +211,20 @@ export function ListActions({
             </div>
             Edit
           </DropdownMenuItem>
+          {tasks.length > 0 && wsId && (
+            <>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={handleMoveAllTasks}>
+                <div className="h-4 w-4">
+                  <ArrowRightLeft className="h-4 w-4 text-dynamic-blue" />
+                </div>
+                Move all tasks
+                <span className="ml-auto text-muted-foreground text-xs">
+                  ({tasks.length})
+                </span>
+              </DropdownMenuItem>
+            </>
+          )}
           {listStatus === 'done' && tasks.length > 0 && (
             <>
               <DropdownMenuSeparator />
@@ -255,6 +317,19 @@ export function ListActions({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Board Selector for Moving All Tasks */}
+      {wsId && (
+        <BoardSelector
+          open={isMoveAllDialogOpen}
+          onOpenChange={setIsMoveAllDialogOpen}
+          wsId={wsId}
+          currentBoardId={boardId}
+          taskCount={tasks.length}
+          onMove={handleBulkMove}
+          isMoving={moveAllTasksFromListMutation.isPending}
+        />
+      )}
     </>
   );
 }

@@ -283,6 +283,14 @@ export function AssigneeSelect({ taskId, assignees = [], onUpdate }: Props) {
           aria-expanded={open}
           disabled={isLoading}
           size="xs"
+          onClick={(e) => {
+            // Prevent popover from opening when shift is held down
+            // (user might be about to select multiple tasks for bulk action)
+            if (e.shiftKey) {
+              e.preventDefault();
+              e.stopPropagation();
+            }
+          }}
         >
           {uniqueAssignees.length > 0 ? (
             <div className="flex min-w-0 items-center gap-1">
