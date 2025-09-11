@@ -167,9 +167,15 @@ export function StandardInvoice({
       const firstProductName =
         selectedProducts[0]?.product.name || t('ws-invoices.unknown_product');
       const additionalCount = selectedProducts.length - 1;
-      const translationKey = additionalCount > 1 ? 'invoice_for_product_and_more_plural' : 'invoice_for_product_and_more';
+      const translationKey =
+        additionalCount > 1
+          ? 'invoice_for_product_and_more_plural'
+          : 'invoice_for_product_and_more';
       setInvoiceContent(
-        t(`ws-invoices.${translationKey}`, { productName: firstProductName, count: additionalCount })
+        t(`ws-invoices.${translationKey}`, {
+          productName: firstProductName,
+          count: additionalCount,
+        })
       );
     }
   }, [selectedProducts]);
@@ -226,9 +232,7 @@ export function StandardInvoice({
       !selectedWalletId ||
       !selectedCategoryId
     ) {
-      toast(
-        t('ws-invoices.create_invoice_validation')
-      );
+      toast(t('ws-invoices.create_invoice_validation'));
       return;
     }
 
@@ -286,23 +290,30 @@ export function StandardInvoice({
               }).format(calculated_values.rounding_applied)}`
             : '';
 
-        toast(
-          t('ws-invoices.invoice_created_recalculated'),
-          {
-            description: `${t('ws-invoices.server_calculated')}: ${Intl.NumberFormat('vi-VN', {
+        toast(t('ws-invoices.invoice_created_recalculated'), {
+          description: `${t('ws-invoices.server_calculated')}: ${Intl.NumberFormat(
+            'vi-VN',
+            {
               style: 'currency',
               currency: 'VND',
-            }).format(
-              calculated_values.total
-            )} | ${t('ws-invoices.frontend_calculated')}: ${Intl.NumberFormat('vi-VN', {
+            }
+          ).format(
+            calculated_values.total
+          )} | ${t('ws-invoices.frontend_calculated')}: ${Intl.NumberFormat(
+            'vi-VN',
+            {
               style: 'currency',
               currency: 'VND',
-            }).format(frontend_values?.total || 0)}${roundingInfo}`,
-            duration: 5000,
-          }
-        );
+            }
+          ).format(frontend_values?.total || 0)}${roundingInfo}`,
+          duration: 5000,
+        });
       } else {
-        toast(t('ws-invoices.invoice_created_success', { invoiceId: result.invoice_id }));
+        toast(
+          t('ws-invoices.invoice_created_success', {
+            invoiceId: result.invoice_id,
+          })
+        );
       }
 
       // Reset form after successful creation
@@ -323,8 +334,8 @@ export function StandardInvoice({
 
       // Show error message
       toast(
-        t('ws-invoices.error_creating_invoice', { 
-          error: error.message || t('ws-invoices.failed_to_create_invoice') 
+        t('ws-invoices.error_creating_invoice', {
+          error: error.message || t('ws-invoices.failed_to_create_invoice'),
         })
       );
 
@@ -340,7 +351,9 @@ export function StandardInvoice({
       <div className="flex items-center justify-center py-8">
         <div className="flex items-center gap-2">
           <Loader2 className="h-4 w-4 animate-spin" />
-          <p className="text-muted-foreground text-sm">{t('ws-invoices.loading')}</p>
+          <p className="text-muted-foreground text-sm">
+            {t('ws-invoices.loading')}
+          </p>
         </div>
       </div>
     );
@@ -360,7 +373,9 @@ export function StandardInvoice({
           </CardHeader>
           <CardContent className="space-y-2">
             <div className="space-y-2">
-              <Label htmlFor="customer-select">{t('ws-invoices.customer')}</Label>
+              <Label htmlFor="customer-select">
+                {t('ws-invoices.customer')}
+              </Label>
               <Combobox
                 t={t}
                 options={users.map(
@@ -406,8 +421,11 @@ export function StandardInvoice({
                                         t('ws-invoices.no_description')}
                                     </p>
                                     <p className="text-muted-foreground text-sm">
-                                      {transaction.category || t('ws-invoices.no_category')} •{' '}
-                                      {transaction.wallet || t('ws-invoices.no_wallet')}
+                                      {transaction.category ||
+                                        t('ws-invoices.no_category')}{' '}
+                                      •{' '}
+                                      {transaction.wallet ||
+                                        t('ws-invoices.no_wallet')}
                                     </p>
                                     <p className="text-muted-foreground text-xs">
                                       {transaction.taken_at
@@ -437,7 +455,9 @@ export function StandardInvoice({
                               ))}
                             {userTransactions.length > 5 && (
                               <p className="text-center text-muted-foreground text-sm">
-                                {t('ws-invoices.and_more_transactions', { count: userTransactions.length - 5 })}
+                                {t('ws-invoices.and_more_transactions', {
+                                  count: userTransactions.length - 5,
+                                })}
                               </p>
                             )}
                           </div>
@@ -461,7 +481,9 @@ export function StandardInvoice({
                                 >
                                   <div className="flex-1">
                                     <p className="font-medium">
-                                      {t('ws-invoices.invoice_id_short', { id: invoice.id.slice(-8) })}
+                                      {t('ws-invoices.invoice_id_short', {
+                                        id: invoice.id.slice(-8),
+                                      })}
                                     </p>
                                     <p className="text-muted-foreground text-sm">
                                       {t('ws-invoices.status')}:{' '}
@@ -506,7 +528,9 @@ export function StandardInvoice({
                               ))}
                             {userInvoices.length > 5 && (
                               <p className="text-center text-muted-foreground text-sm">
-                                {t('ws-invoices.and_more_invoices', { count: userInvoices.length - 5 })}
+                                {t('ws-invoices.and_more_invoices', {
+                                  count: userInvoices.length - 5,
+                                })}
                               </p>
                             )}
                           </div>
@@ -597,7 +621,9 @@ export function StandardInvoice({
                   onValueChange={setSelectedWalletId}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder={t('ws-invoices.select_wallet_required')} />
+                    <SelectValue
+                      placeholder={t('ws-invoices.select_wallet_required')}
+                    />
                   </SelectTrigger>
                   <SelectContent>
                     {wallets.map((wallet) => (
@@ -626,7 +652,8 @@ export function StandardInvoice({
               {/* Transaction Category Selection */}
               <div className="space-y-2">
                 <Label htmlFor="category-select">
-                  {t('ws-invoices.transaction_category')} <span className="text-red-500">*</span>
+                  {t('ws-invoices.transaction_category')}{' '}
+                  <span className="text-red-500">*</span>
                 </Label>
                 <Combobox
                   t={t}
@@ -686,7 +713,9 @@ export function StandardInvoice({
                   {/* Summary */}
                   <div className="space-y-2">
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">{t('ws-invoices.subtotal')}</span>
+                      <span className="text-muted-foreground">
+                        {t('ws-invoices.subtotal')}
+                      </span>
                       <span>
                         {Intl.NumberFormat('vi-VN', {
                           style: 'currency',
@@ -699,7 +728,9 @@ export function StandardInvoice({
                       <div className="flex justify-between">
                         <span className="text-muted-foreground">
                           {t('ws-invoices.discount')} (
-                          {selectedPromotion.name || t('ws-invoices.unnamed_promotion')})
+                          {selectedPromotion.name ||
+                            t('ws-invoices.unnamed_promotion')}
+                          )
                         </span>
                         <span className="text-green-600">
                           -

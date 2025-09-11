@@ -54,9 +54,7 @@ export default function NewInvoicePage({ wsId }: Props) {
                     <Info className="h-4 w-4" />
                   </TooltipTrigger>
                   <TooltipContent>
-                    <p>
-                      {t('ws-invoices.create_multiple_invoices_tooltip')}
-                    </p>
+                    <p>{t('ws-invoices.create_multiple_invoices_tooltip')}</p>
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
