@@ -478,15 +478,13 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
             }
           }}
         >
-          <div className="flex items-center gap-3">
+          <div className="flex items-center justify-start gap-3 text-left">
             <div className="rounded-lg bg-blue-500/10 p-2">
-              <Target className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+              <Target className="h-5 w-5 text-dynamic-blue" />
             </div>
             <div>
-              <p className="font-medium text-blue-700 text-sm dark:text-blue-300">
-                Total Tasks
-              </p>
-              <p className="font-bold text-2xl text-blue-900 dark:text-blue-100">
+              <p className="font-medium text-dynamic-blue">Total Tasks</p>
+              <p className="font-bold text-2xl text-dynamic-blue">
                 {totalTasks}
               </p>
             </div>
@@ -504,7 +502,7 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
             }
           }}
         >
-          <div className="flex items-center gap-3">
+          <div className="flex items-center justify-start gap-3 text-left">
             <div className="rounded-lg bg-green-500/10 p-2">
               <CheckCircle2 className="h-5 w-5 text-green-600 dark:text-green-400" />
             </div>
@@ -520,7 +518,7 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
         </button>
 
         <div className="rounded-xl border bg-gradient-to-br from-purple-50 to-purple-100/50 p-4 transition-all hover:shadow-md dark:from-purple-950/20 dark:to-purple-900/10">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center justify-start gap-3 text-left">
             <div className="rounded-lg bg-purple-500/10 p-2">
               <TrendingUp className="h-5 w-5 text-purple-600 dark:text-purple-400" />
             </div>
@@ -547,7 +545,7 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
           }}
           aria-label="View overdue tasks"
         >
-          <div className="flex items-center gap-3">
+          <div className="flex items-center justify-start gap-3 text-left">
             <div className="rounded-lg bg-red-500/10 p-2">
               <Clock className="h-5 w-5 text-red-600 dark:text-red-400" />
             </div>
@@ -574,7 +572,7 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
           }}
           aria-label="View urgent priority tasks"
         >
-          <div className="flex items-center gap-3">
+          <div className="flex items-center justify-start gap-3 text-left">
             <div className="rounded-lg bg-orange-500/10 p-2">
               <Zap className="h-5 w-5 text-orange-600 dark:text-orange-400" />
             </div>
@@ -993,7 +991,7 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
                             {board.name}
                           </h3>
                           {/* Compact Task Summary */}
-                          <div className="mt-1 flex items-center gap-3 text-muted-foreground text-xs">
+                          <div className="mt-1 flex items-center justify-start gap-3 text-left text-muted-foreground text-xs">
                             <span className="flex items-center gap-1">
                               <BarChart3 className="h-3 w-3" />
                               <span className="font-medium text-foreground">
@@ -1134,7 +1132,7 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
                     {/* Alert Indicators */}
                     {(board.overdueTasks > 0 ||
                       board.highPriorityTasks > 0) && (
-                      <div className="mb-3 flex items-center gap-3 rounded-lg bg-muted/50 p-2">
+                      <div className="mb-3 flex items-center justify-start gap-3 rounded-lg bg-muted/50 p-2 text-left">
                         {board.overdueTasks > 0 && (
                           <div className="flex items-center gap-1 text-red-600">
                             <Clock className="h-3 w-3" />
@@ -1429,7 +1427,7 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
             <div className="flex h-full flex-col">
               {/* Header */}
               <div className="flex items-center justify-between border-b p-6">
-                <div className="flex items-center gap-3">
+                <div className="flex items-center justify-start gap-3 text-left">
                   <div className="rounded-lg bg-primary/10 p-2">
                     <LayoutGrid className="h-5 w-5 text-primary" />
                   </div>

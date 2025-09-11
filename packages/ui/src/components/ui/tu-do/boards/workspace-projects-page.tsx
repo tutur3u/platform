@@ -5,8 +5,8 @@ import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import { Button } from '@tuturuuu/ui/button';
 import { Plus } from '@tuturuuu/ui/icons';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
-import { getTranslations } from 'next-intl/server';
 import { redirect } from 'next/navigation';
+import { getTranslations } from 'next-intl/server';
 import { EnhancedBoardsView } from './enhanced-boards-view';
 import { TaskBoardForm } from './form';
 
@@ -173,9 +173,9 @@ export default async function WorkspaceProjectsPage({
 
           {/* Workspace Summary */}
           {workspaceTotals.totalBoards > 0 && (
-            <div className="flex flex-wrap items-center gap-4 pt-2 text-sm">
+            <div className="flex flex-wrap items-center justify-start gap-4 pt-2 text-left text-sm">
               <div className="flex items-center gap-1">
-                <div className="h-2 w-2 rounded-full bg-blue-500" />
+                <div className="h-2 w-2 rounded-full bg-dynamic-blue" />
                 <span className="text-muted-foreground">
                   <strong className="text-foreground">
                     {workspaceTotals.totalBoards}
@@ -185,7 +185,7 @@ export default async function WorkspaceProjectsPage({
                 </span>
               </div>
               <div className="flex items-center gap-1">
-                <div className="h-2 w-2 rounded-full bg-gray-500" />
+                <div className="h-2 w-2 rounded-full bg-dynamic-gray" />
                 <span className="text-muted-foreground">
                   <strong className="text-foreground">
                     {workspaceTotals.totalTasks}
@@ -196,9 +196,9 @@ export default async function WorkspaceProjectsPage({
               </div>
               {workspaceTotals.completedTasks > 0 && (
                 <div className="flex items-center gap-1">
-                  <div className="h-2 w-2 rounded-full bg-green-500" />
+                  <div className="h-2 w-2 rounded-full bg-dynamic-green" />
                   <span className="text-muted-foreground">
-                    <strong className="text-green-600">
+                    <strong className="text-dynamic-green">
                       {workspaceTotals.completedTasks}
                     </strong>{' '}
                     completed
@@ -207,9 +207,9 @@ export default async function WorkspaceProjectsPage({
               )}
               {workspaceTotals.activeTasks > 0 && (
                 <div className="flex items-center gap-1">
-                  <div className="h-2 w-2 rounded-full bg-orange-500" />
+                  <div className="h-2 w-2 rounded-full bg-dynamic-orange" />
                   <span className="text-muted-foreground">
-                    <strong className="text-orange-600">
+                    <strong className="text-dynamic-orange">
                       {workspaceTotals.activeTasks}
                     </strong>{' '}
                     active
@@ -218,9 +218,9 @@ export default async function WorkspaceProjectsPage({
               )}
               {workspaceTotals.overdueTasks > 0 && (
                 <div className="flex items-center gap-1">
-                  <div className="h-2 w-2 rounded-full bg-red-500" />
+                  <div className="h-2 w-2 rounded-full bg-dynamic-red" />
                   <span className="text-muted-foreground">
-                    <strong className="text-red-600">
+                    <strong className="text-dynamic-red">
                       {workspaceTotals.overdueTasks}
                     </strong>{' '}
                     overdue
@@ -265,8 +265,8 @@ async function getData(
   if (q) queryBuilder.ilike('name', `%${q}%`);
 
   if (page && pageSize) {
-    const parsedPage = parseInt(page);
-    const parsedSize = parseInt(pageSize);
+    const parsedPage = parseInt(page, 10);
+    const parsedSize = parseInt(pageSize, 10);
     const start = (parsedPage - 1) * parsedSize;
     const end = parsedPage * parsedSize;
     queryBuilder.range(start, end).limit(parsedSize);

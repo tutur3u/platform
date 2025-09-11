@@ -44,16 +44,21 @@ import {
   Clock,
   Flag,
   GripVertical,
+  horseHead,
+  Icon,
   List,
   Loader2,
   MoreHorizontal,
   Move,
   Plus,
+  Rabbit,
   Tag,
   Timer,
   Trash2,
+  Turtle,
   UserMinus,
   UserStar,
+  unicornHead,
   X,
 } from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
@@ -721,21 +726,20 @@ export const TaskCard = React.memo(function TaskCard({
     };
 
     const labels = {
-      critical: 'Urgent',
-      high: 'High',
-      normal: 'Medium',
-      low: 'Low',
+      critical: <Icon iconNode={unicornHead} className="h-3 w-3" />,
+      high: <Icon iconNode={horseHead} className="h-3 w-3" />,
+      normal: <Rabbit className="h-3 w-3" />,
+      low: <Turtle className="h-3 w-3" />,
     };
 
     return (
       <Badge
         variant="secondary"
         className={cn(
-          'scale-85 px-1.5 py-0.5 text-xs',
+          'p-1 text-xs',
           colors[task.priority as keyof typeof colors]
         )}
       >
-        <Flag className="mr-1 h-3 w-3" />
         {labels[task.priority as keyof typeof labels]}
       </Badge>
     );
@@ -832,6 +836,7 @@ export const TaskCard = React.memo(function TaskCard({
                 type="button"
                 className={cn(
                   'w-full cursor-pointer text-left font-semibold text-xs leading-tight transition-colors duration-200',
+                  'line-clamp-2',
                   task.archived
                     ? 'text-muted-foreground line-through'
                     : '-mx-1 -my-0.5 rounded-sm px-1 py-0.5 text-foreground active:bg-muted/50'
@@ -848,32 +853,6 @@ export const TaskCard = React.memo(function TaskCard({
                 {task.name}
               </button>
             </div>
-            {/* Description (simplified display with line clamping) */}
-            {task.description && (
-              <div className="mb-2">
-                <button
-                  type="button"
-                  className="-mx-1 -my-1 w-full cursor-pointer rounded-sm border-none bg-transparent p-0 px-1 py-1 text-left transition-colors duration-200 hover:bg-muted/20 focus:bg-muted/20 active:bg-muted/40"
-                  onClick={(e) => {
-                    // Don't allow editing when Shift is held (multi-select mode)
-                    if (!e.shiftKey) {
-                      setEditDialogOpen(true);
-                    }
-                  }}
-                  onKeyDown={(e) => {
-                    if ((e.key === 'Enter' || e.key === ' ') && !e.shiftKey) {
-                      setEditDialogOpen(true);
-                    }
-                  }}
-                  aria-label="Edit task description"
-                  title={`${getDescriptionText(task.description)}\n\nClick to edit task`}
-                >
-                  <div className="line-clamp-3 whitespace-pre-line text-muted-foreground text-xs leading-[1.4]">
-                    {getDescriptionText(task.description)}
-                  </div>
-                </button>
-              </div>
-            )}
           </div>
           {/* Actions (date picker, menu) remain unchanged */}
           <div className="flex items-center justify-end gap-1">
@@ -1451,6 +1430,16 @@ export const TaskCard = React.memo(function TaskCard({
               </DropdownMenu>
             )}
           </div>
+          {/* Assignee: left, not cut off */}
+          {!isPersonalWorkspace && (
+            <div className="min-w-0 max-w-[120px] flex-shrink-0 overflow-hidden truncate">
+              <AssigneeSelect
+                taskId={task.id}
+                assignees={task.assignees}
+                onUpdate={onUpdate}
+              />
+            </div>
+          )}
         </div>
         {/* Dates Row (compact, smaller font) */}
         {(startDate || endDate) && (
@@ -1489,26 +1478,10 @@ export const TaskCard = React.memo(function TaskCard({
         )}
         {/* Bottom Row: Three-column layout for assignee, priority, and checkbox, with only one tag visible and +N tooltip for extras */}
         <div className="flex h-8 min-w-0 items-center gap-x-1 overflow-hidden whitespace-nowrap">
-          {/* Assignee: left, not cut off */}
-          {!isPersonalWorkspace && (
-            <div className="min-w-0 max-w-[120px] flex-shrink-0 overflow-hidden truncate">
-              <AssigneeSelect
-                taskId={task.id}
-                assignees={task.assignees}
-                onUpdate={onUpdate}
-              />
-            </div>
-          )}
           {/* Priority */}
           {!task.archived && task.priority && (
             <div className="min-w-0 max-w-[80px] overflow-hidden">
               {getPriorityIndicator()}
-            </div>
-          )}
-          {/* Labels */}
-          {!task.archived && task.labels && task.labels.length > 0 && (
-            <div className="flex min-w-0 flex-shrink-0 flex-wrap gap-1">
-              <TaskLabelsDisplay labels={task.labels} size="sm" />
             </div>
           )}
           {/* Estimation Points */}
@@ -1520,6 +1493,12 @@ export const TaskCard = React.memo(function TaskCard({
                 estimationType={boardConfig?.estimation_type}
                 showIcon
               />
+            </div>
+          )}
+          {/* Labels */}
+          {!task.archived && task.labels && task.labels.length > 0 && (
+            <div className="flex min-w-0 flex-shrink-0 flex-wrap gap-1">
+              <TaskLabelsDisplay labels={task.labels} size="sm" />
             </div>
           )}
           {/* Checkbox: always at far right */}

@@ -75,8 +75,8 @@ export const projectColumns = (
     ),
     cell: ({ row }) => (
       <div className="flex items-center gap-2">
-        <div className="rounded bg-blue-500/10 p-1">
-          <span className="font-medium text-blue-600 text-sm">
+        <div className="rounded border border-dynamic-blue/20 bg-dynamic-blue/10 px-2 py-1">
+          <span className="font-medium text-dynamic-blue">
             {row.original.totalTasks || 0}
           </span>
         </div>
@@ -90,8 +90,8 @@ export const projectColumns = (
     ),
     cell: ({ row }) => (
       <div className="flex items-center gap-2">
-        <div className="rounded bg-green-500/10 p-1">
-          <span className="font-medium text-green-600 text-sm">
+        <div className="rounded border border-dynamic-green/20 bg-dynamic-green/10 px-2 py-1">
+          <span className="font-medium text-dynamic-green">
             {row.original.completedTasks || 0}
           </span>
         </div>
@@ -115,8 +115,8 @@ export const projectColumns = (
     ),
     cell: ({ row }) => (
       <div className="flex items-center gap-2">
-        <div className="rounded bg-orange-500/10 p-1">
-          <span className="font-medium text-orange-600 text-sm">
+        <div className="rounded border border-dynamic-orange/20 bg-dynamic-orange/10 px-2 py-1">
+          <span className="font-medium text-dynamic-orange text-sm">
             {row.original.activeTasks || 0}
           </span>
         </div>
@@ -131,17 +131,17 @@ export const projectColumns = (
     cell: ({ row }) => (
       <div className="flex items-center gap-2">
         <div
-          className={`rounded p-1 ${
+          className={`rounded border px-2 py-1 ${
             (row.original.overdueTasks || 0) > 0
-              ? 'bg-red-500/10'
-              : 'bg-gray-500/10'
+              ? 'border-dynamic-red/20 bg-dynamic-red/10'
+              : 'border-dynamic-gray/20 bg-dynamic-gray/10'
           }`}
         >
           <span
-            className={`font-medium text-sm ${
+            className={`border font-medium text-sm ${
               (row.original.overdueTasks || 0) > 0
-                ? 'text-red-600'
-                : 'text-gray-600'
+                ? 'text-dynamic-red'
+                : 'text-dynamic-gray'
             }`}
           >
             {row.original.overdueTasks || 0}

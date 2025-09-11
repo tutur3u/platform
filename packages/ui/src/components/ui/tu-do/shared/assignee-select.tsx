@@ -17,10 +17,9 @@ import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import {
   Crown,
   Loader2,
+  UserCircle,
   UserMinus,
   UserPlus,
-  Users,
-  X,
 } from '@tuturuuu/ui/icons';
 import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
 import { cn } from '@tuturuuu/utils/format';
@@ -294,60 +293,27 @@ export function AssigneeSelect({ taskId, assignees = [], onUpdate }: Props) {
         >
           {uniqueAssignees.length > 0 ? (
             <div className="flex min-w-0 items-center gap-1">
-              <div className="flex items-center gap-1">
-                {uniqueAssignees.slice(0, 2).map((assignee) => (
+              <div className="-space-x-3 flex items-center gap-1">
+                {uniqueAssignees.slice(0, 4).map((assignee) => (
                   <div
                     key={assignee.id}
                     className="group/assignee relative flex items-center"
                   >
                     <Avatar className="h-4 w-4 border border-background shadow-sm">
                       <AvatarImage src={assignee.avatar_url} />
-                      <AvatarFallback className="bg-gradient-to-br from-blue-100 to-indigo-100 text-[8px] text-blue-700 dark:from-blue-900 dark:to-indigo-900 dark:text-blue-300">
+                      <AvatarFallback>
                         {assignee.display_name?.[0] ||
                           assignee.email?.[0] ||
                           '?'}
                       </AvatarFallback>
                     </Avatar>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="xs"
-                      className={cn(
-                        '-right-1 -top-1 absolute h-3 w-3 rounded-full bg-red-500 p-0 opacity-0 transition-all duration-200',
-                        'hover:scale-110 hover:bg-red-600',
-                        'group-hover/assignee:opacity-100',
-                        'border border-background shadow-sm'
-                      )}
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        handleSelect(assignee.id);
-                      }}
-                      disabled={assigneeMutation.isPending}
-                      title={`Remove ${assignee.display_name || assignee.email}`}
-                    >
-                      <X className="h-2 w-2 text-white" />
-                    </Button>
                   </div>
                 ))}
               </div>
-              {uniqueAssignees.length > 2 && (
-                <span className="font-medium text-[10px] text-gray-600 dark:text-gray-400">
-                  +{uniqueAssignees.length - 2}
-                </span>
-              )}
-              <span className="truncate text-[10px] text-gray-600 dark:text-gray-400">
-                {uniqueAssignees.length === 1
-                  ? uniqueAssignees[0]?.display_name ||
-                    uniqueAssignees[0]?.email?.split('@')[0] ||
-                    'User'
-                  : `${uniqueAssignees.length} assigned`}
-              </span>
             </div>
           ) : (
-            <div className="flex items-center gap-1 text-gray-500 dark:text-gray-400">
-              <Users className="h-3 w-3" />
-              <span className="text-[10px]">Assign</span>
+            <div className="flex items-center gap-1 text-muted-foreground">
+              <UserCircle className="h-4 w-4" />
             </div>
           )}
           {isLoading ? (
