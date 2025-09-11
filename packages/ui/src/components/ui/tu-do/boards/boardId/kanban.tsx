@@ -24,7 +24,6 @@ import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent } from '@tuturuuu/ui/card';
-import { useHorizontalScroll } from '@tuturuuu/ui/hooks/useHorizontalScroll';
 import { coordinateGetter } from '@tuturuuu/utils/keyboard-preset';
 import { useMoveTask, useMoveTaskToBoard } from '@tuturuuu/utils/task-helper';
 import { hasDraggableData } from '@tuturuuu/utils/task-helpers';
@@ -35,7 +34,7 @@ import { LightweightTaskCard } from './task';
 import { BoardColumn } from './task-list';
 import { TaskListForm } from './task-list-form';
 
-// Wrapper for BoardContainer with horizontal scroll functionality
+// Simplified scrollable container with native scrolling behavior
 function ScrollableBoardContainer({
   children,
   isDragActive,
@@ -43,18 +42,130 @@ function ScrollableBoardContainer({
   children: React.ReactNode;
   isDragActive?: () => boolean;
 }) {
-  const { scrollContainerRef } = useHorizontalScroll({
-    enableTouchScroll: true,
-    enableMouseWheel: true,
-    isDragActive,
-  });
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const [showScrollHint, setShowScrollHint] = useState(false);
+  const [hintDismissed, setHintDismissed] = useState(false);
+
+  // Track drag state to prevent scroll interference
+  useEffect(() => {
+    if (isDragActive) {
+      const dragState = isDragActive();
+      setIsDragging(dragState);
+    }
+  }, [isDragActive]);
+
+  // Enhanced scroll behavior with mouse wheel support
+  useEffect(() => {
+    const scrollContainer = scrollRef.current;
+    if (!scrollContainer) return;
+
+    const handleWheel = (e: WheelEvent) => {
+      // Don't interfere with vertical scrolling or if dragging
+      if (isDragging) return;
+
+      // Handle horizontal scrolling with mouse wheel
+      if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) {
+        // Horizontal wheel movement - use native behavior
+        return;
+      }
+
+      // Convert vertical wheel to horizontal scroll when shift is pressed
+      if (e.shiftKey && e.deltaY !== 0) {
+        e.preventDefault();
+        scrollContainer.scrollLeft += e.deltaY;
+        return;
+      }
+
+      // Convert vertical wheel to horizontal scroll if content overflows horizontally
+      const hasHorizontalScroll =
+        scrollContainer.scrollWidth > scrollContainer.clientWidth;
+      const hasVerticalScroll =
+        scrollContainer.scrollHeight > scrollContainer.clientHeight;
+
+      if (hasHorizontalScroll && !hasVerticalScroll && e.deltaY !== 0) {
+        e.preventDefault();
+        scrollContainer.scrollLeft += e.deltaY;
+      }
+    };
+
+    scrollContainer.addEventListener('wheel', handleWheel, { passive: false });
+    return () => scrollContainer.removeEventListener('wheel', handleWheel);
+  }, [isDragging]);
+
+  // Check if horizontal scrolling is available and show hint
+  useEffect(() => {
+    const scrollContainer = scrollRef.current;
+    if (!scrollContainer) return;
+
+    const checkScrollable = () => {
+      const hasHorizontalScroll =
+        scrollContainer.scrollWidth > scrollContainer.clientWidth;
+      setShowScrollHint(hasHorizontalScroll && !hintDismissed);
+    };
+
+    const handleScroll = () => {
+      // Dismiss hint when user actually scrolls
+      if (showScrollHint) {
+        setHintDismissed(true);
+        setShowScrollHint(false);
+      }
+    };
+
+    // Check initially and on resize
+    checkScrollable();
+    const resizeObserver = new ResizeObserver(checkScrollable);
+    resizeObserver.observe(scrollContainer);
+    scrollContainer.addEventListener('scroll', handleScroll);
+
+    // Auto-dismiss hint after 5 seconds
+    const hintTimer = setTimeout(() => {
+      setHintDismissed(true);
+      setShowScrollHint(false);
+    }, 5000);
+
+    return () => {
+      resizeObserver.disconnect();
+      scrollContainer.removeEventListener('scroll', handleScroll);
+      clearTimeout(hintTimer);
+    };
+  }, [showScrollHint, hintDismissed]);
 
   return (
-    <div
-      ref={scrollContainerRef}
-      className="scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent relative flex h-full w-full gap-4 overflow-x-auto"
-    >
-      {children}
+    <div className="relative h-full w-full">
+      <section
+        ref={scrollRef}
+        className="scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent hover:scrollbar-thumb-gray-400 flex h-full w-full gap-4 overflow-x-auto overflow-y-hidden scroll-smooth"
+        style={{
+          // Ensure smooth scrolling on all browsers
+          scrollBehavior: isDragging ? 'auto' : 'smooth',
+          // Improve scroll performance
+          willChange: isDragging ? 'auto' : 'scroll-position',
+        }}
+        // Add scroll indicators via data attributes for CSS styling
+        data-scrollable="horizontal"
+        aria-label="Kanban board columns"
+      >
+        {children}
+      </section>
+
+      {/* Scroll hint indicator */}
+      {showScrollHint && !isDragging && (
+        <div className="absolute top-4 right-4 z-10 flex items-center gap-2 rounded-md border bg-background/95 px-3 py-2 text-muted-foreground text-xs shadow-md backdrop-blur-sm">
+          <span>Shift + scroll or drag to scroll horizontally</span>
+          <button
+            type="button"
+            onClick={() => {
+              setHintDismissed(true);
+              setShowScrollHint(false);
+            }}
+            className="ml-1 rounded-sm p-0.5 hover:bg-muted"
+            aria-label="Dismiss scroll hint"
+          >
+            ×
+          </button>
+        </div>
+      )}
     </div>
   );
 }
@@ -105,7 +216,6 @@ export function KanbanBoard({ workspace, boardId, tasks, isLoading }: Props) {
   // Ref for the Kanban board container
   const boardRef = useRef<HTMLDivElement>(null);
   const dragStartCardLeft = useRef<number | null>(null);
-  const overlayWidth = 350; // Column width
 
   const handleTaskCreated = useCallback(() => {
     // Invalidate the tasks query to trigger a refetch
@@ -280,24 +390,20 @@ export function KanbanBoard({ workspace, boardId, tasks, isLoading }: Props) {
       pickedUpTaskColumn.current = String(task.list_id);
       console.log('📋 pickedUpTaskColumn set to:', pickedUpTaskColumn.current);
 
-      // Use more specific selector for better reliability
-      // Prefer data-id selector over generic querySelector
-      const cardNode = document.querySelector(
-        `[data-id="${task.id}"]`
-      ) as HTMLElement;
-      if (cardNode) {
-        const cardRect = cardNode.getBoundingClientRect();
-        dragStartCardLeft.current = cardRect.left;
-      } else {
-        // Fallback: try to find the card by task ID in a more specific way
-        const taskCards = document.querySelectorAll('[data-id]');
-        const targetCard = Array.from(taskCards).find(
-          (card) => card.getAttribute('data-id') === task.id
+      // Simplified drag position tracking without complex DOM queries
+      // This prevents interference with scroll position
+      try {
+        const cardNode = document.querySelector(
+          `[data-id="${task.id}"]`
         ) as HTMLElement;
-        if (targetCard) {
-          const cardRect = targetCard.getBoundingClientRect();
+        if (cardNode) {
+          const cardRect = cardNode.getBoundingClientRect();
           dragStartCardLeft.current = cardRect.left;
         }
+      } catch (error) {
+        // If DOM query fails, don't block the drag operation
+        console.warn('Could not track drag start position:', error);
+        dragStartCardLeft.current = 0;
       }
       return;
     }
@@ -676,18 +782,21 @@ export function KanbanBoard({ workspace, boardId, tasks, isLoading }: Props) {
             },
           }}
           modifiers={[
+            // Simplified modifier that doesn't interfere with scrolling
             (args) => {
               const { transform } = args;
-              if (!boardRef.current || dragStartCardLeft.current === null)
-                return transform;
-              const boardRect = boardRef.current.getBoundingClientRect();
-              // Clamp overlay within board
-              const minX = boardRect.left - dragStartCardLeft.current;
-              const maxX =
-                boardRect.right - dragStartCardLeft.current - overlayWidth;
+              // Only apply basic constraints without complex clamping
               return {
                 ...transform,
-                x: Math.max(minX, Math.min(transform.x, maxX)),
+                // Ensure overlay doesn't go too far off-screen
+                x: Math.max(
+                  -200,
+                  Math.min(transform.x, window.innerWidth - 150)
+                ),
+                y: Math.max(
+                  -50,
+                  Math.min(transform.y, window.innerHeight - 100)
+                ),
               };
             },
           ]}
