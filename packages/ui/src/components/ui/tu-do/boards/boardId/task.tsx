@@ -41,7 +41,6 @@ import {
   CircleFadingArrowUpIcon,
   CircleSlash,
   Clock,
-  Edit3,
   Flag,
   GripVertical,
   List,
@@ -53,10 +52,8 @@ import {
   UserStar,
   X,
 } from '@tuturuuu/ui/icons';
-import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
-import { Textarea } from '@tuturuuu/ui/textarea';
 import { cn } from '@tuturuuu/utils/format';
 import {
   moveTask,
@@ -135,11 +132,6 @@ export const TaskCard = React.memo(function TaskCard({
 }: Props) {
   const [isLoading, setIsLoading] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
-  const [isEditing, setIsEditing] = useState(false);
-  const [editName, setEditName] = useState(task.name);
-  const [editDescription, setEditDescription] = useState(
-    task.description || ''
-  );
   const [menuOpen, setMenuOpen] = useState(false);
   const [customDateOpen, setCustomDateOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -236,29 +228,6 @@ export const TaskCard = React.memo(function TaskCard({
         onSettled: () => {
           setIsLoading(false);
           onUpdate();
-        },
-      }
-    );
-  }
-
-  // Quick actions
-  async function handleQuickEdit() {
-    if (editName.trim() === '') return;
-
-    setIsLoading(true);
-    updateTaskMutation.mutate(
-      {
-        taskId: task.id,
-        updates: {
-          name: editName.trim(),
-          description: editDescription.trim(),
-        },
-      },
-      {
-        onSettled: () => {
-          setIsLoading(false);
-          setIsEditing(false);
-          onUpdate?.();
         },
       }
     );
@@ -654,100 +623,50 @@ export const TaskCard = React.memo(function TaskCard({
           {DragHandle}
 
           <div className="min-w-0 flex-1">
-            {isEditing ? (
-              <div className="space-y-2">
-                <Input
-                  value={editName}
-                  onChange={(e) => setEditName(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') handleQuickEdit();
-                    if (e.key === 'Escape') {
-                      setIsEditing(false);
-                      setEditName(task.name);
-                      setEditDescription(task.description || '');
+            <div className="mb-1 flex items-center gap-2">
+              <button
+                type="button"
+                className={cn(
+                  'w-full cursor-pointer text-left font-semibold text-xs leading-tight transition-colors duration-200',
+                  task.archived
+                    ? 'text-muted-foreground line-through'
+                    : '-mx-1 -my-0.5 rounded-sm px-1 py-0.5 text-foreground hover:bg-muted/30 hover:text-primary active:bg-muted/50 group-hover:text-foreground/90'
+                )}
+                onClick={(e) => {
+                  // Don't allow editing when Shift is held (multi-select mode)
+                  if (!e.shiftKey) {
+                    setEditDialogOpen(true);
+                  }
+                }}
+                aria-label={`Edit task: ${task.name}`}
+                title="Click to edit task"
+              >
+                {task.name}
+              </button>
+            </div>
+            {/* Description (truncated, tooltip on hover) */}
+            {task.description && (
+              <div className="mb-1">
+                <button
+                  type="button"
+                  className="scrollbar-none group-hover:scrollbar-thin scrollbar-track-transparent scrollbar-thumb-muted-foreground/30 group-hover:scrollbar-thumb-muted-foreground/50 -mx-1 -my-0.5 max-h-20 w-full cursor-pointer overflow-y-auto whitespace-pre-line rounded-sm border-none bg-transparent p-0 px-1 py-0.5 text-left text-muted-foreground text-xs transition-colors duration-200 hover:bg-muted/20 hover:text-foreground focus:outline-none active:bg-muted/40"
+                  title={`${task.description}\n\nClick to edit task`}
+                  onClick={(e) => {
+                    // Don't allow editing when Shift is held (multi-select mode)
+                    if (!e.shiftKey) {
+                      setEditDialogOpen(true);
                     }
                   }}
-                  className="font-semibold text-sm"
-                  autoFocus
-                />
-                <Textarea
-                  value={editDescription}
-                  onChange={(e) => setEditDescription(e.target.value)}
-                  placeholder="Add description..."
-                  className="text-xs"
-                />
-                <div className="flex justify-end gap-2 pt-1">
-                  <Button
-                    size="sm"
-                    onClick={handleQuickEdit}
-                    disabled={isLoading}
-                    className="h-7 px-3 text-xs"
-                  >
-                    Save
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => {
-                      setIsEditing(false);
-                      setEditName(task.name);
-                      setEditDescription(task.description || '');
-                    }}
-                    className="h-7 px-3 text-xs"
-                  >
-                    Cancel
-                  </Button>
-                </div>
+                  onKeyDown={(e) => {
+                    if ((e.key === 'Enter' || e.key === ' ') && !e.shiftKey) {
+                      setEditDialogOpen(true);
+                    }
+                  }}
+                  aria-label="Edit task description"
+                >
+                  {task.description}
+                </button>
               </div>
-            ) : (
-              <>
-                <div className="mb-1 flex items-center gap-2">
-                  <button
-                    type="button"
-                    className={cn(
-                      'w-full cursor-pointer text-left font-semibold text-xs leading-tight transition-colors',
-                      task.archived
-                        ? 'text-muted-foreground line-through'
-                        : 'text-foreground hover:text-primary group-hover:text-foreground/90'
-                    )}
-                    onClick={(e) => {
-                      // Don't allow editing when Shift is held (multi-select mode)
-                      if (!e.shiftKey) {
-                        setIsEditing(true);
-                      }
-                    }}
-                    aria-label={`Edit task: ${task.name}`}
-                  >
-                    {task.name}
-                  </button>
-                </div>
-                {/* Description (truncated, tooltip on hover) */}
-                {task.description && (
-                  <div className="mb-1">
-                    <button
-                      type="button"
-                      className="scrollbar-none group-hover:scrollbar-thin scrollbar-track-transparent scrollbar-thumb-muted-foreground/30 group-hover:scrollbar-thumb-muted-foreground/50 max-h-20 w-full cursor-pointer overflow-y-auto whitespace-pre-line border-none bg-transparent p-0 text-left text-muted-foreground text-xs hover:text-foreground focus:outline-none"
-                      title={task.description}
-                      onClick={(e) => {
-                        // Don't allow editing when Shift is held (multi-select mode)
-                        if (!e.shiftKey) {
-                          setIsEditing(true);
-                        }
-                      }}
-                      onKeyDown={(e) => {
-                        if (
-                          (e.key === 'Enter' || e.key === ' ') &&
-                          !e.shiftKey
-                        ) {
-                          setIsEditing(true);
-                        }
-                      }}
-                    >
-                      {task.description}
-                    </button>
-                  </div>
-                )}
-              </>
             )}
           </div>
           {/* Actions (date picker, menu) remain unchanged */}
@@ -889,19 +808,6 @@ export const TaskCard = React.memo(function TaskCard({
                   className="w-48"
                   sideOffset={5}
                 >
-                  <DropdownMenuItem
-                    onClick={() => {
-                      setEditDialogOpen(true);
-                      setMenuOpen(false);
-                    }}
-                    className="cursor-pointer"
-                  >
-                    <Edit3 className="h-4 w-4" />
-                    Edit task
-                  </DropdownMenuItem>
-
-                  {<DropdownMenuSeparator />}
-
                   {/* Quick Completion Action */}
                   {canMoveToCompletion && (
                     <DropdownMenuItem
