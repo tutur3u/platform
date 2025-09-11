@@ -110,7 +110,9 @@ export function ProductSelection({
         <CardContent className="space-y-4">
           {/* Product Selection */}
           <div className="space-y-2">
-            <Label htmlFor="product-select">{t('ws-invoices.select_product')}</Label>
+            <Label htmlFor="product-select">
+              {t('ws-invoices.select_product')}
+            </Label>
             <Combobox
               t={t}
               options={products.map(
@@ -288,7 +290,9 @@ function StockItem({ inventory, onAdd, t }: StockItemProps) {
           <p className="font-medium">{inventory.warehouse_name}</p>
           <p className="text-muted-foreground text-sm">
             {t('ws-invoices.available')}:{' '}
-            {inventory.amount === null ? t('ws-invoices.unlimited') : inventory.amount}{' '}
+            {inventory.amount === null
+              ? t('ws-invoices.unlimited')
+              : inventory.amount}{' '}
             {inventory.unit_name} •{' '}
             {Intl.NumberFormat('vi-VN', {
               style: 'currency',

@@ -283,8 +283,6 @@ export function SubscriptionInvoice({
     });
   }, [selectedGroupId, groupProducts, products, userAttendance?.length]);
 
-
-
   // Calculate totals for manual product selection
   const subscriptionSubtotal = useMemo(() => {
     return subscriptionSelectedProducts.reduce(
@@ -560,15 +558,18 @@ export function SubscriptionInvoice({
     );
     const groupName =
       selectedGroup?.workspace_user_groups?.name || 'Unknown Group';
-    const monthName = new Date(selectedMonth + '-01').toLocaleDateString(locale, {
-      year: 'numeric',
-      month: 'long',
-    });
+    const monthName = new Date(selectedMonth + '-01').toLocaleDateString(
+      locale,
+      {
+        year: 'numeric',
+        month: 'long',
+      }
+    );
 
     const contentParts = [
-      t('ws-invoices.subscription_invoice_for_group_month', { 
-        groupName, 
-        monthName 
+      t('ws-invoices.subscription_invoice_for_group_month', {
+        groupName,
+        monthName,
       }),
     ];
 
@@ -583,7 +584,7 @@ export function SubscriptionInvoice({
         total: totalSessions,
         present: attendanceStats.present,
         late: attendanceStats.late,
-        absent: attendanceStats.absent
+        absent: attendanceStats.absent,
       });
     }
 
@@ -599,7 +600,9 @@ export function SubscriptionInvoice({
 
       if (additionalProductCount > 0) {
         contentParts.push(
-          t('ws-invoices.additional_products_count', { count: additionalProductCount })
+          t('ws-invoices.additional_products_count', {
+            count: additionalProductCount,
+          })
         );
       }
     }
@@ -691,9 +694,7 @@ export function SubscriptionInvoice({
       !selectedWalletId ||
       !selectedCategoryId
     ) {
-      toast(
-        t('ws-invoices.create_subscription_invoice_validation')
-      );
+      toast(t('ws-invoices.create_subscription_invoice_validation'));
       return;
     }
 
@@ -755,23 +756,30 @@ export function SubscriptionInvoice({
                 currency: 'VND',
               }).format(calculated_values.rounding_applied)}`
             : '';
-        toast(
-          t('ws-invoices.subscription_invoice_created_recalculated'),
-          {
-            description: `${t('ws-invoices.server_calculated')}: ${Intl.NumberFormat('vi-VN', {
+        toast(t('ws-invoices.subscription_invoice_created_recalculated'), {
+          description: `${t('ws-invoices.server_calculated')}: ${Intl.NumberFormat(
+            'vi-VN',
+            {
               style: 'currency',
               currency: 'VND',
-            }).format(
-              calculated_values.total
-            )} | ${t('ws-invoices.frontend_calculated')}: ${Intl.NumberFormat('vi-VN', {
+            }
+          ).format(
+            calculated_values.total
+          )} | ${t('ws-invoices.frontend_calculated')}: ${Intl.NumberFormat(
+            'vi-VN',
+            {
               style: 'currency',
               currency: 'VND',
-            }).format(frontend_values?.total || 0)}${roundingInfo}`,
-            duration: 5000,
-          }
-        );
+            }
+          ).format(frontend_values?.total || 0)}${roundingInfo}`,
+          duration: 5000,
+        });
       } else {
-        toast(t('ws-invoices.subscription_invoice_created_success', { invoiceId: result.invoice_id }));
+        toast(
+          t('ws-invoices.subscription_invoice_created_success', {
+            invoiceId: result.invoice_id,
+          })
+        );
       }
 
       // Reset form
@@ -791,8 +799,11 @@ export function SubscriptionInvoice({
     } catch (error) {
       console.error('Error creating subscription invoice:', error);
       toast(
-        t('ws-invoices.error_creating_subscription_invoice', { 
-          error: error instanceof Error ? error.message : t('ws-invoices.failed_to_create_subscription_invoice') 
+        t('ws-invoices.error_creating_subscription_invoice', {
+          error:
+            error instanceof Error
+              ? error.message
+              : t('ws-invoices.failed_to_create_subscription_invoice'),
         })
       );
     } finally {
@@ -805,7 +816,9 @@ export function SubscriptionInvoice({
       <div className="flex items-center justify-center py-8">
         <div className="flex items-center gap-2">
           <Loader2 className="h-4 w-4 animate-spin" />
-          <p className="text-muted-foreground text-sm">{t('ws-invoices.loading')}</p>
+          <p className="text-muted-foreground text-sm">
+            {t('ws-invoices.loading')}
+          </p>
         </div>
       </div>
     );
@@ -825,7 +838,9 @@ export function SubscriptionInvoice({
           </CardHeader>
           <CardContent className="space-y-2">
             <div className="space-y-2">
-              <Label htmlFor="customer-select">{t('ws-invoices.customer')}</Label>
+              <Label htmlFor="customer-select">
+                {t('ws-invoices.customer')}
+              </Label>
               <Combobox
                 t={t}
                 options={users.map(
@@ -846,10 +861,10 @@ export function SubscriptionInvoice({
         {selectedUserId && (
           <Card>
             <CardHeader>
-            <CardTitle>{t('ws-invoices.user_groups')}</CardTitle>
-            <CardDescription>
-              {t('ws-invoices.user_groups_description')}
-            </CardDescription>
+              <CardTitle>{t('ws-invoices.user_groups')}</CardTitle>
+              <CardDescription>
+                {t('ws-invoices.user_groups_description')}
+              </CardDescription>
             </CardHeader>
             <CardContent>
               {userGroupsLoading ? (
@@ -894,20 +909,20 @@ export function SubscriptionInvoice({
                             </div>
                             <div className="mt-1 space-y-1">
                               {group.starting_date && (
-                                    <p className="text-muted-foreground text-sm">
-                                      {t('ws-invoices.started')}:{' '}
-                                      {new Date(
-                                        group.starting_date
-                                      ).toLocaleDateString(locale)}
-                                    </p>
+                                <p className="text-muted-foreground text-sm">
+                                  {t('ws-invoices.started')}:{' '}
+                                  {new Date(
+                                    group.starting_date
+                                  ).toLocaleDateString(locale)}
+                                </p>
                               )}
                               {group.ending_date && (
-                                    <p className="text-muted-foreground text-sm">
-                                      {t('ws-invoices.ends')}:{' '}
-                                      {new Date(
-                                        group.ending_date
-                                      ).toLocaleDateString(locale)}
-                                    </p>
+                                <p className="text-muted-foreground text-sm">
+                                  {t('ws-invoices.ends')}:{' '}
+                                  {new Date(
+                                    group.ending_date
+                                  ).toLocaleDateString(locale)}
+                                </p>
                               )}
                             </div>
                           </div>
@@ -957,10 +972,13 @@ export function SubscriptionInvoice({
                 </div>
                 <CardDescription>
                   {t('ws-invoices.attendance_for_month', {
-                    month: new Date(selectedMonth + '-01').toLocaleDateString(locale, {
-                      year: 'numeric',
-                      month: 'long',
-                    })
+                    month: new Date(selectedMonth + '-01').toLocaleDateString(
+                      locale,
+                      {
+                        year: 'numeric',
+                        month: 'long',
+                      }
+                    ),
                   })}
                 </CardDescription>
               </div>
@@ -1227,7 +1245,9 @@ export function SubscriptionInvoice({
                   </Label>
                   <Textarea
                     id="subscription-invoice-content"
-                    placeholder={t('ws-invoices.subscription_invoice_content_placeholder')}
+                    placeholder={t(
+                      'ws-invoices.subscription_invoice_content_placeholder'
+                    )}
                     className="min-h-[80px]"
                     value={invoiceContent}
                     onChange={(e) => setInvoiceContent(e.target.value)}
@@ -1268,7 +1288,9 @@ export function SubscriptionInvoice({
                       onValueChange={setSelectedWalletId}
                     >
                       <SelectTrigger>
-                        <SelectValue placeholder={t('ws-invoices.select_wallet_required')} />
+                        <SelectValue
+                          placeholder={t('ws-invoices.select_wallet_required')}
+                        />
                       </SelectTrigger>
                       <SelectContent>
                         {wallets.map((wallet) => (
@@ -1280,7 +1302,8 @@ export function SubscriptionInvoice({
                               <CreditCard className="h-4 w-4" />
                               <div className="flex flex-row gap-2">
                                 <p className="font-medium">
-                                  {wallet.name || t('ws-invoices.unnamed_wallet')}
+                                  {wallet.name ||
+                                    t('ws-invoices.unnamed_wallet')}
                                 </p>
                                 <p className="text-muted-foreground text-sm">
                                   {wallet.type || 'STANDARD'} -{' '}
@@ -1305,7 +1328,8 @@ export function SubscriptionInvoice({
                       options={categories.map(
                         (category): ComboboxOptions => ({
                           value: category.id || '',
-                          label: category.name || t('ws-invoices.unnamed_category'),
+                          label:
+                            category.name || t('ws-invoices.unnamed_category'),
                         })
                       )}
                       selected={selectedCategoryId}
@@ -1377,7 +1401,9 @@ export function SubscriptionInvoice({
                           <div className="flex justify-between">
                             <span className="text-muted-foreground">
                               {t('ws-invoices.discount')} (
-                              {selectedPromotion.name || t('ws-invoices.unnamed_promotion')})
+                              {selectedPromotion.name ||
+                                t('ws-invoices.unnamed_promotion')}
+                              )
                             </span>
                             <span className="text-green-600">
                               -

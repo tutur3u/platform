@@ -2689,7 +2689,7 @@
     "paid": "Paid",
     "previous_month": "Previous month",
     "next_month": "Next month",
-    "select_month": "Select month...",  
+    "select_month": "Select month...",
     "invoice_configuration": "Invoice Information",
     "subscription_invoice_configuration": "Subscription Invoice Information",
     "subscription_invoice_content_placeholder": "Subscription invoice content...",
