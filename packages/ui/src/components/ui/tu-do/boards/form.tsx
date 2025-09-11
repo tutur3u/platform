@@ -36,8 +36,8 @@ import {
   useCreateBoardWithTemplate,
   useStatusTemplates,
 } from '@tuturuuu/utils/task-helper';
-import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import React, { useId } from 'react';
 import * as z from 'zod';
 import IconPicker from '../../custom/icon-picker';
@@ -79,27 +79,6 @@ const colorClasses: Record<SupportedColor, string> = {
   CYAN: 'bg-dynamic-cyan/30 border-dynamic-cyan/50',
 };
 
-// Common tag suggestions for task boards
-const TAG_SUGGESTIONS = [
-  'Development',
-  'Design',
-  'Marketing',
-  'Sales',
-  'Research',
-  'Planning',
-  'Testing',
-  'Documentation',
-  'Bug Fixes',
-  'Feature',
-  'Urgent',
-  'Personal',
-  'Work',
-  'Project',
-  'Team',
-  'Client',
-];
-
-// Utility function for error handling
 const getErrorMessage = (error: unknown): string => {
   if (error instanceof Error) return error.message;
   if (typeof error === 'string') return error;
