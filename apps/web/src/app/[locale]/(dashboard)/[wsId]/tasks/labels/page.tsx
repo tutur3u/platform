@@ -1,0 +1,64 @@
+import { createClient } from '@tuturuuu/supabase/next/server';
+import { getPermissions } from '@tuturuuu/utils/workspace-helper';
+import { redirect } from 'next/navigation';
+import TaskLabelsClient from './client';
+
+interface Props {
+  params: Promise<{
+    wsId: string;
+  }>;
+}
+
+interface TaskLabel {
+  id: string;
+  name: string;
+  color: string;
+  created_at: string;
+  creator_id: string | null;
+}
+
+export default async function TaskLabelsPage({ params }: Props) {
+  const { wsId } = await params;
+
+  // Check permissions
+  const { withoutPermission } = await getPermissions({
+    wsId,
+  });
+
+  if (withoutPermission('manage_projects')) redirect(`/${wsId}`);
+
+  // Fetch labels data
+  const { labels } = await getTaskLabels(wsId);
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="space-y-2">
+        <h1 className="font-bold text-2xl tracking-tight">Task Labels</h1>
+        <p className="text-muted-foreground">
+          Organize and categorize your tasks with custom labels
+        </p>
+      </div>
+
+      {/* Labels Management */}
+      <TaskLabelsClient wsId={wsId} initialLabels={labels} />
+    </div>
+  );
+}
+
+async function getTaskLabels(wsId: string): Promise<{ labels: TaskLabel[] }> {
+  const supabase = await createClient();
+
+  const { data: labels, error } = await supabase
+    .from('workspace_task_labels')
+    .select('*')
+    .eq('ws_id', wsId)
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    console.error('Error fetching task labels:', error);
+    return { labels: [] };
+  }
+
+  return { labels: labels || [] };
+}
