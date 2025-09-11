@@ -378,6 +378,12 @@ export async function WorkspaceNavigationLinks({
               matchExact: true,
             },
             {
+              title: t('sidebar_tabs.labels'),
+              icon: <Tags className="h-4 w-4" />,
+              tempDisabled: true,
+              matchExact: true,
+            },
+            {
               title: t('sidebar_tabs.teams'),
               icon: <SquareUserRound className="h-4 w-4" />,
               tempDisabled: true,
