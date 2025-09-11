@@ -1,11 +1,7 @@
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { useQuery } from '@tanstack/react-query';
-import Highlight from '@tiptap/extension-highlight';
-import Link from '@tiptap/extension-link';
 import type { JSONContent } from '@tiptap/react';
-import { EditorContent, useEditor } from '@tiptap/react';
-import StarterKit from '@tiptap/starter-kit';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { TaskPriority } from '@tuturuuu/types/primitives/Priority';
 import type { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
@@ -92,65 +88,46 @@ interface Props {
   onSelect?: (taskId: string, event: React.MouseEvent) => void;
 }
 
-// Helper function to parse description content
-const parseDescription = (description?: string): JSONContent | null => {
-  if (!description) return null;
+// Helper function to extract readable text from description with proper formatting
+const getDescriptionText = (description?: string): string => {
+  if (!description) return '';
 
   try {
-    return JSON.parse(description);
-  } catch {
-    // If it's not valid JSON, treat it as plain text
-    return {
-      type: 'doc',
-      content: [
-        {
-          type: 'paragraph',
-          content: [{ type: 'text', text: description }],
-        },
-      ],
+    const parsed = JSON.parse(description);
+    // Extract text with proper spacing and line breaks from JSONContent
+    const extractText = (content: JSONContent): string => {
+      if (content.type === 'text') {
+        return content.text || '';
+      }
+      if (content.type === 'paragraph') {
+        const text = content.content?.map(extractText).join('') || '';
+        return text + '\n';
+      }
+      if (content.type === 'heading') {
+        const text = content.content?.map(extractText).join('') || '';
+        return text + '\n';
+      }
+      if (content.type === 'listItem') {
+        const text = content.content?.map(extractText).join('') || '';
+        return '• ' + text + '\n';
+      }
+      if (content.type === 'bulletList' || content.type === 'orderedList') {
+        return content.content?.map(extractText).join('') || '';
+      }
+      if (content.content) {
+        return content.content.map(extractText).join('');
+      }
+      return '';
     };
+
+    const result = extractText(parsed).trim();
+    // Clean up excessive newlines while preserving structure
+    return result.replace(/\n{3,}/g, '\n\n');
+  } catch {
+    // If it's not valid JSON, return as plain text
+    return description;
   }
 };
-
-// Rich text description display component
-function TaskDescriptionDisplay({ description }: { description?: string }) {
-  const descriptionContent = parseDescription(description);
-
-  const editor = useEditor({
-    extensions: [
-      StarterKit.configure({
-        bulletList: { HTMLAttributes: { class: 'list-disc ml-3' } },
-        orderedList: { HTMLAttributes: { class: 'list-decimal ml-3' } },
-      }),
-      Link.configure({
-        openOnClick: true,
-        HTMLAttributes: {
-          class: 'text-blue-600 hover:text-blue-800 underline cursor-pointer',
-          rel: 'noopener noreferrer',
-          target: '_blank',
-        },
-      }),
-      Highlight,
-    ],
-    content: descriptionContent,
-    editable: false,
-    immediatelyRender: false,
-    editorProps: {
-      attributes: {
-        class:
-          'prose dark:prose-invert prose-sm max-w-none [&_*]:text-xs [&_p]:my-0.5 [&_ul]:my-1 [&_ol]:my-1 [&_li]:my-0',
-      },
-    },
-  });
-
-  if (!descriptionContent || !description) return null;
-
-  return (
-    <div className="max-h-20 w-full overflow-y-auto whitespace-normal text-muted-foreground text-xs">
-      <EditorContent editor={editor} />
-    </div>
-  );
-}
 
 // Lightweight drag overlay version
 export function LightweightTaskCard({ task }: { task: Task }) {
@@ -161,10 +138,17 @@ export function LightweightTaskCard({ task }: { task: Task }) {
     low: 'Low',
   };
 
+  const descriptionText = getDescriptionText(task.description);
+
   return (
     <Card className="pointer-events-none w-full max-w-[350px] scale-105 select-none border-2 border-primary/20 bg-background opacity-95 shadow-xl ring-2 ring-primary/20">
       <div className="flex flex-col gap-2 p-4">
         <div className="truncate font-semibold text-base">{task.name}</div>
+        {descriptionText && (
+          <div className="line-clamp-1 whitespace-pre-line text-muted-foreground text-sm">
+            {descriptionText.replace(/\n/g, ' • ')}
+          </div>
+        )}
         <div className="flex items-center gap-2">
           {task.priority && (
             <Badge variant="secondary" className="text-xs">
@@ -709,12 +693,12 @@ export const TaskCard = React.memo(function TaskCard({
                 {task.name}
               </button>
             </div>
-            {/* Description (rich text display) */}
+            {/* Description (simplified display with line clamping) */}
             {task.description && (
-              <div className="mb-1">
+              <div className="mb-2">
                 <button
                   type="button"
-                  className="scrollbar-none group-hover:scrollbar-thin scrollbar-track-transparent scrollbar-thumb-muted-foreground/30 group-hover:scrollbar-thumb-muted-foreground/50 -mx-1 -my-0.5 max-h-20 w-full cursor-pointer overflow-y-auto rounded-sm border-none bg-transparent p-0 px-1 py-0.5 text-left transition-colors duration-200 hover:bg-muted/20 focus:bg-muted/20 active:bg-muted/40"
+                  className="-mx-1 -my-1 w-full cursor-pointer rounded-sm border-none bg-transparent p-0 px-1 py-1 text-left transition-colors duration-200 hover:bg-muted/20 focus:bg-muted/20 active:bg-muted/40"
                   onClick={(e) => {
                     // Don't allow editing when Shift is held (multi-select mode)
                     if (!e.shiftKey) {
@@ -727,9 +711,11 @@ export const TaskCard = React.memo(function TaskCard({
                     }
                   }}
                   aria-label="Edit task description"
-                  title="Click to edit task"
+                  title={`${getDescriptionText(task.description)}\n\nClick to edit task`}
                 >
-                  <TaskDescriptionDisplay description={task.description} />
+                  <div className="line-clamp-3 whitespace-pre-line text-muted-foreground text-xs leading-[1.4]">
+                    {getDescriptionText(task.description)}
+                  </div>
                 </button>
               </div>
             )}
