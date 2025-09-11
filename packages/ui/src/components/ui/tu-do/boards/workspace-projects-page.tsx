@@ -259,34 +259,10 @@ async function getData(
 ) {
   const supabase = await createClient();
 
+  // Build the main query for boards
   const queryBuilder = supabase
     .from('workspace_boards')
-    .select(
-      `
-      *,
-      task_lists!board_id (
-        id,
-        name,
-        status,
-        color,
-        position,
-        archived,
-        tasks!list_id (
-          id,
-          name,
-          description,
-          archived,
-          priority,
-          start_date,
-          end_date,
-          created_at
-        )
-      )
-    `,
-      {
-        count: 'exact',
-      }
-    )
+    .select('*', { count: 'exact' })
     .eq('ws_id', wsId)
     .order('name', { ascending: true })
     .order('created_at', { ascending: false });
@@ -301,8 +277,52 @@ async function getData(
     queryBuilder.range(start, end).limit(parsedSize);
   }
 
-  const { data, error, count } = await queryBuilder;
-  if (error) throw error;
+  const { data: boards, error: boardsError, count } = await queryBuilder;
+  if (boardsError) throw boardsError;
 
-  return { data, count } as { data: TaskBoard[]; count: number };
+  if (!boards || boards.length === 0) {
+    return { data: [], count: 0 };
+  }
+
+  // Fetch task lists with proper deleted filter
+  const { data: taskLists, error: listsError } = await supabase
+    .from('task_lists')
+    .select('id, name, status, color, position, archived, board_id')
+    .in(
+      'board_id',
+      boards.map((b) => b.id)
+    )
+    .eq('deleted', false);
+
+  if (listsError) throw listsError;
+
+  // Fetch tasks with proper deleted filter
+  const { data: tasks, error: tasksError } = await supabase
+    .from('tasks')
+    .select(
+      'id, name, description, archived, priority, start_date, end_date, created_at, list_id'
+    )
+    .in(
+      'list_id',
+      (taskLists || []).map((l) => l.id)
+    )
+    .eq('deleted', false);
+
+  if (tasksError) throw tasksError;
+
+  // Group data by board
+  const boardsWithData = boards.map((board) => ({
+    ...board,
+    task_lists: (taskLists || [])
+      .filter((list) => list.board_id === board.id)
+      .map((list) => ({
+        ...list,
+        tasks: (tasks || []).filter((task) => task.list_id === list.id),
+      })),
+  }));
+
+  return { data: boardsWithData, count } as {
+    data: TaskBoard[];
+    count: number;
+  };
 }
