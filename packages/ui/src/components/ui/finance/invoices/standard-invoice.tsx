@@ -40,7 +40,6 @@ import { useTranslations } from 'next-intl';
 import { useState, useEffect, useMemo } from 'react';
 import { ProductSelection } from './product-selection';
 import { toast } from '@tuturuuu/ui/sonner';
-import { Switch } from '@tuturuuu/ui/switch';
 import { useRouter } from 'next/navigation';
 import type { SelectedProductItem, Promotion } from './types';
 import {
@@ -57,12 +56,14 @@ interface Props {
   wsId: string;
   selectedUserId: string;
   onSelectedUserIdChange: (value: string) => void;
+  createMultipleInvoices: boolean;
 }
 
 export function StandardInvoice({
   wsId,
   selectedUserId,
   onSelectedUserIdChange,
+  createMultipleInvoices,
 }: Props) {
   const t = useTranslations();
   const router = useRouter();
@@ -87,7 +88,6 @@ export function StandardInvoice({
   const [invoiceContent, setInvoiceContent] = useState<string>('');
   const [invoiceNotes, setInvoiceNotes] = useState<string>('');
   const [isCreating, setIsCreating] = useState(false);
-  const [createMultipleInvoices, setCreateMultipleInvoices] = useState(false);
 
   // User history queries
   const { data: userTransactions = [], isLoading: userTransactionsLoading } =
@@ -102,8 +102,8 @@ export function StandardInvoice({
     selectedPromotionId === 'none'
       ? null
       : promotions.find(
-          (promotion: Promotion) => promotion.id === selectedPromotionId
-        );
+        (promotion: Promotion) => promotion.id === selectedPromotionId
+      );
   const isLoadingUserHistory = userTransactionsLoading || userInvoicesLoading;
   const isLoadingData =
     usersLoading ||
@@ -232,9 +232,9 @@ export function StandardInvoice({
         const roundingInfo =
           calculated_values.rounding_applied !== 0
             ? ` | Rounding: ${Intl.NumberFormat('vi-VN', {
-                style: 'currency',
-                currency: 'VND',
-              }).format(calculated_values.rounding_applied)}`
+              style: 'currency',
+              currency: 'VND',
+            }).format(calculated_values.rounding_applied)}`
             : '';
 
         toast(
@@ -315,7 +315,7 @@ export function StandardInvoice({
                 options={users.map(
                   (user): ComboboxOptions => ({
                     value: user.id,
-                    label: `${user.display_name || user.full_name || 'No name'} (${user.email || user.phone || '-'})`,
+                    label: `${user.full_name} ${user.display_name ? `(${user.display_name})` : ''} (${user.email || user.phone || '-'})`,
                   })
                 )}
                 selected={selectedUserId}
@@ -361,24 +361,23 @@ export function StandardInvoice({
                                     <p className="text-muted-foreground text-xs">
                                       {transaction.taken_at
                                         ? new Date(
-                                            transaction.taken_at
-                                          ).toLocaleDateString()
+                                          transaction.taken_at
+                                        ).toLocaleDateString()
                                         : 'No date'}
                                     </p>
                                   </div>
                                   <div className="text-right">
                                     <p
-                                      className={`font-semibold ${
-                                        (transaction.amount || 0) >= 0
-                                          ? 'text-green-600'
-                                          : 'text-red-600'
-                                      }`}
+                                      className={`font-semibold ${(transaction.amount || 0) >= 0
+                                        ? 'text-green-600'
+                                        : 'text-red-600'
+                                        }`}
                                     >
                                       {transaction.amount !== undefined
                                         ? Intl.NumberFormat('vi-VN', {
-                                            style: 'currency',
-                                            currency: 'VND',
-                                          }).format(transaction.amount)
+                                          style: 'currency',
+                                          currency: 'VND',
+                                        }).format(transaction.amount)
                                         : '-'}
                                     </p>
                                   </div>
@@ -422,8 +421,8 @@ export function StandardInvoice({
                                     <p className="text-muted-foreground text-xs">
                                       {invoice.created_at
                                         ? new Date(
-                                            invoice.created_at
-                                          ).toLocaleDateString()
+                                          invoice.created_at
+                                        ).toLocaleDateString()
                                         : 'No date'}
                                     </p>
                                     {invoice.note && (
@@ -436,9 +435,9 @@ export function StandardInvoice({
                                     <p className="font-semibold text-blue-600">
                                       {invoice.price !== undefined
                                         ? Intl.NumberFormat('vi-VN', {
-                                            style: 'currency',
-                                            currency: 'VND',
-                                          }).format(invoice.price)
+                                          style: 'currency',
+                                          currency: 'VND',
+                                        }).format(invoice.price)
                                         : '-'}
                                     </p>
                                     {invoice.total_diff !== undefined &&
@@ -495,25 +494,6 @@ export function StandardInvoice({
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            {/* Multiple Invoices Toggle */}
-            <div className="flex items-center justify-between">
-              <div className="space-y-1">
-                <Label htmlFor="multiple-invoices">
-                  Create Multiple Invoices
-                </Label>
-                <p className="text-muted-foreground text-sm">
-                  Create separate invoices for each product
-                </p>
-              </div>
-              <Switch
-                id="multiple-invoices"
-                checked={createMultipleInvoices}
-                onCheckedChange={setCreateMultipleInvoices}
-              />
-            </div>
-
-            <Separator />
-
             {/* Invoice Content */}
             <div className="space-y-2">
               <Label htmlFor="invoice-content">
@@ -623,14 +603,13 @@ export function StandardInvoice({
                     ...promotions.map(
                       (promotion): ComboboxOptions => ({
                         value: promotion.id,
-                        label: `${promotion.name || 'Unnamed Promotion'} (${
-                          promotion.use_ratio
-                            ? `${promotion.value}%`
-                            : Intl.NumberFormat('vi-VN', {
-                                style: 'currency',
-                                currency: 'VND',
-                              }).format(promotion.value)
-                        })`,
+                        label: `${promotion.name || 'Unnamed Promotion'} (${promotion.use_ratio
+                          ? `${promotion.value}%`
+                          : Intl.NumberFormat('vi-VN', {
+                            style: 'currency',
+                            currency: 'VND',
+                          }).format(promotion.value)
+                          })`,
                       })
                     ),
                   ]}

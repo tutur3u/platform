@@ -199,7 +199,7 @@ export function ProductSelection({
                       onChange={(e) =>
                         updateQuantity(index, parseInt(e.target.value) || 0)
                       }
-                      className="w-20 text-center"
+                      className="w-20 text-center [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                       min="1"
                       {...(item.inventory.amount !== null && {
                         max: item.inventory.amount,
@@ -298,7 +298,7 @@ function StockItem({ inventory, onAdd }: StockItemProps) {
           type="number"
           value={quantity}
           onChange={(e) => setQuantity(parseInt(e.target.value) || 1)}
-          className="w-20 text-center"
+          className="w-20 text-center [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
           min="1"
           {...(inventory.amount !== null && { max: inventory.amount })}
         />

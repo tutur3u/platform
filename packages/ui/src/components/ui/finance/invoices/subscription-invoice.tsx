@@ -15,6 +15,8 @@ import {
   ArrowDown,
   Calculator,
   Loader2,
+  ChevronLeft,
+  ChevronRight,
 } from '@tuturuuu/ui/icons';
 import { Label } from '@tuturuuu/ui/label';
 import { Textarea } from '@tuturuuu/ui/textarea';
@@ -29,6 +31,7 @@ import {
 import { Combobox, type ComboboxOptions } from '@tuturuuu/ui/custom/combobox';
 import { useTranslations } from 'next-intl';
 import { useState, useEffect, useMemo } from 'react';
+import { useRouter } from 'next/navigation';
 import { ProductSelection } from './product-selection';
 import { toast } from '@tuturuuu/ui/sonner';
 import { Button } from '@tuturuuu/ui/button';
@@ -42,18 +45,24 @@ import {
   useUserGroups,
   useUserAttendance,
   useUserGroupProducts,
+  useUserLatestSubscriptionInvoice,
 } from './hooks';
+import { AttendanceCalendar } from '@tuturuuu/ui/finance/invoices/attendance-calendar';
+
+
 
 interface Props {
   wsId: string;
   selectedUserId: string;
   onSelectedUserIdChange: (value: string) => void;
+  createMultipleInvoices: boolean;
 }
 
 export function SubscriptionInvoice({
   wsId,
   selectedUserId,
   onSelectedUserIdChange,
+  createMultipleInvoices,
 }: Props) {
   const t = useTranslations();
 
@@ -73,7 +82,8 @@ export function SubscriptionInvoice({
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>('');
   const [invoiceContent, setInvoiceContent] = useState<string>('');
   const [invoiceNotes, setInvoiceNotes] = useState<string>('');
-  const [isCreating] = useState(false);
+  const [isCreating, setIsCreating] = useState(false);
+  const router = useRouter();
 
   // Subscription-specific state
   const [selectedGroupId, setSelectedGroupId] = useState<string>('');
@@ -106,6 +116,22 @@ export function SubscriptionInvoice({
   const { data: groupProducts = [], isLoading: groupProductsLoading } =
     useUserGroupProducts(selectedGroupId);
 
+  // Latest subscription invoice for paid state
+  const { data: latestSubscriptionInvoice = [] } = useUserLatestSubscriptionInvoice(selectedUserId, selectedGroupId);
+  const latestValidUntil: Date | null = useMemo(() => {
+    const raw = (latestSubscriptionInvoice as any[])[0]?.valid_until;
+    const d = raw ? new Date(raw) : null;
+    return d && !isNaN(d.getTime()) ? d : null;
+  }, [latestSubscriptionInvoice]);
+  const isSelectedMonthPaid = useMemo(() => {
+    if (!latestValidUntil || !selectedMonth) return false;
+    const selectedMonthStart = new Date(selectedMonth + '-01');
+    const validUntilMonthStart = new Date(latestValidUntil);
+    validUntilMonthStart.setDate(1);
+    // Every invoice BEFORE validUntil month is considered paid
+    return selectedMonthStart < validUntilMonthStart;
+  }, [latestValidUntil, selectedMonth]);
+
   const selectedUser = users.find(
     (user: WorkspaceUser) => user.id === selectedUserId
   );
@@ -113,8 +139,8 @@ export function SubscriptionInvoice({
     selectedPromotionId === 'none'
       ? null
       : promotions.find(
-          (promotion: Promotion) => promotion.id === selectedPromotionId
-        );
+        (promotion: Promotion) => promotion.id === selectedPromotionId
+      );
   const isLoadingSubscriptionData =
     userGroupsLoading || userAttendanceLoading || groupProductsLoading;
   const isLoadingData =
@@ -135,7 +161,7 @@ export function SubscriptionInvoice({
       return;
     }
 
-    const attendanceDays = userAttendance?.length || 0;
+    const attendanceDays = getEffectiveAttendanceDays(userAttendance);
     if (attendanceDays === 0) return;
 
     // Get product IDs that are linked to the selected group
@@ -202,12 +228,16 @@ export function SubscriptionInvoice({
     });
   }, [selectedGroupId, groupProducts, products, userAttendance?.length]);
 
-  // Enforce max quantity limit based on attendance for group products
+  // Enforce max quantity limit based on total sessions for group products
   useEffect(() => {
     if (!selectedGroupId || !groupProducts) return;
 
-    const attendanceDays = userAttendance?.length || 0;
-    if (attendanceDays === 0) return;
+    const selectedGroup = userGroups.find(
+      (g) => g.workspace_user_groups?.id === selectedGroupId
+    );
+    const sessionsArray = selectedGroup?.workspace_user_groups?.sessions || [];
+    const totalSessions = getSessionsForMonth(sessionsArray, selectedMonth);
+    if (totalSessions === 0) return;
 
     const groupProductIds = groupProducts
       .map((item: any) => item.workspace_products?.id)
@@ -215,20 +245,20 @@ export function SubscriptionInvoice({
 
     if (groupProductIds.length === 0) return;
 
-    // Cap quantities for group products to not exceed attendance
+    // Cap quantities for group products to not exceed total sessions of the month
     setSubscriptionSelectedProducts((prev) =>
       prev.map((item) => {
         // Only apply limit to group-linked products
         if (!groupProductIds.includes(item.product.id)) return item;
 
-        // Cap quantity to attendance days
-        const cappedQuantity = Math.min(item.quantity, attendanceDays);
+        // Cap quantity to total sessions in the selected month
+        const cappedQuantity = Math.min(item.quantity, totalSessions);
         return cappedQuantity === item.quantity
           ? item
           : { ...item, quantity: cappedQuantity };
       })
     );
-  }, [selectedGroupId, groupProducts, userAttendance?.length]);
+  }, [selectedGroupId, groupProducts, userAttendance?.length, userGroups?.length, selectedMonth]);
 
   // Calculate totals for manual product selection
   const subscriptionSubtotal = useMemo(() => {
@@ -301,6 +331,43 @@ export function SubscriptionInvoice({
     }
   };
 
+  // Helper functions for attendance status counting
+  const getAttendanceStats = (attendance: { status: string, date: string }[]) => {
+    if (!attendance || !Array.isArray(attendance)) {
+      return { present: 0, late: 0, absent: 0, total: 0 };
+    }
+
+    return attendance.reduce(
+      (stats, record) => {
+        const status = record.status?.toUpperCase();
+        switch (status) {
+          case 'PRESENT':
+            stats.present++;
+            break;
+          case 'LATE':
+            stats.late++;
+            break;
+          case 'ABSENT':
+            stats.absent++;
+            break;
+          default:
+            // If status is unknown, count as present for backward compatibility
+            stats.present++;
+            break;
+        }
+        stats.total++;
+        return stats;
+      },
+      { present: 0, late: 0, absent: 0, total: 0 }
+    );
+  };
+
+  const getEffectiveAttendanceDays = (attendance: { status: string, date: string }[]) => {
+    const stats = getAttendanceStats(attendance);
+    // Count both PRESENT and LATE as effective attendance
+    return stats.present + stats.late;
+  };
+
   // Calculate subscription products based on attendance
   useEffect(() => {
     if (
@@ -318,7 +385,7 @@ export function SubscriptionInvoice({
     );
     const sessionsArray = selectedGroup?.workspace_user_groups?.sessions || [];
     const totalSessions = getSessionsForMonth(sessionsArray, selectedMonth);
-    const attendanceDays = userAttendance.length;
+    const attendanceDays = getEffectiveAttendanceDays(userAttendance);
 
     const calculatedProducts = groupProducts.map((item) => ({
       product: item.workspace_products,
@@ -349,6 +416,21 @@ export function SubscriptionInvoice({
     setSelectedCategoryId('');
     setSelectedMonth(new Date().toISOString().slice(0, 7));
   }, [selectedUserId]);
+
+  // Auto-select the first group when userGroups are loaded
+  useEffect(() => {
+    if (
+      userGroups.length > 0 &&
+      !selectedGroupId &&
+      !userGroupsLoading &&
+      selectedUserId
+    ) {
+      const firstGroup = userGroups[0];
+      if (firstGroup?.workspace_user_groups?.id) {
+        setSelectedGroupId(firstGroup.workspace_user_groups.id);
+      }
+    }
+  }, [userGroups, selectedGroupId, userGroupsLoading, selectedUserId]);
 
   // Validate and reset selectedMonth when group changes
   useEffect(() => {
@@ -418,8 +500,9 @@ export function SubscriptionInvoice({
     if (subscriptionProducts.length > 0) {
       const attendanceDays = subscriptionProducts[0]?.attendanceDays || 0;
       const totalSessions = subscriptionProducts[0]?.totalSessions || 0;
+      const attendanceStats = getAttendanceStats(userAttendance);
       contentParts.push(
-        `Attendance: ${attendanceDays}/${totalSessions} sessions`
+        `Attendance: ${attendanceDays}/${totalSessions} sessions (Present: ${attendanceStats.present}, Late: ${attendanceStats.late}, Absent: ${attendanceStats.absent})`
       );
     }
 
@@ -450,8 +533,171 @@ export function SubscriptionInvoice({
     groupProducts,
   ]);
 
+  // Month navigation handlers
+  const navigateMonth = (direction: 'prev' | 'next') => {
+    const selectedGroup = userGroups.find(
+      (g) => g.workspace_user_groups?.id === selectedGroupId
+    );
+    const group = selectedGroup?.workspace_user_groups;
+
+    if (!group) return;
+
+    // Get group start and end dates
+    const startDate = group.starting_date
+      ? new Date(group.starting_date)
+      : new Date();
+    const endDate = group.ending_date
+      ? new Date(group.ending_date)
+      : new Date();
+
+    // Calculate new month
+    const currentMonth = new Date(selectedMonth + '-01');
+    const newMonth = new Date(currentMonth);
+
+    if (direction === 'prev') {
+      newMonth.setMonth(newMonth.getMonth() - 1);
+    } else {
+      newMonth.setMonth(newMonth.getMonth() + 1);
+    }
+
+    // Check if new month is within group date range
+    if (newMonth >= startDate && newMonth <= endDate) {
+      setSelectedMonth(newMonth.toISOString().slice(0, 7));
+    }
+  };
+
+  const canNavigateMonth = (direction: 'prev' | 'next') => {
+    const selectedGroup = userGroups.find(
+      (g) => g.workspace_user_groups?.id === selectedGroupId
+    );
+    const group = selectedGroup?.workspace_user_groups;
+
+    if (!group) return false;
+
+    // Get group start and end dates
+    const startDate = group.starting_date
+      ? new Date(group.starting_date)
+      : new Date();
+    const endDate = group.ending_date
+      ? new Date(group.ending_date)
+      : new Date();
+
+    // Calculate target month
+    const currentMonth = new Date(selectedMonth + '-01');
+    const targetMonth = new Date(currentMonth);
+
+    if (direction === 'prev') {
+      targetMonth.setMonth(targetMonth.getMonth() - 1);
+    } else {
+      targetMonth.setMonth(targetMonth.getMonth() + 1);
+    }
+
+    return targetMonth >= startDate && targetMonth <= endDate;
+  };
+
   const handleCreateSubscriptionInvoice = async () => {
-    toast('Subscription invoice creation will be implemented in the backend.');
+    if (
+      !selectedUser ||
+      !selectedGroupId ||
+      (subscriptionSelectedProducts.length === 0 && subscriptionProducts.length === 0) ||
+      !selectedWalletId ||
+      !selectedCategoryId
+    ) {
+      toast(
+        'Please select a customer, group, add products, choose a wallet, and select a transaction category before creating the invoice.'
+      );
+      return;
+    }
+
+    // Build product payload from selected items (auto group items are inserted into subscriptionSelectedProducts already)
+    const productsPayload = subscriptionSelectedProducts.map((item) => ({
+      product_id: item.product.id,
+      unit_id: item.inventory.unit_id,
+      warehouse_id: item.inventory.warehouse_id,
+      quantity: item.quantity,
+      price: item.inventory.price,
+      category_id: item.product.category_id,
+    }));
+
+    if (productsPayload.length === 0) {
+      toast('No products to invoice.');
+      return;
+    }
+
+    setIsCreating(true);
+    try {
+      const requestPayload = {
+        customer_id: selectedUserId,
+        group_id: selectedGroupId,
+        selected_month: selectedMonth,
+        content: invoiceContent,
+        notes: invoiceNotes,
+        wallet_id: selectedWalletId,
+        promotion_id: selectedPromotionId !== 'none' ? selectedPromotionId : undefined,
+        products: productsPayload,
+        category_id: selectedCategoryId,
+        frontend_subtotal: subscriptionSubtotal,
+        frontend_discount_amount: subscriptionDiscountAmount,
+        frontend_total: subscriptionRoundedTotal,
+      };
+
+      const response = await fetch(
+        `/api/v1/workspaces/${wsId}/finance/invoices/subscription`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(requestPayload),
+        }
+      );
+
+      const result = await response.json();
+      if (!response.ok) {
+        throw new Error(result.message || 'Failed to create subscription invoice');
+      }
+
+      if (result.data?.values_recalculated) {
+        const { calculated_values, frontend_values } = result.data;
+        const roundingInfo =
+          calculated_values.rounding_applied !== 0
+            ? ` | Rounding: ${Intl.NumberFormat('vi-VN', {
+              style: 'currency',
+              currency: 'VND',
+            }).format(calculated_values.rounding_applied)}`
+            : '';
+        toast(`Subscription invoice created successfully! Values were recalculated on the server.`, {
+          description: `Server calculated: ${Intl.NumberFormat('vi-VN', {
+            style: 'currency',
+            currency: 'VND',
+          }).format(calculated_values.total)} | Frontend calculated: ${Intl.NumberFormat('vi-VN', {
+            style: 'currency',
+            currency: 'VND',
+          }).format(frontend_values?.total || 0)}${roundingInfo}`,
+          duration: 5000,
+        });
+      } else {
+        toast(`Subscription invoice ${result.invoice_id} created successfully`);
+      }
+
+      // Reset form
+      setSubscriptionSelectedProducts([]);
+      setSelectedPromotionId('none');
+      setInvoiceContent('');
+      setInvoiceNotes('');
+      setSubscriptionRoundedTotal(0);
+      onSelectedUserIdChange('');
+      setSelectedWalletId('');
+      setSelectedCategoryId('');
+      setSelectedGroupId('');
+
+      if (!createMultipleInvoices) {
+        router.push(`/${wsId}/finance/invoices/${result.invoice_id}`);
+      }
+    } catch (error: any) {
+      console.error('Error creating subscription invoice:', error);
+      toast(`Error creating subscription invoice: ${error.message || 'Failed to create invoice'}`);
+    } finally {
+      setIsCreating(false);
+    }
   };
 
   if (isLoadingData) {
@@ -485,7 +731,7 @@ export function SubscriptionInvoice({
                 options={users.map(
                   (user): ComboboxOptions => ({
                     value: user.id,
-                    label: `${user.display_name || user.full_name || 'No name'} (${user.email || user.phone || '-'})`,
+                    label: `${user.full_name} ${user.display_name ? `(${user.display_name})` : ''} (${user.email || user.phone || '-'})`,
                   })
                 )}
                 selected={selectedUserId}
@@ -506,7 +752,7 @@ export function SubscriptionInvoice({
               </CardDescription>
             </CardHeader>
             <CardContent>
-              {isLoadingSubscriptionData ? (
+              {userGroupsLoading ? (
                 <div className="flex items-center justify-center py-8">
                   <div className="flex items-center gap-2">
                     <Loader2 className="h-4 w-4 animate-spin" />
@@ -530,11 +776,10 @@ export function SubscriptionInvoice({
                     return (
                       <div
                         key={group.id}
-                        className={`cursor-pointer rounded-lg border p-4 transition-colors ${
-                          selectedGroupId === group.id
-                            ? 'border-primary bg-primary/5'
-                            : 'hover:bg-muted/50'
-                        }`}
+                        className={`cursor-pointer rounded-lg border p-4 transition-colors ${selectedGroupId === group.id
+                          ? 'border-primary bg-primary/5'
+                          : 'hover:bg-muted/50'
+                          }`}
                         onClick={() => setSelectedGroupId(group.id)}
                       >
                         <div className="flex items-center justify-between">
@@ -579,19 +824,81 @@ export function SubscriptionInvoice({
             </CardContent>
           </Card>
         )}
+        {/* Product Selection */}
+        {selectedGroupId && !isSelectedMonthPaid && (
+          <ProductSelection
+            products={availableProducts}
+            selectedProducts={subscriptionSelectedProducts}
+            onSelectedProductsChange={(newProducts) => {
+              // Apply attendance limit for group products
+              if (!selectedGroupId || !groupProducts) {
+                setSubscriptionSelectedProducts(newProducts);
+                return;
+              }
+              const selectedGroup = userGroups.find(
+                (g) => g.workspace_user_groups?.id === selectedGroupId
+              );
+              const sessionsArray =
+                selectedGroup?.workspace_user_groups?.sessions || [];
+              const totalSessions = getSessionsForMonth(
+                sessionsArray,
+                selectedMonth
+              );
+              const groupProductIds = groupProducts
+                .map((item: any) => item.workspace_products?.id)
+                .filter(Boolean);
 
-        {/* Month Selection */}
-        {selectedGroupId && (
+              const limitedProducts = newProducts.map((item) => {
+                // Only apply limit to group-linked products
+                if (!groupProductIds.includes(item.product.id)) return item;
+
+                // Cap quantity to total sessions in the selected month
+                const cappedQuantity = Math.min(item.quantity, totalSessions);
+                return cappedQuantity === item.quantity
+                  ? item
+                  : { ...item, quantity: cappedQuantity };
+              });
+
+              setSubscriptionSelectedProducts(limitedProducts);
+            }}
+          />
+        )}
+      </div>
+
+      {/* Right Column - Attendance and Products */}
+      <div className="space-y-6">
+        {/* Attendance Summary */}
+        {selectedGroupId && selectedMonth && (
           <Card>
-            <CardHeader>
-              <CardTitle>Billing Period</CardTitle>
-              <CardDescription>
-                Select the month for subscription billing.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                <Label htmlFor="month-select">Month</Label>
+            <CardHeader className="flex items-center justify-between flex-row">
+              <div className='flex flex-col gap-1'>
+                <div className="flex items-center gap-2">
+                  <CardTitle>Attendance Summary</CardTitle>
+                  {isSelectedMonthPaid && (
+                    <span className="rounded-full bg-green-100 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-green-700">
+                      Paid
+                    </span>
+                  )}
+                </div>
+                <CardDescription>
+                  Attendance for{' '}
+                  {new Date(selectedMonth + '-01').toLocaleDateString('en-US', {
+                    year: 'numeric',
+                    month: 'long',
+                  })}
+                </CardDescription>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="h-8 w-8"
+                  onClick={() => navigateMonth('prev')}
+                  disabled={!canNavigateMonth('prev')}
+                  aria-label="Previous month"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
                 <Select value={selectedMonth} onValueChange={setSelectedMonth}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select month..." />
@@ -624,10 +931,25 @@ export function SubscriptionInvoice({
                           year: 'numeric',
                           month: 'long',
                         });
+                        const isPaidItem = (() => {
+                          if (!latestValidUntil) return false;
+                          const itemMonthStart = new Date(currentDate);
+                          itemMonthStart.setDate(1);
+                          const paidMonthStart = new Date(latestValidUntil);
+                          paidMonthStart.setDate(1);
+                          return itemMonthStart < paidMonthStart;
+                        })();
 
                         months.push(
                           <SelectItem key={value} value={value}>
-                            {label}
+                            <span className="flex items-center gap-2">
+                              <span>{label}</span>
+                              {isPaidItem && (
+                                <span className="rounded bg-green-100 px-1.5 py-0.5 text-[10px] font-medium text-green-700">
+                                  Paid
+                                </span>
+                              )}
+                            </span>
                           </SelectItem>
                         );
 
@@ -639,59 +961,17 @@ export function SubscriptionInvoice({
                     })()}
                   </SelectContent>
                 </Select>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="h-8 w-8"
+                  onClick={() => navigateMonth('next')}
+                  disabled={!canNavigateMonth('next')}
+                  aria-label="Next month"
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
               </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Product Selection */}
-        {selectedGroupId && (
-          <ProductSelection
-            products={availableProducts}
-            selectedProducts={subscriptionSelectedProducts}
-            onSelectedProductsChange={(newProducts) => {
-              // Apply attendance limit for group products
-              if (!selectedGroupId || !groupProducts) {
-                setSubscriptionSelectedProducts(newProducts);
-                return;
-              }
-
-              const attendanceDays = userAttendance?.length || 0;
-              const groupProductIds = groupProducts
-                .map((item: any) => item.workspace_products?.id)
-                .filter(Boolean);
-
-              const limitedProducts = newProducts.map((item) => {
-                // Only apply limit to group-linked products
-                if (!groupProductIds.includes(item.product.id)) return item;
-
-                // Cap quantity to attendance days
-                const cappedQuantity = Math.min(item.quantity, attendanceDays);
-                return cappedQuantity === item.quantity
-                  ? item
-                  : { ...item, quantity: cappedQuantity };
-              });
-
-              setSubscriptionSelectedProducts(limitedProducts);
-            }}
-          />
-        )}
-      </div>
-
-      {/* Right Column - Attendance and Products */}
-      <div className="space-y-6">
-        {/* Attendance Summary */}
-        {selectedGroupId && selectedMonth && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Attendance Summary</CardTitle>
-              <CardDescription>
-                Attendance for{' '}
-                {new Date(selectedMonth + '-01').toLocaleDateString('en-US', {
-                  year: 'numeric',
-                  month: 'long',
-                })}
-              </CardDescription>
             </CardHeader>
             <CardContent>
               {isLoadingSubscriptionData && userAttendance.length === 0 ? (
@@ -712,40 +992,73 @@ export function SubscriptionInvoice({
               ) : (
                 <div className="space-y-4">
                   {/* Attendance Stats */}
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="rounded-lg border p-3">
-                      <p className="text-muted-foreground text-sm">
-                        Days Attended
-                      </p>
-                      <p className="text-2xl font-bold text-green-600">
-                        {userAttendance?.length || 0}
-                      </p>
-                    </div>
-                    <div className="rounded-lg border p-3">
-                      <p className="text-muted-foreground text-sm">
-                        Total Sessions
-                      </p>
-                      <p className="text-2xl font-bold">
-                        {(() => {
-                          const selectedGroup = userGroups.find(
-                            (g) =>
-                              g.workspace_user_groups?.id === selectedGroupId
-                          );
-                          const sessionsArray =
-                            selectedGroup?.workspace_user_groups?.sessions ||
-                            [];
-                          return getSessionsForMonth(
-                            sessionsArray,
-                            selectedMonth
-                          );
-                        })()}
-                      </p>
-                    </div>
-                  </div>
+                  {(() => {
+                    const attendanceStats = getAttendanceStats(userAttendance);
+                    const selectedGroup = userGroups.find(
+                      (g) => g.workspace_user_groups?.id === selectedGroupId
+                    );
+                    const sessionsArray =
+                      selectedGroup?.workspace_user_groups?.sessions || [];
+                    const totalSessions = getSessionsForMonth(
+                      sessionsArray,
+                      selectedMonth
+                    );
+
+                    return (
+                      <>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="rounded-lg border p-3">
+                            <p className="text-muted-foreground text-sm">
+                              Days Attended
+                            </p>
+                            <p className="text-2xl font-bold text-green-600">
+                              {attendanceStats.present + attendanceStats.late}
+                            </p>
+                          </div>
+                          <div className="rounded-lg border p-3">
+                            <p className="text-muted-foreground text-sm">
+                              Total Sessions
+                            </p>
+                            <p className="text-2xl font-bold">
+                              {totalSessions}
+                            </p>
+                          </div>
+                        </div>
+
+                        {/* Detailed Status Breakdown */}
+                        <div className="grid grid-cols-3 gap-3">
+                          <div className="rounded-lg border p-3">
+                            <p className="text-muted-foreground text-sm">
+                              Present
+                            </p>
+                            <p className="text-xl font-bold text-green-600">
+                              {attendanceStats.present}
+                            </p>
+                          </div>
+                          <div className="rounded-lg border p-3">
+                            <p className="text-muted-foreground text-sm">
+                              Late
+                            </p>
+                            <p className="text-xl font-bold text-yellow-600">
+                              {attendanceStats.late}
+                            </p>
+                          </div>
+                          <div className="rounded-lg border p-3">
+                            <p className="text-muted-foreground text-sm">
+                              Absent
+                            </p>
+                            <p className="text-xl font-bold text-red-600">
+                              {attendanceStats.absent}
+                            </p>
+                          </div>
+                        </div>
+                      </>
+                    );
+                  })()}
 
                   {/* Attendance Rate */}
                   {(() => {
-                    const attendanceDays = userAttendance?.length || 0;
+                    const attendanceDays = getEffectiveAttendanceDays(userAttendance);
                     const selectedGroup = userGroups.find(
                       (g) => g.workspace_user_groups?.id === selectedGroupId
                     );
@@ -780,20 +1093,34 @@ export function SubscriptionInvoice({
                     );
                   })()}
 
-                  {/* Attendance Calendar Preview */}
+                  {/* Attendance Calendar */}
                   {userAttendance && userAttendance.length > 0 && (
                     <div className="space-y-2">
-                      <Label>Attendance Dates</Label>
-                      <div className="max-h-32 overflow-y-auto rounded border p-2">
-                        <div className="grid grid-cols-7 gap-1 text-xs">
-                          {userAttendance.map((attendance, index) => (
-                            <div
-                              key={index}
-                              className="rounded bg-green-100 p-1 text-center text-green-800"
-                            >
-                              {new Date(attendance.date).getDate()}
-                            </div>
-                          ))}
+                      <Label>Attendance Calendar</Label>
+                      <AttendanceCalendar
+                        userAttendance={userAttendance}
+                        selectedMonth={selectedMonth}
+                        selectedGroup={userGroups.find(
+                          (g) => g.workspace_user_groups?.id === selectedGroupId
+                        )}
+                        locale="en-US"
+                      />
+                      <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                        <div className="flex items-center gap-1">
+                          <div className="h-2 w-2 rounded-full bg-green-500"></div>
+                          <span>Present</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <div className="h-2 w-2 rounded-full bg-yellow-500"></div>
+                          <span>Late</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <div className="h-2 w-2 rounded-full bg-red-500"></div>
+                          <span>Absent</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <div className="h-2 w-2 rounded-full bg-gray-300"></div>
+                          <span>No Session</span>
                         </div>
                       </div>
                     </div>
@@ -806,283 +1133,283 @@ export function SubscriptionInvoice({
 
         {/* Invoice Configuration for Subscription */}
         {(subscriptionProducts.length > 0 ||
-          subscriptionSelectedProducts.length > 0) && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <FileText className="h-5 w-5" />
-                Subscription Invoice Configuration
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {/* Invoice Content */}
-              <div className="space-y-2">
-                <Label htmlFor="subscription-invoice-content">
-                  {t('ws-invoices.content')}
-                </Label>
-                <Textarea
-                  id="subscription-invoice-content"
-                  placeholder="Subscription invoice content..."
-                  className="min-h-[80px]"
-                  value={invoiceContent}
-                  onChange={(e) => setInvoiceContent(e.target.value)}
-                />
-              </div>
-
-              {/* Invoice Notes */}
-              <div className="space-y-2">
-                <Label htmlFor="subscription-invoice-notes">
-                  {t('ws-invoices.notes')}
-                </Label>
-                <Textarea
-                  id="subscription-invoice-notes"
-                  placeholder="Additional notes..."
-                  className="min-h-[60px]"
-                  value={invoiceNotes}
-                  onChange={(e) => setInvoiceNotes(e.target.value)}
-                />
-              </div>
-
-              <Separator />
-
-              {/* Payment Settings */}
-              <div className="space-y-4">
-                <div className="flex items-center gap-2 font-medium text-muted-foreground text-sm">
-                  <CreditCard className="h-4 w-4" />
-                  Payment Settings
-                </div>
-
-                {/* Wallet Selection */}
+          subscriptionSelectedProducts.length > 0) && !isSelectedMonthPaid && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <FileText className="h-5 w-5" />
+                  Subscription Invoice Configuration
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {/* Invoice Content */}
                 <div className="space-y-2">
-                  <Label htmlFor="subscription-wallet-select">
-                    {t('ws-wallets.wallet')}{' '}
-                    <span className="text-red-500">*</span>
+                  <Label htmlFor="subscription-invoice-content">
+                    {t('ws-invoices.content')}
                   </Label>
-                  <Select
-                    value={selectedWalletId}
-                    onValueChange={setSelectedWalletId}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select a wallet (required)..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {wallets.map((wallet) => (
-                        <SelectItem
-                          key={wallet.id}
-                          value={wallet.id || 'invalid'}
-                        >
-                          <div className="flex items-center gap-2">
-                            <CreditCard className="h-4 w-4" />
-                            <div className="flex flex-row gap-2">
-                              <p className="font-medium">
-                                {wallet.name || 'Unnamed Wallet'}
-                              </p>
-                              <p className="text-muted-foreground text-sm">
-                                {wallet.type || 'STANDARD'} -{' '}
-                                {wallet.currency || 'VND'}
-                              </p>
-                            </div>
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {/* Transaction Category Selection */}
-                <div className="space-y-2">
-                  <Label htmlFor="subscription-category-select">
-                    Transaction Category <span className="text-red-500">*</span>
-                  </Label>
-                  <Combobox
-                    t={t}
-                    options={categories.map(
-                      (category): ComboboxOptions => ({
-                        value: category.id || '',
-                        label: category.name || 'Unnamed Category',
-                      })
-                    )}
-                    selected={selectedCategoryId}
-                    onChange={(value) => setSelectedCategoryId(value as string)}
-                    placeholder="Select a category (required)..."
+                  <Textarea
+                    id="subscription-invoice-content"
+                    placeholder="Subscription invoice content..."
+                    className="min-h-[80px]"
+                    value={invoiceContent}
+                    onChange={(e) => setInvoiceContent(e.target.value)}
                   />
                 </div>
 
-                {/* Promotion Selection */}
+                {/* Invoice Notes */}
                 <div className="space-y-2">
-                  <Label htmlFor="subscription-promotion-select">
-                    {t('invoices.add_promotion')}
+                  <Label htmlFor="subscription-invoice-notes">
+                    {t('ws-invoices.notes')}
                   </Label>
-                  <Combobox
-                    t={t}
-                    options={[
-                      { value: 'none', label: 'No promotion' },
-                      ...promotions.map(
-                        (promotion): ComboboxOptions => ({
-                          value: promotion.id,
-                          label: `${promotion.name || 'Unnamed Promotion'} (${
-                            promotion.use_ratio
+                  <Textarea
+                    id="subscription-invoice-notes"
+                    placeholder="Additional notes..."
+                    className="min-h-[60px]"
+                    value={invoiceNotes}
+                    onChange={(e) => setInvoiceNotes(e.target.value)}
+                  />
+                </div>
+
+                <Separator />
+
+                {/* Payment Settings */}
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2 font-medium text-muted-foreground text-sm">
+                    <CreditCard className="h-4 w-4" />
+                    Payment Settings
+                  </div>
+
+                  {/* Wallet Selection */}
+                  <div className="space-y-2">
+                    <Label htmlFor="subscription-wallet-select">
+                      {t('ws-wallets.wallet')}{' '}
+                      <span className="text-red-500">*</span>
+                    </Label>
+                    <Select
+                      value={selectedWalletId}
+                      onValueChange={setSelectedWalletId}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a wallet (required)..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {wallets.map((wallet) => (
+                          <SelectItem
+                            key={wallet.id}
+                            value={wallet.id || 'invalid'}
+                          >
+                            <div className="flex items-center gap-2">
+                              <CreditCard className="h-4 w-4" />
+                              <div className="flex flex-row gap-2">
+                                <p className="font-medium">
+                                  {wallet.name || 'Unnamed Wallet'}
+                                </p>
+                                <p className="text-muted-foreground text-sm">
+                                  {wallet.type || 'STANDARD'} -{' '}
+                                  {wallet.currency || 'VND'}
+                                </p>
+                              </div>
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* Transaction Category Selection */}
+                  <div className="space-y-2">
+                    <Label htmlFor="subscription-category-select">
+                      Transaction Category <span className="text-red-500">*</span>
+                    </Label>
+                    <Combobox
+                      t={t}
+                      options={categories.map(
+                        (category): ComboboxOptions => ({
+                          value: category.id || '',
+                          label: category.name || 'Unnamed Category',
+                        })
+                      )}
+                      selected={selectedCategoryId}
+                      onChange={(value) => setSelectedCategoryId(value as string)}
+                      placeholder="Select a category (required)..."
+                    />
+                  </div>
+
+                  {/* Promotion Selection */}
+                  <div className="space-y-2">
+                    <Label htmlFor="subscription-promotion-select">
+                      {t('invoices.add_promotion')}
+                    </Label>
+                    <Combobox
+                      t={t}
+                      options={[
+                        { value: 'none', label: 'No promotion' },
+                        ...promotions.map(
+                          (promotion): ComboboxOptions => ({
+                            value: promotion.id,
+                            label: `${promotion.name || 'Unnamed Promotion'} (${promotion.use_ratio
                               ? `${promotion.value}%`
                               : Intl.NumberFormat('vi-VN', {
+                                style: 'currency',
+                                currency: 'VND',
+                              }).format(promotion.value)
+                              })`,
+                          })
+                        ),
+                      ]}
+                      selected={selectedPromotionId}
+                      onChange={(value) =>
+                        setSelectedPromotionId(value as string)
+                      }
+                      placeholder="Search promotions..."
+                    />
+                  </div>
+                </div>
+
+                {/* Checkout Section for Manual Products */}
+                {subscriptionSelectedProducts.length > 0 && (
+                  <>
+                    <Separator />
+
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-2 font-medium text-muted-foreground text-sm">
+                        <Calculator className="h-4 w-4" />
+                        Additional Products Checkout
+                      </div>
+
+                      {/* Summary */}
+                      <div className="space-y-2">
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Subtotal</span>
+                          <span>
+                            {Intl.NumberFormat('vi-VN', {
+                              style: 'currency',
+                              currency: 'VND',
+                            }).format(subscriptionSubtotal)}
+                          </span>
+                        </div>
+
+                        {selectedPromotion && (
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">
+                              Discount (
+                              {selectedPromotion.name || 'Unnamed Promotion'})
+                            </span>
+                            <span className="text-green-600">
+                              -
+                              {Intl.NumberFormat('vi-VN', {
+                                style: 'currency',
+                                currency: 'VND',
+                              }).format(subscriptionDiscountAmount)}
+                            </span>
+                          </div>
+                        )}
+
+                        <Separator />
+
+                        <div className="flex justify-between font-semibold">
+                          <span>Total</span>
+                          <span>
+                            {Intl.NumberFormat('vi-VN', {
+                              style: 'currency',
+                              currency: 'VND',
+                            }).format(subscriptionRoundedTotal)}
+                          </span>
+                        </div>
+
+                        {Math.abs(
+                          subscriptionRoundedTotal -
+                          subscriptionTotalBeforeRounding
+                        ) > 0.01 && (
+                            <div className="flex justify-between text-muted-foreground text-sm">
+                              <span>Adjustment</span>
+                              <span>
+                                {subscriptionRoundedTotal >
+                                  subscriptionTotalBeforeRounding
+                                  ? '+'
+                                  : ''}
+                                {Intl.NumberFormat('vi-VN', {
                                   style: 'currency',
                                   currency: 'VND',
-                                }).format(promotion.value)
-                          })`,
-                        })
-                      ),
-                    ]}
-                    selected={selectedPromotionId}
-                    onChange={(value) =>
-                      setSelectedPromotionId(value as string)
-                    }
-                    placeholder="Search promotions..."
-                  />
-                </div>
-              </div>
-
-              {/* Checkout Section for Manual Products */}
-              {subscriptionSelectedProducts.length > 0 && (
-                <>
-                  <Separator />
-
-                  <div className="space-y-4">
-                    <div className="flex items-center gap-2 font-medium text-muted-foreground text-sm">
-                      <Calculator className="h-4 w-4" />
-                      Additional Products Checkout
-                    </div>
-
-                    {/* Summary */}
-                    <div className="space-y-2">
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Subtotal</span>
-                        <span>
-                          {Intl.NumberFormat('vi-VN', {
-                            style: 'currency',
-                            currency: 'VND',
-                          }).format(subscriptionSubtotal)}
-                        </span>
+                                }).format(
+                                  subscriptionRoundedTotal -
+                                  subscriptionTotalBeforeRounding
+                                )}
+                              </span>
+                            </div>
+                          )}
                       </div>
 
-                      {selectedPromotion && (
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">
-                            Discount (
-                            {selectedPromotion.name || 'Unnamed Promotion'})
-                          </span>
-                          <span className="text-green-600">
-                            -
-                            {Intl.NumberFormat('vi-VN', {
-                              style: 'currency',
-                              currency: 'VND',
-                            }).format(subscriptionDiscountAmount)}
-                          </span>
-                        </div>
-                      )}
-
-                      <Separator />
-
-                      <div className="flex justify-between font-semibold">
-                        <span>Total</span>
-                        <span>
-                          {Intl.NumberFormat('vi-VN', {
-                            style: 'currency',
-                            currency: 'VND',
-                          }).format(subscriptionRoundedTotal)}
-                        </span>
-                      </div>
-
-                      {Math.abs(
-                        subscriptionRoundedTotal -
-                          subscriptionTotalBeforeRounding
-                      ) > 0.01 && (
-                        <div className="flex justify-between text-muted-foreground text-sm">
-                          <span>Adjustment</span>
-                          <span>
-                            {subscriptionRoundedTotal >
-                            subscriptionTotalBeforeRounding
-                              ? '+'
-                              : ''}
-                            {Intl.NumberFormat('vi-VN', {
-                              style: 'currency',
-                              currency: 'VND',
-                            }).format(
-                              subscriptionRoundedTotal -
+                      {/* Rounding Controls */}
+                      <div className="space-y-2">
+                        <Label>Rounding Options</Label>
+                        <div className="flex gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={roundUpSubscription}
+                            className="flex-1"
+                          >
+                            <ArrowUp className="mr-1 h-4 w-4" />
+                            Round Up
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={roundDownSubscription}
+                            className="flex-1"
+                          >
+                            <ArrowDown className="mr-1 h-4 w-4" />
+                            Round Down
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={resetRoundingSubscription}
+                            disabled={
+                              Math.abs(
+                                subscriptionRoundedTotal -
                                 subscriptionTotalBeforeRounding
-                            )}
-                          </span>
+                              ) < 0.01
+                            }
+                          >
+                            Reset
+                          </Button>
                         </div>
-                      )}
-                    </div>
-
-                    {/* Rounding Controls */}
-                    <div className="space-y-2">
-                      <Label>Rounding Options</Label>
-                      <div className="flex gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={roundUpSubscription}
-                          className="flex-1"
-                        >
-                          <ArrowUp className="mr-1 h-4 w-4" />
-                          Round Up
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={roundDownSubscription}
-                          className="flex-1"
-                        >
-                          <ArrowDown className="mr-1 h-4 w-4" />
-                          Round Down
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={resetRoundingSubscription}
-                          disabled={
-                            Math.abs(
-                              subscriptionRoundedTotal -
-                                subscriptionTotalBeforeRounding
-                            ) < 0.01
-                          }
-                        >
-                          Reset
-                        </Button>
                       </div>
                     </div>
-                  </div>
-                </>
-              )}
-
-              <Separator />
-
-              {/* Create Subscription Invoice Button */}
-              <Button
-                className="w-full"
-                onClick={handleCreateSubscriptionInvoice}
-                disabled={
-                  !selectedUser ||
-                  !selectedGroupId ||
-                  (subscriptionProducts.length === 0 &&
-                    subscriptionSelectedProducts.length === 0) ||
-                  !selectedWalletId ||
-                  !selectedCategoryId ||
-                  isCreating
-                }
-              >
-                {isCreating ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Creating Subscription Invoice...
                   </>
-                ) : (
-                  'Create Subscription Invoice'
                 )}
-              </Button>
-            </CardContent>
-          </Card>
-        )}
+
+                <Separator />
+
+                {/* Create Subscription Invoice Button */}
+                <Button
+                  className="w-full"
+                  onClick={handleCreateSubscriptionInvoice}
+                  disabled={
+                    !selectedUser ||
+                    !selectedGroupId ||
+                    (subscriptionProducts.length === 0 &&
+                      subscriptionSelectedProducts.length === 0) ||
+                    !selectedWalletId ||
+                    !selectedCategoryId ||
+                    isCreating ||
+                    isSelectedMonthPaid
+                  }
+                >
+                  {isCreating ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Creating Subscription Invoice...
+                    </>
+                  ) : (
+                    'Create Subscription Invoice'
+                  )}
+                </Button>
+              </CardContent>
+            </Card>
+          )}
       </div>
     </div>
   );

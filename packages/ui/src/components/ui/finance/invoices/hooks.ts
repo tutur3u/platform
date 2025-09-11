@@ -214,7 +214,7 @@ export const useUserAttendance = (
 
       const { data, error } = await supabase
         .from('user_group_attendance')
-        .select('date')
+        .select('date, status')
         .eq('group_id', groupId)
         .eq('user_id', userId)
         .gte('date', startOfMonth.toISOString().split('T')[0])
@@ -258,6 +258,36 @@ export const useUserGroupProducts = (groupId: string) => {
       return data || [];
     },
     enabled: !!groupId,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes
+    refetchOnWindowFocus: false,
+    retry: 3,
+  });
+};
+
+
+// Get User's Latest Subscription Invoice 
+export const useUserLatestSubscriptionInvoice = (userId: string, groupId: string) => {
+  return useQuery({
+    queryKey: ['user-latest-subscription-invoice', userId, groupId],
+    queryFn: async () => {
+      const supabase = createClient();
+      const { data, error } = await supabase
+        .from('finance_invoices')
+        .select('valid_until')
+        .eq('customer_id', userId)
+        .eq('user_group_id', groupId)
+        .order('created_at', { ascending: false })
+        .limit(1);
+
+      if (error) {
+        console.error('❌ User latest subscription invoice fetch error:', error);
+        throw error;
+      }
+
+      return data || [];
+    },
+    enabled: !!userId && !!groupId,
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 10 * 60 * 1000, // 10 minutes
     refetchOnWindowFocus: false,
