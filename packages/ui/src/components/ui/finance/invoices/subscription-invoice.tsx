@@ -95,7 +95,13 @@ export function SubscriptionInvoice({
   );
   const [subscriptionProducts, setSubscriptionProducts] = useState<
     Array<{
-      product: any;
+      product: {
+        id: string;
+        name: string | null;
+        product_categories: {
+            name: string | null;
+        };
+    };
       attendanceDays: number;
       totalSessions: number;
       pricePerSession: number;
@@ -121,7 +127,7 @@ export function SubscriptionInvoice({
   const { data: latestSubscriptionInvoice = [] } =
     useUserLatestSubscriptionInvoice(selectedUserId, selectedGroupId);
   const latestValidUntil: Date | null = useMemo(() => {
-    const raw = (latestSubscriptionInvoice as any[])[0]?.valid_until;
+    const raw = latestSubscriptionInvoice[0]?.valid_until;
     const d = raw ? new Date(raw) : null;
     return d && !isNaN(d.getTime()) ? d : null;
   }, [latestSubscriptionInvoice]);
@@ -173,7 +179,7 @@ export function SubscriptionInvoice({
 
     // Get product IDs that are linked to the selected group
     const groupProductIds = groupProducts
-      .map((item: any) => item.workspace_products?.id)
+      .map((item) => item.workspace_products?.id)
       .filter(Boolean);
 
     // Find the actual products from the full products list
@@ -187,7 +193,7 @@ export function SubscriptionInvoice({
         // Choose the first available inventory or one with stock
         const inventory =
           product.inventory.find(
-            (inv: any) => inv.amount === null || (inv.amount && inv.amount > 0)
+            (inv) => inv.amount === null || (inv.amount && inv.amount > 0)
           ) || product.inventory[0];
 
         if (!inventory) return null; // Skip products without inventory
@@ -214,7 +220,7 @@ export function SubscriptionInvoice({
 
     // Get product IDs that are linked to the selected group
     const groupProductIds = groupProducts
-      .map((item: any) => item.workspace_products?.id)
+      .map((item) => item.workspace_products?.id)
       .filter(Boolean);
 
     if (groupProductIds.length === 0) return;
@@ -288,7 +294,7 @@ export function SubscriptionInvoice({
     if (totalSessions === 0) return;
 
     const groupProductIds = groupProducts
-      .map((item: any) => item.workspace_products?.id)
+      .map((item) => item.workspace_products?.id)
       .filter(Boolean);
 
     if (groupProductIds.length === 0) return;
@@ -373,7 +379,7 @@ export function SubscriptionInvoice({
     }
 
     const linkedIds = new Set(
-      linkedPromotions.map((p: any) => p.promo_id).filter(Boolean)
+      linkedPromotions.map((p) => p.promo_id).filter(Boolean)
     );
     const candidatePromotions = promotions.filter((p) => linkedIds.has(p.id));
     if (candidatePromotions.length === 0) return;
@@ -816,10 +822,10 @@ export function SubscriptionInvoice({
       if (!createMultipleInvoices) {
         router.push(`/${wsId}/finance/invoices/${result.invoice_id}`);
       }
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error creating subscription invoice:', error);
       toast(
-        `Error creating subscription invoice: ${error.message || 'Failed to create invoice'}`
+        `Error creating subscription invoice: ${error instanceof Error ? error.message : 'Failed to create invoice'}`
       );
     } finally {
       setIsCreating(false);
@@ -972,7 +978,7 @@ export function SubscriptionInvoice({
                 selectedMonth
               );
               const groupProductIds = groupProducts
-                .map((item: any) => item.workspace_products?.id)
+                .map((item) => item.workspace_products?.id)
                 .filter(Boolean);
 
               const limitedProducts = newProducts.map((item) => {
@@ -989,7 +995,7 @@ export function SubscriptionInvoice({
               setSubscriptionSelectedProducts(limitedProducts);
             }}
             groupLinkedProductIds={(groupProducts || [])
-              .map((item: any) => item.workspace_products?.id)
+              .map((item) => item.workspace_products?.id)
               .filter(Boolean)}
           />
         )}
