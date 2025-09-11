@@ -20,6 +20,7 @@ interface Props {
   initialBoard: TaskBoard;
   initialTasks: Task[];
   initialLists: TaskList[];
+  disableTasksQuery?: boolean;
 }
 
 export function BoardClient({
@@ -27,6 +28,7 @@ export function BoardClient({
   initialBoard,
   initialTasks,
   initialLists,
+  disableTasksQuery = false,
 }: Props) {
   const params = useParams();
   const boardId = params.boardId as string;
@@ -59,7 +61,7 @@ export function BoardClient({
     staleTime: 5 * 60 * 1000, // Increased to 5 minutes to match other queries
     refetchOnWindowFocus: false, // Disable to prevent hydration issues
     refetchOnMount: false, // Disable initial refetch on mount
-    enabled: isClient, // Only enable after hydration
+    enabled: isClient && !disableTasksQuery, // Disable when relying on lazy loading
   });
 
   const { data: lists = initialLists } = useQuery({

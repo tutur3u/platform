@@ -717,15 +717,12 @@ export function KanbanBoard({ workspace, boardId, tasks, isLoading }: Props) {
                     return (a.position || 0) - (b.position || 0);
                   })
                   .map((column) => {
-                    const columnTasks = tasks.filter(
-                      (task) => task.list_id === column.id
-                    );
                     return (
                       <BoardColumn
                         key={column.id}
                         column={column}
                         boardId={boardId}
-                        tasks={columnTasks}
+                        enableLazyLoading={true}
                         isPersonalWorkspace={workspace.personal}
                         onTaskCreated={handleTaskCreated}
                         onListUpdated={handleTaskCreated}

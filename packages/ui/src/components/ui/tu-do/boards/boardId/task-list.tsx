@@ -25,6 +25,7 @@ import {
   Filter,
   Flag,
   GripVertical,
+  Loader2,
   RefreshCw,
   Search,
   Users,
@@ -34,7 +35,7 @@ import { Input } from '@tuturuuu/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
 import { DEV_MODE } from '@tuturuuu/utils/constants';
 import { cn } from '@tuturuuu/utils/format';
-import { priorityCompare } from '@tuturuuu/utils/task-helper';
+import { priorityCompare, useListTasks } from '@tuturuuu/utils/task-helper';
 import { debounce } from 'lodash';
 import Image from 'next/image';
 import { useParams } from 'next/navigation';
@@ -54,7 +55,7 @@ import { TaskForm } from './task-form';
 interface Props {
   column: TaskList;
   boardId: string;
-  tasks: Task[];
+  tasks?: Task[]; // Make tasks optional since we'll use lazy loading
   isOverlay?: boolean;
   onTaskCreated?: () => void;
   onListUpdated?: () => void;
@@ -62,6 +63,7 @@ interface Props {
   isMultiSelectMode?: boolean;
   isPersonalWorkspace?: boolean;
   onTaskSelect?: (taskId: string, event: React.MouseEvent) => void;
+  enableLazyLoading?: boolean; // New prop to enable/disable lazy loading
 }
 
 type SortOption =
@@ -109,7 +111,7 @@ const FilterLabel = ({ children }: { children: React.ReactNode }) => (
 export const BoardColumn = React.memo(function BoardColumn({
   column,
   boardId,
-  tasks,
+  tasks: propTasks,
   isOverlay,
   onTaskCreated,
   onListUpdated,
@@ -117,9 +119,28 @@ export const BoardColumn = React.memo(function BoardColumn({
   onTaskSelect,
   isMultiSelectMode,
   isPersonalWorkspace,
+  enableLazyLoading = true,
 }: Props) {
   const params = useParams();
   const wsId = params.wsId as string;
+
+  // Use lazy loading for tasks when enabled
+  const {
+    data: lazyTaskData,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    isLoading: isLoadingTasks,
+  } = useListTasks(column.id, 20);
+
+  // Flatten the paginated data into a single array
+  const lazyTasks = useMemo(() => {
+    if (!lazyTaskData?.pages) return [];
+    return lazyTaskData.pages.flatMap((page) => page.tasks);
+  }, [lazyTaskData]);
+
+  // Use lazy-loaded tasks when enabled, otherwise use prop tasks
+  const tasks = enableLazyLoading ? lazyTasks : propTasks || [];
 
   // Fetch workspace members
   const { data: members = [] } = useQuery({
@@ -151,6 +172,79 @@ export const BoardColumn = React.memo(function BoardColumn({
   const [showFilters, setShowFilters] = useState(false);
 
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const sentinelRef = useRef<HTMLDivElement>(null);
+  const pendingAdjustRef = useRef<{
+    prevTop: number;
+    prevHeight: number;
+    prevScrollPercentage: number;
+  } | null>(null);
+  const observerRef = useRef<IntersectionObserver | null>(null);
+  const lastAutoLoadRef = useRef<{ at: number; scrollTop: number }>({
+    at: 0,
+    scrollTop: 0,
+  });
+
+  const recordScrollMetrics = useCallback(() => {
+    const el = scrollContainerRef.current;
+    if (!el) return;
+    const scrollPercentage =
+      el.scrollHeight > el.clientHeight
+        ? el.scrollTop / (el.scrollHeight - el.clientHeight)
+        : 0;
+    pendingAdjustRef.current = {
+      prevTop: el.scrollTop,
+      prevHeight: el.scrollHeight,
+      prevScrollPercentage: scrollPercentage,
+    };
+  }, []);
+
+  const adjustScrollPosition = useCallback(() => {
+    const el = scrollContainerRef.current;
+    const pending = pendingAdjustRef.current;
+    if (!el || !pending) return;
+
+    // Use a more robust approach to wait for DOM updates
+    const performAdjustment = () => {
+      const newHeight = el.scrollHeight;
+      const delta = newHeight - pending.prevHeight;
+
+      if (delta > 0) {
+        // New content was added, maintain relative scroll position
+        // Try to maintain the exact scroll position first
+        const newScrollTop = pending.prevTop + delta;
+
+        // Ensure we don't scroll beyond the new bounds
+        const maxScrollTop = Math.max(0, newHeight - el.clientHeight);
+        el.scrollTop = Math.min(newScrollTop, maxScrollTop);
+
+        // If the scroll position seems off, use percentage as fallback
+        if (
+          pending.prevScrollPercentage > 0 &&
+          pending.prevScrollPercentage < 1
+        ) {
+          const expectedScrollTop =
+            pending.prevScrollPercentage * (newHeight - el.clientHeight);
+          const currentScrollTop = el.scrollTop;
+
+          // If there's a significant difference, use the percentage-based position
+          if (Math.abs(currentScrollTop - expectedScrollTop) > 100) {
+            el.scrollTop = expectedScrollTop;
+          }
+        }
+      }
+
+      pendingAdjustRef.current = null;
+    };
+
+    // Use multiple animation frames to ensure DOM is fully updated
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        // Additional small delay to ensure React has completed all updates
+        setTimeout(performAdjustment, 10);
+      });
+    });
+  }, []);
 
   const {
     setNodeRef,
@@ -334,6 +428,79 @@ export const BoardColumn = React.memo(function BoardColumn({
     return filtered;
   }, [tasks, filters, sortBy, sortDirection]);
 
+  // Auto-load more when the sentinel comes into view
+  useEffect(() => {
+    if (!enableLazyLoading) return;
+    if (!hasNextPage || isFetchingNextPage) return;
+    const sentinel = sentinelRef.current;
+    const rootEl = scrollContainerRef.current;
+    if (!sentinel || !rootEl) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const entry = entries[0];
+        if (!entry?.isIntersecting) return;
+        if (!hasNextPage || isFetchingNextPage) return;
+
+        const el = scrollContainerRef.current;
+        if (!el) return;
+
+        // Additional bottom-distance guard (hysteresis)
+        const bottomDistance =
+          el.scrollHeight - (el.scrollTop + el.clientHeight);
+        if (bottomDistance > 600) return;
+
+        // Throttle and require user scroll delta since last auto load
+        const now = Date.now();
+        const minIntervalMs = 600;
+        const minScrollDelta = 80;
+        const since = now - lastAutoLoadRef.current.at;
+        const deltaScroll = Math.abs(
+          el.scrollTop - lastAutoLoadRef.current.scrollTop
+        );
+        if (since < minIntervalMs || deltaScroll < minScrollDelta) return;
+
+        lastAutoLoadRef.current = { at: now, scrollTop: el.scrollTop };
+
+        // Temporarily unobserve to avoid immediate re-trigger
+        try {
+          observerRef.current?.unobserve(sentinel);
+        } catch {}
+
+        recordScrollMetrics();
+        fetchNextPage().then(() => {
+          // Use setTimeout to ensure React has finished rendering the new tasks
+          setTimeout(() => {
+            adjustScrollPosition();
+            // Re-observe after adjustment
+            try {
+              observerRef.current?.observe(sentinel);
+            } catch {}
+          }, 0);
+        });
+      },
+      {
+        root: rootEl,
+        rootMargin: '100px',
+        threshold: 0.1,
+      }
+    );
+
+    observerRef.current = observer;
+    observer.observe(sentinel);
+    return () => {
+      observer.disconnect();
+      observerRef.current = null;
+    };
+  }, [
+    enableLazyLoading,
+    hasNextPage,
+    isFetchingNextPage,
+    fetchNextPage,
+    recordScrollMetrics,
+    adjustScrollPosition,
+  ]);
+
   const clearAllFilters = () => {
     setSearchQuery('');
     setFilters({
@@ -424,10 +591,16 @@ export const BoardColumn = React.memo(function BoardColumn({
             )}
           >
             {filteredAndSortedTasks.length}
-            {filteredAndSortedTasks.length !== tasks.length && (
+            {enableLazyLoading && lazyTaskData?.pages?.[0]?.totalCount ? (
               <span className="ml-1 text-muted-foreground">
-                /{tasks.length}
+                /{lazyTaskData.pages[0].totalCount}
               </span>
+            ) : (
+              filteredAndSortedTasks.length !== tasks.length && (
+                <span className="ml-1 text-muted-foreground">
+                  /{tasks.length}
+                </span>
+              )
             )}
           </Badge>
         </div>
@@ -921,8 +1094,21 @@ export const BoardColumn = React.memo(function BoardColumn({
         </div>
       )}
 
-      <div className="h-full flex-1 space-y-2 overflow-y-auto p-3">
-        {filteredAndSortedTasks.length === 0 ? (
+      <div
+        ref={scrollContainerRef}
+        className="h-full flex-1 space-y-2 overflow-y-auto p-3"
+      >
+        {/* Loading state for initial tasks */}
+        {enableLazyLoading &&
+        isLoadingTasks &&
+        filteredAndSortedTasks.length === 0 ? (
+          <div className="flex h-32 items-center justify-center text-muted-foreground">
+            <div className="flex items-center gap-2">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              <p className="text-sm">Loading tasks...</p>
+            </div>
+          </div>
+        ) : filteredAndSortedTasks.length === 0 ? (
           <div className="flex h-32 items-center justify-center text-muted-foreground">
             <div className="text-center">
               <p className="text-sm">
@@ -941,19 +1127,67 @@ export const BoardColumn = React.memo(function BoardColumn({
             </div>
           </div>
         ) : (
-          filteredAndSortedTasks.map((task) => (
-            <TaskCard
-              key={task.id}
-              task={task}
-              taskList={column}
-              boardId={boardId}
-              onUpdate={handleUpdate}
-              isSelected={isMultiSelectMode && selectedTasks?.has(task.id)}
-              isMultiSelectMode={isMultiSelectMode}
-              isPersonalWorkspace={isPersonalWorkspace}
-              onSelect={onTaskSelect}
-            />
-          ))
+          <>
+            {filteredAndSortedTasks.map((task) => (
+              <TaskCard
+                key={task.id}
+                task={task}
+                taskList={column}
+                boardId={boardId}
+                onUpdate={handleUpdate}
+                isSelected={isMultiSelectMode && selectedTasks?.has(task.id)}
+                isMultiSelectMode={isMultiSelectMode}
+                isPersonalWorkspace={isPersonalWorkspace}
+                onSelect={onTaskSelect}
+              />
+            ))}
+
+            {/* Observer sentinel for auto-loading */}
+            {enableLazyLoading && hasNextPage && (
+              <div ref={sentinelRef} className="h-6" />
+            )}
+
+            {/* Load More Button */}
+            {enableLazyLoading && hasNextPage && (
+              <div className="flex justify-center pt-4">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    recordScrollMetrics();
+                    fetchNextPage().then(() => {
+                      // Use setTimeout to ensure React has finished rendering the new tasks
+                      setTimeout(() => {
+                        adjustScrollPosition();
+                      }, 0);
+                    });
+                    // Update last auto load markers so observer won’t immediately trigger again
+                    const el = scrollContainerRef.current;
+                    if (el) {
+                      lastAutoLoadRef.current = {
+                        at: Date.now(),
+                        scrollTop: el.scrollTop,
+                      };
+                    }
+                  }}
+                  disabled={isFetchingNextPage}
+                  className="h-8 gap-2 text-xs"
+                >
+                  {isFetchingNextPage ? (
+                    <>
+                      <Loader2 className="h-3 w-3 animate-spin" />
+                      Loading...
+                    </>
+                  ) : (
+                    <>
+                      <ArrowDownAZ className="h-3 w-3" />
+                      Load More Tasks
+                    </>
+                  )}
+                </Button>
+              </div>
+            )}
+          </>
         )}
       </div>
 
