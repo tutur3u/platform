@@ -6,6 +6,7 @@ import { ChevronDown, ChevronUp, UserRound } from '@tuturuuu/ui/icons';
 import { cn } from '@tuturuuu/utils/format';
 import Link from 'next/link';
 import { useState } from 'react';
+import { getDescriptionText } from '@/utils/text-helper';
 import TaskDueDate from './task-due-date';
 
 interface Task {
@@ -84,7 +85,7 @@ export default function ExpandableTaskList({
                   </h4>
                   {task.description && (
                     <p className="mt-1 line-clamp-2 text-dynamic-orange/70 text-xs">
-                      {task.description}
+                      {getDescriptionText(task.description)}
                     </p>
                   )}
                   <div className="mt-2 flex flex-wrap items-center gap-2 text-dynamic-orange/60 text-xs">
