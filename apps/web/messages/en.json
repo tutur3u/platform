@@ -860,7 +860,8 @@
     "google_workspace": "Google Workspace",
     "groups": "Groups",
     "sites": "Sites",
-    "labels": "Labels"
+    "labels": "Labels",
+    "estimates": "Estimates"
   },
   "usage": {
     "description": "Monitor workspace activity, feature usage, and system metrics across your organization",

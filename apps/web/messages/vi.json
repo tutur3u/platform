@@ -871,7 +871,8 @@
     "google_workspace": "Không gian làm việc của Google",
     "groups": "Nhóm",
     "sites": "Trang web",
-    "labels": "Nhãn"
+    "labels": "Nhãn",
+    "estimates": "Ước tính"
   },
   "usage": {
     "description": "Theo dõi hoạt động workspace, sử dụng tính năng và các số liệu hệ thống trong tổ chức của bạn",
