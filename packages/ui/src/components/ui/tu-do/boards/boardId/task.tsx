@@ -62,7 +62,6 @@ import {
 } from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
-import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
 
 import { cn } from '@tuturuuu/utils/format';
 import {
@@ -157,7 +156,7 @@ export const TaskCard = React.memo(function TaskCard({
   const [isLoading, setIsLoading] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
-  const [customDateOpen, setCustomDateOpen] = useState(false);
+  const [customDateDialogOpen, setCustomDateDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   // Estimation & labels state
@@ -322,13 +321,22 @@ export const TaskCard = React.memo(function TaskCard({
     }
 
     setIsLoading(true);
+    setCustomDateDialogOpen(false); // Close immediately when date is selected
+
     updateTaskMutation.mutate(
       { taskId: task.id, updates: { end_date: newDate } },
       {
+        onSuccess: () => {
+          toast({
+            title: 'Due date updated',
+            description: newDate
+              ? 'Custom due date set successfully'
+              : 'Due date removed',
+          });
+          onUpdate?.();
+        },
         onSettled: () => {
           setIsLoading(false);
-          setCustomDateOpen(false);
-          onUpdate?.();
         },
       }
     );
@@ -1095,63 +1103,19 @@ export const TaskCard = React.memo(function TaskCard({
                         </div>
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />
-                      <Popover
-                        open={customDateOpen}
-                        onOpenChange={setCustomDateOpen}
+                      <DropdownMenuItem
+                        onClick={() => {
+                          setMenuOpen(false);
+                          // Use setTimeout to prevent interference with dropdown closing
+                          setTimeout(() => setCustomDateDialogOpen(true), 100);
+                        }}
+                        className="cursor-pointer"
                       >
-                        <PopoverTrigger asChild>
-                          <DropdownMenuItem
-                            onSelect={(e) => e.preventDefault()}
-                            className="cursor-pointer"
-                          >
-                            <div className="flex items-center gap-2">
-                              <Calendar className="h-4 w-4" />
-                              Custom Date
-                            </div>
-                          </DropdownMenuItem>
-                        </PopoverTrigger>
-                        <PopoverContent
-                          className="w-auto p-0"
-                          side="right"
-                          sideOffset={8}
-                          align="start"
-                        >
-                          <div className="min-w-[300px] space-y-4 p-4">
-                            <div className="flex items-center justify-between">
-                              <Label className="font-semibold text-sm">
-                                Set Custom Date
-                              </Label>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="h-6 w-6 p-0 hover:bg-muted"
-                                onClick={() => setCustomDateOpen(false)}
-                              >
-                                <X className="h-3 w-3" />
-                              </Button>
-                            </div>
-
-                            <div className="space-y-3">
-                              <Label className="block text-muted-foreground text-xs">
-                                Pick a specific date and time:
-                              </Label>
-                              <DateTimePicker
-                                date={
-                                  task.end_date
-                                    ? new Date(task.end_date)
-                                    : undefined
-                                }
-                                setDate={(date) => {
-                                  handleCustomDateChange(date);
-                                  setMenuOpen(false);
-                                }}
-                                showTimeSelect={true}
-                                minDate={new Date()}
-                              />
-                            </div>
-                          </div>
-                        </PopoverContent>
-                      </Popover>
+                        <div className="flex items-center gap-2">
+                          <Calendar className="h-4 w-4" />
+                          Custom Date
+                        </div>
+                      </DropdownMenuItem>
                       {task.end_date && (
                         <>
                           <DropdownMenuSeparator />
@@ -1652,6 +1616,59 @@ export const TaskCard = React.memo(function TaskCard({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Custom Date Dialog */}
+      <Dialog
+        open={customDateDialogOpen}
+        onOpenChange={setCustomDateDialogOpen}
+      >
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Set Custom Due Date</DialogTitle>
+            <DialogDescription>
+              Choose a specific date and time for when this task should be
+              completed.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="space-y-3">
+              <Label className="font-medium text-sm">Due Date & Time</Label>
+              <DateTimePicker
+                date={task.end_date ? new Date(task.end_date) : undefined}
+                setDate={handleCustomDateChange}
+                showTimeSelect={true}
+                minDate={new Date()}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setCustomDateDialogOpen(false)}
+              disabled={isLoading}
+            >
+              Cancel
+            </Button>
+            {task.end_date && (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  handleDueDateChange(null);
+                  setCustomDateDialogOpen(false);
+                }}
+                disabled={isLoading}
+                className="text-muted-foreground hover:text-foreground"
+              >
+                <X className="h-4 w-4" />
+                Remove Due Date
+              </Button>
+            )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {!isOverlay && (
         <TaskActions taskId={task.id} boardId={boardId} onUpdate={onUpdate} />
       )}
