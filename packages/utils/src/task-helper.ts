@@ -457,6 +457,141 @@ export async function moveTask(
   return transformedTask as Task;
 }
 
+export async function moveTaskToBoard(
+  supabase: SupabaseClient,
+  taskId: string,
+  newListId: string,
+  targetBoardId?: string
+) {
+  console.log('🗄️ moveTaskToBoard function called');
+  console.log('📋 Task ID:', taskId);
+  console.log('🎯 New List ID:', newListId);
+  console.log('📊 Target Board ID:', targetBoardId);
+
+  // First, get the current task details including its current archived status and source list
+  console.log('🔍 Fetching current task details...');
+  const { data: currentTask, error: taskError } = await supabase
+    .from('tasks')
+    .select(`
+      id,
+      list_id,
+      archived,
+      task_lists!inner(status, name, board_id)
+    `)
+    .eq('id', taskId)
+    .single();
+
+  if (taskError) {
+    console.log('❌ Error fetching current task:', taskError);
+    throw taskError;
+  }
+
+  console.log('📊 Current task details:', currentTask);
+
+  // Get the target list to check its status and board
+  console.log('🔍 Fetching target list details...');
+  const { data: targetList, error: listError } = await supabase
+    .from('task_lists')
+    .select('status, name, board_id')
+    .eq('id', newListId)
+    .single();
+
+  if (listError) {
+    console.log('❌ Error fetching target list:', listError);
+    throw listError;
+  }
+
+  console.log('📊 Target list details:', targetList);
+
+  // Check if we're moving to a different board
+  const currentBoardId = currentTask.task_lists.board_id;
+  const isMovingToNewBoard = targetList.board_id !== currentBoardId;
+
+  console.log('🏠 Current board ID:', currentBoardId);
+  console.log('🏠 Target board ID:', targetList.board_id);
+  console.log('🔄 Moving to new board:', isMovingToNewBoard);
+
+  // Determine task completion status based on improved logic:
+  // 1. If moving TO a "done"/"closed" list: archive the task
+  // 2. If moving FROM a "done"/"closed" list to any other list: unarchive the task
+  // 3. If moving between non-done lists: preserve current archived status
+  const sourceListStatus = currentTask.task_lists.status;
+  const targetListStatus = targetList.status;
+  const currentlyArchived = currentTask.archived;
+
+  let shouldArchive: boolean;
+
+  if (targetListStatus === 'done' || targetListStatus === 'closed') {
+    // Moving TO a completion list - always archive
+    shouldArchive = true;
+    console.log('📦 Moving to completion list, will archive task');
+  } else if (sourceListStatus === 'done' || sourceListStatus === 'closed') {
+    // Moving FROM a completion list to a non-completion list - always unarchive
+    shouldArchive = false;
+    console.log('📦 Moving from completion list, will unarchive task');
+  } else {
+    // Moving between non-completion lists - preserve current status
+    shouldArchive = currentlyArchived || false;
+    console.log(
+      '📦 Moving between non-completion lists, preserving current status:',
+      currentlyArchived
+    );
+  }
+
+  console.log('📊 Source list status:', sourceListStatus);
+  console.log('📊 Target list status:', targetListStatus);
+  console.log('📊 Currently archived:', currentlyArchived);
+  console.log('📦 Will archive:', shouldArchive);
+
+  console.log('🔄 Updating task in database...');
+  const { data, error } = await supabase
+    .from('tasks')
+    .update({
+      list_id: newListId,
+      archived: shouldArchive,
+    })
+    .eq('id', taskId)
+    .select(
+      `
+        *,
+        assignees:task_assignees(
+          user:users(
+            id,
+            display_name,
+            avatar_url
+          )
+        )
+      `
+    )
+    .single();
+
+  if (error) {
+    console.log('❌ Error updating task:', error);
+    throw error;
+  }
+
+  console.log('✅ Task updated successfully in database');
+  console.log('📊 Updated task data:', data);
+
+  // Transform the nested assignees data
+  const transformedTask = {
+    ...data,
+    assignees: transformAssignees(
+      data.assignees as (TaskAssignee & { user: User })[]
+    ),
+  };
+
+  console.log('🔄 Task data transformed');
+  console.log('📊 Final transformed task:', transformedTask);
+
+  return {
+    task: transformedTask as Task,
+    movedToDifferentBoard: isMovingToNewBoard,
+    sourceBoardId: currentBoardId,
+    targetBoardId: targetList.board_id,
+  };
+}
+
 export async function assignTask(
   supabase: SupabaseClient,
   taskId: string,
@@ -819,6 +954,247 @@ export function useMoveTask(boardId: string) {
       console.log('✅ Cache updated with server response');
     },
     // Removed onSettled to prevent cache invalidation conflicts with optimistic updates
+  });
+}
+
+export function useMoveTaskToBoard(currentBoardId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      taskId,
+      newListId,
+      targetBoardId,
+    }: {
+      taskId: string;
+      newListId: string;
+      targetBoardId?: string;
+    }) => {
+      console.log('🚀 Starting moveTaskToBoard mutation');
+      console.log('📋 Task ID:', taskId);
+      console.log('🎯 New List ID:', newListId);
+      console.log('📊 Target Board ID:', targetBoardId);
+
+      const supabase = createClient();
+      const result = await moveTaskToBoard(
+        supabase,
+        taskId,
+        newListId,
+        targetBoardId
+      );
+
+      console.log('✅ moveTaskToBoard completed successfully');
+      console.log('📊 Result:', result);
+
+      return result;
+    },
+    onMutate: async ({ taskId, newListId, targetBoardId }) => {
+      console.log('🎭 onMutate triggered - optimistic update');
+      console.log('📋 Task ID:', taskId);
+      console.log('🎯 New List ID:', newListId);
+      console.log('📊 Target Board ID:', targetBoardId);
+
+      // Cancel any outgoing refetches for both boards
+      await queryClient.cancelQueries({ queryKey: ['tasks', currentBoardId] });
+      if (targetBoardId && targetBoardId !== currentBoardId) {
+        await queryClient.cancelQueries({ queryKey: ['tasks', targetBoardId] });
+      }
+
+      // Snapshot the previous values
+      const previousCurrentBoardTasks = queryClient.getQueryData([
+        'tasks',
+        currentBoardId,
+      ]);
+      const previousTargetBoardTasks =
+        targetBoardId && targetBoardId !== currentBoardId
+          ? queryClient.getQueryData(['tasks', targetBoardId])
+          : null;
+
+      console.log('📸 Previous tasks snapshots saved');
+
+      // If moving to a different board, remove task from current board's cache
+      if (targetBoardId && targetBoardId !== currentBoardId) {
+        console.log('🔄 Removing task from current board cache');
+        queryClient.setQueryData(
+          ['tasks', currentBoardId],
+          (old: Task[] | undefined) => {
+            if (!old) return old;
+            return old.filter((task) => task.id !== taskId);
+          }
+        );
+
+        // Add task to target board's cache if it exists
+        queryClient.setQueryData(
+          ['tasks', targetBoardId],
+          (old: Task[] | undefined) => {
+            if (!old) return old;
+
+            // Find the task in the current board to add to target board
+            const currentBoardTasks = previousCurrentBoardTasks as
+              | Task[]
+              | undefined;
+            const taskToMove = currentBoardTasks?.find((t) => t.id === taskId);
+
+            if (!taskToMove) return old;
+
+            // Get the target list to determine archived status
+            const targetList = queryClient.getQueryData([
+              'task_lists',
+              targetBoardId,
+            ]) as TaskList[] | undefined;
+            const list = targetList?.find((l) => l.id === newListId);
+            const shouldArchive =
+              list?.status === 'done' || list?.status === 'closed';
+
+            const updatedTask = {
+              ...taskToMove,
+              list_id: newListId,
+              archived: shouldArchive || false,
+            };
+
+            console.log('🔄 Adding task to target board cache:', updatedTask);
+            return [...old, updatedTask];
+          }
+        );
+      } else {
+        // Same board move - just update list_id
+        console.log('🔄 Updating task within same board');
+        queryClient.setQueryData(
+          ['tasks', currentBoardId],
+          (old: Task[] | undefined) => {
+            if (!old) return old;
+            return old.map((task) => {
+              if (task.id === taskId) {
+                // Get the target list to determine archived status
+                const targetList = queryClient.getQueryData([
+                  'task_lists',
+                  currentBoardId,
+                ]) as TaskList[] | undefined;
+                const list = targetList?.find((l) => l.id === newListId);
+                const shouldArchive =
+                  list?.status === 'done' || list?.status === 'closed';
+
+                console.log('🔄 Optimistically updating task:', taskId);
+                console.log('📊 Target list:', list);
+                console.log('📦 Should archive:', shouldArchive);
+
+                return {
+                  ...task,
+                  list_id: newListId,
+                  archived: shouldArchive || false,
+                };
+              }
+              return task;
+            });
+          }
+        );
+      }
+
+      console.log('✅ Optimistic update completed');
+      return {
+        previousCurrentBoardTasks,
+        previousTargetBoardTasks,
+        targetBoardId: targetBoardId || currentBoardId,
+      };
+    },
+    onError: (err, variables, context) => {
+      console.log('❌ onError triggered - rollback optimistic update');
+      console.log('📋 Error details:', err);
+      console.log('📊 Variables:', variables);
+
+      // Rollback optimistic updates on error
+      if (context?.previousCurrentBoardTasks) {
+        console.log('🔄 Rolling back current board state');
+        queryClient.setQueryData(
+          ['tasks', currentBoardId],
+          context.previousCurrentBoardTasks
+        );
+      }
+
+      if (
+        context?.previousTargetBoardTasks &&
+        context.targetBoardId !== currentBoardId
+      ) {
+        console.log('🔄 Rolling back target board state');
+        queryClient.setQueryData(
+          ['tasks', context.targetBoardId],
+          context.previousTargetBoardTasks
+        );
+      }
+
+      console.error('Failed to move task to board:', err);
+      toast({
+        title: 'Error',
+        description: 'Failed to move task to board. Please try again.',
+        variant: 'destructive',
+      });
+    },
+    onSuccess: (result) => {
+      console.log(
+        '✅ onSuccess triggered - updating caches with server response'
+      );
+      console.log('📊 Updated task from server:', result.task);
+      console.log('📊 Moved to different board:', result.movedToDifferentBoard);
+
+      if (result.movedToDifferentBoard) {
+        // Remove from source board cache
+        queryClient.setQueryData(
+          ['tasks', result.sourceBoardId],
+          (old: Task[] | undefined) => {
+            if (!old) return old;
+            return old.filter((task) => task.id !== result.task.id);
+          }
+        );
+
+        // Update target board cache
+        queryClient.setQueryData(
+          ['tasks', result.targetBoardId],
+          (old: Task[] | undefined) => {
+            if (!old) return [result.task];
+
+            // Check if task is already in the target board cache, update or add
+            const existingIndex = old.findIndex(
+              (task) => task.id === result.task.id
+            );
+            if (existingIndex >= 0) {
+              const updated = [...old];
+              updated[existingIndex] = result.task;
+              return updated;
+            } else {
+              return [...old, result.task];
+            }
+          }
+        );
+
+        // Invalidate both boards to ensure consistency
+        queryClient.invalidateQueries({
+          queryKey: ['tasks', result.sourceBoardId],
+        });
+        queryClient.invalidateQueries({
+          queryKey: ['tasks', result.targetBoardId],
+        });
+      } else {
+        // Same board - just update the task
+        queryClient.setQueryData(
+          ['tasks', currentBoardId],
+          (old: Task[] | undefined) => {
+            if (!old) return old;
+            return old.map((task) =>
+              task.id === result.task.id ? result.task : task
+            );
+          }
+        );
+      }
+
+      console.log('✅ Cache updated with server response');
+
+      toast({
+        title: 'Success',
+        description: result.movedToDifferentBoard
+          ? 'Task moved to different board successfully'
+          : 'Task moved successfully',
+      });
+    },
   });
 }
 

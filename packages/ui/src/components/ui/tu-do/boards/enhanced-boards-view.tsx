@@ -988,9 +988,39 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
                     {/* Board Header */}
                     <div className="mb-4">
                       <div className="mb-3 flex items-start justify-between gap-2">
-                        <h3 className="line-clamp-2 font-semibold text-lg leading-tight transition-colors group-hover:text-primary">
-                          {board.name}
-                        </h3>
+                        <div className="flex-1">
+                          <h3 className="line-clamp-2 font-semibold text-lg leading-tight transition-colors group-hover:text-primary">
+                            {board.name}
+                          </h3>
+                          {/* Compact Task Summary */}
+                          <div className="mt-1 flex items-center gap-3 text-muted-foreground text-xs">
+                            <span className="flex items-center gap-1">
+                              <BarChart3 className="h-3 w-3" />
+                              <span className="font-medium text-foreground">
+                                {board.totalTasks}
+                              </span>
+                              tasks
+                            </span>
+                            {board.completedTasks > 0 && (
+                              <span className="flex items-center gap-1">
+                                <CheckCircle2 className="h-3 w-3 text-green-600" />
+                                <span className="font-medium text-green-600">
+                                  {board.completedTasks}
+                                </span>
+                                done
+                              </span>
+                            )}
+                            {board.overdueTasks > 0 && (
+                              <span className="flex items-center gap-1">
+                                <Clock className="h-3 w-3 text-red-600" />
+                                <span className="font-medium text-red-600">
+                                  {board.overdueTasks}
+                                </span>
+                                overdue
+                              </span>
+                            )}
+                          </div>
+                        </div>
                         <div className="flex items-center gap-2">
                           {board.archived && (
                             <span className="inline-flex items-center rounded-full bg-muted px-2 py-1 font-medium text-muted-foreground text-xs">
@@ -1064,8 +1094,8 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
                       </div>
                     </div>
 
-                    {/* Task Stats Grid */}
-                    <div className="mb-4 grid grid-cols-2 gap-4">
+                    {/* Enhanced Task Stats Grid */}
+                    <div className="mb-4 grid grid-cols-2 gap-3">
                       <div className="flex items-center gap-2">
                         <div className="rounded-lg bg-blue-500/10 p-2">
                           <BarChart3 className="h-4 w-4 text-blue-500" />
@@ -1074,7 +1104,9 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
                           <p className="font-bold text-lg">
                             {board.totalTasks}
                           </p>
-                          <p className="text-muted-foreground text-xs">Total</p>
+                          <p className="text-muted-foreground text-xs">
+                            Total Tasks
+                          </p>
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
@@ -1085,7 +1117,35 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
                           <p className="font-bold text-lg">
                             {board.completedTasks}
                           </p>
-                          <p className="text-muted-foreground text-xs">Done</p>
+                          <p className="text-muted-foreground text-xs">
+                            Completed
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="rounded-lg bg-orange-500/10 p-2">
+                          <Activity className="h-4 w-4 text-orange-500" />
+                        </div>
+                        <div>
+                          <p className="font-bold text-lg">
+                            {board.activeTasks}
+                          </p>
+                          <p className="text-muted-foreground text-xs">
+                            Active
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="rounded-lg bg-red-500/10 p-2">
+                          <Clock className="h-4 w-4 text-red-500" />
+                        </div>
+                        <div>
+                          <p className="font-bold text-lg">
+                            {board.overdueTasks}
+                          </p>
+                          <p className="text-muted-foreground text-xs">
+                            Overdue
+                          </p>
                         </div>
                       </div>
                     </div>

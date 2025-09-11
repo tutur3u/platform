@@ -710,7 +710,12 @@ export const TaskCard = React.memo(function TaskCard({
                         ? 'text-muted-foreground line-through'
                         : 'text-foreground hover:text-primary group-hover:text-foreground/90'
                     )}
-                    onClick={() => setIsEditing(true)}
+                    onClick={(e) => {
+                      // Don't allow editing when Shift is held (multi-select mode)
+                      if (!e.shiftKey) {
+                        setIsEditing(true);
+                      }
+                    }}
                     aria-label={`Edit task: ${task.name}`}
                   >
                     {task.name}
@@ -723,10 +728,19 @@ export const TaskCard = React.memo(function TaskCard({
                       type="button"
                       className="scrollbar-none group-hover:scrollbar-thin scrollbar-track-transparent scrollbar-thumb-muted-foreground/30 group-hover:scrollbar-thumb-muted-foreground/50 max-h-20 w-full cursor-pointer overflow-y-auto whitespace-pre-line border-none bg-transparent p-0 text-left text-muted-foreground text-xs hover:text-foreground focus:outline-none"
                       title={task.description}
-                      onClick={() => setIsEditing(true)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' || e.key === ' ')
+                      onClick={(e) => {
+                        // Don't allow editing when Shift is held (multi-select mode)
+                        if (!e.shiftKey) {
                           setIsEditing(true);
+                        }
+                      }}
+                      onKeyDown={(e) => {
+                        if (
+                          (e.key === 'Enter' || e.key === ' ') &&
+                          !e.shiftKey
+                        ) {
+                          setIsEditing(true);
+                        }
                       }}
                     >
                       {task.description}
