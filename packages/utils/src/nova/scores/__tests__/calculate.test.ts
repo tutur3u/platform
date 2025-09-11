@@ -1,12 +1,12 @@
+import { describe, expect, it } from 'vitest';
 import {
-  type ScoreInput,
   aggregateByChallenge,
   calculateBestScores,
   calculatePercentage,
   calculateScore,
   formatScore,
+  type ScoreInput,
 } from '../calculate';
-import { describe, expect, it } from 'vitest';
 
 describe('calculateScore', () => {
   it('should correctly calculate score with only tests', () => {

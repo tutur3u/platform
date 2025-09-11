@@ -1,4 +1,3 @@
-import { PostEmailStatus } from './post';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -28,10 +27,11 @@ import { Separator } from '@tuturuuu/ui/separator';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { cn } from '@tuturuuu/utils/format';
 import { format } from 'date-fns';
-import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { useState } from 'react';
+import { PostEmailStatus } from './post';
 
 export interface UserGroupPost {
   id?: string;

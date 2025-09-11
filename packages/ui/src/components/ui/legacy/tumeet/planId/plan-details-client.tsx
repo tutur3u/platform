@@ -1,11 +1,5 @@
 'use client';
 
-import AgendaDetails from './agenda-details';
-import PlanLogin from './plan-login';
-import SidebarDisplay from './sidebar-display';
-import StickyBottomIndicator from './sticky-bottom-indicator';
-import UnifiedAvailability from './unified-availability';
-import UtilityButtons from './utility-buttons';
 import type {
   MeetTogetherPlan,
   PlanUser,
@@ -23,6 +17,12 @@ import { cn } from '@tuturuuu/utils/format';
 import html2canvas from 'html2canvas-pro';
 import { useTheme } from 'next-themes';
 import { useCallback, useEffect, useState } from 'react';
+import AgendaDetails from './agenda-details';
+import PlanLogin from './plan-login';
+import SidebarDisplay from './sidebar-display';
+import StickyBottomIndicator from './sticky-bottom-indicator';
+import UnifiedAvailability from './unified-availability';
+import UtilityButtons from './utility-buttons';
 
 interface PlanDetailsClientProps {
   plan: MeetTogetherPlan;

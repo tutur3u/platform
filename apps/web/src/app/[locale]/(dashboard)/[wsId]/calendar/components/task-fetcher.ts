@@ -1,7 +1,7 @@
 'use server';
 
-import type { ExtendedWorkspaceTask } from '../../time-tracker/types';
 import { createClient } from '@tuturuuu/supabase/next/server';
+import type { ExtendedWorkspaceTask } from '../../time-tracker/types';
 
 export async function getAssignedTasks(
   assigneeId: string,

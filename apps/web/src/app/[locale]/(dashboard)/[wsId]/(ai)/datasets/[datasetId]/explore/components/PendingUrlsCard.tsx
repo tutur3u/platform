@@ -1,7 +1,7 @@
-import type { UrlWithProgress } from '../types';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Card, CardContent } from '@tuturuuu/ui/card';
 import { Clock } from '@tuturuuu/ui/icons';
+import type { UrlWithProgress } from '../types';
 
 interface Props {
   pendingUrls: UrlWithProgress[];

@@ -1,6 +1,6 @@
-import Menu from './menu';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
+import Menu from './menu';
 
 export default async function ServerMenu() {
   const supabase = await createClient();

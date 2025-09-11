@@ -1,10 +1,10 @@
 'use client';
 
-import PostsRowActions from './row-actions';
-import type { PostEmail } from './types';
 import type { ColumnDef } from '@tanstack/react-table';
 import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
 import { Check, X } from '@tuturuuu/ui/icons';
+import PostsRowActions from './row-actions';
+import type { PostEmail } from './types';
 import 'dayjs/locale/vi';
 import moment from 'moment';
 

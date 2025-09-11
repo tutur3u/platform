@@ -1,7 +1,5 @@
 'use client';
 
-import DayPlanners from './day-planners';
-import TimeColumn from './time-column';
 import type { Timeblock } from '@tuturuuu/types/primitives/Timeblock';
 import { useTimeBlocking } from '@tuturuuu/ui/hooks/time-blocking-provider';
 import { useIsMobile } from '@tuturuuu/ui/hooks/use-mobile';
@@ -11,6 +9,8 @@ import { timetzToHour } from '@tuturuuu/ui/utils/date-helper';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import { memo, useEffect, useMemo, useState } from 'react';
+import DayPlanners from './day-planners';
+import TimeColumn from './time-column';
 
 function DatePlanner({
   timeblocks,

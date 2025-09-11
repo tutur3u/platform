@@ -1,5 +1,3 @@
-import { HOUR_HEIGHT } from './config';
-import { useCalendarSettings } from './settings/settings-context';
 import { useCalendar } from '@tuturuuu/ui/hooks/use-calendar';
 import { getEventStyles } from '@tuturuuu/utils/color-helper';
 import { cn } from '@tuturuuu/utils/format';
@@ -7,6 +5,8 @@ import { format } from 'date-fns';
 import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { HOUR_HEIGHT } from './config';
+import { useCalendarSettings } from './settings/settings-context';
 
 dayjs.extend(timezone);
 

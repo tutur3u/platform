@@ -1,7 +1,3 @@
-import { linkShortenerColumns } from './columns';
-import LinkShortenerFilters from './filters';
-import { InlineLinkShortenerForm } from './inline-form';
-import { CustomDataTable } from '@/components/custom-data-table';
 import {
   createAdminClient,
   createClient,
@@ -24,6 +20,10 @@ import {
 } from '@tuturuuu/ui/icons';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { getTranslations } from 'next-intl/server';
+import { CustomDataTable } from '@/components/custom-data-table';
+import { linkShortenerColumns } from './columns';
+import LinkShortenerFilters from './filters';
+import { InlineLinkShortenerForm } from './inline-form';
 
 type ShortenedLink = Tables<'shortened_links'> & {
   creator?: {

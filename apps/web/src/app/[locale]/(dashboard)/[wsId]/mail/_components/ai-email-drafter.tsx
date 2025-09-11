@@ -1,9 +1,5 @@
 'use client';
 
-import {
-  type EmailDraft,
-  emailDraftSchema,
-} from '../../../../../api/ai/email-draft/schema';
 import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
 import {
@@ -26,6 +22,10 @@ import type { JSONContent } from '@tuturuuu/ui/tiptap';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import Textarea from 'react-textarea-autosize';
+import {
+  type EmailDraft,
+  emailDraftSchema,
+} from '../../../../../api/ai/email-draft/schema';
 
 interface AIEmailDrafterProps {
   onDraftGenerated: (draft: { subject: string; content: JSONContent }) => void;

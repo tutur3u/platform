@@ -1,8 +1,8 @@
-import { HOUR_HEIGHT } from './config';
-import { useCalendarSettings } from './settings/settings-context';
 import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone';
 import { useEffect, useState } from 'react';
+import { HOUR_HEIGHT } from './config';
+import { useCalendarSettings } from './settings/settings-context';
 
 dayjs.extend(timezone);
 

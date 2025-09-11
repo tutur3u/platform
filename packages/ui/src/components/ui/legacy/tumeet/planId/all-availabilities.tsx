@@ -1,12 +1,12 @@
 'use client';
 
-import DatePlanner from './date-planner';
 import type { MeetTogetherPlan } from '@tuturuuu/types/primitives/MeetTogetherPlan';
 import type { Timeblock } from '@tuturuuu/types/primitives/Timeblock';
 import { useTimeBlocking } from '@tuturuuu/ui/hooks/time-blocking-provider';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import { memo, useMemo } from 'react';
+import DatePlanner from './date-planner';
 
 // Memoized progress bar component
 const ProgressBar = memo(({ totalUserCount }: { totalUserCount: number }) => {

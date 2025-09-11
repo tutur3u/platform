@@ -1,9 +1,9 @@
-import BackToHomeButton from './back-to-home-button';
-import LogOutButton from './log-out-button';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
-import { getTranslations } from 'next-intl/server';
 import { redirect } from 'next/navigation';
+import { getTranslations } from 'next-intl/server';
+import BackToHomeButton from './back-to-home-button';
+import LogOutButton from './log-out-button';
 
 export default async function NotWhitelistedPage() {
   const t = await getTranslations();

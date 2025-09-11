@@ -1,9 +1,5 @@
 'use client';
 
-import AiFeatures from './ai-features';
-import AnimatedTimeline from './animated-timeline';
-import FeatureShowcase from './feature-showcase';
-import { DEV_MODE } from '@/constants/common';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Card } from '@tuturuuu/ui/card';
@@ -32,10 +28,14 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@tuturuuu/ui/tooltip';
-import { type Variants, motion } from 'framer-motion';
-import { useTranslations } from 'next-intl';
+import { motion, type Variants } from 'framer-motion';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
+import { DEV_MODE } from '@/constants/common';
+import AiFeatures from './ai-features';
+import AnimatedTimeline from './animated-timeline';
+import FeatureShowcase from './feature-showcase';
 
 // Dynamically import HeroAnimation with no SSR to prevent hydration issues
 const HeroAnimation = dynamic(() => import('./hero-animation'), {

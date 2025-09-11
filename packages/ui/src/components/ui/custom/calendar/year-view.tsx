@@ -1,6 +1,6 @@
-import { Button } from '../../button';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useMemo } from 'react';
+import { Button } from '../../button';
 
 export const YearView: React.FC<{
   locale: string;

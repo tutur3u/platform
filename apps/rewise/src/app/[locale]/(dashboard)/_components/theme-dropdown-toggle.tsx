@@ -1,4 +1,3 @@
-import { ThemeDropdownItems } from './theme-dropdown-items';
 import { Button } from '@tuturuuu/ui/button';
 import {
   DropdownMenu,
@@ -6,6 +5,7 @@ import {
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
 import { Moon, Sun } from '@tuturuuu/ui/icons';
+import { ThemeDropdownItems } from './theme-dropdown-items';
 
 export function ThemeDropdownToggle() {
   return (

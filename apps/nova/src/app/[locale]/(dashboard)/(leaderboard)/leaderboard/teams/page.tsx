@@ -1,3 +1,9 @@
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
+import { getLocale } from 'next-intl/server';
+import { Suspense } from 'react';
 import type { BasicInformation } from '../components/basic-information-component';
 import type {
   LeaderboardEntry,
@@ -5,12 +11,6 @@ import type {
 } from '../components/leaderboard';
 import LeaderboardClient from './client';
 import TeamsLeaderboardFallback from './fallback';
-import {
-  createAdminClient,
-  createClient,
-} from '@tuturuuu/supabase/next/server';
-import { getLocale } from 'next-intl/server';
-import { Suspense } from 'react';
 
 export const revalidate = 60;
 

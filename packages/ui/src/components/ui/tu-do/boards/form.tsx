@@ -37,8 +37,8 @@ import {
   useCreateBoardWithTemplate,
   useStatusTemplates,
 } from '@tuturuuu/utils/task-helper';
-import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import React, { useId } from 'react';
 import * as z from 'zod';
 import IconPicker from '../../custom/icon-picker';

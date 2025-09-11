@@ -1,4 +1,3 @@
-import { ProductForm } from './form';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import type { Product2 } from '@tuturuuu/types/primitives/Product';
 import type { ProductCategory } from '@tuturuuu/types/primitives/ProductCategory';
@@ -8,6 +7,7 @@ import type { ProductWarehouse } from '@tuturuuu/types/primitives/ProductWarehou
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Separator } from '@tuturuuu/ui/separator';
 import { getTranslations } from 'next-intl/server';
+import { ProductForm } from './form';
 
 interface Props {
   params: Promise<{

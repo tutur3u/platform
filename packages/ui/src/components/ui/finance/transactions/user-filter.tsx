@@ -1,6 +1,8 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
+import { createClient } from '@tuturuuu/supabase/next/client';
+import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -14,11 +16,9 @@ import {
 } from '@tuturuuu/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
 import { cn } from '@tuturuuu/utils/format';
-import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { getAvatarPlaceholder, getInitials } from '@tuturuuu/utils/name-helper';
 import { Check, Users, X } from 'lucide-react';
 import { useState } from 'react';
-import { createClient } from '@tuturuuu/supabase/next/client';
 
 interface UserFilterProps {
   wsId: string;

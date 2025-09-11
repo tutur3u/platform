@@ -1,5 +1,5 @@
-import { BASE_URL } from '@/constants/common';
 import MeetTogetherPlanDetailsPage from '@tuturuuu/ui/legacy/tumeet/planId/page';
+import { BASE_URL } from '@/constants/common';
 
 interface PlanPageProps {
   params: Promise<{

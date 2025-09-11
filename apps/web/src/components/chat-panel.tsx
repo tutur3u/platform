@@ -1,8 +1,3 @@
-import { ChatModelSelector } from './chat-model-selector';
-import { PromptForm } from './prompt-form';
-import { ScrollToBottomButton } from './scroll-to-bottom-button';
-import { ScrollToTopButton } from './scroll-to-top-button';
-import { BASE_URL } from '@/constants/common';
 import type { Model } from '@tuturuuu/ai/models';
 import type { UIMessage, UseChatHelpers } from '@tuturuuu/ai/types';
 import { createDynamicClient } from '@tuturuuu/supabase/next/client';
@@ -33,11 +28,16 @@ import {
 import { ScrollArea } from '@tuturuuu/ui/scroll-area';
 import { Separator } from '@tuturuuu/ui/separator';
 import { cn } from '@tuturuuu/utils/format';
-import { useTranslations } from 'next-intl';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 import { QRCodeCanvas } from 'qrcode.react';
 import type React from 'react';
 import { useEffect, useState } from 'react';
+import { BASE_URL } from '@/constants/common';
+import { ChatModelSelector } from './chat-model-selector';
+import { PromptForm } from './prompt-form';
+import { ScrollToBottomButton } from './scroll-to-bottom-button';
+import { ScrollToTopButton } from './scroll-to-top-button';
 
 export interface ChatPanelProps
   extends Pick<

@@ -1,6 +1,5 @@
 'use client';
 
-import type { SyncLog } from './types';
 import { useQuery } from '@tanstack/react-query';
 import type { Workspace } from '@tuturuuu/types/db';
 import { Button } from '@tuturuuu/ui/button';
@@ -9,6 +8,7 @@ import { SummaryCards } from '@tuturuuu/ui/legacy/calendar/settings/summary-card
 import { SyncLogsTable } from '@tuturuuu/ui/legacy/calendar/settings/sync-logs-table';
 import { Calendar, Download, RefreshCw } from 'lucide-react';
 import { useMemo, useState } from 'react';
+import type { SyncLog } from './types';
 
 const getWorkspaces = async () => {
   const workspaces = await fetch('/api/workspaces');

@@ -1,4 +1,3 @@
-import TeamDetailsClient from './client-page';
 import {
   createAdminClient,
   createClient,
@@ -6,9 +5,10 @@ import {
 import { Button } from '@tuturuuu/ui/button';
 import { ArrowLeft } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
-import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import { getTranslations } from 'next-intl/server';
+import TeamDetailsClient from './client-page';
 
 interface Props {
   params: Promise<{

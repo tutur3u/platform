@@ -3,8 +3,8 @@
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Copy, ExternalLink, Eye, LinkIcon } from '@tuturuuu/ui/icons';
-import { useTranslations } from 'next-intl';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
 
 interface AnalyticsHeaderProps {

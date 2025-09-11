@@ -7,8 +7,8 @@ import { Calendar, CreditCard, DollarSign, Wallet } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
 import 'dayjs/locale/vi';
 import moment from 'moment';
-import { getTranslations } from 'next-intl/server';
 import { notFound } from 'next/navigation';
+import { getTranslations } from 'next-intl/server';
 import { Card } from '../../../card';
 
 interface Props {

@@ -26,9 +26,11 @@ import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent } from '@tuturuuu/ui/card';
 import { useHorizontalScroll } from '@tuturuuu/ui/hooks/useHorizontalScroll';
 import { coordinateGetter } from '@tuturuuu/utils/keyboard-preset';
-import { useMoveTask } from '@tuturuuu/utils/task-helper';
+import { useMoveTask, useMoveTaskToBoard } from '@tuturuuu/utils/task-helper';
 import { hasDraggableData } from '@tuturuuu/utils/task-helpers';
+import { ArrowRightLeft } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { BoardSelector } from '../board-selector';
 import { LightweightTaskCard } from './task';
 import { BoardColumn } from './task-list';
 import { TaskListForm } from './task-list-form';
@@ -69,9 +71,11 @@ export function KanbanBoard({ workspace, boardId, tasks, isLoading }: Props) {
   const [activeTask, setActiveTask] = useState<Task | null>(null);
   const [selectedTasks, setSelectedTasks] = useState<Set<string>>(new Set());
   const [isMultiSelectMode, setIsMultiSelectMode] = useState(false);
+  const [boardSelectorOpen, setBoardSelectorOpen] = useState(false);
   const pickedUpTaskColumn = useRef<string | null>(null);
   const queryClient = useQueryClient();
   const moveTaskMutation = useMoveTask(boardId);
+  const moveTaskToBoardMutation = useMoveTaskToBoard(boardId);
 
   // Fetch task lists using React Query (same key as other components)
   const { data: columns = [] } = useQuery({
@@ -151,17 +155,72 @@ export function KanbanBoard({ workspace, boardId, tasks, isLoading }: Props) {
     setIsMultiSelectMode(false);
   }, []);
 
+  // Cross-board move handler
+  const handleCrossBoardMove = useCallback(() => {
+    if (selectedTasks.size > 0) {
+      setBoardSelectorOpen(true);
+    }
+  }, [selectedTasks]);
+
+  // Handle the actual cross-board move
+  const handleBoardMove = useCallback(
+    async (targetBoardId: string, targetListId: string) => {
+      if (selectedTasks.size === 0) return;
+
+      const tasksToMove = Array.from(selectedTasks);
+
+      try {
+        console.log('🚀 Starting batch cross-board move');
+        console.log('📋 Tasks to move:', tasksToMove);
+        console.log('🎯 Target board:', targetBoardId);
+        console.log('📋 Target list:', targetListId);
+
+        // Move all selected tasks in parallel for better performance
+        const movePromises = tasksToMove.map((taskId) =>
+          moveTaskToBoardMutation.mutateAsync({
+            taskId,
+            newListId: targetListId,
+            targetBoardId,
+          })
+        );
+
+        await Promise.allSettled(movePromises);
+
+        console.log('✅ Batch cross-board move completed');
+
+        // Clear selection and close dialog after moves
+        clearSelection();
+        setBoardSelectorOpen(false);
+      } catch (error) {
+        console.error('Failed to move tasks:', error);
+        // Don't close the dialog on error so user can retry
+      }
+    },
+    [selectedTasks, moveTaskToBoardMutation, clearSelection]
+  );
+
   // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
         clearSelection();
       }
+
+      // Ctrl/Cmd + M to move selected tasks to another board
+      if (
+        (event.ctrlKey || event.metaKey) &&
+        event.key.toLowerCase() === 'm' &&
+        selectedTasks.size > 0
+      ) {
+        event.preventDefault();
+        event.stopPropagation();
+        handleCrossBoardMove();
+      }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [clearSelection]);
+  }, [clearSelection, handleCrossBoardMove, selectedTasks]);
 
   // Global drag state reset on mouseup/touchend
   useEffect(() => {
@@ -577,17 +636,29 @@ export function KanbanBoard({ workspace, boardId, tasks, isLoading }: Props) {
               selected
             </span>
             <span className="text-muted-foreground text-xs">
-              Drag to move all • Press Esc to clear
+              Drag to move all • Ctrl+M to move to board • Esc to clear
             </span>
           </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={clearSelection}
-            className="h-6 px-2 text-xs"
-          >
-            Clear
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleCrossBoardMove}
+              className="h-6 px-2 text-xs"
+              disabled={selectedTasks.size === 0}
+            >
+              <ArrowRightLeft className="mr-1 h-3 w-3" />
+              Move to Board
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={clearSelection}
+              className="h-6 px-2 text-xs"
+            >
+              Clear
+            </Button>
+          </div>
         </div>
       )}
 
@@ -684,6 +755,17 @@ export function KanbanBoard({ workspace, boardId, tasks, isLoading }: Props) {
           </DragOverlay>
         </DndContext>
       </div>
+
+      {/* Board Selector Dialog */}
+      <BoardSelector
+        open={boardSelectorOpen}
+        onOpenChange={setBoardSelectorOpen}
+        wsId={workspace.id}
+        currentBoardId={boardId}
+        taskCount={selectedTasks.size}
+        onMove={handleBoardMove}
+        isMoving={moveTaskToBoardMutation.isPending}
+      />
     </div>
   );
 }

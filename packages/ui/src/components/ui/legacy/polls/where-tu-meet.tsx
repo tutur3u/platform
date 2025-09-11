@@ -1,4 +1,3 @@
-import MultipleChoiceVote from '../tumeet/multiple-choice-vote';
 import type { MeetTogetherPlan } from '@tuturuuu/types/primitives/MeetTogetherPlan';
 import type {
   GetPollsForPlanResult,
@@ -6,6 +5,7 @@ import type {
 } from '@tuturuuu/types/primitives/Poll';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import { useTranslations } from 'next-intl';
+import MultipleChoiceVote from '../tumeet/multiple-choice-vote';
 
 export function DefaultWherePollContent({
   plan,

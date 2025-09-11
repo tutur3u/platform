@@ -1,7 +1,5 @@
 'use client';
 
-import { ProductCategoryForm } from '../../categories/form';
-import { ProductWarehouseForm } from '../../warehouses/form';
 import type { ProductCategory } from '@tuturuuu/types/primitives/ProductCategory';
 import type { ProductUnit } from '@tuturuuu/types/primitives/ProductUnit';
 import type { ProductWarehouse } from '@tuturuuu/types/primitives/ProductWarehouse';
@@ -26,7 +24,6 @@ import {
   FormMessage,
 } from '@tuturuuu/ui/form';
 import { useFieldArray, useForm } from '@tuturuuu/ui/hooks/use-form';
-import { toast } from '@tuturuuu/ui/sonner';
 import { Check, ChevronsUpDown, Plus, Trash } from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
@@ -39,12 +36,15 @@ import {
   SelectValue,
 } from '@tuturuuu/ui/select';
 import { Separator } from '@tuturuuu/ui/separator';
+import { toast } from '@tuturuuu/ui/sonner';
 import { Switch } from '@tuturuuu/ui/switch';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import * as z from 'zod';
+import { ProductCategoryForm } from '../../categories/form';
+import { ProductWarehouseForm } from '../../warehouses/form';
 
 const InventorySchema = z.object({
   unit_id: z.string(),

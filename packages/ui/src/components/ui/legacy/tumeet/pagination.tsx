@@ -1,8 +1,8 @@
 'use client';
 
-import { DataPagination } from '../../custom/data-pagination';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useTransition } from 'react';
+import { DataPagination } from '../../custom/data-pagination';
 
 interface MeetTogetherPaginationProps {
   currentPage: number;

@@ -5,8 +5,8 @@ import { isAllDayEvent } from '@tuturuuu/ui/hooks/calendar-utils';
 import { Calendar, MapPin } from '@tuturuuu/ui/icons';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
-import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';
+import { getTranslations } from 'next-intl/server';
 import UpcomingEventDetails from './upcoming-event-details';
 
 interface UpcomingCalendarEventsProps {

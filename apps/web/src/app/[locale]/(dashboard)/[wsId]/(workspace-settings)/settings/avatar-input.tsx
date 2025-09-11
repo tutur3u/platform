@@ -1,7 +1,5 @@
 'use client';
 
-import { ImageCropper } from '@/components/image-cropper';
-import { downloadPublicObject } from '@/lib/storage-helper';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { Workspace } from '@tuturuuu/types/db';
 import { Button } from '@tuturuuu/ui/button';
@@ -9,10 +7,12 @@ import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import { Check, Loader2 } from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
 import { generateRandomUUID } from '@tuturuuu/utils/uuid-helper';
-import { useTranslations } from 'next-intl';
 import NextImage from 'next/image';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
+import { ImageCropper } from '@/components/image-cropper';
+import { downloadPublicObject } from '@/lib/storage-helper';
 
 interface Props {
   workspace: Workspace;

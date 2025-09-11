@@ -1,5 +1,3 @@
-import { getPlatformRoleColumns } from './columns';
-import { CustomDataTable } from '@/components/custom-data-table';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type {
   PlatformUser,
@@ -18,8 +16,10 @@ import {
 import { Separator } from '@tuturuuu/ui/separator';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
-import { getLocale, getTranslations } from 'next-intl/server';
 import { notFound, redirect } from 'next/navigation';
+import { getLocale, getTranslations } from 'next-intl/server';
+import { CustomDataTable } from '@/components/custom-data-table';
+import { getPlatformRoleColumns } from './columns';
 
 // Define a type that matches what the search_users RPC function actually returns
 type SearchUserResult = {

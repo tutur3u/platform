@@ -1,4 +1,3 @@
-import InteractiveDemo from './interactive-demo';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Card } from '@tuturuuu/ui/card';
 import {
@@ -13,6 +12,7 @@ import {
 } from '@tuturuuu/ui/icons';
 import { motion } from 'framer-motion';
 import { useTranslations } from 'next-intl';
+import InteractiveDemo from './interactive-demo';
 
 export default function AiFeatures() {
   // Move useTranslations hook inside the component function

@@ -1,5 +1,5 @@
-import type { PostEmail } from './types';
 import { atom, useAtom } from 'jotai';
+import type { PostEmail } from './types';
 
 type PostConfig = {
   selected: string | null; // Use composite key: user_id-id

@@ -1,6 +1,5 @@
 'use client';
 
-import { formatBytes } from '@/utils/file-helper';
 import { createDynamicClient } from '@tuturuuu/supabase/next/client';
 import type { StorageObject } from '@tuturuuu/types/primitives/StorageObject';
 import { Button } from '@tuturuuu/ui/button';
@@ -24,10 +23,11 @@ import {
 import { Separator } from '@tuturuuu/ui/separator';
 import { cn } from '@tuturuuu/utils/format';
 import { joinPath } from '@tuturuuu/utils/path-helper';
-import { useTranslations } from 'next-intl';
 import dynamic from 'next/dynamic';
 import Image from 'next/image';
+import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
+import { formatBytes } from '@/utils/file-helper';
 
 // Dynamic imports for heavy components
 const PDFViewer = dynamic(

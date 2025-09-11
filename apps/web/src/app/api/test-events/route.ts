@@ -1,4 +1,3 @@
-import { DEV_MODE } from '@/constants/common';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import type { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
@@ -6,6 +5,7 @@ import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone';
 import utc from 'dayjs/plugin/utc';
 import { type NextRequest, NextResponse } from 'next/server';
+import { DEV_MODE } from '@/constants/common';
 
 // Extend dayjs with timezone and UTC plugins
 dayjs.extend(utc);

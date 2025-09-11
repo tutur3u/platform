@@ -1,10 +1,10 @@
 'use client';
 
+import { useEffect } from 'react';
 import { BoardNavigation } from './board-navigation';
 import { ComingSoonSection } from './coming-soon';
 import { EmptyState } from './empty-state';
 import { QuickActions } from './quick-actions';
-import { useEffect } from 'react';
 
 interface CommandRootProps {
   wsId: string;

@@ -1,10 +1,10 @@
 import { schedules, task } from '@trigger.dev/sdk/v3';
 import { google } from '@tuturuuu/google';
 import {
-  type SyncOrchestratorResult,
   getGoogleAuthClient,
   getSyncToken,
   getWorkspacesForSync,
+  type SyncOrchestratorResult,
   storeSyncToken,
   syncWorkspaceBatched,
 } from '@tuturuuu/trigger/google-calendar-sync';

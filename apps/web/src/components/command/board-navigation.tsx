@@ -1,6 +1,5 @@
 'use client';
 
-import type { Board } from './types';
 import { useQuery } from '@tanstack/react-query';
 import { Button } from '@tuturuuu/ui/button';
 import { CommandGroup, CommandItem } from '@tuturuuu/ui/command';
@@ -20,6 +19,7 @@ import {
 import { ScrollArea } from '@tuturuuu/ui/scroll-area';
 import { useRouter } from 'next/navigation';
 import React from 'react';
+import type { Board } from './types';
 
 interface BoardItemProps {
   board: Board;

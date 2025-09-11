@@ -1,8 +1,3 @@
-import { LanguageWrapper } from './(dashboard)/_components/language-wrapper';
-import { LogoutDropdownItem } from './(dashboard)/_components/logout-dropdown-item';
-import { SystemLanguageWrapper } from './(dashboard)/_components/system-language-wrapper';
-import { ThemeDropdownItems } from './(dashboard)/_components/theme-dropdown-items';
-import { TTR_URL } from '@/constants/common';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import {
   DropdownMenu,
@@ -21,8 +16,13 @@ import { Globe, Palette, Settings, User } from '@tuturuuu/ui/icons';
 import { cn } from '@tuturuuu/utils/format';
 import { getInitials } from '@tuturuuu/utils/name-helper';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
-import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';
+import { getTranslations } from 'next-intl/server';
+import { TTR_URL } from '@/constants/common';
+import { LanguageWrapper } from './(dashboard)/_components/language-wrapper';
+import { LogoutDropdownItem } from './(dashboard)/_components/logout-dropdown-item';
+import { SystemLanguageWrapper } from './(dashboard)/_components/system-language-wrapper';
+import { ThemeDropdownItems } from './(dashboard)/_components/theme-dropdown-items';
 
 export async function UserNav({
   hideMetadata = false,

@@ -28,6 +28,8 @@ import {
   Goal,
   GraduationCap,
   HardDrive,
+  hexagons3,
+  Icon,
   IdCardLanyard,
   KeyRound,
   LayoutDashboard,
@@ -374,6 +376,18 @@ export async function WorkspaceNavigationLinks({
             {
               title: t('sidebar_tabs.cycles'),
               icon: <RotateCcw className="h-4 w-4" />,
+              tempDisabled: true,
+              matchExact: true,
+            },
+            {
+              title: t('sidebar_tabs.labels'),
+              icon: <Tags className="h-4 w-4" />,
+              tempDisabled: true,
+              matchExact: true,
+            },
+            {
+              title: t('sidebar_tabs.estimates'),
+              icon: <Icon iconNode={hexagons3} className="h-4 w-4" />,
               tempDisabled: true,
               matchExact: true,
             },

@@ -1,9 +1,9 @@
-import { PORT } from '@/constants/common';
-import { createPolarClient } from '@/lib/polar';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { getCurrentSupabaseUser } from '@tuturuuu/utils/user-helper';
 import { type NextRequest, NextResponse } from 'next/server';
+import { PORT } from '@/constants/common';
+import { createPolarClient } from '@/lib/polar';
 
 export async function GET(
   request: NextRequest,

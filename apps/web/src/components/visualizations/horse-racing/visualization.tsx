@@ -1,5 +1,15 @@
 'use client';
 
+import { Button } from '@tuturuuu/ui/button';
+import { Card, CardContent } from '@tuturuuu/ui/card';
+// Icons
+import { ChevronUp, Lightbulb } from '@tuturuuu/ui/icons';
+import { Separator } from '@tuturuuu/ui/separator';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
+import { useMemo, useRef, useState } from 'react';
+// Utils
+import { findHorseRanking } from '@/utils/horseRacing';
+import type { HorseRacingBenchmark } from '@/utils/horseRacingBenchmarks';
 // UI Components
 // Components
 import { AlgorithmAnalytics } from './algorithm-analytics';
@@ -14,16 +24,6 @@ import { RaceAnimation } from './race-animation';
 import { RaceControls } from './race-controls';
 import { RaceDetails } from './race-details';
 import { RelationshipGraph } from './relationship-graph';
-// Utils
-import { findHorseRanking } from '@/utils/horseRacing';
-import type { HorseRacingBenchmark } from '@/utils/horseRacingBenchmarks';
-import { Button } from '@tuturuuu/ui/button';
-import { Card, CardContent } from '@tuturuuu/ui/card';
-// Icons
-import { ChevronUp, Lightbulb } from '@tuturuuu/ui/icons';
-import { Separator } from '@tuturuuu/ui/separator';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
-import { useMemo, useRef, useState } from 'react';
 
 // Types
 interface Horse {

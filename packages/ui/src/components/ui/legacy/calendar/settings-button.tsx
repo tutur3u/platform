@@ -1,9 +1,9 @@
-import { Button } from '../../button';
-import { Tooltip, TooltipContent, TooltipTrigger } from '../../tooltip';
-import { CalendarSettingsDialog } from './calendar-settings-dialog';
 import type { WorkspaceCalendarGoogleToken } from '@tuturuuu/types/db';
 import { Settings } from 'lucide-react';
 import { useState } from 'react';
+import { Button } from '../../button';
+import { Tooltip, TooltipContent, TooltipTrigger } from '../../tooltip';
+import { CalendarSettingsDialog } from './calendar-settings-dialog';
 
 export const SettingsButton = ({
   wsId,

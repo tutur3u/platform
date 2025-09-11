@@ -1,5 +1,5 @@
-import { priorityCompare } from '@/lib/task-helper';
 import type { TaskPriority } from '@tuturuuu/types/primitives/Priority';
+import { priorityCompare } from '@/lib/task-helper';
 
 export interface Task {
   id: string;

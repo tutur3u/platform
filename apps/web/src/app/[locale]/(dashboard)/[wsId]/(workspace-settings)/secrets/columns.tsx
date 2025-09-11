@@ -1,6 +1,5 @@
 'use client';
 
-import { SecretRowActions } from './row-actions';
 import {
   useIsFetching,
   useMutation,
@@ -13,6 +12,7 @@ import { Loader2 } from '@tuturuuu/ui/icons';
 import { Switch } from '@tuturuuu/ui/switch';
 import moment from 'moment';
 import { useParams, useRouter } from 'next/navigation';
+import { SecretRowActions } from './row-actions';
 
 export const secretColumns = (
   t: any,

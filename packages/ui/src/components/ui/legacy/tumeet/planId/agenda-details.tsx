@@ -6,8 +6,8 @@ import { useTimeBlocking } from '@tuturuuu/ui/hooks/time-blocking-provider';
 import { ClipboardList, Pencil, Plus } from '@tuturuuu/ui/icons';
 import { RichTextEditor } from '@tuturuuu/ui/text-editor/editor';
 import type { JSONContent } from '@tuturuuu/ui/tiptap';
-import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { useCallback, useState } from 'react';
 
 interface AgendaDetailsProps {

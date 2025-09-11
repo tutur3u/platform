@@ -1,8 +1,8 @@
-import { Filter } from '../users/filters';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { Building, Calendar, Globe, User } from '@tuturuuu/ui/icons';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { getTranslations } from 'next-intl/server';
+import { Filter } from '../users/filters';
 
 interface Props {
   wsId: string;

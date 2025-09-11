@@ -1,8 +1,8 @@
-import { type SupabaseCookie, checkEnvVariables } from './common';
 import { createBrowserClient, createServerClient } from '@supabase/ssr';
 import type { Database } from '@tuturuuu/types/supabase';
 import type { ReadonlyRequestCookies } from 'next/dist/server/web/spec-extension/adapters/request-cookies';
 import { cookies } from 'next/headers';
+import { checkEnvVariables, type SupabaseCookie } from './common';
 
 function createCookieHandler(cookieStore: ReadonlyRequestCookies) {
   return {

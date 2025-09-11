@@ -1,19 +1,20 @@
 /**
  * Tests for the streaming utility
  */
+
+import { describe, expect, it } from 'vitest';
 import {
   CATEGORY_CONFIG,
-  type ProgressUpdate,
-  STEP_CONFIG,
   calculateOverallProgress,
   getActiveSteps,
   getCategoryStatus,
   getCurrentStepInfo,
   getStepsByCategory,
+  type ProgressUpdate,
   parseStreamingResponse,
+  STEP_CONFIG,
   shouldShowStep,
 } from './streaming';
-import { describe, expect, it } from 'vitest';
 
 describe('Streaming utilities', () => {
   describe('parseStreamingResponse', () => {

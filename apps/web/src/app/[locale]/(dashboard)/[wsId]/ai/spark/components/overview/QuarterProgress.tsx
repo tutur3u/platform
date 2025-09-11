@@ -1,7 +1,7 @@
 'use client';
 
-import type { Quarter } from '../../types';
 import { Progress } from '@tuturuuu/ui/progress';
+import type { Quarter } from '../../types';
 
 interface QuarterProgressProps {
   quarter: Quarter;

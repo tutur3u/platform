@@ -1,10 +1,10 @@
+import { LogoTitle } from '@tuturuuu/ui/custom/logo-title';
+import { Navbar as SharedNavbar } from '@tuturuuu/ui/navbar';
+import { Suspense } from 'react';
 import NavbarActions from './navbar-actions';
 import NavbarSeparator from './navbar-separator';
 import { MainNavigationMenu } from './navigation-menu';
 import ServerMenu from './server-menu';
-import { LogoTitle } from '@tuturuuu/ui/custom/logo-title';
-import { Navbar as SharedNavbar } from '@tuturuuu/ui/navbar';
-import { Suspense } from 'react';
 
 export default function Navbar({
   hideMetadata = false,

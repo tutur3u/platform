@@ -1,11 +1,5 @@
 'use client';
 
-import type {
-  CalendarSourceData,
-  EventTypeData,
-  TimeSeriesData,
-  WorkspaceActivityData,
-} from './types';
 import {
   Card,
   CardContent,
@@ -37,6 +31,12 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
+import type {
+  CalendarSourceData,
+  EventTypeData,
+  TimeSeriesData,
+  WorkspaceActivityData,
+} from './types';
 
 interface AnalyticsChartsProps {
   timeSeriesData: TimeSeriesData[];

@@ -41,9 +41,9 @@ import {
 import { cn } from '@tuturuuu/utils/format';
 import { format, formatDistanceToNow } from 'date-fns';
 import { motion } from 'framer-motion';
-import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
 
 interface RecentActivity {

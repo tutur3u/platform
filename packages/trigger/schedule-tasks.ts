@@ -1,6 +1,6 @@
+import { schedules, task } from '@trigger.dev/sdk/v3';
 import { getWorkspacesForSync } from './google-calendar-sync';
 import { schedulableTasksHelper } from './schedule-tasks-helper';
-import { schedules, task } from '@trigger.dev/sdk/v3';
 
 export const scheduleTask = task({
   id: 'schedule-task',

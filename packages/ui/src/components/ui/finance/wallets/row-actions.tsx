@@ -14,9 +14,9 @@ import {
 import { WalletForm } from '@tuturuuu/ui/finance/wallets/form';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import { Ellipsis, Eye } from '@tuturuuu/ui/icons';
-import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 
 interface WalletRowActionsProps {

@@ -1,5 +1,3 @@
-import { FinanceCategoryStatistics } from './categories/finance';
-import FinanceToggle from './finance-toggle';
 import LoadingStatisticCard from '@tuturuuu/ui/finance/shared/loaders/statistics';
 import type { FinanceDashboardSearchParams } from '@tuturuuu/ui/finance/shared/metrics';
 import ExpenseStatistics from '@tuturuuu/ui/finance/statistics/expense';
@@ -10,6 +8,8 @@ import TransactionCategoriesStatistics from '@tuturuuu/ui/finance/statistics/tra
 import TransactionsStatistics from '@tuturuuu/ui/finance/statistics/transactions';
 import WalletsStatistics from '@tuturuuu/ui/finance/statistics/wallets';
 import { Suspense } from 'react';
+import { FinanceCategoryStatistics } from './categories/finance';
+import FinanceToggle from './finance-toggle';
 
 export default async function FinanceStatistics({
   wsId,

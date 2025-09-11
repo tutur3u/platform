@@ -1,24 +1,10 @@
 'use client';
 
-import { Alert, AlertDescription, AlertTitle } from '../../alert';
-import { AutosizeTextarea } from '../../custom/autosize-textarea';
-import {
-  COLOR_OPTIONS,
-  DateError,
-  EventColorPicker,
-  EventDateTimePicker,
-  EventDescriptionInput,
-  EventLocationInput,
-  EventTitleInput,
-  EventToggleSwitch,
-  OverlapWarning,
-} from './event-form-components';
-import { useCalendarSettings } from './settings/settings-context';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { calendarEventsSchema } from '@tuturuuu/ai/calendar/events';
 import { useObject } from '@tuturuuu/ai/object/core';
-import type { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
 import type { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
+import type { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
 import {
   Accordion,
   AccordionContent,
@@ -83,6 +69,20 @@ import {
 import Image from 'next/image';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { z } from 'zod';
+import { Alert, AlertDescription, AlertTitle } from '../../alert';
+import { AutosizeTextarea } from '../../custom/autosize-textarea';
+import {
+  COLOR_OPTIONS,
+  DateError,
+  EventColorPicker,
+  EventDateTimePicker,
+  EventDescriptionInput,
+  EventLocationInput,
+  EventTitleInput,
+  EventToggleSwitch,
+  OverlapWarning,
+} from './event-form-components';
+import { useCalendarSettings } from './settings/settings-context';
 
 dayjs.extend(ts);
 dayjs.extend(utc);

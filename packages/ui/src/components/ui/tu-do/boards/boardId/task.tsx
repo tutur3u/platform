@@ -1,6 +1,7 @@
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { useQuery } from '@tanstack/react-query';
+import type { JSONContent } from '@tiptap/react';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { TaskPriority } from '@tuturuuu/types/primitives/Priority';
 import type { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
@@ -41,7 +42,6 @@ import {
   CircleFadingArrowUpIcon,
   CircleSlash,
   Clock,
-  Edit3,
   Flag,
   GripVertical,
   List,
@@ -53,10 +53,8 @@ import {
   UserStar,
   X,
 } from '@tuturuuu/ui/icons';
-import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
-import { Textarea } from '@tuturuuu/ui/textarea';
 import { cn } from '@tuturuuu/utils/format';
 import {
   moveTask,
@@ -90,6 +88,47 @@ interface Props {
   onSelect?: (taskId: string, event: React.MouseEvent) => void;
 }
 
+// Helper function to extract readable text from description with proper formatting
+const getDescriptionText = (description?: string): string => {
+  if (!description) return '';
+
+  try {
+    const parsed = JSON.parse(description);
+    // Extract text with proper spacing and line breaks from JSONContent
+    const extractText = (content: JSONContent): string => {
+      if (content.type === 'text') {
+        return content.text || '';
+      }
+      if (content.type === 'paragraph') {
+        const text = content.content?.map(extractText).join('') || '';
+        return text + '\n';
+      }
+      if (content.type === 'heading') {
+        const text = content.content?.map(extractText).join('') || '';
+        return text + '\n';
+      }
+      if (content.type === 'listItem') {
+        const text = content.content?.map(extractText).join('') || '';
+        return '• ' + text + '\n';
+      }
+      if (content.type === 'bulletList' || content.type === 'orderedList') {
+        return content.content?.map(extractText).join('') || '';
+      }
+      if (content.content) {
+        return content.content.map(extractText).join('');
+      }
+      return '';
+    };
+
+    const result = extractText(parsed).trim();
+    // Clean up excessive newlines while preserving structure
+    return result.replace(/\n{3,}/g, '\n\n');
+  } catch {
+    // If it's not valid JSON, return as plain text
+    return description;
+  }
+};
+
 // Lightweight drag overlay version
 export function LightweightTaskCard({ task }: { task: Task }) {
   const labels = {
@@ -99,10 +138,17 @@ export function LightweightTaskCard({ task }: { task: Task }) {
     low: 'Low',
   };
 
+  const descriptionText = getDescriptionText(task.description);
+
   return (
     <Card className="pointer-events-none w-full max-w-[350px] scale-105 select-none border-2 border-primary/20 bg-background opacity-95 shadow-xl ring-2 ring-primary/20">
       <div className="flex flex-col gap-2 p-4">
         <div className="truncate font-semibold text-base">{task.name}</div>
+        {descriptionText && (
+          <div className="line-clamp-1 whitespace-pre-line text-muted-foreground text-sm">
+            {descriptionText.replace(/\n/g, ' • ')}
+          </div>
+        )}
         <div className="flex items-center gap-2">
           {task.priority && (
             <Badge variant="secondary" className="text-xs">
@@ -135,11 +181,6 @@ export const TaskCard = React.memo(function TaskCard({
 }: Props) {
   const [isLoading, setIsLoading] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
-  const [isEditing, setIsEditing] = useState(false);
-  const [editName, setEditName] = useState(task.name);
-  const [editDescription, setEditDescription] = useState(
-    task.description || ''
-  );
   const [menuOpen, setMenuOpen] = useState(false);
   const [customDateOpen, setCustomDateOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -236,29 +277,6 @@ export const TaskCard = React.memo(function TaskCard({
         onSettled: () => {
           setIsLoading(false);
           onUpdate();
-        },
-      }
-    );
-  }
-
-  // Quick actions
-  async function handleQuickEdit() {
-    if (editName.trim() === '') return;
-
-    setIsLoading(true);
-    updateTaskMutation.mutate(
-      {
-        taskId: task.id,
-        updates: {
-          name: editName.trim(),
-          description: editDescription.trim(),
-        },
-      },
-      {
-        onSettled: () => {
-          setIsLoading(false);
-          setIsEditing(false);
-          onUpdate?.();
         },
       }
     );
@@ -654,86 +672,52 @@ export const TaskCard = React.memo(function TaskCard({
           {DragHandle}
 
           <div className="min-w-0 flex-1">
-            {isEditing ? (
-              <div className="space-y-2">
-                <Input
-                  value={editName}
-                  onChange={(e) => setEditName(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') handleQuickEdit();
-                    if (e.key === 'Escape') {
-                      setIsEditing(false);
-                      setEditName(task.name);
-                      setEditDescription(task.description || '');
+            <div className="mb-1 flex items-center gap-2">
+              <button
+                type="button"
+                className={cn(
+                  'w-full cursor-pointer text-left font-semibold text-xs leading-tight transition-colors duration-200',
+                  task.archived
+                    ? 'text-muted-foreground line-through'
+                    : '-mx-1 -my-0.5 rounded-sm px-1 py-0.5 text-foreground hover:bg-muted/30 hover:text-primary active:bg-muted/50 group-hover:text-foreground/90'
+                )}
+                onClick={(e) => {
+                  // Don't allow editing when Shift is held (multi-select mode)
+                  if (!e.shiftKey) {
+                    setEditDialogOpen(true);
+                  }
+                }}
+                aria-label={`Edit task: ${task.name}`}
+                title="Click to edit task"
+              >
+                {task.name}
+              </button>
+            </div>
+            {/* Description (simplified display with line clamping) */}
+            {task.description && (
+              <div className="mb-2">
+                <button
+                  type="button"
+                  className="-mx-1 -my-1 w-full cursor-pointer rounded-sm border-none bg-transparent p-0 px-1 py-1 text-left transition-colors duration-200 hover:bg-muted/20 focus:bg-muted/20 active:bg-muted/40"
+                  onClick={(e) => {
+                    // Don't allow editing when Shift is held (multi-select mode)
+                    if (!e.shiftKey) {
+                      setEditDialogOpen(true);
                     }
                   }}
-                  className="font-semibold text-sm"
-                  autoFocus
-                />
-                <Textarea
-                  value={editDescription}
-                  onChange={(e) => setEditDescription(e.target.value)}
-                  placeholder="Add description..."
-                  className="text-xs"
-                />
-                <div className="flex justify-end gap-2 pt-1">
-                  <Button
-                    size="sm"
-                    onClick={handleQuickEdit}
-                    disabled={isLoading}
-                    className="h-7 px-3 text-xs"
-                  >
-                    Save
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => {
-                      setIsEditing(false);
-                      setEditName(task.name);
-                      setEditDescription(task.description || '');
-                    }}
-                    className="h-7 px-3 text-xs"
-                  >
-                    Cancel
-                  </Button>
-                </div>
-              </div>
-            ) : (
-              <>
-                <div className="mb-1 flex items-center gap-2">
-                  <button
-                    type="button"
-                    className={cn(
-                      'w-full cursor-pointer text-left font-semibold text-xs leading-tight transition-colors',
-                      task.archived
-                        ? 'text-muted-foreground line-through'
-                        : 'text-foreground hover:text-primary group-hover:text-foreground/90'
-                    )}
-                    onClick={() => setIsEditing(true)}
-                    aria-label={`Edit task: ${task.name}`}
-                  >
-                    {task.name}
-                  </button>
-                </div>
-                {/* Description (truncated, tooltip on hover) */}
-                {task.description && (
-                  <div className="mb-1">
-                    <button
-                      type="button"
-                      className="scrollbar-none group-hover:scrollbar-thin scrollbar-track-transparent scrollbar-thumb-muted-foreground/30 group-hover:scrollbar-thumb-muted-foreground/50 max-h-20 w-full cursor-pointer overflow-y-auto whitespace-pre-line border-none bg-transparent p-0 text-left text-muted-foreground text-xs hover:text-foreground focus:outline-none"
-                      title={task.description}
-                      onClick={() => setIsEditing(true)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' || e.key === ' ')
-                          setIsEditing(true);
-                      }}
-                    >
-                      {task.description}
-                    </button>
+                  onKeyDown={(e) => {
+                    if ((e.key === 'Enter' || e.key === ' ') && !e.shiftKey) {
+                      setEditDialogOpen(true);
+                    }
+                  }}
+                  aria-label="Edit task description"
+                  title={`${getDescriptionText(task.description)}\n\nClick to edit task`}
+                >
+                  <div className="line-clamp-3 whitespace-pre-line text-muted-foreground text-xs leading-[1.4]">
+                    {getDescriptionText(task.description)}
                   </div>
-                )}
-              </>
+                </button>
+              </div>
             )}
           </div>
           {/* Actions (date picker, menu) remain unchanged */}
@@ -875,19 +859,6 @@ export const TaskCard = React.memo(function TaskCard({
                   className="w-48"
                   sideOffset={5}
                 >
-                  <DropdownMenuItem
-                    onClick={() => {
-                      setEditDialogOpen(true);
-                      setMenuOpen(false);
-                    }}
-                    className="cursor-pointer"
-                  >
-                    <Edit3 className="h-4 w-4" />
-                    Edit task
-                  </DropdownMenuItem>
-
-                  {<DropdownMenuSeparator />}
-
                   {/* Quick Completion Action */}
                   {canMoveToCompletion && (
                     <DropdownMenuItem

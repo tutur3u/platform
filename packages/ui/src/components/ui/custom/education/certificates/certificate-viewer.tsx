@@ -4,8 +4,8 @@ import { Button } from '@tuturuuu/ui/button';
 import { DownloadButtonPDF } from '@tuturuuu/ui/custom/education/certificates/download-button-pdf';
 import { ImageIcon } from '@tuturuuu/ui/icons';
 import html2canvas from 'html2canvas';
-import { useTranslations } from 'next-intl';
 import dynamic from 'next/dynamic';
+import { useTranslations } from 'next-intl';
 import { useCallback, useEffect } from 'react';
 
 const PDFViewer = dynamic(

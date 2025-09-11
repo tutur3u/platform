@@ -1,7 +1,7 @@
-import { LOCALE_COOKIE_NAME } from '@/constants/common';
-import { supportedLocales } from '@/i18n/routing';
 import { cookies as c } from 'next/headers';
 import { NextResponse } from 'next/server';
+import { LOCALE_COOKIE_NAME } from '@/constants/common';
+import { supportedLocales } from '@/i18n/routing';
 
 export async function POST(req: Request) {
   const cookies = await c();

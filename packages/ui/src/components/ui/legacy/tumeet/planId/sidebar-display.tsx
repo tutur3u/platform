@@ -1,7 +1,5 @@
 'use client';
 
-import { PlanDetailsPollContent } from '../../polls/poll-display';
-import PlanUserFilterAccordion from './plan-user-filter-accordion';
 import type {
   MeetTogetherPlan,
   PlanUser,
@@ -15,6 +13,8 @@ import {
 } from '@tuturuuu/ui/accordion';
 import { useTimeBlocking } from '@tuturuuu/ui/hooks/time-blocking-provider';
 import { useTranslations } from 'next-intl';
+import { PlanDetailsPollContent } from '../../polls/poll-display';
+import PlanUserFilterAccordion from './plan-user-filter-accordion';
 
 export interface SidebarDisplayProps {
   plan: MeetTogetherPlan;

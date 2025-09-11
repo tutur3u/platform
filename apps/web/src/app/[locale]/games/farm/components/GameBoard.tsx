@@ -1,11 +1,11 @@
 'use client';
 
+import { useCallback, useEffect, useState } from 'react';
 import type { CropType } from '../engine/crop';
 import { GameStateManager } from '../engine/gameState';
 import { CropRenderer } from './CropRenderer';
 import { FarmingUI } from './FarmingUI';
 import { WeatherDisplay } from './WeatherDisplay';
-import { useCallback, useEffect, useState } from 'react';
 
 const GRID_SIZE = 20;
 const CELL_SIZE = 30;

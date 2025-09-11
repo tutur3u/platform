@@ -1,6 +1,6 @@
+import type { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
 import type { WorkspaceScheduledEventWithAttendees } from '@tuturuuu/types/primitives/RSVP';
 import type { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
-import type { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
 import { isBefore, parseISO } from 'date-fns';
 
 export const convertScheduledEventToCalendarEvent = (

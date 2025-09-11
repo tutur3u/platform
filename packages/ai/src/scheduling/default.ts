@@ -1,5 +1,5 @@
-import type { ActiveHours, Task } from './types';
 import dayjs from 'dayjs';
+import type { ActiveHours, Task } from './types';
 
 export const defaultActiveHours: ActiveHours = {
   personal: [

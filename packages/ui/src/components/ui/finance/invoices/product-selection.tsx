@@ -9,10 +9,10 @@ import {
   CardHeader,
   CardTitle,
 } from '@tuturuuu/ui/card';
+import { Combobox, type ComboboxOptions } from '@tuturuuu/ui/custom/combobox';
 import { Building, Minus, Package, Plus } from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
-import { Combobox, type ComboboxOptions } from '@tuturuuu/ui/custom/combobox';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import type { Product, ProductInventory, SelectedProductItem } from './types';

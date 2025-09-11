@@ -1,4 +1,3 @@
-import { DEV_MODE, IS_PRODUCTION_DB } from '@/constants/common';
 import { SESClient, SendEmailCommand } from '@aws-sdk/client-ses';
 import {
   createAdminClient,
@@ -10,6 +9,7 @@ import juice from 'juice';
 import { difference } from 'lodash';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
+import { DEV_MODE, IS_PRODUCTION_DB } from '@/constants/common';
 
 const domainBlacklist = ['@easy.com'];
 const ENABLE_MAIL_ON_DEV = true;

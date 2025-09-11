@@ -11,8 +11,8 @@ import { font, generateCommonMetadata } from '@tuturuuu/utils/common/nextjs';
 import { cn } from '@tuturuuu/utils/format';
 import { VercelAnalytics, VercelInsights } from '@tuturuuu/vercel';
 import type { Metadata } from 'next';
-import { setRequestLocale } from 'next-intl/server';
 import { notFound } from 'next/navigation';
+import { setRequestLocale } from 'next-intl/server';
 import type { ReactNode } from 'react';
 
 export { viewport } from '@tuturuuu/utils/common/nextjs';

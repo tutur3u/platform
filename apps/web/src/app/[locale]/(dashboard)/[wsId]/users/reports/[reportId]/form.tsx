@@ -1,4 +1,3 @@
-import type { UserReportFormSchema } from './editable-report-preview';
 import { Button } from '@tuturuuu/ui/button';
 import { AutosizeTextarea } from '@tuturuuu/ui/custom/autosize-textarea';
 import {
@@ -13,6 +12,7 @@ import type { UseFormReturn } from '@tuturuuu/ui/hooks/use-form';
 import { Input } from '@tuturuuu/ui/input';
 import { Separator } from '@tuturuuu/ui/separator';
 import type * as z from 'zod';
+import type { UserReportFormSchema } from './editable-report-preview';
 
 export default function UserReportForm({
   isNew,

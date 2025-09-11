@@ -1,12 +1,12 @@
-import { SubmissionFilters } from './filters';
-import { SubmissionOverview } from './overview';
-import { SubmissionTable } from './submission-table';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type {
   NovaChallenge,
   NovaProblem,
   NovaSubmission,
 } from '@tuturuuu/types/db';
+import { SubmissionFilters } from './filters';
+import { SubmissionOverview } from './overview';
+import { SubmissionTable } from './submission-table';
 
 type SubmissionWithDetails = NovaSubmission & {
   problem: NovaProblem & {
@@ -39,8 +39,8 @@ export default async function SubmissionsList({
   const searchParams = await futureParams;
 
   // Parse query parameters with defaults
-  const currentPage = parseInt(searchParams.page || '1');
-  const pageSize = parseInt(searchParams.pageSize || '10');
+  const currentPage = parseInt(searchParams.page || '1', 10);
+  const pageSize = parseInt(searchParams.pageSize || '10', 10);
   const sortField = searchParams.sortField || 'created_at';
   const sortDirection = (searchParams.sortDirection || 'desc') as
     | 'asc'

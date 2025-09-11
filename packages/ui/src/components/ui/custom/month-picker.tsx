@@ -1,7 +1,5 @@
 'use client';
 
-import { Button } from '../button';
-import { Popover, PopoverContent, PopoverTrigger } from '../popover';
 import {
   add,
   eachMonthOfInterval,
@@ -12,6 +10,8 @@ import {
 } from 'date-fns';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useState } from 'react';
+import { Button } from '../button';
+import { Popover, PopoverContent, PopoverTrigger } from '../popover';
 
 interface MonthPickerProps {
   lang: string;

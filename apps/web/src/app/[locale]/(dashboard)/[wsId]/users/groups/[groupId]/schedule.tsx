@@ -1,6 +1,5 @@
 'use client';
 
-import useSearchParams from '@/hooks/useSearchParams';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import { Button } from '@tuturuuu/ui/button';
@@ -9,6 +8,7 @@ import { cn } from '@tuturuuu/utils/format';
 import { format, parse } from 'date-fns';
 import { useLocale } from 'next-intl';
 import { useEffect, useMemo, useState } from 'react';
+import useSearchParams from '@/hooks/useSearchParams';
 
 export default function GroupSchedule({
   wsId,

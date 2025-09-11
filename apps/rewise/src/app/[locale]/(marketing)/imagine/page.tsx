@@ -1,6 +1,6 @@
+import { models } from '@tuturuuu/ai/models';
 import Chat from '../chat';
 import { getChats } from '../helper';
-import { models } from '@tuturuuu/ai/models';
 
 interface Props {
   searchParams: Promise<{

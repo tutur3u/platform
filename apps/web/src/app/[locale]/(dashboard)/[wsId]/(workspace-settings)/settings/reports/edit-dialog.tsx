@@ -1,6 +1,5 @@
 'use client';
 
-import ConfigForm, { type ConfigFormSchema } from './form';
 import type { WorkspaceConfig } from '@tuturuuu/types/primitives/WorkspaceConfig';
 import {
   Dialog,
@@ -14,6 +13,7 @@ import { useRouter } from 'next/navigation';
 import type React from 'react';
 import { useState } from 'react';
 import type * as z from 'zod';
+import ConfigForm, { type ConfigFormSchema } from './form';
 
 interface Props {
   data: WorkspaceConfig;

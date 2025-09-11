@@ -1,7 +1,7 @@
-import { createTestcaseSchema } from '../schemas';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
 import { ZodError } from 'zod';
+import { createTestcaseSchema } from '../schemas';
 
 export async function GET(request: Request) {
   const supabase = await createClient();

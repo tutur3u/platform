@@ -1,5 +1,3 @@
-import { EnhancedBoardsView } from './enhanced-boards-view';
-import { TaskBoardForm } from './form';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskBoard } from '@tuturuuu/types/primitives/TaskBoard';
@@ -7,8 +5,10 @@ import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import { Button } from '@tuturuuu/ui/button';
 import { Plus } from '@tuturuuu/ui/icons';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
-import { getTranslations } from 'next-intl/server';
 import { redirect } from 'next/navigation';
+import { getTranslations } from 'next-intl/server';
+import { EnhancedBoardsView } from './enhanced-boards-view';
+import { TaskBoardForm } from './form';
 
 interface Props {
   wsId: string;
@@ -146,17 +146,94 @@ export default async function WorkspaceProjectsPage({
     lowPriorityTasks: number;
   })[];
 
+  // Calculate workspace-wide totals
+  const workspaceTotals = data.reduce(
+    (totals, board) => ({
+      totalBoards: totals.totalBoards + 1,
+      totalTasks: totals.totalTasks + (board.totalTasks || 0),
+      completedTasks: totals.completedTasks + (board.completedTasks || 0),
+      activeTasks: totals.activeTasks + (board.activeTasks || 0),
+      overdueTasks: totals.overdueTasks + (board.overdueTasks || 0),
+    }),
+    {
+      totalBoards: 0,
+      totalTasks: 0,
+      completedTasks: 0,
+      activeTasks: 0,
+      overdueTasks: 0,
+    }
+  );
+
   return (
     <div className="space-y-6">
       {/* Header Section */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
+        <div className="space-y-2">
           <h1 className="font-bold text-2xl tracking-tight">
             {t('ws-task-boards.plural')}
           </h1>
           <p className="text-muted-foreground">
             {t('ws-task-boards.description')}
           </p>
+
+          {/* Workspace Summary */}
+          {workspaceTotals.totalBoards > 0 && (
+            <div className="flex flex-wrap items-center gap-4 pt-2 text-sm">
+              <div className="flex items-center gap-1">
+                <div className="h-2 w-2 rounded-full bg-blue-500" />
+                <span className="text-muted-foreground">
+                  <strong className="text-foreground">
+                    {workspaceTotals.totalBoards}
+                  </strong>{' '}
+                  board
+                  {workspaceTotals.totalBoards !== 1 ? 's' : ''}
+                </span>
+              </div>
+              <div className="flex items-center gap-1">
+                <div className="h-2 w-2 rounded-full bg-gray-500" />
+                <span className="text-muted-foreground">
+                  <strong className="text-foreground">
+                    {workspaceTotals.totalTasks}
+                  </strong>{' '}
+                  total task
+                  {workspaceTotals.totalTasks !== 1 ? 's' : ''}
+                </span>
+              </div>
+              {workspaceTotals.completedTasks > 0 && (
+                <div className="flex items-center gap-1">
+                  <div className="h-2 w-2 rounded-full bg-green-500" />
+                  <span className="text-muted-foreground">
+                    <strong className="text-green-600">
+                      {workspaceTotals.completedTasks}
+                    </strong>{' '}
+                    completed
+                  </span>
+                </div>
+              )}
+              {workspaceTotals.activeTasks > 0 && (
+                <div className="flex items-center gap-1">
+                  <div className="h-2 w-2 rounded-full bg-orange-500" />
+                  <span className="text-muted-foreground">
+                    <strong className="text-orange-600">
+                      {workspaceTotals.activeTasks}
+                    </strong>{' '}
+                    active
+                  </span>
+                </div>
+              )}
+              {workspaceTotals.overdueTasks > 0 && (
+                <div className="flex items-center gap-1">
+                  <div className="h-2 w-2 rounded-full bg-red-500" />
+                  <span className="text-muted-foreground">
+                    <strong className="text-red-600">
+                      {workspaceTotals.overdueTasks}
+                    </strong>{' '}
+                    overdue
+                  </span>
+                </div>
+              )}
+            </div>
+          )}
         </div>
         <TaskBoardForm wsId={wsId}>
           <Button className="flex items-center gap-2">
@@ -182,34 +259,10 @@ async function getData(
 ) {
   const supabase = await createClient();
 
+  // Build the main query for boards
   const queryBuilder = supabase
     .from('workspace_boards')
-    .select(
-      `
-      *,
-      task_lists!board_id (
-        id,
-        name,
-        status,
-        color,
-        position,
-        archived,
-        tasks!list_id (
-          id,
-          name,
-          description,
-          archived,
-          priority,
-          start_date,
-          end_date,
-          created_at
-        )
-      )
-    `,
-      {
-        count: 'exact',
-      }
-    )
+    .select('*', { count: 'exact' })
     .eq('ws_id', wsId)
     .order('name', { ascending: true })
     .order('created_at', { ascending: false });
@@ -224,8 +277,52 @@ async function getData(
     queryBuilder.range(start, end).limit(parsedSize);
   }
 
-  const { data, error, count } = await queryBuilder;
-  if (error) throw error;
+  const { data: boards, error: boardsError, count } = await queryBuilder;
+  if (boardsError) throw boardsError;
 
-  return { data, count } as { data: TaskBoard[]; count: number };
+  if (!boards || boards.length === 0) {
+    return { data: [], count: 0 };
+  }
+
+  // Fetch task lists with proper deleted filter
+  const { data: taskLists, error: listsError } = await supabase
+    .from('task_lists')
+    .select('id, name, status, color, position, archived, board_id')
+    .in(
+      'board_id',
+      boards.map((b) => b.id)
+    )
+    .eq('deleted', false);
+
+  if (listsError) throw listsError;
+
+  // Fetch tasks with proper deleted filter
+  const { data: tasks, error: tasksError } = await supabase
+    .from('tasks')
+    .select(
+      'id, name, description, archived, priority, start_date, end_date, created_at, list_id'
+    )
+    .in(
+      'list_id',
+      (taskLists || []).map((l) => l.id)
+    )
+    .eq('deleted', false);
+
+  if (tasksError) throw tasksError;
+
+  // Group data by board
+  const boardsWithData = boards.map((board) => ({
+    ...board,
+    task_lists: (taskLists || [])
+      .filter((list) => list.board_id === board.id)
+      .map((list) => ({
+        ...list,
+        tasks: (tasks || []).filter((task) => task.list_id === list.id),
+      })),
+  }));
+
+  return { data: boardsWithData, count } as {
+    data: TaskBoard[];
+    count: number;
+  };
 }

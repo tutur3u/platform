@@ -1,4 +1,3 @@
-import { isValidURL } from '@/utils/url-helper';
 import type { WorkspaceConfig } from '@tuturuuu/types/primitives/WorkspaceConfig';
 import { Button } from '@tuturuuu/ui/button';
 import { AutosizeTextarea } from '@tuturuuu/ui/custom/autosize-textarea';
@@ -14,6 +13,7 @@ import { useForm } from '@tuturuuu/ui/hooks/use-form';
 import { zodResolver } from '@tuturuuu/ui/resolvers';
 import { useTranslations } from 'next-intl';
 import * as z from 'zod';
+import { isValidURL } from '@/utils/url-helper';
 
 interface Props {
   data: WorkspaceConfig;

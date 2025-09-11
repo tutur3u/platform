@@ -6,9 +6,9 @@ import {
   DropdownMenuSeparator,
 } from '@tuturuuu/ui/dropdown-menu';
 import { UserPlus } from '@tuturuuu/ui/icons';
-import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { useParams, usePathname } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 
 export default function InviteMembersMenuItem() {
   const t = useTranslations('common');

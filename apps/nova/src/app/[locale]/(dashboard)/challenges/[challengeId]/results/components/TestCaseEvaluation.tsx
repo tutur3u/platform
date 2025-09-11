@@ -1,5 +1,5 @@
-import type { ExtendedNovaSubmission } from '../types';
 import { Badge } from '@tuturuuu/ui/badge';
+import type { ExtendedNovaSubmission } from '../types';
 
 interface TestCaseEvaluationProps {
   submission: ExtendedNovaSubmission;

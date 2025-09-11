@@ -3,10 +3,10 @@ import {
   billPackagesMapping,
   billsMapping,
   classAttendanceMapping,
+  classesMapping,
   classMembersMapping,
   classPackagesMapping,
   classScoresMapping,
-  classesMapping,
   couponsMapping,
   groupedScoreNamesMapping,
   lessonsMapping,
@@ -25,8 +25,8 @@ import {
   userMonthlyReportsMapping,
   userStatusChangesMapping,
   usersMapping,
-  walletTransactionsMapping,
   walletsMapping,
+  walletTransactionsMapping,
   warehousesMapping,
 } from './module-mappings';
 

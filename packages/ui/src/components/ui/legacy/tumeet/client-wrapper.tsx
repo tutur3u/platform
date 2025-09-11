@@ -1,12 +1,12 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
+import { useState } from 'react';
 import type { MeetTogetherPlanWithParticipants } from './page';
 import MeetTogetherPagination from './pagination';
 import { PlansGrid } from './plans-grid';
 import { PlansListView } from './plans-list-view';
 import ViewToggle from './view-toggle';
-import { useTranslations } from 'next-intl';
-import { useState } from 'react';
 
 interface MeetTogetherClientProps {
   plans: MeetTogetherPlanWithParticipants[];

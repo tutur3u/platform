@@ -1,6 +1,6 @@
-import { SIDEBAR_COLLAPSED_COOKIE_NAME } from '@/constants/common';
 import { cookies as c } from 'next/headers';
 import { NextResponse } from 'next/server';
+import { SIDEBAR_COLLAPSED_COOKIE_NAME } from '@/constants/common';
 
 export async function POST(req: Request) {
   const cookies = await c();

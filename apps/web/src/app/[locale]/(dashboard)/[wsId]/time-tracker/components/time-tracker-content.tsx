@@ -1,7 +1,6 @@
 /** biome-ignore-all lint/a11y/noSvgWithoutTitle: <> */
 'use client';
 
-import { priorityCompare } from '@/lib/task-helper';
 import { useQuery } from '@tanstack/react-query';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { TimeTrackingCategory } from '@tuturuuu/types/db';
@@ -38,6 +37,7 @@ import timezone from 'dayjs/plugin/timezone';
 import utc from 'dayjs/plugin/utc';
 import Link from 'next/link';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { priorityCompare } from '@/lib/task-helper';
 import type {
   ExtendedWorkspaceTask,
   SessionWithRelations,

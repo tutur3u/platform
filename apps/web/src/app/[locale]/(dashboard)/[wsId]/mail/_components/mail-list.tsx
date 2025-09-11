@@ -1,9 +1,9 @@
-import { useMail } from '../use-mail';
 import type { InternalEmail } from '@tuturuuu/types/db';
 import { Loader2 } from '@tuturuuu/ui/icons';
 import { formatEmailAddresses } from '@tuturuuu/utils/email/client';
 import { cn } from '@tuturuuu/utils/format';
 import dayjs from 'dayjs';
+import { useMail } from '../use-mail';
 import 'dayjs/locale/en';
 import 'dayjs/locale/vi';
 import localizedFormat from 'dayjs/plugin/localizedFormat';

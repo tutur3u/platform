@@ -1,6 +1,6 @@
-import DocumentPageContent from './document-content';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { notFound } from 'next/navigation';
+import DocumentPageContent from './document-content';
 
 interface Props {
   params: Promise<{

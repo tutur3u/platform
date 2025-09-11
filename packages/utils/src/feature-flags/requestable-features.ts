@@ -1,6 +1,6 @@
+import { BookText, HelpCircle, Sparkles, Trophy } from '@tuturuuu/ui/icons';
 import { FEATURE_FLAGS } from './data';
 import type { FeatureFlag } from './types';
-import { BookText, HelpCircle, Sparkles, Trophy } from '@tuturuuu/ui/icons';
 
 export interface RequestableFeatureConfig {
   flag: FeatureFlag;
