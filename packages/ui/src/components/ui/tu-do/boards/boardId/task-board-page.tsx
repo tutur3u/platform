@@ -1,5 +1,9 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
-import { getTaskBoard, getTaskLists } from '@tuturuuu/utils/task-helper';
+import {
+  getTaskBoard,
+  getTaskLists,
+  getTasks,
+} from '@tuturuuu/utils/task-helper';
 import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import { notFound, redirect } from 'next/navigation';
 import { BoardClient } from '../../shared/board-client';
@@ -25,16 +29,15 @@ export default async function TaskBoardPage({ wsId, boardId }: Props) {
     notFound();
   }
 
-  // Do NOT fetch all tasks here – rely on per-list lazy loading
+  const tasks = await getTasks(supabase, boardId);
   const lists = await getTaskLists(supabase, boardId);
 
   return (
     <BoardClient
       workspace={workspace}
       initialBoard={board}
-      initialTasks={[]}
+      initialTasks={tasks}
       initialLists={lists}
-      disableTasksQuery
     />
   );
 }

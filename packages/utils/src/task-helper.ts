@@ -1,6 +1,5 @@
 import {
   type QueryClient,
-  useInfiniteQuery,
   useMutation,
   useQuery,
   useQueryClient,
@@ -91,61 +90,6 @@ export async function getTasks(supabase: SupabaseClient, boardId: string) {
     return transformedTasks as Task[];
   } catch (error) {
     console.error('Error in getTasks:', error);
-    throw error;
-  }
-}
-
-// Get tasks with pagination for a specific list
-export async function getTasksForList(
-  supabase: SupabaseClient,
-  listId: string,
-  page: number = 1,
-  pageSize: number = 20
-) {
-  try {
-    const offset = (page - 1) * pageSize;
-
-    const { data, error, count } = await supabase
-      .from('tasks')
-      .select(
-        `
-          *,
-          assignees:task_assignees(
-            user:users(
-              id,
-              display_name,
-              avatar_url
-            )
-          )
-        `,
-        { count: 'exact' }
-      )
-      .eq('list_id', listId)
-      .eq('deleted', false)
-      .order('created_at', { ascending: false })
-      .range(offset, offset + pageSize - 1);
-
-    if (error) {
-      console.error('Error fetching tasks for list:', error);
-      throw error;
-    }
-
-    // Transform the nested assignees data and ensure tags field exists
-    const transformedTasks = (data || []).map((task) => ({
-      ...task,
-      tags: task.tags || [], // Ensure tags field exists
-      assignees: transformAssignees(
-        task.assignees as (TaskAssignee & { user: User })[]
-      ),
-    }));
-
-    return {
-      tasks: transformedTasks as Task[],
-      totalCount: count || 0,
-      hasMore: count ? offset + pageSize < count : false,
-    };
-  } catch (error) {
-    console.error('Error in getTasksForList:', error);
     throw error;
   }
 }
@@ -1598,38 +1542,6 @@ export function useBoardTaskTags(boardId: string) {
       return getBoardTaskTags(supabase, boardId);
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
-  });
-}
-
-// Hook for paginated task loading per list
-export function useListTasks(listId: string, pageSize: number = 20) {
-  return useInfiniteQuery({
-    queryKey: ['list-tasks', listId],
-    queryFn: async ({ pageParam = 1 }) => {
-      const supabase = createClient();
-      return getTasksForList(supabase, listId, pageParam, pageSize);
-    },
-    initialPageParam: 1,
-    getNextPageParam: (lastPage, allPages) => {
-      return lastPage.hasMore ? allPages.length + 1 : undefined;
-    },
-    staleTime: 30000, // 30 seconds
-  });
-}
-
-// Hook for loading more tasks in a list
-export function useLoadMoreTasks() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async ({ listId: _listId }: { listId: string }) => {
-      // This will be handled by the infinite query's fetchNextPage
-      return { success: true };
-    },
-    onSuccess: () => {
-      // Invalidate related queries if needed
-      queryClient.invalidateQueries({ queryKey: ['tasks'] });
-    },
   });
 }
 
