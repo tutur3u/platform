@@ -6154,6 +6154,36 @@ export type Database = {
           updated_at?: null | string;
         };
       };
+      task_labels: {
+        Insert: {
+          label_id: string;
+          task_id: string;
+        };
+        Relationships: [
+          {
+            columns: ['label_id'];
+            foreignKeyName: 'task_labels_label_id_fkey';
+            isOneToOne: false;
+            referencedColumns: ['id'];
+            referencedRelation: 'workspace_task_labels';
+          },
+          {
+            columns: ['task_id'];
+            foreignKeyName: 'task_labels_task_id_fkey';
+            isOneToOne: false;
+            referencedColumns: ['id'];
+            referencedRelation: 'tasks';
+          },
+        ];
+        Row: {
+          label_id: string;
+          task_id: string;
+        };
+        Update: {
+          label_id?: string;
+          task_id?: string;
+        };
+      };
       task_lists: {
         Insert: {
           archived?: boolean | null;

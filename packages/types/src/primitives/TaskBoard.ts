@@ -29,12 +29,18 @@ export interface TaskBoard {
   name: string;
   archived: boolean;
   deleted: boolean;
-  created_at: string;
-  creator_id: string;
-  ws_id: string;
+  estimation_type: 'exponential' | 'fibonacci' | 'linear' | 't-shirt' | null;
+  extended_estimation: boolean;
+  allow_zero_estimates: boolean;
+  count_unestimated_issues: boolean;
+  task_count?: number;
+
   template_id?: string;
+  ws_id: string;
   tags?: string[];
   href?: string;
+  created_at: string | null;
+  creator_id: string;
 }
 
 export type EnhancedTaskBoard = TaskBoard & {

@@ -1,5 +1,5 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
-import { getPermissions } from '@tuturuuu/utils/workspace-helper';
+import { getPermissions, getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import { redirect } from 'next/navigation';
 import TaskLabelsClient from './client';
 
@@ -18,7 +18,10 @@ interface TaskLabel {
 }
 
 export default async function TaskLabelsPage({ params }: Props) {
-  const { wsId } = await params;
+  const { wsId: id } = await params;
+
+  const workspace = await getWorkspace(id);
+  const wsId = workspace?.id;
 
   // Check permissions
   const { withoutPermission } = await getPermissions({

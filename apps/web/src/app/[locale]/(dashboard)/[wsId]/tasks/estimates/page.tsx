@@ -1,5 +1,6 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
-import { getPermissions } from '@tuturuuu/utils/workspace-helper';
+import type { TaskBoard } from '@tuturuuu/types/primitives/TaskBoard';
+import { getPermissions, getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import { redirect } from 'next/navigation';
 import TaskEstimatesClient from './client';
 
@@ -9,21 +10,12 @@ interface Props {
   }>;
 }
 
-interface TaskBoard {
-  id: string;
-  name: string;
-  estimation_type: 'exponential' | 'fibonacci' | 'linear' | 't-shirt' | null;
-  extended_estimation: boolean;
-  allow_zero_estimates: boolean;
-  count_unestimated_issues: boolean;
-  created_at: string | null;
-  task_count?: number;
-}
-
 export default async function TaskEstimatesPage({ params }: Props) {
-  const { wsId } = await params;
+  const { wsId: id } = await params;
 
-  // Check permissions
+  const workspace = await getWorkspace(id);
+  const wsId = workspace?.id;
+
   const { withoutPermission } = await getPermissions({
     wsId,
   });
@@ -50,7 +42,9 @@ export default async function TaskEstimatesPage({ params }: Props) {
   );
 }
 
-async function getTaskBoards(wsId: string): Promise<{ boards: TaskBoard[] }> {
+async function getTaskBoards(
+  wsId: string
+): Promise<{ boards: Partial<TaskBoard>[] }> {
   const supabase = await createClient();
 
   // Get boards first

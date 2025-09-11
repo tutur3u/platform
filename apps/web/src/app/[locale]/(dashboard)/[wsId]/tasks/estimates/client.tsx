@@ -1,5 +1,6 @@
 'use client';
 
+import type { TaskBoard } from '@tuturuuu/types/primitives/TaskBoard';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Card } from '@tuturuuu/ui/card';
@@ -31,20 +32,9 @@ import { Switch } from '@tuturuuu/ui/switch';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
-interface TaskBoard {
-  id: string;
-  name: string;
-  estimation_type: 'exponential' | 'fibonacci' | 'linear' | 't-shirt' | null;
-  extended_estimation: boolean;
-  allow_zero_estimates: boolean;
-  count_unestimated_issues: boolean;
-  created_at: string;
-  task_count?: number;
-}
-
 interface Props {
   wsId: string;
-  initialBoards: TaskBoard[];
+  initialBoards: Partial<TaskBoard>[];
 }
 
 const estimationTypes = [
@@ -87,8 +77,10 @@ const estimationTypes = [
 
 export default function TaskEstimatesClient({ wsId, initialBoards }: Props) {
   const router = useRouter();
-  const [boards, setBoards] = useState<TaskBoard[]>(initialBoards);
-  const [editingBoard, setEditingBoard] = useState<TaskBoard | null>(null);
+  const [boards, setBoards] = useState<Partial<TaskBoard>[]>(initialBoards);
+  const [editingBoard, setEditingBoard] = useState<Partial<TaskBoard> | null>(
+    null
+  );
   const [selectedEstimationType, setSelectedEstimationType] =
     useState<string>('none');
   const [extendedEstimation, setExtendedEstimation] = useState<boolean>(false);
@@ -265,15 +257,15 @@ export default function TaskEstimatesClient({ wsId, initialBoards }: Props) {
     }
   };
 
-  const openEditDialog = (board: TaskBoard) => {
+  const openEditDialog = (board: Partial<TaskBoard>) => {
     setEditingBoard(board);
     // Convert null to 'none' for the select component
     const selectValue =
       board.estimation_type === null ? 'none' : board.estimation_type;
     setSelectedEstimationType(selectValue || 'none');
-    setExtendedEstimation(board.extended_estimation);
-    setAllowZeroEstimates(board.allow_zero_estimates);
-    setCountUnestimatedIssues(board.count_unestimated_issues);
+    setExtendedEstimation(board?.extended_estimation || false);
+    setAllowZeroEstimates(board?.allow_zero_estimates || false);
+    setCountUnestimatedIssues(board?.count_unestimated_issues || false);
   };
 
   const closeDialog = () => {
@@ -419,7 +411,7 @@ export default function TaskEstimatesClient({ wsId, initialBoards }: Props) {
             <div className="space-y-3">
               {boards.map((board) => {
                 const estimationInfo = getEstimationTypeInfo(
-                  board.estimation_type
+                  board?.estimation_type || null
                 );
                 return (
                   <div
@@ -451,18 +443,20 @@ export default function TaskEstimatesClient({ wsId, initialBoards }: Props) {
                           <CheckSquare className="h-3 w-3" />
                           <span>{board.task_count || 0} tasks</span>
                         </div>
-                        <div className="flex items-center gap-1">
-                          <Calendar className="h-3 w-3" />
-                          <span>
-                            {new Date(board.created_at).toLocaleDateString()}
-                          </span>
-                        </div>
+                        {board.created_at && (
+                          <div className="flex items-center gap-1">
+                            <Calendar className="h-3 w-3" />
+                            <span>
+                              {new Date(board.created_at).toLocaleDateString()}
+                            </span>
+                          </div>
+                        )}
                       </div>
                       {estimationInfo?.value && (
                         <p className="text-muted-foreground text-sm">
                           {getEstimationDescription(
-                            board.estimation_type,
-                            board.extended_estimation
+                            board?.estimation_type || null,
+                            board?.extended_estimation || false
                           )}
                         </p>
                       )}

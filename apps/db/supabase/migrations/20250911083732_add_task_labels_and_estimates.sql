@@ -139,3 +139,34 @@ $$ LANGUAGE plpgsql;
 CREATE TRIGGER trg_enforce_extended_estimation
 AFTER UPDATE OF extended_estimation ON "public"."workspace_boards"
 FOR EACH ROW EXECUTE FUNCTION enforce_extended_estimation();
+
+-- Add a table to link tasks and labels (many-to-many relationship)
+CREATE TABLE "public"."task_labels" (
+    "task_id" uuid NOT NULL,
+    "label_id" uuid NOT NULL,
+    PRIMARY KEY (task_id, label_id),
+    CONSTRAINT "task_labels_task_id_fkey" FOREIGN KEY (task_id) REFERENCES "public"."tasks"(id) ON DELETE CASCADE,
+    CONSTRAINT "task_labels_label_id_fkey" FOREIGN KEY (label_id) REFERENCES "public"."workspace_task_labels"(id) ON DELETE CASCADE
+);
+CREATE INDEX idx_task_labels_task_id ON "public"."task_labels" (task_id);
+CREATE INDEX idx_task_labels_label_id ON "public"."task_labels" (label_id);
+ALTER TABLE "public"."task_labels" ENABLE ROW LEVEL SECURITY;
+-- Add RLS policies for task_labels table
+CREATE POLICY "Users can view task labels for tasks in their workspaces" ON "public"."task_labels"
+    FOR SELECT USING (
+        exists (select 1 from public.tasks t where t.id = task_id) and
+        exists (select 1 from public.workspace_task_labels tl where tl.id = label_id)
+    );
+CREATE POLICY "Users can insert task labels for tasks in their workspaces" ON "public"."task_labels"
+    FOR INSERT WITH CHECK (
+        exists (select 1 from public.tasks t where t.id = task_id) and
+        exists (select 1 from public.workspace_task_labels tl where tl.id = label_id)
+    );
+CREATE POLICY "Users can delete task labels for tasks in their workspaces" ON "public"."task_labels"
+    FOR DELETE USING (
+        exists (select 1 from public.tasks t where t.id = task_id) and
+        exists (select 1 from public.workspace_task_labels tl where tl.id = label_id)
+    );
+GRANT SELECT, INSERT, DELETE ON TABLE "public"."task_labels" TO "anon";
+GRANT SELECT, INSERT, DELETE ON TABLE "public"."task_labels" TO "authenticated";
+GRANT SELECT, INSERT, DELETE ON TABLE "public"."task_labels" TO "service_role";
