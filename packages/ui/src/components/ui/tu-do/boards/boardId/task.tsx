@@ -1,7 +1,6 @@
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { useQuery } from '@tanstack/react-query';
-import type { JSONContent } from '@tiptap/react';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { TaskPriority } from '@tuturuuu/types/primitives/Priority';
 import type { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
@@ -11,6 +10,7 @@ import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Card } from '@tuturuuu/ui/card';
 import { Checkbox } from '@tuturuuu/ui/checkbox';
+import { ColorPicker } from '@tuturuuu/ui/color-picker';
 import { DateTimePicker } from '@tuturuuu/ui/date-time-picker';
 import {
   Dialog,
@@ -48,11 +48,15 @@ import {
   Loader2,
   MoreHorizontal,
   Move,
+  Plus,
+  Tag,
+  Timer,
   Trash2,
   UserMinus,
   UserStar,
   X,
 } from '@tuturuuu/ui/icons';
+import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
 import { cn } from '@tuturuuu/utils/format';
@@ -69,10 +73,12 @@ import {
   isTomorrow,
   isYesterday,
 } from 'date-fns';
-import React, { useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { getDescriptionText } from '../../../../../utils/text-helper';
 import { AssigneeSelect } from '../../shared/assignee-select';
 import { TaskEditDialog } from '../../shared/task-edit-dialog';
-import { TaskTagsDisplay } from '../../shared/task-tags-display';
+import { TaskEstimationDisplay } from '../../shared/task-estimation-display';
+import { TaskLabelsDisplay } from '../../shared/task-labels-display';
 import { TaskActions } from './task-actions';
 
 interface Props {
@@ -87,47 +93,6 @@ interface Props {
   isPersonalWorkspace?: boolean;
   onSelect?: (taskId: string, event: React.MouseEvent) => void;
 }
-
-// Helper function to extract readable text from description with proper formatting
-const getDescriptionText = (description?: string): string => {
-  if (!description) return '';
-
-  try {
-    const parsed = JSON.parse(description);
-    // Extract text with proper spacing and line breaks from JSONContent
-    const extractText = (content: JSONContent): string => {
-      if (content.type === 'text') {
-        return content.text || '';
-      }
-      if (content.type === 'paragraph') {
-        const text = content.content?.map(extractText).join('') || '';
-        return text + '\n';
-      }
-      if (content.type === 'heading') {
-        const text = content.content?.map(extractText).join('') || '';
-        return text + '\n';
-      }
-      if (content.type === 'listItem') {
-        const text = content.content?.map(extractText).join('') || '';
-        return '• ' + text + '\n';
-      }
-      if (content.type === 'bulletList' || content.type === 'orderedList') {
-        return content.content?.map(extractText).join('') || '';
-      }
-      if (content.content) {
-        return content.content.map(extractText).join('');
-      }
-      return '';
-    };
-
-    const result = extractText(parsed).trim();
-    // Clean up excessive newlines while preserving structure
-    return result.replace(/\n{3,}/g, '\n\n');
-  } catch {
-    // If it's not valid JSON, return as plain text
-    return description;
-  }
-};
 
 // Lightweight drag overlay version
 export function LightweightTaskCard({ task }: { task: Task }) {
@@ -149,17 +114,22 @@ export function LightweightTaskCard({ task }: { task: Task }) {
             {descriptionText.replace(/\n/g, ' • ')}
           </div>
         )}
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           {task.priority && (
             <Badge variant="secondary" className="text-xs">
               {labels[task.priority as keyof typeof labels]}
             </Badge>
           )}
-          {task.tags && task.tags.length > 0 && (
-            <span className="text-muted-foreground text-xs">
-              +{task.tags.length} tags
-            </span>
+          {/* Labels */}
+          {task.labels && task.labels.length > 0 && (
+            <TaskLabelsDisplay labels={task.labels} size="sm" />
           )}
+          {/* Estimation */}
+          <TaskEstimationDisplay
+            points={task.estimation_points}
+            size="sm"
+            showIcon={false}
+          />
         </div>
       </div>
     </Card>
@@ -185,6 +155,17 @@ export const TaskCard = React.memo(function TaskCard({
   const [customDateOpen, setCustomDateOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
+  // Estimation & labels state
+  const [boardConfig, setBoardConfig] = useState<any>(null);
+  const [workspaceLabels, setWorkspaceLabels] = useState<any[]>([]);
+  const [labelsLoading, setLabelsLoading] = useState(false);
+  const [estimationSaving, setEstimationSaving] = useState(false);
+  const [labelsSaving, setLabelsSaving] = useState<string | null>(null);
+  // New label creation state
+  const [newLabelDialogOpen, setNewLabelDialogOpen] = useState(false);
+  const [newLabelName, setNewLabelName] = useState('');
+  const [newLabelColor, setNewLabelColor] = useState('#3b82f6');
+  const [creatingLabel, setCreatingLabel] = useState(false);
   const datePickerRef = useRef<HTMLButtonElement>(null);
   const updateTaskMutation = useUpdateTask(boardId);
   const deleteTaskMutation = useDeleteTask(boardId);
@@ -267,9 +248,43 @@ export const TaskCard = React.memo(function TaskCard({
     return formatDistanceToNow(date, { addSuffix: true });
   };
 
+  // Fetch board config & labels (was accidentally inserted incorrectly earlier)
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      try {
+        const supabase = createClient();
+        const { data: board } = await supabase
+          .from('workspace_boards')
+          .select(
+            'id, estimation_type, extended_estimation, allow_zero_estimates, ws_id'
+          )
+          .eq('id', boardId)
+          .single();
+        if (!active) return;
+        setBoardConfig(board);
+        if (board?.ws_id) {
+          setLabelsLoading(true);
+          const { data: labels } = await supabase
+            .from('workspace_task_labels')
+            .select('id, name, color, created_at')
+            .eq('ws_id', board.ws_id)
+            .order('created_at', { ascending: false });
+          if (active) setWorkspaceLabels(labels || []);
+        }
+      } catch (e) {
+        console.error('Failed loading board config or labels', e);
+      } finally {
+        active && setLabelsLoading(false);
+      }
+    })();
+    return () => {
+      active = false;
+    };
+  }, [boardId]);
+
   async function handleArchiveToggle() {
     if (!onUpdate) return;
-
     setIsLoading(true);
     updateTaskMutation.mutate(
       { taskId: task.id, updates: { archived: !task.archived } },
@@ -277,41 +292,6 @@ export const TaskCard = React.memo(function TaskCard({
         onSettled: () => {
           setIsLoading(false);
           onUpdate();
-        },
-      }
-    );
-  }
-
-  async function handlePriorityChange(priority: TaskPriority | null) {
-    setIsLoading(true);
-    updateTaskMutation.mutate(
-      { taskId: task.id, updates: { priority } },
-      {
-        onSettled: () => {
-          setIsLoading(false);
-          onUpdate?.();
-        },
-      }
-    );
-  }
-
-  async function handleDueDateChange(days: number | null) {
-    let newDate: string | null = null;
-
-    if (days !== null) {
-      const targetDate = addDays(new Date(), days);
-      // Set time to 11:59 PM (23:59:59) for quick date selections
-      targetDate.setHours(23, 59, 59, 999);
-      newDate = targetDate.toISOString();
-    }
-
-    setIsLoading(true);
-    updateTaskMutation.mutate(
-      { taskId: task.id, updates: { end_date: newDate } },
-      {
-        onSettled: () => {
-          setIsLoading(false);
-          onUpdate?.();
         },
       }
     );
@@ -519,6 +499,184 @@ export const TaskCard = React.memo(function TaskCard({
     }
   }
 
+  // Reintroduced: handle quick relative due date changes (was removed during earlier patch)
+  async function handleDueDateChange(days: number | null) {
+    let newDate: string | null = null;
+    if (days !== null) {
+      const target = addDays(new Date(), days);
+      // Set to end of day for consistent due date semantics
+      target.setHours(23, 59, 59, 999);
+      newDate = target.toISOString();
+    }
+    setIsLoading(true);
+    updateTaskMutation.mutate(
+      { taskId: task.id, updates: { end_date: newDate } },
+      {
+        onSuccess: () => {
+          toast({
+            title: 'Due date updated',
+            description: newDate
+              ? 'Due date set successfully'
+              : 'Due date removed',
+          });
+          onUpdate?.();
+        },
+        onSettled: () => {
+          setIsLoading(false);
+          setCustomDateOpen(false);
+        },
+      }
+    );
+  }
+
+  // Reintroduced: priority change handler (lost in earlier patch)
+  function handlePriorityChange(newPriority: TaskPriority | null) {
+    if (newPriority === task.priority) return; // no-op
+    setIsLoading(true);
+    updateTaskMutation.mutate(
+      { taskId: task.id, updates: { priority: newPriority } },
+      {
+        onSuccess: () => {
+          toast({
+            title: 'Priority updated',
+            description: newPriority ? 'Priority changed' : 'Priority cleared',
+          });
+          onUpdate?.();
+        },
+        onSettled: () => setIsLoading(false),
+      }
+    );
+  }
+
+  // Build estimation options dynamically per board config
+  const estimationOptions = useMemo(() => {
+    if (!boardConfig?.estimation_type) return [] as number[];
+    const max = boardConfig.extended_estimation ? 7 : 5;
+    const allowZero = boardConfig.allow_zero_estimates;
+    let options: number[] = [];
+    switch (boardConfig.estimation_type) {
+      default: {
+        // All estimation types use the same 0-7 storage format
+        // The difference is in how they're displayed to the user
+        options = Array.from({ length: max + 1 }, (_, i) => i);
+        break;
+      }
+    }
+    if (!allowZero) options = options.filter((n) => n !== 0);
+    else if (allowZero && !options.includes(0)) options = [0, ...options];
+    return options;
+  }, [boardConfig]);
+
+  // Update estimation points (quick action menu) re-added
+  async function updateEstimationPoints(points: number | null) {
+    if (points === task.estimation_points) return;
+    setEstimationSaving(true);
+    try {
+      const supabase = createClient();
+      const { error } = await supabase
+        .from('tasks')
+        .update({ estimation_points: points })
+        .eq('id', task.id);
+      if (error) throw error;
+      toast({
+        title: 'Estimation updated',
+        description:
+          points == null ? 'Cleared estimation' : `Set to ${points} pts`,
+      });
+      onUpdate?.();
+    } catch (e: any) {
+      console.error('Failed to update estimation', e);
+      toast({
+        title: 'Failed to update estimation',
+        description: e.message || 'Please try again',
+        variant: 'destructive',
+      });
+    } finally {
+      setEstimationSaving(false);
+    }
+  }
+
+  // Toggle a label for the task (quick labels submenu)
+  async function toggleTaskLabel(labelId: string) {
+    setLabelsSaving(labelId);
+    const supabase = createClient();
+    const active = task.labels?.some((l) => l.id === labelId);
+    try {
+      if (active) {
+        const { error } = await supabase
+          .from('task_labels')
+          .delete()
+          .eq('task_id', task.id)
+          .eq('label_id', labelId);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from('task_labels')
+          .insert({ task_id: task.id, label_id: labelId });
+        if (error) throw error;
+      }
+      // Fire refetch
+      onUpdate?.();
+    } catch (e: any) {
+      toast({
+        title: 'Label update failed',
+        description: e.message || 'Unable to toggle label',
+        variant: 'destructive',
+      });
+    } finally {
+      setLabelsSaving(null);
+    }
+  }
+
+  // Create a new label
+  async function createNewLabel() {
+    if (!newLabelName.trim() || !boardConfig?.ws_id) return;
+
+    setCreatingLabel(true);
+    try {
+      const response = await fetch(
+        `/api/v1/workspaces/${boardConfig.ws_id}/labels`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            name: newLabelName.trim(),
+            color: newLabelColor,
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error('Failed to create label');
+      }
+
+      const newLabel = await response.json();
+
+      // Add the new label to the workspace labels list
+      setWorkspaceLabels((prev) => [newLabel, ...prev]);
+
+      // Reset form and close dialog
+      setNewLabelName('');
+      setNewLabelColor('#3b82f6');
+      setNewLabelDialogOpen(false);
+
+      toast({
+        title: 'Label created',
+        description: `"${newLabel.name}" label has been created successfully`,
+      });
+    } catch (e: any) {
+      toast({
+        title: 'Failed to create label',
+        description: e.message || 'Unable to create new label',
+        variant: 'destructive',
+      });
+    } finally {
+      setCreatingLabel(false);
+    }
+  }
+
   // Dynamic color mappings based on task list color
   const getListColorClasses = (color: SupportedColor) => {
     const colorMap: Record<SupportedColor, string> = {
@@ -641,15 +799,14 @@ export const TaskCard = React.memo(function TaskCard({
           !task.archived &&
           'border-dynamic-red/70 bg-dynamic-red/10 ring-1 ring-dynamic-red/20',
         // Hover state
-        !isDragging &&
-          'hover:border-primary/30 hover:ring-1 hover:ring-primary/15',
+        !isDragging && 'hover:ring-1 hover:ring-primary/15',
         // Selection state
         isSelected && 'bg-primary/5 shadow-md ring-2 ring-primary/50',
         // Visual feedback for invalid drop (dev only)
         process.env.NODE_ENV === 'development' &&
           isDragging &&
           !isOverlay &&
-          'ring-2 ring-red-400/60'
+          'ring-2 ring-dynamic-red'
       )}
     >
       {/* Overdue indicator */}
@@ -658,14 +815,12 @@ export const TaskCard = React.memo(function TaskCard({
           <AlertCircle className="-top-4 -right-[18px] absolute h-3 w-3" />
         </div>
       )}
-
       {/* Selection indicator */}
       {isMultiSelectMode && isSelected && (
         <div className="absolute top-2 left-2 flex h-5 w-5 items-center justify-center rounded-full bg-primary font-bold text-primary-foreground text-xs shadow-sm">
           <Check className="h-4 w-4" />
         </div>
       )}
-
       <div className="p-4">
         {/* Header */}
         <div className="flex items-start gap-1">
@@ -679,7 +834,7 @@ export const TaskCard = React.memo(function TaskCard({
                   'w-full cursor-pointer text-left font-semibold text-xs leading-tight transition-colors duration-200',
                   task.archived
                     ? 'text-muted-foreground line-through'
-                    : '-mx-1 -my-0.5 rounded-sm px-1 py-0.5 text-foreground hover:bg-muted/30 hover:text-primary active:bg-muted/50 group-hover:text-foreground/90'
+                    : '-mx-1 -my-0.5 rounded-sm px-1 py-0.5 text-foreground active:bg-muted/50'
                 )}
                 onClick={(e) => {
                   // Don't allow editing when Shift is held (multi-select mode)
@@ -856,7 +1011,7 @@ export const TaskCard = React.memo(function TaskCard({
                 </DropdownMenuTrigger>
                 <DropdownMenuContent
                   align="end"
-                  className="w-48"
+                  className="w-56"
                   sideOffset={5}
                 >
                   {/* Quick Completion Action */}
@@ -1014,6 +1169,161 @@ export const TaskCard = React.memo(function TaskCard({
                       </DropdownMenuItem>
                     </DropdownMenuSubContent>
                   </DropdownMenuSub>
+
+                  {/* Estimation Submenu */}
+                  {boardConfig?.estimation_type && (
+                    <DropdownMenuSub>
+                      <DropdownMenuSubTrigger>
+                        <Timer className="h-4 w-4 text-dynamic-pink" />
+                        Estimation
+                      </DropdownMenuSubTrigger>
+                      <DropdownMenuSubContent className="w-40">
+                        {estimationOptions.map((opt) => {
+                          let label: string | number = opt;
+                          if (boardConfig?.estimation_type === 't-shirt') {
+                            const tshirtMap: Record<number, string> = {
+                              0: '-',
+                              1: 'XS',
+                              2: 'S',
+                              3: 'M',
+                              4: 'L',
+                              5: 'XL',
+                              6: 'XXL',
+                              7: 'XXXL',
+                            };
+                            label = tshirtMap[opt] || opt;
+                          } else if (
+                            boardConfig?.estimation_type === 'fibonacci'
+                          ) {
+                            const fibMap: Record<number, string> = {
+                              0: '0',
+                              1: '1',
+                              2: '2',
+                              3: '3',
+                              4: '5',
+                              5: '8',
+                              6: '13',
+                              7: '21',
+                            };
+                            label = fibMap[opt] || opt;
+                          } else if (
+                            boardConfig?.estimation_type === 'exponential'
+                          ) {
+                            const expMap: Record<number, string> = {
+                              0: '0',
+                              1: '1',
+                              2: '2',
+                              3: '4',
+                              4: '8',
+                              5: '16',
+                              6: '32',
+                              7: '64',
+                            };
+                            label = expMap[opt] || opt;
+                          }
+                          return (
+                            <DropdownMenuItem
+                              key={opt}
+                              onClick={() => updateEstimationPoints(opt)}
+                              className={cn(
+                                'flex cursor-pointer items-center justify-between',
+                                task.estimation_points === opt &&
+                                  'bg-dynamic-pink/10 text-dynamic-pink'
+                              )}
+                              disabled={estimationSaving}
+                            >
+                              <span>{label}</span>
+                              {task.estimation_points === opt && (
+                                <Check className="h-4 w-4" />
+                              )}
+                            </DropdownMenuItem>
+                          );
+                        })}
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem
+                          onClick={() => updateEstimationPoints(null)}
+                          className={cn(
+                            'cursor-pointer text-muted-foreground',
+                            task.estimation_points == null && 'bg-muted/50'
+                          )}
+                          disabled={estimationSaving}
+                        >
+                          <X className="h-4 w-4" /> None
+                        </DropdownMenuItem>
+                      </DropdownMenuSubContent>
+                    </DropdownMenuSub>
+                  )}
+
+                  {/* Labels Submenu */}
+                  <DropdownMenuSub>
+                    <DropdownMenuSubTrigger>
+                      <Tag className="h-4 w-4 text-dynamic-cyan" />
+                      Labels
+                    </DropdownMenuSubTrigger>
+                    <DropdownMenuSubContent>
+                      {labelsLoading && (
+                        <div className="px-2 py-1 text-muted-foreground text-xs">
+                          Loading...
+                        </div>
+                      )}
+                      {!labelsLoading && workspaceLabels.length === 0 && (
+                        <div className="px-2 py-2 text-center text-muted-foreground text-xs">
+                          No labels yet. Create your first label below.
+                        </div>
+                      )}
+                      <div className="grid gap-1">
+                        {!labelsLoading &&
+                          workspaceLabels.length > 0 &&
+                          workspaceLabels.map((label) => {
+                            const active = task.labels?.some(
+                              (l) => l.id === label.id
+                            );
+                            return (
+                              <DropdownMenuItem
+                                key={label.id}
+                                onClick={() => toggleTaskLabel(label.id)}
+                                disabled={labelsSaving === label.id}
+                                className={cn(
+                                  'flex cursor-pointer items-center justify-between',
+                                  active &&
+                                    'bg-dynamic-cyan/10 text-dynamic-cyan'
+                                )}
+                              >
+                                <span className="truncate">{label.name}</span>
+                                {active && <Check className="h-4 w-4" />}
+                              </DropdownMenuItem>
+                            );
+                          })}
+                      </div>
+                      {!labelsLoading &&
+                        task.labels &&
+                        task.labels.length > 0 && (
+                          <>
+                            <DropdownMenuSeparator />
+                            <div className="px-2 pt-1 pb-1 text-[10px] text-muted-foreground">
+                              {task.labels.length} applied
+                            </div>
+                          </>
+                        )}
+                      {!labelsLoading && (
+                        <>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem
+                            onClick={() => {
+                              setNewLabelDialogOpen(true);
+                              setMenuOpen(false);
+                            }}
+                            className="flex cursor-pointer items-center gap-2 text-muted-foreground hover:text-foreground"
+                          >
+                            <Plus className="h-4 w-4" />
+                            Add New Label
+                          </DropdownMenuItem>
+                        </>
+                      )}
+                    </DropdownMenuSubContent>
+                  </DropdownMenuSub>
+
+                  <DropdownMenuSeparator />
 
                   {/* Move to List Actions */}
                   {availableLists.length > 1 && (
@@ -1177,7 +1487,7 @@ export const TaskCard = React.memo(function TaskCard({
             )}
           </div>
         )}
-        {/* Bottom Row: Three-column layout for assignee, priority/tags, and checkbox, with only one tag visible and +N tooltip for extras */}
+        {/* Bottom Row: Three-column layout for assignee, priority, and checkbox, with only one tag visible and +N tooltip for extras */}
         <div className="flex h-8 min-w-0 items-center gap-x-1 overflow-hidden whitespace-nowrap">
           {/* Assignee: left, not cut off */}
           {!isPersonalWorkspace && (
@@ -1195,14 +1505,20 @@ export const TaskCard = React.memo(function TaskCard({
               {getPriorityIndicator()}
             </div>
           )}
-          {/* Tags and +N: do NOT shrink */}
-          {!task.archived && task.tags && task.tags.length > 0 && (
-            <div className="min-w-0 max-w-[180px]">
-              <TaskTagsDisplay
-                tags={task.tags}
-                maxDisplay={1}
-                className="mt-0 h-6 truncate rounded-full px-1.5 py-0.5 font-medium text-[10px]"
-                clickable={false}
+          {/* Labels */}
+          {!task.archived && task.labels && task.labels.length > 0 && (
+            <div className="flex min-w-0 flex-shrink-0 flex-wrap gap-1">
+              <TaskLabelsDisplay labels={task.labels} size="sm" />
+            </div>
+          )}
+          {/* Estimation Points */}
+          {!task.archived && task.estimation_points && (
+            <div className="min-w-0 flex-shrink-0">
+              <TaskEstimationDisplay
+                points={task.estimation_points}
+                size="sm"
+                estimationType={boardConfig?.estimation_type}
+                showIcon
               />
             </div>
           )}
@@ -1240,8 +1556,6 @@ export const TaskCard = React.memo(function TaskCard({
           </div>
         </div>
       </div>
-
-      {/* Delete Confirmation Dialog */}
       <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
@@ -1278,8 +1592,6 @@ export const TaskCard = React.memo(function TaskCard({
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
-      {/* Task Edit Dialog */}
       <TaskEditDialog
         task={task}
         isOpen={editDialogOpen}
@@ -1287,7 +1599,75 @@ export const TaskCard = React.memo(function TaskCard({
         onUpdate={onUpdate}
         availableLists={availableLists}
       />
-
+      <Dialog open={newLabelDialogOpen} onOpenChange={setNewLabelDialogOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Create New Label</DialogTitle>
+            <DialogDescription>
+              Add a new label to organize your tasks. Give it a descriptive name
+              and choose a color.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label>Label Name</Label>
+              <Input
+                value={newLabelName}
+                onChange={(e) => setNewLabelName(e.target.value)}
+                placeholder="e.g., Bug, Feature, Priority"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && newLabelName.trim()) {
+                    createNewLabel();
+                  }
+                }}
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label>Color</Label>
+              <div className="flex items-center gap-3">
+                <ColorPicker
+                  value={newLabelColor}
+                  onChange={setNewLabelColor}
+                />
+                <Badge
+                  style={{
+                    backgroundColor: `color-mix(in srgb, ${newLabelColor} 15%, transparent)`,
+                    borderColor: `color-mix(in srgb, ${newLabelColor} 30%, transparent)`,
+                    color: newLabelColor,
+                  }}
+                  className="border"
+                >
+                  {newLabelName.trim() || 'Preview'}
+                </Badge>
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setNewLabelDialogOpen(false)}
+              disabled={creatingLabel}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              onClick={createNewLabel}
+              disabled={!newLabelName.trim() || creatingLabel}
+            >
+              {creatingLabel ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Creating...
+                </>
+              ) : (
+                'Create Label'
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
       {!isOverlay && (
         <TaskActions taskId={task.id} boardId={boardId} onUpdate={onUpdate} />
       )}

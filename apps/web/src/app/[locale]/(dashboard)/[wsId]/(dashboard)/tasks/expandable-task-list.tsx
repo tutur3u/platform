@@ -3,6 +3,7 @@
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { ChevronDown, ChevronUp, UserRound } from '@tuturuuu/ui/icons';
+import { getDescriptionText } from '@tuturuuu/ui/utils/text-helper';
 import { cn } from '@tuturuuu/utils/format';
 import Link from 'next/link';
 import { useState } from 'react';
@@ -84,7 +85,7 @@ export default function ExpandableTaskList({
                   </h4>
                   {task.description && (
                     <p className="mt-1 line-clamp-2 text-dynamic-orange/70 text-xs">
-                      {task.description}
+                      {getDescriptionText(task.description)}
                     </p>
                   )}
                   <div className="mt-2 flex flex-wrap items-center gap-2 text-dynamic-orange/60 text-xs">

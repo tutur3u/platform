@@ -1,3 +1,5 @@
+import type { NavLink } from '@/components/navigation';
+import { DEV_MODE } from '@/constants/common';
 import {
   Activity,
   Archive,
@@ -78,8 +80,6 @@ import {
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { getPermissions, verifySecret } from '@tuturuuu/utils/workspace-helper';
 import { getTranslations } from 'next-intl/server';
-import type { NavLink } from '@/components/navigation';
-import { DEV_MODE } from '@/constants/common';
 
 export async function WorkspaceNavigationLinks({
   wsId,
@@ -381,15 +381,13 @@ export async function WorkspaceNavigationLinks({
             },
             {
               title: t('sidebar_tabs.labels'),
+              href: `/${personalOrWsId}/tasks/labels`,
               icon: <Tags className="h-4 w-4" />,
-              tempDisabled: true,
-              matchExact: true,
             },
             {
               title: t('sidebar_tabs.estimates'),
               icon: <Icon iconNode={hexagons3} className="h-4 w-4" />,
-              tempDisabled: true,
-              matchExact: true,
+              href: `/${personalOrWsId}/tasks/estimates`,
             },
             {
               title: t('sidebar_tabs.teams'),

@@ -11,6 +11,13 @@ import { StatusGroupedBoard } from '../boards/boardId/status-grouped-board';
 import { BoardHeader } from '../shared/board-header';
 import { ListView } from '../shared/list-view';
 
+interface TaskLabel {
+  id: string;
+  name: string;
+  color: string;
+  created_at: string;
+}
+
 export type ViewType = 'kanban' | 'status-grouped' | 'list';
 
 interface Props {
@@ -20,8 +27,27 @@ interface Props {
 
 export function BoardViews({ workspace, board }: Props) {
   const [currentView, setCurrentView] = useState<ViewType>('kanban');
-  const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [selectedLabels, setSelectedLabels] = useState<TaskLabel[]>([]);
   const queryClient = useQueryClient();
+
+  // Filter tasks based on selected labels
+  const filteredTasks = useMemo(() => {
+    if (selectedLabels.length === 0) {
+      return board.tasks;
+    }
+
+    return board.tasks.filter((task) => {
+      // If task has no labels, exclude it from results
+      if (!task.labels || task.labels.length === 0) {
+        return false;
+      }
+
+      // Check if task has any of the selected labels
+      return selectedLabels.some((selectedLabel) =>
+        task.labels?.some((taskLabel) => taskLabel.id === selectedLabel.id)
+      );
+    });
+  }, [board.tasks, selectedLabels]);
 
   // Helper function to create board with filtered tasks
   const createBoardWithFilteredTasks = (
@@ -32,24 +58,6 @@ export function BoardViews({ workspace, board }: Props) {
       ...board,
       tasks: filteredTasks,
     }) as TaskBoard & { tasks: Task[]; lists: TaskList[] };
-
-  // Filter tasks based on selected tags
-  const filteredTasks = useMemo(() => {
-    if (selectedTags.length === 0) {
-      return board.tasks;
-    }
-
-    return board.tasks.filter((task) => {
-      if (!task.tags || task.tags.length === 0) {
-        return false;
-      }
-
-      // Check if task has any of the selected tags
-      return selectedTags.some((selectedTag) =>
-        task.tags?.includes(selectedTag)
-      );
-    });
-  }, [board.tasks, selectedTags]);
 
   const handleUpdate = async () => {
     // const supabase = createClient(); // Not needed for current implementation
@@ -87,8 +95,6 @@ export function BoardViews({ workspace, board }: Props) {
         return (
           <ListView
             board={createBoardWithFilteredTasks(board, filteredTasks)}
-            selectedTags={selectedTags}
-            onTagsChange={setSelectedTags}
             isPersonalWorkspace={workspace.personal}
           />
         );
@@ -112,6 +118,8 @@ export function BoardViews({ workspace, board }: Props) {
         board={board}
         currentView={currentView}
         onViewChange={setCurrentView}
+        selectedLabels={selectedLabels}
+        onLabelsChange={setSelectedLabels}
       />
       <div className="h-full flex-1 overflow-hidden">{renderView()}</div>
     </div>

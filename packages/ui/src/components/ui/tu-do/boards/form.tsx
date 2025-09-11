@@ -3,7 +3,6 @@
 import type { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
 import type { TaskBoard } from '@tuturuuu/types/primitives/TaskBoard';
 import { Badge } from '@tuturuuu/ui/badge';
-import { TagSuggestions, TagsInput } from '@tuturuuu/ui/board-tags-input';
 import { Button } from '@tuturuuu/ui/button';
 import {
   Dialog,
@@ -57,7 +56,6 @@ const FormSchema = z.object({
     .min(1, 'Board name is required')
     .refine((val) => val.trim().length > 0, 'Board name cannot be empty'),
   template_id: z.string().optional(),
-  tags: z.array(z.string()).max(8, 'Maximum 8 tags allowed').optional(),
 });
 
 const templateIcons = {
@@ -81,27 +79,6 @@ const colorClasses: Record<SupportedColor, string> = {
   CYAN: 'bg-dynamic-cyan/30 border-dynamic-cyan/50',
 };
 
-// Common tag suggestions for task boards
-const TAG_SUGGESTIONS = [
-  'Development',
-  'Design',
-  'Marketing',
-  'Sales',
-  'Research',
-  'Planning',
-  'Testing',
-  'Documentation',
-  'Bug Fixes',
-  'Feature',
-  'Urgent',
-  'Personal',
-  'Work',
-  'Project',
-  'Team',
-  'Client',
-];
-
-// Utility function for error handling
 const getErrorMessage = (error: unknown): string => {
   if (error instanceof Error) return error.message;
   if (typeof error === 'string') return error;
@@ -129,7 +106,6 @@ export function TaskBoardForm({ wsId, data, children, onFinish }: Props) {
       id: data?.id,
       name: data?.name || '',
       template_id: '',
-      tags: data?.tags || [],
     },
   });
 
@@ -153,7 +129,6 @@ export function TaskBoardForm({ wsId, data, children, onFinish }: Props) {
             },
             body: JSON.stringify({
               name: formData.name.trim(),
-              tags: formData.tags || [],
             }),
           }
         );
@@ -181,7 +156,6 @@ export function TaskBoardForm({ wsId, data, children, onFinish }: Props) {
         await createBoardMutation.mutateAsync({
           name: formData.name.trim(),
           templateId: formData.template_id || undefined,
-          tags: formData.tags || [],
         });
 
         toast({
@@ -262,45 +236,6 @@ export function TaskBoardForm({ wsId, data, children, onFinish }: Props) {
                     )}
                   />
                 </div>
-
-                {/* Tags Input */}
-                <FormField
-                  control={form.control}
-                  name="tags"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="font-medium text-sm sm:text-base">
-                        Tags
-                      </FormLabel>
-                      <FormControl>
-                        <TagsInput
-                          value={field.value || []}
-                          onChange={field.onChange}
-                          placeholder="Add tags to categorize your board..."
-                          maxTags={8}
-                          validateTag={(tag) => tag.length <= 20}
-                          className="text-sm sm:text-base"
-                        />
-                      </FormControl>
-                      <div className="mt-2">
-                        <Label className="text-muted-foreground text-xs">
-                          Suggestions:
-                        </Label>
-                        <div className="mt-1">
-                          <TagSuggestions
-                            suggestions={TAG_SUGGESTIONS}
-                            selectedTags={field.value || []}
-                            onTagSelect={(tag) =>
-                              field.onChange([...(field.value || []), tag])
-                            }
-                            maxDisplay={6}
-                          />
-                        </div>
-                      </div>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
 
                 {/* Template Selection (only for new boards) */}
                 {!isEditMode && (

@@ -11,7 +11,6 @@ import {
 } from '@tuturuuu/ui/card';
 import { Checkbox } from '@tuturuuu/ui/checkbox';
 import {
-  Brain,
   Clock,
   GraduationCap,
   Plus,
@@ -31,7 +30,6 @@ import {
 } from '@tuturuuu/ui/select';
 import { Separator } from '@tuturuuu/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
-import { TagInput } from '@tuturuuu/ui/tag-input';
 import { useState } from 'react';
 import type { PlanRequest, SkillLevel, TimeOfDay } from '../../types';
 
@@ -482,76 +480,6 @@ export function GoalsInput({
                       ))}
                     </SelectContent>
                   </Select>
-                </div>
-              </div>
-
-              <div className="space-y-4">
-                <div className="flex items-center gap-2">
-                  <Brain className="h-5 w-5 text-primary" />
-                  <h3 className="font-medium">Skills & Focus Areas</h3>
-                </div>
-                <Separator />
-                <div className="grid gap-4">
-                  <div className="grid space-y-2">
-                    <Label className="flex items-center gap-1">
-                      Focus Areas
-                    </Label>
-                    <TagInput
-                      placeholder="Add focus areas"
-                      tags={advancedSettings.focusAreas ?? []}
-                      setTags={(tags) =>
-                        setAdvancedSettings({
-                          ...advancedSettings,
-                          focusAreas: tags,
-                        })
-                      }
-                      maxTags={5}
-                    />
-                    <p className="text-muted-foreground text-xs">
-                      Add up to 5 specific areas you want to focus on
-                    </p>
-                  </div>
-
-                  <div className="grid space-y-2">
-                    <Label className="flex items-center gap-1">
-                      Existing Skills
-                    </Label>
-                    <TagInput
-                      placeholder="Add existing skills"
-                      tags={advancedSettings.existingSkills ?? []}
-                      setTags={(tags) =>
-                        setAdvancedSettings({
-                          ...advancedSettings,
-                          existingSkills: tags,
-                        })
-                      }
-                      maxTags={10}
-                    />
-                    <p className="text-muted-foreground text-xs">
-                      List skills you already have that are relevant to your
-                      goals
-                    </p>
-                  </div>
-
-                  <div className="grid space-y-2">
-                    <Label className="flex items-center gap-1">
-                      Dependencies
-                    </Label>
-                    <TagInput
-                      placeholder="Add dependencies"
-                      tags={advancedSettings.dependencies ?? []}
-                      setTags={(tags) =>
-                        setAdvancedSettings({
-                          ...advancedSettings,
-                          dependencies: tags,
-                        })
-                      }
-                      maxTags={5}
-                    />
-                    <p className="text-muted-foreground text-xs">
-                      Add any prerequisites or dependencies for your goals
-                    </p>
-                  </div>
                 </div>
               </div>
             </div>

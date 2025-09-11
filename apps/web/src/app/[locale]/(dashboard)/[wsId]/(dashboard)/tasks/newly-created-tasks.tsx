@@ -4,6 +4,7 @@ import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
 import { CheckCircle, Eye, Plus } from '@tuturuuu/ui/icons';
+import { getDescriptionText } from '@tuturuuu/ui/utils/text-helper';
 import { cn } from '@tuturuuu/utils/format';
 import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
@@ -75,7 +76,7 @@ export default async function NewlyCreatedTasks({
 
   return (
     <Card className="overflow-hidden border-dynamic-green/20 transition-all duration-300">
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 border-dynamic-green/20 border-b bg-gradient-to-r from-dynamic-green/5 to-dynamic-blue/5 p-4">
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 border-dynamic-green/20 border-b bg-gradient-to-r from-dynamic-green/5 to-dynamic-green/5 p-4">
         <CardTitle className="flex items-center gap-2 font-semibold text-base">
           <div className="rounded-lg bg-dynamic-green/10 p-1.5 text-dynamic-green">
             <CheckCircle className="h-4 w-4" />
@@ -99,7 +100,7 @@ export default async function NewlyCreatedTasks({
             {recentTasks.map((task) => (
               <div
                 key={task.id}
-                className="group rounded-xl border border-dynamic-blue/10 bg-gradient-to-br from-dynamic-blue/5 to-dynamic-cyan/5 p-4 transition-all duration-300"
+                className="group rounded-xl border border-dynamic-green/10 bg-gradient-to-br from-dynamic-green/5 to-dynamic-cyan/5 p-4 transition-all duration-300"
               >
                 <div className="flex items-start justify-between">
                   <div className="flex-1 space-y-2">
@@ -109,11 +110,11 @@ export default async function NewlyCreatedTasks({
                           {task.name}
                         </h4>
                         {task.description && (
-                          <p className="mt-1 line-clamp-2 text-dynamic-blue/70 text-xs">
-                            {task.description}
+                          <p className="mt-1 line-clamp-2 text-dynamic-green/70 text-xs">
+                            {getDescriptionText(task.description)}
                           </p>
                         )}
-                        <div className="mt-2 flex flex-wrap items-center gap-2 text-dynamic-blue/60 text-xs">
+                        <div className="mt-2 flex flex-wrap items-center gap-2 text-dynamic-green/60 text-xs">
                           <Link
                             href={`/${wsId}/tasks/boards/${task.list?.board?.id}`}
                             className="font-semibold text-dynamic-green transition-colors hover:text-dynamic-green/80 hover:underline"

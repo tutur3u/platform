@@ -83,7 +83,6 @@ interface SessionTemplate {
   description?: string;
   category_id?: string;
   task_id?: string;
-  tags?: string[];
   category?: TimeTrackingCategory;
   task?: WorkspaceTask;
   usage_count: number;

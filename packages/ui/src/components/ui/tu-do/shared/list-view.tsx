@@ -52,7 +52,6 @@ import {
   RefreshCw,
   Search,
   Settings2,
-  Tag,
   Users,
   X,
 } from '@tuturuuu/ui/icons';
@@ -76,14 +75,8 @@ import {
   TableHeader,
   TableRow,
 } from '@tuturuuu/ui/table';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@tuturuuu/ui/tooltip';
+import { TooltipProvider } from '@tuturuuu/ui/tooltip';
 import { cn } from '@tuturuuu/utils/format';
-import { getTagColorStyling } from '@tuturuuu/utils/tag-utils';
 import { getTasks, priorityCompare } from '@tuturuuu/utils/task-helper';
 import {
   addDays,
@@ -99,8 +92,6 @@ import { TaskEditDialog } from './task-edit-dialog';
 
 interface Props {
   board: { id: string; tasks: Task[]; lists?: TaskList[] };
-  selectedTags?: string[];
-  onTagsChange?: (tags: string[]) => void;
   isPersonalWorkspace?: boolean;
 }
 
@@ -111,8 +102,7 @@ type SortField =
   | 'end_date'
   | 'assignees'
   | 'created_at'
-  | 'status'
-  | 'tags';
+  | 'status';
 type SortOrder = 'asc' | 'desc';
 
 interface TableFilters {
@@ -130,7 +120,6 @@ interface ColumnVisibility {
   start_date: boolean;
   end_date: boolean;
   assignees: boolean;
-  tags: boolean;
   actions: boolean;
 }
 
@@ -162,12 +151,7 @@ const priorityColors = {
 
 const SKELETON_KEYS: string[] = ['a', 'b', 'c', 'd', 'e'];
 
-export function ListView({
-  board,
-  selectedTags = [],
-  onTagsChange = () => {},
-  isPersonalWorkspace = false,
-}: Props) {
+export function ListView({ board, isPersonalWorkspace = false }: Props) {
   const queryClient = useQueryClient();
   const params = useParams();
   const wsId = params.wsId as string;
@@ -212,7 +196,6 @@ export function ListView({
     start_date: true,
     end_date: true,
     assignees: !isPersonalWorkspace,
-    tags: true,
     actions: true,
   });
 
@@ -221,7 +204,6 @@ export function ListView({
   const [bulkEditData, setBulkEditData] = useState({
     priority: 'keep',
     status: 'keep',
-    tags: [] as string[],
   });
   const [showBulkDeleteDialog, setShowBulkDeleteDialog] = useState(false);
 
@@ -244,7 +226,6 @@ export function ListView({
       const updateData: {
         priority?: TaskPriority | null;
         archived?: boolean;
-        tags?: string[];
       } = {};
       let hasUpdates = false;
 
@@ -255,11 +236,6 @@ export function ListView({
 
       if (bulkEditData.status !== 'keep') {
         updateData.archived = bulkEditData.status === 'completed';
-        hasUpdates = true;
-      }
-
-      if (bulkEditData.tags.length > 0) {
-        updateData.tags = bulkEditData.tags;
         hasUpdates = true;
       }
 
@@ -279,7 +255,7 @@ export function ListView({
       queryClient.invalidateQueries({ queryKey: ['tasks', board.id] });
       setSelectedTasks(new Set());
       setIsBulkEditing(false);
-      setBulkEditData({ priority: 'keep', status: 'keep', tags: [] });
+      setBulkEditData({ priority: 'keep', status: 'keep' });
       toast({
         title: 'Tasks updated',
         description: `${taskIds.length} task${taskIds.length !== 1 ? 's' : ''} updated successfully.`,
@@ -429,21 +405,6 @@ export function ListView({
     };
   }, [tasks]);
 
-  // Extract unique tags from tasks
-  const availableTags = useMemo(() => {
-    const tagSet = new Set<string>();
-    tasks.forEach((task) => {
-      if (task.tags && Array.isArray(task.tags)) {
-        task.tags.forEach((tag) => {
-          if (tag && typeof tag === 'string') {
-            tagSet.add(tag);
-          }
-        });
-      }
-    });
-    return Array.from(tagSet).sort();
-  }, [tasks]);
-
   // Apply filters and sorting
   const filteredAndSortedTasks = useMemo(() => {
     const filtered = tasks.filter((task) => {
@@ -459,18 +420,6 @@ export function ListView({
               assignee.email?.toLowerCase().includes(query)
           );
         if (!matches) return false;
-      }
-
-      // Tag filter
-      if (selectedTags.length > 0) {
-        if (!task.tags || task.tags.length === 0) {
-          return false;
-        }
-        // Check if task has any of the selected tags
-        const hasMatchingTag = selectedTags.some(
-          (selectedTag) => task.tags?.includes(selectedTag) ?? false
-        );
-        if (!hasMatchingTag) return false;
       }
 
       // Priority filter
@@ -609,19 +558,13 @@ export function ListView({
           comparison = aStatus.localeCompare(bStatus);
           break;
         }
-        case 'tags': {
-          const aLength = a.tags?.length || 0;
-          const bLength = b.tags?.length || 0;
-          comparison = aLength - bLength;
-          break;
-        }
       }
 
       return sortOrder === 'desc' ? -comparison : comparison;
     });
 
     return filtered;
-  }, [tasks, filters, sortField, sortOrder, selectedTags]);
+  }, [tasks, filters, sortField, sortOrder]);
 
   // Paginated tasks
   const paginatedTasks = useMemo(() => {
@@ -663,7 +606,6 @@ export function ListView({
       assignees: new Set(),
       dateFilter: 'all',
     });
-    onTagsChange([]); // Clear tag filters
     setCurrentPage(1);
   }
 
@@ -696,8 +638,7 @@ export function ListView({
     filters.priorities.size > 0 ||
     filters.statuses.size > 0 ||
     filters.assignees.size > 0 ||
-    filters.dateFilter !== 'all' ||
-    selectedTags.length > 0;
+    filters.dateFilter !== 'all';
 
   // Reset page when filters change - handled in individual filter setters
 
@@ -777,88 +718,6 @@ export function ListView({
       >
         {priorityLabels[priority as keyof typeof priorityLabels]}
       </Badge>
-    );
-  }
-
-  const MAX_VISIBLE_TAGS = 3;
-
-  function renderTags(tags: string[] | null) {
-    if (!tags || tags.length === 0) {
-      return <span className="text-muted-foreground text-sm">—</span>;
-    }
-
-    const needsScroll = tags.length >= 10;
-
-    return (
-      <div className="flex flex-wrap gap-1">
-        {tags.slice(0, MAX_VISIBLE_TAGS).map((tag) => {
-          const { style, className: tagClassName } = getTagColorStyling(tag);
-          return (
-            <Badge
-              key={tag}
-              variant="outline"
-              className={cn(
-                'h-5 rounded-full border px-1.5 font-medium text-xs',
-                'max-w-[100px] truncate transition-all duration-200',
-                'hover:scale-105 hover:brightness-110',
-                tagClassName
-              )}
-              style={style}
-              title={tag.length > 12 ? tag : undefined}
-            >
-              {tag}
-            </Badge>
-          );
-        })}
-        {tags.length > MAX_VISIBLE_TAGS && (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Badge
-                variant="outline"
-                className="h-5 cursor-help rounded-full border px-1.5 font-medium text-xs transition-all duration-200 hover:scale-105 hover:bg-muted/50"
-              >
-                +{tags.length - MAX_VISIBLE_TAGS}
-              </Badge>
-            </TooltipTrigger>
-            <TooltipContent
-              side="top"
-              className={cn('max-w-sm p-0', needsScroll && 'max-h-64')}
-              sideOffset={8}
-            >
-              <div className="space-y-3 p-4">
-                <p className="font-medium text-foreground text-sm">All tags:</p>
-                <div
-                  className={cn(
-                    'flex flex-wrap gap-1.5',
-                    needsScroll && 'max-h-48 overflow-y-auto pr-2'
-                  )}
-                >
-                  {tags.map((tag) => {
-                    const { style, className: tagClassName } =
-                      getTagColorStyling(tag);
-                    return (
-                      <Badge
-                        key={tag}
-                        variant="outline"
-                        className={cn(
-                          'h-auto rounded-full border px-2 py-0.5 font-medium text-xs',
-                          'max-w-[140px] truncate transition-all duration-200',
-                          'hover:scale-105 hover:brightness-110',
-                          tagClassName
-                        )}
-                        style={style}
-                        title={tag.length > 18 ? tag : undefined}
-                      >
-                        {tag}
-                      </Badge>
-                    );
-                  })}
-                </div>
-              </div>
-            </TooltipContent>
-          </Tooltip>
-        )}
-      </div>
     );
   }
 
@@ -942,77 +801,6 @@ export function ListView({
 
           {/* Table Actions */}
           <div className="flex items-center gap-2">
-            {/* Tag Filter */}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className={cn(
-                    'h-8 gap-1.5 px-3 text-xs',
-                    selectedTags.length > 0 &&
-                      'border-primary bg-primary/5 text-primary hover:bg-primary/10'
-                  )}
-                >
-                  <Tag className="h-3.5 w-3.5" />
-                  Tags
-                  {selectedTags.length > 0 && (
-                    <Badge
-                      variant="secondary"
-                      className="ml-1 h-4 w-4 rounded-full p-0 text-xs"
-                    >
-                      {selectedTags.length}
-                    </Badge>
-                  )}
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent
-                align="start"
-                className="max-h-64 w-56 overflow-y-auto"
-              >
-                <div className="max-h-48 overflow-y-auto">
-                  {availableTags.map((tag) => (
-                    <DropdownMenuItem
-                      key={tag}
-                      onClick={() => {
-                        const newTags = selectedTags.includes(tag)
-                          ? selectedTags.filter((t) => t !== tag)
-                          : [...selectedTags, tag];
-                        onTagsChange(newTags);
-                      }}
-                      className="cursor-pointer"
-                    >
-                      <Checkbox
-                        checked={selectedTags.includes(tag)}
-                        className="mr-2 h-3.5 w-3.5"
-                      />
-                      <Badge
-                        variant="outline"
-                        className={cn(
-                          'text-xs',
-                          getTagColorStyling(tag).className
-                        )}
-                        style={getTagColorStyling(tag).style}
-                      >
-                        {tag}
-                      </Badge>
-                    </DropdownMenuItem>
-                  ))}
-                </div>
-                {selectedTags.length > 0 && (
-                  <>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem
-                      onClick={() => onTagsChange([])}
-                      className="cursor-pointer text-muted-foreground"
-                    >
-                      Clear all tags
-                    </DropdownMenuItem>
-                  </>
-                )}
-              </DropdownMenuContent>
-            </DropdownMenu>
-
             {/* Priority Filter */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -1344,17 +1132,6 @@ export function ListView({
                     Assignees
                   </DropdownMenuCheckboxItem>
                 )}
-                <DropdownMenuCheckboxItem
-                  checked={columnVisibility.tags}
-                  onCheckedChange={(checked) =>
-                    setColumnVisibility({
-                      ...columnVisibility,
-                      tags: checked,
-                    })
-                  }
-                >
-                  Tags
-                </DropdownMenuCheckboxItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={refreshData}>
                   <RefreshCw className="mr-2 h-4 w-4" />
@@ -1426,16 +1203,12 @@ export function ListView({
           </div>
           <div className="space-y-2">
             <h3 className="font-semibold text-lg">
-              {filters.search || selectedTags.length > 0
-                ? 'No tasks found'
-                : 'No tasks yet'}
+              {filters.search ? 'No tasks found' : 'No tasks yet'}
             </h3>
             <p className="max-w-sm text-muted-foreground text-sm">
               {filters.search
                 ? `No tasks match "${filters.search}". Try adjusting your search terms.`
-                : selectedTags.length > 0
-                  ? `No tasks match the selected tags. Try adjusting your filters.`
-                  : 'Get started by creating your first task.'}
+                : 'Get started by creating your first task.'}
             </p>
           </div>
           {filters.search && (
@@ -1581,22 +1354,6 @@ export function ListView({
                       </Button>
                     </TableHead>
                   )}
-                  {columnVisibility.tags && (
-                    <TableHead className="w-[100px]">
-                      <Button
-                        variant="ghost"
-                        className={cn(
-                          '-ml-4 h-8 justify-start hover:bg-transparent',
-                          sortField === 'tags' && 'text-foreground'
-                        )}
-                        onClick={() => handleSort('tags')}
-                      >
-                        <Tag className="h-4 w-4" />
-                        <span className="font-medium">Tags</span>
-                        {getSortIcon('tags')}
-                      </Button>
-                    </TableHead>
-                  )}
                   {columnVisibility.actions && (
                     <TableHead className="w-[50px]" />
                   )}
@@ -1675,9 +1432,6 @@ export function ListView({
                           </div>
                         )}
                       </TableCell>
-                    )}
-                    {columnVisibility.tags && (
-                      <TableCell>{renderTags(task.tags || null)}</TableCell>
                     )}
                     {columnVisibility.actions && (
                       <TableCell>
@@ -1870,48 +1624,13 @@ export function ListView({
                 </SelectContent>
               </Select>
             </div>
-            <div className="grid gap-2">
-              <Label htmlFor="bulk-tags">Tags</Label>
-              <div className="flex flex-wrap gap-2">
-                {availableTags.map((tag) => (
-                  <Button
-                    key={tag}
-                    variant={
-                      bulkEditData.tags.includes(tag) ? 'default' : 'outline'
-                    }
-                    size="sm"
-                    onClick={() => {
-                      const newTags = bulkEditData.tags.includes(tag)
-                        ? bulkEditData.tags.filter((t) => t !== tag)
-                        : [...bulkEditData.tags, tag];
-                      setBulkEditData((prev) => ({ ...prev, tags: newTags }));
-                    }}
-                    className="h-7 text-xs"
-                  >
-                    {tag}
-                  </Button>
-                ))}
-              </div>
-              {bulkEditData.tags.length > 0 && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() =>
-                    setBulkEditData((prev) => ({ ...prev, tags: [] }))
-                  }
-                  className="h-7 text-muted-foreground text-xs"
-                >
-                  Clear all tags
-                </Button>
-              )}
-            </div>
           </div>
           <DialogFooter>
             <Button
               variant="outline"
               onClick={() => {
                 setIsBulkEditing(false);
-                setBulkEditData({ priority: 'keep', status: 'keep', tags: [] });
+                setBulkEditData({ priority: 'keep', status: 'keep' });
               }}
               disabled={isLoading}
             >
@@ -1922,8 +1641,7 @@ export function ListView({
               disabled={
                 isLoading ||
                 (bulkEditData.priority === 'keep' &&
-                  bulkEditData.status === 'keep' &&
-                  bulkEditData.tags.length === 0)
+                  bulkEditData.status === 'keep')
               }
             >
               {isLoading ? (

@@ -23,9 +23,10 @@ import {
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
 import { useToast } from '@tuturuuu/ui/hooks/use-toast';
-import { Clock, Flag, Loader2, Users } from '@tuturuuu/ui/icons';
+import { Clock, Flag, Loader2, Tag, Timer, Users, X } from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
+import { Separator } from '@tuturuuu/ui/separator';
 import { RichTextEditor } from '@tuturuuu/ui/text-editor/editor';
 import { cn } from '@tuturuuu/utils/format';
 import {
@@ -35,7 +36,6 @@ import {
 import { addDays } from 'date-fns';
 import { useParams } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
-import { TaskTagInput } from './task-tag-input';
 
 interface TaskEditDialogProps {
   task: Task;
@@ -43,6 +43,21 @@ interface TaskEditDialogProps {
   onClose: () => void;
   onUpdate: () => void;
   availableLists?: TaskList[];
+}
+
+// Helper types
+interface WorkspaceTaskLabel {
+  id: string;
+  name: string;
+  color: string;
+  created_at: string;
+}
+
+interface BoardEstimationConfig {
+  estimation_type?: string | null;
+  extended_estimation?: boolean;
+  allow_zero_estimates?: boolean;
+  count_unestimated_issues?: boolean;
 }
 
 export function TaskEditDialog({
@@ -84,8 +99,21 @@ export function TaskEditDialog({
   const [endDate, setEndDate] = useState<Date | undefined>(
     task.end_date ? new Date(task.end_date) : undefined
   );
-  const [tags, setTags] = useState<string[]>(task.tags || []);
   const [selectedListId, setSelectedListId] = useState<string>(task.list_id);
+  const [estimationPoints, setEstimationPoints] = useState<
+    number | null | undefined
+  >(task.estimation_points ?? null);
+  const [availableLabels, setAvailableLabels] = useState<WorkspaceTaskLabel[]>(
+    []
+  );
+  const [selectedLabels, setSelectedLabels] = useState<WorkspaceTaskLabel[]>(
+    task.labels || []
+  );
+  const [boardConfig, setBoardConfig] = useState<BoardEstimationConfig | null>(
+    null
+  );
+  const [labelsLoading, setLabelsLoading] = useState(false);
+  const [estimationSaving, setEstimationSaving] = useState(false);
 
   const params = useParams();
   const boardId = params.boardId as string;
@@ -142,10 +170,44 @@ export function TaskEditDialog({
       setPriority(task.priority || null);
       setStartDate(task.start_date ? new Date(task.start_date) : undefined);
       setEndDate(task.end_date ? new Date(task.end_date) : undefined);
-      setTags(task.tags || []);
       setSelectedListId(task.list_id);
+      setEstimationPoints(task.estimation_points ?? null);
+      setSelectedLabels(task.labels || []);
     }
   }, [task, parseDescription]);
+
+  // Fetch board estimation config & workspace labels when dialog opens
+  useEffect(() => {
+    if (!isOpen) return;
+    (async () => {
+      try {
+        const supabase = createClient();
+        // Fetch board config
+        const { data: board } = await supabase
+          .from('workspace_boards')
+          .select(
+            'estimation_type, extended_estimation, allow_zero_estimates, count_unestimated_issues, ws_id'
+          )
+          .eq('id', boardId)
+          .single();
+        setBoardConfig(board as any);
+
+        if (board?.ws_id) {
+          setLabelsLoading(true);
+          const { data: labels, error } = await supabase
+            .from('workspace_task_labels')
+            .select('id, name, color, created_at')
+            .eq('ws_id', board.ws_id)
+            .order('created_at', { ascending: false });
+          if (!error && labels) setAvailableLabels(labels as any);
+        }
+      } catch (e) {
+        console.error('Error loading board config or labels', e);
+      } finally {
+        setLabelsLoading(false);
+      }
+    })();
+  }, [isOpen, boardId]);
 
   // Helper function to handle end date with default time
   const handleEndDateChange = (date: Date | undefined) => {
@@ -221,6 +283,62 @@ export function TaskEditDialog({
     );
   };
 
+  // Handle estimation save (optimistic local update + API call)
+  const updateEstimation = async (points: number | null) => {
+    if (points === estimationPoints) return;
+    setEstimationPoints(points);
+    setEstimationSaving(true);
+    try {
+      const supabase = createClient();
+      const { error } = await supabase
+        .from('tasks')
+        .update({ estimation_points: points })
+        .eq('id', task.id);
+      if (error) throw error;
+      invalidateTaskCaches(queryClient, boardId);
+    } catch (e: any) {
+      console.error('Failed updating estimation', e);
+      toast({
+        title: 'Failed to update estimation',
+        description: e.message || 'Please try again',
+        variant: 'destructive',
+      });
+    } finally {
+      setEstimationSaving(false);
+    }
+  };
+
+  // Label selection handlers
+  const toggleLabel = async (label: WorkspaceTaskLabel) => {
+    const exists = selectedLabels.some((l) => l.id === label.id);
+    const supabase = createClient();
+    try {
+      if (exists) {
+        // remove
+        const { error } = await supabase
+          .from('task_labels')
+          .delete()
+          .eq('task_id', task.id)
+          .eq('label_id', label.id);
+        if (error) throw error;
+        setSelectedLabels((prev) => prev.filter((l) => l.id !== label.id));
+      } else {
+        const { error } = await supabase
+          .from('task_labels')
+          .insert({ task_id: task.id, label_id: label.id });
+        if (error) throw error;
+        setSelectedLabels((prev) => [label, ...prev]);
+      }
+      invalidateTaskCaches(queryClient, boardId);
+    } catch (e: any) {
+      toast({
+        title: 'Label update failed',
+        description: e.message || 'Unable to update labels',
+        variant: 'destructive',
+      });
+    }
+  };
+
   const handleSave = async () => {
     if (!name.trim()) return;
 
@@ -240,13 +358,6 @@ export function TaskEditDialog({
       end_date: endDate?.toISOString(),
       list_id: selectedListId,
     };
-
-    // Always include tags to allow clearing
-    taskUpdates.tags = tags.filter((tag) => tag && tag.trim() !== '');
-    // Ensure tags is always an array, never undefined
-    if (taskUpdates.tags.length === 0) {
-      taskUpdates.tags = [];
-    }
 
     updateTaskMutation.mutate(
       {
@@ -301,18 +412,55 @@ export function TaskEditDialog({
     }
   };
 
+  const getLabelColorClasses = (color: string) => {
+    const map: Record<string, string> = {
+      red: 'bg-red-100 text-red-700 border-red-200 dark:bg-red-900/30 dark:text-red-300 dark:border-red-800',
+      orange:
+        'bg-orange-100 text-orange-700 border-orange-200 dark:bg-orange-900/30 dark:text-orange-300 dark:border-orange-800',
+      yellow:
+        'bg-yellow-100 text-yellow-700 border-yellow-200 dark:bg-yellow-900/30 dark:text-yellow-300 dark:border-yellow-800',
+      green:
+        'bg-green-100 text-green-700 border-green-200 dark:bg-green-900/30 dark:text-green-300 dark:border-green-800',
+      blue: 'bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-800',
+      indigo:
+        'bg-indigo-100 text-indigo-700 border-indigo-200 dark:bg-indigo-900/30 dark:text-indigo-300 dark:border-indigo-800',
+      purple:
+        'bg-purple-100 text-purple-700 border-purple-200 dark:bg-purple-900/30 dark:text-purple-300 dark:border-purple-800',
+      pink: 'bg-pink-100 text-pink-700 border-pink-200 dark:bg-pink-900/30 dark:text-pink-300 dark:border-pink-800',
+      gray: 'bg-gray-100 text-gray-700 border-gray-200 dark:bg-gray-900/30 dark:text-gray-300 dark:border-gray-800',
+    };
+    return map[color] || map.gray;
+  };
+
+  // Build estimation options per config
+  const estimationOptions = (() => {
+    if (!boardConfig?.estimation_type) return [] as (number | null)[];
+    const max = boardConfig.extended_estimation ? 7 : 5;
+    const allowZero = boardConfig.allow_zero_estimates;
+    switch (boardConfig.estimation_type) {
+      default: {
+        // All estimation types use the same 0-7 storage format
+        // The difference is in how they're displayed to the user
+        const arr = Array.from({ length: max + 1 }, (_, i) => i).filter(
+          (n) => allowZero || n !== 0
+        );
+        return arr;
+      }
+    }
+  })();
+
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="flex max-h-[85vh] flex-col gap-0 p-0 sm:max-w-[650px]">
+      <DialogContent className="flex max-h-[85vh] flex-col gap-0 p-0 sm:max-w-[720px]">
         <DialogHeader className="px-6 pt-6 pb-4">
           <DialogTitle>Edit Task</DialogTitle>
           <DialogDescription>
-            Update task details, tags, and assignments.
+            Update task details, estimation and labels.
           </DialogDescription>
         </DialogHeader>
 
         <div className="flex-1 overflow-y-auto px-6 pb-4">
-          <div className="space-y-4">
+          <div className="space-y-6">
             {/* Task Name */}
             <div className="space-y-2">
               <Label htmlFor="task-name">Task Name</Label>
@@ -370,18 +518,6 @@ export function TaskEditDialog({
                   </Button>
                 ))}
               </div>
-            </div>
-
-            {/* Tags */}
-            <div className="space-y-2">
-              <Label>Tags</Label>
-              <TaskTagInput
-                value={tags}
-                onChange={setTags}
-                boardId={boardId}
-                placeholder="Add tags..."
-                maxTags={10}
-              />
             </div>
 
             {/* List Selection */}
@@ -498,6 +634,147 @@ export function TaskEditDialog({
                 />
               </div>
             </div>
+
+            {/* Estimation Section */}
+            {boardConfig?.estimation_type && (
+              <div className="space-y-2">
+                <Label className="flex items-center gap-2">
+                  <Timer className="h-4 w-4" /> Estimation
+                </Label>
+                <div className="flex flex-wrap gap-2">
+                  {estimationOptions.map((val) => {
+                    let label: string | number = val ?? 'N/A';
+                    if (
+                      val !== null &&
+                      boardConfig?.estimation_type === 't-shirt'
+                    ) {
+                      const tshirtMap: Record<number, string> = {
+                        0: '-',
+                        1: 'XS',
+                        2: 'S',
+                        3: 'M',
+                        4: 'L',
+                        5: 'XL',
+                        6: 'XXL',
+                        7: 'XXXL',
+                      };
+                      label = tshirtMap[val] || val;
+                    } else if (
+                      val !== null &&
+                      boardConfig?.estimation_type === 'fibonacci'
+                    ) {
+                      const fibMap: Record<number, string> = {
+                        0: '0',
+                        1: '1',
+                        2: '1',
+                        3: '2',
+                        4: '3',
+                        5: '5',
+                        6: '8',
+                        7: '13',
+                      };
+                      label = fibMap[val] || val;
+                    } else if (
+                      val !== null &&
+                      boardConfig?.estimation_type === 'exponential'
+                    ) {
+                      const expMap: Record<number, string> = {
+                        0: '0',
+                        1: '1',
+                        2: '2',
+                        3: '4',
+                        4: '8',
+                        5: '16',
+                        6: '32',
+                        7: '64',
+                      };
+                      label = expMap[val] || val;
+                    }
+                    return (
+                      <Button
+                        key={val === null ? 'none' : val}
+                        type="button"
+                        variant={
+                          (val ?? null) === estimationPoints
+                            ? 'default'
+                            : 'outline'
+                        }
+                        size="sm"
+                        className="h-7 px-2 text-xs"
+                        onClick={() => updateEstimation(val as number)}
+                        disabled={estimationSaving}
+                      >
+                        {label}
+                      </Button>
+                    );
+                  })}
+                  <Button
+                    type="button"
+                    variant={estimationPoints == null ? 'default' : 'outline'}
+                    size="sm"
+                    className="h-7 px-2 text-xs"
+                    onClick={() => updateEstimation(null)}
+                    disabled={estimationSaving}
+                  >
+                    None
+                  </Button>
+                </div>
+                <p className="text-muted-foreground text-xs">
+                  {boardConfig.estimation_type} estimation. Max points{' '}
+                  {boardConfig.extended_estimation ? 8 : 5}.{' '}
+                  {!boardConfig.allow_zero_estimates && 'Zero disabled.'}
+                </p>
+              </div>
+            )}
+
+            {/* Labels Section */}
+            <div className="space-y-2">
+              <Label className="flex items-center gap-2">
+                <Tag className="h-4 w-4" /> Labels
+              </Label>
+              {labelsLoading ? (
+                <div className="text-muted-foreground text-xs">
+                  Loading labels...
+                </div>
+              ) : availableLabels.length === 0 ? (
+                <div className="text-muted-foreground text-xs">
+                  No labels yet.
+                </div>
+              ) : (
+                <div className="flex flex-wrap gap-2">
+                  {availableLabels.map((label) => {
+                    const active = selectedLabels.some(
+                      (l) => l.id === label.id
+                    );
+                    return (
+                      <Button
+                        key={label.id}
+                        type="button"
+                        variant={active ? 'default' : 'outline'}
+                        size="sm"
+                        onClick={() => toggleLabel(label)}
+                        className={cn(
+                          'h-7 border px-2 text-xs',
+                          !active && 'bg-background',
+                          active && getLabelColorClasses(label.color)
+                        )}
+                      >
+                        {label.name}
+                        {active && <X className="ml-1 h-3 w-3" />}
+                      </Button>
+                    );
+                  })}
+                </div>
+              )}
+              {selectedLabels.length > 0 && (
+                <p className="text-muted-foreground text-xs">
+                  {selectedLabels.length} label
+                  {selectedLabels.length !== 1 && 's'} selected
+                </p>
+              )}
+            </div>
+
+            <Separator />
 
             {/* Current Assignees Display */}
             {task.assignees && task.assignees.length > 0 && (

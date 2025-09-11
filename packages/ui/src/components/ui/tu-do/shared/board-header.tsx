@@ -45,15 +45,31 @@ import { Separator } from '@tuturuuu/ui/separator';
 import { cn } from '@tuturuuu/utils/format';
 import { useRouter } from 'next/navigation';
 import { useMemo, useState } from 'react';
+import { LabelFilter } from '../boards/boardId/label-filter';
 import type { ViewType } from './board-views';
+
+interface TaskLabel {
+  id: string;
+  name: string;
+  color: string;
+  created_at: string;
+}
 
 interface Props {
   board: TaskBoard & { tasks: Task[]; lists: TaskList[] };
   currentView: ViewType;
   onViewChange: (view: ViewType) => void;
+  selectedLabels: TaskLabel[];
+  onLabelsChange: (labels: TaskLabel[]) => void;
 }
 
-export function BoardHeader({ board, currentView, onViewChange }: Props) {
+export function BoardHeader({
+  board,
+  currentView,
+  onViewChange,
+  selectedLabels,
+  onLabelsChange,
+}: Props) {
   const [isLoading, setIsLoading] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editedName, setEditedName] = useState(board.name);
@@ -276,6 +292,13 @@ export function BoardHeader({ board, currentView, onViewChange }: Props) {
               );
             })}
           </div>
+
+          {/* Label Filter */}
+          <LabelFilter
+            wsId={board.ws_id}
+            selectedLabels={selectedLabels}
+            onLabelsChange={onLabelsChange}
+          />
 
           {/* Actions Menu */}
           <DropdownMenu>
