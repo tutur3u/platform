@@ -21,12 +21,14 @@ interface Props {
   products: Product[];
   selectedProducts: SelectedProductItem[];
   onSelectedProductsChange: (products: SelectedProductItem[]) => void;
+  groupLinkedProductIds?: string[];
 }
 
 export function ProductSelection({
   products,
   selectedProducts,
   onSelectedProductsChange,
+  groupLinkedProductIds = [],
 }: Props) {
   const t = useTranslations();
   const [selectedProductId, setSelectedProductId] = useState<string>('');
@@ -164,7 +166,7 @@ export function ProductSelection({
               {selectedProducts.map((item, index) => (
                 <div
                   key={`${item.product.id}-${item.inventory.warehouse_id}-${item.inventory.unit_id}-${index}`}
-                  className="flex items-center justify-between rounded-lg border p-3"
+                  className={`flex items-center justify-between rounded-lg border p-3 ${groupLinkedProductIds.includes(item.product.id) ? 'border-primary bg-primary/5' : ''}`}
                 >
                   <div className="flex-1">
                     <p className="font-medium">{item.product.name}</p>
@@ -183,6 +185,11 @@ export function ProductSelection({
                         currency: 'VND',
                       }).format(item.inventory.price)}
                     </p>
+                    {groupLinkedProductIds.includes(item.product.id) && (
+                      <div className="mt-1">
+                        <Badge variant="secondary" className="text-[10px]">Linked to group</Badge>
+                      </div>
+                    )}
                   </div>
                   <div className="flex items-center gap-2">
                     <Button

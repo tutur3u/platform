@@ -30,7 +30,7 @@ import {
 } from '@tuturuuu/ui/select';
 import { Combobox, type ComboboxOptions } from '@tuturuuu/ui/custom/combobox';
 import { useTranslations } from 'next-intl';
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { ProductSelection } from './product-selection';
 import { toast } from '@tuturuuu/ui/sonner';
@@ -158,6 +158,52 @@ export function SubscriptionInvoice({
   const availableProducts = useMemo(() => {
     return products;
   }, [products]);
+
+  // When switching groups: clear current selections and replace with the group's linked products
+  const previousGroupIdRef = useRef<string>('');
+  useEffect(() => {
+    if (!selectedGroupId || !groupProducts || groupProducts.length === 0) {
+      return;
+    }
+
+    const isGroupChanged = previousGroupIdRef.current !== selectedGroupId;
+    previousGroupIdRef.current = selectedGroupId;
+
+    if (!isGroupChanged) return;
+
+    const attendanceDays = getEffectiveAttendanceDays(userAttendance);
+
+    // Get product IDs that are linked to the selected group
+    const groupProductIds = groupProducts
+      .map((item: any) => item.workspace_products?.id)
+      .filter(Boolean);
+
+    // Find the actual products from the full products list
+    const groupLinkedProducts = products.filter((product) =>
+      groupProductIds.includes(product.id)
+    );
+
+    // Create SelectedProductItem entries for group products with attendance-based quantity
+    const autoSelectedProducts: SelectedProductItem[] = groupLinkedProducts
+      .map((product) => {
+        // Choose the first available inventory or one with stock
+        const inventory =
+          product.inventory.find(
+            (inv: any) => inv.amount === null || (inv.amount && inv.amount > 0)
+          ) || product.inventory[0];
+
+        if (!inventory) return null; // Skip products without inventory
+
+        return {
+          product,
+          inventory,
+          quantity: attendanceDays,
+        } as SelectedProductItem;
+      })
+      .filter((item): item is SelectedProductItem => item !== null);
+
+    setSubscriptionSelectedProducts(autoSelectedProducts);
+  }, [selectedGroupId, groupProducts, products]);
 
   // Auto-add group products based on attendance when group is selected
   useEffect(() => {
@@ -920,6 +966,9 @@ export function SubscriptionInvoice({
 
               setSubscriptionSelectedProducts(limitedProducts);
             }}
+            groupLinkedProductIds={(groupProducts || [])
+              .map((item: any) => item.workspace_products?.id)
+              .filter(Boolean)}
           />
         )}
       </div>
