@@ -188,7 +188,7 @@ export function StandardInvoice({
     }
 
     const linkedIds = new Set(
-      linkedPromotions.map((p: any) => p.promo_id).filter(Boolean)
+      linkedPromotions.map((p) => p.promo_id).filter(Boolean)
     );
 
     const candidatePromotions = promotions.filter((p) => linkedIds.has(p.id));
