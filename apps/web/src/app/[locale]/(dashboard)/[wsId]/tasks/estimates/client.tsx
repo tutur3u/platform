@@ -116,8 +116,8 @@ export default function TaskEstimatesClient({ wsId, initialBoards }: Props) {
 
   const getTShirtDescription = (isExtended: boolean) => {
     return isExtended
-      ? 'T-shirt sizes (XS, S, M, L, XL, XXL, XXXL, XXXXL)'
-      : 'T-shirt sizes (XS, S, M, L, XL, XXL)';
+      ? 'T-shirt sizes (-, XS, S, M, L, XL, XXL, XXXL)'
+      : 'T-shirt sizes (-, XS, S, M, L, XL)';
   };
 
   const getRangeInfo = (type: string) => {
