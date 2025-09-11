@@ -220,7 +220,7 @@ export default function ScheduleCalendar({
                             onClick={handleSubmit}
                             disabled={isSubmitting}
                             className={cn(
-                                'bg-dynamic-blue text-white hover:bg-dynamic-blue/80'
+                                'bg-dynamic-blue/10 border border-dynamic-blue/20 text-dynamic-blue hover:bg-dynamic-blue/20'
                             )}
                         >
                             <Save className="h-4 w-4" />

@@ -14,10 +14,10 @@ export default function StickyBottomIndicator() {
       message={t('common.unsaved-changes')}
       actions={
         <Button
-          variant="default"
           size="lg"
           onClick={handleSave}
           disabled={!isDirty || isSaving}
+          className='bg-dynamic-blue/10 border border-dynamic-blue/20 text-dynamic-blue hover:bg-dynamic-blue/20'
         >
           <Save size={16} />
           {isSaving ? t('common.saving') : t('common.save')}
