@@ -128,9 +128,14 @@ CREATE OR REPLACE FUNCTION enforce_extended_estimation()
 RETURNS TRIGGER AS $$
 BEGIN
     IF NEW.extended_estimation = FALSE THEN
-        UPDATE "public"."tasks"
-        SET estimation_points = LEAST(estimation_points, 5)
-        WHERE board_id = NEW.id AND estimation_points > 5;
+        -- tasks doesn't have board_id, so we need to join with workspace_boards via list_id
+        UPDATE "public"."tasks" t
+        SET estimation_points = 5
+        FROM "public"."task_lists" tl
+        JOIN "public"."workspace_boards" wb ON tl.board_id = wb.id
+        WHERE t.list_id = tl.id
+          AND wb.id = NEW.id
+          AND t.estimation_points > 5;
     END IF;
     RETURN NEW;
 END;
@@ -144,6 +149,7 @@ FOR EACH ROW EXECUTE FUNCTION enforce_extended_estimation();
 CREATE TABLE "public"."task_labels" (
     "task_id" uuid NOT NULL,
     "label_id" uuid NOT NULL,
+    "created_at" timestamp with time zone NOT NULL DEFAULT now(),
     PRIMARY KEY (task_id, label_id),
     CONSTRAINT "task_labels_task_id_fkey" FOREIGN KEY (task_id) REFERENCES "public"."tasks"(id) ON DELETE CASCADE,
     CONSTRAINT "task_labels_label_id_fkey" FOREIGN KEY (label_id) REFERENCES "public"."workspace_task_labels"(id) ON DELETE CASCADE
