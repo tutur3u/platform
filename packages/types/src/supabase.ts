@@ -6971,6 +6971,7 @@ export type Database = {
           group_id: string;
           product_id: string;
           unit_id: string;
+          warehouse_id?: null | string;
         };
         Relationships: [
           {
@@ -7029,18 +7030,27 @@ export type Database = {
             referencedColumns: ['id'];
             referencedRelation: 'inventory_units';
           },
+          {
+            columns: ['warehouse_id'];
+            foreignKeyName: 'user_group_linked_products_warehouse_id_fkey';
+            isOneToOne: false;
+            referencedColumns: ['id'];
+            referencedRelation: 'inventory_warehouses';
+          },
         ];
         Row: {
           created_at: string;
           group_id: string;
           product_id: string;
           unit_id: string;
+          warehouse_id: null | string;
         };
         Update: {
           created_at?: string;
           group_id?: string;
           product_id?: string;
           unit_id?: string;
+          warehouse_id?: null | string;
         };
       };
       user_group_post_checks: {
