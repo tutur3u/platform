@@ -78,16 +78,12 @@ export default function GroupIndicatorsManager({
 
   // Dialog states
   const [addDialogOpen, setAddDialogOpen] = useState(false)
-  const [editDialogOpen, setEditDialogOpen] = useState(false)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [selectedIndicator, setSelectedIndicator] = useState<GroupIndicator | null>(null)
   const [selectedVitalId, setSelectedVitalId] = useState<string>("")
 
   // Queries
-  const {
-    data: groupIndicators = initialGroupIndicators,
-    isLoading: isLoadingGroupIndicators,
-  } = useQuery({
+  const { data: groupIndicators = initialGroupIndicators } = useQuery({
     queryKey: ["groupIndicators", wsId, groupId],
     queryFn: async (): Promise<GroupIndicator[]> => {
       const { data, error } = await supabase
@@ -102,18 +98,15 @@ export default function GroupIndicatorsManager({
     initialData: initialGroupIndicators,
   })
 
-  const {
-    data: userIndicators = initialUserIndicators,
-    isLoading: isLoadingUserIndicators,
-  } = useQuery({
+  const { data: userIndicators = initialUserIndicators } = useQuery({
     queryKey: ["userIndicators", wsId, groupId],
     queryFn: async (): Promise<UserIndicator[]> => {
       const { data, error } = await supabase
         .from("user_indicators")
-        .select("user_id, healthcare_vitals(id, name), value")
+        .select("user_id, indicator_id, healthcare_vitals(id, name), value")
         .eq("healthcare_vitals.group_id", groupId)
-        .order("user_id")
-        .order("healthcare_vitals.id")
+        .order("user_id", { ascending: true })
+        .order("id", { ascending: true, foreignTable: "healthcare_vitals" })
 
       if (error) throw error
       return (data || []) as UserIndicator[]

@@ -63,6 +63,16 @@ drop table "public"."user_group_indicators";
 
 alter table "public"."user_indicators" drop column "group_id";
 
+create policy "Enable read access for authenticated users" on "public"."user_indicators" as permissive for select to authenticated using (true);
+
+create policy "Enable insert access for authenticated users" on "public"."user_indicators" as permissive for insert to authenticated with check (true);
+
+create policy "Enable update access for authenticated users" on "public"."user_indicators" as permissive for update to authenticated with check (true);
+
+create policy "Enable delete access for authenticated users" on "public"."user_indicators" as permissive for delete to authenticated with check (true);
+
+
+
 
 
 
