@@ -41,6 +41,7 @@ import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
+
 interface LinkedProduct {
   id: string;
   name: string | null;
@@ -77,6 +78,7 @@ interface LinkedProductsClientProps {
 }
 
 export const useProducts = (wsId: string) => {
+  const t = useTranslations();
   return useQuery({
     queryKey: ['products', wsId],
     queryFn: async () => {
@@ -93,7 +95,7 @@ export const useProducts = (wsId: string) => {
         toast(
           error instanceof Error
             ? error.message
-            : { t('ws-groups.failed_to_fetch_available_products') }
+            : t('ws-groups.failed_to_fetch_available_products')
         );
         return [];
       }
@@ -103,6 +105,7 @@ export const useProducts = (wsId: string) => {
 };
 
 export const useWarehouses = (wsId: string) => {
+  const t = useTranslations();
   return useQuery({
     queryKey: ['warehouses', wsId],
     queryFn: async () => {
@@ -115,7 +118,7 @@ export const useWarehouses = (wsId: string) => {
 
       if (error) {
         toast(
-          error instanceof Error ? error.message : { t('ws-groups.failed_to_fetch_warehouses') }
+          error instanceof Error ? error.message : t('ws-groups.failed_to_fetch_warehouses')
         );
         return [];
       }
