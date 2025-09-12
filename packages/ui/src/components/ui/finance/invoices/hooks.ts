@@ -5,7 +5,9 @@ import type { Wallet } from '@tuturuuu/types/primitives/Wallet';
 import type { TransactionCategory } from '@tuturuuu/types/primitives/TransactionCategory';
 import type { Transaction } from '@tuturuuu/types/primitives/Transaction';
 import type { Invoice } from '@tuturuuu/types/primitives/Invoice';
-import type { Product, Promotion } from './types';
+import type { Product, Promotion, UserGroupProducts } from './types';
+
+
 
 // React Query hooks for data fetching
 export const useUsers = (wsId: string) => {
@@ -256,7 +258,7 @@ export const useUserGroupProducts = (groupId: string) => {
       }
 
       console.log('Group products:', data);
-      return data || [];
+      return data as UserGroupProducts[];
     },
     enabled: !!groupId,
     staleTime: 5 * 60 * 1000, // 5 minutes

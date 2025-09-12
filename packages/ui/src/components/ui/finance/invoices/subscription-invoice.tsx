@@ -35,7 +35,8 @@ import { useRouter } from 'next/navigation';
 import { ProductSelection } from './product-selection';
 import { toast } from '@tuturuuu/ui/sonner';
 import { Button } from '@tuturuuu/ui/button';
-import type { SelectedProductItem, Promotion } from './types';
+import type { SelectedProductItem, Promotion, UserGroupProducts, Product, ProductInventory } from './types';
+
 import {
   useUsers,
   useProducts,
@@ -58,8 +59,8 @@ interface Props {
 }
 
 const buildAutoSelectedProductsForGroup = (
-  groupLinked: any[],
-  allProducts: any[],
+  groupLinked: UserGroupProducts[],
+  allProducts: Product[],
   attendanceDays: number
 ) => {
   let fallbackTriggered = false;
@@ -67,37 +68,37 @@ const buildAutoSelectedProductsForGroup = (
   const results: SelectedProductItem[] = [];
 
   for (const linkItem of groupLinked || []) {
-    const productId = linkItem?.workspace_products?.id ?? linkItem?.product_id;
+    const productId = linkItem?.workspace_products?.id;
     if (!productId) continue;
 
     const desiredUnitId = linkItem.inventory_units.id;
-    const desiredWarehouseId = linkItem.warehouse_id ?? null;
+    const desiredWarehouseId = linkItem.warehouse_id;
 
     const product = allProducts.find((p) => p.id === productId);
     if (!product || !Array.isArray(product.inventory)) continue;
 
     // Filter inventories by desired unit if provided; otherwise, use all
     const inventoriesByUnit = desiredUnitId
-      ? product.inventory.filter((inv: any) => inv.unit_id === desiredUnitId)
+      ? product.inventory.filter((inv) => inv.unit_id === desiredUnitId)
       : product.inventory;
 
     if (!inventoriesByUnit.length) continue;
 
-    let chosenInventory: any | null = null;
+    let chosenInventory: ProductInventory | null = null;
 
     if (desiredWarehouseId) {
       // Try to find exact warehouse match first
       chosenInventory = inventoriesByUnit.find(
-        (inv: any) => inv.warehouse_id === desiredWarehouseId
+        (inv) => inv.warehouse_id === desiredWarehouseId
       )
         // Else pick first with available stock
         || inventoriesByUnit.find(
-          (inv: any) => inv.amount === null || (inv.amount && inv.amount > 0)
+          (inv) => inv.amount === null || (inv.amount && inv.amount > 0)
         )
         // Else just pick the first
-        || inventoriesByUnit[0];
+        || inventoriesByUnit[0] || null;
       if (
-        !inventoriesByUnit.some((inv: any) => inv.warehouse_id === desiredWarehouseId)
+        !inventoriesByUnit.some((inv) => inv.warehouse_id === desiredWarehouseId)
       ) {
         // Provided warehouse not found; consider this a fallback too
         fallbackTriggered = true;
@@ -111,8 +112,8 @@ const buildAutoSelectedProductsForGroup = (
       // No warehouse specified → fallback per requirement
       chosenInventory =
         inventoriesByUnit.find(
-          (inv: any) => inv.amount === null || (inv.amount && inv.amount > 0)
-        ) || inventoriesByUnit[0];
+          (inv) => inv.amount === null || (inv.amount && inv.amount > 0)
+        ) || inventoriesByUnit[0] || null;
       fallbackTriggered = true;
       // eslint-disable-next-line no-console
       console.warn(
