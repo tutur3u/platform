@@ -1159,7 +1159,9 @@
     "url": "Liên kết",
     "columns": "Cột",
     "rows": "Dòng",
-    "type": "Loại"
+    "type": "Loại",
+    "link_product": "Liên kết sản phẩm",
+    "link_product_description": "Chọn một sản phẩm, cùng với đơn vị và kho hàng của nó để liên kết với nhóm này"
   },
   "email-data-table": {
     "id": "Mã số",
@@ -2830,6 +2832,7 @@
     "description": "Sản phẩm được sử dụng dưới dạng loại mặt hàng riêng lẻ mà bạn có trong kho của mình và có thể được sử dụng để liên kết với hóa đơn.",
     "create": "Tạo sản phẩm",
     "create_description": "Tạo một sản phẩm mới",
+    "unnamed_product": "Sản phẩm chưa đặt tên",
     "form": {
       "details": "Chi tiết",
       "name": "Tên sản phẩm",
@@ -2858,7 +2861,8 @@
     "description": "Đơn vị tính được sử dụng để đo lường các sản phẩm tồn kho.",
     "create": "Tạo đơn vị tính",
     "create_description": "Tạo một đơn vị tính mới",
-    "placeholder": "Chọn đơn vị tính"
+    "placeholder": "Chọn đơn vị tính",
+    "unnamed_unit": "Đơn vị tính chưa đặt tên"
   },
   "ws-inventory-suppliers": {
     "plural": "Nhà cung cấp",
@@ -2873,7 +2877,8 @@
     "description": "Kho hàng được sử dụng để lưu trữ các sản phẩm tồn kho.",
     "create": "Tạo kho hàng",
     "create_description": "Tạo một kho hàng mới",
-    "placeholder": "Chọn kho hàng"
+    "placeholder": "Chọn kho hàng",
+    "unnamed_warehouse": "Kho hàng chưa đặt tên"
   },
   "ws-inventory-batches": {
     "plural": "Lô hàng",
@@ -4296,5 +4301,34 @@
     "no_recent_plans_title": "Không có kế hoạch gần đây",
     "no_recent_plans_desc": "Các kế hoạch TuMeet gần nhất của bạn sẽ xuất hiện tại đây",
     "create_plan": "Tạo kế hoạch mới"
+  },
+  "ws-groups": {
+    "select_warehouse": "Chọn kho hàng",
+    "select_unit": "Chọn đơn vị",
+    "linking": "Đang liên kết...",
+    "link_product": "Liên kết sản phẩm",
+    "select_product_warehouse_unit": "Vui lòng chọn sản phẩm, kho hàng và đơn vị",
+    "failed_to_add_linked_product": "Không thể thêm sản phẩm liên kết",
+    "linked_product_added_successfully": "Đã thêm sản phẩm liên kết thành công",
+    "failed_to_delete_linked_product": "Không thể xóa sản phẩm liên kết",
+    "linked_product_removed_successfully": "Đã xóa sản phẩm liên kết thành công",
+    "failed_to_refresh_linked_products": "Không thể làm mới danh sách sản phẩm liên kết",
+    "select_warehouse_and_unit": "Vui lòng chọn kho hàng và đơn vị",
+    "failed_to_update_linked_product": "Không thể cập nhật sản phẩm liên kết",
+    "linked_product_updated_successfully": "Đã cập nhật sản phẩm liên kết thành công",
+    "missing_warehouse": "Thiếu kho hàng",
+    "missing_unit": "Thiếu đơn vị",
+    "no_linked_products": "Không có sản phẩm liên kết",
+    "add_products_to_link": "Thêm sản phẩm để liên kết với nhóm này",
+    "remove_linked_product": "Xóa sản phẩm liên kết",
+    "confirm_remove_product": "Bạn có chắc chắn muốn xóa \"{productName}\" khỏi nhóm này không? Hành động này không thể hoàn tác.",
+    "removing": "Đang xóa...",
+    "remove": "Xóa",
+    "edit_linked_product": "Chỉnh sửa sản phẩm liên kết",
+    "update_warehouse_and_unit": "Cập nhật kho hàng và đơn vị cho sản phẩm liên kết này.",
+    "saving": "Đang lưu...",
+    "save": "Lưu",
+    "edit_product": "Chỉnh sửa sản phẩm",
+    "remove_product": "Xóa sản phẩm"
   }
 }

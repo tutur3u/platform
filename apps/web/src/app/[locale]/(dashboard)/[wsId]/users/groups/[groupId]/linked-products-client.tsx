@@ -27,10 +27,11 @@ import {
 import { Combobox, type ComboboxOptions } from '@tuturuuu/ui/custom/combobox';
 import { Label } from '@tuturuuu/ui/label';
 import { toast } from '@tuturuuu/ui/sonner';
-import { Box, MoreHorizontal, Pencil, ShoppingCart, Trash2 } from '@tuturuuu/ui/icons';
+import { Box, MoreHorizontal, Pencil, Trash2, Warehouse, RulerDimensionLine, AlertCircle, Link } from '@tuturuuu/ui/icons';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
+
 
 
 interface LinkedProduct {
@@ -153,7 +154,7 @@ export default function LinkedProductsClient({
     // Add linked product
     const handleAddProduct = async () => {
         if (!selectedProduct || !selectedWarehouse || !selectedUnit) {
-            toast('Please select product, warehouse, and unit');
+            toast(t('ws-groups.select_product_warehouse_unit'));
             return;
         }
 
@@ -170,7 +171,7 @@ export default function LinkedProductsClient({
             });
 
         if (error) {
-            toast(error instanceof Error ? error.message : 'Failed to add linked product');
+            toast(error instanceof Error ? error.message : t('ws-groups.failed_to_add_linked_product'));
             setLoading(false);
             return;
         }
@@ -183,7 +184,7 @@ export default function LinkedProductsClient({
         setSelectedUnit('');
         setLoading(false);
 
-        toast('Linked product added successfully');
+        toast(t('ws-groups.linked_product_added_successfully'));
     };
 
     // Delete linked product
@@ -200,7 +201,7 @@ export default function LinkedProductsClient({
             .eq('product_id', deletingProduct.id);
 
         if (error) {
-            toast(error instanceof Error ? error.message : 'Failed to delete linked product');
+            toast(error instanceof Error ? error.message : t('ws-groups.failed_to_delete_linked_product'));
             setLoading(false);
             return;
         }
@@ -211,7 +212,7 @@ export default function LinkedProductsClient({
         setDeletingProduct(null);
         setLoading(false);
 
-        toast('Linked product removed successfully');
+        toast(t('ws-groups.linked_product_removed_successfully'));
     }
 
 
@@ -225,7 +226,7 @@ export default function LinkedProductsClient({
             .order('created_at', { ascending: false });
 
         if (error) {
-            toast(error instanceof Error ? error.message : 'Failed to refresh linked products');
+            toast(error instanceof Error ? error.message : t('ws-groups.failed_to_refresh_linked_products'));
             return;
         }
 
@@ -245,7 +246,7 @@ export default function LinkedProductsClient({
     const handleEditProduct = async () => {
         if (!editingProduct) return;
         if (!selectedWarehouse || !selectedUnit) {
-            toast('Please select warehouse and unit');
+            toast(t('ws-groups.select_warehouse_and_unit'));
             return;
         }
 
@@ -262,7 +263,7 @@ export default function LinkedProductsClient({
             .eq('product_id', editingProduct.id);
 
         if (error) {
-            toast(error instanceof Error ? error.message : 'Failed to update linked product');
+            toast(error instanceof Error ? error.message : t('ws-groups.failed_to_update_linked_product'));
             setLoading(false);
             return;
         }
@@ -274,7 +275,7 @@ export default function LinkedProductsClient({
         setSelectedWarehouse('');
         setSelectedUnit('');
         setLoading(false);
-        toast('Linked product updated successfully');
+        toast(t('ws-groups.linked_product_updated_successfully'));
     };
 
     // Get available products for selection (excluding already linked ones)
@@ -284,7 +285,7 @@ export default function LinkedProductsClient({
 
     return (
         <div className="flex flex-col rounded-lg border border-border bg-foreground/5 p-4">
-            <div className="mb-4 flex items-center justify-between">
+            <div className="mb-2 flex items-center justify-between">
                 <div className="font-semibold text-xl">
                     {t('user-data-table.linked_products')}
                     {!!count && ` (${count})`}
@@ -292,48 +293,48 @@ export default function LinkedProductsClient({
                 <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
                     <DialogTrigger asChild>
                         <Button variant="outline" size="sm">
-                            <ShoppingCart className="mr-2 h-4 w-4" />
-                            Add Product
+                            <Link className="mr-2 h-4 w-4" />
+                            {t('user-data-table.link_product')}
                         </Button>
                     </DialogTrigger>
                     <DialogContent onWheel={(e) => e.stopPropagation()}>
                         <DialogHeader>
-                            <DialogTitle>Add Linked Product</DialogTitle>
+                            <DialogTitle>{t('user-data-table.link_product')}</DialogTitle>
                             <DialogDescription>
-                                Select a product and unit to link to this group.
+                                {t('user-data-table.link_product_description')}
                             </DialogDescription>
                         </DialogHeader>
                         <div className="space-y-4">
                             <div className="space-y-2">
                                 <Label htmlFor="product-select">
-                                    Product
+                                    {t('ws-inventory-products.singular')}
                                 </Label>
                                 <Combobox
                                     t={t}
                                     options={availableProducts.map(
                                         (product): ComboboxOptions => ({
                                             value: product.id,
-                                            label: `${product.name || 'Unnamed Product'}${product.manufacturer ? ` - ${product.manufacturer}` : ''}${product.description ? ` (${product.description})` : ''}`,
+                                            label: `${product.name || t('ws-inventory-products.unnamed_product')}${product.manufacturer ? ` - ${product.manufacturer}` : ''}${product.description ? ` (${product.description})` : ''}`,
                                         })
                                     )}
                                     selected={selectedProduct}
                                     onChange={(value) => setSelectedProduct(value as string)}
-                                    placeholder="Search products..."
+                                    placeholder={t('ws-invoices.search_products')}
                                 />
                             </div>
                             {selectedProduct && (
                                 <div className="space-y-2">
                                     <Label htmlFor="warehouse-select">
-                                        Warehouse
+                                        {t('ws-inventory-warehouses.singular')}
                                     </Label>
                                     <Select value={selectedWarehouse} onValueChange={setSelectedWarehouse}>
                                         <SelectTrigger>
-                                            <SelectValue placeholder="Select a warehouse" />
+                                            <SelectValue placeholder={t('ws-groups.select_warehouse')} />
                                         </SelectTrigger>
                                         <SelectContent>
                                             {((warehouses ?? []) as WarehouseOption[]).map((wh) => (
                                                 <SelectItem key={wh.id} value={wh.id}>
-                                                    {wh.name || 'Unnamed Warehouse'}
+                                                    {wh.name || t('ws-inventory-warehouses.unnamed_warehouse')}
                                                 </SelectItem>
                                             ))}
                                         </SelectContent>
@@ -343,16 +344,16 @@ export default function LinkedProductsClient({
                             {selectedProduct && selectedWarehouse && (
                                 <div className="space-y-2">
                                     <Label htmlFor="unit-select">
-                                        Unit
+                                        {t('ws-inventory-units.singular')}
                                     </Label>
                                     <Select value={selectedUnit} onValueChange={setSelectedUnit}>
                                         <SelectTrigger>
-                                            <SelectValue placeholder="Select a unit" />
+                                            <SelectValue placeholder={t('ws-groups.select_unit')} />
                                         </SelectTrigger>
                                         <SelectContent>
                                             {getAvailableUnits(selectedProduct, selectedWarehouse).map((inventory) => (
                                                 <SelectItem key={inventory.unit_id} value={inventory.unit_id}>
-                                                    {inventory.inventory_units?.name || 'Unnamed Unit'}
+                                                    {inventory.inventory_units?.name || t('ws-inventory-units.unnamed_unit')}
                                                 </SelectItem>
                                             ))}
                                         </SelectContent>
@@ -366,10 +367,10 @@ export default function LinkedProductsClient({
                                 onClick={() => setIsAddDialogOpen(false)}
                                 disabled={loading}
                             >
-                                Cancel
+                                {t('ws-settings.cancel')}
                             </Button>
                             <Button onClick={handleAddProduct} disabled={loading || !selectedProduct || !selectedWarehouse || !selectedUnit}>
-                                {loading ? 'Adding...' : 'Add Product'}
+                                {loading ? t('ws-groups.linking') : t('ws-groups.link_product')}
                             </Button>
                         </DialogFooter>
                     </DialogContent>
@@ -379,72 +380,90 @@ export default function LinkedProductsClient({
             {count > 0 ? (
                 <div className="grid grid-cols-1 gap-2 lg:grid-cols-2">
                     {linkedProducts.map((product) => {
-                        const missingWarehouse = !product.warehouse_id;
-                        const missingUnit = !product.unit_id;
-                        const hasMissing = missingWarehouse || missingUnit;
-                        const warehouseName = getWarehouseName(product.warehouse_id);
-                        const unitName = getUnitName(product.id, product.warehouse_id, product.unit_id);
+                        const missingWarehouse = !product.warehouse_id
+                        const missingUnit = !product.unit_id
+                        const hasMissing = missingWarehouse || missingUnit
+                        const warehouseName = getWarehouseName(product.warehouse_id)
+                        const unitName = getUnitName(product.id, product.warehouse_id, product.unit_id)
                         return (
                             <div
                                 key={product.id}
-                                className="flex items-center justify-between rounded-lg border bg-background p-2 md:p-4"
+                                className="group flex items-center justify-between rounded-xl border border-border/50 bg-card/50 backdrop-blur-sm p-4 md:p-6 transition-all duration-200 hover:shadow-lg hover:shadow-black/5 hover:border-border hover:bg-card/80"
                             >
-                                <div className="flex items-center">
-                                    <Box className="mr-2 h-8 w-8" />
-                                    <div>
-                                        <div className="font-semibold text-lg">{product.name}</div>
+                                <div className="flex items-center space-x-4">
+                                    {/* <div className="flex-shrink-0 rounded-lg bg-primary/10 p-2.5 group-hover:bg-primary/15 transition-colors">
+                                        <Box className="h-6 w-6 text-primary" />
+                                    </div> */}
+                                    <div className="min-w-0 flex-1">
+                                        <div className="font-semibold text-lg text-foreground mb-1">{product.name}</div>
                                         {product.description && (
-                                            <div className="text-sm">{product.description}</div>
+                                            <div className="text-sm text-muted-foreground mb-2 line-clamp-2">{product.description}</div>
                                         )}
                                         {hasMissing && (
-                                            <div className="mt-1 text-xs text-dynamic-red">
-                                                {missingWarehouse && 'Missing warehouse'}{missingWarehouse && missingUnit ? ' • ' : ''}{missingUnit && 'Missing unit'}
+                                            <div className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-destructive/10 text-xs font-medium text-destructive">
+                                                <AlertCircle className="h-3 w-3" />
+                                                {missingWarehouse && t('ws-groups.missing_warehouse')}
+                                                {missingWarehouse && missingUnit ? " • " : ""}
+                                                {missingUnit && t('ws-groups.missing_unit')}
                                             </div>
                                         )}
                                         {!hasMissing && (warehouseName || unitName) && (
-                                            <div className="mt-1 text-xs text-muted-foreground">
-                                                {warehouseName && <span>Warehouse: {warehouseName}</span>}
-                                                {warehouseName && unitName && <span> • </span>}
-                                                {unitName && <span>Unit: {unitName}</span>}
+                                            <div className="flex justify-center gap-2 text-xs text-muted-foreground flex-col">
+                                                {warehouseName && (
+                                                    <div className="flex items-center gap-1.5">
+                                                        <Warehouse className="h-3.5 w-3.5" />
+                                                        <span className="sr-only">{t('ws-inventory-warehouses.singular')}</span>
+                                                        <span className="font-medium">{warehouseName}</span>
+                                                    </div>
+                                                )}
+                                                {unitName && (
+                                                    <div className="flex items-center gap-1.5">
+                                                        <RulerDimensionLine className="h-3.5 w-3.5" />
+                                                        <span className="sr-only">{t('ws-inventory-units.singular')}</span>
+                                                        <span className="font-medium">{unitName}</span>
+                                                    </div>
+                                                )}
                                             </div>
                                         )}
                                     </div>
                                 </div>
                                 <DropdownMenu>
                                     <DropdownMenuTrigger asChild>
-                                        <Button variant="ghost" size="sm">
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            className="opacity-60 group-hover:opacity-100 transition-opacity hover:bg-muted/80"
+                                        >
                                             <MoreHorizontal className="h-4 w-4" />
                                         </Button>
                                     </DropdownMenuTrigger>
-                                    <DropdownMenuContent align="end">
-                                        <DropdownMenuItem
-                                            onClick={() => openEditDialog(product)}
-                                        >
+                                    <DropdownMenuContent align="end" className="w-48">
+                                        <DropdownMenuItem onClick={() => openEditDialog(product)} className="cursor-pointer">
                                             <Pencil className="mr-2 h-4 w-4" />
-                                            Edit
+                                            {t('ws-groups.edit_product')}
                                         </DropdownMenuItem>
                                         <DropdownMenuItem
                                             onClick={() => {
-                                                setDeletingProduct(product);
-                                                setIsDeleteDialogOpen(true);
+                                                setDeletingProduct(product)
+                                                setIsDeleteDialogOpen(true)
                                             }}
-                                            className="text-dynamic-red"
+                                            className="text-dynamic-red cursor-pointer"
                                         >
                                             <Trash2 className="mr-2 h-4 w-4 text-dynamic-red" />
-                                            Remove
+                                            {t('ws-groups.remove_product')}
                                         </DropdownMenuItem>
                                     </DropdownMenuContent>
                                 </DropdownMenu>
                             </div>
-                        );
+                        )
                     })}
                 </div>
             ) : (
                 <div className="flex flex-col items-center justify-center py-8 text-center">
                     <Box className="mb-4 h-12 w-12 text-muted-foreground" />
-                    <div className="font-medium text-muted-foreground">No linked products</div>
+                    <div className="font-medium text-muted-foreground">{t('ws-groups.no_linked_products')}</div>
                     <div className="text-sm text-muted-foreground">
-                        Add products to link them to this group
+                        {t('ws-groups.add_products_to_link')}
                     </div>
                 </div>
             )}
@@ -453,10 +472,9 @@ export default function LinkedProductsClient({
             <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
                 <DialogContent>
                     <DialogHeader>
-                        <DialogTitle>Remove Linked Product</DialogTitle>
+                        <DialogTitle>{t('ws-groups.remove_linked_product')}</DialogTitle>
                         <DialogDescription>
-                            Are you sure you want to remove "{deletingProduct?.name}" from this group?
-                            This action cannot be undone.
+                            {t('ws-groups.confirm_remove_product', { productName: deletingProduct?.name ?? 'this product' })}
                         </DialogDescription>
                     </DialogHeader>
                     <DialogFooter>
@@ -465,14 +483,14 @@ export default function LinkedProductsClient({
                             onClick={() => setIsDeleteDialogOpen(false)}
                             disabled={loading}
                         >
-                            Cancel
+                            {t('ws-settings.cancel')}
                         </Button>
                         <Button
                             variant="destructive"
                             onClick={handleDeleteProduct}
                             disabled={loading}
                         >
-                            {loading ? 'Removing...' : 'Remove'}
+                            {loading ? t('ws-groups.removing') : t('ws-groups.remove')}
                         </Button>
                     </DialogFooter>
                 </DialogContent>
@@ -482,15 +500,15 @@ export default function LinkedProductsClient({
             <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
                 <DialogContent onWheel={(e) => e.stopPropagation()}>
                     <DialogHeader>
-                        <DialogTitle>Edit Linked Product</DialogTitle>
+                        <DialogTitle>{t('ws-groups.edit_linked_product')}</DialogTitle>
                         <DialogDescription>
-                            Update the warehouse and unit for this linked product.
+                            {t('ws-groups.update_warehouse_and_unit')}
                         </DialogDescription>
                     </DialogHeader>
                     <div className="space-y-4">
                         <div className="space-y-2">
                             <Label>
-                                Product
+                                {t('ws-inventory-products.singular')}
                             </Label>
                             <div className="text-sm">
                                 {editingProduct?.name}
@@ -498,16 +516,16 @@ export default function LinkedProductsClient({
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="edit-warehouse-select">
-                                Warehouse
+                                {t('ws-inventory-warehouses.singular')}
                             </Label>
                             <Select value={selectedWarehouse} onValueChange={setSelectedWarehouse}>
                                 <SelectTrigger>
-                                    <SelectValue placeholder="Select a warehouse" />
+                                    <SelectValue placeholder={t('ws-groups.select_warehouse')} />
                                 </SelectTrigger>
                                 <SelectContent>
                                     {((warehouses ?? []) as WarehouseOption[]).map((wh) => (
                                         <SelectItem key={wh.id} value={wh.id}>
-                                            {wh.name || 'Unnamed Warehouse'}
+                                            {wh.name || t('ws-inventory-warehouses.unnamed_warehouse')}
                                         </SelectItem>
                                     ))}
                                 </SelectContent>
@@ -516,16 +534,16 @@ export default function LinkedProductsClient({
                         {selectedWarehouse && editingProduct && (
                             <div className="space-y-2">
                                 <Label htmlFor="edit-unit-select">
-                                    Unit
+                                    {t('ws-inventory-units.singular')}
                                 </Label>
                                 <Select value={selectedUnit} onValueChange={setSelectedUnit}>
                                     <SelectTrigger>
-                                        <SelectValue placeholder="Select a unit" />
+                                        <SelectValue placeholder={t('ws-groups.select_unit')} />
                                     </SelectTrigger>
                                     <SelectContent>
                                         {getAvailableUnits(editingProduct.id, selectedWarehouse).map((inventory) => (
                                             <SelectItem key={inventory.unit_id} value={inventory.unit_id}>
-                                                {inventory.inventory_units?.name || 'Unnamed Unit'}
+                                                {inventory.inventory_units?.name || t('ws-inventory-units.unnamed_unit')}
                                             </SelectItem>
                                         ))}
                                     </SelectContent>
@@ -539,10 +557,10 @@ export default function LinkedProductsClient({
                             onClick={() => setIsEditDialogOpen(false)}
                             disabled={loading}
                         >
-                            Cancel
+                            {t('ws-settings.cancel')}
                         </Button>
                         <Button onClick={handleEditProduct} disabled={loading || !selectedWarehouse || !selectedUnit}>
-                            {loading ? 'Saving...' : 'Save'}
+                            {loading ? t('ws-groups.saving') : t('ws-groups.save')}
                         </Button>
                     </DialogFooter>
                 </DialogContent>

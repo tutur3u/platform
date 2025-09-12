@@ -1148,7 +1148,9 @@
     "url": "URL",
     "columns": "Columns",
     "rows": "Rows",
-    "type": "Type"
+    "type": "Type",
+    "link_product": "Link Product",
+    "link_product_description": "Select a product, along with its unit and warehouse to link to this group"
   },
   "email-data-table": {
     "id": "ID",
@@ -2780,6 +2782,7 @@
     "description": "Products are used as individual type of item that you have in your inventory and could be used to link with invoices.",
     "create": "Create product",
     "create_description": "Create a new product",
+    "unnamed_product": "Unnamed Product",
     "form": {
       "details": "Details",
       "name": "Product name",
@@ -2808,7 +2811,8 @@
     "description": "Units are used to measure inventory products.",
     "create": "Create unit",
     "create_description": "Create a new unit",
-    "placeholder": "Choose a unit"
+    "placeholder": "Choose a unit",
+    "unnamed_unit": "Unnamed Unit"
   },
   "ws-inventory-suppliers": {
     "plural": "Suppliers",
@@ -2823,7 +2827,8 @@
     "description": "Warehouses are used to store inventory products.",
     "create": "Create warehouse",
     "create_description": "Create a new warehouse",
-    "placeholder": "Choose a warehouse"
+    "placeholder": "Choose a warehouse",
+    "unnamed_warehouse": "Unnamed Warehouse"
   },
   "ws-inventory-batches": {
     "plural": "Batches",
@@ -4387,5 +4392,34 @@
     "no_recent_plans_title": "No recent plans",
     "no_recent_plans_desc": "Your latest TuMeet plans will appear here",
     "create_plan": "Create Plan"
+  },
+  "ws-groups": {
+    "select_warehouse": "Select Warehouse",
+    "select_unit": "Select Unit",
+    "linking": "Linking...",
+    "link_product": "Link Product",
+    "select_product_warehouse_unit": "Please select product, warehouse, and unit",
+    "failed_to_add_linked_product": "Failed to add linked product",
+    "linked_product_added_successfully": "Linked product added successfully",
+    "failed_to_delete_linked_product": "Failed to delete linked product",
+    "linked_product_removed_successfully": "Linked product removed successfully",
+    "failed_to_refresh_linked_products": "Failed to refresh linked products",
+    "select_warehouse_and_unit": "Please select warehouse and unit",
+    "failed_to_update_linked_product": "Failed to update linked product",
+    "linked_product_updated_successfully": "Linked product updated successfully",
+    "missing_warehouse": "Missing warehouse",
+    "missing_unit": "Missing unit",
+    "no_linked_products": "No linked products",
+    "add_products_to_link": "Add products to link them to this group",
+    "remove_linked_product": "Remove Linked Product",
+    "confirm_remove_product": "Are you sure you want to remove \"{productName}\" from this group? This action cannot be undone.",
+    "removing": "Removing...",
+    "remove": "Remove",
+    "edit_linked_product": "Edit Linked Product",
+    "update_warehouse_and_unit": "Update the warehouse and unit for this linked product.",
+    "saving": "Saving...",
+    "save": "Save",
+    "edit_product": "Edit Product",
+    "remove_product": "Remove Product"
   }
 }
