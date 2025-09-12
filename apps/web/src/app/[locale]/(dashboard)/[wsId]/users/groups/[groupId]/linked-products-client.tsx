@@ -41,7 +41,6 @@ import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
-
 interface LinkedProduct {
   id: string;
   name: string | null;
@@ -118,7 +117,9 @@ export const useWarehouses = (wsId: string) => {
 
       if (error) {
         toast(
-          error instanceof Error ? error.message : t('ws-groups.failed_to_fetch_warehouses')
+          error instanceof Error
+            ? error.message
+            : t('ws-groups.failed_to_fetch_warehouses')
         );
         return [];
       }
@@ -159,7 +160,11 @@ export default function LinkedProductsClient({
       productId,
       warehouseId,
       unitId,
-    }: { productId: string; warehouseId: string; unitId: string }) => {
+    }: {
+      productId: string;
+      warehouseId: string;
+      unitId: string;
+    }) => {
       const supabase = createClient();
       const { error } = await supabase
         .from('user_group_linked_products')
@@ -192,7 +197,11 @@ export default function LinkedProductsClient({
       queryClient.invalidateQueries({ queryKey: ['products', wsId] });
     },
     onError: (error: unknown) => {
-      toast(error instanceof Error ? error.message : t('ws-groups.failed_to_add_linked_product'));
+      toast(
+        error instanceof Error
+          ? error.message
+          : t('ws-groups.failed_to_add_linked_product')
+      );
     },
   });
 
@@ -216,7 +225,11 @@ export default function LinkedProductsClient({
       queryClient.invalidateQueries({ queryKey: ['products', wsId] });
     },
     onError: (error: unknown) => {
-      toast(error instanceof Error ? error.message : t('ws-groups.failed_to_delete_linked_product'));
+      toast(
+        error instanceof Error
+          ? error.message
+          : t('ws-groups.failed_to_delete_linked_product')
+      );
     },
   });
 
@@ -225,7 +238,11 @@ export default function LinkedProductsClient({
       productId,
       warehouseId,
       unitId,
-    }: { productId: string; warehouseId: string; unitId: string }) => {
+    }: {
+      productId: string;
+      warehouseId: string;
+      unitId: string;
+    }) => {
       const supabase = createClient();
       const { error } = await supabase
         .from('user_group_linked_products')
@@ -241,7 +258,9 @@ export default function LinkedProductsClient({
     onSuccess: ({ productId, warehouseId, unitId }) => {
       setLinkedProducts((prev) =>
         prev.map((p) =>
-          p.id === productId ? { ...p, warehouse_id: warehouseId, unit_id: unitId } : p
+          p.id === productId
+            ? { ...p, warehouse_id: warehouseId, unit_id: unitId }
+            : p
         )
       );
       setIsEditDialogOpen(false);
@@ -253,7 +272,11 @@ export default function LinkedProductsClient({
       queryClient.invalidateQueries({ queryKey: ['products', wsId] });
     },
     onError: (error: unknown) => {
-      toast(error instanceof Error ? error.message : t('ws-groups.failed_to_update_linked_product'));
+      toast(
+        error instanceof Error
+          ? error.message
+          : t('ws-groups.failed_to_update_linked_product')
+      );
     },
   });
 
@@ -310,15 +333,15 @@ export default function LinkedProductsClient({
 
     setLoading(true);
     try {
-      await deleteLinkedProductMutation.mutateAsync({ productId: deletingProduct.id });
+      await deleteLinkedProductMutation.mutateAsync({
+        productId: deletingProduct.id,
+      });
     } catch (_) {
       // error handled in onError
     } finally {
       setLoading(false);
     }
   };
-
-
 
   // Edit linked product (update warehouse and unit)
   const openEditDialog = (product: LinkedProduct) => {
