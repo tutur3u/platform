@@ -2771,7 +2771,8 @@
     "low_stock": "Low Stock",
     "add": "Add",
     "create_multiple_invoices": "Create Multiple Invoices",
-    "create_multiple_invoices_tooltip": "Allows you to create multiple invoices in a single session."
+    "create_multiple_invoices_tooltip": "Allows you to create multiple invoices in a single session.",
+    "inventory_fallback_used": "A warehouse was not specified so a default one has been selected"
   },
   "ws-inventory-products": {
     "plural": "Products",

@@ -57,6 +57,150 @@ interface Props {
   createMultipleInvoices: boolean;
 }
 
+const buildAutoSelectedProductsForGroup = (
+  groupLinked: any[],
+  allProducts: any[],
+  attendanceDays: number
+) => {
+  let fallbackTriggered = false;
+
+  const results: SelectedProductItem[] = [];
+
+  for (const linkItem of groupLinked || []) {
+    const productId = linkItem?.workspace_products?.id ?? linkItem?.product_id;
+    if (!productId) continue;
+
+    const desiredUnitId = linkItem.inventory_units.id;
+    const desiredWarehouseId = linkItem.warehouse_id ?? null;
+
+    const product = allProducts.find((p) => p.id === productId);
+    if (!product || !Array.isArray(product.inventory)) continue;
+
+    // Filter inventories by desired unit if provided; otherwise, use all
+    const inventoriesByUnit = desiredUnitId
+      ? product.inventory.filter((inv: any) => inv.unit_id === desiredUnitId)
+      : product.inventory;
+
+    if (!inventoriesByUnit.length) continue;
+
+    let chosenInventory: any | null = null;
+
+    if (desiredWarehouseId) {
+      // Try to find exact warehouse match first
+      chosenInventory = inventoriesByUnit.find(
+        (inv: any) => inv.warehouse_id === desiredWarehouseId
+      )
+        // Else pick first with available stock
+        || inventoriesByUnit.find(
+          (inv: any) => inv.amount === null || (inv.amount && inv.amount > 0)
+        )
+        // Else just pick the first
+        || inventoriesByUnit[0];
+      if (
+        !inventoriesByUnit.some((inv: any) => inv.warehouse_id === desiredWarehouseId)
+      ) {
+        // Provided warehouse not found; consider this a fallback too
+        fallbackTriggered = true;
+        // eslint-disable-next-line no-console
+        console.warn(
+          '[SubscriptionInvoice] Fallback inventory used because desired warehouse_id not found for',
+          { productId, desiredUnitId, desiredWarehouseId }
+        );
+      }
+    } else {
+      // No warehouse specified → fallback per requirement
+      chosenInventory =
+        inventoriesByUnit.find(
+          (inv: any) => inv.amount === null || (inv.amount && inv.amount > 0)
+        ) || inventoriesByUnit[0];
+      fallbackTriggered = true;
+      // eslint-disable-next-line no-console
+      console.warn(
+        '[SubscriptionInvoice] Fallback inventory used because warehouse_id not provided for',
+        { productId, desiredUnitId }
+      );
+    }
+
+    if (!chosenInventory) continue;
+
+    results.push({
+      product,
+      inventory: chosenInventory,
+      quantity: attendanceDays,
+    } as SelectedProductItem);
+  }
+
+  return { autoSelected: results, fallbackTriggered };
+};
+
+// Helper function to filter sessions by month
+const getSessionsForMonth = (
+  sessionsArray: string[] | null,
+  month: string
+): number => {
+  if (!Array.isArray(sessionsArray) || !month) return 0;
+
+  try {
+    const startOfMonth = new Date(month + '-01');
+    const nextMonth = new Date(startOfMonth);
+    nextMonth.setMonth(nextMonth.getMonth() + 1);
+
+    const filteredSessions = sessionsArray.filter((sessionDate) => {
+      if (!sessionDate) return false;
+      const sessionDateObj = new Date(sessionDate);
+      // Check if date is valid
+      if (isNaN(sessionDateObj.getTime())) return false;
+      return sessionDateObj >= startOfMonth && sessionDateObj < nextMonth;
+    });
+
+    return filteredSessions.length;
+  } catch (error) {
+    console.error('Error filtering sessions by month:', error);
+    return 0;
+  }
+};
+
+// Helper functions for attendance status counting
+const getAttendanceStats = (
+  attendance: { status: string; date: string }[]
+) => {
+  if (!attendance || !Array.isArray(attendance)) {
+    return { present: 0, late: 0, absent: 0, total: 0 };
+  }
+
+  return attendance.reduce(
+    (stats, record) => {
+      const status = record.status?.toUpperCase();
+      switch (status) {
+        case 'PRESENT':
+          stats.present++;
+          break;
+        case 'LATE':
+          stats.late++;
+          break;
+        case 'ABSENT':
+          stats.absent++;
+          break;
+        default:
+          // If status is unknown, count as present for backward compatibility
+          stats.present++;
+          break;
+      }
+      stats.total++;
+      return stats;
+    },
+    { present: 0, late: 0, absent: 0, total: 0 }
+  );
+};
+
+const getEffectiveAttendanceDays = (
+  attendance: { status: string; date: string }[]
+) => {
+  const stats = getAttendanceStats(attendance);
+  // Count both PRESENT and LATE as effective attendance
+  return stats.present + stats.late;
+};
+
 export function SubscriptionInvoice({
   wsId,
   selectedUserId,
@@ -127,11 +271,13 @@ export function SubscriptionInvoice({
   // Latest subscription invoice for paid state
   const { data: latestSubscriptionInvoice = [] } =
     useUserLatestSubscriptionInvoice(selectedUserId, selectedGroupId);
+
   const latestValidUntil: Date | null = useMemo(() => {
     const raw = latestSubscriptionInvoice[0]?.valid_until;
     const d = raw ? new Date(raw) : null;
     return d && !isNaN(d.getTime()) ? d : null;
   }, [latestSubscriptionInvoice]);
+
   const isSelectedMonthPaid = useMemo(() => {
     if (!latestValidUntil || !selectedMonth) return false;
     const selectedMonthStart = new Date(selectedMonth + '-01');
@@ -148,10 +294,12 @@ export function SubscriptionInvoice({
     selectedPromotionId === 'none'
       ? null
       : promotions.find(
-          (promotion: Promotion) => promotion.id === selectedPromotionId
-        );
+        (promotion: Promotion) => promotion.id === selectedPromotionId
+      );
+
   const isLoadingSubscriptionData =
     userGroupsLoading || userAttendanceLoading || groupProductsLoading;
+
   const isLoadingData =
     usersLoading ||
     productsLoading ||
@@ -159,13 +307,15 @@ export function SubscriptionInvoice({
     walletsLoading ||
     categoriesLoading;
 
-  // Show all products - don't filter by group to allow adding any products
-  const availableProducts = useMemo(() => {
-    return products;
-  }, [products]);
-
   // When switching groups: clear current selections and replace with the group's linked products
   const previousGroupIdRef = useRef<string>('');
+  const fallbackToastShownRef = useRef<boolean>(false);
+  /**
+   * Pick product inventories linked to the group respecting unit_id and warehouse_id.
+   * If warehouse_id is not provided or not found, fallback to the first inventory for that unit.
+   * Returns auto selected products and whether any fallback occurred (for logging/toast).
+   */
+
   useEffect(() => {
     if (!selectedGroupId || !groupProducts || groupProducts.length === 0) {
       return;
@@ -176,38 +326,27 @@ export function SubscriptionInvoice({
 
     if (!isGroupChanged) return;
 
+    // Reset one-time fallback toast when switching groups
+    fallbackToastShownRef.current = false;
+
     const attendanceDays = getEffectiveAttendanceDays(userAttendance);
 
-    // Get product IDs that are linked to the selected group
-    const groupProductIds = groupProducts
-      .map((item) => item.workspace_products?.id)
-      .filter(Boolean);
-
-    // Find the actual products from the full products list
-    const groupLinkedProducts = products.filter((product) =>
-      groupProductIds.includes(product.id)
+    const { autoSelected, fallbackTriggered } = buildAutoSelectedProductsForGroup(
+      groupProducts,
+      products,
+      attendanceDays
     );
 
-    // Create SelectedProductItem entries for group products with attendance-based quantity
-    const autoSelectedProducts: SelectedProductItem[] = groupLinkedProducts
-      .map((product) => {
-        // Choose the first available inventory or one with stock
-        const inventory =
-          product.inventory.find(
-            (inv) => inv.amount === null || (inv.amount && inv.amount > 0)
-          ) || product.inventory[0];
+    setSubscriptionSelectedProducts(autoSelected);
 
-        if (!inventory) return null; // Skip products without inventory
-
-        return {
-          product,
-          inventory,
-          quantity: attendanceDays,
-        } as SelectedProductItem;
-      })
-      .filter((item): item is SelectedProductItem => item !== null);
-
-    setSubscriptionSelectedProducts(autoSelectedProducts);
+    if (fallbackTriggered && !fallbackToastShownRef.current) {
+      toast(
+        t('ws-invoices.inventory_fallback_used', {
+          default: 'Some items used fallback warehouses due to missing preference.',
+        })
+      );
+      fallbackToastShownRef.current = true;
+    }
   }, [selectedGroupId, groupProducts, products]);
 
   // Auto-add group products based on attendance when group is selected
@@ -219,44 +358,19 @@ export function SubscriptionInvoice({
     const attendanceDays = getEffectiveAttendanceDays(userAttendance);
     if (attendanceDays === 0) return;
 
-    // Get product IDs that are linked to the selected group
-    const groupProductIds = groupProducts
-      .map((item) => item.workspace_products?.id)
-      .filter(Boolean);
-
-    if (groupProductIds.length === 0) return;
-
-    // Find the actual products from the full products list
-    const groupLinkedProducts = products.filter((product) =>
-      groupProductIds.includes(product.id)
+    const { autoSelected, fallbackTriggered } = buildAutoSelectedProductsForGroup(
+      groupProducts,
+      products,
+      attendanceDays
     );
 
-    // Create SelectedProductItem entries for group products
-    const autoSelectedProducts: SelectedProductItem[] = groupLinkedProducts
-      .map((product) => {
-        // Choose the first available inventory or one with stock
-        const inventory =
-          product.inventory.find(
-            (inv) => inv.amount === null || (inv.amount && inv.amount > 0)
-          ) || product.inventory[0];
-
-        if (!inventory) return null; // Skip products without inventory
-
-        return {
-          product,
-          inventory,
-          quantity: attendanceDays,
-        };
-      })
-      .filter((item): item is SelectedProductItem => item !== null); // Only include valid items
-
-    if (autoSelectedProducts.length === 0) return;
+    if (autoSelected.length === 0) return;
 
     // Add or update the selected products
     setSubscriptionSelectedProducts((prev) => {
       const updated = [...prev];
 
-      autoSelectedProducts.forEach((newItem) => {
+      autoSelected.forEach((newItem) => {
         const existingIndex = updated.findIndex(
           (item) =>
             item.product.id === newItem.product.id &&
@@ -281,6 +395,15 @@ export function SubscriptionInvoice({
 
       return updated;
     });
+
+    if (fallbackTriggered && !fallbackToastShownRef.current) {
+      toast(
+        t('ws-invoices.inventory_fallback_used', {
+          default: 'Some items used fallback warehouses due to missing preference.',
+        })
+      );
+      fallbackToastShownRef.current = true;
+    }
   }, [selectedGroupId, groupProducts, products, userAttendance?.length]);
 
   // Calculate totals for manual product selection
@@ -303,6 +426,7 @@ export function SubscriptionInvoice({
 
   const subscriptionTotalBeforeRounding =
     subscriptionSubtotal - subscriptionDiscountAmount;
+
   const [subscriptionRoundedTotal, setSubscriptionRoundedTotal] = useState(
     subscriptionTotalBeforeRounding
   );
@@ -373,73 +497,7 @@ export function SubscriptionInvoice({
     subscriptionSubtotal,
   ]);
 
-  // Helper function to filter sessions by month
-  const getSessionsForMonth = (
-    sessionsArray: string[] | null,
-    month: string
-  ): number => {
-    if (!Array.isArray(sessionsArray) || !month) return 0;
 
-    try {
-      const startOfMonth = new Date(month + '-01');
-      const nextMonth = new Date(startOfMonth);
-      nextMonth.setMonth(nextMonth.getMonth() + 1);
-
-      const filteredSessions = sessionsArray.filter((sessionDate) => {
-        if (!sessionDate) return false;
-        const sessionDateObj = new Date(sessionDate);
-        // Check if date is valid
-        if (isNaN(sessionDateObj.getTime())) return false;
-        return sessionDateObj >= startOfMonth && sessionDateObj < nextMonth;
-      });
-
-      return filteredSessions.length;
-    } catch (error) {
-      console.error('Error filtering sessions by month:', error);
-      return 0;
-    }
-  };
-
-  // Helper functions for attendance status counting
-  const getAttendanceStats = (
-    attendance: { status: string; date: string }[]
-  ) => {
-    if (!attendance || !Array.isArray(attendance)) {
-      return { present: 0, late: 0, absent: 0, total: 0 };
-    }
-
-    return attendance.reduce(
-      (stats, record) => {
-        const status = record.status?.toUpperCase();
-        switch (status) {
-          case 'PRESENT':
-            stats.present++;
-            break;
-          case 'LATE':
-            stats.late++;
-            break;
-          case 'ABSENT':
-            stats.absent++;
-            break;
-          default:
-            // If status is unknown, count as present for backward compatibility
-            stats.present++;
-            break;
-        }
-        stats.total++;
-        return stats;
-      },
-      { present: 0, late: 0, absent: 0, total: 0 }
-    );
-  };
-
-  const getEffectiveAttendanceDays = (
-    attendance: { status: string; date: string }[]
-  ) => {
-    const stats = getAttendanceStats(attendance);
-    // Count both PRESENT and LATE as effective attendance
-    return stats.present + stats.late;
-  };
 
   // Calculate subscription products based on attendance
   useEffect(() => {
@@ -752,9 +810,9 @@ export function SubscriptionInvoice({
         const roundingInfo =
           calculated_values.rounding_applied !== 0
             ? ` | ${t('ws-invoices.rounding')}: ${Intl.NumberFormat('vi-VN', {
-                style: 'currency',
-                currency: 'VND',
-              }).format(calculated_values.rounding_applied)}`
+              style: 'currency',
+              currency: 'VND',
+            }).format(calculated_values.rounding_applied)}`
             : '';
         toast(t('ws-invoices.subscription_invoice_created_recalculated'), {
           description: `${t('ws-invoices.server_calculated')}: ${Intl.NumberFormat(
@@ -891,11 +949,10 @@ export function SubscriptionInvoice({
                     return (
                       <div
                         key={group.id}
-                        className={`cursor-pointer rounded-lg border p-4 transition-colors ${
-                          selectedGroupId === group.id
-                            ? 'border-primary bg-primary/5'
-                            : 'hover:bg-muted/50'
-                        }`}
+                        className={`cursor-pointer rounded-lg border p-4 transition-colors ${selectedGroupId === group.id
+                          ? 'border-primary bg-primary/5'
+                          : 'hover:bg-muted/50'
+                          }`}
                         onClick={() => setSelectedGroupId(group.id)}
                       >
                         <div className="flex items-center justify-between">
@@ -943,7 +1000,7 @@ export function SubscriptionInvoice({
         {/* Product Selection */}
         {selectedGroupId && !isSelectedMonthPaid && (
           <ProductSelection
-            products={availableProducts}
+            products={products}
             selectedProducts={subscriptionSelectedProducts}
             onSelectedProductsChange={(newProducts) => {
               setSubscriptionSelectedProducts(newProducts);
@@ -1352,14 +1409,13 @@ export function SubscriptionInvoice({
                         ...promotions.map(
                           (promotion): ComboboxOptions => ({
                             value: promotion.id,
-                            label: `${promotion.name || t('ws-invoices.unnamed_promotion')} (${
-                              promotion.use_ratio
-                                ? `${promotion.value}%`
-                                : Intl.NumberFormat('vi-VN', {
-                                    style: 'currency',
-                                    currency: 'VND',
-                                  }).format(promotion.value)
-                            })`,
+                            label: `${promotion.name || t('ws-invoices.unnamed_promotion')} (${promotion.use_ratio
+                              ? `${promotion.value}%`
+                              : Intl.NumberFormat('vi-VN', {
+                                style: 'currency',
+                                currency: 'VND',
+                              }).format(promotion.value)
+                              })`,
                           })
                         ),
                       ]}
@@ -1429,25 +1485,25 @@ export function SubscriptionInvoice({
 
                         {Math.abs(
                           subscriptionRoundedTotal -
-                            subscriptionTotalBeforeRounding
+                          subscriptionTotalBeforeRounding
                         ) > 0.01 && (
-                          <div className="flex justify-between text-muted-foreground text-sm">
-                            <span>{t('ws-invoices.adjustment')}</span>
-                            <span>
-                              {subscriptionRoundedTotal >
-                              subscriptionTotalBeforeRounding
-                                ? '+'
-                                : ''}
-                              {Intl.NumberFormat('vi-VN', {
-                                style: 'currency',
-                                currency: 'VND',
-                              }).format(
-                                subscriptionRoundedTotal -
+                            <div className="flex justify-between text-muted-foreground text-sm">
+                              <span>{t('ws-invoices.adjustment')}</span>
+                              <span>
+                                {subscriptionRoundedTotal >
                                   subscriptionTotalBeforeRounding
-                              )}
-                            </span>
-                          </div>
-                        )}
+                                  ? '+'
+                                  : ''}
+                                {Intl.NumberFormat('vi-VN', {
+                                  style: 'currency',
+                                  currency: 'VND',
+                                }).format(
+                                  subscriptionRoundedTotal -
+                                  subscriptionTotalBeforeRounding
+                                )}
+                              </span>
+                            </div>
+                          )}
                       </div>
 
                       {/* Rounding Controls */}
@@ -1479,7 +1535,7 @@ export function SubscriptionInvoice({
                             disabled={
                               Math.abs(
                                 subscriptionRoundedTotal -
-                                  subscriptionTotalBeforeRounding
+                                subscriptionTotalBeforeRounding
                               ) < 0.01
                             }
                           >

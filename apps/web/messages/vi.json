@@ -2821,7 +2821,8 @@
     "low_stock": "Hàng Sắp Hết",
     "add": "Thêm",
     "create_multiple_invoices": "Tạo Nhiều Hóa Đơn",
-    "create_multiple_invoices_tooltip": "Cho phép bạn tạo nhiều hóa đơn trong một phiên làm việc."
+    "create_multiple_invoices_tooltip": "Cho phép bạn tạo nhiều hóa đơn trong một phiên làm việc.",
+    "inventory_fallback_used": "Kho lưu trữ không được chỉ định nên một kho mặc định đã được chọn"
   },
   "ws-inventory-products": {
     "plural": "Sản phẩm",

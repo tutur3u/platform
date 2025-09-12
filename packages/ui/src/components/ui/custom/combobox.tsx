@@ -71,12 +71,12 @@ export function Combobox({
       ? options.find((option) => option.value === selected)?.label
       : mode === 'multiple' && Array.isArray(selected)
         ? selected
-            .map(
-              (selectedValue) =>
-                options.find((option) => option.value === selectedValue)?.label
-            )
-            .filter(Boolean)
-            .join(', ')
+          .map(
+            (selectedValue) =>
+              options.find((option) => option.value === selectedValue)?.label
+          )
+          .filter(Boolean)
+          .join(', ')
         : undefined;
 
   return (

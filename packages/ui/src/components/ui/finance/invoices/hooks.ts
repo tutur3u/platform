@@ -246,7 +246,7 @@ export const useUserGroupProducts = (groupId: string) => {
       const { data, error } = await supabase
         .from('user_group_linked_products')
         .select(
-          'workspace_products(id, name, product_categories(name)), inventory_units(name)'
+          'workspace_products(id, name, product_categories(name)), inventory_units(name, id), warehouse_id'
         )
         .eq('group_id', groupId);
 
@@ -255,6 +255,7 @@ export const useUserGroupProducts = (groupId: string) => {
         throw error;
       }
 
+      console.log('Group products:', data);
       return data || [];
     },
     enabled: !!groupId,
