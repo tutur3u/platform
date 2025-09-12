@@ -39,7 +39,7 @@ import {
 } from '@tuturuuu/ui/icons';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 interface LinkedProduct {
   id: string;
@@ -93,9 +93,9 @@ export const useProducts = (wsId: string) => {
         toast(
           error instanceof Error
             ? error.message
-            : 'Failed to fetch available products'
+            : { t('ws-groups.failed_to_fetch_available_products') }
         );
-        return;
+        return [];
       }
       return data as WorkspaceProduct[];
     },
@@ -115,9 +115,9 @@ export const useWarehouses = (wsId: string) => {
 
       if (error) {
         toast(
-          error instanceof Error ? error.message : 'Failed to fetch warehouses'
+          error instanceof Error ? error.message : { t('ws-groups.failed_to_fetch_warehouses') }
         );
-        return;
+        return [];
       }
       return data as WarehouseOption[];
     },
@@ -135,6 +135,7 @@ export default function LinkedProductsClient({
   const [count, setCount] = useState(initialCount);
   const { data: workspaceProducts } = useProducts(wsId);
   const { data: warehouses } = useWarehouses(wsId);
+  const queryClient = useQueryClient();
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -148,6 +149,110 @@ export default function LinkedProductsClient({
     null
   );
   const [loading, setLoading] = useState(false);
+
+  // Mutations
+  const addLinkedProductMutation = useMutation({
+    mutationFn: async ({
+      productId,
+      warehouseId,
+      unitId,
+    }: { productId: string; warehouseId: string; unitId: string }) => {
+      const supabase = createClient();
+      const { error } = await supabase
+        .from('user_group_linked_products')
+        .insert({
+          group_id: groupId,
+          product_id: productId,
+          warehouse_id: warehouseId,
+          unit_id: unitId,
+        });
+      if (error) throw error;
+      const matched = (workspaceProducts ?? []).find((p) => p.id === productId);
+      const newLinked: LinkedProduct = {
+        id: productId,
+        name: matched?.name ?? null,
+        description: matched?.description ?? null,
+        warehouse_id: warehouseId,
+        unit_id: unitId,
+      };
+      return newLinked;
+    },
+    onSuccess: (newLinked) => {
+      setLinkedProducts((prev) => [...prev, newLinked]);
+      setCount((c) => c + 1);
+      setIsAddDialogOpen(false);
+      setSelectedProduct('');
+      setSelectedWarehouse('');
+      setSelectedUnit('');
+      toast(t('ws-groups.linked_product_added_successfully'));
+      // Optionally invalidate related queries if present elsewhere
+      queryClient.invalidateQueries({ queryKey: ['products', wsId] });
+    },
+    onError: (error: unknown) => {
+      toast(error instanceof Error ? error.message : t('ws-groups.failed_to_add_linked_product'));
+    },
+  });
+
+  const deleteLinkedProductMutation = useMutation({
+    mutationFn: async ({ productId }: { productId: string }) => {
+      const supabase = createClient();
+      const { error } = await supabase
+        .from('user_group_linked_products')
+        .delete()
+        .eq('group_id', groupId)
+        .eq('product_id', productId);
+      if (error) throw error;
+      return { productId };
+    },
+    onSuccess: ({ productId }) => {
+      setLinkedProducts((prev) => prev.filter((p) => p.id !== productId));
+      setCount((c) => Math.max(0, c - 1));
+      setIsDeleteDialogOpen(false);
+      setDeletingProduct(null);
+      toast(t('ws-groups.linked_product_removed_successfully'));
+      queryClient.invalidateQueries({ queryKey: ['products', wsId] });
+    },
+    onError: (error: unknown) => {
+      toast(error instanceof Error ? error.message : t('ws-groups.failed_to_delete_linked_product'));
+    },
+  });
+
+  const updateLinkedProductMutation = useMutation({
+    mutationFn: async ({
+      productId,
+      warehouseId,
+      unitId,
+    }: { productId: string; warehouseId: string; unitId: string }) => {
+      const supabase = createClient();
+      const { error } = await supabase
+        .from('user_group_linked_products')
+        .update({
+          warehouse_id: warehouseId,
+          unit_id: unitId,
+        })
+        .eq('group_id', groupId)
+        .eq('product_id', productId);
+      if (error) throw error;
+      return { productId, warehouseId, unitId };
+    },
+    onSuccess: ({ productId, warehouseId, unitId }) => {
+      setLinkedProducts((prev) =>
+        prev.map((p) =>
+          p.id === productId ? { ...p, warehouse_id: warehouseId, unit_id: unitId } : p
+        )
+      );
+      setIsEditDialogOpen(false);
+      setEditingProduct(null);
+      setSelectedProduct('');
+      setSelectedWarehouse('');
+      setSelectedUnit('');
+      toast(t('ws-groups.linked_product_updated_successfully'));
+      queryClient.invalidateQueries({ queryKey: ['products', wsId] });
+    },
+    onError: (error: unknown) => {
+      toast(error instanceof Error ? error.message : t('ws-groups.failed_to_update_linked_product'));
+    },
+  });
 
   // Get available units for selected product
   const getAvailableUnits = (productId: string, warehouseId: string) => {
@@ -183,34 +288,17 @@ export default function LinkedProductsClient({
     }
 
     setLoading(true);
-    const supabase = createClient();
-
-    const { error } = await supabase.from('user_group_linked_products').insert({
-      group_id: groupId,
-      product_id: selectedProduct,
-      warehouse_id: selectedWarehouse,
-      unit_id: selectedUnit,
-    });
-
-    if (error) {
-      toast(
-        error instanceof Error
-          ? error.message
-          : t('ws-groups.failed_to_add_linked_product')
-      );
+    try {
+      await addLinkedProductMutation.mutateAsync({
+        productId: selectedProduct,
+        warehouseId: selectedWarehouse,
+        unitId: selectedUnit,
+      });
+    } catch (_) {
+      // error handled in onError
+    } finally {
       setLoading(false);
-      return;
     }
-
-    // Refresh the data
-    await refreshLinkedProducts();
-    setIsAddDialogOpen(false);
-    setSelectedProduct('');
-    setSelectedWarehouse('');
-    setSelectedUnit('');
-    setLoading(false);
-
-    toast(t('ws-groups.linked_product_added_successfully'));
   };
 
   // Delete linked product
@@ -218,61 +306,16 @@ export default function LinkedProductsClient({
     if (!deletingProduct) return;
 
     setLoading(true);
-    const supabase = createClient();
-
-    const { error } = await supabase
-      .from('user_group_linked_products')
-      .delete()
-      .eq('group_id', groupId)
-      .eq('product_id', deletingProduct.id);
-
-    if (error) {
-      toast(
-        error instanceof Error
-          ? error.message
-          : t('ws-groups.failed_to_delete_linked_product')
-      );
+    try {
+      await deleteLinkedProductMutation.mutateAsync({ productId: deletingProduct.id });
+    } catch (_) {
+      // error handled in onError
+    } finally {
       setLoading(false);
-      return;
     }
-
-    // Refresh the data
-    await refreshLinkedProducts();
-    setIsDeleteDialogOpen(false);
-    setDeletingProduct(null);
-    setLoading(false);
-
-    toast(t('ws-groups.linked_product_removed_successfully'));
   };
 
-  // Refresh linked products data
-  const refreshLinkedProducts = async () => {
-    const supabase = createClient();
-    const {
-      data,
-      error,
-      count: newCount,
-    } = await supabase
-      .from('user_group_linked_products')
-      .select(
-        'warehouse_id, unit_id, ...workspace_products(id, name, description)',
-        { count: 'exact' }
-      )
-      .eq('group_id', groupId)
-      .order('created_at', { ascending: false });
 
-    if (error) {
-      toast(
-        error instanceof Error
-          ? error.message
-          : t('ws-groups.failed_to_refresh_linked_products')
-      );
-      return;
-    }
-
-    setLinkedProducts(data || []);
-    setCount(newCount || 0);
-  };
 
   // Edit linked product (update warehouse and unit)
   const openEditDialog = (product: LinkedProduct) => {
@@ -291,35 +334,17 @@ export default function LinkedProductsClient({
     }
 
     setLoading(true);
-    const supabase = createClient();
-
-    const { error } = await supabase
-      .from('user_group_linked_products')
-      .update({
-        warehouse_id: selectedWarehouse,
-        unit_id: selectedUnit,
-      })
-      .eq('group_id', groupId)
-      .eq('product_id', editingProduct.id);
-
-    if (error) {
-      toast(
-        error instanceof Error
-          ? error.message
-          : t('ws-groups.failed_to_update_linked_product')
-      );
+    try {
+      await updateLinkedProductMutation.mutateAsync({
+        productId: editingProduct.id,
+        warehouseId: selectedWarehouse,
+        unitId: selectedUnit,
+      });
+    } catch (_) {
+      // error handled in onError
+    } finally {
       setLoading(false);
-      return;
     }
-
-    await refreshLinkedProducts();
-    setIsEditDialogOpen(false);
-    setEditingProduct(null);
-    setSelectedProduct('');
-    setSelectedWarehouse('');
-    setSelectedUnit('');
-    setLoading(false);
-    toast(t('ws-groups.linked_product_updated_successfully'));
   };
 
   // Get available products for selection (excluding already linked ones)

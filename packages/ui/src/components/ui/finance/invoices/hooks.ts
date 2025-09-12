@@ -254,8 +254,6 @@ export const useUserGroupProducts = (groupId: string) => {
         console.error('❌ Group products fetch error:', error);
         throw error;
       }
-
-      console.log('Group products:', data);
       return data as UserGroupProducts[];
     },
     enabled: !!groupId,

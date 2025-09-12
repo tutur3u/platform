@@ -112,11 +112,6 @@ const buildAutoSelectedProductsForGroup = (
       ) {
         // Provided warehouse not found; consider this a fallback too
         fallbackTriggered = true;
-        // eslint-disable-next-line no-console
-        console.warn(
-          '[SubscriptionInvoice] Fallback inventory used because desired warehouse_id not found for',
-          { productId, desiredUnitId, desiredWarehouseId }
-        );
       }
     } else {
       // No warehouse specified → fallback per requirement
@@ -127,11 +122,6 @@ const buildAutoSelectedProductsForGroup = (
         inventoriesByUnit[0] ||
         null;
       fallbackTriggered = true;
-      // eslint-disable-next-line no-console
-      console.warn(
-        '[SubscriptionInvoice] Fallback inventory used because warehouse_id not provided for',
-        { productId, desiredUnitId }
-      );
     }
 
     if (!chosenInventory) continue;

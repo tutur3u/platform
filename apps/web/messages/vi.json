@@ -4329,6 +4329,8 @@
     "saving": "Đang lưu...",
     "save": "Lưu",
     "edit_product": "Chỉnh sửa sản phẩm",
-    "remove_product": "Xóa sản phẩm"
+    "remove_product": "Xóa sản phẩm",
+    "failed_to_fetch_warehouses": "Không lấy được kho hàng",
+    "failed_to_fetch_available_products": "Không lấy được các sản phẩm"
   }
 }

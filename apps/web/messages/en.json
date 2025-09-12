@@ -4420,6 +4420,8 @@
     "saving": "Saving...",
     "save": "Save",
     "edit_product": "Edit Product",
-    "remove_product": "Remove Product"
+    "remove_product": "Remove Product",
+    "failed_to_fetch_warehouses": "Failed to fetch warehouses",
+    "failed_to_fetch_available_products": "Failed to fetch available products"
   }
 }
