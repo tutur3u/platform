@@ -367,7 +367,10 @@ async function getLinkedProducts(groupId: string) {
   const supabase = await createClient();
   const { data, error, count } = await supabase
     .from('user_group_linked_products')
-    .select('warehouse_id, unit_id, ...workspace_products(id, name, description)', { count: 'exact' })
+    .select(
+      'warehouse_id, unit_id, ...workspace_products(id, name, description)',
+      { count: 'exact' }
+    )
     .eq('group_id', groupId)
     .order('created_at', { ascending: false });
 
