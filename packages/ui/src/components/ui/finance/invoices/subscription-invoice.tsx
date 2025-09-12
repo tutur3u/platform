@@ -35,7 +35,13 @@ import { useRouter } from 'next/navigation';
 import { ProductSelection } from './product-selection';
 import { toast } from '@tuturuuu/ui/sonner';
 import { Button } from '@tuturuuu/ui/button';
-import type { SelectedProductItem, Promotion, UserGroupProducts, Product, ProductInventory } from './types';
+import type {
+  SelectedProductItem,
+  Promotion,
+  UserGroupProducts,
+  Product,
+  ProductInventory,
+} from './types';
 
 import {
   useUsers,
@@ -88,17 +94,21 @@ const buildAutoSelectedProductsForGroup = (
 
     if (desiredWarehouseId) {
       // Try to find exact warehouse match first
-      chosenInventory = inventoriesByUnit.find(
-        (inv) => inv.warehouse_id === desiredWarehouseId
-      )
+      chosenInventory =
+        inventoriesByUnit.find(
+          (inv) => inv.warehouse_id === desiredWarehouseId
+        ) ||
         // Else pick first with available stock
-        || inventoriesByUnit.find(
+        inventoriesByUnit.find(
           (inv) => inv.amount === null || (inv.amount && inv.amount > 0)
-        )
+        ) ||
         // Else just pick the first
-        || inventoriesByUnit[0] || null;
+        inventoriesByUnit[0] ||
+        null;
       if (
-        !inventoriesByUnit.some((inv) => inv.warehouse_id === desiredWarehouseId)
+        !inventoriesByUnit.some(
+          (inv) => inv.warehouse_id === desiredWarehouseId
+        )
       ) {
         // Provided warehouse not found; consider this a fallback too
         fallbackTriggered = true;
@@ -113,7 +123,9 @@ const buildAutoSelectedProductsForGroup = (
       chosenInventory =
         inventoriesByUnit.find(
           (inv) => inv.amount === null || (inv.amount && inv.amount > 0)
-        ) || inventoriesByUnit[0] || null;
+        ) ||
+        inventoriesByUnit[0] ||
+        null;
       fallbackTriggered = true;
       // eslint-disable-next-line no-console
       console.warn(
@@ -162,9 +174,7 @@ const getSessionsForMonth = (
 };
 
 // Helper functions for attendance status counting
-const getAttendanceStats = (
-  attendance: { status: string; date: string }[]
-) => {
+const getAttendanceStats = (attendance: { status: string; date: string }[]) => {
   if (!attendance || !Array.isArray(attendance)) {
     return { present: 0, late: 0, absent: 0, total: 0 };
   }
@@ -295,8 +305,8 @@ export function SubscriptionInvoice({
     selectedPromotionId === 'none'
       ? null
       : promotions.find(
-        (promotion: Promotion) => promotion.id === selectedPromotionId
-      );
+          (promotion: Promotion) => promotion.id === selectedPromotionId
+        );
 
   const isLoadingSubscriptionData =
     userGroupsLoading || userAttendanceLoading || groupProductsLoading;
@@ -332,18 +342,20 @@ export function SubscriptionInvoice({
 
     const attendanceDays = getEffectiveAttendanceDays(userAttendance);
 
-    const { autoSelected, fallbackTriggered } = buildAutoSelectedProductsForGroup(
-      groupProducts,
-      products,
-      attendanceDays
-    );
+    const { autoSelected, fallbackTriggered } =
+      buildAutoSelectedProductsForGroup(
+        groupProducts,
+        products,
+        attendanceDays
+      );
 
     setSubscriptionSelectedProducts(autoSelected);
 
     if (fallbackTriggered && !fallbackToastShownRef.current) {
       toast(
         t('ws-invoices.inventory_fallback_used', {
-          default: 'Some items used fallback warehouses due to missing preference.',
+          default:
+            'Some items used fallback warehouses due to missing preference.',
         })
       );
       fallbackToastShownRef.current = true;
@@ -359,11 +371,12 @@ export function SubscriptionInvoice({
     const attendanceDays = getEffectiveAttendanceDays(userAttendance);
     if (attendanceDays === 0) return;
 
-    const { autoSelected, fallbackTriggered } = buildAutoSelectedProductsForGroup(
-      groupProducts,
-      products,
-      attendanceDays
-    );
+    const { autoSelected, fallbackTriggered } =
+      buildAutoSelectedProductsForGroup(
+        groupProducts,
+        products,
+        attendanceDays
+      );
 
     if (autoSelected.length === 0) return;
 
@@ -400,7 +413,8 @@ export function SubscriptionInvoice({
     if (fallbackTriggered && !fallbackToastShownRef.current) {
       toast(
         t('ws-invoices.inventory_fallback_used', {
-          default: 'Some items used fallback warehouses due to missing preference.',
+          default:
+            'Some items used fallback warehouses due to missing preference.',
         })
       );
       fallbackToastShownRef.current = true;
@@ -497,8 +511,6 @@ export function SubscriptionInvoice({
     selectedPromotionId,
     subscriptionSubtotal,
   ]);
-
-
 
   // Calculate subscription products based on attendance
   useEffect(() => {
@@ -811,9 +823,9 @@ export function SubscriptionInvoice({
         const roundingInfo =
           calculated_values.rounding_applied !== 0
             ? ` | ${t('ws-invoices.rounding')}: ${Intl.NumberFormat('vi-VN', {
-              style: 'currency',
-              currency: 'VND',
-            }).format(calculated_values.rounding_applied)}`
+                style: 'currency',
+                currency: 'VND',
+              }).format(calculated_values.rounding_applied)}`
             : '';
         toast(t('ws-invoices.subscription_invoice_created_recalculated'), {
           description: `${t('ws-invoices.server_calculated')}: ${Intl.NumberFormat(
@@ -950,10 +962,11 @@ export function SubscriptionInvoice({
                     return (
                       <div
                         key={group.id}
-                        className={`cursor-pointer rounded-lg border p-4 transition-colors ${selectedGroupId === group.id
-                          ? 'border-primary bg-primary/5'
-                          : 'hover:bg-muted/50'
-                          }`}
+                        className={`cursor-pointer rounded-lg border p-4 transition-colors ${
+                          selectedGroupId === group.id
+                            ? 'border-primary bg-primary/5'
+                            : 'hover:bg-muted/50'
+                        }`}
                         onClick={() => setSelectedGroupId(group.id)}
                       >
                         <div className="flex items-center justify-between">
@@ -1410,13 +1423,14 @@ export function SubscriptionInvoice({
                         ...promotions.map(
                           (promotion): ComboboxOptions => ({
                             value: promotion.id,
-                            label: `${promotion.name || t('ws-invoices.unnamed_promotion')} (${promotion.use_ratio
-                              ? `${promotion.value}%`
-                              : Intl.NumberFormat('vi-VN', {
-                                style: 'currency',
-                                currency: 'VND',
-                              }).format(promotion.value)
-                              })`,
+                            label: `${promotion.name || t('ws-invoices.unnamed_promotion')} (${
+                              promotion.use_ratio
+                                ? `${promotion.value}%`
+                                : Intl.NumberFormat('vi-VN', {
+                                    style: 'currency',
+                                    currency: 'VND',
+                                  }).format(promotion.value)
+                            })`,
                           })
                         ),
                       ]}
@@ -1486,25 +1500,25 @@ export function SubscriptionInvoice({
 
                         {Math.abs(
                           subscriptionRoundedTotal -
-                          subscriptionTotalBeforeRounding
+                            subscriptionTotalBeforeRounding
                         ) > 0.01 && (
-                            <div className="flex justify-between text-muted-foreground text-sm">
-                              <span>{t('ws-invoices.adjustment')}</span>
-                              <span>
-                                {subscriptionRoundedTotal >
+                          <div className="flex justify-between text-muted-foreground text-sm">
+                            <span>{t('ws-invoices.adjustment')}</span>
+                            <span>
+                              {subscriptionRoundedTotal >
+                              subscriptionTotalBeforeRounding
+                                ? '+'
+                                : ''}
+                              {Intl.NumberFormat('vi-VN', {
+                                style: 'currency',
+                                currency: 'VND',
+                              }).format(
+                                subscriptionRoundedTotal -
                                   subscriptionTotalBeforeRounding
-                                  ? '+'
-                                  : ''}
-                                {Intl.NumberFormat('vi-VN', {
-                                  style: 'currency',
-                                  currency: 'VND',
-                                }).format(
-                                  subscriptionRoundedTotal -
-                                  subscriptionTotalBeforeRounding
-                                )}
-                              </span>
-                            </div>
-                          )}
+                              )}
+                            </span>
+                          </div>
+                        )}
                       </div>
 
                       {/* Rounding Controls */}
@@ -1536,7 +1550,7 @@ export function SubscriptionInvoice({
                             disabled={
                               Math.abs(
                                 subscriptionRoundedTotal -
-                                subscriptionTotalBeforeRounding
+                                  subscriptionTotalBeforeRounding
                               ) < 0.01
                             }
                           >

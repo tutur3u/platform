@@ -10,7 +10,12 @@ import {
   AlertDialogTrigger,
 } from '@tuturuuu/ui/alert-dialog';
 import { Button } from '@tuturuuu/ui/button';
-import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuTrigger } from '@tuturuuu/ui/dropdown-menu';
+import {
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuTrigger,
+} from '@tuturuuu/ui/dropdown-menu';
 import {
   Dialog,
   DialogContent,
@@ -20,7 +25,14 @@ import {
   DialogTitle,
 } from '@tuturuuu/ui/dialog';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
-import { BookPlus, Clock, Eye, Pencil, Trash2, Settings } from '@tuturuuu/ui/icons';
+import {
+  BookPlus,
+  Clock,
+  Eye,
+  Pencil,
+  Trash2,
+  Settings,
+} from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
 import { Separator } from '@tuturuuu/ui/separator';
@@ -159,14 +171,17 @@ export default function UserGroupPosts({
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuCheckboxItem className="flex items-center" id="show-post-content"
+              <DropdownMenuCheckboxItem
+                className="flex items-center"
+                id="show-post-content"
                 checked={configs.showContent}
                 onCheckedChange={(checked) =>
                   setConfigs((prev) => ({
                     ...prev,
                     showContent: Boolean(checked),
                   }))
-                }>
+                }
+              >
                 <Label
                   htmlFor="show-post-content"
                   className="font-medium text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
@@ -174,14 +189,17 @@ export default function UserGroupPosts({
                   {t('ws-user-groups.show_post_content')}
                 </Label>
               </DropdownMenuCheckboxItem>
-              <DropdownMenuCheckboxItem className="flex items-center" id="show-post-status"
+              <DropdownMenuCheckboxItem
+                className="flex items-center"
+                id="show-post-status"
                 checked={configs.showStatus}
                 onCheckedChange={(checked) =>
                   setConfigs((prev) => ({
                     ...prev,
                     showStatus: Boolean(checked),
                   }))
-                }>
+                }
+              >
                 <Label
                   htmlFor="show-post-status"
                   className="font-medium text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
@@ -267,7 +285,7 @@ export default function UserGroupPosts({
               className={cn(
                 'flex flex-col gap-2 rounded border p-2 transition duration-300 hover:border-foreground hover:bg-foreground/5',
                 selectedPostId === post.id &&
-                'border-foreground bg-foreground/5',
+                  'border-foreground bg-foreground/5',
                 onClick ? 'cursor-pointer' : ''
               )}
               onClick={() => post.id && onClick && onClick(post.id)}
@@ -281,7 +299,9 @@ export default function UserGroupPosts({
             >
               <div className="flex items-start justify-between">
                 <div>
-                  <div className="font-semibold text-sm text-left">{post.title}</div>
+                  <div className="font-semibold text-sm text-left">
+                    {post.title}
+                  </div>
                   <div className="flex flex-wrap items-center gap-2 font-semibold">
                     {post?.group_name && (
                       <div className="flex w-fit items-center gap-0.5 rounded bg-foreground px-2 py-1 text-background text-xs">
@@ -305,7 +325,11 @@ export default function UserGroupPosts({
                           : '#'
                       }
                     >
-                      <Button size="sm" variant="outline" onClick={(e) => e.stopPropagation()}>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={(e) => e.stopPropagation()}
+                      >
                         <Eye className="h-4 w-4" />
                       </Button>
                     </Link>
@@ -321,7 +345,11 @@ export default function UserGroupPosts({
                     </Button>
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
-                        <Button size="sm" variant="destructive" onClick={(e) => e.stopPropagation()}>
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          onClick={(e) => e.stopPropagation()}
+                        >
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       </AlertDialogTrigger>

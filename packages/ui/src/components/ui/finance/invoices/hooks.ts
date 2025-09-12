@@ -7,8 +7,6 @@ import type { Transaction } from '@tuturuuu/types/primitives/Transaction';
 import type { Invoice } from '@tuturuuu/types/primitives/Invoice';
 import type { Product, Promotion, UserGroupProducts } from './types';
 
-
-
 // React Query hooks for data fetching
 export const useUsers = (wsId: string) => {
   return useQuery({
