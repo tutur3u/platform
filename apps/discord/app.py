@@ -419,7 +419,7 @@ def create_slash_command(force: bool = False):
         print(f"🤖: command {command_name} created successfully")
 
 
-@app.function(secrets=[discord_secret, supabase_secret], image=image)
+@app.function(secrets=[discord_secret, supabase_secret], min_containers=1, image=image)
 @modal.concurrent(max_inputs=1000)
 @modal.asgi_app()
 def web_app():
