@@ -46,86 +46,6 @@ discord_secret = modal.Secret.from_name(
 )
 
 
-@app.function(secrets=[supabase_secret], image=image)
-@modal.concurrent(max_inputs=1000)
-async def fetch_api() -> str:
-    """Fetch random API data (legacy function for backward compatibility)."""
-    handler = CommandHandler()
-    return await handler._fetch_api_data()
-
-
-@app.local_entrypoint()
-def test_fetch_api():
-    """Test the API wrapper."""
-    result = fetch_api.remote()
-    if result.startswith("# 🤖: Oops! "):  # type: ignore
-        raise Exception(result)
-    else:
-        print(result)
-
-
-@app.function(secrets=[supabase_secret], image=image)
-@modal.concurrent(max_inputs=1000)
-async def reply(
-    app_id: str, interaction_token: str, user_id: Optional[str] = None, guild_id: Optional[str] = None
-):
-    """Handle /api command with authorization."""
-    handler = CommandHandler()
-
-    # Check authorization
-    if user_id:
-        if guild_id:
-            if not handler.is_user_authorized(user_id, guild_id):
-                print(f"🤖: unauthorized user {user_id} in guild {guild_id}")
-                await handler.discord_client.send_response(
-                    {
-                        "content": handler.discord_client.format_unauthorized_user_message()
-                    },
-                    app_id,
-                    interaction_token,
-                )
-                return
-        else:
-            if not handler.is_user_authorized_for_dm(user_id):
-                print(f"🤖: unauthorized user {user_id} in DM")
-                await handler.discord_client.send_response(
-                    {
-                        "content": handler.discord_client.format_unauthorized_user_message()
-                    },
-                    app_id,
-                    interaction_token,
-                )
-                return
-
-    # Get user info for context
-    user_info = None
-    if user_id:
-        user_info = handler.get_user_workspace_info(user_id, guild_id or "")
-        if user_info:
-            print(
-                f"🤖: authorized user {user_id} ({user_info.get('display_name', 'Unknown')}) from workspace {user_info.get('workspace_id')}"
-            )
-
-    try:
-        print(f"🤖: Calling handle_api_command for user {user_id}")
-        if user_info:
-            await handler.handle_api_command(app_id, interaction_token, user_info)
-        else:
-            await handler.handle_api_command(app_id, interaction_token, None)  # type: ignore[arg-type]
-        print(f"🤖: handle_api_command completed successfully")
-    except Exception as e:
-        print(f"🤖: Error in handle_api_command: {e}")
-        import traceback
-
-        traceback.print_exc()
-
-        # Send error response to Discord
-        try:
-            await handler.discord_client.send_response(
-                {"content": f"❌ **Error:** {str(e)}"}, app_id, interaction_token
-            )
-        except Exception as response_error:
-            print(f"🤖: Failed to send error response: {response_error}")
 
 
 @app.function(secrets=[supabase_secret], image=image)
@@ -587,10 +507,7 @@ def web_app():
             print(f"🤖: deferring response for user {user_id} in guild {guild_id}")
 
             # Handle different commands asynchronously
-            if command_name == "api":
-                # kick off request asynchronously, will handle authorization
-                reply.spawn(app_id, interaction_token, user_id, guild_id)
-            elif command_name == "shorten":
+            if command_name == "shorten":
                 # Handle link shortening
                 options = data["data"].get("options", [])
                 url = None

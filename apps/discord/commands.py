@@ -24,10 +24,6 @@ class CommandHandler:
         """Get all slash command definitions."""
         return [
             {
-                "name": "api",
-                "description": "Information about a random free, public API",
-            },
-            {
                 "name": "shorten",
                 "description": "Shorten a URL",
                 "options": [
@@ -85,22 +81,6 @@ class CommandHandler:
         """Get workspace information for a Discord user in a specific guild."""
         return get_user_workspace_info(discord_user_id, guild_id)
 
-    async def handle_api_command(
-        self, app_id: str, interaction_token: str, user_info: Optional[dict] = None
-    ) -> None:
-        """Handle the /api command."""
-        message = await self._fetch_api_data()
-
-        # Add user context if available
-        if user_info:
-            user_name = (
-                user_info.get("display_name") or user_info.get("handle") or "User"
-            )
-            message = f"**Requested by {user_name}**\n\n{message}"
-
-        await self.discord_client.send_response(
-            {"content": message}, app_id, interaction_token
-        )
 
     async def handle_shorten_command(
         self,
@@ -452,18 +432,3 @@ class CommandHandler:
 
         return report
 
-    async def _fetch_api_data(self) -> str:
-        """Fetch random API data."""
-        url = "https://www.freepublicapis.com/api/random"
-
-        async with aiohttp.ClientSession() as session:
-            try:
-                async with session.get(url) as response:
-                    response.raise_for_status()
-                    data = await response.json()
-                    message = f"# {data.get('emoji') or '🤖'} [{data['title']}]({data['source']})"
-                    message += f"\n _{''.join(data['description'].splitlines())}_"
-            except Exception as e:
-                message = f"# 🤖: Oops! {e}"
-
-        return message
