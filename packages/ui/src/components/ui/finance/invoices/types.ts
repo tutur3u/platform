@@ -58,3 +58,18 @@ export interface Promotion {
   creator_id: string | null;
   description: string | null;
 }
+
+export interface UserGroupProducts {
+  workspace_products: {
+    id: string;
+    name: string | null;
+    product_categories: {
+      name: string | null;
+    };
+  };
+  inventory_units: {
+    name: string | null;
+    id: string;
+  };
+  warehouse_id: string | null;
+}

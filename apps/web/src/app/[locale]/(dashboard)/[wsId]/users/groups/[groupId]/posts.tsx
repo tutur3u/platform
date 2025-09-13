@@ -10,7 +10,12 @@ import {
   AlertDialogTrigger,
 } from '@tuturuuu/ui/alert-dialog';
 import { Button } from '@tuturuuu/ui/button';
-import { Checkbox } from '@tuturuuu/ui/checkbox';
+import {
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuTrigger,
+} from '@tuturuuu/ui/dropdown-menu';
 import {
   Dialog,
   DialogContent,
@@ -20,7 +25,14 @@ import {
   DialogTitle,
 } from '@tuturuuu/ui/dialog';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
-import { BookPlus, Clock, Eye, Pencil, Trash2 } from '@tuturuuu/ui/icons';
+import {
+  BookPlus,
+  Clock,
+  Eye,
+  Pencil,
+  Trash2,
+  Settings,
+} from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
 import { Separator } from '@tuturuuu/ui/separator';
@@ -140,55 +152,64 @@ export default function UserGroupPosts({
 
   return (
     <>
-      <div className="flex items-start justify-between">
-        <div className="grid gap-1">
-          <div className="mb-2 font-semibold text-xl">
-            {t('ws-user-groups.posts')}
-            {!!count && ` (${count})`}
-          </div>
-          <div className="flex items-center space-x-2">
-            <Checkbox
-              id="show-post-content"
-              checked={configs.showContent}
-              onCheckedChange={(checked) =>
-                setConfigs((prev) => ({
-                  ...prev,
-                  showContent: Boolean(checked),
-                }))
-              }
-            />
-            <label
-              htmlFor="show-post-content"
-              className="font-medium text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-            >
-              {t('ws-user-groups.show_post_content')}
-            </label>
-          </div>
-          <div className="flex items-center space-x-2">
-            <Checkbox
-              id="show-post-status"
-              checked={configs.showStatus}
-              onCheckedChange={(checked) =>
-                setConfigs((prev) => ({
-                  ...prev,
-                  showStatus: Boolean(checked),
-                }))
-              }
-            />
-            <label
-              htmlFor="show-post-status"
-              className="font-medium text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-            >
-              {t('ws-user-groups.show_post_status')}
-            </label>
-          </div>
+      <div className="flex flex-row items-center gap-2 justify-between">
+        <div className="font-semibold text-xl">
+          {t('ws-user-groups.posts')}
+          {!!count && ` (${count})`}
         </div>
-        {groupId && (
-          <Button onClick={() => handleOpenDialog()}>
-            <BookPlus className="mr-1 h-5 w-5" />
-            {t('ws-user-groups.add_post')}
-          </Button>
-        )}
+        <div className="flex items-center gap-2">
+          {groupId && (
+            <Button onClick={() => handleOpenDialog()}>
+              <BookPlus className="mr-1 h-5 w-5" />
+              {t('ws-user-groups.add_post')}
+            </Button>
+          )}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline">
+                <Settings className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuCheckboxItem
+                className="flex items-center"
+                id="show-post-content"
+                checked={configs.showContent}
+                onCheckedChange={(checked) =>
+                  setConfigs((prev) => ({
+                    ...prev,
+                    showContent: Boolean(checked),
+                  }))
+                }
+              >
+                <Label
+                  htmlFor="show-post-content"
+                  className="font-medium text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                >
+                  {t('ws-user-groups.show_post_content')}
+                </Label>
+              </DropdownMenuCheckboxItem>
+              <DropdownMenuCheckboxItem
+                className="flex items-center"
+                id="show-post-status"
+                checked={configs.showStatus}
+                onCheckedChange={(checked) =>
+                  setConfigs((prev) => ({
+                    ...prev,
+                    showStatus: Boolean(checked),
+                  }))
+                }
+              >
+                <Label
+                  htmlFor="show-post-status"
+                  className="font-medium text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                >
+                  {t('ws-user-groups.show_post_status')}
+                </Label>
+              </DropdownMenuCheckboxItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       </div>
       <Separator className="mt-4 w-full" />
       <div className="flex max-h-96 flex-col gap-2 overflow-y-auto py-4">
@@ -257,20 +278,30 @@ export default function UserGroupPosts({
 
         {posts.length > 0 ? (
           posts.map((post) => (
-            <button
-              type="button"
+            <div
               key={post.id}
+              role={onClick ? 'button' : undefined}
+              tabIndex={onClick ? 0 : -1}
               className={cn(
                 'flex flex-col gap-2 rounded border p-2 transition duration-300 hover:border-foreground hover:bg-foreground/5',
                 selectedPostId === post.id &&
                   'border-foreground bg-foreground/5',
-                groupId || 'cursor-pointer'
+                onClick ? 'cursor-pointer' : ''
               )}
               onClick={() => post.id && onClick && onClick(post.id)}
+              onKeyDown={(e) => {
+                if (!onClick) return;
+                if ((e.key === 'Enter' || e.key === ' ') && post.id) {
+                  e.preventDefault();
+                  onClick(post.id);
+                }
+              }}
             >
               <div className="flex items-start justify-between">
                 <div>
-                  <div className="font-semibold text-sm">{post.title}</div>
+                  <div className="font-semibold text-sm text-left">
+                    {post.title}
+                  </div>
                   <div className="flex flex-wrap items-center gap-2 font-semibold">
                     {post?.group_name && (
                       <div className="flex w-fit items-center gap-0.5 rounded bg-foreground px-2 py-1 text-background text-xs">
@@ -294,20 +325,31 @@ export default function UserGroupPosts({
                           : '#'
                       }
                     >
-                      <Button size="sm" variant="outline">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={(e) => e.stopPropagation()}
+                      >
                         <Eye className="h-4 w-4" />
                       </Button>
                     </Link>
                     <Button
                       size="sm"
                       variant="outline"
-                      onClick={() => handleOpenDialog(post)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleOpenDialog(post);
+                      }}
                     >
                       <Pencil className="h-4 w-4" />
                     </Button>
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
-                        <Button size="sm" variant="destructive">
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          onClick={(e) => e.stopPropagation()}
+                        >
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       </AlertDialogTrigger>
@@ -343,7 +385,7 @@ export default function UserGroupPosts({
               {configs.showStatus && groupId && post.id && (
                 <PostEmailStatus groupId={groupId} postId={post.id} />
               )}
-            </button>
+            </div>
           ))
         ) : (
           <div className="text-center text-sm opacity-50">

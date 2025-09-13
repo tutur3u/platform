@@ -5,7 +5,7 @@ import type { Wallet } from '@tuturuuu/types/primitives/Wallet';
 import type { TransactionCategory } from '@tuturuuu/types/primitives/TransactionCategory';
 import type { Transaction } from '@tuturuuu/types/primitives/Transaction';
 import type { Invoice } from '@tuturuuu/types/primitives/Invoice';
-import type { Product, Promotion } from './types';
+import type { Product, Promotion, UserGroupProducts } from './types';
 
 // React Query hooks for data fetching
 export const useUsers = (wsId: string) => {
@@ -246,7 +246,7 @@ export const useUserGroupProducts = (groupId: string) => {
       const { data, error } = await supabase
         .from('user_group_linked_products')
         .select(
-          'workspace_products(id, name, product_categories(name)), inventory_units(name)'
+          'workspace_products(id, name, product_categories(name)), inventory_units(name, id), warehouse_id'
         )
         .eq('group_id', groupId);
 
@@ -254,8 +254,7 @@ export const useUserGroupProducts = (groupId: string) => {
         console.error('❌ Group products fetch error:', error);
         throw error;
       }
-
-      return data || [];
+      return data as UserGroupProducts[];
     },
     enabled: !!groupId,
     staleTime: 5 * 60 * 1000, // 5 minutes

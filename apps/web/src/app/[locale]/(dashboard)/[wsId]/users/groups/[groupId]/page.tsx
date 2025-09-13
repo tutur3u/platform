@@ -5,7 +5,6 @@ import type { WorkspaceUserField } from '@tuturuuu/types/primitives/WorkspaceUse
 import { Button } from '@tuturuuu/ui/button';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import {
-  Box,
   Calendar,
   ChartColumn,
   FileUser,
@@ -26,6 +25,7 @@ import ExternalGroupMembers from './external-group-members';
 import GroupMemberForm from './form';
 import PostsClient from './posts-client';
 import GroupSchedule from './schedule';
+import LinkedProductsClient from './linked-products-client';
 
 interface SearchParams {
   q?: string;
@@ -200,30 +200,12 @@ export default async function UserGroupDetailsPage({
           />
         </div>
 
-        {lpCount ? (
-          <div className="flex flex-col rounded-lg border border-border bg-foreground/5 p-4">
-            <div className="mb-2 font-semibold text-xl">
-              {t('user-data-table.linked_products')}
-              {!!lpCount && ` (${lpCount})`}
-            </div>
-            <div className="grid grid-cols-1 gap-2 lg:grid-cols-2">
-              {linkedProducts.map((product) => (
-                <div
-                  key={product.id}
-                  className="flex items-center rounded-lg border bg-background p-2 md:p-4"
-                >
-                  <Box className="mr-2 h-8 w-8" />
-                  <div>
-                    <div className="font-semibold text-lg">{product.name}</div>
-                    {product.description && (
-                      <div className="text-sm">{product.description}</div>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        ) : null}
+        <LinkedProductsClient
+          wsId={wsId}
+          groupId={groupId}
+          initialLinkedProducts={linkedProducts}
+          initialCount={lpCount || 0}
+        />
       </div>
       <Separator className="my-4" />
       <CustomDataTable
@@ -385,12 +367,15 @@ async function getLinkedProducts(groupId: string) {
   const supabase = await createClient();
   const { data, error, count } = await supabase
     .from('user_group_linked_products')
-    .select('...workspace_products(id, name, description)', { count: 'exact' })
+    .select(
+      'warehouse_id, unit_id, ...workspace_products(id, name, description)',
+      { count: 'exact' }
+    )
     .eq('group_id', groupId)
     .order('created_at', { ascending: false });
 
   if (error) throw error;
-  return { data, count };
+  return { data: data || [], count };
 }
 
 async function getExcludedUserGroups(wsId: string, groupId: string) {
