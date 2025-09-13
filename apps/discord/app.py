@@ -7,9 +7,10 @@ from auth import DiscordAuth
 from commands import CommandHandler
 from config import DiscordInteractionType, DiscordResponseType
 
-# Create Modal image with all required dependencies
-image = modal.Image.debian_slim(python_version="3.13").pip_install(
-    "fastapi[standard]", "pynacl", "requests", "supabase", "nanoid"
+image = (
+    modal.Image.debian_slim(python_version="3.13")
+    .pip_install("fastapi[standard]", "pynacl", "requests", "supabase", "nanoid")
+    .add_local_python_source("auth", "commands", "config", "discord_client", "link_shortener", "utils")
 )
 
 app = modal.App("tuturuuu-discord-bot", image=image)
@@ -34,7 +35,7 @@ discord_secret = modal.Secret.from_name(
 )
 
 
-@app.function()
+@app.function(secrets=[supabase_secret], image=image)
 @modal.concurrent(max_inputs=1000)
 async def fetch_api() -> str:
     """Fetch random API data (legacy function for backward compatibility)."""
@@ -52,7 +53,7 @@ def test_fetch_api():
         print(result)
 
 
-@app.function()
+@app.function(secrets=[supabase_secret], image=image)
 @modal.concurrent(max_inputs=1000)
 async def reply(app_id: str, interaction_token: str):
     """Handle /api command (legacy function for backward compatibility)."""
@@ -60,7 +61,7 @@ async def reply(app_id: str, interaction_token: str):
     await handler.handle_api_command(app_id, interaction_token)
 
 
-@app.function()
+@app.function(secrets=[supabase_secret], image=image)
 @modal.concurrent(max_inputs=1000)
 async def reply_shorten_link(
     app_id: str, interaction_token: str, url: str, custom_slug: str = None
@@ -149,7 +150,7 @@ def test_bot_token():
     return True
 
 
-@app.function(secrets=[discord_secret], image=image)
+@app.function(secrets=[discord_secret, supabase_secret], image=image)
 def create_slash_command(force: bool = False):
     """Registers the slash commands with Discord. Pass the force flag to re-register."""
     import os
@@ -236,7 +237,7 @@ def create_slash_command(force: bool = False):
         print(f"🤖: command {command_name} created successfully")
 
 
-@app.function(secrets=[discord_secret], min_containers=1)
+@app.function(secrets=[discord_secret, supabase_secret], min_containers=1, image=image)
 @modal.concurrent(max_inputs=1000)
 @modal.asgi_app()
 def web_app():

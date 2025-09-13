@@ -54,5 +54,8 @@
   "IDX.aI.enableCodebaseIndexing": true,
   "i18n-ally.sourceLanguage": "en",
   "typescript.experimental.useTsgo": false,
-  "cSpell.words": ["Tuturuuu", "tuturuuu"]
+  "cSpell.words": ["Tuturuuu", "tuturuuu"],
+  "python-envs.defaultEnvManager": "ms-python.python:conda",
+  "python-envs.defaultPackageManager": "ms-python.python:conda",
+  "python-envs.pythonProjects": []
 }
