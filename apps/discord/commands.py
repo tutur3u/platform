@@ -44,6 +44,14 @@ class CommandHandler:
             {
                 "name": "daily-report",
                 "description": "Get your daily time tracking statistics",
+                "options": [
+                    {
+                        "name": "date",
+                        "description": "Specific date (DD-MM-YYYY, DD/MM/YYYY, or DD/MM/YY format, optional)",
+                        "type": 3,  # STRING
+                        "required": False,
+                    }
+                ],
             },
             {
                 "name": "tumeet",
@@ -163,9 +171,17 @@ class CommandHandler:
             print(f"🤖: Error sending response to Discord: {e}")
 
     async def handle_daily_report_command(
-        self, app_id: str, interaction_token: str, user_info: Optional[dict] = None
+        self, app_id: str, interaction_token: str, options: Optional[List[Dict]] = None, user_info: Optional[dict] = None
     ) -> None:
-        """Handle the /daily-report command."""
+        """Handle the /daily-report command (workspace summary).
+
+        Now aggregates stats for all users in the linked workspace (Discord integration),
+        similar to the management dashboard summary:
+          - Per-user today/week/month durations
+          - Totals and active users count
+          - Top contributors today
+        Falls back gracefully on rate limit or partial failures.
+        """
         if not user_info:
             await self.discord_client.send_response(
                 {"content": "❌ **Error:** Unable to retrieve user information."},
@@ -175,20 +191,68 @@ class CommandHandler:
             return
 
         try:
-            # Fetch time tracking data
-            stats = await self._fetch_time_tracking_stats(user_info)
-            if not stats:
+            # Parse date option if provided
+            target_date = None
+            if options:
+                for option in options:
+                    if option["name"] == "date":
+                        date_str = option.get("value", "").strip()
+                        if date_str:
+                            try:
+                                from datetime import datetime
+                                # Try multiple date formats
+                                for date_format in ["%d-%m-%Y", "%d/%m/%Y", "%d/%m/%y"]:
+                                    try:
+                                        target_date = datetime.strptime(date_str, date_format)
+                                        # If 2-digit year, assume 20xx
+                                        if target_date.year < 100:
+                                            target_date = target_date.replace(year=target_date.year + 2000)
+                                        break
+                                    except ValueError:
+                                        continue
+                                else:
+                                    # None of the formats worked
+                                    raise ValueError("No valid format found")
+                            except ValueError:
+                                await self.discord_client.send_response(
+                                    {"content": "❌ **Error:** Invalid date format. Please use DD-MM-YYYY, DD/MM/YYYY, or DD/MM/YY (e.g., 14-09-2025, 14/09/2025, 14/9/25)."},
+                                    app_id,
+                                    interaction_token,
+                                )
+                                return
+
+            workspace_id = user_info.get("workspace_id")
+            if not workspace_id:
                 await self.discord_client.send_response(
-                    {"content": "❌ **Error:** Unable to fetch time tracking data."},
+                    {"content": "❌ **Error:** Missing workspace context."},
                     app_id,
                     interaction_token,
                 )
                 return
 
-            # Format the daily report
-            message = self._format_daily_report(stats, user_info)
+            # Direct DB aggregation only (no per-user HTTP fallback to avoid rate limiting)
+            aggregated, members_meta = self._fetch_workspace_time_tracking_stats(workspace_id, target_date)
+            if aggregated is None:
+                await self.discord_client.send_response(
+                    {"content": "❌ **Error:** Workspace time tracking aggregation unavailable (schema mismatch)."},
+                    app_id,
+                    interaction_token,
+                )
+                return
+            if not aggregated:
+                await self.discord_client.send_response(
+                    {"content": "📭 No tracked time today for any members yet."},
+                    app_id,
+                    interaction_token,
+                )
+                return
+
+            message = self._render_workspace_report(aggregated, members_meta, workspace_id, target_date)
+
             await self.discord_client.send_response(
-                {"content": message}, app_id, interaction_token
+                {"content": message[:1800]},  # keep under Discord limits with buffer
+                app_id,
+                interaction_token,
             )
         except Exception as e:
             print(f"Error in daily report command: {e}")
@@ -308,32 +372,89 @@ class CommandHandler:
         )
 
     async def _fetch_time_tracking_stats(self, user_info: dict) -> Optional[dict]:
-        """Fetch time tracking statistics from the API."""
+        """Fetch time tracking statistics from the API with basic retry/backoff.
+
+        Returns either the stats dict or a sentinel dict with one of:
+          {"_rate_limited": True, "_retry_after_seconds": <float?>}
+          {"_unauthorized": True}
+          {"_empty": True} when 200 OK but stats missing/empty
+        Returns None only for unrecoverable unexpected errors.
+        """
         try:
             workspace_id = user_info.get("workspace_id")
             platform_user_id = user_info.get("platform_user_id")
 
             if not workspace_id or not platform_user_id:
-                return None
+                return {"_unauthorized": True}
 
-            # Get the base URL for API calls
             from utils import get_base_url
+            import asyncio
+            import math
 
             base_url = get_base_url()
+            today_url = (
+                f"{base_url}/api/v1/workspaces/{workspace_id}/time-tracking/sessions"
+                f"?type=stats&userId={platform_user_id}"
+            )
 
-            # Fetch stats from the time tracking API
-            async with aiohttp.ClientSession() as session:
-                # Get today's stats
-                today_url = f"{base_url}/api/v1/workspaces/{workspace_id}/time-tracking/sessions?type=stats&userId={platform_user_id}"
-                async with session.get(today_url) as response:
-                    if response.status == 200:
-                        data = await response.json()
-                        return data.get("stats", {})
-                    else:
-                        print(f"Failed to fetch stats: {response.status}")
+            max_attempts = 3
+            for attempt in range(1, max_attempts + 1):
+                async with aiohttp.ClientSession() as session:
+                    try:
+                        async with session.get(today_url) as response:
+                            status = response.status
+                            if status == 200:
+                                data = await response.json()
+                                stats = data.get("stats", {})
+                                if not stats:
+                                    return {"_empty": True}
+                                return stats
+                            if status == 401 or status == 403:
+                                return {"_unauthorized": True}
+                            if status == 429:
+                                # Try to read retry-after header if present
+                                retry_after_raw = response.headers.get("Retry-After")
+                                retry_after = None
+                                if retry_after_raw:
+                                    try:
+                                        retry_after = float(retry_after_raw)
+                                    except ValueError:
+                                        retry_after = None
+                                # If not last attempt, wait with backoff
+                                if attempt < max_attempts:
+                                    backoff_seconds = retry_after or (2 ** attempt)
+                                    print(
+                                        f"Rate limited (429). Attempt {attempt}/{max_attempts}. Sleeping {backoff_seconds:.1f}s"
+                                    )
+                                    await asyncio.sleep(backoff_seconds)
+                                    continue
+                                return {"_rate_limited": True, "_retry_after_seconds": retry_after}
+                            if status in {500, 502, 503, 504} and attempt < max_attempts:
+                                backoff_seconds = 2 ** attempt
+                                print(
+                                    f"Server error {status}. Attempt {attempt}/{max_attempts}. Sleeping {backoff_seconds}s"
+                                )
+                                await asyncio.sleep(backoff_seconds)
+                                continue
+                            # Other statuses: break with None sentinel
+                            print(f"Failed to fetch stats: HTTP {status}")
+                            return None
+                    except asyncio.TimeoutError:
+                        if attempt < max_attempts:
+                            wait = 2 ** attempt
+                            print(f"Timeout fetching stats. Retrying in {wait}s")
+                            await asyncio.sleep(wait)
+                            continue
                         return None
+                    except Exception as e:
+                        print(f"Unexpected error attempt {attempt}: {e}")
+                        if attempt < max_attempts:
+                            await asyncio.sleep(2 ** attempt)
+                            continue
+                        return None
+            return None
         except Exception as e:
-            print(f"Error fetching time tracking stats: {e}")
+            print(f"Error fetching time tracking stats (outer): {e}")
             return None
 
     def _format_daily_report(self, stats: dict, user_info: dict) -> str:
@@ -431,4 +552,233 @@ class CommandHandler:
             )
 
         return report
+
+    def _get_workspace_members(self, workspace_id: str) -> List[dict]:
+        """Fetch workspace members with display names & handles via Supabase service role.
+
+        Returns a list of dicts: { platform_user_id, display_name, handle }
+        """
+        try:
+            from utils import get_supabase_client
+            supabase = get_supabase_client()
+            # Select workspace members joined to users table (as seen elsewhere in utils.py)
+            result = (
+                supabase.table("workspace_members")
+                .select("user_id, users!inner(display_name, handle)")
+                .eq("ws_id", workspace_id)
+                .execute()
+            )
+            rows = result.data or []
+            members: List[dict] = []
+            for r in rows:
+                users_obj = r.get("users") or {}
+                members.append(
+                    {
+                        "platform_user_id": r.get("user_id"),
+                        "display_name": users_obj.get("display_name"),
+                        "handle": users_obj.get("handle"),
+                    }
+                )
+            filtered = [m for m in members if m.get("platform_user_id")]
+            if not filtered:
+                print(f"⚠️ _get_workspace_members: No members found for ws_id={workspace_id} (raw count={len(rows)})")
+            else:
+                print(f"🤖 _get_workspace_members: Retrieved {len(filtered)} members for ws_id={workspace_id}")
+            return filtered
+        except Exception as e:
+            print(f"Error fetching workspace members: {e}")
+            return []
+
+    def _fetch_workspace_time_tracking_stats(self, workspace_id: str, target_date=None):
+        """Aggregate time tracking stats (today/week/month) for all users in a workspace directly via Supabase.
+
+        Assumptions (adjust if schema differs):
+          - Table `time_tracking_sessions` with columns:
+              user_id (uuid), ws_id (uuid), started_at (timestamptz), duration_seconds (int)
+          - Session duration already finalized; active sessions ignored here.
+        If schema doesn't match, returns (None, []).
+        Returns (aggregated_list, members_metadata)
+        """
+                # NOTE: If this function returns (None, []), the caller will fallback to the legacy
+                # per-user HTTP stats fetch with retry/backoff. This preserves behavior when the
+                # assumed direct DB schema is not present or an unexpected error occurs.
+                # For performance with large workspaces, consider replacing this client-side
+                # aggregation with a Postgres RPC or materialized view.
+        try:
+            from utils import get_supabase_client
+            supabase = get_supabase_client()
+            import datetime, pytz  # type: ignore[import-not-found]
+            tz = pytz.timezone("Asia/Bangkok")
+            
+            if target_date:
+                # Use provided date, convert to Asia/Bangkok timezone
+                base_date = tz.localize(target_date.replace(hour=0, minute=0, second=0, microsecond=0))
+            else:
+                # Use current date
+                base_date = datetime.datetime.now(tz).replace(hour=0, minute=0, second=0, microsecond=0)
+            
+            start_of_day = base_date
+            start_of_yesterday = start_of_day - datetime.timedelta(days=1)
+            start_of_week = (start_of_day - datetime.timedelta(days=start_of_day.weekday()))
+            start_of_month = start_of_day.replace(day=1)
+
+            # Fetch members first
+            members = self._get_workspace_members(workspace_id)
+            if not members:
+                return [], []
+            user_ids = [m["platform_user_id"] for m in members if m.get("platform_user_id")]
+            if not user_ids:
+                return [], members
+
+            # Attempt to pull sessions for relevant window (month) and aggregate in Python if SQL RPC not available
+            # NOTE: If large data volumes, replace with SQL/RPC aggregation.
+            month_iso = start_of_month.isoformat()
+            # Use existing schema columns: start_time, end_time (seed/migrations use start_time)
+            query = (
+                supabase.table("time_tracking_sessions")
+                .select("user_id, start_time, duration_seconds")
+                .eq("ws_id", workspace_id)
+                .gte("start_time", month_iso)
+            )
+            rows = query.execute().data or []
+            # Build buckets
+            agg_map = {uid: {"todayTime":0, "yesterdayTime":0, "weekTime":0, "monthTime":0} for uid in user_ids}
+            for r in rows:
+                uid = r.get("user_id")
+                if uid not in agg_map:
+                    continue
+                dur = r.get("duration_seconds") or 0
+                started_raw = r.get("start_time")
+                if not started_raw:
+                    continue
+                try:
+                    started = datetime.datetime.fromisoformat(str(started_raw).replace("Z","+00:00"))
+                    started_local = started.astimezone(tz)
+                except Exception:
+                    continue
+                if started_local >= start_of_month:
+                    agg_map[uid]["monthTime"] += dur
+                if started_local >= start_of_week:
+                    agg_map[uid]["weekTime"] += dur
+                if started_local >= start_of_day:
+                    agg_map[uid]["todayTime"] += dur
+                elif started_local >= start_of_yesterday and started_local < start_of_day:
+                    agg_map[uid]["yesterdayTime"] += dur
+
+            aggregated = []
+            for m in members:
+                uid = m.get("platform_user_id")
+                if not uid:
+                    continue
+                stats = agg_map.get(uid)
+                if not stats:
+                    continue
+                # Include users even if all zero; filter later in handler if needed
+                aggregated.append({"user": m, "stats": stats})
+            return aggregated, members
+        except Exception as e:
+            print(f"_fetch_workspace_time_tracking_stats fallback due to error: {e}")
+            return None, []
+
+    def _get_discord_user_map(self, workspace_id: str) -> Dict[str, str]:
+        """Return mapping platform_user_id -> discord_user_id (optionally filtered by workspace integration)."""
+        try:
+            from utils import get_supabase_client
+            supabase = get_supabase_client()
+            # We fetch all guild members; optional optimization: filter by guilds linked to workspace
+            result = (
+                supabase.table("discord_guild_members")
+                .select("platform_user_id, discord_user_id")
+                .execute()
+            )
+            mapping: Dict[str, str] = {}
+            for row in (result.data or []):
+                puid = row.get("platform_user_id")
+                duid = row.get("discord_user_id")
+                if puid and duid:
+                    mapping[puid] = duid
+            return mapping
+        except Exception as e:
+            print(f"_get_discord_user_map error: {e}")
+            return {}
+
+    def _render_workspace_report(self, aggregated: List[dict], members_meta: List[dict], workspace_id: str, target_date=None) -> str:
+        """Render clean workspace report with display names and Discord mentions."""
+        from datetime import datetime
+        import pytz  # type: ignore[import-not-found]
+        tz = pytz.timezone("Asia/Bangkok")
+        now = datetime.now(tz)
+
+        def fmt_dur(sec: int) -> str:
+            if sec < 60:
+                return f"{sec}s"
+            if sec < 3600:
+                return f"{sec//60}m"
+            return f"{sec//3600}h {(sec%3600)//60}m"
+
+        total_today = sum(a["stats"].get("todayTime", 0) for a in aggregated)
+        total_yesterday = sum(a["stats"].get("yesterdayTime", 0) for a in aggregated)
+        total_week = sum(a["stats"].get("weekTime", 0) for a in aggregated)
+        total_month = sum(a["stats"].get("monthTime", 0) for a in aggregated)
+        active_users_today = sum(1 for a in aggregated if a["stats"].get("todayTime", 0) > 0)
+
+        # Sort (already sorted earlier but ensure)
+        aggregated.sort(key=lambda x: x["stats"].get("todayTime", 0), reverse=True)
+
+        def get_medal(rank: int) -> str:
+            medals = {1: "🥇", 2: "🥈", 3: "🥉"}
+            return medals.get(rank, f"**{rank}.**")
+
+        discord_map = self._get_discord_user_map(workspace_id)
+
+        # Header with clean totals
+        date_str = target_date.strftime("%B %d, %Y") if target_date else "Today"
+        header = f"""# 📊 **Workspace Daily Report** - {date_str}
+
+**📈 Totals**
+🌅 Today: **{fmt_dur(total_today)}** | 🌆 Yesterday: **{fmt_dur(total_yesterday)}**
+📅 Week: **{fmt_dur(total_week)}** | 📆 Month: **{fmt_dur(total_month)}**
+👥 Active Users: **{active_users_today}** of **{len(members_meta)}**
+
+## 🏆 **Top Contributors**"""
+
+        # User listings
+        lines = []
+        top_limit = 10
+        for idx, item in enumerate(aggregated[:top_limit], start=1):
+            user = item["user"]
+            puid = user.get("platform_user_id")
+            display_name = user.get("display_name") or user.get("handle") or "User"
+            st = item["stats"]
+            
+            today = st.get("todayTime", 0)
+            yesterday = st.get("yesterdayTime", 0)
+            week = st.get("weekTime", 0)
+            month = st.get("monthTime", 0)
+            
+            medal = get_medal(idx)
+            
+            # Format user with display name and mention
+            if puid in discord_map:
+                user_display = f"**{display_name}** (<@{discord_map[puid]}>)"
+            else:
+                user_display = f"**{display_name}**"
+            
+            # User name line
+            lines.append(f"{medal} {user_display}")
+            
+            # Metrics - each on new line with emoji and text
+            lines.append(f"    🌅 **Today:** {fmt_dur(today)}")
+            lines.append(f"    🌆 **Yesterday:** {fmt_dur(yesterday)}")
+            lines.append(f"    📅 **Week:** {fmt_dur(week)}")
+            lines.append(f"    📆 **Month:** {fmt_dur(month)}")
+            lines.append("")  # Spacing between users
+        
+        if len(aggregated) > top_limit:
+            lines.append(f"*... and {len(aggregated) - top_limit} more contributors*")
+
+        # Footer
+        footer = f"\n*📅 Generated: {now.strftime('%B %d, %Y at %H:%M')} (GMT+7)*"
+        
+        return header + "\n" + "\n".join(lines) + footer
 

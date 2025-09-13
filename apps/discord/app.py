@@ -128,7 +128,7 @@ async def reply_shorten_link(
 @app.function(secrets=[supabase_secret], image=image)
 @modal.concurrent(max_inputs=1000)
 async def reply_daily_report(
-    app_id: str, interaction_token: str, user_id: Optional[str] = None, guild_id: Optional[str] = None
+    app_id: str, interaction_token: str, options: list, user_id: Optional[str] = None, guild_id: Optional[str] = None
 ):
     """Handle /daily-report command with authorization."""
     handler = CommandHandler()
@@ -169,10 +169,7 @@ async def reply_daily_report(
 
     try:
         print(f"🤖: Calling handle_daily_report_command for user {user_id}")
-        if user_info:
-            await handler.handle_daily_report_command(app_id, interaction_token, user_info)
-        else:
-            await handler.handle_daily_report_command(app_id, interaction_token, None)  # type: ignore[arg-type]
+        await handler.handle_daily_report_command(app_id, interaction_token, options, user_info)
         print(f"🤖: handle_daily_report_command completed successfully")
     except Exception as e:
         print(f"🤖: Error in handle_daily_report_command: {e}")
@@ -537,8 +534,10 @@ def web_app():
                     app_id, interaction_token, url, custom_slug or "", user_id, guild_id
                 )
             elif command_name == "daily-report":
+                # Extract options for daily-report command
+                options = data["data"].get("options", [])
                 # kick off daily report asynchronously, will handle authorization
-                reply_daily_report.spawn(app_id, interaction_token, user_id, guild_id)
+                reply_daily_report.spawn(app_id, interaction_token, options, user_id, guild_id)
             elif command_name == "tumeet":
                 options = data["data"].get("options", [])
                 reply_tumeet_plan.spawn(
