@@ -57,9 +57,46 @@ def test_fetch_api():
 
 @app.function(secrets=[supabase_secret], image=image)
 @modal.concurrent(max_inputs=1000)
-async def reply(app_id: str, interaction_token: str, user_info: dict = None):
-    """Handle /api command (legacy function for backward compatibility)."""
+async def reply(
+    app_id: str, interaction_token: str, user_id: str = None, guild_id: str = None
+):
+    """Handle /api command with authorization."""
     handler = CommandHandler()
+
+    # Check authorization
+    if user_id:
+        if guild_id:
+            if not handler.is_user_authorized(user_id, guild_id):
+                print(f"🤖: unauthorized user {user_id} in guild {guild_id}")
+                await handler.discord_client.send_response(
+                    {
+                        "content": handler.discord_client.format_unauthorized_user_message()
+                    },
+                    app_id,
+                    interaction_token,
+                )
+                return
+        else:
+            if not handler.is_user_authorized_for_dm(user_id):
+                print(f"🤖: unauthorized user {user_id} in DM")
+                await handler.discord_client.send_response(
+                    {
+                        "content": handler.discord_client.format_unauthorized_user_message()
+                    },
+                    app_id,
+                    interaction_token,
+                )
+                return
+
+    # Get user info for context
+    user_info = None
+    if user_id:
+        user_info = handler.get_user_workspace_info(user_id, guild_id)
+        if user_info:
+            print(
+                f"🤖: authorized user {user_id} ({user_info.get('display_name', 'Unknown')}) from workspace {user_info.get('workspace_id')}"
+            )
+
     await handler.handle_api_command(app_id, interaction_token, user_info)
 
 
@@ -70,10 +107,46 @@ async def reply_shorten_link(
     interaction_token: str,
     url: str,
     custom_slug: str = None,
-    user_info: dict = None,
+    user_id: str = None,
+    guild_id: str = None,
 ):
-    """Handle link shortening (legacy function for backward compatibility)."""
+    """Handle link shortening with authorization."""
     handler = CommandHandler()
+
+    # Check authorization
+    if user_id:
+        if guild_id:
+            if not handler.is_user_authorized(user_id, guild_id):
+                print(f"🤖: unauthorized user {user_id} in guild {guild_id}")
+                await handler.discord_client.send_response(
+                    {
+                        "content": handler.discord_client.format_unauthorized_user_message()
+                    },
+                    app_id,
+                    interaction_token,
+                )
+                return
+        else:
+            if not handler.is_user_authorized_for_dm(user_id):
+                print(f"🤖: unauthorized user {user_id} in DM")
+                await handler.discord_client.send_response(
+                    {
+                        "content": handler.discord_client.format_unauthorized_user_message()
+                    },
+                    app_id,
+                    interaction_token,
+                )
+                return
+
+    # Get user info for context
+    user_info = None
+    if user_id:
+        user_info = handler.get_user_workspace_info(user_id, guild_id)
+        if user_info:
+            print(
+                f"🤖: authorized user {user_id} ({user_info.get('display_name', 'Unknown')}) from workspace {user_info.get('workspace_id')}"
+            )
+
     options = [{"name": "url", "value": url}]
     if custom_slug:
         options.append({"name": "custom_slug", "value": custom_slug})
@@ -298,61 +371,14 @@ def web_app():
                     "type": DiscordResponseType.DEFERRED_CHANNEL_MESSAGE_WITH_SOURCE
                 }
 
-            # Check if the user is authorized to use commands
-            if user_id:
-                handler = CommandHandler()
+            # Always defer the response first to avoid timeout issues
+            # Authorization checks will be done in the async functions
+            print(f"🤖: deferring response for user {user_id} in guild {guild_id}")
 
-                # For guild commands, check guild + user authorization
-                if guild_id:
-                    if not handler.is_user_authorized(user_id, guild_id):
-                        print(
-                            f"🤖: command from unauthorized user: {user_id} in guild: {guild_id}"
-                        )
-                        await handler.discord_client.send_response(
-                            {
-                                "content": handler.discord_client.format_unauthorized_user_message()
-                            },
-                            app_id,
-                            interaction_token,
-                        )
-                        return {
-                            "type": DiscordResponseType.DEFERRED_CHANNEL_MESSAGE_WITH_SOURCE
-                        }
-                else:
-                    # For DM commands, check if user is linked to any workspace with Discord integration
-                    if not handler.is_user_authorized_for_dm(user_id):
-                        print(f"🤖: command from unauthorized user in DM: {user_id}")
-                        await handler.discord_client.send_response(
-                            {
-                                "content": handler.discord_client.format_unauthorized_user_message()
-                            },
-                            app_id,
-                            interaction_token,
-                        )
-                        return {
-                            "type": DiscordResponseType.DEFERRED_CHANNEL_MESSAGE_WITH_SOURCE
-                        }
-
-                # Log user info for debugging
-                user_info = handler.get_user_workspace_info(user_id, guild_id)
-                if user_info:
-                    print(
-                        f"🤖: authorized user {user_id} ({user_info.get('display_name', 'Unknown')}) from workspace {user_info.get('workspace_id')}"
-                    )
-                else:
-                    print(f"🤖: user {user_id} authorized but no workspace info found")
-
-            # Handle different commands
-            handler = CommandHandler()
-
-            # Get user info for command context (already retrieved above)
-            user_info = None
-            if user_id:
-                user_info = handler.get_user_workspace_info(user_id, guild_id)
-
+            # Handle different commands asynchronously
             if command_name == "api":
-                # kick off request asynchronously, will respond when ready
-                reply.spawn(app_id, interaction_token, user_info)
+                # kick off request asynchronously, will handle authorization
+                reply.spawn(app_id, interaction_token, user_id, guild_id)
             elif command_name == "shorten":
                 # Handle link shortening
                 options = data["data"].get("options", [])
@@ -366,6 +392,7 @@ def web_app():
                         custom_slug = option["value"]
 
                 if not url:
+                    handler = CommandHandler()
                     await handler.discord_client.send_response(
                         {
                             "content": handler.discord_client.format_missing_url_message()
@@ -377,12 +404,13 @@ def web_app():
                         "type": DiscordResponseType.DEFERRED_CHANNEL_MESSAGE_WITH_SOURCE
                     }
 
-                # kick off link shortening asynchronously
+                # kick off link shortening asynchronously, will handle authorization
                 reply_shorten_link.spawn(
-                    app_id, interaction_token, url, custom_slug, user_info
+                    app_id, interaction_token, url, custom_slug, user_id, guild_id
                 )
             else:
                 print(f"🤖: unknown command: {command_name}")
+                handler = CommandHandler()
                 await handler.discord_client.send_response(
                     {
                         "content": handler.discord_client.format_unknown_command_message(

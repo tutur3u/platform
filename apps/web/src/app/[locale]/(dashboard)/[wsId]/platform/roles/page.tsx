@@ -36,6 +36,7 @@ type SearchUserResult = {
   allow_manage_all_challenges: boolean;
   allow_role_management: boolean;
   allow_workspace_creation?: boolean;
+  allow_discord_integrations?: boolean;
   email: string;
   new_email: string;
   birthday: string;
@@ -44,10 +45,14 @@ type SearchUserResult = {
 
 // Create a compatible type that merges the search result with required User fields
 export type PlatformUserWithDetails = Omit<User, 'services'> &
-  Omit<PlatformUser, 'allow_workspace_creation'> &
+  Omit<
+    PlatformUser,
+    'allow_workspace_creation' | 'allow_discord_integrations'
+  > &
   Partial<UserPrivateDetails> & {
     services?: User['services']; // Make services optional since RPC doesn't return it
     allow_workspace_creation?: boolean; // Make this optional to handle RPC function compatibility
+    allow_discord_integrations?: boolean; // Make this optional to handle RPC function compatibility
   };
 
 interface Props {
