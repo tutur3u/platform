@@ -38,6 +38,18 @@ class DiscordClient:
         return "❌ **Error:** This bot is not available in this server."
 
     @staticmethod
+    def format_unauthorized_user_message() -> str:
+        """Format an unauthorized user message."""
+        return (
+            "❌ **Access Denied:** You are not authorized to use this bot.\n\n"
+            "To use this bot, you must:\n"
+            "1. Be a member of a workspace that has Discord integration enabled\n"
+            "2. Have your Discord account linked to that workspace\n"
+            "3. Use the bot in a server where your workspace has Discord integration\n\n"
+            "Contact your workspace administrator to get access."
+        )
+
+    @staticmethod
     def format_missing_url_message() -> str:
         """Format a missing URL message."""
         return "❌ **Error:** URL is required."

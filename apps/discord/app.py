@@ -10,7 +10,9 @@ from config import DiscordInteractionType, DiscordResponseType
 image = (
     modal.Image.debian_slim(python_version="3.13")
     .pip_install("fastapi[standard]", "pynacl", "requests", "supabase", "nanoid")
-    .add_local_python_source("auth", "commands", "config", "discord_client", "link_shortener", "utils")
+    .add_local_python_source(
+        "auth", "commands", "config", "discord_client", "link_shortener", "utils"
+    )
 )
 
 app = modal.App("tuturuuu-discord-bot", image=image)
@@ -55,16 +57,20 @@ def test_fetch_api():
 
 @app.function(secrets=[supabase_secret], image=image)
 @modal.concurrent(max_inputs=1000)
-async def reply(app_id: str, interaction_token: str):
+async def reply(app_id: str, interaction_token: str, user_info: dict = None):
     """Handle /api command (legacy function for backward compatibility)."""
     handler = CommandHandler()
-    await handler.handle_api_command(app_id, interaction_token)
+    await handler.handle_api_command(app_id, interaction_token, user_info)
 
 
 @app.function(secrets=[supabase_secret], image=image)
 @modal.concurrent(max_inputs=1000)
 async def reply_shorten_link(
-    app_id: str, interaction_token: str, url: str, custom_slug: str = None
+    app_id: str,
+    interaction_token: str,
+    url: str,
+    custom_slug: str = None,
+    user_info: dict = None,
 ):
     """Handle link shortening (legacy function for backward compatibility)."""
     handler = CommandHandler()
@@ -72,7 +78,7 @@ async def reply_shorten_link(
     if custom_slug:
         options.append({"name": "custom_slug", "value": custom_slug})
 
-    await handler.handle_shorten_command(app_id, interaction_token, options)
+    await handler.handle_shorten_command(app_id, interaction_token, options, user_info)
 
 
 @app.function(secrets=[discord_secret], image=image)
@@ -276,10 +282,10 @@ def web_app():
             app_id = data["application_id"]
             interaction_token = data["token"]
             command_name = data["data"]["name"]
+            guild_id = data.get("guild_id")
+            user_id = data.get("member", {}).get("user", {}).get("id")
 
             # Check if the command is from an allowed guild
-            guild_id = data.get("guild_id")
-
             if guild_id and not CommandHandler().is_guild_authorized(guild_id):
                 print(f"🤖: command from unauthorized guild: {guild_id}")
                 handler = CommandHandler()
@@ -292,12 +298,61 @@ def web_app():
                     "type": DiscordResponseType.DEFERRED_CHANNEL_MESSAGE_WITH_SOURCE
                 }
 
+            # Check if the user is authorized to use commands
+            if user_id:
+                handler = CommandHandler()
+
+                # For guild commands, check guild + user authorization
+                if guild_id:
+                    if not handler.is_user_authorized(user_id, guild_id):
+                        print(
+                            f"🤖: command from unauthorized user: {user_id} in guild: {guild_id}"
+                        )
+                        await handler.discord_client.send_response(
+                            {
+                                "content": handler.discord_client.format_unauthorized_user_message()
+                            },
+                            app_id,
+                            interaction_token,
+                        )
+                        return {
+                            "type": DiscordResponseType.DEFERRED_CHANNEL_MESSAGE_WITH_SOURCE
+                        }
+                else:
+                    # For DM commands, check if user is linked to any workspace with Discord integration
+                    if not handler.is_user_authorized_for_dm(user_id):
+                        print(f"🤖: command from unauthorized user in DM: {user_id}")
+                        await handler.discord_client.send_response(
+                            {
+                                "content": handler.discord_client.format_unauthorized_user_message()
+                            },
+                            app_id,
+                            interaction_token,
+                        )
+                        return {
+                            "type": DiscordResponseType.DEFERRED_CHANNEL_MESSAGE_WITH_SOURCE
+                        }
+
+                # Log user info for debugging
+                user_info = handler.get_user_workspace_info(user_id, guild_id)
+                if user_info:
+                    print(
+                        f"🤖: authorized user {user_id} ({user_info.get('display_name', 'Unknown')}) from workspace {user_info.get('workspace_id')}"
+                    )
+                else:
+                    print(f"🤖: user {user_id} authorized but no workspace info found")
+
             # Handle different commands
             handler = CommandHandler()
 
+            # Get user info for command context (already retrieved above)
+            user_info = None
+            if user_id:
+                user_info = handler.get_user_workspace_info(user_id, guild_id)
+
             if command_name == "api":
                 # kick off request asynchronously, will respond when ready
-                reply.spawn(app_id, interaction_token)
+                reply.spawn(app_id, interaction_token, user_info)
             elif command_name == "shorten":
                 # Handle link shortening
                 options = data["data"].get("options", [])
@@ -323,7 +378,9 @@ def web_app():
                     }
 
                 # kick off link shortening asynchronously
-                reply_shorten_link.spawn(app_id, interaction_token, url, custom_slug)
+                reply_shorten_link.spawn(
+                    app_id, interaction_token, url, custom_slug, user_info
+                )
             else:
                 print(f"🤖: unknown command: {command_name}")
                 await handler.discord_client.send_response(

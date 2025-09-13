@@ -1,10 +1,12 @@
 """Utility functions for the Discord bot."""
 
+import os
 import re
 from urllib.parse import urlparse
 
 import nanoid
 from config import DEFAULT_SLUG_LENGTH, MAX_SLUG_LENGTH
+from supabase import Client, create_client
 
 
 def is_valid_url(url: str) -> bool:
@@ -43,3 +45,209 @@ def get_base_url() -> str:
         if os.getenv("NODE_ENV") == "production"
         else "http://localhost:3002"
     )
+
+
+def get_supabase_client() -> Client:
+    """Get Supabase client for database operations."""
+    supabase_url = os.getenv("SUPABASE_URL")
+    supabase_key = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
+
+    if not supabase_url or not supabase_key:
+        raise Exception("Supabase credentials not found in environment variables")
+
+    return create_client(supabase_url, supabase_key)
+
+
+def is_user_authorized_for_guild(discord_user_id: str, guild_id: str) -> bool:
+    """
+    Check if a Discord user is authorized to use commands in a specific guild.
+
+    A user is authorized if:
+    1. The guild has a Discord integration
+    2. The user is linked to a workspace that has that Discord integration
+    3. The user is a member of that workspace
+    """
+    try:
+        supabase = get_supabase_client()
+
+        # First, check if the guild has a Discord integration
+        integration_result = (
+            supabase.table("discord_integrations")
+            .select("ws_id")
+            .eq("discord_guild_id", guild_id)
+            .execute()
+        )
+
+        if not integration_result.data:
+            return False
+
+        # Get all workspace IDs that have integrations with this guild
+        workspace_ids = [
+            integration["ws_id"] for integration in integration_result.data
+        ]
+
+        # Check if the Discord user is linked to any of these workspaces
+        # Use a safer approach with separate queries to avoid join issues
+        member_result = (
+            supabase.table("discord_guild_members")
+            .select("platform_user_id, discord_guild_id")
+            .eq("discord_user_id", discord_user_id)
+            .execute()
+        )
+
+        if not member_result.data:
+            return False
+
+        # Get the guild IDs that this user is linked to
+        user_guild_ids = [member["discord_guild_id"] for member in member_result.data]
+
+        # Check if any of the user's guilds match the requested guild
+        if guild_id not in user_guild_ids:
+            return False
+
+        # Verify that the user's guild has a Discord integration
+        user_integration_result = (
+            supabase.table("discord_integrations")
+            .select("ws_id")
+            .eq("discord_guild_id", guild_id)
+            .execute()
+        )
+
+        return bool(user_integration_result.data)
+
+    except Exception as e:
+        print(f"🤖: Error checking user authorization: {e}")
+        return False
+
+
+def is_user_authorized_for_dm(discord_user_id: str) -> bool:
+    """
+    Check if a Discord user is authorized to use commands in DMs.
+
+    A user is authorized if they are linked to any workspace that has Discord integration.
+    """
+    try:
+        supabase = get_supabase_client()
+
+        # Check if the Discord user is linked to any workspace with Discord integration
+        member_result = (
+            supabase.table("discord_guild_members")
+            .select("discord_guild_id")
+            .eq("discord_user_id", discord_user_id)
+            .execute()
+        )
+
+        if not member_result.data:
+            return False
+
+        # Get the guild IDs that this user is linked to
+        user_guild_ids = [member["discord_guild_id"] for member in member_result.data]
+
+        # Check if any of the user's guilds have Discord integrations
+        for guild_id in user_guild_ids:
+            integration_result = (
+                supabase.table("discord_integrations")
+                .select("id")
+                .eq("discord_guild_id", guild_id)
+                .execute()
+            )
+            if integration_result.data:
+                return True
+
+        return False
+
+    except Exception as e:
+        print(f"🤖: Error checking DM user authorization: {e}")
+        return False
+
+
+def get_user_workspace_info(discord_user_id: str, guild_id: str = None) -> dict:
+    """
+    Get workspace information for a Discord user in a specific guild.
+    Returns workspace details if user is authorized, None otherwise.
+    """
+    try:
+        supabase = get_supabase_client()
+
+        if guild_id:
+            # For guild commands, get info for specific guild
+            integration_result = (
+                supabase.table("discord_integrations")
+                .select("ws_id")
+                .eq("discord_guild_id", guild_id)
+                .execute()
+            )
+
+            if not integration_result.data:
+                return None
+
+            workspace_id = integration_result.data[0]["ws_id"]
+
+            # Get user's platform user ID for this specific guild
+            member_result = (
+                supabase.table("discord_guild_members")
+                .select("platform_user_id")
+                .eq("discord_user_id", discord_user_id)
+                .eq("discord_guild_id", guild_id)
+                .execute()
+            )
+
+            if not member_result.data:
+                return None
+
+            platform_user_id = member_result.data[0]["platform_user_id"]
+        else:
+            # For DM commands, get info from any linked workspace
+            member_result = (
+                supabase.table("discord_guild_members")
+                .select("platform_user_id, discord_guild_id")
+                .eq("discord_user_id", discord_user_id)
+                .execute()
+            )
+
+            if not member_result.data:
+                return None
+
+            # Get the first available workspace
+            platform_user_id = member_result.data[0]["platform_user_id"]
+            user_guild_id = member_result.data[0]["discord_guild_id"]
+
+            # Get workspace ID for this guild
+            integration_result = (
+                supabase.table("discord_integrations")
+                .select("ws_id")
+                .eq("discord_guild_id", user_guild_id)
+                .execute()
+            )
+
+            if not integration_result.data:
+                return None
+
+            workspace_id = integration_result.data[0]["ws_id"]
+
+        # Get workspace member info
+        workspace_member_result = (
+            supabase.table("workspace_members")
+            .select("role, role_title, users!inner(display_name, handle)")
+            .eq("ws_id", workspace_id)
+            .eq("user_id", platform_user_id)
+            .execute()
+        )
+
+        if not workspace_member_result.data:
+            return None
+
+        member_info = workspace_member_result.data[0]
+
+        return {
+            "workspace_id": workspace_id,
+            "platform_user_id": platform_user_id,
+            "role": member_info["role"],
+            "role_title": member_info["role_title"],
+            "display_name": member_info["users"]["display_name"],
+            "handle": member_info["users"]["handle"],
+        }
+
+    except Exception as e:
+        print(f"🤖: Error getting user workspace info: {e}")
+        return None
