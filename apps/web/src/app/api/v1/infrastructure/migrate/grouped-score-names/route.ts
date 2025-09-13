@@ -1,22 +1,14 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
 
 export async function PUT(req: Request) {
-  const supabase = await createClient();
-
-  const json = await req.json();
-
-  const { error } = await supabase
-    .from('user_group_indicators')
-    .upsert(json?.data || []);
-
-  if (error) {
-    console.log(error);
-    return NextResponse.json(
-      { message: 'Error migrating workspace users' },
-      { status: 500 }
-    );
-  }
-
-  return NextResponse.json({ message: 'success' });
+  // This migration is disabled because the user_group_indicators table was dropped
+  // in migration 20250912103843_group_metrics.sql
+  return NextResponse.json(
+    {
+      message:
+        'Grouped score names migration is no longer available. The user_group_indicators table was removed in a recent database migration.',
+      error: 'MIGRATION_DISABLED',
+    },
+    { status: 410 } // Gone - resource no longer available
+  );
 }
