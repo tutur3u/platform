@@ -24,32 +24,29 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@tuturuuu/ui/dialog"
-import { toast } from "@tuturuuu/ui/hooks/use-toast"
-import { Plus, Trash2 } from "@tuturuuu/ui/icons"
+import { toast } from "@tuturuuu/ui/sonner"
+import { StickyBottomBar } from "@tuturuuu/ui/sticky-bottom-bar"
+import { Plus, Trash2, Save, RotateCcw } from "@tuturuuu/ui/icons"
 import { Input } from "@tuturuuu/ui/input"
 import { Label } from "@tuturuuu/ui/label"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@tuturuuu/ui/select"
 import { useTranslations } from "next-intl"
-import { useEffect, useState } from "react"
-
-interface HealthcareVital {
-  id: string
-  name: string
-  unit: string
-}
+import { useState, useCallback } from "react"
+import { cn } from "@tuturuuu/utils/format"
 
 interface GroupIndicator {
   id: string
   name: string
+  factor: number
+  unit: string
 }
 
 interface UserIndicator {
+  user_id: string
+  indicator_id: string
+  value: number | null
+}
+
+interface PendingIndicatorValue {
   user_id: string
   indicator_id: string
   value: number | null
@@ -74,13 +71,20 @@ export default function GroupIndicatorsManager({
   const supabase = createClient()
   const queryClient = useQueryClient()
 
-  const [availableVitals, setAvailableVitals] = useState<HealthcareVital[]>([])
 
   // Dialog states
   const [addDialogOpen, setAddDialogOpen] = useState(false)
+  const [editDialogOpen, setEditDialogOpen] = useState(false)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [selectedIndicator, setSelectedIndicator] = useState<GroupIndicator | null>(null)
-  const [selectedVitalId, setSelectedVitalId] = useState<string>("")
+  const [editFormData, setEditFormData] = useState({ name: "", factor: 1, unit: "" })
+  
+  // Add indicator form states
+  const [newVitalForm, setNewVitalForm] = useState({ name: "", unit: "", factor: 1 })
+
+  // Dirty changes tracking
+  const [pendingValues, setPendingValues] = useState<Map<string, PendingIndicatorValue>>(new Map())
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   // Queries
   const { data: groupIndicators = initialGroupIndicators } = useQuery({
@@ -88,9 +92,9 @@ export default function GroupIndicatorsManager({
     queryFn: async (): Promise<GroupIndicator[]> => {
       const { data, error } = await supabase
         .from("healthcare_vitals")
-        .select("id, name")
+        .select("id, name, factor, unit")
         .eq("group_id", groupId)
-        .order("name")
+        .order("created_at", { ascending: true })
 
       if (error) throw error
       return (data || []) as GroupIndicator[]
@@ -103,10 +107,8 @@ export default function GroupIndicatorsManager({
     queryFn: async (): Promise<UserIndicator[]> => {
       const { data, error } = await supabase
         .from("user_indicators")
-        .select("user_id, indicator_id, healthcare_vitals(id, name), value")
+        .select("user_id, indicator_id, healthcare_vitals(group_id, name), value")
         .eq("healthcare_vitals.group_id", groupId)
-        .order("user_id", { ascending: true })
-        .order("id", { ascending: true, foreignTable: "healthcare_vitals" })
 
       if (error) throw error
       return (data || []) as UserIndicator[]
@@ -114,26 +116,7 @@ export default function GroupIndicatorsManager({
     initialData: initialUserIndicators,
   })
 
-  const { data: availableVitalsQueryData = [], isLoading: isLoadingAvailableVitals } = useQuery({
-    queryKey: ["availableVitals", wsId],
-    queryFn: async (): Promise<HealthcareVital[]> => {
-      const { data, error } = await supabase
-        .from("healthcare_vitals")
-        .select("id, name, unit")
-        .eq("ws_id", wsId)
-        .is("group_id", null)
-        .order("name")
 
-      if (error) throw error
-      return (data || []) as HealthcareVital[]
-    },
-  })
-
-  useEffect(() => {
-    setAvailableVitals(availableVitalsQueryData)
-  }, [availableVitalsQueryData])
-
-  // Remove this mapping since we now get groupIndicators directly from the query
 
   // Mutations
   const addIndicatorMutation = useMutation({
@@ -147,13 +130,60 @@ export default function GroupIndicatorsManager({
     onSuccess: async () => {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["groupIndicators", wsId, groupId] }),
-        queryClient.invalidateQueries({ queryKey: ["availableVitals", wsId] }),
       ])
-      toast({ title: "Success", description: "Indicator added successfully" })
+      toast.success("Indicator added successfully")
     },
     onError: (error) => {
       console.error("Error adding indicator:", error)
-      toast({ title: "Error", description: "Failed to add indicator", variant: "destructive" })
+      toast.error("Failed to add indicator")
+    },
+  })
+
+  const createVitalMutation = useMutation({
+    mutationFn: async ({ name, unit, factor }: { name: string; unit: string; factor: number }) => {
+      const insertData = {
+        name,
+        unit: unit.trim() || "",
+        factor,
+        ws_id: wsId,
+        group_id: groupId,
+      }
+      
+      const { data, error } = await supabase
+        .from("healthcare_vitals")
+        .insert(insertData)
+        .select()
+        .single()
+      if (error) throw error
+      return data
+    },
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["groupIndicators", wsId, groupId] }),
+      ])
+      toast.success("New indicator created and added successfully")
+    },
+    onError: (error) => {
+      console.error("Error creating indicator:", error)
+      toast.error("Failed to create indicator")
+    },
+  })
+
+  const updateIndicatorMutation = useMutation({
+    mutationFn: async ({ indicatorId, name, factor, unit }: { indicatorId: string; name: string; factor: number; unit: string }) => {
+      const { error } = await supabase
+        .from("healthcare_vitals")
+        .update({ name, factor, unit })
+        .eq("id", indicatorId)
+      if (error) throw error
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["groupIndicators", wsId, groupId] })
+      toast.success("Indicator updated successfully")
+    },
+    onError: (error) => {
+      console.error("Error updating indicator:", error)
+      toast.error("Failed to update indicator")
     },
   })
 
@@ -169,55 +199,66 @@ export default function GroupIndicatorsManager({
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["groupIndicators", wsId, groupId] }),
         queryClient.invalidateQueries({ queryKey: ["userIndicators", wsId, groupId] }),
-        queryClient.invalidateQueries({ queryKey: ["availableVitals", wsId] }),
       ])
-      toast({ title: "Success", description: "Indicator removed successfully" })
+      toast.success("Indicator removed successfully")
     },
     onError: (error) => {
       console.error("Error deleting indicator:", error)
-      toast({ title: "Error", description: "Failed to remove indicator", variant: "destructive" })
+      toast.error("Failed to remove indicator")
     },
   })
 
   const updateUserIndicatorValueMutation = useMutation({
-    mutationFn: async ({ userId, indicatorId, numericValue }: { userId: string; indicatorId: string; numericValue: number | null }) => {
+    mutationFn: async (pendingValues: PendingIndicatorValue[]) => {
       const { error } = await supabase
         .from("user_indicators")
-        .upsert({
-          user_id: userId,
-          indicator_id: indicatorId,
-          group_id: groupId,
-          value: numericValue,
-        })
+        .upsert(
+          pendingValues.map(({ user_id, indicator_id, value }) => ({
+            user_id,
+            indicator_id,
+            value,
+          }))
+        )
       if (error) throw error
     },
-    onMutate: async ({ userId, indicatorId, numericValue }) => {
-      await queryClient.cancelQueries({ queryKey: ["userIndicators", wsId, groupId] })
-      const previous = queryClient.getQueryData<UserIndicator[]>(["userIndicators", wsId, groupId]) || []
-      const updated = previous.filter((ui) => !(ui.user_id === userId && ui.indicator_id === indicatorId))
-      if (numericValue !== null) {
-        updated.push({ user_id: userId, indicator_id: indicatorId, value: numericValue })
-      }
-      queryClient.setQueryData(["userIndicators", wsId, groupId], updated)
-      return { previous }
-    },
-    onError: (error, _variables, context) => {
-      console.error("Error updating indicator value:", error)
-      if (context?.previous) {
-        queryClient.setQueryData(["userIndicators", wsId, groupId], context.previous)
-      }
-      toast({ title: "Error", description: "Failed to update indicator value", variant: "destructive" })
-    },
-    onSettled: async () => {
+    onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["userIndicators", wsId, groupId] })
+      setPendingValues(new Map())
+      toast.success("Indicator values updated successfully")
+    },
+    onError: (error) => {
+      console.error("Error updating indicator values:", error)
+      toast.error("Failed to update indicator values")
     },
   })
 
   const addIndicator = async () => {
-    if (!selectedVitalId) return
-    await addIndicatorMutation.mutateAsync(selectedVitalId)
-    setAddDialogOpen(false)
-    setSelectedVitalId("")
+      if (!newVitalForm.name.trim()) return
+      await createVitalMutation.mutateAsync({
+        name: newVitalForm.name.trim(),
+        unit: newVitalForm.unit.trim(),
+        factor: newVitalForm.factor,
+      })
+      setAddDialogOpen(false)
+      setNewVitalForm({ name: "", unit: "", factor: 1 })
+  }
+
+  const openEditDialog = (indicator: GroupIndicator) => {
+    setSelectedIndicator(indicator)
+    setEditFormData({ name: indicator.name, factor: indicator.factor, unit: indicator.unit })
+    setEditDialogOpen(true)
+  }
+
+  const updateIndicator = async () => {
+    if (!selectedIndicator) return
+    await updateIndicatorMutation.mutateAsync({
+      indicatorId: selectedIndicator.id,
+      name: editFormData.name,
+      factor: editFormData.factor,
+      unit: editFormData.unit,
+    })
+    setEditDialogOpen(false)
+    setSelectedIndicator(null)
   }
 
   const deleteIndicator = async () => {
@@ -227,21 +268,86 @@ export default function GroupIndicatorsManager({
     setSelectedIndicator(null)
   }
 
-  const updateUserIndicatorValue = async (userId: string, indicatorId: string, value: string) => {
+  // Handle indicator value changes (local state only)
+  const handleIndicatorValueChange = useCallback((userId: string, indicatorId: string, value: string) => {
     const numericValue = value === "" ? null : parseFloat(value)
-    await updateUserIndicatorValueMutation.mutateAsync({ userId, indicatorId, numericValue })
-  }
+    const key = `${userId}|${indicatorId}`
+    
+    setPendingValues(prev => {
+      const newMap = new Map(prev)
+      if (numericValue === null) {
+        // Check if there was an original value - if so, we need to track the deletion
+        const originalIndicator = userIndicators.find(
+          ui => ui.user_id === userId && ui.indicator_id === indicatorId
+        )
+        if (originalIndicator?.value !== null && originalIndicator?.value !== undefined) {
+          // User is clearing a value that existed, so we track this as a deletion
+          newMap.set(key, { user_id: userId, indicator_id: indicatorId, value: null })
+        } else {
+          // No original value, so we can just remove from pending
+          newMap.delete(key)
+        }
+      } else {
+        newMap.set(key, { user_id: userId, indicator_id: indicatorId, value: numericValue })
+      }
+      return newMap
+    })
+  }, [userIndicators])
 
-  const getIndicatorValue = (userId: string, indicatorId: string) => {
+  // Check if a value is pending (different from original)
+  const isValuePending = useCallback((userId: string, indicatorId: string) => {
+    const key = `${userId}|${indicatorId}`
+    return pendingValues.has(key)
+  }, [pendingValues])
+
+  // Reset all pending changes
+  const handleReset = useCallback(() => {
+    setPendingValues(new Map())
+  }, [])
+
+  // Submit all pending changes
+  const handleSubmit = useCallback(async () => {
+    if (pendingValues.size === 0) {
+      toast.info(t('common.no_changes_to_save'))
+      return
+    }
+
+    setIsSubmitting(true)
+    try {
+      await updateUserIndicatorValueMutation.mutateAsync(Array.from(pendingValues.values()))
+    } finally {
+      setIsSubmitting(false)
+    }
+  }, [pendingValues, updateUserIndicatorValueMutation, t])
+
+  const getIndicatorValue = useCallback((userId: string, indicatorId: string) => {
+    const key = `${userId}|${indicatorId}`
+    
+    // Check if there's a pending value first
+    if (pendingValues.has(key)) {
+      const pendingValue = pendingValues.get(key)?.value
+      // If pending value is null, it means user explicitly cleared it
+      return pendingValue === null ? "" : (pendingValue?.toString() || "")
+    }
+    
+    // Fall back to original value
     const indicator = userIndicators.find(
       ui => ui.user_id === userId && ui.indicator_id === indicatorId
     )
     return indicator?.value?.toString() || ""
-  }
+  }, [pendingValues, userIndicators])
 
-  const calculateAverage = (userId: string) => {
+  const calculateAverage = useCallback((userId: string) => {
     const userValues = groupIndicators
       .map(indicator => {
+        const key = `${userId}|${indicator.id}`
+        
+        // Check if there's a pending value first
+        if (pendingValues.has(key)) {
+          return pendingValues.get(key)?.value
+        }
+        
+        // Fall back to original value
         const userIndicator = userIndicators.find(
           ui => ui.user_id === userId && ui.indicator_id === indicator.id
         )
@@ -253,19 +359,51 @@ export default function GroupIndicatorsManager({
     
     const average = userValues.reduce((sum, value) => sum + value, 0) / userValues.length
     return average.toPrecision(2)
-  }
+  }, [groupIndicators, pendingValues, userIndicators])
 
-  const availableVitalsForAdd = availableVitals.filter(
-    vital => !groupIndicators.some(indicator => indicator.id === vital.id)
-  )
 
   const isAnyMutationPending =
     addIndicatorMutation.isPending ||
+    createVitalMutation.isPending ||
+    updateIndicatorMutation.isPending ||
     deleteIndicatorMutation.isPending ||
-    updateUserIndicatorValueMutation.isPending
+    updateUserIndicatorValueMutation.isPending ||
+    isSubmitting
+
+  const hasChanges = pendingValues.size > 0
 
   return (
-    <div className="space-y-4">
+    <div>
+      <StickyBottomBar
+        show={hasChanges}
+        message={t('common.unsaved-changes')}
+        actions={
+          <>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={handleReset}
+              disabled={isAnyMutationPending}
+            >
+              <RotateCcw className="h-4 w-4" />
+              {t('common.reset')}
+            </Button>
+            <Button
+              size="sm"
+              onClick={handleSubmit}
+              disabled={isAnyMutationPending}
+              className={cn(
+                'bg-dynamic-blue/10 border border-dynamic-blue/20 text-dynamic-blue hover:bg-dynamic-blue/20'
+              )}
+            >
+              <Save className="h-4 w-4" />
+              {isSubmitting ? t('common.saving') : t('common.save')}
+            </Button>
+          </>
+        }
+      />
+
+      <div className="space-y-4">
       {/* Add Indicator Button */}
       <div className="flex justify-end">
         <Dialog open={addDialogOpen} onOpenChange={setAddDialogOpen}>
@@ -279,44 +417,160 @@ export default function GroupIndicatorsManager({
             <DialogHeader>
               <DialogTitle>Add Indicator</DialogTitle>
               <DialogDescription>
-                Select a healthcare vital to add as an indicator for this group.
+                Choose to add an existing healthcare vital or create a new one for this group.
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="vital-select">Healthcare Vital</Label>
-                <Select value={selectedVitalId} onValueChange={setSelectedVitalId}>
-                  <SelectTrigger>
-                    <SelectValue placeholder={isLoadingAvailableVitals ? "Loading..." : "Select a vital..."} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {availableVitalsForAdd.map(vital => (
-                      <SelectItem key={vital.id} value={vital.id}>
-                        {vital.name} ({vital.unit})
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="new-vital-name">Indicator Name</Label>
+                    <Input
+                      id="new-vital-name"
+                      value={newVitalForm.name}
+                      onChange={(e) => setNewVitalForm(prev => ({ ...prev, name: e.target.value }))}
+                      placeholder="Enter indicator name"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="new-vital-unit">Unit</Label>
+                    <Input
+                      id="new-vital-unit"
+                      value={newVitalForm.unit}
+                      onChange={(e) => setNewVitalForm(prev => ({ ...prev, unit: e.target.value }))}
+                      placeholder="e.g., mg/dL, bpm, °C"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="new-vital-factor">Factor</Label>
+                    <Input
+                      id="new-vital-factor"
+                      type="number"
+                      step="0.01"
+                      value={newVitalForm.factor}
+                      onChange={(e) => setNewVitalForm(prev => ({ ...prev, factor: parseFloat(e.target.value) || 1 }))}
+                      placeholder="Enter factor"
+                    />
+                    <p className="text-sm text-muted-foreground">
+                      Factor is used to weight this indicator in calculations (default: 1.0)
+                    </p>
+                  </div>
+                </div>
             </div>
             <DialogFooter>
               <Button
                 variant="outline"
-                onClick={() => setAddDialogOpen(false)}
+                onClick={() => {
+                  setAddDialogOpen(false)
+                  setSelectedIndicator(null)
+                  setNewVitalForm({ name: "", unit: "", factor: 1 })
+                }}
                 disabled={isAnyMutationPending}
               >
                 Cancel
               </Button>
               <Button
                 onClick={addIndicator}
-                disabled={isAnyMutationPending || !selectedVitalId}
+                disabled={
+                  isAnyMutationPending || !newVitalForm.name.trim()
+                }
               >
-                {addIndicatorMutation.isPending ? "Adding..." : "Add Indicator"}
+                {addIndicatorMutation.isPending || createVitalMutation.isPending ? "Adding..." : "Add Indicator"}
               </Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
       </div>
+
+      {/* Edit Indicator Dialog */}
+      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Indicator</DialogTitle>
+            <DialogDescription>
+              Update the name and factor for this indicator.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="indicator-name">Indicator Name</Label>
+              <Input
+                id="indicator-name"
+                value={editFormData.name}
+                onChange={(e) => setEditFormData(prev => ({ ...prev, name: e.target.value }))}
+                placeholder="Enter indicator name"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="indicator-factor">Factor</Label>
+              <Input
+                id="indicator-factor"
+                type="number"
+                step="0.01"
+                value={editFormData.factor}
+                onChange={(e) => setEditFormData(prev => ({ ...prev, factor: parseFloat(e.target.value) || 1 }))}
+                placeholder="Enter factor"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="indicator-unit">Unit</Label>
+              <Input
+                id="indicator-unit"
+                value={editFormData.unit}
+                onChange={(e) => setEditFormData(prev => ({ ...prev, unit: e.target.value }))}
+                placeholder="Enter unit"
+              />
+            </div>
+          </div>
+          <DialogFooter className="flex justify-between">
+            <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+              <AlertDialogTrigger asChild>
+                <Button
+                  variant="destructive"
+                  disabled={isAnyMutationPending}
+                >
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Delete
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Remove Indicator</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Are you sure you want to remove "{selectedIndicator?.name}" from this group? 
+                    This will also delete all associated user data for this indicator.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel disabled={isAnyMutationPending}>Cancel</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={deleteIndicator}
+                    disabled={isAnyMutationPending}
+                    className="bg-red-600 hover:bg-red-700"
+                  >
+                    {deleteIndicatorMutation.isPending ? "Removing..." : "Remove"}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+            <div className="flex space-x-2">
+              <Button
+                variant="outline"
+                onClick={() => setEditDialogOpen(false)}
+                disabled={isAnyMutationPending}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={updateIndicator}
+                disabled={isAnyMutationPending || !editFormData.name.trim()}
+              >
+                {updateIndicatorMutation.isPending ? "Updating..." : "Update"}
+              </Button>
+            </div>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Indicators Table */}
       <div className="overflow-x-auto rounded-lg border">
@@ -330,42 +584,12 @@ export default function GroupIndicatorsManager({
                 </th>
                 {groupIndicators.map((indicator) => (
                   <th key={indicator.id} className="border-r px-4 py-2 font-semibold min-w-[120px]">
-                    <div className="flex items-center justify-center space-x-2">
-                      <button className="flex-1 hover:bg-dynamic-purple/10 hover:text-dynamic-purple rounded px-2 py-1">
-                        <span className="line-clamp-1 break-all">{indicator.name}</span>
-                      </button>
-                      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-                        <AlertDialogTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-6 w-6 p-0 hover:bg-red-100 hover:text-red-600"
-                            onClick={() => setSelectedIndicator(indicator)}
-                          >
-                            <Trash2 className="h-3 w-3" />
-                          </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>Remove Indicator</AlertDialogTitle>
-                            <AlertDialogDescription>
-                              Are you sure you want to remove "{selectedIndicator?.name}" from this group? 
-                              This will also delete all associated user data for this indicator.
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel disabled={isAnyMutationPending}>Cancel</AlertDialogCancel>
-                            <AlertDialogAction
-                              onClick={deleteIndicator}
-                              disabled={isAnyMutationPending}
-                              className="bg-red-600 hover:bg-red-700"
-                            >
-                              {deleteIndicatorMutation.isPending ? "Removing..." : "Remove"}
-                            </AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
-                    </div>
+                    <button 
+                      className="w-full hover:bg-dynamic-purple/10 hover:text-dynamic-purple rounded px-2 py-1 text-center"
+                      onClick={() => openEditDialog(indicator)}
+                    >
+                      <span className="line-clamp-2 break-all text-balance">{indicator.name}</span>
+                    </button>
                   </th>
                 ))}
                 <th className="sticky right-0 z-20 bg-background border-l px-4 py-2 font-semibold min-w-[100px]">
@@ -386,8 +610,11 @@ export default function GroupIndicatorsManager({
                         type="number"
                         step="0.01"
                         value={getIndicatorValue(user.id, indicator.id)}
-                        onChange={(e) => updateUserIndicatorValue(user.id, indicator.id, e.target.value)}
-                        className="w-20 h-8 text-center"
+                        onChange={(e) => handleIndicatorValueChange(user.id, indicator.id, e.target.value)}
+                        className={cn(
+                          "w-20 h-8 text-center",
+                          isValuePending(user.id, indicator.id) && "border-dynamic-blue/50 bg-dynamic-blue/5"
+                        )}
                         placeholder="-"
                       />
                     </td>
@@ -402,12 +629,13 @@ export default function GroupIndicatorsManager({
         </div>
       </div>
 
-      {groupIndicators.length === 0 && (
-        <div className="text-center py-8 text-muted-foreground">
-          <p>No indicators added to this group yet.</p>
-          <p className="text-sm">Click "Add Indicator" to get started.</p>
-        </div>
-      )}
+        {groupIndicators.length === 0 && (
+          <div className="text-center py-8 text-muted-foreground">
+            <p>No indicators added to this group yet.</p>
+            <p className="text-sm">Click "Add Indicator" to get started.</p>
+          </div>
+        )}
+      </div>
     </div>
   )
 }

@@ -144,9 +144,9 @@ async function getGroupIndicators(groupId: string) {
 
   const { data, error } = await supabase
     .from("healthcare_vitals")
-    .select("id, name")
+    .select("id, name, factor, unit")
     .eq("group_id", groupId)
-    .order("name", { ascending: true })
+    .order("created_at", { ascending: true })
 
   if (error) throw error
   if (!data) return []
@@ -156,8 +156,6 @@ async function getGroupIndicators(groupId: string) {
 
 async function getIndicators(groupId: string) {
   const supabase = await createClient()
-
-  console.log(groupId)
 
   const { data: rawData, error } = await supabase
     .from("user_indicators")
