@@ -1,6 +1,7 @@
 """Main Discord bot application."""
 
 import json
+from typing import Optional, cast
 
 import modal
 from auth import DiscordAuth
@@ -66,7 +67,7 @@ def test_fetch_api():
 @app.function(secrets=[supabase_secret], image=image)
 @modal.concurrent(max_inputs=1000)
 async def reply(
-    app_id: str, interaction_token: str, user_id: str = None, guild_id: str = None
+    app_id: str, interaction_token: str, user_id: Optional[str] = None, guild_id: Optional[str] = None
 ):
     """Handle /api command with authorization."""
     handler = CommandHandler()
@@ -99,7 +100,7 @@ async def reply(
     # Get user info for context
     user_info = None
     if user_id:
-        user_info = handler.get_user_workspace_info(user_id, guild_id)
+        user_info = handler.get_user_workspace_info(user_id, guild_id or "")
         if user_info:
             print(
                 f"🤖: authorized user {user_id} ({user_info.get('display_name', 'Unknown')}) from workspace {user_info.get('workspace_id')}"
@@ -107,7 +108,10 @@ async def reply(
 
     try:
         print(f"🤖: Calling handle_api_command for user {user_id}")
-        await handler.handle_api_command(app_id, interaction_token, user_info)
+        if user_info:
+            await handler.handle_api_command(app_id, interaction_token, user_info)
+        else:
+            await handler.handle_api_command(app_id, interaction_token, None)  # type: ignore[arg-type]
         print(f"🤖: handle_api_command completed successfully")
     except Exception as e:
         print(f"🤖: Error in handle_api_command: {e}")
@@ -130,9 +134,9 @@ async def reply_shorten_link(
     app_id: str,
     interaction_token: str,
     url: str,
-    custom_slug: str = None,
-    user_id: str = None,
-    guild_id: str = None,
+    custom_slug: Optional[str] = None,
+    user_id: Optional[str] = None,
+    guild_id: Optional[str] = None,
 ):
     """Handle link shortening with authorization."""
     handler = CommandHandler()
@@ -165,7 +169,7 @@ async def reply_shorten_link(
     # Get user info for context
     user_info = None
     if user_id:
-        user_info = handler.get_user_workspace_info(user_id, guild_id)
+        user_info = handler.get_user_workspace_info(user_id, guild_id or "")
         if user_info:
             print(
                 f"🤖: authorized user {user_id} ({user_info.get('display_name', 'Unknown')}) from workspace {user_info.get('workspace_id')}"
@@ -177,9 +181,14 @@ async def reply_shorten_link(
 
     try:
         print(f"🤖: Calling handle_shorten_command for user {user_id}")
-        await handler.handle_shorten_command(
-            app_id, interaction_token, options, user_info
-        )
+        if user_info:
+            await handler.handle_shorten_command(
+                app_id, interaction_token, options, user_info
+            )
+        else:
+            await handler.handle_shorten_command(
+                app_id, interaction_token, options, None  # type: ignore[arg-type]
+            )
         print(f"🤖: handle_shorten_command completed successfully")
     except Exception as e:
         print(f"🤖: Error in handle_shorten_command: {e}")
@@ -199,7 +208,7 @@ async def reply_shorten_link(
 @app.function(secrets=[supabase_secret], image=image)
 @modal.concurrent(max_inputs=1000)
 async def reply_daily_report(
-    app_id: str, interaction_token: str, user_id: str = None, guild_id: str = None
+    app_id: str, interaction_token: str, user_id: Optional[str] = None, guild_id: Optional[str] = None
 ):
     """Handle /daily-report command with authorization."""
     handler = CommandHandler()
@@ -232,7 +241,7 @@ async def reply_daily_report(
     # Get user info for context
     user_info = None
     if user_id:
-        user_info = handler.get_user_workspace_info(user_id, guild_id)
+        user_info = handler.get_user_workspace_info(user_id, guild_id or "")
         if user_info:
             print(
                 f"🤖: authorized user {user_id} ({user_info.get('display_name', 'Unknown')}) from workspace {user_info.get('workspace_id')}"
@@ -240,7 +249,10 @@ async def reply_daily_report(
 
     try:
         print(f"🤖: Calling handle_daily_report_command for user {user_id}")
-        await handler.handle_daily_report_command(app_id, interaction_token, user_info)
+        if user_info:
+            await handler.handle_daily_report_command(app_id, interaction_token, user_info)
+        else:
+            await handler.handle_daily_report_command(app_id, interaction_token, None)  # type: ignore[arg-type]
         print(f"🤖: handle_daily_report_command completed successfully")
     except Exception as e:
         print(f"🤖: Error in handle_daily_report_command: {e}")
@@ -255,6 +267,58 @@ async def reply_daily_report(
             )
         except Exception as response_error:
             print(f"🤖: Failed to send error response: {response_error}")
+
+
+@app.function(secrets=[supabase_secret], image=image)
+@modal.concurrent(max_inputs=1000)
+async def reply_tumeet_plan(
+    app_id: str,
+    interaction_token: str,
+    options: list,
+    user_id: Optional[str] = None,
+    guild_id: Optional[str] = None,
+):
+    """Handle /tumeet command with authorization and option parsing."""
+    handler = CommandHandler()
+
+    # Authorization (same pattern)
+    if user_id:
+        if guild_id:
+            if not handler.is_user_authorized(user_id, guild_id):
+                await handler.discord_client.send_response(
+                    {
+                        "content": handler.discord_client.format_unauthorized_user_message()
+                    },
+                    app_id,
+                    interaction_token,
+                )
+                return
+        else:
+            if not handler.is_user_authorized_for_dm(user_id):
+                await handler.discord_client.send_response(
+                    {
+                        "content": handler.discord_client.format_unauthorized_user_message()
+                    },
+                    app_id,
+                    interaction_token,
+                )
+                return
+
+    user_info = None
+    if user_id:
+        user_info = handler.get_user_workspace_info(user_id, guild_id or "")
+
+    try:
+        await handler.handle_tumeet_plan_command(
+            app_id, interaction_token, options or [], user_info
+        )
+    except Exception as e:
+        import traceback
+
+        traceback.print_exc()
+        await handler.discord_client.send_response(
+            {"content": f"❌ **Error:** {e}"}, app_id, interaction_token
+        )
 
 
 @app.function(secrets=[discord_secret], image=image)
@@ -334,7 +398,21 @@ def test_bot_token():
 
 @app.function(secrets=[discord_secret, supabase_secret], image=image)
 def create_slash_command(force: bool = False):
-    """Registers the slash commands with Discord. Pass the force flag to re-register."""
+    """Register (or sync) global slash commands with Discord.
+
+    Behaviour:
+      - Default (force = False):
+          * Create any commands that do not yet exist (matched by name).
+          * Skip existing commands.
+      - Force (force = True):
+          * Delete any existing global commands whose names are NOT in our current definitions.
+          * PATCH (update) existing commands whose names match (ensures description/options drift is fixed).
+          * Create new commands that are missing.
+
+    This ensures that running with --force leaves Discord's global command set in exact
+    correspondence with our `CommandHandler.get_command_definitions()` output (a light
+    reconciliation strategy without using the bulk overwrite endpoint, providing clearer logs).
+    """
     import os
 
     import requests
@@ -387,36 +465,66 @@ def create_slash_command(force: bool = False):
     existing_commands = response.json()
     print(f"🤖: Found {len(existing_commands)} existing commands")
 
-    # Check which commands exist
-    existing_command_names = {cmd.get("name") for cmd in existing_commands}
+    # Map existing commands by name for quick lookup
+    existing_by_name = {cmd.get("name"): cmd for cmd in existing_commands if cmd.get("name")}
 
+    desired_names = {c["name"] for c in commands}
+
+    if force:
+        # Delete stale commands (those that exist remotely but no longer defined locally)
+        stale = [cmd for name, cmd in existing_by_name.items() if name not in desired_names]
+        if stale:
+            print(f"🤖: Deleting {len(stale)} stale command(s): {[c.get('name') for c in stale]}")
+        for cmd in stale:
+            cmd_id = cmd.get("id")
+            name = cmd.get("name")
+            del_url = f"{url}/{cmd_id}"
+            r = requests.delete(del_url, headers=headers)
+            if r.status_code not in (200, 204):
+                print(f"🤖: ⚠️ Failed to delete stale command {name}: {r.status_code} - {r.text}")
+            else:
+                print(f"🤖: 🗑️ Deleted stale command {name}")
+
+    # Reconcile / create / update desired commands
     for command in commands:
-        command_name = command["name"]
-        command_exists = command_name in existing_command_names
+        name = command["name"]
+        existing = existing_by_name.get(name)
 
-        # and only recreate it if the force flag is set
-        if command_exists and not force:
-            print(f"🤖: command {command_name} exists")
-            continue
+        if existing:
+            if not force:
+                print(f"🤖: ✅ Command '{name}' already exists (skip; use --force to update)")
+                continue
 
-        print(f"🤖: Creating command {command_name}")
-        response = requests.post(url, headers=headers, json=command)
+            # PATCH existing command
+            cmd_id = existing.get("id")
+            patch_url = f"{url}/{cmd_id}"
+            print(f"🤖: 🔄 Updating command '{name}' (id={cmd_id})")
+            r = requests.patch(patch_url, headers=headers, json=command)
+            if r.status_code == 401:
+                raise Exception(f"401 Unauthorized when updating command '{name}': {r.text}")
+            try:
+                r.raise_for_status()
+            except Exception as e:
+                print(f"🤖: ❌ Error updating '{name}': {r.status_code} - {r.text}")
+                raise Exception(f"Failed to update command '{name}': {e}") from e
+            print(f"🤖: ✅ Updated command '{name}'")
+        else:
+            # Create new command
+            print(f"🤖: ➕ Creating new command '{name}'")
+            r = requests.post(url, headers=headers, json=command)
+            if r.status_code == 401:
+                raise Exception(f"401 Unauthorized when creating command '{name}': {r.text}")
+            try:
+                r.raise_for_status()
+            except Exception as e:
+                print(f"🤖: ❌ Error creating '{name}': {r.status_code} - {r.text}")
+                raise Exception(f"Failed to create command '{name}': {e}") from e
+            print(f"🤖: ✅ Created command '{name}'")
 
-        if response.status_code == 401:
-            print(
-                f"🤖: 401 Unauthorized when creating command - Response: {response.text}"
-            )
-            raise Exception(f"401 Unauthorized when creating command: {response.text}")
-
-        try:
-            response.raise_for_status()
-        except Exception as e:
-            print(
-                f"🤖: Error creating command: {response.status_code} - {response.text}"
-            )
-            raise Exception(f"Failed to create slash command: {e}") from e
-
-        print(f"🤖: command {command_name} created successfully")
+    if force:
+        print("🤖: Force sync complete — remote command set now matches local definitions.")
+    else:
+        print("🤖: Non-force registration complete — new commands (if any) created.")
 
 
 @app.function(secrets=[discord_secret, supabase_secret], min_containers=1, image=image)
@@ -444,7 +552,7 @@ def web_app():
         body = await request.body()
 
         # confirm this is a request from Discord
-        DiscordAuth.verify_request(request.headers, body)
+        DiscordAuth.verify_request(cast(dict, request.headers), body)
 
         print("🤖: parsing request")
         data = json.loads(body.decode())
@@ -509,11 +617,16 @@ def web_app():
 
                 # kick off link shortening asynchronously, will handle authorization
                 reply_shorten_link.spawn(
-                    app_id, interaction_token, url, custom_slug, user_id, guild_id
+                    app_id, interaction_token, url, custom_slug or "", user_id, guild_id
                 )
             elif command_name == "daily-report":
                 # kick off daily report asynchronously, will handle authorization
                 reply_daily_report.spawn(app_id, interaction_token, user_id, guild_id)
+            elif command_name == "tumeet":
+                options = data["data"].get("options", [])
+                reply_tumeet_plan.spawn(
+                    app_id, interaction_token, options, user_id, guild_id
+                )
             else:
                 print(f"🤖: unknown command: {command_name}")
                 handler = CommandHandler()

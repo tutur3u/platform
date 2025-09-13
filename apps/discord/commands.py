@@ -1,6 +1,6 @@
 """Discord slash command definitions and handlers."""
 
-from typing import Dict, List
+from typing import Dict, List, Optional, Any
 
 import aiohttp
 from config import ALLOWED_GUILD_IDS, DiscordResponseType
@@ -48,6 +48,42 @@ class CommandHandler:
             {
                 "name": "daily-report",
                 "description": "Get your daily time tracking statistics",
+            },
+            {
+                "name": "tumeet",
+                "description": "Create a new TuMeet plan",
+                "options": [
+                    {
+                        "name": "name",
+                        "description": "Plan title (e.g. Sprint Planning)",
+                        "type": 3,  # STRING
+                        "required": True,
+                    },
+                    {
+                        "name": "date",
+                        "description": "Date (YYYY-MM-DD, default today GMT+7)",
+                        "type": 3,
+                        "required": False,
+                    },
+                    {
+                        "name": "start",
+                        "description": "Start time (HH:MM, 24h)",
+                        "type": 3,
+                        "required": False,
+                    },
+                    {
+                        "name": "end",
+                        "description": "End time (HH:MM, 24h)",
+                        "type": 3,
+                        "required": False,
+                    },
+                    {
+                        "name": "public",
+                        "description": "Public plan? (true/false, default true)",
+                        "type": 3,  # Discord does not have native boolean for older compatibility here
+                        "required": False,
+                    },
+                ],
             },
         ]
 
@@ -206,7 +242,165 @@ class CommandHandler:
                 interaction_token,
             )
 
-    async def _fetch_time_tracking_stats(self, user_info: dict) -> dict:
+    async def handle_tumeet_plan_command(
+        self,
+        app_id: str,
+        interaction_token: str,
+        options: List[Dict[str, Any]],
+        user_info: Optional[dict] = None,
+    ) -> None:
+        """Handle the /tumeet command to create a meet together plan.
+
+        Required option: name
+        Optional: date (YYYY-MM-DD), start (HH:MM), end (HH:MM), public (true/false)
+        Times are interpreted in GMT+7 and stored as ISO strings (date only for now if times omitted).
+        """
+        if not user_info:
+            await self.discord_client.send_response(
+                {"content": "❌ **Error:** Unable to identify user/workspace."},
+                app_id,
+                interaction_token,
+            )
+            return
+
+        # Parse options
+        raw: Dict[str, Optional[str]] = {opt["name"]: opt.get("value") for opt in options}
+        plan_name = (raw.get("name") or "").strip()
+        if not plan_name:
+            await self.discord_client.send_response(
+                {"content": "❌ **Error:** Plan name is required."},
+                app_id,
+                interaction_token,
+            )
+            return
+
+        from datetime import datetime
+        import pytz
+
+        tz = pytz.timezone("Asia/Bangkok")  # GMT+7
+        today_str = datetime.now(tz).strftime("%Y-%m-%d")
+
+        date_str = (raw.get("date") or today_str).strip()
+        start_str = (raw.get("start") or "").strip()
+        end_str = (raw.get("end") or "").strip()
+        public_str = (raw.get("public") or "true").strip().lower()
+        is_public = public_str in {"true", "1", "yes", "y"}
+
+        # Basic validation
+        # Ensure date format
+        try:
+            datetime.strptime(date_str, "%Y-%m-%d")
+        except ValueError:
+            await self.discord_client.send_response(
+                {"content": "❌ **Error:** Invalid date format. Use YYYY-MM-DD."},
+                app_id,
+                interaction_token,
+            )
+            return
+
+        def parse_time(label: str, value: str):
+            if not value:
+                return None
+            try:
+                datetime.strptime(value, "%H:%M")
+                return value
+            except ValueError:
+                return None
+
+        start_ok = parse_time("start", start_str)
+        end_ok = parse_time("end", end_str)
+        if start_str and not start_ok:
+            await self.discord_client.send_response(
+                {"content": "❌ **Error:** Invalid start time. Use HH:MM 24h."},
+                app_id,
+                interaction_token,
+            )
+            return
+        if end_str and not end_ok:
+            await self.discord_client.send_response(
+                {"content": "❌ **Error:** Invalid end time. Use HH:MM 24h."},
+                app_id,
+                interaction_token,
+            )
+            return
+        # Provide defaults if missing (required by DB NOT NULL)
+        if not start_ok:
+            start_ok = "07:00"  # Default 7 AM GMT+7
+        if not end_ok:
+            end_ok = "22:00"  # Default 10 PM GMT+7
+        if start_ok and end_ok and start_ok >= end_ok:
+            await self.discord_client.send_response(
+                {"content": "❌ **Error:** End time must be after start time."},
+                app_id,
+                interaction_token,
+            )
+            return
+
+        # Prepare Supabase insert
+        # dates column appears to store array of date strings
+        workspace_id = user_info.get("workspace_id")
+        creator_id = user_info.get("platform_user_id")
+        if not workspace_id or not creator_id:
+            await self.discord_client.send_response(
+                {"content": "❌ **Error:** Missing workspace context."},
+                app_id,
+                interaction_token,
+            )
+            return
+
+        # Build payload matching API route behavior
+        payload = {
+            "name": plan_name,
+            "dates": [date_str],
+            "is_public": is_public,
+        }
+        if start_ok:
+            payload["start_time"] = start_ok
+        if end_ok:
+            payload["end_time"] = end_ok
+
+        # Insert directly via service role (Python Supabase client)
+        try:
+            from utils import get_supabase_client
+
+            supabase = get_supabase_client()
+            insert_payload = {
+                **payload,
+                "creator_id": creator_id,
+                "ws_id": workspace_id,
+            }
+            result = supabase.table("meet_together_plans").insert(insert_payload).execute()
+            if not result.data:
+                raise Exception("Empty insert result")
+            # Supabase python client returns list of rows inserted if returning is enabled by default
+            plan_id = result.data[0].get("id")
+            if not plan_id:
+                raise Exception("Missing plan id in response")
+        except Exception as e:
+            await self.discord_client.send_response(
+                {"content": f"❌ **Error:** Failed to create plan ({e})."},
+                app_id,
+                interaction_token,
+            )
+            return
+
+        # Construct share URL (tumeet.me/{id})
+        share_url = f"https://tumeet.me/{plan_id}"
+        user_name = user_info.get("display_name") or user_info.get("handle") or "User"
+        message = (
+            f"✅ **TuMeet plan created by {user_name}!**\n\n"
+            f"**Name:** {plan_name}\n"
+            f"**Date:** {date_str}" + (f" {start_ok}-{end_ok}" if start_ok and end_ok else "") + "\n"
+            f"**Public:** {'Yes' if is_public else 'No'}\n"
+            # share url must not include dashes
+            f"**Link:** {share_url.replace('-', '')}\n"
+        )
+
+        await self.discord_client.send_response(
+            {"content": message}, app_id, interaction_token
+        )
+
+    async def _fetch_time_tracking_stats(self, user_info: dict) -> Optional[dict]:
         """Fetch time tracking statistics from the API."""
         try:
             workspace_id = user_info.get("workspace_id")
