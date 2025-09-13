@@ -36,6 +36,7 @@ class LinkShortener:
         url: str,
         custom_slug: Optional[str] = None,
         ws_id: str = DEFAULT_WORKSPACE_ID,
+        creator_id: Optional[str] = None,
     ) -> Dict:
         """Shorten a URL using the Supabase database."""
         try:
@@ -61,7 +62,7 @@ class LinkShortener:
             domain = extract_domain(url)
 
             # Insert the new shortened link
-            new_link = self._insert_link(url, slug, ws_id, domain)
+            new_link = self._insert_link(url, slug, ws_id, domain, creator_id)
             if not new_link:
                 return {"error": "Failed to create shortened link"}
 
@@ -110,7 +111,12 @@ class LinkShortener:
         return None
 
     def _insert_link(
-        self, url: str, slug: str, ws_id: str, domain: str
+        self,
+        url: str,
+        slug: str,
+        ws_id: str,
+        domain: str,
+        creator_id: Optional[str] = None,
     ) -> Optional[Dict]:
         """Insert a new shortened link into the database."""
         insert_data = {
@@ -118,7 +124,7 @@ class LinkShortener:
             "slug": slug,
             "ws_id": ws_id,
             "domain": domain,
-            "creator_id": DISCORD_BOT_USER_ID,
+            "creator_id": creator_id or DISCORD_BOT_USER_ID,
         }
 
         result = self.supabase.table("shortened_links").insert(insert_data).execute()

@@ -9,7 +9,15 @@ from config import DiscordInteractionType, DiscordResponseType
 
 image = (
     modal.Image.debian_slim(python_version="3.13")
-    .pip_install("fastapi[standard]", "pynacl", "requests", "supabase", "nanoid")
+    .pip_install(
+        "fastapi[standard]",
+        "pynacl",
+        "requests",
+        "supabase",
+        "nanoid",
+        "pytz",
+        "aiohttp",
+    )
     .add_local_python_source(
         "auth", "commands", "config", "discord_client", "link_shortener", "utils"
     )
@@ -97,7 +105,23 @@ async def reply(
                 f"🤖: authorized user {user_id} ({user_info.get('display_name', 'Unknown')}) from workspace {user_info.get('workspace_id')}"
             )
 
-    await handler.handle_api_command(app_id, interaction_token, user_info)
+    try:
+        print(f"🤖: Calling handle_api_command for user {user_id}")
+        await handler.handle_api_command(app_id, interaction_token, user_info)
+        print(f"🤖: handle_api_command completed successfully")
+    except Exception as e:
+        print(f"🤖: Error in handle_api_command: {e}")
+        import traceback
+
+        traceback.print_exc()
+
+        # Send error response to Discord
+        try:
+            await handler.discord_client.send_response(
+                {"content": f"❌ **Error:** {str(e)}"}, app_id, interaction_token
+            )
+        except Exception as response_error:
+            print(f"🤖: Failed to send error response: {response_error}")
 
 
 @app.function(secrets=[supabase_secret], image=image)
@@ -151,7 +175,86 @@ async def reply_shorten_link(
     if custom_slug:
         options.append({"name": "custom_slug", "value": custom_slug})
 
-    await handler.handle_shorten_command(app_id, interaction_token, options, user_info)
+    try:
+        print(f"🤖: Calling handle_shorten_command for user {user_id}")
+        await handler.handle_shorten_command(
+            app_id, interaction_token, options, user_info
+        )
+        print(f"🤖: handle_shorten_command completed successfully")
+    except Exception as e:
+        print(f"🤖: Error in handle_shorten_command: {e}")
+        import traceback
+
+        traceback.print_exc()
+
+        # Send error response to Discord
+        try:
+            await handler.discord_client.send_response(
+                {"content": f"❌ **Error:** {str(e)}"}, app_id, interaction_token
+            )
+        except Exception as response_error:
+            print(f"🤖: Failed to send error response: {response_error}")
+
+
+@app.function(secrets=[supabase_secret], image=image)
+@modal.concurrent(max_inputs=1000)
+async def reply_daily_report(
+    app_id: str, interaction_token: str, user_id: str = None, guild_id: str = None
+):
+    """Handle /daily-report command with authorization."""
+    handler = CommandHandler()
+
+    # Check authorization
+    if user_id:
+        if guild_id:
+            if not handler.is_user_authorized(user_id, guild_id):
+                print(f"🤖: unauthorized user {user_id} in guild {guild_id}")
+                await handler.discord_client.send_response(
+                    {
+                        "content": handler.discord_client.format_unauthorized_user_message()
+                    },
+                    app_id,
+                    interaction_token,
+                )
+                return
+        else:
+            if not handler.is_user_authorized_for_dm(user_id):
+                print(f"🤖: unauthorized user {user_id} in DM")
+                await handler.discord_client.send_response(
+                    {
+                        "content": handler.discord_client.format_unauthorized_user_message()
+                    },
+                    app_id,
+                    interaction_token,
+                )
+                return
+
+    # Get user info for context
+    user_info = None
+    if user_id:
+        user_info = handler.get_user_workspace_info(user_id, guild_id)
+        if user_info:
+            print(
+                f"🤖: authorized user {user_id} ({user_info.get('display_name', 'Unknown')}) from workspace {user_info.get('workspace_id')}"
+            )
+
+    try:
+        print(f"🤖: Calling handle_daily_report_command for user {user_id}")
+        await handler.handle_daily_report_command(app_id, interaction_token, user_info)
+        print(f"🤖: handle_daily_report_command completed successfully")
+    except Exception as e:
+        print(f"🤖: Error in handle_daily_report_command: {e}")
+        import traceback
+
+        traceback.print_exc()
+
+        # Send error response to Discord
+        try:
+            await handler.discord_client.send_response(
+                {"content": f"❌ **Error:** {str(e)}"}, app_id, interaction_token
+            )
+        except Exception as response_error:
+            print(f"🤖: Failed to send error response: {response_error}")
 
 
 @app.function(secrets=[discord_secret], image=image)
@@ -316,7 +419,7 @@ def create_slash_command(force: bool = False):
         print(f"🤖: command {command_name} created successfully")
 
 
-@app.function(secrets=[discord_secret, supabase_secret], min_containers=1, image=image)
+@app.function(secrets=[discord_secret, supabase_secret], image=image)
 @modal.concurrent(max_inputs=1000)
 @modal.asgi_app()
 def web_app():
@@ -408,6 +511,9 @@ def web_app():
                 reply_shorten_link.spawn(
                     app_id, interaction_token, url, custom_slug, user_id, guild_id
                 )
+            elif command_name == "daily-report":
+                # kick off daily report asynchronously, will handle authorization
+                reply_daily_report.spawn(app_id, interaction_token, user_id, guild_id)
             else:
                 print(f"🤖: unknown command: {command_name}")
                 handler = CommandHandler()

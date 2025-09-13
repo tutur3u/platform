@@ -38,13 +38,7 @@ def extract_domain(url: str) -> str:
 
 def get_base_url() -> str:
     """Get the base URL for shortened links based on environment."""
-    import os
-
-    return (
-        "https://tuturuuu.com"
-        if os.getenv("NODE_ENV") == "production"
-        else "http://localhost:3002"
-    )
+    return "https://ttr.gg"
 
 
 def get_supabase_client() -> Client:
@@ -208,22 +202,44 @@ def get_user_workspace_info(discord_user_id: str, guild_id: str = None) -> dict:
             if not member_result.data:
                 return None
 
-            # Get the first available workspace
             platform_user_id = member_result.data[0]["platform_user_id"]
-            user_guild_id = member_result.data[0]["discord_guild_id"]
 
-            # Get workspace ID for this guild
-            integration_result = (
-                supabase.table("discord_integrations")
-                .select("ws_id")
-                .eq("discord_guild_id", user_guild_id)
-                .execute()
-            )
+            # Get all workspace IDs for this user's guilds and find one they're actually a member of
+            user_guild_ids = [
+                member["discord_guild_id"] for member in member_result.data
+            ]
+            workspace_id = None
 
-            if not integration_result.data:
+            for guild_id in user_guild_ids:
+                # Get workspace ID for this guild
+                integration_result = (
+                    supabase.table("discord_integrations")
+                    .select("ws_id")
+                    .eq("discord_guild_id", guild_id)
+                    .execute()
+                )
+
+                if integration_result.data:
+                    potential_workspace_id = integration_result.data[0]["ws_id"]
+
+                    # Check if the user is actually a member of this workspace
+                    workspace_member_check = (
+                        supabase.table("workspace_members")
+                        .select("user_id")
+                        .eq("ws_id", potential_workspace_id)
+                        .eq("user_id", platform_user_id)
+                        .execute()
+                    )
+
+                    if workspace_member_check.data:
+                        workspace_id = potential_workspace_id
+                        break
+
+            if not workspace_id:
+                print(
+                    f"🤖: No valid workspace found for Discord user {discord_user_id} in DM context"
+                )
                 return None
-
-            workspace_id = integration_result.data[0]["ws_id"]
 
         # Get workspace member info
         workspace_member_result = (
@@ -239,7 +255,7 @@ def get_user_workspace_info(discord_user_id: str, guild_id: str = None) -> dict:
 
         member_info = workspace_member_result.data[0]
 
-        return {
+        result = {
             "workspace_id": workspace_id,
             "platform_user_id": platform_user_id,
             "role": member_info["role"],
@@ -247,6 +263,11 @@ def get_user_workspace_info(discord_user_id: str, guild_id: str = None) -> dict:
             "display_name": member_info["users"]["display_name"],
             "handle": member_info["users"]["handle"],
         }
+
+        print(
+            f"🤖: User workspace info: workspace_id={workspace_id}, platform_user_id={platform_user_id}"
+        )
+        return result
 
     except Exception as e:
         print(f"🤖: Error getting user workspace info: {e}")

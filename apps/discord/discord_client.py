@@ -13,9 +13,19 @@ class DiscordClient:
         """Send a response to Discord."""
         interaction_url = f"https://discord.com/api/v10/webhooks/{app_id}/{interaction_token}/messages/@original"
 
-        async with aiohttp.ClientSession() as session:
-            async with session.patch(interaction_url, json=payload) as resp:
-                print("🤖 Discord response: " + await resp.text())
+        try:
+            async with aiohttp.ClientSession() as session:
+                async with session.patch(interaction_url, json=payload) as resp:
+                    response_text = await resp.text()
+                    print(f"🤖 Discord response: {response_text}")
+
+                    if resp.status != 200:
+                        print(
+                            f"🤖 Discord error: Status {resp.status}, Response: {response_text}"
+                        )
+        except Exception as e:
+            print(f"🤖 Error sending Discord response: {e}")
+            raise
 
     @staticmethod
     def format_success_message(result: Dict) -> str:
