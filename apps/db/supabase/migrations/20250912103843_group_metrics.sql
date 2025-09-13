@@ -69,7 +69,7 @@ create policy "Enable insert access for authenticated users" on "public"."user_i
 
 create policy "Enable update access for authenticated users" on "public"."user_indicators" as permissive for update to authenticated with check (true);
 
-create policy "Enable delete access for authenticated users" on "public"."user_indicators" as permissive for delete to authenticated with check (true);
+create policy "Enable delete access for authenticated users" on "public"."user_indicators" as permissive for delete to authenticated using (true);
 
 
 
