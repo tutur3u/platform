@@ -1,15 +1,7 @@
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@tuturuuu/ui/card';
-import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
-import { Bot } from '@tuturuuu/ui/icons';
-import { Separator } from '@tuturuuu/ui/separator';
+import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
+import { Bot, ExternalLink, Settings } from '@tuturuuu/ui/icons';
 import Link from 'next/link';
 
 interface Props {
@@ -36,93 +28,171 @@ export default async function IntegrationsPage({ params }: Props) {
         'Server notifications',
         'Member management',
       ],
+      color: 'blue',
+    },
+    {
+      id: 'slack',
+      name: 'Slack',
+      description:
+        'Integrate with Slack for team communication and notifications',
+      icon: <Settings className="h-8 w-8 text-dynamic-green" />,
+      status: 'coming_soon',
+      href: '#',
+      features: [
+        'Channel notifications',
+        'Message forwarding',
+        'User synchronization',
+        'Custom commands',
+      ],
+      color: 'green',
+    },
+    {
+      id: 'github',
+      name: 'GitHub',
+      description:
+        'Connect GitHub repositories for automated workflows and updates',
+      icon: <ExternalLink className="h-8 w-8 text-dynamic-purple" />,
+      status: 'coming_soon',
+      href: '#',
+      features: [
+        'Repository monitoring',
+        'Pull request tracking',
+        'Issue management',
+        'Automated deployments',
+      ],
+      color: 'purple',
     },
   ];
 
   return (
-    <div className="container mx-auto max-w-7xl space-y-6">
-      <FeatureSummary
-        title="Integrations"
-        description="Connect external services and platforms to extend your workspace capabilities"
-      />
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="space-y-6 rounded-xl border border-dynamic-border/20 bg-gradient-to-r from-dynamic-blue/5 via-dynamic-purple/5 to-dynamic-green/5 p-8">
+        <div className="flex items-center justify-between">
+          <div className="space-y-3">
+            <div className="flex items-center gap-4">
+              <div className="rounded-lg bg-gradient-to-br from-dynamic-blue/20 to-dynamic-purple/20 p-3 ring-2 ring-dynamic-blue/10">
+                <Settings className="size-8 text-dynamic-blue" />
+              </div>
+              <div>
+                <h1 className="bg-gradient-to-r from-dynamic-blue to-dynamic-purple bg-clip-text font-bold text-3xl text-transparent">
+                  Integrations
+                </h1>
+                <p className="mt-1 text-base text-dynamic-muted">
+                  Connect external services and platforms to extend your
+                  workspace capabilities
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
 
-      <Separator className="my-6" />
-
+      {/* Integrations Grid */}
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {integrations.map((integration) => (
-          <Card key={integration.id} className="relative">
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  {integration.icon}
+        {integrations.map((integration) => {
+          const colorClasses = {
+            blue: 'border-dynamic-blue/20 bg-gradient-to-r from-dynamic-blue/5 to-dynamic-purple/5',
+            green:
+              'border-dynamic-green/20 bg-gradient-to-r from-dynamic-green/5 to-dynamic-blue/5',
+            purple:
+              'border-dynamic-purple/20 bg-gradient-to-r from-dynamic-purple/5 to-dynamic-pink/5',
+          };
+
+          const iconBgClasses = {
+            blue: 'bg-dynamic-blue/10 text-dynamic-blue',
+            green: 'bg-dynamic-green/10 text-dynamic-green',
+            purple: 'bg-dynamic-purple/10 text-dynamic-purple',
+          };
+
+          return (
+            <Card
+              key={integration.id}
+              className={`overflow-hidden transition-all duration-300 hover:shadow-lg ${colorClasses[integration.color as keyof typeof colorClasses]}`}
+            >
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 border-dynamic-border/20 border-b p-4">
+                <CardTitle className="flex items-center gap-2 font-semibold text-base">
+                  <div
+                    className={`rounded-lg p-1.5 ${iconBgClasses[integration.color as keyof typeof iconBgClasses]}`}
+                  >
+                    {integration.icon}
+                  </div>
+                  <div className="line-clamp-1">{integration.name}</div>
+                </CardTitle>
+                <Badge
+                  variant={
+                    integration.status === 'available' ? 'default' : 'secondary'
+                  }
+                  className="ml-2"
+                >
+                  {integration.status === 'available'
+                    ? 'Available'
+                    : 'Coming Soon'}
+                </Badge>
+              </CardHeader>
+              <CardContent className="h-full space-y-6 p-6">
+                <div className="space-y-4">
+                  <p className="text-dynamic-muted-foreground text-sm leading-relaxed">
+                    {integration.description}
+                  </p>
+
                   <div>
-                    <CardTitle className="text-lg">
-                      {integration.name}
-                    </CardTitle>
-                    <Badge
-                      variant={
-                        integration.status === 'available'
-                          ? 'default'
-                          : 'secondary'
-                      }
-                      className="mt-1"
-                    >
-                      {integration.status === 'available'
-                        ? 'Available'
-                        : 'Coming Soon'}
-                    </Badge>
+                    <h4 className="mb-3 font-semibold text-dynamic-foreground text-sm">
+                      Features
+                    </h4>
+                    <div className="space-y-2">
+                      {integration.features.map((feature, index) => (
+                        <div
+                          key={index}
+                          className="flex items-center gap-2 rounded-md border border-dynamic-border/10 bg-dynamic-muted/5 p-2"
+                        >
+                          <div className="size-1.5 rounded-full bg-dynamic-blue" />
+                          <span className="text-dynamic-muted-foreground text-sm">
+                            {feature}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 </div>
-              </div>
-              <CardDescription className="mt-2">
-                {integration.description}
-              </CardDescription>
-            </CardHeader>
 
-            <CardContent>
-              <div className="space-y-3">
-                <div>
-                  <h4 className="mb-2 font-medium text-dynamic-muted-foreground text-sm">
-                    Features
-                  </h4>
-                  <ul className="space-y-1">
-                    {integration.features.map((feature, index) => (
-                      <li
-                        key={index}
-                        className="text-dynamic-muted-foreground text-sm"
-                      >
-                        • {feature}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-
-                <div className="flex gap-2 pt-2">
+                <div className="pt-2">
                   {integration.status === 'available' ? (
-                    <Button asChild className="flex-1">
-                      <Link href={integration.href}>Configure</Link>
+                    <Button
+                      asChild
+                      className="w-full transition-all duration-200 hover:scale-[1.02]"
+                    >
+                      <Link href={integration.href}>
+                        <Settings className="mr-2 h-4 w-4" />
+                        Configure Integration
+                      </Link>
                     </Button>
                   ) : (
-                    <Button disabled className="flex-1">
+                    <Button disabled className="w-full">
+                      <Settings className="mr-2 h-4 w-4" />
                       Coming Soon
                     </Button>
                   )}
                 </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+              </CardContent>
+            </Card>
+          );
+        })}
       </div>
 
       {integrations.length === 0 && (
         <div className="py-12 text-center">
-          <Bot className="mx-auto mb-4 h-12 w-12 text-dynamic-muted-foreground" />
-          <h3 className="mb-2 font-medium text-dynamic-muted-foreground text-lg">
-            No integrations available
-          </h3>
-          <p className="text-dynamic-muted-foreground">
-            Check back later for new integration options.
-          </p>
+          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full border border-dynamic-gray/20 bg-gradient-to-br from-dynamic-gray/10 to-dynamic-slate/10">
+            <Bot className="h-8 w-8 text-dynamic-gray/60" />
+          </div>
+          <div className="space-y-2">
+            <h3 className="font-semibold text-base text-dynamic-gray">
+              No integrations available
+            </h3>
+            <p className="mx-auto max-w-xs text-dynamic-gray/60 text-sm">
+              Check back later for new integration options.
+            </p>
+          </div>
         </div>
       )}
     </div>

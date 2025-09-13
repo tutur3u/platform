@@ -30,8 +30,12 @@ import {
   CheckCircle,
   Copy,
   ExternalLink,
+  Loader2,
+  Plus,
+  Search,
   Settings,
   Trash2,
+  UserMinus,
   Users,
 } from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
@@ -40,12 +44,25 @@ import { Separator } from '@tuturuuu/ui/separator';
 import { toast } from '@tuturuuu/ui/sonner';
 import { getInitials } from '@tuturuuu/utils/name-helper';
 import moment from 'moment';
-import { useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 type DiscordIntegration =
   Database['public']['Tables']['discord_integrations']['Row'];
 type DiscordGuildMember =
   Database['public']['Tables']['discord_guild_members']['Row'];
+
+interface WorkspaceMember {
+  user_id: string;
+  role: string;
+  role_title: string;
+  created_at: string;
+  users: {
+    id: string;
+    display_name: string | null;
+    avatar_url: string | null;
+    handle: string | null;
+  } | null;
+}
 
 interface Props {
   wsId: string;
@@ -72,6 +89,24 @@ export default function DiscordIntegrationDashboard({
   const [isLoading, setIsLoading] = useState(false);
   const [guildId, setGuildId] = useState('');
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+
+  // Member management state
+  const [members, setMembers] = useState(guildMembers || []);
+  const [showAddMemberDialog, setShowAddMemberDialog] = useState(false);
+  const [availableMembers, setAvailableMembers] = useState<WorkspaceMember[]>(
+    []
+  );
+  const [memberSearchQuery, setMemberSearchQuery] = useState('');
+  const [isSearchingMembers, setIsSearchingMembers] = useState(false);
+  const [isAddingMember, setIsAddingMember] = useState(false);
+  const [isRemovingMember, setIsRemovingMember] = useState<string | null>(null);
+
+  // Discord user ID input state
+  const [showDiscordIdDialog, setShowDiscordIdDialog] = useState(false);
+  const [selectedMember, setSelectedMember] = useState<WorkspaceMember | null>(
+    null
+  );
+  const [discordUserId, setDiscordUserId] = useState('');
 
   const handleConnectDiscord = async () => {
     if (!guildId.trim()) {
@@ -149,6 +184,149 @@ export default function DiscordIntegrationDashboard({
       toast.success('Guild ID copied to clipboard');
     }
   };
+
+  const copyToClipboard = (text: string, label: string) => {
+    navigator.clipboard.writeText(text);
+    toast.success(`${label} copied to clipboard`);
+  };
+
+  // Member management functions
+  const searchAvailableMembers = useCallback(
+    async (query: string) => {
+      if (!integration) return;
+
+      setIsSearchingMembers(true);
+      try {
+        const params = new URLSearchParams({
+          wsId,
+          discordGuildId: integration.discord_guild_id,
+          query: query.trim(),
+        });
+
+        const response = await fetch(
+          `/api/v1/integrations/discord/available-members?${params}`
+        );
+
+        if (!response.ok) {
+          throw new Error('Failed to search members');
+        }
+
+        const { data } = await response.json();
+        setAvailableMembers(data || []);
+      } catch (error) {
+        console.error('Error searching members:', error);
+        toast.error('Failed to search members');
+      } finally {
+        setIsSearchingMembers(false);
+      }
+    },
+    [wsId, integration]
+  );
+
+  const handleAddMember = (workspaceMember: WorkspaceMember) => {
+    if (!integration || !workspaceMember.users) return;
+
+    setSelectedMember(workspaceMember);
+    setDiscordUserId('');
+    setShowDiscordIdDialog(true);
+  };
+
+  const handleConfirmAddMember = async () => {
+    if (!integration || !selectedMember?.users) return;
+
+    if (!discordUserId.trim()) {
+      toast.error('Discord User ID is required');
+      return;
+    }
+
+    // Validate Discord User ID format (should be a numeric string)
+    if (!/^\d{17,19}$/.test(discordUserId.trim())) {
+      toast.error(
+        'Invalid Discord User ID format. Please enter a valid Discord User ID (17-19 digits)'
+      );
+      return;
+    }
+
+    setIsAddingMember(true);
+    try {
+      const response = await fetch('/api/v1/integrations/discord/members', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          wsId,
+          discordGuildId: integration.discord_guild_id,
+          platformUserId: selectedMember.users.id,
+          discordUserId: discordUserId.trim(),
+        }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to add member');
+      }
+
+      const { data: newMember } = await response.json();
+      setMembers((prev) => [newMember, ...prev]);
+      setAvailableMembers((prev) =>
+        prev.filter((m) => m.user_id !== selectedMember.user_id)
+      );
+      toast.success('Member added successfully');
+      setShowDiscordIdDialog(false);
+      setSelectedMember(null);
+      setDiscordUserId('');
+    } catch (error) {
+      console.error('Error adding member:', error);
+      toast.error(
+        error instanceof Error ? error.message : 'Failed to add member'
+      );
+    } finally {
+      setIsAddingMember(false);
+    }
+  };
+
+  const handleRemoveMember = async (memberId: string) => {
+    if (!integration) return;
+
+    setIsRemovingMember(memberId);
+    try {
+      const response = await fetch('/api/v1/integrations/discord/members', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          wsId,
+          discordGuildId: integration.discord_guild_id,
+          memberId,
+        }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to remove member');
+      }
+
+      setMembers((prev) => prev.filter((m) => m.id !== memberId));
+      toast.success('Member removed successfully');
+    } catch (error) {
+      console.error('Error removing member:', error);
+      toast.error(
+        error instanceof Error ? error.message : 'Failed to remove member'
+      );
+    } finally {
+      setIsRemovingMember(null);
+    }
+  };
+
+  // Search members when dialog opens or query changes
+  useEffect(() => {
+    if (showAddMemberDialog && integration) {
+      searchAvailableMembers(memberSearchQuery);
+    }
+  }, [
+    showAddMemberDialog,
+    memberSearchQuery,
+    searchAvailableMembers,
+    integration,
+  ]);
 
   const botInviteUrl = `https://discord.com/api/oauth2/authorize?client_id=1333464267004489801&permissions=274878024768&scope=bot%20applications.commands`;
   const supportedCommands = [
@@ -299,191 +477,297 @@ export default function DiscordIntegrationDashboard({
 
       <Separator className="my-6" />
 
-      <div className="grid gap-6 lg:grid-cols-3">
+      <div className="grid gap-6 lg:grid-cols-2">
         {/* Integration Status */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <CheckCircle className="h-5 w-5 text-dynamic-green" />
-              Connected
+        <Card className="overflow-hidden border-dynamic-green/20 transition-all duration-300">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 border-dynamic-green/20 border-b bg-gradient-to-r from-dynamic-green/5 to-dynamic-blue/5 p-4">
+            <CardTitle className="flex items-center gap-2 font-semibold text-base">
+              <div className="rounded-lg bg-dynamic-green/10 p-1.5 text-dynamic-green">
+                <CheckCircle className="h-4 w-4" />
+              </div>
+              <div className="line-clamp-1">Connected</div>
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <Label className="font-medium text-sm">Guild ID</Label>
-              <div className="mt-1 flex items-center gap-2">
-                <code className="flex-1 rounded bg-dynamic-muted/30 px-2 py-1 font-mono text-sm">
-                  {integration.discord_guild_id}
-                </code>
-                <Button variant="ghost" size="sm" onClick={copyGuildId}>
-                  <Copy className="h-4 w-4" />
-                </Button>
+          <CardContent className="h-full space-y-6 p-6">
+            <div className="space-y-4">
+              <div>
+                <Label className="font-medium text-dynamic-foreground text-sm">
+                  Guild ID
+                </Label>
+                <div className="mt-2 flex items-center gap-2 rounded-lg border border-dynamic-border/10 bg-dynamic-muted/5 p-3">
+                  <code className="flex-1 font-mono text-dynamic-foreground text-sm">
+                    {integration.discord_guild_id}
+                  </code>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={copyGuildId}
+                    className="h-8 w-8 p-0"
+                  >
+                    <Copy className="h-3 w-3" />
+                  </Button>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div className="rounded-lg border border-dynamic-border/10 bg-dynamic-muted/5 p-3">
+                  <Label className="font-medium text-dynamic-muted-foreground text-sm">
+                    Connected
+                  </Label>
+                  <p className="mt-1 font-medium text-dynamic-foreground text-sm">
+                    {moment(integration.created_at).format('MMM DD, YYYY')}
+                  </p>
+                </div>
+
+                <div className="rounded-lg border border-dynamic-border/10 bg-dynamic-muted/5 p-3">
+                  <Label className="font-medium text-dynamic-muted-foreground text-sm">
+                    Created by
+                  </Label>
+                  <p className="mt-1 font-medium text-dynamic-foreground text-sm">
+                    {integration.creator_id === user.id
+                      ? 'You'
+                      : 'Another member'}
+                  </p>
+                </div>
               </div>
             </div>
 
-            <div>
-              <Label className="font-medium text-sm">Connected</Label>
-              <p className="mt-1 text-dynamic-muted-foreground text-sm">
-                {moment(integration.created_at).format(
-                  'MMM DD, YYYY [at] HH:mm'
-                )}
-              </p>
-            </div>
-
-            <div>
-              <Label className="font-medium text-sm">Created by</Label>
-              <p className="mt-1 text-dynamic-muted-foreground text-sm">
-                {integration.creator_id === user.id ? 'You' : 'Another member'}
-              </p>
-            </div>
-
-            <Separator />
-
-            <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-              <DialogTrigger asChild>
-                <Button variant="destructive" size="sm" className="w-full">
-                  <Trash2 className="mr-2 h-4 w-4" />
-                  Disconnect
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Disconnect Discord Integration</DialogTitle>
-                  <DialogDescription>
-                    This will remove the connection between your workspace and
-                    Discord server. The bot will remain in your Discord server
-                    but won't respond to commands.
-                  </DialogDescription>
-                </DialogHeader>
-                <DialogFooter>
-                  <Button
-                    variant="ghost"
-                    onClick={() => setShowDeleteDialog(false)}
-                  >
-                    Cancel
-                  </Button>
+            <div className="pt-2">
+              <Dialog
+                open={showDeleteDialog}
+                onOpenChange={setShowDeleteDialog}
+              >
+                <DialogTrigger asChild>
                   <Button
                     variant="destructive"
-                    onClick={handleDisconnectDiscord}
-                    disabled={isLoading}
+                    size="sm"
+                    className="w-full transition-all duration-200 hover:scale-[1.02]"
                   >
-                    {isLoading ? 'Disconnecting...' : 'Disconnect'}
+                    <Trash2 className="mr-2 h-4 w-4" />
+                    Disconnect Integration
                   </Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Disconnect Discord Integration</DialogTitle>
+                    <DialogDescription>
+                      This will remove the connection between your workspace and
+                      Discord server. The bot will remain in your Discord server
+                      but won't respond to commands.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <DialogFooter>
+                    <Button
+                      variant="ghost"
+                      onClick={() => setShowDeleteDialog(false)}
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      onClick={handleDisconnectDiscord}
+                      disabled={isLoading}
+                    >
+                      {isLoading ? 'Disconnecting...' : 'Disconnect'}
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+            </div>
           </CardContent>
         </Card>
 
         {/* Bot Commands */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Bot className="h-5 w-5" />
-              Available Commands
+        <Card className="overflow-hidden border-dynamic-purple/20 transition-all duration-300">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 border-dynamic-purple/20 border-b bg-gradient-to-r from-dynamic-purple/5 to-dynamic-pink/5 p-4">
+            <CardTitle className="flex items-center gap-2 font-semibold text-base">
+              <div className="rounded-lg bg-dynamic-purple/10 p-1.5 text-dynamic-purple">
+                <Bot className="h-4 w-4" />
+              </div>
+              <div className="line-clamp-1">Available Commands</div>
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-3">
-            {supportedCommands.map((command) => (
-              <div key={command.name} className="rounded-lg border p-3">
-                <code className="rounded bg-dynamic-muted/30 px-2 py-1 font-mono text-dynamic-blue text-sm">
-                  {command.name}
-                </code>
-                <p className="mt-2 text-dynamic-muted-foreground text-sm">
-                  {command.description}
-                </p>
-              </div>
-            ))}
+          <CardContent className="h-full space-y-6 p-6">
+            <div className="space-y-3">
+              {supportedCommands.map((command) => (
+                <div
+                  key={command.name}
+                  className="rounded-lg border border-dynamic-border/10 bg-dynamic-muted/5 p-3 transition-all duration-200 hover:border-dynamic-purple/20 hover:bg-dynamic-purple/5"
+                >
+                  <div className="flex items-center gap-2">
+                    <code className="rounded bg-dynamic-purple/10 px-2 py-1 font-mono text-dynamic-purple text-sm">
+                      {command.name}
+                    </code>
+                  </div>
+                  <p className="mt-2 text-dynamic-muted-foreground text-sm leading-relaxed">
+                    {command.description}
+                  </p>
+                </div>
+              ))}
+            </div>
           </CardContent>
         </Card>
 
         {/* Guild Members */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Users className="h-5 w-5" />
-              Guild Members
-              {guildMembers && (
-                <Badge variant="secondary">{guildMembers.length}</Badge>
+        <Card className="col-span-2 overflow-hidden border-dynamic-blue/20 transition-all duration-300">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 border-dynamic-blue/20 border-b bg-gradient-to-r from-dynamic-blue/5 to-dynamic-purple/5 p-4">
+            <CardTitle className="flex items-center gap-2 font-semibold text-base">
+              <div className="rounded-lg bg-dynamic-blue/10 p-1.5 text-dynamic-blue">
+                <Users className="h-4 w-4" />
+              </div>
+              <div className="line-clamp-1">Guild Members</div>
+              {members && (
+                <Badge variant="secondary" className="ml-2">
+                  {members.length}
+                </Badge>
               )}
             </CardTitle>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-8 px-2 transition-colors hover:bg-dynamic-blue/10 hover:text-dynamic-blue"
+              onClick={() => setShowAddMemberDialog(true)}
+            >
+              <Plus className="mr-1 h-3 w-3" />
+              Add Member
+            </Button>
           </CardHeader>
-          <CardContent>
-            {guildMembers && guildMembers.length > 0 ? (
-              <div className="max-h-64 space-y-3 overflow-y-auto">
-                {guildMembers.map((member) => (
+          <CardContent className="h-full space-y-6 p-6">
+            {members && members.length > 0 ? (
+              <div className="space-y-3">
+                {members.map((member) => (
                   <div
                     key={member.id}
-                    className="flex items-center gap-3 rounded-lg border p-2"
+                    className="flex items-center justify-between rounded-lg border border-dynamic-border/10 bg-dynamic-muted/5 p-3 transition-all duration-200 hover:border-dynamic-blue/20 hover:bg-dynamic-blue/5"
                   >
-                    <Avatar className="h-8 w-8">
-                      <AvatarImage
-                        src={member.users?.avatar_url || undefined}
-                      />
-                      <AvatarFallback className="text-xs">
-                        {getInitials(
-                          member.users?.display_name ||
-                            `User ${member.discord_user_id.slice(-4)}`
-                        )}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate font-medium text-sm">
-                        {member.users?.display_name || `Discord User`}
-                      </p>
-                      <p className="text-dynamic-muted-foreground text-xs">
-                        ID: {member.discord_user_id.slice(-8)}...
-                      </p>
+                    <div className="flex items-center gap-3">
+                      <Avatar className="h-8 w-8">
+                        <AvatarImage
+                          src={member.users?.avatar_url || undefined}
+                        />
+                        <AvatarFallback className="text-xs">
+                          {getInitials(
+                            member.users?.display_name ||
+                              `User ${member.discord_user_id.slice(-4)}`
+                          )}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate font-medium text-dynamic-foreground text-sm">
+                          {member.users?.display_name || `Discord User`}
+                        </p>
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-2">
+                            <p className="text-dynamic-muted-foreground text-xs">
+                              <span className="font-medium">Platform ID:</span>
+                            </p>
+                            <div className="flex items-center gap-1 rounded bg-dynamic-muted/30 px-2 py-1">
+                              <button
+                                className="cursor-pointer border-none bg-transparent p-0 text-left font-mono text-xs transition-colors hover:text-dynamic-blue"
+                                title={member.platform_user_id}
+                                onClick={() =>
+                                  copyToClipboard(
+                                    member.platform_user_id,
+                                    'Platform ID'
+                                  )
+                                }
+                                type="button"
+                              >
+                                {member.platform_user_id.slice(0, 8)}...
+                              </button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() =>
+                                  copyToClipboard(
+                                    member.platform_user_id,
+                                    'Platform ID'
+                                  )
+                                }
+                                className="h-4 w-4 p-0 hover:bg-dynamic-muted/50"
+                                title="Copy full Platform ID"
+                              >
+                                <Copy className="h-2.5 w-2.5" />
+                              </Button>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <p className="text-dynamic-muted-foreground text-xs">
+                              <span className="font-medium">Discord ID:</span>
+                            </p>
+                            <div className="flex items-center gap-1 rounded bg-dynamic-muted/30 px-2 py-1">
+                              <code className="font-mono text-xs">
+                                {member.discord_user_id}
+                              </code>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() =>
+                                  copyToClipboard(
+                                    member.discord_user_id,
+                                    'Discord ID'
+                                  )
+                                }
+                                className="h-4 w-4 p-0 hover:bg-dynamic-muted/50"
+                                title="Copy Discord ID"
+                              >
+                                <Copy className="h-2.5 w-2.5" />
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
                     </div>
-                    <Badge variant="outline" className="text-xs">
-                      Linked
-                    </Badge>
+                    <div className="flex items-center gap-2">
+                      <Badge variant="outline" className="text-xs">
+                        Linked
+                      </Badge>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 w-8 p-0 text-dynamic-red hover:bg-dynamic-red/10 hover:text-dynamic-red"
+                        onClick={() => handleRemoveMember(member.id)}
+                        disabled={isRemovingMember === member.id}
+                      >
+                        {isRemovingMember === member.id ? (
+                          <Loader2 className="h-3 w-3 animate-spin" />
+                        ) : (
+                          <UserMinus className="h-3 w-3" />
+                        )}
+                      </Button>
+                    </div>
                   </div>
                 ))}
               </div>
             ) : (
-              <div className="py-6 text-center text-dynamic-muted-foreground">
-                <Users className="mx-auto mb-2 h-8 w-8 opacity-50" />
-                <p className="text-sm">No linked members found</p>
-                <p className="mt-1 text-xs">
-                  Members will appear here when they use bot commands
-                </p>
+              <div className="py-8 text-center">
+                <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full border border-dynamic-gray/20 bg-gradient-to-br from-dynamic-gray/10 to-dynamic-slate/10">
+                  <Users className="h-8 w-8 text-dynamic-gray/60" />
+                </div>
+                <div className="space-y-2">
+                  <h3 className="font-semibold text-base text-dynamic-gray">
+                    No linked members found
+                  </h3>
+                  <p className="mx-auto max-w-xs text-dynamic-gray/60 text-sm">
+                    Add workspace members to link them with Discord users
+                  </p>
+                </div>
+                <div className="mt-6">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="border-dynamic-blue/20 text-dynamic-blue transition-all duration-200 hover:border-dynamic-blue/30 hover:bg-dynamic-blue/10"
+                    onClick={() => setShowAddMemberDialog(true)}
+                  >
+                    <Plus className="mr-2 h-4 w-4" />
+                    Add Member
+                  </Button>
+                </div>
               </div>
             )}
           </CardContent>
         </Card>
       </div>
-
-      {/* Management Actions */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Management</CardTitle>
-          <CardDescription>
-            Manage your Discord integration and bot permissions
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-wrap gap-3">
-            <Button asChild variant="outline">
-              <a href={botInviteUrl} target="_blank" rel="noopener noreferrer">
-                <ExternalLink className="mr-2 h-4 w-4" />
-                Reinvite Bot
-              </a>
-            </Button>
-
-            <Button asChild variant="outline">
-              <a
-                href="https://discord.com/developers/applications"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                <ExternalLink className="mr-2 h-4 w-4" />
-                Discord Developer Portal
-              </a>
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
 
       {/* Usage Instructions */}
       <Alert>
@@ -494,6 +778,192 @@ export default function DiscordIntegrationDashboard({
           see available commands.
         </AlertDescription>
       </Alert>
+
+      {/* Add Member Dialog */}
+      <Dialog open={showAddMemberDialog} onOpenChange={setShowAddMemberDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Plus className="h-5 w-5 text-dynamic-blue" />
+              Add Guild Member
+            </DialogTitle>
+            <DialogDescription>
+              Search and add workspace members to link them with Discord users
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="member-search">Search Members</Label>
+              <div className="relative">
+                <Search className="-translate-y-1/2 absolute top-1/2 left-3 h-4 w-4 text-dynamic-muted-foreground" />
+                <Input
+                  id="member-search"
+                  placeholder="Search by name or handle..."
+                  value={memberSearchQuery}
+                  onChange={(e) => setMemberSearchQuery(e.target.value)}
+                  className="pl-10"
+                />
+                {isSearchingMembers && (
+                  <Loader2 className="-translate-y-1/2 absolute top-1/2 right-3 h-4 w-4 animate-spin text-dynamic-muted-foreground" />
+                )}
+              </div>
+            </div>
+
+            <div className="max-h-64 space-y-2 overflow-y-auto">
+              {availableMembers.length > 0 ? (
+                availableMembers.map((member) => (
+                  <div
+                    key={member.user_id}
+                    className="flex items-center justify-between rounded-lg border border-dynamic-border/10 bg-dynamic-muted/5 p-3"
+                  >
+                    <div className="flex items-center gap-3">
+                      <Avatar className="h-8 w-8">
+                        <AvatarImage
+                          src={member.users?.avatar_url || undefined}
+                        />
+                        <AvatarFallback className="text-xs">
+                          {getInitials(
+                            member.users?.display_name || 'Unknown User'
+                          )}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate font-medium text-dynamic-foreground text-sm">
+                          {member.users?.display_name || 'Unknown User'}
+                        </p>
+                        {member.users?.handle && (
+                          <p className="text-dynamic-muted-foreground text-xs">
+                            @{member.users.handle}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleAddMember(member)}
+                      disabled={isAddingMember}
+                      className="border-dynamic-blue/20 text-dynamic-blue hover:bg-dynamic-blue/10"
+                    >
+                      {isAddingMember ? (
+                        <Loader2 className="h-3 w-3 animate-spin" />
+                      ) : (
+                        <Plus className="h-3 w-3" />
+                      )}
+                    </Button>
+                  </div>
+                ))
+              ) : (
+                <div className="py-6 text-center text-dynamic-muted-foreground">
+                  <Users className="mx-auto mb-2 h-8 w-8 opacity-50" />
+                  <p className="text-sm">
+                    {memberSearchQuery.trim()
+                      ? 'No members found matching your search'
+                      : 'No available members to add'}
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowAddMemberDialog(false);
+                setMemberSearchQuery('');
+                setAvailableMembers([]);
+              }}
+            >
+              Cancel
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Discord User ID Input Dialog */}
+      <Dialog open={showDiscordIdDialog} onOpenChange={setShowDiscordIdDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Bot className="h-5 w-5 text-dynamic-blue" />
+              Add Discord User
+            </DialogTitle>
+            <DialogDescription>
+              Enter the Discord User ID for{' '}
+              <span className="font-medium text-dynamic-foreground">
+                {selectedMember?.users?.display_name || 'this user'}
+              </span>
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="discord-user-id">Discord User ID</Label>
+              <Input
+                id="discord-user-id"
+                placeholder="e.g., 123456789012345678"
+                value={discordUserId}
+                onChange={(e) => setDiscordUserId(e.target.value)}
+                className="font-mono"
+              />
+              <p className="text-dynamic-muted-foreground text-xs">
+                Enter a 17-19 digit Discord User ID
+              </p>
+            </div>
+
+            <div className="rounded-lg border border-dynamic-blue/20 bg-dynamic-blue/5 p-4">
+              <div className="flex items-start gap-3">
+                <div className="mt-0.5 flex size-5 items-center justify-center rounded-full bg-dynamic-blue/20">
+                  <span className="text-dynamic-blue text-xs">💡</span>
+                </div>
+                <div className="flex-1 text-xs">
+                  <p className="font-medium text-dynamic-blue">
+                    How to get Discord User ID:
+                  </p>
+                  <ol className="mt-1 space-y-1 text-dynamic-blue/80">
+                    <li>1. Enable Developer Mode in Discord Settings</li>
+                    <li>2. Right-click on the user's name or avatar</li>
+                    <li>3. Select "Copy User ID"</li>
+                    <li>4. Paste it in the field above</li>
+                  </ol>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowDiscordIdDialog(false);
+                setSelectedMember(null);
+                setDiscordUserId('');
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleConfirmAddMember}
+              disabled={isAddingMember || !discordUserId.trim()}
+              className="bg-dynamic-blue text-white hover:bg-dynamic-blue/90"
+            >
+              {isAddingMember ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Adding...
+                </>
+              ) : (
+                <>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Add Member
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

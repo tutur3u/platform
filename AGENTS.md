@@ -230,6 +230,7 @@ Follow Conventional Commits & Branch naming (see `apps/docs/git-conventions.mdx`
 - Ensure interactive elements are reachable via keyboard (tab order natural, no positive tabindex).
 - Provide `aria-label` or text content for icon-only buttons.
 - Color choices must respect contrast (WCAG AA). If uncertain, note for human review.
+- **Dialog Components**: Always use `@tuturuuu/ui/dialog` components instead of native browser dialogs (`alert()`, `confirm()`, `prompt()`). Native dialogs are not accessible, not customizable, and break the design system.
 
 #### 5.7 Security & Secrets
 - Only reference environment variables by name—never inline secret values.
@@ -389,6 +390,53 @@ import { toast } from '@tuturuuu/ui/sonner';
 ```
 
 No behavioral API change expected; if an edge case arises (missing variant / prop), escalate instead of shim‑patching locally.
+
+#### 5.14 Dialog Components
+Use the unified dialog system from `@tuturuuu/ui/dialog` for all modal interactions.
+
+Rules:
+1. **NEVER** use native browser dialogs (`alert()`, `confirm()`, `prompt()`) – they are not accessible, not customizable, and break the design system.
+2. **ALWAYS** use `@tuturuuu/ui/dialog` components for modal interactions.
+3. Import dialog components: `import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger } from '@tuturuuu/ui/dialog'`
+4. Use proper dialog patterns with controlled state management.
+5. Ensure dialogs are keyboard accessible and screen reader friendly.
+6. Use `DialogTrigger` for opening dialogs, `DialogContent` for the modal content.
+7. Include proper `DialogHeader`, `DialogTitle`, and `DialogDescription` for accessibility.
+8. Use `DialogFooter` for action buttons (Cancel, Confirm, etc.).
+
+Dialog Pattern:
+```tsx
+const [showDialog, setShowDialog] = useState(false);
+
+<Dialog open={showDialog} onOpenChange={setShowDialog}>
+  <DialogTrigger asChild>
+    <Button>Open Dialog</Button>
+  </DialogTrigger>
+  <DialogContent>
+    <DialogHeader>
+      <DialogTitle>Dialog Title</DialogTitle>
+      <DialogDescription>Dialog description</DialogDescription>
+    </DialogHeader>
+    {/* Dialog content */}
+    <DialogFooter>
+      <Button variant="outline" onClick={() => setShowDialog(false)}>
+        Cancel
+      </Button>
+      <Button onClick={handleConfirm}>Confirm</Button>
+    </DialogFooter>
+  </DialogContent>
+</Dialog>
+```
+
+Rationale:
+- Native dialogs cannot be styled, are not accessible, and break the design system.
+- Custom dialogs provide full control over styling, behavior, and accessibility.
+- Consistent dialog patterns improve user experience and maintainability.
+- Proper ARIA attributes and keyboard navigation are built into the dialog components.
+
+Guardrail Enforcement:
+- Any use of `alert()`, `confirm()`, or `prompt()` should be flagged and replaced with proper dialog components.
+- Dialog components must include proper accessibility attributes and keyboard navigation.
 
 ### 6. Environment & Tooling Usage
 
@@ -707,5 +755,6 @@ Document any deviation inside PR description (Reason + Observed Failure Mode).
 | Mutation | Write operation defined with `useMutation`; may perform optimistic UI update then reconcile. |
 | Optimistic Update | Temporary cache modification prior to server confirmation with rollback on failure. |
 | Hydration | Passing pre-fetched query data from server (RSC) into client cache to avoid duplicate fetch. |
+| Dialog Components | Accessible modal components from `@tuturuuu/ui/dialog`; must be used instead of native browser dialogs (`alert()`, `confirm()`, `prompt()`). |
 
 
