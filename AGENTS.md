@@ -272,6 +272,124 @@ Migration Guidance (if editing legacy code):
 
 Add a comment `// rationale: dynamic token mapping` only when mapping is non-obvious (e.g., brand-accent to dynamic-orange).
 
+#### 5.12 Data Fetching & React Query
+Goal: Minimize client complexity and network chatter while keeping UX responsive.
+
+Decision Order (Prefer Earlier):
+1. Pure Server Component (RSC) fetch – for read-only, cacheable, SEO / first paint critical data.
+2. Server Action (mutation or non-idempotent op) returning updated canonical state to RSC.
+3. RSC initial fetch + Client hydration (dehydrate React Query cache) if post-load background refresh needed.
+4. Client-only React Query (`useQuery`/`useMutation`) for interactive, rapidly changing, or session-local state.
+5. Realtime subscription (Supabase channel) + targeted query invalidation / cache updates (avoid polling) – only if live updates materially improve UX.
+
+When NOT to use React Query:
+- Single static fetch with no refresh requirement (use RSC).
+- Simple form POST where immediate redirect or RSC re-render suffices (use server action / route handler returning redirect or new data).
+- Data already fully present via parent RSC props.
+
+When TO use React Query:
+- User-triggered mutations needing optimistic UI or undo.
+- Background refetch for freshness after initial SSR/RSC render.
+- Paginated / infinite lists with incremental loading.
+- Dependent queries (one key depends on another's resolved data) requiring client sequencing.
+- Shared client state consumed in multiple sibling Client Components without prop drilling.
+
+Query Keys:
+- Always use stable array form: `[domain, subdomain?, paramsObjectHash, version?]`.
+- Include a lightweight version token when shape/filters change to avoid stale structural assumptions.
+- Never put non-deterministic values (functions, Date instances) directly in keys; serialize needed primitives.
+
+Caching & Staleness:
+- Set `staleTime` > 0 for data that rarely changes to prevent immediate refetch storms.
+- Use `gcTime` (garbage collection) mindful of memory – large lists may require shorter retention; small scalar resources can live longer.
+- For RSC + hydration: mark query as fresh (`staleTime` > re-render window) to avoid double fetch after hydration.
+
+Hydration Pattern (RSC → Client):
+1. Fetch data in Server Component / route.
+2. Create a `QueryClient`, pre-populate with `queryClient.setQueryData(key, data)`.
+3. Pass `dehydrate(queryClient)` to a Client boundary provider.
+4. Client `useQuery` with same key gets instant data (no flash / duplicate network call).
+
+Mutations:
+- Define `useMutation({ mutationFn, onMutate, onError, onSettled })`.
+- Optimistic Update Flow:
+	1. `onMutate` – cancel outgoing queries for affected keys (`queryClient.cancelQueries`). Snapshot previous value.
+	2. Apply optimistic cache change (`setQueryData`).
+	3. On error – restore snapshot; surface toast / non-intrusive error.
+	4. On success – merge server response (source of truth) and invalidate narrowly (e.g., `invalidateQueries({ queryKey: [...] })`).
+- Avoid broad `invalidateQueries()` with no key – hurts perf & determinism.
+
+Error Handling:
+- Normalize HTTP / RPC errors to domain-centric objects before caching (avoid leaking implementation details into UI layer).
+- Use error boundaries or `onError` side effects (logging, non-blocking notifications) – never swallow silently.
+
+Pagination:
+- Prefer cursor-based (stable `nextCursor`) over page-number when API supports it – simpler invalidation.
+- Use `useInfiniteQuery` with `getNextPageParam` returning cursor; flatten pages in memoized selector.
+
+Selective Data Mapping:
+- Use `select` in `useQuery` to derive view model slices; keeps components decoupled from raw payload shape and reduces re-renders.
+
+Realtime Integration (Optional):
+- Subscribe to Supabase channel only for high-value live data (e.g., collaborative edits). In handler, update cache via `setQueryData` instead of invalidating if diff known.
+- Throttle bursts (debounce merging) to avoid rapid re-renders.
+
+Performance & Render Hygiene:
+- Co-locate small read queries with components; share bigger aggregates at boundary provider to avoid over-fetch.
+- Wrap large lists with virtualization when item count > ~200.
+- Avoid putting large objects directly in dependency arrays; derive stable memoized IDs for selectors.
+
+Security & Auth:
+- Never embed service-role operations in client queries – all privileged actions must be via server route / action.
+- On 401/403 inside mutation/query: surface sign-in required state; do not loop refetch blindly.
+
+Testing Guidelines:
+- Mock query client in unit tests; assert cache transitions for optimistic flows.
+- Provide controlled fake timers for staleTime expiry tests.
+
+Do / Avoid Summary:
+| Do | Because | Avoid | Why |
+|----|---------|-------|-----|
+| RSC first for static & SEO data | Fewer bytes, faster TTFB | Client query for static config | Redundant round trip |
+| Hydrate initial query cache | Prevent double fetch | Refetch immediately post-hydration | Wasted bandwidth |
+| Narrow invalidations | Precise updates | Global invalidation | Performance hit |
+| Optimistic updates with snapshot | Responsive UX | Blind optimistic writes w/out rollback | Inconsistent UI on failure |
+| Version query keys on shape change | Avoid stale structural assumptions | Reusing old key after breaking change | Hard-to-debug stale caches |
+
+Escalate if: Proposed pattern entails >5 overlapping realtime channels OR optimistic update logic >40 LOC (extract helper / reconsider complexity).
+
+Cross-Reference: See 5.2 (TypeScript) for return type clarity and 5.7 (Security) for auth separation; React Query Client usage must not undermine those guarantees.
+
+#### 5.13 Toast Notifications
+Use the unified toast utility exported from `@tuturuuu/ui/sonner`.
+
+Rules:
+1. DO import from `@tuturuuu/ui/sonner` for all new toast / notification toasts.
+2. DO NOT import from `@tuturuuu/ui/toast` – that module is **deprecated** and will be removed (breaking) in a future cleanup.
+3. If you touch a file that still imports `@tuturuuu/ui/toast`, opportunistically migrate it to `@tuturuuu/ui/sonner` in the same PR (scoped change; no large refactor required).
+4. Keep toast content concise (≤120 chars primary message). Longer contextual info should link to a help page or surface in an expanded UI element instead of stuffing the toast.
+5. Prefer semantic intent variants (success / error / info / warning) provided by the Sonner wrapper; avoid custom ad‑hoc styling that bypasses design tokens.
+
+Rationale:
+- Consolidated API (Sonner) standardizes animation, accessibility (ARIA live region), and theming with dynamic color tokens.
+- Deprecated path lacked consistent accessibility attributes and theming alignment.
+- Early migration reduces friction ahead of scheduled removal.
+
+Guardrail Enforcement:
+- New imports from `@tuturuuu/ui/toast` should be treated similar to a lint violation and blocked in review.
+- If a removal PR is large (>30 modified files), split into batches grouped by app/package.
+
+Migration Pattern:
+```ts
+// BEFORE (deprecated)
+import { toast } from '@tuturuuu/ui/toast';
+
+// AFTER
+import { toast } from '@tuturuuu/ui/sonner';
+```
+
+No behavioral API change expected; if an edge case arises (missing variant / prop), escalate instead of shim‑patching locally.
+
 ### 6. Environment & Tooling Usage
 
 #### 6.1 Package Manager & Scripts
@@ -584,5 +702,10 @@ Document any deviation inside PR description (Reason + Observed Failure Mode).
 | Scope (Commit) | Affected package/app name inside Conventional Commit header (`feat(ui): ...`). |
 | Escalation | Opening `policy-gap` or human request when rule coverage insufficient or safety threshold exceeded. |
 | Dynamic Color Classes | Tailwind `dynamic-*` token-based utilities replacing static palette class names (blue-500, etc.). |
+| React Query | Client-side caching & async state library for queries/mutations; used only when RSC/server actions insufficient. |
+| Query Key | Stable array descriptor for cached resource (`[domain, paramsHash, version]`). |
+| Mutation | Write operation defined with `useMutation`; may perform optimistic UI update then reconcile. |
+| Optimistic Update | Temporary cache modification prior to server confirmation with rollback on failure. |
+| Hydration | Passing pre-fetched query data from server (RSC) into client cache to avoid duplicate fetch. |
 
 
