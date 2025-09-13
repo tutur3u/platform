@@ -58,31 +58,7 @@ class CommandHandler:
                         "description": "Plan title (e.g. Sprint Planning)",
                         "type": 3,  # STRING
                         "required": True,
-                    },
-                    {
-                        "name": "date",
-                        "description": "Date (YYYY-MM-DD, default today GMT+7)",
-                        "type": 3,
-                        "required": False,
-                    },
-                    {
-                        "name": "start",
-                        "description": "Start time (HH:MM, 24h)",
-                        "type": 3,
-                        "required": False,
-                    },
-                    {
-                        "name": "end",
-                        "description": "End time (HH:MM, 24h)",
-                        "type": 3,
-                        "required": False,
-                    },
-                    {
-                        "name": "public",
-                        "description": "Public plan? (true/false, default true)",
-                        "type": 3,  # Discord does not have native boolean for older compatibility here
-                        "required": False,
-                    },
+                    }
                 ],
             },
         ]
@@ -110,7 +86,7 @@ class CommandHandler:
         return get_user_workspace_info(discord_user_id, guild_id)
 
     async def handle_api_command(
-        self, app_id: str, interaction_token: str, user_info: dict = None
+        self, app_id: str, interaction_token: str, user_info: Optional[dict] = None
     ) -> None:
         """Handle the /api command."""
         message = await self._fetch_api_data()
@@ -131,7 +107,7 @@ class CommandHandler:
         app_id: str,
         interaction_token: str,
         options: List[Dict],
-        user_info: dict = None,
+        user_info: Optional[dict] = None,
     ) -> None:
         """Handle the /shorten command."""
         # Extract parameters
@@ -170,7 +146,7 @@ class CommandHandler:
                     self.link_shortener.shorten_link,
                     url,
                     custom_slug,
-                    workspace_id,
+                    workspace_id,  # type: ignore[arg-type] workspace_id can be None for global shortening
                     creator_id,
                 ),
                 timeout=10.0,  # 10 second timeout
@@ -207,7 +183,7 @@ class CommandHandler:
             print(f"🤖: Error sending response to Discord: {e}")
 
     async def handle_daily_report_command(
-        self, app_id: str, interaction_token: str, user_info: dict = None
+        self, app_id: str, interaction_token: str, user_info: Optional[dict] = None
     ) -> None:
         """Handle the /daily-report command."""
         if not user_info:
@@ -251,9 +227,12 @@ class CommandHandler:
     ) -> None:
         """Handle the /tumeet command to create a meet together plan.
 
-        Required option: name
-        Optional: date (YYYY-MM-DD), start (HH:MM), end (HH:MM), public (true/false)
-        Times are interpreted in GMT+7 and stored as ISO strings (date only for now if times omitted).
+        Simplified version: user only supplies the plan *name*.
+        All other fields use defaults and can be edited later on the website:
+          - date: today (Asia/Bangkok, GMT+7)
+          - start_time: 07:00:00+07:00
+          - end_time:   22:00:00+07:00
+          - is_public: true
         """
         if not user_info:
             await self.discord_client.send_response(
@@ -263,7 +242,7 @@ class CommandHandler:
             )
             return
 
-        # Parse options
+        # Extract only the required name option
         raw: Dict[str, Optional[str]] = {opt["name"]: opt.get("value") for opt in options}
         plan_name = (raw.get("name") or "").strip()
         if not plan_name:
@@ -275,66 +254,16 @@ class CommandHandler:
             return
 
         from datetime import datetime
-        import pytz
+        import pytz  # type: ignore[import-not-found]
 
         tz = pytz.timezone("Asia/Bangkok")  # GMT+7
         today_str = datetime.now(tz).strftime("%Y-%m-%d")
 
-        date_str = (raw.get("date") or today_str).strip()
-        start_str = (raw.get("start") or "").strip()
-        end_str = (raw.get("end") or "").strip()
-        public_str = (raw.get("public") or "true").strip().lower()
-        is_public = public_str in {"true", "1", "yes", "y"}
-
-        # Basic validation
-        # Ensure date format
-        try:
-            datetime.strptime(date_str, "%Y-%m-%d")
-        except ValueError:
-            await self.discord_client.send_response(
-                {"content": "❌ **Error:** Invalid date format. Use YYYY-MM-DD."},
-                app_id,
-                interaction_token,
-            )
-            return
-
-        def parse_time(label: str, value: str):
-            if not value:
-                return None
-            try:
-                datetime.strptime(value, "%H:%M")
-                return value
-            except ValueError:
-                return None
-
-        start_ok = parse_time("start", start_str)
-        end_ok = parse_time("end", end_str)
-        if start_str and not start_ok:
-            await self.discord_client.send_response(
-                {"content": "❌ **Error:** Invalid start time. Use HH:MM 24h."},
-                app_id,
-                interaction_token,
-            )
-            return
-        if end_str and not end_ok:
-            await self.discord_client.send_response(
-                {"content": "❌ **Error:** Invalid end time. Use HH:MM 24h."},
-                app_id,
-                interaction_token,
-            )
-            return
-        # Provide defaults if missing (required by DB NOT NULL)
-        if not start_ok:
-            start_ok = "07:00"  # Default 7 AM GMT+7
-        if not end_ok:
-            end_ok = "22:00"  # Default 10 PM GMT+7
-        if start_ok and end_ok and start_ok >= end_ok:
-            await self.discord_client.send_response(
-                {"content": "❌ **Error:** End time must be after start time."},
-                app_id,
-                interaction_token,
-            )
-            return
+        # Defaults (timezone-aware strings)
+        date_str = today_str
+        start_time = "07:00:00+07:00"
+        end_time = "22:00:00+07:00"
+        is_public = True
 
         # Prepare Supabase insert
         # dates column appears to store array of date strings
@@ -353,11 +282,9 @@ class CommandHandler:
             "name": plan_name,
             "dates": [date_str],
             "is_public": is_public,
+            "start_time": start_time,
+            "end_time": end_time,
         }
-        if start_ok:
-            payload["start_time"] = start_ok
-        if end_ok:
-            payload["end_time"] = end_ok
 
         # Insert directly via service role (Python Supabase client)
         try:
@@ -390,10 +317,10 @@ class CommandHandler:
         message = (
             f"✅ **TuMeet plan created by {user_name}!**\n\n"
             f"**Name:** {plan_name}\n"
-            f"**Date:** {date_str}" + (f" {start_ok}-{end_ok}" if start_ok and end_ok else "") + "\n"
-            f"**Public:** {'Yes' if is_public else 'No'}\n"
-            # share url must not include dashes
-            f"**Link:** {share_url.replace('-', '')}\n"
+            f"**Date:** {date_str} 07:00–22:00 (GMT+7)\n"
+            f"**Public:** Yes (default)\n"
+            f"**Link:** {share_url.replace('-', '')}\n\n"
+            f"_Defaults applied. Edit details & times on the website if needed._"
         )
 
         await self.discord_client.send_response(
@@ -432,8 +359,7 @@ class CommandHandler:
     def _format_daily_report(self, stats: dict, user_info: dict) -> str:
         """Format the daily report for Discord display."""
         from datetime import datetime, timedelta, timezone
-
-        import pytz
+        import pytz  # type: ignore[import-not-found]
 
         # Get GMT+7 timezone
         gmt_plus_7 = pytz.timezone("Asia/Bangkok")  # GMT+7
