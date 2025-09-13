@@ -862,7 +862,8 @@
     "groups": "Groups",
     "sites": "Sites",
     "labels": "Labels",
-    "estimates": "Estimates"
+    "estimates": "Estimates",
+    "integrations": "Integrations"
   },
   "usage": {
     "description": "Monitor workspace activity, feature usage, and system metrics across your organization",

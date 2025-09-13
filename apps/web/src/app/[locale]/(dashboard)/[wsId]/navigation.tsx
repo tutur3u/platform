@@ -1,5 +1,4 @@
-import type { NavLink } from '@/components/navigation';
-import { DEV_MODE } from '@/constants/common';
+import { createClient } from '@tuturuuu/supabase/next/server';
 import {
   Activity,
   Archive,
@@ -9,6 +8,7 @@ import {
   BookKey,
   BookText,
   BookUser,
+  Bot,
   Box,
   Boxes,
   BriefcaseBusiness,
@@ -78,8 +78,11 @@ import {
   Warehouse,
 } from '@tuturuuu/ui/icons';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
+import { getCurrentUser } from '@tuturuuu/utils/user-helper';
 import { getPermissions, verifySecret } from '@tuturuuu/utils/workspace-helper';
 import { getTranslations } from 'next-intl/server';
+import type { NavLink } from '@/components/navigation';
+import { DEV_MODE } from '@/constants/common';
 
 export async function WorkspaceNavigationLinks({
   wsId,
@@ -103,6 +106,22 @@ export async function WorkspaceNavigationLinks({
     name: 'ENABLE_AI_ONLY',
     value: 'true',
   });
+
+  // Check if user has Discord integration permission
+  const user = await getCurrentUser();
+  const supabase = await createClient();
+  let allowDiscordIntegrations = false;
+
+  if (user) {
+    const { data: platformUserRole } = await supabase
+      .from('platform_user_roles')
+      .select('allow_discord_integrations')
+      .eq('user_id', user.id)
+      .single();
+
+    allowDiscordIntegrations =
+      platformUserRole?.allow_discord_integrations ?? false;
+  }
 
   const navLinks: (NavLink | null)[] = [
     {
@@ -841,6 +860,14 @@ export async function WorkspaceNavigationLinks({
         },
       ],
     },
+    allowDiscordIntegrations
+      ? {
+          title: t('sidebar_tabs.integrations'),
+          icon: <Bot className="h-5 w-5" />,
+          href: `/${personalOrWsId}/integrations`,
+          disabled: !allowDiscordIntegrations,
+        }
+      : null,
     {
       title: t('common.settings'),
       icon: <Settings className="h-5 w-5" />,
@@ -855,6 +882,8 @@ export async function WorkspaceNavigationLinks({
         `/${personalOrWsId}/secrets`,
         `/${personalOrWsId}/infrastructure`,
         `/${personalOrWsId}/migrations`,
+        `/${personalOrWsId}/integrations`,
+        `/${personalOrWsId}/integrations/discord`,
       ],
       children: [
         {

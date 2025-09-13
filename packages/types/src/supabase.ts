@@ -2471,6 +2471,126 @@ export type Database = {
           name?: string;
         };
       };
+      discord_guild_members: {
+        Insert: {
+          created_at?: string;
+          discord_guild_id: string;
+          discord_user_id: string;
+          id?: string;
+          platform_user_id: string;
+        };
+        Relationships: [
+          {
+            columns: ['platform_user_id'];
+            foreignKeyName: 'discord_guild_members_platform_user_id_fkey';
+            isOneToOne: false;
+            referencedColumns: ['user_id'];
+            referencedRelation: 'nova_user_challenge_leaderboard';
+          },
+          {
+            columns: ['platform_user_id'];
+            foreignKeyName: 'discord_guild_members_platform_user_id_fkey';
+            isOneToOne: false;
+            referencedColumns: ['user_id'];
+            referencedRelation: 'nova_user_leaderboard';
+          },
+          {
+            columns: ['platform_user_id'];
+            foreignKeyName: 'discord_guild_members_platform_user_id_fkey';
+            isOneToOne: false;
+            referencedColumns: ['id'];
+            referencedRelation: 'shortened_links_creator_stats';
+          },
+          {
+            columns: ['platform_user_id'];
+            foreignKeyName: 'discord_guild_members_platform_user_id_fkey';
+            isOneToOne: false;
+            referencedColumns: ['id'];
+            referencedRelation: 'users';
+          },
+        ];
+        Row: {
+          created_at: string;
+          discord_guild_id: string;
+          discord_user_id: string;
+          id: string;
+          platform_user_id: string;
+        };
+        Update: {
+          created_at?: string;
+          discord_guild_id?: string;
+          discord_user_id?: string;
+          id?: string;
+          platform_user_id?: string;
+        };
+      };
+      discord_integrations: {
+        Insert: {
+          created_at?: string;
+          creator_id?: string;
+          discord_guild_id: string;
+          id?: string;
+          ws_id: string;
+        };
+        Relationships: [
+          {
+            columns: ['creator_id'];
+            foreignKeyName: 'discord_integrations_creator_id_fkey';
+            isOneToOne: false;
+            referencedColumns: ['user_id'];
+            referencedRelation: 'nova_user_challenge_leaderboard';
+          },
+          {
+            columns: ['creator_id'];
+            foreignKeyName: 'discord_integrations_creator_id_fkey';
+            isOneToOne: false;
+            referencedColumns: ['user_id'];
+            referencedRelation: 'nova_user_leaderboard';
+          },
+          {
+            columns: ['creator_id'];
+            foreignKeyName: 'discord_integrations_creator_id_fkey';
+            isOneToOne: false;
+            referencedColumns: ['id'];
+            referencedRelation: 'shortened_links_creator_stats';
+          },
+          {
+            columns: ['creator_id'];
+            foreignKeyName: 'discord_integrations_creator_id_fkey';
+            isOneToOne: false;
+            referencedColumns: ['id'];
+            referencedRelation: 'users';
+          },
+          {
+            columns: ['ws_id'];
+            foreignKeyName: 'discord_integrations_ws_id_fkey';
+            isOneToOne: true;
+            referencedColumns: ['id'];
+            referencedRelation: 'workspace_link_counts';
+          },
+          {
+            columns: ['ws_id'];
+            foreignKeyName: 'discord_integrations_ws_id_fkey';
+            isOneToOne: true;
+            referencedColumns: ['id'];
+            referencedRelation: 'workspaces';
+          },
+        ];
+        Row: {
+          created_at: string;
+          creator_id: string;
+          discord_guild_id: string;
+          id: string;
+          ws_id: string;
+        };
+        Update: {
+          created_at?: string;
+          creator_id?: string;
+          discord_guild_id?: string;
+          id?: string;
+          ws_id?: string;
+        };
+      };
       external_user_monthly_report_logs: {
         Insert: {
           content?: string;
@@ -5059,6 +5179,7 @@ export type Database = {
       platform_user_roles: {
         Insert: {
           allow_challenge_management?: boolean;
+          allow_discord_integrations?: boolean;
           allow_manage_all_challenges?: boolean;
           allow_role_management?: boolean;
           allow_workspace_creation?: boolean;
@@ -5098,6 +5219,7 @@ export type Database = {
         ];
         Row: {
           allow_challenge_management: boolean;
+          allow_discord_integrations: boolean;
           allow_manage_all_challenges: boolean;
           allow_role_management: boolean;
           allow_workspace_creation: boolean;
@@ -5107,6 +5229,7 @@ export type Database = {
         };
         Update: {
           allow_challenge_management?: boolean;
+          allow_discord_integrations?: boolean;
           allow_manage_all_challenges?: boolean;
           allow_role_management?: boolean;
           allow_workspace_creation?: boolean;
