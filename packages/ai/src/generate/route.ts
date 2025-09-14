@@ -3,7 +3,13 @@ import {
   type GoogleGenerativeAIProviderOptions,
 } from '@ai-sdk/google';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
-import { type FinishReason, streamText } from 'ai';
+import {
+  type FilePart,
+  type FinishReason,
+  type ImagePart,
+  streamText,
+  type TextPart,
+} from 'ai';
 import { cookies } from 'next/headers';
 import { type NextRequest, NextResponse } from 'next/server';
 import { ROOT_WORKSPACE_ID } from './../../../utils/src/constants';
@@ -71,6 +77,8 @@ export function createPOST(
 
     const {
       prompt,
+      dataType = 'text',
+      mimeType = 'text/plain',
       accessKey,
       configs = {
         wsId: ROOT_WORKSPACE_ID,
@@ -81,6 +89,8 @@ export function createPOST(
       },
     } = (await req.json()) as {
       prompt?: string;
+      dataType?: 'text' | 'file' | 'image';
+      mimeType?: string;
       accessKey?: {
         id: string;
         value: string;
@@ -111,6 +121,25 @@ export function createPOST(
 
     if (!configs?.includeThoughts) {
       configs.includeThoughts = false;
+    }
+
+    if (['text', 'file', 'image'].indexOf(dataType) === -1) {
+      console.error('Invalid dataType');
+      return new Response('Invalid dataType', { status: 400 });
+    }
+
+    if (dataType === 'file' && !mimeType) {
+      console.error('Missing mimeType for file dataType');
+      return new Response('Missing mimeType for file dataType', {
+        status: 400,
+      });
+    }
+
+    if (dataType === 'image' && !mimeType) {
+      console.error('Missing mimeType for image dataType');
+      return new Response('Missing mimeType for image dataType', {
+        status: 400,
+      });
     }
 
     try {
@@ -194,7 +223,18 @@ export function createPOST(
 
       const stream = streamText({
         model: google(configs.model),
-        prompt,
+        messages: [
+          {
+            role: 'user',
+            content: [
+              {
+                type: dataType,
+                data: prompt,
+                mediaType: mimeType,
+              } as TextPart | FilePart | ImagePart,
+            ],
+          },
+        ],
         system: configs.systemPrompt,
         onFinish: async ({ text, finishReason, usage }) => {
           result = {
