@@ -428,33 +428,38 @@ async def handle_ticket_modal_submission(
 ):
     """Handle ticket modal submission with authorization."""
     handler = CommandHandler()
+    # NOTE: Modal was shown optimistically without pre-check. We must enforce
+    # full authorization here before creating any task. This prevents an
+    # unauthorized user from successfully creating resources even though they
+    # could trigger the modal UI.
+    if not user_id:
+        await handler.discord_client.send_response(
+            {"content": "❌ **Error:** Unable to identify user."},
+            app_id,
+            interaction_token,
+        )
+        return
 
-    # Authorization (same pattern as other commands)
-    if user_id:
-        if guild_id:
-            if not handler.is_user_authorized(user_id, guild_id):
-                await handler.discord_client.send_response(
-                    {
-                        "content": handler.discord_client.format_unauthorized_user_message()
-                    },
-                    app_id,
-                    interaction_token,
-                )
-                return
-        else:
-            if not handler.is_user_authorized_for_dm(user_id):
-                await handler.discord_client.send_response(
-                    {
-                        "content": handler.discord_client.format_unauthorized_user_message()
-                    },
-                    app_id,
-                    interaction_token,
-                )
-                return
+    if guild_id:
+        if not handler.is_user_authorized(user_id, guild_id):
+            await handler.discord_client.send_response(
+                {"content": handler.discord_client.format_unauthorized_user_message()},
+                app_id,
+                interaction_token,
+            )
+            return
+    else:
+        # DM context
+        if not handler.is_user_authorized_for_dm(user_id):
+            await handler.discord_client.send_response(
+                {"content": handler.discord_client.format_unauthorized_user_message()},
+                app_id,
+                interaction_token,
+            )
+            return
 
-    user_info = None
-    if user_id:
-        user_info = handler.get_user_workspace_info(user_id, guild_id or "")
+    # Retrieve workspace/user context AFTER auth check to reduce DB lookups for rejected users
+    user_info = handler.get_user_workspace_info(user_id, guild_id or "")
 
     if not list_id or not components:
         await handler.discord_client.send_response(
@@ -882,7 +887,8 @@ def web_app():
             )
 
             # Handle different component interactions asynchronously
-            if custom_id == "select_board_for_lists":
+            # Support both legacy boards listing select id and ticket flow specific id
+            if custom_id in ("select_board_for_lists", "select_board_for_ticket"):
                 selected_board_id = data["data"]["values"][0]
                 print(f"🤖: selected board ID: {selected_board_id}")
                 handle_board_selection_interaction.spawn(
@@ -905,26 +911,10 @@ def web_app():
                                 "flags": 64,  # EPHEMERAL flag
                             },
                         }
-
-                    # Get user info
+                    # Show modal immediately WITHOUT pre-checking user permissions/workspace.
+                    # Authorization & workspace validation will be enforced on modal submission.
                     handler = CommandHandler()
-                    user_info = None
-                    if user_id:
-                        user_info = handler.get_user_workspace_info(
-                            user_id, guild_id or ""
-                        )
-
-                    if not user_info:
-                        return {
-                            "type": DiscordResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
-                            "data": {
-                                "content": "❌ **Error:** Unable to identify user/workspace.",
-                                "flags": 64,  # EPHEMERAL flag
-                            },
-                        }
-
-                    # Create and return modal
-                    modal_data = handler.create_ticket_form_modal(list_id, user_info)
+                    modal_data = handler.create_ticket_form_modal(list_id, None)
                     return modal_data
 
                 except Exception as e:
