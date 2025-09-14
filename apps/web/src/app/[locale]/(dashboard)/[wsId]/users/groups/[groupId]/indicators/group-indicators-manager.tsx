@@ -68,6 +68,7 @@ export default function GroupIndicatorsManager({
   initialUserIndicators,
 }: Props) {
   const t = useTranslations();
+  const tIndicators = useTranslations('ws-user-group-indicators');
   const supabase = createClient();
   const queryClient = useQueryClient();
 
@@ -117,9 +118,12 @@ export default function GroupIndicatorsManager({
     queryFn: async (): Promise<UserIndicator[]> => {
       const { data, error } = await supabase
         .from('user_indicators')
-        .select(
-          'user_id, indicator_id, healthcare_vitals(group_id, name), value'
-        )
+        .select(`
+          user_id, 
+          indicator_id, 
+          value,
+          healthcare_vitals!inner(group_id)
+        `)
         .eq('healthcare_vitals.group_id', groupId);
 
       if (error) throw error;
@@ -143,11 +147,11 @@ export default function GroupIndicatorsManager({
           queryKey: ['groupIndicators', wsId, groupId],
         }),
       ]);
-      toast.success('Indicator added successfully');
+      toast.success(tIndicators('indicator_added_successfully'));
     },
     onError: (error) => {
       console.error('Error adding indicator:', error);
-      toast.error('Failed to add indicator');
+      toast.error(tIndicators('failed_to_add_indicator'));
     },
   });
 
@@ -183,11 +187,11 @@ export default function GroupIndicatorsManager({
           queryKey: ['groupIndicators', wsId, groupId],
         }),
       ]);
-      toast.success('New indicator created and added successfully');
+      toast.success(tIndicators('indicator_created_successfully'));
     },
     onError: (error) => {
       console.error('Error creating indicator:', error);
-      toast.error('Failed to create indicator');
+      toast.error(tIndicators('failed_to_create_indicator'));
     },
   });
 
@@ -213,11 +217,11 @@ export default function GroupIndicatorsManager({
       await queryClient.invalidateQueries({
         queryKey: ['groupIndicators', wsId, groupId],
       });
-      toast.success('Indicator updated successfully');
+      toast.success(tIndicators('indicator_updated_successfully'));
     },
     onError: (error) => {
       console.error('Error updating indicator:', error);
-      toast.error('Failed to update indicator');
+      toast.error(tIndicators('failed_to_update_indicator'));
     },
   });
 
@@ -238,11 +242,11 @@ export default function GroupIndicatorsManager({
           queryKey: ['userIndicators', wsId, groupId],
         }),
       ]);
-      toast.success('Indicator removed successfully');
+      toast.success(tIndicators('indicator_removed_successfully'));
     },
     onError: (error) => {
       console.error('Error deleting indicator:', error);
-      toast.error('Failed to remove indicator');
+      toast.error(tIndicators('failed_to_remove_indicator'));
     },
   });
 
@@ -262,11 +266,11 @@ export default function GroupIndicatorsManager({
         queryKey: ['userIndicators', wsId, groupId],
       });
       setPendingValues(new Map());
-      toast.success('Indicator values updated successfully');
+      toast.success(tIndicators('values_updated_successfully'));
     },
     onError: (error) => {
       console.error('Error updating indicator values:', error);
-      toast.error('Failed to update indicator values');
+      toast.error(tIndicators('failed_to_update_values'));
     },
   });
 
@@ -396,6 +400,7 @@ export default function GroupIndicatorsManager({
       const indicator = userIndicators.find(
         (ui) => ui.user_id === userId && ui.indicator_id === indicatorId
       );
+      
       return indicator?.value?.toString() || '';
     },
     [pendingValues, userIndicators]
@@ -477,21 +482,20 @@ export default function GroupIndicatorsManager({
             <DialogTrigger asChild>
               <Button>
                 <Plus className="h-4 w-4 mr-2" />
-                Add Indicator
+                {tIndicators('add_indicator')}
               </Button>
             </DialogTrigger>
             <DialogContent>
               <DialogHeader>
-                <DialogTitle>Add Indicator</DialogTitle>
+                <DialogTitle>{tIndicators('add_indicator')}</DialogTitle>
                 <DialogDescription>
-                  Choose to add an existing healthcare vital or create a new one
-                  for this group.
+                  {tIndicators('add_indicator_description')}
                 </DialogDescription>
               </DialogHeader>
               <div className="space-y-4">
                 <div className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="new-vital-name">Indicator Name</Label>
+                    <Label htmlFor="new-vital-name">{tIndicators('indicator_name')}</Label>
                     <Input
                       id="new-vital-name"
                       value={newVitalForm.name}
@@ -501,11 +505,11 @@ export default function GroupIndicatorsManager({
                           name: e.target.value,
                         }))
                       }
-                      placeholder="Enter indicator name"
+                      placeholder={tIndicators('indicator_name_placeholder')}
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="new-vital-unit">Unit</Label>
+                    <Label htmlFor="new-vital-unit">{tIndicators('unit')}</Label>
                     <Input
                       id="new-vital-unit"
                       value={newVitalForm.unit}
@@ -515,11 +519,11 @@ export default function GroupIndicatorsManager({
                           unit: e.target.value,
                         }))
                       }
-                      placeholder="e.g., mg/dL, bpm, °C"
+                      placeholder={tIndicators('unit_placeholder')}
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="new-vital-factor">Factor</Label>
+                    <Label htmlFor="new-vital-factor">{tIndicators('factor')}</Label>
                     <Input
                       id="new-vital-factor"
                       type="number"
@@ -531,11 +535,10 @@ export default function GroupIndicatorsManager({
                           factor: parseFloat(e.target.value) || 1,
                         }))
                       }
-                      placeholder="Enter factor"
+                      placeholder={tIndicators('factor_placeholder')}
                     />
                     <p className="text-sm text-muted-foreground">
-                      Factor is used to weight this indicator in calculations
-                      (default: 1.0)
+                      {tIndicators('factor_description')}
                     </p>
                   </div>
                 </div>
@@ -550,7 +553,7 @@ export default function GroupIndicatorsManager({
                   }}
                   disabled={isAnyMutationPending}
                 >
-                  Cancel
+                  {t('common.cancel')}
                 </Button>
                 <Button
                   onClick={addIndicator}
@@ -558,8 +561,8 @@ export default function GroupIndicatorsManager({
                 >
                   {addIndicatorMutation.isPending ||
                   createVitalMutation.isPending
-                    ? 'Adding...'
-                    : 'Add Indicator'}
+                    ? tIndicators('adding')
+                    : tIndicators('add_indicator')}
                 </Button>
               </DialogFooter>
             </DialogContent>
@@ -570,14 +573,14 @@ export default function GroupIndicatorsManager({
         <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Edit Indicator</DialogTitle>
+              <DialogTitle>{tIndicators('edit_indicator')}</DialogTitle>
               <DialogDescription>
-                Update the name and factor for this indicator.
+                {tIndicators('edit_indicator_description')}
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="indicator-name">Indicator Name</Label>
+                <Label htmlFor="indicator-name">{tIndicators('indicator_name')}</Label>
                 <Input
                   id="indicator-name"
                   value={editFormData.name}
@@ -587,11 +590,11 @@ export default function GroupIndicatorsManager({
                       name: e.target.value,
                     }))
                   }
-                  placeholder="Enter indicator name"
+                  placeholder={tIndicators('indicator_name_placeholder')}
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="indicator-factor">Factor</Label>
+                <Label htmlFor="indicator-factor">{tIndicators('factor')}</Label>
                 <Input
                   id="indicator-factor"
                   type="number"
@@ -603,11 +606,11 @@ export default function GroupIndicatorsManager({
                       factor: parseFloat(e.target.value) || 1,
                     }))
                   }
-                  placeholder="Enter factor"
+                  placeholder={tIndicators('factor_placeholder')}
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="indicator-unit">Unit</Label>
+                <Label htmlFor="indicator-unit">{tIndicators('unit')}</Label>
                 <Input
                   id="indicator-unit"
                   value={editFormData.unit}
@@ -617,7 +620,7 @@ export default function GroupIndicatorsManager({
                       unit: e.target.value,
                     }))
                   }
-                  placeholder="Enter unit"
+                  placeholder={tIndicators('unit_placeholder')}
                 />
               </div>
             </div>
@@ -629,21 +632,21 @@ export default function GroupIndicatorsManager({
                 <AlertDialogTrigger asChild>
                   <Button variant="destructive" disabled={isAnyMutationPending}>
                     <Trash2 className="h-4 w-4 mr-2" />
-                    Delete
+                    {t('common.delete')}
                   </Button>
                 </AlertDialogTrigger>
                 <AlertDialogContent>
                   <AlertDialogHeader>
-                    <AlertDialogTitle>Remove Indicator</AlertDialogTitle>
+                    <AlertDialogTitle>{tIndicators('remove_indicator')}</AlertDialogTitle>
                     <AlertDialogDescription>
-                      Are you sure you want to remove "{selectedIndicator?.name}
-                      " from this group? This will also delete all associated
-                      user data for this indicator.
+                      {selectedIndicator?.name 
+                        ? tIndicators('remove_indicator_description', { indicatorName: selectedIndicator.name })
+                        : tIndicators('remove_indicator_description', { indicatorName: '' })}
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
                     <AlertDialogCancel disabled={isAnyMutationPending}>
-                      Cancel
+                      {t('common.cancel')}
                     </AlertDialogCancel>
                     <AlertDialogAction
                       onClick={deleteIndicator}
@@ -651,8 +654,8 @@ export default function GroupIndicatorsManager({
                       className="bg-red-600 hover:bg-red-700"
                     >
                       {deleteIndicatorMutation.isPending
-                        ? 'Removing...'
-                        : 'Remove'}
+                        ? tIndicators('removing')
+                        : t('common.remove')}
                     </AlertDialogAction>
                   </AlertDialogFooter>
                 </AlertDialogContent>
@@ -663,13 +666,13 @@ export default function GroupIndicatorsManager({
                   onClick={() => setEditDialogOpen(false)}
                   disabled={isAnyMutationPending}
                 >
-                  Cancel
+                  {t('common.cancel')}
                 </Button>
                 <Button
                   onClick={updateIndicator}
                   disabled={isAnyMutationPending || !editFormData.name.trim()}
                 >
-                  {updateIndicatorMutation.isPending ? 'Updating...' : 'Update'}
+                  {updateIndicatorMutation.isPending ? tIndicators('updating') : t('common.save')}
                 </Button>
               </div>
             </DialogFooter>
@@ -758,8 +761,8 @@ export default function GroupIndicatorsManager({
 
         {groupIndicators.length === 0 && (
           <div className="text-center py-8 text-muted-foreground">
-            <p>No indicators added to this group yet.</p>
-            <p className="text-sm">Click "Add Indicator" to get started.</p>
+            <p>{tIndicators('no_indicators')}</p>
+            <p className="text-sm">{tIndicators('no_indicators_description')}</p>
           </div>
         )}
       </div>

@@ -117,6 +117,12 @@ export type Database = {
         };
         Returns: boolean;
       };
+      can_manage_indicator: {
+        Args: {
+          p_indicator_id: string;
+        };
+        Returns: boolean;
+      };
       check_guest_group: {
         Args: {
           group_id: string;

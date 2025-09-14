@@ -63,13 +63,43 @@ drop table "public"."user_group_indicators";
 
 alter table "public"."user_indicators" drop column "group_id";
 
-create policy "Enable read access for authenticated users" on "public"."user_indicators" as permissive for select to authenticated using (true);
+CREATE UNIQUE INDEX user_indicators_unique_user_indicator ON public.user_indicators USING btree (user_id, indicator_id);
 
-create policy "Enable insert access for authenticated users" on "public"."user_indicators" as permissive for insert to authenticated with check (true);
+alter table "public"."user_indicators" add constraint "user_indicators_unique_user_indicator" UNIQUE using index "user_indicators_unique_user_indicator";
 
-create policy "Enable update access for authenticated users" on "public"."user_indicators" as permissive for update to authenticated with check (true);
 
-create policy "Enable delete access for authenticated users" on "public"."user_indicators" as permissive for delete to authenticated using (true);
+CREATE UNIQUE INDEX user_indicators_pkey ON public.user_indicators USING btree (user_id, indicator_id);
+
+alter table "public"."user_indicators" add constraint "user_indicators_pkey" PRIMARY KEY using index "user_indicators_pkey";
+
+set check_function_bodies = off;
+
+CREATE OR REPLACE FUNCTION public.can_manage_indicator(p_indicator_id uuid)
+ RETURNS boolean
+ LANGUAGE sql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$SELECT EXISTS (
+    SELECT 1
+    FROM healthcare_vitals hv
+    WHERE hv.id = p_indicator_id
+      AND is_org_member(auth.uid(), hv.ws_id)
+  );$function$
+;
+
+
+create policy "Allow full CRUD for workspace members via indicator"
+on "public"."user_indicators"
+as permissive
+for all
+to authenticated
+using (can_manage_indicator(indicator_id))
+with check (can_manage_indicator(indicator_id));
+
+
+
+
+
 
 
 
