@@ -22,13 +22,25 @@ import { createClient } from '@tuturuuu/supabase/next/client';
 import type { Workspace } from '@tuturuuu/types/db';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
+import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent } from '@tuturuuu/ui/card';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
+  DropdownMenuTrigger,
+} from '@tuturuuu/ui/dropdown-menu';
 import { useHorizontalScroll } from '@tuturuuu/ui/hooks/useHorizontalScroll';
 import { coordinateGetter } from '@tuturuuu/utils/keyboard-preset';
 import { useMoveTask, useMoveTaskToBoard } from '@tuturuuu/utils/task-helper';
 import { hasDraggableData } from '@tuturuuu/utils/task-helpers';
-import { ArrowRightLeft } from 'lucide-react';
+import { ArrowRightLeft, Flag, MinusCircle, Tags, Timer } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { BoardSelector } from '../board-selector';
 import { LightweightTaskCard } from './task';
@@ -72,10 +84,12 @@ export function KanbanBoard({ workspace, boardId, tasks, isLoading }: Props) {
   const [selectedTasks, setSelectedTasks] = useState<Set<string>>(new Set());
   const [isMultiSelectMode, setIsMultiSelectMode] = useState(false);
   const [boardSelectorOpen, setBoardSelectorOpen] = useState(false);
+  const [bulkWorking, setBulkWorking] = useState(false);
   const pickedUpTaskColumn = useRef<string | null>(null);
   const queryClient = useQueryClient();
   const moveTaskMutation = useMoveTask(boardId);
   const moveTaskToBoardMutation = useMoveTaskToBoard(boardId);
+  const [boardConfig, setBoardConfig] = useState<any>(null);
 
   // Fetch task lists using React Query (same key as other components)
   const { data: columns = [] } = useQuery({
@@ -238,6 +252,326 @@ export function KanbanBoard({ workspace, boardId, tasks, isLoading }: Props) {
   }, []);
 
   const columnsId = useMemo(() => columns.map((col) => col.id), [columns]);
+
+  // Fetch board config for estimation settings (estimation_type, extended_estimation, allow_zero_estimates)
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      try {
+        const supabase = createClient();
+        const { data, error } = await supabase
+          .from('workspace_boards')
+          .select(
+            'id, estimation_type, extended_estimation, allow_zero_estimates'
+          )
+          .eq('id', boardId)
+          .single();
+        if (error) throw error;
+        if (active) setBoardConfig(data);
+      } catch (e) {
+        console.error('Failed loading board config for estimation', e);
+      }
+    })();
+    return () => {
+      active = false;
+    };
+  }, [boardId]);
+
+  const estimationOptions = useMemo(() => {
+    if (!boardConfig?.estimation_type) return [] as number[];
+    const max = boardConfig.extended_estimation ? 7 : 5;
+    const allowZero = boardConfig.allow_zero_estimates;
+    let options: number[] = [];
+    // All estimation types currently map underlying stored indices 0..N.
+    // We always build index list; display mapping handled separately below.
+    options = Array.from({ length: max + 1 }, (_, i) => i);
+    if (!allowZero) options = options.filter((n) => n !== 0);
+    else if (allowZero && !options.includes(0)) options = [0, ...options];
+    return options;
+  }, [boardConfig]);
+
+  // Helper to map internal point index to display label depending on estimation type
+  const estimationDisplay = useCallback(
+    (points: number) => {
+      const type = boardConfig?.estimation_type;
+      if (type === 't-shirt') {
+        const map: Record<number, string> = {
+          0: '-',
+          1: 'XS',
+          2: 'S',
+          3: 'M',
+          4: 'L',
+          5: 'XL',
+          6: 'XXL',
+          7: 'XXXL',
+        };
+        return map[points] ?? String(points);
+      }
+      if (type === 'fibonacci') {
+        const fibMap: Record<number, string> = {
+          0: '0',
+          1: '1',
+          2: '2',
+          3: '3',
+          4: '5',
+          5: '8',
+          6: '13',
+          7: '21',
+        };
+        return fibMap[points] ?? String(points);
+      }
+      if (type === 'exponential') {
+        const expMap: Record<number, string> = {
+          0: '0',
+          1: '1',
+          2: '2',
+          3: '4',
+          4: '8',
+          5: '16',
+          6: '32',
+          7: '64',
+        };
+        return expMap[points] ?? String(points);
+      }
+      // default numeric / linear
+      return String(points);
+    },
+    [boardConfig?.estimation_type]
+  );
+
+  // Workspace labels for bulk operations
+  const { data: workspaceLabels = [] } = useQuery({
+    queryKey: ['workspace_task_labels', workspace.id],
+    queryFn: async () => {
+      const supabase = createClient();
+      const { data, error } = await supabase
+        .from('workspace_task_labels')
+        .select('id, name, color, created_at')
+        .eq('ws_id', workspace.id)
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      return data as {
+        id: string;
+        name: string;
+        color: string;
+        created_at: string;
+      }[];
+    },
+    staleTime: 30000,
+    enabled: isMultiSelectMode && selectedTasks.size > 0,
+  });
+
+  // Bulk helpers -----------------------------------------------------------
+  const applyOptimistic = (updater: (t: Task) => Task) => {
+    queryClient.setQueryData(['tasks', boardId], (old: Task[] | undefined) => {
+      if (!old) return old;
+      return old.map((t) => (selectedTasks.has(t.id) ? updater(t) : t));
+    });
+  };
+
+  async function bulkUpdatePriority(priority: Task['priority'] | null) {
+    if (selectedTasks.size === 0) return;
+    setBulkWorking(true);
+    const supabase = createClient();
+    const ids = Array.from(selectedTasks);
+    const prev = queryClient.getQueryData(['tasks', boardId]) as
+      | Task[]
+      | undefined;
+    try {
+      applyOptimistic((t) => ({ ...t, priority }));
+      const { error } = await supabase
+        .from('tasks')
+        .update({ priority })
+        .in('id', ids);
+      if (error) throw error;
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['tasks', boardId] }),
+      ]);
+    } catch (e) {
+      console.error('Bulk priority update failed', e);
+      // revert
+      if (prev) queryClient.setQueryData(['tasks', boardId], prev);
+    } finally {
+      setBulkWorking(false);
+    }
+  }
+
+  async function bulkUpdateEstimation(points: number | null) {
+    if (selectedTasks.size === 0) return;
+    setBulkWorking(true);
+    const supabase = createClient();
+    const ids = Array.from(selectedTasks);
+    const prev = queryClient.getQueryData(['tasks', boardId]) as
+      | Task[]
+      | undefined;
+    try {
+      applyOptimistic((t) => ({ ...t, estimation_points: points }));
+      const { error } = await supabase
+        .from('tasks')
+        .update({ estimation_points: points })
+        .in('id', ids);
+      if (error) throw error;
+      await queryClient.invalidateQueries({ queryKey: ['tasks', boardId] });
+    } catch (e) {
+      console.error('Bulk estimation update failed', e);
+      if (prev) queryClient.setQueryData(['tasks', boardId], prev);
+    } finally {
+      setBulkWorking(false);
+    }
+  }
+
+  async function bulkUpdateDueDate(
+    preset: 'today' | 'tomorrow' | 'week' | 'clear'
+  ) {
+    if (selectedTasks.size === 0) return;
+    setBulkWorking(true);
+    const supabase = createClient();
+    const ids = Array.from(selectedTasks);
+    const prev = queryClient.getQueryData(['tasks', boardId]) as
+      | Task[]
+      | undefined;
+    try {
+      let newDate: string | null = null;
+      if (preset !== 'clear') {
+        const d = new Date();
+        if (preset === 'tomorrow') d.setDate(d.getDate() + 1);
+        if (preset === 'week') d.setDate(d.getDate() + 7);
+        d.setHours(23, 59, 59, 999);
+        newDate = d.toISOString();
+      }
+      const end_date = newDate;
+      applyOptimistic((t) => ({ ...t, end_date }));
+      const { error } = await supabase
+        .from('tasks')
+        .update({ end_date })
+        .in('id', ids);
+      if (error) throw error;
+      await queryClient.invalidateQueries({ queryKey: ['tasks', boardId] });
+    } catch (e) {
+      console.error('Bulk due date update failed', e);
+      if (prev) queryClient.setQueryData(['tasks', boardId], prev);
+    } finally {
+      setBulkWorking(false);
+    }
+  }
+
+  function getListIdByStatus(status: 'done' | 'closed') {
+    const list = columns.find((c) => c.status === status);
+    return list ? String(list.id) : null;
+  }
+
+  async function bulkMoveToStatus(status: 'done' | 'closed') {
+    if (selectedTasks.size === 0) return;
+    const targetListId = getListIdByStatus(status);
+    if (!targetListId) return; // silently no-op if list missing
+    setBulkWorking(true);
+    const supabase = createClient();
+    const ids = Array.from(selectedTasks);
+    const prev = queryClient.getQueryData(['tasks', boardId]) as
+      | Task[]
+      | undefined;
+    try {
+      applyOptimistic((t) => ({ ...t, list_id: targetListId }));
+      const { error } = await supabase
+        .from('tasks')
+        .update({ list_id: targetListId })
+        .in('id', ids);
+      if (error) throw error;
+      await queryClient.invalidateQueries({ queryKey: ['tasks', boardId] });
+    } catch (e) {
+      console.error('Bulk status move failed', e);
+      if (prev) queryClient.setQueryData(['tasks', boardId], prev);
+    } finally {
+      setBulkWorking(false);
+    }
+  }
+
+  async function bulkAddLabel(labelId: string) {
+    if (selectedTasks.size === 0) return;
+    setBulkWorking(true);
+    const supabase = createClient();
+    const ids = Array.from(selectedTasks);
+    const prev = queryClient.getQueryData(['tasks', boardId]) as
+      | Task[]
+      | undefined;
+    try {
+      // Pre-compute tasks missing the label to avoid duplicate inserts / conflicts
+      const current =
+        (queryClient.getQueryData(['tasks', boardId]) as Task[] | undefined) ||
+        [];
+      const labelMeta = workspaceLabels.find((l) => l.id === labelId);
+      const missingTaskIds = ids.filter((id) => {
+        const t = current.find((ct) => ct.id === id);
+        return !t?.labels?.some((l) => l.id === labelId);
+      });
+
+      if (missingTaskIds.length === 0) {
+        setBulkWorking(false);
+        return; // Nothing to add
+      }
+
+      applyOptimistic((t) => {
+        if (!missingTaskIds.includes(t.id)) return t;
+        return {
+          ...t,
+          labels: [
+            ...(t.labels || []),
+            {
+              id: labelId,
+              name: labelMeta?.name || 'Label',
+              color: labelMeta?.color || '#3b82f6',
+              created_at: new Date().toISOString(),
+            },
+          ],
+        } as Task;
+      });
+
+      const rows = missingTaskIds.map((taskId) => ({
+        task_id: taskId,
+        label_id: labelId,
+      }));
+      // Insert ignoring duplicates (Supabase will error on conflict unless policy). We attempt and swallow duplicate errors.
+      const { error } = await supabase
+        .from('task_labels')
+        .insert(rows, { count: 'exact' });
+      if (error && !String(error.message).toLowerCase().includes('duplicate'))
+        throw error;
+      await queryClient.invalidateQueries({ queryKey: ['tasks', boardId] });
+    } catch (e) {
+      console.error('Bulk add label failed', e);
+      if (prev) queryClient.setQueryData(['tasks', boardId], prev);
+    } finally {
+      setBulkWorking(false);
+    }
+  }
+
+  async function bulkRemoveLabel(labelId: string) {
+    if (selectedTasks.size === 0) return;
+    setBulkWorking(true);
+    const supabase = createClient();
+    const ids = Array.from(selectedTasks);
+    const prev = queryClient.getQueryData(['tasks', boardId]) as
+      | Task[]
+      | undefined;
+    try {
+      applyOptimistic((t) => ({
+        ...t,
+        labels: (t.labels || []).filter((l) => l.id !== labelId),
+      }));
+      const { error } = await supabase
+        .from('task_labels')
+        .delete()
+        .in('task_id', ids)
+        .eq('label_id', labelId);
+      if (error) throw error;
+      await queryClient.invalidateQueries({ queryKey: ['tasks', boardId] });
+    } catch (e) {
+      console.error('Bulk remove label failed', e);
+      if (prev) queryClient.setQueryData(['tasks', boardId], prev);
+    } finally {
+      setBulkWorking(false);
+    }
+  }
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -629,32 +963,234 @@ export function KanbanBoard({ workspace, boardId, tasks, isLoading }: Props) {
     <div className="flex h-full flex-col">
       {/* Multi-select indicator */}
       {isMultiSelectMode && selectedTasks.size > 0 && (
-        <div className="flex items-center justify-between border-b px-4 py-2">
-          <div className="flex items-center gap-2">
-            <span className="font-medium text-sm">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b px-4 py-2">
+          <div className="flex flex-wrap items-center gap-2 text-xs md:text-sm">
+            <span className="font-medium">
               {selectedTasks.size} task{selectedTasks.size !== 1 ? 's' : ''}{' '}
               selected
             </span>
-            <span className="text-muted-foreground text-xs">
-              Drag to move all • Ctrl+M to move to board • Esc to clear
+            <span className="hidden text-muted-foreground sm:inline">
+              Drag to move • Ctrl+M board move • Esc clear
             </span>
+            {bulkWorking && (
+              <Badge
+                variant="outline"
+                className="animate-pulse border-dynamic-blue/40 text-[10px]"
+              >
+                Working...
+              </Badge>
+            )}
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-6 px-2 text-xs"
+                  disabled={bulkWorking}
+                >
+                  <Tags className="mr-1 h-3 w-3" /> Bulk
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-64">
+                <DropdownMenuLabel>Bulk Actions</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                {boardConfig?.estimation_type && (
+                  <DropdownMenuSub>
+                    <DropdownMenuSubTrigger>
+                      <Timer className="mr-2 h-3.5 w-3.5 text-dynamic-purple" />
+                      Estimation
+                    </DropdownMenuSubTrigger>
+                    <DropdownMenuSubContent className="w-48">
+                      <DropdownMenuItem
+                        disabled={bulkWorking}
+                        onClick={() => bulkUpdateEstimation(null)}
+                      >
+                        Clear
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      {estimationOptions.map((p) => (
+                        <DropdownMenuItem
+                          key={p}
+                          disabled={bulkWorking}
+                          onClick={() => bulkUpdateEstimation(p)}
+                        >
+                          {estimationDisplay(p)}
+                        </DropdownMenuItem>
+                      ))}
+                    </DropdownMenuSubContent>
+                  </DropdownMenuSub>
+                )}
+                <DropdownMenuSub>
+                  <DropdownMenuSubTrigger>
+                    <Flag className="mr-2 h-3.5 w-3.5 text-dynamic-green" />
+                    Due Date
+                  </DropdownMenuSubTrigger>
+                  <DropdownMenuSubContent className="w-40">
+                    <DropdownMenuItem
+                      disabled={bulkWorking}
+                      onClick={() => bulkUpdateDueDate('today')}
+                    >
+                      Today
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      disabled={bulkWorking}
+                      onClick={() => bulkUpdateDueDate('tomorrow')}
+                    >
+                      Tomorrow
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      disabled={bulkWorking}
+                      onClick={() => bulkUpdateDueDate('week')}
+                    >
+                      In 7 Days
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      disabled={bulkWorking}
+                      onClick={() => bulkUpdateDueDate('clear')}
+                    >
+                      Clear
+                    </DropdownMenuItem>
+                  </DropdownMenuSubContent>
+                </DropdownMenuSub>
+                <DropdownMenuSub>
+                  <DropdownMenuSubTrigger>
+                    <Flag className="mr-2 h-3.5 w-3.5 text-dynamic-blue" />
+                    Status
+                  </DropdownMenuSubTrigger>
+                  <DropdownMenuSubContent className="w-44">
+                    <DropdownMenuItem
+                      disabled={
+                        bulkWorking || !columns.some((c) => c.status === 'done')
+                      }
+                      onClick={() => bulkMoveToStatus('done')}
+                    >
+                      Mark Done
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      disabled={
+                        bulkWorking ||
+                        !columns.some((c) => c.status === 'closed')
+                      }
+                      onClick={() => bulkMoveToStatus('closed')}
+                    >
+                      Mark Closed
+                    </DropdownMenuItem>
+                  </DropdownMenuSubContent>
+                </DropdownMenuSub>
+                <DropdownMenuSub>
+                  <DropdownMenuSubTrigger>
+                    <Flag className="mr-2 h-3.5 w-3.5 text-dynamic-orange" />
+                    Priority
+                  </DropdownMenuSubTrigger>
+                  <DropdownMenuSubContent className="w-40">
+                    <DropdownMenuItem
+                      disabled={bulkWorking}
+                      onClick={() => bulkUpdatePriority(null)}
+                    >
+                      Clear
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      disabled={bulkWorking}
+                      onClick={() => bulkUpdatePriority('critical')}
+                    >
+                      Critical
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      disabled={bulkWorking}
+                      onClick={() => bulkUpdatePriority('high')}
+                    >
+                      High
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      disabled={bulkWorking}
+                      onClick={() => bulkUpdatePriority('normal')}
+                    >
+                      Normal
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      disabled={bulkWorking}
+                      onClick={() => bulkUpdatePriority('low')}
+                    >
+                      Low
+                    </DropdownMenuItem>
+                  </DropdownMenuSubContent>
+                </DropdownMenuSub>
+                <DropdownMenuSub>
+                  <DropdownMenuSubTrigger>
+                    <Tags className="mr-2 h-3.5 w-3.5 text-dynamic-cyan" />
+                    Add Label
+                  </DropdownMenuSubTrigger>
+                  <DropdownMenuSubContent className="max-h-60 w-52 overflow-auto">
+                    {workspaceLabels.length === 0 && (
+                      <div className="px-2 py-1 text-[11px] text-muted-foreground">
+                        No labels
+                      </div>
+                    )}
+                    {workspaceLabels.map((l) => (
+                      <DropdownMenuItem
+                        key={l.id}
+                        disabled={bulkWorking}
+                        onClick={() => bulkAddLabel(l.id)}
+                        className="flex items-center gap-2"
+                      >
+                        <span
+                          className="h-3 w-3 rounded-full"
+                          style={{ backgroundColor: l.color, opacity: 0.9 }}
+                        />
+                        {l.name}
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuSubContent>
+                </DropdownMenuSub>
+                <DropdownMenuSub>
+                  <DropdownMenuSubTrigger>
+                    <MinusCircle className="mr-2 h-3.5 w-3.5 text-dynamic-red" />
+                    Remove Label
+                  </DropdownMenuSubTrigger>
+                  <DropdownMenuSubContent className="max-h-60 w-52 overflow-auto">
+                    {workspaceLabels.length === 0 && (
+                      <div className="px-2 py-1 text-[11px] text-muted-foreground">
+                        No labels
+                      </div>
+                    )}
+                    {workspaceLabels.map((l) => (
+                      <DropdownMenuItem
+                        key={l.id}
+                        disabled={bulkWorking}
+                        onClick={() => bulkRemoveLabel(l.id)}
+                        className="flex items-center gap-2"
+                      >
+                        <span
+                          className="h-3 w-3 rounded-full ring-1 ring-border"
+                          style={{ backgroundColor: l.color, opacity: 0.3 }}
+                        />
+                        {l.name}
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuSubContent>
+                </DropdownMenuSub>
+              </DropdownMenuContent>
+            </DropdownMenu>
             <Button
               variant="outline"
               size="sm"
               onClick={handleCrossBoardMove}
               className="h-6 px-2 text-xs"
-              disabled={selectedTasks.size === 0}
+              disabled={selectedTasks.size === 0 || bulkWorking}
             >
               <ArrowRightLeft className="mr-1 h-3 w-3" />
-              Move to Board
+              Move
             </Button>
             <Button
               variant="ghost"
               size="sm"
               onClick={clearSelection}
               className="h-6 px-2 text-xs"
+              disabled={bulkWorking}
             >
               Clear
             </Button>
