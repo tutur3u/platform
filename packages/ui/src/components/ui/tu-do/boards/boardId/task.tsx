@@ -1410,38 +1410,39 @@ export const TaskCard = React.memo(function TaskCard({
             </div>
           )}
         </div>
-        {/* Dates Row (compact, smaller font) */}
+        {/* Dates Section (improved layout & conditional rendering) */}
         {(startDate || endDate) && (
-          <div className="mb-1 flex items-center gap-2 text-[10px] text-muted-foreground">
-            {startDate && (
-              <span className="flex items-center gap-1">
+          <div className="mb-1 space-y-0.5 text-[10px] leading-snug">
+            {/* Show start only if in the future (hide historical start for visual simplicity) */}
+            {startDate && startDate > now && (
+              <div className="flex items-center gap-1 text-muted-foreground">
                 <Clock className="h-2.5 w-2.5 shrink-0" />
-                Starts {formatSmartDate(startDate)}
-              </span>
+                <span className="truncate">
+                  Starts {formatSmartDate(startDate)}
+                </span>
+              </div>
             )}
-            {startDate && endDate && <span className="mx-1">•</span>}
             {endDate && (
-              <span
+              <div
                 className={cn(
                   'flex items-center gap-1',
                   isOverdue && !task.archived
                     ? 'font-medium text-dynamic-red'
-                    : ''
+                    : 'text-muted-foreground'
                 )}
               >
                 <Calendar className="h-2.5 w-2.5 shrink-0" />
-                Due {formatSmartDate(endDate)}
-                {isOverdue && !task.archived && (
-                  <Badge className="ml-1 h-4 bg-dynamic-red px-1 text-[9px] text-white">
-                    OVERDUE - {format(endDate, "MMM dd 'at' h:mm a")}
+                <span className="truncate">Due {formatSmartDate(endDate)}</span>
+                {isOverdue && !task.archived ? (
+                  <Badge className="ml-1 h-4 bg-dynamic-red px-1 font-semibold text-[9px] text-white tracking-wide">
+                    OVERDUE
                   </Badge>
-                )}
-                {!isOverdue && !task.archived && endDate && (
-                  <span className="ml-1 text-[10px] text-muted-foreground">
-                    ({format(endDate, "MMM dd 'at' h:mm a")})
+                ) : (
+                  <span className="ml-1 hidden text-[10px] text-muted-foreground md:inline">
+                    {format(endDate, "MMM dd 'at' h:mm a")}
                   </span>
                 )}
-              </span>
+              </div>
             )}
           </div>
         )}
