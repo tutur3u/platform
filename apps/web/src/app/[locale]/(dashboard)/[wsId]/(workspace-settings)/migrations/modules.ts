@@ -180,6 +180,7 @@ export const generateModules = (): ModulePackage[] => {
         // baseModule.name = 'User Group Indicators';
         baseModule.externalPath = `/migrate/score-names`;
         baseModule.mapping = groupedScoreNamesMapping;
+        baseModule.disabled = true; // Disabled: user_group_indicators table was dropped
         break;
 
       case 'student-feedbacks':

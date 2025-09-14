@@ -117,6 +117,12 @@ export type Database = {
         };
         Returns: boolean;
       };
+      can_manage_indicator: {
+        Args: {
+          p_indicator_id: string;
+        };
+        Returns: boolean;
+      };
       check_guest_group: {
         Args: {
           group_id: string;
@@ -7020,74 +7026,6 @@ export type Database = {
           user_id?: string;
         };
       };
-      user_group_indicators: {
-        Insert: {
-          created_at?: string;
-          group_id: string;
-          indicator_id: string;
-        };
-        Relationships: [
-          {
-            columns: ['group_id'];
-            foreignKeyName: 'user_group_indicators_group_id_fkey';
-            isOneToOne: false;
-            referencedColumns: ['group_id'];
-            referencedRelation: 'group_users_with_post_checks';
-          },
-          {
-            columns: ['group_id'];
-            foreignKeyName: 'user_group_indicators_group_id_fkey';
-            isOneToOne: false;
-            referencedColumns: ['group_id'];
-            referencedRelation: 'group_with_attendance';
-          },
-          {
-            columns: ['group_id'];
-            foreignKeyName: 'user_group_indicators_group_id_fkey';
-            isOneToOne: false;
-            referencedColumns: ['id'];
-            referencedRelation: 'user_groups_with_tags';
-          },
-          {
-            columns: ['group_id'];
-            foreignKeyName: 'user_group_indicators_group_id_fkey';
-            isOneToOne: false;
-            referencedColumns: ['id'];
-            referencedRelation: 'workspace_user_groups';
-          },
-          {
-            columns: ['group_id'];
-            foreignKeyName: 'user_group_indicators_group_id_fkey';
-            isOneToOne: false;
-            referencedColumns: ['id'];
-            referencedRelation: 'workspace_user_groups_with_amount';
-          },
-          {
-            columns: ['group_id'];
-            foreignKeyName: 'user_group_indicators_group_id_fkey';
-            isOneToOne: false;
-            referencedColumns: ['id'];
-            referencedRelation: 'workspace_user_groups_with_guest';
-          },
-          {
-            columns: ['indicator_id'];
-            foreignKeyName: 'user_group_indicators_indicator_id_fkey';
-            isOneToOne: false;
-            referencedColumns: ['id'];
-            referencedRelation: 'healthcare_vitals';
-          },
-        ];
-        Row: {
-          created_at: string;
-          group_id: string;
-          indicator_id: string;
-        };
-        Update: {
-          created_at?: string;
-          group_id?: string;
-          indicator_id?: string;
-        };
-      };
       user_group_linked_products: {
         Insert: {
           created_at?: string;
@@ -7320,7 +7258,6 @@ export type Database = {
         Insert: {
           created_at?: string;
           creator_id?: null | string;
-          group_id: string;
           indicator_id: string;
           user_id: string;
           value?: null | number;
@@ -7353,48 +7290,6 @@ export type Database = {
             isOneToOne: false;
             referencedColumns: ['id'];
             referencedRelation: 'workspace_users_with_groups';
-          },
-          {
-            columns: ['group_id'];
-            foreignKeyName: 'user_indicators_group_id_fkey';
-            isOneToOne: false;
-            referencedColumns: ['group_id'];
-            referencedRelation: 'group_users_with_post_checks';
-          },
-          {
-            columns: ['group_id'];
-            foreignKeyName: 'user_indicators_group_id_fkey';
-            isOneToOne: false;
-            referencedColumns: ['group_id'];
-            referencedRelation: 'group_with_attendance';
-          },
-          {
-            columns: ['group_id'];
-            foreignKeyName: 'user_indicators_group_id_fkey';
-            isOneToOne: false;
-            referencedColumns: ['id'];
-            referencedRelation: 'user_groups_with_tags';
-          },
-          {
-            columns: ['group_id'];
-            foreignKeyName: 'user_indicators_group_id_fkey';
-            isOneToOne: false;
-            referencedColumns: ['id'];
-            referencedRelation: 'workspace_user_groups';
-          },
-          {
-            columns: ['group_id'];
-            foreignKeyName: 'user_indicators_group_id_fkey';
-            isOneToOne: false;
-            referencedColumns: ['id'];
-            referencedRelation: 'workspace_user_groups_with_amount';
-          },
-          {
-            columns: ['group_id'];
-            foreignKeyName: 'user_indicators_group_id_fkey';
-            isOneToOne: false;
-            referencedColumns: ['id'];
-            referencedRelation: 'workspace_user_groups_with_guest';
           },
           {
             columns: ['indicator_id'];
@@ -7435,7 +7330,6 @@ export type Database = {
         Row: {
           created_at: string;
           creator_id: null | string;
-          group_id: string;
           indicator_id: string;
           user_id: string;
           value: null | number;
@@ -7443,7 +7337,6 @@ export type Database = {
         Update: {
           created_at?: string;
           creator_id?: null | string;
-          group_id?: string;
           indicator_id?: string;
           user_id?: string;
           value?: null | number;

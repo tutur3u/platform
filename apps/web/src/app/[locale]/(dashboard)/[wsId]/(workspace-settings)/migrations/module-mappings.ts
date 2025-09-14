@@ -106,7 +106,6 @@ export const classScoresMapping = (_: string, data: any[]) =>
   data.map((i) => ({
     user_id: i?.user_id,
     indicator_id: i?.score_id,
-    group_id: i?.class_id,
     value: i?.value,
     creator_id: i?.creator_id,
     created_at: i?.created_at,
