@@ -27,6 +27,11 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 export interface TimelineProps {
   board: TaskBoard & { tasks: Task[]; lists: TaskList[] };
   className?: string;
+  /**
+   * Callback for propagating optimistic partial task updates (e.g., resize, inline edit)
+   * to parent so switching away/back preserves latest state before server refetch.
+   */
+  onTaskPartialUpdate?: (taskId: string, partial: Partial<Task>) => void;
 }
 
 interface TimelineSpan {
@@ -170,7 +175,11 @@ function isWeekStart(d: Date) {
 }
 
 // --- Component -------------------------------------------------------------
-export function TimelineBoard({ board, className }: TimelineProps) {
+export function TimelineBoard({
+  board,
+  className,
+  onTaskPartialUpdate,
+}: TimelineProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [scale, setScale] = useState<'day' | 'week'>('day');
   const [density, setDensity] = useState<
@@ -372,17 +381,19 @@ export function TimelineBoard({ board, className }: TimelineProps) {
         return;
       }
       // Optimistic update local tasks
+      const startISO = draft.start.toISOString();
+      const endISO = draft.end.toISOString();
       setLocalTasks((prev) =>
         prev.map((t) =>
           t.id === resizing.taskId
-            ? {
-                ...t,
-                start_date: draft.start.toISOString(),
-                end_date: draft.end.toISOString(),
-              }
+            ? ({ ...t, start_date: startISO, end_date: endISO } as Task)
             : t
         )
       );
+      onTaskPartialUpdate?.(resizing.taskId, {
+        start_date: startISO,
+        end_date: endISO,
+      });
       const supabase = createClient();
       try {
         await supabase
@@ -407,7 +418,7 @@ export function TimelineBoard({ board, className }: TimelineProps) {
       window.removeEventListener('pointermove', handleMove);
       window.removeEventListener('pointerup', handleUp);
     };
-  }, [resizing, dayWidth, resizeDraft, board.tasks]);
+  }, [resizing, dayWidth, resizeDraft, board.tasks, onTaskPartialUpdate]);
 
   return (
     <>
@@ -521,7 +532,7 @@ export function TimelineBoard({ board, className }: TimelineProps) {
             {/* Background grid / week stripes */}
             {/* Background stripes & vertical dividers layer (single container to avoid cumulative border width drift). */}
             <div
-              className="absolute top-12 left-0 z-0 h-[calc(100%-3rem)]"
+              className="absolute top-14 bottom-0 left-0 z-0 h-full"
               style={{ width: totalWidth }}
               aria-hidden="true"
             >
@@ -530,7 +541,7 @@ export function TimelineBoard({ board, className }: TimelineProps) {
                 isWeekStart(d) ? (
                   <div
                     key={i}
-                    className="absolute inset-y-0 bg-dynamic-blue/5"
+                    className="absolute inset-y-0 h-full bg-dynamic-blue/5"
                     style={{ left: i * dayWidth, width: dayWidth }}
                   />
                 ) : null
@@ -539,7 +550,7 @@ export function TimelineBoard({ board, className }: TimelineProps) {
               {days.map((_, i) => (
                 <div
                   key={i}
-                  className="absolute inset-y-0 border-border/40 border-r"
+                  className="absolute inset-y-0 h-full border-border/40 border-r"
                   style={{ left: i * dayWidth, width: 0 }}
                 />
               ))}
@@ -562,7 +573,7 @@ export function TimelineBoard({ board, className }: TimelineProps) {
 
             {/* Task rows container */}
             <div
-              className="relative z-10 mt-0.5 grid pb-16"
+              className="relative z-10 mt-0.5 grid"
               style={{
                 minHeight: rowCount * (rowHeight + rowGap) + 80,
                 width: totalWidth,
@@ -748,17 +759,24 @@ export function TimelineBoard({ board, className }: TimelineProps) {
                 end_date: endISO,
               })
               .eq('id', editingTask.id);
+            const trimmedName = editName.trim();
             setLocalTasks((prev) =>
-              prev.map((t) => {
-                if (t.id !== editingTask.id) return t;
-                return {
-                  ...t,
-                  name: editName.trim(),
-                  start_date: startISO ?? undefined,
-                  end_date: endISO ?? undefined,
-                } as Task;
-              })
+              prev.map((t) =>
+                t.id === editingTask.id
+                  ? ({
+                      ...t,
+                      name: trimmedName,
+                      start_date: startISO ?? undefined,
+                      end_date: endISO ?? undefined,
+                    } as Task)
+                  : t
+              )
             );
+            onTaskPartialUpdate?.(editingTask.id, {
+              name: trimmedName,
+              start_date: startISO ?? undefined,
+              end_date: endISO ?? undefined,
+            });
             setEditingTask(null);
           } catch (err) {
             console.error('Failed to save task edits', err);

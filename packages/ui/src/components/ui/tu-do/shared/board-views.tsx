@@ -29,6 +29,10 @@ interface Props {
 export function BoardViews({ workspace, board }: Props) {
   const [currentView, setCurrentView] = useState<ViewType>('kanban');
   const [selectedLabels, setSelectedLabels] = useState<TaskLabel[]>([]);
+  // Local per-session optimistic overrides (e.g., timeline resize) so switching views preserves changes
+  const [taskOverrides, setTaskOverrides] = useState<
+    Record<string, Partial<Task>>
+  >({});
   const queryClient = useQueryClient();
 
   // Filter tasks based on selected labels
@@ -50,14 +54,30 @@ export function BoardViews({ workspace, board }: Props) {
     });
   }, [board.tasks, selectedLabels]);
 
+  // Apply optimistic overrides so views receive up-to-date edits (durations, name, dates) even before refetch.
+  const effectiveTasks = useMemo(() => {
+    if (!Object.keys(taskOverrides).length) return filteredTasks;
+    return filteredTasks.map((t) => {
+      const o = taskOverrides[t.id];
+      return o ? ({ ...t, ...o } as Task) : t;
+    });
+  }, [filteredTasks, taskOverrides]);
+
+  const handleTaskPartialUpdate = (taskId: string, partial: Partial<Task>) => {
+    setTaskOverrides((prev) => ({
+      ...prev,
+      [taskId]: { ...(prev[taskId] || {}), ...partial },
+    }));
+  };
+
   // Helper function to create board with filtered tasks
-  const createBoardWithFilteredTasks = (
+  const createBoardWithTasks = (
     board: TaskBoard & { tasks: Task[]; lists: TaskList[] },
-    filteredTasks: Task[]
+    tasks: Task[]
   ) =>
     ({
       ...board,
-      tasks: filteredTasks,
+      tasks,
     }) as TaskBoard & { tasks: Task[]; lists: TaskList[] };
 
   const handleUpdate = async () => {
@@ -76,7 +96,7 @@ export function BoardViews({ workspace, board }: Props) {
         return (
           <StatusGroupedBoard
             lists={board.lists}
-            tasks={filteredTasks}
+            tasks={effectiveTasks}
             boardId={board.id}
             onUpdate={handleUpdate}
             hideTasksMode={true}
@@ -88,28 +108,29 @@ export function BoardViews({ workspace, board }: Props) {
           <KanbanBoard
             workspace={workspace}
             boardId={board.id}
-            tasks={filteredTasks}
+            tasks={effectiveTasks}
             isLoading={false}
           />
         );
       case 'list':
         return (
           <ListView
-            board={createBoardWithFilteredTasks(board, filteredTasks)}
+            board={createBoardWithTasks(board, effectiveTasks)}
             isPersonalWorkspace={workspace.personal}
           />
         );
       case 'timeline':
         return (
           <TimelineBoard
-            board={createBoardWithFilteredTasks(board, filteredTasks)}
+            board={createBoardWithTasks(board, effectiveTasks)}
+            onTaskPartialUpdate={handleTaskPartialUpdate}
           />
         );
       default:
         return (
           <StatusGroupedBoard
             lists={board.lists}
-            tasks={filteredTasks}
+            tasks={effectiveTasks}
             boardId={board.id}
             onUpdate={handleUpdate}
             hideTasksMode={true}
