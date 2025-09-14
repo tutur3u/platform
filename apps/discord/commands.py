@@ -70,6 +70,54 @@ class CommandHandler:
                 "description": "Create a new task ticket using interactive selection",
                 "options": [],
             },
+            {
+                "name": "assign",
+                "description": "Assign users to a task by Discord mention",
+                "options": [
+                    {
+                        "name": "task_id",
+                        "description": "Task ID (UUID) to assign users to",
+                        "type": 3,  # STRING
+                        "required": True,
+                    },
+                    {
+                        "name": "users",
+                        "description": "Space or comma separated list of Discord @mentions",
+                        "type": 3,  # STRING
+                        "required": True,
+                    },
+                ],
+            },
+            {
+                "name": "unassign",
+                "description": "Remove assignees from a task by Discord mention",
+                "options": [
+                    {
+                        "name": "task_id",
+                        "description": "Task ID (UUID) to unassign users from",
+                        "type": 3,  # STRING
+                        "required": True,
+                    },
+                    {
+                        "name": "users",
+                        "description": "Space or comma separated list of Discord @mentions",
+                        "type": 3,  # STRING
+                        "required": True,
+                    },
+                ],
+            },
+            {
+                "name": "assignees",
+                "description": "List current assignees for a task",
+                "options": [
+                    {
+                        "name": "task_id",
+                        "description": "Task ID (UUID) to list assignees for",
+                        "type": 3,  # STRING
+                        "required": True,
+                    },
+                ],
+            },
         ]
 
     def is_guild_authorized(self, guild_id: str) -> bool:
@@ -895,6 +943,510 @@ class CommandHandler:
             print(f"Error creating ticket: {e}")
             await self.discord_client.send_response(
                 {"content": f"❌ **Error:** Failed to create task ticket: {str(e)}"},
+                app_id,
+                interaction_token,
+            )
+
+    async def handle_assign_command(
+        self,
+        app_id: str,
+        interaction_token: str,
+        options: List[Dict[str, Any]],
+        user_info: Optional[dict] = None,
+    ) -> None:
+        """Handle the /assign command to assign users to a task.
+
+        Expects options:
+          - task_id: UUID of task
+          - users: string containing one or more @mentions separated by space or comma
+
+        Process:
+          1. Validate workspace/user context
+          2. Validate task exists and belongs to workspace via list->board->workspace chain
+          3. Parse mentions -> discord_user_ids
+          4. Map discord_user_ids -> platform_user_ids (must belong to same workspace)
+          5. Insert rows into task assignments table (assumed schema). If table absent, respond with informative error.
+        """
+        if not user_info:
+            await self.discord_client.send_response(
+                {"content": "❌ **Error:** Unable to identify user/workspace."},
+                app_id,
+                interaction_token,
+            )
+            return
+
+        raw: Dict[str, Any] = {opt["name"]: opt.get("value") for opt in options}
+        task_id = str(raw.get("task_id") or "").strip()
+        users_raw = str(raw.get("users") or "").strip()
+
+        if not task_id:
+            await self.discord_client.send_response(
+                {"content": "❌ **Error:** task_id is required."},
+                app_id,
+                interaction_token,
+            )
+            return
+        if not users_raw:
+            await self.discord_client.send_response(
+                {"content": "❌ **Error:** At least one @mention is required."},
+                app_id,
+                interaction_token,
+            )
+            return
+
+        workspace_id = user_info.get("workspace_id")
+        if not workspace_id:
+            await self.discord_client.send_response(
+                {"content": "❌ **Error:** Missing workspace context."},
+                app_id,
+                interaction_token,
+            )
+            return
+
+        # Parse mentions: Discord mentions come as <@1234567890> or <@!1234567890>
+        import re
+        mention_pattern = re.compile(r"<@!?([0-9]+)>")
+        mentioned_ids = mention_pattern.findall(users_raw)
+        if not mentioned_ids:
+            await self.discord_client.send_response(
+                {"content": "❌ **Error:** No valid @mentions found. Use Discord autocomplete to mention users."},
+                app_id,
+                interaction_token,
+            )
+            return
+
+        try:
+            from utils import get_supabase_client
+            supabase = get_supabase_client()
+
+            # Validate task and derive workspace via joins
+            # Need task -> list -> board -> workspace (workspace_boards.ws_id)
+            task_result = (
+                supabase.table("tasks")
+                .select("id, list_id, task_lists!inner(id, board_id, workspace_boards!inner(id, ws_id))")
+                .eq("id", task_id)
+                .eq("deleted", False)
+                .execute()
+            )
+            if not task_result.data:
+                await self.discord_client.send_response(
+                    {"content": "❌ **Error:** Task not found or deleted."},
+                    app_id,
+                    interaction_token,
+                )
+                return
+
+            task_row = task_result.data[0]
+            # Extract ws_id safely
+            ws_via_task = (
+                ((task_row.get("task_lists") or {}).get("workspace_boards") or {}).get("ws_id")
+            )
+            if not ws_via_task or ws_via_task != workspace_id:
+                await self.discord_client.send_response(
+                    {"content": "❌ **Error:** Task does not belong to your workspace."},
+                    app_id,
+                    interaction_token,
+                )
+                return
+
+            # Map discord_user_ids -> platform_user_ids in same workspace via discord_guild_members and workspace_members
+            member_rows = (
+                supabase.table("discord_guild_members")
+                .select("discord_user_id, platform_user_id, discord_guild_id")
+                .in_("discord_user_id", mentioned_ids)
+                .execute()
+            )
+
+            if not member_rows.data:
+                await self.discord_client.send_response(
+                    {"content": "❌ **Error:** None of the mentioned users are linked to any workspace."},
+                    app_id,
+                    interaction_token,
+                )
+                return
+
+            # Filter those belonging to the same workspace via workspace_members
+            platform_ids = [r.get("platform_user_id") for r in member_rows.data if r.get("platform_user_id")]
+            if not platform_ids:
+                await self.discord_client.send_response(
+                    {"content": "❌ **Error:** Unable to resolve mentioned users."},
+                    app_id,
+                    interaction_token,
+                )
+                return
+
+            wm_rows = (
+                supabase.table("workspace_members")
+                .select("user_id")
+                .eq("ws_id", workspace_id)
+                .in_("user_id", platform_ids)
+                .execute()
+            )
+            valid_user_ids = [r.get("user_id") for r in (wm_rows.data or []) if r.get("user_id")]
+            if not valid_user_ids:
+                await self.discord_client.send_response(
+                    {"content": "❌ **Error:** Mentioned users are not members of this workspace."},
+                    app_id,
+                    interaction_token,
+                )
+                return
+
+            # Insert assignments. Assume a table task_assignees(task_id uuid, user_id uuid, created_at timestamptz, unique(task_id,user_id))
+            # We'll upsert-like by ignoring conflicts if Supabase configured with unique constraint (client lacks native upsert for simple ignore w/out update in python, so try/except duplicates)
+            inserted = 0
+            new_mentions: List[str] = []
+            # Build map discord_user_id -> platform_user_id for quick reverse lookup
+            discord_to_platform = {r.get("platform_user_id"): r.get("discord_user_id") for r in (member_rows.data or []) if r.get("platform_user_id") and r.get("discord_user_id")}
+            for uid in valid_user_ids:
+                try:
+                    res = (
+                        supabase.table("task_assignees")
+                        .insert({"task_id": task_id, "user_id": uid})
+                        .execute()
+                    )
+                    if res.data:
+                        inserted += 1
+                        discord_id = discord_to_platform.get(uid)
+                        if discord_id:
+                            new_mentions.append(f"<@{discord_id}>")
+                except Exception as e:  # likely duplicate
+                    print(f"Assign duplicate or error for user {uid}: {e}")
+                    continue
+
+            # Prepare response
+            if inserted == 0:
+                message = "ℹ️ No new assignees added (they might already be assigned)."
+            else:
+                mention_list = ", ".join(new_mentions) if new_mentions else "(no resolvable mentions)"
+                message = f"✅ Added {inserted} assignee(s) to task `{task_id}`: {mention_list}"
+
+            await self.discord_client.send_response(
+                {"content": message},
+                app_id,
+                interaction_token,
+            )
+
+        except Exception as e:
+            print(f"Error in assign command: {e}")
+            await self.discord_client.send_response(
+                {"content": f"❌ **Error:** Failed to assign users: {e}"},
+                app_id,
+                interaction_token,
+            )
+
+    async def handle_unassign_command(
+        self,
+        app_id: str,
+        interaction_token: str,
+        options: List[Dict[str, Any]],
+        user_info: Optional[dict] = None,
+    ) -> None:
+        """Handle the /unassign command to remove users from a task.
+
+        Logic mirrors /assign but deletes rows from task_assignees.
+        """
+        if not user_info:
+            await self.discord_client.send_response(
+                {"content": "❌ **Error:** Unable to identify user/workspace."},
+                app_id,
+                interaction_token,
+            )
+            return
+
+        raw: Dict[str, Any] = {opt["name"]: opt.get("value") for opt in options}
+        task_id = str(raw.get("task_id") or "").strip()
+        users_raw = str(raw.get("users") or "").strip()
+
+        if not task_id:
+            await self.discord_client.send_response(
+                {"content": "❌ **Error:** task_id is required."},
+                app_id,
+                interaction_token,
+            )
+            return
+        if not users_raw:
+            await self.discord_client.send_response(
+                {"content": "❌ **Error:** At least one @mention is required."},
+                app_id,
+                interaction_token,
+            )
+            return
+
+        workspace_id = user_info.get("workspace_id")
+        if not workspace_id:
+            await self.discord_client.send_response(
+                {"content": "❌ **Error:** Missing workspace context."},
+                app_id,
+                interaction_token,
+            )
+            return
+
+        import re
+        mention_pattern = re.compile(r"<@!?([0-9]+)>")
+        mentioned_ids = mention_pattern.findall(users_raw)
+        if not mentioned_ids:
+            await self.discord_client.send_response(
+                {"content": "❌ **Error:** No valid @mentions found."},
+                app_id,
+                interaction_token,
+            )
+            return
+
+        try:
+            from utils import get_supabase_client
+            supabase = get_supabase_client()
+
+            # Validate task belongs to workspace
+            task_result = (
+                supabase.table("tasks")
+                .select("id, list_id, task_lists!inner(id, board_id, workspace_boards!inner(id, ws_id))")
+                .eq("id", task_id)
+                .eq("deleted", False)
+                .execute()
+            )
+            if not task_result.data:
+                await self.discord_client.send_response(
+                    {"content": "❌ **Error:** Task not found or deleted."},
+                    app_id,
+                    interaction_token,
+                )
+                return
+
+            task_row = task_result.data[0]
+            ws_via_task = (
+                ((task_row.get("task_lists") or {}).get("workspace_boards") or {}).get("ws_id")
+            )
+            if not ws_via_task or ws_via_task != workspace_id:
+                await self.discord_client.send_response(
+                    {"content": "❌ **Error:** Task does not belong to your workspace."},
+                    app_id,
+                    interaction_token,
+                )
+                return
+
+            # Resolve mentioned discord users to platform user IDs
+            member_rows = (
+                supabase.table("discord_guild_members")
+                .select("discord_user_id, platform_user_id")
+                .in_("discord_user_id", mentioned_ids)
+                .execute()
+            )
+            platform_ids = [r.get("platform_user_id") for r in (member_rows.data or []) if r.get("platform_user_id")]
+            if not platform_ids:
+                await self.discord_client.send_response(
+                    {"content": "❌ **Error:** Unable to resolve mentioned users."},
+                    app_id,
+                    interaction_token,
+                )
+                return
+
+            # Filter to workspace membership
+            wm_rows = (
+                supabase.table("workspace_members")
+                .select("user_id")
+                .eq("ws_id", workspace_id)
+                .in_("user_id", platform_ids)
+                .execute()
+            )
+            valid_user_ids = [r.get("user_id") for r in (wm_rows.data or []) if r.get("user_id")]
+            if not valid_user_ids:
+                await self.discord_client.send_response(
+                    {"content": "❌ **Error:** Mentioned users are not members of this workspace."},
+                    app_id,
+                    interaction_token,
+                )
+                return
+
+            # Delete assignments
+            removed = 0
+            removed_mentions: List[str] = []
+            # Build map platform_user_id -> discord_user_id for mention reconstruction
+            discord_map = {
+                r.get("platform_user_id"): r.get("discord_user_id")
+                for r in (member_rows.data or [])
+                if r.get("platform_user_id") and r.get("discord_user_id")
+            }
+            for uid in valid_user_ids:
+                try:
+                    # Delete where matches task & user
+                    del_res = (
+                        supabase.table("task_assignees")
+                        .delete()
+                        .eq("task_id", task_id)
+                        .eq("user_id", uid)
+                        .execute()
+                    )
+                    if del_res.data:
+                        removed += len(del_res.data)
+                        discord_id = discord_map.get(uid)
+                        if discord_id:
+                            removed_mentions.append(f"<@{discord_id}>")
+                except Exception as e:
+                    print(f"Unassign error for user {uid}: {e}")
+                    continue
+
+            if removed == 0:
+                message = "ℹ️ No assignees were removed (they may not have been assigned)."
+            else:
+                mention_list = ", ".join(removed_mentions) if removed_mentions else "(no resolvable mentions)"
+                message = f"✅ Removed {removed} assignment(s) from task `{task_id}`: {mention_list}"
+
+            await self.discord_client.send_response(
+                {"content": message},
+                app_id,
+                interaction_token,
+            )
+
+        except Exception as e:
+            print(f"Error in unassign command: {e}")
+            await self.discord_client.send_response(
+                {"content": f"❌ **Error:** Failed to unassign users: {e}"},
+                app_id,
+                interaction_token,
+            )
+
+    async def handle_assignees_command(
+        self,
+        app_id: str,
+        interaction_token: str,
+        options: List[Dict[str, Any]],
+        user_info: Optional[dict] = None,
+    ) -> None:
+        """Handle the /assignees command to list current task assignees.
+
+        Steps:
+          1. Validate user/workspace context
+          2. Validate task exists and belongs to workspace
+          3. Fetch current assignees via task_assignees join to users + discord mapping
+          4. Render nicely with display names + Discord mentions + count summary
+        """
+        if not user_info:
+            await self.discord_client.send_response(
+                {"content": "❌ **Error:** Unable to identify user/workspace."},
+                app_id,
+                interaction_token,
+            )
+            return
+
+        raw: Dict[str, Any] = {opt["name"]: opt.get("value") for opt in options}
+        task_id = str(raw.get("task_id") or "").strip()
+        if not task_id:
+            await self.discord_client.send_response(
+                {"content": "❌ **Error:** task_id is required."},
+                app_id,
+                interaction_token,
+            )
+            return
+
+        workspace_id = user_info.get("workspace_id")
+        if not workspace_id:
+            await self.discord_client.send_response(
+                {"content": "❌ **Error:** Missing workspace context."},
+                app_id,
+                interaction_token,
+            )
+            return
+
+        try:
+            from utils import get_supabase_client
+            supabase = get_supabase_client()
+
+            # Validate task belongs to workspace
+            task_result = (
+                supabase.table("tasks")
+                .select("id, list_id, task_lists!inner(id, board_id, workspace_boards!inner(id, ws_id))")
+                .eq("id", task_id)
+                .eq("deleted", False)
+                .execute()
+            )
+            if not task_result.data:
+                await self.discord_client.send_response(
+                    {"content": "❌ **Error:** Task not found or deleted."},
+                    app_id,
+                    interaction_token,
+                )
+                return
+
+            task_row = task_result.data[0]
+            ws_via_task = (
+                ((task_row.get("task_lists") or {}).get("workspace_boards") or {}).get("ws_id")
+            )
+            if not ws_via_task or ws_via_task != workspace_id:
+                await self.discord_client.send_response(
+                    {"content": "❌ **Error:** Task does not belong to your workspace."},
+                    app_id,
+                    interaction_token,
+                )
+                return
+
+            # Fetch assignees
+            # Assuming task_assignees(user_id, task_id) and users table for display info
+            assignee_rows = (
+                supabase.table("task_assignees")
+                .select("user_id, users!inner(display_name, handle)")
+                .eq("task_id", task_id)
+                .execute()
+            )
+            rows = assignee_rows.data or []
+            if not rows:
+                await self.discord_client.send_response(
+                    {"content": f"📭 No current assignees for task `{task_id}`."},
+                    app_id,
+                    interaction_token,
+                )
+                return
+
+            # Map platform_user_id -> discord_user_id
+            # (Optionally we could filter to only those in this workspace, but membership enforced earlier.)
+            discord_map_rows = (
+                supabase.table("discord_guild_members")
+                .select("platform_user_id, discord_user_id")
+                .execute()
+            )
+            discord_map = {
+                r.get("platform_user_id"): r.get("discord_user_id")
+                for r in (discord_map_rows.data or [])
+                if r.get("platform_user_id") and r.get("discord_user_id")
+            }
+
+            assignees: List[str] = []
+            for r in rows:
+                uid = r.get("user_id")
+                user_meta = r.get("users") or {}
+                display_name = user_meta.get("display_name") or user_meta.get("handle") or "User"
+                if uid in discord_map:
+                    assignees.append(f"• **{display_name}** (<@{discord_map[uid]}>)")
+                else:
+                    assignees.append(f"• **{display_name}**")
+
+            header = f"👥 **Assignees for Task `{task_id}`**\n\n"
+            body = "\n".join(assignees)
+            summary = f"\n\nTotal: **{len(assignees)}** assignee(s)."
+            message = header + body + summary
+
+            # Truncate if somehow exceeds Discord limit (2000 chars)
+            if len(message) > 1900:
+                # Keep header and summary, truncate body lines
+                available = 1900 - len(header) - len(summary) - 20
+                truncated_body = []
+                current = 0
+                for line in assignees:
+                    if current + len(line) + 1 > available:
+                        truncated_body.append("… (truncated)")
+                        break
+                    truncated_body.append(line)
+                    current += len(line) + 1
+                message = header + "\n".join(truncated_body) + summary
+
+            await self.discord_client.send_response(
+                {"content": message},
+                app_id,
+                interaction_token,
+            )
+        except Exception as e:
+            print(f"Error in assignees command: {e}")
+            await self.discord_client.send_response(
+                {"content": f"❌ **Error:** Failed to list assignees: {e}"},
                 app_id,
                 interaction_token,
             )

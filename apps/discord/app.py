@@ -296,6 +296,138 @@ async def reply_ticket(
 
 @app.function(secrets=[supabase_secret], image=image)
 @modal.concurrent(max_inputs=1000)
+async def reply_assign(
+    app_id: str,
+    interaction_token: str,
+    options: list,
+    user_id: Optional[str] = None,
+    guild_id: Optional[str] = None,
+):
+    """Handle /assign command with authorization."""
+    handler = CommandHandler()
+
+    if user_id:
+        if guild_id:
+            if not handler.is_user_authorized(user_id, guild_id):
+                await handler.discord_client.send_response(
+                    {"content": handler.discord_client.format_unauthorized_user_message()},
+                    app_id,
+                    interaction_token,
+                )
+                return
+        else:
+            if not handler.is_user_authorized_for_dm(user_id):
+                await handler.discord_client.send_response(
+                    {"content": handler.discord_client.format_unauthorized_user_message()},
+                    app_id,
+                    interaction_token,
+                )
+                return
+
+    user_info = None
+    if user_id:
+        user_info = handler.get_user_workspace_info(user_id, guild_id or "")
+
+    try:
+        await handler.handle_assign_command(app_id, interaction_token, options or [], user_info)
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        await handler.discord_client.send_response(
+            {"content": f"❌ **Error:** {e}"}, app_id, interaction_token
+        )
+
+
+@app.function(secrets=[supabase_secret], image=image)
+@modal.concurrent(max_inputs=1000)
+async def reply_unassign(
+    app_id: str,
+    interaction_token: str,
+    options: list,
+    user_id: Optional[str] = None,
+    guild_id: Optional[str] = None,
+):
+    """Handle /unassign command with authorization."""
+    handler = CommandHandler()
+
+    if user_id:
+        if guild_id:
+            if not handler.is_user_authorized(user_id, guild_id):
+                await handler.discord_client.send_response(
+                    {"content": handler.discord_client.format_unauthorized_user_message()},
+                    app_id,
+                    interaction_token,
+                )
+                return
+        else:
+            if not handler.is_user_authorized_for_dm(user_id):
+                await handler.discord_client.send_response(
+                    {"content": handler.discord_client.format_unauthorized_user_message()},
+                    app_id,
+                    interaction_token,
+                )
+                return
+
+    user_info = None
+    if user_id:
+        user_info = handler.get_user_workspace_info(user_id, guild_id or "")
+
+    try:
+        await handler.handle_unassign_command(app_id, interaction_token, options or [], user_info)
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        await handler.discord_client.send_response(
+            {"content": f"❌ **Error:** {e}"}, app_id, interaction_token
+        )
+
+
+@app.function(secrets=[supabase_secret], image=image)
+@modal.concurrent(max_inputs=1000)
+async def reply_assignees(
+    app_id: str,
+    interaction_token: str,
+    options: list,
+    user_id: Optional[str] = None,
+    guild_id: Optional[str] = None,
+):
+    """Handle /assignees command with authorization."""
+    handler = CommandHandler()
+
+    if user_id:
+        if guild_id:
+            if not handler.is_user_authorized(user_id, guild_id):
+                await handler.discord_client.send_response(
+                    {"content": handler.discord_client.format_unauthorized_user_message()},
+                    app_id,
+                    interaction_token,
+                )
+                return
+        else:
+            if not handler.is_user_authorized_for_dm(user_id):
+                await handler.discord_client.send_response(
+                    {"content": handler.discord_client.format_unauthorized_user_message()},
+                    app_id,
+                    interaction_token,
+                )
+                return
+
+    user_info = None
+    if user_id:
+        user_info = handler.get_user_workspace_info(user_id, guild_id or "")
+
+    try:
+        await handler.handle_assignees_command(app_id, interaction_token, options or [], user_info)
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        await handler.discord_client.send_response(
+            {"content": f"❌ **Error:** {e}"}, app_id, interaction_token
+        )
+
+
+@app.function(secrets=[supabase_secret], image=image)
+@modal.concurrent(max_inputs=1000)
 async def handle_board_selection_interaction(
     app_id: str,
     interaction_token: str,
@@ -843,6 +975,15 @@ def web_app():
                 )
             elif command_name == "ticket":
                 reply_ticket.spawn(app_id, interaction_token, user_id, guild_id)
+            elif command_name == "assign":
+                options = data["data"].get("options", [])
+                reply_assign.spawn(app_id, interaction_token, options, user_id, guild_id)
+            elif command_name == "unassign":
+                options = data["data"].get("options", [])
+                reply_unassign.spawn(app_id, interaction_token, options, user_id, guild_id)
+            elif command_name == "assignees":
+                options = data["data"].get("options", [])
+                reply_assignees.spawn(app_id, interaction_token, options, user_id, guild_id)
             else:
                 print(f"🤖: unknown command: {command_name}")
                 handler = CommandHandler()
