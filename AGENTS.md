@@ -186,6 +186,8 @@ Use Biome (user-run only; agent must not execute commands directly).
 2. If dependency added, update `requirements.txt` (if present) and pin.
 3. Provide run instructions or adjust existing README.
 4. Respect separate .env – do not mix Node env var assumptions.
+5. **NEVER** auto-execute Modal commands (`modal run`, `modal deploy`) without explicit user request.
+6. For Modal-based Discord bots: provide deployment commands but let user execute them.
 
 #### 4.11 Scripts in `scripts/`
 1. Must be idempotent & side-effect explicit.
@@ -655,6 +657,7 @@ Agent Responsibilities:
 | (DO NOT auto run build/dev) | (Requires explicit user request) | Safeguard against unintended resource use |
 | (DO NOT run sb:push/linkpush) | User-only | Agent prepares migration & instructions |
 | (DO NOT run biome commands) | User-only | Agent suggests fixes; user executes |
+| (DO NOT run modal commands) | User-only | Agent prepares Modal code; user runs `modal run/deploy` |
 
 Top 5 Failure Causes → Fix Fast:
 1. Missing regenerated Supabase types → run `bun sb:typegen`.
