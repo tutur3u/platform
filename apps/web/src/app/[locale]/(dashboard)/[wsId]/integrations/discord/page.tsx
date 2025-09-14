@@ -11,9 +11,11 @@ interface Props {
 }
 
 export default async function DiscordIntegrationPage({ params }: Props) {
-  const { wsId } = await params;
+  const { wsId: id } = await params;
 
-  const workspace = await getWorkspace(wsId);
+  const workspace = await getWorkspace(id);
+  const wsId = workspace?.id;
+
   const user = await getCurrentUser();
 
   if (!workspace || !user) {

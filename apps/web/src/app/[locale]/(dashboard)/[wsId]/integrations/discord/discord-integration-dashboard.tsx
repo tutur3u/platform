@@ -33,7 +33,6 @@ import {
   Loader2,
   Plus,
   Search,
-  Settings,
   Trash2,
   UserMinus,
   Users,
@@ -329,16 +328,6 @@ export default function DiscordIntegrationDashboard({
   ]);
 
   const botInviteUrl = `https://discord.com/api/oauth2/authorize?client_id=1333464267004489801&permissions=274878024768&scope=bot%20applications.commands`;
-  const supportedCommands = [
-    {
-      name: '/api',
-      description: 'Get information about a random free, public API',
-    },
-    {
-      name: '/shorten',
-      description: 'Shorten a URL with optional custom slug',
-    },
-  ];
 
   if (!integration) {
     return (
@@ -350,7 +339,7 @@ export default function DiscordIntegrationDashboard({
 
         <Separator className="my-6" />
 
-        <div className="grid gap-6 md:grid-cols-2">
+        <div className="grid gap-6">
           {/* Setup Instructions */}
           <Card>
             <CardHeader>
@@ -437,33 +426,6 @@ export default function DiscordIntegrationDashboard({
             </CardContent>
           </Card>
         </div>
-
-        {/* Bot Features */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Settings className="h-5 w-5" />
-              Bot Features
-            </CardTitle>
-            <CardDescription>
-              Available commands and features once connected
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid gap-4 md:grid-cols-2">
-              {supportedCommands.map((command) => (
-                <div key={command.name} className="rounded-lg border p-3">
-                  <code className="rounded bg-dynamic-muted/30 px-2 py-1 font-mono text-dynamic-blue text-sm">
-                    {command.name}
-                  </code>
-                  <p className="mt-2 text-dynamic-muted-foreground text-sm">
-                    {command.description}
-                  </p>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
       </div>
     );
   }
@@ -577,39 +539,8 @@ export default function DiscordIntegrationDashboard({
           </CardContent>
         </Card>
 
-        {/* Bot Commands */}
-        <Card className="overflow-hidden border-dynamic-purple/20 transition-all duration-300">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 border-dynamic-purple/20 border-b bg-gradient-to-r from-dynamic-purple/5 to-dynamic-pink/5 p-4">
-            <CardTitle className="flex items-center gap-2 font-semibold text-base">
-              <div className="rounded-lg bg-dynamic-purple/10 p-1.5 text-dynamic-purple">
-                <Bot className="h-4 w-4" />
-              </div>
-              <div className="line-clamp-1">Available Commands</div>
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="h-full space-y-6 p-6">
-            <div className="space-y-3">
-              {supportedCommands.map((command) => (
-                <div
-                  key={command.name}
-                  className="rounded-lg border border-dynamic-border/10 bg-dynamic-muted/5 p-3 transition-all duration-200 hover:border-dynamic-purple/20 hover:bg-dynamic-purple/5"
-                >
-                  <div className="flex items-center gap-2">
-                    <code className="rounded bg-dynamic-purple/10 px-2 py-1 font-mono text-dynamic-purple text-sm">
-                      {command.name}
-                    </code>
-                  </div>
-                  <p className="mt-2 text-dynamic-muted-foreground text-sm leading-relaxed">
-                    {command.description}
-                  </p>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-
         {/* Guild Members */}
-        <Card className="col-span-2 overflow-hidden border-dynamic-blue/20 transition-all duration-300">
+        <Card className="overflow-hidden border-dynamic-blue/20 transition-all duration-300">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 border-dynamic-blue/20 border-b bg-gradient-to-r from-dynamic-blue/5 to-dynamic-purple/5 p-4">
             <CardTitle className="flex items-center gap-2 font-semibold text-base">
               <div className="rounded-lg bg-dynamic-blue/10 p-1.5 text-dynamic-blue">

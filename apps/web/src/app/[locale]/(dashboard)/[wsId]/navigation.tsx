@@ -865,6 +865,15 @@ export async function WorkspaceNavigationLinks({
           title: t('sidebar_tabs.integrations'),
           icon: <Bot className="h-5 w-5" />,
           href: `/${personalOrWsId}/integrations`,
+          aliases: [`/${personalOrWsId}/integrations/discord`],
+          children: [
+            {
+              title: 'Discord',
+              href: `/${personalOrWsId}/integrations/discord`,
+              icon: <Bot className="h-5 w-5" />,
+              disabled: !allowDiscordIntegrations,
+            },
+          ],
           disabled: !allowDiscordIntegrations,
         }
       : null,

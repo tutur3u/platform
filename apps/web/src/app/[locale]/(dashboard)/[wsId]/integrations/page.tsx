@@ -2,6 +2,7 @@ import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
 import { Bot, ExternalLink, Settings } from '@tuturuuu/ui/icons';
+import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import Link from 'next/link';
 
 interface Props {
@@ -11,7 +12,10 @@ interface Props {
 }
 
 export default async function IntegrationsPage({ params }: Props) {
-  const { wsId } = await params;
+  const { wsId: id } = await params;
+
+  const workspace = await getWorkspace(id);
+  const wsId = workspace?.id;
 
   const integrations = [
     {
