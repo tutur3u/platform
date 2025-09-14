@@ -65,6 +65,11 @@ class CommandHandler:
                     }
                 ],
             },
+            {
+                "name": "ticket",
+                "description": "Create a new task ticket using interactive selection",
+                "options": [],
+            },
         ]
 
     def is_guild_authorized(self, guild_id: str) -> bool:
@@ -371,6 +376,529 @@ class CommandHandler:
             {"content": message}, app_id, interaction_token
         )
 
+    async def handle_ticket_command(
+        self,
+        app_id: str,
+        interaction_token: str,
+        user_info: Optional[dict] = None,
+    ) -> None:
+        """Handle the /ticket command with interactive board selection."""
+        if not user_info:
+            await self.discord_client.send_response(
+                {"content": "❌ **Error:** Unable to identify user/workspace."},
+                app_id,
+                interaction_token,
+            )
+            return
+
+        workspace_id = user_info.get("workspace_id")
+        if not workspace_id:
+            await self.discord_client.send_response(
+                {"content": "❌ **Error:** Missing workspace context."},
+                app_id,
+                interaction_token,
+            )
+            return
+
+        try:
+            from utils import get_supabase_client
+
+            supabase = get_supabase_client()
+
+            # Fetch boards for interactive selection
+            boards_result = supabase.table("workspace_boards").select("id, name, created_at").eq("ws_id", workspace_id).eq("deleted", False).order("created_at").execute()
+
+            if not boards_result.data:
+                await self.discord_client.send_response(
+                    {"content": "📋 **No task boards found** in your workspace.\n\n_Create boards on the web dashboard first._"},
+                    app_id,
+                    interaction_token,
+                )
+                return
+
+            # Create interactive board selection
+            user_name = user_info.get("display_name") or user_info.get("handle") or "User"
+            components = self.discord_client.create_board_selection_components(boards_result.data)
+            
+            # Update the custom_id to indicate this is for ticket creation
+            if components and components[0].get("components"):
+                components[0]["components"][0]["custom_id"] = "select_board_for_ticket"
+            
+            payload = {
+                "content": f"🎫 **Create a Task Ticket - Step 1/2**\n\n**Hi {user_name}!** Choose a board to create your ticket in:",
+                "components": components
+            }
+
+            await self.discord_client.send_response_with_components(
+                payload, app_id, interaction_token
+            )
+
+        except Exception as e:
+            print(f"Error in ticket command: {e}")
+            await self.discord_client.send_response(
+                {"content": f"❌ **Error:** Failed to load boards: {str(e)}"},
+                app_id,
+                interaction_token,
+            )
+
+    async def handle_boards_command(
+        self,
+        app_id: str,
+        interaction_token: str,
+        user_info: Optional[dict] = None,
+    ) -> None:
+        """Handle the /boards command to list available task boards."""
+        if not user_info:
+            await self.discord_client.send_response(
+                {"content": "❌ **Error:** Unable to identify user/workspace."},
+                app_id,
+                interaction_token,
+            )
+            return
+
+        workspace_id = user_info.get("workspace_id")
+        if not workspace_id:
+            await self.discord_client.send_response(
+                {"content": "❌ **Error:** Missing workspace context."},
+                app_id,
+                interaction_token,
+            )
+            return
+
+        try:
+            from utils import get_supabase_client
+
+            supabase = get_supabase_client()
+
+            # Fetch all boards in the workspace
+            boards_result = supabase.table("workspace_boards").select("id, name, created_at").eq("ws_id", workspace_id).eq("deleted", False).order("created_at").execute()
+
+            if not boards_result.data:
+                await self.discord_client.send_response(
+                    {"content": "📋 **No task boards found** in your workspace.\\n\\n_You can create boards on the web dashboard._"},
+                    app_id,
+                    interaction_token,
+                )
+                return
+
+            # Create interactive board selection
+            user_name = user_info.get("display_name") or user_info.get("handle") or "User"
+            components = self.discord_client.create_board_selection_components(boards_result.data)
+            
+            payload = {
+                "content": f"📋 **Task Boards for {user_name}**\n\nSelect a board to see its task lists:",
+                "components": components
+            }
+
+            await self.discord_client.send_response_with_components(
+                payload, app_id, interaction_token
+            )
+
+        except Exception as e:
+            print(f"Error in boards command: {e}")
+            await self.discord_client.send_response(
+                {"content": f"❌ **Error:** Failed to fetch boards: {str(e)}"},
+                app_id,
+                interaction_token,
+            )
+
+    async def handle_lists_command(
+        self,
+        app_id: str,
+        interaction_token: str,
+        options: List[Dict[str, Any]],
+        user_info: Optional[dict] = None,
+    ) -> None:
+        """Handle the /lists command to list task lists in a board."""
+        if not user_info:
+            await self.discord_client.send_response(
+                {"content": "❌ **Error:** Unable to identify user/workspace."},
+                app_id,
+                interaction_token,
+            )
+            return
+
+        # Extract board_id from options
+        raw: Dict[str, Any] = {opt["name"]: opt.get("value") for opt in options}
+        board_id = str(raw.get("board_id") or "").strip()
+
+        if not board_id:
+            await self.discord_client.send_response(
+                {"content": "❌ **Error:** Board ID is required. Use `/boards` to see available boards."},
+                app_id,
+                interaction_token,
+            )
+            return
+
+        workspace_id = user_info.get("workspace_id")
+        if not workspace_id:
+            await self.discord_client.send_response(
+                {"content": "❌ **Error:** Missing workspace context."},
+                app_id,
+                interaction_token,
+            )
+            return
+
+        try:
+            from utils import get_supabase_client
+
+            supabase = get_supabase_client()
+
+            # Validate board exists and belongs to workspace
+            board_result = supabase.table("workspace_boards").select("id, name").eq("id", board_id).eq("ws_id", workspace_id).eq("deleted", False).execute()
+            if not board_result.data:
+                await self.discord_client.send_response(
+                    {"content": f"❌ **Error:** Board '{board_id}' not found in your workspace."},
+                    app_id,
+                    interaction_token,
+                )
+                return
+
+            board = board_result.data[0]
+            board_name = board.get("name", "Unknown Board")
+
+            # Fetch task lists in the board
+            lists_result = supabase.table("task_lists").select("id, name, status, created_at").eq("board_id", board_id).eq("deleted", False).order("position").order("created_at").execute()
+
+            if not lists_result.data:
+                await self.discord_client.send_response(
+                    {"content": f"📝 **No task lists found** in board '{board_name}'.\\n\\n_You can create lists on the web dashboard._"},
+                    app_id,
+                    interaction_token,
+                )
+                return
+
+            # Format the lists
+            # user_name = user_info.get("display_name") or user_info.get("handle") or "User"
+            message = f"📝 **Task Lists in '{board_name}'**\n\n"
+
+            status_emojis = {
+                "not_started": "⚪",
+                "active": "🟢",
+                "done": "✅",
+                "closed": "🔴",
+            }
+
+            for idx, task_list in enumerate(lists_result.data[:15], 1):  # Limit to 15 lists
+                list_id = task_list.get("id")
+                list_name = task_list.get("name", "Unnamed List")
+                status = task_list.get("status", "not_started")
+                emoji = status_emojis.get(status, "⚪")
+                message += f"**{idx}.** {emoji} {list_name}\n`ID: {list_id}`\n\n"
+
+            if len(lists_result.data) > 15:
+                message += f"_... and {len(lists_result.data) - 15} more lists_\n\n"
+
+            message += f"_Use `/ticket {board_id} <list_id> \"Task Title\"` to create a task._"
+
+            await self.discord_client.send_response(
+                {"content": message}, app_id, interaction_token
+            )
+
+        except Exception as e:
+            print(f"Error in lists command: {e}")
+            await self.discord_client.send_response(
+                {"content": f"❌ **Error:** Failed to fetch lists: {str(e)}"},
+                app_id,
+                interaction_token,
+            )
+
+    async def handle_board_selection_interaction(
+        self,
+        app_id: str,
+        interaction_token: str,
+        board_id: str,
+        user_info: Optional[dict] = None
+    ) -> None:
+        """Handle board selection from select menu."""
+        if not user_info:
+            await self.discord_client.send_response(
+                {"content": "❌ **Error:** Unable to identify user/workspace."},
+                app_id,
+                interaction_token,
+            )
+            return
+
+        workspace_id = user_info.get("workspace_id")
+        if not workspace_id:
+            await self.discord_client.send_response(
+                {"content": "❌ **Error:** Missing workspace context."},
+                app_id,
+                interaction_token,
+            )
+            return
+
+        try:
+            from utils import get_supabase_client
+
+            supabase = get_supabase_client()
+
+            # Validate board exists and belongs to workspace
+            board_result = supabase.table("workspace_boards").select("id, name").eq("id", board_id).eq("ws_id", workspace_id).eq("deleted", False).execute()
+            if not board_result.data:
+                await self.discord_client.send_response(
+                    {"content": "❌ **Error:** Board not found in your workspace."},
+                    app_id,
+                    interaction_token,
+                )
+                return
+
+            board = board_result.data[0]
+            board_name = board.get("name", "Unknown Board")
+
+            # Fetch task lists in the board
+            lists_result = supabase.table("task_lists").select("id, name, status, created_at").eq("board_id", board_id).eq("deleted", False).order("position").order("created_at").execute()
+
+            if not lists_result.data:
+                await self.discord_client.send_response(
+                    {"content": f"📝 **No task lists found** in board '{board_name}'.\n\n_Create lists on the web dashboard first._"},
+                    app_id,
+                    interaction_token,
+                )
+                return
+
+            # Create interactive list selection
+            components = self.discord_client.create_list_selection_components(lists_result.data, board_id)
+            content = f"🎫 **Create Ticket - Step 2/2**\n\n**Board:** {board_name}\n\nChoose a list to create your ticket in:"
+            
+            payload = {
+                "content": content,
+                "components": components
+            }
+
+            await self.discord_client.send_response_with_components(
+                payload, app_id, interaction_token
+            )
+
+        except Exception as e:
+            print(f"Error in board selection: {e}")
+            await self.discord_client.send_response(
+                {"content": f"❌ **Error:** Failed to load lists: {str(e)}"},
+                app_id,
+                interaction_token,
+            )
+
+    async def handle_list_selection_interaction(
+        self,
+        app_id: str,
+        interaction_token: str,
+        board_id: str,
+        list_id: str,
+        user_info: Optional[dict] = None,
+    ) -> None:
+        """Handle list selection - show ticket creation modal."""
+        if not user_info:
+            # This should not happen in normal flow, but handle gracefully
+            return
+
+        try:
+            from utils import get_supabase_client
+
+            supabase = get_supabase_client()
+
+            # Get list information with board details
+            list_result = supabase.table("task_lists").select(
+                "id, name, board_id, workspace_boards!inner(id, name)"
+            ).eq("id", list_id).eq("deleted", False).execute()
+
+            if not list_result.data:
+                await self.discord_client.send_response(
+                    {"content": "❌ **Error:** List not found."},
+                    app_id,
+                    interaction_token,
+                )
+                return
+            
+            list_data = list_result.data[0]
+            list_name = list_data.get("name", "Unknown List")
+            actual_board_id = list_data.get("board_id")
+            board_name = list_data.get("workspace_boards", {}).get("name", "Unknown Board")
+
+            if not actual_board_id:
+                await self.discord_client.send_response(
+                    {"content": "❌ **Error:** Board information not found."},
+                    app_id,
+                    interaction_token,
+                )
+                return
+
+            # This method is no longer used for modal creation
+            # Modal creation is now handled synchronously in the main interaction handler
+            await self.discord_client.send_response(
+                {"content": f"✅ Selected list: **{list_name}** in board **{board_name}**"},
+                app_id,
+                interaction_token,
+            )
+
+        except Exception as e:
+            print(f"Error in list selection: {e}")
+            await self.discord_client.send_response(
+                {"content": f"❌ **Error:** Failed to prepare ticket form: {str(e)}"},
+                app_id,
+                interaction_token,
+            )
+
+    async def handle_ticket_modal_submission(
+        self,
+        app_id: str,
+        interaction_token: str,
+        board_id: str,
+        list_id: str,
+        form_data: Dict[str, str],
+        user_info: Optional[dict] = None,
+    ) -> None:
+        """Handle ticket form modal submission."""
+        if not user_info:
+            await self.discord_client.send_response(
+                {"content": "❌ **Error:** Unable to identify user/workspace."},
+                app_id,
+                interaction_token,
+            )
+            return
+
+        workspace_id = user_info.get("workspace_id")
+        creator_id = user_info.get("platform_user_id")
+        if not workspace_id or not creator_id:
+            await self.discord_client.send_response(
+                {"content": "❌ **Error:** Missing workspace context."},
+                app_id,
+                interaction_token,
+            )
+            return
+
+        try:
+            from utils import get_supabase_client
+
+            supabase = get_supabase_client()
+
+            # Extract form data
+            title = form_data.get("ticket_title", "").strip()
+            description = form_data.get("ticket_description", "").strip() or None
+            priority_raw = form_data.get("ticket_priority", "2").strip()
+
+            # ---- Priority Mapping (Legacy numeric -> New enum) ----
+            # Database migration history:
+            #   Original schema stored a smallint priority (1..4).
+            #   Later migrations introduced enum task_priority ('low','normal','high','critical')
+            #   and finally replaced the numeric column with the enum (renaming user_defined_priority -> priority).
+            #   Legacy UI / Discord modal still sends numeric values 1..4 representing severity from lowest to highest.
+            #   We preserve user-facing labels (Low, Medium, High, Urgent) while storing the canonical enum.
+            # Mapping we apply here (ascending severity):
+            #   1 -> 'low'
+            #   2 -> 'normal'   (displayed as Medium)
+            #   3 -> 'high'
+            #   4 -> 'critical' (displayed as Urgent)
+            # We also accept historical textual inputs ('urgent','medium') just in case.
+
+            def normalize_priority(value: str) -> str:
+                value_lc = value.lower().strip()
+                # Accept direct enum values
+                if value_lc in {"low", "normal", "high", "critical"}:
+                    return value_lc
+                # Accept legacy textual synonyms
+                synonyms = {
+                    "medium": "normal",
+                    "urgent": "critical",
+                }
+                if value_lc in synonyms:
+                    return synonyms[value_lc]
+                # Numeric mapping fallback
+                try:
+                    num = int(value_lc)
+                except ValueError:
+                    num = 2  # default medium/normal
+                num = max(1, min(4, num))
+                numeric_map = {1: "low", 2: "normal", 3: "high", 4: "critical"}
+                return numeric_map.get(num, "normal")
+
+            priority_enum = normalize_priority(priority_raw)
+
+            if not title:
+                await self.discord_client.send_response(
+                    {"content": "❌ **Error:** Task title is required."},
+                    app_id,
+                    interaction_token,
+                )
+                return
+
+            # Validate board and list still exist
+            board_result = supabase.table("workspace_boards").select("id, name").eq("id", board_id).eq("ws_id", workspace_id).eq("deleted", False).execute()
+            if not board_result.data:
+                await self.discord_client.send_response(
+                    {"content": "❌ **Error:** Board not found or access denied."},
+                    app_id,
+                    interaction_token,
+                )
+                return
+
+            list_result = supabase.table("task_lists").select("id, name").eq("id", list_id).eq("board_id", board_id).eq("deleted", False).execute()
+            if not list_result.data:
+                await self.discord_client.send_response(
+                    {"content": "❌ **Error:** List not found or access denied."},
+                    app_id,
+                    interaction_token,
+                )
+                return
+
+            board_name = board_result.data[0].get("name", "Unknown Board")
+            list_name = list_result.data[0].get("name", "Unknown List")
+
+            # Create the task
+            task_payload = {
+                "name": title,
+                "description": description,
+                "list_id": list_id,
+                # Store enum value expected by DB
+                "priority": priority_enum,
+                "creator_id": creator_id,
+                "deleted": False,
+                "completed": False,
+                "archived": False,
+            }
+
+            task_result = supabase.table("tasks").insert(task_payload).execute()
+            if not task_result.data:
+                raise Exception("Failed to create task - empty result")
+
+            task_id = task_result.data[0].get("id")
+            if not task_id:
+                raise Exception("Missing task ID in response")
+
+            # Format success message
+            user_name = user_info.get("display_name") or user_info.get("handle") or "User"
+            # Display labels aligned with original numeric UI while DB keeps canonical enums
+            display_labels = {"low": "Low 🐢", "normal": "Medium 🐰", "high": "High 🐴", "critical": "Urgent 🦄"}
+            priority_name = display_labels.get(priority_enum, "Medium")
+
+            message = (
+                f"🎫 **Task ticket created by {user_name}!**\n\n"
+                f"**Title:** {title}\n"
+                f"**Board:** {board_name}\n"
+                f"**List:** {list_name}\n"
+                f"**Priority:** {priority_name}\n"
+            )
+
+            if description:
+                # Truncate description if too long
+                desc_display = description[:100] + "..." if len(description) > 100 else description
+                message += f"**Description:**\n{desc_display}\n\n"
+
+            message += f"**Task ID:** `{task_id}`\n"
+            message += f"**Link:** https://tuturuuu.com/{workspace_id}/tasks/boards/{board_id}\n\n"
+            message += "_Task created successfully! View it in your workspace dashboard._"
+
+            await self.discord_client.send_response(
+                {"content": message}, app_id, interaction_token
+            )
+
+        except Exception as e:
+            print(f"Error creating ticket: {e}")
+            await self.discord_client.send_response(
+                {"content": f"❌ **Error:** Failed to create task ticket: {str(e)}"},
+                app_id,
+                interaction_token,
+            )
+
     async def _fetch_time_tracking_stats(self, user_info: dict) -> Optional[dict]:
         """Fetch time tracking statistics from the API with basic retry/backoff.
 
@@ -389,7 +917,6 @@ class CommandHandler:
 
             from utils import get_base_url
             import asyncio
-            import math
 
             base_url = get_base_url()
             today_url = (
@@ -459,7 +986,7 @@ class CommandHandler:
 
     def _format_daily_report(self, stats: dict, user_info: dict) -> str:
         """Format the daily report for Discord display."""
-        from datetime import datetime, timedelta, timezone
+        from datetime import datetime
         import pytz  # type: ignore[import-not-found]
 
         # Get GMT+7 timezone
@@ -493,7 +1020,7 @@ class CommandHandler:
         today_categories = category_breakdown.get("today", {})
 
         # Build the report
-        report = f"# 📊 Daily Time Tracking Report\n\n"
+        report = "# 📊 Daily Time Tracking Report\n\n"
         report += f"**User:** {user_name}\n"
         report += f"**Date:** {now_gmt7.strftime('%A, %B %d, %Y')} (GMT+7)\n"
         report += f"**Time:** {now_gmt7.strftime('%H:%M:%S')}\n\n"
@@ -607,7 +1134,8 @@ class CommandHandler:
         try:
             from utils import get_supabase_client
             supabase = get_supabase_client()
-            import datetime, pytz  # type: ignore[import-not-found]
+            import datetime
+            import pytz  # type: ignore[import-not-found]
             tz = pytz.timezone("Asia/Bangkok")
             
             if target_date:
@@ -781,4 +1309,113 @@ class CommandHandler:
         footer = f"\n*📅 Generated: {now.strftime('%B %d, %Y at %H:%M')} (GMT+7)*"
         
         return header + "\n" + "\n".join(lines) + footer
+
+    async def handle_board_selection_sync(
+        self,
+        board_id: str,
+        user_info: Optional[dict] = None
+    ) -> dict:
+        """Handle board selection synchronously and return response data."""
+        if not user_info:
+            return {
+                "content": "❌ **Error:** Unable to identify user/workspace.",
+                "components": []
+            }
+
+        workspace_id = user_info.get("workspace_id")
+        if not workspace_id:
+            return {
+                "content": "❌ **Error:** Missing workspace context.",
+                "components": []
+            }
+
+        try:
+            from utils import get_supabase_client
+
+            supabase = get_supabase_client()
+
+            # Validate board exists and belongs to workspace
+            board_result = supabase.table("workspace_boards").select("id, name").eq("id", board_id).eq("ws_id", workspace_id).eq("deleted", False).execute()
+            if not board_result.data:
+                return {
+                    "content": "❌ **Error:** Board not found in your workspace.",
+                    "components": []
+                }
+
+            board = board_result.data[0]
+            board_name = board.get("name", "Unknown Board")
+
+            # Fetch task lists in the board
+            lists_result = supabase.table("task_lists").select("id, name, status, created_at").eq("board_id", board_id).eq("deleted", False).order("position").order("created_at").execute()
+
+            if not lists_result.data:
+                return {
+                    "content": f"📝 **No task lists found** in board '{board_name}'.\n\n_Create lists on the web dashboard first._",
+                    "components": []
+                }
+
+            # Create interactive list selection
+            components = self.discord_client.create_list_selection_components(lists_result.data, board_id)
+            content = f"🎫 **Create Ticket - Step 2/2**\n\n**Board:** {board_name}\n\nChoose a list to create your ticket in:"
+            
+            return {
+                "content": content,
+                "components": components
+            }
+
+        except Exception as e:
+            print(f"Error in board selection: {e}")
+            return {
+                "content": f"❌ **Error:** Failed to load lists: {str(e)}",
+                "components": []
+            }
+
+    def create_ticket_form_modal(self, list_id: str, user_info: Optional[dict] = None) -> dict:
+        """Create ticket form modal data."""
+        try:
+            from utils import get_supabase_client
+            
+            supabase = get_supabase_client()
+            
+            # Get list information including board details
+            list_result = supabase.table("task_lists").select(
+                "id, name, board_id, workspace_boards!inner(id, name)"
+            ).eq("id", list_id).eq("deleted", False).execute()
+            
+            if not list_result.data:
+                # Return error instead of invalid modal
+                return {
+                    "type": DiscordResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
+                    "data": {
+                        "content": "❌ **Error:** List not found.",
+                        "flags": 64  # EPHEMERAL flag
+                    }
+                }
+            
+            list_data = list_result.data[0]
+            list_name = list_data.get("name", "Unknown List")
+            board_id = list_data.get("board_id")
+            board_name = list_data.get("workspace_boards", {}).get("name", "Unknown Board")
+            
+            if not board_id:
+                return {
+                    "type": DiscordResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
+                    "data": {
+                        "content": "❌ **Error:** Board information not found.",
+                        "flags": 64  # EPHEMERAL flag
+                    }
+                }
+            
+            return self.discord_client.create_ticket_form_modal(board_id, list_id, board_name, list_name)
+            
+        except Exception as e:
+            print(f"Error creating modal: {e}")
+            # Return error instead of invalid modal
+            return {
+                "type": DiscordResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
+                "data": {
+                    "content": f"❌ **Error:** Failed to create ticket form: {str(e)}",
+                    "flags": 64  # EPHEMERAL flag
+                }
+            }
 

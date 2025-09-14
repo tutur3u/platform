@@ -23,9 +23,12 @@ DEV_BASE_URL = "http://localhost:3002"
 class DiscordInteractionType:
     PING = 1
     APPLICATION_COMMAND = 2
+    MESSAGE_COMPONENT = 3
+    MODAL_SUBMIT = 5
 
 
 # Discord response types
 class DiscordResponseType:
     PONG = 1
     DEFERRED_CHANNEL_MESSAGE_WITH_SOURCE = 5
+    CHANNEL_MESSAGE_WITH_SOURCE = 4  # Immediate message response (used for modal/error replies)
