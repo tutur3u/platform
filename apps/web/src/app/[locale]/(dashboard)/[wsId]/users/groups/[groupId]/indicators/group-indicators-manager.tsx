@@ -400,7 +400,7 @@ export default function GroupIndicatorsManager({
       const indicator = userIndicators.find(
         (ui) => ui.user_id === userId && ui.indicator_id === indicatorId
       );
-      
+
       return indicator?.value?.toString() || '';
     },
     [pendingValues, userIndicators]
@@ -495,7 +495,9 @@ export default function GroupIndicatorsManager({
               <div className="space-y-4">
                 <div className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="new-vital-name">{tIndicators('indicator_name')}</Label>
+                    <Label htmlFor="new-vital-name">
+                      {tIndicators('indicator_name')}
+                    </Label>
                     <Input
                       id="new-vital-name"
                       value={newVitalForm.name}
@@ -509,7 +511,9 @@ export default function GroupIndicatorsManager({
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="new-vital-unit">{tIndicators('unit')}</Label>
+                    <Label htmlFor="new-vital-unit">
+                      {tIndicators('unit')}
+                    </Label>
                     <Input
                       id="new-vital-unit"
                       value={newVitalForm.unit}
@@ -523,7 +527,9 @@ export default function GroupIndicatorsManager({
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="new-vital-factor">{tIndicators('factor')}</Label>
+                    <Label htmlFor="new-vital-factor">
+                      {tIndicators('factor')}
+                    </Label>
                     <Input
                       id="new-vital-factor"
                       type="number"
@@ -580,7 +586,9 @@ export default function GroupIndicatorsManager({
             </DialogHeader>
             <div className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="indicator-name">{tIndicators('indicator_name')}</Label>
+                <Label htmlFor="indicator-name">
+                  {tIndicators('indicator_name')}
+                </Label>
                 <Input
                   id="indicator-name"
                   value={editFormData.name}
@@ -594,7 +602,9 @@ export default function GroupIndicatorsManager({
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="indicator-factor">{tIndicators('factor')}</Label>
+                <Label htmlFor="indicator-factor">
+                  {tIndicators('factor')}
+                </Label>
                 <Input
                   id="indicator-factor"
                   type="number"
@@ -637,11 +647,17 @@ export default function GroupIndicatorsManager({
                 </AlertDialogTrigger>
                 <AlertDialogContent>
                   <AlertDialogHeader>
-                    <AlertDialogTitle>{tIndicators('remove_indicator')}</AlertDialogTitle>
+                    <AlertDialogTitle>
+                      {tIndicators('remove_indicator')}
+                    </AlertDialogTitle>
                     <AlertDialogDescription>
-                      {selectedIndicator?.name 
-                        ? tIndicators('remove_indicator_description', { indicatorName: selectedIndicator.name })
-                        : tIndicators('remove_indicator_description', { indicatorName: '' })}
+                      {selectedIndicator?.name
+                        ? tIndicators('remove_indicator_description', {
+                            indicatorName: selectedIndicator.name,
+                          })
+                        : tIndicators('remove_indicator_description', {
+                            indicatorName: '',
+                          })}
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
@@ -672,7 +688,9 @@ export default function GroupIndicatorsManager({
                   onClick={updateIndicator}
                   disabled={isAnyMutationPending || !editFormData.name.trim()}
                 >
-                  {updateIndicatorMutation.isPending ? tIndicators('updating') : t('common.save')}
+                  {updateIndicatorMutation.isPending
+                    ? tIndicators('updating')
+                    : t('common.save')}
                 </Button>
               </div>
             </DialogFooter>
@@ -762,7 +780,9 @@ export default function GroupIndicatorsManager({
         {groupIndicators.length === 0 && (
           <div className="text-center py-8 text-muted-foreground">
             <p>{tIndicators('no_indicators')}</p>
-            <p className="text-sm">{tIndicators('no_indicators_description')}</p>
+            <p className="text-sm">
+              {tIndicators('no_indicators_description')}
+            </p>
           </div>
         )}
       </div>
