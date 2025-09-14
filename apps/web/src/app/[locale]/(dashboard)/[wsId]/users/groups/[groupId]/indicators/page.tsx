@@ -165,14 +165,14 @@ async function getIndicators(groupId: string) {
   const supabase = await createClient();
 
   const { data: rawData, error } = await supabase
-  .from('user_indicators')
-  .select(`
+    .from('user_indicators')
+    .select(`
     user_id, 
     indicator_id, 
     value,
     healthcare_vitals!inner(group_id)
   `)
-  .eq('healthcare_vitals.group_id', groupId);
+    .eq('healthcare_vitals.group_id', groupId);
 
   if (error) throw error;
   if (!rawData) return [];
