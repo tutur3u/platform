@@ -33,6 +33,7 @@ import {
 } from '@tuturuuu/ui/dropdown-menu';
 import {
   BarChart3,
+  CalendarDays,
   Layers,
   LayoutGrid,
   List,
@@ -156,6 +157,11 @@ export function BoardHeader({
       icon: List,
       label: 'List',
       description: 'Simple list view',
+    },
+    timeline: {
+      icon: CalendarDays,
+      label: 'Timeline',
+      description: 'Visual schedule of tasks',
     },
   };
 

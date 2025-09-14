@@ -8,6 +8,7 @@ import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import { useMemo, useState } from 'react';
 import { KanbanBoard } from '../boards/boardId/kanban';
 import { StatusGroupedBoard } from '../boards/boardId/status-grouped-board';
+import { TimelineBoard } from '../boards/boardId/timeline-board';
 import { BoardHeader } from '../shared/board-header';
 import { ListView } from '../shared/list-view';
 
@@ -18,7 +19,7 @@ interface TaskLabel {
   created_at: string;
 }
 
-export type ViewType = 'kanban' | 'status-grouped' | 'list';
+export type ViewType = 'kanban' | 'status-grouped' | 'list' | 'timeline';
 
 interface Props {
   workspace: Workspace;
@@ -96,6 +97,12 @@ export function BoardViews({ workspace, board }: Props) {
           <ListView
             board={createBoardWithFilteredTasks(board, filteredTasks)}
             isPersonalWorkspace={workspace.personal}
+          />
+        );
+      case 'timeline':
+        return (
+          <TimelineBoard
+            board={createBoardWithFilteredTasks(board, filteredTasks)}
           />
         );
       default:
