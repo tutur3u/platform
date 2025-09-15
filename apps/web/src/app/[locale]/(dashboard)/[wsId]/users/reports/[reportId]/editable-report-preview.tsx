@@ -352,15 +352,15 @@ export default function EditableReportPreview({
       <div className="grid h-fit gap-4">
         {isNew || (
           <div className="grid h-fit gap-2 rounded-lg border p-4">
-            <div className="font-semibold text-lg">User Data</div>
+            <div className="font-semibold text-lg">{t('ws-reports.user_data')}</div>
             <Separator />
 
             <div>
               {report.scores?.length === 0 ? (
-                <div className="text-red-500">No scores data</div>
+                <div className="text-dynamic-red">{t('ws-reports.no_scores')}</div>
               ) : (
                 <div className="flex items-center gap-1">
-                  Average score:
+                  {t('ws-reports.average_score')}:
                   <div className="flex flex-wrap gap-1">
                     <div className="flex aspect-square h-8 items-center justify-center overflow-hidden rounded bg-foreground p-1 font-semibold text-background">
                       {(
@@ -378,10 +378,10 @@ export default function EditableReportPreview({
             </div>
             <div>
               {report.scores?.length === 0 ? (
-                <div className="text-red-500">No scores data</div>
+                <div className="text-dynamic-red">{t('ws-reports.no_scores')}</div>
               ) : (
                 <div className="flex items-center gap-1">
-                  Scores:
+                  {t('ws-reports.scores')}:
                   <div className="flex flex-wrap gap-1">
                     {report.scores
                       ?.filter((s) => s !== null && s !== undefined)

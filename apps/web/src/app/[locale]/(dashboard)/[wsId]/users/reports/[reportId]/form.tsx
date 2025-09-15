@@ -13,6 +13,7 @@ import { Input } from '@tuturuuu/ui/input';
 import { Separator } from '@tuturuuu/ui/separator';
 import type * as z from 'zod';
 import type { UserReportFormSchema } from './editable-report-preview';
+import { useTranslations } from 'next-intl';
 
 export default function UserReportForm({
   isNew,
@@ -28,9 +29,10 @@ export default function UserReportForm({
   onSubmit?: (formData: z.infer<typeof UserReportFormSchema>) => void;
   onDelete?: () => void;
 }) {
+  const t = useTranslations();
   return (
     <div className="grid h-fit gap-2 rounded-lg border p-4">
-      <div className="font-semibold text-lg">Thông tin cơ bản</div>
+      <div className="font-semibold text-lg">{t('ws-settings.basic_info')}</div>
       <Separator />
       <Form {...form}>
         <form
@@ -42,9 +44,9 @@ export default function UserReportForm({
             name="title"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Title</FormLabel>
+                <FormLabel>{t('user-report-data-table.title')}</FormLabel>
                 <FormControl>
-                  <Input placeholder="Title" {...field} />
+                  <Input placeholder={t('user-report-data-table.title')} {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -56,10 +58,10 @@ export default function UserReportForm({
             name="content"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Content</FormLabel>
+                <FormLabel>{t('user-report-data-table.content')}</FormLabel>
                 <FormControl>
                   <AutosizeTextarea
-                    placeholder="Content"
+                    placeholder={t('user-report-data-table.content')}
                     {...field}
                   />
                 </FormControl>
@@ -73,10 +75,10 @@ export default function UserReportForm({
             name="feedback"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Feedback</FormLabel>
+                <FormLabel>{t('user-report-data-table.feedback')}</FormLabel>
                 <FormControl>
                   <AutosizeTextarea
-                    placeholder="Feedback"
+                    placeholder={t('user-report-data-table.feedback')}
                     {...field}
                   />
                 </FormControl>
@@ -93,7 +95,7 @@ export default function UserReportForm({
             </Button>
             {!isNew && onDelete && (
               <Button type="button" variant="destructive" onClick={onDelete}>
-                Delete
+                {t('common.delete')}
               </Button>
             )}
           </div>

@@ -1740,6 +1740,10 @@
   "ws-reports": {
     "report": "Báo cáo",
     "reports": "Báo cáo",
+    "user_data": "Dữ liệu người dùng",
+    "no_scores": "Không có dữ liệu điểm",
+    "average_score": "Điểm trung bình",
+    "scores": "Điểm",
     "description": "Tuỳ chỉnh các cài đặt báo cáo của bạn.",
     "name": "Tên",
     "value": "Giá trị",
