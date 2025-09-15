@@ -175,10 +175,10 @@ export default function EditableReportPreview({
         creator_name: raw.creator?.display_name
           ? raw.creator.display_name
           : raw.creator?.full_name,
-        title: (raw as any).title,
-        content: (raw as any).content,
-        feedback: (raw as any).feedback,
-        score: (raw as any).score,
+        title: raw.title,
+        content: raw.content,
+        feedback: raw.feedback,
+        score: raw.score,
       })) as Array<{
         id: string;
         created_at: string;
@@ -301,7 +301,7 @@ export default function EditableReportPreview({
       return data as { id: string };
     },
     onSuccess: async (data, variables) => {
-      toast.success('Report created');
+      toast.success(t('ws-reports.report_created'));
       // Invalidate lists that may include this report
       if (report.user_id && report.group_id) {
         await queryClient.invalidateQueries({
@@ -328,8 +328,8 @@ export default function EditableReportPreview({
         router.replace(`/${wsId}/users/reports/${data.id}`);
       }
     },
-    onError: (err: any) => {
-      toast.error(err?.message || 'Failed to create report');
+    onError: (err) => {
+      toast.error(err instanceof Error ? err.message : t('ws-reports.failed_create_report'));
     },
   });
 
@@ -352,7 +352,7 @@ export default function EditableReportPreview({
       if (error) throw error;
     },
     onSuccess: async (_, variables) => {
-      toast.success('Report saved');
+      toast.success(t('ws-reports.report_saved'));
       // Insert version log snapshot
       if (report.id) await insertLog(report.id, variables);
       // Invalidate detail and logs
@@ -385,8 +385,8 @@ export default function EditableReportPreview({
         }),
       ]);
     },
-    onError: (err: any) => {
-      toast.error(err?.message || 'Failed to save report');
+    onError: (err) => {
+      toast.error( err instanceof Error ? err.message : t('ws-reports.failed_save_report'));
     },
   });
 
@@ -400,7 +400,7 @@ export default function EditableReportPreview({
       if (error) throw error;
     },
     onSuccess: async () => {
-      toast.success('Report deleted');
+      toast.success(t('ws-reports.report_deleted'));
       if (report.user_id && report.group_id) {
         await queryClient.invalidateQueries({
           queryKey: [
@@ -430,8 +430,8 @@ export default function EditableReportPreview({
         router.replace(`/${wsId}/users/reports/new${qs}`);
       }
     },
-    onError: (err: any) => {
-      toast.error(err?.message || 'Failed to delete report');
+    onError: (err) => {
+      toast.error(err?.message || t('ws-reports.failed_delete_report'));
     },
   });
 
@@ -459,7 +459,7 @@ export default function EditableReportPreview({
   const handlePrintExport = () => {
     const printableArea = document.getElementById('printable-area');
     if (!printableArea) {
-      toast.error('Report preview not found');
+      toast.error(t('ws-reports.report_export_not_found'));
       return;
     }
 
@@ -490,7 +490,7 @@ export default function EditableReportPreview({
       <html>
         <head>
           <meta charset="utf-8">
-          <title>Report - ${previewTitle || 'Untitled'}</title>
+          <title>${t('ws-reports.report')} - ${previewTitle || t('common.untitled')}</title>
           <meta name="viewport" content="width=device-width, initial-scale=1">
           ${stylesheets}
                     <style>
@@ -614,7 +614,7 @@ export default function EditableReportPreview({
       
       const printableArea = document.getElementById('printable-area');
       if (!printableArea) {
-        throw new Error('Report preview not found');
+        throw new Error(t('ws-reports.report_export_not_found'));
       }
 
       // Create canvas with high quality settings
@@ -648,11 +648,11 @@ export default function EditableReportPreview({
         document.body.removeChild(link);
         URL.revokeObjectURL(url);
         
-        toast.success('Report exported as PNG');
+        toast.success(t('ws-reports.export_png_success'));
       }, 'image/png', 1.0);
     } catch (error) {
       console.error('PNG export failed:', error);
-      toast.error('Failed to export as PNG');
+      toast.error(t('ws-reports.failed_export_png'));
     } finally {
       setIsExporting(false);
     }
@@ -783,30 +783,29 @@ export default function EditableReportPreview({
                 <div className="flex items-center justify-between w-full mr-2">
                   <div className="font-semibold text-lg flex flex-row gap-2 items-center">
                     <History className="w-4 h-4" />
-                    History
+                    {t('ws-reports.history')}
                   </div>
                   {logsQuery.data && (
                     <div className="text-xs opacity-70">
-                      {logsQuery.data.length} entr
-                      {logsQuery.data.length === 1 ? 'y' : 'ies'}
+                      {logsQuery.data.length} {t('common.history')}
                     </div>
                   )}
                 </div>
               </AccordionTrigger>
               <AccordionContent className="p-4">
                 {logsQuery.isLoading ? (
-                  <div className="text-sm opacity-70">Loading...</div>
+                  <div className="text-sm opacity-70">{t('common.loading')}</div>
                 ) : logsQuery.data && logsQuery.data.length > 0 ? (
                   <div className="space-y-6">
                     {logsQuery.data.map((log, idx) => {
                       const isLatest = idx === 0;
                       const isOldest = idx === logsQuery.data!.length - 1;
                       const actionLabel = isOldest
-                        ? 'created report'
-                        : 'updated report';
+                        ? t('ws-reports.created_report')
+                        : t('ws-reports.updated_report');
                       const label = isLatest
-                        ? 'Current version'
-                        : `Update #${logsQuery.data!.length - idx}`;
+                        ? t('ws-reports.current_version')
+                        : t('ws-reports.updated_report-number', { number: logsQuery.data!.length - idx });
                       const exact = new Date(log.created_at).toLocaleString(
                         locale
                       );
@@ -882,7 +881,7 @@ export default function EditableReportPreview({
                                   {label}
                                 </div>
                                 <div className="text-sm text-muted-foreground">
-                                  {log.creator_name || 'Someone'} {actionLabel}.
+                                  {log.creator_name || t('common.unknown')} {actionLabel}.
                                 </div>
                               </div>
 
@@ -903,7 +902,7 @@ export default function EditableReportPreview({
                     })}
                   </div>
                 ) : (
-                  <div className="text-sm opacity-70">No history</div>
+                  <div className="text-sm opacity-70">{t('ws-reports.no_history')}</div>
                 )}
               </AccordionContent>
             </AccordionItem>
@@ -913,7 +912,7 @@ export default function EditableReportPreview({
           <div className="rounded-lg border p-3 text-sm bg-card -mt-2 print:hidden">
             <div className="flex items-center justify-between">
               <div>
-                Viewing history snapshot
+                {t('ws-reports.viewing_history_snapshot')}
               </div>
               <Button
                 variant="default"
@@ -921,7 +920,7 @@ export default function EditableReportPreview({
                 onClick={() => setSelectedLog(null)}
               >
                 <Undo className="w-4 h-4" />
-                Reset to current
+                {t('ws-reports.reset_to_current')}
               </Button>
             </div>
           </div>
@@ -932,7 +931,7 @@ export default function EditableReportPreview({
               <DropdownMenuTrigger asChild>
                 <Button size="sm" variant="outline" className="gap-2">
                   <Download className="w-4 h-4" />
-                  Export
+                  {t('common.export')}
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="start">
@@ -944,7 +943,7 @@ export default function EditableReportPreview({
                   className="gap-2"
                 >
                   <Printer className="w-4 h-4" />
-                  Print
+                  {t('ws-reports.print')}
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   disabled={isExporting}
@@ -955,7 +954,7 @@ export default function EditableReportPreview({
                   className="gap-2"
                 >
                   <ImageIcon className="w-4 h-4" />
-                  {isExporting ? 'Exporting PNG...' : 'PNG'}
+                  {isExporting ? t('ws-reports.exporting_png') : t('ws-reports.png')}
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -963,17 +962,17 @@ export default function EditableReportPreview({
               <DropdownMenuTrigger asChild>
                 <Button size="sm" variant="outline" className="gap-2">
                   <Palette className="w-4 h-4" />
-                  Theme
+                  {t('common.theme')}
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="start">
                 <DropdownMenuItem onClick={() => setIsDarkPreview(false)}>
                   <Sun className="w-4 h-4" />
-                  Light
+                  {t('common.light')}
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setIsDarkPreview(true)}>
                   <Moon className="w-4 h-4" />
-                  Dark
+                  {t('common.dark')}
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
