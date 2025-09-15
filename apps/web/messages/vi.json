@@ -369,7 +369,8 @@
     "title": "Tiêu đề",
     "optional": "tùy chọn",
     "characters": "kí tự",
-    "no_changes_to_save": "Không có thay đổi để lưu"
+    "no_changes_to_save": "Không có thay đổi để lưu",
+    "confirm_delete": "Xóa bản báo cáo?"
   },
   "date_helper": {
     "time-unit": "Đơn vị thời gian",
@@ -1761,7 +1762,8 @@
     "report_score_text": "Chữ hiển thị cho mục điểm báo cáo",
     "report_feedback_text": "Chữ hiển thị cho mục phản hồi báo cáo",
     "report_conclusion": "Đoạn kết báo cáo",
-    "report_closing": "Lời kết báo cáo"
+    "report_closing": "Lời kết báo cáo",
+    "delete_confirm_message": "Hành động này không thể được hoàn tác và sẽ xóa vĩnh viễn báo cáo."
   },
   "ws-users": {
     "singular": "Người dùng",

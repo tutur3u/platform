@@ -371,7 +371,8 @@
     "title": "Title",
     "optional": "optional",
     "characters": "characters",
-    "no_changes_to_save": "No changes to save"
+    "no_changes_to_save": "No changes to save",
+    "confirm_delete": "Delete Report?"
   },
   "date_helper": {
     "time-unit": "Time unit",
@@ -1757,7 +1758,8 @@
     "report_score_text": "Text displayed for report score header",
     "report_feedback_text": "Text displayed for report feedback header",
     "report_conclusion": "Report conclusion",
-    "report_closing": "Report closing"
+    "report_closing": "Report closing",
+    "delete_confirm_message": "This action cannot be undone. This will permanently delete the report."
   },
   "ws-users": {
     "singular": "User",

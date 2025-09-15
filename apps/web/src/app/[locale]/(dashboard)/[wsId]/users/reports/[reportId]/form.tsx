@@ -36,7 +36,15 @@ export default function UserReportForm({
       <Separator />
       <Form {...form}>
         <form
-          onSubmit={onSubmit && form.handleSubmit(onSubmit)}
+          onSubmit={(e) => {
+            if (!form.formState.isDirty) {
+              e.preventDefault();
+              return;
+            }
+            if (onSubmit) {
+              return form.handleSubmit(onSubmit)(e);
+            }
+          }}
           className="grid gap-2"
         >
           <FormField
@@ -93,7 +101,11 @@ export default function UserReportForm({
           <Separator />
 
           <div className="flex gap-2">
-            <Button type="submit" className="w-full">
+            <Button
+              type="submit"
+              className="w-full"
+              disabled={!form.formState.isDirty}
+            >
               {submitLabel}
             </Button>
             {!isNew && onDelete && (

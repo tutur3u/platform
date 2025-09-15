@@ -16,13 +16,22 @@ import {
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useLocale, useTranslations } from 'next-intl';
 import type { ReactNode } from 'react';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { toast } from '@tuturuuu/ui/sonner';
 import * as z from 'zod';
-import { FileText, Plus, PencilIcon, History } from '@tuturuuu/ui/icons';
+import { FileText, Plus, PencilIcon, History, Undo, Sun, Moon } from '@tuturuuu/ui/icons';
 import UserMonthAttendance from '../../attendance/user-month-attendance';
 import UserReportForm from './form';
+import { Button } from '@tuturuuu/ui/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@tuturuuu/ui/dialog';
 
 export const UserReportFormSchema = z.object({
   title: z.string(),
@@ -140,12 +149,16 @@ export default function EditableReportPreview({
         id: string;
         created_at: string;
         creator_name?: string | null;
+        title?: string | null;
+        content?: string | null;
+        feedback?: string | null;
+        score?: number | null;
       }>
     > => {
       const { data, error } = await supabase
         .from('external_user_monthly_report_logs')
         .select(
-          'id, created_at, creator:workspace_users!creator_id(full_name, display_name)'
+          'id, created_at, title, content, feedback, score, creator:workspace_users!creator_id(full_name, display_name)'
         )
         .eq('report_id', report?.id as string)
         .order('created_at', { ascending: false });
@@ -156,10 +169,18 @@ export default function EditableReportPreview({
         creator_name: raw.creator?.display_name
           ? raw.creator.display_name
           : raw.creator?.full_name,
+        title: (raw as any).title,
+        content: (raw as any).content,
+        feedback: (raw as any).feedback,
+        score: (raw as any).score,
       })) as Array<{
         id: string;
         created_at: string;
         creator_name?: string | null;
+        title?: string | null;
+        content?: string | null;
+        feedback?: string | null;
+        score?: number | null;
       }>;
     },
   });
@@ -408,8 +429,28 @@ export default function EditableReportPreview({
     },
   });
 
+  const [selectedLog, setSelectedLog] = useState<
+    | {
+        id: string;
+        title?: string | null;
+        content?: string | null;
+        feedback?: string | null;
+        score?: number | null;
+      }
+    | null
+  >(null);
+
+  // Local theme toggle for report preview only
+  const [isDarkPreview, setIsDarkPreview] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+
+  const previewTitle = selectedLog?.title ?? title;
+  const previewContent = selectedLog?.content ?? content;
+  const previewFeedback = selectedLog?.feedback ?? feedback;
+  const previewScore = (selectedLog?.score ?? report.score)?.toString() || '';
+
   return (
-    <div className="grid h-fit gap-4 xl:grid-cols-2">
+    <div className="grid h-fit gap-4 xl:grid-cols-3">
       <div className="grid h-fit gap-4">
         {isNew || (
           <div className="grid h-fit gap-2 rounded-lg border p-4">
@@ -475,8 +516,34 @@ export default function EditableReportPreview({
             if (isNew) createMutation.mutate(values);
             else updateMutation.mutate(values);
           }}
-          onDelete={!isNew ? () => deleteMutation.mutate() : undefined}
+          onDelete={!isNew ? () => setShowDeleteDialog(true) : undefined}
         />
+
+        <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>{t('common.confirm_delete') || 'Delete report?'}</DialogTitle>
+              <DialogDescription>
+                {t('ws-reports.delete_confirm_message') ||
+                  'This action cannot be undone. This will permanently delete the report.'}
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowDeleteDialog(false)}>
+                {t('common.cancel') || 'Cancel'}
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={() => {
+                  setShowDeleteDialog(false);
+                  deleteMutation.mutate();
+                }}
+              >
+                {t('common.delete') || 'Delete'}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
         {/* <div className="grid h-fit gap-2 rounded-lg border p-4">
           <div className="text-lg font-semibold">Report Data</div>
@@ -499,7 +566,7 @@ export default function EditableReportPreview({
         )}
       </div>
 
-      <div className="grid h-fit gap-4">
+      <div className="grid h-fit gap-4 xl:col-span-2">
         {isNew || (
           <Accordion type="single" collapsible className="rounded-lg border">
             <AccordionItem value="history" className="border-none">
@@ -517,7 +584,7 @@ export default function EditableReportPreview({
                   )}
                 </div>
               </AccordionTrigger>
-              <AccordionContent className="px-4 pb-4">
+              <AccordionContent className="p-4">
                 {logsQuery.isLoading ? (
                   <div className="text-sm opacity-70">Loading...</div>
                 ) : logsQuery.data && logsQuery.data.length > 0 ? (
@@ -550,10 +617,32 @@ export default function EditableReportPreview({
                           : 'bg-dynamic-orange';
                       const iconColor = 'text-background';
 
+                      const isSelected = selectedLog?.id === log.id;
+
                       return (
-                        <div key={log.id} className="relative">
+                        <div
+                          key={log.id}
+                          className="relative"
+                        >
                           {/* Timeline item */}
-                          <div className="flex gap-4">
+                          <div
+                            className={`flex gap-4 cursor-pointer ${isSelected ? 'opacity-100' : 'opacity-100'} `}
+                            onClick={() =>
+                              setSelectedLog((prev) =>
+                                prev?.id === log.id
+                                  ? null
+                                  : {
+                                      id: log.id,
+                                      title: log.title,
+                                      content: log.content,
+                                      feedback: log.feedback,
+                                      score: log.score ?? null,
+                                    }
+                              )
+                            }
+                            role="button"
+                            aria-pressed={isSelected}
+                          >
                             {/* Timeline icon container */}
                             <div className="relative flex-shrink-0">
                               {/* Timeline line - only between items, not after the last one */}
@@ -578,8 +667,8 @@ export default function EditableReportPreview({
                             </div>
 
                             {/* Content */}
-                            <div className="flex-1 space-y-2">
-                              <div className="bg-card border rounded-lg p-3">
+                            <div className={`flex-1 space-y-2`}>
+                              <div className={`bg-card border rounded-lg p-3 ${isSelected ? 'ring-2 ring-dynamic-blue' : ''}`}>
                                 <div className="font-semibold text-sm">
                                   {label}
                                 </div>
@@ -611,18 +700,60 @@ export default function EditableReportPreview({
             </AccordionItem>
           </Accordion>
         )}
-        <ReportPreview
-          t={t}
-          lang={locale}
-          parseDynamicText={parseDynamicText}
-          getConfig={getConfig}
-          data={{
-            title,
-            content,
-            score: report.score?.toString() || '',
-            feedback,
-          }}
-        />
+        {selectedLog && (
+          <div className="rounded-lg border p-3 text-sm bg-card -mt-2">
+            <div className="flex items-center justify-between">
+              <div>
+                Viewing history snapshot
+              </div>
+              <Button
+                variant="default"
+                className="bg-dynamic-blue/10 text-dynamic-blue hover:bg-dynamic-blue/20"
+                onClick={() => setSelectedLog(null)}
+              >
+                <Undo className="w-4 h-4" />
+                Reset to current
+              </Button>
+            </div>
+          </div>
+        )}
+        <div className="flex items-center justify-end gap-2 -mb-2">
+          <Button
+            size="sm"
+            variant="outline"
+            className={!isDarkPreview ? 'bg-dynamic-blue/10 text-dynamic-blue hover:bg-dynamic-blue/20' : ''}
+            onClick={() => setIsDarkPreview(false)}
+            aria-pressed={!isDarkPreview}
+          >
+            <Sun className="w-4 h-4" />
+            Light
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            className={isDarkPreview ? 'bg-dynamic-blue/10 text-dynamic-blue hover:bg-dynamic-blue/20' : ''}
+            onClick={() => setIsDarkPreview(true)}
+            aria-pressed={isDarkPreview}
+          >
+            <Moon className="w-4 h-4" />
+            Dark
+          </Button>
+        </div>
+
+
+          <ReportPreview
+            t={t}
+            lang={locale}
+            parseDynamicText={parseDynamicText}
+            getConfig={getConfig}
+            theme={isDarkPreview ? 'dark' : 'light'}
+            data={{
+              title: previewTitle,
+              content: previewContent,
+              score: previewScore,
+              feedback: previewFeedback,
+            }}
+          />
       </div>
     </div>
   );
