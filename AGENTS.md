@@ -394,6 +394,36 @@ import { toast } from '@tuturuuu/ui/sonner';
 No behavioral API change expected; if an edge case arises (missing variant / prop), escalate instead of shim‑patching locally.
 
 #### 5.14 Dialog Components
+#### 5.15 Estimation Points Mapping (Boards)
+To ensure consistent display of task estimation points across all views (task cards, bulk actions, timelines) a single shared mapping utility must be used.
+
+Rules:
+1. Underlying stored value is always an integer index (0…7). Never store the human label directly.
+2. Mapping from index → display string handled by a shared function (currently `mapEstimationPoints` in `packages/ui/src/components/ui/tu-do/shared/estimation-mapping.ts`). Do not re‑implement ad hoc switch statements elsewhere (DRY enforcement).
+3. Supported estimation types & display sequences:
+  - `t-shirt`: `0 -> -`, `1 -> XS`, `2 -> S`, `3 -> M`, `4 -> L`, `5 -> XL`, `6 -> XXL`, `7 -> XXXL`.
+  - `fibonacci`: `0,1,2,3,5,8,13,21` (index 0..7).
+  - `exponential`: `0,1,2,4,8,16,32,64` (index 0..7).
+  - Default / linear: display the raw index.
+4. Extended Estimation Flag (`extended_estimation`):
+  - When false: indices >5 (i.e. 6 and 7) MUST NOT be selectable; they should render in menus as disabled (optional hint label e.g. “(upgrade)” or omitted entirely).
+  - When true: indices 6 and 7 become enabled with their mapped labels.
+5. Zero Handling (`allow_zero_estimates`):
+  - If false: index 0 is excluded from selection lists and should not appear.
+  - If true: index 0 is included; t‑shirt displays `-`, others show their mapped numeric.
+6. Bulk / dropdown UIs must: (a) enumerate indices based on flags, (b) disable (not hide) extended indices when `extended_estimation` is false to educate users about higher tiers.
+7. Task display components (e.g. `TaskEstimationDisplay`) must rely on the shared util – any changes to mapping occur centrally.
+8. New estimation types REQUIRE updating the shared util + this section; failure to do so is a review blocker.
+
+Rationale:
+- Prevents divergent label sets (e.g., numeric in bulk menu vs. t‑shirt on cards).
+- Simplifies future addition of estimation types by consolidating mapping logic.
+- Clear UX signaling for features gated behind `extended_estimation`.
+
+Quality Gate Additions:
+- PRs touching estimation display/selection must show diff of `estimation-mapping.ts` or explain why unchanged.
+- Lint/Review should reject duplicate local maps for estimation types.
+
 Use the unified dialog system from `@tuturuuu/ui/dialog` for all modal interactions.
 
 Rules:

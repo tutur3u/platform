@@ -80,6 +80,10 @@ import {
 import React, { useEffect, useMemo, useState } from 'react';
 import { getDescriptionText } from '../../../../../utils/text-helper';
 import { AssigneeSelect } from '../../shared/assignee-select';
+import {
+  buildEstimationIndices,
+  mapEstimationPoints,
+} from '../../shared/estimation-mapping';
 import { TaskEditDialog } from '../../shared/task-edit-dialog';
 import { TaskEstimationDisplay } from '../../shared/task-estimation-display';
 import { TaskLabelsDisplay } from '../../shared/task-labels-display';
@@ -558,25 +562,6 @@ export const TaskCard = React.memo(function TaskCard({
       }
     );
   }
-
-  // Build estimation options dynamically per board config
-  const estimationOptions = useMemo(() => {
-    if (!boardConfig?.estimation_type) return [] as number[];
-    const max = boardConfig.extended_estimation ? 7 : 5;
-    const allowZero = boardConfig.allow_zero_estimates;
-    let options: number[] = [];
-    switch (boardConfig.estimation_type) {
-      default: {
-        // All estimation types use the same 0-7 storage format
-        // The difference is in how they're displayed to the user
-        options = Array.from({ length: max + 1 }, (_, i) => i);
-        break;
-      }
-    }
-    if (!allowZero) options = options.filter((n) => n !== 0);
-    else if (allowZero && !options.includes(0)) options = [0, ...options];
-    return options;
-  }, [boardConfig]);
 
   // Update estimation points (quick action menu) re-added
   async function updateEstimationPoints(points: number | null) {
@@ -1142,62 +1127,36 @@ export const TaskCard = React.memo(function TaskCard({
                         Estimation
                       </DropdownMenuSubTrigger>
                       <DropdownMenuSubContent className="w-40">
-                        {estimationOptions.map((opt) => {
-                          let label: string | number = opt;
-                          if (boardConfig?.estimation_type === 't-shirt') {
-                            const tshirtMap: Record<number, string> = {
-                              0: '-',
-                              1: 'XS',
-                              2: 'S',
-                              3: 'M',
-                              4: 'L',
-                              5: 'XL',
-                              6: 'XXL',
-                              7: 'XXXL',
-                            };
-                            label = tshirtMap[opt] || opt;
-                          } else if (
-                            boardConfig?.estimation_type === 'fibonacci'
-                          ) {
-                            const fibMap: Record<number, string> = {
-                              0: '0',
-                              1: '1',
-                              2: '2',
-                              3: '3',
-                              4: '5',
-                              5: '8',
-                              6: '13',
-                              7: '21',
-                            };
-                            label = fibMap[opt] || opt;
-                          } else if (
-                            boardConfig?.estimation_type === 'exponential'
-                          ) {
-                            const expMap: Record<number, string> = {
-                              0: '0',
-                              1: '1',
-                              2: '2',
-                              3: '4',
-                              4: '8',
-                              5: '16',
-                              6: '32',
-                              7: '64',
-                            };
-                            label = expMap[opt] || opt;
-                          }
+                        {buildEstimationIndices({
+                          extended: boardConfig?.extended_estimation,
+                          allowZero: boardConfig?.allow_zero_estimates,
+                        }).map((idx) => {
+                          const disabledByExtended =
+                            !boardConfig?.extended_estimation && idx > 5;
+                          const label = mapEstimationPoints(
+                            idx,
+                            boardConfig?.estimation_type
+                          );
                           return (
                             <DropdownMenuItem
-                              key={opt}
-                              onClick={() => updateEstimationPoints(opt)}
+                              key={idx}
+                              onClick={() => updateEstimationPoints(idx)}
                               className={cn(
                                 'flex cursor-pointer items-center justify-between',
-                                task.estimation_points === opt &&
+                                task.estimation_points === idx &&
                                   'bg-dynamic-pink/10 text-dynamic-pink'
                               )}
-                              disabled={estimationSaving}
+                              disabled={estimationSaving || disabledByExtended}
                             >
-                              <span>{label}</span>
-                              {task.estimation_points === opt && (
+                              <span>
+                                {label}
+                                {disabledByExtended && (
+                                  <span className="ml-1 text-[10px] text-muted-foreground/60">
+                                    (upgrade)
+                                  </span>
+                                )}
+                              </span>
+                              {task.estimation_points === idx && (
                                 <Check className="h-4 w-4" />
                               )}
                             </DropdownMenuItem>

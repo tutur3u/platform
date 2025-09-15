@@ -16,7 +16,11 @@ import { Calculator, Check, ChevronDown } from '@tuturuuu/ui/icons';
 import { Label } from '@tuturuuu/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
 import { cn } from '@tuturuuu/utils/format';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
+import {
+  buildEstimationIndices,
+  mapEstimationPoints,
+} from './estimation-mapping';
 
 type EstimationType = 'fibonacci' | 'linear' | 'exponential' | 't-shirt';
 
@@ -36,74 +40,6 @@ interface Props {
   onPointsChange: (points: number | null) => void;
   disabled?: boolean;
 }
-
-const getEstimationValues = (
-  type: EstimationType | null,
-  isExtended: boolean,
-  allowZero: boolean
-): { value: number | null; label: string }[] => {
-  if (!type) return [];
-
-  const baseValues: { value: number | null; label: string }[] = allowZero
-    ? [
-        { value: null, label: 'Not estimated' },
-        { value: 0, label: '0' },
-      ]
-    : [{ value: null, label: 'Not estimated' }];
-
-  switch (type) {
-    case 'fibonacci': {
-      const fibValues = isExtended ? [1, 2, 3, 5, 8, 13, 21] : [1, 2, 3, 5, 8];
-      return [
-        ...baseValues,
-        ...fibValues.map((v) => ({ value: v, label: v.toString() })),
-      ];
-    }
-
-    case 'linear': {
-      const linearMax = isExtended ? 7 : 5;
-      const linearValues = Array.from({ length: linearMax }, (_, i) => i + 1);
-      return [
-        ...baseValues,
-        ...linearValues.map((v) => ({ value: v, label: v.toString() })),
-      ];
-    }
-
-    case 'exponential': {
-      const expValues = isExtended
-        ? [1, 2, 4, 8, 16, 32, 64]
-        : [1, 2, 4, 8, 16];
-      return [
-        ...baseValues,
-        ...expValues.map((v) => ({ value: v, label: v.toString() })),
-      ];
-    }
-
-    case 't-shirt': {
-      const tshirtValues = isExtended
-        ? [
-            { value: 1, label: 'XS' },
-            { value: 2, label: 'S' },
-            { value: 3, label: 'M' },
-            { value: 4, label: 'L' },
-            { value: 5, label: 'XL' },
-            { value: 6, label: 'XXL' },
-            { value: 7, label: 'XXXL' },
-          ]
-        : [
-            { value: 1, label: 'XS' },
-            { value: 2, label: 'S' },
-            { value: 3, label: 'M' },
-            { value: 4, label: 'L' },
-            { value: 5, label: 'XL' },
-          ];
-      return [...baseValues, ...tshirtValues];
-    }
-
-    default:
-      return baseValues;
-  }
-};
 
 export function TaskEstimationPicker({
   wsId,
@@ -170,6 +106,29 @@ export function TaskEstimationPicker({
     setOpen(false);
   };
 
+  const estimationValues = useMemo(() => {
+    if (!boardConfig.estimation_type) return [];
+    const indices = buildEstimationIndices({
+      extended: boardConfig.extended_estimation,
+      allowZero: boardConfig.allow_zero_estimates,
+    });
+    // Always include a null option first for clearing estimation
+    const options: {
+      value: number | null;
+      label: string;
+      disabled?: boolean;
+    }[] = [{ value: null, label: 'Not estimated' }];
+    for (const idx of indices) {
+      const label = mapEstimationPoints(idx, boardConfig.estimation_type);
+      options.push({ value: idx, label });
+    }
+    return options;
+  }, [
+    boardConfig.estimation_type,
+    boardConfig.extended_estimation,
+    boardConfig.allow_zero_estimates,
+  ]);
+
   // If board is not configured for estimation, show message
   if (!isLoading && (!boardConfig || !boardConfig.estimation_type)) {
     return (
@@ -189,12 +148,6 @@ export function TaskEstimationPicker({
       </div>
     );
   }
-
-  const estimationValues = getEstimationValues(
-    boardConfig.estimation_type,
-    boardConfig.extended_estimation,
-    boardConfig.allow_zero_estimates
-  );
 
   const selectedValue = estimationValues.find(
     (v) => v.value === selectedPoints
@@ -239,20 +192,23 @@ export function TaskEstimationPicker({
               <CommandList>
                 <CommandEmpty>No estimation values found.</CommandEmpty>
                 <CommandGroup>
-                  {estimationValues.map((item) => (
-                    <CommandItem
-                      key={item.value?.toString() || 'null'}
-                      onSelect={() => handlePointsChange(item.value)}
-                      className="cursor-pointer"
-                    >
-                      <div className="flex w-full items-center justify-between">
-                        <span>{item.label}</span>
-                        {selectedPoints === item.value && (
-                          <Check className="h-4 w-4 text-primary" />
-                        )}
-                      </div>
-                    </CommandItem>
-                  ))}
+                  {estimationValues.map((item) => {
+                    const key = item.value === null ? 'null' : item.value;
+                    return (
+                      <CommandItem
+                        key={key}
+                        onSelect={() => handlePointsChange(item.value)}
+                        className="cursor-pointer"
+                      >
+                        <div className="flex w-full items-center justify-between">
+                          <span>{item.label}</span>
+                          {selectedPoints === item.value && (
+                            <Check className="h-4 w-4 text-primary" />
+                          )}
+                        </div>
+                      </CommandItem>
+                    );
+                  })}
                 </CommandGroup>
               </CommandList>
             </Command>

@@ -3,6 +3,7 @@
 import { Badge } from '@tuturuuu/ui/badge';
 import { Timer } from '@tuturuuu/ui/icons';
 import { cn } from '@tuturuuu/utils/format';
+import { mapEstimationPoints } from './estimation-mapping';
 
 interface TaskEstimationDisplayProps {
   points: number | null | undefined;
@@ -33,44 +34,7 @@ export function TaskEstimationDisplay({
     lg: 'h-3.5 w-3.5',
   };
 
-  let display = String(points);
-  if (estimationType === 't-shirt') {
-    const map: Record<number, string> = {
-      0: '-',
-      1: 'XS',
-      2: 'S',
-      3: 'M',
-      4: 'L',
-      5: 'XL',
-      6: 'XXL',
-      7: 'XXXL',
-    };
-    display = map[points] || String(points);
-  } else if (estimationType === 'fibonacci') {
-    const fibMap: Record<number, string> = {
-      0: '0',
-      1: '1',
-      2: '2',
-      3: '3',
-      4: '5',
-      5: '8',
-      6: '13',
-      7: '21',
-    };
-    display = fibMap[points] || String(points);
-  } else if (estimationType === 'exponential') {
-    const expMap: Record<number, string> = {
-      0: '0',
-      1: '1',
-      2: '2',
-      3: '4',
-      4: '8',
-      5: '16',
-      6: '32',
-      7: '64',
-    };
-    display = expMap[points] || String(points);
-  }
+  const display = mapEstimationPoints(points, estimationType);
 
   return (
     <Badge

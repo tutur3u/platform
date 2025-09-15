@@ -42,6 +42,10 @@ import { useMoveTask, useMoveTaskToBoard } from '@tuturuuu/utils/task-helper';
 import { hasDraggableData } from '@tuturuuu/utils/task-helpers';
 import { ArrowRightLeft, Flag, MinusCircle, Tags, Timer } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  buildEstimationIndices,
+  mapEstimationPoints,
+} from '../../shared/estimation-mapping';
 import { BoardSelector } from '../board-selector';
 import { LightweightTaskCard } from './task';
 import { BoardColumn } from './task-list';
@@ -279,65 +283,16 @@ export function KanbanBoard({ workspace, boardId, tasks, isLoading }: Props) {
 
   const estimationOptions = useMemo(() => {
     if (!boardConfig?.estimation_type) return [] as number[];
-    const max = boardConfig.extended_estimation ? 7 : 5;
-    const allowZero = boardConfig.allow_zero_estimates;
-    let options: number[] = [];
-    // All estimation types currently map underlying stored indices 0..N.
-    // We always build index list; display mapping handled separately below.
-    options = Array.from({ length: max + 1 }, (_, i) => i);
-    if (!allowZero) options = options.filter((n) => n !== 0);
-    else if (allowZero && !options.includes(0)) options = [0, ...options];
-    return options;
-  }, [boardConfig]);
-
-  // Helper to map internal point index to display label depending on estimation type
-  const estimationDisplay = useCallback(
-    (points: number) => {
-      const type = boardConfig?.estimation_type;
-      if (type === 't-shirt') {
-        const map: Record<number, string> = {
-          0: '-',
-          1: 'XS',
-          2: 'S',
-          3: 'M',
-          4: 'L',
-          5: 'XL',
-          6: 'XXL',
-          7: 'XXXL',
-        };
-        return map[points] ?? String(points);
-      }
-      if (type === 'fibonacci') {
-        const fibMap: Record<number, string> = {
-          0: '0',
-          1: '1',
-          2: '2',
-          3: '3',
-          4: '5',
-          5: '8',
-          6: '13',
-          7: '21',
-        };
-        return fibMap[points] ?? String(points);
-      }
-      if (type === 'exponential') {
-        const expMap: Record<number, string> = {
-          0: '0',
-          1: '1',
-          2: '2',
-          3: '4',
-          4: '8',
-          5: '16',
-          6: '32',
-          7: '64',
-        };
-        return expMap[points] ?? String(points);
-      }
-      // default numeric / linear
-      return String(points);
-    },
-    [boardConfig?.estimation_type]
-  );
+    // Always build full index list respecting extended flag; disabling for >5 handled in UI.
+    return buildEstimationIndices({
+      extended: boardConfig.extended_estimation,
+      allowZero: boardConfig.allow_zero_estimates,
+    });
+  }, [
+    boardConfig?.estimation_type,
+    boardConfig?.extended_estimation,
+    boardConfig?.allow_zero_estimates,
+  ]);
 
   // Workspace labels for bulk operations
   const { data: workspaceLabels = [] } = useQuery({
@@ -1010,15 +965,27 @@ export function KanbanBoard({ workspace, boardId, tasks, isLoading }: Props) {
                         Clear
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />
-                      {estimationOptions.map((p) => (
-                        <DropdownMenuItem
-                          key={p}
-                          disabled={bulkWorking}
-                          onClick={() => bulkUpdateEstimation(p)}
-                        >
-                          {estimationDisplay(p)}
-                        </DropdownMenuItem>
-                      ))}
+                      {estimationOptions.map((p) => {
+                        const disabledByExtended =
+                          !boardConfig?.extended_estimation && p > 5;
+                        return (
+                          <DropdownMenuItem
+                            key={p}
+                            disabled={bulkWorking || disabledByExtended}
+                            onClick={() => bulkUpdateEstimation(p)}
+                          >
+                            {mapEstimationPoints(
+                              p,
+                              boardConfig?.estimation_type
+                            )}
+                            {disabledByExtended && (
+                              <span className="ml-1 text-[10px] text-muted-foreground/60">
+                                (upgrade)
+                              </span>
+                            )}
+                          </DropdownMenuItem>
+                        );
+                      })}
                     </DropdownMenuSubContent>
                   </DropdownMenuSub>
                 )}

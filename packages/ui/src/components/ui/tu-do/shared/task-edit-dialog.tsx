@@ -36,6 +36,10 @@ import {
 import { addDays } from 'date-fns';
 import { useParams } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
+import {
+  buildEstimationIndices,
+  mapEstimationPoints,
+} from './estimation-mapping';
 
 interface TaskEditDialogProps {
   task: Task;
@@ -145,11 +149,9 @@ export function TaskEditDialog({
   // Helper function to convert description to JSONContent
   const parseDescription = useCallback((desc?: string): JSONContent | null => {
     if (!desc) return null;
-
     try {
       return JSON.parse(desc);
     } catch {
-      // If it's not valid JSON, treat it as plain text and convert to JSONContent
       return {
         type: 'doc',
         content: [
@@ -161,19 +163,16 @@ export function TaskEditDialog({
       };
     }
   }, []);
-
   // Reset form when task changes
   useEffect(() => {
-    if (task) {
-      setName(task.name);
-      setDescription(parseDescription(task.description));
-      setPriority(task.priority || null);
-      setStartDate(task.start_date ? new Date(task.start_date) : undefined);
-      setEndDate(task.end_date ? new Date(task.end_date) : undefined);
-      setSelectedListId(task.list_id);
-      setEstimationPoints(task.estimation_points ?? null);
-      setSelectedLabels(task.labels || []);
-    }
+    setName(task.name);
+    setDescription(parseDescription(task.description));
+    setPriority(task.priority || null);
+    setStartDate(task.start_date ? new Date(task.start_date) : undefined);
+    setEndDate(task.end_date ? new Date(task.end_date) : undefined);
+    setSelectedListId(task.list_id);
+    setEstimationPoints(task.estimation_points ?? null);
+    setSelectedLabels(task.labels || []);
   }, [task, parseDescription]);
 
   // Fetch board estimation config & workspace labels when dialog opens
@@ -182,40 +181,36 @@ export function TaskEditDialog({
     (async () => {
       try {
         const supabase = createClient();
-        // Fetch board config
-        const { data: board } = await supabase
+        const { data: board, error: boardErr } = await supabase
           .from('workspace_boards')
           .select(
             'estimation_type, extended_estimation, allow_zero_estimates, count_unestimated_issues, ws_id'
           )
           .eq('id', boardId)
           .single();
+        if (boardErr) throw boardErr;
         setBoardConfig(board as any);
-
-        if (board?.ws_id) {
+        // Fetch workspace labels (best-effort)
+        if ((board as any)?.ws_id) {
           setLabelsLoading(true);
-          const { data: labels, error } = await supabase
+          const { data: labels, error: labelsErr } = await supabase
             .from('workspace_task_labels')
-            .select('id, name, color, created_at')
-            .eq('ws_id', board.ws_id)
-            .order('created_at', { ascending: false });
-          if (!error && labels) setAvailableLabels(labels as any);
+            .select('id,name,color,created_at')
+            .eq('ws_id', (board as any).ws_id)
+            .order('created_at');
+          if (!labelsErr && labels) setAvailableLabels(labels as any);
+          setLabelsLoading(false);
         }
       } catch (e) {
-        console.error('Error loading board config or labels', e);
-      } finally {
-        setLabelsLoading(false);
+        console.error('Failed loading board config or labels', e);
       }
     })();
   }, [isOpen, boardId]);
 
-  // Helper function to handle end date with default time
+  // End date change helper (preserve 23:59 default if only date picked)
   const handleEndDateChange = (date: Date | undefined) => {
     if (date) {
       const selectedDate = new Date(date);
-
-      // If the selected time is 00:00:00 (midnight), it likely means the user
-      // only selected a date without specifying a time, so default to 11:59 PM
       if (
         selectedDate.getHours() === 0 &&
         selectedDate.getMinutes() === 0 &&
@@ -224,38 +219,25 @@ export function TaskEditDialog({
       ) {
         selectedDate.setHours(23, 59, 59, 999);
       }
-
       setEndDate(selectedDate);
     } else {
       setEndDate(undefined);
     }
   };
 
-  // Handle quick due date assignment with auto-close
-  const handleQuickDueDate = async (days: number | null) => {
+  // Quick due date setter (today, tomorrow, etc.)
+  const handleQuickDueDate = (days: number | null) => {
     let newDate: Date | undefined;
-
     if (days !== null) {
-      const targetDate = addDays(new Date(), days);
-      // Set time to 11:59 PM for quick date selections
-      targetDate.setHours(23, 59, 59, 999);
-      newDate = targetDate;
+      const target = addDays(new Date(), days);
+      target.setHours(23, 59, 59, 999);
+      newDate = target;
     }
-
     setEndDate(newDate);
-
-    // Auto-save and close dialog
     setIsLoading(true);
-
-    const taskUpdates: Partial<Task> = {
-      end_date: newDate?.toISOString(),
-    };
-
+    const taskUpdates: Partial<Task> = { end_date: newDate?.toISOString() };
     updateTaskMutation.mutate(
-      {
-        taskId: task.id,
-        updates: taskUpdates,
-      },
+      { taskId: task.id, updates: taskUpdates },
       {
         onSuccess: () => {
           invalidateTaskCaches(queryClient, boardId);
@@ -268,7 +250,7 @@ export function TaskEditDialog({
           onUpdate();
           onClose();
         },
-        onError: (error) => {
+        onError: (error: any) => {
           console.error('Error updating due date:', error);
           toast({
             title: 'Error updating due date',
@@ -276,9 +258,7 @@ export function TaskEditDialog({
             variant: 'destructive',
           });
         },
-        onSettled: () => {
-          setIsLoading(false);
-        },
+        onSettled: () => setIsLoading(false),
       }
     );
   };
@@ -432,22 +412,13 @@ export function TaskEditDialog({
     return map[color] || map.gray;
   };
 
-  // Build estimation options per config
-  const estimationOptions = (() => {
-    if (!boardConfig?.estimation_type) return [] as (number | null)[];
-    const max = boardConfig.extended_estimation ? 7 : 5;
-    const allowZero = boardConfig.allow_zero_estimates;
-    switch (boardConfig.estimation_type) {
-      default: {
-        // All estimation types use the same 0-7 storage format
-        // The difference is in how they're displayed to the user
-        const arr = Array.from({ length: max + 1 }, (_, i) => i).filter(
-          (n) => allowZero || n !== 0
-        );
-        return arr;
-      }
-    }
-  })();
+  // Build estimation indices via shared util
+  const estimationIndices: number[] = boardConfig?.estimation_type
+    ? buildEstimationIndices({
+        extended: boardConfig?.extended_estimation,
+        allowZero: boardConfig?.allow_zero_estimates,
+      })
+    : [];
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
@@ -642,66 +613,21 @@ export function TaskEditDialog({
                   <Timer className="h-4 w-4" /> Estimation
                 </Label>
                 <div className="flex flex-wrap gap-2">
-                  {estimationOptions.map((val) => {
-                    let label: string | number = val ?? 'N/A';
-                    if (
-                      val !== null &&
-                      boardConfig?.estimation_type === 't-shirt'
-                    ) {
-                      const tshirtMap: Record<number, string> = {
-                        0: '-',
-                        1: 'XS',
-                        2: 'S',
-                        3: 'M',
-                        4: 'L',
-                        5: 'XL',
-                        6: 'XXL',
-                        7: 'XXXL',
-                      };
-                      label = tshirtMap[val] || val;
-                    } else if (
-                      val !== null &&
-                      boardConfig?.estimation_type === 'fibonacci'
-                    ) {
-                      const fibMap: Record<number, string> = {
-                        0: '0',
-                        1: '1',
-                        2: '1',
-                        3: '2',
-                        4: '3',
-                        5: '5',
-                        6: '8',
-                        7: '13',
-                      };
-                      label = fibMap[val] || val;
-                    } else if (
-                      val !== null &&
-                      boardConfig?.estimation_type === 'exponential'
-                    ) {
-                      const expMap: Record<number, string> = {
-                        0: '0',
-                        1: '1',
-                        2: '2',
-                        3: '4',
-                        4: '8',
-                        5: '16',
-                        6: '32',
-                        7: '64',
-                      };
-                      label = expMap[val] || val;
-                    }
+                  {estimationIndices.map((idx) => {
+                    const label = mapEstimationPoints(
+                      idx,
+                      boardConfig.estimation_type
+                    );
                     return (
                       <Button
-                        key={val === null ? 'none' : val}
+                        key={idx}
                         type="button"
                         variant={
-                          (val ?? null) === estimationPoints
-                            ? 'default'
-                            : 'outline'
+                          idx === estimationPoints ? 'default' : 'outline'
                         }
                         size="sm"
                         className="h-7 px-2 text-xs"
-                        onClick={() => updateEstimation(val as number)}
+                        onClick={() => updateEstimation(idx)}
                         disabled={estimationSaving}
                       >
                         {label}
@@ -720,9 +646,9 @@ export function TaskEditDialog({
                   </Button>
                 </div>
                 <p className="text-muted-foreground text-xs">
-                  {boardConfig.estimation_type} estimation. Max points{' '}
-                  {boardConfig.extended_estimation ? 8 : 5}.{' '}
-                  {!boardConfig.allow_zero_estimates && 'Zero disabled.'}
+                  {boardConfig?.estimation_type} estimation. Max points{' '}
+                  {boardConfig?.extended_estimation ? 8 : 5}.{' '}
+                  {!boardConfig?.allow_zero_estimates && 'Zero disabled.'}
                 </p>
               </div>
             )}
