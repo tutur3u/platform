@@ -4332,7 +4332,27 @@
     "edit_product": "Chỉnh sửa sản phẩm",
     "remove_product": "Xóa sản phẩm",
     "failed_to_fetch_warehouses": "Không lấy được kho hàng",
-    "failed_to_fetch_available_products": "Không lấy được các sản phẩm"
+    "failed_to_fetch_available_products": "Không lấy được các sản phẩm",
+    "link_coupon": "Liên kết khuyến mãi"
+  },
+  "ws-user-linked-coupons": {
+    "title": "Khuyến mãi đã liên kết",
+    "link_action": "Liên kết khuyến mãi",
+    "link_description": "Liên kết khuyến mãi cho người dùng. Hệ thống sẽ tự áp dụng khuyến mãi tốt nhất khi thanh toán.",
+    "coupon_label": "Khuyến mãi",
+    "search_placeholder": "Tìm khuyến mãi",
+    "unlink": "Gỡ liên kết",
+    "unlinking": "Đang gỡ liên kết...",
+    "unlink_title": "Gỡ liên kết khuyến mãi",
+    "unlink_confirm": "Bạn có chắc muốn gỡ liên kết \"{name}\"?",
+    "empty_title": "Khuyến mãi đã liên kết",
+    "empty_description": "Liên kết khuyến mãi cho người dùng. Hệ thống sẽ tự áp dụng khuyến mãi tốt nhất khi thanh toán.",
+    "discount_value_label": "Giá trị giảm",
+    "load_failed": "Không tải được khuyến mãi",
+    "link_success": "Liên kết khuyến mãi thành công",
+    "unlink_success": "Gỡ liên kết khuyến mãi thành công",
+    "link_failed": "Không thể liên kết khuyến mãi",
+    "unlink_failed": "Không thể gỡ liên kết khuyến mãi"
   },
   "ws-user-group-indicators": {
     "singular": "Chỉ số",

@@ -4423,7 +4423,8 @@
     "edit_product": "Edit Product",
     "remove_product": "Remove Product",
     "failed_to_fetch_warehouses": "Failed to fetch warehouses",
-    "failed_to_fetch_available_products": "Failed to fetch available products"
+    "failed_to_fetch_available_products": "Failed to fetch available products",
+    "link_coupon": "Link Coupon"
   },
   "ws-user-group-indicators": {
     "singular": "Indicator",
@@ -4457,6 +4458,25 @@
     "failed_to_remove_indicator": "Failed to remove indicator",
     "failed_to_update_values": "Failed to update indicator values",
     "values_updated_successfully": "Indicator values updated successfully"
+  },
+  "ws-user-linked-coupons": {
+    "title": "Linked Coupons",
+    "link_action": "Link Coupon",
+    "link_description": "Link a coupon to the user. The best coupon will be applied automatically at checkout.",
+    "coupon_label": "Coupon",
+    "search_placeholder": "Search available coupons",
+    "unlink": "Unlink",
+    "unlinking": "Unlinking...",
+    "unlink_title": "Unlink Coupon",
+    "unlink_confirm": "Are you sure you want to unlink \"{name}\"?",
+    "empty_title": "Linked Coupons",
+    "empty_description": "Link a coupon to the user. The best coupon will be applied automatically at checkout.",
+    "discount_value_label": "Discount value",
+    "load_failed": "Failed to load coupons",
+    "link_success": "Coupon linked successfully",
+    "unlink_success": "Coupon unlinked successfully",
+    "link_failed": "Failed to link coupon",
+    "unlink_failed": "Failed to unlink coupon"
   },
   "ws-user-group-feedback": {
     "user_feedback": "User Feedback",
