@@ -4457,5 +4457,30 @@
     "failed_to_remove_indicator": "Failed to remove indicator",
     "failed_to_update_values": "Failed to update indicator values",
     "values_updated_successfully": "Indicator values updated successfully"
+  },
+  "ws-user-group-feedback": {
+    "user_feedback": "User Feedback",
+    "user_feedback_description": "Add feedback for {userName} in {groupName}",
+    "add_feedback": "Add Feedback",
+    "view_feedbacks": "View Feedbacks",
+    "feedback_content": "Feedback Content",
+    "feedback_content_placeholder": "Enter your feedback here...",
+    "requires_attention": "Requires Attention",
+    "creating": "Creating...",
+    "create_feedback": "Create Feedback",
+    "feedback_created_successfully": "Feedback created successfully",
+    "failed_to_create_feedback": "Failed to create feedback",
+    "content_required": "Feedback content is required",
+    "view_feedbacks_coming_soon": "View past feedbacks - Coming Soon",
+    "view_feedbacks_description": "This feature will allow you to view and manage all past feedback for this user.",
+    "loading_feedbacks": "Loading feedbacks...",
+    "no_feedbacks_found": "No feedbacks found",
+    "no_feedbacks_description": "No feedback has been added for this user yet.",
+    "ok": "OK",
+    "created_by": "Created by",
+    "showing_feedbacks": "Showing {start}-{end} of {total} feedbacks",
+    "previous": "Previous",
+    "next": "Next",
+    "page_of": "Page {current} of {total}"
   }
 }

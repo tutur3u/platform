@@ -122,6 +122,7 @@ export default async function UserGroupIndicatorsPage({ params }: Props) {
       <GroupIndicatorsManager
         wsId={wsId}
         groupId={groupId}
+        groupName={group.name}
         users={users}
         initialGroupIndicators={groupIndicators}
         initialUserIndicators={indicators}

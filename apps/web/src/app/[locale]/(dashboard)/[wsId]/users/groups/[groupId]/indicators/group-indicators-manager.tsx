@@ -32,6 +32,7 @@ import { Label } from '@tuturuuu/ui/label';
 import { useTranslations } from 'next-intl';
 import { useState, useCallback } from 'react';
 import { cn } from '@tuturuuu/utils/format';
+import UserFeedbackDialog from './user-feedback-dialog';
 
 interface GroupIndicator {
   id: string;
@@ -55,6 +56,7 @@ interface PendingIndicatorValue {
 interface Props {
   wsId: string;
   groupId: string;
+  groupName: string;
   users: WorkspaceUser[];
   initialGroupIndicators: GroupIndicator[];
   initialUserIndicators: UserIndicator[];
@@ -63,6 +65,7 @@ interface Props {
 export default function GroupIndicatorsManager({
   wsId,
   groupId,
+  groupName,
   users,
   initialGroupIndicators,
   initialUserIndicators,
@@ -76,8 +79,10 @@ export default function GroupIndicatorsManager({
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [feedbackDialogOpen, setFeedbackDialogOpen] = useState(false);
   const [selectedIndicator, setSelectedIndicator] =
     useState<GroupIndicator | null>(null);
+  const [selectedUser, setSelectedUser] = useState<WorkspaceUser | null>(null);
   const [editFormData, setEditFormData] = useState({
     name: '',
     factor: 1,
@@ -312,6 +317,11 @@ export default function GroupIndicatorsManager({
     await deleteIndicatorMutation.mutateAsync(selectedIndicator.id);
     setDeleteDialogOpen(false);
     setSelectedIndicator(null);
+  };
+
+  const openFeedbackDialog = (user: WorkspaceUser) => {
+    setSelectedUser(user);
+    setFeedbackDialogOpen(true);
   };
 
   // Handle indicator value changes (local state only)
@@ -736,9 +746,14 @@ export default function GroupIndicatorsManager({
                       {index + 1}
                     </td>
                     <td className="sticky left-12 z-10 bg-background border-r px-4 py-2">
-                      <span className="line-clamp-1 break-all">
-                        {user.full_name}
-                      </span>
+                      <button
+                        onClick={() => openFeedbackDialog(user)}
+                        className="w-full text-left hover:bg-dynamic-blue/10 hover:text-dynamic-blue rounded px-2 py-1 transition-colors"
+                      >
+                        <span className="line-clamp-1 break-all">
+                          {user.full_name}
+                        </span>
+                      </button>
                     </td>
                     {groupIndicators.map((indicator) => (
                       <td
@@ -786,6 +801,16 @@ export default function GroupIndicatorsManager({
           </div>
         )}
       </div>
+
+      {/* User Feedback Dialog */}
+      <UserFeedbackDialog
+        open={feedbackDialogOpen}
+        onOpenChange={setFeedbackDialogOpen}
+        user={selectedUser}
+        groupName={groupName}
+        wsId={wsId}
+        groupId={groupId}
+      />
     </div>
   );
 }
