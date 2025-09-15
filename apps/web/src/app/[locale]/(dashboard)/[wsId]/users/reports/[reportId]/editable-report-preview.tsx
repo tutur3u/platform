@@ -8,6 +8,7 @@ import { zodResolver } from '@tuturuuu/ui/resolvers';
 import { Separator } from '@tuturuuu/ui/separator';
 import { useLocale, useTranslations } from 'next-intl';
 import type { ReactNode } from 'react';
+import { useEffect } from 'react';
 import * as z from 'zod';
 import UserMonthAttendance from '../../attendance/user-month-attendance';
 import UserReportForm from './form';
@@ -44,6 +45,16 @@ export default function EditableReportPreview({
       feedback: report?.feedback || '',
     },
   });
+
+  // Ensure form reflects the latest report when switching user/report selections
+  useEffect(() => {
+    form.reset({
+      title: report?.title || '',
+      content: report?.content || '',
+      feedback: report?.feedback || '',
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [report?.id, report?.title, report?.content, report?.feedback]);
 
   const title = form.watch('title');
   const content = form.watch('content');
