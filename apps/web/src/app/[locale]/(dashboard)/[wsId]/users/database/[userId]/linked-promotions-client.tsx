@@ -5,12 +5,31 @@ import { useTranslations } from 'next-intl';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useMemo, useState } from 'react';
 import { Button } from '@tuturuuu/ui/button';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@tuturuuu/ui/dialog';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@tuturuuu/ui/dropdown-menu';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@tuturuuu/ui/dialog';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@tuturuuu/ui/dropdown-menu';
 import { Combobox, type ComboboxOptions } from '@tuturuuu/ui/custom/combobox';
 import { Label } from '@tuturuuu/ui/label';
 import { toast } from '@tuturuuu/ui/sonner';
-import { Link, MoreHorizontal, Trash2, TicketCheck, Tag } from '@tuturuuu/ui/icons';
+import {
+  Link,
+  MoreHorizontal,
+  Trash2,
+  TicketCheck,
+  Tag,
+} from '@tuturuuu/ui/icons';
 
 interface WorkspacePromotion {
   id: string;
@@ -49,7 +68,11 @@ const useWorkspacePromotions = (wsId: string) => {
         .eq('ws_id', wsId)
         .order('created_at', { ascending: false });
       if (error) {
-        toast(error instanceof Error ? error.message : t('ws-user-linked-coupons.load_failed'));
+        toast(
+          error instanceof Error
+            ? error.message
+            : t('ws-user-linked-coupons.load_failed')
+        );
         return [] as WorkspacePromotion[];
       }
       return (data || []) as WorkspacePromotion[];
@@ -57,14 +80,21 @@ const useWorkspacePromotions = (wsId: string) => {
   });
 };
 
-export default function LinkedPromotionsClient({ wsId, userId, initialPromotions, initialCount }: LinkedPromotionsClientProps) {
+export default function LinkedPromotionsClient({
+  wsId,
+  userId,
+  initialPromotions,
+  initialCount,
+}: LinkedPromotionsClientProps) {
   const t = useTranslations();
-  const [promotions, setPromotions] = useState<LinkedPromotionItem[]>(initialPromotions);
+  const [promotions, setPromotions] =
+    useState<LinkedPromotionItem[]>(initialPromotions);
   const [count, setCount] = useState<number>(initialCount);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [selectedPromoId, setSelectedPromoId] = useState<string>('');
-  const [deletingPromotion, setDeletingPromotion] = useState<LinkedPromotionItem | null>(null);
+  const [deletingPromotion, setDeletingPromotion] =
+    useState<LinkedPromotionItem | null>(null);
   const [loading, setLoading] = useState(false);
   const queryClient = useQueryClient();
 
@@ -99,10 +129,16 @@ export default function LinkedPromotionsClient({ wsId, userId, initialPromotions
       setIsAddDialogOpen(false);
       setSelectedPromoId('');
       toast(t('ws-user-linked-coupons.link_success'));
-      queryClient.invalidateQueries({ queryKey: ['workspace-promotions', wsId] });
+      queryClient.invalidateQueries({
+        queryKey: ['workspace-promotions', wsId],
+      });
     },
     onError: (error: unknown) => {
-      toast(error instanceof Error ? error.message : t('ws-user-linked-coupons.link_failed')); // reuse label if missing specific error key
+      toast(
+        error instanceof Error
+          ? error.message
+          : t('ws-user-linked-coupons.link_failed')
+      ); // reuse label if missing specific error key
     },
   });
 
@@ -123,10 +159,16 @@ export default function LinkedPromotionsClient({ wsId, userId, initialPromotions
       setIsDeleteDialogOpen(false);
       setDeletingPromotion(null);
       toast(t('ws-user-linked-coupons.unlink_success'));
-      queryClient.invalidateQueries({ queryKey: ['workspace-promotions', wsId] });
+      queryClient.invalidateQueries({
+        queryKey: ['workspace-promotions', wsId],
+      });
     },
     onError: (error: unknown) => {
-      toast(error instanceof Error ? error.message : t('ws-user-linked-coupons.unlink_failed'));
+      toast(
+        error instanceof Error
+          ? error.message
+          : t('ws-user-linked-coupons.unlink_failed')
+      );
     },
   });
 
@@ -148,7 +190,9 @@ export default function LinkedPromotionsClient({ wsId, userId, initialPromotions
     if (!deletingPromotion) return;
     setLoading(true);
     try {
-      await deletePromotionMutation.mutateAsync({ promoId: deletingPromotion.id });
+      await deletePromotionMutation.mutateAsync({
+        promoId: deletingPromotion.id,
+      });
     } catch (_) {
       // handled in onError
     } finally {
@@ -172,7 +216,9 @@ export default function LinkedPromotionsClient({ wsId, userId, initialPromotions
           </DialogTrigger>
           <DialogContent onWheel={(e) => e.stopPropagation()}>
             <DialogHeader>
-              <DialogTitle>{t('ws-user-linked-coupons.link_action')}</DialogTitle>
+              <DialogTitle>
+                {t('ws-user-linked-coupons.link_action')}
+              </DialogTitle>
               <DialogDescription>
                 {t('ws-user-linked-coupons.link_description')}
               </DialogDescription>
@@ -197,11 +243,20 @@ export default function LinkedPromotionsClient({ wsId, userId, initialPromotions
               </div>
             </div>
             <DialogFooter>
-              <Button variant="outline" onClick={() => setIsAddDialogOpen(false)} disabled={loading}>
+              <Button
+                variant="outline"
+                onClick={() => setIsAddDialogOpen(false)}
+                disabled={loading}
+              >
                 {t('ws-settings.cancel')}
               </Button>
-              <Button onClick={handleAdd} disabled={loading || !selectedPromoId}>
-                {loading ? t('ws-groups.linking') : t('ws-user-linked-coupons.link_action')}
+              <Button
+                onClick={handleAdd}
+                disabled={loading || !selectedPromoId}
+              >
+                {loading
+                  ? t('ws-groups.linking')
+                  : t('ws-user-linked-coupons.link_action')}
               </Button>
             </DialogFooter>
           </DialogContent>
@@ -219,30 +274,40 @@ export default function LinkedPromotionsClient({ wsId, userId, initialPromotions
                 <div className="min-w-0 flex-1">
                   <div className="font-semibold text-lg text-foreground mb-1 flex items-center gap-2">
                     <TicketCheck className="h-5 w-5" />
-                    <span className="sr-only">{t('ws-user-linked-coupons.coupon_label')}</span>
+                    <span className="sr-only">
+                      {t('ws-user-linked-coupons.coupon_label')}
+                    </span>
                     {promo.name || t('ws-user-linked-coupons.coupon_label')}
                   </div>
                   <div>
-                  {promo.description && (
-                    <div className="text-sm text-muted-foreground mb-2 line-clamp-2">{promo.description}</div>
-                  )}
-                  {(promo.value ?? null) !== null && (
-                    <div className="mt-1 inline-flex items-center gap-1 rounded-md bg-foreground/10 px-2 py-1 text-xs font-medium text-foreground">
-                      <Tag className="h-3.5 w-3.5" />
-                      <span className="sr-only">{t('ws-user-linked-coupons.discount_value_label')}</span>
-                      <span>
-                        {promo.use_ratio
-                          ? `${promo.value ?? 0}%`
-                          : `${(promo.value ?? 0).toLocaleString()}`}
-                      </span>
-                    </div>
-                  )}
+                    {promo.description && (
+                      <div className="text-sm text-muted-foreground mb-2 line-clamp-2">
+                        {promo.description}
+                      </div>
+                    )}
+                    {(promo.value ?? null) !== null && (
+                      <div className="mt-1 inline-flex items-center gap-1 rounded-md bg-foreground/10 px-2 py-1 text-xs font-medium text-foreground">
+                        <Tag className="h-3.5 w-3.5" />
+                        <span className="sr-only">
+                          {t('ws-user-linked-coupons.discount_value_label')}
+                        </span>
+                        <span>
+                          {promo.use_ratio
+                            ? `${promo.value ?? 0}%`
+                            : `${(promo.value ?? 0).toLocaleString()}`}
+                        </span>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="sm" className="opacity-60 group-hover:opacity-100 transition-opacity hover:bg-muted/80">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="opacity-60 group-hover:opacity-100 transition-opacity hover:bg-muted/80"
+                  >
                     <MoreHorizontal className="h-4 w-4" />
                   </Button>
                 </DropdownMenuTrigger>
@@ -278,17 +343,31 @@ export default function LinkedPromotionsClient({ wsId, userId, initialPromotions
       <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{t('ws-user-linked-coupons.unlink_title')}</DialogTitle>
+            <DialogTitle>
+              {t('ws-user-linked-coupons.unlink_title')}
+            </DialogTitle>
             <DialogDescription>
-              {t('ws-user-linked-coupons.unlink_confirm', { name: deletingPromotion?.name || '' })}
+              {t('ws-user-linked-coupons.unlink_confirm', {
+                name: deletingPromotion?.name || '',
+              })}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)} disabled={loading}>
+            <Button
+              variant="outline"
+              onClick={() => setIsDeleteDialogOpen(false)}
+              disabled={loading}
+            >
               {t('ws-settings.cancel')}
             </Button>
-            <Button variant="destructive" onClick={handleDelete} disabled={loading}>
-              {loading ? t('ws-user-linked-coupons.unlinking') : t('ws-user-linked-coupons.unlink')}
+            <Button
+              variant="destructive"
+              onClick={handleDelete}
+              disabled={loading}
+            >
+              {loading
+                ? t('ws-user-linked-coupons.unlinking')
+                : t('ws-user-linked-coupons.unlink')}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -296,5 +375,3 @@ export default function LinkedPromotionsClient({ wsId, userId, initialPromotions
     </div>
   );
 }
-
-
