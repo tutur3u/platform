@@ -4,14 +4,12 @@ import { createClient } from '@tuturuuu/supabase/next/client';
 import type { WorkspaceUserReport } from '@tuturuuu/types/db';
 import type { WorkspaceConfig } from '@tuturuuu/types/primitives/WorkspaceConfig';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
-import { Button } from '@tuturuuu/ui/button';
 import { Combobox, type ComboboxOptions } from '@tuturuuu/ui/custom/combobox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@tuturuuu/ui/select';
-import { Separator } from '@tuturuuu/ui/separator';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { useTranslations } from 'next-intl';
-import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useMemo } from 'react';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import EditableReportPreview from '../../../reports/[reportId]/editable-report-preview';
 import { availableConfigs } from '@/constants/configs/reports';
 
@@ -30,7 +28,7 @@ export default function GroupReportsClient({ wsId, groupId, initialUserId, initi
   const searchParams = useSearchParams();
 
   const userId = searchParams.get('userId') ?? initialUserId ?? undefined;
-  const reportId = searchParams.get('reportId') ?? initialReportId ?? undefined;
+  const reportId = searchParams.get('reportId') ?? (userId === initialUserId ? initialReportId : undefined);
 
   const updateSearchParams = (next: { userId?: string; reportId?: string }) => {
     const sp = new URLSearchParams(searchParams.toString());
@@ -45,7 +43,7 @@ export default function GroupReportsClient({ wsId, groupId, initialUserId, initi
     router.replace(`${pathname}?${sp.toString()}`);
   };
 
-  const supabase = useMemo(() => createClient(), []);
+  const supabase = createClient();
 
   const usersQuery = useQuery({
     queryKey: ['ws', wsId, 'group', groupId, 'users'],
@@ -75,13 +73,15 @@ export default function GroupReportsClient({ wsId, groupId, initialUserId, initi
     queryFn: async (): Promise<WorkspaceUserReport[]> => {
       const { data, error } = await supabase
         .from('external_user_monthly_reports')
-        .select('*, user:workspace_users!user_id!inner(full_name, ws_id), creator:workspace_users!creator_id(full_name)')
+        .select('*, user:workspace_users!user_id!inner(full_name, ws_id), creator:workspace_users!creator_id(full_name)', {
+          count: 'exact',
+        })
         .eq('user_id', userId!)
         .eq('group_id', groupId)
         .eq('workspace_users.ws_id', wsId)
         .order('created_at', { ascending: false });
       if (error) throw error;
-      const mapped = (data ?? []).map((raw: any) => ({
+      const mapped = (data ?? []).map((raw) => ({
         user_name: raw.user?.full_name,
         creator_name: raw.creator?.full_name,
         ...raw,
@@ -91,31 +91,34 @@ export default function GroupReportsClient({ wsId, groupId, initialUserId, initi
   });
 
   const reportsOptions = useMemo(
-    () => reportsQuery.data?.map((r: any) => ({ value: r.id, label: r.title || 'No title' })) ?? [],
+    () => reportsQuery.data?.map((r) => ({ value: r.id, label: r.title || 'No title' })) ?? [],
     [reportsQuery.data]
   );
 
   const reportDetailQuery = useQuery({
-    queryKey: ['ws', wsId, 'report', reportId],
+    queryKey: ['ws', wsId, 'group', groupId, 'user', userId, 'report', reportId],
     enabled: Boolean(reportId && reportId !== 'new'),
     queryFn: async (): Promise<(WorkspaceUserReport & { group_name: string }) | null> => {
       const { data, error } = await supabase
         .from('external_user_monthly_reports')
-        .select('*, user:workspace_users!user_id!inner(full_name, ws_id), creator:workspace_users!creator_id(full_name), ...workspace_user_groups(group_name:name)', { count: 'exact' })
+        .select('*, user:workspace_users!user_id!inner(full_name, ws_id), creator:workspace_users!creator_id(full_name), ...workspace_user_groups(group_name:name)', {
+          count: 'exact',
+        })
         .eq('id', reportId!)
+        .eq('user_id', userId!)
+        .eq('group_id', groupId)
         .eq('user.ws_id', wsId)
         .order('created_at', { ascending: false })
         .maybeSingle();
       if (error) throw error;
       if (!data) return null;
-      const mapped: any = {
-        user_name: Array.isArray((data as any).user) ? (data as any).user?.[0]?.full_name : (data as any).user?.full_name ?? undefined,
-        creator_name: Array.isArray((data as any).creator) ? (data as any).creator?.[0]?.full_name : (data as any).creator?.full_name ?? undefined,
+      const mapped = {
+        user_name: Array.isArray(data.user) ? data.user?.[0]?.full_name : data.user?.full_name ?? undefined,
+        creator_name: Array.isArray(data.creator) ? data.creator?.[0]?.full_name : data.creator?.full_name ?? undefined,
         ...data,
-      };
-      delete mapped.user;
-      delete mapped.creator;
-      return mapped as WorkspaceUserReport & { group_name: string };
+      } as any;
+      const { user: _user, creator: _creator, ...rest } = mapped;
+      return rest as WorkspaceUserReport & { group_name: string };
     },
   });
 
@@ -144,7 +147,7 @@ export default function GroupReportsClient({ wsId, groupId, initialUserId, initi
       if (error) throw error;
       const base = availableConfigs.map(({ defaultValue, ...rest }) => ({ ...rest, value: defaultValue }));
       const merged = [...base];
-      (data ?? []).forEach((config: any) => {
+      (data ?? []).forEach((config) => {
         const idx = merged.findIndex((c) => c.id === config.id);
         if (idx !== -1) merged[idx] = { ...merged[idx], ...config };
         else merged.push(config);
@@ -162,7 +165,8 @@ export default function GroupReportsClient({ wsId, groupId, initialUserId, initi
         created_at: new Date().toISOString(),
       } as Partial<WorkspaceUserReport & { group_name: string }>;
     }
-    if (reportDetailQuery.data) return reportDetailQuery.data;
+    // Only use cached detail data when a valid reportId is present
+    if (reportId && reportDetailQuery.data) return reportDetailQuery.data;
     return undefined;
   }, [reportId, userId, groupId, groupQuery.data, groupNameFallback, reportDetailQuery.data]);
 
@@ -208,7 +212,7 @@ export default function GroupReportsClient({ wsId, groupId, initialUserId, initi
       {Boolean(groupId && userId) && selectedReport && configsQuery.data && (
         <EditableReportPreview
           wsId={wsId}
-          report={{ ...selectedReport, group_name: (selectedReport as any).group_name ?? groupQuery.data?.name ?? groupNameFallback }}
+          report={{ ...selectedReport, group_name: (selectedReport).group_name ?? groupQuery.data?.name ?? groupNameFallback }}
           configs={configsQuery.data}
           isNew={reportId === 'new'}
         />
