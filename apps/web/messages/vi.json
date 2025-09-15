@@ -4366,5 +4366,30 @@
     "failed_to_remove_indicator": "Không thể xóa chỉ số",
     "failed_to_update_values": "Không thể cập nhật giá trị chỉ số",
     "values_updated_successfully": "Đã cập nhật giá trị chỉ số thành công"
+  },
+  "ws-user-group-feedback": {
+    "user_feedback": "Nhận xét người dùng",
+    "user_feedback_description": "Thêm nhận xét cho {userName} trong {groupName}",
+    "add_feedback": "Thêm nhận xét",
+    "view_feedbacks": "Xem nhận xét",
+    "feedback_content": "Nội dung nhận xét",
+    "feedback_content_placeholder": "Nhập nhận xét của bạn ở đây...",
+    "requires_attention": "Cần chú ý",
+    "creating": "Đang tạo...",
+    "create_feedback": "Tạo nhận xét",
+    "feedback_created_successfully": "Đã tạo nhận xét thành công",
+    "failed_to_create_feedback": "Không thể tạo nhận xét",
+    "content_required": "Nội dung nhận xét là bắt buộc",
+    "view_feedbacks_coming_soon": "Xem nhận xét trước đây - Sắp ra mắt",
+    "view_feedbacks_description": "Tính năng này sẽ cho phép bạn xem và quản lý tất cả nhận xét trước đây cho người dùng này.",
+    "loading_feedbacks": "Đang tải nhận xét...",
+    "no_feedbacks_found": "Không tìm thấy nhận xét nào",
+    "no_feedbacks_description": "Chưa có nhận xét nào được thêm cho người dùng này.",
+    "ok": "OK",
+    "created_by": "Tạo bởi",
+    "showing_feedbacks": "Hiển thị {start}-{end} trong {total} nhận xét",
+    "previous": "Trước",
+    "next": "Tiếp",
+    "page_of": "Trang {current} của {total}"
   }
 }
