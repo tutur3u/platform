@@ -4,7 +4,7 @@ import type { Invoice } from '@tuturuuu/types/primitives/Invoice';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { Button } from '@tuturuuu/ui/button';
 import { invoiceColumns } from '@tuturuuu/ui/finance/invoices/columns';
-import { TicketCheck, Users } from '@tuturuuu/ui/icons';
+import { Users } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
 import moment from 'moment';
 import Image from 'next/image';
@@ -13,6 +13,7 @@ import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import { CustomDataTable } from '@/components/custom-data-table';
 import UserMonthAttendance from '../../attendance/user-month-attendance';
+import LinkedPromotionsClient from './linked-promotions-client';
 
 interface Props {
   params: Promise<{
@@ -194,38 +195,19 @@ export default async function WorkspaceUserDetailsPage({
             </div>
           </div>
 
-          <div className="h-full rounded-lg border p-4">
-            <div
-              className={`h-full gap-2 ${groups && groups.length ? 'grid content-start' : 'flex flex-col items-center justify-center'}`}
-            >
-              <div className="font-semibold text-lg">
-                {t('coupons')} ({couponCount})
-              </div>
-              <Separator />
-              {coupons && coupons.length ? (
-                <div className="grid h-full gap-2 2xl:grid-cols-2">
-                  {coupons.map((coupon) => (
-                    <Link
-                      key={coupon.id}
-                      href={`/${wsId}/users/coupons/${coupon.id}`}
-                    >
-                      <Button
-                        className="flex w-full items-center gap-2"
-                        variant="secondary"
-                      >
-                        <TicketCheck className="inline-block h-6 w-6" />
-                        {coupon.name}
-                      </Button>
-                    </Link>
-                  ))}
-                </div>
-              ) : (
-                <div className="flex w-full flex-1 items-center justify-center text-center opacity-60">
-                  {t('no_coupons')}.
-                </div>
-              )}
-            </div>
-          </div>
+          <LinkedPromotionsClient
+            wsId={wsId}
+            userId={userId}
+            initialPromotions={coupons.map((c) => ({
+              id: c.id,
+              name: c.name ?? null,
+              description: c.description ?? null,
+              code: c.code ?? null,
+              value: c.value ?? null,
+              use_ratio: c.use_ratio ?? null,
+            }))}
+            initialCount={couponCount || 0}
+          />
         </div>
       </div>
 

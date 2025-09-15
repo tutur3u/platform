@@ -4423,7 +4423,8 @@
     "edit_product": "Edit Product",
     "remove_product": "Remove Product",
     "failed_to_fetch_warehouses": "Failed to fetch warehouses",
-    "failed_to_fetch_available_products": "Failed to fetch available products"
+    "failed_to_fetch_available_products": "Failed to fetch available products",
+    "link_coupon": "Link Coupon"
   },
   "ws-user-group-indicators": {
     "singular": "Indicator",
@@ -4457,5 +4458,49 @@
     "failed_to_remove_indicator": "Failed to remove indicator",
     "failed_to_update_values": "Failed to update indicator values",
     "values_updated_successfully": "Indicator values updated successfully"
+  },
+  "ws-user-linked-coupons": {
+    "title": "Linked Coupons",
+    "link_action": "Link Coupon",
+    "link_description": "Link a coupon to the user. The best coupon will be applied automatically at checkout.",
+    "coupon_label": "Coupon",
+    "search_placeholder": "Search available coupons",
+    "unlink": "Unlink",
+    "unlinking": "Unlinking...",
+    "unlink_title": "Unlink Coupon",
+    "unlink_confirm": "Are you sure you want to unlink \"{name}\"?",
+    "empty_title": "Linked Coupons",
+    "empty_description": "Link a coupon to the user. The best coupon will be applied automatically at checkout.",
+    "discount_value_label": "Discount value",
+    "load_failed": "Failed to load coupons",
+    "link_success": "Coupon linked successfully",
+    "unlink_success": "Coupon unlinked successfully",
+    "link_failed": "Failed to link coupon",
+    "unlink_failed": "Failed to unlink coupon"
+  },
+  "ws-user-group-feedback": {
+    "user_feedback": "User Feedback",
+    "user_feedback_description": "Add feedback for {userName} in {groupName}",
+    "add_feedback": "Add Feedback",
+    "view_feedbacks": "View Feedbacks",
+    "feedback_content": "Feedback Content",
+    "feedback_content_placeholder": "Enter your feedback here...",
+    "requires_attention": "Requires Attention",
+    "creating": "Creating...",
+    "create_feedback": "Create Feedback",
+    "feedback_created_successfully": "Feedback created successfully",
+    "failed_to_create_feedback": "Failed to create feedback",
+    "content_required": "Feedback content is required",
+    "view_feedbacks_coming_soon": "View past feedbacks - Coming Soon",
+    "view_feedbacks_description": "This feature will allow you to view and manage all past feedback for this user.",
+    "loading_feedbacks": "Loading feedbacks...",
+    "no_feedbacks_found": "No feedbacks found",
+    "no_feedbacks_description": "No feedback has been added for this user yet.",
+    "ok": "OK",
+    "created_by": "Created by",
+    "showing_feedbacks": "Showing {start}-{end} of {total} feedbacks",
+    "previous": "Previous",
+    "next": "Next",
+    "page_of": "Page {current} of {total}"
   }
 }
