@@ -13,6 +13,12 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from '@tuturuuu/ui/accordion';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@tuturuuu/ui/dropdown-menu';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useLocale, useTranslations } from 'next-intl';
 import type { ReactNode } from 'react';
@@ -20,7 +26,7 @@ import { useEffect, useState } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { toast } from '@tuturuuu/ui/sonner';
 import * as z from 'zod';
-import { FileText, Plus, PencilIcon, History, Undo, Sun, Moon } from '@tuturuuu/ui/icons';
+import { FileText, Plus, PencilIcon, History, Undo, Sun, Moon, Printer, Download, Palette, ImageIcon } from '@tuturuuu/ui/icons';
 import UserMonthAttendance from '../../attendance/user-month-attendance';
 import UserReportForm from './form';
 import { Button } from '@tuturuuu/ui/button';
@@ -443,11 +449,214 @@ export default function EditableReportPreview({
   // Local theme toggle for report preview only
   const [isDarkPreview, setIsDarkPreview] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
 
   const previewTitle = selectedLog?.title ?? title;
   const previewContent = selectedLog?.content ?? content;
   const previewFeedback = selectedLog?.feedback ?? feedback;
   const previewScore = (selectedLog?.score ?? report.score)?.toString() || '';
+
+  const handlePrintExport = () => {
+    const printableArea = document.getElementById('printable-area');
+    if (!printableArea) {
+      toast.error('Report preview not found');
+      return;
+    }
+
+    // Get all stylesheets from the current document
+    const stylesheets = Array.from(document.styleSheets)
+      .map((styleSheet) => {
+        try {
+          if (styleSheet.href) {
+            return `<link rel="stylesheet" href="${styleSheet.href}">`;
+          } else if (styleSheet.ownerNode) {
+            // For inline styles
+            const styleElement = styleSheet.ownerNode as HTMLStyleElement;
+            return `<style>${styleElement.innerHTML}</style>`;
+          }
+        } catch (e) {
+          // Handle CORS issues with external stylesheets
+          if (styleSheet.href) {
+            return `<link rel="stylesheet" href="${styleSheet.href}">`;
+          }
+        }
+        return '';
+      })
+      .join('\n');
+
+    // Create the HTML content for printing
+    const printContent = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="utf-8">
+          <title>Report - ${previewTitle || 'Untitled'}</title>
+          <meta name="viewport" content="width=device-width, initial-scale=1">
+          ${stylesheets}
+                    <style>
+            body {
+              margin: 0;
+              padding: 20px;
+              font-family: system-ui, -apple-system, sans-serif;
+              background: white;
+              color: black;
+            }
+            @media print {
+              body {
+                margin: 0;
+                padding: 0;
+              }
+              #printable-area {
+                height: auto !important;
+                width: auto !important;
+                max-width: none !important;
+                border: none !important;
+                border-radius: 0 !important;
+                box-shadow: none !important;
+                margin: 0 !important;
+                background: white !important;
+              }
+              .print\\:hidden {
+                display: none !important;
+              }
+              .print\\:text-black {
+                color: black !important;
+              }
+              .print\\:bg-white {
+                background-color: white !important;
+              }
+              .print\\:border-black {
+                border-color: black !important;
+              }
+              .print\\:text-red-600 {
+                color: #dc2626 !important;
+              }
+              .print\\:border-0 {
+                border: none !important;
+              }
+              .print\\:rounded-none {
+                border-radius: 0 !important;
+              }
+              .print\\:h-auto {
+                height: auto !important;
+              }
+              .print\\:p-8 {
+                padding: 2rem !important;
+              }
+              .print\\:w-auto {
+                width: auto !important;
+              }
+              .print\\:max-w-none {
+                max-width: none !important;
+              }
+              .print\\:shadow-none {
+                box-shadow: none !important;
+              }
+              .print\\:m-0 {
+                margin: 0 !important;
+              }
+              .print\\:p-4 {
+                padding: 1rem !important;
+              }
+              .print\\:opacity-50 {
+                opacity: 0.5 !important;
+              }
+            }
+          </style>
+        </head>
+        <body>
+          ${printableArea.outerHTML}
+          <script>
+            window.onload = function() {
+              // Small delay to ensure styles are loaded
+              setTimeout(() => {
+                window.print();
+                // Close the window after printing (optional)
+                window.onafterprint = function() {
+                  window.close();
+                };
+              }, 500);
+            };
+          </script>
+        </body>
+      </html>
+    `;
+
+    // Create a blob with the HTML content
+    const blob = new Blob([printContent], { type: 'text/html' });
+    const url = URL.createObjectURL(blob);
+
+    // Open the blob URL in a new tab
+    const printWindow = window.open(url, '_blank', 'noopener,noreferrer');
+    if (printWindow) {
+      // Clean up the blob URL when the tab is closing
+      const revoke = () => {
+        try {
+          URL.revokeObjectURL(url);
+        } catch (_) {
+          // no-op
+        }
+      };
+      printWindow.addEventListener('beforeunload', revoke, { once: true });
+      // Fallback cleanup in case beforeunload doesn't fire
+      setTimeout(revoke, 60_000);
+    } else {
+      // Clean up if window couldn't be opened
+      URL.revokeObjectURL(url);
+    }
+  };
+
+  const handlePngExport = async () => {
+    setIsExporting(true);
+    try {
+      // Dynamically import html2canvas-pro to avoid SSR issues
+      const html2canvas = (await import('html2canvas-pro')).default;
+      
+      const printableArea = document.getElementById('printable-area');
+      if (!printableArea) {
+        throw new Error('Report preview not found');
+      }
+
+      // Create canvas with high quality settings
+      const canvas = await html2canvas(printableArea, {
+        scale: 2, // Higher resolution
+        useCORS: true,
+        allowTaint: true,
+        backgroundColor: isDarkPreview ? '#1a1a1a' : '#ffffff',
+        width: printableArea.scrollWidth,
+        height: printableArea.scrollHeight,
+      });
+
+      // Convert to blob and download
+      canvas.toBlob((blob) => {
+        if (!blob) {
+          throw new Error('Failed to create image');
+        }
+        
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        
+        // Generate filename with report title or default
+        const fileName = previewTitle 
+          ? `${previewTitle.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_report.png`
+          : 'report.png';
+        
+        link.download = fileName;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+        
+        toast.success('Report exported as PNG');
+      }, 'image/png', 1.0);
+    } catch (error) {
+      console.error('PNG export failed:', error);
+      toast.error('Failed to export as PNG');
+    } finally {
+      setIsExporting(false);
+    }
+  };
 
   return (
     <div className="grid h-fit gap-4 xl:grid-cols-3">
@@ -701,7 +910,7 @@ export default function EditableReportPreview({
           </Accordion>
         )}
         {selectedLog && (
-          <div className="rounded-lg border p-3 text-sm bg-card -mt-2">
+          <div className="rounded-lg border p-3 text-sm bg-card -mt-2 print:hidden">
             <div className="flex items-center justify-between">
               <div>
                 Viewing history snapshot
@@ -718,26 +927,57 @@ export default function EditableReportPreview({
           </div>
         )}
         <div className="flex items-center justify-end gap-2 -mb-2">
-          <Button
-            size="sm"
-            variant="outline"
-            className={!isDarkPreview ? 'bg-dynamic-blue/10 text-dynamic-blue hover:bg-dynamic-blue/20' : ''}
-            onClick={() => setIsDarkPreview(false)}
-            aria-pressed={!isDarkPreview}
-          >
-            <Sun className="w-4 h-4" />
-            Light
-          </Button>
-          <Button
-            size="sm"
-            variant="outline"
-            className={isDarkPreview ? 'bg-dynamic-blue/10 text-dynamic-blue hover:bg-dynamic-blue/20' : ''}
-            onClick={() => setIsDarkPreview(true)}
-            aria-pressed={isDarkPreview}
-          >
-            <Moon className="w-4 h-4" />
-            Dark
-          </Button>
+          <div className="flex items-center gap-2">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button size="sm" variant="outline" className="gap-2">
+                  <Download className="w-4 h-4" />
+                  Export
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start">
+                <DropdownMenuItem
+                  onClick={(e) => {
+                    e.preventDefault();
+                    handlePrintExport();
+                  }}
+                  className="gap-2"
+                >
+                  <Printer className="w-4 h-4" />
+                  Print
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  disabled={isExporting}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    handlePngExport();
+                  }}
+                  className="gap-2"
+                >
+                  <ImageIcon className="w-4 h-4" />
+                  {isExporting ? 'Exporting PNG...' : 'PNG'}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button size="sm" variant="outline" className="gap-2">
+                  <Palette className="w-4 h-4" />
+                  Theme
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start">
+                <DropdownMenuItem onClick={() => setIsDarkPreview(false)}>
+                  <Sun className="w-4 h-4" />
+                  Light
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setIsDarkPreview(true)}>
+                  <Moon className="w-4 h-4" />
+                  Dark
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         </div>
 
 
