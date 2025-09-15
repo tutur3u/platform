@@ -592,7 +592,11 @@ export function KanbanBoard({ workspace, boardId, tasks, isLoading }: Props) {
     }
   }
 
-  function onDragOver(event: DragOverEvent) {
+  // rAF throttling for onDragOver to reduce cache churn
+  const dragOverRaf = useRef<number | null>(null);
+  const lastOverArgs = useRef<DragOverEvent | null>(null);
+
+  function processDragOver(event: DragOverEvent) {
     const { active, over } = event;
     if (!over) return;
 
@@ -624,12 +628,14 @@ export function KanbanBoard({ workspace, boardId, tasks, isLoading }: Props) {
 
       if (!sourceListExists || !targetListExists) return;
 
-      console.log(
-        '🔄 onDragOver - Optimistically updating task:',
-        activeTask.id,
-        'to list:',
-        targetListId
-      );
+      // Skip if target list unchanged for current drag set to avoid redundant cache writes
+      // Stash lastTargetListId directly on function to skip redundant writes
+      if ((processDragOver as any).lastTargetListId === targetListId) {
+        return;
+      }
+      (processDragOver as any).lastTargetListId = targetListId;
+
+      console.log('🔄 onDragOver - updating tasks to list:', targetListId);
 
       // Optimistically update the tasks in the cache for preview
       queryClient.setQueryData(
@@ -656,6 +662,21 @@ export function KanbanBoard({ workspace, boardId, tasks, isLoading }: Props) {
       );
     }
   }
+
+  function onDragOver(event: DragOverEvent) {
+    lastOverArgs.current = event;
+    if (dragOverRaf.current != null) return; // already queued
+    dragOverRaf.current = requestAnimationFrame(() => {
+      dragOverRaf.current = null;
+      if (lastOverArgs.current) processDragOver(lastOverArgs.current);
+    });
+  }
+
+  useEffect(() => {
+    return () => {
+      if (dragOverRaf.current) cancelAnimationFrame(dragOverRaf.current);
+    };
+  }, []);
 
   // Memoized DragOverlay content to minimize re-renders
   const MemoizedTaskOverlay = useMemo(() => {

@@ -42,7 +42,6 @@ import {
   CircleSlash,
   Clock,
   Flag,
-  GripVertical,
   horseHead,
   Icon,
   List,
@@ -77,7 +76,7 @@ import {
   isTomorrow,
   isYesterday,
 } from 'date-fns';
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { memo, useCallback, useEffect, useState } from 'react';
 import { getDescriptionText } from '../../../../../utils/text-helper';
 import { AssigneeSelect } from '../../shared/assignee-select';
 import {
@@ -151,7 +150,7 @@ export function LightweightTaskCard({ task }: { task: Task }) {
 }
 
 // Memoized full TaskCard
-export const TaskCard = React.memo(function TaskCard({
+function TaskCardInner({
   task,
   boardId,
   taskList,
@@ -164,7 +163,7 @@ export const TaskCard = React.memo(function TaskCard({
   onSelect,
 }: Props) {
   const [isLoading, setIsLoading] = useState(false);
-  const [isHovered, setIsHovered] = useState(false);
+  // Removed isHovered state to reduce re-renders; rely on CSS :hover
   const [menuOpen, setMenuOpen] = useState(false);
   const [customDateDialogOpen, setCustomDateDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -241,12 +240,20 @@ export const TaskCard = React.memo(function TaskCard({
         list_id: String(task.list_id),
       },
     },
+    // Reduce expensive layout animations for smoother dragging
+    animateLayoutChanges: (args) => {
+      const { isSorting, wasDragging } = args;
+      // Only animate if not actively dragging to keep drag performance snappy
+      return isSorting && !wasDragging;
+    },
   });
 
-  const style = {
+  const style: React.CSSProperties = {
     transform: CSS.Transform.toString(transform),
-    transition,
+    // Disable transition while actively dragging for perf
+    transition: isDragging ? undefined : transition,
     height: 'var(--task-height)',
+    willChange: 'transform',
   };
 
   const now = new Date();
@@ -824,45 +831,42 @@ export const TaskCard = React.memo(function TaskCard({
   };
 
   // Memoize drag handle for performance
-  const DragHandle = useMemo(
-    () => (
-      <div
-        {...attributes}
-        {...listeners}
-        className={cn(
-          'mt-0.5 h-4 w-4 shrink-0 cursor-grab text-muted-foreground/60 transition-all duration-200',
-          'group-hover:text-foreground',
-          'hover:scale-110 hover:text-primary',
-          isDragging && 'cursor-grabbing text-primary',
-          isOverlay && 'cursor-grabbing'
-        )}
-        title="Drag to move task"
-      >
-        <GripVertical className="h-4 w-4" />
-      </div>
-    ),
-    [attributes, listeners, isDragging, isOverlay]
-  );
+  // Removed explicit drag handle – entire card is now draggable for better UX.
+  // Keep attributes/listeners to spread onto root interactive area.
 
   // Hide the source card during drag (unless in overlay)
-  if (isDragging && !isOverlay) return null;
+  // Show a lightweight placeholder in original position during drag (improves spatial feedback)
+  if (isDragging && !isOverlay) {
+    return (
+      <div
+        className={cn(
+          'h-[var(--task-height)] w-full rounded-lg border-2 border-dynamic-blue/40 border-dashed bg-dynamic-blue/5 opacity-60'
+        )}
+        style={{ height: 'var(--task-height)' }}
+        aria-hidden="true"
+      />
+    );
+  }
 
   return (
     <Card
       data-id={task.id}
       ref={setNodeRef}
       style={style}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
       onClick={(e) => onSelect?.(task.id, e)}
+      // Spread sortable listeners on full card for whole-card dragging
+      {...attributes}
+      {...listeners}
       className={cn(
-        'group relative overflow-hidden rounded-lg border-l-4 transition-all duration-200',
+        'group relative touch-none select-none overflow-hidden rounded-lg border-l-4 transition-all',
+        'cursor-grab active:cursor-grabbing',
         'cursor-default hover:shadow-md',
         // Task list or priority-based styling
         getCardColorClasses(),
         // Dragging state
-        isDragging && 'z-50 scale-105 shadow-xl ring-2 ring-primary/30',
-        isOverlay && 'shadow-xl ring-2 ring-primary/30',
+        isDragging && 'z-50 scale-[1.02] shadow-xl ring-2 ring-primary/40',
+        isOverlay &&
+          'scale-105 shadow-2xl ring-2 ring-primary/50 backdrop-blur-sm',
         // Archive state (completed tasks)
         task.archived && 'opacity-70 saturate-75',
         // Overdue state
@@ -895,7 +899,7 @@ export const TaskCard = React.memo(function TaskCard({
       <div className="p-4">
         {/* Header */}
         <div className="flex items-start gap-1">
-          {DragHandle}
+          {/* Drag handle removed – entire card draggable */}
 
           <div className="min-w-0 flex-1">
             <div className="mb-1 flex items-center gap-2">
@@ -942,7 +946,7 @@ export const TaskCard = React.memo(function TaskCard({
                     className={cn(
                       'h-7 w-7 shrink-0 p-0 transition-all duration-200',
                       'hover:scale-105 hover:bg-muted',
-                      isHovered || menuOpen
+                      menuOpen
                         ? 'opacity-100'
                         : 'opacity-0 group-hover:opacity-100',
                       menuOpen && 'bg-muted ring-1 ring-border'
@@ -1725,4 +1729,42 @@ export const TaskCard = React.memo(function TaskCard({
       )}
     </Card>
   );
+}
+
+// Custom comparator to avoid re-renders when stable fields unchanged
+export const TaskCard = memo(TaskCardInner, (prev, next) => {
+  // Quick identity checks for frequently changing props
+  if (prev.isOverlay !== next.isOverlay) return false;
+  if (prev.isSelected !== next.isSelected) return false;
+  if (prev.isMultiSelectMode !== next.isMultiSelectMode) return false;
+  if (prev.boardId !== next.boardId) return false;
+  // Shallow compare task critical fields
+  const a = prev.task;
+  const b = next.task;
+  if (a === b) return true;
+  // Compare a subset of fields relevant to rendering
+  const keys: (keyof typeof a)[] = [
+    'id',
+    'name',
+    'priority',
+    'archived',
+    'end_date',
+    'start_date',
+    'estimation_points',
+    'list_id',
+  ];
+  for (const k of keys) {
+    if (a[k] !== b[k]) return false;
+  }
+  // Compare labels length + names (sorted) for deterministic check
+  const aLabels = (a.labels || [])
+    .map((l) => l.name)
+    .sort()
+    .join('|');
+  const bLabels = (b.labels || [])
+    .map((l) => l.name)
+    .sort()
+    .join('|');
+  if (aLabels !== bLabels) return false;
+  return true;
 });

@@ -1,3 +1,4 @@
+import { useDndMonitor } from '@dnd-kit/core';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { useQuery } from '@tanstack/react-query';
@@ -336,13 +337,14 @@ export const BoardColumn = React.memo(function BoardColumn({
     setSortBy('none');
   };
 
-  const hasActiveFilters =
+  const hasActiveFilters = Boolean(
     filters.search ||
-    filters.priorities.size > 0 ||
-    filters.assignees.size > 0 ||
-    filters.overdue ||
-    filters.dueSoon ||
-    sortBy !== 'none';
+      filters.priorities.size > 0 ||
+      filters.assignees.size > 0 ||
+      filters.overdue ||
+      filters.dueSoon ||
+      sortBy !== 'none'
+  );
 
   const handleUpdate = () => {
     if (onListUpdated) onListUpdated();
@@ -892,41 +894,19 @@ export const BoardColumn = React.memo(function BoardColumn({
         </div>
       )}
 
-      <div className="h-full flex-1 space-y-2 overflow-y-auto p-3">
-        {filteredAndSortedTasks.length === 0 ? (
-          <div className="flex h-32 items-center justify-center text-muted-foreground">
-            <div className="text-center">
-              <p className="text-sm">
-                {hasActiveFilters ? 'No tasks match filters' : 'No tasks yet'}
-              </p>
-              {hasActiveFilters && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={clearAllFilters}
-                  className="mt-2 h-auto text-xs"
-                >
-                  Clear filters to see all tasks
-                </Button>
-              )}
-            </div>
-          </div>
-        ) : (
-          filteredAndSortedTasks.map((task) => (
-            <TaskCard
-              key={task.id}
-              task={task}
-              taskList={column}
-              boardId={boardId}
-              onUpdate={handleUpdate}
-              isSelected={isMultiSelectMode && selectedTasks?.has(task.id)}
-              isMultiSelectMode={isMultiSelectMode}
-              isPersonalWorkspace={isPersonalWorkspace}
-              onSelect={onTaskSelect}
-            />
-          ))
-        )}
-      </div>
+      {/* Virtualized Tasks Container */}
+      <VirtualizedTaskList
+        tasks={filteredAndSortedTasks}
+        column={column}
+        boardId={boardId}
+        handleUpdate={handleUpdate}
+        isMultiSelectMode={isMultiSelectMode}
+        selectedTasks={selectedTasks}
+        isPersonalWorkspace={isPersonalWorkspace}
+        onTaskSelect={onTaskSelect}
+        hasActiveFilters={hasActiveFilters}
+        clearAllFilters={clearAllFilters}
+      />
 
       <div className="rounded-b-xl border-t p-3 backdrop-blur-sm">
         <TaskForm listId={column.id} onTaskCreated={handleTaskCreated} />
@@ -942,3 +922,329 @@ export function BoardContainer({ children }: { children: React.ReactNode }) {
     </div>
   );
 }
+
+// Lightweight list virtualization tuned for relatively uniform TaskCard heights.
+// Assumptions:
+//  - Average TaskCard height ~ 96px including margin gap (~84 card + 12 gap). We sample first few to refine.
+//  - We only virtualize when task count exceeds VIRTUALIZE_THRESHOLD to avoid overhead for small lists.
+//  - We keep overscan of 4 items above and below viewport to smooth fast scroll and during drag placeholder movement.
+//  - Drag-and-drop library (dnd-kit) works since offscreen tasks simply aren't registered; this is acceptable for large columns
+//    because user can only drag over visible tasks. Reordering across far distances relies on dropping into the column body,
+//    which still updates list_id at column level.
+interface VirtualizedTaskListProps {
+  tasks: Task[];
+  column: TaskList;
+  boardId: string;
+  handleUpdate: () => void;
+  isMultiSelectMode?: boolean;
+  selectedTasks?: Set<string>;
+  isPersonalWorkspace?: boolean;
+  onTaskSelect?: (taskId: string, event: React.MouseEvent) => void;
+  hasActiveFilters: boolean;
+  clearAllFilters: () => void;
+}
+
+const VIRTUALIZE_THRESHOLD = 60; // only virtualize for fairly large lists
+const ESTIMATED_ITEM_HEIGHT = 96; // px including margin (space-y-2 gap)
+const OVERSCAN_PX = 400; // overscan in pixels above and below viewport for smoother scroll
+
+const VirtualizedTaskListComponent: React.FC<VirtualizedTaskListProps> = ({
+  tasks,
+  column,
+  boardId,
+  handleUpdate,
+  isMultiSelectMode,
+  selectedTasks,
+  isPersonalWorkspace,
+  onTaskSelect,
+  hasActiveFilters,
+  clearAllFilters,
+}) => {
+  const scrollRef = useRef<HTMLDivElement | null>(null);
+  const [viewportHeight, setViewportHeight] = useState(0);
+  const [scrollTop, setScrollTop] = useState(0);
+  const [avgHeight, setAvgHeight] = useState(ESTIMATED_ITEM_HEIGHT);
+  const sizesRef = useRef<Record<string, number>>({});
+  const prefixHeightsRef = useRef<number[]>([]); // cumulative heights
+  const idsRef = useRef<string[]>([]);
+
+  const shouldVirtualize = tasks.length > VIRTUALIZE_THRESHOLD;
+  const [isDraggingHere, setIsDraggingHere] = useState(false);
+
+  // Monitor drag state to widen window while a task from this column is dragged
+  useDndMonitor({
+    onDragStart(event) {
+      const t = event.active.data?.current?.task as Task | undefined;
+      if (t && t.list_id === column.id) setIsDraggingHere(true);
+    },
+    onDragEnd() {
+      setIsDraggingHere(false);
+    },
+    onDragCancel() {
+      setIsDraggingHere(false);
+    },
+  });
+
+  // Measure viewport height
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const update = () => setViewportHeight(el.clientHeight);
+    update();
+    window.addEventListener('resize', update);
+    return () => window.removeEventListener('resize', update);
+  }, []);
+
+  // Scroll handler (rAF throttled)
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el || !shouldVirtualize) return;
+    let frame: number | null = null;
+    const onScroll = () => {
+      if (frame) cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(() => {
+        setScrollTop(el.scrollTop);
+      });
+    };
+    el.addEventListener('scroll', onScroll, { passive: true });
+    return () => {
+      el.removeEventListener('scroll', onScroll);
+      if (frame) cancelAnimationFrame(frame);
+    };
+  }, [shouldVirtualize]);
+
+  // Recompute average height when sizes change
+  const rebuildPrefixHeights = useCallback(() => {
+    const ids = idsRef.current;
+    let running = 0;
+    const prefix: number[] = new Array(ids.length);
+    for (let i = 0; i < ids.length; i++) {
+      const key = ids[i];
+      const h = key ? (sizesRef.current[key] ?? avgHeight) : avgHeight;
+      prefix[i] = running;
+      running += h;
+    }
+    prefixHeightsRef.current = prefix;
+  }, [avgHeight]);
+
+  const updateSize = useCallback(
+    (id: string, height: number) => {
+      const prev = sizesRef.current[id];
+      if (prev === height) return;
+      sizesRef.current[id] = height;
+      const values = Object.values(sizesRef.current);
+      if (values.length > 0) {
+        const sum = values.reduce((a, b) => a + b, 0);
+        setAvgHeight(Math.round(sum / values.length));
+      }
+      rebuildPrefixHeights();
+    },
+    [rebuildPrefixHeights]
+  );
+
+  // Initialize idsRef when task list changes
+  useEffect(() => {
+    idsRef.current = tasks.map((t) => t.id);
+    rebuildPrefixHeights();
+  }, [tasks, rebuildPrefixHeights]);
+
+  let totalHeight: number | undefined;
+  let startIndex = 0;
+  let endIndex = tasks.length;
+  let offsetY = 0;
+  let visibleTasks = tasks;
+
+  if (shouldVirtualize) {
+    const ids = idsRef.current;
+    const prefix = prefixHeightsRef.current;
+    const getOffset = (index: number) => prefix[index] ?? index * avgHeight;
+    const getHeight = (index: number) => {
+      const key = ids[index];
+      return key ? (sizesRef.current[key] ?? avgHeight) : avgHeight;
+    };
+
+    // Binary search for first index whose bottom >= scrollTop - overscan
+    const overscan = isDraggingHere ? OVERSCAN_PX * 2 : OVERSCAN_PX;
+    const targetTop = Math.max(0, scrollTop - overscan);
+    let lo = 0;
+    let hi = tasks.length - 1;
+    while (lo < hi) {
+      const mid = (lo + hi) >>> 1;
+      const midBottom = getOffset(mid) + getHeight(mid);
+      if (midBottom >= targetTop) hi = mid;
+      else lo = mid + 1;
+    }
+    startIndex = lo;
+
+    // Binary search for last index whose top <= scrollBottom + overscan
+    const targetBottom = scrollTop + viewportHeight + overscan;
+    lo = startIndex;
+    hi = tasks.length - 1;
+    while (lo < hi) {
+      const mid = (lo + hi + 1) >>> 1;
+      const midTop = getOffset(mid);
+      if (midTop <= targetBottom) lo = mid;
+      else hi = mid - 1;
+    }
+    endIndex = Math.min(tasks.length, lo + 1);
+    visibleTasks = tasks.slice(startIndex, endIndex);
+    offsetY = getOffset(startIndex);
+    const lastIndex = tasks.length - 1;
+    const lastBottom = getOffset(lastIndex) + getHeight(lastIndex);
+    totalHeight = lastBottom;
+  }
+
+  return (
+    <div
+      ref={scrollRef}
+      className="h-full flex-1 space-y-2 overflow-y-auto p-3"
+      // When not virtualizing we still want consistent styling
+      data-virtualized={shouldVirtualize ? 'true' : 'false'}
+    >
+      {tasks.length === 0 ? (
+        <div className="flex h-32 items-center justify-center text-muted-foreground">
+          <div className="text-center">
+            <p className="text-sm">
+              {hasActiveFilters ? 'No tasks match filters' : 'No tasks yet'}
+            </p>
+            {hasActiveFilters && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={clearAllFilters}
+                className="mt-2 h-auto text-xs"
+              >
+                Clear filters to see all tasks
+              </Button>
+            )}
+          </div>
+        </div>
+      ) : shouldVirtualize ? (
+        <div style={{ height: totalHeight, position: 'relative' }}>
+          <div
+            className="grid gap-2"
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              transform: `translateY(${offsetY}px)`,
+            }}
+          >
+            {visibleTasks.map((task) => (
+              <MeasuredTaskCard
+                key={task.id}
+                task={task}
+                taskList={column}
+                boardId={boardId}
+                onUpdate={handleUpdate}
+                isSelected={Boolean(
+                  isMultiSelectMode && selectedTasks?.has(task.id)
+                )}
+                isMultiSelectMode={isMultiSelectMode}
+                isPersonalWorkspace={isPersonalWorkspace}
+                onSelect={onTaskSelect}
+                onHeight={(h) => updateSize(task.id, h)}
+              />
+            ))}
+          </div>
+        </div>
+      ) : (
+        tasks.map((task) => (
+          <MeasuredTaskCard
+            key={task.id}
+            task={task}
+            taskList={column}
+            boardId={boardId}
+            onUpdate={handleUpdate}
+            isSelected={Boolean(
+              isMultiSelectMode && selectedTasks?.has(task.id)
+            )}
+            isMultiSelectMode={isMultiSelectMode}
+            isPersonalWorkspace={isPersonalWorkspace}
+            onSelect={onTaskSelect}
+            onHeight={(h) => updateSize(task.id, h)}
+          />
+        ))
+      )}
+    </div>
+  );
+};
+
+const VirtualizedTaskList = React.memo(
+  VirtualizedTaskListComponent,
+  (prev, next) => {
+    // Shallow compare arrays by length + first/last id for quick bailout
+    if (prev.tasks.length !== next.tasks.length) return false;
+    if (prev.tasks[0]?.id !== next.tasks[0]?.id) return false;
+    if (
+      prev.tasks[prev.tasks.length - 1]?.id !==
+      next.tasks[next.tasks.length - 1]?.id
+    )
+      return false;
+    // Compare selection size
+    if (prev.selectedTasks?.size !== next.selectedTasks?.size) return false;
+    // Compare basic flags
+    if (prev.isMultiSelectMode !== next.isMultiSelectMode) return false;
+    if (prev.hasActiveFilters !== next.hasActiveFilters) return false;
+    return true;
+  }
+);
+
+interface MeasuredTaskCardProps {
+  task: Task;
+  taskList: TaskList;
+  boardId: string;
+  onUpdate: () => void;
+  isSelected: boolean;
+  isMultiSelectMode?: boolean;
+  isPersonalWorkspace?: boolean;
+  onSelect?: (taskId: string, event: React.MouseEvent) => void;
+  onHeight: (height: number) => void;
+}
+
+const MeasuredTaskCard: React.FC<MeasuredTaskCardProps> = ({
+  task,
+  taskList,
+  boardId,
+  onUpdate,
+  isSelected,
+  isMultiSelectMode,
+  isPersonalWorkspace,
+  onSelect,
+  onHeight,
+}) => {
+  const ref = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (!ref.current) return;
+    const node = ref.current;
+    // Initial measure
+    onHeight(node.getBoundingClientRect().height + 8 /* approximate gap */);
+    // Resize observer for dynamic height changes (e.g., label changes)
+    const ro = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        if (entry.target === node) {
+          onHeight(entry.contentRect.height + 8);
+        }
+      }
+    });
+    ro.observe(node);
+    return () => ro.disconnect();
+  }, [onHeight]);
+
+  return (
+    <div ref={ref} data-id={task.id}>
+      <TaskCard
+        task={task}
+        taskList={taskList}
+        boardId={boardId}
+        onUpdate={onUpdate}
+        isSelected={isSelected}
+        isMultiSelectMode={isMultiSelectMode}
+        isPersonalWorkspace={isPersonalWorkspace}
+        onSelect={onSelect}
+      />
+    </div>
+  );
+};
