@@ -13,10 +13,12 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from '@tuturuuu/ui/accordion';
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useLocale, useTranslations } from 'next-intl';
 import type { ReactNode } from 'react';
 import { useEffect } from 'react';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { toast } from '@tuturuuu/ui/sonner';
 import * as z from 'zod';
 import { FileText, Plus, PencilIcon, History } from '@tuturuuu/ui/icons';
 import UserMonthAttendance from '../../attendance/user-month-attendance';
@@ -33,6 +35,7 @@ export default function EditableReportPreview({
   report,
   configs,
   isNew,
+  groupId,
 }: {
   wsId: string;
   report: Partial<WorkspaceUserReport> & {
@@ -42,10 +45,15 @@ export default function EditableReportPreview({
   };
   configs: WorkspaceConfig[];
   isNew: boolean;
+  groupId?: string;
 }) {
   const locale = useLocale();
   const t = useTranslations();
   const supabase = createClient();
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const queryClient = useQueryClient();
 
   const form = useForm({
     resolver: zodResolver(UserReportFormSchema),
@@ -136,7 +144,7 @@ export default function EditableReportPreview({
     > => {
       const { data, error } = await supabase
         .from('external_user_monthly_report_logs')
-        .select('id, created_at, creator:workspace_users!creator_id(full_name)')
+        .select('id, created_at, creator:workspace_users!creator_id(full_name, display_name)')
         .eq('report_id', report?.id as string)
         .order('created_at', { ascending: false });
       if (error) throw error;
@@ -144,9 +152,7 @@ export default function EditableReportPreview({
         (data ?? []).map((raw) => ({
           id: raw.id,
           created_at: raw.created_at,
-          creator_name: Array.isArray(raw.creator)
-            ? raw.creator?.[0]?.full_name
-            : raw.creator?.full_name,
+          creator_name: raw.creator?.display_name ? raw.creator.display_name : raw.creator?.full_name,
         })) as Array<{ id: string; created_at: string; creator_name?: string | null }>
       );
     },
@@ -170,6 +176,176 @@ export default function EditableReportPreview({
     const years = Math.round(months / 12);
     return rtf.format(Math.sign(diffMs) * Math.round(years), 'year');
   };
+
+
+
+  const insertLog = async (
+    reportId: string,
+    values: { title: string; content: string; feedback: string }
+  ) => {
+    try {
+      if (!report.user_id || !report.group_id) return;
+
+                  // Get the current user's workspace user ID
+                  const { data: { user: authUser } } = await supabase.auth.getUser();
+                  if (!authUser) throw new Error('User not authenticated');
+      
+                  const { data: workspaceUser, error: workspaceUserError } = await supabase
+                      .from('workspace_user_linked_users')
+                      .select('virtual_user_id')
+                      .eq('platform_user_id', authUser.id)
+                      .eq('ws_id', wsId)
+                      .single();
+      
+                  if (workspaceUserError) throw workspaceUserError;
+                  if (!workspaceUser) throw new Error('User not found in workspace');
+      await supabase.from('external_user_monthly_report_logs').insert({
+        report_id: reportId,
+        user_id: report.user_id,
+        group_id: report.group_id,
+        title: values.title ?? '',
+        content: values.content ?? '',
+        feedback: values.feedback ?? '',
+        score: report?.score ?? null,
+        scores: report.scores ?? null,
+        creator_id: workspaceUser.virtual_user_id ?? undefined,
+      });
+      await queryClient.invalidateQueries({
+        queryKey: ['ws', wsId, 'report', reportId, 'logs'],
+      });
+    } catch (_) {
+      // no-op; logging should not block UX
+    }
+  };
+
+  // Mutations: create, update, delete
+  const createMutation = useMutation({
+    mutationFn: async (payload: { title: string; content: string; feedback: string }) => {
+      if (!report.user_id || !report.group_id) throw new Error('Missing user or group');
+
+      
+                  // Get the current user's workspace user ID
+                  const { data: { user: authUser } } = await supabase.auth.getUser();
+                  if (!authUser) throw new Error('User not authenticated');
+      
+                  const { data: workspaceUser, error: workspaceUserError } = await supabase
+                      .from('workspace_user_linked_users')
+                      .select('virtual_user_id')
+                      .eq('platform_user_id', authUser.id)
+                      .eq('ws_id', wsId)
+                      .single();
+      
+                  if (workspaceUserError) throw workspaceUserError;
+                  if (!workspaceUser) throw new Error('User not found in workspace');
+                  const now = new Date().toISOString();
+      const { data, error } = await supabase
+        .from('external_user_monthly_reports')
+        .insert({
+          user_id: report.user_id,
+          group_id: report.group_id,
+          title: payload.title,
+          content: payload.content,
+          feedback: payload.feedback,
+          score: report?.score ?? null,
+          scores: report.scores ?? null,
+          creator_id: workspaceUser.virtual_user_id ?? undefined,
+          created_at: now,
+          updated_at: now,
+        })
+        .select('id')
+        .single();
+      if (error) throw error;
+      return data as { id: string };
+    },
+    onSuccess: async (data, variables) => {
+      toast.success('Report created');
+      // Invalidate lists that may include this report
+      if (report.user_id && report.group_id) {
+        await queryClient.invalidateQueries({
+          queryKey: ['ws', wsId, 'group', report.group_id, 'user', report.user_id, 'reports'],
+        });
+      }
+      // Insert initial log snapshot
+      await insertLog(data.id, variables);
+      // Navigate depending on context
+      const isGroupContext = pathname.includes('/users/groups/');
+      if (isGroupContext) {
+        const sp = new URLSearchParams(searchParams.toString());
+        sp.set('reportId', data.id);
+        router.replace(`${pathname}?${sp.toString()}`);
+      } else {
+        router.replace(`/${wsId}/users/reports/${data.id}`);
+      }
+    },
+    onError: (err: any) => {
+      toast.error(err?.message || 'Failed to create report');
+    },
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: async (payload: { title: string; content: string; feedback: string }) => {
+      if (!report.id) throw new Error('Missing report id');
+      const { error } = await supabase
+        .from('external_user_monthly_reports')
+        .update({
+          title: payload.title,
+          content: payload.content,
+          feedback: payload.feedback,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', report.id);
+      if (error) throw error;
+    },
+    onSuccess: async (_, variables) => {
+      toast.success('Report saved');
+      // Insert version log snapshot
+      if (report.id) await insertLog(report.id, variables);
+      // Invalidate detail and logs
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['ws', wsId, 'report', report.id, 'logs'] }),
+        queryClient.invalidateQueries({ queryKey: ['ws', wsId, 'group', report.group_id, 'user', report.user_id, 'report', report.id] }),
+        queryClient.invalidateQueries({ queryKey: ['ws', wsId, 'group', report.group_id, 'user', report.user_id, 'reports'] }),
+      ]);
+    },
+    onError: (err: any) => {
+      toast.error(err?.message || 'Failed to save report');
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async () => {
+      if (!report.id) throw new Error('Missing report id');
+      const { error } = await supabase
+        .from('external_user_monthly_reports')
+        .delete()
+        .eq('id', report.id);
+      if (error) throw error;
+    },
+    onSuccess: async () => {
+      toast.success('Report deleted');
+      if (report.user_id && report.group_id) {
+        await queryClient.invalidateQueries({
+          queryKey: ['ws', wsId, 'group', report.group_id, 'user', report.user_id, 'reports'],
+        });
+      }
+      const isGroupContext = pathname.includes('/users/groups/');
+      if (isGroupContext) {
+        const sp = new URLSearchParams(searchParams.toString());
+        sp.delete('reportId');
+        router.replace(`${pathname}?${sp.toString()}`);
+      } else {
+        // Redirect to new with preserved user/group if available
+        const qp: string[] = [];
+        if (report.group_id) qp.push(`groupId=${encodeURIComponent(report.group_id)}`);
+        if (report.user_id) qp.push(`userId=${encodeURIComponent(report.user_id)}`);
+        const qs = qp.length ? `?${qp.join('&')}` : '';
+        router.replace(`/${wsId}/users/reports/new${qs}`);
+      }
+    },
+    onError: (err: any) => {
+      toast.error(err?.message || 'Failed to delete report');
+    },
+  });
 
   return (
     <div className="grid h-fit gap-4 xl:grid-cols-2">
@@ -227,7 +403,12 @@ export default function EditableReportPreview({
         <UserReportForm
           isNew={isNew}
           form={form}
-          submitLabel={t('common.save')}
+          submitLabel={isNew ? t('common.create') : t('common.save')}
+          onSubmit={(values) => {
+            if (isNew) createMutation.mutate(values);
+            else updateMutation.mutate(values);
+          }}
+          onDelete={!isNew ? () => deleteMutation.mutate() : undefined}
         />
 
         {/* <div className="grid h-fit gap-2 rounded-lg border p-4">
@@ -246,7 +427,7 @@ export default function EditableReportPreview({
               full_name: report.user_name,
               href: `/${wsId}/users/database/${report.user_id}`,
             }}
-            defaultIncludedGroups={[report.group_id!]}
+            defaultIncludedGroups={[groupId || report.group_id!]}
           />
         )}
       </div>

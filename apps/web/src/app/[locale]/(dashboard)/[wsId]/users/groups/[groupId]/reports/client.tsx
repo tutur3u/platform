@@ -7,6 +7,7 @@ import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { Combobox, type ComboboxOptions } from '@tuturuuu/ui/custom/combobox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@tuturuuu/ui/select';
 import { useQuery } from '@tanstack/react-query';
+import { Button } from '@tuturuuu/ui/button';
 import { useTranslations } from 'next-intl';
 import { useMemo } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
@@ -172,7 +173,8 @@ export default function GroupReportsClient({ wsId, groupId, initialUserId, initi
 
   return (
     <div className="flex min-h-full w-full flex-col">
-      <div className="mb-4 grid flex-wrap items-start gap-2 md:flex">
+        <div className="flex flex-row gap-2 items-center justify-between mb-4">
+      <div className="grid flex-wrap items-start gap-2 md:flex">
         <Combobox
           t={t}
           key="user-combobox"
@@ -187,26 +189,38 @@ export default function GroupReportsClient({ wsId, groupId, initialUserId, initi
         />
 
         {Boolean(userId) && (
-          <div className="min-w-56">
-            <Select
-              value={reportId ?? ''}
-              onValueChange={(val) => updateSearchParams({ reportId: val || undefined })}
-              disabled={reportsQuery.isLoading}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder={t('user-data-table.report')} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="new">{t('common.new')}</SelectItem>
-                {reportsOptions.map((opt) => (
-                  <SelectItem key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          <div className="flex items-center gap-2">
+            <div className="min-w-56">
+              <Select
+                value={reportId ?? ''}
+                onValueChange={(val) => updateSearchParams({ reportId: val || undefined })}
+                disabled={reportsQuery.isLoading}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder={t('user-data-table.report')} />
+                </SelectTrigger>
+                <SelectContent>
+                  {reportsOptions.map((opt) => (
+                    <SelectItem key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
         )}
+      </div>
+      {userId ? (
+      <div className="flex flex-row gap-2 items-center">
+      <Button
+              type="button"
+              onClick={() => updateSearchParams({ reportId: 'new' })}
+            >
+              {t('common.new')}
+            </Button>
+      </div>
+      ) : null}
       </div>
 
       {Boolean(groupId && userId) && selectedReport && configsQuery.data && (
@@ -215,6 +229,7 @@ export default function GroupReportsClient({ wsId, groupId, initialUserId, initi
           report={{ ...selectedReport, group_name: (selectedReport).group_name ?? groupQuery.data?.name ?? groupNameFallback }}
           configs={configsQuery.data}
           isNew={reportId === 'new'}
+          groupId={groupId}
         />
       )}
     </div>

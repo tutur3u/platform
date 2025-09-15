@@ -19,12 +19,14 @@ export default function UserReportForm({
   form,
   submitLabel,
   onSubmit,
+  onDelete,
 }: {
   isNew: boolean;
   form: UseFormReturn<z.infer<typeof UserReportFormSchema>>;
   submitLabel: string;
   // eslint-disable-next-line no-unused-vars
   onSubmit?: (formData: z.infer<typeof UserReportFormSchema>) => void;
+  onDelete?: () => void;
 }) {
   return (
     <div className="grid h-fit gap-2 rounded-lg border p-4">
@@ -42,7 +44,7 @@ export default function UserReportForm({
               <FormItem>
                 <FormLabel>Title</FormLabel>
                 <FormControl>
-                  <Input placeholder="Title" {...field} disabled={isNew} />
+                  <Input placeholder="Title" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -59,7 +61,6 @@ export default function UserReportForm({
                   <AutosizeTextarea
                     placeholder="Content"
                     {...field}
-                    disabled={isNew}
                   />
                 </FormControl>
                 <FormMessage />
@@ -77,7 +78,6 @@ export default function UserReportForm({
                   <AutosizeTextarea
                     placeholder="Feedback"
                     {...field}
-                    disabled={isNew}
                   />
                 </FormControl>
                 <FormMessage />
@@ -87,9 +87,16 @@ export default function UserReportForm({
 
           <Separator />
 
-          <Button type="submit" className="w-full" disabled={isNew}>
-            {submitLabel}
-          </Button>
+          <div className="flex gap-2">
+            <Button type="submit" className="w-full">
+              {submitLabel}
+            </Button>
+            {!isNew && onDelete && (
+              <Button type="button" variant="destructive" onClick={onDelete}>
+                Delete
+              </Button>
+            )}
+          </div>
         </form>
       </Form>
     </div>

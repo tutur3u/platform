@@ -65,14 +65,15 @@ export default function ReportPreview({
           )}
 
           <div className="text-center font-bold text-foreground text-lg uppercase">
+            {data?.title}
             {getConfig('REPORT_TITLE_PREFIX')}{' '}
-            {new Date().toLocaleDateString(lang, {
+            {/* {new Date().toLocaleDateString(lang, {
               month: 'long',
             })}
             /
             {new Date().toLocaleDateString(lang, {
               year: 'numeric',
-            })}{' '}
+            })}{' '} */}
             {getConfig('REPORT_TITLE_SUFFIX')}
           </div>
 
