@@ -144,17 +144,23 @@ export default function EditableReportPreview({
     > => {
       const { data, error } = await supabase
         .from('external_user_monthly_report_logs')
-        .select('id, created_at, creator:workspace_users!creator_id(full_name, display_name)')
+        .select(
+          'id, created_at, creator:workspace_users!creator_id(full_name, display_name)'
+        )
         .eq('report_id', report?.id as string)
         .order('created_at', { ascending: false });
       if (error) throw error;
-      return (
-        (data ?? []).map((raw) => ({
-          id: raw.id,
-          created_at: raw.created_at,
-          creator_name: raw.creator?.display_name ? raw.creator.display_name : raw.creator?.full_name,
-        })) as Array<{ id: string; created_at: string; creator_name?: string | null }>
-      );
+      return (data ?? []).map((raw) => ({
+        id: raw.id,
+        created_at: raw.created_at,
+        creator_name: raw.creator?.display_name
+          ? raw.creator.display_name
+          : raw.creator?.full_name,
+      })) as Array<{
+        id: string;
+        created_at: string;
+        creator_name?: string | null;
+      }>;
     },
   });
 
@@ -166,18 +172,20 @@ export default function EditableReportPreview({
     const diffMs = then.getTime() - now.getTime();
     const absMs = Math.abs(diffMs);
     const minutes = Math.round(absMs / (60 * 1000));
-    if (minutes < 60) return rtf.format(Math.sign(diffMs) * Math.round(minutes), 'minute');
+    if (minutes < 60)
+      return rtf.format(Math.sign(diffMs) * Math.round(minutes), 'minute');
     const hours = Math.round(minutes / 60);
-    if (hours < 24) return rtf.format(Math.sign(diffMs) * Math.round(hours), 'hour');
+    if (hours < 24)
+      return rtf.format(Math.sign(diffMs) * Math.round(hours), 'hour');
     const days = Math.round(hours / 24);
-    if (days < 30) return rtf.format(Math.sign(diffMs) * Math.round(days), 'day');
+    if (days < 30)
+      return rtf.format(Math.sign(diffMs) * Math.round(days), 'day');
     const months = Math.round(days / 30);
-    if (months < 12) return rtf.format(Math.sign(diffMs) * Math.round(months), 'month');
+    if (months < 12)
+      return rtf.format(Math.sign(diffMs) * Math.round(months), 'month');
     const years = Math.round(months / 12);
     return rtf.format(Math.sign(diffMs) * Math.round(years), 'year');
   };
-
-
 
   const insertLog = async (
     reportId: string,
@@ -186,19 +194,21 @@ export default function EditableReportPreview({
     try {
       if (!report.user_id || !report.group_id) return;
 
-                  // Get the current user's workspace user ID
-                  const { data: { user: authUser } } = await supabase.auth.getUser();
-                  if (!authUser) throw new Error('User not authenticated');
-      
-                  const { data: workspaceUser, error: workspaceUserError } = await supabase
-                      .from('workspace_user_linked_users')
-                      .select('virtual_user_id')
-                      .eq('platform_user_id', authUser.id)
-                      .eq('ws_id', wsId)
-                      .single();
-      
-                  if (workspaceUserError) throw workspaceUserError;
-                  if (!workspaceUser) throw new Error('User not found in workspace');
+      // Get the current user's workspace user ID
+      const {
+        data: { user: authUser },
+      } = await supabase.auth.getUser();
+      if (!authUser) throw new Error('User not authenticated');
+
+      const { data: workspaceUser, error: workspaceUserError } = await supabase
+        .from('workspace_user_linked_users')
+        .select('virtual_user_id')
+        .eq('platform_user_id', authUser.id)
+        .eq('ws_id', wsId)
+        .single();
+
+      if (workspaceUserError) throw workspaceUserError;
+      if (!workspaceUser) throw new Error('User not found in workspace');
       await supabase.from('external_user_monthly_report_logs').insert({
         report_id: reportId,
         user_id: report.user_id,
@@ -220,24 +230,30 @@ export default function EditableReportPreview({
 
   // Mutations: create, update, delete
   const createMutation = useMutation({
-    mutationFn: async (payload: { title: string; content: string; feedback: string }) => {
-      if (!report.user_id || !report.group_id) throw new Error('Missing user or group');
+    mutationFn: async (payload: {
+      title: string;
+      content: string;
+      feedback: string;
+    }) => {
+      if (!report.user_id || !report.group_id)
+        throw new Error('Missing user or group');
 
-      
-                  // Get the current user's workspace user ID
-                  const { data: { user: authUser } } = await supabase.auth.getUser();
-                  if (!authUser) throw new Error('User not authenticated');
-      
-                  const { data: workspaceUser, error: workspaceUserError } = await supabase
-                      .from('workspace_user_linked_users')
-                      .select('virtual_user_id')
-                      .eq('platform_user_id', authUser.id)
-                      .eq('ws_id', wsId)
-                      .single();
-      
-                  if (workspaceUserError) throw workspaceUserError;
-                  if (!workspaceUser) throw new Error('User not found in workspace');
-                  const now = new Date().toISOString();
+      // Get the current user's workspace user ID
+      const {
+        data: { user: authUser },
+      } = await supabase.auth.getUser();
+      if (!authUser) throw new Error('User not authenticated');
+
+      const { data: workspaceUser, error: workspaceUserError } = await supabase
+        .from('workspace_user_linked_users')
+        .select('virtual_user_id')
+        .eq('platform_user_id', authUser.id)
+        .eq('ws_id', wsId)
+        .single();
+
+      if (workspaceUserError) throw workspaceUserError;
+      if (!workspaceUser) throw new Error('User not found in workspace');
+      const now = new Date().toISOString();
       const { data, error } = await supabase
         .from('external_user_monthly_reports')
         .insert({
@@ -262,7 +278,15 @@ export default function EditableReportPreview({
       // Invalidate lists that may include this report
       if (report.user_id && report.group_id) {
         await queryClient.invalidateQueries({
-          queryKey: ['ws', wsId, 'group', report.group_id, 'user', report.user_id, 'reports'],
+          queryKey: [
+            'ws',
+            wsId,
+            'group',
+            report.group_id,
+            'user',
+            report.user_id,
+            'reports',
+          ],
         });
       }
       // Insert initial log snapshot
@@ -283,7 +307,11 @@ export default function EditableReportPreview({
   });
 
   const updateMutation = useMutation({
-    mutationFn: async (payload: { title: string; content: string; feedback: string }) => {
+    mutationFn: async (payload: {
+      title: string;
+      content: string;
+      feedback: string;
+    }) => {
       if (!report.id) throw new Error('Missing report id');
       const { error } = await supabase
         .from('external_user_monthly_reports')
@@ -302,9 +330,32 @@ export default function EditableReportPreview({
       if (report.id) await insertLog(report.id, variables);
       // Invalidate detail and logs
       await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ['ws', wsId, 'report', report.id, 'logs'] }),
-        queryClient.invalidateQueries({ queryKey: ['ws', wsId, 'group', report.group_id, 'user', report.user_id, 'report', report.id] }),
-        queryClient.invalidateQueries({ queryKey: ['ws', wsId, 'group', report.group_id, 'user', report.user_id, 'reports'] }),
+        queryClient.invalidateQueries({
+          queryKey: ['ws', wsId, 'report', report.id, 'logs'],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: [
+            'ws',
+            wsId,
+            'group',
+            report.group_id,
+            'user',
+            report.user_id,
+            'report',
+            report.id,
+          ],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: [
+            'ws',
+            wsId,
+            'group',
+            report.group_id,
+            'user',
+            report.user_id,
+            'reports',
+          ],
+        }),
       ]);
     },
     onError: (err: any) => {
@@ -325,7 +376,15 @@ export default function EditableReportPreview({
       toast.success('Report deleted');
       if (report.user_id && report.group_id) {
         await queryClient.invalidateQueries({
-          queryKey: ['ws', wsId, 'group', report.group_id, 'user', report.user_id, 'reports'],
+          queryKey: [
+            'ws',
+            wsId,
+            'group',
+            report.group_id,
+            'user',
+            report.user_id,
+            'reports',
+          ],
         });
       }
       const isGroupContext = pathname.includes('/users/groups/');
@@ -336,8 +395,10 @@ export default function EditableReportPreview({
       } else {
         // Redirect to new with preserved user/group if available
         const qp: string[] = [];
-        if (report.group_id) qp.push(`groupId=${encodeURIComponent(report.group_id)}`);
-        if (report.user_id) qp.push(`userId=${encodeURIComponent(report.user_id)}`);
+        if (report.group_id)
+          qp.push(`groupId=${encodeURIComponent(report.group_id)}`);
+        if (report.user_id)
+          qp.push(`userId=${encodeURIComponent(report.user_id)}`);
         const qs = qp.length ? `?${qp.join('&')}` : '';
         router.replace(`/${wsId}/users/reports/new${qs}`);
       }
@@ -352,12 +413,16 @@ export default function EditableReportPreview({
       <div className="grid h-fit gap-4">
         {isNew || (
           <div className="grid h-fit gap-2 rounded-lg border p-4">
-            <div className="font-semibold text-lg">{t('ws-reports.user_data')}</div>
+            <div className="font-semibold text-lg">
+              {t('ws-reports.user_data')}
+            </div>
             <Separator />
 
             <div>
               {report.scores?.length === 0 ? (
-                <div className="text-dynamic-red">{t('ws-reports.no_scores')}</div>
+                <div className="text-dynamic-red">
+                  {t('ws-reports.no_scores')}
+                </div>
               ) : (
                 <div className="flex items-center gap-1">
                   {t('ws-reports.average_score')}:
@@ -378,7 +443,9 @@ export default function EditableReportPreview({
             </div>
             <div>
               {report.scores?.length === 0 ? (
-                <div className="text-dynamic-red">{t('ws-reports.no_scores')}</div>
+                <div className="text-dynamic-red">
+                  {t('ws-reports.no_scores')}
+                </div>
               ) : (
                 <div className="flex items-center gap-1">
                   {t('ws-reports.scores')}:
@@ -433,7 +500,7 @@ export default function EditableReportPreview({
       </div>
 
       <div className="grid h-fit gap-4">
-      {isNew || (
+        {isNew || (
           <Accordion type="single" collapsible className="rounded-lg border">
             <AccordionItem value="history" className="border-none">
               <AccordionTrigger className="px-4 py-3 hover:no-underline">
@@ -444,7 +511,8 @@ export default function EditableReportPreview({
                   </div>
                   {logsQuery.data && (
                     <div className="text-xs opacity-70">
-                      {logsQuery.data.length} entr{logsQuery.data.length === 1 ? 'y' : 'ies'}
+                      {logsQuery.data.length} entr
+                      {logsQuery.data.length === 1 ? 'y' : 'ies'}
                     </div>
                   )}
                 </div>
@@ -457,17 +525,31 @@ export default function EditableReportPreview({
                     {logsQuery.data.map((log, idx) => {
                       const isLatest = idx === 0;
                       const isOldest = idx === logsQuery.data!.length - 1;
-                      const actionLabel = isOldest ? 'created report' : 'updated report';
-                      const label = isLatest ? 'Current version' : `Update #${logsQuery.data!.length - idx}`;
-                      const exact = new Date(log.created_at).toLocaleString(locale);
+                      const actionLabel = isOldest
+                        ? 'created report'
+                        : 'updated report';
+                      const label = isLatest
+                        ? 'Current version'
+                        : `Update #${logsQuery.data!.length - idx}`;
+                      const exact = new Date(log.created_at).toLocaleString(
+                        locale
+                      );
                       const relative = formatRelativeTime(log.created_at);
-                      
+
                       // Choose icon and color based on action type
-                      const IconComponent = isLatest ? FileText : isOldest ? Plus : PencilIcon;
+                      const IconComponent = isLatest
+                        ? FileText
+                        : isOldest
+                          ? Plus
+                          : PencilIcon;
                       // Solid background to mask the timeline line; icon uses contrasting text color
-                      const bgColor = isLatest ? 'bg-dynamic-blue' : isOldest ? 'bg-dynamic-green' : 'bg-dynamic-orange';
+                      const bgColor = isLatest
+                        ? 'bg-dynamic-blue'
+                        : isOldest
+                          ? 'bg-dynamic-green'
+                          : 'bg-dynamic-orange';
                       const iconColor = 'text-background';
-                      
+
                       return (
                         <div key={log.id} className="relative">
                           {/* Timeline item */}
@@ -486,15 +568,21 @@ export default function EditableReportPreview({
                                 />
                               )}
                               {/* Timeline icon */}
-                              <div className={`w-8 h-8 rounded-full ${bgColor} flex items-center justify-center relative z-10`}>
-                                <IconComponent className={`w-4 h-4 ${iconColor}`} />
+                              <div
+                                className={`w-8 h-8 rounded-full ${bgColor} flex items-center justify-center relative z-10`}
+                              >
+                                <IconComponent
+                                  className={`w-4 h-4 ${iconColor}`}
+                                />
                               </div>
                             </div>
 
                             {/* Content */}
                             <div className="flex-1 space-y-2">
                               <div className="bg-card border rounded-lg p-3">
-                                <div className="font-semibold text-sm">{label}</div>
+                                <div className="font-semibold text-sm">
+                                  {label}
+                                </div>
                                 <div className="text-sm text-muted-foreground">
                                   {log.creator_name || 'Someone'} {actionLabel}.
                                 </div>

@@ -5,7 +5,13 @@ import type { WorkspaceUserReport } from '@tuturuuu/types/db';
 import type { WorkspaceConfig } from '@tuturuuu/types/primitives/WorkspaceConfig';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { Combobox, type ComboboxOptions } from '@tuturuuu/ui/custom/combobox';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@tuturuuu/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@tuturuuu/ui/select';
 import { useQuery } from '@tanstack/react-query';
 import { Button } from '@tuturuuu/ui/button';
 import { useTranslations } from 'next-intl';
@@ -22,14 +28,22 @@ interface Props {
   groupNameFallback: string;
 }
 
-export default function GroupReportsClient({ wsId, groupId, initialUserId, initialReportId, groupNameFallback }: Props) {
+export default function GroupReportsClient({
+  wsId,
+  groupId,
+  initialUserId,
+  initialReportId,
+  groupNameFallback,
+}: Props) {
   const t = useTranslations();
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
   const userId = searchParams.get('userId') ?? initialUserId ?? undefined;
-  const reportId = searchParams.get('reportId') ?? (userId === initialUserId ? initialReportId : undefined);
+  const reportId =
+    searchParams.get('reportId') ??
+    (userId === initialUserId ? initialReportId : undefined);
 
   const updateSearchParams = (next: { userId?: string; reportId?: string }) => {
     const sp = new URLSearchParams(searchParams.toString());
@@ -64,7 +78,11 @@ export default function GroupReportsClient({ wsId, groupId, initialUserId, initi
   });
 
   const userOptions: ComboboxOptions[] = useMemo(
-    () => usersQuery.data?.map((u) => ({ value: u.id, label: u.full_name || 'No name' })) ?? [],
+    () =>
+      usersQuery.data?.map((u) => ({
+        value: u.id,
+        label: u.full_name || 'No name',
+      })) ?? [],
     [usersQuery.data]
   );
 
@@ -74,9 +92,12 @@ export default function GroupReportsClient({ wsId, groupId, initialUserId, initi
     queryFn: async (): Promise<WorkspaceUserReport[]> => {
       const { data, error } = await supabase
         .from('external_user_monthly_reports')
-        .select('*, user:workspace_users!user_id!inner(full_name, ws_id), creator:workspace_users!creator_id(full_name)', {
-          count: 'exact',
-        })
+        .select(
+          '*, user:workspace_users!user_id!inner(full_name, ws_id), creator:workspace_users!creator_id(full_name)',
+          {
+            count: 'exact',
+          }
+        )
         .eq('user_id', userId!)
         .eq('group_id', groupId)
         .eq('workspace_users.ws_id', wsId)
@@ -92,19 +113,37 @@ export default function GroupReportsClient({ wsId, groupId, initialUserId, initi
   });
 
   const reportsOptions = useMemo(
-    () => reportsQuery.data?.map((r) => ({ value: r.id, label: r.title || 'No title' })) ?? [],
+    () =>
+      reportsQuery.data?.map((r) => ({
+        value: r.id,
+        label: r.title || 'No title',
+      })) ?? [],
     [reportsQuery.data]
   );
 
   const reportDetailQuery = useQuery({
-    queryKey: ['ws', wsId, 'group', groupId, 'user', userId, 'report', reportId],
+    queryKey: [
+      'ws',
+      wsId,
+      'group',
+      groupId,
+      'user',
+      userId,
+      'report',
+      reportId,
+    ],
     enabled: Boolean(reportId && reportId !== 'new'),
-    queryFn: async (): Promise<(WorkspaceUserReport & { group_name: string }) | null> => {
+    queryFn: async (): Promise<
+      (WorkspaceUserReport & { group_name: string }) | null
+    > => {
       const { data, error } = await supabase
         .from('external_user_monthly_reports')
-        .select('*, user:workspace_users!user_id!inner(full_name, ws_id), creator:workspace_users!creator_id(full_name), ...workspace_user_groups(group_name:name)', {
-          count: 'exact',
-        })
+        .select(
+          '*, user:workspace_users!user_id!inner(full_name, ws_id), creator:workspace_users!creator_id(full_name), ...workspace_user_groups(group_name:name)',
+          {
+            count: 'exact',
+          }
+        )
         .eq('id', reportId!)
         .eq('user_id', userId!)
         .eq('group_id', groupId)
@@ -114,8 +153,12 @@ export default function GroupReportsClient({ wsId, groupId, initialUserId, initi
       if (error) throw error;
       if (!data) return null;
       const mapped = {
-        user_name: Array.isArray(data.user) ? data.user?.[0]?.full_name : data.user?.full_name ?? undefined,
-        creator_name: Array.isArray(data.creator) ? data.creator?.[0]?.full_name : data.creator?.full_name ?? undefined,
+        user_name: Array.isArray(data.user)
+          ? data.user?.[0]?.full_name
+          : (data.user?.full_name ?? undefined),
+        creator_name: Array.isArray(data.creator)
+          ? data.creator?.[0]?.full_name
+          : (data.creator?.full_name ?? undefined),
         ...data,
       } as any;
       const { user: _user, creator: _creator, ...rest } = mapped;
@@ -133,7 +176,10 @@ export default function GroupReportsClient({ wsId, groupId, initialUserId, initi
         .eq('id', groupId)
         .maybeSingle();
       if (error) throw error;
-      return (data ?? { id: groupId, name: groupNameFallback }) as { id: string; name: string | null };
+      return (data ?? { id: groupId, name: groupNameFallback }) as {
+        id: string;
+        name: string | null;
+      };
     },
   });
 
@@ -146,7 +192,10 @@ export default function GroupReportsClient({ wsId, groupId, initialUserId, initi
         .eq('ws_id', wsId)
         .order('created_at', { ascending: false });
       if (error) throw error;
-      const base = availableConfigs.map(({ defaultValue, ...rest }) => ({ ...rest, value: defaultValue }));
+      const base = availableConfigs.map(({ defaultValue, ...rest }) => ({
+        ...rest,
+        value: defaultValue,
+      }));
       const merged = [...base];
       (data ?? []).forEach((config) => {
         const idx = merged.findIndex((c) => c.id === config.id);
@@ -169,64 +218,87 @@ export default function GroupReportsClient({ wsId, groupId, initialUserId, initi
     // Only use cached detail data when a valid reportId is present
     if (reportId && reportDetailQuery.data) return reportDetailQuery.data;
     return undefined;
-  }, [reportId, userId, groupId, groupQuery.data, groupNameFallback, reportDetailQuery.data]);
+  }, [
+    reportId,
+    userId,
+    groupId,
+    groupQuery.data,
+    groupNameFallback,
+    reportDetailQuery.data,
+  ]);
 
   return (
     <div className="flex min-h-full w-full flex-col">
-        <div className="flex flex-row gap-2 items-center justify-between mb-4">
-      <div className="grid flex-wrap items-start gap-2 md:flex">
-        <Combobox
-          t={t}
-          key="user-combobox"
-          options={userOptions}
-          selected={userId ?? ''}
-          placeholder={t('user-data-table.user')}
-          disabled={usersQuery.isLoading}
-          onChange={(val) => {
-            const nextUserId = typeof val === 'string' ? val : Array.isArray(val) ? val[0] : '';
-            updateSearchParams({ userId: nextUserId || undefined, reportId: undefined });
-          }}
-        />
+      <div className="flex flex-row gap-2 items-center justify-between mb-4">
+        <div className="grid flex-wrap items-start gap-2 md:flex">
+          <Combobox
+            t={t}
+            key="user-combobox"
+            options={userOptions}
+            selected={userId ?? ''}
+            placeholder={t('user-data-table.user')}
+            disabled={usersQuery.isLoading}
+            onChange={(val) => {
+              const nextUserId =
+                typeof val === 'string'
+                  ? val
+                  : Array.isArray(val)
+                    ? val[0]
+                    : '';
+              updateSearchParams({
+                userId: nextUserId || undefined,
+                reportId: undefined,
+              });
+            }}
+          />
 
-        {Boolean(userId) && (
-          <div className="flex items-center gap-2">
-            <div className="min-w-56">
-              <Select
-                value={reportId ?? ''}
-                onValueChange={(val) => updateSearchParams({ reportId: val || undefined })}
-                disabled={reportsQuery.isLoading}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder={t('user-data-table.report')} />
-                </SelectTrigger>
-                <SelectContent>
-                  {reportsOptions.map((opt) => (
-                    <SelectItem key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+          {Boolean(userId) && (
+            <div className="flex items-center gap-2">
+              <div className="min-w-56">
+                <Select
+                  value={reportId ?? ''}
+                  onValueChange={(val) =>
+                    updateSearchParams({ reportId: val || undefined })
+                  }
+                  disabled={reportsQuery.isLoading}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder={t('user-data-table.report')} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {reportsOptions.map((opt) => (
+                      <SelectItem key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
-          </div>
-        )}
-      </div>
-      {userId ? (
-      <div className="flex flex-row gap-2 items-center">
-      <Button
+          )}
+        </div>
+        {userId ? (
+          <div className="flex flex-row gap-2 items-center">
+            <Button
               type="button"
               onClick={() => updateSearchParams({ reportId: 'new' })}
             >
               {t('common.new')}
             </Button>
-      </div>
-      ) : null}
+          </div>
+        ) : null}
       </div>
 
       {Boolean(groupId && userId) && selectedReport && configsQuery.data && (
         <EditableReportPreview
           wsId={wsId}
-          report={{ ...selectedReport, group_name: (selectedReport).group_name ?? groupQuery.data?.name ?? groupNameFallback }}
+          report={{
+            ...selectedReport,
+            group_name:
+              selectedReport.group_name ??
+              groupQuery.data?.name ??
+              groupNameFallback,
+          }}
           configs={configsQuery.data}
           isNew={reportId === 'new'}
           groupId={groupId}
@@ -235,5 +307,3 @@ export default function GroupReportsClient({ wsId, groupId, initialUserId, initi
     </div>
   );
 }
-
-

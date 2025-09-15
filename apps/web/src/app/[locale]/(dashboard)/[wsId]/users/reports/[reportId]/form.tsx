@@ -46,7 +46,10 @@ export default function UserReportForm({
               <FormItem>
                 <FormLabel>{t('user-report-data-table.title')}</FormLabel>
                 <FormControl>
-                  <Input placeholder={t('user-report-data-table.title')} {...field} />
+                  <Input
+                    placeholder={t('user-report-data-table.title')}
+                    {...field}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>

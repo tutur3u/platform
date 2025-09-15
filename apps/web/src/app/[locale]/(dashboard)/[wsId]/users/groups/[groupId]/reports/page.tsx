@@ -2,12 +2,7 @@ import { createClient } from '@tuturuuu/supabase/next/server';
 import type { UserGroup } from '@tuturuuu/types/primitives/UserGroup';
 import { Button } from '@tuturuuu/ui/button';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
-import {
-  Calendar,
-  ChartColumn,
-  FileUser,
-  UserCheck,
-} from '@tuturuuu/ui/icons';
+import { Calendar, ChartColumn, FileUser, UserCheck } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
 import { cn } from '@tuturuuu/utils/format';
 import Link from 'next/link';
