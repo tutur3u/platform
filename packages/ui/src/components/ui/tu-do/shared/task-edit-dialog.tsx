@@ -118,6 +118,9 @@ export function TaskEditDialog({
   );
   const [labelsLoading, setLabelsLoading] = useState(false);
   const [estimationSaving, setEstimationSaving] = useState(false);
+  const [newLabelName, setNewLabelName] = useState('');
+  const [newLabelColor, setNewLabelColor] = useState('gray');
+  const [creatingLabel, setCreatingLabel] = useState(false);
 
   const params = useParams();
   const boardId = params.boardId as string;
@@ -175,7 +178,29 @@ export function TaskEditDialog({
     setSelectedLabels(task.labels || []);
   }, [task, parseDescription]);
 
-  // Fetch board estimation config & workspace labels when dialog opens
+  const fetchLabels = useCallback(async (wsId: string) => {
+    try {
+      setLabelsLoading(true);
+      const supabase = createClient();
+      const { data: labels, error: labelsErr } = await supabase
+        .from('workspace_task_labels')
+        .select('id,name,color,created_at')
+        .eq('ws_id', wsId)
+        .order('created_at');
+      if (!labelsErr && labels)
+        setAvailableLabels(
+          (labels as any).sort((a: any, b: any) =>
+            a.name.toLowerCase().localeCompare(b.name.toLowerCase())
+          )
+        );
+    } catch (e) {
+      console.error('Failed fetching labels', e);
+    } finally {
+      setLabelsLoading(false);
+    }
+  }, []);
+
+  // Fetch board estimation config & labels on open
   useEffect(() => {
     if (!isOpen) return;
     (async () => {
@@ -190,22 +215,96 @@ export function TaskEditDialog({
           .single();
         if (boardErr) throw boardErr;
         setBoardConfig(board as any);
-        // Fetch workspace labels (best-effort)
-        if ((board as any)?.ws_id) {
-          setLabelsLoading(true);
-          const { data: labels, error: labelsErr } = await supabase
-            .from('workspace_task_labels')
-            .select('id,name,color,created_at')
-            .eq('ws_id', (board as any).ws_id)
-            .order('created_at');
-          if (!labelsErr && labels) setAvailableLabels(labels as any);
-          setLabelsLoading(false);
-        }
+        if ((board as any)?.ws_id) await fetchLabels((board as any).ws_id);
       } catch (e) {
         console.error('Failed loading board config or labels', e);
       }
     })();
-  }, [isOpen, boardId]);
+  }, [isOpen, boardId, fetchLabels]);
+
+  const handleCreateLabel = async () => {
+    if (!newLabelName.trim() || !boardConfig) return;
+    // Need workspace id from boardConfig; we re-fetch board already, store ws_id inside boardConfig? not persisted previously; fallback fetch if absent
+    setCreatingLabel(true);
+    try {
+      const supabase = createClient();
+      // Ensure we have ws_id
+      let wsId: string | undefined = (boardConfig as any)?.ws_id;
+      if (!wsId) {
+        const { data: board } = await supabase
+          .from('workspace_boards')
+          .select('ws_id')
+          .eq('id', boardId)
+          .single();
+        wsId = (board as any)?.ws_id;
+      }
+      if (!wsId) throw new Error('Workspace id not found');
+      const { data, error } = await supabase
+        .from('workspace_task_labels')
+        .insert({
+          ws_id: wsId,
+          name: newLabelName.trim(),
+          color: newLabelColor,
+        })
+        .select('id,name,color,created_at')
+        .single();
+      if (error) throw error;
+      if (data) {
+        setAvailableLabels((prev) =>
+          [data as any, ...prev].sort((a, b) =>
+            a.name.toLowerCase().localeCompare(b.name.toLowerCase())
+          )
+        );
+        // auto-select new label (maintain alphabetical order in selection list too)
+        setSelectedLabels((prev) =>
+          [data as any, ...prev].sort((a, b) =>
+            a.name.toLowerCase().localeCompare(b.name.toLowerCase())
+          )
+        );
+
+        // Attempt to link label to this task in DB
+        const { error: linkErr } = await supabase
+          .from('task_labels')
+          .insert({ task_id: task.id, label_id: (data as any).id });
+        if (linkErr) {
+          // Rollback local selection if link fails
+          setSelectedLabels((prev) =>
+            prev.filter((l) => l.id !== (data as any).id)
+          );
+          toast({
+            title: 'Label created (not linked)',
+            description: 'Label saved but could not be attached to task.',
+            variant: 'destructive',
+          });
+        } else {
+          // Invalidate caches so parent task list reflects new label
+          invalidateTaskCaches(queryClient, boardId);
+          onUpdate();
+          // Dispatch global event so other open components can refresh
+          if (typeof window !== 'undefined') {
+            window.dispatchEvent(
+              new CustomEvent('workspace-label-created', {
+                detail: { wsId, label: data },
+              })
+            );
+          }
+          toast({
+            title: 'Label created & linked',
+            description: 'New label added and attached to this task.',
+          });
+        }
+        setNewLabelName('');
+      }
+    } catch (e: any) {
+      toast({
+        title: 'Label creation failed',
+        description: e.message || 'Unable to create label',
+        variant: 'destructive',
+      });
+    } finally {
+      setCreatingLabel(false);
+    }
+  };
 
   // End date change helper (preserve 23:59 default if only date picked)
   const handleEndDateChange = (date: Date | undefined) => {
@@ -307,7 +406,11 @@ export function TaskEditDialog({
           .from('task_labels')
           .insert({ task_id: task.id, label_id: label.id });
         if (error) throw error;
-        setSelectedLabels((prev) => [label, ...prev]);
+        setSelectedLabels((prev) =>
+          [label, ...prev].sort((a, b) =>
+            a.name.toLowerCase().localeCompare(b.name.toLowerCase())
+          )
+        );
       }
       invalidateTaskCaches(queryClient, boardId);
     } catch (e: any) {
@@ -655,9 +758,66 @@ export function TaskEditDialog({
 
             {/* Labels Section */}
             <div className="space-y-2">
-              <Label className="flex items-center gap-2">
-                <Tag className="h-4 w-4" /> Labels
+              <Label className="flex items-center justify-between gap-2">
+                <span className="flex items-center gap-2">
+                  <Tag className="h-4 w-4" /> Labels
+                </span>
+                {boardConfig && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="xs"
+                    className="h-6 px-2 text-[10px]"
+                    onClick={() =>
+                      (boardConfig as any)?.ws_id &&
+                      fetchLabels((boardConfig as any).ws_id)
+                    }
+                    disabled={labelsLoading}
+                  >
+                    {labelsLoading ? 'Refreshing…' : 'Refresh'}
+                  </Button>
+                )}
               </Label>
+              {boardConfig && (
+                <div className="flex items-center gap-2">
+                  <Input
+                    placeholder="New label name"
+                    value={newLabelName}
+                    onChange={(e) => setNewLabelName(e.target.value)}
+                    className="h-8"
+                  />
+                  <select
+                    className="h-8 rounded border bg-background px-2 text-xs"
+                    value={newLabelColor}
+                    onChange={(e) => setNewLabelColor(e.target.value)}
+                  >
+                    {[
+                      'red',
+                      'orange',
+                      'yellow',
+                      'green',
+                      'blue',
+                      'indigo',
+                      'purple',
+                      'pink',
+                      'gray',
+                    ].map((c) => (
+                      <option key={c} value={c}>
+                        {c}
+                      </option>
+                    ))}
+                  </select>
+                  <Button
+                    type="button"
+                    size="sm"
+                    className="h-8 px-2 text-xs"
+                    onClick={handleCreateLabel}
+                    disabled={creatingLabel || !newLabelName.trim()}
+                  >
+                    {creatingLabel ? 'Creating…' : 'Add'}
+                  </Button>
+                </div>
+              )}
               {labelsLoading ? (
                 <div className="text-muted-foreground text-xs">
                   Loading labels...

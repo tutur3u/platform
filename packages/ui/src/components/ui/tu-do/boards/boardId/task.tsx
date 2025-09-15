@@ -77,7 +77,7 @@ import {
   isTomorrow,
   isYesterday,
 } from 'date-fns';
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { getDescriptionText } from '../../../../../utils/text-helper';
 import { AssigneeSelect } from '../../shared/assignee-select';
 import {
@@ -112,6 +112,12 @@ export function LightweightTaskCard({ task }: { task: Task }) {
   };
 
   const descriptionText = getDescriptionText(task.description);
+  // Ensure deterministic ordering of labels (case-insensitive alphabetical)
+  const sortedLabels = task.labels
+    ? [...task.labels].sort((a, b) =>
+        a.name.toLowerCase().localeCompare(b.name.toLowerCase())
+      )
+    : [];
 
   return (
     <Card className="pointer-events-none w-full max-w-[350px] scale-105 select-none border-2 border-primary/20 bg-background opacity-95 shadow-xl ring-2 ring-primary/20">
@@ -129,8 +135,8 @@ export function LightweightTaskCard({ task }: { task: Task }) {
             </Badge>
           )}
           {/* Labels */}
-          {task.labels && task.labels.length > 0 && (
-            <TaskLabelsDisplay labels={task.labels} size="sm" />
+          {sortedLabels.length > 0 && (
+            <TaskLabelsDisplay labels={sortedLabels} size="sm" />
           )}
           {/* Estimation */}
           <TaskEstimationDisplay
@@ -174,6 +180,7 @@ export const TaskCard = React.memo(function TaskCard({
   const [newLabelName, setNewLabelName] = useState('');
   const [newLabelColor, setNewLabelColor] = useState('#3b82f6');
   const [creatingLabel, setCreatingLabel] = useState(false);
+  // Track initial mount to avoid duplicate fetch storms
   const updateTaskMutation = useUpdateTask(boardId);
   const deleteTaskMutation = useDeleteTask(boardId);
 
@@ -255,9 +262,33 @@ export const TaskCard = React.memo(function TaskCard({
     return formatDistanceToNow(date, { addSuffix: true });
   };
 
-  // Fetch board config & labels (was accidentally inserted incorrectly earlier)
+  // Shared label fetcher
+  const fetchWorkspaceLabels = useCallback(async (wsId: string) => {
+    setLabelsLoading(true);
+    try {
+      const supabase = createClient();
+      const { data: labels, error } = await supabase
+        .from('workspace_task_labels')
+        .select('id, name, color, created_at')
+        .eq('ws_id', wsId)
+        .order('created_at', { ascending: false });
+      if (!error) {
+        setWorkspaceLabels(
+          (labels || []).sort((a, b) =>
+            a.name.toLowerCase().localeCompare(b.name.toLowerCase())
+          )
+        );
+      }
+    } catch (e) {
+      console.error('Failed fetching labels', e);
+    } finally {
+      setLabelsLoading(false);
+    }
+  }, []);
+
+  // Initial load + board config
   useEffect(() => {
-    let active = true;
+    let mounted = true;
     (async () => {
       try {
         const supabase = createClient();
@@ -268,27 +299,40 @@ export const TaskCard = React.memo(function TaskCard({
           )
           .eq('id', boardId)
           .single();
-        if (!active) return;
+        if (!mounted) return;
         setBoardConfig(board);
-        if (board?.ws_id) {
-          setLabelsLoading(true);
-          const { data: labels } = await supabase
-            .from('workspace_task_labels')
-            .select('id, name, color, created_at')
-            .eq('ws_id', board.ws_id)
-            .order('created_at', { ascending: false });
-          if (active) setWorkspaceLabels(labels || []);
-        }
+        if (board?.ws_id) await fetchWorkspaceLabels(board.ws_id);
       } catch (e) {
         console.error('Failed loading board config or labels', e);
       } finally {
-        active && setLabelsLoading(false);
+        // no-op
       }
     })();
     return () => {
-      active = false;
+      mounted = false;
     };
-  }, [boardId]);
+  }, [boardId, fetchWorkspaceLabels]);
+
+  // Listen for global label created events to refresh labels list
+  useEffect(() => {
+    function handleGlobalLabelCreated(e: any) {
+      const wsId = e?.detail?.wsId;
+      if (wsId && boardConfig?.ws_id === wsId) {
+        // Avoid race: small delay to ensure backend commit
+        setTimeout(() => fetchWorkspaceLabels(wsId), 120);
+      }
+    }
+    window.addEventListener(
+      'workspace-label-created',
+      handleGlobalLabelCreated as EventListener
+    );
+    return () => {
+      window.removeEventListener(
+        'workspace-label-created',
+        handleGlobalLabelCreated as EventListener
+      );
+    };
+  }, [boardConfig?.ws_id, fetchWorkspaceLabels]);
 
   async function handleArchiveToggle() {
     if (!onUpdate) return;
@@ -650,8 +694,33 @@ export const TaskCard = React.memo(function TaskCard({
 
       const newLabel = await response.json();
 
-      // Add the new label to the workspace labels list
-      setWorkspaceLabels((prev) => [newLabel, ...prev]);
+      // Add the new label to the workspace labels list (sorted)
+      setWorkspaceLabels((prev) =>
+        [newLabel, ...prev].sort((a, b) =>
+          a.name.toLowerCase().localeCompare(b.name.toLowerCase())
+        )
+      );
+
+      // Auto-apply the newly created label to this task
+      try {
+        const supabase = createClient();
+        const { error: linkErr } = await supabase
+          .from('task_labels')
+          .insert({ task_id: task.id, label_id: newLabel.id });
+        if (linkErr) {
+          toast({
+            title: 'Label created (not applied)',
+            description:
+              'The label was created but could not be attached to the task. Refresh and try manually.',
+            variant: 'destructive',
+          });
+        } else {
+          // Trigger parent refetch so task prop includes new label
+          onUpdate?.();
+        }
+      } catch (applyErr: any) {
+        console.error('Failed to auto-apply new label', applyErr);
+      }
 
       // Reset form and close dialog
       setNewLabelName('');
@@ -659,9 +728,16 @@ export const TaskCard = React.memo(function TaskCard({
       setNewLabelDialogOpen(false);
 
       toast({
-        title: 'Label created',
-        description: `"${newLabel.name}" label has been created successfully`,
+        title: 'Label created & applied',
+        description: `"${newLabel.name}" label created and applied to this task`,
       });
+
+      // Dispatch global event so other task cards can refresh
+      window.dispatchEvent(
+        new CustomEvent('workspace-label-created', {
+          detail: { wsId: boardConfig.ws_id, label: newLabel },
+        })
+      );
     } catch (e: any) {
       toast({
         title: 'Failed to create label',
@@ -849,7 +925,16 @@ export const TaskCard = React.memo(function TaskCard({
           <div className="flex items-center justify-end gap-1">
             {/* Main Actions Menu - With integrated date picker */}
             {!isOverlay && (
-              <DropdownMenu open={menuOpen} onOpenChange={setMenuOpen}>
+              <DropdownMenu
+                open={menuOpen}
+                onOpenChange={async (open) => {
+                  setMenuOpen(open);
+                  // On open, ensure labels are current (fetch only if we have ws and already initialized)
+                  if (open && boardConfig?.ws_id) {
+                    await fetchWorkspaceLabels(boardConfig.ws_id);
+                  }
+                }}
+              >
                 <DropdownMenuTrigger asChild>
                   <Button
                     variant="ghost"
@@ -1427,7 +1512,13 @@ export const TaskCard = React.memo(function TaskCard({
           {/* Labels */}
           {!task.archived && task.labels && task.labels.length > 0 && (
             <div className="flex min-w-0 flex-shrink-0 flex-wrap gap-1">
-              <TaskLabelsDisplay labels={task.labels} size="sm" />
+              {/* Sort labels for deterministic display order */}
+              <TaskLabelsDisplay
+                labels={[...task.labels].sort((a, b) =>
+                  a.name.toLowerCase().localeCompare(b.name.toLowerCase())
+                )}
+                size="sm"
+              />
             </div>
           )}
           {/* Checkbox: always at far right */}
