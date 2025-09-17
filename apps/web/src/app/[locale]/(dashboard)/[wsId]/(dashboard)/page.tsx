@@ -52,9 +52,11 @@ export default async function WorkspaceHomePage({ params }: Props) {
       {isInternalUser && wsId === ROOT_WORKSPACE_ID && <Countdown />}
       {currentUser && (
         <div className="grid gap-4 pb-4 md:grid-cols-2">
-          <Suspense fallback={<DashboardCardSkeleton />}>
-            <NewlyCreatedTasks wsId={wsId} />
-          </Suspense>
+          {id !== 'personal' && (
+            <Suspense fallback={<DashboardCardSkeleton />}>
+              <NewlyCreatedTasks wsId={wsId} />
+            </Suspense>
+          )}
 
           <Suspense fallback={<DashboardCardSkeleton />}>
             <TasksAssignedToMe
@@ -81,7 +83,11 @@ export default async function WorkspaceHomePage({ params }: Props) {
 
           <Suspense fallback={<DashboardCardSkeleton />}>
             <RecentTumeetPlans
-              className={disableCalendar ? 'col-span-1' : 'col-span-full'}
+              className={
+                disableCalendar || id === 'personal'
+                  ? 'col-span-1'
+                  : 'col-span-full'
+              }
             />
           </Suspense>
         </div>
