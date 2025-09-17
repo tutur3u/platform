@@ -71,7 +71,6 @@ export default function GroupAttendanceClient({
   const tCommon = useTranslations('common');
   const tAtt = useTranslations('ws-user-group-attendance');
   const tDetails = useTranslations('ws-user-group-details');
-  const tUA = useTranslations('ws-user-attendance');
 
   const dateParam = searchParams.getSingle('date');
   const initialDateStr = initialDate || format(new Date(), 'yyyy-MM-dd');
