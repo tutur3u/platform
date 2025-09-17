@@ -201,7 +201,9 @@ export default function GroupReportsClient({
       if (error) throw error;
       const user = (data as any)?.user;
       if (!user) return null;
-      return Array.isArray(user) ? user[0]?.full_name ?? null : user.full_name ?? null;
+      return Array.isArray(user)
+        ? (user[0]?.full_name ?? null)
+        : (user.full_name ?? null);
     },
   });
 
@@ -230,9 +232,25 @@ export default function GroupReportsClient({
 
   // Query to fetch healthcare vitals scores for the selected user
   const healthcareVitalsQuery = useQuery({
-    queryKey: ['ws', wsId, 'group', groupId, 'user', userId, 'healthcare-vitals'],
+    queryKey: [
+      'ws',
+      wsId,
+      'group',
+      groupId,
+      'user',
+      userId,
+      'healthcare-vitals',
+    ],
     enabled: Boolean(userId),
-    queryFn: async (): Promise<Array<{ id: string; name: string; unit: string; factor: number; value: number | null }>> => {
+    queryFn: async (): Promise<
+      Array<{
+        id: string;
+        name: string;
+        unit: string;
+        factor: number;
+        value: number | null;
+      }>
+    > => {
       const { data, error } = await supabase
         .from('user_indicators')
         .select(`
@@ -251,7 +269,6 @@ export default function GroupReportsClient({
       if (error) {
         throw error;
       }
-      
 
       const result = (data ?? []).map((item) => ({
         id: item.healthcare_vitals.id,
@@ -268,20 +285,24 @@ export default function GroupReportsClient({
     if (reportId === 'new' && userId) {
       // Calculate scores and average from healthcare vitals
       const vitals = healthcareVitalsQuery.data ?? [];
-      
+
       const scores = vitals
         .filter((vital) => vital.value !== null && vital.value !== undefined)
         .map((vital) => {
           const baseValue = vital.value ?? 0;
           // Apply factor only if feature flag is enabled
-          return ENABLE_FACTOR_CALCULATION ? baseValue * (vital.factor ?? 1) : baseValue;
+          return ENABLE_FACTOR_CALCULATION
+            ? baseValue * (vital.factor ?? 1)
+            : baseValue;
         });
-      
-      const averageScore = scores.length > 0 
-        ? scores.reduce((sum, score) => sum + score, 0) / scores.length 
-        : null;
 
-      const userFullName = usersQuery.data?.find((u) => u.id === userId)?.full_name ?? undefined;
+      const averageScore =
+        scores.length > 0
+          ? scores.reduce((sum, score) => sum + score, 0) / scores.length
+          : null;
+
+      const userFullName =
+        usersQuery.data?.find((u) => u.id === userId)?.full_name ?? undefined;
 
       return {
         user_id: userId,

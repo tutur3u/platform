@@ -5,7 +5,6 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { Button } from '@tuturuuu/ui/button';
 import { RefreshCw } from '@tuturuuu/ui/icons';
 
-
 interface HealthcareVital {
   id: string;
   name: string;
@@ -39,13 +38,16 @@ export default function ScoreDisplay({
   isFetchingNewScores = false,
   factorEnabled = false,
 }: ScoreDisplayProps) {
-
-    const t = useTranslations();
+  const t = useTranslations();
   // Calculate average score from healthcare vitals
-  const calculateAverageFromVitals = (vitals: HealthcareVital[]): number | null => {
-    const validVitals = vitals.filter((vital) => vital.value !== null && vital.value !== undefined);
+  const calculateAverageFromVitals = (
+    vitals: HealthcareVital[]
+  ): number | null => {
+    const validVitals = vitals.filter(
+      (vital) => vital.value !== null && vital.value !== undefined
+    );
     if (validVitals.length === 0) return null;
-    
+
     const totalScore = validVitals
       .map((vital) => {
         const baseValue = vital.value ?? 0;
@@ -53,14 +55,16 @@ export default function ScoreDisplay({
         return factorEnabled ? baseValue * (vital.factor ?? 1) : baseValue;
       })
       .reduce((a, b) => a + b, 0);
-    
+
     return totalScore / validVitals.length;
   };
 
   // Calculate average score from existing scores
-  const calculateAverageFromScores = (scores: number[] | null): number | null => {
+  const calculateAverageFromScores = (
+    scores: number[] | null
+  ): number | null => {
     if (!scores || scores.length === 0) return null;
-    
+
     const totalScore = scores.reduce((a, b) => a + b, 0);
     return totalScore / scores.length;
   };
@@ -77,7 +81,9 @@ export default function ScoreDisplay({
         .map((vital) => {
           const baseValue = vital.value ?? 0;
           // Apply factor only if feature flag is enabled
-          const calculatedScore = factorEnabled ? baseValue * (vital.factor ?? 1) : baseValue;
+          const calculatedScore = factorEnabled
+            ? baseValue * (vital.factor ?? 1)
+            : baseValue;
           return {
             score: calculatedScore,
             vital,
@@ -112,7 +118,10 @@ export default function ScoreDisplay({
   }
 
   // No data state
-  if ((isNew && healthcareVitals.length === 0) || (!isNew && (!scores || scores.length === 0))) {
+  if (
+    (isNew && healthcareVitals.length === 0) ||
+    (!isNew && (!scores || scores.length === 0))
+  ) {
     return (
       <div className="text-dynamic-red">
         {isNew ? 'No healthcare vitals available' : t('ws-reports.no_scores')}
@@ -124,9 +133,7 @@ export default function ScoreDisplay({
     <div className="space-y-2">
       {/* Header with Fetch New Scores button for existing reports */}
       <div className="flex items-center justify-between">
-        <div className="font-semibold text-lg">
-          {t('ws-reports.user_data')}
-        </div>
+        <div className="font-semibold text-lg">{t('ws-reports.user_data')}</div>
         {!isNew && onFetchNewScores && (
           <Button
             size="sm"
@@ -135,8 +142,12 @@ export default function ScoreDisplay({
             disabled={isFetchingNewScores}
             className="gap-2"
           >
-            <RefreshCw className={`w-4 h-4 ${isFetchingNewScores ? 'animate-spin' : ''}`} />
-            {isFetchingNewScores ? t('common.loading') : t('ws-reports.fetch_new_scores')}
+            <RefreshCw
+              className={`w-4 h-4 ${isFetchingNewScores ? 'animate-spin' : ''}`}
+            />
+            {isFetchingNewScores
+              ? t('common.loading')
+              : t('ws-reports.fetch_new_scores')}
           </Button>
         )}
       </div>
@@ -153,7 +164,9 @@ export default function ScoreDisplay({
             </TooltipTrigger>
             <TooltipContent>
               <div className="space-y-1">
-                <div className="font-semibold">{t('ws-reports.average_score')}</div>
+                <div className="font-semibold">
+                  {t('ws-reports.average_score')}
+                </div>
                 <div className="text-xs text-muted-foreground">
                   {individualScoresWithMetadata.length} {t('ws-reports.scores')}
                 </div>
@@ -163,9 +176,7 @@ export default function ScoreDisplay({
                     {factorEnabled ? ' (with factors)' : ' (raw values)'}
                   </div>
                 ) : (
-                  <div className="text-xs">
-                    Calculated from stored scores
-                  </div>
+                  <div className="text-xs">Calculated from stored scores</div>
                 )}
               </div>
             </TooltipContent>
@@ -193,16 +204,17 @@ export default function ScoreDisplay({
                     </div>
                     <div className="text-xs">
                       {factorEnabled ? (
-                        <>Calculation: {scoreData.vital.value} × {scoreData.vital.factor} = {scoreData.score}</>
+                        <>
+                          Calculation: {scoreData.vital.value} ×{' '}
+                          {scoreData.vital.factor} = {scoreData.score}
+                        </>
                       ) : (
                         <>Value: {scoreData.vital.value} (factor disabled)</>
                       )}
                     </div>
                   </div>
                 ) : (
-                  <div className="text-xs">
-                    Stored score: {scoreData.score}
-                  </div>
+                  <div className="text-xs">Stored score: {scoreData.score}</div>
                 )}
               </TooltipContent>
             </Tooltip>
