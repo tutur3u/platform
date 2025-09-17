@@ -26,7 +26,10 @@ interface Props {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }
 
-export default async function UserGroupAttendancePage({ params, searchParams }: Props) {
+export default async function UserGroupAttendancePage({
+  params,
+  searchParams,
+}: Props) {
   const t = await getTranslations();
   const { wsId, groupId } = await params;
   const sp = await searchParams;
@@ -36,10 +39,17 @@ export default async function UserGroupAttendancePage({ params, searchParams }: 
     ? requestedDateParam[0]
     : requestedDateParam;
   const fallbackToday = new Date().toISOString().slice(0, 10);
-  const effectiveDate = (requestedDate && /^\d{4}-\d{2}-\d{2}$/.test(requestedDate)) ? requestedDate : fallbackToday;
+  const effectiveDate =
+    requestedDate && /^\d{4}-\d{2}-\d{2}$/.test(requestedDate)
+      ? requestedDate
+      : fallbackToday;
 
   const group = await getData(wsId, groupId);
-  const { sessions, members, attendance: attendanceMap } = await getInitialAttendanceData(wsId, groupId, effectiveDate);
+  const {
+    sessions,
+    members,
+    attendance: attendanceMap,
+  } = await getInitialAttendanceData(wsId, groupId, effectiveDate);
 
   return (
     <>
@@ -154,7 +164,11 @@ async function getData(wsId: string, groupId: string) {
   return data as UserGroup;
 }
 
-async function getInitialAttendanceData(wsId: string, groupId: string, dateYYYYMMDD: string) {
+async function getInitialAttendanceData(
+  wsId: string,
+  groupId: string,
+  dateYYYYMMDD: string
+) {
   const supabase = await createClient();
 
   // Sessions
@@ -200,6 +214,8 @@ async function getInitialAttendanceData(wsId: string, groupId: string, dateYYYYM
   return {
     sessions: (groupRow?.sessions as string[]) || [],
     members,
-    attendance: attendance as NonNullable<InitialAttendanceProps['initialAttendance']>,
+    attendance: attendance as NonNullable<
+      InitialAttendanceProps['initialAttendance']
+    >,
   };
 }
