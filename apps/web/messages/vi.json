@@ -2968,6 +2968,19 @@
     "metrics": "Số liệu nhóm",
     "modify_schedule": "Chỉnh sửa lịch trình"
   },
+  "ws-user-group-attendance": {
+    "unsaved_changes_message": "Bạn có thay đổi điểm danh chưa lưu",
+    "no_session_for_day": "Không có buổi học cho ngày này.",
+    "summary_total": "Tổng",
+    "summary_present": "Có mặt",
+    "summary_absent": "Vắng mặt",
+    "summary_not_attended": "Chưa điểm danh",
+    "phone_fallback": "Không có số điện thoại",
+    "notes_placeholder": "Ghi chú",
+    "late": "Trễ",
+    "present": "Có mặt",
+    "absent": "Vắng mặt"
+  },
   "workspace-education-tabs": {
     "overview": "Tổng quan",
     "courses": "Khóa học",
