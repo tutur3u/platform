@@ -382,7 +382,7 @@ export default function GroupAttendanceClient({
             </Button>
           </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="pb-0">
           <div className="mb-2 text-foreground/60 font-semibold">{calendarMonth.getFullYear()} / {calendarMonth.toLocaleString(locale, { month: '2-digit' })}</div>
           <div className="relative grid gap-1 text-xs md:gap-2 md:text-base">
             <div className="grid grid-cols-7 gap-1 md:gap-2">
@@ -394,15 +394,30 @@ export default function GroupAttendanceClient({
             </div>
             <div className="grid grid-cols-7 gap-1 md:gap-2">
               {daysInMonth.map((day, idx) => {
-                const available = isCurrentMonth(day) && isDateAvailable(sessions, day);
+                const inMonth = isCurrentMonth(day);
+                const available = inMonth && isDateAvailable(sessions, day);
                 const isSelected = format(day, 'yyyy-MM-dd') === format(currentDate, 'yyyy-MM-dd');
                 const base = 'flex justify-center rounded p-2 font-semibold md:rounded-lg';
+
+                // Hide days that are not part of the current month (keep grid cell for layout)
+                if (!inMonth) {
+                  return (
+                    <div
+                      key={`day-${idx}`}
+                      aria-hidden="true"
+                      className={cn(base, 'cursor-default border border-transparent')}
+                    />
+                  );
+                }
+
+                // Current month but no session on this day → show disabled cell with date
                 if (!available)
                   return (
                     <div key={`day-${idx}`} className={cn(base, 'cursor-default text-foreground/20 border border-transparent')}>
                       {day.getDate()}
                     </div>
                   );
+
                 return (
                   <button
                     key={`day-${idx}`}
