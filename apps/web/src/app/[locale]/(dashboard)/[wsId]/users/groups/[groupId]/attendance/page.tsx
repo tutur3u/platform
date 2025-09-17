@@ -6,30 +6,16 @@ import {
   CalendarIcon,
   ChartColumn,
   FileUser,
-  MinusCircle,
   UserCheck,
 } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
 import { cn } from '@tuturuuu/utils/format';
-import { CustomMonthPicker } from '@/components/custom-month-picker';
-import UserAttendances from '../../../attendance/user-attendances';
-import UserAttendancesSkeleton from '../../../attendance/user-attendances-skeleton';
-import { Filter } from '../../../filters';
 import 'dayjs/locale/vi';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
-import { Suspense } from 'react';
-
-interface SearchParams {
-  q?: string;
-  page?: string;
-  pageSize?: string;
-  month?: string; // yyyy-MM
-
-  includedGroups?: string | string[];
-  excludedGroups?: string | string[];
-}
+import GroupAttendanceClient from './client';
+import type { InitialAttendanceProps } from './client';
 
 interface Props {
   params: Promise<{
@@ -37,21 +23,23 @@ interface Props {
     wsId: string;
     groupId: string;
   }>;
-  searchParams: Promise<SearchParams>;
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }
 
-export default async function UserGroupAttendancePage({
-  params,
-  searchParams,
-}: Props) {
+export default async function UserGroupAttendancePage({ params, searchParams }: Props) {
   const t = await getTranslations();
-  const { locale, wsId, groupId } = await params;
+  const { wsId, groupId } = await params;
+  const sp = await searchParams;
+
+  const requestedDateParam = sp?.date;
+  const requestedDate = Array.isArray(requestedDateParam)
+    ? requestedDateParam[0]
+    : requestedDateParam;
+  const fallbackToday = new Date().toISOString().slice(0, 10);
+  const effectiveDate = (requestedDate && /^\d{4}-\d{2}-\d{2}$/.test(requestedDate)) ? requestedDate : fallbackToday;
 
   const group = await getData(wsId, groupId);
-  const { data: excludedUserGroups } = await getExcludedUserGroups(
-    wsId,
-    groupId
-  );
+  const { sessions, members, attendance: attendanceMap } = await getInitialAttendanceData(wsId, groupId, effectiveDate);
 
   return (
     <>
@@ -138,32 +126,14 @@ export default async function UserGroupAttendancePage({
         createDescription={t('ws-user-groups.add_user_description')}
       />
       <Separator className="my-4" />
-      <div className="mb-4 grid flex-wrap items-start gap-2 md:flex">
-        <CustomMonthPicker
-          lang={locale}
-          className="col-span-full md:col-span-1"
-        />
-        <Filter
-          key="excluded-user-groups-filter"
-          tag="excludedGroups"
-          title={t('user-data-table.excluded_groups')}
-          icon={<MinusCircle className="mr-2 h-4 w-4" />}
-          options={excludedUserGroups.map((group) => ({
-            label: group.name || 'No name',
-            value: group.id,
-            count: group.amount,
-          }))}
-        />
-      </div>
-
-      <Suspense
-        fallback={<UserAttendancesSkeleton searchParams={await searchParams} />}
-      >
-        <UserAttendances
-          wsId={wsId}
-          searchParams={{ ...(await searchParams), includedGroups: [groupId] }}
-        />
-      </Suspense>
+      <GroupAttendanceClient
+        wsId={wsId}
+        groupId={groupId}
+        initialSessions={sessions}
+        initialMembers={members}
+        initialDate={effectiveDate}
+        initialAttendance={attendanceMap}
+      />
     </>
   );
 }
@@ -184,25 +154,52 @@ async function getData(wsId: string, groupId: string) {
   return data as UserGroup;
 }
 
-async function getExcludedUserGroups(wsId: string, groupId: string) {
+async function getInitialAttendanceData(wsId: string, groupId: string, dateYYYYMMDD: string) {
   const supabase = await createClient();
 
-  const queryBuilder = supabase
-    .rpc(
-      'get_possible_excluded_groups',
-      {
-        _ws_id: wsId,
-        included_groups: [groupId],
-      },
-      {
-        count: 'exact',
-      }
-    )
-    .select('id, name, amount')
-    .order('name');
+  // Sessions
+  const { data: groupRow } = await supabase
+    .from('workspace_user_groups')
+    .select('sessions')
+    .eq('ws_id', wsId)
+    .eq('id', groupId)
+    .maybeSingle();
 
-  const { data, error, count } = await queryBuilder;
-  if (error) throw error;
+  // Members (basic profile info)
+  const { data: membersRows } = await supabase
+    .from('workspace_user_groups_users')
+    .select('workspace_users(*)')
+    .eq('group_id', groupId)
+    .eq('role', 'STUDENT');
 
-  return { data, count } as { data: UserGroup[]; count: number };
+  const members =
+    membersRows?.map((row: any) => ({
+      id: row.workspace_users?.id,
+      display_name: row.workspace_users?.display_name,
+      full_name: row.workspace_users?.full_name,
+      email: row.workspace_users?.email,
+      phone: row.workspace_users?.phone,
+      avatar_url: row.workspace_users?.avatar_url,
+    })) ?? [];
+
+  // Initial attendance for the requested date (seed hydration)
+  const { data: attRows } = await supabase
+    .from('user_group_attendance')
+    .select('user_id,status,notes')
+    .eq('group_id', groupId)
+    .eq('date', dateYYYYMMDD);
+
+  const attendance: Record<string, { status: unknown; note?: string }> = {};
+  (attRows || []).forEach((r) => {
+    attendance[(r as any).user_id] = {
+      status: (r as any).status,
+      note: (r as any).notes ?? '',
+    };
+  });
+
+  return {
+    sessions: (groupRow?.sessions as string[]) || [],
+    members,
+    attendance: attendance as NonNullable<InitialAttendanceProps['initialAttendance']>,
+  };
 }

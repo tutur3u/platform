@@ -2882,6 +2882,19 @@
     "metrics": "Group Metrics",
     "modify_schedule": "Modify Schedule"
   },
+  "ws-user-group-attendance": {
+    "unsaved_changes_message": "You have unsaved attendance changes",
+    "no_session_for_day": "No session for this day.",
+    "summary_total": "Total",
+    "summary_present": "Present",
+    "summary_absent": "Absent",
+    "summary_not_attended": "Not attended",
+    "phone_fallback": "No phone number",
+    "notes_placeholder": "Notes",
+    "late": "Late",
+    "present": "Present",
+    "absent": "Absent"
+  },
   "workspace-education-tabs": {
     "overview": "Overview",
     "courses": "Courses",
