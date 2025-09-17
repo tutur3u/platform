@@ -1741,7 +1741,7 @@
   "ws-reports": {
     "report": "Báo cáo",
     "reports": "Báo cáo",
-    "user_data": "Dữ liệu người dùng",
+    "user_data": "Chỉ số người dùng",
     "no_scores": "Không có dữ liệu điểm",
     "average_score": "Điểm trung bình",
     "scores": "Điểm",
@@ -1790,7 +1790,10 @@
     "export_png_success": "Đã xuất PNG của báo cáo",
     "delete_report_title": "Xóa báo cáo?",
     "delete_confirm_title": "Xóa báo cáo?",
-    "updated_report-number": "Bản cập nhật #{number}"
+    "updated_report-number": "Bản cập nhật #{number}",
+    "fetch_new_scores": "Lấy điểm mới",
+    "scores_updated": "Đã cập nhật điểm thành công",
+    "failed_update_scores": "Cập nhật điểm thất bại"
   },
   "ws-users": {
     "singular": "Người dùng",

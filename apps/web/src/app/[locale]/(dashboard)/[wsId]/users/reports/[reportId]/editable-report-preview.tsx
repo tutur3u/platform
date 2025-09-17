@@ -6,7 +6,6 @@ import type { WorkspaceConfig } from '@tuturuuu/types/primitives/WorkspaceConfig
 import ReportPreview from '@tuturuuu/ui/custom/report-preview';
 import { useForm } from '@tuturuuu/ui/hooks/use-form';
 import { zodResolver } from '@tuturuuu/ui/resolvers';
-import { Separator } from '@tuturuuu/ui/separator';
 import {
   Accordion,
   AccordionContent,
@@ -29,6 +28,7 @@ import * as z from 'zod';
 import { FileText, Plus, PencilIcon, History, Undo, Sun, Moon, Printer, Download, Palette, ImageIcon } from '@tuturuuu/ui/icons';
 import UserMonthAttendance from '../../attendance/user-month-attendance';
 import UserReportForm from './form';
+import ScoreDisplay from './score-display';
 import { Button } from '@tuturuuu/ui/button';
 import {
   Dialog,
@@ -51,6 +51,9 @@ export default function EditableReportPreview({
   configs,
   isNew,
   groupId,
+  healthcareVitals = [],
+  healthcareVitalsLoading = false,
+  factorEnabled = false,
 }: {
   wsId: string;
   report: Partial<WorkspaceUserReport> & {
@@ -61,6 +64,9 @@ export default function EditableReportPreview({
   configs: WorkspaceConfig[];
   isNew: boolean;
   groupId?: string;
+  healthcareVitals?: Array<{ id: string; name: string; unit: string; factor: number; value: number | null }>;
+  healthcareVitalsLoading?: boolean;
+  factorEnabled?: boolean;
 }) {
   const locale = useLocale();
   const t = useTranslations();
@@ -280,6 +286,26 @@ export default function EditableReportPreview({
 
       if (workspaceUserError) throw workspaceUserError;
       if (!workspaceUser) throw new Error('User not found in workspace');
+
+      // Calculate scores and average from healthcare vitals if not already calculated
+      let calculatedScores = report.scores;
+      let calculatedScore = report.score;
+      
+      if (isNew && healthcareVitals.length > 0) {
+        const scores = healthcareVitals
+          .filter((vital) => vital.value !== null && vital.value !== undefined)
+          .map((vital) => {
+            const baseValue = vital.value ?? 0;
+            // Apply factor only if feature flag is enabled
+            return factorEnabled ? baseValue * (vital.factor ?? 1) : baseValue;
+          });
+        
+        calculatedScores = scores.length > 0 ? scores : [];
+        calculatedScore = scores.length > 0 
+          ? scores.reduce((sum, score) => sum + score, 0) / scores.length 
+          : null;
+      }
+
       const now = new Date().toISOString();
       const { data, error } = await supabase
         .from('external_user_monthly_reports')
@@ -289,8 +315,8 @@ export default function EditableReportPreview({
           title: payload.title,
           content: payload.content,
           feedback: payload.feedback,
-          score: report?.score ?? null,
-          scores: report.scores ?? null,
+          score: calculatedScore,
+          scores: calculatedScores,
           creator_id: workspaceUser.virtual_user_id ?? undefined,
           created_at: now,
           updated_at: now,
@@ -435,6 +461,96 @@ export default function EditableReportPreview({
     },
   });
 
+  // Mutation to update report with new scores from healthcare vitals
+  const updateScoresMutation = useMutation({
+    mutationFn: async () => {
+      if (!report.id || !report.user_id || !report.group_id) {
+        throw new Error('Missing report, user, or group information');
+      }
+
+      // Fetch fresh healthcare vitals data
+      const { data: vitalsData, error: vitalsError } = await supabase
+        .from('user_indicators')
+        .select(`
+          value,
+          healthcare_vitals!inner(
+            id,
+            name,
+            unit,
+            factor,
+            group_id
+          )
+        `)
+        .eq('user_id', report.user_id)
+        .eq('healthcare_vitals.group_id', report.group_id);
+
+      if (vitalsError) throw vitalsError;
+
+      const vitals = (vitalsData ?? []).map((item) => ({
+        id: item.healthcare_vitals.id,
+        name: item.healthcare_vitals.name,
+        unit: item.healthcare_vitals.unit,
+        factor: item.healthcare_vitals.factor,
+        value: item.value,
+      }));
+
+      // Calculate new scores
+      const scores = vitals
+        .filter((vital) => vital.value !== null && vital.value !== undefined)
+        .map((vital) => {
+          const baseValue = vital.value ?? 0;
+          // Apply factor only if feature flag is enabled
+          return factorEnabled ? baseValue * (vital.factor ?? 1) : baseValue;
+        });
+      
+      const averageScore = scores.length > 0 
+        ? scores.reduce((sum, score) => sum + score, 0) / scores.length 
+        : null;
+
+      // Update the report with new scores
+      const { error: updateError } = await supabase
+        .from('external_user_monthly_reports')
+        .update({
+          scores: scores.length > 0 ? scores : null,
+          score: averageScore,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', report.id);
+
+      if (updateError) throw updateError;
+
+      return { scores, averageScore, vitals };
+    },
+    onSuccess: async (data) => {
+      toast.success(t('ws-reports.scores_updated'));
+      
+      // Update the local report state
+      if (report.id) {
+        // Invalidate and refetch the report detail query
+        await queryClient.invalidateQueries({
+          queryKey: [
+            'ws',
+            wsId,
+            'group',
+            report.group_id,
+            'user',
+            report.user_id,
+            'report',
+            report.id,
+          ],
+        });
+        
+        // Also invalidate the healthcare vitals query to get fresh data
+        await queryClient.invalidateQueries({
+          queryKey: ['ws', wsId, 'group', report.group_id, 'user', report.user_id, 'healthcare-vitals'],
+        });
+      }
+    },
+    onError: (err) => {
+      toast.error(err instanceof Error ? err.message : t('ws-reports.failed_update_scores'));
+    },
+  });
+
   const [selectedLog, setSelectedLog] = useState<
     | {
         id: string;
@@ -454,7 +570,7 @@ export default function EditableReportPreview({
   const previewTitle = selectedLog?.title ?? title;
   const previewContent = selectedLog?.content ?? content;
   const previewFeedback = selectedLog?.feedback ?? feedback;
-  const previewScore = (selectedLog?.score ?? report.score)?.toString() || '';
+  const previewScore = (selectedLog?.score ?? report.score)?.toFixed(1) || '';
 
   const handlePrintExport = () => {
     const printableArea = document.getElementById('printable-area');
@@ -661,61 +777,19 @@ export default function EditableReportPreview({
   return (
     <div className="grid h-fit gap-4 xl:grid-cols-3">
       <div className="grid h-fit gap-4">
-        {isNew || (
-          <div className="grid h-fit gap-2 rounded-lg border p-4">
-            <div className="font-semibold text-lg">
-              {t('ws-reports.user_data')}
-            </div>
-            <Separator />
+        <div className="grid h-fit gap-2 rounded-lg border p-4">
+          <ScoreDisplay
+            healthcareVitals={healthcareVitals}
+            healthcareVitalsLoading={healthcareVitalsLoading}
+            isNew={isNew}
+            scores={report.scores}
+            reportId={report.id}
+            onFetchNewScores={!isNew ? () => updateScoresMutation.mutate() : undefined}
+            isFetchingNewScores={updateScoresMutation.isPending}
+            factorEnabled={factorEnabled}
+          />
+        </div>
 
-            <div>
-              {report.scores?.length === 0 ? (
-                <div className="text-dynamic-red">
-                  {t('ws-reports.no_scores')}
-                </div>
-              ) : (
-                <div className="flex items-center gap-1">
-                  {t('ws-reports.average_score')}:
-                  <div className="flex flex-wrap gap-1">
-                    <div className="flex aspect-square h-8 items-center justify-center overflow-hidden rounded bg-foreground p-1 font-semibold text-background">
-                      {(
-                        (report?.scores
-                          ?.filter((s) => s !== null && s !== undefined)
-                          ?.reduce((a, b) => a + b, 0) ?? 0) /
-                        (report?.scores?.filter(
-                          (s) => s !== null && s !== undefined
-                        )?.length ?? 1)
-                      )?.toPrecision(2) || '-'}
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-            <div>
-              {report.scores?.length === 0 ? (
-                <div className="text-dynamic-red">
-                  {t('ws-reports.no_scores')}
-                </div>
-              ) : (
-                <div className="flex items-center gap-1">
-                  {t('ws-reports.scores')}:
-                  <div className="flex flex-wrap gap-1">
-                    {report.scores
-                      ?.filter((s) => s !== null && s !== undefined)
-                      ?.map((s, idx) => (
-                        <div
-                          key={`report-${report.id}-score-${idx}`}
-                          className="flex aspect-square h-8 items-center justify-center overflow-hidden rounded bg-foreground p-1 font-semibold text-background"
-                        >
-                          {s}
-                        </div>
-                      ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
 
         <UserReportForm
           isNew={isNew}

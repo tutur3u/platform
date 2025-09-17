@@ -20,6 +20,9 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import EditableReportPreview from '../../../reports/[reportId]/editable-report-preview';
 import { availableConfigs } from '@/constants/configs/reports';
 
+// Feature flag for experimental factor functionality
+const ENABLE_FACTOR_CALCULATION = false;
+
 interface Props {
   wsId: string;
   groupId: string;
@@ -183,6 +186,25 @@ export default function GroupReportsClient({
     },
   });
 
+  // Query to fetch the group manager (teacher) name
+  const groupManagerQuery = useQuery({
+    queryKey: ['ws', wsId, 'group', groupId, 'manager'],
+    queryFn: async (): Promise<string | null> => {
+      const { data, error } = await supabase
+        .from('workspace_user_groups_users')
+        .select('user:workspace_users!inner(full_name, ws_id)')
+        .eq('group_id', groupId)
+        .eq('role', 'TEACHER')
+        .eq('user.ws_id', wsId)
+        .limit(1)
+        .maybeSingle();
+      if (error) throw error;
+      const user = (data as any)?.user;
+      if (!user) return null;
+      return Array.isArray(user) ? user[0]?.full_name ?? null : user.full_name ?? null;
+    },
+  });
+
   const configsQuery = useQuery({
     queryKey: ['ws', wsId, 'report-configs'],
     queryFn: async (): Promise<WorkspaceConfig[]> => {
@@ -206,13 +228,71 @@ export default function GroupReportsClient({
     },
   });
 
+  // Query to fetch healthcare vitals scores for the selected user
+  const healthcareVitalsQuery = useQuery({
+    queryKey: ['ws', wsId, 'group', groupId, 'user', userId, 'healthcare-vitals'],
+    enabled: Boolean(userId),
+    queryFn: async (): Promise<Array<{ id: string; name: string; unit: string; factor: number; value: number | null }>> => {
+      const { data, error } = await supabase
+        .from('user_indicators')
+        .select(`
+          value,
+          healthcare_vitals!inner(
+            id,
+            name,
+            unit,
+            factor,
+            group_id
+          )
+        `)
+        .eq('user_id', userId!)
+        .eq('healthcare_vitals.group_id', groupId);
+
+      if (error) {
+        throw error;
+      }
+      
+
+      const result = (data ?? []).map((item) => ({
+        id: item.healthcare_vitals.id,
+        name: item.healthcare_vitals.name,
+        unit: item.healthcare_vitals.unit,
+        factor: item.healthcare_vitals.factor,
+        value: item.value,
+      }));
+      return result;
+    },
+  });
+
   const selectedReport = useMemo(() => {
     if (reportId === 'new' && userId) {
+      // Calculate scores and average from healthcare vitals
+      const vitals = healthcareVitalsQuery.data ?? [];
+      
+      const scores = vitals
+        .filter((vital) => vital.value !== null && vital.value !== undefined)
+        .map((vital) => {
+          const baseValue = vital.value ?? 0;
+          // Apply factor only if feature flag is enabled
+          return ENABLE_FACTOR_CALCULATION ? baseValue * (vital.factor ?? 1) : baseValue;
+        });
+      
+      const averageScore = scores.length > 0 
+        ? scores.reduce((sum, score) => sum + score, 0) / scores.length 
+        : null;
+
+      const userFullName = usersQuery.data?.find((u) => u.id === userId)?.full_name ?? undefined;
+
       return {
         user_id: userId,
         group_id: groupId,
         group_name: groupQuery.data?.name ?? groupNameFallback,
+        user_name: userFullName,
+        // Map group manager name to creator_name so preview can show it as group_manager_name
+        creator_name: groupManagerQuery.data ?? undefined,
         created_at: new Date().toISOString(),
+        scores: scores.length > 0 ? scores : [],
+        score: averageScore,
       } as Partial<WorkspaceUserReport & { group_name: string }>;
     }
     // Only use cached detail data when a valid reportId is present
@@ -225,6 +305,7 @@ export default function GroupReportsClient({
     groupQuery.data,
     groupNameFallback,
     reportDetailQuery.data,
+    healthcareVitalsQuery.data,
   ]);
 
   return (
@@ -302,6 +383,9 @@ export default function GroupReportsClient({
           configs={configsQuery.data}
           isNew={reportId === 'new'}
           groupId={groupId}
+          healthcareVitals={healthcareVitalsQuery.data ?? []}
+          healthcareVitalsLoading={healthcareVitalsQuery.isLoading}
+          factorEnabled={ENABLE_FACTOR_CALCULATION}
         />
       )}
     </div>

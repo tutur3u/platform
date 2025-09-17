@@ -1737,7 +1737,7 @@
   "ws-reports": {
     "report": "Report",
     "reports": "Reports",
-    "user_data": "User Data",
+    "user_data": "User Statistics",
     "no_scores": "No scores data",
     "average_score": "Average score",
     "scores": "Scores",
@@ -1786,7 +1786,10 @@
     "export_png_success": "Report exported as PNG",
     "delete_report_title": "Delete Report?",
     "delete_confirm_title": "Delete report?",
-    "updated_report-number": "Update #{number}"
+    "updated_report-number": "Update #{number}",
+    "fetch_new_scores": "Fetch New Scores",
+    "scores_updated": "Scores updated successfully",
+    "failed_update_scores": "Failed to update scores"
   },
   "ws-users": {
     "singular": "User",
