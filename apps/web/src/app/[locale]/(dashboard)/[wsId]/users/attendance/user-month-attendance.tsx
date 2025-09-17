@@ -27,6 +27,7 @@ export default function UserMonthAttendance({
   wsId,
   user: initialUser,
   noOutline,
+  defaultIncludedGroups,
 }: {
   wsId: string;
   user: WorkspaceUser & { href: string };
@@ -70,16 +71,40 @@ export default function UserMonthAttendance({
       'attendance',
       {
         month,
+        groups: defaultIncludedGroups?.slice().sort(),
       },
     ],
-    queryFn: () => getData(wsId, initialUser.id, month),
+    queryFn: () => getData(wsId, initialUser.id, month, defaultIncludedGroups),
     placeholderData: keepPreviousData,
   });
 
-  const data = {
+  const baseData = {
     ...initialUser,
     ...queryData?.data,
-  };
+  } as WorkspaceUser & { attendance?: WorkspaceUserAttendance[] };
+
+  const filteredAttendance = useMemo(() => {
+    const attendance = baseData.attendance;
+    if (!attendance) return attendance;
+    if (!defaultIncludedGroups || defaultIncludedGroups.length === 0)
+      return attendance;
+
+    return attendance.filter((entry) => {
+      const groups = entry.groups as
+        | { id: string; name: string }
+        | Array<{ id: string; name: string }>
+        | null
+        | undefined;
+      if (!groups) return false;
+      const arr = Array.isArray(groups) ? groups : [groups];
+      return arr.some((g) => defaultIncludedGroups.includes(g.id));
+    });
+  }, [baseData.attendance, defaultIncludedGroups]);
+
+  const data = {
+    ...baseData,
+    attendance: filteredAttendance,
+  } as WorkspaceUser & { attendance?: WorkspaceUserAttendance[] };
 
   const handlePrev = async () =>
     setCurrentDate(new Date(currentDate.setMonth(currentDate.getMonth() - 1)));
@@ -230,7 +255,7 @@ export default function UserMonthAttendance({
           <div className="ml-2 flex h-12 w-[calc(100%-3.5rem)] flex-col justify-between">
             <div className="flex items-center justify-between gap-1">
               <Link
-                href={data.href}
+                href={data.href || '#'}
                 className="line-clamp-1 font-semibold text-zinc-900 hover:underline dark:text-zinc-200"
               >
                 {data?.display_name || data?.full_name || data?.email || '-'}
@@ -418,7 +443,12 @@ export default function UserMonthAttendance({
   );
 }
 
-async function getData(wsId: string, userId: string, month: string) {
+async function getData(
+  wsId: string,
+  userId: string,
+  month: string,
+  defaultIncludedGroups?: string[]
+) {
   const supabase = await createClient();
 
   const startDate = new Date(month);
@@ -436,6 +466,12 @@ async function getData(wsId: string, userId: string, month: string) {
     .lt('attendance.date', endDate.toISOString())
     .order('full_name', { ascending: true, nullsFirst: false })
     .eq('id', userId);
+
+  if (defaultIncludedGroups && defaultIncludedGroups.length > 0) {
+    // Filter nested relation rows to the provided groups only
+    const first = defaultIncludedGroups[0] as string;
+    queryBuilder.eq('attendance.group_id', first);
+  }
 
   const { data, error } = await queryBuilder.single();
 

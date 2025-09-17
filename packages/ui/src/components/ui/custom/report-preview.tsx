@@ -7,6 +7,7 @@ export default function ReportPreview({
   data,
   parseDynamicText,
   getConfig,
+  theme,
 }: {
   lang: string;
   data?: {
@@ -20,14 +21,17 @@ export default function ReportPreview({
   parseDynamicText: (text?: string | null) => ReactNode;
 
   getConfig: (id: string) => string | null | undefined;
+  theme?: 'light' | 'dark';
 }) {
   return (
     <div className="overflow-x-auto xl:flex-none">
       <div
         id="printable-area"
-        className="h-fit w-full flex-none rounded-xl dark:bg-foreground/10 print:p-4"
+        className={`h-[297mm] w-[210mm] max-w-full flex-none rounded-xl ${theme === 'dark' ? 'bg-foreground/10' : 'bg-white'} print:h-auto print:w-auto print:max-w-none print:rounded-none print:shadow-none print:border-0 print:m-0 print:p-4 mx-auto`}
       >
-        <div className="h-full rounded-lg border p-4 text-foreground md:p-12">
+        <div
+          className={`h-full rounded-lg border p-4 ${theme === 'dark' ? 'text-foreground' : 'text-black'} md:p-12 print:border-0 print:rounded-none print:h-auto print:p-8 print:text-black print:bg-white`}
+        >
           <div className="flex flex-wrap items-center justify-between gap-8">
             {getConfig('BRAND_LOGO_URL') && (
               <img
@@ -64,20 +68,25 @@ export default function ReportPreview({
             <Separator className="my-4" />
           )}
 
-          <div className="text-center font-bold text-foreground text-lg uppercase">
+          <div
+            className={`text-center font-bold ${theme === 'dark' ? 'text-foreground' : 'text-black'} text-lg uppercase print:text-black`}
+          >
+            {data?.title}
             {getConfig('REPORT_TITLE_PREFIX')}{' '}
-            {new Date().toLocaleDateString(lang, {
+            {/* {new Date().toLocaleDateString(lang, {
               month: 'long',
             })}
             /
             {new Date().toLocaleDateString(lang, {
               year: 'numeric',
-            })}{' '}
+            })}{' '} */}
             {getConfig('REPORT_TITLE_SUFFIX')}
           </div>
 
           {getConfig('REPORT_INTRO') && (
-            <div className="mt-2 whitespace-pre-wrap text-left text-sm">
+            <div
+              className={`mt-2 whitespace-pre-wrap text-left text-sm ${theme === 'dark' ? 'text-foreground' : 'text-black'} print:text-black`}
+            >
               {parseDynamicText(getConfig('REPORT_INTRO'))}
             </div>
           )}
@@ -85,14 +94,18 @@ export default function ReportPreview({
           {(!!getConfig('REPORT_CONTENT_TEXT') ||
             !!getConfig('REPORT_SCORE_TEXT') ||
             !!getConfig('REPORT_FEEDBACK_TEXT')) && (
-            <div className="my-4 flex flex-col justify-stretch rounded border-2 border-foreground/50 text-sm md:flex-row">
+            <div
+              className={`my-4 flex flex-row justify-stretch rounded border-2 ${theme === 'dark' ? 'border-foreground/50' : 'border-black'} text-sm print:border-black print:rounded-none`}
+            >
               {getConfig('REPORT_CONTENT_TEXT') && (
-                <div className="md:flex-2">
-                  <div className="flex h-16 items-center justify-center whitespace-pre-wrap p-2 text-center font-bold text-sm">
+                <div className="flex-2">
+                  <div
+                    className={`flex h-20 items-center justify-center whitespace-pre-wrap p-2 text-center font-bold text-sm ${theme === 'dark' ? 'text-foreground' : 'text-black'}`}
+                  >
                     {getConfig('REPORT_CONTENT_TEXT')}
                   </div>
                   <div
-                    className={`min-h-24 text-ellipsis whitespace-pre-line break-words border-foreground/50 border-t-2 p-2 font-semibold ${
+                    className={`min-h-24 text-ellipsis whitespace-pre-line break-words ${theme === 'dark' ? 'border-foreground/50' : 'border-black'} border-t-2 p-2 font-semibold ${
                       !data?.content ? 'text-center underline' : 'text-left'
                     }`}
                   >
@@ -103,22 +116,23 @@ export default function ReportPreview({
                 </div>
               )}
 
-              {getConfig('REPORT_CONTENT_TEXT') &&
-                getConfig('REPORT_SCORE_TEXT') && (
-                  <div className="h-[2px] min-h-full w-auto shrink-0 bg-foreground/50 md:h-auto md:w-[2px]" />
-                )}
-
               {getConfig('REPORT_SCORE_TEXT') && (
-                <div className="flex-1 border-foreground/50">
-                  <div className="flex h-16 flex-col items-center justify-center whitespace-pre-wrap p-2 font-bold text-sm">
+                <div
+                  className={`flex-1 ${theme === 'dark' ? 'border-foreground/50' : 'border-black'} md:border-l-2 print:border-l-2`}
+                >
+                  <div
+                    className={`flex h-20 flex-col items-center justify-center whitespace-pre-wrap p-2 font-bold text-sm ${theme === 'dark' ? 'text-foreground' : 'text-black'}`}
+                  >
                     {getConfig('REPORT_SCORE_TEXT')}
                   </div>
-                  <div className="flex min-h-24 justify-center text-ellipsis whitespace-pre-line break-words border-foreground/50 border-t-2 p-2 text-center">
+                  <div
+                    className={`flex min-h-24 justify-center text-ellipsis whitespace-pre-line break-words ${theme === 'dark' ? 'border-foreground/50' : 'border-black'} border-t-2 p-2 text-center`}
+                  >
                     <span
                       className={
                         data?.score
-                          ? 'font-bold text-2xl text-red-600 underline dark:text-red-300'
-                          : 'font-semibold opacity-50'
+                          ? `font-bold text-2xl underline ${theme === 'dark' ? 'text-red-300' : 'text-red-600'} print:text-red-600`
+                          : 'font-semibold opacity-50 print:opacity-50'
                       }
                     >
                       {data?.score || '-'}
@@ -127,19 +141,17 @@ export default function ReportPreview({
                 </div>
               )}
 
-              {(getConfig('REPORT_SCORE_TEXT') ||
-                getConfig('REPORT_CONTENT_TEXT')) &&
-                getConfig('REPORT_FEEDBACK_TEXT') && (
-                  <div className="h-[2px] min-h-full w-auto shrink-0 bg-foreground/50 md:h-auto md:w-[2px]" />
-                )}
-
               {getConfig('REPORT_FEEDBACK_TEXT') && (
-                <div className="flex-2">
-                  <div className="flex h-16 items-center justify-center whitespace-pre-wrap p-2 font-bold text-sm">
+                <div
+                  className={`flex-2 ${theme === 'dark' ? 'border-foreground/50' : 'border-black'} md:border-l-2 print:border-l-2`}
+                >
+                  <div
+                    className={`flex h-20 items-center justify-center whitespace-pre-wrap p-2 font-bold text-sm ${theme === 'dark' ? 'text-foreground' : 'text-black'}`}
+                  >
                     {getConfig('REPORT_FEEDBACK_TEXT')}
                   </div>
                   <div
-                    className={`min-h-24 text-ellipsis whitespace-pre-line break-words border-foreground/50 border-t-2 p-2 font-semibold ${
+                    className={`min-h-24 text-ellipsis whitespace-pre-line break-words ${theme === 'dark' ? 'border-foreground/50' : 'border-black'} border-t-2 p-2 font-semibold ${
                       !data?.feedback ? 'text-center underline' : 'text-left'
                     }`}
                   >
@@ -152,7 +164,9 @@ export default function ReportPreview({
             </div>
           )}
 
-          <div className="text-left text-sm">
+          <div
+            className={`text-left text-sm ${theme === 'dark' ? 'text-foreground' : 'text-black'} print:text-black`}
+          >
             {getConfig('REPORT_CONCLUSION')}
 
             {getConfig('REPORT_CONCLUSION') && getConfig('REPORT_CLOSING') && (
@@ -163,7 +177,9 @@ export default function ReportPreview({
             )}
 
             {getConfig('REPORT_CLOSING') && (
-              <span className="font-semibold">
+              <span
+                className={`font-semibold ${theme === 'dark' ? 'text-foreground' : 'text-black'}`}
+              >
                 {getConfig('REPORT_CLOSING')}
               </span>
             )}
