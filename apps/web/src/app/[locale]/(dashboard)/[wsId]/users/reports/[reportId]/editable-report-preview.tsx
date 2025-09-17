@@ -25,7 +25,19 @@ import { useEffect, useState } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { toast } from '@tuturuuu/ui/sonner';
 import * as z from 'zod';
-import { FileText, Plus, PencilIcon, History, Undo, Sun, Moon, Printer, Download, Palette, ImageIcon } from '@tuturuuu/ui/icons';
+import {
+  FileText,
+  Plus,
+  PencilIcon,
+  History,
+  Undo,
+  Sun,
+  Moon,
+  Printer,
+  Download,
+  Palette,
+  ImageIcon,
+} from '@tuturuuu/ui/icons';
 import UserMonthAttendance from '../../attendance/user-month-attendance';
 import UserReportForm from './form';
 import ScoreDisplay from './score-display';
@@ -64,7 +76,13 @@ export default function EditableReportPreview({
   configs: WorkspaceConfig[];
   isNew: boolean;
   groupId?: string;
-  healthcareVitals?: Array<{ id: string; name: string; unit: string; factor: number; value: number | null }>;
+  healthcareVitals?: Array<{
+    id: string;
+    name: string;
+    unit: string;
+    factor: number;
+    value: number | null;
+  }>;
   healthcareVitalsLoading?: boolean;
   factorEnabled?: boolean;
 }) {
@@ -290,7 +308,7 @@ export default function EditableReportPreview({
       // Calculate scores and average from healthcare vitals if not already calculated
       let calculatedScores = report.scores;
       let calculatedScore = report.score;
-      
+
       if (isNew && healthcareVitals.length > 0) {
         const scores = healthcareVitals
           .filter((vital) => vital.value !== null && vital.value !== undefined)
@@ -299,11 +317,12 @@ export default function EditableReportPreview({
             // Apply factor only if feature flag is enabled
             return factorEnabled ? baseValue * (vital.factor ?? 1) : baseValue;
           });
-        
+
         calculatedScores = scores.length > 0 ? scores : [];
-        calculatedScore = scores.length > 0 
-          ? scores.reduce((sum, score) => sum + score, 0) / scores.length 
-          : null;
+        calculatedScore =
+          scores.length > 0
+            ? scores.reduce((sum, score) => sum + score, 0) / scores.length
+            : null;
       }
 
       const now = new Date().toISOString();
@@ -355,7 +374,11 @@ export default function EditableReportPreview({
       }
     },
     onError: (err) => {
-      toast.error(err instanceof Error ? err.message : t('ws-reports.failed_create_report'));
+      toast.error(
+        err instanceof Error
+          ? err.message
+          : t('ws-reports.failed_create_report')
+      );
     },
   });
 
@@ -412,7 +435,9 @@ export default function EditableReportPreview({
       ]);
     },
     onError: (err) => {
-      toast.error( err instanceof Error ? err.message : t('ws-reports.failed_save_report'));
+      toast.error(
+        err instanceof Error ? err.message : t('ws-reports.failed_save_report')
+      );
     },
   });
 
@@ -502,10 +527,11 @@ export default function EditableReportPreview({
           // Apply factor only if feature flag is enabled
           return factorEnabled ? baseValue * (vital.factor ?? 1) : baseValue;
         });
-      
-      const averageScore = scores.length > 0 
-        ? scores.reduce((sum, score) => sum + score, 0) / scores.length 
-        : null;
+
+      const averageScore =
+        scores.length > 0
+          ? scores.reduce((sum, score) => sum + score, 0) / scores.length
+          : null;
 
       // Update the report with new scores
       const { error: updateError } = await supabase
@@ -523,7 +549,7 @@ export default function EditableReportPreview({
     },
     onSuccess: async (data) => {
       toast.success(t('ws-reports.scores_updated'));
-      
+
       // Update the local report state
       if (report.id) {
         // Invalidate and refetch the report detail query
@@ -539,28 +565,37 @@ export default function EditableReportPreview({
             report.id,
           ],
         });
-        
+
         // Also invalidate the healthcare vitals query to get fresh data
         await queryClient.invalidateQueries({
-          queryKey: ['ws', wsId, 'group', report.group_id, 'user', report.user_id, 'healthcare-vitals'],
+          queryKey: [
+            'ws',
+            wsId,
+            'group',
+            report.group_id,
+            'user',
+            report.user_id,
+            'healthcare-vitals',
+          ],
         });
       }
     },
     onError: (err) => {
-      toast.error(err instanceof Error ? err.message : t('ws-reports.failed_update_scores'));
+      toast.error(
+        err instanceof Error
+          ? err.message
+          : t('ws-reports.failed_update_scores')
+      );
     },
   });
 
-  const [selectedLog, setSelectedLog] = useState<
-    | {
-        id: string;
-        title?: string | null;
-        content?: string | null;
-        feedback?: string | null;
-        score?: number | null;
-      }
-    | null
-  >(null);
+  const [selectedLog, setSelectedLog] = useState<{
+    id: string;
+    title?: string | null;
+    content?: string | null;
+    feedback?: string | null;
+    score?: number | null;
+  } | null>(null);
 
   // Local theme toggle for report preview only
   const [isDarkPreview, setIsDarkPreview] = useState(false);
@@ -727,7 +762,7 @@ export default function EditableReportPreview({
     try {
       // Dynamically import html2canvas-pro to avoid SSR issues
       const html2canvas = (await import('html2canvas-pro')).default;
-      
+
       const printableArea = document.getElementById('printable-area');
       if (!printableArea) {
         throw new Error(t('ws-reports.report_export_not_found'));
@@ -744,28 +779,32 @@ export default function EditableReportPreview({
       });
 
       // Convert to blob and download
-      canvas.toBlob((blob) => {
-        if (!blob) {
-          throw new Error('Failed to create image');
-        }
-        
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        
-        // Generate filename with report title or default
-        const fileName = previewTitle 
-          ? `${previewTitle.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_report.png`
-          : 'report.png';
-        
-        link.download = fileName;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(url);
-        
-        toast.success(t('ws-reports.export_png_success'));
-      }, 'image/png', 1.0);
+      canvas.toBlob(
+        (blob) => {
+          if (!blob) {
+            throw new Error('Failed to create image');
+          }
+
+          const url = URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.href = url;
+
+          // Generate filename with report title or default
+          const fileName = previewTitle
+            ? `${previewTitle.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_report.png`
+            : 'report.png';
+
+          link.download = fileName;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          URL.revokeObjectURL(url);
+
+          toast.success(t('ws-reports.export_png_success'));
+        },
+        'image/png',
+        1.0
+      );
     } catch (error) {
       console.error('PNG export failed:', error);
       toast.error(t('ws-reports.failed_export_png'));
@@ -784,12 +823,13 @@ export default function EditableReportPreview({
             isNew={isNew}
             scores={report.scores}
             reportId={report.id}
-            onFetchNewScores={!isNew ? () => updateScoresMutation.mutate() : undefined}
+            onFetchNewScores={
+              !isNew ? () => updateScoresMutation.mutate() : undefined
+            }
             isFetchingNewScores={updateScoresMutation.isPending}
             factorEnabled={factorEnabled}
           />
         </div>
-
 
         <UserReportForm
           isNew={isNew}
@@ -805,14 +845,19 @@ export default function EditableReportPreview({
         <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>{t('common.confirm_delete') || 'Delete report?'}</DialogTitle>
+              <DialogTitle>
+                {t('common.confirm_delete') || 'Delete report?'}
+              </DialogTitle>
               <DialogDescription>
                 {t('ws-reports.delete_confirm_message') ||
                   'This action cannot be undone. This will permanently delete the report.'}
               </DialogDescription>
             </DialogHeader>
             <DialogFooter>
-              <Button variant="outline" onClick={() => setShowDeleteDialog(false)}>
+              <Button
+                variant="outline"
+                onClick={() => setShowDeleteDialog(false)}
+              >
                 {t('common.cancel') || 'Cancel'}
               </Button>
               <Button
@@ -868,7 +913,9 @@ export default function EditableReportPreview({
               </AccordionTrigger>
               <AccordionContent className="p-4">
                 {logsQuery.isLoading ? (
-                  <div className="text-sm opacity-70">{t('common.loading')}</div>
+                  <div className="text-sm opacity-70">
+                    {t('common.loading')}
+                  </div>
                 ) : logsQuery.data && logsQuery.data.length > 0 ? (
                   <div className="space-y-6">
                     {logsQuery.data.map((log, idx) => {
@@ -879,7 +926,9 @@ export default function EditableReportPreview({
                         : t('ws-reports.updated_report');
                       const label = isLatest
                         ? t('ws-reports.current_version')
-                        : t('ws-reports.updated_report-number', { number: logsQuery.data!.length - idx });
+                        : t('ws-reports.updated_report-number', {
+                            number: logsQuery.data!.length - idx,
+                          });
                       const exact = new Date(log.created_at).toLocaleString(
                         locale
                       );
@@ -902,10 +951,7 @@ export default function EditableReportPreview({
                       const isSelected = selectedLog?.id === log.id;
 
                       return (
-                        <div
-                          key={log.id}
-                          className="relative"
-                        >
+                        <div key={log.id} className="relative">
                           {/* Timeline item */}
                           <div
                             className={`flex gap-4 cursor-pointer ${isSelected ? 'opacity-100' : 'opacity-100'} `}
@@ -950,12 +996,15 @@ export default function EditableReportPreview({
 
                             {/* Content */}
                             <div className={`flex-1 space-y-2`}>
-                              <div className={`bg-card border rounded-lg p-3 ${isSelected ? 'ring-2 ring-dynamic-blue' : ''}`}>
+                              <div
+                                className={`bg-card border rounded-lg p-3 ${isSelected ? 'ring-2 ring-dynamic-blue' : ''}`}
+                              >
                                 <div className="font-semibold text-sm">
                                   {label}
                                 </div>
                                 <div className="text-sm text-muted-foreground">
-                                  {log.creator_name || t('common.unknown')} {actionLabel}.
+                                  {log.creator_name || t('common.unknown')}{' '}
+                                  {actionLabel}.
                                 </div>
                               </div>
 
@@ -976,7 +1025,9 @@ export default function EditableReportPreview({
                     })}
                   </div>
                 ) : (
-                  <div className="text-sm opacity-70">{t('ws-reports.no_history')}</div>
+                  <div className="text-sm opacity-70">
+                    {t('ws-reports.no_history')}
+                  </div>
                 )}
               </AccordionContent>
             </AccordionItem>
@@ -985,9 +1036,7 @@ export default function EditableReportPreview({
         {selectedLog && (
           <div className="rounded-lg border p-3 text-sm bg-card -mt-2 print:hidden">
             <div className="flex items-center justify-between">
-              <div>
-                {t('ws-reports.viewing_history_snapshot')}
-              </div>
+              <div>{t('ws-reports.viewing_history_snapshot')}</div>
               <Button
                 variant="default"
                 className="bg-dynamic-blue/10 text-dynamic-blue hover:bg-dynamic-blue/20"
@@ -1028,7 +1077,9 @@ export default function EditableReportPreview({
                   className="gap-2"
                 >
                   <ImageIcon className="w-4 h-4" />
-                  {isExporting ? t('ws-reports.exporting_png') : t('ws-reports.png')}
+                  {isExporting
+                    ? t('ws-reports.exporting_png')
+                    : t('ws-reports.png')}
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -1053,20 +1104,19 @@ export default function EditableReportPreview({
           </div>
         </div>
 
-
-          <ReportPreview
-            t={t}
-            lang={locale}
-            parseDynamicText={parseDynamicText}
-            getConfig={getConfig}
-            theme={isDarkPreview ? 'dark' : 'light'}
-            data={{
-              title: previewTitle,
-              content: previewContent,
-              score: previewScore,
-              feedback: previewFeedback,
-            }}
-          />
+        <ReportPreview
+          t={t}
+          lang={locale}
+          parseDynamicText={parseDynamicText}
+          getConfig={getConfig}
+          theme={isDarkPreview ? 'dark' : 'light'}
+          data={{
+            title: previewTitle,
+            content: previewContent,
+            score: previewScore,
+            feedback: previewFeedback,
+          }}
+        />
       </div>
     </div>
   );
