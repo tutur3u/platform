@@ -72,7 +72,7 @@
     "@types/node": "^24.5.1",
     "@types/react": "^19.1.13",
     "@types/react-dom": "^19.1.9",
-    "@types/uuid": "^10.0.0",
+    "@types/uuid": "^11.0.0",
     "@vitejs/plugin-react": "^5.0.2",
     "autoprefixer": "^10.4.21",
     "jsdom": "^27.0.0",
