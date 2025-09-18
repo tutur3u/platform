@@ -9,7 +9,7 @@
     ".": "./src/core/index.ts"
   },
   "dependencies": {
-    "googleapis": "^159.0.0",
+    "googleapis": "^160.0.0",
     "google-auth-library": "^10.3.0"
   },
   "devDependencies": {
