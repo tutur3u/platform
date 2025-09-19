@@ -12,6 +12,7 @@ import {
 import { Separator } from '@tuturuuu/ui/separator';
 import { availableConfigs } from '@tuturuuu/utils/configs/reports';
 import InvoiceCard from './invoice-card';
+import InvoiceEditForm from './invoice-edit-form';
 import 'dayjs/locale/vi';
 import { ProductCard } from '@tuturuuu/ui/finance/invoices/invoiceId/product-card';
 import { PromotionCard } from '@tuturuuu/ui/finance/invoices/invoiceId/promotion-card';
@@ -32,7 +33,7 @@ export default async function InvoiceDetailsPage({
 }: Props) {
   const t = await getTranslations();
 
-  const invoice = await getInvoice(invoiceId);
+  const invoice = await getInvoiceDetails(invoiceId);
   const products = await getProducts(invoiceId);
   const promotions = await getPromotions(invoiceId);
   const { data: configs } = await getConfigs(wsId);
@@ -99,7 +100,13 @@ export default async function InvoiceDetailsPage({
           <InvoiceCard
             lang={locale}
             configs={configs}
-            invoice={invoice}
+            invoice={{
+              ...invoice,
+              creator: invoice.creator ?? {
+                display_name: null,
+                full_name: null,
+              },
+            }}
             products={products}
             promotions={promotions}
           />
@@ -153,13 +160,13 @@ export default async function InvoiceDetailsPage({
               )}
             </div>
           </div>
-          <div className="h-fit rounded-lg border p-4">
-            <div className="grid h-fit content-start gap-2">
-              <div className="font-semibold text-lg">{t('invoices.note')}</div>
-              <Separator />
-              <p>{invoice.note || t('common.empty')}</p>
-            </div>
-          </div>
+          <InvoiceEditForm
+            wsId={wsId}
+            invoiceId={invoice.id}
+            initialNotice={invoice.notice}
+            initialNote={invoice.note}
+            initialWalletId={invoice.wallet_id}
+          />
         </div>
       </div>
     </>
@@ -184,13 +191,13 @@ function DetailItem({
   );
 }
 
-async function getInvoice(invoiceId: string) {
+async function getInvoiceDetails(invoiceId: string) {
   const supabase = await createClient();
 
   const { data: invoice, error: invoiceError } = await supabase
     .from('finance_invoices')
     .select(
-      '*, ...workspace_users!customer_id(customer_display_name:display_name, customer_full_name:full_name)'
+      '*, ...workspace_users!customer_id(customer_display_name:display_name, customer_full_name:full_name), creator:workspace_users!creator_id(display_name, full_name), wallet:workspace_wallets(name)'
     )
     .eq('id', invoiceId)
     .single();

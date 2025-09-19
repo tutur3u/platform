@@ -2338,7 +2338,8 @@
     "print": "In",
     "download_image": "Tải hình ảnh xuống",
     "add_promotion": "Thêm khuyến mãi",
-    "files": "Tệp tin"
+    "files": "Tệp tin",
+    "content": "Nội dung hóa đơn"
   },
   "ws-polls": {
     "plural": "Bỏ phiếu",
@@ -2865,7 +2866,12 @@
     "add": "Thêm",
     "create_multiple_invoices": "Tạo Nhiều Hóa Đơn",
     "create_multiple_invoices_tooltip": "Cho phép bạn tạo nhiều hóa đơn trong một phiên làm việc.",
-    "inventory_fallback_used": "Kho lưu trữ không được chỉ định nên một kho mặc định đã được chọn"
+    "inventory_fallback_used": "Kho lưu trữ không được chỉ định nên một kho mặc định đã được chọn",
+    "edit_invoice": "Chỉnh sửa hóa đơn",
+    "edit_invoice_description": "Chỉnh sửa thông tin hóa đơn",
+    "creator": "Người tạo hóa đơn",
+    "print_after_create": "In hóa đơn",
+    "print_after_create_tooltip": "In hóa đơn sau khi tạo thành công"
   },
   "ws-inventory-products": {
     "plural": "Sản phẩm",

@@ -58,6 +58,7 @@ interface Props {
   selectedUserId: string;
   onSelectedUserIdChange: (value: string) => void;
   createMultipleInvoices: boolean;
+  printAfterCreate?: boolean;
 }
 
 export function StandardInvoice({
@@ -65,6 +66,7 @@ export function StandardInvoice({
   selectedUserId,
   onSelectedUserIdChange,
   createMultipleInvoices,
+  printAfterCreate = false,
 }: Props) {
   const t = useTranslations();
   const router = useRouter();
@@ -327,7 +329,8 @@ export function StandardInvoice({
       setSelectedCategoryId('');
 
       if (!createMultipleInvoices) {
-        router.push(`/${wsId}/finance/invoices/${result.invoice_id}`);
+        const query = printAfterCreate ? '?print=true' : '';
+        router.push(`/${wsId}/finance/invoices/${result.invoice_id}${query}`);
       }
     } catch (error: any) {
       console.error('Error creating invoice:', error);

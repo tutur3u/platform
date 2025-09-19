@@ -2330,7 +2330,8 @@
     "print": "Print",
     "download_image": "Download image",
     "add_promotion": "Add promotion",
-    "files": "Files"
+    "files": "Files",
+    "content": "Invoice Content"
   },
   "ai_chat": {
     "welcome_to": "Welcome to",
@@ -2815,7 +2816,12 @@
     "add": "Add",
     "create_multiple_invoices": "Create Multiple Invoices",
     "create_multiple_invoices_tooltip": "Allows you to create multiple invoices in a single session.",
-    "inventory_fallback_used": "A warehouse was not specified so a default one has been selected"
+    "inventory_fallback_used": "A warehouse was not specified so a default one has been selected",
+    "edit_invoice": "Edit Invoice",
+    "edit_invoice_description": "Make modifications to invoice details",
+    "creator": "Invoice Creator",
+    "print_after_create": "Print after Creation",
+    "print_after_create_tooltip": "Prints invoice after creation"
   },
   "ws-inventory-products": {
     "plural": "Products",
