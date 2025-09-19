@@ -25,6 +25,7 @@ export default function NewInvoicePage({ wsId }: Props) {
   const t = useTranslations();
   const [selectedUserId, setSelectedUserId] = useState<string>('');
   const [multipleInvoices, setMultipleInvoices] = useState<boolean>(false);
+  const [printAfterCreate, setPrintAfterCreate] = useState<boolean>(false);
 
   return (
     <>
@@ -43,27 +44,55 @@ export default function NewInvoicePage({ wsId }: Props) {
               {t('ws-invoices.subscription_invoice')}
             </TabsTrigger>
           </TabsList>
-          <div className="flex items-center justify-center gap-2">
-            <div className="space-y-1 flex items-center gap-2">
-              <Label htmlFor="multiple-invoices">
-                {t('ws-invoices.create_multiple_invoices')}
-              </Label>
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger>
-                    <Info className="h-4 w-4" />
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>{t('ws-invoices.create_multiple_invoices_tooltip')}</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
+          <div className="flex items-center justify-center gap-4">
+            <div className="flex items-center gap-2">
+              <div className="space-y-1 flex items-center gap-2">
+                <Label htmlFor="multiple-invoices">
+                  {t('ws-invoices.create_multiple_invoices')}
+                </Label>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger>
+                      <Info className="h-4 w-4" />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>{t('ws-invoices.create_multiple_invoices_tooltip')}</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
+              <Switch
+                id="multiple-invoices"
+                checked={multipleInvoices}
+                onCheckedChange={(v) => {
+                  setMultipleInvoices(v);
+                  if (v) setPrintAfterCreate(false);
+                }}
+              />
             </div>
-            <Switch
-              id="multiple-invoices"
-              checked={multipleInvoices}
-              onCheckedChange={setMultipleInvoices}
-            />
+            <div className="flex items-center gap-2">
+              <div className="space-y-1 flex items-center gap-2">
+                <Label htmlFor="print-after-create">
+                  {t('ws-invoices.print_after_create')}
+                </Label>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger>
+                      <Info className="h-4 w-4" />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>{t('ws-invoices.print_after_create_tooltip')}</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
+              <Switch
+                id="print-after-create"
+                checked={printAfterCreate}
+                disabled={multipleInvoices}
+                onCheckedChange={setPrintAfterCreate}
+              />
+            </div>
           </div>
         </div>
 
@@ -73,6 +102,7 @@ export default function NewInvoicePage({ wsId }: Props) {
             selectedUserId={selectedUserId}
             onSelectedUserIdChange={setSelectedUserId}
             createMultipleInvoices={multipleInvoices}
+            printAfterCreate={printAfterCreate}
           />
         </TabsContent>
 
@@ -82,6 +112,7 @@ export default function NewInvoicePage({ wsId }: Props) {
             selectedUserId={selectedUserId}
             onSelectedUserIdChange={setSelectedUserId}
             createMultipleInvoices={multipleInvoices}
+            printAfterCreate={printAfterCreate}
           />
         </TabsContent>
       </Tabs>

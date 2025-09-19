@@ -62,6 +62,7 @@ interface Props {
   selectedUserId: string;
   onSelectedUserIdChange: (value: string) => void;
   createMultipleInvoices: boolean;
+  printAfterCreate?: boolean;
 }
 
 const buildAutoSelectedProductsForGroup = (
@@ -207,6 +208,7 @@ export function SubscriptionInvoice({
   selectedUserId,
   onSelectedUserIdChange,
   createMultipleInvoices,
+  printAfterCreate = false,
 }: Props) {
   const t = useTranslations();
   const locale = useLocale();
@@ -855,7 +857,8 @@ export function SubscriptionInvoice({
       setSelectedGroupId('');
 
       if (!createMultipleInvoices) {
-        router.push(`/${wsId}/finance/invoices/${result.invoice_id}`);
+        const query = printAfterCreate ? '?print=true' : '';
+        router.push(`/${wsId}/finance/invoices/${result.invoice_id}${query}`);
       }
     } catch (error) {
       console.error('Error creating subscription invoice:', error);
