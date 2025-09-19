@@ -102,7 +102,10 @@ export default async function InvoiceDetailsPage({
             configs={configs}
             invoice={{
               ...invoice,
-              creator: invoice.creator ?? { display_name: null, full_name: null },
+              creator: invoice.creator ?? {
+                display_name: null,
+                full_name: null,
+              },
             }}
             products={products}
             promotions={promotions}

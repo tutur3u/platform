@@ -18,7 +18,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@tuturuuu/ui/select';
-import { useWallets } from '../hooks'
+import { useWallets } from '../hooks';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { toast } from '@tuturuuu/ui/sonner';
@@ -61,7 +61,11 @@ export default function InvoiceEditForm({
       toast.success(t('common.saved', { default: 'Saved' }));
       router.refresh();
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : t('common.error', { default: 'Something went wrong' }));
+      toast.error(
+        e instanceof Error
+          ? e.message
+          : t('common.error', { default: 'Something went wrong' })
+      );
     } finally {
       setSaving(false);
     }
@@ -103,9 +107,15 @@ export default function InvoiceEditForm({
         {/* Payment Method (Wallet) */}
         <div className="space-y-2">
           <Label htmlFor="wallet-select">{t('ws-wallets.wallet')}</Label>
-          <Select value={walletId} onValueChange={setWalletId} disabled={walletsLoading}>
+          <Select
+            value={walletId}
+            onValueChange={setWalletId}
+            disabled={walletsLoading}
+          >
             <SelectTrigger>
-              <SelectValue placeholder={t('ws-invoices.select_wallet_required')} />
+              <SelectValue
+                placeholder={t('ws-invoices.select_wallet_required')}
+              />
             </SelectTrigger>
             <SelectContent>
               {wallets.map((wallet) => (
@@ -143,5 +153,3 @@ export default function InvoiceEditForm({
     </Card>
   );
 }
-
-
