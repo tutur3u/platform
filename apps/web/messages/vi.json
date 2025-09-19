@@ -128,6 +128,7 @@
     "processing": "Đang xử lý...",
     "saving": "Đang lưu thay đổi...",
     "loading": "Đang tải",
+    "load_more": "Tải thêm",
     "complete": "Hoàn tất",
     "default": "Mặc định",
     "all": "Tất cả",
@@ -155,6 +156,8 @@
     "refresh": "Làm mới",
     "view-options": "Trình bày",
     "view": "Xem",
+    "gender": "Giới tính",
+    "birthday": "Sinh nhật",
     "show-all": "Hiển thị tất cả",
     "hide-all": "Ẩn tất cả",
     "columns": "Cột",
@@ -1163,7 +1166,8 @@
     "rows": "Dòng",
     "type": "Loại",
     "link_product": "Liên kết sản phẩm",
-    "link_product_description": "Chọn một sản phẩm, cùng với đơn vị và kho hàng của nó để liên kết với nhóm này"
+    "link_product_description": "Chọn một sản phẩm, cùng với đơn vị và kho hàng của nó để liên kết với nhóm này",
+    "invoices": "Hóa đơn"
   },
   "email-data-table": {
     "id": "Mã số",
@@ -2966,7 +2970,8 @@
     "attendance": "Điểm danh nhóm",
     "reports": "Báo cáo nhóm",
     "metrics": "Số liệu nhóm",
-    "modify_schedule": "Chỉnh sửa lịch trình"
+    "modify_schedule": "Chỉnh sửa lịch trình",
+    "managers": "Quản lý nhóm"
   },
   "ws-user-group-attendance": {
     "unsaved_changes_message": "Bạn có thay đổi điểm danh chưa lưu",

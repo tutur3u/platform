@@ -134,6 +134,7 @@
     "processing": "Processing...",
     "saving": "Saving changes...",
     "loading": "Loading",
+    "load_more": "Load more",
     "complete": "Complete",
     "default": "Default",
     "all": "All",
@@ -161,6 +162,8 @@
     "refresh": "Refresh",
     "view-options": "Columns",
     "view": "View",
+    "gender": "Gender",
+    "birthday": "Birthday",
     "show-all": "Show All",
     "hide-all": "Hide All",
     "columns": "Columns",
@@ -1152,7 +1155,8 @@
     "rows": "Rows",
     "type": "Type",
     "link_product": "Link Product",
-    "link_product_description": "Select a product, along with its unit and warehouse to link to this group"
+    "link_product_description": "Select a product, along with its unit and warehouse to link to this group",
+    "invoices": "Invoices"
   },
   "email-data-table": {
     "id": "ID",
@@ -2916,7 +2920,11 @@
     "attendance": "Group Attendance",
     "reports": "Group Reports",
     "metrics": "Group Metrics",
-    "modify_schedule": "Modify Schedule"
+    "modify_schedule": "Modify Schedule",
+    "members_and_guests": "Members & Guests",
+    "managers": "Managers",
+    "no_members": "No members found",
+    "no_managers": "No managers found"
   },
   "ws-user-group-attendance": {
     "unsaved_changes_message": "You have unsaved attendance changes",
