@@ -6,8 +6,15 @@ import type { ProductUnit } from '@tuturuuu/types/primitives/ProductUnit';
 import type { ProductWarehouse } from '@tuturuuu/types/primitives/ProductWarehouse';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Separator } from '@tuturuuu/ui/separator';
+import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 import { ProductForm } from './form';
+
+export const metadata: Metadata = {
+  title: 'Product Details',
+  description:
+    'Manage Product Details in the Products area of your Tuturuuu workspace.',
+};
 
 interface Props {
   params: Promise<{

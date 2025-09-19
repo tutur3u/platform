@@ -4,12 +4,18 @@ import {
 } from '@tuturuuu/supabase/next/server';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
+import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 import { CustomDataTable } from '@/components/custom-data-table';
 import { getColumns } from '../columns';
 import ModelForm from '../form';
 import UncrawledUrlsCount from '../uncrawled-urls-count';
 import CrawlerFilters from './crawler-filters';
+
+export const metadata: Metadata = {
+  title: 'Crawlers',
+  description: 'Manage Crawlers in your Tuturuuu workspace.',
+};
 
 interface SearchParams {
   q?: string;

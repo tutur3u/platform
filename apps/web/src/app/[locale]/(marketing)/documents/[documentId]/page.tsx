@@ -1,6 +1,12 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import DocumentPageContent from './document-content';
+
+export const metadata: Metadata = {
+  title: 'Document Preview',
+  description: 'Review an example Tuturuuu document shared from the platform.',
+};
 
 interface Props {
   params: Promise<{

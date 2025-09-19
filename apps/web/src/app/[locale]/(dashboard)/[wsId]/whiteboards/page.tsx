@@ -2,10 +2,16 @@ import { createClient } from '@tuturuuu/supabase/next/server';
 import { Button } from '@tuturuuu/ui/button';
 import { PlusIcon } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
+import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import WhiteboardsList, { type Whiteboard } from './client';
 import CreateWhiteboardDialog from './createWhiteboardDialog';
+
+export const metadata: Metadata = {
+  title: 'Whiteboards',
+  description: 'Manage Whiteboards in your Tuturuuu workspace.',
+};
 
 interface WhiteboardsPageProps {
   params: Promise<{ wsId: string }>;

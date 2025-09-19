@@ -12,10 +12,17 @@ import {
 import { Separator } from '@tuturuuu/ui/separator';
 import { cn } from '@tuturuuu/utils/format';
 import 'dayjs/locale/vi';
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import GroupIndicatorsManager from './group-indicators-manager';
+
+export const metadata: Metadata = {
+  title: 'Indicators',
+  description:
+    'Manage Indicators in the Group area of your Tuturuuu workspace.',
+};
 
 interface Props {
   params: Promise<{

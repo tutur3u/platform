@@ -1,7 +1,14 @@
 import { Button } from '@tuturuuu/ui/button';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { BookText, Sparkles } from '@tuturuuu/ui/icons';
+import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
+
+export const metadata: Metadata = {
+  title: 'Extra Content',
+  description:
+    'Manage Extra Content in the Module area of your Tuturuuu workspace.',
+};
 
 // interface Props {
 //   params: Promise<{

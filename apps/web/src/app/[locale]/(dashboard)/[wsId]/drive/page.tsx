@@ -31,6 +31,7 @@ import {
 } from '@tuturuuu/ui/tooltip';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { getPermissions, getWorkspace } from '@tuturuuu/utils/workspace-helper';
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
@@ -38,6 +39,11 @@ import { formatBytes } from '@/utils/file-helper';
 import { joinPath } from '@/utils/path-helper';
 import NewActions from './new-actions';
 import StorageObjectsTable from './table';
+
+export const metadata: Metadata = {
+  title: 'Drive',
+  description: 'Manage Drive in your Tuturuuu workspace.',
+};
 
 interface Props {
   params: Promise<{

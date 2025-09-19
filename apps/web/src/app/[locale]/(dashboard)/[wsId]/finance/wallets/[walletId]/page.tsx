@@ -1,5 +1,12 @@
 import WalletDetailsPage from '@tuturuuu/ui/finance/wallets/walletId/wallet-details-page';
 import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'Wallet Details',
+  description: 'Manage Wallet Details in the Wallets area of your Tuturuuu workspace.',
+};
+
 
 interface Props {
   params: Promise<{

@@ -7,6 +7,7 @@ import { invoiceColumns } from '@tuturuuu/ui/finance/invoices/columns';
 import { Users } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
 import moment from 'moment';
+import type { Metadata } from 'next';
 import Image from 'next/image';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
@@ -14,6 +15,12 @@ import { getTranslations } from 'next-intl/server';
 import { CustomDataTable } from '@/components/custom-data-table';
 import UserMonthAttendance from '../../attendance/user-month-attendance';
 import LinkedPromotionsClient from './linked-promotions-client';
+
+export const metadata: Metadata = {
+  title: 'Userid Details',
+  description:
+    'Manage Userid Details in the Database area of your Tuturuuu workspace.',
+};
 
 interface Props {
   params: Promise<{

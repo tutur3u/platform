@@ -13,12 +13,19 @@ import {
 import { Separator } from '@tuturuuu/ui/separator';
 import { getGuestGroup } from '@tuturuuu/utils/workspace-helper';
 import { format } from 'date-fns';
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import UserCard from './card';
 import { CheckAll } from './check-all';
 import { EmailList } from './email-list';
+
+export const metadata: Metadata = {
+  title: 'Postid Details',
+  description:
+    'Manage Postid Details in the Posts area of your Tuturuuu workspace.',
+};
 
 interface SearchParams {
   q?: string;

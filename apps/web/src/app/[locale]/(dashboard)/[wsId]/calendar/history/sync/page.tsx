@@ -1,6 +1,12 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { CalendarSyncDashboard } from '@tuturuuu/ui/legacy/calendar/settings/calendar-sync-dashboard';
+import type { Metadata } from 'next';
 import type { SyncLog } from '../../../../../../../../../../packages/ui/src/components/ui/legacy/calendar/settings/types';
+
+export const metadata: Metadata = {
+  title: 'Sync',
+  description: 'Manage Sync in the History area of your Tuturuuu workspace.',
+};
 
 export default async function CalendarSyncDashboardPage() {
   const syncLogs = await getSyncLogs();

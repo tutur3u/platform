@@ -6,10 +6,16 @@ import { CoursePagination } from '@tuturuuu/ui/custom/education/courses/course-p
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { ViewToggle } from '@tuturuuu/ui/custom/view-toggle';
 import { Separator } from '@tuturuuu/ui/separator';
+import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
-//import { mockData } from './mock/mock-courses';
 import { CustomDataTable } from '@/components/custom-data-table';
 import { getWorkspaceCourseColumns } from './columns';
+
+export const metadata: Metadata = {
+  title: 'Courses',
+  description:
+    'Manage Courses in the Education area of your Tuturuuu workspace.',
+};
 
 interface SearchParams {
   q?: string;

@@ -1,8 +1,14 @@
 import type { UIMessage } from '@tuturuuu/ai/types';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { AIChat } from '@tuturuuu/types/db';
+import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import Chat from '@/app/[locale]/(dashboard)/[wsId]/chat/chat';
+
+export const metadata: Metadata = {
+  title: 'AI Chat Conversation',
+  description: 'Revisit an AI chat thread shared from the Tuturuuu platform.',
+};
 
 interface Props {
   params: Promise<{

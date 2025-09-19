@@ -5,6 +5,7 @@ import {
 import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
 import { Activity, ArrowLeft, Clock } from '@tuturuuu/ui/icons';
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
 import { AnalyticsCards } from './analytics-cards';
@@ -16,6 +17,11 @@ import { GeographicAnalytics } from './geographic-analytics';
 import { HourlyChart } from './hourly-chart';
 import { WeeklyActivity } from './weekly-activity';
 
+export const metadata: Metadata = {
+  title: 'Analytics',
+  description: 'Manage Analytics in the Link area of your Tuturuuu workspace.',
+};
+
 interface Props {
   params: Promise<{
     wsId: string;
@@ -24,7 +30,6 @@ interface Props {
 }
 
 interface AnalyticsData {
-  // biome-ignore lint/suspicious/noExplicitAny: <link can be anything>
   link: any;
   analytics: {
     total_clicks: number | null;

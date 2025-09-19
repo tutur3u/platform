@@ -5,9 +5,16 @@ import YouTubeLinkForm from '@tuturuuu/ui/custom/education/modules/youtube/form'
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Youtube } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
 import { extractYoutubeId } from '@/utils/url-helper';
+
+export const metadata: Metadata = {
+  title: 'Youtube Links',
+  description:
+    'Manage Youtube Links in the Module area of your Tuturuuu workspace.',
+};
 
 interface Props {
   params: Promise<{

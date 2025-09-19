@@ -2,10 +2,16 @@ import { createClient } from '@tuturuuu/supabase/next/server';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { ListTodo } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
+import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 import QuizForm from '../../../../../quizzes/form';
 import AIQuizzes from './client-ai';
 import ClientQuizzes from './client-quizzes';
+
+export const metadata: Metadata = {
+  title: 'Quizzes',
+  description: 'Manage Quizzes in the Module area of your Tuturuuu workspace.',
+};
 
 interface Props {
   params: Promise<{

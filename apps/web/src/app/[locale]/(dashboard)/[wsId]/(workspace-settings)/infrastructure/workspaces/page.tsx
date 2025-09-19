@@ -1,7 +1,14 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { Separator } from '@tuturuuu/ui/separator';
 import { enforceRootWorkspaceAdmin } from '@tuturuuu/utils/workspace-helper';
+import type { Metadata } from 'next';
 import WorkspaceCard from '../../../../../../../components/cards/WorkspaceCard';
+
+export const metadata: Metadata = {
+  title: 'Workspaces',
+  description:
+    'Manage Workspaces in the Infrastructure area of your Tuturuuu workspace.',
+};
 
 interface Props {
   params: Promise<{

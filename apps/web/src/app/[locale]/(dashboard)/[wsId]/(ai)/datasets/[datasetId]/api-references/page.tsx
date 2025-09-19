@@ -8,8 +8,15 @@ import {
 } from '@tuturuuu/ui/card';
 import { CodeBlock } from '@tuturuuu/ui/codeblock';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
+import type { Metadata } from 'next';
 import { headers } from 'next/headers';
 import EnvironmentSetup from './environment-setup';
+
+export const metadata: Metadata = {
+  title: 'API References',
+  description:
+    'Manage API References in the Dataset area of your Tuturuuu workspace.',
+};
 
 interface Props {
   params: Promise<{

@@ -5,10 +5,16 @@ import { Dialog, DialogTrigger } from '@tuturuuu/ui/dialog';
 import { FilePlus } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
 import { getPermissions, getWorkspace } from '@tuturuuu/utils/workspace-helper';
+import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import { DocumentCard } from './card';
 import MyDialogContent from './dialog-content';
+
+export const metadata: Metadata = {
+  title: 'Documents',
+  description: 'Manage Documents in your Tuturuuu workspace.',
+};
 
 interface Props {
   params: Promise<{ wsId: string }>;

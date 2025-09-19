@@ -2,10 +2,16 @@ import { createClient } from '@tuturuuu/supabase/next/server';
 import type { ProductUnit } from '@tuturuuu/types/primitives/ProductUnit';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Separator } from '@tuturuuu/ui/separator';
+import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 import { CustomDataTable } from '@/components/custom-data-table';
 import { productUnitColumns } from './columns';
 import { ProductUnitForm } from './form';
+
+export const metadata: Metadata = {
+  title: 'Units',
+  description: 'Manage Units in the Inventory area of your Tuturuuu workspace.',
+};
 
 interface Props {
   params: Promise<{

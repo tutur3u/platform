@@ -1,4 +1,10 @@
+import type { Metadata } from 'next';
 import { GameBoard } from './components/GameBoard';
+
+export const metadata: Metadata = {
+  title: 'Farm',
+  description: 'Explore the Farm game on Tuturuuu.',
+};
 
 export default function FarmGamePage() {
   return (

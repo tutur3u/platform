@@ -17,8 +17,14 @@ import {
 import { Progress } from '@tuturuuu/ui/progress';
 import { Separator } from '@tuturuuu/ui/separator';
 import { cn } from '@tuturuuu/utils/format';
+import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 import { Suspense } from 'react';
+
+export const metadata: Metadata = {
+  title: 'Polls',
+  description: 'Manage Polls in your Tuturuuu workspace.',
+};
 
 const mockPolls = [
   {

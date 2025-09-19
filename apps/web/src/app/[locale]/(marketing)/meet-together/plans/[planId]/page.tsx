@@ -1,5 +1,12 @@
 import MeetTogetherPlanDetailsPage from '@tuturuuu/ui/legacy/tumeet/planId/page';
+import type { Metadata } from 'next';
 import { BASE_URL } from '@/constants/common';
+
+export const metadata: Metadata = {
+  title: 'Meet Together Plan',
+  description:
+    'Compare features across Meet Together plans and choose the right fit.',
+};
 
 interface PlanPageProps {
   params: Promise<{

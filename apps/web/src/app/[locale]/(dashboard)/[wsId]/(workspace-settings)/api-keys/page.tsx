@@ -5,10 +5,17 @@ import { CustomDataTable } from '@tuturuuu/ui/custom/tables/custom-data-table';
 import { Plus } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
 import { getPermissions, getWorkspace } from '@tuturuuu/utils/workspace-helper';
+import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import { apiKeyColumns } from './columns';
 import ApiKeyEditDialog from './edit-dialog';
+
+export const metadata: Metadata = {
+  title: 'API Keys',
+  description:
+    'Manage API Keys in the Workspace Settings area of your Tuturuuu workspace.',
+};
 
 interface Props {
   params: Promise<{

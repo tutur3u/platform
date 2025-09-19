@@ -18,10 +18,17 @@ import {
   PowerOff,
   XCircle,
 } from '@tuturuuu/ui/icons';
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { CustomDataTable } from '@/components/custom-data-table';
 import { getColumns } from '../../executions/columns';
+
+export const metadata: Metadata = {
+  title: 'Job Details',
+  description:
+    'Manage Job Details in the Jobs area of your Tuturuuu workspace.',
+};
 
 interface SearchParams {
   q?: string;

@@ -3,11 +3,18 @@ import type { UserGroup } from '@tuturuuu/types/primitives/UserGroup';
 import type { UserGroupTag } from '@tuturuuu/types/primitives/UserGroupTag';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Separator } from '@tuturuuu/ui/separator';
+import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import { CustomDataTable } from '@/components/custom-data-table';
 import { getUserGroupColumns } from './columns';
 import UserGroupForm from './form';
+
+export const metadata: Metadata = {
+  title: 'Tag Details',
+  description:
+    'Manage Tag Details in the Group Tags area of your Tuturuuu workspace.',
+};
 
 interface SearchParams {
   q?: string;

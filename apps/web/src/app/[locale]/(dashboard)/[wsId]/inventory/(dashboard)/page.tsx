@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import { Suspense } from 'react';
 import LoadingStatisticCard from '@/components/loading-statistic-card';
 import {
@@ -10,6 +11,11 @@ import {
   UnitsStatistics,
   WarehousesStatistics,
 } from '../../(dashboard)/statistics';
+
+export const metadata: Metadata = {
+  title: 'Inventory',
+  description: 'Manage Inventory in your Tuturuuu workspace.',
+};
 
 interface Props {
   params: Promise<{

@@ -2,10 +2,17 @@ import { createClient } from '@tuturuuu/supabase/next/server';
 import type { WorkspaceFlashcard } from '@tuturuuu/types/db';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Separator } from '@tuturuuu/ui/separator';
+import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 import { CustomDataTable } from '@/components/custom-data-table';
 import { getWorkspaceFlashcardColumns } from './columns';
 import FlashcardForm from './form';
+
+export const metadata: Metadata = {
+  title: 'Flashcards',
+  description:
+    'Manage Flashcards in the Education area of your Tuturuuu workspace.',
+};
 
 interface SearchParams {
   q?: string;

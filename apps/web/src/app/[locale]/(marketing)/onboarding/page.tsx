@@ -2,9 +2,15 @@ import {
   getCurrentUser,
   getUserDefaultWorkspace,
 } from '@tuturuuu/utils/user-helper';
+import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { getUserOnboardingProgress, hasCompletedOnboarding } from './actions';
 import OnboardingFlow from './onboarding-flow';
+
+export const metadata: Metadata = {
+  title: 'Onboarding with Tuturuuu',
+  description: 'Guide new teammates through getting started with Tuturuuu.',
+};
 
 export default async function OnboardingPage() {
   const user = await getCurrentUser();

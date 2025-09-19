@@ -11,11 +11,18 @@ import {
 import { Separator } from '@tuturuuu/ui/separator';
 import { cn } from '@tuturuuu/utils/format';
 import 'dayjs/locale/vi';
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
-import GroupAttendanceClient from './client';
 import type { InitialAttendanceProps } from './client';
+import GroupAttendanceClient from './client';
+
+export const metadata: Metadata = {
+  title: 'Attendance',
+  description:
+    'Manage Attendance in the Group area of your Tuturuuu workspace.',
+};
 
 interface Props {
   params: Promise<{

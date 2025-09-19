@@ -1,4 +1,11 @@
 import InvoicesPage from '@tuturuuu/ui/finance/invoices/invoice-page';
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'Invoices',
+  description:
+    'Manage Invoices in the Finance area of your Tuturuuu workspace.',
+};
 
 interface Props {
   params: Promise<{

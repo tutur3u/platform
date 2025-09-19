@@ -4,6 +4,7 @@ import type { WorkspaceUserField } from '@tuturuuu/types/primitives/WorkspaceUse
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Separator } from '@tuturuuu/ui/separator';
 import { getPermissions, getWorkspace } from '@tuturuuu/utils/workspace-helper';
+import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 import { CustomDataTable } from '@/components/custom-data-table';
 import { getUserColumns } from './columns';
@@ -11,6 +12,11 @@ import ExportDialogContent from './export-dialog-content';
 import Filters from './filters';
 import UserForm from './form';
 import ImportDialogContent from './import-dialog-content';
+
+export const metadata: Metadata = {
+  title: 'Database',
+  description: 'Manage Database in the Users area of your Tuturuuu workspace.',
+};
 
 interface SearchParams {
   q?: string;

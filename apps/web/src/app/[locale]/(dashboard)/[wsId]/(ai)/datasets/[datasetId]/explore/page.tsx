@@ -1,7 +1,13 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { Card, CardContent } from '@tuturuuu/ui/card';
+import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { DataExplorer } from './data-explorer';
+
+export const metadata: Metadata = {
+  title: 'Explore',
+  description: 'Manage Explore in the Dataset area of your Tuturuuu workspace.',
+};
 
 interface Props {
   params: Promise<{

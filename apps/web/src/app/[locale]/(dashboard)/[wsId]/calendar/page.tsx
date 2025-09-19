@@ -2,11 +2,17 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { CalendarSyncProvider } from '@tuturuuu/ui/hooks/use-calendar-sync';
 import { getPermissions, getWorkspace } from '@tuturuuu/utils/workspace-helper';
+import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { DEV_MODE } from '@/constants/common';
 import { CalendarActiveSyncDebugger } from './active-sync';
 import CalendarClientPage from './client';
 import TasksSidebar from './components/tasks-sidebar';
+
+export const metadata: Metadata = {
+  title: 'Calendar',
+  description: 'Manage Calendar in your Tuturuuu workspace.',
+};
 
 interface PageProps {
   params: Promise<{

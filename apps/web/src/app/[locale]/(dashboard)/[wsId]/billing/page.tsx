@@ -1,9 +1,15 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { checkTuturuuuAdmin } from '@tuturuuu/utils/workspace-helper';
+import type { Metadata } from 'next';
 import { createPolarClient } from '@/lib/polar';
 import { BillingClient } from './billing-client';
 import BillingHistory from './billing-history';
+
+export const metadata: Metadata = {
+  title: 'Billing',
+  description: 'Manage Billing in your Tuturuuu workspace.',
+};
 
 const fetchProducts = async ({
   wsId,

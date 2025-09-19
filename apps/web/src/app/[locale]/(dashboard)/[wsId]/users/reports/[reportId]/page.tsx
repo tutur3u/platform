@@ -4,11 +4,18 @@ import type { UserGroup } from '@tuturuuu/types/primitives/UserGroup';
 import type { WorkspaceConfig } from '@tuturuuu/types/primitives/WorkspaceConfig';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { PlusCircle, User } from '@tuturuuu/ui/icons';
+import type { Metadata } from 'next';
 import { notFound, redirect } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import { availableConfigs } from '@/constants/configs/reports';
 import { Filter } from '../../filters';
 import EditableReportPreview from './editable-report-preview';
+
+export const metadata: Metadata = {
+  title: 'Report Details',
+  description:
+    'Manage Report Details in the Reports area of your Tuturuuu workspace.',
+};
 
 interface Props {
   params: Promise<{
@@ -297,7 +304,7 @@ async function getConfigs(wsId: string) {
   ];
 
   // If rawData is not empty, merge it with availableConfigs
-  if (rawData && rawData.length) {
+  if (rawData?.length) {
     rawData.forEach((config) => {
       const index = configs.findIndex((c) => c.id === config.id);
       if (index !== -1) {

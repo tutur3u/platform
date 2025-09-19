@@ -2,11 +2,18 @@ import LoginForm from './form';
 import './login.css';
 import { Badge } from '@tuturuuu/ui/badge';
 import { XIcon } from '@tuturuuu/ui/icons';
+import type { Metadata } from 'next';
 import Image from 'next/image';
 import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
 import { Suspense } from 'react';
 import { DEV_MODE, PORT } from '@/constants/common';
+
+export const metadata: Metadata = {
+  title: 'Sign In to Tuturuuu',
+  description:
+    'Access your Tuturuuu workspace and continue where you left off.',
+};
 
 const DOMAINS = {
   TUTURUUU: {

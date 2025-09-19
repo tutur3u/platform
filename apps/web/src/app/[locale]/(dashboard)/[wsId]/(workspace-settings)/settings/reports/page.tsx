@@ -3,12 +3,19 @@ import type { WorkspaceConfig } from '@tuturuuu/types/primitives/WorkspaceConfig
 import ReportPreview from '@tuturuuu/ui/custom/report-preview';
 import { Separator } from '@tuturuuu/ui/separator';
 import { getPermissions, getWorkspace } from '@tuturuuu/utils/workspace-helper';
+import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { getLocale, getTranslations } from 'next-intl/server';
 import type { ReactNode } from 'react';
 import { CustomDataTable } from '@/components/custom-data-table';
 import { availableConfigs } from '@/constants/configs/reports';
 import { configColumns } from './columns';
+
+export const metadata: Metadata = {
+  title: 'Reports',
+  description:
+    'Manage Reports in the Settings area of your Tuturuuu workspace.',
+};
 
 interface SearchParams {
   q?: string;

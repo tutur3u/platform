@@ -3,8 +3,14 @@ import { Button } from '@tuturuuu/ui/button';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Goal, Sparkles } from '@tuturuuu/ui/icons';
 import type { JSONContent } from '@tuturuuu/ui/tiptap';
+import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 import { ModuleContentEditor } from './content-editor';
+
+export const metadata: Metadata = {
+  title: 'Content',
+  description: 'Manage Content in the Module area of your Tuturuuu workspace.',
+};
 
 interface Props {
   params: Promise<{

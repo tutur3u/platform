@@ -2,10 +2,17 @@ import { createClient } from '@tuturuuu/supabase/next/server';
 import type { ProductSupplier } from '@tuturuuu/types/primitives/ProductSupplier';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Separator } from '@tuturuuu/ui/separator';
+import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 import { CustomDataTable } from '@/components/custom-data-table';
 import { productSupplierColumns } from './columns';
 import { ProductSupplierForm } from './form';
+
+export const metadata: Metadata = {
+  title: 'Suppliers',
+  description:
+    'Manage Suppliers in the Inventory area of your Tuturuuu workspace.',
+};
 
 interface Props {
   params: Promise<{

@@ -1,10 +1,16 @@
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Separator } from '@tuturuuu/ui/separator';
+import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 import { Suspense } from 'react';
 import LoadingStatisticCard from '@/components/loading-statistic-card';
 import ExecutionStatistics from './executions';
 import JobsStatistics from './jobs';
+
+export const metadata: Metadata = {
+  title: 'Cron',
+  description: 'Manage Cron in your Tuturuuu workspace.',
+};
 
 interface Props {
   params: Promise<{

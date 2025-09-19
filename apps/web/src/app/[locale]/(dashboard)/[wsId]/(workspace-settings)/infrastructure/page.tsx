@@ -1,9 +1,16 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import tzs from '@tuturuuu/utils/timezones';
 import { enforceRootWorkspaceAdmin } from '@tuturuuu/utils/workspace-helper';
+import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import StatisticCard from '../../../../../../components/cards/StatisticCard';
+
+export const metadata: Metadata = {
+  title: 'Infrastructure',
+  description:
+    'Manage Infrastructure in the Workspace Settings area of your Tuturuuu workspace.',
+};
 
 interface Props {
   params: Promise<{

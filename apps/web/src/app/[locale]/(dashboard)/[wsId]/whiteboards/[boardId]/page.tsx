@@ -1,7 +1,14 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
+import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import type { TLStoreSnapshot } from 'tldraw';
 import { CustomTldraw } from './custom-tldraw';
+
+export const metadata: Metadata = {
+  title: 'Board Details',
+  description:
+    'Manage Board Details in the Whiteboards area of your Tuturuuu workspace.',
+};
 
 interface TLDrawPageProps {
   params: Promise<{ wsId: string; boardId: string }>;

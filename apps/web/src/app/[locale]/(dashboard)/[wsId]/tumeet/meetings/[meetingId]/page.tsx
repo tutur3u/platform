@@ -10,10 +10,17 @@ import {
 import { ArrowLeft, Calendar, Clock, Users } from '@tuturuuu/ui/icons';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
 import { format } from 'date-fns';
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
 import { MeetingActions } from './meeting-actions';
 import { RecordingSessionsOverview } from './recording-sessions-overview';
+
+export const metadata: Metadata = {
+  title: 'Meeting Details',
+  description:
+    'Manage Meeting Details in the Meetings area of your Tuturuuu workspace.',
+};
 
 interface MeetingDetailPageProps {
   params: Promise<{

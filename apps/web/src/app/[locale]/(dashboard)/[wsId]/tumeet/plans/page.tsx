@@ -1,5 +1,11 @@
 import { MeetTogetherPage } from '@tuturuuu/ui/legacy/tumeet/page';
 import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'Plans',
+  description: 'Manage Plans in the Tumeet area of your Tuturuuu workspace.',
+};
 
 interface TumeetPageProps {
   params: Promise<{

@@ -2,9 +2,15 @@ import { createClient } from '@tuturuuu/supabase/next/server';
 import { Card, CardContent, CardHeader } from '@tuturuuu/ui/card';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
 import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
+import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { Suspense } from 'react';
 import { MeetingsContent } from './meetings-content';
+
+export const metadata: Metadata = {
+  title: 'Meetings',
+  description: 'Manage Meetings in the Tumeet area of your Tuturuuu workspace.',
+};
 
 interface MeetingsPageProps {
   params: Promise<{

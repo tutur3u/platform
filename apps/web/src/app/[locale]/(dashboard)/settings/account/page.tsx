@@ -1,6 +1,13 @@
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
+import type { Metadata } from 'next';
 import ContactInformationCard from './contact-information-card';
 import ProfileInformationCard from './profile-information-card';
+
+export const metadata: Metadata = {
+  title: 'Account',
+  description:
+    'Manage Account in the Settings area of your Tuturuuu workspace.',
+};
 
 export default async function AccountSettingsPage() {
   const user = await getCurrentUser();

@@ -2,12 +2,19 @@ import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Separator } from '@tuturuuu/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import { CustomDataTable } from '@/components/custom-data-table';
 import WhitelistEmailClient from './client-page';
 import { getAIWhitelistEmailColumns } from './columns';
+
+export const metadata: Metadata = {
+  title: 'Emails',
+  description:
+    'Manage Emails in the Whitelist area of your Tuturuuu workspace.',
+};
 
 interface SearchParams {
   q?: string;

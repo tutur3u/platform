@@ -16,10 +16,16 @@ import {
 import { Separator } from '@tuturuuu/ui/separator';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
+import type { Metadata } from 'next';
 import { notFound, redirect } from 'next/navigation';
 import { getLocale, getTranslations } from 'next-intl/server';
 import { CustomDataTable } from '@/components/custom-data-table';
 import { getPlatformRoleColumns } from './columns';
+
+export const metadata: Metadata = {
+  title: 'Roles',
+  description: 'Manage Roles in the Platform area of your Tuturuuu workspace.',
+};
 
 // Define a type that matches what the search_users RPC function actually returns
 type SearchUserResult = {

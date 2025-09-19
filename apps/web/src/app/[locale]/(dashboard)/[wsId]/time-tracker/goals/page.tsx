@@ -3,6 +3,13 @@ import { getCurrentSupabaseUser } from '@tuturuuu/utils/user-helper';
 import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import { notFound } from 'next/navigation';
 import { GoalManager } from '../components/goal-manager';
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'Goals',
+  description: 'Manage Goals in the Time Tracker area of your Tuturuuu workspace.',
+};
+
 
 export default async function TimeTrackerGoalsPage({
   params,

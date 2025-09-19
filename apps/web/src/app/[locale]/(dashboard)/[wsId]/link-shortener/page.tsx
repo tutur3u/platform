@@ -19,11 +19,17 @@ import {
   Users,
 } from '@tuturuuu/ui/icons';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
+import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 import { CustomDataTable } from '@/components/custom-data-table';
 import { linkShortenerColumns } from './columns';
 import LinkShortenerFilters from './filters';
 import { InlineLinkShortenerForm } from './inline-form';
+
+export const metadata: Metadata = {
+  title: 'Link Shortener',
+  description: 'Manage Link Shortener in your Tuturuuu workspace.',
+};
 
 type ShortenedLink = Tables<'shortened_links'> & {
   creator?: {

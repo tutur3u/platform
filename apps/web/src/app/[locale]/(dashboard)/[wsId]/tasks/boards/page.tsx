@@ -1,5 +1,12 @@
 import WorkspaceProjectsPage from '@tuturuuu/ui/tu-do/boards/workspace-projects-page';
 import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'Boards',
+  description: 'Manage Boards in the Tasks area of your Tuturuuu workspace.',
+};
+
 
 interface Props {
   params: Promise<{

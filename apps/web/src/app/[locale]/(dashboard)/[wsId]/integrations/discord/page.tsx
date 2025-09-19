@@ -1,8 +1,15 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
 import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
+import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import DiscordIntegrationDashboard from './discord-integration-dashboard';
+
+export const metadata: Metadata = {
+  title: 'Discord',
+  description:
+    'Manage Discord in the Integrations area of your Tuturuuu workspace.',
+};
 
 interface Props {
   params: Promise<{

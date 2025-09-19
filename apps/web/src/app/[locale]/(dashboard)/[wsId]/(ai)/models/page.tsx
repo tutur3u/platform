@@ -2,10 +2,16 @@ import { createClient } from '@tuturuuu/supabase/next/server';
 import type { WorkspaceAIModel } from '@tuturuuu/types/db';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Separator } from '@tuturuuu/ui/separator';
+import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 import { CustomDataTable } from '@/components/custom-data-table';
 import { getColumns } from './columns';
 import ModelForm from './form';
+
+export const metadata: Metadata = {
+  title: 'Models',
+  description: 'Manage Models in the AI area of your Tuturuuu workspace.',
+};
 
 interface SearchParams {
   q?: string;

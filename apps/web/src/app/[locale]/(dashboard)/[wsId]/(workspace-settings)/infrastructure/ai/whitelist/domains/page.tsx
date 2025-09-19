@@ -2,12 +2,19 @@ import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Separator } from '@tuturuuu/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import { CustomDataTable } from '@/components/custom-data-table';
 import WhitelistDomainClient from '../domains/domain-client-page';
 import { getAIWhitelistDomainColumns } from '../domains/domain-columns';
+
+export const metadata: Metadata = {
+  title: 'Domains',
+  description:
+    'Manage Domains in the Whitelist area of your Tuturuuu workspace.',
+};
 
 interface SearchParams {
   q?: string;

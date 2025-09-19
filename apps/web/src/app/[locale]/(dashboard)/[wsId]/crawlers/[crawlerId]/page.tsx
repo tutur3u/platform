@@ -2,7 +2,14 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
+import type { Metadata } from 'next';
 import { CrawlerContent } from './crawler-content';
+
+export const metadata: Metadata = {
+  title: 'Crawler Details',
+  description:
+    'Manage Crawler Details in the Crawlers area of your Tuturuuu workspace.',
+};
 
 interface Props {
   params: Promise<{

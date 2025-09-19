@@ -1,9 +1,15 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { GradientHeadline } from '@tuturuuu/ui/custom/gradient-headline';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
+import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import SparkClientPage from './client-page';
+
+export const metadata: Metadata = {
+  title: 'Spark',
+  description: 'Manage Spark in the AI area of your Tuturuuu workspace.',
+};
 
 export default async function SparkPage({
   params,

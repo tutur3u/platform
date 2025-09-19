@@ -5,9 +5,16 @@ import {
   getPermissions,
   verifyHasSecrets,
 } from '@tuturuuu/utils/workspace-helper';
+import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import Chat from '../chat';
 import { getChats } from '../helper';
+
+export const metadata: Metadata = {
+  title: 'Chat Details',
+  description:
+    'Manage Chat Details in the Chat area of your Tuturuuu workspace.',
+};
 
 interface Props {
   params: Promise<{

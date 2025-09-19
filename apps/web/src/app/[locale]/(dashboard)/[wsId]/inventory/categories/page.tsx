@@ -2,10 +2,17 @@ import { createClient } from '@tuturuuu/supabase/next/server';
 import type { ProductCategory } from '@tuturuuu/types/primitives/ProductCategory';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Separator } from '@tuturuuu/ui/separator';
+import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 import { CustomDataTable } from '@/components/custom-data-table';
 import { productCategoryColumns } from './columns';
 import { ProductCategoryForm } from './form';
+
+export const metadata: Metadata = {
+  title: 'Categories',
+  description:
+    'Manage Categories in the Inventory area of your Tuturuuu workspace.',
+};
 
 interface Props {
   params: Promise<{

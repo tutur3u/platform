@@ -6,14 +6,15 @@ import { Button } from '@tuturuuu/ui/button';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import {
   Calendar,
+  CalendarPlus,
   ChartColumn,
   FileUser,
   MinusCircle,
-  CalendarPlus,
   UserCheck,
 } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
 import { cn } from '@tuturuuu/utils/format';
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
@@ -23,9 +24,15 @@ import { getUserColumns } from '../../database/columns';
 import { Filter } from '../../filters';
 import ExternalGroupMembers from './external-group-members';
 import GroupMemberForm from './form';
+import LinkedProductsClient from './linked-products-client';
 import PostsClient from './posts-client';
 import GroupSchedule from './schedule';
-import LinkedProductsClient from './linked-products-client';
+
+export const metadata: Metadata = {
+  title: 'Group Details',
+  description:
+    'Manage Group Details in the Groups area of your Tuturuuu workspace.',
+};
 
 interface SearchParams {
   q?: string;
@@ -176,7 +183,7 @@ export default async function UserGroupDetailsPage({
         ) : null}
 
         <div className="flex flex-col rounded-lg border border-border bg-foreground/5 p-4">
-          <div className="flex flex-row items-center justify-between mb-2">
+          <div className="mb-2 flex flex-row items-center justify-between">
             <div className="font-semibold text-xl">
               {t('ws-user-group-details.schedule')}
             </div>

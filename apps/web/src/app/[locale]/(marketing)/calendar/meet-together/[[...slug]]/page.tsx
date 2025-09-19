@@ -1,4 +1,11 @@
+import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
+
+export const metadata: Metadata = {
+  title: 'Meet Together Calendar',
+  description:
+    'Explore calendar templates and resources for Meet Together events.',
+};
 
 export default async function LegacyMeetTogetherPage(props: {
   params: Promise<{

@@ -1,8 +1,14 @@
+import type { Metadata } from 'next';
 import { Suspense } from 'react';
 import LoadingStatisticCard from '@/components/loading-statistic-card';
 import CoursesStatistics from '../../(dashboard)/statistics/courses';
 import FlashcardsStatistics from '../../(dashboard)/statistics/flashcards';
 import QuizzesStatistics from '../../(dashboard)/statistics/quizzes';
+
+export const metadata: Metadata = {
+  title: 'Education',
+  description: 'Manage Education in your Tuturuuu workspace.',
+};
 
 interface Props {
   params: Promise<{

@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import { Suspense } from 'react';
 import LoadingStatisticCard from '@/components/loading-statistic-card';
 import {
@@ -6,6 +7,11 @@ import {
   UserReportsStatistics,
   UsersStatistics,
 } from '../../(dashboard)/statistics';
+
+export const metadata: Metadata = {
+  title: 'Users',
+  description: 'Manage Users in your Tuturuuu workspace.',
+};
 
 interface Props {
   params: Promise<{

@@ -3,6 +3,7 @@ import type { AuroraForecast } from '@tuturuuu/types/db';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
 import { getPermissions, getWorkspace } from '@tuturuuu/utils/workspace-helper';
+import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { Suspense } from 'react';
 import LoadingStatisticCard from '@/components/loading-statistic-card';
@@ -13,6 +14,12 @@ import NewlyCreatedTasks from './tasks/newly-created-tasks';
 import TasksAssignedToMe from './tasks/tasks-assigned-to-me';
 import TimeTrackingMetrics from './time-tracker/time-tracking-metrics';
 import RecentTumeetPlans from './tumeet/recent-plans';
+
+export const metadata: Metadata = {
+  title: 'Workspace Details',
+  description:
+    'Manage Workspace Details in the Dashboard area of your Tuturuuu workspace.',
+};
 
 interface Props {
   params: Promise<{

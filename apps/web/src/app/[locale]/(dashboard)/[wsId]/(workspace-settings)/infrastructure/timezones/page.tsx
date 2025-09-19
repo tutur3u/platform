@@ -1,9 +1,16 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { Timezone } from '@tuturuuu/types/primitives/Timezone';
 import timezones from '@tuturuuu/utils/timezones';
+import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { CustomDataTable } from '@/components/custom-data-table';
 import { timezoneColumns } from '@/data/columns/timezones';
+
+export const metadata: Metadata = {
+  title: 'Timezones',
+  description:
+    'Manage Timezones in the Infrastructure area of your Tuturuuu workspace.',
+};
 
 interface Props {
   searchParams: Promise<{

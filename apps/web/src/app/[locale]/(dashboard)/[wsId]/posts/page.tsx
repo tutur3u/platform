@@ -1,7 +1,13 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
+import type { Metadata } from 'next';
 import PostsClient from './client';
 import type { PostEmail } from './types';
+
+export const metadata: Metadata = {
+  title: 'Posts',
+  description: 'Manage Posts in your Tuturuuu workspace.',
+};
 
 interface SearchParams {
   page?: string;

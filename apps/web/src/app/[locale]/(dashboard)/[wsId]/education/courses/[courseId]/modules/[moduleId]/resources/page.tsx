@@ -5,7 +5,14 @@ import { StorageObjectForm } from '@tuturuuu/ui/custom/education/modules/resourc
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Paperclip } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
+import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
+
+export const metadata: Metadata = {
+  title: 'Resources',
+  description:
+    'Manage Resources in the Module area of your Tuturuuu workspace.',
+};
 
 interface Props {
   params: Promise<{

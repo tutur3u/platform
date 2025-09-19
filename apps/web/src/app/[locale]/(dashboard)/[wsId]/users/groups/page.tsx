@@ -2,11 +2,17 @@ import { createClient } from '@tuturuuu/supabase/next/server';
 import type { UserGroup } from '@tuturuuu/types/primitives/UserGroup';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Separator } from '@tuturuuu/ui/separator';
+import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 import { CustomDataTable } from '@/components/custom-data-table';
 import { getUserGroupColumns } from './columns';
 import Filters from './filters';
 import UserGroupForm from './form';
+
+export const metadata: Metadata = {
+  title: 'Groups',
+  description: 'Manage Groups in the Users area of your Tuturuuu workspace.',
+};
 
 interface SearchParams {
   q?: string;

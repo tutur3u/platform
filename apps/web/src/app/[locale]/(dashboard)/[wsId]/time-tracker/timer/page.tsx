@@ -4,6 +4,13 @@ import { notFound } from 'next/navigation';
 import { getTimeTrackingData } from '@/lib/time-tracking-helper';
 import TimeTrackerWrapper from '../components/time-tracker-wrapper';
 import type { TimeTrackerData } from '../types';
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'Timer',
+  description: 'Manage Timer in the Time Tracker area of your Tuturuuu workspace.',
+};
+
 
 interface Props {
   params: Promise<{

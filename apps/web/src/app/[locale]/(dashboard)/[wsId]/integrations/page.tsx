@@ -3,7 +3,13 @@ import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
 import { Bot, ExternalLink, Settings } from '@tuturuuu/ui/icons';
 import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
+import type { Metadata } from 'next';
 import Link from 'next/link';
+
+export const metadata: Metadata = {
+  title: 'Integrations',
+  description: 'Manage Integrations in your Tuturuuu workspace.',
+};
 
 interface Props {
   params: Promise<{

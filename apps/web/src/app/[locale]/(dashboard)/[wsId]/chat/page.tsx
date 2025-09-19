@@ -3,9 +3,15 @@ import {
   getWorkspace,
   verifyHasSecrets,
 } from '@tuturuuu/utils/workspace-helper';
+import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import Chat from './chat';
 import { getChats } from './helper';
+
+export const metadata: Metadata = {
+  title: 'Chat',
+  description: 'Manage Chat in your Tuturuuu workspace.',
+};
 
 interface Props {
   params: Promise<{

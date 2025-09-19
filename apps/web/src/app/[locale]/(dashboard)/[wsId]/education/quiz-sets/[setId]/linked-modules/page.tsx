@@ -2,10 +2,17 @@ import { createClient } from '@tuturuuu/supabase/next/server';
 import type { WorkspaceCourseModule } from '@tuturuuu/types/db';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Separator } from '@tuturuuu/ui/separator';
+import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 import { CustomDataTable } from '@/components/custom-data-table';
 import { getWorkspaceCourseModuleColumns } from './columns';
 import { QuizsetModuleLinker } from './linker';
+
+export const metadata: Metadata = {
+  title: 'Linked Modules',
+  description:
+    'Manage Linked Modules in the Set area of your Tuturuuu workspace.',
+};
 
 interface SearchParams {
   q?: string;

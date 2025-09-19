@@ -2,6 +2,13 @@ import { createClient } from '@tuturuuu/supabase/next/server';
 import { getPermissions, getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import { redirect } from 'next/navigation';
 import TaskLabelsClient from './client';
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'Labels',
+  description: 'Manage Labels in the Tasks area of your Tuturuuu workspace.',
+};
+
 
 interface Props {
   params: Promise<{

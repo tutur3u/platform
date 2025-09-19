@@ -2,10 +2,17 @@ import { createClient } from '@tuturuuu/supabase/next/server';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { SwatchBook } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
+import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 import FlashcardForm from '../../../../../flashcards/form';
 import { AIFlashcards } from './client-ai';
 import ClientFlashcards from './client-flashcards';
+
+export const metadata: Metadata = {
+  title: 'Flashcards',
+  description:
+    'Manage Flashcards in the Module area of your Tuturuuu workspace.',
+};
 
 interface Props {
   params: Promise<{

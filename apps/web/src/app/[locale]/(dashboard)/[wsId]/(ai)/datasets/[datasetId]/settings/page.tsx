@@ -9,10 +9,17 @@ import {
 } from '@tuturuuu/ui/card';
 import { AlertCircle } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
+import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { ClearDataDialog } from './clear-data-dialog';
 import { DeleteDatasetDialog } from './delete-dataset-dialog';
 import { ManageColumns } from './manage-columns';
+
+export const metadata: Metadata = {
+  title: 'Settings',
+  description:
+    'Manage Settings in the Dataset area of your Tuturuuu workspace.',
+};
 
 interface Props {
   params: Promise<{

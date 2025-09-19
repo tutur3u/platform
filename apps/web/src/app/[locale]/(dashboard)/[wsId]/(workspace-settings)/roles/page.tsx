@@ -4,11 +4,18 @@ import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Separator } from '@tuturuuu/ui/separator';
 import { permissions, totalPermissions } from '@tuturuuu/utils/permissions';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
+import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import { CustomDataTable } from '@/components/custom-data-table';
 import { roleColumns } from './columns';
 import { RoleForm } from './form';
+
+export const metadata: Metadata = {
+  title: 'Roles',
+  description:
+    'Manage Roles in the Workspace Settings area of your Tuturuuu workspace.',
+};
 
 interface Props {
   params: Promise<{

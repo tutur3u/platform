@@ -1,6 +1,12 @@
 import QR from '@tuturuuu/ui/custom/qr/qr';
 import { Separator } from '@tuturuuu/ui/separator';
+import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
+
+export const metadata: Metadata = {
+  title: 'QR Code Generator',
+  description: 'Create branded QR codes instantly with the Tuturuuu generator.',
+};
 
 export default async function QRGeneratorPage() {
   const t = await getTranslations();

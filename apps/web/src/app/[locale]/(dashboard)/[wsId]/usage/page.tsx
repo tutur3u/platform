@@ -3,11 +3,17 @@ import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Activity, Brain, HardDrive, Users } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
 import { getPermissions, getWorkspace } from '@tuturuuu/utils/workspace-helper';
+import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import { Suspense } from 'react';
 import StatisticCard from '@/components/cards/StatisticCard';
 import LoadingStatisticCard from '@/components/loading-statistic-card';
+
+export const metadata: Metadata = {
+  title: 'Usage',
+  description: 'Manage Usage in your Tuturuuu workspace.',
+};
 
 interface PageProps {
   params: Promise<{

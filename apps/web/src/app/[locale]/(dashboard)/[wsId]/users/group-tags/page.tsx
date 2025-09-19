@@ -2,10 +2,17 @@ import { createClient } from '@tuturuuu/supabase/next/server';
 import type { UserGroupTag } from '@tuturuuu/types/primitives/UserGroupTag';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Separator } from '@tuturuuu/ui/separator';
+import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 import { CustomDataTable } from '@/components/custom-data-table';
 import { groupTagColumns } from './columns';
 import GroupTagForm from './form';
+
+export const metadata: Metadata = {
+  title: 'Group Tags',
+  description:
+    'Manage Group Tags in the Users area of your Tuturuuu workspace.',
+};
 
 interface Props {
   params: Promise<{

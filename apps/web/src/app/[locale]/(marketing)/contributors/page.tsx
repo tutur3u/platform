@@ -1,10 +1,17 @@
 import { createAppAuth } from '@octokit/auth-app';
 import { Octokit } from '@octokit/rest';
 import { LoadingIndicator } from '@tuturuuu/ui/custom/loading-indicator';
+import type { Metadata } from 'next';
 import { getLocale } from 'next-intl/server';
 import { Suspense } from 'react';
 import { GITHUB_OWNER, GITHUB_REPO } from '@/constants/common';
 import ContributorsClient from './components/contributors-client';
+
+export const metadata: Metadata = {
+  title: 'Community Contributors',
+  description:
+    'Celebrate the builders and designers who contribute to Tuturuuu.',
+};
 
 // Define static generation parameters
 export const dynamic = 'force-static';

@@ -7,9 +7,16 @@ import { Button } from '@tuturuuu/ui/button';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Plus } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
 import { ProductsPageClient } from './products-page-client';
+
+export const metadata: Metadata = {
+  title: 'Products',
+  description:
+    'Manage Products in the Inventory area of your Tuturuuu workspace.',
+};
 
 interface Props {
   params: Promise<{

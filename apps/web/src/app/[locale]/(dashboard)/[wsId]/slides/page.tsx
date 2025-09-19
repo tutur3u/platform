@@ -2,10 +2,16 @@ import { createClient } from '@tuturuuu/supabase/next/server';
 import type { WorkspaceApiKey } from '@tuturuuu/types/primitives/WorkspaceApiKey';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Separator } from '@tuturuuu/ui/separator';
+import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 import { CustomDataTable } from '@/components/custom-data-table';
 import { groupTagColumns } from './columns';
 import GroupTagForm from './form';
+
+export const metadata: Metadata = {
+  title: 'Slides',
+  description: 'Manage Slides in your Tuturuuu workspace.',
+};
 
 interface Props {
   params: Promise<{

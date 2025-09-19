@@ -3,6 +3,13 @@ import type { TaskBoard } from '@tuturuuu/types/primitives/TaskBoard';
 import { getPermissions, getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import { redirect } from 'next/navigation';
 import TaskEstimatesClient from './client';
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'Estimates',
+  description: 'Manage Estimates in the Tasks area of your Tuturuuu workspace.',
+};
+
 
 interface Props {
   params: Promise<{

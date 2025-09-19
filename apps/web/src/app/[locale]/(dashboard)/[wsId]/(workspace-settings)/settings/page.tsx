@@ -9,6 +9,7 @@ import {
   getWorkspace,
   verifyHasSecrets,
 } from '@tuturuuu/utils/workspace-helper';
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
 import WorkspaceAvatarSettings from './avatar';
@@ -16,6 +17,12 @@ import BasicInfo from './basic-info';
 import WorkspaceLogoSettings from './logo';
 import RemoveYourself from './remove-yourself';
 import Security from './security';
+
+export const metadata: Metadata = {
+  title: 'Settings',
+  description:
+    'Manage Settings in the Workspace Settings area of your Tuturuuu workspace.',
+};
 
 interface Props {
   params: Promise<{

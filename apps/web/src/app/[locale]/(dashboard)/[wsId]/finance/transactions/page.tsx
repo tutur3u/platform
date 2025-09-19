@@ -1,5 +1,12 @@
 import TransactionsPage from '@tuturuuu/ui/finance/transactions/transactions-page';
 import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'Transactions',
+  description: 'Manage Transactions in the Finance area of your Tuturuuu workspace.',
+};
+
 
 interface Props {
   params: Promise<{

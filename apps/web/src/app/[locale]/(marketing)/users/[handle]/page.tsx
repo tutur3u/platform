@@ -3,8 +3,14 @@ import { createClient } from '@tuturuuu/supabase/next/server';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { User } from '@tuturuuu/ui/icons';
 import { getInitials } from '@tuturuuu/utils/name-helper';
+import type { Metadata } from 'next';
 import Image from 'next/image';
 import { redirect } from 'next/navigation';
+
+export const metadata: Metadata = {
+  title: 'Community Profile',
+  description: 'View a Tuturuuu community member profile.',
+};
 
 interface Props {
   params: Promise<{

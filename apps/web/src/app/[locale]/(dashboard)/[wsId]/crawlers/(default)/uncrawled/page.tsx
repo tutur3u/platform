@@ -1,6 +1,13 @@
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
+import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 import UncrawledUrlsList from './uncrawled-urls';
+
+export const metadata: Metadata = {
+  title: 'Uncrawled',
+  description:
+    'Manage Uncrawled in the Crawlers area of your Tuturuuu workspace.',
+};
 
 interface Props {
   params: Promise<{

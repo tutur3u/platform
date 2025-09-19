@@ -10,11 +10,18 @@ import {
   getWorkspace,
   verifyHasSecrets,
 } from '@tuturuuu/utils/workspace-helper';
+import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import InviteMemberButton from './_components/invite-member-button';
 import MemberList from './_components/member-list';
 import MemberTabs from './_components/member-tabs';
+
+export const metadata: Metadata = {
+  title: 'Members',
+  description:
+    'Manage Members in the Workspace Settings area of your Tuturuuu workspace.',
+};
 
 interface Props {
   params: Promise<{

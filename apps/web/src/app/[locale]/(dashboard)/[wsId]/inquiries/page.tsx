@@ -1,7 +1,13 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
 import type { Product, SupportInquiry, SupportType } from '@tuturuuu/types/db';
+import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { InquiriesClient } from './inquiries-client';
+
+export const metadata: Metadata = {
+  title: 'Inquiries',
+  description: 'Manage Inquiries in your Tuturuuu workspace.',
+};
 
 export interface ExtendedSupportInquiry extends SupportInquiry {
   users: {

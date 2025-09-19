@@ -1,4 +1,11 @@
 import { MeetTogetherPage } from '@tuturuuu/ui/legacy/tumeet/page';
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'Meet Together Overview',
+  description:
+    'See how Tuturuuu Meet Together streamlines collaborative meetings.',
+};
 
 interface TumeetPageProps {
   searchParams: Promise<{

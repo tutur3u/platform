@@ -5,10 +5,16 @@ import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Calendar, ChartColumn, FileUser, UserCheck } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
 import { cn } from '@tuturuuu/utils/format';
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import GroupReportsClient from './client';
+
+export const metadata: Metadata = {
+  title: 'Reports',
+  description: 'Manage Reports in the Group area of your Tuturuuu workspace.',
+};
 
 interface Props {
   params: Promise<{

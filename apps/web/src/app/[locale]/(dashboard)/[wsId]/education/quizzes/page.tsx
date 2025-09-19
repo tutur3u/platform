@@ -2,10 +2,17 @@ import { createClient } from '@tuturuuu/supabase/next/server';
 import type { WorkspaceQuiz } from '@tuturuuu/types/db';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Separator } from '@tuturuuu/ui/separator';
+import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 import { CustomDataTable } from '@/components/custom-data-table';
 import { getWorkspaceQuizColumns } from './columns';
 import QuizForm from './form';
+
+export const metadata: Metadata = {
+  title: 'Quizzes',
+  description:
+    'Manage Quizzes in the Education area of your Tuturuuu workspace.',
+};
 
 interface SearchParams {
   q?: string;

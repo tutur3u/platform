@@ -1,5 +1,12 @@
 import TaskBoardPage from '@tuturuuu/ui/tu-do/boards/boardId/task-board-page';
 import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'Board Details',
+  description: 'Manage Board Details in the Boards area of your Tuturuuu workspace.',
+};
+
 
 interface Props {
   params: Promise<{

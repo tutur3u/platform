@@ -1,4 +1,10 @@
+import type { Metadata } from 'next';
 import ClientComponent from './client-component';
+
+export const metadata: Metadata = {
+  title: 'Success',
+  description: 'Manage Success in the Billing area of your Tuturuuu workspace.',
+};
 
 export default async function SuccessPage({
   params,

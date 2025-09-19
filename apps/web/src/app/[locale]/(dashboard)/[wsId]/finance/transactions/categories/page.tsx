@@ -1,4 +1,11 @@
 import TransactionCategoriesPage from '@tuturuuu/ui/finance/transactions/categories/transactions-categories-page';
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'Categories',
+  description: 'Manage Categories in the Transactions area of your Tuturuuu workspace.',
+};
+
 
 interface Props {
   params: Promise<{
