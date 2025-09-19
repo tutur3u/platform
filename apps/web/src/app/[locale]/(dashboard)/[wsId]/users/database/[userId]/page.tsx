@@ -235,7 +235,6 @@ export default async function WorkspaceUserDetailsPage({
   );
 }
 
-
 async function isUserGuest(user_id: string) {
   const supabase = await createClient();
 
