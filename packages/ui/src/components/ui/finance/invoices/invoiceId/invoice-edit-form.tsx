@@ -60,8 +60,8 @@ export default function InvoiceEditForm({
       if (error) throw error;
       toast.success(t('common.saved', { default: 'Saved' }));
       router.refresh();
-    } catch (e: any) {
-      toast.error(e?.message || t('common.error', { default: 'Something went wrong' }));
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : t('common.error', { default: 'Something went wrong' }));
     } finally {
       setSaving(false);
     }
