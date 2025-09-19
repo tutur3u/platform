@@ -1,15 +1,15 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { getCurrentSupabaseUser } from '@tuturuuu/utils/user-helper';
 import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
+import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { SessionHistory } from '../components/session-history';
-import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
   title: 'History',
-  description: 'Manage History in the Time Tracker area of your Tuturuuu workspace.',
+  description:
+    'Manage History in the Time Tracker area of your Tuturuuu workspace.',
 };
-
 
 export default async function TimeTrackerHistoryPage({
   params,

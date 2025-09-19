@@ -4,9 +4,9 @@ import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
   title: 'Wallet Details',
-  description: 'Manage Wallet Details in the Wallets area of your Tuturuuu workspace.',
+  description:
+    'Manage Wallet Details in the Wallets area of your Tuturuuu workspace.',
 };
-
 
 interface Props {
   params: Promise<{

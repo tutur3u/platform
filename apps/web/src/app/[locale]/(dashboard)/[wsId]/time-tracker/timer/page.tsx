@@ -1,16 +1,16 @@
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
 import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
+import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { getTimeTrackingData } from '@/lib/time-tracking-helper';
 import TimeTrackerWrapper from '../components/time-tracker-wrapper';
 import type { TimeTrackerData } from '../types';
-import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
   title: 'Timer',
-  description: 'Manage Timer in the Time Tracker area of your Tuturuuu workspace.',
+  description:
+    'Manage Timer in the Time Tracker area of your Tuturuuu workspace.',
 };
-
 
 interface Props {
   params: Promise<{

@@ -4,9 +4,9 @@ import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
   title: 'Board Details',
-  description: 'Manage Board Details in the Boards area of your Tuturuuu workspace.',
+  description:
+    'Manage Board Details in the Boards area of your Tuturuuu workspace.',
 };
-
 
 interface Props {
   params: Promise<{

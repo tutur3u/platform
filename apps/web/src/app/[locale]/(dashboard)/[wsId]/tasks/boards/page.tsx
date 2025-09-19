@@ -7,7 +7,6 @@ export const metadata: Metadata = {
   description: 'Manage Boards in the Tasks area of your Tuturuuu workspace.',
 };
 
-
 interface Props {
   params: Promise<{
     wsId: string;

@@ -7,7 +7,6 @@ export const metadata: Metadata = {
   description: 'Manage Wallets in the Finance area of your Tuturuuu workspace.',
 };
 
-
 interface Props {
   params: Promise<{
     wsId: string;

@@ -1,13 +1,13 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
-import { CategoryManager } from '../components/category-manager';
 import type { Metadata } from 'next';
+import { CategoryManager } from '../components/category-manager';
 
 export const metadata: Metadata = {
   title: 'Categories',
-  description: 'Manage Categories in the Time Tracker area of your Tuturuuu workspace.',
+  description:
+    'Manage Categories in the Time Tracker area of your Tuturuuu workspace.',
 };
-
 
 export default async function TimeTrackerCategoriesPage({
   params,

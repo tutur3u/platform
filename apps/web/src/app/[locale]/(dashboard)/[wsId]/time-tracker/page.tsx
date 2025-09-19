@@ -8,15 +8,14 @@ import {
 } from '@tuturuuu/ui/card';
 import { Calendar, Clock, TrendingUp, Zap } from '@tuturuuu/ui/icons';
 import { getCurrentSupabaseUser } from '@tuturuuu/utils/user-helper';
+import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { ActivityHeatmap } from './components/activity-heatmap';
-import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
   title: 'Time Tracker',
   description: 'Manage Time Tracker in your Tuturuuu workspace.',
 };
-
 
 const formatDuration = (seconds: number | undefined): string => {
   const safeSeconds = Math.max(0, Math.floor(seconds || 0));

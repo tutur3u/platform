@@ -4,9 +4,9 @@ import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
   title: 'Transactions',
-  description: 'Manage Transactions in the Finance area of your Tuturuuu workspace.',
+  description:
+    'Manage Transactions in the Finance area of your Tuturuuu workspace.',
 };
-
 
 interface Props {
   params: Promise<{
