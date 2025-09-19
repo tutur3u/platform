@@ -10,6 +10,7 @@ import { notFound } from 'next/navigation';
 import { NextIntlClientProvider } from 'next-intl';
 import { setRequestLocale } from 'next-intl/server';
 import type { ReactNode } from 'react';
+import { DEV_MODE } from '@/constants/common';
 import { Providers } from './providers';
 
 const font = Inter({ subsets: ['latin', 'vietnamese'], display: 'block' });
@@ -34,7 +35,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   return {
     title: {
-      default: siteConfig.name,
+      default: `${DEV_MODE && '[DEV] '} ${siteConfig.name}`,
       template: `%s - ${siteConfig.name}`,
     },
     metadataBase: new URL(siteConfig.url),

@@ -14,6 +14,7 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { setRequestLocale } from 'next-intl/server';
 import type { ReactNode } from 'react';
+import { DEV_MODE } from '@/constants/common';
 
 export { viewport } from '@tuturuuu/utils/common/nextjs';
 
@@ -31,7 +32,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         en: 'Take control of your workflow, supercharged by AI.',
         vi: 'Quản lý công việc của bạn, siêu tốc độ cùng AI.',
       },
-      name: siteConfig.name,
+      name: `${DEV_MODE && '[DEV] '} ${siteConfig.name}`,
       url: siteConfig.url,
       ogImage: siteConfig.ogImage,
     },
