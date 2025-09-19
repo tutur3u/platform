@@ -51,7 +51,7 @@ export interface WorkspaceActivityData {
   color: string;
 }
 
-export interface CalendarSourceData {
+export interface CalendarSourceData extends Record<string, unknown> {
   name: string;
   value: number;
   color: string;
