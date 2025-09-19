@@ -36,6 +36,9 @@ export default async function WorkspaceUserDetailsPage({
 
   const data = await getData({ wsId, userId });
 
+  const isGuest = await isUserGuest(userId);
+  console.log('isGuest', isGuest);
+
   const { data: groups, count: groupCount } = await getGroupData({
     wsId,
     userId,
@@ -212,7 +215,7 @@ export default async function WorkspaceUserDetailsPage({
       </div>
 
       <div className="mt-4 mb-2 font-semibold text-lg">
-        Hoá đơn ({invoiceCount})
+        {t('invoices')} ({invoiceCount})
       </div>
       <CustomDataTable
         data={invoiceData}
@@ -230,6 +233,18 @@ export default async function WorkspaceUserDetailsPage({
       />
     </div>
   );
+}
+
+async function isUserGuest(user_id: string) {
+  const supabase = await createClient();
+
+  const user_uuid = user_id;
+
+  const { data, error } = await supabase.rpc('is_user_guest', {
+    user_uuid,
+  });
+  if (error) throw error;
+  return data as boolean;
 }
 
 async function getData({ wsId, userId }: { wsId: string; userId: string }) {

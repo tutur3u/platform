@@ -921,6 +921,12 @@ export type Database = {
         };
         Returns: boolean;
       };
+      is_user_guest: {
+        Args: {
+          user_uuid: string;
+        };
+        Returns: boolean;
+      };
       is_user_task_in_board: {
         Args: {
           _task_id: string;
