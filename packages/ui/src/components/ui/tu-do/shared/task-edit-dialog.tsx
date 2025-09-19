@@ -34,7 +34,6 @@ import {
   useUpdateTask,
 } from '@tuturuuu/utils/task-helper';
 import { addDays } from 'date-fns';
-import { useParams } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
 import {
   buildEstimationIndices,
@@ -43,6 +42,7 @@ import {
 
 interface TaskEditDialogProps {
   task: Task;
+  boardId: string;
   isOpen: boolean;
   onClose: () => void;
   onUpdate: () => void;
@@ -66,6 +66,7 @@ interface BoardEstimationConfig {
 
 export function TaskEditDialog({
   task,
+  boardId,
   isOpen,
   onClose,
   onUpdate,
@@ -122,8 +123,6 @@ export function TaskEditDialog({
   const [newLabelColor, setNewLabelColor] = useState('gray');
   const [creatingLabel, setCreatingLabel] = useState(false);
 
-  const params = useParams();
-  const boardId = params.boardId as string;
   const queryClient = useQueryClient();
 
   // Use the React Query mutation hook for updating tasks

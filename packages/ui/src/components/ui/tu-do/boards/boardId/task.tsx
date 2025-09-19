@@ -224,6 +224,13 @@ function TaskCardInner({
   const canMoveToClose =
     targetClosedList && targetClosedList.id !== task.list_id;
 
+  const dragDisabled =
+    editDialogOpen ||
+    deleteDialogOpen ||
+    customDateDialogOpen ||
+    newLabelDialogOpen ||
+    menuOpen;
+
   const {
     setNodeRef,
     attributes,
@@ -240,6 +247,7 @@ function TaskCardInner({
         list_id: String(task.list_id),
       },
     },
+    disabled: dragDisabled,
     // Reduce expensive layout animations for smoother dragging
     animateLayoutChanges: (args) => {
       const { isSorting, wasDragging } = args;
@@ -344,15 +352,54 @@ function TaskCardInner({
   async function handleArchiveToggle() {
     if (!onUpdate) return;
     setIsLoading(true);
-    updateTaskMutation.mutate(
-      { taskId: task.id, updates: { archived: !task.archived } },
-      {
-        onSettled: () => {
-          setIsLoading(false);
-          onUpdate();
-        },
+
+    const newArchivedState = !task.archived;
+
+    // If marking as done (archived = true) and there's a done list available, move the task there
+    if (
+      newArchivedState &&
+      targetCompletionList &&
+      targetCompletionList.id !== task.list_id
+    ) {
+      const supabase = createClient();
+      try {
+        // First update the archived status
+        await updateTaskMutation.mutateAsync({
+          taskId: task.id,
+          updates: { archived: newArchivedState },
+        });
+
+        // Then move to the done list
+        await moveTask(supabase, task.id, targetCompletionList.id);
+
+        toast({
+          title: 'Task completed',
+          description: `Task marked as done and moved to ${targetCompletionList.name}`,
+        });
+
+        onUpdate();
+      } catch (error) {
+        console.error('Failed to complete task:', error);
+        toast({
+          title: 'Error',
+          description: 'Failed to complete task. Please try again.',
+          variant: 'destructive',
+        });
+      } finally {
+        setIsLoading(false);
       }
-    );
+    } else {
+      // Normal archive toggle without moving
+      updateTaskMutation.mutate(
+        { taskId: task.id, updates: { archived: newArchivedState } },
+        {
+          onSettled: () => {
+            setIsLoading(false);
+            onUpdate();
+          },
+        }
+      );
+    }
   }
 
   async function handleCustomDateChange(date: Date | undefined) {
@@ -854,13 +901,13 @@ function TaskCardInner({
       ref={setNodeRef}
       style={style}
       onClick={(e) => onSelect?.(task.id, e)}
-      // Spread sortable listeners on full card for whole-card dragging
+      // Apply sortable listeners/attributes to the full card so the whole surface remains draggable
       {...attributes}
       {...listeners}
       className={cn(
         'group relative touch-none select-none overflow-hidden rounded-lg border-l-4 transition-all',
-        'cursor-grab active:cursor-grabbing',
-        'cursor-default hover:shadow-md',
+        dragDisabled ? 'cursor-default' : 'cursor-grab active:cursor-grabbing',
+        'hover:shadow-md',
         // Task list or priority-based styling
         getCardColorClasses(),
         // Dragging state
@@ -899,8 +946,6 @@ function TaskCardInner({
       <div className="p-4">
         {/* Header */}
         <div className="flex items-start gap-1">
-          {/* Drag handle removed – entire card draggable */}
-
           <div className="min-w-0 flex-1">
             <div className="mb-1 flex items-center gap-2">
               <button
@@ -1597,6 +1642,7 @@ function TaskCardInner({
       </Dialog>
       <TaskEditDialog
         task={task}
+        boardId={boardId}
         isOpen={editDialogOpen}
         onClose={() => setEditDialogOpen(false)}
         onUpdate={onUpdate}

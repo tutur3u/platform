@@ -1563,6 +1563,7 @@ export function ListView({ board, isPersonalWorkspace = false }: Props) {
       {selectedTask && (
         <TaskEditDialog
           task={selectedTask}
+          boardId={board.id}
           isOpen={!!selectedTaskId}
           onClose={() => setSelectedTaskId(null)}
           onUpdate={() => {
