@@ -54,12 +54,14 @@ export default async function UserGroupDetailsPage({
 
   // Fetch group members data for the GroupMembers component
   const MEMBERS_PAGE_SIZE = 10;
-  const groupMembersData = await getGroupMembersData(groupId, MEMBERS_PAGE_SIZE);
+  const groupMembersData = await getGroupMembersData(
+    groupId,
+    MEMBERS_PAGE_SIZE
+  );
 
   const { data: posts, count: postsCount } = await getGroupPosts(groupId);
   const { data: linkedProducts, count: lpCount } =
     await getLinkedProducts(groupId);
-
 
   return (
     <>
@@ -148,7 +150,12 @@ export default async function UserGroupDetailsPage({
       />
       <Separator className="my-4" />
       <div className="grid w-full grid-cols-1 gap-4 lg:grid-cols-2">
-        <GroupMembers wsId={wsId} groupId={groupId} initialData={groupMembersData} pageSize={MEMBERS_PAGE_SIZE} />
+        <GroupMembers
+          wsId={wsId}
+          groupId={groupId}
+          initialData={groupMembersData}
+          pageSize={MEMBERS_PAGE_SIZE}
+        />
 
         <div className="flex flex-col rounded-lg border border-border bg-foreground/5 p-4">
           <div className="flex flex-row items-center justify-between mb-2">
@@ -355,7 +362,7 @@ async function getLinkedProducts(groupId: string) {
 
 async function getGroupMembersData(groupId: string, PAGE_SIZE: number) {
   const supabase = await createClient();
-  
+
   // Fetch all users in the group with their roles
   const { data: groupUsers, error: groupError } = await supabase
     .from('workspace_user_groups_users')
@@ -365,7 +372,6 @@ async function getGroupMembersData(groupId: string, PAGE_SIZE: number) {
     `)
     .eq('group_id', groupId)
     .range(0, PAGE_SIZE - 1);
-
 
   if (groupError) throw groupError;
   if (!groupUsers) return [];

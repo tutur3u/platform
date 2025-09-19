@@ -12,8 +12,21 @@ import {
   DropdownMenuContent,
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
-import { Cake, ChevronDown, Filter, Mail, Phone, User, UserCheck, VenusAndMars } from '@tuturuuu/ui/icons';
-import { HoverCard, HoverCardContent, HoverCardTrigger } from '@tuturuuu/ui/hover-card';
+import {
+  Cake,
+  ChevronDown,
+  Filter,
+  Mail,
+  Phone,
+  User,
+  UserCheck,
+  VenusAndMars,
+} from '@tuturuuu/ui/icons';
+import {
+  HoverCard,
+  HoverCardContent,
+  HoverCardTrigger,
+} from '@tuturuuu/ui/hover-card';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
@@ -34,7 +47,12 @@ interface GroupMembersProps {
   pageSize: number;
 }
 
-export default function GroupMembers({ wsId, groupId, initialData, pageSize }: GroupMembersProps) {
+export default function GroupMembers({
+  wsId,
+  groupId,
+  initialData,
+  pageSize,
+}: GroupMembersProps) {
   const t = useTranslations();
 
   // React Query with server-side data hydration
@@ -64,7 +82,8 @@ export default function GroupMembers({ wsId, groupId, initialData, pageSize }: G
         .range(from, to);
 
       if (groupError) throw groupError;
-      if (!groupUsers || groupUsers.length === 0) return { items: [], next: undefined };
+      if (!groupUsers || groupUsers.length === 0)
+        return { items: [], next: undefined };
 
       const membersWithGuestStatus = await Promise.all(
         groupUsers.map(async (user) => {
@@ -81,7 +100,10 @@ export default function GroupMembers({ wsId, groupId, initialData, pageSize }: G
       );
 
       const next = groupUsers.length < pageSize ? undefined : to + 1;
-      return { items: membersWithGuestStatus, next } as { items: GroupMember[]; next?: number };
+      return { items: membersWithGuestStatus, next } as {
+        items: GroupMember[];
+        next?: number;
+      };
     },
     getNextPageParam: (lastPage) => lastPage.next,
     initialPageParam: 0,
@@ -164,7 +186,9 @@ export default function GroupMembers({ wsId, groupId, initialData, pageSize }: G
           {t('ws-roles.members')}
         </div>
         <div className="flex items-center justify-center py-8">
-          <div className="text-dynamic-red">{t('common.error')} {error.message}</div>
+          <div className="text-dynamic-red">
+            {t('common.error')} {error.message}
+          </div>
         </div>
       </div>
     );
@@ -173,9 +197,7 @@ export default function GroupMembers({ wsId, groupId, initialData, pageSize }: G
   return (
     <div className="flex flex-col rounded-lg border border-border bg-foreground/5 p-4">
       <div className="mb-4 flex items-center justify-between">
-        <div className="font-semibold text-xl">
-          {t('ws-roles.members')}
-        </div>
+        <div className="font-semibold text-xl">{t('ws-roles.members')}</div>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="outline">
@@ -238,22 +260,37 @@ export default function GroupMembers({ wsId, groupId, initialData, pageSize }: G
                       <CardContent className="p-0">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-3">
-                          {hasAvatar ? (
-                            <Avatar className="h-8 w-8">
-                              <AvatarImage src={person.avatar_url as string} alt={person.display_name || person.full_name || t('avatar')} />
-                            </Avatar>
-                          ) : (
-                            <div className={`flex h-8 w-8 items-center justify-center rounded-full ${isManager ? 'bg-dynamic-green/10' : 'bg-dynamic-blue/10'}`}>
-                              {isManager ? (
-                                <UserCheck className={`h-4 w-4 ${isManager ? 'text-dynamic-green' : 'text-dynamic-blue'}`} />
-                              ) : (
-                                <User className="h-4 w-4 text-dynamic-blue" />
-                              )}
-                            </div>
-                          )}
+                            {hasAvatar ? (
+                              <Avatar className="h-8 w-8">
+                                <AvatarImage
+                                  src={person.avatar_url as string}
+                                  alt={
+                                    person.display_name ||
+                                    person.full_name ||
+                                    t('avatar')
+                                  }
+                                />
+                              </Avatar>
+                            ) : (
+                              <div
+                                className={`flex h-8 w-8 items-center justify-center rounded-full ${isManager ? 'bg-dynamic-green/10' : 'bg-dynamic-blue/10'}`}
+                              >
+                                {isManager ? (
+                                  <UserCheck
+                                    className={`h-4 w-4 ${isManager ? 'text-dynamic-green' : 'text-dynamic-blue'}`}
+                                  />
+                                ) : (
+                                  <User className="h-4 w-4 text-dynamic-blue" />
+                                )}
+                              </div>
+                            )}
                             <div>
                               <div className="font-medium">
-                              {person.display_name || person.full_name || (isManager ? t('ws-user-group-details.managers') : t('common.unknown'))}
+                                {person.display_name ||
+                                  person.full_name ||
+                                  (isManager
+                                    ? t('ws-user-group-details.managers')
+                                    : t('common.unknown'))}
                               </div>
                             </div>
                           </div>
@@ -283,23 +320,32 @@ export default function GroupMembers({ wsId, groupId, initialData, pageSize }: G
                 <HoverCardContent align="end" className="w-80">
                   <div className="space-y-2">
                     <div className="text-sm flex items-center gap-2">
-                        <Phone className="h-4 w-4" />
-                        <span className="sr-only">{t('settings-account.phone-number')}</span>{' '}
-                      <span>{person.phone || t('ws-user-group-attendance.phone_fallback')}</span>
+                      <Phone className="h-4 w-4" />
+                      <span className="sr-only">
+                        {t('settings-account.phone-number')}
+                      </span>{' '}
+                      <span>
+                        {person.phone ||
+                          t('ws-user-group-attendance.phone_fallback')}
+                      </span>
                     </div>
                     <div className="text-sm flex items-center gap-2">
-                    <VenusAndMars className="h-4 w-4" />
-                    <span className="sr-only">{t('common.gender')}</span>
+                      <VenusAndMars className="h-4 w-4" />
+                      <span className="sr-only">{t('common.gender')}</span>
                       <span>{person.gender || t('common.unknown')}</span>
                     </div>
                     <div className="text-sm flex items-center gap-2">
-                        <Cake className="h-4 w-4" />
-                        <span className="sr-only">{t('common.birthday')}</span>
-                      <span>{person.birthday ? new Date(person.birthday).toLocaleDateString() : t('common.unknown')}</span>
+                      <Cake className="h-4 w-4" />
+                      <span className="sr-only">{t('common.birthday')}</span>
+                      <span>
+                        {person.birthday
+                          ? new Date(person.birthday).toLocaleDateString()
+                          : t('common.unknown')}
+                      </span>
                     </div>
                     <div className="text-sm flex items-center gap-2">
-                        <Mail className="h-4 w-4" />
-                        <span className="sr-only">{t('ws-emails.singular')}</span>
+                      <Mail className="h-4 w-4" />
+                      <span className="sr-only">{t('ws-emails.singular')}</span>
                       <span>{person.email || t('common.unknown')}</span>
                     </div>
                   </div>
@@ -311,7 +357,11 @@ export default function GroupMembers({ wsId, groupId, initialData, pageSize }: G
       </div>
       <div className="mt-3 flex justify-center">
         {hasNextPage && (
-          <Button onClick={() => fetchNextPage()} disabled={isFetchingNextPage} variant="outline">
+          <Button
+            onClick={() => fetchNextPage()}
+            disabled={isFetchingNextPage}
+            variant="outline"
+          >
             <ChevronDown className="h-4 w-4" />
             {isFetchingNextPage ? t('common.loading') : t('common.load_more')}
           </Button>
