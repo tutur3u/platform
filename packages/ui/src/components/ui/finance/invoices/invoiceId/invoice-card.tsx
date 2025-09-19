@@ -38,7 +38,7 @@ export default function InvoiceCard({
   invoice: Invoice & {
     customer_display_name: string | null;
     customer_full_name: string | null;
-    wallet : {
+    wallet: {
       name: string | null;
     } | null;
     creator: {
@@ -123,7 +123,9 @@ export default function InvoiceCard({
     const printWindow = window.open(url, '_blank', 'noopener,noreferrer');
     if (printWindow) {
       const revoke = () => {
-        try { URL.revokeObjectURL(url); } catch (_) {}
+        try {
+          URL.revokeObjectURL(url);
+        } catch (_) {}
       };
       printWindow.addEventListener('beforeunload', revoke, { once: true });
       setTimeout(revoke, 60000);
@@ -204,13 +206,28 @@ export default function InvoiceCard({
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuItem className="gap-2" onClick={(e) => { e.preventDefault(); handlePrintExport(); }}>
+            <DropdownMenuItem
+              className="gap-2"
+              onClick={(e) => {
+                e.preventDefault();
+                handlePrintExport();
+              }}
+            >
               <Printer className="h-4 w-4" />
               {t('invoices.print')}
             </DropdownMenuItem>
-            <DropdownMenuItem className="gap-2" disabled={isExporting} onClick={(e) => { e.preventDefault(); handlePngExport(); }}>
+            <DropdownMenuItem
+              className="gap-2"
+              disabled={isExporting}
+              onClick={(e) => {
+                e.preventDefault();
+                handlePngExport();
+              }}
+            >
               <ImageIcon className="h-4 w-4" />
-              {isExporting ? t('ws-reports.exporting_png') : t('invoices.download_image')}
+              {isExporting
+                ? t('ws-reports.exporting_png')
+                : t('invoices.download_image')}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -250,10 +267,14 @@ export default function InvoiceCard({
               )}
             </div>
             <div className="flex-1 text-right">
-              <h1 className={`mb-2 font-bold text-3xl ${isDarkPreview ? 'text-foreground/70' : 'text-black'}`}>
+              <h1
+                className={`mb-2 font-bold text-3xl ${isDarkPreview ? 'text-foreground/70' : 'text-black'}`}
+              >
                 {t('invoices.invoice')}
               </h1>
-              <p className={`text-xs print:text-black ${isDarkPreview ? 'text-foreground/70' : 'text-black'}`}>
+              <p
+                className={`text-xs print:text-black ${isDarkPreview ? 'text-foreground/70' : 'text-black'}`}
+              >
                 #{invoice.id}
               </p>
             </div>
@@ -262,15 +283,23 @@ export default function InvoiceCard({
           {/* Company Info */}
           <div className="mb-8 text-center">
             {getConfig('BRAND_NAME') && (
-              <h2 className={`font-bold text-xl ${isDarkPreview ? 'text-foreground/70' : 'text-black'}`}>{getConfig('BRAND_NAME')}</h2>
+              <h2
+                className={`font-bold text-xl ${isDarkPreview ? 'text-foreground/70' : 'text-black'}`}
+              >
+                {getConfig('BRAND_NAME')}
+              </h2>
             )}
             {getConfig('BRAND_LOCATION') && (
-              <p className={` print:text-black ${isDarkPreview ? 'text-foreground/70' : 'text-black'}`}>
+              <p
+                className={` print:text-black ${isDarkPreview ? 'text-foreground/70' : 'text-black'}`}
+              >
                 {getConfig('BRAND_LOCATION')}
               </p>
             )}
             {getConfig('BRAND_PHONE_NUMBER') && (
-              <p className={` print:text-black ${isDarkPreview ? 'text-foreground/70' : 'text-black'}`}>
+              <p
+                className={` print:text-black ${isDarkPreview ? 'text-foreground/70' : 'text-black'}`}
+              >
                 {getConfig('BRAND_PHONE_NUMBER')}
               </p>
             )}
@@ -281,15 +310,25 @@ export default function InvoiceCard({
           {/* Invoice Details */}
           <div className="mb-8 flex justify-between">
             <div>
-              <h3 className={`mb-2 font-semibold ${isDarkPreview ? 'text-foreground/70' : 'text-black'}`}>{t('invoices.bill_to')}:</h3>
-              <p className={`${isDarkPreview ? 'text-foreground/70' : 'text-black'}`}>
+              <h3
+                className={`mb-2 font-semibold ${isDarkPreview ? 'text-foreground/70' : 'text-black'}`}
+              >
+                {t('invoices.bill_to')}:
+              </h3>
+              <p
+                className={`${isDarkPreview ? 'text-foreground/70' : 'text-black'}`}
+              >
                 {invoice.customer_full_name || invoice.customer_display_name}
               </p>
             </div>
             <div className="text-right">
               {invoice.created_at && (
-                <p className={`${isDarkPreview ? 'text-foreground/70' : 'text-black'}`}>
-                  <span className={`font-semibold ${isDarkPreview ? 'text-foreground/70' : 'text-black'}`}>
+                <p
+                  className={`${isDarkPreview ? 'text-foreground/70' : 'text-black'}`}
+                >
+                  <span
+                    className={`font-semibold ${isDarkPreview ? 'text-foreground/70' : 'text-black'}`}
+                  >
                     {t('invoices.invoice_date')}:
                   </span>{' '}
                   {dayjs(invoice.created_at).format('DD/MM/YYYY')}
@@ -300,10 +339,14 @@ export default function InvoiceCard({
 
           {/* Invoice Content */}
           <div className="mb-8">
-            <h3 className={`mb-2 font-semibold ${isDarkPreview ? 'text-foreground/70' : 'text-black'}`}>
+            <h3
+              className={`mb-2 font-semibold ${isDarkPreview ? 'text-foreground/70' : 'text-black'}`}
+            >
               {t('invoices.content')}:
             </h3>
-            <p className={`${isDarkPreview ? 'text-foreground/70' : 'text-black'} text-wrap break-words`}>
+            <p
+              className={`${isDarkPreview ? 'text-foreground/70' : 'text-black'} text-wrap break-words`}
+            >
               {invoice.notice}
             </p>
           </div>
@@ -312,21 +355,49 @@ export default function InvoiceCard({
           <table className="mb-8 w-full">
             <thead className="w-full">
               <tr className="border-b">
-                <th className={`py-2 text-left ${isDarkPreview ? 'text-foreground/70' : 'text-black'}`}>{t('invoices.description')}</th>
-                <th className={`py-2 text-right ${isDarkPreview ? 'text-foreground/70' : 'text-black'}`}>{t('invoices.quantity')}</th>
-                <th className={`py-2 text-right ${isDarkPreview ? 'text-foreground/70' : 'text-black'}`}>{t('invoices.price')}</th>
-                <th className={`py-2 text-right ${isDarkPreview ? 'text-foreground/70' : 'text-black'}`}>{t('invoices.total')}</th>
+                <th
+                  className={`py-2 text-left ${isDarkPreview ? 'text-foreground/70' : 'text-black'}`}
+                >
+                  {t('invoices.description')}
+                </th>
+                <th
+                  className={`py-2 text-right ${isDarkPreview ? 'text-foreground/70' : 'text-black'}`}
+                >
+                  {t('invoices.quantity')}
+                </th>
+                <th
+                  className={`py-2 text-right ${isDarkPreview ? 'text-foreground/70' : 'text-black'}`}
+                >
+                  {t('invoices.price')}
+                </th>
+                <th
+                  className={`py-2 text-right ${isDarkPreview ? 'text-foreground/70' : 'text-black'}`}
+                >
+                  {t('invoices.total')}
+                </th>
               </tr>
             </thead>
             <tbody className="w-full">
               {products.map((product) => (
                 <tr key={product.product_id} className="border-b">
-                  <td className={`py-2 ${isDarkPreview ? 'text-foreground/70' : 'text-black'}`}>{product.product_name}</td>
-                  <td className={`py-2 text-right ${isDarkPreview ? 'text-foreground/70' : 'text-black'}`}>{product.amount}</td>
-                  <td className={`py-2 text-right ${isDarkPreview ? 'text-foreground/70' : 'text-black'}`}>
+                  <td
+                    className={`py-2 ${isDarkPreview ? 'text-foreground/70' : 'text-black'}`}
+                  >
+                    {product.product_name}
+                  </td>
+                  <td
+                    className={`py-2 text-right ${isDarkPreview ? 'text-foreground/70' : 'text-black'}`}
+                  >
+                    {product.amount}
+                  </td>
+                  <td
+                    className={`py-2 text-right ${isDarkPreview ? 'text-foreground/70' : 'text-black'}`}
+                  >
                     {formatCurrency(product.price, 'VND')}
                   </td>
-                  <td className={`py-2 text-right ${isDarkPreview ? 'text-foreground/70' : 'text-black'}`}>
+                  <td
+                    className={`py-2 text-right ${isDarkPreview ? 'text-foreground/70' : 'text-black'}`}
+                  >
                     {formatCurrency(product.amount * product.price, 'VND')}
                   </td>
                 </tr>
@@ -337,11 +408,16 @@ export default function InvoiceCard({
           {/* Promotions */}
           {promotions.length > 0 && (
             <div className="mb-8">
-              <h3 className={`mb-2 font-semibold ${isDarkPreview ? 'text-foreground/70' : 'text-black'}`}>
+              <h3
+                className={`mb-2 font-semibold ${isDarkPreview ? 'text-foreground/70' : 'text-black'}`}
+              >
                 {t('invoices.promotions')}:
               </h3>
               {promotions.map((promo) => (
-                <p key={promo.promo_id} className={`${isDarkPreview ? 'text-foreground/70' : 'text-black'}`}>
+                <p
+                  key={promo.promo_id}
+                  className={`${isDarkPreview ? 'text-foreground/70' : 'text-black'}`}
+                >
                   {promo.name || promo.code}:{' '}
                   {promo.use_ratio
                     ? `${promo.value}%`
@@ -354,12 +430,16 @@ export default function InvoiceCard({
           <Separator className="my-2" />
           {/* Total */}
           <div className="text-right">
-            <p className={`mb-2 ${isDarkPreview ? 'text-foreground/70' : 'text-black'}`}>
+            <p
+              className={`mb-2 ${isDarkPreview ? 'text-foreground/70' : 'text-black'}`}
+            >
               <span className="font-semibold">{t('invoices.subtotal')}:</span>{' '}
               {formatCurrency(subtotal, 'VND')}
             </p>
             {promotions.length > 0 && (
-              <p className={`mb-2 ${isDarkPreview ? 'text-foreground/70' : 'text-black'}`}>
+              <p
+                className={`mb-2 ${isDarkPreview ? 'text-foreground/70' : 'text-black'}`}
+              >
                 <span className="font-semibold">
                   {t('invoices.discounts')}: {''}
                 </span>
@@ -367,12 +447,16 @@ export default function InvoiceCard({
                 {formatCurrency(discount_amount, 'VND')}
               </p>
             )}
-            <p className={`mb-2 ${isDarkPreview ? 'text-foreground/70' : 'text-black'}`}>
+            <p
+              className={`mb-2 ${isDarkPreview ? 'text-foreground/70' : 'text-black'}`}
+            >
               <span className="font-semibold">{t('invoices.rounding')}:</span>{' '}
               {formatCurrency(invoice.total_diff, 'VND')}
             </p>
             <Separator className="my-2" />
-            <p className={`text-xl ${isDarkPreview ? 'text-foreground/70' : 'text-black'}`}>
+            <p
+              className={`text-xl ${isDarkPreview ? 'text-foreground/70' : 'text-black'}`}
+            >
               <span className="font-bold">{t('invoices.total')}:</span>{' '}
               <span className="font-semibold">
                 {formatCurrency(invoice.price + invoice.total_diff, 'VND')}
@@ -383,29 +467,36 @@ export default function InvoiceCard({
           {/* Wallet */}
           {invoice.wallet && (
             <div className="mb-8">
-              <h3 className={`mb-2 font-semibold ${isDarkPreview ? 'text-foreground/70' : 'text-black'}`}>
+              <h3
+                className={`mb-2 font-semibold ${isDarkPreview ? 'text-foreground/70' : 'text-black'}`}
+              >
                 {t('ws-wallets.wallet')}:
               </h3>
-            <p className={`${isDarkPreview ? 'text-foreground/70' : 'text-black'}`}>
-              {invoice.wallet.name}
-            </p>
+              <p
+                className={`${isDarkPreview ? 'text-foreground/70' : 'text-black'}`}
+              >
+                {invoice.wallet.name}
+              </p>
             </div>
           )}
 
           {/* Creator */}
           {invoice.creator && (
             <div className="mb-8">
-              <h3 className={`mb-2 font-semibold ${isDarkPreview ? 'text-foreground/70' : 'text-black'}`}>
+              <h3
+                className={`mb-2 font-semibold ${isDarkPreview ? 'text-foreground/70' : 'text-black'}`}
+              >
                 {t('ws-invoices.creator')}:
               </h3>
-              <p className={`${isDarkPreview ? 'text-foreground/70' : 'text-black'}`}>
+              <p
+                className={`${isDarkPreview ? 'text-foreground/70' : 'text-black'}`}
+              >
                 {invoice.creator.full_name || invoice.creator.display_name}
               </p>
             </div>
           )}
         </div>
       </div>
-
     </div>
   );
 }
