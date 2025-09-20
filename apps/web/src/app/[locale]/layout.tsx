@@ -11,10 +11,9 @@ import { font, generateCommonMetadata } from '@tuturuuu/utils/common/nextjs';
 import { cn } from '@tuturuuu/utils/format';
 import { VercelAnalytics, VercelInsights } from '@tuturuuu/vercel';
 import type { Metadata } from 'next';
-import { notFound } from 'next/navigation';
 import { setRequestLocale } from 'next-intl/server';
+import { notFound } from 'next/navigation';
 import type { ReactNode } from 'react';
-import { DEV_MODE } from '@/constants/common';
 
 export { viewport } from '@tuturuuu/utils/common/nextjs';
 
@@ -32,7 +31,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         en: 'Take control of your workflow, supercharged by AI.',
         vi: 'Quản lý công việc của bạn, siêu tốc độ cùng AI.',
       },
-      name: `${DEV_MODE && '[DEV] '} ${siteConfig.name}`,
+      name: siteConfig.name,
       url: siteConfig.url,
       ogImage: siteConfig.ogImage,
     },

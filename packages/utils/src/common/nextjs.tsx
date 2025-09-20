@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next';
 import { Noto_Sans } from 'next/font/google';
+import { DEV_MODE } from '../constants';
 
 export const font = Noto_Sans({
   subsets: ['latin', 'vietnamese'],
@@ -33,7 +34,7 @@ export async function generateCommonMetadata({
   return {
     title: {
       default: config.name,
-      template: `%s - ${config.name}`,
+      template: `${DEV_MODE ? '[DEV] ' : ''} %s | ${config.name}`,
     },
     metadataBase: new URL(config.url),
     description,
