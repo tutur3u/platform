@@ -6,7 +6,11 @@
   "crons": [
     {
       "path": "/api/cron/discord/wol/daily/remind",
-      "schedule": "35 15 * * *"
+      "schedule": "0 14 * * *"
+    },
+    {
+      "path": "/api/cron/discord/daily-report",
+      "schedule": "0 16 * * *"
     }
   ],
   "functions": {

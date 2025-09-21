@@ -26,6 +26,7 @@ image = (
         "discord_client",
         "link_shortener",
         "utils",
+        "daily_report",
         "wol_reminder",
     )
 )
@@ -952,7 +953,7 @@ def web_app():
     )
 
     def _is_cron_request_authorized(request: Request) -> bool:
-        secret = os.getenv("VERCEL_CRON_SECRET")
+        secret = os.getenv("VERCEL_CRON_SECRET") or os.getenv("CRON_SECRET")
         if not secret:
             return True
 
@@ -1259,5 +1260,47 @@ def web_app():
             "content_preview": result["content"],
             "mode": result.get("mode", "everyone"),
         }
+
+    @web_app.api_route("/daily-report", methods=["GET", "POST"])
+    async def daily_report_endpoint(request: Request):
+        """Trigger the workspace daily report via cron or manual invocation."""
+        if not _is_cron_request_authorized(request):
+            raise HTTPException(status_code=401, detail="Unauthorized")
+
+        from daily_report import DailyReportConfigurationError, trigger_daily_report
+        from discord_client import (
+            DiscordAPIError,
+            DiscordMissingAccessError,
+            DiscordMissingPermissionsError,
+        )
+
+        try:
+            result = await trigger_daily_report()
+        except DailyReportConfigurationError as error:
+            raise HTTPException(status_code=500, detail=str(error))
+        except DiscordMissingAccessError as error:
+            print(f"🤖: Cron daily report missing access: {error}")
+            raise HTTPException(
+                status_code=403,
+                detail=(
+                    "Bot lacks access to the configured channel. Verify the channel ID and bot permissions."
+                ),
+            )
+        except DiscordMissingPermissionsError as error:
+            print(f"🤖: Cron daily report missing permissions: {error}")
+            raise HTTPException(
+                status_code=403,
+                detail=(
+                    "Bot lacks permission to post in the configured channel (Send Messages or Mention Everyone)."
+                ),
+            )
+        except DiscordAPIError as error:
+            print(f"🤖: Error executing daily report: {error}")
+            raise HTTPException(status_code=500, detail="Failed to send daily report")
+        except Exception as error:
+            print(f"🤖: Unexpected error executing daily report: {error}")
+            raise HTTPException(status_code=500, detail="Unexpected error during daily report")
+
+        return {"status": "ok", **result}
 
     return web_app

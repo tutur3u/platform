@@ -15,8 +15,8 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ ok: false }, { status: 401 });
   }
 
-  const res = await fetch(
-    `${process.env.DISCORD_APP_DEPLOYMENT_URL}/wol-reminder`,
+  const response = await fetch(
+    `${process.env.DISCORD_APP_DEPLOYMENT_URL}/daily-report`,
     {
       method: 'POST',
       headers: {
@@ -28,9 +28,10 @@ export async function GET(req: NextRequest) {
 
   let data: unknown;
   try {
-    data = await res.json();
+    data = await response.json();
   } catch (error) {
     data = { ok: false, error: 'Invalid JSON from Discord app' };
   }
-  return NextResponse.json(data, { status: res.status });
+
+  return NextResponse.json(data, { status: response.status });
 }

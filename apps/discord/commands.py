@@ -1759,15 +1759,25 @@ class CommandHandler:
             from utils import get_supabase_client
             supabase = get_supabase_client()
             import datetime
-            import pytz  # type: ignore[import-not-found]
-            tz = pytz.timezone("Asia/Bangkok")
-            
+            from zoneinfo import ZoneInfo
+
+            tz = ZoneInfo("Asia/Ho_Chi_Minh")
+
             if target_date:
-                # Use provided date, convert to Asia/Bangkok timezone
-                base_date = tz.localize(target_date.replace(hour=0, minute=0, second=0, microsecond=0))
+                if target_date.tzinfo is None:
+                    # Assume naive timestamps are already in the target timezone
+                    base_date = target_date.replace(
+                        hour=0, minute=0, second=0, microsecond=0, tzinfo=tz
+                    )
+                else:
+                    base_date = target_date.astimezone(tz).replace(
+                        hour=0, minute=0, second=0, microsecond=0
+                    )
             else:
-                # Use current date
-                base_date = datetime.datetime.now(tz).replace(hour=0, minute=0, second=0, microsecond=0)
+                # Use current date in the target timezone
+                base_date = datetime.datetime.now(tz).replace(
+                    hour=0, minute=0, second=0, microsecond=0
+                )
             
             start_of_day = base_date
             start_of_yesterday = start_of_day - datetime.timedelta(days=1)
@@ -1804,7 +1814,11 @@ class CommandHandler:
                 if not started_raw:
                     continue
                 try:
-                    started = datetime.datetime.fromisoformat(str(started_raw).replace("Z","+00:00"))
+                    started = datetime.datetime.fromisoformat(
+                        str(started_raw).replace("Z", "+00:00")
+                    )
+                    if started.tzinfo is None:
+                        started = started.replace(tzinfo=datetime.timezone.utc)
                     started_local = started.astimezone(tz)
                 except Exception:
                     continue

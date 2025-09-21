@@ -7,6 +7,7 @@ A Discord bot that provides information about random free, public APIs and short
 - **API Information**: Get information about random free, public APIs
 - **Link Shortener**: Shorten URLs with optional custom slugs
 - **WOL Reminder**: Schedule or manually trigger the daily priorities reminder
+- **Daily Report Automation**: Post nightly time-tracking summaries to Discord
 - **Guild Restriction**: Only works in authorized Discord servers
 - **Modular Architecture**: Clean, maintainable code structure
 
@@ -61,7 +62,7 @@ Create two Modal secrets:
 
 1. Ensure `DISCORD_ANNOUNCEMENT_CHANNEL` and (optionally) `VERCEL_CRON_SECRET` are available to the Modal app. Keep the secret alongside your other Discord credentials.
 2. The reminder endpoint lives at `/wol-reminder` on the deployed FastAPI app. It accepts `GET` or `POST` requests.
-3. When `VERCEL_CRON_SECRET` is set, schedule callers (e.g., Vercel Cron) must send `Authorization: Bearer <VERCEL_CRON_SECRET>`.
+3. When `VERCEL_CRON_SECRET` or `CRON_SECRET` is set, schedule callers (e.g., Vercel Cron) must send `Authorization: Bearer <secret>`.
 4. Example Vercel Cron entry:
 
    ```json
@@ -77,6 +78,7 @@ Create two Modal secrets:
 5. You can also trigger the endpoint manually (e.g., `curl -H "Authorization: Bearer $VERCEL_CRON_SECRET" https://<deployment>/wol-reminder`).
 6. Ensure the bot has **View Channel**, **Send Messages**, and (optionally) **Mention Everyone** permissions on the configured channel. Without mention permission the reminder still posts but skips the `@everyone` ping.
 7. The cron endpoint accepts `Authorization: Bearer <secret>`, `X-Cron-Secret`, `X-Vercel-Cron-Secret`, or a `?secret=<value>` query parameter—use whichever is easiest in your environment.
+8. Set `DISCORD_DAILY_REPORT_WORKSPACE_ID` (and optionally `DISCORD_DAILY_REPORT_CHANNEL`) so the nightly report knows which workspace and channel to target.
 
 ### 5. Deploy and Test
 
