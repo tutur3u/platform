@@ -26,7 +26,8 @@ def build_wol_reminder_message(now: datetime | None = None) -> str:
         "@everyone 🌅 **Tomorrow's Focus Pulse**\n"
         f"Share your top priorities for **{formatted_date}** before {WOL_CUTOFF_DISPLAY}.\n"
         "✨ Let the crew know: what you're shipping, what support you need, and any early blockers.\n"
-        "Let's keep our WOL rhythm bright and land tomorrow with confidence! 🚀"
+        "Let's keep our WOL rhythm bright and land tomorrow with confidence! 🚀\n"
+        "_⏰ This reminder is automatically sent every day at 9:00 PM (GMT+7)_"
     )
 
 
@@ -34,7 +35,9 @@ async def trigger_wol_reminder(now: datetime | None = None) -> dict[str, str]:
     """Send the reminder message to the announcement channel."""
     channel_id = os.getenv("DISCORD_ANNOUNCEMENT_CHANNEL")
     if not channel_id:
-        raise RuntimeError("DISCORD_ANNOUNCEMENT_CHANNEL environment variable is not set")
+        raise RuntimeError(
+            "DISCORD_ANNOUNCEMENT_CHANNEL environment variable is not set"
+        )
 
     message = build_wol_reminder_message(now)
     try:
