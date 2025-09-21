@@ -1,16 +1,21 @@
 """Discord slash command definitions and handlers."""
 
-from typing import Dict, List, Optional, Any
+from typing import Any, Dict, List, Optional
 
 import aiohttp
 from config import ALLOWED_GUILD_IDS, DiscordResponseType
-from discord_client import DiscordClient
+from discord_client import (
+    DiscordAPIError,
+    DiscordClient,
+    DiscordMissingAccessError,
+)
 from link_shortener import LinkShortener
 from utils import (
     get_user_workspace_info,
     is_user_authorized_for_dm,
     is_user_authorized_for_guild,
 )
+from wol_reminder import trigger_wol_reminder
 
 
 class CommandHandler:
@@ -117,6 +122,11 @@ class CommandHandler:
                         "required": True,
                     },
                 ],
+            },
+            {
+                "name": "wol-reminder",
+                "description": "Send the daily WOL priorities reminder to the announcement channel",
+                "options": [],
             },
         ]
 
@@ -422,6 +432,68 @@ class CommandHandler:
 
         await self.discord_client.send_response(
             {"content": message}, app_id, interaction_token
+        )
+
+    async def handle_wol_reminder_command(
+        self,
+        app_id: str,
+        interaction_token: str,
+        user_info: Optional[dict] = None,
+    ) -> None:
+        """Handle the /wol-reminder command."""
+        try:
+            result = await trigger_wol_reminder()
+        except DiscordMissingAccessError as error:
+            await self.discord_client.send_response(
+                {
+                    "content": (
+                        "❌ **Error:** The bot cannot access the configured announcement channel.\n"
+                        "Please confirm `DISCORD_ANNOUNCEMENT_CHANNEL` points to a text channel where the bot has"
+                        " **View Channel** and **Send Messages** permissions."
+                    )
+                },
+                app_id,
+                interaction_token,
+            )
+            print(f"WOL reminder missing access: {error}")
+            return
+        except DiscordAPIError as error:
+            print(f"Error sending WOL reminder: {error}")
+            await self.discord_client.send_response(
+                {
+                    "content": (
+                        "❌ **Error:** Unable to send the reminder. Please try again or check the cron endpoint logs."
+                    )
+                },
+                app_id,
+                interaction_token,
+            )
+            return
+
+        channel_mention = f"<#{result['channel_id']}>"
+        requester = None
+        if user_info:
+            requester = user_info.get("display_name") or user_info.get("handle")
+
+        prefix = "✅ Reminder sent."
+        if requester:
+            prefix = f"✅ Reminder triggered by {requester}."
+
+        suffix = ""
+        if result.get("mode") == "no-mention":
+            suffix = (
+                "\n⚠️ Bot lacks permission to ping @everyone in that channel, so the notification omitted the mention."
+            )
+
+        await self.discord_client.send_response(
+            {
+                "content": (
+                    f"{prefix}\n"
+                    f"Message delivered in {channel_mention}.{suffix}"
+                )
+            },
+            app_id,
+            interaction_token,
         )
 
     async def handle_ticket_command(
@@ -1970,4 +2042,3 @@ class CommandHandler:
                     "flags": 64  # EPHEMERAL flag
                 }
             }
-

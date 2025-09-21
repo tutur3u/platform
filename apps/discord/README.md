@@ -6,6 +6,7 @@ A Discord bot that provides information about random free, public APIs and short
 
 - **API Information**: Get information about random free, public APIs
 - **Link Shortener**: Shorten URLs with optional custom slugs
+- **WOL Reminder**: Schedule or manually trigger the daily priorities reminder
 - **Guild Restriction**: Only works in authorized Discord servers
 - **Modular Architecture**: Clean, maintainable code structure
 
@@ -49,13 +50,35 @@ Create two Modal secrets:
 - `DISCORD_BOT_TOKEN`: Your bot token from step 1
 - `DISCORD_CLIENT_ID`: Your application ID from step 1
 - `DISCORD_PUBLIC_KEY`: Your application's public key (found in General Information)
+- `DISCORD_ANNOUNCEMENT_CHANNEL`: Channel ID where the WOL reminder should be posted
 
 #### Supabase Secret (`supabase-secret`)
 
 - `SUPABASE_URL`: Your Supabase project URL
 - `SUPABASE_SERVICE_ROLE_KEY`: Your Supabase service role key (found in Project Settings > API)
 
-### 4. Deploy and Test
+### 4. Configure WOL Reminder Cron
+
+1. Ensure `DISCORD_ANNOUNCEMENT_CHANNEL` and (optionally) `VERCEL_CRON_SECRET` are available to the Modal app. Keep the secret alongside your other Discord credentials.
+2. The reminder endpoint lives at `/wol-reminder` on the deployed FastAPI app. It accepts `GET` or `POST` requests.
+3. When `VERCEL_CRON_SECRET` is set, schedule callers (e.g., Vercel Cron) must send `Authorization: Bearer <VERCEL_CRON_SECRET>`.
+4. Example Vercel Cron entry:
+
+   ```json
+   {
+     "path": "/wol-reminder",
+     "schedule": "0 14 * * *",
+     "region": "iad1"
+   }
+   ```
+
+   The example runs at 09:00 PM GMT+7 (14:00 UTC). Adjust as needed.
+
+5. You can also trigger the endpoint manually (e.g., `curl -H "Authorization: Bearer $VERCEL_CRON_SECRET" https://<deployment>/wol-reminder`).
+6. Ensure the bot has **View Channel**, **Send Messages**, and (optionally) **Mention Everyone** permissions on the configured channel. Without mention permission the reminder still posts but skips the `@everyone` ping.
+7. The cron endpoint accepts `Authorization: Bearer <secret>`, `X-Cron-Secret`, `X-Vercel-Cron-Secret`, or a `?secret=<value>` query parameter—use whichever is easiest in your environment.
+
+### 5. Deploy and Test
 
 ```bash
 # Test the API wrapper
@@ -118,6 +141,19 @@ Shorten a URL with an optional custom slug.
 Original URL: https://example.com/very-long-url
 Shortened URL: https://tuturuuu.com/s/abc123
 Slug: abc123
+```
+
+### `/wol-reminder`
+
+Send the daily “working out loud” reminder to the configured announcement channel. Only authorized workspace members can execute it.
+
+If the bot cannot access that channel, the command responds with a permission hint instead of posting the reminder.
+
+**Response:**
+
+```
+✅ Reminder triggered by <display name>.
+Message delivered in <#channel>.
 ```
 
 ## Troubleshooting

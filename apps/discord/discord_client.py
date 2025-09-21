@@ -1,8 +1,27 @@
 """Discord client functionality for the bot."""
 
-from typing import Dict
+import json
+import os
+from typing import Any, Dict, Optional
 
 import aiohttp
+
+
+class DiscordAPIError(RuntimeError):
+    """Base exception for Discord API failures."""
+
+    def __init__(self, message: str, *, status: int | None = None, code: int | None = None):
+        super().__init__(message)
+        self.status = status
+        self.code = code
+
+
+class DiscordMissingAccessError(DiscordAPIError):
+    """Raised when the bot lacks access to the target resource."""
+
+
+class DiscordMissingPermissionsError(DiscordAPIError):
+    """Raised when the bot is missing send/mention permissions."""
 
 
 class DiscordClient:
@@ -123,6 +142,58 @@ class DiscordClient:
             "type": 1,  # ACTION_ROW
             "components": [select_menu]
         }]
+
+    @staticmethod
+    async def send_channel_message(
+        channel_id: str,
+        content: str,
+        allowed_mentions: Optional[Dict[str, Any]] = None,
+    ) -> None:
+        """Send a message to a Discord channel."""
+        bot_token = os.getenv("DISCORD_BOT_TOKEN")
+        if not bot_token:
+            raise RuntimeError("DISCORD_BOT_TOKEN environment variable is not set")
+
+        url = f"https://discord.com/api/v10/channels/{channel_id}/messages"
+        headers = {
+            "Authorization": f"Bot {bot_token}",
+            "Content-Type": "application/json",
+        }
+        payload: Dict[str, Any] = {"content": content}
+        if allowed_mentions is not None:
+            payload["allowed_mentions"] = allowed_mentions
+
+        async with aiohttp.ClientSession() as session:
+            async with session.post(url, headers=headers, json=payload) as resp:
+                if resp.status >= 400:
+                    raw = await resp.text()
+                    parsed: Dict[str, Any] = {}
+                    try:
+                        parsed = json.loads(raw)
+                    except json.JSONDecodeError:
+                        parsed = {"message": raw}
+
+                    error_message = parsed.get("message", "Unknown Discord error")
+                    error_code = parsed.get("code")
+
+                    if resp.status == 403 and error_code == 50001:
+                        raise DiscordMissingAccessError(
+                            f"Missing access to channel {channel_id}: {error_message}",
+                            status=resp.status,
+                            code=error_code,
+                        ) from None
+                    if resp.status == 403 and error_code == 50013:
+                        raise DiscordMissingPermissionsError(
+                            f"Missing permissions to post in channel {channel_id}: {error_message}",
+                            status=resp.status,
+                            code=error_code,
+                        ) from None
+
+                    raise DiscordAPIError(
+                        f"Failed to send channel message ({resp.status}): {error_message}",
+                        status=resp.status,
+                        code=error_code,
+                    )
 
     @staticmethod
     def create_list_selection_components(lists: list, board_id: str) -> list:

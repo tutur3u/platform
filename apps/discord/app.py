@@ -20,7 +20,13 @@ image = (
         "aiohttp",
     )
     .add_local_python_source(
-        "auth", "commands", "config", "discord_client", "link_shortener", "utils"
+        "auth",
+        "commands",
+        "config",
+        "discord_client",
+        "link_shortener",
+        "utils",
+        "wol_reminder",
     )
 )
 
@@ -42,6 +48,7 @@ discord_secret = modal.Secret.from_name(
         "DISCORD_BOT_TOKEN",
         "DISCORD_CLIENT_ID",
         "DISCORD_PUBLIC_KEY",
+        "DISCORD_ANNOUNCEMENT_CHANNEL",
     ],
 )
 
@@ -242,6 +249,58 @@ async def reply_tumeet_plan(
         traceback.print_exc()
         await handler.discord_client.send_response(
             {"content": f"❌ **Error:** {e}"}, app_id, interaction_token
+        )
+
+
+@app.function(secrets=[discord_secret, supabase_secret], image=image)
+@modal.concurrent(max_inputs=1000)
+async def reply_wol_reminder(
+    app_id: str,
+    interaction_token: str,
+    user_id: Optional[str] = None,
+    guild_id: Optional[str] = None,
+):
+    """Handle /wol-reminder command with authorization checks."""
+    handler = CommandHandler()
+
+    if user_id:
+        if guild_id:
+            if not handler.is_user_authorized(user_id, guild_id):
+                await handler.discord_client.send_response(
+                    {
+                        "content": handler.discord_client.format_unauthorized_user_message()
+                    },
+                    app_id,
+                    interaction_token,
+                )
+                return
+        else:
+            if not handler.is_user_authorized_for_dm(user_id):
+                await handler.discord_client.send_response(
+                    {
+                        "content": handler.discord_client.format_unauthorized_user_message()
+                    },
+                    app_id,
+                    interaction_token,
+                )
+                return
+
+    user_info = None
+    if user_id:
+        user_info = handler.get_user_workspace_info(user_id, guild_id or "")
+
+    try:
+        await handler.handle_wol_reminder_command(
+            app_id,
+            interaction_token,
+            user_info,
+        )
+    except Exception as error:
+        import traceback
+
+        traceback.print_exc()
+        await handler.discord_client.send_response(
+            {"content": f"❌ **Error:** {error}"}, app_id, interaction_token
         )
 
 
@@ -877,6 +936,7 @@ def create_slash_command(force: bool = False):
 @modal.asgi_app()
 def web_app():
     """Main web application for handling Discord interactions."""
+    import os
     from fastapi import FastAPI, HTTPException, Request
     from fastapi.middleware.cors import CORSMiddleware
 
@@ -890,6 +950,31 @@ def web_app():
         allow_methods=["*"],
         allow_headers=["*"],
     )
+
+    def _is_cron_request_authorized(request: Request) -> bool:
+        secret = os.getenv("VERCEL_CRON_SECRET")
+        if not secret:
+            return True
+
+        auth_header = request.headers.get("Authorization")
+        if auth_header:
+            parts = auth_header.strip().split()
+            if len(parts) == 2 and parts[0].lower() == "bearer" and parts[1] == secret:
+                return True
+            if auth_header.strip() == secret:
+                return True
+
+        cron_header = request.headers.get("X-Cron-Secret") or request.headers.get(
+            "X-Vercel-Cron-Secret"
+        )
+        if cron_header and cron_header.strip() == secret:
+            return True
+
+        query_secret = request.query_params.get("secret")
+        if query_secret and query_secret.strip() == secret:
+            return True
+
+        return False
 
     @web_app.post("/api")
     async def get_api(request: Request):
@@ -984,6 +1069,8 @@ def web_app():
             elif command_name == "assignees":
                 options = data["data"].get("options", [])
                 reply_assignees.spawn(app_id, interaction_token, options, user_id, guild_id)
+            elif command_name == "wol-reminder":
+                reply_wol_reminder.spawn(app_id, interaction_token, user_id, guild_id)
             else:
                 print(f"🤖: unknown command: {command_name}")
                 handler = CommandHandler()
@@ -1142,5 +1229,35 @@ def web_app():
 
         print(f"🤖: unable to parse request with type {data.get('type')}")
         raise HTTPException(status_code=400, detail="Bad request")
+
+    @web_app.api_route("/wol-reminder", methods=["GET", "POST"])
+    async def wol_reminder_endpoint(request: Request):
+        """Trigger the WOL reminder via cron or manual invocation."""
+        if not _is_cron_request_authorized(request):
+            raise HTTPException(status_code=401, detail="Unauthorized")
+
+        from wol_reminder import trigger_wol_reminder
+        from discord_client import DiscordAPIError, DiscordMissingAccessError
+
+        try:
+            result = await trigger_wol_reminder()
+        except DiscordMissingAccessError as error:
+            print(f"🤖: Cron WOL reminder missing access: {error}")
+            raise HTTPException(
+                status_code=403,
+                detail=(
+                    "Bot lacks access to the configured channel. Verify the channel ID and bot permissions."
+                ),
+            )
+        except DiscordAPIError as error:
+            print(f"🤖: Error executing WOL reminder: {error}")
+            raise HTTPException(status_code=500, detail="Failed to send reminder")
+
+        return {
+            "status": "ok",
+            "channel_id": result["channel_id"],
+            "content_preview": result["content"],
+            "mode": result.get("mode", "everyone"),
+        }
 
     return web_app

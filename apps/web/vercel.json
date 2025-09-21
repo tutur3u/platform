@@ -3,6 +3,12 @@
   "github": {
     "enabled": false
   },
+  "crons": [
+    {
+      "path": "/api/cron/discord/wol/daily/remind",
+      "schedule": "30 15 * * *"
+    }
+  ],
   "functions": {
     "src/app/api/**/*": {
       "maxDuration": 300
