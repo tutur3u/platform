@@ -101,7 +101,7 @@
     "use-debounce": "^10.0.6",
     "uuid": "^13.0.0",
     "xlsx": "file:vendor/xlsx-0.20.3.tgz",
-    "zod": "^4.1.9"
+    "zod": "^4.1.11"
   },
   "devDependencies": {
     "@next/bundle-analyzer": "^15.5.3",
