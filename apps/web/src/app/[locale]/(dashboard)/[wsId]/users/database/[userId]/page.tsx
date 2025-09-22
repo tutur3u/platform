@@ -75,11 +75,12 @@ export default async function WorkspaceUserDetailsPage({
 
   // Fetch referral data
   const workspaceSettings = await getWorkspaceSettings(wsId);
-  const { data: availableUsers, count: availableUsersCount } = await getAvailableUsersForReferral({
-    wsId,
-    currentUserId: userId,
-    referredBy: data.referred_by,
-  });
+  const { data: availableUsers, count: availableUsersCount } =
+    await getAvailableUsersForReferral({
+      wsId,
+      currentUserId: userId,
+      referredBy: data.referred_by,
+    });
 
   return (
     <div className="flex min-h-full w-full flex-col">
@@ -94,9 +95,7 @@ export default async function WorkspaceUserDetailsPage({
           />
           {data.full_name && <div>{data.full_name}</div>}
           {isGuest && (
-            <div
-              className="inline-flex items-center rounded-full border bg-dynamic-orange/10 text-dynamic-orange border-dynamic-orange/20 px-2 py-0.5 text-sm font-medium"
-            >
+            <div className="inline-flex items-center rounded-full border bg-dynamic-orange/10 text-dynamic-orange border-dynamic-orange/20 px-2 py-0.5 text-sm font-medium">
               {t('guest')}
             </div>
           )}
@@ -118,7 +117,9 @@ export default async function WorkspaceUserDetailsPage({
       <div className="grid h-fit gap-4 md:grid-cols-2">
         <div className="grid gap-4">
           <div className="grid h-fit gap-2 rounded-lg border p-4">
-            <div className="font-semibold text-lg">{t('basic_information')}</div>
+            <div className="font-semibold text-lg">
+              {t('basic_information')}
+            </div>
             <Separator />
             {data.display_name && (
               <div>
@@ -293,13 +294,13 @@ async function getData({ wsId, userId }: { wsId: string; userId: string }) {
   const supabase = await createClient();
 
   // Use raw SQL query via RPC to avoid complex PostgREST syntax
-  const { data: rawData, error } = await supabase.rpc(
+  const { data: rawData, error } = (await supabase.rpc(
     'get_workspace_user_with_details',
     {
       p_ws_id: wsId,
       p_user_id: userId,
     }
-  ) as { data: any; error: any };
+  )) as { data: any; error: any };
   console.log(rawData);
   if (error) throw error;
   if (!rawData) notFound();
@@ -325,7 +326,8 @@ async function getData({ wsId, userId }: { wsId: string; userId: string }) {
     referrer: rawData.referrer
       ? {
           id: rawData.referrer.id,
-          display_name: rawData.referrer.display_name || rawData.referrer.full_name || '',
+          display_name:
+            rawData.referrer.display_name || rawData.referrer.full_name || '',
         }
       : undefined,
   };
@@ -458,13 +460,13 @@ async function getInvoiceData(
 
 async function getWorkspaceSettings(wsId: string) {
   const supabase = await createClient();
-  
+
   const { data, error } = await supabase
     .from('workspace_settings')
     .select('referral_count_cap, referral_increment_percent')
     .eq('ws_id', wsId)
     .single();
-  
+
   if (error) {
     // If no settings exist, return default values
     return {
@@ -472,7 +474,7 @@ async function getWorkspaceSettings(wsId: string) {
       referral_increment_percent: 5,
     };
   }
-  
+
   return data;
 }
 
@@ -499,7 +501,10 @@ async function getAvailableUsersForReferral({
     queryBuilder = queryBuilder.neq('id', referredBy);
   }
 
-  queryBuilder = queryBuilder.order('full_name', { ascending: true, nullsFirst: false });
+  queryBuilder = queryBuilder.order('full_name', {
+    ascending: true,
+    nullsFirst: false,
+  });
 
   const { data, count, error } = await queryBuilder;
   if (error) throw error;

@@ -56,7 +56,10 @@ export default function ReferralSectionClient({
         queryBuilder = queryBuilder.neq('id', currentUserData.referred_by);
       }
 
-      queryBuilder = queryBuilder.order('full_name', { ascending: true, nullsFirst: false });
+      queryBuilder = queryBuilder.order('full_name', {
+        ascending: true,
+        nullsFirst: false,
+      });
 
       const { data, count, error } = await queryBuilder;
       if (error) throw error;
@@ -98,12 +101,14 @@ export default function ReferralSectionClient({
   );
 
   const currentReferralCount = currentReferralsQuery.data || 0;
-  const canReferMore = currentReferralCount < workspaceSettings.referral_count_cap;
-  const remainingReferrals = workspaceSettings.referral_count_cap - currentReferralCount;
+  const canReferMore =
+    currentReferralCount < workspaceSettings.referral_count_cap;
+  const remainingReferrals =
+    workspaceSettings.referral_count_cap - currentReferralCount;
 
   const handleReferUser = async () => {
     if (!selectedUserId) return;
-    
+
     // TODO: This will be implemented with mutations in the future
     console.log('Referring user:', selectedUserId);
   };
@@ -118,7 +123,7 @@ export default function ReferralSectionClient({
           })}
         </div>
         <Separator />
-        
+
         <div className="space-y-4">
           <div className="text-sm opacity-60">
             {t('refer_summary', {
@@ -165,9 +170,12 @@ export default function ReferralSectionClient({
             <div className="text-sm">
               <span className="font-medium">{t('current_discount_label')}</span>{' '}
               {Math.min(
-                currentReferralCount * workspaceSettings.referral_increment_percent,
-                workspaceSettings.referral_count_cap * workspaceSettings.referral_increment_percent
-              )}%
+                currentReferralCount *
+                  workspaceSettings.referral_increment_percent,
+                workspaceSettings.referral_count_cap *
+                  workspaceSettings.referral_increment_percent
+              )}
+              %
             </div>
           )}
         </div>
