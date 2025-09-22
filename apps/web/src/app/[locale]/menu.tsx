@@ -35,6 +35,7 @@ const navItems = (t: any, user: WorkspaceUser | null) => {
   const baseItems = [
     { href: '/', label: t('common.home') },
     { href: '/about', label: t('common.about') },
+    { href: '/achievements', label: 'Hall of Fame' },
     { href: '/projects', label: t('common.projects') },
     { href: '/meet-together', label: t('common.meet-together') },
     { href: '/neo-crush', label: 'Neo Crush' },

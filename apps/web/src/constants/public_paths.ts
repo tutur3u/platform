@@ -3,6 +3,7 @@ import { supportedLocales } from '@/i18n/routing';
 export const APP_PUBLIC_PATHS = [
   '/login',
   '/about',
+  '/achievements',
   '/projects',
   '/meet-together',
   '/neo-crush',
