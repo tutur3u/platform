@@ -9,6 +9,8 @@ import { getTranslations } from 'next-intl/server';
 import { CustomDataTable } from '@/components/custom-data-table';
 import { getPromotionColumns } from './columns';
 import { PromotionForm } from './form';
+import WorkspaceSettingsForm from './settings-form';
+// removed React Query hydration for regular promotions per request
 
 export const metadata: Metadata = {
   title: 'Promotions',
@@ -49,6 +51,16 @@ export default async function WorkspacePromotionsPage({
     use_ratio,
   }));
 
+  const workspaceSettings = await getWorkspaceSettings(wsId);
+  const settingsRow = Array.isArray(workspaceSettings)
+    ? workspaceSettings[0]
+    : workspaceSettings;
+
+  // Derive regular promotions from the already-fetched data
+  const regularPromotions = (data)
+    .filter((p) => p.promo_type === 'REGULAR')
+    .map((p) => ({ id: p.id as string, name: p.name as string | null, code: p.code as string | null, value: p.value as number, use_ratio: p.use_ratio as boolean }));
+
   return (
     <>
       <FeatureSummary
@@ -58,6 +70,9 @@ export default async function WorkspacePromotionsPage({
         createTitle={t('ws-inventory-promotions.create')}
         createDescription={t('ws-inventory-promotions.create_description')}
         form={<PromotionForm wsId={wsId} wsUserId={wsUser.virtual_user_id} />}
+        settingsData={settingsRow}
+        settingsForm={<WorkspaceSettingsForm wsId={wsId} regularPromotions={regularPromotions} />}
+        settingsTitle={t('common.settings')}
       />
       <Separator className="my-4" />
       <CustomDataTable
@@ -105,4 +120,14 @@ async function getData(
   if (error) throw error;
 
   return { data, count } as { data: ProductPromotion[]; count: number };
+}
+
+async function getWorkspaceSettings(wsId: string) {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from('workspace_settings')
+    .select('*')
+    .eq('ws_id', wsId).single();
+  if (error) throw error;
+  return data;
 }

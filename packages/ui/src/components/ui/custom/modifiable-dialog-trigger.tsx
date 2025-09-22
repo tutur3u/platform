@@ -74,6 +74,7 @@ export default function ModifiableDialogTrigger<T>({
             ? 'md:max-w-2xl lg:max-w-4xl xl:max-w-6xl'
             : undefined
         }
+        onWheel={(e) => e.stopPropagation()}
       >
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>

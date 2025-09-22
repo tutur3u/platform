@@ -4566,4 +4566,14 @@
     "next": "Next",
     "page_of": "Page {current} of {total}"
   }
+  ,
+  "inventory": {
+    "referral_count_cap": "Referral count cap",
+    "referral_increment_percent": "Referral increment percent",
+    "default_referral_promotion": "Default referral promotion"
+  },
+  "ws-promotions": {
+    "no_promotion": "No promotion",
+    "search_promotions": "Search promotions"
+  }
 }

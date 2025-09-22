@@ -4471,5 +4471,14 @@
     "previous": "Trước",
     "next": "Tiếp",
     "page_of": "Trang {current} của {total}"
+  },
+  "inventory": {
+    "referral_count_cap": "Giới hạn số lượt giới thiệu",
+    "referral_increment_percent": "Phần trăm tăng theo lượt giới thiệu",
+    "default_referral_promotion": "Khuyến mãi được cấp mặc định"
+  },
+  "ws-promotions": {
+    "no_promotion": "Không có khuyến mãi",
+    "search_promotions": "Tìm kiếm khuyến mãi"
   }
 }
