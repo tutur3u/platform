@@ -134,3 +134,100 @@ ADD CONSTRAINT workspace_settings_referral_promo_fkey
   FOREIGN KEY (ws_id, referral_promotion_id)
   REFERENCES public.workspace_promotions (ws_id, id)
   ON DELETE SET NULL;
+
+
+CREATE OR REPLACE FUNCTION public.auto_link_referral_promotion()
+RETURNS TRIGGER AS $$
+BEGIN
+  -- Insert a new record into user_linked_promotions
+  -- using the owner's ID and the new promotion's ID.
+  INSERT INTO public.user_linked_promotions (user_id, promo_id)
+  VALUES (NEW.owner_id, NEW.id);
+
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+
+CREATE TRIGGER t_auto_link_referral_promo
+AFTER INSERT ON public.workspace_promotions
+FOR EACH ROW
+WHEN (NEW.promo_type = 'REFERRAL' AND NEW.owner_id IS NOT NULL)
+EXECUTE FUNCTION public.auto_link_referral_promotion();
+
+
+-- Create RPC function to get workspace user with linked users and referrer details
+CREATE OR REPLACE FUNCTION public.get_workspace_user_with_details(
+  p_ws_id uuid,
+  p_user_id uuid
+)
+RETURNS json
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+DECLARE
+  result json;
+BEGIN
+  -- Main query to get workspace user with all related data
+  SELECT json_build_object(
+    'id', wu.id,
+    'ws_id', wu.ws_id,
+    'display_name', wu.display_name,
+    'full_name', wu.full_name,
+    'email', wu.email,
+    'phone', wu.phone,
+    'avatar_url', wu.avatar_url,
+    'birthday', wu.birthday,
+    'gender', wu.gender,
+    'created_at', wu.created_at,
+    'updated_at', wu.updated_at,
+    'archived', wu.archived,
+    'note', wu.note,
+    'referred_by', wu.referred_by,
+    'linked_users', COALESCE(
+      (
+        SELECT json_agg(
+          json_build_object(
+            'platform_user_id', wulu.platform_user_id,
+            'users', json_build_object(
+              'display_name', u.display_name
+            )
+          )
+        )
+        FROM workspace_user_linked_users wulu
+        JOIN users u ON u.id = wulu.platform_user_id
+        JOIN workspace_members wm ON wm.user_id = u.id AND wm.ws_id = p_ws_id
+        WHERE wulu.virtual_user_id = wu.id
+          AND wulu.ws_id = p_ws_id
+      ), 
+      '[]'::json
+    ),
+    'referrer', CASE 
+      WHEN wu.referred_by IS NOT NULL THEN
+        json_build_object(
+          'id', ref_wu.id,
+          'display_name', ref_wu.display_name,
+          'full_name', ref_wu.full_name,
+          'ws_id', ref_wu.ws_id
+        )
+      ELSE NULL
+    END
+  ) INTO result
+  FROM workspace_users wu
+  LEFT JOIN workspace_users ref_wu ON ref_wu.id = wu.referred_by
+  WHERE wu.ws_id = p_ws_id 
+    AND wu.id = p_user_id;
+
+  -- Return the result
+  RETURN result;
+END;
+$$;
+
+-- Grant execute permission to authenticated users
+GRANT EXECUTE ON FUNCTION public.get_workspace_user_with_details(uuid, uuid) TO authenticated;
+
+-- Add comment for documentation
+COMMENT ON FUNCTION public.get_workspace_user_with_details(uuid, uuid) IS 
+'Retrieves a workspace user with their linked platform users and referrer information. 
+Parameters: workspace_id, user_id. 
+Returns: JSON object with user details, linked_users array, and referrer object.';

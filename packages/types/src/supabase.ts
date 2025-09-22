@@ -752,6 +752,13 @@ export type Database = {
         };
         Returns: number;
       };
+      get_workspace_user_with_details: {
+        Args: {
+          p_user_id: string;
+          p_ws_id: string;
+        };
+        Returns: Json;
+      };
       get_workspace_users: {
         Args: {
           _ws_id: string;

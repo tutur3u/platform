@@ -1167,7 +1167,9 @@
     "type": "Loại",
     "link_product": "Liên kết sản phẩm",
     "link_product_description": "Chọn một sản phẩm, cùng với đơn vị và kho hàng của nó để liên kết với nhóm này",
-    "invoices": "Hóa đơn"
+    "invoices": "Hóa đơn",
+    "guest": "Khách mời",
+    "basic_information": "Thông tin cơ bản"
   },
   "email-data-table": {
     "id": "Mã số",

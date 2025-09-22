@@ -44,7 +44,6 @@ export default async function WorkspaceUserDetailsPage({
   const data = await getData({ wsId, userId });
 
   const isGuest = await isUserGuest(userId);
-  console.log('isGuest', isGuest);
 
   const { data: groups, count: groupCount } = await getGroupData({
     wsId,
@@ -85,13 +84,32 @@ export default async function WorkspaceUserDetailsPage({
             className="aspect-square min-w-32 rounded-lg object-cover"
           />
           {data.full_name && <div>{data.full_name}</div>}
+          {isGuest && (
+            <div
+              className="inline-flex items-center rounded-full border bg-dynamic-orange/10 text-dynamic-orange border-dynamic-orange/20 px-2 py-0.5 text-sm font-medium"
+            >
+              {t('guest')}
+            </div>
+          )}
+          {data.referrer?.id && (
+            <Link
+              href={`/${wsId}/users/database/${data.referrer.id}`}
+              className="
+                inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-sm font-medium
+                bg-dynamic-surface/50 border-dynamic-border hover:bg-dynamic-surface/80 transition-colors
+              "
+            >
+              <span className="opacity-60">Referred by:</span>
+              <span>{data.referrer.display_name || data.full_name || '-'}</span>
+            </Link>
+          )}
         </div>
       )}
 
       <div className="grid h-fit gap-4 md:grid-cols-2">
         <div className="grid gap-4">
           <div className="grid h-fit gap-2 rounded-lg border p-4">
-            <div className="font-semibold text-lg">Thông tin cơ bản</div>
+            <div className="font-semibold text-lg">{t('basic_information')}</div>
             <Separator />
             {data.display_name && (
               <div>
@@ -257,23 +275,21 @@ async function isUserGuest(user_id: string) {
 async function getData({ wsId, userId }: { wsId: string; userId: string }) {
   const supabase = await createClient();
 
-  const queryBuilder = supabase
-    .from('workspace_users')
-    .select(
-      '*, linked_users:workspace_user_linked_users(platform_user_id, users(display_name, workspace_members!inner(user_id, ws_id)))'
-    )
-    .eq('ws_id', wsId)
-    .eq('id', userId)
-    .eq('linked_users.users.workspace_members.ws_id', wsId)
-    .maybeSingle();
-
-  const { data: rawData, error } = await queryBuilder;
+  // Use raw SQL query via RPC to avoid complex PostgREST syntax
+  const { data: rawData, error } = await supabase.rpc(
+    'get_workspace_user_with_details',
+    {
+      p_ws_id: wsId,
+      p_user_id: userId,
+    }
+  ) as { data: any; error: any };
+  console.log(rawData);
   if (error) throw error;
   if (!rawData) notFound();
 
   const data = {
     ...rawData,
-    linked_users: rawData.linked_users
+    linked_users: (rawData.linked_users || [])
       .map(
         ({
           platform_user_id,
@@ -289,9 +305,15 @@ async function getData({ wsId, userId }: { wsId: string; userId: string }) {
             : null
       )
       .filter((v: WorkspaceUser | null) => v),
+    referrer: rawData.referrer
+      ? {
+          id: rawData.referrer.id,
+          display_name: rawData.referrer.display_name || rawData.referrer.full_name || '',
+        }
+      : undefined,
   };
 
-  return data as WorkspaceUser;
+  return data;
 }
 
 async function getGroupData({

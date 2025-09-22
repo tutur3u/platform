@@ -1156,7 +1156,9 @@
     "type": "Type",
     "link_product": "Link Product",
     "link_product_description": "Select a product, along with its unit and warehouse to link to this group",
-    "invoices": "Invoices"
+    "invoices": "Invoices",
+    "guest": "Guest",
+    "basic_information": "Basic Information"
   },
   "email-data-table": {
     "id": "ID",
@@ -4565,8 +4567,7 @@
     "previous": "Previous",
     "next": "Next",
     "page_of": "Page {current} of {total}"
-  }
-  ,
+  },
   "inventory": {
     "referral_count_cap": "Referral count cap",
     "referral_increment_percent": "Referral increment percent",
