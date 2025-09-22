@@ -22,12 +22,19 @@ import { useMutation } from '@tanstack/react-query';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import { Combobox, type ComboboxOptions } from '@tuturuuu/ui/custom/combobox';
 
-type WorkspaceSettings = Database['public']['Tables']['workspace_settings']['Row'];
+type WorkspaceSettings =
+  Database['public']['Tables']['workspace_settings']['Row'];
 
 interface Props {
   wsId: string;
   data?: WorkspaceSettings | WorkspaceSettings[];
-  regularPromotions?: Array<{ id: string; name: string | null; code: string | null; value: number; use_ratio: boolean }>;
+  regularPromotions?: Array<{
+    id: string;
+    name: string | null;
+    code: string | null;
+    value: number;
+    use_ratio: boolean;
+  }>;
   onFinish?: (data: z.infer<typeof FormSchema>) => void;
 }
 
@@ -37,10 +44,17 @@ const FormSchema = z.object({
   referral_promotion_id: z.string().uuid().nullable().optional(),
 });
 
-export default function WorkspaceSettingsForm({ wsId, data, regularPromotions, onFinish }: Props) {
+export default function WorkspaceSettingsForm({
+  wsId,
+  data,
+  regularPromotions,
+  onFinish,
+}: Props) {
   const t = useTranslations();
   const [loading, setLoading] = useState(false);
-  const [promotionOptions, setPromotionOptions] = useState<ComboboxOptions[]>([]);
+  const [promotionOptions, setPromotionOptions] = useState<ComboboxOptions[]>(
+    []
+  );
   const router = useRouter();
 
   const row = Array.isArray(data) ? data[0] : data;
@@ -57,14 +71,12 @@ export default function WorkspaceSettingsForm({ wsId, data, regularPromotions, o
   const mutation = useMutation({
     mutationFn: async (values: z.infer<typeof FormSchema>) => {
       const supabase = createClient();
-      const { error } = await supabase
-        .from('workspace_settings')
-        .upsert({
-          ws_id: wsId,
-          referral_count_cap: values.referral_count_cap,
-          referral_increment_percent: values.referral_increment_percent,
-          referral_promotion_id: values.referral_promotion_id ?? null,
-        });
+      const { error } = await supabase.from('workspace_settings').upsert({
+        ws_id: wsId,
+        referral_count_cap: values.referral_count_cap,
+        referral_increment_percent: values.referral_increment_percent,
+        referral_promotion_id: values.referral_promotion_id ?? null,
+      });
       if (error) throw error;
 
       // If default referral promotion changed, migrate user_linked_promotions
@@ -81,7 +93,9 @@ export default function WorkspaceSettingsForm({ wsId, data, regularPromotions, o
             .not('referred_by', 'is', null);
           if (usersErr) throw usersErr;
 
-          const userIds = (referredUsers ?? []).map((u: { id: string }) => u.id);
+          const userIds = (referredUsers ?? []).map(
+            (u: { id: string }) => u.id
+          );
           if (userIds.length === 0) {
             return values;
           }
@@ -94,10 +108,15 @@ export default function WorkspaceSettingsForm({ wsId, data, regularPromotions, o
             .in('user_id', userIds);
           if (linksErr) throw linksErr;
 
-          const affectedUserIds = (oldLinks ?? []).map((l: { user_id: string }) => l.user_id);
+          const affectedUserIds = (oldLinks ?? []).map(
+            (l: { user_id: string }) => l.user_id
+          );
           if (affectedUserIds.length === 0) {
             // No old links found → add link for all referred users to the new default promo
-            const upsertAllPayload = userIds.map((uid) => ({ user_id: uid, promo_id: nextPromoId }));
+            const upsertAllPayload = userIds.map((uid) => ({
+              user_id: uid,
+              promo_id: nextPromoId,
+            }));
             const { error: upsertAllErr } = await supabase
               .from('user_linked_promotions')
               .upsert(upsertAllPayload, { onConflict: 'user_id,promo_id' });
@@ -106,7 +125,10 @@ export default function WorkspaceSettingsForm({ wsId, data, regularPromotions, o
           }
 
           // 3) Upsert new links for affected users to the new default promo
-          const upsertPayload = affectedUserIds.map((uid) => ({ user_id: uid, promo_id: nextPromoId }));
+          const upsertPayload = affectedUserIds.map((uid) => ({
+            user_id: uid,
+            promo_id: nextPromoId,
+          }));
           const { error: upsertErr } = await supabase
             .from('user_linked_promotions')
             .upsert(upsertPayload, { onConflict: 'user_id,promo_id' });
@@ -121,7 +143,10 @@ export default function WorkspaceSettingsForm({ wsId, data, regularPromotions, o
           if (deleteErr) throw deleteErr;
         } catch (e) {
           // Best-effort migration: do not block settings save, surface toast via onError handler
-          console.error('Failed to migrate referral default promotion links', e);
+          console.error(
+            'Failed to migrate referral default promotion links',
+            e
+          );
         }
       }
       return values;
@@ -145,7 +170,9 @@ export default function WorkspaceSettingsForm({ wsId, data, regularPromotions, o
   const mappedOptions = useMemo<ComboboxOptions[]>(() => {
     const promos = regularPromotions ?? [];
     return promos.map((p) => {
-      const baseLabel = p.name ? `${p.name}${p.code ? ` (${p.code})` : ''}` : p.code ?? p.id;
+      const baseLabel = p.name
+        ? `${p.name}${p.code ? ` (${p.code})` : ''}`
+        : (p.code ?? p.id);
       const valueLabel = p.use_ratio ? `${p.value}%` : `${p.value}`;
       return {
         value: p.id,
@@ -205,8 +232,17 @@ export default function WorkspaceSettingsForm({ wsId, data, regularPromotions, o
               <FormLabel>{t('inventory.default_referral_promotion')}</FormLabel>
               <FormControl>
                 <Combobox
-                  t={(key: string) => (key === 'common.empty' ? t('common.empty') : key === 'common.add' ? t('common.add') : key)}
-                  options={[{ value: '', label: t('ws-promotions.no_promotion') }, ...promotionOptions]}
+                  t={(key: string) =>
+                    key === 'common.empty'
+                      ? t('common.empty')
+                      : key === 'common.add'
+                        ? t('common.add')
+                        : key
+                  }
+                  options={[
+                    { value: '', label: t('ws-promotions.no_promotion') },
+                    ...promotionOptions,
+                  ]}
                   selected={(field.value as string) ?? ''}
                   placeholder={t('ws-promotions.search_promotions')}
                   onChange={(value) => field.onChange(value ? value : null)}
@@ -217,12 +253,16 @@ export default function WorkspaceSettingsForm({ wsId, data, regularPromotions, o
           )}
         />
 
-        <Button type="submit" className="w-full" disabled={loading || mutation.isPending}>
-          {loading || mutation.isPending ? t('common.processing') : t('common.save')}
+        <Button
+          type="submit"
+          className="w-full"
+          disabled={loading || mutation.isPending}
+        >
+          {loading || mutation.isPending
+            ? t('common.processing')
+            : t('common.save')}
         </Button>
       </form>
     </Form>
   );
 }
-
-
