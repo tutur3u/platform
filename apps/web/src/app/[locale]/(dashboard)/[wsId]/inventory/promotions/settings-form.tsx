@@ -66,6 +66,64 @@ export default function WorkspaceSettingsForm({ wsId, data, regularPromotions, o
           referral_promotion_id: values.referral_promotion_id ?? null,
         });
       if (error) throw error;
+
+      // If default referral promotion changed, migrate user_linked_promotions
+      const previousPromoId = row?.referral_promotion_id ?? null;
+      const nextPromoId = values.referral_promotion_id ?? null;
+
+      if (previousPromoId && nextPromoId && previousPromoId !== nextPromoId) {
+        try {
+          // 1) Find users in this workspace with a referrer
+          const { data: referredUsers, error: usersErr } = await supabase
+            .from('workspace_users')
+            .select('id')
+            .eq('ws_id', wsId)
+            .not('referred_by', 'is', null);
+          if (usersErr) throw usersErr;
+
+          const userIds = (referredUsers ?? []).map((u: { id: string }) => u.id);
+          if (userIds.length === 0) {
+            return values;
+          }
+
+          // 2) Among those users, find who is currently linked to the old default promo
+          const { data: oldLinks, error: linksErr } = await supabase
+            .from('user_linked_promotions')
+            .select('user_id')
+            .eq('promo_id', previousPromoId)
+            .in('user_id', userIds);
+          if (linksErr) throw linksErr;
+
+          const affectedUserIds = (oldLinks ?? []).map((l: { user_id: string }) => l.user_id);
+          if (affectedUserIds.length === 0) {
+            // No old links found → add link for all referred users to the new default promo
+            const upsertAllPayload = userIds.map((uid) => ({ user_id: uid, promo_id: nextPromoId }));
+            const { error: upsertAllErr } = await supabase
+              .from('user_linked_promotions')
+              .upsert(upsertAllPayload, { onConflict: 'user_id,promo_id' });
+            if (upsertAllErr) throw upsertAllErr;
+            return values;
+          }
+
+          // 3) Upsert new links for affected users to the new default promo
+          const upsertPayload = affectedUserIds.map((uid) => ({ user_id: uid, promo_id: nextPromoId }));
+          const { error: upsertErr } = await supabase
+            .from('user_linked_promotions')
+            .upsert(upsertPayload, { onConflict: 'user_id,promo_id' });
+          if (upsertErr) throw upsertErr;
+
+          // 4) Remove old links to the previous default promo for those users
+          const { error: deleteErr } = await supabase
+            .from('user_linked_promotions')
+            .delete()
+            .eq('promo_id', previousPromoId)
+            .in('user_id', affectedUserIds);
+          if (deleteErr) throw deleteErr;
+        } catch (e) {
+          // Best-effort migration: do not block settings save, surface toast via onError handler
+          console.error('Failed to migrate referral default promotion links', e);
+        }
+      }
       return values;
     },
     onSuccess: () => {
