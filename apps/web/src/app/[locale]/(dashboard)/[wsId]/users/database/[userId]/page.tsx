@@ -15,6 +15,7 @@ import { getTranslations } from 'next-intl/server';
 import { CustomDataTable } from '@/components/custom-data-table';
 import UserMonthAttendance from '../../attendance/user-month-attendance';
 import LinkedPromotionsClient from './linked-promotions-client';
+import ReferralSectionClient from './referral-section-client';
 
 export const metadata: Metadata = {
   title: 'Userid Details',
@@ -71,6 +72,14 @@ export default async function WorkspaceUserDetailsPage({
     href: `/${wsId}/finance/invoices/${d.id}`,
     ws_id: wsId,
   }));
+
+  // Fetch referral data
+  const workspaceSettings = await getWorkspaceSettings(wsId);
+  const { data: availableUsers, count: availableUsersCount } = await getAvailableUsersForReferral({
+    wsId,
+    currentUserId: userId,
+    referredBy: data.referred_by,
+  });
 
   return (
     <div className="flex min-h-full w-full flex-col">
@@ -235,6 +244,14 @@ export default async function WorkspaceUserDetailsPage({
               use_ratio: c.use_ratio ?? null,
             }))}
             initialCount={couponCount || 0}
+          />
+
+          <ReferralSectionClient
+            wsId={wsId}
+            userId={userId}
+            workspaceSettings={workspaceSettings}
+            initialAvailableUsers={availableUsers}
+            initialAvailableUsersCount={availableUsersCount || 0}
           />
         </div>
       </div>
@@ -437,4 +454,55 @@ async function getInvoiceData(
   }));
 
   return { data, count } as { data: Invoice[]; count: number };
+}
+
+async function getWorkspaceSettings(wsId: string) {
+  const supabase = await createClient();
+  
+  const { data, error } = await supabase
+    .from('workspace_settings')
+    .select('referral_count_cap, referral_increment_percent')
+    .eq('ws_id', wsId)
+    .single();
+  
+  if (error) {
+    // If no settings exist, return default values
+    return {
+      referral_count_cap: 3,
+      referral_increment_percent: 5,
+    };
+  }
+  
+  return data;
+}
+
+async function getAvailableUsersForReferral({
+  wsId,
+  currentUserId,
+  referredBy,
+}: {
+  wsId: string;
+  currentUserId: string;
+  referredBy: string | null;
+}) {
+  const supabase = await createClient();
+
+  let queryBuilder = supabase
+    .from('workspace_users')
+    .select('id, full_name, display_name, email, phone', { count: 'exact' })
+    .eq('ws_id', wsId)
+    .eq('archived', false)
+    .neq('id', currentUserId); // Can't refer ourselves
+
+  // Can't refer the person who referred us
+  if (referredBy) {
+    queryBuilder = queryBuilder.neq('id', referredBy);
+  }
+
+  queryBuilder = queryBuilder.order('full_name', { ascending: true, nullsFirst: false });
+
+  const { data, count, error } = await queryBuilder;
+  if (error) throw error;
+
+  return { data, count };
 }

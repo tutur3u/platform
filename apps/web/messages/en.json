@@ -1158,7 +1158,14 @@
     "link_product_description": "Select a product, along with its unit and warehouse to link to this group",
     "invoices": "Invoices",
     "guest": "Guest",
-    "basic_information": "Basic Information"
+    "basic_information": "Basic Information",
+    "refer_people_with_progress": "Refer People ({current}/{max})",
+    "refer_summary": "You can refer up to {cap} people. Each referral gives you {percent}% discount.",
+    "select_person_to_refer_with_remaining": "Select person to refer ({remaining} remaining)",
+    "search_person_to_refer_placeholder": "Search for a person to refer...",
+    "refer_selected_person": "Refer Selected Person",
+    "reached_max_referrals": "You have reached the maximum number of referrals ({cap}).",
+    "current_discount_label": "Current discount:"
   },
   "email-data-table": {
     "id": "ID",

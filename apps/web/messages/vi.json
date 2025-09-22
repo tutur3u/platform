@@ -1169,7 +1169,14 @@
     "link_product_description": "Chọn một sản phẩm, cùng với đơn vị và kho hàng của nó để liên kết với nhóm này",
     "invoices": "Hóa đơn",
     "guest": "Khách mời",
-    "basic_information": "Thông tin cơ bản"
+    "basic_information": "Thông tin cơ bản",
+    "refer_people_with_progress": "Giới thiệu người khác ({current}/{max})",
+    "refer_summary": "Bạn có thể giới thiệu tối đa {cap} người. Mỗi lượt giới thiệu mang lại {percent}% giảm giá.",
+    "select_person_to_refer_with_remaining": "Chọn người để giới thiệu (còn {remaining})",
+    "search_person_to_refer_placeholder": "Tìm người để giới thiệu...",
+    "refer_selected_person": "Giới thiệu người đã chọn",
+    "reached_max_referrals": "Bạn đã đạt số lượt giới thiệu tối đa ({cap}).",
+    "current_discount_label": "Giảm giá hiện tại:"
   },
   "email-data-table": {
     "id": "Mã số",
