@@ -149,86 +149,43 @@ export default function Members() {
         >
           {currentMembers.length === 6 ? (
             // Layout for 6 members
-            <>
-              {/* First row - 3 cards */}
-              <motion.div
-                className="mt-8 grid grid-cols-1 justify-items-center gap-8 px-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3"
-                initial="hidden"
-                animate="visible"
-                variants={{
-                  hidden: {},
-                  visible: {
-                    transition: {
-                      staggerChildren: 0.2,
-                    },
+            <motion.div
+              className="mt-8 grid grid-cols-1 justify-items-center gap-8 px-4 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3"
+              initial="hidden"
+              animate="visible"
+              variants={{
+                hidden: {},
+                visible: {
+                  transition: {
+                    staggerChildren: 0.2,
                   },
-                }}
-              >
-                {currentMembers.slice(0, 3).map((p) => (
-                  <motion.div
-                    key={p.name}
-                    className={`relative flex justify-center transition-all duration-300 ${
-                      isHidden(p.departments)
-                        ? 'scale-95 opacity-20'
-                        : 'scale-100 opacity-100'
-                    }`}
-                    variants={cardVariants}
-                  >
-                    {isHidden(p.departments) && (
-                      <div className="absolute inset-0 z-10 rounded-lg bg-black/20 backdrop-blur-[1px]" />
-                    )}
-                    <MemberCard
-                      name={p.name}
-                      role={p.role}
-                      image={p.image}
-                      bio={p.bio}
-                      quote={p.quote}
-                      socials={p.socials}
-                    />
-                  </motion.div>
-                ))}
-              </motion.div>
-
-              {/* Second row - 3 members */}
-              <motion.div
-                className="mt-8 grid grid-cols-1 justify-items-center gap-8 px-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3"
-                initial="hidden"
-                animate="visible"
-                variants={{
-                  hidden: {},
-                  visible: {
-                    transition: {
-                      staggerChildren: 0.2,
-                      delayChildren: 0.4,
-                    },
-                  },
-                }}
-              >
-                {currentMembers.slice(3, 6).map((p) => (
-                  <motion.div
-                    key={p.name}
-                    className={`relative flex justify-center transition-all duration-300 ${
-                      isHidden(p.departments)
-                        ? 'scale-95 opacity-20'
-                        : 'scale-100 opacity-100'
-                    }`}
-                    variants={cardVariants}
-                  >
-                    {isHidden(p.departments) && (
-                      <div className="absolute inset-0 z-10 rounded-lg bg-black/20 backdrop-blur-[1px]" />
-                    )}
-                    <MemberCard
-                      name={p.name}
-                      role={p.role}
-                      image={p.image}
-                      bio={p.bio}
-                      quote={p.quote}
-                      socials={p.socials}
-                    />
-                  </motion.div>
-                ))}
-              </motion.div>
-            </>
+                },
+              }}
+            >
+              {currentMembers.map((p) => (
+                <motion.div
+                  key={p.name}
+                  className={`relative flex justify-center transition-all duration-300 ${
+                    isHidden(p.departments)
+                      ? 'scale-95 opacity-20'
+                      : 'scale-100 opacity-100'
+                  }`}
+                  variants={cardVariants}
+                >
+                  {isHidden(p.departments) && (
+                    <div className="absolute inset-0 z-10 rounded-lg bg-black/20 backdrop-blur-[1px]" />
+                  )}
+                  <MemberCard
+                    name={p.name}
+                    role={p.role}
+                    image={p.image}
+                    bio={p.bio}
+                    quote={p.quote}
+                    socials={p.socials}
+                  />
+                </motion.div>
+              ))}
+            </motion.div>
           ) : (
             // Layout for 7+ members
             <>
