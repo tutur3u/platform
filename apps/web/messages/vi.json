@@ -1118,6 +1118,9 @@
     "created_at": "Ngày tạo"
   },
   "user-data-table": {
+    "referral_settings_title": "Cần cài đặt giới thiệu",
+    "referral_settings_desc": "Hãy thiết lập giới hạn giới thiệu và phần trăm giảm để bật tính năng giới thiệu cho không gian làm việc này.",
+    "configure_in_promotions_cta": "Cài đặt Khuyến mãi",
     "id": "Mã số",
     "attendance_count": "Số lần điểm danh",
     "avatar_url": "Ảnh đại diện",
@@ -1176,7 +1179,10 @@
     "search_person_to_refer_placeholder": "Tìm người để giới thiệu...",
     "refer_selected_person": "Giới thiệu người đã chọn",
     "reached_max_referrals": "Bạn đã đạt số lượt giới thiệu tối đa ({cap}).",
-    "current_discount_label": "Giảm giá hiện tại:"
+    "current_discount_label": "Giảm giá hiện tại:",
+    "common": {
+      "empty": "Trống"
+    }
   },
   "email-data-table": {
     "id": "Mã số",
@@ -2950,6 +2956,8 @@
     "create": "Tạo khuyến mãi",
     "create_description": "Tạo một khuyến mãi mới",
     "update": "Cập nhật khuyến mãi",
+    "create_settings": "Tạo cài đặt",
+    "create_settings_tooltip": "Chưa có cài đặt cho không gian làm việc. Bấm để tạo.",
     "form": {
       "name": "Tên",
       "description": "Mô tả",

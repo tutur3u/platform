@@ -268,6 +268,19 @@ export type Database = {
           total_tokens: number;
         }[];
       };
+      get_available_referral_users: {
+        Args: {
+          p_user_id: string;
+          p_ws_id: string;
+        };
+        Returns: {
+          display_name: string;
+          email: string;
+          full_name: string;
+          id: string;
+          phone: string;
+        }[];
+      };
       get_browsers: {
         Args: {
           p_limit?: number;

@@ -11,6 +11,9 @@ import { getPromotionColumns } from './columns';
 import { PromotionForm } from './form';
 import WorkspaceSettingsForm from './settings-form';
 // removed React Query hydration for regular promotions per request
+import { Button } from '@tuturuuu/ui/button';
+import { Settings } from '@tuturuuu/ui/icons';
+// removed tooltip to ensure DialogTrigger receives clicks
 
 export const metadata: Metadata = {
   title: 'Promotions',
@@ -51,10 +54,8 @@ export default async function WorkspacePromotionsPage({
     use_ratio,
   }));
 
-  const workspaceSettings = await getWorkspaceSettings(wsId);
-  const settingsRow = Array.isArray(workspaceSettings)
-    ? workspaceSettings[0]
-    : workspaceSettings;
+  const settingsRow = await getWorkspaceSettings(wsId);
+  console.log(settingsRow);
 
   // Derive regular promotions from the already-fetched data
   const regularPromotions = data
@@ -76,13 +77,23 @@ export default async function WorkspacePromotionsPage({
         createTitle={t('ws-inventory-promotions.create')}
         createDescription={t('ws-inventory-promotions.create_description')}
         form={<PromotionForm wsId={wsId} wsUserId={wsUser.virtual_user_id} />}
-        settingsData={settingsRow}
+        settingsData={settingsRow ? settingsRow : undefined}
         settingsForm={
           <WorkspaceSettingsForm
             wsId={wsId}
             regularPromotions={regularPromotions}
           />
         }
+        settingsTrigger={!settingsRow ? (
+          <Button
+            size="xs"
+            className="w-full md:w-fit border border-dynamic-red/30 bg-dynamic-red/10 text-dynamic-red hover:bg-dynamic-red/15"
+            title={t('ws-inventory-promotions.create_settings_tooltip')}
+          >
+            <Settings className="h-4 w-4" />
+            {t('ws-inventory-promotions.create_settings')}
+          </Button>
+        ) : undefined}
         settingsTitle={t('common.settings')}
       />
       <Separator className="my-4" />
@@ -139,7 +150,7 @@ async function getWorkspaceSettings(wsId: string) {
     .from('workspace_settings')
     .select('*')
     .eq('ws_id', wsId)
-    .single();
+    .maybeSingle();
   if (error) throw error;
   return data;
 }

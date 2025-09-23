@@ -256,7 +256,7 @@ export default function WorkspaceSettingsForm({
         <Button
           type="submit"
           className="w-full"
-          disabled={loading || mutation.isPending}
+          disabled={loading || mutation.isPending || !form.formState.isDirty}
         >
           {loading || mutation.isPending
             ? t('common.processing')

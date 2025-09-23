@@ -78,8 +78,7 @@ export default async function WorkspaceUserDetailsPage({
   const { data: availableUsers, count: availableUsersCount } =
     await getAvailableUsersForReferral({
       wsId,
-      currentUserId: userId,
-      referredBy: data.referred_by,
+      currentUserId: userId
     });
 
   return (
@@ -301,7 +300,6 @@ async function getData({ wsId, userId }: { wsId: string; userId: string }) {
       p_user_id: userId,
     }
   )) as { data: any; error: any };
-  console.log(rawData);
   if (error) throw error;
   if (!rawData) notFound();
 
@@ -465,14 +463,10 @@ async function getWorkspaceSettings(wsId: string) {
     .from('workspace_settings')
     .select('referral_count_cap, referral_increment_percent')
     .eq('ws_id', wsId)
-    .single();
+    .maybeSingle();
 
   if (error) {
-    // If no settings exist, return default values
-    return {
-      referral_count_cap: 3,
-      referral_increment_percent: 5,
-    };
+throw error;
   }
 
   return data;
@@ -481,33 +475,19 @@ async function getWorkspaceSettings(wsId: string) {
 async function getAvailableUsersForReferral({
   wsId,
   currentUserId,
-  referredBy,
 }: {
   wsId: string;
   currentUserId: string;
-  referredBy: string | null;
 }) {
   const supabase = await createClient();
 
-  let queryBuilder = supabase
-    .from('workspace_users')
-    .select('id, full_name, display_name, email, phone', { count: 'exact' })
-    .eq('ws_id', wsId)
-    .eq('archived', false)
-    .neq('id', currentUserId); // Can't refer ourselves
-
-  // Can't refer the person who referred us
-  if (referredBy) {
-    queryBuilder = queryBuilder.neq('id', referredBy);
-  }
-
-  queryBuilder = queryBuilder.order('full_name', {
-    ascending: true,
-    nullsFirst: false,
-  });
-
-  const { data, count, error } = await queryBuilder;
+  const { data, error } = await supabase.rpc(
+    'get_available_referral_users',
+    {
+      p_ws_id: wsId,
+      p_user_id: currentUserId,
+    }
+  );
   if (error) throw error;
-
-  return { data, count };
+  return { data, count: data?.length || 0 };
 }

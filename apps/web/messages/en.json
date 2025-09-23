@@ -1107,6 +1107,9 @@
     "created_at": "Created At"
   },
   "user-data-table": {
+    "referral_settings_title": "Referral settings needed",
+    "referral_settings_desc": "Set the referral limit and discount increment to enable referrals for this workspace.",
+    "configure_in_promotions_cta": "Promotions settings",
     "id": "ID",
     "attendance_count": "Attendance Count",
     "avatar_url": "Avatar",
@@ -1165,7 +1168,10 @@
     "search_person_to_refer_placeholder": "Search for a person to refer...",
     "refer_selected_person": "Refer Selected Person",
     "reached_max_referrals": "You have reached the maximum number of referrals ({cap}).",
-    "current_discount_label": "Current discount:"
+    "current_discount_label": "Current discount:",
+    "common": {
+      "empty": "Empty"
+    }
   },
   "email-data-table": {
     "id": "ID",
@@ -2900,6 +2906,8 @@
     "create": "Create promotion",
     "create_description": "Create a new promotion",
     "update": "Update promotion",
+    "create_settings": "Create settings",
+    "create_settings_tooltip": "Workspace settings are missing. Click to create them.",
     "form": {
       "name": "Name",
       "description": "Decription",
