@@ -1,4 +1,6 @@
-import AchievementsClient from './client';
+import { OtherAchivements, TopThreeAchivements } from './client';
+import { achievements } from './data';
+import { Separator } from '@ncthub/ui/separator';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
@@ -11,8 +13,8 @@ export const metadata: Metadata = {
 
 export default function AchievementsPage() {
   return (
-    <div className="min-h-screen bg-background">
-      <div className="container mx-auto px-4 py-12 sm:px-6 lg:px-8">
+    <div className="container mx-auto">
+      <section className="px-4 py-8 sm:px-6 lg:px-8">
         <div className="my-12 text-center">
           <h1 className="bg-gradient-to-br from-purple-600 via-pink-500 to-orange-400 bg-clip-text text-5xl font-bold tracking-tight text-transparent md:text-6xl">
             Hall of Fame
@@ -24,8 +26,19 @@ export default function AchievementsPage() {
             technologies.
           </p>
         </div>
-        <AchievementsClient />
-      </div>
+        <TopThreeAchivements achievements={achievements.slice(0, 3)} />
+      </section>
+
+      <Separator className="my-6" />
+
+      <section className="px-4 py-12 sm:px-6 lg:px-8">
+        <div className="my-12 text-center">
+          <h1 className="text-4xl font-bold tracking-tight text-foreground md:text-5xl">
+            Other Achievements
+          </h1>
+        </div>
+        <OtherAchivements achievements={achievements.slice(3)} />
+      </section>
     </div>
   );
 }
