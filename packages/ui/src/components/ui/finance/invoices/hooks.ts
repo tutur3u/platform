@@ -346,7 +346,9 @@ export const useUserReferralDiscounts = (wsId: string, userId: string) => {
       return (
         (data || []).map((row) => ({
           promo_id: row.promo_id as string | null,
-          calculated_discount_value: row.calculated_discount_value as number | null,
+          calculated_discount_value: row.calculated_discount_value as
+            | number
+            | null,
         })) || []
       );
     },
@@ -386,7 +388,9 @@ export const useAvailablePromotions = (wsId: string, userId: string) => {
       // User-linked promotions (could include referral)
       const { data: linked, error: linkedErr } = await supabase
         .from('user_linked_promotions')
-        .select('promo_id, workspace_promotions(id, name, code, value, use_ratio, promo_type)')
+        .select(
+          'promo_id, workspace_promotions(id, name, code, value, use_ratio, promo_type)'
+        )
         .eq('user_id', userId);
       if (linkedErr) throw linkedErr;
 

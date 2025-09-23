@@ -163,7 +163,9 @@ export default function LinkedPromotionsClient({
   }, [referralDiscountsQuery.data]);
 
   const availablePromotions = useMemo(() => {
-    const linkedIds = new Set((userLinkedPromotionsQuery.data || []).map((p) => p.id));
+    const linkedIds = new Set(
+      (userLinkedPromotionsQuery.data || []).map((p) => p.id)
+    );
     return (allPromotions || []).filter((p) => !linkedIds.has(p.id));
   }, [allPromotions, userLinkedPromotionsQuery.data]);
 
@@ -360,7 +362,8 @@ export default function LinkedPromotionsClient({
                         {promo.description}
                       </div>
                     )}
-                    {(referralDiscountMap.has(promo.id) || (promo.value ?? null) !== null) && (
+                    {(referralDiscountMap.has(promo.id) ||
+                      (promo.value ?? null) !== null) && (
                       <div className="mt-1 inline-flex items-center gap-1 rounded-md bg-foreground/10 px-2 py-1 text-xs font-medium text-foreground">
                         <Tag className="h-3.5 w-3.5" />
                         <span className="sr-only">

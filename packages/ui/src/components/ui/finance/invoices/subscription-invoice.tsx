@@ -302,7 +302,8 @@ export function SubscriptionInvoice({
     selectedPromotionId === 'none'
       ? null
       : availablePromotions.find(
-          (promotion: AvailablePromotion) => promotion.id === selectedPromotionId
+          (promotion: AvailablePromotion) =>
+            promotion.id === selectedPromotionId
         );
 
   const isLoadingSubscriptionData =
@@ -448,7 +449,12 @@ export function SubscriptionInvoice({
         : Math.min(selectedPromotion.value, subscriptionSubtotal);
     }
     return 0;
-  }, [selectedPromotionId, selectedPromotion, subscriptionSubtotal, referralDiscountMap]);
+  }, [
+    selectedPromotionId,
+    selectedPromotion,
+    subscriptionSubtotal,
+    referralDiscountMap,
+  ]);
 
   const subscriptionTotalBeforeRounding =
     subscriptionSubtotal - subscriptionDiscountAmount;
@@ -507,7 +513,11 @@ export function SubscriptionInvoice({
             }
           : null;
       })
-      .filter(Boolean) as Array<{ id: string; use_ratio: boolean; value: number }>;
+      .filter(Boolean) as Array<{
+      id: string;
+      use_ratio: boolean;
+      value: number;
+    }>;
 
     if (candidates.length === 0) return;
 
@@ -1451,35 +1461,49 @@ export function SubscriptionInvoice({
                       t={t}
                       options={(() => {
                         const list: ComboboxOptions[] = [
-                          { value: 'none', label: t('ws-invoices.no_promotion') },
-                          ...availablePromotions.map((promotion): ComboboxOptions => {
-                            const referralPercent = referralDiscountMap.get(promotion.id);
-                            const labelValue =
-                              referralPercent !== undefined
-                                ? `${referralPercent || 0}%`
-                                : promotion.use_ratio
-                                  ? `${promotion.value}%`
-                                  : Intl.NumberFormat('vi-VN', {
-                                      style: 'currency',
-                                      currency: 'VND',
-                                    }).format(promotion.value);
-                            return {
-                              value: promotion.id,
-                              label: `${promotion.name || t('ws-invoices.unnamed_promotion')} (${labelValue})`,
-                            } as ComboboxOptions;
-                          }),
+                          {
+                            value: 'none',
+                            label: t('ws-invoices.no_promotion'),
+                          },
+                          ...availablePromotions.map(
+                            (promotion): ComboboxOptions => {
+                              const referralPercent = referralDiscountMap.get(
+                                promotion.id
+                              );
+                              const labelValue =
+                                referralPercent !== undefined
+                                  ? `${referralPercent || 0}%`
+                                  : promotion.use_ratio
+                                    ? `${promotion.value}%`
+                                    : Intl.NumberFormat('vi-VN', {
+                                        style: 'currency',
+                                        currency: 'VND',
+                                      }).format(promotion.value);
+                              return {
+                                value: promotion.id,
+                                label: `${promotion.name || t('ws-invoices.unnamed_promotion')} (${labelValue})`,
+                              } as ComboboxOptions;
+                            }
+                          ),
                         ];
 
                         if (
                           selectedPromotionId &&
                           selectedPromotionId !== 'none' &&
-                          !availablePromotions.some((p) => p.id === selectedPromotionId)
+                          !availablePromotions.some(
+                            (p) => p.id === selectedPromotionId
+                          )
                         ) {
-                          const referralPercent = referralDiscountMap.get(selectedPromotionId);
-                          const referralName = (linkedPromotions || []).find((lp) => lp.promo_id === selectedPromotionId)?.workspace_promotions?.name || t('ws-invoices.unnamed_promotion');
+                          const referralPercent =
+                            referralDiscountMap.get(selectedPromotionId);
+                          const referralName =
+                            (linkedPromotions || []).find(
+                              (lp) => lp.promo_id === selectedPromotionId
+                            )?.workspace_promotions?.name ||
+                            t('ws-invoices.unnamed_promotion');
                           list.splice(1, 0, {
                             value: selectedPromotionId,
-                            label: `${referralName} (${(referralPercent ?? 0)}%)`,
+                            label: `${referralName} (${referralPercent ?? 0}%)`,
                           } as ComboboxOptions);
                         }
 
@@ -1521,30 +1545,33 @@ export function SubscriptionInvoice({
 
                         {(() => {
                           const referralPercent =
-                            selectedPromotionId && selectedPromotionId !== 'none'
+                            selectedPromotionId &&
+                            selectedPromotionId !== 'none'
                               ? referralDiscountMap.get(selectedPromotionId)
                               : undefined;
                           const hasReferral = referralPercent !== undefined;
                           if (!selectedPromotion && !hasReferral) return null;
                           const labelName = selectedPromotion
-                            ? selectedPromotion.name || t('ws-invoices.unnamed_promotion')
-                            : (linkedPromotions || []).find((lp) => lp.promo_id === selectedPromotionId)?.workspace_promotions?.name || t('ws-invoices.unnamed_promotion');
+                            ? selectedPromotion.name ||
+                              t('ws-invoices.unnamed_promotion')
+                            : (linkedPromotions || []).find(
+                                (lp) => lp.promo_id === selectedPromotionId
+                              )?.workspace_promotions?.name ||
+                              t('ws-invoices.unnamed_promotion');
                           const amount = subscriptionDiscountAmount;
                           return (
-                          <div className="flex justify-between">
-                            <span className="text-muted-foreground">
-                              {t('ws-invoices.discount')} (
-                              {labelName}
-                              )
-                            </span>
-                            <span className="text-green-600">
-                              -
-                              {Intl.NumberFormat('vi-VN', {
-                                style: 'currency',
-                                currency: 'VND',
-                              }).format(amount)}
-                            </span>
-                          </div>
+                            <div className="flex justify-between">
+                              <span className="text-muted-foreground">
+                                {t('ws-invoices.discount')} ({labelName})
+                              </span>
+                              <span className="text-green-600">
+                                -
+                                {Intl.NumberFormat('vi-VN', {
+                                  style: 'currency',
+                                  currency: 'VND',
+                                }).format(amount)}
+                              </span>
+                            </div>
                           );
                         })()}
 

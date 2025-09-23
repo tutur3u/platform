@@ -78,12 +78,10 @@ export default async function WorkspaceUserDetailsPage({
   const { data: availableUsers, count: availableUsersCount } =
     await getAvailableUsersForReferral({
       wsId,
-      currentUserId: userId
+      currentUserId: userId,
     });
 
   const referredUsers = await getReferredUsers({ wsId, userId });
-
-
 
   return (
     <div className="flex min-h-full w-full flex-col">
@@ -471,7 +469,7 @@ async function getWorkspaceSettings(wsId: string) {
     .maybeSingle();
 
   if (error) {
-throw error;
+    throw error;
   }
 
   return data;
@@ -486,13 +484,10 @@ async function getAvailableUsersForReferral({
 }) {
   const supabase = await createClient();
 
-  const { data, error } = await supabase.rpc(
-    'get_available_referral_users',
-    {
-      p_ws_id: wsId,
-      p_user_id: currentUserId,
-    }
-  );
+  const { data, error } = await supabase.rpc('get_available_referral_users', {
+    p_ws_id: wsId,
+    p_user_id: currentUserId,
+  });
   if (error) throw error;
   return { data, count: data?.length || 0 };
 }

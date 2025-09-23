@@ -83,16 +83,18 @@ export default async function WorkspacePromotionsPage({
             regularPromotions={regularPromotions}
           />
         }
-        settingsTrigger={!settingsRow ? (
-          <Button
-            size="xs"
-            className="w-full md:w-fit border border-dynamic-red/30 bg-dynamic-red/10 text-dynamic-red hover:bg-dynamic-red/15"
-            title={t('ws-inventory-promotions.create_settings_tooltip')}
-          >
-            <Settings className="h-4 w-4" />
-            {t('ws-inventory-promotions.create_settings')}
-          </Button>
-        ) : undefined}
+        settingsTrigger={
+          !settingsRow ? (
+            <Button
+              size="xs"
+              className="w-full md:w-fit border border-dynamic-red/30 bg-dynamic-red/10 text-dynamic-red hover:bg-dynamic-red/15"
+              title={t('ws-inventory-promotions.create_settings_tooltip')}
+            >
+              <Settings className="h-4 w-4" />
+              {t('ws-inventory-promotions.create_settings')}
+            </Button>
+          ) : undefined
+        }
         settingsTitle={t('common.settings')}
       />
       <Separator className="my-4" />

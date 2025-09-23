@@ -113,7 +113,8 @@ export function StandardInvoice({
     selectedPromotionId === 'none'
       ? null
       : availablePromotions.find(
-          (promotion: AvailablePromotion) => promotion.id === selectedPromotionId
+          (promotion: AvailablePromotion) =>
+            promotion.id === selectedPromotionId
         );
   const isLoadingUserHistory = userTransactionsLoading || userInvoicesLoading;
   const isLoadingData =
@@ -232,7 +233,11 @@ export function StandardInvoice({
             }
           : null;
       })
-      .filter(Boolean) as Array<{ id: string; use_ratio: boolean; value: number }>;
+      .filter(Boolean) as Array<{
+      id: string;
+      use_ratio: boolean;
+      value: number;
+    }>;
 
     if (candidates.length === 0) return;
 
@@ -376,7 +381,10 @@ export function StandardInvoice({
       // Show error message
       toast(
         t('ws-invoices.error_creating_invoice', {
-          error: error instanceof Error ? error.message : t('ws-invoices.failed_to_create_invoice'),
+          error:
+            error instanceof Error
+              ? error.message
+              : t('ws-invoices.failed_to_create_invoice'),
         })
       );
 
@@ -720,35 +728,46 @@ export function StandardInvoice({
                   options={(() => {
                     const list: ComboboxOptions[] = [
                       { value: 'none', label: t('ws-invoices.no_promotion') },
-                      ...availablePromotions.map((promotion: AvailablePromotion): ComboboxOptions => {
-                        const referralPercent = referralDiscountMap.get(promotion.id);
-                        const labelValue =
-                          referralPercent !== undefined
-                            ? `${referralPercent || 0}%`
-                            : promotion.use_ratio
-                              ? `${promotion.value}%`
-                              : Intl.NumberFormat('vi-VN', {
-                                  style: 'currency',
-                                  currency: 'VND',
-                                }).format(promotion.value);
-                        return {
-                          value: promotion.id,
-                          label: `${promotion.name || t('ws-invoices.unnamed_promotion')} (${labelValue})`,
-                        } as ComboboxOptions;
-                      }),
+                      ...availablePromotions.map(
+                        (promotion: AvailablePromotion): ComboboxOptions => {
+                          const referralPercent = referralDiscountMap.get(
+                            promotion.id
+                          );
+                          const labelValue =
+                            referralPercent !== undefined
+                              ? `${referralPercent || 0}%`
+                              : promotion.use_ratio
+                                ? `${promotion.value}%`
+                                : Intl.NumberFormat('vi-VN', {
+                                    style: 'currency',
+                                    currency: 'VND',
+                                  }).format(promotion.value);
+                          return {
+                            value: promotion.id,
+                            label: `${promotion.name || t('ws-invoices.unnamed_promotion')} (${labelValue})`,
+                          } as ComboboxOptions;
+                        }
+                      ),
                     ];
 
                     // If auto-applied referral promotion isn't in the normal list, inject a synthetic item
                     if (
                       selectedPromotionId &&
                       selectedPromotionId !== 'none' &&
-                      !availablePromotions.some((p: AvailablePromotion) => p.id === selectedPromotionId)
+                      !availablePromotions.some(
+                        (p: AvailablePromotion) => p.id === selectedPromotionId
+                      )
                     ) {
-                      const referralPercent = referralDiscountMap.get(selectedPromotionId);
-                      const referralName = (linkedPromotions || []).find((lp) => lp.promo_id === selectedPromotionId)?.workspace_promotions?.name || t('ws-invoices.unnamed_promotion');
+                      const referralPercent =
+                        referralDiscountMap.get(selectedPromotionId);
+                      const referralName =
+                        (linkedPromotions || []).find(
+                          (lp) => lp.promo_id === selectedPromotionId
+                        )?.workspace_promotions?.name ||
+                        t('ws-invoices.unnamed_promotion');
                       list.splice(1, 0, {
                         value: selectedPromotionId,
-                        label: `${referralName} (${(referralPercent ?? 0)}%)`,
+                        label: `${referralName} (${referralPercent ?? 0}%)`,
                       } as ComboboxOptions);
                     }
 
