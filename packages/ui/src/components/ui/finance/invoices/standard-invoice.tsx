@@ -219,7 +219,7 @@ export function StandardInvoice({
 
     // Build candidate list from linked promotions directly (includes referral)
     const candidates = (linkedPromotions || [])
-      .map((lp: any) => {
+      .map((lp) => {
         const id = lp?.promo_id as string | undefined;
         const promoObj = lp?.workspace_promotions as
           | { value?: number | null; use_ratio?: boolean | null }
@@ -370,13 +370,13 @@ export function StandardInvoice({
         const query = printAfterCreate ? '?print=true' : '';
         router.push(`/${wsId}/finance/invoices/${result.invoice_id}${query}`);
       }
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error creating invoice:', error);
 
       // Show error message
       toast(
         t('ws-invoices.error_creating_invoice', {
-          error: error.message || t('ws-invoices.failed_to_create_invoice'),
+          error: error instanceof Error ? error.message : t('ws-invoices.failed_to_create_invoice'),
         })
       );
 
@@ -745,7 +745,7 @@ export function StandardInvoice({
                       !availablePromotions.some((p: AvailablePromotion) => p.id === selectedPromotionId)
                     ) {
                       const referralPercent = referralDiscountMap.get(selectedPromotionId);
-                      const referralName = (linkedPromotions || []).find((lp: any) => lp.promo_id === selectedPromotionId)?.workspace_promotions?.name || t('ws-invoices.unnamed_promotion');
+                      const referralName = (linkedPromotions || []).find((lp) => lp.promo_id === selectedPromotionId)?.workspace_promotions?.name || t('ws-invoices.unnamed_promotion');
                       list.splice(1, 0, {
                         value: selectedPromotionId,
                         label: `${referralName} (${(referralPercent ?? 0)}%)`,

@@ -404,7 +404,7 @@ export const useAvailablePromotions = (wsId: string, userId: string) => {
       }
 
       for (const row of linked || []) {
-        const p = (row as any).workspace_promotions;
+        const p = row.workspace_promotions;
         if (p?.promo_type === 'REFERRAL' && p?.id) {
           resultMap.set(p.id, {
             id: p.id,

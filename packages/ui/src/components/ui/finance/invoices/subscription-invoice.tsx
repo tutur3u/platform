@@ -494,7 +494,7 @@ export function SubscriptionInvoice({
     // linkedIds not needed now; we derive candidates directly
     // Build candidate list from linked promotions directly (includes referral)
     const candidates = (linkedPromotions || [])
-      .map((lp: any) => {
+      .map((lp) => {
         const id = lp?.promo_id as string | undefined;
         const promoObj = lp?.workspace_promotions as
           | { value?: number | null; use_ratio?: boolean | null }
@@ -1476,7 +1476,7 @@ export function SubscriptionInvoice({
                           !availablePromotions.some((p) => p.id === selectedPromotionId)
                         ) {
                           const referralPercent = referralDiscountMap.get(selectedPromotionId);
-                          const referralName = (linkedPromotions || []).find((lp: any) => lp.promo_id === selectedPromotionId)?.workspace_promotions?.name || t('ws-invoices.unnamed_promotion');
+                          const referralName = (linkedPromotions || []).find((lp) => lp.promo_id === selectedPromotionId)?.workspace_promotions?.name || t('ws-invoices.unnamed_promotion');
                           list.splice(1, 0, {
                             value: selectedPromotionId,
                             label: `${referralName} (${(referralPercent ?? 0)}%)`,
@@ -1528,7 +1528,7 @@ export function SubscriptionInvoice({
                           if (!selectedPromotion && !hasReferral) return null;
                           const labelName = selectedPromotion
                             ? selectedPromotion.name || t('ws-invoices.unnamed_promotion')
-                            : (linkedPromotions || []).find((lp: any) => lp.promo_id === selectedPromotionId)?.workspace_promotions?.name || t('ws-invoices.unnamed_promotion');
+                            : (linkedPromotions || []).find((lp) => lp.promo_id === selectedPromotionId)?.workspace_promotions?.name || t('ws-invoices.unnamed_promotion');
                           const amount = subscriptionDiscountAmount;
                           return (
                           <div className="flex justify-between">
