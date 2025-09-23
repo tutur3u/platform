@@ -103,18 +103,15 @@ export default function ProjectCard({
           isSelected ? 'bg-transparent' : 'bg-muted/60'
         )}
       />
-      {/* Card Header with Status, Type, and Title */}
       <CardHeader className="flex flex-col gap-6 p-6">
-        {/* Status and Type Indicators Row */}
         <div className="flex items-center justify-between">
-          {/* Status Indicator */}
           <div
             className={`rounded-full bg-gradient-to-r px-3 py-1 text-xs font-bold text-primary-foreground shadow-lg backdrop-blur-sm ${STATUS_COLORS[project.status as keyof typeof STATUS_COLORS]} `}
           >
-            {project.status.charAt(0).toUpperCase() + project.status.slice(1)}
+            {project.status.charAt(0).toUpperCase() + project.status.slice(1)} -{' '}
+            {project.semester}
           </div>
 
-          {/* Type Indicator */}
           <div
             className={`flex items-center gap-2 rounded-full bg-gradient-to-r px-3 py-1 text-xs font-medium text-primary-foreground ${typeConfig.gradient}`}
           >

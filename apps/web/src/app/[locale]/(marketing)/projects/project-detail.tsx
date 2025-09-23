@@ -1,6 +1,6 @@
 import { Project } from './data';
 import { motion } from 'framer-motion';
-import { Code, ExternalLink, Github, Play, X } from 'lucide-react';
+import { Calendar, Code, ExternalLink, Github, Play, X } from 'lucide-react';
 import Image from 'next/image';
 
 interface ProjectDetailProps {
@@ -55,6 +55,7 @@ export default function ProjectDetail({ onClose, data }: ProjectDetailProps) {
     manager,
     type,
     status,
+    semester,
     githubUrl,
     demoUrl,
     image,
@@ -110,6 +111,9 @@ export default function ProjectDetail({ onClose, data }: ProjectDetailProps) {
               <div className="rounded-full bg-gradient-to-r from-[#F4B71A] to-[#1AF4E6] px-3 py-1 text-sm font-medium text-black">
                 {TYPE_LABELS[type]}
               </div>
+              <div className="rounded-full bg-gradient-to-r from-purple-500 to-indigo-500 px-3 py-1 text-sm font-medium text-primary-foreground">
+                {semester}
+              </div>
             </div>
           </div>
 
@@ -161,7 +165,7 @@ export default function ProjectDetail({ onClose, data }: ProjectDetailProps) {
         {/* Content */}
         <div className="space-y-8 px-8 pb-8">
           {/* Project Stats */}
-          <div className="mb-8 grid grid-cols-3 gap-4">
+          <div className="mb-8 grid grid-cols-4 gap-4">
             {[
               {
                 label: 'Technologies',
@@ -177,6 +181,11 @@ export default function ProjectDetail({ onClose, data }: ProjectDetailProps) {
                 label: 'Status',
                 value: STATUS_CONFIG[status].label,
                 icon: Play,
+              },
+              {
+                label: 'Semester',
+                value: semester,
+                icon: Calendar,
               },
             ].map((stat, index) => (
               <motion.div

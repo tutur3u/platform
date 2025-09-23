@@ -6,6 +6,7 @@ export type Project = {
   techStack?: string[];
   purpose: string;
   status: 'planning' | 'ongoing' | 'completed';
+  semester: string;
   members?: { name: string; role: string }[];
   githubUrl?: string;
   demoUrl?: string;
@@ -22,6 +23,7 @@ export const projects: Project[] = [
     type: 'software',
     techStack: ['Python'],
     status: 'completed',
+    semester: 'A/2025',
     manager: 'Truong Gia Hy',
     members: [
       {
@@ -54,6 +56,7 @@ export const projects: Project[] = [
     type: 'hardware',
     techStack: ['Arduino', 'C++', 'Solid Work'],
     status: 'completed',
+    semester: 'A/2025',
     manager: 'Le Van Chi Hoang',
     members: [
       {
@@ -81,6 +84,7 @@ export const projects: Project[] = [
     type: 'hardware',
     techStack: ['Arduino', 'C++', 'Solid Work'],
     status: 'completed',
+    semester: 'A/2025',
     manager: 'Cu Dinh Bach',
     members: [
       {
@@ -108,6 +112,7 @@ export const projects: Project[] = [
     type: 'hardware',
     techStack: ['Arduino', 'C++', 'Solid Work'],
     status: 'completed',
+    semester: 'A/2025',
     manager: 'Truong Duc Qui',
     members: [
       {
@@ -132,6 +137,7 @@ export const projects: Project[] = [
     type: 'web',
     techStack: ['Next.js', 'Typescript', 'Tailwind CSS'],
     status: 'completed',
+    semester: 'A/2025',
     manager: 'Nguyen An Nhien',
     members: [
       {
@@ -163,6 +169,7 @@ export const projects: Project[] = [
     type: 'web',
     techStack: ['Next.js', 'Typescript', 'Tailwind CSS'],
     status: 'completed',
+    semester: 'A/2025',
     manager: 'Nguyen Gia Khang',
     purpose:
       "This project aims to create a more engaging and visually appealing landing page that better represents the club's identity and showcases our projects with improved design and user experience.",
@@ -179,6 +186,7 @@ export const projects: Project[] = [
     type: 'web',
     techStack: ['Python', 'React.js'],
     status: 'completed',
+    semester: 'A/2025',
     manager: 'Nguyen Gia Khang',
     purpose:
       "This project aims to save time for gathering participant's information.",
@@ -195,6 +203,7 @@ export const projects: Project[] = [
     type: 'hardware',
     techStack: ['Arduino', 'C++', 'PlatformIO'],
     status: 'completed',
+    semester: 'C/2024',
     manager: 'Huynh Hoang Duc',
     purpose:
       'This project aims to create a sophisticated micromouse capable of navigating mazes efficiently.',
@@ -220,6 +229,7 @@ export const projects: Project[] = [
       'Shadcn UI',
     ],
     status: 'completed',
+    semester: 'B/2024',
     manager: 'Luong Ngoc Bao Tran',
     purpose:
       'A short-term project to demonstrate realtime multiplayer game development with cutting-edge technologies.',
@@ -243,6 +253,7 @@ export const projects: Project[] = [
       'Shadcn UI',
     ],
     status: 'completed',
+    semester: 'B/2024',
     manager: 'Vo Hoang Phuc',
     members: [
       { name: 'Huynh Tan Phat', role: 'Developer' },
@@ -265,6 +276,7 @@ export const projects: Project[] = [
     type: 'web',
     techStack: ['Next.js', 'Typescript', 'Tailwind CSS'],
     status: 'completed',
+    semester: 'B/2024',
     manager: 'Ngo Van Tai',
     purpose:
       'A revamp of the club landing page to showcase the club projects and activities.',
@@ -297,6 +309,7 @@ export const projects: Project[] = [
       'Shadcn UI',
     ],
     status: 'completed',
+    semester: 'B/2024',
     manager: 'Vo Hoang Phuc',
     purpose:
       'An informative digital platform for visitors as well as all-in-one management platform for core team members.',
