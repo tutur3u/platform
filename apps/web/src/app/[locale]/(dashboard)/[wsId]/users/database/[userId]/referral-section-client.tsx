@@ -46,9 +46,7 @@ export default function ReferralSectionClient({
             <Settings className="h-5 w-5 mt-0.5" />
             <div className="flex-1">
               <AlertTitle>{t('referral_settings_title')}</AlertTitle>
-              <AlertDescription>
-                {t('referral_settings_desc')}
-              </AlertDescription>
+              <AlertDescription>{t('referral_settings_desc')}</AlertDescription>
             </div>
             <Link href={`/${wsId}/inventory/promotions`}>
               <Button
@@ -145,7 +143,9 @@ export default function ReferralSectionClient({
   // Keep selected option valid: if the selected user disappears from available list, reset selection
   useEffect(() => {
     if (!selectedUserId) return;
-    const ids = new Set((availableUsersQuery.data?.data || []).map((u) => u.id));
+    const ids = new Set(
+      (availableUsersQuery.data?.data || []).map((u) => u.id)
+    );
     if (!ids.has(selectedUserId)) {
       setSelectedUserId('');
     }
@@ -153,7 +153,9 @@ export default function ReferralSectionClient({
 
   const isSelectedValid = useMemo(() => {
     if (!selectedUserId) return false;
-    return (availableUsersQuery.data?.data || []).some((u) => u.id === selectedUserId);
+    return (availableUsersQuery.data?.data || []).some(
+      (u) => u.id === selectedUserId
+    );
   }, [selectedUserId, availableUsersQuery.data?.data]);
 
   const currentReferralCount = currentReferralsQuery.data || 0;
@@ -185,7 +187,8 @@ export default function ReferralSectionClient({
       // Resolve current workspace virtual user id for auditing fields
       let creatorVirtualUserId: string | null = null;
       try {
-        const { data: userData, error: userError } = await supabase.auth.getUser();
+        const { data: userData, error: userError } =
+          await supabase.auth.getUser();
         if (userError) throw userError;
         if (userData?.user?.id) {
           const { data: creatorRow, error: creatorIdErr } = await supabase
@@ -273,7 +276,8 @@ export default function ReferralSectionClient({
 
       await queryClient.setQueryData(
         ['ws', wsId, 'user', userId, 'referrals', 'count'],
-        (prev: number | undefined) => (typeof prev === 'number' ? prev + 1 : undefined)
+        (prev: number | undefined) =>
+          typeof prev === 'number' ? prev + 1 : undefined
       );
 
       // Invalidate to reconcile with server
@@ -295,7 +299,8 @@ export default function ReferralSectionClient({
       ]);
     },
     onError: (error: unknown) => {
-      const message = error instanceof Error ? error.message : t('common.error');
+      const message =
+        error instanceof Error ? error.message : t('common.error');
       toast.error(message);
     },
   });
@@ -331,7 +336,9 @@ export default function ReferralSectionClient({
               {referredUsersQuery.isLoading ? (
                 <div className="opacity-60 text-sm">{t('loading')}</div>
               ) : (referredUsersQuery.data || []).length === 0 ? (
-                <div className="opacity-60 text-sm">{t('no_referred_users')}</div>
+                <div className="opacity-60 text-sm">
+                  {t('no_referred_users')}
+                </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                   {(referredUsersQuery.data || []).map((u) => {
@@ -345,7 +352,11 @@ export default function ReferralSectionClient({
                                 <Avatar className="h-8 w-8">
                                   <AvatarImage
                                     src={u.avatar_url as string}
-                                    alt={u.display_name || u.full_name || t('avatar')}
+                                    alt={
+                                      u.display_name ||
+                                      u.full_name ||
+                                      t('avatar')
+                                    }
                                   />
                                 </Avatar>
                               ) : (
@@ -354,7 +365,9 @@ export default function ReferralSectionClient({
                                 </div>
                               )}
                               <div className="font-medium">
-                                {u.display_name || u.full_name || t('common.unknown')}
+                                {u.display_name ||
+                                  u.full_name ||
+                                  t('common.unknown')}
                               </div>
                             </div>
                           </CardContent>
