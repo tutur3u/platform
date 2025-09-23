@@ -231,20 +231,20 @@ export default function ProjectCard({
                 <Play className="h-4 w-4" />
               </motion.button>
             )}
-          </div>
 
-          {/* Team Size Indicator with enhanced design */}
-          {project.members && project.members.length > 0 && (
-            <div
-              className={`flex items-center gap-2 rounded-lg bg-muted/50 px-3 py-1 text-muted-foreground backdrop-blur-sm ${isSelected ? 'text-sm' : 'text-xs'}`}
-            >
-              <Users className="h-4 w-4" />
-              <span>
-                {project.members.length} member
-                {project.members.length !== 1 ? 's' : ''}
-              </span>
-            </div>
-          )}
+            {/* Team Size Indicator with enhanced design */}
+            {project.members && project.members.length > 0 && (
+              <div
+                className={`flex items-center gap-2 rounded-lg bg-muted/50 px-3 py-1 text-muted-foreground backdrop-blur-sm ${isSelected ? 'text-sm' : 'text-xs'}`}
+              >
+                <Users className="h-4 w-4" />
+                <span>
+                  {project.members.length} member
+                  {project.members.length !== 1 ? 's' : ''}
+                </span>
+              </div>
+            )}
+          </div>
         </div>
       </CardFooter>
 
