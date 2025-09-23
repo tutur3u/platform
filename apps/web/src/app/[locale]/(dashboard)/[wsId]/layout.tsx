@@ -1,6 +1,6 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
-import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
+import { getWorkspace, toWorkspaceSlug } from '@tuturuuu/utils/workspace-helper';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
@@ -30,6 +30,7 @@ export default async function Layout({ children, params }: LayoutProps) {
 
   const workspace = await getWorkspace(id);
   const wsId = workspace.id;
+  const workspaceSlug = toWorkspaceSlug(wsId, { personal: !!workspace.personal });
 
   const user = await getCurrentUser();
 
@@ -139,7 +140,7 @@ export default async function Layout({ children, params }: LayoutProps) {
         links={
           await WorkspaceNavigationLinks({
             wsId,
-            personalOrWsId: workspace.personal ? 'personal' : wsId,
+            personalOrWsId: workspaceSlug,
             isPersonal: !!workspace.personal,
             isTuturuuuUser: !!user.email?.endsWith('@tuturuuu.com'),
           })

@@ -1,6 +1,7 @@
 import { match } from '@formatjs/intl-localematcher';
 import { createCentralizedAuthMiddleware } from '@tuturuuu/auth/middleware';
 import { createClient } from '@tuturuuu/supabase/next/server';
+import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { getUserDefaultWorkspace } from '@tuturuuu/utils/user-helper';
 import { isPersonalWorkspace } from '@tuturuuu/utils/workspace-helper';
 import Negotiator from 'negotiator';
@@ -57,6 +58,9 @@ export async function middleware(req: NextRequest): Promise<NextResponse> {
   let potentialWorkspaceId: string | null = null;
   let hasLocaleInPath = false;
 
+  const isRootWorkspaceSegment = (segment?: string) =>
+    segment?.toLowerCase() === ROOT_WORKSPACE_ID.toLowerCase();
+
   if (pathSegments.length >= 1) {
     // Check if first segment is a locale
     if (
@@ -65,16 +69,35 @@ export async function middleware(req: NextRequest): Promise<NextResponse> {
     ) {
       hasLocaleInPath = true;
       // Check if second segment is a workspace ID
-      if (
-        pathSegments.length >= 2 &&
-        pathSegments[1] &&
-        uuidRegex.test(pathSegments[1])
-      ) {
-        potentialWorkspaceId = pathSegments[1];
+      if (pathSegments.length >= 2 && pathSegments[1]) {
+        const candidate = pathSegments[1];
+        if (isRootWorkspaceSegment(candidate)) {
+          potentialWorkspaceId = ROOT_WORKSPACE_ID;
+        } else if (uuidRegex.test(candidate)) {
+          potentialWorkspaceId = candidate;
+        }
       }
-    } else if (pathSegments[0] && uuidRegex.test(pathSegments[0])) {
+    } else if (pathSegments[0]) {
       // First segment is a workspace ID (no locale in path)
-      potentialWorkspaceId = pathSegments[0];
+      if (isRootWorkspaceSegment(pathSegments[0])) {
+        potentialWorkspaceId = ROOT_WORKSPACE_ID;
+      } else if (uuidRegex.test(pathSegments[0])) {
+        potentialWorkspaceId = pathSegments[0];
+      }
+    }
+  }
+
+  // Remap root workspace URL to the internal workspace slug for consistency
+  if (potentialWorkspaceId === ROOT_WORKSPACE_ID) {
+    const wsIdIndex = hasLocaleInPath ? 1 : 0;
+    const newPathSegments = [...pathSegments];
+
+    if (newPathSegments[wsIdIndex] !== 'internal') {
+      newPathSegments[wsIdIndex] = 'internal';
+      const redirectUrl = new URL(`/${newPathSegments.join('/')}`, req.nextUrl);
+      redirectUrl.search = req.nextUrl.search;
+
+      return NextResponse.redirect(redirectUrl);
     }
   }
 
@@ -141,7 +164,9 @@ export async function middleware(req: NextRequest): Promise<NextResponse> {
         if (defaultWorkspace) {
           const target = defaultWorkspace.personal
             ? 'personal'
-            : defaultWorkspace.id;
+            : defaultWorkspace.id === ROOT_WORKSPACE_ID
+              ? 'internal'
+              : defaultWorkspace.id;
           const redirectUrl = new URL(`/${target}`, req.nextUrl);
           return NextResponse.redirect(redirectUrl);
         }

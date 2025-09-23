@@ -77,7 +77,10 @@ import {
   Wallet,
   Warehouse,
 } from '@tuturuuu/ui/icons';
-import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
+import {
+  ROOT_WORKSPACE_ID,
+  resolveWorkspaceId,
+} from '@tuturuuu/utils/constants';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
 import { getPermissions, verifySecret } from '@tuturuuu/utils/workspace-helper';
 import { getTranslations } from 'next-intl/server';
@@ -96,13 +99,14 @@ export async function WorkspaceNavigationLinks({
   isTuturuuuUser: boolean;
 }) {
   const t = await getTranslations();
+  const resolvedWorkspaceId = resolveWorkspaceId(wsId);
   const { withoutPermission } = await getPermissions({
-    wsId,
+    wsId: resolvedWorkspaceId,
   });
 
   const ENABLE_AI_ONLY = await verifySecret({
     forceAdmin: true,
-    wsId,
+    wsId: resolvedWorkspaceId,
     name: 'ENABLE_AI_ONLY',
     value: 'true',
   });
@@ -142,7 +146,7 @@ export async function WorkspaceNavigationLinks({
             ENABLE_AI_ONLY ||
             !(await verifySecret({
               forceAdmin: true,
-              wsId,
+              wsId: resolvedWorkspaceId,
               name: 'ENABLE_TASKS',
               value: 'true',
             })) ||
@@ -157,7 +161,7 @@ export async function WorkspaceNavigationLinks({
             ENABLE_AI_ONLY ||
             !(await verifySecret({
               forceAdmin: true,
-              wsId,
+              wsId: resolvedWorkspaceId,
               name: 'ENABLE_CHAT',
               value: 'true',
             })) ||
@@ -179,7 +183,7 @@ export async function WorkspaceNavigationLinks({
           disabled:
             !(await verifySecret({
               forceAdmin: true,
-              wsId,
+              wsId: resolvedWorkspaceId,
               name: 'ENABLE_AI',
               value: 'true',
             })) || withoutPermission('ai_lab'),
@@ -192,7 +196,7 @@ export async function WorkspaceNavigationLinks({
           disabled:
             !(await verifySecret({
               forceAdmin: true,
-              wsId,
+              wsId: resolvedWorkspaceId,
               name: 'ENABLE_AI',
               value: 'true',
             })) || withoutPermission('ai_lab'),
@@ -205,7 +209,7 @@ export async function WorkspaceNavigationLinks({
           disabled:
             !(await verifySecret({
               forceAdmin: true,
-              wsId,
+              wsId: resolvedWorkspaceId,
               name: 'ENABLE_AI',
               value: 'true',
             })) || withoutPermission('ai_lab'),
@@ -218,7 +222,7 @@ export async function WorkspaceNavigationLinks({
           disabled:
             !(await verifySecret({
               forceAdmin: true,
-              wsId,
+              wsId: resolvedWorkspaceId,
               name: 'ENABLE_AI',
               value: 'true',
             })) || withoutPermission('ai_lab'),
@@ -231,7 +235,7 @@ export async function WorkspaceNavigationLinks({
           disabled:
             !(await verifySecret({
               forceAdmin: true,
-              wsId,
+              wsId: resolvedWorkspaceId,
               name: 'ENABLE_AI',
               value: 'true',
             })) || withoutPermission('ai_lab'),
@@ -244,7 +248,7 @@ export async function WorkspaceNavigationLinks({
           disabled:
             !(await verifySecret({
               forceAdmin: true,
-              wsId,
+              wsId: resolvedWorkspaceId,
               name: 'ENABLE_AI',
               value: 'true',
             })) || withoutPermission('ai_lab'),
@@ -475,7 +479,7 @@ export async function WorkspaceNavigationLinks({
           disabled:
             !(await verifySecret({
               forceAdmin: true,
-              wsId,
+              wsId: resolvedWorkspaceId,
               name: 'ENABLE_EMAIL_SENDING',
               value: 'true',
             })) ||
@@ -499,7 +503,7 @@ export async function WorkspaceNavigationLinks({
             ENABLE_AI_ONLY ||
             !(await verifySecret({
               forceAdmin: true,
-              wsId,
+              wsId: resolvedWorkspaceId,
               name: 'ENABLE_DOCS',
               value: 'true',
             })) ||
@@ -514,7 +518,7 @@ export async function WorkspaceNavigationLinks({
             ENABLE_AI_ONLY ||
             !(await verifySecret({
               forceAdmin: true,
-              wsId,
+              wsId: resolvedWorkspaceId,
               name: 'ENABLE_SLIDES',
               value: 'true',
             })),
@@ -527,33 +531,33 @@ export async function WorkspaceNavigationLinks({
           children: [
             {
               title: t('workspace-education-tabs.overview'),
-              href: `/${wsId}/education`,
+              href: `/${personalOrWsId}/education`,
               icon: <LayoutDashboard className="h-5 w-5" />,
               matchExact: true,
             },
             {
               title: t('workspace-education-tabs.courses'),
-              href: `/${wsId}/education/courses`,
+              href: `/${personalOrWsId}/education/courses`,
               icon: <BookText className="h-5 w-5" />,
             },
             {
               title: t('workspace-education-tabs.flashcards'),
-              href: `/${wsId}/education/flashcards`,
+              href: `/${personalOrWsId}/education/flashcards`,
               icon: <SwatchBook className="h-5 w-5" />,
             },
             {
               title: t('workspace-education-tabs.quiz-sets'),
-              href: `/${wsId}/education/quiz-sets`,
+              href: `/${personalOrWsId}/education/quiz-sets`,
               icon: <LayoutList className="h-5 w-5" />,
             },
             {
               title: t('workspace-education-tabs.quizzes'),
-              href: `/${wsId}/education/quizzes`,
+              href: `/${personalOrWsId}/education/quizzes`,
               icon: <ListTodo className="h-5 w-5" />,
             },
             {
               title: t('workspace-education-tabs.attempts'),
-              href: `/${wsId}/education/attempts`,
+              href: `/${personalOrWsId}/education/attempts`,
               icon: <ListCheck className="h-5 w-5" />,
             },
           ],
@@ -561,7 +565,7 @@ export async function WorkspaceNavigationLinks({
             ENABLE_AI_ONLY ||
             !(await verifySecret({
               forceAdmin: true,
-              wsId,
+              wsId: resolvedWorkspaceId,
               name: 'ENABLE_EDUCATION',
               value: 'true',
             })) ||
@@ -576,7 +580,7 @@ export async function WorkspaceNavigationLinks({
             ENABLE_AI_ONLY ||
             !(await verifySecret({
               forceAdmin: true,
-              wsId,
+              wsId: resolvedWorkspaceId,
               name: 'ENABLE_WHITEBOARDS',
               value: 'true',
             })) ||
@@ -640,10 +644,10 @@ export async function WorkspaceNavigationLinks({
           href: `/${personalOrWsId}/link-shortener`,
           icon: <Link className="h-5 w-5" />,
           disabled:
-            wsId !== ROOT_WORKSPACE_ID &&
+            resolvedWorkspaceId !== ROOT_WORKSPACE_ID &&
             !(await verifySecret({
               forceAdmin: true,
-              wsId,
+              wsId: resolvedWorkspaceId,
               name: 'ENABLE_LINK_SHORTENER',
               value: 'true',
             })),
@@ -716,7 +720,7 @@ export async function WorkspaceNavigationLinks({
                 ENABLE_AI_ONLY ||
                 !(await verifySecret({
                   forceAdmin: true,
-                  wsId,
+                  wsId: resolvedWorkspaceId,
                   name: 'ENABLE_USERS',
                   value: 'true',
                 })) ||
@@ -727,7 +731,7 @@ export async function WorkspaceNavigationLinks({
             ENABLE_AI_ONLY ||
             !(await verifySecret({
               forceAdmin: true,
-              wsId,
+              wsId: resolvedWorkspaceId,
               name: 'ENABLE_USERS',
               value: 'true',
             })) ||
@@ -788,7 +792,7 @@ export async function WorkspaceNavigationLinks({
             ENABLE_AI_ONLY ||
             !(await verifySecret({
               forceAdmin: true,
-              wsId,
+              wsId: resolvedWorkspaceId,
               name: 'ENABLE_FINANCE',
               value: 'true',
             })) ||
@@ -852,7 +856,7 @@ export async function WorkspaceNavigationLinks({
             ENABLE_AI_ONLY ||
             !(await verifySecret({
               forceAdmin: true,
-              wsId,
+              wsId: resolvedWorkspaceId,
               name: 'ENABLE_INVENTORY',
               value: 'true',
             })) ||
@@ -901,7 +905,7 @@ export async function WorkspaceNavigationLinks({
           icon: <Bolt className="h-5 w-5" />,
           matchExact: true,
         },
-        ...(wsId !== 'personal' && !isPersonal
+        ...(!isPersonal
           ? [
               {
                 title: t('workspace-settings-layout.members'),
