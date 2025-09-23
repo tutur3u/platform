@@ -296,6 +296,13 @@ export default function ReferralSectionClient({
         queryClient.invalidateQueries({
           queryKey: ['user-linked-promotions', wsId, userId],
         }),
+        // Refresh linked promotions for this user in the invoice page
+        queryClient.invalidateQueries({
+          queryKey: ['user-linked-promotions', userId],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ['user-referral-discounts', wsId, userId],
+        }),
       ]);
     },
     onError: (error: unknown) => {
