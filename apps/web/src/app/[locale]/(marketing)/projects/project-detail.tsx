@@ -178,7 +178,6 @@ export default function ProjectDetail({ onClose, data }: ProjectDetailProps) {
 
         {/* Content */}
         <div className="space-y-8 px-8 pb-8">
-          
           {/* 3D Model Viewer */}
           <AnimatePresence initial={false} mode="popLayout">
             {is3DViewOpen && modelFile && (
