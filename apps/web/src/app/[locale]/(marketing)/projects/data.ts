@@ -17,6 +17,41 @@ const NCT_REPO_URL = 'https://github.com/rmit-nct/hub';
 
 export const projects: Project[] = [
   {
+    name: 'Neo Storage Console',
+    description:
+      'A console-based application for user authentication and item tracking. Provides a simple, local solution for managing item ownership without web complexity.',
+    type: 'software',
+    techStack: ['C++'],
+    status: 'completed',
+    semester: 'B/2025',
+    manager: 'Nguyen Don Gia Phat',
+    members: [
+      {
+        name: 'Nguyen Don Gia Phat',
+        role: 'Leader, Developer',
+      },
+      {
+        name: 'Truong Tan Quang',
+        role: 'Developer',
+      },
+      {
+        name: 'Phan Hoang Khang',
+        role: 'Developer',
+      },
+      {
+        name: 'Tran Hoang Minh',
+        role: 'Developer',
+      },
+      {
+        name: 'Do Le Minh Quan',
+        role: 'Developer',
+      },
+    ],
+    purpose:
+      'This research project aims to demystify blockchain technology beyond buzzwords, covering consensus mechanisms (PoW), smart contracts, digital signatures, and real-world applications in healthcare and supply chains. Through practical Python implementation, it demonstrates how blockchain data is securely linked, verified, and made immutable.',
+    githubUrl: 'https://github.com/rmit-nct/neo-storage-console',
+  },
+  {
     name: 'Blockchain Research',
     description:
       'A blockchain research project exploring distributed ledger technology through Python implementation, covering consensus mechanisms, smart contracts, and real-world applications.',
@@ -26,6 +61,10 @@ export const projects: Project[] = [
     semester: 'A/2025',
     manager: 'Truong Gia Hy',
     members: [
+      {
+        name: 'Truong Gia Hy',
+        role: 'Leader/Researcher',
+      },
       {
         name: 'Nguyen Trong Tien',
         role: 'Developer/Researcher',
@@ -60,6 +99,10 @@ export const projects: Project[] = [
     manager: 'Le Van Chi Hoang',
     members: [
       {
+        name: 'Le Van Chi Hoang',
+        role: 'Leader, Hardware Developer',
+      },
+      {
         name: 'Nguyen Ngoc Thien Ngan',
         role: 'Hardware Developer',
       },
@@ -87,6 +130,10 @@ export const projects: Project[] = [
     semester: 'A/2025',
     manager: 'Cu Dinh Bach',
     members: [
+      {
+        name: 'Cu Dinh Bach',
+        role: 'Leader, Hardware Developer',
+      },
       {
         name: 'Nguyen Do Tuong Van',
         role: 'Hardware Developer',
@@ -116,6 +163,10 @@ export const projects: Project[] = [
     manager: 'Truong Duc Qui',
     members: [
       {
+        name: 'Truong Duc Qui',
+        role: 'Leader, Hardware Engineer',
+      },
+      {
         name: 'Mai Dang Khoa',
         role: 'Hardware Engineer',
       },
@@ -140,6 +191,10 @@ export const projects: Project[] = [
     semester: 'A/2025',
     manager: 'Nguyen An Nhien',
     members: [
+      {
+        name: 'Nguyen An Nhien',
+        role: 'Leader, Hardware Engineer',
+      },
       {
         name: 'Chau Tung Nguyen',
         role: 'Developer',
@@ -208,6 +263,7 @@ export const projects: Project[] = [
     purpose:
       'This project aims to create a sophisticated micromouse capable of navigating mazes efficiently.',
     members: [
+      { name: 'Huynh Hoang Duc', role: 'Leader, Hardware Engineer' },
       { name: 'Pham Ngoc Phu Vinh', role: 'Hardware Engineer' },
       { name: 'Tran Thanh Sang', role: 'Hardware Engineer' },
       { name: 'Nguyen Gia Khang', role: 'Software Developer' },
@@ -233,7 +289,10 @@ export const projects: Project[] = [
     manager: 'Luong Ngoc Bao Tran',
     purpose:
       'A short-term project to demonstrate realtime multiplayer game development with cutting-edge technologies.',
-    members: [{ name: 'Vo Hoang Phuc', role: 'Developer' }],
+    members: [
+      { name: 'Luong Ngoc Bao Tran', role: 'Leader, Developer' },
+      { name: 'Vo Hoang Phuc', role: 'Developer' },
+    ],
     githubUrl: NCT_REPO_URL,
     demoUrl:
       process.env.NODE_ENV === 'development'
@@ -256,6 +315,7 @@ export const projects: Project[] = [
     semester: 'B/2024',
     manager: 'Vo Hoang Phuc',
     members: [
+      { name: 'Vo Hoang Phuc', role: 'Leader, Developer' },
       { name: 'Huynh Tan Phat', role: 'Developer' },
       { name: 'Nguyen Gia Khang', role: 'Developer' },
       { name: 'Luong Ngoc Bao Tran', role: 'Developer' },
@@ -282,6 +342,7 @@ export const projects: Project[] = [
       'A revamp of the club landing page to showcase the club projects and activities.',
 
     members: [
+      { name: 'Ngo Van Tai', role: 'Leader, Developer' },
       { name: 'Nguyen Phuong Anh', role: 'Developer' },
       { name: 'Luong Ngoc Bao Tran', role: 'Developer' },
       { name: 'Huynh Ngoc Nhat Mai', role: 'Developer' },
