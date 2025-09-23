@@ -125,17 +125,6 @@ WITH CHECK (
 );
 
 
-ALTER TABLE public.workspace_promotions
-ADD CONSTRAINT workspace_promotions_ws_id_id_key UNIQUE (ws_id, id);
-
-ALTER TABLE public.workspace_settings
-ADD COLUMN referral_promotion_id uuid NULL,
-ADD CONSTRAINT workspace_settings_referral_promo_fkey
-  FOREIGN KEY (ws_id, referral_promotion_id)
-  REFERENCES public.workspace_promotions (ws_id, id)
-  ON DELETE SET NULL;
-
-
 CREATE OR REPLACE FUNCTION public.auto_link_referral_promotion()
 RETURNS TRIGGER AS $$
 BEGIN
