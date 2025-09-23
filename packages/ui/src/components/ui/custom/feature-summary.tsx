@@ -18,7 +18,7 @@ interface Props<T> {
   trigger?: ReactNode;
   form?: ReactElement<FormProps<T>>;
   // Settings support (optional)
-  settingsData?: unknown & { id?: string };
+  settingsData?: unknown;
   settingsForm?: ReactElement<FormProps<unknown>>;
   settingsTitle?: string;
   settingsDescription?: string;

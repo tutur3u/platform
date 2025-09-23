@@ -1164,14 +1164,23 @@
     "basic_information": "Basic Information",
     "refer_people_with_progress": "Refer People ({current}/{max})",
     "refer_summary": "You can refer up to {cap} people. Each referral gives you {percent}% discount.",
+    "referred_users_label": "Referred users",
+    "loading": "Loading...",
+    "no_referred_users": "No referred users yet",
     "select_person_to_refer_with_remaining": "Select person to refer ({remaining} remaining)",
     "search_person_to_refer_placeholder": "Search for a person to refer...",
     "refer_selected_person": "Refer Selected Person",
     "reached_max_referrals": "You have reached the maximum number of referrals ({cap}).",
     "current_discount_label": "Current discount:",
+    "avatar": "Avatar",
     "common": {
-      "empty": "Empty"
-    }
+      "empty": "Empty",
+      "error": "Something went wrong",
+      "unknown": "Unknown"
+    },
+    "referral_success": "Sucessfully referred a new user",
+    "user_already_referred": "This user has already been referred.",
+    "missing_creator_id": "Missing a creator ID. You are not authorized"
   },
   "email-data-table": {
     "id": "ID",

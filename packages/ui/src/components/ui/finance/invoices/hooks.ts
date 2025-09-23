@@ -75,6 +75,7 @@ export const usePromotions = (wsId: string) => {
         .from('workspace_promotions')
         .select('*')
         .eq('ws_id', wsId)
+        .neq('promo_type', 'REFERRAL')
         .order('code', { ascending: true });
 
       if (error) throw error;
@@ -320,6 +321,107 @@ export const useUserLinkedPromotions = (userId: string) => {
     enabled: !!userId,
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 10 * 60 * 1000, // 10 minutes
+    refetchOnWindowFocus: false,
+    retry: 3,
+  });
+};
+
+// Per-user referral discounts (percent) from view
+export const useUserReferralDiscounts = (wsId: string, userId: string) => {
+  return useQuery({
+    queryKey: ['user-referral-discounts', wsId, userId],
+    queryFn: async () => {
+      const supabase = createClient();
+      const { data, error } = await supabase
+        .from('v_user_referral_discounts')
+        .select('promo_id, calculated_discount_value')
+        .eq('ws_id', wsId)
+        .eq('user_id', userId);
+
+      if (error) {
+        console.error('❌ User referral discounts fetch error:', error);
+        throw error;
+      }
+
+      return (
+        (data || []).map((row) => ({
+          promo_id: row.promo_id as string | null,
+          calculated_discount_value: row.calculated_discount_value as number | null,
+        })) || []
+      );
+    },
+    enabled: !!wsId && !!userId,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes
+    refetchOnWindowFocus: false,
+    retry: 3,
+  });
+};
+
+// Combined promotions list: all regular promos + only user's linked referral promos
+export type AvailablePromotion = {
+  id: string;
+  name: string | null;
+  code: string | null;
+  value: number;
+  use_ratio: boolean;
+  is_referral: boolean;
+};
+
+export const useAvailablePromotions = (wsId: string, userId: string) => {
+  return useQuery({
+    queryKey: ['available-promotions', wsId, userId],
+    queryFn: async () => {
+      const supabase = createClient();
+
+      // Regular (non-referral) promotions
+      const { data: regular, error: regularErr } = await supabase
+        .from('workspace_promotions')
+        .select('id, name, code, value, use_ratio')
+        .eq('ws_id', wsId)
+        .neq('promo_type', 'REFERRAL')
+        .order('code', { ascending: true });
+      if (regularErr) throw regularErr;
+
+      // User-linked promotions (could include referral)
+      const { data: linked, error: linkedErr } = await supabase
+        .from('user_linked_promotions')
+        .select('promo_id, workspace_promotions(id, name, code, value, use_ratio, promo_type)')
+        .eq('user_id', userId);
+      if (linkedErr) throw linkedErr;
+
+      // Build result: include all regular + only linked where promo_type == 'REFERRAL'
+      const resultMap = new Map<string, AvailablePromotion>();
+      for (const p of regular || []) {
+        resultMap.set(p.id, {
+          id: p.id,
+          name: p.name,
+          code: p.code,
+          value: Number(p.value ?? 0),
+          use_ratio: !!p.use_ratio,
+          is_referral: false,
+        });
+      }
+
+      for (const row of linked || []) {
+        const p = (row as any).workspace_promotions;
+        if (p?.promo_type === 'REFERRAL' && p?.id) {
+          resultMap.set(p.id, {
+            id: p.id,
+            name: p.name ?? null,
+            code: p.code ?? null,
+            value: Number(p.value ?? 0),
+            use_ratio: !!p.use_ratio,
+            is_referral: true,
+          });
+        }
+      }
+
+      return Array.from(resultMap.values()) as AvailablePromotion[];
+    },
+    enabled: !!wsId && !!userId,
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
     refetchOnWindowFocus: false,
     retry: 3,
   });

@@ -152,7 +152,7 @@ CREATE OR REPLACE FUNCTION public.get_workspace_user_with_details(
 )
 RETURNS json
 LANGUAGE plpgsql
-SECURITY DEFINER
+SECURITY INVOKER
 AS $$
 DECLARE
   result json;

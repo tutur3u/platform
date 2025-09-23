@@ -6,13 +6,16 @@ import { Button } from '@tuturuuu/ui/button';
 import { Combobox, type ComboboxOptions } from '@tuturuuu/ui/custom/combobox';
 import { UserPlus } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { Alert, AlertDescription, AlertTitle } from '@tuturuuu/ui/alert';
 import { Settings, ArrowRight } from '@tuturuuu/ui/icons';
-import { useMemo, useState } from 'react';
-
+import { useEffect, useMemo, useState } from 'react';
+import { toast } from '@tuturuuu/ui/sonner';
+import { Card, CardContent } from '@tuturuuu/ui/card';
+import { Avatar, AvatarImage } from '@tuturuuu/ui/avatar';
+import { User } from '@tuturuuu/ui/icons';
 interface ReferralSectionClientProps {
   wsId: string;
   userId: string;
@@ -22,6 +25,7 @@ interface ReferralSectionClientProps {
   } | null;
   initialAvailableUsers: WorkspaceUser[];
   initialAvailableUsersCount: number;
+  initialReferredUsers: WorkspaceUser[];
 }
 
 export default function ReferralSectionClient({
@@ -30,6 +34,7 @@ export default function ReferralSectionClient({
   workspaceSettings,
   initialAvailableUsers,
   initialAvailableUsersCount,
+  initialReferredUsers,
 }: ReferralSectionClientProps) {
   const t = useTranslations('user-data-table');
   const [selectedUserId, setSelectedUserId] = useState<string>('');
@@ -61,6 +66,7 @@ export default function ReferralSectionClient({
   }
 
   const supabase = createClient();
+  const queryClient = useQueryClient();
 
   // Single query: fetch all available users via RPC, hydrate with SSR data
   const availableUsersQuery = useQuery({
@@ -104,19 +110,51 @@ export default function ReferralSectionClient({
       if (error) throw error;
       return count || 0;
     },
-    staleTime: 1 * 60 * 1000, // 1 minute
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+
+  // Fetch detailed list of users referred by current user for display
+  const referredUsersQuery = useQuery({
+    queryKey: ['ws', wsId, 'user', userId, 'referrals', 'list'],
+    queryFn: async (): Promise<WorkspaceUser[]> => {
+      const { data, error } = await supabase
+        .from('workspace_users')
+        .select('id, full_name, display_name, email, phone')
+        .eq('ws_id', wsId)
+        .eq('referred_by', userId)
+        .eq('archived', false)
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      return (data || []) as unknown as WorkspaceUser[];
+    },
+    initialData: initialReferredUsers,
+    staleTime: 5 * 60 * 1000,
   });
 
   const userOptions: ComboboxOptions[] = useMemo(
     () =>
       (availableUsersQuery.data?.data || []).map((user) => ({
         value: user.id,
-        label: `${user.full_name || user.display_name || 'No name'} ${
+        label: `${user.full_name || user.display_name || t('common.unknown')} ${
           user.email || user.phone ? `(${user.email || user.phone})` : ''
         }`,
       })),
     [availableUsersQuery.data?.data]
   );
+
+  // Keep selected option valid: if the selected user disappears from available list, reset selection
+  useEffect(() => {
+    if (!selectedUserId) return;
+    const ids = new Set((availableUsersQuery.data?.data || []).map((u) => u.id));
+    if (!ids.has(selectedUserId)) {
+      setSelectedUserId('');
+    }
+  }, [availableUsersQuery.data?.data, selectedUserId]);
+
+  const isSelectedValid = useMemo(() => {
+    if (!selectedUserId) return false;
+    return (availableUsersQuery.data?.data || []).some((u) => u.id === selectedUserId);
+  }, [selectedUserId, availableUsersQuery.data?.data]);
 
   const currentReferralCount = currentReferralsQuery.data || 0;
   const canReferMore =
@@ -124,11 +162,147 @@ export default function ReferralSectionClient({
   const remainingReferrals =
     workspaceSettings.referral_count_cap - currentReferralCount;
 
-  const handleReferUser = async () => {
-    if (!selectedUserId) return;
+  const referUserMutation = useMutation({
+    mutationFn: async (referredUserId: string) => {
+      // Prevent duplicate referral: ensure this user is still in the available list
+      const stillAvailable = (availableUsersQuery.data?.data || []).some(
+        (u) => u.id === referredUserId
+      );
+      if (!stillAvailable) {
+        throw new Error(t('user_already_referred'));
+      }
 
-    // TODO: This will be implemented with mutations in the future
-    console.log('Referring user:', selectedUserId);
+      // 1) Ensure referrer-owned referral promotion exists
+      const { data: existingPromo, error: promoFetchErr } = await supabase
+        .from('workspace_promotions')
+        .select('id')
+        .eq('ws_id', wsId)
+        .eq('promo_type', 'REFERRAL')
+        .eq('owner_id', userId)
+        .maybeSingle();
+      if (promoFetchErr) throw promoFetchErr;
+
+      // Resolve current workspace virtual user id for auditing fields
+      let creatorVirtualUserId: string | null = null;
+      try {
+        const { data: userData, error: userError } = await supabase.auth.getUser();
+        if (userError) throw userError;
+        if (userData?.user?.id) {
+          const { data: creatorRow, error: creatorIdErr } = await supabase
+            .from('workspace_user_linked_users')
+            .select('virtual_user_id')
+            .eq('ws_id', wsId)
+            .eq('platform_user_id', userData.user.id)
+            .maybeSingle();
+          if (creatorIdErr) throw creatorIdErr;
+          creatorVirtualUserId = creatorRow?.virtual_user_id ?? null;
+        }
+      } catch (error) {
+        // If we fail to resolve the virtual user id, proceed without it
+        creatorVirtualUserId = null;
+      }
+
+      // Require a valid creatorVirtualUserId; otherwise, do nothing.
+      if (!creatorVirtualUserId) {
+        throw new Error(t('missing_creator_id'));
+      }
+
+      // Create a referrer-owned referral promotion only when we have a
+      // platform user mapped to a virtual user (creatorVirtualUserId).
+      if (!existingPromo) {
+        const { error: promoInsertErr } = await supabase
+          .from('workspace_promotions')
+          .insert({
+            ws_id: wsId,
+            owner_id: userId,
+            promo_type: 'REFERRAL',
+            value: 0,
+            code: 'REF',
+            name: 'Referral',
+            description: 'Referral Code for Referral System',
+            use_ratio: true,
+            creator_id: creatorVirtualUserId,
+          })
+          .select('id')
+          .single();
+        if (promoInsertErr) throw promoInsertErr;
+      }
+
+      // 2) Set referred_by for the selected user
+      const { error: updateErr } = await supabase
+        .from('workspace_users')
+        .update({ referred_by: userId, updated_by: creatorVirtualUserId })
+        .eq('id', referredUserId)
+        .eq('ws_id', wsId);
+      if (updateErr) throw updateErr;
+
+      // 3) Link workspace default referral promotion to referred user (if configured)
+      const { data: wsSettings, error: settingsErr } = await supabase
+        .from('workspace_settings')
+        .select('referral_promotion_id')
+        .eq('ws_id', wsId)
+        .maybeSingle();
+      if (settingsErr) throw settingsErr;
+
+      const promoIdToLink = wsSettings?.referral_promotion_id || null;
+      if (promoIdToLink) {
+        const { error: linkErr } = await supabase
+          .from('user_linked_promotions')
+          .upsert(
+            { user_id: referredUserId, promo_id: promoIdToLink },
+            { onConflict: 'user_id,promo_id' }
+          );
+        if (linkErr) throw linkErr;
+      }
+
+      return referredUserId;
+    },
+    onSuccess: async (referredUserId) => {
+      toast.success(t('referral_success'));
+      setSelectedUserId('');
+
+      // Optimistic cache updates
+      await queryClient.setQueryData(
+        ['ws', wsId, 'users', 'available-for-referral', userId],
+        (prev: { data: WorkspaceUser[]; count: number } | undefined) => {
+          if (!prev) return prev as any;
+          const data = prev.data.filter((u) => u.id !== referredUserId);
+          return { data, count: data.length };
+        }
+      );
+
+      await queryClient.setQueryData(
+        ['ws', wsId, 'user', userId, 'referrals', 'count'],
+        (prev: number | undefined) => (typeof prev === 'number' ? prev + 1 : undefined)
+      );
+
+      // Invalidate to reconcile with server
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: ['ws', wsId, 'users', 'available-for-referral', userId],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ['ws', wsId, 'user', userId, 'referrals', 'count'],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ['ws', wsId, 'user', userId, 'referrals', 'list'],
+        }),
+        // Also refresh linked promotions for this user, since we may have
+        // upserted the workspace's default referral promotion
+        queryClient.invalidateQueries({
+          queryKey: ['user-linked-promotions', wsId, userId],
+        }),
+      ]);
+    },
+    onError: (error: unknown) => {
+      const message = error instanceof Error ? error.message : t('common.error');
+      toast.error(message);
+    },
+  });
+
+  const handleReferUser = async () => {
+    if (!selectedUserId || referUserMutation.isPending) return;
+    await referUserMutation.mutateAsync(selectedUserId);
   };
 
   return (
@@ -150,6 +324,49 @@ export default function ReferralSectionClient({
             })}
           </div>
 
+          {/* Referred users list as cards (placed above selector) */}
+          {currentReferralCount > 0 && (
+            <div className="space-y-2">
+              <div className="font-medium">{t('referred_users_label')}</div>
+              {referredUsersQuery.isLoading ? (
+                <div className="opacity-60 text-sm">{t('loading')}</div>
+              ) : (referredUsersQuery.data || []).length === 0 ? (
+                <div className="opacity-60 text-sm">{t('no_referred_users')}</div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                  {(referredUsersQuery.data || []).map((u) => {
+                    const hasAvatar = Boolean(u.avatar_url);
+                    return (
+                      <Link href={`/${wsId}/users/database/${u.id}`} key={u.id}>
+                        <Card className="p-3 transition duration-200 hover:border-foreground hover:bg-foreground/5">
+                          <CardContent className="p-0">
+                            <div className="flex items-center gap-3">
+                              {hasAvatar ? (
+                                <Avatar className="h-8 w-8">
+                                  <AvatarImage
+                                    src={u.avatar_url as string}
+                                    alt={u.display_name || u.full_name || t('avatar')}
+                                  />
+                                </Avatar>
+                              ) : (
+                                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-dynamic-blue/10">
+                                  <User className="h-4 w-4 text-dynamic-blue" />
+                                </div>
+                              )}
+                              <div className="font-medium">
+                                {u.display_name || u.full_name || t('common.unknown')}
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      </Link>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
+
           {canReferMore ? (
             <>
               <div className="space-y-2">
@@ -170,7 +387,7 @@ export default function ReferralSectionClient({
 
               <Button
                 onClick={handleReferUser}
-                disabled={!selectedUserId}
+                disabled={!isSelectedValid || referUserMutation.isPending}
                 className="w-full"
               >
                 <UserPlus className="h-4 w-4 mr-2" />
@@ -182,19 +399,6 @@ export default function ReferralSectionClient({
               {t('reached_max_referrals', {
                 cap: workspaceSettings.referral_count_cap,
               })}
-            </div>
-          )}
-
-          {currentReferralCount > 0 && (
-            <div className="text-sm">
-              <span className="font-medium">{t('current_discount_label')}</span>{' '}
-              {Math.min(
-                currentReferralCount *
-                  workspaceSettings.referral_increment_percent,
-                workspaceSettings.referral_count_cap *
-                  workspaceSettings.referral_increment_percent
-              )}
-              %
             </div>
           )}
         </div>

@@ -55,7 +55,6 @@ export default async function WorkspacePromotionsPage({
   }));
 
   const settingsRow = await getWorkspaceSettings(wsId);
-  console.log(settingsRow);
 
   // Derive regular promotions from the already-fetched data
   const regularPromotions = data
@@ -126,7 +125,8 @@ async function getData(
     .select('*', {
       count: 'exact',
     })
-    .eq('ws_id', wsId);
+    .eq('ws_id', wsId)
+    .neq('promo_type', 'REFERRAL');
 
   if (q) queryBuilder.ilike('name', `%${q}%`);
 

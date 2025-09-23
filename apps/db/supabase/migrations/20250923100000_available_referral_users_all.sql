@@ -1,5 +1,3 @@
--- Redefine RPC to return all available referral users (no pagination)
-
 CREATE OR REPLACE FUNCTION public.get_available_referral_users(
   p_ws_id uuid,
   p_user_id uuid
@@ -12,7 +10,7 @@ RETURNS TABLE (
   phone text
 )
 LANGUAGE sql
-SECURITY DEFINER
+SECURITY INVOKER
 AS $$
 WITH current AS (
   SELECT referred_by
@@ -30,7 +28,10 @@ CROSS JOIN current c
 WHERE wu.ws_id = p_ws_id
   AND wu.archived = false
   AND wu.id <> p_user_id
+  -- Exclude the current user's own referrer if any
   AND (c.referred_by IS NULL OR wu.id <> c.referred_by)
+  -- Exclude users who have already been referred by someone
+  AND wu.referred_by IS NULL
   AND is_org_member(auth.uid(), p_ws_id)
 ORDER BY wu.full_name NULLS LAST;
 $$;
@@ -38,6 +39,4 @@ $$;
 GRANT EXECUTE ON FUNCTION public.get_available_referral_users(uuid, uuid) TO authenticated;
 
 COMMENT ON FUNCTION public.get_available_referral_users(uuid, uuid) IS
-'Returns all available referral candidates for a user within a workspace, excluding self and their referrer.';
-
-
+'Returns available referral candidates: excludes self, and anyone already referred.';

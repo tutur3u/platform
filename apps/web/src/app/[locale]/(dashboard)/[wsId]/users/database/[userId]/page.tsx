@@ -81,6 +81,10 @@ export default async function WorkspaceUserDetailsPage({
       currentUserId: userId
     });
 
+  const referredUsers = await getReferredUsers({ wsId, userId });
+
+
+
   return (
     <div className="flex min-h-full w-full flex-col">
       {data.avatar_url && (
@@ -252,6 +256,7 @@ export default async function WorkspaceUserDetailsPage({
             workspaceSettings={workspaceSettings}
             initialAvailableUsers={availableUsers}
             initialAvailableUsersCount={availableUsersCount || 0}
+            initialReferredUsers={referredUsers}
           />
         </div>
       </div>
@@ -490,4 +495,24 @@ async function getAvailableUsersForReferral({
   );
   if (error) throw error;
   return { data, count: data?.length || 0 };
+}
+
+async function getReferredUsers({
+  wsId,
+  userId,
+}: {
+  wsId: string;
+  userId: string;
+}) {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from('workspace_users')
+    .select('id, full_name, display_name, email, phone')
+    .eq('ws_id', wsId)
+    .eq('referred_by', userId)
+    .eq('archived', false)
+    .order('created_at', { ascending: false });
+  if (error) throw error;
+  return (data || []) as unknown as WorkspaceUser[];
 }

@@ -1175,14 +1175,23 @@
     "basic_information": "Thông tin cơ bản",
     "refer_people_with_progress": "Giới thiệu người khác ({current}/{max})",
     "refer_summary": "Bạn có thể giới thiệu tối đa {cap} người. Mỗi lượt giới thiệu mang lại {percent}% giảm giá.",
+    "referred_users_label": "Người đã được bạn giới thiệu",
+    "loading": "Đang tải...",
+    "no_referred_users": "Chưa có người nào được giới thiệu",
     "select_person_to_refer_with_remaining": "Chọn người để giới thiệu (còn {remaining})",
     "search_person_to_refer_placeholder": "Tìm người để giới thiệu...",
     "refer_selected_person": "Giới thiệu người đã chọn",
     "reached_max_referrals": "Bạn đã đạt số lượt giới thiệu tối đa ({cap}).",
     "current_discount_label": "Giảm giá hiện tại:",
+    "avatar": "Ảnh đại diện",
     "common": {
-      "empty": "Trống"
-    }
+      "empty": "Trống",
+      "error": "Đã có lỗi xảy ra",
+      "unknown": "Không rõ"
+    },
+    "referral_success": "Đã giới thiệu một người dùng mới",
+    "user_already_referred": "Người dùng này đã được giới thiệu.",
+    "missing_creator_id": "Thiếu ID của người tạo. \nBạn không được ủy quyền"
   },
   "email-data-table": {
     "id": "Mã số",

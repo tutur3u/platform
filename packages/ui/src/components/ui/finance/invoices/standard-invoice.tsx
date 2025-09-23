@@ -41,16 +41,18 @@ import { useState, useEffect, useMemo } from 'react';
 import { ProductSelection } from './product-selection';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useRouter } from 'next/navigation';
-import type { SelectedProductItem, Promotion } from './types';
+import type { SelectedProductItem } from './types';
+import type { AvailablePromotion } from './hooks';
 import {
   useUsers,
   useProducts,
-  usePromotions,
   useWallets,
   useCategories,
   useUserTransactions,
   useUserInvoices,
   useUserLinkedPromotions,
+  useUserReferralDiscounts,
+  useAvailablePromotions,
 } from './hooks';
 
 interface Props {
@@ -74,10 +76,14 @@ export function StandardInvoice({
   // Data queries
   const { data: users = [], isLoading: usersLoading } = useUsers(wsId);
   const { data: products = [], isLoading: productsLoading } = useProducts(wsId);
-  const { data: promotions = [], isLoading: promotionsLoading } =
-    usePromotions(wsId);
+  const { data: availablePromotions = [], isLoading: promotionsLoading } =
+    useAvailablePromotions(wsId, selectedUserId);
   const { data: linkedPromotions = [] } =
     useUserLinkedPromotions(selectedUserId);
+  const { data: referralDiscountRows = [] } = useUserReferralDiscounts(
+    wsId,
+    selectedUserId
+  );
   const { data: wallets = [], isLoading: walletsLoading } = useWallets(wsId);
   const { data: categories = [], isLoading: categoriesLoading } =
     useCategories(wsId);
@@ -106,8 +112,8 @@ export function StandardInvoice({
   const selectedPromotion =
     selectedPromotionId === 'none'
       ? null
-      : promotions.find(
-          (promotion: Promotion) => promotion.id === selectedPromotionId
+      : availablePromotions.find(
+          (promotion: AvailablePromotion) => promotion.id === selectedPromotionId
         );
   const isLoadingUserHistory = userTransactionsLoading || userInvoicesLoading;
   const isLoadingData =
@@ -116,6 +122,16 @@ export function StandardInvoice({
     promotionsLoading ||
     walletsLoading ||
     categoriesLoading;
+
+  const referralDiscountMap = useMemo(() => {
+    const map = new Map<string, number>();
+    for (const row of referralDiscountRows || []) {
+      if (row?.promo_id) {
+        map.set(row.promo_id, row.calculated_discount_value ?? 0);
+      }
+    }
+    return map;
+  }, [referralDiscountRows]);
 
   // Calculate totals
   const subtotal = useMemo(() => {
@@ -126,14 +142,21 @@ export function StandardInvoice({
   }, [selectedProducts]);
 
   const discountAmount = useMemo(() => {
-    if (!selectedPromotion) return 0;
+    if (!selectedPromotionId || selectedPromotionId === 'none') return 0;
 
-    if (selectedPromotion.use_ratio) {
-      return subtotal * (selectedPromotion.value / 100);
-    } else {
-      return Math.min(selectedPromotion.value, subtotal);
+    const referralPercent = referralDiscountMap.get(selectedPromotionId);
+    if (referralPercent !== undefined) {
+      return subtotal * ((referralPercent || 0) / 100);
     }
-  }, [selectedPromotion, subtotal]);
+
+    if (selectedPromotion) {
+      return selectedPromotion.use_ratio
+        ? subtotal * (selectedPromotion.value / 100)
+        : Math.min(selectedPromotion.value, subtotal);
+    }
+
+    return 0;
+  }, [selectedPromotionId, selectedPromotion, subtotal, referralDiscountMap]);
 
   const totalBeforeRounding = subtotal - discountAmount;
   const [roundedTotal, setRoundedTotal] = useState(totalBeforeRounding);
@@ -186,8 +209,6 @@ export function StandardInvoice({
   useEffect(() => {
     if (
       !selectedUserId ||
-      !Array.isArray(promotions) ||
-      promotions.length === 0 ||
       !Array.isArray(linkedPromotions) ||
       linkedPromotions.length === 0 ||
       selectedPromotionId !== 'none' ||
@@ -196,22 +217,39 @@ export function StandardInvoice({
       return;
     }
 
-    const linkedIds = new Set(
-      linkedPromotions.map((p) => p.promo_id).filter(Boolean)
-    );
+    // Build candidate list from linked promotions directly (includes referral)
+    const candidates = (linkedPromotions || [])
+      .map((lp: any) => {
+        const id = lp?.promo_id as string | undefined;
+        const promoObj = lp?.workspace_promotions as
+          | { value?: number | null; use_ratio?: boolean | null }
+          | undefined;
+        return id
+          ? {
+              id,
+              use_ratio: !!promoObj?.use_ratio,
+              value: Number(promoObj?.value ?? 0),
+            }
+          : null;
+      })
+      .filter(Boolean) as Array<{ id: string; use_ratio: boolean; value: number }>;
 
-    const candidatePromotions = promotions.filter((p) => linkedIds.has(p.id));
-    if (candidatePromotions.length === 0) return;
+    if (candidates.length === 0) return;
 
-    const computeDiscount = (p: Promotion) =>
-      p.use_ratio ? subtotal * (p.value / 100) : Math.min(p.value, subtotal);
+    const computeDiscount = (id: string, use_ratio: boolean, value: number) => {
+      const referralPercent = referralDiscountMap.get(id);
+      if (referralPercent !== undefined) {
+        return subtotal * ((referralPercent || 0) / 100);
+      }
+      return use_ratio ? subtotal * (value / 100) : Math.min(value, subtotal);
+    };
 
-    let best: Promotion | null = null;
+    let best: { id: string } | null = null;
     let bestAmount = -1;
-    for (const p of candidatePromotions) {
-      const amount = computeDiscount(p);
+    for (const c of candidates) {
+      const amount = computeDiscount(c.id, c.use_ratio, c.value);
       if (amount > bestAmount) {
-        best = p;
+        best = { id: c.id };
         bestAmount = amount;
       }
     }
@@ -221,10 +259,10 @@ export function StandardInvoice({
     }
   }, [
     selectedUserId,
-    promotions,
     linkedPromotions,
     selectedPromotionId,
     subtotal,
+    referralDiscountMap,
   ]);
 
   const handleCreateInvoice = async () => {
@@ -679,22 +717,43 @@ export function StandardInvoice({
                 </Label>
                 <Combobox
                   t={t}
-                  options={[
-                    { value: 'none', label: t('ws-invoices.no_promotion') },
-                    ...promotions.map(
-                      (promotion): ComboboxOptions => ({
-                        value: promotion.id,
-                        label: `${promotion.name || t('ws-invoices.unnamed_promotion')} (${
-                          promotion.use_ratio
-                            ? `${promotion.value}%`
-                            : Intl.NumberFormat('vi-VN', {
-                                style: 'currency',
-                                currency: 'VND',
-                              }).format(promotion.value)
-                        })`,
-                      })
-                    ),
-                  ]}
+                  options={(() => {
+                    const list: ComboboxOptions[] = [
+                      { value: 'none', label: t('ws-invoices.no_promotion') },
+                      ...availablePromotions.map((promotion: AvailablePromotion): ComboboxOptions => {
+                        const referralPercent = referralDiscountMap.get(promotion.id);
+                        const labelValue =
+                          referralPercent !== undefined
+                            ? `${referralPercent || 0}%`
+                            : promotion.use_ratio
+                              ? `${promotion.value}%`
+                              : Intl.NumberFormat('vi-VN', {
+                                  style: 'currency',
+                                  currency: 'VND',
+                                }).format(promotion.value);
+                        return {
+                          value: promotion.id,
+                          label: `${promotion.name || t('ws-invoices.unnamed_promotion')} (${labelValue})`,
+                        } as ComboboxOptions;
+                      }),
+                    ];
+
+                    // If auto-applied referral promotion isn't in the normal list, inject a synthetic item
+                    if (
+                      selectedPromotionId &&
+                      selectedPromotionId !== 'none' &&
+                      !availablePromotions.some((p: AvailablePromotion) => p.id === selectedPromotionId)
+                    ) {
+                      const referralPercent = referralDiscountMap.get(selectedPromotionId);
+                      const referralName = (linkedPromotions || []).find((lp: any) => lp.promo_id === selectedPromotionId)?.workspace_promotions?.name || t('ws-invoices.unnamed_promotion');
+                      list.splice(1, 0, {
+                        value: selectedPromotionId,
+                        label: `${referralName} (${(referralPercent ?? 0)}%)`,
+                      } as ComboboxOptions);
+                    }
+
+                    return list;
+                  })()}
                   selected={selectedPromotionId}
                   onChange={(value) => setSelectedPromotionId(value as string)}
                   placeholder={t('ws-invoices.search_promotions')}

@@ -37,16 +37,15 @@ import { toast } from '@tuturuuu/ui/sonner';
 import { Button } from '@tuturuuu/ui/button';
 import type {
   SelectedProductItem,
-  Promotion,
   UserGroupProducts,
   Product,
   ProductInventory,
 } from './types';
+import type { AvailablePromotion } from './hooks';
 
 import {
   useUsers,
   useProducts,
-  usePromotions,
   useWallets,
   useCategories,
   useUserGroups,
@@ -54,6 +53,8 @@ import {
   useUserGroupProducts,
   useUserLatestSubscriptionInvoice,
   useUserLinkedPromotions,
+  useUserReferralDiscounts,
+  useAvailablePromotions,
 } from './hooks';
 import { AttendanceCalendar } from '@tuturuuu/ui/finance/invoices/attendance-calendar';
 
@@ -216,10 +217,14 @@ export function SubscriptionInvoice({
   // Data queries
   const { data: users = [], isLoading: usersLoading } = useUsers(wsId);
   const { data: products = [], isLoading: productsLoading } = useProducts(wsId);
-  const { data: promotions = [], isLoading: promotionsLoading } =
-    usePromotions(wsId);
+  const { data: availablePromotions = [], isLoading: promotionsLoading } =
+    useAvailablePromotions(wsId, selectedUserId);
   const { data: linkedPromotions = [] } =
     useUserLinkedPromotions(selectedUserId);
+  const { data: referralDiscountRows = [] } = useUserReferralDiscounts(
+    wsId,
+    selectedUserId
+  );
   const { data: wallets = [], isLoading: walletsLoading } = useWallets(wsId);
   const { data: categories = [], isLoading: categoriesLoading } =
     useCategories(wsId);
@@ -296,8 +301,8 @@ export function SubscriptionInvoice({
   const selectedPromotion =
     selectedPromotionId === 'none'
       ? null
-      : promotions.find(
-          (promotion: Promotion) => promotion.id === selectedPromotionId
+      : availablePromotions.find(
+          (promotion: AvailablePromotion) => promotion.id === selectedPromotionId
         );
 
   const isLoadingSubscriptionData =
@@ -309,6 +314,16 @@ export function SubscriptionInvoice({
     promotionsLoading ||
     walletsLoading ||
     categoriesLoading;
+
+  const referralDiscountMap = useMemo(() => {
+    const map = new Map<string, number>();
+    for (const row of referralDiscountRows || []) {
+      if (row?.promo_id) {
+        map.set(row.promo_id, row.calculated_discount_value ?? 0);
+      }
+    }
+    return map;
+  }, [referralDiscountRows]);
 
   // When switching groups: clear current selections and replace with the group's linked products
   const previousGroupIdRef = useRef<string>('');
@@ -422,14 +437,18 @@ export function SubscriptionInvoice({
   }, [subscriptionSelectedProducts]);
 
   const subscriptionDiscountAmount = useMemo(() => {
-    if (!selectedPromotion) return 0;
-
-    if (selectedPromotion.use_ratio) {
-      return subscriptionSubtotal * (selectedPromotion.value / 100);
-    } else {
-      return Math.min(selectedPromotion.value, subscriptionSubtotal);
+    if (!selectedPromotionId || selectedPromotionId === 'none') return 0;
+    const referralPercent = referralDiscountMap.get(selectedPromotionId);
+    if (referralPercent !== undefined) {
+      return subscriptionSubtotal * ((referralPercent || 0) / 100);
     }
-  }, [selectedPromotion, subscriptionSubtotal]);
+    if (selectedPromotion) {
+      return selectedPromotion.use_ratio
+        ? subscriptionSubtotal * (selectedPromotion.value / 100)
+        : Math.min(selectedPromotion.value, subscriptionSubtotal);
+    }
+    return 0;
+  }, [selectedPromotionId, selectedPromotion, subscriptionSubtotal, referralDiscountMap]);
 
   const subscriptionTotalBeforeRounding =
     subscriptionSubtotal - subscriptionDiscountAmount;
@@ -462,8 +481,8 @@ export function SubscriptionInvoice({
   useEffect(() => {
     if (
       !selectedUserId ||
-      !Array.isArray(promotions) ||
-      promotions.length === 0 ||
+      !Array.isArray(availablePromotions) ||
+      availablePromotions.length === 0 ||
       !Array.isArray(linkedPromotions) ||
       linkedPromotions.length === 0 ||
       selectedPromotionId !== 'none' ||
@@ -472,23 +491,42 @@ export function SubscriptionInvoice({
       return;
     }
 
-    const linkedIds = new Set(
-      linkedPromotions.map((p) => p.promo_id).filter(Boolean)
-    );
-    const candidatePromotions = promotions.filter((p) => linkedIds.has(p.id));
-    if (candidatePromotions.length === 0) return;
+    // linkedIds not needed now; we derive candidates directly
+    // Build candidate list from linked promotions directly (includes referral)
+    const candidates = (linkedPromotions || [])
+      .map((lp: any) => {
+        const id = lp?.promo_id as string | undefined;
+        const promoObj = lp?.workspace_promotions as
+          | { value?: number | null; use_ratio?: boolean | null }
+          | undefined;
+        return id
+          ? {
+              id,
+              use_ratio: !!promoObj?.use_ratio,
+              value: Number(promoObj?.value ?? 0),
+            }
+          : null;
+      })
+      .filter(Boolean) as Array<{ id: string; use_ratio: boolean; value: number }>;
 
-    const computeDiscount = (p: Promotion) =>
-      p.use_ratio
-        ? subscriptionSubtotal * (p.value / 100)
-        : Math.min(p.value, subscriptionSubtotal);
+    if (candidates.length === 0) return;
 
-    let best: Promotion | null = null;
+    const computeDiscount = (id: string, use_ratio: boolean, value: number) => {
+      const referralPercent = referralDiscountMap.get(id);
+      if (referralPercent !== undefined) {
+        return subscriptionSubtotal * ((referralPercent || 0) / 100);
+      }
+      return use_ratio
+        ? subscriptionSubtotal * (value / 100)
+        : Math.min(value, subscriptionSubtotal);
+    };
+
+    let best: { id: string } | null = null;
     let bestAmount = -1;
-    for (const p of candidatePromotions) {
-      const amount = computeDiscount(p);
+    for (const c of candidates) {
+      const amount = computeDiscount(c.id, c.use_ratio, c.value);
       if (amount > bestAmount) {
-        best = p;
+        best = { id: c.id };
         bestAmount = amount;
       }
     }
@@ -498,10 +536,10 @@ export function SubscriptionInvoice({
     }
   }, [
     selectedUserId,
-    promotions,
     linkedPromotions,
     selectedPromotionId,
     subscriptionSubtotal,
+    referralDiscountMap,
   ]);
 
   // Calculate subscription products based on attendance
@@ -1411,22 +1449,42 @@ export function SubscriptionInvoice({
                     </Label>
                     <Combobox
                       t={t}
-                      options={[
-                        { value: 'none', label: t('ws-invoices.no_promotion') },
-                        ...promotions.map(
-                          (promotion): ComboboxOptions => ({
-                            value: promotion.id,
-                            label: `${promotion.name || t('ws-invoices.unnamed_promotion')} (${
-                              promotion.use_ratio
-                                ? `${promotion.value}%`
-                                : Intl.NumberFormat('vi-VN', {
-                                    style: 'currency',
-                                    currency: 'VND',
-                                  }).format(promotion.value)
-                            })`,
-                          })
-                        ),
-                      ]}
+                      options={(() => {
+                        const list: ComboboxOptions[] = [
+                          { value: 'none', label: t('ws-invoices.no_promotion') },
+                          ...availablePromotions.map((promotion): ComboboxOptions => {
+                            const referralPercent = referralDiscountMap.get(promotion.id);
+                            const labelValue =
+                              referralPercent !== undefined
+                                ? `${referralPercent || 0}%`
+                                : promotion.use_ratio
+                                  ? `${promotion.value}%`
+                                  : Intl.NumberFormat('vi-VN', {
+                                      style: 'currency',
+                                      currency: 'VND',
+                                    }).format(promotion.value);
+                            return {
+                              value: promotion.id,
+                              label: `${promotion.name || t('ws-invoices.unnamed_promotion')} (${labelValue})`,
+                            } as ComboboxOptions;
+                          }),
+                        ];
+
+                        if (
+                          selectedPromotionId &&
+                          selectedPromotionId !== 'none' &&
+                          !availablePromotions.some((p) => p.id === selectedPromotionId)
+                        ) {
+                          const referralPercent = referralDiscountMap.get(selectedPromotionId);
+                          const referralName = (linkedPromotions || []).find((lp: any) => lp.promo_id === selectedPromotionId)?.workspace_promotions?.name || t('ws-invoices.unnamed_promotion');
+                          list.splice(1, 0, {
+                            value: selectedPromotionId,
+                            label: `${referralName} (${(referralPercent ?? 0)}%)`,
+                          } as ComboboxOptions);
+                        }
+
+                        return list;
+                      })()}
                       selected={selectedPromotionId}
                       onChange={(value) =>
                         setSelectedPromotionId(value as string)
@@ -1461,12 +1519,22 @@ export function SubscriptionInvoice({
                           </span>
                         </div>
 
-                        {selectedPromotion && (
+                        {(() => {
+                          const referralPercent =
+                            selectedPromotionId && selectedPromotionId !== 'none'
+                              ? referralDiscountMap.get(selectedPromotionId)
+                              : undefined;
+                          const hasReferral = referralPercent !== undefined;
+                          if (!selectedPromotion && !hasReferral) return null;
+                          const labelName = selectedPromotion
+                            ? selectedPromotion.name || t('ws-invoices.unnamed_promotion')
+                            : (linkedPromotions || []).find((lp: any) => lp.promo_id === selectedPromotionId)?.workspace_promotions?.name || t('ws-invoices.unnamed_promotion');
+                          const amount = subscriptionDiscountAmount;
+                          return (
                           <div className="flex justify-between">
                             <span className="text-muted-foreground">
                               {t('ws-invoices.discount')} (
-                              {selectedPromotion.name ||
-                                t('ws-invoices.unnamed_promotion')}
+                              {labelName}
                               )
                             </span>
                             <span className="text-green-600">
@@ -1474,10 +1542,11 @@ export function SubscriptionInvoice({
                               {Intl.NumberFormat('vi-VN', {
                                 style: 'currency',
                                 currency: 'VND',
-                              }).format(subscriptionDiscountAmount)}
+                              }).format(amount)}
                             </span>
                           </div>
-                        )}
+                          );
+                        })()}
 
                         <Separator />
 
