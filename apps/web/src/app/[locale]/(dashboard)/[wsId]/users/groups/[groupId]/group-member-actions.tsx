@@ -210,7 +210,7 @@ export default function GroupMemberActions({ wsId, groupId, memberIds, managerId
         <DialogContent className="max-w-lg">
           <DialogHeader>
             <DialogTitle>{activeAction ? actionLabel(activeAction) : ''}</DialogTitle>
-            <DialogDescription>{t('ws-user-group-details.select_and_submit', { groupActionLabel: actionLabel(activeAction) })}</DialogDescription>
+            <DialogDescription>{t('ws-user-group-details.select_and_submit', { groupActionLabel: activeAction ? actionLabel(activeAction) : '' })}</DialogDescription>
           </DialogHeader>
 
           <Accordion type="single" collapsible className="mb-2">

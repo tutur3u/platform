@@ -68,7 +68,7 @@ export default function EditableReportPreview({
   factorEnabled = false,
   managerOptions,
   selectedManagerName,
-  onChangeManager,
+  onChangeManagerAction,
 }: {
   wsId: string;
   report: Partial<WorkspaceUserReport> & {
@@ -90,7 +90,7 @@ export default function EditableReportPreview({
   factorEnabled?: boolean;
   managerOptions?: Array<{ value: string; label: string }>;
   selectedManagerName?: string;
-  onChangeManager?: (name?: string) => void;
+  onChangeManagerAction?: (name?: string) => void;
 }) {
   const locale = useLocale();
   const t = useTranslations();
@@ -854,7 +854,7 @@ export default function EditableReportPreview({
           onDelete={!isNew ? () => setShowDeleteDialog(true) : undefined}
           managerOptions={managerOptions}
           selectedManagerName={selectedManagerName ?? report.creator_name}
-          onChangeManager={(name) => onChangeManager?.(name)}
+          onChangeManager={(name) => onChangeManagerAction?.(name)}
         />
 
         <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>

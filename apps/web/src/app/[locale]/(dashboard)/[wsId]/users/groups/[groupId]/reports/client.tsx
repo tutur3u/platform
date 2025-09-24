@@ -23,6 +23,12 @@ import { availableConfigs } from '@/constants/configs/reports';
 // Feature flag for experimental factor functionality
 const ENABLE_FACTOR_CALCULATION = false;
 
+type ReportWithNames = WorkspaceUserReport & {
+  group_name: string;
+  creator_name?: string | null;
+  user_name?: string | null;
+};
+
 interface Props {
   wsId: string;
   groupId: string;
@@ -80,6 +86,8 @@ export default function GroupReportsClient({
     },
   });
 
+
+
   const userOptions: ComboboxOptions[] = useMemo(
     () =>
       usersQuery.data?.map((u) => ({
@@ -124,7 +132,7 @@ export default function GroupReportsClient({
     [reportsQuery.data]
   );
 
-  const reportDetailQuery = useQuery({
+  const reportDetailQuery = useQuery<ReportWithNames | null>({
     queryKey: [
       'ws',
       wsId,
@@ -136,9 +144,7 @@ export default function GroupReportsClient({
       reportId,
     ],
     enabled: Boolean(reportId && reportId !== 'new'),
-    queryFn: async (): Promise<
-      (WorkspaceUserReport & { group_name: string }) | null
-    > => {
+    queryFn: async (): Promise<ReportWithNames | null> => {
       const { data, error } = await supabase
         .from('external_user_monthly_reports')
         .select(
@@ -165,9 +171,11 @@ export default function GroupReportsClient({
         ...data,
       } as any;
       const { user: _user, creator: _creator, ...rest } = mapped;
-      return rest as WorkspaceUserReport & { group_name: string };
+      return rest as ReportWithNames;
     },
   });
+
+  const reportDetail = reportDetailQuery.data as ReportWithNames | null | undefined;
 
   const groupQuery = useQuery({
     queryKey: ['ws', wsId, 'group', groupId, 'meta'],
@@ -225,12 +233,12 @@ export default function GroupReportsClient({
       return;
     }
     // Prefer existing report creator_name if present; otherwise default to first
-    const existing = reportDetailQuery.data?.creator_name;
+    const existing = reportDetail?.creator_name;
     if (existing && names.includes(existing)) setSelectedManagerName(existing);
     else if (reportId === 'new') setSelectedManagerName(names[0]);
     else if (selectedManagerName === undefined) setSelectedManagerName(names[0]);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [groupManagersQuery.data, reportDetailQuery.data?.creator_name, reportId]);
+  }, [groupManagersQuery.data, reportDetail?.creator_name, reportId]);
 
   const configsQuery = useQuery({
     queryKey: ['ws', wsId, 'report-configs'],
@@ -306,7 +314,7 @@ export default function GroupReportsClient({
     },
   });
 
-  const selectedReport = useMemo(() => {
+  const selectedReport: ReportWithNames | Partial<ReportWithNames> | undefined = useMemo(() => {
     if (reportId === 'new' && userId) {
       // Calculate scores and average from healthcare vitals
       const vitals = healthcareVitalsQuery.data ?? [];
@@ -338,7 +346,7 @@ export default function GroupReportsClient({
         created_at: new Date().toISOString(),
         scores: scores.length > 0 ? scores : [],
         score: averageScore,
-      } as Partial<WorkspaceUserReport & { group_name: string }>;
+      } as Partial<ReportWithNames>;
     }
     // Only use cached detail data when a valid reportId is present
     if (reportId && reportDetailQuery.data) return reportDetailQuery.data;
@@ -354,7 +362,8 @@ export default function GroupReportsClient({
   ]);
 
   // Compute effective creator (group manager) name for preview/export only
-  const effectiveCreatorName = selectedManagerName ?? selectedReport?.creator_name;
+  const selectedReportCreatorName = (selectedReport as Partial<ReportWithNames> | undefined)?.creator_name;
+  const effectiveCreatorName = selectedManagerName ?? selectedReportCreatorName;
 
   const managerOptions: ComboboxOptions[] = useMemo(
     () =>
@@ -431,12 +440,14 @@ export default function GroupReportsClient({
           wsId={wsId}
           report={{
             ...selectedReport,
+            // normalize potential nulls to undefined to match prop type
+            user_name: selectedReport?.user_name ?? undefined,
             group_name:
               selectedReport.group_name ??
               groupQuery.data?.name ??
               groupNameFallback,
             // Frontend-only override of the displayed group manager name
-            creator_name: effectiveCreatorName,
+            creator_name: effectiveCreatorName ?? undefined,
           }}
           configs={configsQuery.data}
           isNew={reportId === 'new'}
@@ -445,8 +456,8 @@ export default function GroupReportsClient({
           healthcareVitalsLoading={healthcareVitalsQuery.isLoading}
           factorEnabled={ENABLE_FACTOR_CALCULATION}
           managerOptions={managerOptions}
-          selectedManagerName={effectiveCreatorName}
-          onChangeManager={(name) => setSelectedManagerName(name)}
+          selectedManagerName={effectiveCreatorName ?? undefined}
+          onChangeManagerAction={(name) => setSelectedManagerName(name)}
         />
       )}
     </div>
