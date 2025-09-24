@@ -14,7 +14,13 @@ import { Separator } from '@tuturuuu/ui/separator';
 import type * as z from 'zod';
 import type { UserReportFormSchema } from './editable-report-preview';
 import { useTranslations } from 'next-intl';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@tuturuuu/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@tuturuuu/ui/select';
 
 export default function UserReportForm({
   isNew,

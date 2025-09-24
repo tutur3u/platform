@@ -831,7 +831,7 @@ export default function EditableReportPreview({
             healthcareVitals={healthcareVitals}
             healthcareVitalsLoading={healthcareVitalsLoading}
             isNew={isNew}
-            scores={selectedLog ? selectedLog.scores ?? null : report.scores}
+            scores={selectedLog ? (selectedLog.scores ?? null) : report.scores}
             reportId={report.id}
             onFetchNewScores={
               !isNew && !selectedLog

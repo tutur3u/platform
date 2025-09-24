@@ -119,10 +119,7 @@ export function UserRowActions({ row, href, extraData }: UserRowActionsProps) {
         </Link>
       )}
 
-      <Dialog
-        open={open}
-        onOpenChange={setOpen}
-      >
+      <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent
           className="max-h-[80vh] max-w-4xl overflow-y-scroll"
           onOpenAutoFocus={(e) => e.preventDefault()}
@@ -155,7 +152,7 @@ export function UserRowActions({ row, href, extraData }: UserRowActionsProps) {
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-[160px]">
-            <DropdownMenuItem onClick={() => setOpen(true)}>
+          <DropdownMenuItem onClick={() => setOpen(true)}>
             {t('common.edit')}
           </DropdownMenuItem>
 
