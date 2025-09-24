@@ -135,11 +135,11 @@
     "saving": "Saving changes...",
     "loading": "Loading",
     "load_more": "Load more",
-  "submit": "Submit",
-  "manage": "Manage",
-  "no-selection": "No users selected",
-  "confirm": "Confirm",
-  "removed": "Removed",
+    "submit": "Submit",
+    "manage": "Manage",
+    "no-selection": "No users selected",
+    "confirm": "Confirm",
+    "removed": "Removed",
     "complete": "Complete",
     "default": "Default",
     "all": "All",
@@ -380,7 +380,8 @@
     "optional": "optional",
     "characters": "characters",
     "no_changes_to_save": "No changes to save",
-    "confirm_delete": "Delete Report?"
+    "confirm_delete": "Delete Report?",
+    "filter": "Filter"
   },
   "date_helper": {
     "time-unit": "Time unit",
@@ -1798,7 +1799,8 @@
     "updated_report-number": "Update #{number}",
     "fetch_new_scores": "Fetch New Scores",
     "scores_updated": "Scores updated successfully",
-    "failed_update_scores": "Failed to update scores"
+    "failed_update_scores": "Failed to update scores",
+    "group_manager": "Group Manager"
   },
   "ws-users": {
     "singular": "User",

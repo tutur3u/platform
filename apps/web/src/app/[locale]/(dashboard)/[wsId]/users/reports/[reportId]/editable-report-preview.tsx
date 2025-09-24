@@ -66,6 +66,9 @@ export default function EditableReportPreview({
   healthcareVitals = [],
   healthcareVitalsLoading = false,
   factorEnabled = false,
+  managerOptions,
+  selectedManagerName,
+  onChangeManager,
 }: {
   wsId: string;
   report: Partial<WorkspaceUserReport> & {
@@ -85,6 +88,9 @@ export default function EditableReportPreview({
   }>;
   healthcareVitalsLoading?: boolean;
   factorEnabled?: boolean;
+  managerOptions?: Array<{ value: string; label: string }>;
+  selectedManagerName?: string;
+  onChangeManager?: (name?: string) => void;
 }) {
   const locale = useLocale();
   const t = useTranslations();
@@ -828,7 +834,9 @@ export default function EditableReportPreview({
             scores={selectedLog ? selectedLog.scores ?? null : report.scores}
             reportId={report.id}
             onFetchNewScores={
-              !isNew ? () => updateScoresMutation.mutate() : undefined
+              !isNew && !selectedLog
+                ? () => updateScoresMutation.mutate()
+                : undefined
             }
             isFetchingNewScores={updateScoresMutation.isPending}
             factorEnabled={factorEnabled}
@@ -844,6 +852,9 @@ export default function EditableReportPreview({
             else updateMutation.mutate(values);
           }}
           onDelete={!isNew ? () => setShowDeleteDialog(true) : undefined}
+          managerOptions={managerOptions}
+          selectedManagerName={selectedManagerName ?? report.creator_name}
+          onChangeManager={(name) => onChangeManager?.(name)}
         />
 
         <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>

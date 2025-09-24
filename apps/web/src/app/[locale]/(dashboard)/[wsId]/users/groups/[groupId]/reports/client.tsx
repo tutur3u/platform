@@ -15,7 +15,7 @@ import {
 import { useQuery } from '@tanstack/react-query';
 import { Button } from '@tuturuuu/ui/button';
 import { useTranslations } from 'next-intl';
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import EditableReportPreview from '../../../reports/[reportId]/editable-report-preview';
 import { availableConfigs } from '@/constants/configs/reports';
@@ -186,26 +186,51 @@ export default function GroupReportsClient({
     },
   });
 
-  // Query to fetch the group manager (teacher) name
-  const groupManagerQuery = useQuery({
-    queryKey: ['ws', wsId, 'group', groupId, 'manager'],
-    queryFn: async (): Promise<string | null> => {
+  // Query to fetch all group managers (teachers)
+  const groupManagersQuery = useQuery({
+    queryKey: ['ws', wsId, 'group', groupId, 'managers'],
+    queryFn: async (): Promise<Array<{ id: string; full_name: string | null }>> => {
       const { data, error } = await supabase
         .from('workspace_user_groups_users')
-        .select('user:workspace_users!inner(full_name, ws_id)')
+        .select('user:workspace_users!inner(id, full_name, ws_id)')
         .eq('group_id', groupId)
         .eq('role', 'TEACHER')
-        .eq('user.ws_id', wsId)
-        .limit(1)
-        .maybeSingle();
+        .eq('user.ws_id', wsId);
       if (error) throw error;
-      const user = (data as any)?.user;
-      if (!user) return null;
-      return Array.isArray(user)
-        ? (user[0]?.full_name ?? null)
-        : (user.full_name ?? null);
+      const rows = (data ?? []) as Array<{ user: any }>;
+      const managers: Array<{ id: string; full_name: string | null }> = [];
+      for (const row of rows) {
+        const u = row?.user;
+        if (Array.isArray(u)) {
+          const first = u[0];
+          if (first) managers.push({ id: first.id, full_name: first.full_name ?? null });
+        } else if (u) {
+          managers.push({ id: u.id, full_name: u.full_name ?? null });
+        }
+      }
+      return managers;
     },
   });
+
+  // Local state to allow overriding displayed group manager for export/preview only
+  const [selectedManagerName, setSelectedManagerName] = useState<string | undefined>(undefined);
+
+  // Initialize/reset selected manager based on available managers and current report
+  useEffect(() => {
+    const names = (groupManagersQuery.data ?? [])
+      .map((m) => m.full_name)
+      .filter((n): n is string => Boolean(n));
+    if (!names.length) {
+      setSelectedManagerName(undefined);
+      return;
+    }
+    // Prefer existing report creator_name if present; otherwise default to first
+    const existing = reportDetailQuery.data?.creator_name;
+    if (existing && names.includes(existing)) setSelectedManagerName(existing);
+    else if (reportId === 'new') setSelectedManagerName(names[0]);
+    else if (selectedManagerName === undefined) setSelectedManagerName(names[0]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [groupManagersQuery.data, reportDetailQuery.data?.creator_name, reportId]);
 
   const configsQuery = useQuery({
     queryKey: ['ws', wsId, 'report-configs'],
@@ -309,8 +334,7 @@ export default function GroupReportsClient({
         group_id: groupId,
         group_name: groupQuery.data?.name ?? groupNameFallback,
         user_name: userFullName,
-        // Map group manager name to creator_name so preview can show it as group_manager_name
-        creator_name: groupManagerQuery.data ?? undefined,
+        // creator_name will be overridden below via selectedManagerName when passed to preview
         created_at: new Date().toISOString(),
         scores: scores.length > 0 ? scores : [],
         score: averageScore,
@@ -328,6 +352,17 @@ export default function GroupReportsClient({
     reportDetailQuery.data,
     healthcareVitalsQuery.data,
   ]);
+
+  // Compute effective creator (group manager) name for preview/export only
+  const effectiveCreatorName = selectedManagerName ?? selectedReport?.creator_name;
+
+  const managerOptions: ComboboxOptions[] = useMemo(
+    () =>
+      (groupManagersQuery.data ?? [])
+        .map((m) => ({ value: m.full_name || '', label: m.full_name || 'No name' }))
+        .filter((o) => Boolean(o.value)),
+    [groupManagersQuery.data]
+  );
 
   return (
     <div className="flex min-h-full w-full flex-col">
@@ -400,6 +435,8 @@ export default function GroupReportsClient({
               selectedReport.group_name ??
               groupQuery.data?.name ??
               groupNameFallback,
+            // Frontend-only override of the displayed group manager name
+            creator_name: effectiveCreatorName,
           }}
           configs={configsQuery.data}
           isNew={reportId === 'new'}
@@ -407,6 +444,9 @@ export default function GroupReportsClient({
           healthcareVitals={healthcareVitalsQuery.data ?? []}
           healthcareVitalsLoading={healthcareVitalsQuery.isLoading}
           factorEnabled={ENABLE_FACTOR_CALCULATION}
+          managerOptions={managerOptions}
+          selectedManagerName={effectiveCreatorName}
+          onChangeManager={(name) => setSelectedManagerName(name)}
         />
       )}
     </div>

@@ -239,6 +239,7 @@ export default function GroupMembers({
             <DropdownMenuTrigger asChild>
               <Button variant="outline">
                 <Filter className="h-4 w-4" />
+                {t('common.filter')}
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">

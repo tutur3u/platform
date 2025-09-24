@@ -129,11 +129,11 @@
     "saving": "Đang lưu thay đổi...",
     "loading": "Đang tải",
     "load_more": "Tải thêm",
-  "submit": "Gửi",
-  "manage": "Quản lý",
-  "no-selection": "Chưa chọn người dùng nào",
-  "confirm": "Xác nhận",
-  "removed": "Đã xóa",
+    "submit": "Gửi",
+    "manage": "Quản lý",
+    "no-selection": "Chưa chọn người dùng nào",
+    "confirm": "Xác nhận",
+    "removed": "Đã xóa",
     "complete": "Hoàn tất",
     "default": "Mặc định",
     "all": "Tất cả",
@@ -378,7 +378,8 @@
     "optional": "tùy chọn",
     "characters": "kí tự",
     "no_changes_to_save": "Không có thay đổi để lưu",
-    "confirm_delete": "Xóa bản báo cáo?"
+    "confirm_delete": "Xóa bản báo cáo?",
+    "filter": "Lọc"
   },
   "date_helper": {
     "time-unit": "Đơn vị thời gian",
@@ -1802,7 +1803,8 @@
     "updated_report-number": "Bản cập nhật #{number}",
     "fetch_new_scores": "Lấy điểm mới",
     "scores_updated": "Đã cập nhật điểm thành công",
-    "failed_update_scores": "Cập nhật điểm thất bại"
+    "failed_update_scores": "Cập nhật điểm thất bại",
+    "group_manager": "Quản lý nhóm"
   },
   "ws-users": {
     "singular": "Người dùng",

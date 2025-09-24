@@ -14,6 +14,7 @@ import { Separator } from '@tuturuuu/ui/separator';
 import type * as z from 'zod';
 import type { UserReportFormSchema } from './editable-report-preview';
 import { useTranslations } from 'next-intl';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@tuturuuu/ui/select';
 
 export default function UserReportForm({
   isNew,
@@ -21,6 +22,9 @@ export default function UserReportForm({
   submitLabel,
   onSubmit,
   onDelete,
+  managerOptions,
+  selectedManagerName,
+  onChangeManager,
 }: {
   isNew: boolean;
   form: UseFormReturn<z.infer<typeof UserReportFormSchema>>;
@@ -28,6 +32,9 @@ export default function UserReportForm({
   // eslint-disable-next-line no-unused-vars
   onSubmit?: (formData: z.infer<typeof UserReportFormSchema>) => void;
   onDelete?: () => void;
+  managerOptions?: Array<{ value: string; label: string }>;
+  selectedManagerName?: string;
+  onChangeManager?: (name?: string) => void;
 }) {
   const t = useTranslations();
   return (
@@ -47,6 +54,30 @@ export default function UserReportForm({
           }}
           className="grid gap-2"
         >
+          {managerOptions && managerOptions.length > 1 && (
+            <FormItem>
+              <FormLabel>{t('ws-reports.group_manager')}</FormLabel>
+              <FormControl>
+                <Select
+                  value={selectedManagerName ?? ''}
+                  onValueChange={(val) => onChangeManager?.(val || undefined)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder={t('ws-reports.group_manager')} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {managerOptions.map((opt) => (
+                      <SelectItem key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+
           <FormField
             control={form.control}
             name="title"
