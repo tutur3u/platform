@@ -61,7 +61,7 @@ import {
 } from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
-
+import { getDescriptionText } from '@tuturuuu/ui/utils/text-helper';
 import { cn } from '@tuturuuu/utils/format';
 import {
   moveTask,
@@ -76,8 +76,7 @@ import {
   isTomorrow,
   isYesterday,
 } from 'date-fns';
-import { memo, useCallback, useEffect, useState } from 'react';
-import { getDescriptionText } from '../../../../../utils/text-helper';
+import React, { useCallback, useEffect, useState } from 'react';
 import { AssigneeSelect } from '../../shared/assignee-select';
 import {
   buildEstimationIndices,
@@ -162,6 +161,7 @@ function TaskCardInner({
   isPersonalWorkspace = false,
   onSelect,
 }: Props) {
+  console.log('task2', task);
   const [isLoading, setIsLoading] = useState(false);
   // Removed isHovered state to reduce re-renders; rely on CSS :hover
   const [menuOpen, setMenuOpen] = useState(false);
@@ -1778,7 +1778,7 @@ function TaskCardInner({
 }
 
 // Custom comparator to avoid re-renders when stable fields unchanged
-export const TaskCard = memo(TaskCardInner, (prev, next) => {
+export const TaskCard = React.memo(TaskCardInner, (prev, next) => {
   // Quick identity checks for frequently changing props
   if (prev.isOverlay !== next.isOverlay) return false;
   if (prev.isSelected !== next.isSelected) return false;

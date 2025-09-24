@@ -1173,21 +1173,24 @@ const VirtualizedTaskListComponent: React.FC<VirtualizedTaskListProps> = ({
 
 const VirtualizedTaskList = React.memo(
   VirtualizedTaskListComponent,
-  (prev, next) => {
-    // Shallow compare arrays by length + first/last id for quick bailout
-    if (prev.tasks.length !== next.tasks.length) return false;
-    if (prev.tasks[0]?.id !== next.tasks[0]?.id) return false;
-    if (
-      prev.tasks[prev.tasks.length - 1]?.id !==
-      next.tasks[next.tasks.length - 1]?.id
-    )
-      return false;
-    // Compare selection size
-    if (prev.selectedTasks?.size !== next.selectedTasks?.size) return false;
-    // Compare basic flags
-    if (prev.isMultiSelectMode !== next.isMultiSelectMode) return false;
-    if (prev.hasActiveFilters !== next.hasActiveFilters) return false;
-    return true;
+  (_prev, _next) => {
+    // Ensure re-render
+    // This is core reason that task content is not updated
+    return false;
+    // // Shallow compare arrays by length + first/last id for quick bailout
+    // if (prev.tasks.length !== next.tasks.length) return false;
+    // if (prev.tasks[0]?.id !== next.tasks[0]?.id) return false;
+    // if (
+    //   prev.tasks[prev.tasks.length - 1]?.id !==
+    //   next.tasks[next.tasks.length - 1]?.id
+    // )
+    //   return false;
+    // // Compare selection size
+    // if (prev.selectedTasks?.size !== next.selectedTasks?.size) return false;
+    // // Compare basic flags
+    // if (prev.isMultiSelectMode !== next.isMultiSelectMode) return false;
+    // if (prev.hasActiveFilters !== next.hasActiveFilters) return false;
+    // return true;
   }
 );
 
