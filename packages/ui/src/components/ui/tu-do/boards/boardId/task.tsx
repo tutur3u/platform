@@ -116,22 +116,24 @@ function TaskCardInner({
   onSelect,
 }: TaskCardProps) {
   const [isLoading, setIsLoading] = useState(false);
-  // Removed isHovered state to reduce re-renders; rely on CSS :hover
   const [menuOpen, setMenuOpen] = useState(false);
   const [customDateDialogOpen, setCustomDateDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
+
   // Estimation & labels state
   const [boardConfig, setBoardConfig] = useState<any>(null);
   const [workspaceLabels, setWorkspaceLabels] = useState<any[]>([]);
   const [labelsLoading, setLabelsLoading] = useState(false);
   const [estimationSaving, setEstimationSaving] = useState(false);
   const [labelsSaving, setLabelsSaving] = useState<string | null>(null);
+
   // New label creation state
   const [newLabelDialogOpen, setNewLabelDialogOpen] = useState(false);
   const [newLabelName, setNewLabelName] = useState('');
   const [newLabelColor, setNewLabelColor] = useState(NEW_LABEL_COLOR);
   const [creatingLabel, setCreatingLabel] = useState(false);
+
   // Track initial mount to avoid duplicate fetch storms
   const updateTaskMutation = useUpdateTask(boardId);
   const deleteTaskMutation = useDeleteTask(boardId);
