@@ -350,7 +350,6 @@ function TaskCardInner({
         {
           onSettled: () => {
             setIsLoading(false);
-            onUpdate();
           },
         }
       );
@@ -390,7 +389,6 @@ function TaskCardInner({
               ? 'Custom due date set successfully'
               : 'Due date removed',
           });
-          onUpdate?.();
         },
         onSettled: () => {
           setIsLoading(false);
@@ -456,7 +454,6 @@ function TaskCardInner({
     deleteTaskMutation.mutate(task.id, {
       onSuccess: () => {
         setDeleteDialogOpen(false);
-        onUpdate?.();
       },
       onSettled: () => {
         setIsLoading(false);
@@ -588,7 +585,6 @@ function TaskCardInner({
               ? 'Due date set successfully'
               : 'Due date removed',
           });
-          onUpdate?.();
         },
         onSettled: () => {
           setIsLoading(false);
@@ -609,9 +605,10 @@ function TaskCardInner({
             title: 'Priority updated',
             description: newPriority ? 'Priority changed' : 'Priority cleared',
           });
-          onUpdate?.();
         },
-        onSettled: () => setIsLoading(false),
+        onSettled: () => {
+          setIsLoading(false);
+        },
       }
     );
   }

@@ -97,8 +97,7 @@ interface BoardColumnProps {
   boardId: string;
   tasks: Task[];
   isOverlay?: boolean;
-  onTaskCreated?: () => void;
-  onListUpdated?: () => void;
+  onUpdate?: () => void;
   selectedTasks?: Set<string>;
   isMultiSelectMode?: boolean;
   isPersonalWorkspace?: boolean;
@@ -110,8 +109,7 @@ function BoardColumnInner({
   boardId,
   tasks,
   isOverlay,
-  onTaskCreated,
-  onListUpdated,
+  onUpdate,
   selectedTasks,
   onTaskSelect,
   isMultiSelectMode,
@@ -347,12 +345,7 @@ function BoardColumnInner({
   );
 
   const handleUpdate = () => {
-    if (onListUpdated) onListUpdated();
-    else if (onTaskCreated) onTaskCreated();
-  };
-
-  const handleTaskCreated = () => {
-    if (onTaskCreated) onTaskCreated();
+    onUpdate?.();
   };
 
   const colorClass =
@@ -909,7 +902,7 @@ function BoardColumnInner({
       />
 
       <div className="rounded-b-xl border-t p-3 backdrop-blur-sm">
-        <TaskForm listId={column.id} onTaskCreated={handleTaskCreated} />
+        <TaskForm listId={column.id} onTaskCreated={handleUpdate} />
       </div>
     </Card>
   );

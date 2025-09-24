@@ -111,7 +111,7 @@ export function KanbanBoard({
   const dragStartCardLeft = useRef<number | null>(null);
   const overlayWidth = 350; // Column width
 
-  const handleTaskCreated = useCallback(() => {
+  const handleUpdate = useCallback(() => {
     // Invalidate the tasks query to trigger a refetch
     queryClient.invalidateQueries({ queryKey: ['tasks', boardId] });
     queryClient.invalidateQueries({ queryKey: ['task_lists', boardId] });
@@ -721,11 +721,10 @@ export function KanbanBoard({
           tasks={tasks.filter((task) => task.list_id === activeColumn.id)}
           isOverlay
           isPersonalWorkspace={workspace.personal}
-          onTaskCreated={handleTaskCreated}
-          onListUpdated={handleTaskCreated}
+          onUpdate={handleUpdate}
         />
       ) : null,
-    [activeColumn, tasks, boardId, workspace.personal, handleTaskCreated]
+    [activeColumn, tasks, boardId, workspace.personal, handleUpdate]
   );
 
   async function onDragEnd(event: DragEndEvent) {
@@ -1237,18 +1236,14 @@ export function KanbanBoard({
                         boardId={boardId}
                         tasks={columnTasks}
                         isPersonalWorkspace={workspace.personal}
-                        onTaskCreated={handleTaskCreated}
-                        onListUpdated={handleTaskCreated}
+                        onUpdate={handleUpdate}
                         selectedTasks={selectedTasks}
                         isMultiSelectMode={isMultiSelectMode}
                         onTaskSelect={handleTaskSelect}
                       />
                     );
                   })}
-                <TaskListForm
-                  boardId={boardId}
-                  onListCreated={handleTaskCreated}
-                />
+                <TaskListForm boardId={boardId} onListCreated={handleUpdate} />
               </div>
             </SortableContext>
           </ScrollableBoardContainer>
