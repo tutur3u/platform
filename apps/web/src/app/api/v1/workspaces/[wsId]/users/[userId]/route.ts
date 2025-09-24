@@ -70,7 +70,7 @@ export async function PUT(req: Request, { params }: Params) {
       if (is_guest) {
         const { error: linkError } = await supabase
           .from('workspace_user_groups_users')
-          .insert({ group_id: guestGroup.id, user_id: userId });
+          .upsert({ group_id: guestGroup.id, user_id: userId }, { onConflict: 'group_id,user_id' });
         if (linkError) {
           console.log(linkError);
           warning = 'Failed to link user to guest group.';
