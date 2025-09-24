@@ -31,7 +31,7 @@
     "@emotion/react": "^11.14.0",
     "@emotion/server": "^11.11.0",
     "@formatjs/intl-localematcher": "^0.6.1",
-    "@tanstack/react-query": "^5.89.0",
+    "@tanstack/react-query": "^5.90.2",
     "@tanstack/react-table": "^8.21.3",
     "@tuturuuu/ai": "workspace:*",
     "@tuturuuu/auth": "workspace:*",
@@ -44,7 +44,7 @@
     "canvas-confetti": "^1.9.3",
     "date-fns": "^4.1.0",
     "dayjs": "^1.11.18",
-    "framer-motion": "^12.23.16",
+    "framer-motion": "^12.23.19",
     "jotai": "^2.14.0",
     "juice": "^11.0.1",
     "lodash": "^4.17.21",
@@ -62,7 +62,7 @@
   },
   "devDependencies": {
     "@next/bundle-analyzer": "^15.5.3",
-    "@tanstack/react-query-devtools": "^5.89.0",
+    "@tanstack/react-query-devtools": "^5.90.2",
     "@testing-library/react": "^16.3.0",
     "@tuturuuu/typescript-config": "workspace:*",
     "@types/canvas-confetti": "^1.9.0",
@@ -80,5 +80,5 @@
     "typescript": "^5.9.2",
     "vitest": "^3.2.4"
   },
-  "packageManager": "bun@1.2.21"
+  "packageManager": "bun@1.2.22"
 }

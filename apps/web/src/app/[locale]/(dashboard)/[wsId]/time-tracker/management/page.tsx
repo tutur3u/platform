@@ -1,5 +1,6 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
+import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import {
@@ -30,7 +31,11 @@ export default async function TimeTrackerManagementPage({
   params,
   searchParams,
 }: Props) {
-  const { wsId } = await params;
+  const { wsId: id } = await params;
+
+  const workspace = await getWorkspace(id);
+  const wsId = workspace?.id;
+
   const searchParamsResolved = await searchParams;
   const supabase = await createClient();
 
