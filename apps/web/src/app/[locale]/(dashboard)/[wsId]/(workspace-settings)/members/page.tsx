@@ -11,7 +11,7 @@ import {
   verifyHasSecrets,
 } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
-import { redirect } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import InviteMemberButton from './_components/invite-member-button';
 import MemberList from './_components/member-list';
@@ -37,7 +37,15 @@ export default async function WorkspaceMembersPage({
   params,
   searchParams,
 }: Props) {
-  const { wsId } = await params;
+  const { wsId: id } = await params;
+
+  const workspace = await getWorkspace(id, {
+    requireUserRole: true,
+  });
+  const wsId = workspace?.id;
+
+  if (!wsId) notFound();
+
   const { status } = await searchParams;
   const { withoutPermission } = await getPermissions({
     wsId,
@@ -46,9 +54,6 @@ export default async function WorkspaceMembersPage({
   if (withoutPermission('manage_workspace_members'))
     redirect(`/${wsId}/settings`);
 
-  const ws = await getWorkspace(wsId, {
-    requireUserRole: true,
-  });
   const user = await getCurrentUser();
   const members = await getMembers(wsId, await searchParams);
 
@@ -71,7 +76,7 @@ export default async function WorkspaceMembersPage({
             wsId={wsId}
             currentUser={{
               ...user!,
-              role: ws?.role,
+              role: workspace?.role,
             }}
             label={
               disableInvite
@@ -87,7 +92,7 @@ export default async function WorkspaceMembersPage({
       <div className="flex min-h-full w-full flex-col">
         <div className="grid items-end gap-4 lg:grid-cols-2">
           <MemberList
-            workspace={ws}
+            workspace={workspace}
             members={members}
             invited={status === 'invited'}
           />
