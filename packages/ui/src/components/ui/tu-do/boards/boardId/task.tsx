@@ -87,6 +87,8 @@ import { TaskEstimationDisplay } from '../../shared/task-estimation-display';
 import { TaskLabelsDisplay } from '../../shared/task-labels-display';
 import { TaskActions } from './task-actions';
 
+const NEW_LABEL_COLOR = '#3b82f6';
+
 interface TaskCardProps {
   task: Task;
   boardId: string;
@@ -128,7 +130,7 @@ function TaskCardInner({
   // New label creation state
   const [newLabelDialogOpen, setNewLabelDialogOpen] = useState(false);
   const [newLabelName, setNewLabelName] = useState('');
-  const [newLabelColor, setNewLabelColor] = useState('#3b82f6');
+  const [newLabelColor, setNewLabelColor] = useState(NEW_LABEL_COLOR);
   const [creatingLabel, setCreatingLabel] = useState(false);
   // Track initial mount to avoid duplicate fetch storms
   const updateTaskMutation = useUpdateTask(boardId);
