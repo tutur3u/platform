@@ -2978,7 +2978,7 @@
     "no_managers": "No managers found",
     "add_members": "Add Members",
     "add_managers": "Add Managers",
-    "select_and_submit": "Select users and submit",
+    "select_and_submit": "{groupActionLabel} to the group ",
     "no_users_selected": "No users selected.",
     "search_users_placeholder": "Search users...",
     "manager": "Manager",

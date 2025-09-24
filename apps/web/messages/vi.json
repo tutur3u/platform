@@ -3025,7 +3025,7 @@
     "managers": "Quản lý nhóm",
     "add_members": "Thêm thành viên",
     "add_managers": "Thêm quản lý",
-    "select_and_submit": "Chọn người dùng và gửi",
+    "select_and_submit": "{groupActionLabel} vào nhóm",
     "no_users_selected": "Chưa chọn người dùng nào.",
     "search_users_placeholder": "Tìm kiếm người dùng...",
     "manager": "Quản lý",
