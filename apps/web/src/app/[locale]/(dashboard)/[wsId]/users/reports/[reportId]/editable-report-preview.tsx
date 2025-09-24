@@ -183,12 +183,13 @@ export default function EditableReportPreview({
         content?: string | null;
         feedback?: string | null;
         score?: number | null;
+        scores?: number[] | null;
       }>
     > => {
       const { data, error } = await supabase
         .from('external_user_monthly_report_logs')
         .select(
-          'id, created_at, title, content, feedback, score, creator:workspace_users!creator_id(full_name, display_name)'
+          'id, created_at, title, content, feedback, score, scores, creator:workspace_users!creator_id(full_name, display_name)'
         )
         .eq('report_id', report?.id as string)
         .order('created_at', { ascending: false });
@@ -203,6 +204,7 @@ export default function EditableReportPreview({
         content: raw.content,
         feedback: raw.feedback,
         score: raw.score,
+        scores: (raw as any).scores as number[] | null,
       })) as Array<{
         id: string;
         created_at: string;
@@ -211,6 +213,7 @@ export default function EditableReportPreview({
         content?: string | null;
         feedback?: string | null;
         score?: number | null;
+        scores?: number[] | null;
       }>;
     },
   });
@@ -595,6 +598,7 @@ export default function EditableReportPreview({
     content?: string | null;
     feedback?: string | null;
     score?: number | null;
+    scores?: number[] | null;
   } | null>(null);
 
   // Local theme toggle for report preview only
@@ -821,7 +825,7 @@ export default function EditableReportPreview({
             healthcareVitals={healthcareVitals}
             healthcareVitalsLoading={healthcareVitalsLoading}
             isNew={isNew}
-            scores={report.scores}
+            scores={selectedLog ? selectedLog.scores ?? null : report.scores}
             reportId={report.id}
             onFetchNewScores={
               !isNew ? () => updateScoresMutation.mutate() : undefined
@@ -965,6 +969,7 @@ export default function EditableReportPreview({
                                       content: log.content,
                                       feedback: log.feedback,
                                       score: log.score ?? null,
+                                      scores: (log as any).scores ?? null,
                                     }
                               )
                             }
