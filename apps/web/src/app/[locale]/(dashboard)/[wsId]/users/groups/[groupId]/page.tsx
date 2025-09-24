@@ -15,7 +15,6 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
-import GroupMemberForm from './form';
 import GroupMembers from './group-members';
 import LinkedProductsClient from './linked-products-client';
 import PostsClient from './posts-client';
@@ -145,9 +144,6 @@ export default async function UserGroupDetailsPage({
             </Link>
           </div>
         }
-        createTitle={t('ws-user-groups.add_user')}
-        createDescription={t('ws-user-groups.add_user_description')}
-        form={<GroupMemberForm wsId={wsId} groupId={groupId} />}
       />
       <Separator className="my-4" />
       <div className="grid w-full grid-cols-1 gap-4 lg:grid-cols-2">
