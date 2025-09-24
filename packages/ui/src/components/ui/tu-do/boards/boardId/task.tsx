@@ -87,112 +87,6 @@ import { TaskEstimationDisplay } from '../../shared/task-estimation-display';
 import { TaskLabelsDisplay } from '../../shared/task-labels-display';
 import { TaskActions } from './task-actions';
 
-// Lightweight drag overlay version
-export function LightweightTaskCard({ task }: { task: Task }) {
-  const labels = {
-    critical: 'Urgent',
-    high: 'High',
-    normal: 'Medium',
-    low: 'Low',
-  };
-
-  const descriptionText = getDescriptionText(task.description);
-  // Ensure deterministic ordering of labels (case-insensitive alphabetical)
-  const sortedLabels = task.labels
-    ? [...task.labels].sort((a, b) =>
-        a.name.toLowerCase().localeCompare(b.name.toLowerCase())
-      )
-    : [];
-
-  return (
-    <Card className="pointer-events-none w-full max-w-[350px] scale-105 select-none border-2 border-primary/20 bg-background opacity-95 shadow-xl ring-2 ring-primary/20">
-      <div className="flex flex-col gap-2 p-4">
-        <div className="truncate font-semibold text-base">{task.name}</div>
-        {descriptionText && (
-          <div className="line-clamp-1 whitespace-pre-line text-muted-foreground text-sm">
-            {descriptionText.replace(/\n/g, ' • ')}
-          </div>
-        )}
-        <div className="flex flex-wrap items-center gap-2">
-          {task.priority && (
-            <Badge variant="secondary" className="text-xs">
-              {labels[task.priority as keyof typeof labels]}
-            </Badge>
-          )}
-          {/* Labels */}
-          {sortedLabels.length > 0 && (
-            <TaskLabelsDisplay labels={sortedLabels} size="sm" />
-          )}
-          {/* Estimation */}
-          <TaskEstimationDisplay
-            points={task.estimation_points}
-            size="sm"
-            showIcon={false}
-          />
-        </div>
-      </div>
-    </Card>
-  );
-}
-
-interface MeasuredTaskCardProps {
-  task: Task;
-  taskList: TaskList;
-  boardId: string;
-  onUpdate: () => void;
-  isSelected: boolean;
-  isMultiSelectMode?: boolean;
-  isPersonalWorkspace?: boolean;
-  onSelect?: (taskId: string, event: React.MouseEvent) => void;
-  onHeight: (height: number) => void;
-}
-
-export function MeasuredTaskCard({
-  task,
-  taskList,
-  boardId,
-  onUpdate,
-  isSelected,
-  isMultiSelectMode,
-  isPersonalWorkspace,
-  onSelect,
-  onHeight,
-}: MeasuredTaskCardProps) {
-  const ref = useRef<HTMLDivElement | null>(null);
-
-  useEffect(() => {
-    if (!ref.current) return;
-    const node = ref.current;
-    // Initial measure
-    onHeight(node.getBoundingClientRect().height + 8 /* approximate gap */);
-    // Resize observer for dynamic height changes (e.g., label changes)
-    const ro = new ResizeObserver((entries) => {
-      for (const entry of entries) {
-        if (entry.target === node) {
-          onHeight(entry.contentRect.height + 8);
-        }
-      }
-    });
-    ro.observe(node);
-    return () => ro.disconnect();
-  }, [onHeight]);
-
-  return (
-    <div ref={ref} data-id={task.id}>
-      <TaskCard
-        task={task}
-        taskList={taskList}
-        boardId={boardId}
-        onUpdate={onUpdate}
-        isSelected={isSelected}
-        isMultiSelectMode={isMultiSelectMode}
-        isPersonalWorkspace={isPersonalWorkspace}
-        onSelect={onSelect}
-      />
-    </div>
-  );
-}
-
 interface TaskCardProps {
   task: Task;
   boardId: string;
@@ -219,7 +113,6 @@ function TaskCardInner({
   isPersonalWorkspace = false,
   onSelect,
 }: TaskCardProps) {
-  console.log('task2', task);
   const [isLoading, setIsLoading] = useState(false);
   // Removed isHovered state to reduce re-renders; rely on CSS :hover
   const [menuOpen, setMenuOpen] = useState(false);
@@ -1872,3 +1765,109 @@ export const TaskCard = React.memo(TaskCardInner, (prev, next) => {
   if (aLabels !== bLabels) return false;
   return true;
 });
+
+interface MeasuredTaskCardProps {
+  task: Task;
+  taskList: TaskList;
+  boardId: string;
+  onUpdate: () => void;
+  isSelected: boolean;
+  isMultiSelectMode?: boolean;
+  isPersonalWorkspace?: boolean;
+  onSelect?: (taskId: string, event: React.MouseEvent) => void;
+  onHeight: (height: number) => void;
+}
+
+export function MeasuredTaskCard({
+  task,
+  taskList,
+  boardId,
+  onUpdate,
+  isSelected,
+  isMultiSelectMode,
+  isPersonalWorkspace,
+  onSelect,
+  onHeight,
+}: MeasuredTaskCardProps) {
+  const ref = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (!ref.current) return;
+    const node = ref.current;
+    // Initial measure
+    onHeight(node.getBoundingClientRect().height + 8 /* approximate gap */);
+    // Resize observer for dynamic height changes (e.g., label changes)
+    const ro = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        if (entry.target === node) {
+          onHeight(entry.contentRect.height + 8);
+        }
+      }
+    });
+    ro.observe(node);
+    return () => ro.disconnect();
+  }, [onHeight]);
+
+  return (
+    <div ref={ref} data-id={task.id}>
+      <TaskCard
+        task={task}
+        taskList={taskList}
+        boardId={boardId}
+        onUpdate={onUpdate}
+        isSelected={isSelected}
+        isMultiSelectMode={isMultiSelectMode}
+        isPersonalWorkspace={isPersonalWorkspace}
+        onSelect={onSelect}
+      />
+    </div>
+  );
+}
+
+// Lightweight drag overlay version
+export function LightweightTaskCard({ task }: { task: Task }) {
+  const labels = {
+    critical: 'Urgent',
+    high: 'High',
+    normal: 'Medium',
+    low: 'Low',
+  };
+
+  const descriptionText = getDescriptionText(task.description);
+  // Ensure deterministic ordering of labels (case-insensitive alphabetical)
+  const sortedLabels = task.labels
+    ? [...task.labels].sort((a, b) =>
+        a.name.toLowerCase().localeCompare(b.name.toLowerCase())
+      )
+    : [];
+
+  return (
+    <Card className="pointer-events-none w-full max-w-[350px] scale-105 select-none border-2 border-primary/20 bg-background opacity-95 shadow-xl ring-2 ring-primary/20">
+      <div className="flex flex-col gap-2 p-4">
+        <div className="truncate font-semibold text-base">{task.name}</div>
+        {descriptionText && (
+          <div className="line-clamp-1 whitespace-pre-line text-muted-foreground text-sm">
+            {descriptionText.replace(/\n/g, ' • ')}
+          </div>
+        )}
+        <div className="flex flex-wrap items-center gap-2">
+          {task.priority && (
+            <Badge variant="secondary" className="text-xs">
+              {labels[task.priority as keyof typeof labels]}
+            </Badge>
+          )}
+          {/* Labels */}
+          {sortedLabels.length > 0 && (
+            <TaskLabelsDisplay labels={sortedLabels} size="sm" />
+          )}
+          {/* Estimation */}
+          <TaskEstimationDisplay
+            points={task.estimation_points}
+            size="sm"
+            showIcon={false}
+          />
+        </div>
+      </div>
+    </Card>
+  );
+}

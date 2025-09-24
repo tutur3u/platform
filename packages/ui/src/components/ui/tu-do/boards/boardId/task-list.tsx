@@ -899,7 +899,7 @@ function BoardColumnInner({
         tasks={filteredAndSortedTasks}
         column={column}
         boardId={boardId}
-        handleUpdate={handleUpdate}
+        onUpdate={handleUpdate}
         isMultiSelectMode={isMultiSelectMode}
         selectedTasks={selectedTasks}
         isPersonalWorkspace={isPersonalWorkspace}
@@ -933,7 +933,7 @@ interface VirtualizedTaskListProps {
   tasks: Task[];
   column: TaskList;
   boardId: string;
-  handleUpdate: () => void;
+  onUpdate: () => void;
   isMultiSelectMode?: boolean;
   selectedTasks?: Set<string>;
   isPersonalWorkspace?: boolean;
@@ -946,7 +946,7 @@ function VirtualizedTaskListInner({
   tasks,
   column,
   boardId,
-  handleUpdate,
+  onUpdate,
   isMultiSelectMode,
   selectedTasks,
   isPersonalWorkspace,
@@ -1131,7 +1131,7 @@ function VirtualizedTaskListInner({
                 task={task}
                 taskList={column}
                 boardId={boardId}
-                onUpdate={handleUpdate}
+                onUpdate={onUpdate}
                 isSelected={Boolean(
                   isMultiSelectMode && selectedTasks?.has(task.id)
                 )}
@@ -1150,7 +1150,7 @@ function VirtualizedTaskListInner({
             task={task}
             taskList={column}
             boardId={boardId}
-            onUpdate={handleUpdate}
+            onUpdate={onUpdate}
             isSelected={Boolean(
               isMultiSelectMode && selectedTasks?.has(task.id)
             )}
@@ -1165,25 +1165,4 @@ function VirtualizedTaskListInner({
   );
 }
 
-export const VirtualizedTaskList = React.memo(
-  VirtualizedTaskListInner,
-  (_prev, _next) => {
-    // Ensure re-render
-    // This is core reason that task content is not updated
-    return false;
-    // // Shallow compare arrays by length + first/last id for quick bailout
-    // if (prev.tasks.length !== next.tasks.length) return false;
-    // if (prev.tasks[0]?.id !== next.tasks[0]?.id) return false;
-    // if (
-    //   prev.tasks[prev.tasks.length - 1]?.id !==
-    //   next.tasks[next.tasks.length - 1]?.id
-    // )
-    //   return false;
-    // // Compare selection size
-    // if (prev.selectedTasks?.size !== next.selectedTasks?.size) return false;
-    // // Compare basic flags
-    // if (prev.isMultiSelectMode !== next.isMultiSelectMode) return false;
-    // if (prev.hasActiveFilters !== next.hasActiveFilters) return false;
-    // return true;
-  }
-);
+export const VirtualizedTaskList = React.memo(VirtualizedTaskListInner);
