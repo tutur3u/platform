@@ -76,7 +76,7 @@ import {
   isTomorrow,
   isYesterday,
 } from 'date-fns';
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { AssigneeSelect } from '../../shared/assignee-select';
 import {
   buildEstimationIndices,
@@ -86,19 +86,6 @@ import { TaskEditDialog } from '../../shared/task-edit-dialog';
 import { TaskEstimationDisplay } from '../../shared/task-estimation-display';
 import { TaskLabelsDisplay } from '../../shared/task-labels-display';
 import { TaskActions } from './task-actions';
-
-interface Props {
-  task: Task;
-  boardId: string;
-  taskList?: TaskList;
-  isOverlay?: boolean;
-  onUpdate: () => void;
-  availableLists?: TaskList[]; // Optional: pass from parent to avoid redundant API calls
-  isSelected?: boolean;
-  isMultiSelectMode?: boolean;
-  isPersonalWorkspace?: boolean;
-  onSelect?: (taskId: string, event: React.MouseEvent) => void;
-}
 
 // Lightweight drag overlay version
 export function LightweightTaskCard({ task }: { task: Task }) {
@@ -148,6 +135,77 @@ export function LightweightTaskCard({ task }: { task: Task }) {
   );
 }
 
+interface MeasuredTaskCardProps {
+  task: Task;
+  taskList: TaskList;
+  boardId: string;
+  onUpdate: () => void;
+  isSelected: boolean;
+  isMultiSelectMode?: boolean;
+  isPersonalWorkspace?: boolean;
+  onSelect?: (taskId: string, event: React.MouseEvent) => void;
+  onHeight: (height: number) => void;
+}
+
+export function MeasuredTaskCard({
+  task,
+  taskList,
+  boardId,
+  onUpdate,
+  isSelected,
+  isMultiSelectMode,
+  isPersonalWorkspace,
+  onSelect,
+  onHeight,
+}: MeasuredTaskCardProps) {
+  const ref = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (!ref.current) return;
+    const node = ref.current;
+    // Initial measure
+    onHeight(node.getBoundingClientRect().height + 8 /* approximate gap */);
+    // Resize observer for dynamic height changes (e.g., label changes)
+    const ro = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        if (entry.target === node) {
+          onHeight(entry.contentRect.height + 8);
+        }
+      }
+    });
+    ro.observe(node);
+    return () => ro.disconnect();
+  }, [onHeight]);
+
+  return (
+    <div ref={ref} data-id={task.id}>
+      <TaskCard
+        task={task}
+        taskList={taskList}
+        boardId={boardId}
+        onUpdate={onUpdate}
+        isSelected={isSelected}
+        isMultiSelectMode={isMultiSelectMode}
+        isPersonalWorkspace={isPersonalWorkspace}
+        onSelect={onSelect}
+      />
+    </div>
+  );
+}
+
+interface TaskCardProps {
+  task: Task;
+  boardId: string;
+  taskList?: TaskList;
+  isOverlay?: boolean;
+  onUpdate: () => void;
+  availableLists?: TaskList[]; // Optional: pass from parent to avoid redundant API calls
+  isSelected?: boolean;
+  isMultiSelectMode?: boolean;
+  isPersonalWorkspace?: boolean;
+  onSelect?: (taskId: string, event: React.MouseEvent) => void;
+}
+
 // Memoized full TaskCard
 function TaskCardInner({
   task,
@@ -160,7 +218,7 @@ function TaskCardInner({
   isMultiSelectMode = false,
   isPersonalWorkspace = false,
   onSelect,
-}: Props) {
+}: TaskCardProps) {
   console.log('task2', task);
   const [isLoading, setIsLoading] = useState(false);
   // Removed isHovered state to reduce re-renders; rely on CSS :hover
