@@ -35,7 +35,14 @@ import { useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import GroupMemberActions from './group-member-actions';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@tuturuuu/ui/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@tuturuuu/ui/dialog';
 import { toast } from '@tuturuuu/ui/sonner';
 
 interface GroupMember extends WorkspaceUser {
@@ -146,8 +153,14 @@ export default function GroupMembers({
     return { membersOnly, guestsOnly, managersOnly };
   }, [members]);
 
-  const memberIds = useMemo(() => new Set([...membersOnly, ...guestsOnly].map((m) => m.id)), [membersOnly, guestsOnly]);
-  const managerIds = useMemo(() => new Set(managersOnly.map((m) => m.id)), [managersOnly]);
+  const memberIds = useMemo(
+    () => new Set([...membersOnly, ...guestsOnly].map((m) => m.id)),
+    [membersOnly, guestsOnly]
+  );
+  const managerIds = useMemo(
+    () => new Set(managersOnly.map((m) => m.id)),
+    [managersOnly]
+  );
 
   const [filters, setFilters] = useState({
     members: true,
@@ -193,7 +206,9 @@ export default function GroupMembers({
       if (error) throw error;
       toast.success(t('common.removed'));
       setRemoveTarget(null);
-      await queryClient.invalidateQueries({ queryKey: ['group-members', wsId, groupId] });
+      await queryClient.invalidateQueries({
+        queryKey: ['group-members', wsId, groupId],
+      });
     } catch (e) {
       const msg = e instanceof Error ? e.message : 'Unknown error';
       toast.error(`${t('common.error')} ${msg}`);
@@ -247,7 +262,11 @@ export default function GroupMembers({
                 checked={allSelected}
                 onCheckedChange={(checked) => {
                   const value = Boolean(checked);
-                  setFilters({ members: value, guests: value, managers: value });
+                  setFilters({
+                    members: value,
+                    guests: value,
+                    managers: value,
+                  });
                 }}
               >
                 {t('common.all')} ({members?.length ?? 0})
@@ -271,14 +290,22 @@ export default function GroupMembers({
               <DropdownMenuCheckboxItem
                 checked={filters.managers}
                 onCheckedChange={(checked) =>
-                  setFilters((prev) => ({ ...prev, managers: Boolean(checked) }))
+                  setFilters((prev) => ({
+                    ...prev,
+                    managers: Boolean(checked),
+                  }))
                 }
               >
                 {t('ws-user-group-details.managers')} ({managersOnly.length})
               </DropdownMenuCheckboxItem>
             </DropdownMenuContent>
           </DropdownMenu>
-          <GroupMemberActions wsId={wsId} groupId={groupId} memberIds={memberIds} managerIds={managerIds} />
+          <GroupMemberActions
+            wsId={wsId}
+            groupId={groupId}
+            memberIds={memberIds}
+            managerIds={managerIds}
+          />
         </div>
       </div>
 
@@ -412,7 +439,10 @@ export default function GroupMembers({
           })
         )}
       </div>
-      <Dialog open={removeTarget !== null} onOpenChange={(open) => !open && setRemoveTarget(null)}>
+      <Dialog
+        open={removeTarget !== null}
+        onOpenChange={(open) => !open && setRemoveTarget(null)}
+      >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>{t('common.confirm')}</DialogTitle>

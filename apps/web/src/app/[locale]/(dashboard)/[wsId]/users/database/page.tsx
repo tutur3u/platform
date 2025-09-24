@@ -56,7 +56,6 @@ export default async function WorkspaceUsersPage({
     href: `/${wsId}/users/database/${u.id}`,
   }));
 
-
   return (
     <>
       <FeatureSummary
@@ -167,11 +166,16 @@ async function getData(
       const { data: isGuest } = await supabase.rpc('is_user_guest', {
         user_uuid: u.id,
       });
-      return { ...u, is_guest: Boolean(isGuest) } as WorkspaceUser & { is_guest?: boolean };
+      return { ...u, is_guest: Boolean(isGuest) } as WorkspaceUser & {
+        is_guest?: boolean;
+      };
     })
   );
 
-  return { data: withGuest as unknown as WorkspaceUser[], count: count as number };
+  return {
+    data: withGuest as unknown as WorkspaceUser[],
+    count: count as number,
+  };
 }
 
 async function getUserFields(wsId: string) {

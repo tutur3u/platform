@@ -44,7 +44,6 @@ export default async function WorkspaceUserDetailsPage({
   const workspace = await getWorkspace(id);
   const wsId = workspace.id;
 
-
   const data = await getData({ wsId, userId });
 
   const isGuest = await isUserGuest(userId);
