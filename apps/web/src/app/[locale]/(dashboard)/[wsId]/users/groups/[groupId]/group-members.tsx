@@ -10,6 +10,7 @@ import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
+  DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
 import {
@@ -21,6 +22,7 @@ import {
   User,
   UserCheck,
   VenusAndMars,
+  Ellipsis,
 } from '@tuturuuu/ui/icons';
 import {
   HoverCard,
@@ -28,9 +30,13 @@ import {
   HoverCardTrigger,
 } from '@tuturuuu/ui/hover-card';
 import { useInfiniteQuery } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
 import { useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
+import GroupMemberActions from './group-member-actions';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@tuturuuu/ui/dialog';
+import { toast } from '@tuturuuu/ui/sonner';
 
 interface GroupMember extends WorkspaceUser {
   role?: string | null;
@@ -140,6 +146,9 @@ export default function GroupMembers({
     return { membersOnly, guestsOnly, managersOnly };
   }, [members]);
 
+  const memberIds = useMemo(() => new Set([...membersOnly, ...guestsOnly].map((m) => m.id)), [membersOnly, guestsOnly]);
+  const managerIds = useMemo(() => new Set(managersOnly.map((m) => m.id)), [managersOnly]);
+
   const [filters, setFilters] = useState({
     members: true,
     guests: true,
@@ -165,6 +174,33 @@ export default function GroupMembers({
       );
     });
   }, [members, filters, allSelected, noneSelected]);
+
+  const [removeTarget, setRemoveTarget] = useState<GroupMember | null>(null);
+  const [removing, setRemoving] = useState(false);
+
+  const queryClient = useQueryClient();
+
+  const onConfirmRemove = async () => {
+    if (!removeTarget) return;
+    try {
+      setRemoving(true);
+      const supabase = createClient();
+      const { error } = await supabase
+        .from('workspace_user_groups_users')
+        .delete()
+        .eq('group_id', groupId)
+        .eq('user_id', removeTarget.id);
+      if (error) throw error;
+      toast.success(t('common.removed'));
+      setRemoveTarget(null);
+      await queryClient.invalidateQueries({ queryKey: ['group-members', wsId, groupId] });
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : 'Unknown error';
+      toast.error(`${t('common.error')} ${msg}`);
+    } finally {
+      setRemoving(false);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -198,48 +234,51 @@ export default function GroupMembers({
     <div className="flex flex-col rounded-lg border border-border bg-foreground/5 p-4">
       <div className="mb-4 flex items-center justify-between">
         <div className="font-semibold text-xl">{t('ws-roles.members')}</div>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline">
-              <Filter className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuCheckboxItem
-              checked={allSelected}
-              onCheckedChange={(checked) => {
-                const value = Boolean(checked);
-                setFilters({ members: value, guests: value, managers: value });
-              }}
-            >
-              {t('common.all')} ({members?.length ?? 0})
-            </DropdownMenuCheckboxItem>
-            <DropdownMenuCheckboxItem
-              checked={filters.members}
-              onCheckedChange={(checked) =>
-                setFilters((prev) => ({ ...prev, members: Boolean(checked) }))
-              }
-            >
-              {t('ws-roles.members')} ({membersOnly.length})
-            </DropdownMenuCheckboxItem>
-            <DropdownMenuCheckboxItem
-              checked={filters.guests}
-              onCheckedChange={(checked) =>
-                setFilters((prev) => ({ ...prev, guests: Boolean(checked) }))
-              }
-            >
-              {t('meet-together.guests')} ({guestsOnly.length})
-            </DropdownMenuCheckboxItem>
-            <DropdownMenuCheckboxItem
-              checked={filters.managers}
-              onCheckedChange={(checked) =>
-                setFilters((prev) => ({ ...prev, managers: Boolean(checked) }))
-              }
-            >
-              {t('ws-user-group-details.managers')} ({managersOnly.length})
-            </DropdownMenuCheckboxItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <div className="flex items-center gap-2">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline">
+                <Filter className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuCheckboxItem
+                checked={allSelected}
+                onCheckedChange={(checked) => {
+                  const value = Boolean(checked);
+                  setFilters({ members: value, guests: value, managers: value });
+                }}
+              >
+                {t('common.all')} ({members?.length ?? 0})
+              </DropdownMenuCheckboxItem>
+              <DropdownMenuCheckboxItem
+                checked={filters.members}
+                onCheckedChange={(checked) =>
+                  setFilters((prev) => ({ ...prev, members: Boolean(checked) }))
+                }
+              >
+                {t('ws-roles.members')} ({membersOnly.length})
+              </DropdownMenuCheckboxItem>
+              <DropdownMenuCheckboxItem
+                checked={filters.guests}
+                onCheckedChange={(checked) =>
+                  setFilters((prev) => ({ ...prev, guests: Boolean(checked) }))
+                }
+              >
+                {t('meet-together.guests')} ({guestsOnly.length})
+              </DropdownMenuCheckboxItem>
+              <DropdownMenuCheckboxItem
+                checked={filters.managers}
+                onCheckedChange={(checked) =>
+                  setFilters((prev) => ({ ...prev, managers: Boolean(checked) }))
+                }
+              >
+                {t('ws-user-group-details.managers')} ({managersOnly.length})
+              </DropdownMenuCheckboxItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          <GroupMemberActions wsId={wsId} groupId={groupId} memberIds={memberIds} managerIds={managerIds} />
+        </div>
       </div>
 
       <div className="space-y-2 grid grid-cols-1 md:grid-cols-2 gap-2">
@@ -311,6 +350,23 @@ export default function GroupMembers({
                                 {t('meet-together.guests')}
                               </Badge>
                             )}
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="icon">
+                                  <Ellipsis className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    setRemoveTarget(person);
+                                  }}
+                                >
+                                  {t('common.remove')}
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
                           </div>
                         </div>
                       </CardContent>
@@ -355,6 +411,26 @@ export default function GroupMembers({
           })
         )}
       </div>
+      <Dialog open={removeTarget !== null} onOpenChange={(open) => !open && setRemoveTarget(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{t('common.confirm')}</DialogTitle>
+            <DialogDescription>
+              {removeTarget?.role === 'TEACHER' && managersOnly.length === 1
+                ? t('ws-user-group-details.confirm_remove_last_manager')
+                : t('ws-user-group-details.confirm_remove_member')}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setRemoveTarget(null)}>
+              {t('common.cancel')}
+            </Button>
+            <Button onClick={onConfirmRemove} disabled={removing}>
+              {removing ? t('common.loading') : t('common.remove')}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
       <div className="mt-3 flex justify-center">
         {hasNextPage && (
           <Button

@@ -179,7 +179,6 @@ async function getData(wsId: string, groupId: string) {
     .eq('ws_id', wsId);
 
   const { data, error } = await queryBuilder.single();
-  console.log(data);
 
   if (error) throw error;
   return { data };

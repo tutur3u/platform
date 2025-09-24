@@ -10,6 +10,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import GroupReportsClient from './client';
+import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
 
 export const metadata: Metadata = {
   title: 'Reports',
@@ -37,7 +38,9 @@ export default async function UserGroupDetailsPage({
 }: Props) {
   const t = await getTranslations();
 
-  const { wsId, groupId } = await params;
+  const { wsId: id, groupId } = await params;
+  const workspace = await getWorkspace(id);
+  const wsId = workspace.id;
   const { reportId, userId } = await searchParams;
   const group = await getData(wsId, groupId);
 

@@ -15,6 +15,7 @@ import { getTranslations } from 'next-intl/server';
 import { CustomDataTable } from '@/components/custom-data-table';
 import UserMonthAttendance from '../../attendance/user-month-attendance';
 import LinkedPromotionsClient from './linked-promotions-client';
+import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
 
 export const metadata: Metadata = {
   title: 'Userid Details',
@@ -39,7 +40,10 @@ export default async function WorkspaceUserDetailsPage({
   searchParams,
 }: Props) {
   const t = await getTranslations('user-data-table');
-  const { wsId, userId } = await params;
+  const { wsId: id, userId } = await params;
+  const workspace = await getWorkspace(id);
+  const wsId = workspace.id;
+
 
   const data = await getData({ wsId, userId });
 
