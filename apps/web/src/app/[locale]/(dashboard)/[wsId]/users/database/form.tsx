@@ -63,12 +63,12 @@ const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB
 const AVATAR_SIZE = 500;
 
 // Helper component for labels with tooltips
-function LabelWithTooltip({ 
-  label, 
-  tooltip 
-}: { 
-  label: string; 
-  tooltip: string; 
+function LabelWithTooltip({
+  label,
+  tooltip,
+}: {
+  label: string;
+  tooltip: string;
 }) {
   return (
     <div className="flex items-center gap-1">
@@ -85,7 +85,14 @@ function LabelWithTooltip({
   );
 }
 
-export default function UserForm({ wsId, data, onFinish, onSuccess, onError, showUserID = true }: Props) {
+export default function UserForm({
+  wsId,
+  data,
+  onFinish,
+  onSuccess,
+  onError,
+  showUserID = true,
+}: Props) {
   const t = useTranslations();
   const router = useRouter();
   const [saving, setSaving] = useState(false);
@@ -118,7 +125,8 @@ export default function UserForm({ wsId, data, onFinish, onSuccess, onError, sho
       address: data?.address || '',
       note: data?.note || '',
       // Initialize from provided data (if present), else undefined so edits don't change unless toggled
-      is_guest: (data as unknown as { is_guest?: boolean })?.is_guest ?? undefined,
+      is_guest:
+        (data as unknown as { is_guest?: boolean })?.is_guest ?? undefined,
     },
   });
 
@@ -293,7 +301,9 @@ export default function UserForm({ wsId, data, onFinish, onSuccess, onError, sho
             const payload: Record<string, unknown> = {
               ...rest,
               avatar_url: avatarUrl,
-              birthday: formData.birthday ? dayjs(formData.birthday).format('YYYY/MM/DD') : null,
+              birthday: formData.birthday
+                ? dayjs(formData.birthday).format('YYYY/MM/DD')
+                : null,
             };
             if (typeof is_guest === 'boolean') {
               payload.is_guest = is_guest;
@@ -321,7 +331,9 @@ export default function UserForm({ wsId, data, onFinish, onSuccess, onError, sho
         }
       } else {
         const resData = await res.json();
-        const errorMessage = resData.message || `Failed to ${formData.id ? 'edit' : 'create'} user`;
+        const errorMessage =
+          resData.message ||
+          `Failed to ${formData.id ? 'edit' : 'create'} user`;
         onError?.(errorMessage);
         if (!onError) {
           toast({
@@ -332,7 +344,8 @@ export default function UserForm({ wsId, data, onFinish, onSuccess, onError, sho
         }
       }
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
       onError?.(errorMessage);
       if (!onError) {
         toast({
@@ -367,337 +380,359 @@ export default function UserForm({ wsId, data, onFinish, onSuccess, onError, sho
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-3">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3 border-b p-1">
-              {/* User ID - Full width when editing */}
-              {data?.id && showUserID && (
-                <div className="col-span-2">
-                  <FormField
-                    control={form.control}
-                    name="id"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>
-                          <LabelWithTooltip 
-                            label={t('ws-users.user_id')} 
-                            tooltip={t('ws-users.user_id_tooltip')}
-                          />
-                        </FormLabel>
-                        <FormControl>
-                          <Input {...field} disabled />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
+            {/* User ID - Full width when editing */}
+            {data?.id && showUserID && (
+              <div className="col-span-2">
+                <FormField
+                  control={form.control}
+                  name="id"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>
+                        <LabelWithTooltip
+                          label={t('ws-users.user_id')}
+                          tooltip={t('ws-users.user_id_tooltip')}
+                        />
+                      </FormLabel>
+                      <FormControl>
+                        <Input {...field} disabled />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+            )}
+
+            {/* Avatar Section - Full width */}
+            <div className="col-span-2 flex items-center gap-2 rounded-md border p-4">
+              <Avatar>
+                <AvatarImage src={previewSrc || data?.avatar_url || ''} />
+                <AvatarFallback className="font-semibold">
+                  {name ? getInitials(name) : <UserIcon className="h-5 w-5" />}
+                </AvatarFallback>
+              </Avatar>
+
+              <div>
+                <Button variant="ghost" type="button" className="mt-2">
+                  <label htmlFor="file-upload" className="cursor-pointer">
+                    {previewSrc
+                      ? t('settings-account.new_avatar')
+                      : t('settings-account.upload_avatar')}
+                  </label>
+                </Button>
+                <input
+                  id="file-upload"
+                  type="file"
+                  accept="image/png,image/jpeg,image/jpg,image/webp"
+                  onChange={(e) => {
+                    if (e.target.files?.[0]) {
+                      handleFileSelect(e.target.files[0]);
+                    }
+                  }}
+                  className="hidden"
+                />
+                {previewSrc && (
+                  <Button variant="destructive" onClick={removeAvatar}>
+                    {saving ? (
+                      <Loader2 className="h-5 w-5 animate-spin" />
+                    ) : (
+                      t('settings-account.remove_avatar')
                     )}
-                  />
-                </div>
-              )}
-
-              {/* Avatar Section - Full width */}
-              <div className="col-span-2 flex items-center gap-2 rounded-md border p-4">
-                <Avatar>
-                  <AvatarImage src={previewSrc || data?.avatar_url || ''} />
-                  <AvatarFallback className="font-semibold">
-                    {name ? getInitials(name) : <UserIcon className="h-5 w-5" />}
-                  </AvatarFallback>
-                </Avatar>
-
-                <div>
-                  <Button variant="ghost" type="button" className="mt-2">
-                    <label htmlFor="file-upload" className="cursor-pointer">
-                      {previewSrc
-                        ? t('settings-account.new_avatar')
-                        : t('settings-account.upload_avatar')}
-                    </label>
                   </Button>
-                  <input
-                    id="file-upload"
-                    type="file"
-                    accept="image/png,image/jpeg,image/jpg,image/webp"
-                    onChange={(e) => {
-                      if (e.target.files?.[0]) {
-                        handleFileSelect(e.target.files[0]);
-                      }
-                    }}
-                    className="hidden"
-                  />
-                  {previewSrc && (
-                    <Button variant="destructive" onClick={removeAvatar}>
-                      {saving ? (
-                        <Loader2 className="h-5 w-5 animate-spin" />
-                      ) : (
-                        t('settings-account.remove_avatar')
-                      )}
-                    </Button>
-                  )}
-                </div>
-              </div>
-
-              {/* Name Fields - 2 columns */}
-              <FormField
-                control={form.control}
-                name="full_name"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>
-                      <LabelWithTooltip 
-                        label={t('ws-users.full_name')} 
-                        tooltip={t('ws-users.full_name_tooltip')}
-                      />
-                    </FormLabel>
-                    <FormControl>
-                      <Input placeholder={t('ws-users.placeholder.name')} {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
                 )}
-              />
-
-              <FormField
-                control={form.control}
-                name="display_name"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>
-                      <LabelWithTooltip 
-                        label={t('ws-users.display_name')} 
-                        tooltip={t('ws-users.display_name_tooltip')}
-                      />
-                    </FormLabel>
-                    <FormControl>
-                      <Input placeholder={t('ws-users.placeholder.name')} {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              {/* Contact Fields - 2 columns */}
-              <FormField
-                control={form.control}
-                name="email"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>
-                      <LabelWithTooltip 
-                        label={t('ws-users.email')} 
-                        tooltip={t('ws-users.email_tooltip')}
-                      />
-                    </FormLabel>
-                    <FormControl>
-                      <Input placeholder="example@tuturuuu.com" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="phone"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>
-                      <LabelWithTooltip 
-                        label={t('ws-users.phone')} 
-                        tooltip={t('ws-users.phone_tooltip')}
-                      />
-                    </FormLabel>
-                    <FormControl>
-                      <Input placeholder={t('ws-users.placeholder.phone')} {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              {/* Personal Info - 2 columns */}
-              <FormField
-                control={form.control}
-                name="gender"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>
-                      <LabelWithTooltip 
-                        label={t('ws-users.gender')} 
-                        tooltip={t('ws-users.gender_tooltip')}
-                      />
-                    </FormLabel>
-                    <FormControl>
-                      <SelectField
-                        id="gender"
-                        placeholder={t('ws-users.gender_placeholder')}
-                        defaultValue={field.value}
-                        onValueChange={field.onChange}
-                        options={[
-                          { value: 'MALE', label: t('ws-users.gender_options.male') },
-                          { value: 'FEMALE', label: t('ws-users.gender_options.female') },
-                          { value: 'OTHER', label: t('ws-users.gender_options.other') },
-                        ]}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="birthday"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>
-                      <LabelWithTooltip 
-                        label={t('ws-users.birthday')} 
-                        tooltip={t('ws-users.birthday_tooltip')}
-                      />
-                    </FormLabel>
-                    <FormControl>
-                      <DatePicker
-                        defaultValue={
-                          field.value ? dayjs(field.value).toDate() : undefined
-                        }
-                        onValueChange={field.onChange}
-                        className="w-full"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              {/* Additional Info - 2 columns */}
-              <FormField
-                control={form.control}
-                name="national_id"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>
-                      <LabelWithTooltip 
-                        label={t('ws-users.national_id')} 
-                        tooltip={t('ws-users.national_id_tooltip')}
-                      />
-                    </FormLabel>
-                    <FormControl>
-                      <Input placeholder={t('common.empty')} {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="ethnicity"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>
-                      <LabelWithTooltip 
-                        label={t('ws-users.ethnicity')} 
-                        tooltip={t('ws-users.ethnicity_tooltip')}
-                      />
-                    </FormLabel>
-                    <FormControl>
-                      <Input placeholder={t('common.empty')} {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="guardian"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>
-                      <LabelWithTooltip 
-                        label={t('ws-users.guardian')} 
-                        tooltip={t('ws-users.guardian_tooltip')}
-                      />
-                    </FormLabel>
-                    <FormControl>
-                      <Input placeholder={t('common.empty')} {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="address"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>
-                      <LabelWithTooltip 
-                        label={t('ws-users.address')} 
-                        tooltip={t('ws-users.address_tooltip')}
-                      />
-                    </FormLabel>
-                    <FormControl>
-                      <Input placeholder={t('common.empty')} {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              {/* Notes - Full width */}
-              <div className="col-span-2">
-                <FormField
-                  control={form.control}
-                  name="note"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>
-                        <LabelWithTooltip 
-                          label={t('ws-users.note')} 
-                          tooltip={t('ws-users.note_tooltip')}
-                        />
-                      </FormLabel>
-                      <FormControl>
-                        <Input placeholder={t('common.empty')} {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-
-              {/* Guest User - Full width */}
-              <div className="col-span-2">
-                <FormField
-                  control={form.control}
-                  name="is_guest"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>
-                        <LabelWithTooltip 
-                          label="Guest user" 
-                          tooltip="If enabled, the user will be linked to the workspace's guest group."
-                        />
-                      </FormLabel>
-                      <FormControl>
-                        <div className="flex items-center gap-2">
-                          <Switch
-                            checked={!!field.value}
-                            onCheckedChange={field.onChange}
-                          />
-                          <span className="text-sm text-muted-foreground">{t('ws-users.mark_as_guest')}</span>
-                        </div>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
               </div>
             </div>
+
+            {/* Name Fields - 2 columns */}
+            <FormField
+              control={form.control}
+              name="full_name"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>
+                    <LabelWithTooltip
+                      label={t('ws-users.full_name')}
+                      tooltip={t('ws-users.full_name_tooltip')}
+                    />
+                  </FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder={t('ws-users.placeholder.name')}
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="display_name"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>
+                    <LabelWithTooltip
+                      label={t('ws-users.display_name')}
+                      tooltip={t('ws-users.display_name_tooltip')}
+                    />
+                  </FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder={t('ws-users.placeholder.name')}
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {/* Contact Fields - 2 columns */}
+            <FormField
+              control={form.control}
+              name="email"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>
+                    <LabelWithTooltip
+                      label={t('ws-users.email')}
+                      tooltip={t('ws-users.email_tooltip')}
+                    />
+                  </FormLabel>
+                  <FormControl>
+                    <Input placeholder="example@tuturuuu.com" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="phone"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>
+                    <LabelWithTooltip
+                      label={t('ws-users.phone')}
+                      tooltip={t('ws-users.phone_tooltip')}
+                    />
+                  </FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder={t('ws-users.placeholder.phone')}
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {/* Personal Info - 2 columns */}
+            <FormField
+              control={form.control}
+              name="gender"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>
+                    <LabelWithTooltip
+                      label={t('ws-users.gender')}
+                      tooltip={t('ws-users.gender_tooltip')}
+                    />
+                  </FormLabel>
+                  <FormControl>
+                    <SelectField
+                      id="gender"
+                      placeholder={t('ws-users.gender_placeholder')}
+                      defaultValue={field.value}
+                      onValueChange={field.onChange}
+                      options={[
+                        {
+                          value: 'MALE',
+                          label: t('ws-users.gender_options.male'),
+                        },
+                        {
+                          value: 'FEMALE',
+                          label: t('ws-users.gender_options.female'),
+                        },
+                        {
+                          value: 'OTHER',
+                          label: t('ws-users.gender_options.other'),
+                        },
+                      ]}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="birthday"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>
+                    <LabelWithTooltip
+                      label={t('ws-users.birthday')}
+                      tooltip={t('ws-users.birthday_tooltip')}
+                    />
+                  </FormLabel>
+                  <FormControl>
+                    <DatePicker
+                      defaultValue={
+                        field.value ? dayjs(field.value).toDate() : undefined
+                      }
+                      onValueChange={field.onChange}
+                      className="w-full"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {/* Additional Info - 2 columns */}
+            <FormField
+              control={form.control}
+              name="national_id"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>
+                    <LabelWithTooltip
+                      label={t('ws-users.national_id')}
+                      tooltip={t('ws-users.national_id_tooltip')}
+                    />
+                  </FormLabel>
+                  <FormControl>
+                    <Input placeholder={t('common.empty')} {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="ethnicity"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>
+                    <LabelWithTooltip
+                      label={t('ws-users.ethnicity')}
+                      tooltip={t('ws-users.ethnicity_tooltip')}
+                    />
+                  </FormLabel>
+                  <FormControl>
+                    <Input placeholder={t('common.empty')} {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="guardian"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>
+                    <LabelWithTooltip
+                      label={t('ws-users.guardian')}
+                      tooltip={t('ws-users.guardian_tooltip')}
+                    />
+                  </FormLabel>
+                  <FormControl>
+                    <Input placeholder={t('common.empty')} {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="address"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>
+                    <LabelWithTooltip
+                      label={t('ws-users.address')}
+                      tooltip={t('ws-users.address_tooltip')}
+                    />
+                  </FormLabel>
+                  <FormControl>
+                    <Input placeholder={t('common.empty')} {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {/* Notes - Full width */}
+            <div className="col-span-2">
+              <FormField
+                control={form.control}
+                name="note"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>
+                      <LabelWithTooltip
+                        label={t('ws-users.note')}
+                        tooltip={t('ws-users.note_tooltip')}
+                      />
+                    </FormLabel>
+                    <FormControl>
+                      <Input placeholder={t('common.empty')} {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            {/* Guest User - Full width */}
+            <div className="col-span-2">
+              <FormField
+                control={form.control}
+                name="is_guest"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>
+                      <LabelWithTooltip
+                        label="Guest user"
+                        tooltip="If enabled, the user will be linked to the workspace's guest group."
+                      />
+                    </FormLabel>
+                    <FormControl>
+                      <div className="flex items-center gap-2">
+                        <Switch
+                          checked={!!field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                        <span className="text-sm text-muted-foreground">
+                          {t('ws-users.mark_as_guest')}
+                        </span>
+                      </div>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+          </div>
 
           <div className="flex justify-center gap-2">
             <Button type="submit" className="w-full" disabled={saving}>
               {saving ? (
                 <Loader2 className="h-5 w-5 animate-spin" />
+              ) : data?.id ? (
+                t('common.save')
               ) : (
-                data?.id ? t('common.save') : t('ws-users.create')
+                t('ws-users.create')
               )}
             </Button>
           </div>

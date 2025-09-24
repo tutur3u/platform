@@ -25,7 +25,12 @@ import { ScrollArea } from '@tuturuuu/ui/scroll-area';
 import { Avatar, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Badge } from '@tuturuuu/ui/badge';
 import { ChevronDown, Loader2, Search, X, UserPlus } from '@tuturuuu/ui/icons';
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@tuturuuu/ui/accordion';
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from '@tuturuuu/ui/accordion';
 import { toast } from '@tuturuuu/ui/sonner';
 
 interface WorkspaceUserLite {
@@ -45,14 +50,19 @@ export interface GroupMemberActionsProps {
   managerIds: Set<string>;
 }
 
-export default function GroupMemberActions({ wsId, groupId, memberIds, managerIds }: GroupMemberActionsProps) {
+export default function GroupMemberActions({
+  wsId,
+  groupId,
+  memberIds,
+  managerIds,
+}: GroupMemberActionsProps) {
   const t = useTranslations();
   const queryClient = useQueryClient();
 
   const { data: allUsers, isLoading } = useQuery({
     queryKey: ['workspace-users-lite', wsId],
     queryFn: async () => {
-        const supabase = createClient();
+      const supabase = createClient();
       const { data, error } = await supabase
         .from('workspace_users')
         .select('id, display_name, full_name, email, avatar_url')
@@ -74,15 +84,15 @@ export default function GroupMemberActions({ wsId, groupId, memberIds, managerId
     setSelected({});
   };
 
-  
-
   const candidateUsers: WorkspaceUserLite[] = useMemo(() => {
     if (!allUsers) return [];
     let pool: WorkspaceUserLite[] = allUsers;
     switch (activeAction) {
       case 'add_members':
         // Show users not already members (members include guests) and not managers
-        pool = allUsers.filter((u) => !memberIds.has(u.id) && !managerIds.has(u.id));
+        pool = allUsers.filter(
+          (u) => !memberIds.has(u.id) && !managerIds.has(u.id)
+        );
         break;
       case 'add_managers':
         // Show users not already managers
@@ -94,9 +104,10 @@ export default function GroupMemberActions({ wsId, groupId, memberIds, managerId
     const bySearch = (() => {
       if (!search) return pool;
       const q = search.toLowerCase();
-      return pool.filter((u) =>
-        (u.display_name || u.full_name || '').toLowerCase().includes(q) ||
-        (u.email || '').toLowerCase().includes(q)
+      return pool.filter(
+        (u) =>
+          (u.display_name || u.full_name || '').toLowerCase().includes(q) ||
+          (u.email || '').toLowerCase().includes(q)
       );
     })();
 
@@ -109,7 +120,10 @@ export default function GroupMemberActions({ wsId, groupId, memberIds, managerId
     setSelected((prev) => ({ ...prev, [id]: !prev[id] }));
   };
 
-  const selectedIds = useMemo(() => Object.keys(selected).filter((k) => selected[k]), [selected]);
+  const selectedIds = useMemo(
+    () => Object.keys(selected).filter((k) => selected[k]),
+    [selected]
+  );
 
   const selectedUsers = useMemo(() => {
     if (!allUsers) return [] as WorkspaceUserLite[];
@@ -129,7 +143,11 @@ export default function GroupMemberActions({ wsId, groupId, memberIds, managerId
         const { error } = await supabase
           .from('workspace_user_groups_users')
           .insert(
-            selectedIds.map((userId) => ({ user_id: userId, group_id: groupId , role: 'STUDENT'}))
+            selectedIds.map((userId) => ({
+              user_id: userId,
+              group_id: groupId,
+              role: 'STUDENT',
+            }))
           );
         if (error) throw error;
         toast.success(t('ws-user-group-details.members_added'));
@@ -141,13 +159,19 @@ export default function GroupMemberActions({ wsId, groupId, memberIds, managerId
         const { error } = await supabase
           .from('workspace_user_groups_users')
           .upsert(
-            selectedIds.map((userId) => ({ user_id: userId, group_id: groupId, role: 'TEACHER' })),
+            selectedIds.map((userId) => ({
+              user_id: userId,
+              group_id: groupId,
+              role: 'TEACHER',
+            })),
             { onConflict: 'group_id,user_id' }
           );
         if (error) throw error;
         toast.success(t('ws-user-group-details.managers_added'));
       }
-      await queryClient.invalidateQueries({ queryKey: ['group-members', wsId, groupId] });
+      await queryClient.invalidateQueries({
+        queryKey: ['group-members', wsId, groupId],
+      });
       closeDialog();
     } catch (e) {
       const msg = e instanceof Error ? e.message : 'Unknown error';
@@ -169,7 +193,7 @@ export default function GroupMemberActions({ wsId, groupId, memberIds, managerId
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant="outline" className="flex items-center gap-2">
-          <UserPlus className="h-4 w-4" />  
+            <UserPlus className="h-4 w-4" />
             <span>{t('common.manage')}</span>
             <ChevronDown className="h-4 w-4" />
           </Button>
@@ -181,7 +205,8 @@ export default function GroupMemberActions({ wsId, groupId, memberIds, managerId
               if (allUsers) {
                 const initial: Record<string, boolean> = {};
                 allUsers.forEach((u) => {
-                  if (!memberIds.has(u.id) && !managerIds.has(u.id)) initial[u.id] = false;
+                  if (!memberIds.has(u.id) && !managerIds.has(u.id))
+                    initial[u.id] = false;
                 });
                 setSelected(initial);
               }
@@ -206,11 +231,20 @@ export default function GroupMemberActions({ wsId, groupId, memberIds, managerId
         </DropdownMenuContent>
       </DropdownMenu>
 
-      <Dialog open={activeAction !== null} onOpenChange={(open) => !open && closeDialog()}>
+      <Dialog
+        open={activeAction !== null}
+        onOpenChange={(open) => !open && closeDialog()}
+      >
         <DialogContent className="max-w-lg">
           <DialogHeader>
-            <DialogTitle>{activeAction ? actionLabel(activeAction) : ''}</DialogTitle>
-            <DialogDescription>{t('ws-user-group-details.select_and_submit', { groupActionLabel: activeAction ? actionLabel(activeAction) : '' })}</DialogDescription>
+            <DialogTitle>
+              {activeAction ? actionLabel(activeAction) : ''}
+            </DialogTitle>
+            <DialogDescription>
+              {t('ws-user-group-details.select_and_submit', {
+                groupActionLabel: activeAction ? actionLabel(activeAction) : '',
+              })}
+            </DialogDescription>
           </DialogHeader>
 
           <Accordion type="single" collapsible className="mb-2">
@@ -220,13 +254,19 @@ export default function GroupMemberActions({ wsId, groupId, memberIds, managerId
               </AccordionTrigger>
               <AccordionContent>
                 {selectedUsers.length === 0 ? (
-                  <div className="text-sm text-muted-foreground">{t('ws-user-group-details.no_users_selected')}</div>
+                  <div className="text-sm text-muted-foreground">
+                    {t('ws-user-group-details.no_users_selected')}
+                  </div>
                 ) : (
                   <div className="grid grid-cols-2 gap-2">
                     {selectedUsers.map((u) => {
-                      const name = u.display_name || u.full_name || u.email || '—';
+                      const name =
+                        u.display_name || u.full_name || u.email || '—';
                       return (
-                        <div key={u.id} className="flex items-center justify-between rounded-md border px-2 py-2">
+                        <div
+                          key={u.id}
+                          className="flex items-center justify-between rounded-md border px-2 py-2"
+                        >
                           <div className="flex min-w-0 items-center gap-2">
                             {u.avatar_url ? (
                               <Avatar className="h-6 w-6">
@@ -241,7 +281,12 @@ export default function GroupMemberActions({ wsId, groupId, memberIds, managerId
                             size="icon"
                             variant="ghost"
                             className="h-6 w-6"
-                            onClick={() => setSelected((prev) => ({ ...prev, [u.id]: false }))}
+                            onClick={() =>
+                              setSelected((prev) => ({
+                                ...prev,
+                                [u.id]: false,
+                              }))
+                            }
                             aria-label={`Remove ${name}`}
                           >
                             <X className="h-3 w-3" />
@@ -273,10 +318,13 @@ export default function GroupMemberActions({ wsId, groupId, memberIds, managerId
               <ScrollArea className="h-72">
                 <div className="p-2 space-y-2">
                   {candidateUsers.length === 0 ? (
-                    <div className="text-center py-6 text-muted-foreground">{t('common.no-results')}</div>
+                    <div className="text-center py-6 text-muted-foreground">
+                      {t('common.no-results')}
+                    </div>
                   ) : (
                     candidateUsers.map((u) => {
-                      const name = u.display_name || u.full_name || u.email || '—';
+                      const name =
+                        u.display_name || u.full_name || u.email || '—';
                       const inMembers = memberIds.has(u.id);
                       const inManagers = managerIds.has(u.id);
                       return (
@@ -303,12 +351,19 @@ export default function GroupMemberActions({ wsId, groupId, memberIds, managerId
                             )}
                             <div className="flex items-center gap-2">
                               <div className="font-medium text-sm">{name}</div>
-                      {inManagers && (
-                        <Badge className="bg-dynamic-green/10 text-dynamic-green border-dynamic-green/20">{t('ws-user-group-details.manager')}</Badge>
-                      )}
-                      {inMembers && !inManagers && (
-                        <Badge variant="secondary" className="bg-dynamic-blue/10 text-dynamic-blue border-dynamic-blue/20">{t('ws-user-group-details.member')}</Badge>
-                      )}
+                              {inManagers && (
+                                <Badge className="bg-dynamic-green/10 text-dynamic-green border-dynamic-green/20">
+                                  {t('ws-user-group-details.manager')}
+                                </Badge>
+                              )}
+                              {inMembers && !inManagers && (
+                                <Badge
+                                  variant="secondary"
+                                  className="bg-dynamic-blue/10 text-dynamic-blue border-dynamic-blue/20"
+                                >
+                                  {t('ws-user-group-details.member')}
+                                </Badge>
+                              )}
                             </div>
                           </div>
                           <Checkbox
@@ -327,7 +382,9 @@ export default function GroupMemberActions({ wsId, groupId, memberIds, managerId
           </div>
 
           <DialogFooter>
-            <Button variant="outline" onClick={closeDialog}>{t('common.cancel')}</Button>
+            <Button variant="outline" onClick={closeDialog}>
+              {t('common.cancel')}
+            </Button>
             <Button onClick={onSubmit}>{t('common.submit')}</Button>
           </DialogFooter>
         </DialogContent>
@@ -335,5 +392,3 @@ export default function GroupMemberActions({ wsId, groupId, memberIds, managerId
     </>
   );
 }
-
-

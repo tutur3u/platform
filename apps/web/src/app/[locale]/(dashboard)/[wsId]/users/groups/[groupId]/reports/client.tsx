@@ -86,8 +86,6 @@ export default function GroupReportsClient({
     },
   });
 
-
-
   const userOptions: ComboboxOptions[] = useMemo(
     () =>
       usersQuery.data?.map((u) => ({
@@ -175,7 +173,10 @@ export default function GroupReportsClient({
     },
   });
 
-  const reportDetail = reportDetailQuery.data as ReportWithNames | null | undefined;
+  const reportDetail = reportDetailQuery.data as
+    | ReportWithNames
+    | null
+    | undefined;
 
   const groupQuery = useQuery({
     queryKey: ['ws', wsId, 'group', groupId, 'meta'],
@@ -197,7 +198,9 @@ export default function GroupReportsClient({
   // Query to fetch all group managers (teachers)
   const groupManagersQuery = useQuery({
     queryKey: ['ws', wsId, 'group', groupId, 'managers'],
-    queryFn: async (): Promise<Array<{ id: string; full_name: string | null }>> => {
+    queryFn: async (): Promise<
+      Array<{ id: string; full_name: string | null }>
+    > => {
       const { data, error } = await supabase
         .from('workspace_user_groups_users')
         .select('user:workspace_users!inner(id, full_name, ws_id)')
@@ -211,7 +214,8 @@ export default function GroupReportsClient({
         const u = row?.user;
         if (Array.isArray(u)) {
           const first = u[0];
-          if (first) managers.push({ id: first.id, full_name: first.full_name ?? null });
+          if (first)
+            managers.push({ id: first.id, full_name: first.full_name ?? null });
         } else if (u) {
           managers.push({ id: u.id, full_name: u.full_name ?? null });
         }
@@ -221,7 +225,9 @@ export default function GroupReportsClient({
   });
 
   // Local state to allow overriding displayed group manager for export/preview only
-  const [selectedManagerName, setSelectedManagerName] = useState<string | undefined>(undefined);
+  const [selectedManagerName, setSelectedManagerName] = useState<
+    string | undefined
+  >(undefined);
 
   // Initialize/reset selected manager based on available managers and current report
   useEffect(() => {
@@ -236,7 +242,8 @@ export default function GroupReportsClient({
     const existing = reportDetail?.creator_name;
     if (existing && names.includes(existing)) setSelectedManagerName(existing);
     else if (reportId === 'new') setSelectedManagerName(names[0]);
-    else if (selectedManagerName === undefined) setSelectedManagerName(names[0]);
+    else if (selectedManagerName === undefined)
+      setSelectedManagerName(names[0]);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [groupManagersQuery.data, reportDetail?.creator_name, reportId]);
 
@@ -314,61 +321,67 @@ export default function GroupReportsClient({
     },
   });
 
-  const selectedReport: ReportWithNames | Partial<ReportWithNames> | undefined = useMemo(() => {
-    if (reportId === 'new' && userId) {
-      // Calculate scores and average from healthcare vitals
-      const vitals = healthcareVitalsQuery.data ?? [];
+  const selectedReport: ReportWithNames | Partial<ReportWithNames> | undefined =
+    useMemo(() => {
+      if (reportId === 'new' && userId) {
+        // Calculate scores and average from healthcare vitals
+        const vitals = healthcareVitalsQuery.data ?? [];
 
-      const scores = vitals
-        .filter((vital) => vital.value !== null && vital.value !== undefined)
-        .map((vital) => {
-          const baseValue = vital.value ?? 0;
-          // Apply factor only if feature flag is enabled
-          return ENABLE_FACTOR_CALCULATION
-            ? baseValue * (vital.factor ?? 1)
-            : baseValue;
-        });
+        const scores = vitals
+          .filter((vital) => vital.value !== null && vital.value !== undefined)
+          .map((vital) => {
+            const baseValue = vital.value ?? 0;
+            // Apply factor only if feature flag is enabled
+            return ENABLE_FACTOR_CALCULATION
+              ? baseValue * (vital.factor ?? 1)
+              : baseValue;
+          });
 
-      const averageScore =
-        scores.length > 0
-          ? scores.reduce((sum, score) => sum + score, 0) / scores.length
-          : null;
+        const averageScore =
+          scores.length > 0
+            ? scores.reduce((sum, score) => sum + score, 0) / scores.length
+            : null;
 
-      const userFullName =
-        usersQuery.data?.find((u) => u.id === userId)?.full_name ?? undefined;
+        const userFullName =
+          usersQuery.data?.find((u) => u.id === userId)?.full_name ?? undefined;
 
-      return {
-        user_id: userId,
-        group_id: groupId,
-        group_name: groupQuery.data?.name ?? groupNameFallback,
-        user_name: userFullName,
-        // creator_name will be overridden below via selectedManagerName when passed to preview
-        created_at: new Date().toISOString(),
-        scores: scores.length > 0 ? scores : [],
-        score: averageScore,
-      } as Partial<ReportWithNames>;
-    }
-    // Only use cached detail data when a valid reportId is present
-    if (reportId && reportDetailQuery.data) return reportDetailQuery.data;
-    return undefined;
-  }, [
-    reportId,
-    userId,
-    groupId,
-    groupQuery.data,
-    groupNameFallback,
-    reportDetailQuery.data,
-    healthcareVitalsQuery.data,
-  ]);
+        return {
+          user_id: userId,
+          group_id: groupId,
+          group_name: groupQuery.data?.name ?? groupNameFallback,
+          user_name: userFullName,
+          // creator_name will be overridden below via selectedManagerName when passed to preview
+          created_at: new Date().toISOString(),
+          scores: scores.length > 0 ? scores : [],
+          score: averageScore,
+        } as Partial<ReportWithNames>;
+      }
+      // Only use cached detail data when a valid reportId is present
+      if (reportId && reportDetailQuery.data) return reportDetailQuery.data;
+      return undefined;
+    }, [
+      reportId,
+      userId,
+      groupId,
+      groupQuery.data,
+      groupNameFallback,
+      reportDetailQuery.data,
+      healthcareVitalsQuery.data,
+    ]);
 
   // Compute effective creator (group manager) name for preview/export only
-  const selectedReportCreatorName = (selectedReport as Partial<ReportWithNames> | undefined)?.creator_name;
+  const selectedReportCreatorName = (
+    selectedReport as Partial<ReportWithNames> | undefined
+  )?.creator_name;
   const effectiveCreatorName = selectedManagerName ?? selectedReportCreatorName;
 
   const managerOptions: ComboboxOptions[] = useMemo(
     () =>
       (groupManagersQuery.data ?? [])
-        .map((m) => ({ value: m.full_name || '', label: m.full_name || 'No name' }))
+        .map((m) => ({
+          value: m.full_name || '',
+          label: m.full_name || 'No name',
+        }))
         .filter((o) => Boolean(o.value)),
     [groupManagersQuery.data]
   );
