@@ -121,10 +121,18 @@ export async function POST(req: Request, { params }: Params) {
   const data = await req.json();
   const { wsId } = await params;
 
-  const { error } = await supabase.from('workspace_users').insert({
-    ...data,
-    ws_id: wsId,
-  });
+  // Separate control flag from user payload
+  const { is_guest, ...userPayload } = data ?? {};
+
+  // Create user and get the new id
+  const { data: createdUser, error } = await supabase
+    .from('workspace_users')
+    .insert({
+      ...userPayload,
+      ws_id: wsId,
+    })
+    .select('id')
+    .single();
 
   if (error) {
     console.log(error);
@@ -134,5 +142,33 @@ export async function POST(req: Request, { params }: Params) {
     );
   }
 
-  return NextResponse.json({ message: 'success' });
+  // If marked as guest, attach the user to the workspace's guest group
+  let warning: string | undefined;
+  if (is_guest && createdUser?.id) {
+    const { data: guestGroup, error: groupError } = await supabase
+      .from('workspace_user_groups')
+      .select('id')
+      .eq('ws_id', wsId)
+      .eq('is_guest', true)
+      .maybeSingle();
+
+    if (!groupError && guestGroup?.id) {
+      // Insert relation; ignore error if already exists
+      const { error: linkError } = await supabase
+        .from('workspace_user_groups_users')
+        .insert({
+          group_id: guestGroup.id,
+          user_id: createdUser.id,
+        });
+
+      if (linkError) {
+        console.log(linkError);
+        warning = 'User created, but failed to link to guest group.';
+      }
+    } else {
+      warning = 'User created, but no guest group found in this workspace.';
+    }
+  }
+
+  return NextResponse.json({ message: 'success', warning });
 }

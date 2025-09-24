@@ -8,7 +8,6 @@ import { SelectField } from '@tuturuuu/ui/custom/select-field';
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -16,11 +15,10 @@ import {
 } from '@tuturuuu/ui/form';
 import { useForm } from '@tuturuuu/ui/hooks/use-form';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
-import { Loader2, UserIcon } from '@tuturuuu/ui/icons';
+import { Info, Loader2, UserIcon } from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
 import { zodResolver } from '@tuturuuu/ui/resolvers';
-import { ScrollArea } from '@tuturuuu/ui/scroll-area';
-import { Separator } from '@tuturuuu/ui/separator';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { getInitials } from '@tuturuuu/utils/name-helper';
 import { generateRandomUUID } from '@tuturuuu/utils/uuid-helper';
 import dayjs from 'dayjs';
@@ -30,12 +28,18 @@ import { useState } from 'react';
 import * as z from 'zod';
 import { ImageCropper } from '@/components/image-cropper';
 import { DatePicker } from '@/components/row-actions/users/date-picker';
+import { Switch } from '@tuturuuu/ui/switch';
 
 interface Props {
   wsId: string;
   data?: WorkspaceUser;
   // eslint-disable-next-line no-unused-vars
   onFinish?: (data: z.infer<typeof FormSchema>) => void;
+  // eslint-disable-next-line no-unused-vars
+  onSuccess?: () => void;
+  // eslint-disable-next-line no-unused-vars
+  onError?: (error: string) => void;
+  showUserID?: boolean;
 }
 
 const FormSchema = z.object({
@@ -52,12 +56,36 @@ const FormSchema = z.object({
   national_id: z.string().optional(),
   address: z.string().optional(),
   note: z.string().optional(),
+  is_guest: z.boolean().optional(),
 });
 
 const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB
 const AVATAR_SIZE = 500;
 
-export default function UserForm({ wsId, data, onFinish }: Props) {
+// Helper component for labels with tooltips
+function LabelWithTooltip({ 
+  label, 
+  tooltip 
+}: { 
+  label: string; 
+  tooltip: string; 
+}) {
+  return (
+    <div className="flex items-center gap-1">
+      <span>{label}</span>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Info className="h-3 w-3 text-muted-foreground cursor-help" />
+        </TooltipTrigger>
+        <TooltipContent>
+          <p>{tooltip}</p>
+        </TooltipContent>
+      </Tooltip>
+    </div>
+  );
+}
+
+export default function UserForm({ wsId, data, onFinish, onSuccess, onError, showUserID = true }: Props) {
   const t = useTranslations();
   const router = useRouter();
   const [saving, setSaving] = useState(false);
@@ -89,6 +117,8 @@ export default function UserForm({ wsId, data, onFinish }: Props) {
       national_id: data?.national_id || '',
       address: data?.address || '',
       note: data?.note || '',
+      // Initialize from provided data (if present), else undefined so edits don't change unless toggled
+      is_guest: (data as unknown as { is_guest?: boolean })?.is_guest ?? undefined,
     },
   });
 
@@ -255,30 +285,62 @@ export default function UserForm({ wsId, data, onFinish }: Props) {
           : `/api/v1/workspaces/${wsId}/users`,
         {
           method: formData.id ? 'PUT' : 'POST',
-          body: JSON.stringify({
-            ...formData,
-            avatar_url: avatarUrl,
-            birthday: dayjs(formData.birthday).format('YYYY/MM/DD'),
-          }),
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: (() => {
+            const { is_guest, ...rest } = formData as any;
+            const payload: Record<string, unknown> = {
+              ...rest,
+              avatar_url: avatarUrl,
+              birthday: formData.birthday ? dayjs(formData.birthday).format('YYYY/MM/DD') : null,
+            };
+            if (typeof is_guest === 'boolean') {
+              payload.is_guest = is_guest;
+            }
+            return JSON.stringify(payload);
+          })(),
         }
       );
 
       if (res.ok) {
+        // Surface any server-side warnings (e.g., failed guest linking)
+        try {
+          const body = await res.json();
+          if (body?.warning) {
+            toast({
+              title: 'Warning',
+              description: String(body.warning),
+            });
+          }
+        } catch {}
         onFinish?.(formData);
-        router.refresh();
+        onSuccess?.();
+        if (!onSuccess) {
+          router.refresh();
+        }
       } else {
         const resData = await res.json();
-        toast({
-          title: `Failed to ${formData.id ? 'edit' : 'create'} user`,
-          description: resData.message,
-        });
+        const errorMessage = resData.message || `Failed to ${formData.id ? 'edit' : 'create'} user`;
+        onError?.(errorMessage);
+        if (!onError) {
+          toast({
+            title: `Failed to ${formData.id ? 'edit' : 'create'} user`,
+            description: errorMessage,
+            variant: 'destructive',
+          });
+        }
       }
     } catch (error) {
-      toast({
-        title: `Failed to ${formData.id ? 'edit' : 'create'} user`,
-        description: error instanceof Error ? error.message : String(error),
-        variant: 'destructive',
-      });
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      onError?.(errorMessage);
+      if (!onError) {
+        toast({
+          title: `Failed to ${formData.id ? 'edit' : 'create'} user`,
+          description: errorMessage,
+          variant: 'destructive',
+        });
+      }
     } finally {
       setSaving(false);
     }
@@ -303,258 +365,340 @@ export default function UserForm({ wsId, data, onFinish }: Props) {
       )}
 
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-3">
-          <ScrollArea className="grid h-[50vh] gap-3 border-b">
-            {data?.id && (
-              <>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 border-b p-1">
+              {/* User ID - Full width when editing */}
+              {data?.id && showUserID && (
+                <div className="col-span-2">
+                  <FormField
+                    control={form.control}
+                    name="id"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>
+                          <LabelWithTooltip 
+                            label={t('ws-users.user_id')} 
+                            tooltip={t('ws-users.user_id_tooltip')}
+                          />
+                        </FormLabel>
+                        <FormControl>
+                          <Input {...field} disabled />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              )}
+
+              {/* Avatar Section - Full width */}
+              <div className="col-span-2 flex items-center gap-2 rounded-md border p-4">
+                <Avatar>
+                  <AvatarImage src={previewSrc || data?.avatar_url || ''} />
+                  <AvatarFallback className="font-semibold">
+                    {name ? getInitials(name) : <UserIcon className="h-5 w-5" />}
+                  </AvatarFallback>
+                </Avatar>
+
+                <div>
+                  <Button variant="ghost" type="button" className="mt-2">
+                    <label htmlFor="file-upload" className="cursor-pointer">
+                      {previewSrc
+                        ? t('settings-account.new_avatar')
+                        : t('settings-account.upload_avatar')}
+                    </label>
+                  </Button>
+                  <input
+                    id="file-upload"
+                    type="file"
+                    accept="image/png,image/jpeg,image/jpg,image/webp"
+                    onChange={(e) => {
+                      if (e.target.files?.[0]) {
+                        handleFileSelect(e.target.files[0]);
+                      }
+                    }}
+                    className="hidden"
+                  />
+                  {previewSrc && (
+                    <Button variant="destructive" onClick={removeAvatar}>
+                      {saving ? (
+                        <Loader2 className="h-5 w-5 animate-spin" />
+                      ) : (
+                        t('settings-account.remove_avatar')
+                      )}
+                    </Button>
+                  )}
+                </div>
+              </div>
+
+              {/* Name Fields - 2 columns */}
+              <FormField
+                control={form.control}
+                name="full_name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>
+                      <LabelWithTooltip 
+                        label={t('ws-users.full_name')} 
+                        tooltip={t('ws-users.full_name_tooltip')}
+                      />
+                    </FormLabel>
+                    <FormControl>
+                      <Input placeholder={t('ws-users.placeholder.name')} {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="display_name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>
+                      <LabelWithTooltip 
+                        label={t('ws-users.display_name')} 
+                        tooltip={t('ws-users.display_name_tooltip')}
+                      />
+                    </FormLabel>
+                    <FormControl>
+                      <Input placeholder={t('ws-users.placeholder.name')} {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {/* Contact Fields - 2 columns */}
+              <FormField
+                control={form.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>
+                      <LabelWithTooltip 
+                        label={t('ws-users.email')} 
+                        tooltip={t('ws-users.email_tooltip')}
+                      />
+                    </FormLabel>
+                    <FormControl>
+                      <Input placeholder="example@tuturuuu.com" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="phone"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>
+                      <LabelWithTooltip 
+                        label={t('ws-users.phone')} 
+                        tooltip={t('ws-users.phone_tooltip')}
+                      />
+                    </FormLabel>
+                    <FormControl>
+                      <Input placeholder={t('ws-users.placeholder.phone')} {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {/* Personal Info - 2 columns */}
+              <FormField
+                control={form.control}
+                name="gender"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>
+                      <LabelWithTooltip 
+                        label={t('ws-users.gender')} 
+                        tooltip={t('ws-users.gender_tooltip')}
+                      />
+                    </FormLabel>
+                    <FormControl>
+                      <SelectField
+                        id="gender"
+                        placeholder={t('ws-users.gender_placeholder')}
+                        defaultValue={field.value}
+                        onValueChange={field.onChange}
+                        options={[
+                          { value: 'MALE', label: t('ws-users.gender_options.male') },
+                          { value: 'FEMALE', label: t('ws-users.gender_options.female') },
+                          { value: 'OTHER', label: t('ws-users.gender_options.other') },
+                        ]}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="birthday"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>
+                      <LabelWithTooltip 
+                        label={t('ws-users.birthday')} 
+                        tooltip={t('ws-users.birthday_tooltip')}
+                      />
+                    </FormLabel>
+                    <FormControl>
+                      <DatePicker
+                        defaultValue={
+                          field.value ? dayjs(field.value).toDate() : undefined
+                        }
+                        onValueChange={field.onChange}
+                        className="w-full"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {/* Additional Info - 2 columns */}
+              <FormField
+                control={form.control}
+                name="national_id"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>
+                      <LabelWithTooltip 
+                        label={t('ws-users.national_id')} 
+                        tooltip={t('ws-users.national_id_tooltip')}
+                      />
+                    </FormLabel>
+                    <FormControl>
+                      <Input placeholder={t('common.empty')} {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="ethnicity"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>
+                      <LabelWithTooltip 
+                        label={t('ws-users.ethnicity')} 
+                        tooltip={t('ws-users.ethnicity_tooltip')}
+                      />
+                    </FormLabel>
+                    <FormControl>
+                      <Input placeholder={t('common.empty')} {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="guardian"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>
+                      <LabelWithTooltip 
+                        label={t('ws-users.guardian')} 
+                        tooltip={t('ws-users.guardian_tooltip')}
+                      />
+                    </FormLabel>
+                    <FormControl>
+                      <Input placeholder={t('common.empty')} {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="address"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>
+                      <LabelWithTooltip 
+                        label={t('ws-users.address')} 
+                        tooltip={t('ws-users.address_tooltip')}
+                      />
+                    </FormLabel>
+                    <FormControl>
+                      <Input placeholder={t('common.empty')} {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {/* Notes - Full width */}
+              <div className="col-span-2">
                 <FormField
                   control={form.control}
-                  name="id"
+                  name="note"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>User ID</FormLabel>
+                      <FormLabel>
+                        <LabelWithTooltip 
+                          label={t('ws-users.note')} 
+                          tooltip={t('ws-users.note_tooltip')}
+                        />
+                      </FormLabel>
                       <FormControl>
-                        <Input {...field} disabled />
+                        <Input placeholder={t('common.empty')} {...field} />
                       </FormControl>
                       <FormMessage />
-                      <FormDescription>
-                        The identification number of this user in your
-                        workspace. This is automatically managed by Tuturuuu,
-                        and cannot be changed.
-                      </FormDescription>
                     </FormItem>
                   )}
                 />
-                <Separator />
-              </>
-            )}
+              </div>
 
-            <div className="flex items-center gap-2 rounded-md border p-4">
-              <Avatar>
-                <AvatarImage src={previewSrc || data?.avatar_url || ''} />
-                <AvatarFallback className="font-semibold">
-                  {name ? getInitials(name) : <UserIcon className="h-5 w-5" />}
-                </AvatarFallback>
-              </Avatar>
-
-              <div>
-                <Button variant="ghost" type="button" className="mt-2">
-                  <label htmlFor="file-upload" className="cursor-pointer">
-                    {previewSrc
-                      ? t('settings-account.new_avatar')
-                      : t('settings-account.upload_avatar')}
-                  </label>
-                </Button>
-                <input
-                  id="file-upload"
-                  type="file"
-                  accept="image/png,image/jpeg,image/jpg,image/webp"
-                  onChange={(e) => {
-                    if (e.target.files?.[0]) {
-                      handleFileSelect(e.target.files[0]);
-                    }
-                  }}
-                  className="hidden"
+              {/* Guest User - Full width */}
+              <div className="col-span-2">
+                <FormField
+                  control={form.control}
+                  name="is_guest"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>
+                        <LabelWithTooltip 
+                          label="Guest user" 
+                          tooltip="If enabled, the user will be linked to the workspace's guest group."
+                        />
+                      </FormLabel>
+                      <FormControl>
+                        <div className="flex items-center gap-2">
+                          <Switch
+                            checked={!!field.value}
+                            onCheckedChange={field.onChange}
+                          />
+                          <span className="text-sm text-muted-foreground">{t('ws-users.mark_as_guest')}</span>
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
                 />
-                {previewSrc && (
-                  <Button variant="destructive" onClick={removeAvatar}>
-                    {saving ? (
-                      <Loader2 className="h-5 w-5 animate-spin" />
-                    ) : (
-                      t('settings-account.remove_avatar')
-                    )}
-                  </Button>
-                )}
               </div>
             </div>
 
-            <FormField
-              control={form.control}
-              name="full_name"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Full Name</FormLabel>
-                  <FormControl>
-                    <Input placeholder="John Doe" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                  <FormDescription>The real name of this user.</FormDescription>
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="display_name"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Display Name</FormLabel>
-                  <FormControl>
-                    <Input placeholder="John Doe" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                  <FormDescription>
-                    This name will be displayed everywhere in the current
-                    workspace for this user.
-                  </FormDescription>
-                </FormItem>
-              )}
-            />
-
-            <Separator />
-
-            <FormField
-              control={form.control}
-              name="email"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Email</FormLabel>
-                  <FormControl>
-                    <Input placeholder="example@tuturuuu.com" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="phone"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Phone Number</FormLabel>
-                  <FormControl>
-                    <Input placeholder="+123456789" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <Separator />
-
-            <FormField
-              control={form.control}
-              name="gender"
-              render={({ field }) => (
-                <FormItem className="w-full">
-                  <FormLabel>Gender</FormLabel>
-                  <FormControl>
-                    <SelectField
-                      id="gender"
-                      placeholder="Please select a gender"
-                      defaultValue={field.value}
-                      onValueChange={field.onChange}
-                      options={[
-                        { value: 'MALE', label: 'Male' },
-                        { value: 'FEMALE', label: 'Female' },
-                        { value: 'OTHER', label: 'Other' },
-                      ]}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="birthday"
-              render={({ field }) => (
-                <FormItem className="grid w-full">
-                  <FormLabel>Birthday</FormLabel>
-                  <FormControl>
-                    <DatePicker
-                      defaultValue={
-                        field.value ? dayjs(field.value).toDate() : undefined
-                      }
-                      onValueChange={field.onChange}
-                      className="w-full"
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <Separator />
-
-            <FormField
-              control={form.control}
-              name="national_id"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>National ID</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Empty" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="ethnicity"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Ethnicity</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Empty" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="guardian"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Guardian</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Empty" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="address"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Address</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Empty" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <Separator />
-
-            <FormField
-              control={form.control}
-              name="note"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Notes</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Empty" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </ScrollArea>
-
           <div className="flex justify-center gap-2">
-            <Button type="submit" className="w-full">
-              Save changes
+            <Button type="submit" className="w-full" disabled={saving}>
+              {saving ? (
+                <Loader2 className="h-5 w-5 animate-spin" />
+              ) : (
+                data?.id ? t('common.save') : t('ws-users.create')
+              )}
             </Button>
           </div>
         </form>
