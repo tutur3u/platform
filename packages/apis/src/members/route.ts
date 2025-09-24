@@ -1,4 +1,8 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
+import {
+  PERSONAL_WORKSPACE_SLUG,
+  resolveWorkspaceId,
+} from '@tuturuuu/utils/constants';
 import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import { type NextRequest, NextResponse } from 'next/server';
 
@@ -8,15 +12,20 @@ interface Params {
   }>;
 }
 
+const normalizeWorkspaceId = async (wsId: string) => {
+  if (wsId.toLowerCase() === PERSONAL_WORKSPACE_SLUG) {
+    const workspace = await getWorkspace(wsId);
+    return workspace.id;
+  }
+
+  return resolveWorkspaceId(wsId);
+};
+
 export async function GET(_: NextRequest, { params }: Params) {
   const { wsId: id } = await params;
   const supabase = await createClient();
 
-  let wsId = id;
-  if (wsId.toLowerCase() === 'personal') {
-    const workspace = await getWorkspace(id);
-    wsId = workspace.id;
-  }
+  const wsId = await normalizeWorkspaceId(id);
 
   const { data, error } = await supabase
     .from('workspace_members')
@@ -66,6 +75,7 @@ export async function PUT(req: NextRequest, { params }: Params) {
 
   const supabase = await createClient();
   const { pending, role, role_title } = await req.json();
+  const resolvedWsId = await normalizeWorkspaceId(wsId);
 
   const query = supabase
     .from(
@@ -76,7 +86,7 @@ export async function PUT(req: NextRequest, { params }: Params) {
         : 'workspace_members'
     )
     .update({ role: role, role_title: role_title })
-    .eq('ws_id', wsId);
+    .eq('ws_id', resolvedWsId);
 
   if (userId) query.eq('user_id', userId);
   if (userEmail) query.eq('email', userEmail);
@@ -102,12 +112,13 @@ export async function DELETE(req: NextRequest, { params }: Params) {
   const userEmail = searchParams.get('email');
 
   const supabase = await createClient();
+  const resolvedWsId = await normalizeWorkspaceId(wsId);
 
   const inviteQuery = userId
     ? supabase
         .from('workspace_invites')
         .delete()
-        .eq('ws_id', wsId)
+        .eq('ws_id', resolvedWsId)
         .eq('user_id', userId)
     : { error: undefined };
 
@@ -115,7 +126,7 @@ export async function DELETE(req: NextRequest, { params }: Params) {
     ? supabase
         .from('workspace_email_invites')
         .delete()
-        .eq('ws_id', wsId)
+        .eq('ws_id', resolvedWsId)
         .eq('email', userEmail)
     : { error: undefined };
 
@@ -123,7 +134,7 @@ export async function DELETE(req: NextRequest, { params }: Params) {
     ? supabase
         .from('workspace_members')
         .delete()
-        .eq('ws_id', wsId)
+        .eq('ws_id', resolvedWsId)
         .eq('user_id', userId)
     : { error: undefined };
 
