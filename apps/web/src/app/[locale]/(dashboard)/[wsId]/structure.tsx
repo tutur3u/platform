@@ -320,7 +320,11 @@ export function Structure({
 
       if (link.disabled) return [];
       if (link.disableOnProduction && PROD_MODE) return [];
-      if (link.requireRootMember && !user?.email?.endsWith('@tuturuuu.com'))
+      if (
+        link.requireRootMember &&
+        (!user?.email?.endsWith('@tuturuuu.com') ||
+          !user?.email?.endsWith('@xwf.tuturuuu.com'))
+      )
         return [];
       if (link.requireRootWorkspace && !isRootWorkspace) return [];
       // Do not filter by allowedRoles here; this is handled in `Navigation` where role context exists
