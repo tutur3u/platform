@@ -129,7 +129,7 @@ export default function GroupMemberActions({ wsId, groupId, memberIds, managerId
         const { error } = await supabase
           .from('workspace_user_groups_users')
           .insert(
-            selectedIds.map((userId) => ({ user_id: userId, group_id: groupId , role: 'STUDENT'}))
+            selectedIds.map((userId) => ({ user_id: userId, group_id: groupId, role: 'STUDENT'}))
           );
         if (error) throw error;
         toast.success(t('ws-user-group-details.members_added'));
