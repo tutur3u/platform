@@ -1,4 +1,5 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
+import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import type { UserGroup } from '@tuturuuu/types/primitives/UserGroup';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Separator } from '@tuturuuu/ui/separator';
@@ -34,7 +35,9 @@ export default async function WorkspaceUserGroupsPage({
   searchParams,
 }: Props) {
   const t = await getTranslations();
-  const { wsId } = await params;
+  const { wsId: id } = await params;
+  const workspace = await getWorkspace(id);
+  const wsId = workspace.id;
 
   const { data, count } = await getData(wsId, await searchParams);
 

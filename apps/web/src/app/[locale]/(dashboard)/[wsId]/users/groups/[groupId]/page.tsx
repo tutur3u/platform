@@ -20,6 +20,7 @@ import GroupMembers from './group-members';
 import LinkedProductsClient from './linked-products-client';
 import PostsClient from './posts-client';
 import GroupSchedule from './schedule';
+import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
 
 export const metadata: Metadata = {
   title: 'Group Details',
@@ -48,7 +49,9 @@ export default async function UserGroupDetailsPage({
   // searchParams,
 }: Props) {
   const t = await getTranslations();
-  const { wsId, groupId } = await params;
+  const { wsId: id, groupId } = await params;
+  const workspace = await getWorkspace(id);
+  const wsId = workspace.id;
 
   const group = await getData(wsId, groupId);
 
