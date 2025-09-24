@@ -53,6 +53,7 @@ export function BoardClient({
     queryKey: ['tasks', boardId],
     queryFn: async () => {
       const supabase = createClient();
+      console.log('Getting tasks for boardId:', boardId);
       return getTasks(supabase, boardId);
     },
     initialData: initialTasks,
@@ -61,6 +62,8 @@ export function BoardClient({
     refetchOnMount: false, // Disable initial refetch on mount
     enabled: isClient, // Only enable after hydration
   });
+
+  console.log(tasks);
 
   const { data: lists = initialLists } = useQuery({
     queryKey: ['task_lists', boardId],
