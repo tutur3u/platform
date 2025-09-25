@@ -61,7 +61,7 @@ import {
 } from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
-
+import { getDescriptionText } from '@tuturuuu/ui/utils/text-helper';
 import { cn } from '@tuturuuu/utils/format';
 import {
   moveTask,
@@ -76,8 +76,7 @@ import {
   isTomorrow,
   isYesterday,
 } from 'date-fns';
-import { memo, useCallback, useEffect, useState } from 'react';
-import { getDescriptionText } from '../../../../../utils/text-helper';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { AssigneeSelect } from '../../shared/assignee-select';
 import {
   buildEstimationIndices,
@@ -88,7 +87,9 @@ import { TaskEstimationDisplay } from '../../shared/task-estimation-display';
 import { TaskLabelsDisplay } from '../../shared/task-labels-display';
 import { TaskActions } from './task-actions';
 
-interface Props {
+const NEW_LABEL_COLOR = '#3b82f6';
+
+interface TaskCardProps {
   task: Task;
   boardId: string;
   taskList?: TaskList;
@@ -99,54 +100,6 @@ interface Props {
   isMultiSelectMode?: boolean;
   isPersonalWorkspace?: boolean;
   onSelect?: (taskId: string, event: React.MouseEvent) => void;
-}
-
-// Lightweight drag overlay version
-export function LightweightTaskCard({ task }: { task: Task }) {
-  const labels = {
-    critical: 'Urgent',
-    high: 'High',
-    normal: 'Medium',
-    low: 'Low',
-  };
-
-  const descriptionText = getDescriptionText(task.description);
-  // Ensure deterministic ordering of labels (case-insensitive alphabetical)
-  const sortedLabels = task.labels
-    ? [...task.labels].sort((a, b) =>
-        a.name.toLowerCase().localeCompare(b.name.toLowerCase())
-      )
-    : [];
-
-  return (
-    <Card className="pointer-events-none w-full max-w-[350px] scale-105 select-none border-2 border-primary/20 bg-background opacity-95 shadow-xl ring-2 ring-primary/20">
-      <div className="flex flex-col gap-2 p-4">
-        <div className="truncate font-semibold text-base">{task.name}</div>
-        {descriptionText && (
-          <div className="line-clamp-1 whitespace-pre-line text-muted-foreground text-sm">
-            {descriptionText.replace(/\n/g, ' • ')}
-          </div>
-        )}
-        <div className="flex flex-wrap items-center gap-2">
-          {task.priority && (
-            <Badge variant="secondary" className="text-xs">
-              {labels[task.priority as keyof typeof labels]}
-            </Badge>
-          )}
-          {/* Labels */}
-          {sortedLabels.length > 0 && (
-            <TaskLabelsDisplay labels={sortedLabels} size="sm" />
-          )}
-          {/* Estimation */}
-          <TaskEstimationDisplay
-            points={task.estimation_points}
-            size="sm"
-            showIcon={false}
-          />
-        </div>
-      </div>
-    </Card>
-  );
 }
 
 // Memoized full TaskCard
@@ -161,24 +114,26 @@ function TaskCardInner({
   isMultiSelectMode = false,
   isPersonalWorkspace = false,
   onSelect,
-}: Props) {
+}: TaskCardProps) {
   const [isLoading, setIsLoading] = useState(false);
-  // Removed isHovered state to reduce re-renders; rely on CSS :hover
   const [menuOpen, setMenuOpen] = useState(false);
   const [customDateDialogOpen, setCustomDateDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
+
   // Estimation & labels state
   const [boardConfig, setBoardConfig] = useState<any>(null);
   const [workspaceLabels, setWorkspaceLabels] = useState<any[]>([]);
   const [labelsLoading, setLabelsLoading] = useState(false);
   const [estimationSaving, setEstimationSaving] = useState(false);
   const [labelsSaving, setLabelsSaving] = useState<string | null>(null);
+
   // New label creation state
   const [newLabelDialogOpen, setNewLabelDialogOpen] = useState(false);
   const [newLabelName, setNewLabelName] = useState('');
-  const [newLabelColor, setNewLabelColor] = useState('#3b82f6');
+  const [newLabelColor, setNewLabelColor] = useState(NEW_LABEL_COLOR);
   const [creatingLabel, setCreatingLabel] = useState(false);
+
   // Track initial mount to avoid duplicate fetch storms
   const updateTaskMutation = useUpdateTask(boardId);
   const deleteTaskMutation = useDeleteTask(boardId);
@@ -395,7 +350,6 @@ function TaskCardInner({
         {
           onSettled: () => {
             setIsLoading(false);
-            onUpdate();
           },
         }
       );
@@ -435,7 +389,6 @@ function TaskCardInner({
               ? 'Custom due date set successfully'
               : 'Due date removed',
           });
-          onUpdate?.();
         },
         onSettled: () => {
           setIsLoading(false);
@@ -501,7 +454,6 @@ function TaskCardInner({
     deleteTaskMutation.mutate(task.id, {
       onSuccess: () => {
         setDeleteDialogOpen(false);
-        onUpdate?.();
       },
       onSettled: () => {
         setIsLoading(false);
@@ -633,7 +585,6 @@ function TaskCardInner({
               ? 'Due date set successfully'
               : 'Due date removed',
           });
-          onUpdate?.();
         },
         onSettled: () => {
           setIsLoading(false);
@@ -654,9 +605,10 @@ function TaskCardInner({
             title: 'Priority updated',
             description: newPriority ? 'Priority changed' : 'Priority cleared',
           });
-          onUpdate?.();
         },
-        onSettled: () => setIsLoading(false),
+        onSettled: () => {
+          setIsLoading(false);
+        },
       }
     );
   }
@@ -1778,7 +1730,7 @@ function TaskCardInner({
 }
 
 // Custom comparator to avoid re-renders when stable fields unchanged
-export const TaskCard = memo(TaskCardInner, (prev, next) => {
+export const TaskCard = React.memo(TaskCardInner, (prev, next) => {
   // Quick identity checks for frequently changing props
   if (prev.isOverlay !== next.isOverlay) return false;
   if (prev.isSelected !== next.isSelected) return false;
@@ -1814,3 +1766,109 @@ export const TaskCard = memo(TaskCardInner, (prev, next) => {
   if (aLabels !== bLabels) return false;
   return true;
 });
+
+interface MeasuredTaskCardProps {
+  task: Task;
+  taskList: TaskList;
+  boardId: string;
+  onUpdate: () => void;
+  isSelected: boolean;
+  isMultiSelectMode?: boolean;
+  isPersonalWorkspace?: boolean;
+  onSelect?: (taskId: string, event: React.MouseEvent) => void;
+  onHeight: (height: number) => void;
+}
+
+export function MeasuredTaskCard({
+  task,
+  taskList,
+  boardId,
+  onUpdate,
+  isSelected,
+  isMultiSelectMode,
+  isPersonalWorkspace,
+  onSelect,
+  onHeight,
+}: MeasuredTaskCardProps) {
+  const ref = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (!ref.current) return;
+    const node = ref.current;
+    // Initial measure
+    onHeight(node.getBoundingClientRect().height + 8 /* approximate gap */);
+    // Resize observer for dynamic height changes (e.g., label changes)
+    const ro = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        if (entry.target === node) {
+          onHeight(entry.contentRect.height + 8);
+        }
+      }
+    });
+    ro.observe(node);
+    return () => ro.disconnect();
+  }, [onHeight]);
+
+  return (
+    <div ref={ref} data-id={task.id}>
+      <TaskCard
+        task={task}
+        taskList={taskList}
+        boardId={boardId}
+        onUpdate={onUpdate}
+        isSelected={isSelected}
+        isMultiSelectMode={isMultiSelectMode}
+        isPersonalWorkspace={isPersonalWorkspace}
+        onSelect={onSelect}
+      />
+    </div>
+  );
+}
+
+// Lightweight drag overlay version
+export function LightweightTaskCard({ task }: { task: Task }) {
+  const labels = {
+    critical: 'Urgent',
+    high: 'High',
+    normal: 'Medium',
+    low: 'Low',
+  };
+
+  const descriptionText = getDescriptionText(task.description);
+  // Ensure deterministic ordering of labels (case-insensitive alphabetical)
+  const sortedLabels = task.labels
+    ? [...task.labels].sort((a, b) =>
+        a.name.toLowerCase().localeCompare(b.name.toLowerCase())
+      )
+    : [];
+
+  return (
+    <Card className="pointer-events-none w-full max-w-[350px] scale-105 select-none border-2 border-primary/20 bg-background opacity-95 shadow-xl ring-2 ring-primary/20">
+      <div className="flex flex-col gap-2 p-4">
+        <div className="truncate font-semibold text-base">{task.name}</div>
+        {descriptionText && (
+          <div className="line-clamp-1 whitespace-pre-line text-muted-foreground text-sm">
+            {descriptionText.replace(/\n/g, ' • ')}
+          </div>
+        )}
+        <div className="flex flex-wrap items-center gap-2">
+          {task.priority && (
+            <Badge variant="secondary" className="text-xs">
+              {labels[task.priority as keyof typeof labels]}
+            </Badge>
+          )}
+          {/* Labels */}
+          {sortedLabels.length > 0 && (
+            <TaskLabelsDisplay labels={sortedLabels} size="sm" />
+          )}
+          {/* Estimation */}
+          <TaskEstimationDisplay
+            points={task.estimation_points}
+            size="sm"
+            showIcon={false}
+          />
+        </div>
+      </div>
+    </Card>
+  );
+}

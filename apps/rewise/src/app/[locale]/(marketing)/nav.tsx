@@ -91,7 +91,7 @@ export function Nav({
 
   useEffect(() => {
     if (urlToLoad && urlToLoad === pathname) setUrlToLoad(undefined);
-  }, [pathname, searchParams]);
+  }, [pathname, urlToLoad]);
 
   const renderLink = (
     link: NavLink,
@@ -109,7 +109,8 @@ export function Nav({
     // If the link requires root membership, check if user email ends with @tuturuuu.com
     if (
       link?.requireRootMember &&
-      !currentUser?.email?.endsWith('@tuturuuu.com')
+      (!currentUser?.email?.endsWith('@tuturuuu.com') ||
+        !currentUser?.email?.endsWith('@xwf.tuturuuu.com'))
     )
       return null;
 

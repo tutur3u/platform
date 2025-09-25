@@ -70,19 +70,7 @@ export function BoardViews({ workspace, board }: Props) {
     }));
   };
 
-  // Helper function to create board with filtered tasks
-  const createBoardWithTasks = (
-    board: TaskBoard & { tasks: Task[]; lists: TaskList[] },
-    tasks: Task[]
-  ) =>
-    ({
-      ...board,
-      tasks,
-    }) as TaskBoard & { tasks: Task[]; lists: TaskList[] };
-
   const handleUpdate = async () => {
-    // const supabase = createClient(); // Not needed for current implementation
-
     // Refresh both tasks and lists
     await Promise.all([
       queryClient.invalidateQueries({ queryKey: ['tasks', board.id] }),
@@ -109,20 +97,24 @@ export function BoardViews({ workspace, board }: Props) {
             workspace={workspace}
             boardId={board.id}
             tasks={effectiveTasks}
+            lists={board.lists}
             isLoading={false}
           />
         );
       case 'list':
         return (
           <ListView
-            board={createBoardWithTasks(board, effectiveTasks)}
+            boardId={board.id}
+            tasks={effectiveTasks}
+            lists={board.lists}
             isPersonalWorkspace={workspace.personal}
           />
         );
       case 'timeline':
         return (
           <TimelineBoard
-            board={createBoardWithTasks(board, effectiveTasks)}
+            tasks={effectiveTasks}
+            lists={board.lists}
             onTaskPartialUpdate={handleTaskPartialUpdate}
           />
         );

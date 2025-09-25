@@ -1,6 +1,6 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
-import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
+import WorkspaceWrapper from '@/components/workspace-wrapper';
 import PostsClient from './client';
 import type { PostEmail } from './types';
 
@@ -24,23 +24,26 @@ export default async function PostsPage({
   params: Promise<{ wsId: string; locale: string }>;
   searchParams: Promise<SearchParams>;
 }) {
-  const { wsId: id, locale } = await params;
-  const workspace = await getWorkspace(id);
-  const wsId = workspace?.id;
-
+  const { locale } = await params;
   const searchParamsData = await searchParams;
 
-  const postsData = await getPostsData(wsId, searchParamsData);
-  const postsStatus = await getSentEmails(wsId, searchParamsData);
-
   return (
-    <PostsClient
-      wsId={wsId}
-      locale={locale}
-      searchParams={searchParamsData}
-      postsData={postsData}
-      postsStatus={postsStatus}
-    />
+    <WorkspaceWrapper params={params}>
+      {async ({ wsId }) => {
+        const postsData = await getPostsData(wsId, searchParamsData);
+        const postsStatus = await getSentEmails(wsId, searchParamsData);
+
+        return (
+          <PostsClient
+            wsId={wsId}
+            locale={locale}
+            searchParams={searchParamsData}
+            postsData={postsData}
+            postsStatus={postsStatus}
+          />
+        );
+      }}
+    </WorkspaceWrapper>
   );
 }
 

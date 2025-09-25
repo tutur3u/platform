@@ -91,7 +91,9 @@ import { useEffect, useMemo, useState } from 'react';
 import { TaskEditDialog } from './task-edit-dialog';
 
 interface Props {
-  board: { id: string; tasks: Task[]; lists?: TaskList[] };
+  boardId: string;
+  tasks: Task[];
+  lists: TaskList[];
   isPersonalWorkspace?: boolean;
 }
 
@@ -151,7 +153,12 @@ const priorityColors = {
 
 const SKELETON_KEYS: string[] = ['a', 'b', 'c', 'd', 'e'];
 
-export function ListView({ board, isPersonalWorkspace = false }: Props) {
+export function ListView({
+  boardId,
+  tasks,
+  lists,
+  isPersonalWorkspace = false,
+}: Props) {
   const queryClient = useQueryClient();
   const params = useParams();
   const wsId = params.wsId as string;
@@ -168,7 +175,7 @@ export function ListView({ board, isPersonalWorkspace = false }: Props) {
     enabled: !!wsId,
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
-  const [tasks, setTasks] = useState<Task[]>(board.tasks);
+  const [localTasks, setLocalTasks] = useState<Task[]>(tasks);
   const [isLoading, setIsLoading] = useState(false);
   const [sortField, setSortField] = useState<SortField>('created_at');
   const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
@@ -250,9 +257,9 @@ export function ListView({ board, isPersonalWorkspace = false }: Props) {
       }
 
       // Refresh the task list and invalidate cache
-      const updatedTasks = await getTasks(supabase, board.id);
-      setTasks(updatedTasks);
-      queryClient.invalidateQueries({ queryKey: ['tasks', board.id] });
+      const updatedTasks = await getTasks(supabase, boardId);
+      setLocalTasks(updatedTasks);
+      queryClient.invalidateQueries({ queryKey: ['tasks', boardId] });
       setSelectedTasks(new Set());
       setIsBulkEditing(false);
       setBulkEditData({ priority: 'keep', status: 'keep' });
@@ -286,9 +293,9 @@ export function ListView({ board, isPersonalWorkspace = false }: Props) {
       const taskIds = Array.from(selectedTasks);
       await supabase.from('tasks').delete().in('id', taskIds);
       // Refresh the task list and invalidate cache
-      const updatedTasks = await getTasks(supabase, board.id);
-      setTasks(updatedTasks);
-      queryClient.invalidateQueries({ queryKey: ['tasks', board.id] });
+      const updatedTasks = await getTasks(supabase, boardId);
+      setLocalTasks(updatedTasks);
+      queryClient.invalidateQueries({ queryKey: ['tasks', boardId] });
       setSelectedTasks(new Set());
       toast({
         title: 'Tasks deleted',
@@ -309,8 +316,8 @@ export function ListView({ board, isPersonalWorkspace = false }: Props) {
 
   // Update local state when props change
   useEffect(() => {
-    setTasks(board.tasks);
-  }, [board.tasks]);
+    setLocalTasks(tasks);
+  }, [tasks]);
 
   useEffect(() => {
     let mounted = true;
@@ -320,8 +327,8 @@ export function ListView({ board, isPersonalWorkspace = false }: Props) {
     async function loadData() {
       try {
         setIsLoading(true);
-        const tasks = await getTasks(supabase, board.id);
-        if (mounted) setTasks(tasks);
+        const tasks = await getTasks(supabase, boardId);
+        if (mounted) setLocalTasks(tasks);
       } catch (error) {
         console.error('Failed to load tasks:', error);
       } finally {
@@ -340,10 +347,10 @@ export function ListView({ board, isPersonalWorkspace = false }: Props) {
           table: 'tasks',
         },
         async () => {
-          const tasks = await getTasks(supabase, board.id);
+          const tasks = await getTasks(supabase, boardId);
           if (mounted) {
-            setTasks(tasks);
-            queryClient.invalidateQueries({ queryKey: ['tasks', board.id] });
+            setLocalTasks(tasks);
+            queryClient.invalidateQueries({ queryKey: ['tasks', boardId] });
           }
         }
       )
@@ -355,10 +362,10 @@ export function ListView({ board, isPersonalWorkspace = false }: Props) {
           table: 'task_assignees',
         },
         async () => {
-          const tasks = await getTasks(supabase, board.id);
+          const tasks = await getTasks(supabase, boardId);
           if (mounted) {
-            setTasks(tasks);
-            queryClient.invalidateQueries({ queryKey: ['tasks', board.id] });
+            setLocalTasks(tasks);
+            queryClient.invalidateQueries({ queryKey: ['tasks', boardId] });
           }
         }
       )
@@ -370,7 +377,7 @@ export function ListView({ board, isPersonalWorkspace = false }: Props) {
       mounted = false;
       tasksSubscription.unsubscribe();
     };
-  }, [board.id, queryClient]);
+  }, [boardId, queryClient]);
 
   // Get unique values for filters
   const filterOptions = useMemo(() => {
@@ -388,7 +395,7 @@ export function ListView({ board, isPersonalWorkspace = false }: Props) {
     statuses.add('active');
     statuses.add('completed');
 
-    tasks.forEach((task) => {
+    localTasks.forEach((task) => {
       task.assignees?.forEach((assignee) => {
         assignees.add({
           id: assignee.id,
@@ -403,11 +410,11 @@ export function ListView({ board, isPersonalWorkspace = false }: Props) {
       statuses: Array.from(statuses),
       assignees: Array.from(assignees),
     };
-  }, [tasks]);
+  }, [localTasks]);
 
   // Apply filters and sorting
   const filteredAndSortedTasks = useMemo(() => {
-    const filtered = tasks.filter((task) => {
+    const filtered = localTasks.filter((task) => {
       // Search filter
       if (filters.search) {
         const query = filters.search.toLowerCase();
@@ -564,7 +571,7 @@ export function ListView({ board, isPersonalWorkspace = false }: Props) {
     });
 
     return filtered;
-  }, [tasks, filters, sortField, sortOrder]);
+  }, [localTasks, filters, sortField, sortOrder]);
 
   // Paginated tasks
   const paginatedTasks = useMemo(() => {
@@ -629,7 +636,7 @@ export function ListView({ board, isPersonalWorkspace = false }: Props) {
 
   function refreshData() {
     const supabase = createClient();
-    getTasks(supabase, board.id).then(setTasks);
+    getTasks(supabase, boardId).then(setLocalTasks);
   }
 
   // Check if filters are active
@@ -684,9 +691,7 @@ export function ListView({ board, isPersonalWorkspace = false }: Props) {
     // Check if task is in a "done" list but not individually archived
     const isInDoneList =
       task.list_id &&
-      board.lists?.some(
-        (list) => list.id === task.list_id && list.status === 'done'
-      );
+      lists?.some((list) => list.id === task.list_id && list.status === 'done');
 
     return (
       <div className="flex items-center justify-center">
@@ -1563,13 +1568,13 @@ export function ListView({ board, isPersonalWorkspace = false }: Props) {
       {selectedTask && (
         <TaskEditDialog
           task={selectedTask}
-          boardId={board.id}
+          boardId={boardId}
           isOpen={!!selectedTaskId}
           onClose={() => setSelectedTaskId(null)}
           onUpdate={() => {
             setSelectedTaskId(null);
             const supabase = createClient();
-            getTasks(supabase, board.id).then(setTasks);
+            getTasks(supabase, boardId).then(setLocalTasks);
           }}
         />
       )}

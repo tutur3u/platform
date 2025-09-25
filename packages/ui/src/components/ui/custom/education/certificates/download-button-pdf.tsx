@@ -43,7 +43,7 @@ export function DownloadButtonPDF({
           },
           body: JSON.stringify({
             locale: locale,
-            wsId: wsId,
+            wsId,
           }),
         }
       );

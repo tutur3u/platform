@@ -48,21 +48,8 @@ import React, {
 } from 'react';
 import { ListActions } from './list-actions';
 import { statusIcons } from './status-section';
-import { TaskCard } from './task';
+import { MeasuredTaskCard } from './task';
 import { TaskForm } from './task-form';
-
-interface Props {
-  column: TaskList;
-  boardId: string;
-  tasks: Task[];
-  isOverlay?: boolean;
-  onTaskCreated?: () => void;
-  onListUpdated?: () => void;
-  selectedTasks?: Set<string>;
-  isMultiSelectMode?: boolean;
-  isPersonalWorkspace?: boolean;
-  onTaskSelect?: (taskId: string, event: React.MouseEvent) => void;
-}
 
 type SortOption =
   | 'none'
@@ -105,18 +92,29 @@ const FilterLabel = ({ children }: { children: React.ReactNode }) => (
   <div className="font-medium text-xs">{children}</div>
 );
 
-export const BoardColumn = React.memo(function BoardColumn({
+interface BoardColumnProps {
+  column: TaskList;
+  boardId: string;
+  tasks: Task[];
+  isOverlay?: boolean;
+  onUpdate?: () => void;
+  selectedTasks?: Set<string>;
+  isMultiSelectMode?: boolean;
+  isPersonalWorkspace?: boolean;
+  onTaskSelect?: (taskId: string, event: React.MouseEvent) => void;
+}
+
+function BoardColumnInner({
   column,
   boardId,
   tasks,
   isOverlay,
-  onTaskCreated,
-  onListUpdated,
+  onUpdate,
   selectedTasks,
   onTaskSelect,
   isMultiSelectMode,
   isPersonalWorkspace,
-}: Props) {
+}: BoardColumnProps) {
   const params = useParams();
   const wsId = params.wsId as string;
 
@@ -347,12 +345,7 @@ export const BoardColumn = React.memo(function BoardColumn({
   );
 
   const handleUpdate = () => {
-    if (onListUpdated) onListUpdated();
-    else if (onTaskCreated) onTaskCreated();
-  };
-
-  const handleTaskCreated = () => {
-    if (onTaskCreated) onTaskCreated();
+    onUpdate?.();
   };
 
   const colorClass =
@@ -899,7 +892,7 @@ export const BoardColumn = React.memo(function BoardColumn({
         tasks={filteredAndSortedTasks}
         column={column}
         boardId={boardId}
-        handleUpdate={handleUpdate}
+        onUpdate={handleUpdate}
         isMultiSelectMode={isMultiSelectMode}
         selectedTasks={selectedTasks}
         isPersonalWorkspace={isPersonalWorkspace}
@@ -909,19 +902,17 @@ export const BoardColumn = React.memo(function BoardColumn({
       />
 
       <div className="rounded-b-xl border-t p-3 backdrop-blur-sm">
-        <TaskForm listId={column.id} onTaskCreated={handleTaskCreated} />
+        <TaskForm listId={column.id} onTaskCreated={handleUpdate} />
       </div>
     </Card>
   );
-});
-
-export function BoardContainer({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent relative flex h-full w-full gap-4 overflow-x-auto">
-      {children}
-    </div>
-  );
 }
+
+export const BoardColumn = React.memo(BoardColumnInner);
+
+const VIRTUALIZE_THRESHOLD = 60; // only virtualize for fairly large lists
+const ESTIMATED_ITEM_HEIGHT = 96; // px including margin (space-y-2 gap)
+const OVERSCAN_PX = 400; // overscan in pixels above and below viewport for smoother scroll
 
 // Lightweight list virtualization tuned for relatively uniform TaskCard heights.
 // Assumptions:
@@ -935,7 +926,7 @@ interface VirtualizedTaskListProps {
   tasks: Task[];
   column: TaskList;
   boardId: string;
-  handleUpdate: () => void;
+  onUpdate: () => void;
   isMultiSelectMode?: boolean;
   selectedTasks?: Set<string>;
   isPersonalWorkspace?: boolean;
@@ -944,22 +935,18 @@ interface VirtualizedTaskListProps {
   clearAllFilters: () => void;
 }
 
-const VIRTUALIZE_THRESHOLD = 60; // only virtualize for fairly large lists
-const ESTIMATED_ITEM_HEIGHT = 96; // px including margin (space-y-2 gap)
-const OVERSCAN_PX = 400; // overscan in pixels above and below viewport for smoother scroll
-
-const VirtualizedTaskListComponent: React.FC<VirtualizedTaskListProps> = ({
+function VirtualizedTaskListInner({
   tasks,
   column,
   boardId,
-  handleUpdate,
+  onUpdate,
   isMultiSelectMode,
   selectedTasks,
   isPersonalWorkspace,
   onTaskSelect,
   hasActiveFilters,
   clearAllFilters,
-}) => {
+}: VirtualizedTaskListProps) {
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const [viewportHeight, setViewportHeight] = useState(0);
   const [scrollTop, setScrollTop] = useState(0);
@@ -1137,7 +1124,7 @@ const VirtualizedTaskListComponent: React.FC<VirtualizedTaskListProps> = ({
                 task={task}
                 taskList={column}
                 boardId={boardId}
-                onUpdate={handleUpdate}
+                onUpdate={onUpdate}
                 isSelected={Boolean(
                   isMultiSelectMode && selectedTasks?.has(task.id)
                 )}
@@ -1156,7 +1143,7 @@ const VirtualizedTaskListComponent: React.FC<VirtualizedTaskListProps> = ({
             task={task}
             taskList={column}
             boardId={boardId}
-            onUpdate={handleUpdate}
+            onUpdate={onUpdate}
             isSelected={Boolean(
               isMultiSelectMode && selectedTasks?.has(task.id)
             )}
@@ -1169,82 +1156,6 @@ const VirtualizedTaskListComponent: React.FC<VirtualizedTaskListProps> = ({
       )}
     </div>
   );
-};
-
-const VirtualizedTaskList = React.memo(
-  VirtualizedTaskListComponent,
-  (prev, next) => {
-    // Shallow compare arrays by length + first/last id for quick bailout
-    if (prev.tasks.length !== next.tasks.length) return false;
-    if (prev.tasks[0]?.id !== next.tasks[0]?.id) return false;
-    if (
-      prev.tasks[prev.tasks.length - 1]?.id !==
-      next.tasks[next.tasks.length - 1]?.id
-    )
-      return false;
-    // Compare selection size
-    if (prev.selectedTasks?.size !== next.selectedTasks?.size) return false;
-    // Compare basic flags
-    if (prev.isMultiSelectMode !== next.isMultiSelectMode) return false;
-    if (prev.hasActiveFilters !== next.hasActiveFilters) return false;
-    return true;
-  }
-);
-
-interface MeasuredTaskCardProps {
-  task: Task;
-  taskList: TaskList;
-  boardId: string;
-  onUpdate: () => void;
-  isSelected: boolean;
-  isMultiSelectMode?: boolean;
-  isPersonalWorkspace?: boolean;
-  onSelect?: (taskId: string, event: React.MouseEvent) => void;
-  onHeight: (height: number) => void;
 }
 
-const MeasuredTaskCard: React.FC<MeasuredTaskCardProps> = ({
-  task,
-  taskList,
-  boardId,
-  onUpdate,
-  isSelected,
-  isMultiSelectMode,
-  isPersonalWorkspace,
-  onSelect,
-  onHeight,
-}) => {
-  const ref = useRef<HTMLDivElement | null>(null);
-
-  useEffect(() => {
-    if (!ref.current) return;
-    const node = ref.current;
-    // Initial measure
-    onHeight(node.getBoundingClientRect().height + 8 /* approximate gap */);
-    // Resize observer for dynamic height changes (e.g., label changes)
-    const ro = new ResizeObserver((entries) => {
-      for (const entry of entries) {
-        if (entry.target === node) {
-          onHeight(entry.contentRect.height + 8);
-        }
-      }
-    });
-    ro.observe(node);
-    return () => ro.disconnect();
-  }, [onHeight]);
-
-  return (
-    <div ref={ref} data-id={task.id}>
-      <TaskCard
-        task={task}
-        taskList={taskList}
-        boardId={boardId}
-        onUpdate={onUpdate}
-        isSelected={isSelected}
-        isMultiSelectMode={isMultiSelectMode}
-        isPersonalWorkspace={isPersonalWorkspace}
-        onSelect={onSelect}
-      />
-    </div>
-  );
-};
+export const VirtualizedTaskList = React.memo(VirtualizedTaskListInner);

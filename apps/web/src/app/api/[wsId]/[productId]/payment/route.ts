@@ -81,7 +81,7 @@ export async function GET(
     successUrl: `${BASE_URL}/${wsId}/billing/success`,
     // externalCustomerId: user?.id || '',
     metadata: {
-      wsId: wsId,
+      wsId,
     },
   });
 
