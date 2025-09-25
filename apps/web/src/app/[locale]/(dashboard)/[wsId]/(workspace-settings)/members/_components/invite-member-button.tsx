@@ -59,7 +59,7 @@ export default function InviteMemberButton({
   const form = useForm({
     resolver: zodResolver(FormSchema),
     values: {
-      wsId: wsId,
+      wsId,
       email: '',
       role: '',
       accessLevel: 'MEMBER',

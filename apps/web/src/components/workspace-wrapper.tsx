@@ -5,7 +5,9 @@ import type { ReactNode } from 'react';
 import { Suspense } from 'react';
 
 interface WorkspaceWrapperProps {
-  wsId: string;
+  params: Promise<{
+    wsId: string;
+  }>;
   children: (props: {
     workspace: Workspace & { role: WorkspaceUserRole; joined: boolean };
     wsId: string; // The validated UUID from workspace.id
@@ -27,10 +29,11 @@ interface WorkspaceWrapperProps {
  * - wsId: The validated UUID from workspace.id (not the legacy identifier)
  */
 export default async function WorkspaceWrapper({
-  wsId,
+  params,
   children,
   fallback,
 }: WorkspaceWrapperProps) {
+  const { wsId } = await params;
   const workspace = await getWorkspace(wsId);
 
   if (!workspace) {

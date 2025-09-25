@@ -7,12 +7,12 @@ import { Separator } from '@tuturuuu/ui/separator';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
 import {
   getPermissions,
-  getWorkspace,
   verifyHasSecrets,
 } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
-import { notFound, redirect } from 'next/navigation';
+import { redirect } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
+import WorkspaceWrapper from '@/components/workspace-wrapper';
 import InviteMemberButton from './_components/invite-member-button';
 import MemberList from './_components/member-list';
 import MemberTabs from './_components/member-tabs';
@@ -37,68 +37,68 @@ export default async function WorkspaceMembersPage({
   params,
   searchParams,
 }: Props) {
-  const { wsId: id } = await params;
-
-  const workspace = await getWorkspace(id, {
-    requireUserRole: true,
-  });
-  const wsId = workspace?.id;
-
-  if (!wsId) notFound();
-
   const { status } = await searchParams;
-  const { withoutPermission } = await getPermissions({
-    wsId,
-  });
-
-  if (withoutPermission('manage_workspace_members'))
-    redirect(`/${wsId}/settings`);
-
-  const user = await getCurrentUser();
-  const members = await getMembers(wsId, await searchParams);
-
-  const t = await getTranslations();
-  const disableInvite = await verifyHasSecrets(wsId, ['DISABLE_INVITE']);
 
   return (
-    <>
-      <div className="flex flex-col justify-between gap-4 rounded-lg border border-border bg-foreground/5 p-4 md:flex-row md:items-start">
-        <div>
-          <h1 className="font-bold text-2xl">
-            {t('workspace-settings-layout.members')}
-          </h1>
-          <p className="text-foreground/80">{t('ws-members.description')}</p>
-        </div>
+    <WorkspaceWrapper params={params}>
+      {async ({ workspace, wsId }) => {
+        const { withoutPermission } = await getPermissions({
+          wsId,
+        });
 
-        <div className="flex flex-col items-center justify-center gap-2 md:flex-row">
-          <MemberTabs value={status || 'all'} />
-          <InviteMemberButton
-            wsId={wsId}
-            currentUser={{
-              ...user!,
-              role: workspace?.role,
-            }}
-            label={
-              disableInvite
-                ? t('ws-members.invite_member_disabled')
-                : t('ws-members.invite_member')
-            }
-            disabled={disableInvite}
-          />
-        </div>
-      </div>
-      <Separator className="my-4" />
+        if (withoutPermission('manage_workspace_members'))
+          redirect(`/${wsId}/settings`);
 
-      <div className="flex min-h-full w-full flex-col">
-        <div className="grid items-end gap-4 lg:grid-cols-2">
-          <MemberList
-            workspace={workspace}
-            members={members}
-            invited={status === 'invited'}
-          />
-        </div>
-      </div>
-    </>
+        const user = await getCurrentUser();
+        const members = await getMembers(wsId, await searchParams);
+
+        const t = await getTranslations();
+        const disableInvite = await verifyHasSecrets(wsId, ['DISABLE_INVITE']);
+
+        return (
+          <>
+            <div className="flex flex-col justify-between gap-4 rounded-lg border border-border bg-foreground/5 p-4 md:flex-row md:items-start">
+              <div>
+                <h1 className="font-bold text-2xl">
+                  {t('workspace-settings-layout.members')}
+                </h1>
+                <p className="text-foreground/80">
+                  {t('ws-members.description')}
+                </p>
+              </div>
+
+              <div className="flex flex-col items-center justify-center gap-2 md:flex-row">
+                <MemberTabs value={status || 'all'} />
+                <InviteMemberButton
+                  wsId={wsId}
+                  currentUser={{
+                    ...user!,
+                    role: workspace?.role,
+                  }}
+                  label={
+                    disableInvite
+                      ? t('ws-members.invite_member_disabled')
+                      : t('ws-members.invite_member')
+                  }
+                  disabled={disableInvite}
+                />
+              </div>
+            </div>
+            <Separator className="my-4" />
+
+            <div className="flex min-h-full w-full flex-col">
+              <div className="grid items-end gap-4 lg:grid-cols-2">
+                <MemberList
+                  workspace={workspace}
+                  members={members}
+                  invited={status === 'invited'}
+                />
+              </div>
+            </div>
+          </>
+        );
+      }}
+    </WorkspaceWrapper>
   );
 }
 
