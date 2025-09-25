@@ -17,6 +17,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import GroupIndicatorsManager from './group-indicators-manager';
+import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
 
 export const metadata: Metadata = {
   title: 'Indicators',
@@ -34,7 +35,9 @@ interface Props {
 
 export default async function UserGroupIndicatorsPage({ params }: Props) {
   const t = await getTranslations();
-  const { wsId, groupId } = await params;
+  const { wsId: id, groupId } = await params;
+  const workspace = await getWorkspace(id);
+  const wsId = workspace.id;
 
   const group = await getData(wsId, groupId);
   const indicators = await getIndicators(groupId);

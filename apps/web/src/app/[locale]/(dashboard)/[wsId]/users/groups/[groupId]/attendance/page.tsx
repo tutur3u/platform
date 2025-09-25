@@ -17,6 +17,7 @@ import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import type { InitialAttendanceProps } from './client';
 import GroupAttendanceClient from './client';
+import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
 
 export const metadata: Metadata = {
   title: 'Attendance',
@@ -38,7 +39,9 @@ export default async function UserGroupAttendancePage({
   searchParams,
 }: Props) {
   const t = await getTranslations();
-  const { wsId, groupId } = await params;
+  const { wsId: id, groupId } = await params;
+  const workspace = await getWorkspace(id);
+  const wsId = workspace.id;
   const sp = await searchParams;
 
   const requestedDateParam = sp?.date;

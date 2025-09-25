@@ -11,7 +11,7 @@ import {
   X,
 } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
-import { getGuestGroup } from '@tuturuuu/utils/workspace-helper';
+import { getGuestGroup, getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import { format } from 'date-fns';
 import type { Metadata } from 'next';
 import Link from 'next/link';
@@ -46,7 +46,9 @@ interface Props {
 
 export default async function HomeworkCheck({ params, searchParams }: Props) {
   const t = await getTranslations();
-  const { wsId, groupId, postId } = await params;
+  const { wsId: id, groupId, postId } = await params;
+  const workspace = await getWorkspace(id);
+  const wsId = workspace.id;
 
   const post = await getPostData(postId);
   const group = await getGroupData(wsId, groupId);

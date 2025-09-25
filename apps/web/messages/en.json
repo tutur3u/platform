@@ -135,6 +135,11 @@
     "saving": "Saving changes...",
     "loading": "Loading",
     "load_more": "Load more",
+    "submit": "Submit",
+    "manage": "Manage",
+    "no-selection": "No users selected",
+    "confirm": "Confirm",
+    "removed": "Removed",
     "complete": "Complete",
     "default": "Default",
     "all": "All",
@@ -375,7 +380,8 @@
     "optional": "optional",
     "characters": "characters",
     "no_changes_to_save": "No changes to save",
-    "confirm_delete": "Delete Report?"
+    "confirm_delete": "Delete Report?",
+    "filter": "Filter"
   },
   "date_helper": {
     "time-unit": "Time unit",
@@ -1793,7 +1799,8 @@
     "updated_report-number": "Update #{number}",
     "fetch_new_scores": "Fetch New Scores",
     "scores_updated": "Scores updated successfully",
-    "failed_update_scores": "Failed to update scores"
+    "failed_update_scores": "Failed to update scores",
+    "group_manager": "Group Manager"
   },
   "ws-users": {
     "singular": "User",
@@ -1801,10 +1808,48 @@
     "description": "Users are people who are directly or indirectly related to your workspace. They can be assigned to tasks, projects, and more.",
     "full_name": "Full name",
     "display_name": "Display name",
+    "email": "Email",
+    "phone": "Phone number",
+    "gender": "Gender",
+    "birthday": "Birthday",
+    "national_id": "National ID",
+    "ethnicity": "Ethnicity",
+    "guardian": "Guardian",
+    "address": "Address",
+    "note": "Notes",
+    "user_id": "User ID",
+    "user_id_tooltip": "The identification number of this user in your workspace. This is automatically managed by Tuturuuu, and cannot be changed.",
+    "full_name_tooltip": "The real name of this user.",
+    "display_name_tooltip": "This name will be displayed everywhere in the current workspace for this user.",
+    "email_tooltip": "The email address for this user.",
+    "phone_tooltip": "The phone number for this user.",
+    "gender_tooltip": "The gender identity of this user.",
+    "birthday_tooltip": "The birth date of this user.",
+    "national_id_tooltip": "The national identification number for this user.",
+    "ethnicity_tooltip": "The ethnic background of this user.",
+    "guardian_tooltip": "The guardian or parent information for this user.",
+    "address_tooltip": "The physical address of this user.",
+    "note_tooltip": "Additional notes or comments about this user.",
+    "guest_user": "Guest user",
+    "guest_user_tooltip": "If enabled, the user will be linked to the workspace's guest group.",
+    "mark_as_guest": "Mark as guest",
+    "gender_placeholder": "Please select a gender",
+    "gender_options": {
+      "male": "Male",
+      "female": "Female",
+      "other": "Other"
+    },
+    "placeholder": {
+      "name": "John Doe",
+      "phone": "+123456789"
+    },
     "create": "Create user",
     "edit": "Edit user",
     "create_description": "Create a new user",
-    "edit_description": "Edit an existing user"
+    "edit_description": "Edit an existing user",
+    "failed_create": "Failed to create user",
+    "failed_edit": "Failed to edit user",
+    "failed_delete": "Failed to delete workspace user"
   },
   "ws-user-attendance": {
     "singular": "Attendance",
@@ -2930,7 +2975,18 @@
     "members_and_guests": "Members & Guests",
     "managers": "Managers",
     "no_members": "No members found",
-    "no_managers": "No managers found"
+    "no_managers": "No managers found",
+    "add_members": "Add Members",
+    "add_managers": "Add Managers",
+    "select_and_submit": "{groupActionLabel} to the group ",
+    "no_users_selected": "No users selected.",
+    "search_users_placeholder": "Search users...",
+    "manager": "Manager",
+    "member": "Member",
+    "members_added": "Members added",
+    "managers_added": "Managers added",
+    "confirm_remove_last_manager": "Are you sure you want to remove the last manager?",
+    "confirm_remove_member": "Are you sure you want to remove this member?"
   },
   "ws-user-group-attendance": {
     "unsaved_changes_message": "You have unsaved attendance changes",

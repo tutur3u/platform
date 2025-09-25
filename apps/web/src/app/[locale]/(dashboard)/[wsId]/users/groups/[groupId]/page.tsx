@@ -15,11 +15,11 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
-import GroupMemberForm from './form';
 import GroupMembers from './group-members';
 import LinkedProductsClient from './linked-products-client';
 import PostsClient from './posts-client';
 import GroupSchedule from './schedule';
+import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
 
 export const metadata: Metadata = {
   title: 'Group Details',
@@ -48,7 +48,9 @@ export default async function UserGroupDetailsPage({
   // searchParams,
 }: Props) {
   const t = await getTranslations();
-  const { wsId, groupId } = await params;
+  const { wsId: id, groupId } = await params;
+  const workspace = await getWorkspace(id);
+  const wsId = workspace.id;
 
   const group = await getData(wsId, groupId);
 
@@ -142,9 +144,6 @@ export default async function UserGroupDetailsPage({
             </Link>
           </div>
         }
-        createTitle={t('ws-user-groups.add_user')}
-        createDescription={t('ws-user-groups.add_user_description')}
-        form={<GroupMemberForm wsId={wsId} groupId={groupId} />}
       />
       <Separator className="my-4" />
       <div className="grid w-full grid-cols-1 gap-4 lg:grid-cols-2">

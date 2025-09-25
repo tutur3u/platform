@@ -15,6 +15,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import ScheduleCalendar from './schedule-calendar';
+import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
 
 export const metadata: Metadata = {
   title: 'Schedule',
@@ -31,7 +32,9 @@ interface Props {
 
 export default async function UserGroupDetailsPage({ params }: Props) {
   const t = await getTranslations();
-  const { locale, wsId, groupId } = await params;
+  const { locale, wsId: id, groupId } = await params;
+  const workspace = await getWorkspace(id);
+  const wsId = workspace.id;
 
   const group = await getData(wsId, groupId);
 

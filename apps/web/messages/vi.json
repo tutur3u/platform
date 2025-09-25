@@ -129,6 +129,11 @@
     "saving": "Đang lưu thay đổi...",
     "loading": "Đang tải",
     "load_more": "Tải thêm",
+    "submit": "Gửi",
+    "manage": "Quản lý",
+    "no-selection": "Chưa chọn người dùng nào",
+    "confirm": "Xác nhận",
+    "removed": "Đã xóa",
     "complete": "Hoàn tất",
     "default": "Mặc định",
     "all": "Tất cả",
@@ -373,7 +378,8 @@
     "optional": "tùy chọn",
     "characters": "kí tự",
     "no_changes_to_save": "Không có thay đổi để lưu",
-    "confirm_delete": "Xóa bản báo cáo?"
+    "confirm_delete": "Xóa bản báo cáo?",
+    "filter": "Lọc"
   },
   "date_helper": {
     "time-unit": "Đơn vị thời gian",
@@ -1797,7 +1803,8 @@
     "updated_report-number": "Bản cập nhật #{number}",
     "fetch_new_scores": "Lấy điểm mới",
     "scores_updated": "Đã cập nhật điểm thành công",
-    "failed_update_scores": "Cập nhật điểm thất bại"
+    "failed_update_scores": "Cập nhật điểm thất bại",
+    "group_manager": "Quản lý nhóm"
   },
   "ws-users": {
     "singular": "Người dùng",
@@ -1805,10 +1812,48 @@
     "description": "Người dùng là những người có liên quan trực tiếp hoặc gián tiếp đến không gian làm việc của bạn. Họ có thể được gán cho các công việc, dự án và nhiều hơn nữa.",
     "full_name": "Họ và tên",
     "display_name": "Tên hiển thị",
+    "email": "Email",
+    "phone": "Số điện thoại",
+    "gender": "Giới tính",
+    "birthday": "Ngày sinh",
+    "national_id": "CMND/CCCD",
+    "ethnicity": "Dân tộc",
+    "guardian": "Người giám hộ",
+    "address": "Địa chỉ",
+    "note": "Ghi chú",
+    "user_id": "Mã người dùng",
+    "user_id_tooltip": "Mã định danh của người dùng này trong không gian làm việc của bạn. Hệ thống Tuturuuu tự động quản lý và không thể thay đổi.",
+    "full_name_tooltip": "Tên thật của người dùng này.",
+    "display_name_tooltip": "Tên sẽ được hiển thị trong không gian làm việc cho người dùng này.",
+    "email_tooltip": "Địa chỉ email của người dùng này.",
+    "phone_tooltip": "Số điện thoại của người dùng này.",
+    "gender_tooltip": "Bản dạng giới của người dùng này.",
+    "birthday_tooltip": "Ngày sinh của người dùng này.",
+    "national_id_tooltip": "Số định danh/căn cước công dân của người dùng.",
+    "ethnicity_tooltip": "Thông tin dân tộc của người dùng.",
+    "guardian_tooltip": "Thông tin người giám hộ hoặc phụ huynh của người dùng.",
+    "address_tooltip": "Địa chỉ liên hệ của người dùng.",
+    "note_tooltip": "Ghi chú bổ sung về người dùng này.",
+    "guest_user": "Người dùng khách",
+    "guest_user_tooltip": "Nếu bật, người dùng sẽ được liên kết với nhóm khách của không gian làm việc.",
+    "mark_as_guest": "Đánh dấu là khách",
+    "gender_placeholder": "Vui lòng chọn giới tính",
+    "gender_options": {
+      "male": "Nam",
+      "female": "Nữ",
+      "other": "Khác"
+    },
+    "placeholder": {
+      "name": "Nguyễn Văn A",
+      "phone": "+84901234567"
+    },
     "create": "Tạo người dùng",
     "edit": "Chỉnh sửa người dùng",
     "create_description": "Tạo một người dùng mới",
-    "edit_description": "Chỉnh sửa thông tin của người dùng"
+    "edit_description": "Chỉnh sửa thông tin của người dùng",
+    "failed_create": "Tạo người dùng thất bại",
+    "failed_edit": "Chỉnh sửa người dùng thất bại",
+    "failed_delete": "Xóa người dùng trong không gian làm việc thất bại"
   },
   "ws-user-attendance": {
     "singular": "Điểm danh",
@@ -2977,7 +3022,18 @@
     "reports": "Báo cáo nhóm",
     "metrics": "Số liệu nhóm",
     "modify_schedule": "Chỉnh sửa lịch trình",
-    "managers": "Quản lý nhóm"
+    "managers": "Quản lý nhóm",
+    "add_members": "Thêm thành viên",
+    "add_managers": "Thêm quản lý",
+    "select_and_submit": "{groupActionLabel} vào nhóm",
+    "no_users_selected": "Chưa chọn người dùng nào.",
+    "search_users_placeholder": "Tìm kiếm người dùng...",
+    "manager": "Quản lý",
+    "member": "Thành viên",
+    "members_added": "Đã thêm thành viên",
+    "managers_added": "Đã thêm quản lý",
+    "confirm_remove_last_manager": "Bạn có chắc muốn xóa quản lý cuối cùng?",
+    "confirm_remove_member": "Bạn có chắc muốn xóa thành viên này?"
   },
   "ws-user-group-attendance": {
     "unsaved_changes_message": "Bạn có thay đổi điểm danh chưa lưu",

@@ -35,10 +35,11 @@ export async function PUT(req: Request, { params }: Params) {
   const { wsId, userId } = await params;
 
   const data = await req.json();
+  const { is_guest, ...userPayload } = data ?? {};
 
   const { error } = await supabase
     .from('workspace_users')
-    .update(data)
+    .update(userPayload)
     .eq('ws_id', wsId)
     .eq('id', userId);
 
@@ -50,7 +51,48 @@ export async function PUT(req: Request, { params }: Params) {
     );
   }
 
-  return NextResponse.json({ message: 'success' });
+  // Sync guest membership based on is_guest flag when provided
+  let warning: string | undefined;
+  if (typeof is_guest === 'boolean') {
+    const { data: guestGroup, error: groupError } = await supabase
+      .from('workspace_user_groups')
+      .select('id')
+      .eq('ws_id', wsId)
+      .eq('is_guest', true)
+      .maybeSingle();
+
+    if (groupError) {
+      console.log(groupError);
+      warning = 'Failed to resolve guest group for this workspace.';
+    } else if (!guestGroup?.id) {
+      warning = 'No guest group found in this workspace.';
+    } else {
+      if (is_guest) {
+        const { error: linkError } = await supabase
+          .from('workspace_user_groups_users')
+          .upsert(
+            { group_id: guestGroup.id, user_id: userId },
+            { onConflict: 'group_id,user_id' }
+          );
+        if (linkError) {
+          console.log(linkError);
+          warning = 'Failed to link user to guest group.';
+        }
+      } else {
+        const { error: unlinkError } = await supabase
+          .from('workspace_user_groups_users')
+          .delete()
+          .eq('group_id', guestGroup.id)
+          .eq('user_id', userId);
+        if (unlinkError) {
+          console.log(unlinkError);
+          warning = 'Failed to unlink user from guest group.';
+        }
+      }
+    }
+  }
+
+  return NextResponse.json({ message: 'success', warning });
 }
 
 export async function DELETE(_: Request, { params }: Params) {

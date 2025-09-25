@@ -160,7 +160,22 @@ async function getData(
     return getData(wsId, { q, pageSize, retry: false });
   }
 
-  return { data, count } as unknown as { data: WorkspaceUser[]; count: number };
+  // Enrich each user with guest status via RPC (page size is small, acceptable)
+  const withGuest = await Promise.all(
+    (data as unknown as WorkspaceUser[]).map(async (u) => {
+      const { data: isGuest } = await supabase.rpc('is_user_guest', {
+        user_uuid: u.id,
+      });
+      return { ...u, is_guest: Boolean(isGuest) } as WorkspaceUser & {
+        is_guest?: boolean;
+      };
+    })
+  );
+
+  return {
+    data: withGuest as unknown as WorkspaceUser[],
+    count: count as number,
+  };
 }
 
 async function getUserFields(wsId: string) {
