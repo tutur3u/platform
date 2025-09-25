@@ -58,6 +58,7 @@ interface GroupMembersProps {
   groupId: string;
   initialData?: GroupMember[];
   pageSize: number;
+  canViewPersonalInfo: boolean;
 }
 
 export default function GroupMembers({
@@ -65,6 +66,7 @@ export default function GroupMembers({
   groupId,
   initialData,
   pageSize,
+  canViewPersonalInfo,
 }: GroupMembersProps) {
   const t = useTranslations();
 
@@ -309,7 +311,7 @@ export default function GroupMembers({
         </div>
       </div>
 
-      <div className="space-y-2 grid grid-cols-1 md:grid-cols-2 gap-2">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
         {filteredList.length === 0 ? (
           <div className="text-center py-8 text-muted-foreground">
             {t('ws-user-group-details.no_members')}
@@ -323,9 +325,9 @@ export default function GroupMembers({
               <HoverCard key={person.id}>
                 <HoverCardTrigger asChild>
                   <Link href={`/${wsId}/users/database/${person.id}`}>
-                    <Card className="p-3 transition duration-200 hover:border-foreground hover:bg-foreground/5">
+                    <Card className="p-3 transition duration-200 hover:border-foreground hover:bg-foreground/5 h-full items-center flex w-full relative">
                       <CardContent className="p-0">
-                        <div className="flex items-center justify-between">
+                        <div className="flex items-center justify-between pr-12 flex-row">
                           <div className="flex items-center gap-3">
                             {hasAvatar ? (
                               <Avatar className="h-8 w-8">
@@ -352,57 +354,71 @@ export default function GroupMembers({
                               </div>
                             )}
                             <div>
-                              <div className="font-medium">
-                                {person.display_name ||
-                                  person.full_name ||
-                                  (isManager
-                                    ? t('ws-user-group-details.managers')
-                                    : t('common.unknown'))}
+                              <div className="flex items-center gap-2">
+                                <div className="font-medium">
+                                  {person.display_name ||
+                                    person.full_name ||
+                                    (isManager
+                                      ? t('ws-user-group-details.managers')
+                                      : t('common.unknown'))}
+                                </div>
+                                {isManager && (
+                                  <Badge
+                                    variant="default"
+                                    className="bg-dynamic-green/10 text-dynamic-green border-dynamic-green/20"
+                                  >
+                                    {t('ws-user-group-details.managers')}
+                                  </Badge>
+                                )}
+                                {isGuest && (
+                                  <Badge
+                                    variant="secondary"
+                                    className="bg-dynamic-orange/10 text-dynamic-orange border-dynamic-orange/20"
+                                  >
+                                    {t('meet-together.guests')}
+                                  </Badge>
+                                )}
                               </div>
                             </div>
                           </div>
-                          <div className="flex items-center gap-2">
-                            {isManager && (
-                              <Badge
-                                variant="default"
-                                className="bg-dynamic-green/10 text-dynamic-green border-dynamic-green/20"
-                              >
-                                {t('ws-user-group-details.managers')}
-                              </Badge>
-                            )}
-                            {isGuest && (
-                              <Badge
-                                variant="secondary"
-                                className="bg-dynamic-orange/10 text-dynamic-orange border-dynamic-orange/20"
-                              >
-                                {t('meet-together.guests')}
-                              </Badge>
-                            )}
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="icon">
-                                  <Ellipsis className="h-4 w-4" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
-                                <DropdownMenuItem
-                                  onClick={(e) => {
-                                    e.preventDefault();
-                                    setRemoveTarget(person);
-                                  }}
-                                >
-                                  {t('common.remove')}
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          </div>
+                          <div className="flex items-center gap-2" />
                         </div>
                       </CardContent>
+                      {/* Ellipsis button pinned to the right side of the card */}
+                      <div className="absolute right-2 top-1/2 -translate-y-1/2 z-10">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                              }}
+                            >
+                              <Ellipsis className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                setRemoveTarget(person);
+                              }}
+                            >
+                              {t('common.remove')}
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
                     </Card>
                   </Link>
                 </HoverCardTrigger>
                 <HoverCardContent align="end" className="w-80">
                   <div className="space-y-2">
+                    {canViewPersonalInfo && (
+                      <>
                     <div className="text-sm flex items-center gap-2">
                       <Phone className="h-4 w-4" />
                       <span className="sr-only">
@@ -413,6 +429,13 @@ export default function GroupMembers({
                           t('ws-user-group-attendance.phone_fallback')}
                       </span>
                     </div>
+                    <div className="text-sm flex items-center gap-2">
+                      <Mail className="h-4 w-4" />
+                      <span className="sr-only">{t('ws-emails.singular')}</span>
+                      <span>{person.email || t('common.unknown')}</span>
+                    </div>
+                    </>
+                    )}
                     <div className="text-sm flex items-center gap-2">
                       <VenusAndMars className="h-4 w-4" />
                       <span className="sr-only">{t('common.gender')}</span>
@@ -427,11 +450,7 @@ export default function GroupMembers({
                           : t('common.unknown')}
                       </span>
                     </div>
-                    <div className="text-sm flex items-center gap-2">
-                      <Mail className="h-4 w-4" />
-                      <span className="sr-only">{t('ws-emails.singular')}</span>
-                      <span>{person.email || t('common.unknown')}</span>
-                    </div>
+
                   </div>
                 </HoverCardContent>
               </HoverCard>
