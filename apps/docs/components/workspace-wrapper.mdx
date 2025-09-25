@@ -30,12 +30,14 @@ import WorkspaceWrapper from '@/components/workspace-wrapper';
 
 ```tsx
 export default async function MyPage({ 
-  searchParams 
+  params 
 }: { 
-  searchParams: Promise<{ wsId: string }> 
+  params: Promise<{ wsId: string }> 
 }) {
+  const { wsId } = await params;
+  
   return (
-    <WorkspaceWrapper searchParams={searchParams}>
+    <WorkspaceWrapper wsId={wsId}>
       {({ workspace, wsId: validatedWsId }) => (
         <div>
           <h1>{workspace.name}</h1>
@@ -54,13 +56,15 @@ export default async function MyPage({
 import LoadingSpinner from '@/components/loading-spinner';
 
 export default async function MyPage({ 
-  searchParams 
+  params 
 }: { 
-  searchParams: Promise<{ wsId: string }> 
+  params: Promise<{ wsId: string }> 
 }) {
+  const { wsId } = await params;
+  
   return (
     <WorkspaceWrapper 
-      searchParams={searchParams}
+      wsId={wsId}
       fallback={<LoadingSpinner />}
     >
       {({ workspace, wsId: validatedWsId }) => (
@@ -82,12 +86,14 @@ import { withWorkspace } from '@/components/workspace-wrapper';
 import MyClientComponent from './my-client-component';
 
 export default async function MyPage({ 
-  searchParams 
+  params 
 }: { 
-  searchParams: Promise<{ wsId: string }> 
+  params: Promise<{ wsId: string }> 
 }) {
+  const { wsId } = await params;
+  
   return withWorkspace(
-    searchParams,
+    wsId,
     MyClientComponent,
     { 
       someProp: 'value',
@@ -133,7 +139,7 @@ export function MyClientComponent({
 
 | Prop | Type | Required | Description |
 |------|------|----------|-------------|
-| `searchParams` | `Promise<{ wsId: string }>` | Yes | The searchParams containing the workspace identifier |
+| `wsId` | `string` | Yes | The workspace identifier (legacy or UUID) |
 | `children` | `Function` | Yes | Function that receives `{ workspace, wsId }` |
 | `fallback` | `ReactNode` | No | Loading fallback component |
 
@@ -141,7 +147,7 @@ export function MyClientComponent({
 
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
-| `searchParams` | `Promise<{ wsId: string }>` | Yes | The searchParams containing the workspace identifier |
+| `wsId` | `string` | Yes | The workspace identifier (legacy or UUID) |
 | `Component` | `React.ComponentType` | Yes | Client component to render |
 | `props` | `T` | Yes | Props to pass to the component |
 | `fallback` | `ReactNode` | No | Loading fallback component |
@@ -159,11 +165,9 @@ export function MyClientComponent({
 
 ```tsx
 export default async function MyPage({ 
-  params, 
-  searchParams 
+  params 
 }: { 
   params: Promise<{ wsId: string }>;
-  searchParams: Promise<{ wsId: string }>;
 }) {
   const { wsId: id } = await params;
   
@@ -180,12 +184,14 @@ export default async function MyPage({
 
 ```tsx
 export default async function MyPage({ 
-  searchParams 
+  params 
 }: { 
-  searchParams: Promise<{ wsId: string }> 
+  params: Promise<{ wsId: string }> 
 }) {
+  const { wsId } = await params;
+  
   return (
-    <WorkspaceWrapper searchParams={searchParams}>
+    <WorkspaceWrapper wsId={wsId}>
       {({ workspace, wsId: validatedWsId }) => (
         <MyComponent workspace={workspace} wsId={validatedWsId} />
       )}

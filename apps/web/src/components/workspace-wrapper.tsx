@@ -5,7 +5,7 @@ import type { ReactNode } from 'react';
 import { Suspense } from 'react';
 
 interface WorkspaceWrapperProps {
-  searchParams: Promise<{ wsId: string }>;
+  wsId: string;
   children: (props: {
     workspace: Workspace & { role: WorkspaceUserRole; joined: boolean };
     wsId: string; // The validated UUID from workspace.id
@@ -14,7 +14,7 @@ interface WorkspaceWrapperProps {
 }
 
 /**
- * WorkspaceWrapper component that resolves workspace ID from searchParams
+ * WorkspaceWrapper component that resolves workspace ID from params
  * and provides a validated workspace object to its children.
  *
  * This wrapper handles the conversion from legacy workspace identifiers:
@@ -27,11 +27,10 @@ interface WorkspaceWrapperProps {
  * - wsId: The validated UUID from workspace.id (not the legacy identifier)
  */
 export default async function WorkspaceWrapper({
-  searchParams,
+  wsId,
   children,
   fallback,
 }: WorkspaceWrapperProps) {
-  const { wsId } = await searchParams;
   const workspace = await getWorkspace(wsId);
 
   if (!workspace) {
@@ -54,7 +53,7 @@ export default async function WorkspaceWrapper({
  * to client components through props.
  */
 export async function withWorkspace<T extends Record<string, any>>(
-  searchParams: Promise<{ wsId: string }>,
+  wsId: string,
   Component: React.ComponentType<
     T & {
       workspace: Workspace & { role: WorkspaceUserRole; joined: boolean };
@@ -64,7 +63,6 @@ export async function withWorkspace<T extends Record<string, any>>(
   props: T,
   fallback?: ReactNode
 ) {
-  const { wsId } = await searchParams;
   const workspace = await getWorkspace(wsId);
 
   if (!workspace) {

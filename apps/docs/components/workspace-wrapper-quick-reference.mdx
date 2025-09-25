@@ -10,7 +10,8 @@ updatedAt: "2024-12-19"
 import WorkspaceWrapper from '@/components/workspace-wrapper';
 
 // Basic usage
-<WorkspaceWrapper searchParams={searchParams}>
+const { wsId } = await params;
+<WorkspaceWrapper wsId={wsId}>
   {({ workspace, wsId }) => (
     <div>{workspace.name} - {wsId}</div>
   )}
@@ -18,7 +19,7 @@ import WorkspaceWrapper from '@/components/workspace-wrapper';
 
 // With loading fallback
 <WorkspaceWrapper 
-  searchParams={searchParams}
+  wsId={wsId}
   fallback={<LoadingSpinner />}
 >
   {({ workspace, wsId }) => <MyComponent />}
@@ -31,8 +32,9 @@ import WorkspaceWrapper from '@/components/workspace-wrapper';
 import { withWorkspace } from '@/components/workspace-wrapper';
 
 // For client components
+const { wsId } = await params;
 return withWorkspace(
-  searchParams,
+  wsId,
   MyClientComponent,
   { prop1: 'value' },
   <LoadingSpinner />
@@ -43,7 +45,7 @@ return withWorkspace(
 
 | Prop | Type | Description |
 |------|------|-------------|
-| `searchParams` | `Promise<{ wsId: string }>` | Search params containing wsId |
+| `wsId` | `string` | Workspace identifier (legacy or UUID) |
 | `children` | `Function` | Receives `{ workspace, wsId }` |
 | `fallback` | `ReactNode` | Loading fallback component |
 
@@ -60,9 +62,11 @@ return withWorkspace(
 
 ### Dashboard Page
 ```tsx
-export default async function Dashboard({ searchParams }) {
+export default async function Dashboard({ params }) {
+  const { wsId } = await params;
+  
   return (
-    <WorkspaceWrapper searchParams={searchParams}>
+    <WorkspaceWrapper wsId={wsId}>
       {({ workspace, wsId }) => (
         <DashboardContent workspace={workspace} wsId={wsId} />
       )}
@@ -73,9 +77,11 @@ export default async function Dashboard({ searchParams }) {
 
 ### Settings Page
 ```tsx
-export default async function Settings({ searchParams }) {
+export default async function Settings({ params }) {
+  const { wsId } = await params;
+  
   return (
-    <WorkspaceWrapper searchParams={searchParams}>
+    <WorkspaceWrapper wsId={wsId}>
       {({ workspace, wsId }) => (
         <SettingsForm 
           workspace={workspace} 
@@ -91,9 +97,11 @@ export default async function Settings({ searchParams }) {
 ### Client Component Integration
 ```tsx
 // Server component
-export default async function Page({ searchParams }) {
+export default async function Page({ params }) {
+  const { wsId } = await params;
+  
   return withWorkspace(
-    searchParams,
+    wsId,
     WorkspaceSettings,
     { theme: 'dark' },
     <div>Loading...</div>
