@@ -32,12 +32,12 @@ import {
 } from '@tuturuuu/ui/select';
 import { toast } from '@tuturuuu/ui/sonner';
 import { cn } from '@tuturuuu/utils/format';
+import { priorityCompare } from '@tuturuuu/utils/task-helper';
 import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone';
 import utc from 'dayjs/plugin/utc';
 import Link from 'next/link';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { priorityCompare } from '@/lib/task-helper';
 import type {
   ExtendedWorkspaceTask,
   SessionWithRelations,

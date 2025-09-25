@@ -79,10 +79,17 @@ interface Props {
   workspace: Workspace;
   boardId: string;
   tasks: Task[];
+  lists: TaskList[];
   isLoading: boolean;
 }
 
-export function KanbanBoard({ workspace, boardId, tasks, isLoading }: Props) {
+export function KanbanBoard({
+  workspace,
+  boardId,
+  tasks,
+  lists,
+  isLoading,
+}: Props) {
   const [activeColumn, setActiveColumn] = useState<TaskList | null>(null);
   const [activeTask, setActiveTask] = useState<Task | null>(null);
   const [selectedTasks, setSelectedTasks] = useState<Set<string>>(new Set());
@@ -95,37 +102,16 @@ export function KanbanBoard({ workspace, boardId, tasks, isLoading }: Props) {
   const moveTaskToBoardMutation = useMoveTaskToBoard(boardId);
   const [boardConfig, setBoardConfig] = useState<any>(null);
 
-  // Fetch task lists using React Query (same key as other components)
-  const { data: columns = [] } = useQuery({
-    queryKey: ['task_lists', boardId],
-    queryFn: async () => {
-      const supabase = createClient();
-      const { data, error } = await supabase
-        .from('task_lists')
-        .select('*')
-        .eq('board_id', boardId)
-        .eq('deleted', false)
-        .order('position')
-        .order('created_at');
-
-      if (error) throw error;
-
-      // Use the full TaskList objects as columns (they extend Column interface)
-      const enhancedColumns: TaskList[] = (data as TaskList[]).map((list) => ({
-        ...list,
-        title: list.name, // Maintain backward compatibility for title property
-      }));
-
-      return enhancedColumns;
-    },
-    staleTime: 30000, // 30 seconds
-  });
+  const columns: TaskList[] = lists.map((list) => ({
+    ...list,
+    title: list.name, // Maintain backward compatibility for title property
+  }));
   // Ref for the Kanban board container
   const boardRef = useRef<HTMLDivElement>(null);
   const dragStartCardLeft = useRef<number | null>(null);
   const overlayWidth = 350; // Column width
 
-  const handleTaskCreated = useCallback(() => {
+  const handleUpdate = useCallback(() => {
     // Invalidate the tasks query to trigger a refetch
     queryClient.invalidateQueries({ queryKey: ['tasks', boardId] });
     queryClient.invalidateQueries({ queryKey: ['task_lists', boardId] });
@@ -735,11 +721,10 @@ export function KanbanBoard({ workspace, boardId, tasks, isLoading }: Props) {
           tasks={tasks.filter((task) => task.list_id === activeColumn.id)}
           isOverlay
           isPersonalWorkspace={workspace.personal}
-          onTaskCreated={handleTaskCreated}
-          onListUpdated={handleTaskCreated}
+          onUpdate={handleUpdate}
         />
       ) : null,
-    [activeColumn, tasks, boardId, workspace.personal, handleTaskCreated]
+    [activeColumn, tasks, boardId, workspace.personal, handleUpdate]
   );
 
   async function onDragEnd(event: DragEndEvent) {
@@ -1251,18 +1236,14 @@ export function KanbanBoard({ workspace, boardId, tasks, isLoading }: Props) {
                         boardId={boardId}
                         tasks={columnTasks}
                         isPersonalWorkspace={workspace.personal}
-                        onTaskCreated={handleTaskCreated}
-                        onListUpdated={handleTaskCreated}
+                        onUpdate={handleUpdate}
                         selectedTasks={selectedTasks}
                         isMultiSelectMode={isMultiSelectMode}
                         onTaskSelect={handleTaskSelect}
                       />
                     );
                   })}
-                <TaskListForm
-                  boardId={boardId}
-                  onListCreated={handleTaskCreated}
-                />
+                <TaskListForm boardId={boardId} onListCreated={handleUpdate} />
               </div>
             </SortableContext>
           </ScrollableBoardContainer>

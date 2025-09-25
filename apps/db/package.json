@@ -19,8 +19,8 @@
   },
   "devDependencies": {
     "@biomejs/biome": "^2.2.4",
-    "supabase": "2.34.0",
+    "supabase": "2.45.5",
     "typescript": "^5.9.2"
   },
-  "packageManager": "bun@1.2.21"
+  "packageManager": "bun@1.2.22"
 }

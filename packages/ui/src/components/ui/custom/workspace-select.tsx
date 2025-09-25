@@ -42,6 +42,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@tuturuuu/ui/select';
+import {
+  PERSONAL_WORKSPACE_SLUG,
+  resolveWorkspaceId,
+  toWorkspaceSlug,
+} from '@tuturuuu/utils/constants';
 import { cn } from '@tuturuuu/utils/format';
 import { getInitials } from '@tuturuuu/utils/name-helper';
 import { CheckIcon, ChevronDown, Crown, PlusCircle } from 'lucide-react';
@@ -82,6 +87,11 @@ export function WorkspaceSelect({
   });
 
   const workspaces = (workspacesQuery?.data || []) as Workspace[];
+
+  const resolvedWorkspaceId =
+    wsId && wsId !== PERSONAL_WORKSPACE_SLUG
+      ? resolveWorkspaceId(wsId)
+      : undefined;
 
   const form = useForm({
     resolver: zodResolver(FormSchema),
@@ -139,7 +149,7 @@ export function WorkspaceSelect({
       teams: [
         {
           label: personalWorkspace.name || 'Personal',
-          value: 'personal',
+          value: PERSONAL_WORKSPACE_SLUG,
         },
       ],
     },
@@ -151,9 +161,12 @@ export function WorkspaceSelect({
           id: string;
           name: string | null;
           created_by_me?: boolean;
+          personal?: boolean;
         }) => ({
           label: workspace.name || 'Untitled',
-          value: workspace.id,
+          value: toWorkspaceSlug(workspace.id, {
+            personal: workspace?.personal,
+          }),
           // Signal creator-owned workspaces for UI
           isCreator: workspace?.created_by_me === true,
         })
@@ -165,23 +178,23 @@ export function WorkspaceSelect({
     teams: { label: string; value: string | undefined; isCreator?: boolean }[];
   }[];
 
-  const onValueChange = (wsId: string) => {
-    let newPathname = pathname?.replace(/^\/[^/]+/, `/${wsId}`);
+  const onValueChange = (nextSlug: string) => {
+    let newPathname = pathname?.replace(/^\/[^/]+/, `/${nextSlug}`);
     if (newPathname) {
       // Regex to match a UUID at the end of the string, with or without dashes
       const uuidRegex =
         /\/([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}|[0-9a-fA-F]{32})$/;
       // Remove the UUID if present, and the current path is not /:wsId
-      if (uuidRegex.test(newPathname) && newPathname !== `/${wsId}`)
+      if (uuidRegex.test(newPathname) && newPathname !== `/${nextSlug}`)
         newPathname = newPathname.replace(uuidRegex, '');
       router.push(newPathname);
     }
   };
 
   const workspace =
-    wsId === 'personal'
+    wsId === PERSONAL_WORKSPACE_SLUG
       ? personalWorkspace
-      : workspaces?.find((ws: { id: string }) => ws.id === wsId);
+      : workspaces?.find((ws: { id: string }) => ws.id === resolvedWorkspaceId);
   if (!wsId) return <div />;
 
   return (

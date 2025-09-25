@@ -2,11 +2,11 @@ import { createClient } from '@tuturuuu/supabase/next/server';
 import type { AuroraForecast } from '@tuturuuu/types/db';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
-import { getPermissions, getWorkspace } from '@tuturuuu/utils/workspace-helper';
+import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
-import { notFound } from 'next/navigation';
 import { Suspense } from 'react';
 import LoadingStatisticCard from '@/components/loading-statistic-card';
+import WorkspaceWrapper from '@/components/workspace-wrapper';
 import UpcomingCalendarEvents from './calendar/upcoming-events';
 import Countdown from './countdown';
 import DashboardCardSkeleton from './dashboard-card-skeleton';
@@ -28,78 +28,80 @@ interface Props {
 }
 
 export default async function WorkspaceHomePage({ params }: Props) {
-  const { wsId: id } = await params;
-
-  const workspace = await getWorkspace(id);
-  const currentUser = await getCurrentUser();
-  const forecast = await getForecast();
-  const mlMetrics = await getMLMetrics();
-  const statsMetrics = await getStatsMetrics();
-
-  if (!workspace) notFound();
-
-  if (!forecast || !mlMetrics || !statsMetrics) {
-    return <LoadingStatisticCard />;
-  }
-
-  const wsId = workspace?.id;
-
-  const { withoutPermission } = await getPermissions({
-    wsId,
-  });
-
-  const isInternalUser =
-    currentUser?.email?.endsWith('@tuturuuu.com') ||
-    currentUser?.email?.endsWith('@xwf.tuturuuu.com');
-
-  const disableCalendar = withoutPermission('manage_calendar');
-
   return (
-    <>
-      {isInternalUser && wsId === ROOT_WORKSPACE_ID && <Countdown />}
-      {currentUser && (
-        <div className="grid gap-4 pb-4 md:grid-cols-2">
-          {id !== 'personal' && (
-            <Suspense fallback={<DashboardCardSkeleton />}>
-              <NewlyCreatedTasks wsId={wsId} />
-            </Suspense>
-          )}
+    <WorkspaceWrapper params={params} fallback={<LoadingStatisticCard />}>
+      {async ({ workspace, wsId, isPersonal }) => {
+        // At this point, wsId is guaranteed to be a validated UUID
+        // and workspace contains the full workspace object with role and joined status
 
-          <Suspense fallback={<DashboardCardSkeleton />}>
-            <TasksAssignedToMe
-              wsId={wsId}
-              userId={currentUser.id}
-              isPersonal={workspace.personal}
-            />
-          </Suspense>
+        const currentUser = await getCurrentUser();
+        const forecast = await getForecast();
+        const mlMetrics = await getMLMetrics();
+        const statsMetrics = await getStatsMetrics();
 
-          <Suspense fallback={<DashboardCardSkeleton />}>
-            <UpcomingCalendarEvents
-              wsId={wsId}
-              showNavigation={!disableCalendar}
-            />
-          </Suspense>
+        if (!forecast || !mlMetrics || !statsMetrics) {
+          return <LoadingStatisticCard />;
+        }
 
-          <Suspense fallback={<DashboardCardSkeleton />}>
-            <TimeTrackingMetrics
-              wsId={wsId}
-              userId={currentUser.id}
-              isPersonal={workspace.personal}
-            />
-          </Suspense>
+        const { withoutPermission } = await getPermissions({
+          wsId, // This is the validated UUID, not the legacy identifier
+        });
 
-          <Suspense fallback={<DashboardCardSkeleton />}>
-            <RecentTumeetPlans
-              className={
-                disableCalendar || id === 'personal'
-                  ? 'col-span-1'
-                  : 'col-span-full'
-              }
-            />
-          </Suspense>
-        </div>
-      )}
-    </>
+        const isInternalUser =
+          currentUser?.email?.endsWith('@tuturuuu.com') ||
+          currentUser?.email?.endsWith('@xwf.tuturuuu.com');
+
+        const disableCalendar = withoutPermission('manage_calendar');
+
+        return (
+          <>
+            {isInternalUser && wsId === ROOT_WORKSPACE_ID && <Countdown />}
+            {currentUser && (
+              <div className="grid gap-4 pb-4 md:grid-cols-2">
+                {!isPersonal && (
+                  <Suspense fallback={<DashboardCardSkeleton />}>
+                    <NewlyCreatedTasks wsId={wsId} />
+                  </Suspense>
+                )}
+
+                <Suspense fallback={<DashboardCardSkeleton />}>
+                  <TasksAssignedToMe
+                    wsId={wsId}
+                    userId={currentUser.id}
+                    isPersonal={workspace.personal}
+                  />
+                </Suspense>
+
+                <Suspense fallback={<DashboardCardSkeleton />}>
+                  <UpcomingCalendarEvents
+                    wsId={wsId}
+                    showNavigation={!disableCalendar}
+                  />
+                </Suspense>
+
+                <Suspense fallback={<DashboardCardSkeleton />}>
+                  <TimeTrackingMetrics
+                    wsId={wsId}
+                    userId={currentUser.id}
+                    isPersonal={workspace.personal}
+                  />
+                </Suspense>
+
+                <Suspense fallback={<DashboardCardSkeleton />}>
+                  <RecentTumeetPlans
+                    className={
+                      disableCalendar || isPersonal
+                        ? 'col-span-1'
+                        : 'col-span-full'
+                    }
+                  />
+                </Suspense>
+              </div>
+            )}
+          </>
+        );
+      }}
+    </WorkspaceWrapper>
   );
 }
 

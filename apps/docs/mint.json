@@ -36,25 +36,37 @@
   ],
   "navigation": [
     {
-      "group": "API References",
-      "pages": ["api-reference/endpoint/generate"]
+      "group": "Get Started",
+      "pages": ["introduction", "organization-guide"]
     },
     {
-      "group": "Get Started",
+      "group": "Development Tools",
       "pages": [
-        "introduction",
-        "development",
-        "monorepo-architecture",
-        "git-conventions",
-        "local-supabase-development",
-        "ci-cd-pipelines",
-        "cleaning-clone",
-        "documenting"
+        "development-tools/index",
+        "development-tools/development",
+        "development-tools/monorepo-architecture",
+        "development-tools/git-conventions",
+        "development-tools/local-supabase-development",
+        "development-tools/ci-cd-pipelines",
+        "development-tools/cleaning-clone",
+        "development-tools/documenting"
       ]
     },
     {
+      "group": "Components",
+      "pages": [
+        "components/index",
+        "components/workspace-wrapper",
+        "components/workspace-wrapper-quick-reference"
+      ]
+    },
+    {
+      "group": "Examples",
+      "pages": ["examples/index"]
+    },
+    {
       "group": "Features",
-      "pages": ["features/meet-together"]
+      "pages": ["features/meet-together", "features/user-management"]
     },
     {
       "group": "AI Features",
@@ -63,6 +75,10 @@
     {
       "group": "Personalization",
       "pages": ["personalization/themes", "personalization/language"]
+    },
+    {
+      "group": "API References",
+      "pages": ["api-reference/endpoint/generate"]
     },
     {
       "group": "Experiments",
