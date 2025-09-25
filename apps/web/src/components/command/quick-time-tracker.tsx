@@ -22,10 +22,10 @@ import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
 import { toast } from '@tuturuuu/ui/sonner';
 import { cn } from '@tuturuuu/utils/format';
+import { priorityCompare } from '@tuturuuu/utils/task-helper';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { priorityCompare } from '@/lib/task-helper';
 import { prioritizeTasks, type Task } from '../../utils/task-prioritization';
 
 interface QuickTimeTrackerProps {

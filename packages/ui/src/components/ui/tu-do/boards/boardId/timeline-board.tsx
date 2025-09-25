@@ -2,7 +2,6 @@
 
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { Task } from '@tuturuuu/types/primitives/Task';
-import type { TaskBoard } from '@tuturuuu/types/primitives/TaskBoard';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -25,7 +24,8 @@ import { cn } from '@tuturuuu/utils/format';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 export interface TimelineProps {
-  board: TaskBoard & { tasks: Task[]; lists: TaskList[] };
+  tasks: Task[];
+  lists: TaskList[];
   className?: string;
   /**
    * Callback for propagating optimistic partial task updates (e.g., resize, inline edit)
@@ -176,7 +176,8 @@ function isWeekStart(d: Date) {
 
 // --- Component -------------------------------------------------------------
 export function TimelineBoard({
-  board,
+  tasks,
+  lists,
   className,
   onTaskPartialUpdate,
 }: TimelineProps) {
@@ -186,11 +187,11 @@ export function TimelineBoard({
     'compact' | 'comfortable' | 'expanded'
   >('comfortable');
   // Local editable tasks copy for optimistic UI
-  const [localTasks, setLocalTasks] = useState<Task[]>(board.tasks);
+  const [localTasks, setLocalTasks] = useState<Task[]>(tasks);
   // Re-sync when source changes (unless actively resizing/editing)
   useEffect(() => {
-    setLocalTasks(board.tasks);
-  }, [board.tasks]);
+    setLocalTasks(tasks);
+  }, [tasks]);
 
   // Resize state
   const [resizing, setResizing] = useState<{
@@ -230,8 +231,8 @@ export function TimelineBoard({
   }, [localTasks, resizeDraft]);
 
   const { spans, unscheduled, minDate, maxDate, rowCount } = useMemo(
-    () => computeTimelineSpans(tasksForCompute, board.lists),
-    [tasksForCompute, board.lists]
+    () => computeTimelineSpans(tasksForCompute, lists),
+    [tasksForCompute, lists]
   );
 
   // Exact range (removed +/-1 day padding to keep header width equal to task extent)
@@ -406,7 +407,7 @@ export function TimelineBoard({
       } catch (err) {
         console.error('Failed to persist resize', err);
         // Revert on failure
-        setLocalTasks(board.tasks);
+        setLocalTasks(tasks);
       } finally {
         setResizeDraft({});
       }
@@ -418,7 +419,7 @@ export function TimelineBoard({
       window.removeEventListener('pointermove', handleMove);
       window.removeEventListener('pointerup', handleUp);
     };
-  }, [resizing, dayWidth, resizeDraft, board.tasks, onTaskPartialUpdate]);
+  }, [resizing, dayWidth, resizeDraft, tasks, onTaskPartialUpdate]);
 
   return (
     <>
