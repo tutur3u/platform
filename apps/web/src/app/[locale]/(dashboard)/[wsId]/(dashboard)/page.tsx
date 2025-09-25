@@ -28,11 +28,9 @@ interface Props {
 }
 
 export default async function WorkspaceHomePage({ params }: Props) {
-  const { wsId: id } = await params;
-
   return (
-    <WorkspaceWrapper wsId={id} fallback={<LoadingStatisticCard />}>
-      {async ({ workspace, wsId }) => {
+    <WorkspaceWrapper params={params} fallback={<LoadingStatisticCard />}>
+      {async ({ workspace, wsId, isPersonal }) => {
         // At this point, wsId is guaranteed to be a validated UUID
         // and workspace contains the full workspace object with role and joined status
 
@@ -60,7 +58,7 @@ export default async function WorkspaceHomePage({ params }: Props) {
             {isInternalUser && wsId === ROOT_WORKSPACE_ID && <Countdown />}
             {currentUser && (
               <div className="grid gap-4 pb-4 md:grid-cols-2">
-                {id !== 'personal' && (
+                {!isPersonal && (
                   <Suspense fallback={<DashboardCardSkeleton />}>
                     <NewlyCreatedTasks wsId={wsId} />
                   </Suspense>
@@ -92,7 +90,7 @@ export default async function WorkspaceHomePage({ params }: Props) {
                 <Suspense fallback={<DashboardCardSkeleton />}>
                   <RecentTumeetPlans
                     className={
-                      disableCalendar || id === 'personal'
+                      disableCalendar || isPersonal
                         ? 'col-span-1'
                         : 'col-span-full'
                     }

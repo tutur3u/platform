@@ -1,4 +1,5 @@
 import type { Workspace, WorkspaceUserRole } from '@tuturuuu/types/db';
+import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import { notFound } from 'next/navigation';
 import type { ReactNode } from 'react';
@@ -11,6 +12,8 @@ interface WorkspaceWrapperProps {
   children: (props: {
     workspace: Workspace & { role: WorkspaceUserRole; joined: boolean };
     wsId: string; // The validated UUID from workspace.id
+    isPersonal: boolean;
+    isRoot: boolean;
   }) => ReactNode;
   fallback?: ReactNode;
 }
@@ -45,7 +48,12 @@ export default async function WorkspaceWrapper({
 
   return (
     <Suspense fallback={fallback}>
-      {children({ workspace, wsId: validatedWsId })}
+      {children({
+        workspace,
+        wsId: validatedWsId,
+        isPersonal: workspace.personal,
+        isRoot: workspace.id === ROOT_WORKSPACE_ID,
+      })}
     </Suspense>
   );
 }
@@ -61,6 +69,8 @@ export async function withWorkspace<T extends Record<string, any>>(
     T & {
       workspace: Workspace & { role: WorkspaceUserRole; joined: boolean };
       wsId: string;
+      isPersonal: boolean;
+      isRoot: boolean;
     }
   >,
   props: T,
@@ -76,7 +86,13 @@ export async function withWorkspace<T extends Record<string, any>>(
 
   return (
     <Suspense fallback={fallback}>
-      <Component {...props} workspace={workspace} wsId={validatedWsId} />
+      <Component
+        {...props}
+        workspace={workspace}
+        wsId={validatedWsId}
+        isPersonal={workspace.personal}
+        isRoot={workspace.id === ROOT_WORKSPACE_ID}
+      />
     </Suspense>
   );
 }
