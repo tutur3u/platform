@@ -65,6 +65,8 @@ export default async function UserGroupDetailsPage({
   const { data: linkedProducts, count: lpCount } =
     await getLinkedProducts(groupId);
 
+  const canViewPersonalInfo: boolean = false;
+
   return (
     <>
       <FeatureSummary
@@ -152,6 +154,7 @@ export default async function UserGroupDetailsPage({
           groupId={groupId}
           initialData={groupMembersData}
           pageSize={MEMBERS_PAGE_SIZE}
+          canViewPersonalInfo={canViewPersonalInfo}
         />
 
         <div className="flex flex-col rounded-lg border border-border bg-foreground/5 p-4">
