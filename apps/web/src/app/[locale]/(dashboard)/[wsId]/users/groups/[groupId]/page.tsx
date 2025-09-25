@@ -65,7 +65,7 @@ export default async function UserGroupDetailsPage({
   const { data: linkedProducts, count: lpCount } =
     await getLinkedProducts(groupId);
 
-  const canViewPersonalInfo : boolean = false;
+  const canViewPersonalInfo: boolean = false;
 
   return (
     <>
