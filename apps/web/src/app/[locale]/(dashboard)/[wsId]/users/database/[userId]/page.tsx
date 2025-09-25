@@ -6,6 +6,7 @@ import { Button } from '@tuturuuu/ui/button';
 import { invoiceColumns } from '@tuturuuu/ui/finance/invoices/columns';
 import { Users } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
+import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import moment from 'moment';
 import type { Metadata } from 'next';
 import Image from 'next/image';
@@ -15,7 +16,7 @@ import { getTranslations } from 'next-intl/server';
 import { CustomDataTable } from '@/components/custom-data-table';
 import UserMonthAttendance from '../../attendance/user-month-attendance';
 import LinkedPromotionsClient from './linked-promotions-client';
-import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
+import ReferralSectionClient from './referral-section-client';
 
 export const metadata: Metadata = {
   title: 'Userid Details',
@@ -47,7 +48,6 @@ export default async function WorkspaceUserDetailsPage({
   const data = await getData({ wsId, userId });
 
   const isGuest = await isUserGuest(userId);
-  console.log('isGuest', isGuest);
 
   const { data: groups, count: groupCount } = await getGroupData({
     wsId,
@@ -76,6 +76,16 @@ export default async function WorkspaceUserDetailsPage({
     ws_id: wsId,
   }));
 
+  // Fetch referral data
+  const workspaceSettings = await getWorkspaceSettings(wsId);
+  const { data: availableUsers, count: availableUsersCount } =
+    await getAvailableUsersForReferral({
+      wsId,
+      currentUserId: userId,
+    });
+
+  const referredUsers = await getReferredUsers({ wsId, userId });
+
   return (
     <div className="flex min-h-full w-full flex-col">
       {data.avatar_url && (
@@ -88,13 +98,29 @@ export default async function WorkspaceUserDetailsPage({
             className="aspect-square min-w-32 rounded-lg object-cover"
           />
           {data.full_name && <div>{data.full_name}</div>}
+          {isGuest && (
+            <div className="inline-flex items-center rounded-full border border-dynamic-orange/20 bg-dynamic-orange/10 px-2 py-0.5 font-medium text-dynamic-orange text-sm">
+              {t('guest')}
+            </div>
+          )}
+          {data.referrer?.id && (
+            <Link
+              href={`/${wsId}/users/database/${data.referrer.id}`}
+              className="inline-flex items-center gap-1 rounded-full border border-dynamic-border bg-dynamic-surface/50 px-2 py-0.5 font-medium text-sm transition-colors hover:bg-dynamic-surface/80"
+            >
+              <span className="opacity-60">Referred by:</span>
+              <span>{data.referrer.display_name || data.full_name || '-'}</span>
+            </Link>
+          )}
         </div>
       )}
 
       <div className="grid h-fit gap-4 md:grid-cols-2">
         <div className="grid gap-4">
           <div className="grid h-fit gap-2 rounded-lg border p-4">
-            <div className="font-semibold text-lg">Thông tin cơ bản</div>
+            <div className="font-semibold text-lg">
+              {t('basic_information')}
+            </div>
             <Separator />
             {data.display_name && (
               <div>
@@ -144,13 +170,13 @@ export default async function WorkspaceUserDetailsPage({
         <div className="grid gap-4">
           <div className="h-full rounded-lg border p-4">
             <div
-              className={`h-full gap-2 ${groups && groups.length ? 'grid content-start' : 'flex flex-col items-center justify-center'}`}
+              className={`h-full gap-2 ${groups?.length ? 'grid content-start' : 'flex flex-col items-center justify-center'}`}
             >
               <div className="font-semibold text-lg">
                 {t('joined_groups')} ({groupCount})
               </div>
               <Separator />
-              {groups && groups.length ? (
+              {groups?.length ? (
                 <div className="grid h-full gap-2 2xl:grid-cols-2">
                   {groups.map((group) => (
                     <Link
@@ -177,13 +203,13 @@ export default async function WorkspaceUserDetailsPage({
 
           <div className="h-full rounded-lg border p-4">
             <div
-              className={`h-full gap-2 ${reports && reports.length ? 'grid content-start' : 'flex flex-col items-center justify-center'}`}
+              className={`h-full gap-2 ${reports?.length ? 'grid content-start' : 'flex flex-col items-center justify-center'}`}
             >
               <div className="font-semibold text-lg">
                 {t('reports')} ({reportCount})
               </div>
               <Separator />
-              {reports && reports.length ? (
+              {reports?.length ? (
                 <div className="grid h-full gap-2 2xl:grid-cols-2">
                   {reports.map((group) => (
                     <Link
@@ -220,6 +246,15 @@ export default async function WorkspaceUserDetailsPage({
               use_ratio: c.use_ratio ?? null,
             }))}
             initialCount={couponCount || 0}
+          />
+
+          <ReferralSectionClient
+            wsId={wsId}
+            userId={userId}
+            workspaceSettings={workspaceSettings}
+            initialAvailableUsers={availableUsers}
+            initialAvailableUsersCount={availableUsersCount || 0}
+            initialReferredUsers={referredUsers}
           />
         </div>
       </div>
@@ -260,23 +295,20 @@ async function isUserGuest(user_id: string) {
 async function getData({ wsId, userId }: { wsId: string; userId: string }) {
   const supabase = await createClient();
 
-  const queryBuilder = supabase
-    .from('workspace_users')
-    .select(
-      '*, linked_users:workspace_user_linked_users(platform_user_id, users(display_name, workspace_members!inner(user_id, ws_id)))'
-    )
-    .eq('ws_id', wsId)
-    .eq('id', userId)
-    .eq('linked_users.users.workspace_members.ws_id', wsId)
-    .maybeSingle();
-
-  const { data: rawData, error } = await queryBuilder;
+  // Use raw SQL query via RPC to avoid complex PostgREST syntax
+  const { data: rawData, error } = (await supabase.rpc(
+    'get_workspace_user_with_details',
+    {
+      p_ws_id: wsId,
+      p_user_id: userId,
+    }
+  )) as { data: any; error: any };
   if (error) throw error;
   if (!rawData) notFound();
 
   const data = {
     ...rawData,
-    linked_users: rawData.linked_users
+    linked_users: (rawData.linked_users || [])
       .map(
         ({
           platform_user_id,
@@ -292,9 +324,16 @@ async function getData({ wsId, userId }: { wsId: string; userId: string }) {
             : null
       )
       .filter((v: WorkspaceUser | null) => v),
+    referrer: rawData.referrer
+      ? {
+          id: rawData.referrer.id,
+          display_name:
+            rawData.referrer.display_name || rawData.referrer.full_name || '',
+        }
+      : undefined,
   };
 
-  return data as WorkspaceUser;
+  return data;
 }
 
 async function getGroupData({
@@ -402,8 +441,8 @@ async function getInvoiceData(
   if (q) queryBuilder.ilike('notice', `%${q}%`);
 
   if (page && pageSize) {
-    const parsedPage = parseInt(page);
-    const parsedSize = parseInt(pageSize);
+    const parsedPage = parseInt(page, 10);
+    const parsedSize = parseInt(pageSize, 10);
     const start = (parsedPage - 1) * parsedSize;
     const end = parsedPage * parsedSize;
     queryBuilder.range(start, end).limit(parsedSize);
@@ -418,4 +457,57 @@ async function getInvoiceData(
   }));
 
   return { data, count } as { data: Invoice[]; count: number };
+}
+
+async function getWorkspaceSettings(wsId: string) {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from('workspace_settings')
+    .select('referral_count_cap, referral_increment_percent')
+    .eq('ws_id', wsId)
+    .maybeSingle();
+
+  if (error) {
+    throw error;
+  }
+
+  return data;
+}
+
+async function getAvailableUsersForReferral({
+  wsId,
+  currentUserId,
+}: {
+  wsId: string;
+  currentUserId: string;
+}) {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase.rpc('get_available_referral_users', {
+    p_ws_id: wsId,
+    p_user_id: currentUserId,
+  });
+  if (error) throw error;
+  return { data, count: data?.length || 0 };
+}
+
+async function getReferredUsers({
+  wsId,
+  userId,
+}: {
+  wsId: string;
+  userId: string;
+}) {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from('workspace_users')
+    .select('id, full_name, display_name, email, phone')
+    .eq('ws_id', wsId)
+    .eq('referred_by', userId)
+    .eq('archived', false)
+    .order('created_at', { ascending: false });
+  if (error) throw error;
+  return (data || []) as unknown as WorkspaceUser[];
 }

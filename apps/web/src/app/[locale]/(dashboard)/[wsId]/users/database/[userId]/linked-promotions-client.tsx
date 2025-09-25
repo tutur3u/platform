@@ -66,6 +66,7 @@ const useWorkspacePromotions = (wsId: string) => {
         .from('workspace_promotions')
         .select('id, name, description, code, value, use_ratio')
         .eq('ws_id', wsId)
+        .neq('promo_type', 'REFERRAL')
         .order('created_at', { ascending: false });
       if (error) {
         toast(
@@ -80,6 +81,11 @@ const useWorkspacePromotions = (wsId: string) => {
   });
 };
 
+type ReferralDiscountRow = {
+  promo_id: string | null;
+  calculated_discount_value: number | null;
+};
+
 export default function LinkedPromotionsClient({
   wsId,
   userId,
@@ -87,9 +93,39 @@ export default function LinkedPromotionsClient({
   initialCount,
 }: LinkedPromotionsClientProps) {
   const t = useTranslations();
-  const [promotions, setPromotions] =
-    useState<LinkedPromotionItem[]>(initialPromotions);
-  const [count, setCount] = useState<number>(initialCount);
+
+  // Source of truth via React Query; hydrate with SSR data
+  const userLinkedPromotionsQuery = useQuery({
+    queryKey: ['user-linked-promotions', wsId, userId],
+    queryFn: async (): Promise<LinkedPromotionItem[]> => {
+      console.log('Fetching linked promotions for user:', userId);
+      const supabase = createClient();
+      // Single joined query: get linked promotions with joined workspace promotion data
+      const { data, error } = await supabase
+        .from('user_linked_promotions')
+        .select(
+          'workspace_promotions!inner(id, name, description, code, value, use_ratio)'
+        )
+        .eq('user_id', userId)
+        .eq('workspace_promotions.ws_id', wsId);
+      if (error) throw error;
+      const items = (data || [])
+        .map((row: any) => row.workspace_promotions)
+        .filter(Boolean)
+        .map((p: any) => ({
+          id: p.id as string,
+          name: (p.name ?? null) as string | null,
+          description: (p.description ?? null) as string | null,
+          code: (p.code ?? null) as string | null,
+          value: (p.value ?? null) as number | null,
+          use_ratio: (p.use_ratio ?? null) as boolean | null,
+        })) as LinkedPromotionItem[];
+      return items;
+    },
+    initialData: initialPromotions,
+    staleTime: 5 * 60 * 1000,
+  });
+  const count = (userLinkedPromotionsQuery.data || []).length;
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [selectedPromoId, setSelectedPromoId] = useState<string>('');
@@ -100,10 +136,38 @@ export default function LinkedPromotionsClient({
 
   const { data: allPromotions } = useWorkspacePromotions(wsId);
 
+  // Fetch dynamic referral discount values per user/promo (percent)
+  const referralDiscountsQuery = useQuery({
+    queryKey: ['user-referral-discounts', wsId, userId],
+    queryFn: async (): Promise<ReferralDiscountRow[]> => {
+      const supabase = createClient();
+      const { data, error } = await supabase
+        .from('v_user_referral_discounts')
+        .select('promo_id, calculated_discount_value')
+        .eq('ws_id', wsId)
+        .eq('user_id', userId);
+      if (error) throw error;
+      return (data || []) as ReferralDiscountRow[];
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const referralDiscountMap = useMemo(() => {
+    const map = new Map<string, number>();
+    for (const row of referralDiscountsQuery.data || []) {
+      if (row.promo_id) {
+        map.set(row.promo_id, row.calculated_discount_value ?? 0);
+      }
+    }
+    return map;
+  }, [referralDiscountsQuery.data]);
+
   const availablePromotions = useMemo(() => {
-    const linkedIds = new Set(promotions.map((p) => p.id));
+    const linkedIds = new Set(
+      (userLinkedPromotionsQuery.data || []).map((p) => p.id)
+    );
     return (allPromotions || []).filter((p) => !linkedIds.has(p.id));
-  }, [allPromotions, promotions]);
+  }, [allPromotions, userLinkedPromotionsQuery.data]);
 
   const addPromotionMutation = useMutation({
     mutationFn: async ({ promoId }: { promoId: string }) => {
@@ -112,25 +176,27 @@ export default function LinkedPromotionsClient({
         .from('user_linked_promotions')
         .insert({ user_id: userId, promo_id: promoId });
       if (error) throw error;
-      const matched = (allPromotions || []).find((p) => p.id === promoId);
-      const newLinked: LinkedPromotionItem = {
-        id: promoId,
-        name: matched?.name ?? null,
-        description: matched?.description ?? null,
-        code: matched?.code ?? null,
-        value: matched?.value ?? null,
-        use_ratio: matched?.use_ratio ?? null,
-      };
-      return newLinked;
+      return { promoId };
     },
-    onSuccess: (newLinked) => {
-      setPromotions((prev) => [...prev, newLinked]);
-      setCount((c) => c + 1);
+    onSuccess: () => {
       setIsAddDialogOpen(false);
       setSelectedPromoId('');
       toast(t('ws-user-linked-coupons.link_success'));
       queryClient.invalidateQueries({
+        queryKey: ['user-linked-promotions', wsId, userId],
+      });
+      // Ensure other consumers with different query keys also refresh
+      queryClient.invalidateQueries({
+        queryKey: ['user-linked-promotions', userId],
+      });
+      queryClient.invalidateQueries({
         queryKey: ['workspace-promotions', wsId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ['user-referral-discounts', wsId, userId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ['available-promotions', wsId, userId],
       });
     },
     onError: (error: unknown) => {
@@ -154,13 +220,24 @@ export default function LinkedPromotionsClient({
       return { promoId };
     },
     onSuccess: ({ promoId }) => {
-      setPromotions((prev) => prev.filter((p) => p.id !== promoId));
-      setCount((c) => Math.max(0, c - 1));
       setIsDeleteDialogOpen(false);
       setDeletingPromotion(null);
       toast(t('ws-user-linked-coupons.unlink_success'));
       queryClient.invalidateQueries({
+        queryKey: ['user-linked-promotions', wsId, userId],
+      });
+      // Ensure other consumers with different query keys also refresh
+      queryClient.invalidateQueries({
+        queryKey: ['user-linked-promotions', userId],
+      });
+      queryClient.invalidateQueries({
         queryKey: ['workspace-promotions', wsId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ['user-referral-discounts', wsId, userId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ['available-promotions', wsId, userId],
       });
     },
     onError: (error: unknown) => {
@@ -265,7 +342,7 @@ export default function LinkedPromotionsClient({
 
       {count > 0 ? (
         <div className="grid grid-cols-1 gap-2 lg:grid-cols-2">
-          {promotions.map((promo) => (
+          {(userLinkedPromotionsQuery.data || []).map((promo) => (
             <div
               key={promo.id}
               className="group flex justify-between rounded-xl border border-border/50 bg-card/50 backdrop-blur-sm p-4 md:p-6 transition-all duration-200 hover:shadow-lg hover:shadow-black/5 hover:border-border hover:bg-card/80"
@@ -285,45 +362,50 @@ export default function LinkedPromotionsClient({
                         {promo.description}
                       </div>
                     )}
-                    {(promo.value ?? null) !== null && (
+                    {(referralDiscountMap.has(promo.id) ||
+                      (promo.value ?? null) !== null) && (
                       <div className="mt-1 inline-flex items-center gap-1 rounded-md bg-foreground/10 px-2 py-1 text-xs font-medium text-foreground">
                         <Tag className="h-3.5 w-3.5" />
                         <span className="sr-only">
                           {t('ws-user-linked-coupons.discount_value_label')}
                         </span>
                         <span>
-                          {promo.use_ratio
-                            ? `${promo.value ?? 0}%`
-                            : `${(promo.value ?? 0).toLocaleString()}`}
+                          {referralDiscountMap.has(promo.id)
+                            ? `${referralDiscountMap.get(promo.id) ?? 0}%`
+                            : promo.use_ratio
+                              ? `${promo.value ?? 0}%`
+                              : `${(promo.value ?? 0).toLocaleString()}`}
                         </span>
                       </div>
                     )}
                   </div>
                 </div>
               </div>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="opacity-60 group-hover:opacity-100 transition-opacity hover:bg-muted/80"
-                  >
-                    <MoreHorizontal className="h-4 w-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-48">
-                  <DropdownMenuItem
-                    onClick={() => {
-                      setDeletingPromotion(promo);
-                      setIsDeleteDialogOpen(true);
-                    }}
-                    className="text-dynamic-red cursor-pointer"
-                  >
-                    <Trash2 className="mr-2 h-4 w-4 text-dynamic-red" />
-                    {t('ws-user-linked-coupons.unlink')}
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              {!referralDiscountMap.has(promo.id) && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="opacity-60 group-hover:opacity-100 transition-opacity hover:bg-muted/80"
+                    >
+                      <MoreHorizontal className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-48">
+                    <DropdownMenuItem
+                      onClick={() => {
+                        setDeletingPromotion(promo);
+                        setIsDeleteDialogOpen(true);
+                      }}
+                      className="text-dynamic-red cursor-pointer"
+                    >
+                      <Trash2 className="mr-2 h-4 w-4 text-dynamic-red" />
+                      {t('ws-user-linked-coupons.unlink')}
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
             </div>
           ))}
         </div>

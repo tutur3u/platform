@@ -46,6 +46,7 @@ export type Database = {
         | 'tudo'
         | 'tumeet'
         | 'web';
+      promotion_type: 'REFERRAL' | 'REGULAR';
       recording_status:
         | 'completed'
         | 'failed'
@@ -265,6 +266,19 @@ export type Database = {
           total_output_tokens: number;
           total_reasoning_tokens: number;
           total_tokens: number;
+        }[];
+      };
+      get_available_referral_users: {
+        Args: {
+          p_user_id: string;
+          p_ws_id: string;
+        };
+        Returns: {
+          display_name: string;
+          email: string;
+          full_name: string;
+          id: string;
+          phone: string;
         }[];
       };
       get_browsers: {
@@ -750,6 +764,13 @@ export type Database = {
           ws_id: string;
         };
         Returns: number;
+      };
+      get_workspace_user_with_details: {
+        Args: {
+          p_user_id: string;
+          p_ws_id: string;
+        };
+        Returns: Json;
       };
       get_workspace_users: {
         Args: {
@@ -2996,6 +3017,13 @@ export type Database = {
             isOneToOne: false;
             referencedColumns: ['id'];
             referencedRelation: 'finance_invoices';
+          },
+          {
+            columns: ['promo_id'];
+            foreignKeyName: 'finance_invoice_promotions_promo_id_fkey';
+            isOneToOne: false;
+            referencedColumns: ['promo_id'];
+            referencedRelation: 'v_user_referral_discounts';
           },
           {
             columns: ['promo_id'];
@@ -7359,6 +7387,13 @@ export type Database = {
             columns: ['promo_id'];
             foreignKeyName: 'user_linked_promotions_promo_id_fkey';
             isOneToOne: false;
+            referencedColumns: ['promo_id'];
+            referencedRelation: 'v_user_referral_discounts';
+          },
+          {
+            columns: ['promo_id'];
+            foreignKeyName: 'user_linked_promotions_promo_id_fkey';
+            isOneToOne: false;
             referencedColumns: ['id'];
             referencedRelation: 'workspace_promotions';
           },
@@ -9271,11 +9306,41 @@ export type Database = {
           description?: null | string;
           id?: string;
           name?: null | string;
+          owner_id?: null | string;
+          promo_type?: Database['public']['Enums']['promotion_type'];
           use_ratio?: boolean;
           value: number;
           ws_id: string;
         };
         Relationships: [
+          {
+            columns: ['owner_id'];
+            foreignKeyName: 'fk_workspace_promotions_owner';
+            isOneToOne: false;
+            referencedColumns: ['id'];
+            referencedRelation: 'distinct_invoice_creators';
+          },
+          {
+            columns: ['owner_id'];
+            foreignKeyName: 'fk_workspace_promotions_owner';
+            isOneToOne: false;
+            referencedColumns: ['user_id'];
+            referencedRelation: 'group_user_with_attendance';
+          },
+          {
+            columns: ['owner_id'];
+            foreignKeyName: 'fk_workspace_promotions_owner';
+            isOneToOne: false;
+            referencedColumns: ['id'];
+            referencedRelation: 'workspace_users';
+          },
+          {
+            columns: ['owner_id'];
+            foreignKeyName: 'fk_workspace_promotions_owner';
+            isOneToOne: false;
+            referencedColumns: ['id'];
+            referencedRelation: 'workspace_users_with_groups';
+          },
           {
             columns: ['creator_id'];
             foreignKeyName: 'public_workspace_promotions_creator_id_fkey';
@@ -9326,6 +9391,8 @@ export type Database = {
           description: null | string;
           id: string;
           name: null | string;
+          owner_id: null | string;
+          promo_type: Database['public']['Enums']['promotion_type'];
           use_ratio: boolean;
           value: number;
           ws_id: string;
@@ -9337,6 +9404,8 @@ export type Database = {
           description?: null | string;
           id?: string;
           name?: null | string;
+          owner_id?: null | string;
+          promo_type?: Database['public']['Enums']['promotion_type'];
           use_ratio?: boolean;
           value?: number;
           ws_id?: string;
@@ -9740,6 +9809,62 @@ export type Database = {
           id?: string;
           name?: string;
           value?: null | string;
+          ws_id?: string;
+        };
+      };
+      workspace_settings: {
+        Insert: {
+          created_at?: string;
+          referral_count_cap?: number;
+          referral_increment_percent?: number;
+          referral_promotion_id?: null | string;
+          updated_at?: string;
+          ws_id: string;
+        };
+        Relationships: [
+          {
+            columns: ['ws_id', 'referral_promotion_id'];
+            foreignKeyName: 'workspace_settings_referral_promo_fkey';
+            isOneToOne: false;
+            referencedColumns: ['ws_id', 'promo_id'];
+            referencedRelation: 'v_user_referral_discounts';
+          },
+          {
+            columns: ['ws_id', 'referral_promotion_id'];
+            foreignKeyName: 'workspace_settings_referral_promo_fkey';
+            isOneToOne: false;
+            referencedColumns: ['ws_id', 'id'];
+            referencedRelation: 'workspace_promotions';
+          },
+          {
+            columns: ['ws_id'];
+            foreignKeyName: 'workspace_settings_ws_id_fkey';
+            isOneToOne: true;
+            referencedColumns: ['id'];
+            referencedRelation: 'workspace_link_counts';
+          },
+          {
+            columns: ['ws_id'];
+            foreignKeyName: 'workspace_settings_ws_id_fkey';
+            isOneToOne: true;
+            referencedColumns: ['id'];
+            referencedRelation: 'workspaces';
+          },
+        ];
+        Row: {
+          created_at: string;
+          referral_count_cap: number;
+          referral_increment_percent: number;
+          referral_promotion_id: null | string;
+          updated_at: string;
+          ws_id: string;
+        };
+        Update: {
+          created_at?: string;
+          referral_count_cap?: number;
+          referral_increment_percent?: number;
+          referral_promotion_id?: null | string;
+          updated_at?: string;
           ws_id?: string;
         };
       };
@@ -10464,11 +10589,40 @@ export type Database = {
           national_id?: null | string;
           note?: null | string;
           phone?: null | string;
+          referred_by?: null | string;
           updated_at?: string;
           updated_by?: null | string;
           ws_id: string;
         };
         Relationships: [
+          {
+            columns: ['referred_by'];
+            foreignKeyName: 'fk_workspace_users_referred_by';
+            isOneToOne: false;
+            referencedColumns: ['id'];
+            referencedRelation: 'distinct_invoice_creators';
+          },
+          {
+            columns: ['referred_by'];
+            foreignKeyName: 'fk_workspace_users_referred_by';
+            isOneToOne: false;
+            referencedColumns: ['user_id'];
+            referencedRelation: 'group_user_with_attendance';
+          },
+          {
+            columns: ['referred_by'];
+            foreignKeyName: 'fk_workspace_users_referred_by';
+            isOneToOne: false;
+            referencedColumns: ['id'];
+            referencedRelation: 'workspace_users';
+          },
+          {
+            columns: ['referred_by'];
+            foreignKeyName: 'fk_workspace_users_referred_by';
+            isOneToOne: false;
+            referencedColumns: ['id'];
+            referencedRelation: 'workspace_users_with_groups';
+          },
           {
             columns: ['updated_by'];
             foreignKeyName: 'public_workspace_users_updated_by_fkey';
@@ -10559,6 +10713,7 @@ export type Database = {
           national_id: null | string;
           note: null | string;
           phone: null | string;
+          referred_by: null | string;
           updated_at: string;
           updated_by: null | string;
           ws_id: string;
@@ -10582,6 +10737,7 @@ export type Database = {
           national_id?: null | string;
           note?: null | string;
           phone?: null | string;
+          referred_by?: null | string;
           updated_at?: string;
           updated_by?: null | string;
           ws_id?: string;
@@ -11510,6 +11666,59 @@ export type Database = {
           ws_id?: null | string;
         };
       };
+      v_user_referral_discounts: {
+        Relationships: [
+          {
+            columns: ['user_id'];
+            foreignKeyName: 'fk_workspace_promotions_owner';
+            isOneToOne: false;
+            referencedColumns: ['id'];
+            referencedRelation: 'distinct_invoice_creators';
+          },
+          {
+            columns: ['user_id'];
+            foreignKeyName: 'fk_workspace_promotions_owner';
+            isOneToOne: false;
+            referencedColumns: ['user_id'];
+            referencedRelation: 'group_user_with_attendance';
+          },
+          {
+            columns: ['user_id'];
+            foreignKeyName: 'fk_workspace_promotions_owner';
+            isOneToOne: false;
+            referencedColumns: ['id'];
+            referencedRelation: 'workspace_users';
+          },
+          {
+            columns: ['user_id'];
+            foreignKeyName: 'fk_workspace_promotions_owner';
+            isOneToOne: false;
+            referencedColumns: ['id'];
+            referencedRelation: 'workspace_users_with_groups';
+          },
+          {
+            columns: ['ws_id'];
+            foreignKeyName: 'workspace_promotions_ws_id_fkey';
+            isOneToOne: false;
+            referencedColumns: ['id'];
+            referencedRelation: 'workspace_link_counts';
+          },
+          {
+            columns: ['ws_id'];
+            foreignKeyName: 'workspace_promotions_ws_id_fkey';
+            isOneToOne: false;
+            referencedColumns: ['id'];
+            referencedRelation: 'workspaces';
+          },
+        ];
+        Row: {
+          calculated_discount_value: null | number;
+          promo_code: null | string;
+          promo_id: null | string;
+          user_id: null | string;
+          ws_id: null | string;
+        };
+      };
       workspace_dataset_row_cells: {
         Relationships: [
           {
@@ -11929,6 +12138,7 @@ export const Constants = {
         'tumeet',
         'web',
       ],
+      promotion_type: ['REFERRAL', 'REGULAR'],
       recording_status: [
         'completed',
         'failed',

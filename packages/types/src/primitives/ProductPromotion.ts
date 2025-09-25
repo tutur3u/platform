@@ -6,4 +6,5 @@ export interface ProductPromotion extends Entity {
   value: number | string;
   use_ratio: boolean;
   ws_id?: string;
+  promo_type: 'REGULAR' | 'REFERRAL';
 }

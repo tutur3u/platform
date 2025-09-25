@@ -1124,6 +1124,9 @@
     "created_at": "Ngày tạo"
   },
   "user-data-table": {
+    "referral_settings_title": "Cần cài đặt giới thiệu",
+    "referral_settings_desc": "Hãy thiết lập giới hạn giới thiệu và phần trăm giảm để bật tính năng giới thiệu cho không gian làm việc này.",
+    "configure_in_promotions_cta": "Cài đặt Khuyến mãi",
     "id": "Mã số",
     "attendance_count": "Số lần điểm danh",
     "avatar_url": "Ảnh đại diện",
@@ -1173,7 +1176,28 @@
     "type": "Loại",
     "link_product": "Liên kết sản phẩm",
     "link_product_description": "Chọn một sản phẩm, cùng với đơn vị và kho hàng của nó để liên kết với nhóm này",
-    "invoices": "Hóa đơn"
+    "invoices": "Hóa đơn",
+    "guest": "Khách mời",
+    "basic_information": "Thông tin cơ bản",
+    "refer_people_with_progress": "Giới thiệu người khác ({current}/{max})",
+    "refer_summary": "Bạn có thể giới thiệu tối đa {cap} người. Mỗi lượt giới thiệu mang lại {percent}% giảm giá.",
+    "referred_users_label": "Người đã được bạn giới thiệu",
+    "loading": "Đang tải...",
+    "no_referred_users": "Chưa có người nào được giới thiệu",
+    "select_person_to_refer_with_remaining": "Chọn người để giới thiệu (còn {remaining})",
+    "search_person_to_refer_placeholder": "Tìm người để giới thiệu...",
+    "refer_selected_person": "Giới thiệu người đã chọn",
+    "reached_max_referrals": "Bạn đã đạt số lượt giới thiệu tối đa ({cap}).",
+    "current_discount_label": "Giảm giá hiện tại:",
+    "avatar": "Ảnh đại diện",
+    "common": {
+      "empty": "Trống",
+      "error": "Đã có lỗi xảy ra",
+      "unknown": "Không rõ"
+    },
+    "referral_success": "Đã giới thiệu một người dùng mới",
+    "user_already_referred": "Người dùng này đã được giới thiệu.",
+    "missing_creator_id": "Thiếu ID của người tạo. \nBạn không được ủy quyền"
   },
   "email-data-table": {
     "id": "Mã số",
@@ -2986,6 +3010,8 @@
     "create": "Tạo khuyến mãi",
     "create_description": "Tạo một khuyến mãi mới",
     "update": "Cập nhật khuyến mãi",
+    "create_settings": "Tạo cài đặt",
+    "create_settings_tooltip": "Chưa có cài đặt cho không gian làm việc. Bấm để tạo.",
     "form": {
       "name": "Tên",
       "description": "Mô tả",
@@ -4527,5 +4553,14 @@
     "previous": "Trước",
     "next": "Tiếp",
     "page_of": "Trang {current} của {total}"
+  },
+  "inventory": {
+    "referral_count_cap": "Giới hạn số lượt giới thiệu",
+    "referral_increment_percent": "Phần trăm tăng theo lượt giới thiệu",
+    "default_referral_promotion": "Khuyến mãi được cấp mặc định"
+  },
+  "ws-promotions": {
+    "no_promotion": "Không có khuyến mãi",
+    "search_promotions": "Tìm kiếm khuyến mãi"
   }
 }

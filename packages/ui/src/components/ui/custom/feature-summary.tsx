@@ -17,6 +17,15 @@ interface Props<T> {
   defaultData?: T & { id?: string };
   trigger?: ReactNode;
   form?: ReactElement<FormProps<T>>;
+  // Settings support (optional)
+  settingsData?: unknown;
+  settingsForm?: ReactElement<FormProps<unknown>>;
+  settingsTitle?: string;
+  settingsDescription?: string;
+  settingsRequireExpansion?: boolean;
+  settingsTrigger?: ReactNode;
+  settingsTriggerTitle?: string;
+  settingsTriggerIcon?: ReactNode;
   href?: string;
   secondaryHref?: string;
   title?: ReactNode;
@@ -47,6 +56,14 @@ export default function FeatureSummary<T>({
   data,
   defaultData,
   form,
+  settingsData,
+  settingsForm,
+  settingsTitle,
+  settingsDescription,
+  settingsRequireExpansion,
+  settingsTrigger,
+  settingsTriggerTitle,
+  settingsTriggerIcon,
   href,
   secondaryHref,
   title,
@@ -87,6 +104,16 @@ export default function FeatureSummary<T>({
   showDefaultFormAsSecondary,
   setOpen,
 }: Props<T>) {
+  const computedSettingsTrigger =
+    settingsTrigger ||
+    (settingsForm ? (
+      <Button size="xs" variant="ghost" className="w-full md:w-fit">
+        {settingsTriggerIcon || (
+          <Cog className={cn('h-5 w-5', settingsTriggerTitle ? 'mr-1' : '')} />
+        )}
+        {settingsTriggerTitle || 'Settings'}
+      </Button>
+    ) : undefined);
   return (
     <div className="flex flex-col justify-between gap-4 rounded-lg border border-border bg-foreground/5 p-4 md:flex-row md:items-start">
       <div className="w-full">
@@ -103,10 +130,21 @@ export default function FeatureSummary<T>({
       )}
       {(form ||
         action ||
+        settingsForm ||
         showDefaultFormAsSecondary ||
         (showSecondaryTrigger && !showCustomSecondaryTrigger) ||
         (showSecondaryTrigger && secondaryTrigger)) && (
         <div className="flex flex-col items-center justify-center gap-2 md:flex-row">
+          {settingsForm && (
+            <ModifiableDialogTrigger
+              data={settingsData as { id?: string } | undefined}
+              trigger={computedSettingsTrigger}
+              form={settingsForm as ReactElement<FormProps<unknown>>}
+              title={settingsTitle || 'Settings'}
+              editDescription={settingsDescription}
+              requireExpansion={settingsRequireExpansion}
+            />
+          )}
           {showDefaultFormAsSecondary ||
           (showSecondaryTrigger && !showCustomSecondaryTrigger) ? (
             <ModifiableDialogTrigger
