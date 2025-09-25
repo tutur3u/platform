@@ -1,0 +1,142 @@
+---
+title: "WorkspaceWrapper Quick Reference"
+description: "Quick reference guide for the WorkspaceWrapper component"
+updatedAt: "2024-12-19"
+---
+
+## Quick Start
+
+```tsx
+import WorkspaceWrapper from '@/components/workspace-wrapper';
+
+// Basic usage
+<WorkspaceWrapper searchParams={searchParams}>
+  {({ workspace, wsId }) => (
+    <div>{workspace.name} - {wsId}</div>
+  )}
+</WorkspaceWrapper>
+
+// With loading fallback
+<WorkspaceWrapper 
+  searchParams={searchParams}
+  fallback={<LoadingSpinner />}
+>
+  {({ workspace, wsId }) => <MyComponent />}
+</WorkspaceWrapper>
+```
+
+## withWorkspace Helper
+
+```tsx
+import { withWorkspace } from '@/components/workspace-wrapper';
+
+// For client components
+return withWorkspace(
+  searchParams,
+  MyClientComponent,
+  { prop1: 'value' },
+  <LoadingSpinner />
+);
+```
+
+## Props Reference
+
+| Prop | Type | Description |
+|------|------|-------------|
+| `searchParams` | `Promise<{ wsId: string }>` | Search params containing wsId |
+| `children` | `Function` | Receives `{ workspace, wsId }` |
+| `fallback` | `ReactNode` | Loading fallback component |
+
+## Children Function
+
+```tsx
+{({ workspace, wsId }) => {
+  // workspace: Workspace & { role: WorkspaceUserRole; joined: boolean }
+  // wsId: string (validated UUID)
+}}
+```
+
+## Common Patterns
+
+### Dashboard Page
+```tsx
+export default async function Dashboard({ searchParams }) {
+  return (
+    <WorkspaceWrapper searchParams={searchParams}>
+      {({ workspace, wsId }) => (
+        <DashboardContent workspace={workspace} wsId={wsId} />
+      )}
+    </WorkspaceWrapper>
+  );
+}
+```
+
+### Settings Page
+```tsx
+export default async function Settings({ searchParams }) {
+  return (
+    <WorkspaceWrapper searchParams={searchParams}>
+      {({ workspace, wsId }) => (
+        <SettingsForm 
+          workspace={workspace} 
+          wsId={wsId}
+          onSave={handleSave}
+        />
+      )}
+    </WorkspaceWrapper>
+  );
+}
+```
+
+### Client Component Integration
+```tsx
+// Server component
+export default async function Page({ searchParams }) {
+  return withWorkspace(
+    searchParams,
+    WorkspaceSettings,
+    { theme: 'dark' },
+    <div>Loading...</div>
+  );
+}
+
+// Client component
+'use client';
+export function WorkspaceSettings({ 
+  workspace, 
+  wsId, 
+  theme 
+}: { 
+  workspace: Workspace & { role: WorkspaceUserRole; joined: boolean };
+  wsId: string;
+  theme: string;
+}) {
+  return <div>{workspace.name}</div>;
+}
+```
+
+## Error Handling
+
+The wrapper automatically handles:
+- Invalid workspace ID → `notFound()`
+- User not authenticated → Redirects to login
+- Workspace not found → `notFound()`
+- User not a member → `notFound()`
+
+## Migration Checklist
+
+- [ ] Replace manual `getWorkspace()` calls
+- [ ] Update component props to use `searchParams`
+- [ ] Use validated `wsId` from wrapper
+- [ ] Add appropriate loading fallbacks
+- [ ] Update TypeScript types
+- [ ] Test error scenarios
+
+## Troubleshooting
+
+| Issue | Solution |
+|-------|----------|
+| `notFound()` called | Check workspace access and ID validity |
+| TypeScript errors | Use workspace object from wrapper |
+| Loading never resolves | Check `getWorkspace` function |
+| Props not passed | Use `withWorkspace` helper for client components |
