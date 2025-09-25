@@ -419,22 +419,24 @@ export default function GroupMembers({
                   <div className="space-y-2">
                     {canViewPersonalInfo && (
                       <>
-                    <div className="text-sm flex items-center gap-2">
-                      <Phone className="h-4 w-4" />
-                      <span className="sr-only">
-                        {t('settings-account.phone-number')}
-                      </span>{' '}
-                      <span>
-                        {person.phone ||
-                          t('ws-user-group-attendance.phone_fallback')}
-                      </span>
-                    </div>
-                    <div className="text-sm flex items-center gap-2">
-                      <Mail className="h-4 w-4" />
-                      <span className="sr-only">{t('ws-emails.singular')}</span>
-                      <span>{person.email || t('common.unknown')}</span>
-                    </div>
-                    </>
+                        <div className="text-sm flex items-center gap-2">
+                          <Phone className="h-4 w-4" />
+                          <span className="sr-only">
+                            {t('settings-account.phone-number')}
+                          </span>{' '}
+                          <span>
+                            {person.phone ||
+                              t('ws-user-group-attendance.phone_fallback')}
+                          </span>
+                        </div>
+                        <div className="text-sm flex items-center gap-2">
+                          <Mail className="h-4 w-4" />
+                          <span className="sr-only">
+                            {t('ws-emails.singular')}
+                          </span>
+                          <span>{person.email || t('common.unknown')}</span>
+                        </div>
+                      </>
                     )}
                     <div className="text-sm flex items-center gap-2">
                       <VenusAndMars className="h-4 w-4" />
@@ -450,7 +452,6 @@ export default function GroupMembers({
                           : t('common.unknown')}
                       </span>
                     </div>
-
                   </div>
                 </HoverCardContent>
               </HoverCard>
