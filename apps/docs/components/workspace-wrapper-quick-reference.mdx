@@ -10,19 +10,18 @@ updatedAt: "2024-12-19"
 import WorkspaceWrapper from '@/components/workspace-wrapper';
 
 // Basic usage
-const { wsId } = await params;
-<WorkspaceWrapper wsId={wsId}>
-  {({ workspace, wsId }) => (
+<WorkspaceWrapper params={params}>
+  {({ workspace, wsId, isPersonal, isRoot }) => (
     <div>{workspace.name} - {wsId}</div>
   )}
 </WorkspaceWrapper>
 
 // With loading fallback
 <WorkspaceWrapper 
-  wsId={wsId}
+  params={params}
   fallback={<LoadingSpinner />}
 >
-  {({ workspace, wsId }) => <MyComponent />}
+  {({ workspace, wsId, isPersonal, isRoot }) => <MyComponent />}
 </WorkspaceWrapper>
 ```
 
@@ -32,9 +31,8 @@ const { wsId } = await params;
 import { withWorkspace } from '@/components/workspace-wrapper';
 
 // For client components
-const { wsId } = await params;
 return withWorkspace(
-  wsId,
+  (await params).wsId,
   MyClientComponent,
   { prop1: 'value' },
   <LoadingSpinner />
@@ -45,16 +43,18 @@ return withWorkspace(
 
 | Prop | Type | Description |
 |------|------|-------------|
-| `wsId` | `string` | Workspace identifier (legacy or UUID) |
-| `children` | `Function` | Receives `{ workspace, wsId }` |
+| `params` | `Promise<{ wsId: string }>` | Route params containing `wsId` |
+| `children` | `Function` | Receives `{ workspace, wsId, isPersonal, isRoot }` |
 | `fallback` | `ReactNode` | Loading fallback component |
 
 ## Children Function
 
 ```tsx
-{({ workspace, wsId }) => {
+{({ workspace, wsId, isPersonal, isRoot }) => {
   // workspace: Workspace & { role: WorkspaceUserRole; joined: boolean }
   // wsId: string (validated UUID)
+  // isPersonal: boolean
+  // isRoot: boolean
 }}
 ```
 
@@ -63,11 +63,9 @@ return withWorkspace(
 ### Dashboard Page
 ```tsx
 export default async function Dashboard({ params }) {
-  const { wsId } = await params;
-  
   return (
-    <WorkspaceWrapper wsId={wsId}>
-      {({ workspace, wsId }) => (
+    <WorkspaceWrapper params={params}>
+      {({ workspace, wsId, isPersonal, isRoot }) => (
         <DashboardContent workspace={workspace} wsId={wsId} />
       )}
     </WorkspaceWrapper>
@@ -78,11 +76,9 @@ export default async function Dashboard({ params }) {
 ### Settings Page
 ```tsx
 export default async function Settings({ params }) {
-  const { wsId } = await params;
-  
   return (
-    <WorkspaceWrapper wsId={wsId}>
-      {({ workspace, wsId }) => (
+    <WorkspaceWrapper params={params}>
+      {({ workspace, wsId, isPersonal, isRoot }) => (
         <SettingsForm 
           workspace={workspace} 
           wsId={wsId}
@@ -98,10 +94,8 @@ export default async function Settings({ params }) {
 ```tsx
 // Server component
 export default async function Page({ params }) {
-  const { wsId } = await params;
-  
   return withWorkspace(
-    wsId,
+    (await params).wsId,
     WorkspaceSettings,
     { theme: 'dark' },
     <div>Loading...</div>
@@ -113,10 +107,14 @@ export default async function Page({ params }) {
 export function WorkspaceSettings({ 
   workspace, 
   wsId, 
+  isPersonal,
+  isRoot,
   theme 
 }: { 
   workspace: Workspace & { role: WorkspaceUserRole; joined: boolean };
   wsId: string;
+  isPersonal: boolean;
+  isRoot: boolean;
   theme: string;
 }) {
   return <div>{workspace.name}</div>;

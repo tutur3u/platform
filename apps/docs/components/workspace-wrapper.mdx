@@ -34,15 +34,14 @@ export default async function MyPage({
 }: { 
   params: Promise<{ wsId: string }> 
 }) {
-  const { wsId } = await params;
-  
   return (
-    <WorkspaceWrapper wsId={wsId}>
-      {({ workspace, wsId: validatedWsId }) => (
+    <WorkspaceWrapper params={params}>
+      {({ workspace, wsId, isPersonal, isRoot }) => (
         <div>
           <h1>{workspace.name}</h1>
-          <p>Workspace UUID: {validatedWsId}</p>
-          <p>Is Personal: {workspace.personal ? 'Yes' : 'No'}</p>
+          <p>Workspace UUID: {wsId}</p>
+          <p>Is Personal: {isPersonal ? 'Yes' : 'No'}</p>
+          <p>Is Root: {isRoot ? 'Yes' : 'No'}</p>
         </div>
       )}
     </WorkspaceWrapper>
@@ -60,15 +59,13 @@ export default async function MyPage({
 }: { 
   params: Promise<{ wsId: string }> 
 }) {
-  const { wsId } = await params;
-  
   return (
     <WorkspaceWrapper 
-      wsId={wsId}
+      params={params}
       fallback={<LoadingSpinner />}
     >
-      {({ workspace, wsId: validatedWsId }) => (
-        <MyWorkspaceContent workspace={workspace} wsId={validatedWsId} />
+      {({ workspace, wsId, isPersonal, isRoot }) => (
+        <MyWorkspaceContent workspace={workspace} wsId={wsId} />
       )}
     </WorkspaceWrapper>
   );
@@ -112,6 +109,8 @@ export default async function MyPage({
 interface MyClientComponentProps {
   workspace: Workspace & { role: WorkspaceUserRole; joined: boolean };
   wsId: string; // Validated UUID
+  isPersonal: boolean;
+  isRoot: boolean;
   someProp: string;
   anotherProp: number;
 }
@@ -119,6 +118,8 @@ interface MyClientComponentProps {
 export function MyClientComponent({ 
   workspace, 
   wsId, 
+  isPersonal,
+  isRoot,
   someProp, 
   anotherProp 
 }: MyClientComponentProps) {
@@ -128,6 +129,8 @@ export function MyClientComponent({
       <h1>{workspace.name}</h1>
       <p>Workspace ID: {wsId}</p>
       <p>User Role: {workspace.role}</p>
+      <p>Personal: {isPersonal ? 'Yes' : 'No'}</p>
+      <p>Root: {isRoot ? 'Yes' : 'No'}</p>
     </div>
   );
 }
@@ -139,8 +142,8 @@ export function MyClientComponent({
 
 | Prop | Type | Required | Description |
 |------|------|----------|-------------|
-| `wsId` | `string` | Yes | The workspace identifier (legacy or UUID) |
-| `children` | `Function` | Yes | Function that receives `{ workspace, wsId }` |
+| `params` | `Promise<{ wsId: string }>` | Yes | The route params containing `wsId` |
+| `children` | `Function` | Yes | Function that receives `{ workspace, wsId, isPersonal, isRoot }` |
 | `fallback` | `ReactNode` | No | Loading fallback component |
 
 ### withWorkspace Parameters
@@ -158,6 +161,8 @@ export function MyClientComponent({
 |-----------|------|-------------|
 | `workspace` | `Workspace & { role: WorkspaceUserRole; joined: boolean }` | Full workspace object with user role and joined status |
 | `wsId` | `string` | Validated UUID from `workspace.id` |
+| `isPersonal` | `boolean` | Whether the workspace is a personal workspace |
+| `isRoot` | `boolean` | Whether the workspace is the root/internal workspace |
 
 ## Migration Guide
 
@@ -188,12 +193,10 @@ export default async function MyPage({
 }: { 
   params: Promise<{ wsId: string }> 
 }) {
-  const { wsId } = await params;
-  
   return (
-    <WorkspaceWrapper wsId={wsId}>
-      {({ workspace, wsId: validatedWsId }) => (
-        <MyComponent workspace={workspace} wsId={validatedWsId} />
+    <WorkspaceWrapper params={params}>
+      {({ workspace, wsId }) => (
+        <MyComponent workspace={workspace} wsId={wsId} />
       )}
     </WorkspaceWrapper>
   );
@@ -209,13 +212,13 @@ Here's how the dashboard page uses the WorkspaceWrapper:
 ```tsx:apps/docs/examples/workspace-wrapper-example.tsx
 // Example 1: Basic Dashboard Page
 export default async function DashboardPage({ 
-  searchParams 
+  params 
 }: { 
-  searchParams: Promise<{ wsId: string }> 
+  params: Promise<{ wsId: string }> 
 }) {
   return (
-    <WorkspaceWrapper searchParams={searchParams}>
-      {({ workspace, wsId }) => (
+    <WorkspaceWrapper params={params}>
+      {({ workspace, wsId, isPersonal, isRoot }) => (
         <div className="p-6">
           <h1 className="text-2xl font-bold mb-4">
             {workspace.name || 'Unnamed Workspace'}
@@ -224,9 +227,10 @@ export default async function DashboardPage({
             <div className="p-4 bg-gray-100 rounded">
               <h2 className="font-semibold">Workspace Details</h2>
               <p>ID: {wsId}</p>
-              <p>Type: {workspace.personal ? 'Personal' : 'Team'}</p>
+              <p>Type: {isPersonal ? 'Personal' : 'Team'}</p>
               <p>Role: {workspace.role}</p>
               <p>Joined: {workspace.joined ? 'Yes' : 'No'}</p>
+              <p>Root: {isRoot ? 'Yes' : 'No'}</p>
             </div>
           </div>
         </div>
@@ -239,13 +243,13 @@ export default async function DashboardPage({
 ```tsx:apps/docs/examples/workspace-wrapper-example.tsx
 // Example 2: Settings Page with Loading State
 export default async function SettingsPage({ 
-  searchParams 
+  params 
 }: { 
-  searchParams: Promise<{ wsId: string }> 
+  params: Promise<{ wsId: string }> 
 }) {
   return (
     <WorkspaceWrapper 
-      searchParams={searchParams}
+      params={params}
       fallback={<div className="p-6">Loading workspace settings...</div>}
     >
       {async ({ workspace, wsId }) => {
