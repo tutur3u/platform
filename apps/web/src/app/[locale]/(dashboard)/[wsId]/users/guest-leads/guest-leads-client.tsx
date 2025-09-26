@@ -36,11 +36,15 @@ export default function GuestLeadsClient({
   }, [queryClient, queryKey, initialData, initialCount]);
 
   // Set up the query for client-side refetching
-  const { data: queryData, isLoading, error } = useQuery({
+  const {
+    data: queryData,
+    isLoading,
+    error,
+  } = useQuery({
     queryKey,
     queryFn: async () => {
       const { q, page = '1', pageSize = '10' } = searchParams;
-      
+
       // Get workspace settings to check threshold
       const { data: settings } = await supabase
         .from('workspace_settings')
@@ -73,10 +77,13 @@ export default function GuestLeadsClient({
 
       // Add search functionality
       if (q) {
-        userQueryBuilder = userQueryBuilder.or(`full_name.ilike.%${q}%,email.ilike.%${q}%`);
+        userQueryBuilder = userQueryBuilder.or(
+          `full_name.ilike.%${q}%,email.ilike.%${q}%`
+        );
       }
 
-      const { data: workspaceUsers, error: usersError } = await userQueryBuilder;
+      const { data: workspaceUsers, error: usersError } =
+        await userQueryBuilder;
 
       if (usersError) throw usersError;
 
@@ -87,22 +94,26 @@ export default function GuestLeadsClient({
       // Filter users who are actually guests using the is_user_guest function
       const guestUsers = [];
       for (const user of workspaceUsers) {
-        const { data: isGuest, error: guestError } = await supabase.rpc('is_user_guest', {
-          user_uuid: user.id,
-        });
-        
+        const { data: isGuest, error: guestError } = await supabase.rpc(
+          'is_user_guest',
+          {
+            user_uuid: user.id,
+          }
+        );
+
         if (guestError) continue; // Skip users with errors
         if (!isGuest) continue; // Skip non-guest users
 
         // Calculate attendance count for this user
-        const { count: attendanceCount, error: attendanceError } = await supabase
-          .from('user_group_attendance')
-          .select('*', { count: 'exact', head: true })
-          .eq('user_id', user.id)
-          .in('status', ['PRESENT', 'LATE']);
+        const { count: attendanceCount, error: attendanceError } =
+          await supabase
+            .from('user_group_attendance')
+            .select('*', { count: 'exact', head: true })
+            .eq('user_id', user.id)
+            .in('status', ['PRESENT', 'LATE']);
 
         if (attendanceError) continue; // Skip users with attendance errors
-        
+
         // Only include users who meet the attendance threshold
         if ((attendanceCount || 0) >= threshold) {
           guestUsers.push({
@@ -113,7 +124,7 @@ export default function GuestLeadsClient({
       }
 
       // Check which users already have lead generation records
-      const userIds = guestUsers.map(user => user.id);
+      const userIds = guestUsers.map((user) => user.id);
       const { data: leadGenData, error: leadGenError } = await supabase
         .from('guest_users_lead_generation')
         .select('user_id')
@@ -122,10 +133,14 @@ export default function GuestLeadsClient({
 
       if (leadGenError) throw leadGenError;
 
-      const usersWithLeads = new Set(leadGenData?.map((lead: any) => lead.user_id) || []);
+      const usersWithLeads = new Set(
+        leadGenData?.map((lead: any) => lead.user_id) || []
+      );
 
       // Filter out users who already have lead generation records
-      const eligibleUsers = guestUsers.filter(user => !usersWithLeads.has(user.id));
+      const eligibleUsers = guestUsers.filter(
+        (user) => !usersWithLeads.has(user.id)
+      );
 
       // Apply pagination to the filtered results
       const totalCount = eligibleUsers.length;
@@ -136,21 +151,24 @@ export default function GuestLeadsClient({
       const paginatedUsers = eligibleUsers.slice(start, end);
 
       // Transform the data to match our GuestUserLead interface
-      const transformedData: GuestUserLead[] = paginatedUsers.map((user: any) => {
-        const userGroup = user.workspace_user_groups_users?.[0]?.workspace_user_groups;
-        return {
-          id: user.id,
-          full_name: user.full_name,
-          email: user.email,
-          phone: user.phone,
-          gender: user.gender,
-          attendance_count: user.attendance_count,
-          group_id: userGroup?.id || null,
-          group_name: userGroup?.name || null,
-          has_lead_generation: false, // These are all users without lead generation records
-          created_at: user.created_at,
-        };
-      });
+      const transformedData: GuestUserLead[] = paginatedUsers.map(
+        (user: any) => {
+          const userGroup =
+            user.workspace_user_groups_users?.[0]?.workspace_user_groups;
+          return {
+            id: user.id,
+            full_name: user.full_name,
+            email: user.email,
+            phone: user.phone,
+            gender: user.gender,
+            attendance_count: user.attendance_count,
+            group_id: userGroup?.id || null,
+            group_name: userGroup?.name || null,
+            has_lead_generation: false, // These are all users without lead generation records
+            created_at: user.created_at,
+          };
+        }
+      );
 
       return { data: transformedData, count: totalCount };
     },

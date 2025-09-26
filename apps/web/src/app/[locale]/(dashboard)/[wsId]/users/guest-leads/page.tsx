@@ -52,10 +52,7 @@ export default async function GuestUserLeadsPage({
         description={t('users.guest_leads.description')}
         settingsData={settingsRow ? settingsRow : undefined}
         settingsForm={
-          <GuestLeadSettingsForm
-            wsId={wsId}
-            data={settingsRow ?? undefined}
-          />
+          <GuestLeadSettingsForm wsId={wsId} data={settingsRow ?? undefined} />
         }
         settingsTrigger={
           !settingsRow?.guest_user_checkup_threshold ? (
@@ -130,7 +127,9 @@ async function getData(
 
   // Add search functionality
   if (q) {
-    userQueryBuilder = userQueryBuilder.or(`full_name.ilike.%${q}%,email.ilike.%${q}%`);
+    userQueryBuilder = userQueryBuilder.or(
+      `full_name.ilike.%${q}%,email.ilike.%${q}%`
+    );
   }
 
   const { data: workspaceUsers, error: usersError } = await userQueryBuilder;
@@ -144,11 +143,15 @@ async function getData(
   // Limit concurrent operations to prevent stack overflow
   const BATCH_SIZE = 50;
   const eligibleUsers = [];
-  
+
   // Process users in batches to avoid stack overflow
-  for (let batchStart = 0; batchStart < workspaceUsers.length; batchStart += BATCH_SIZE) {
+  for (
+    let batchStart = 0;
+    batchStart < workspaceUsers.length;
+    batchStart += BATCH_SIZE
+  ) {
     const batch = workspaceUsers.slice(batchStart, batchStart + BATCH_SIZE);
-    const batchUserIds = batch.map(user => user.id);
+    const batchUserIds = batch.map((user) => user.id);
 
     // Get lead generation data for this batch
     const { data: batchLeadGenData, error: leadGenError } = await supabase
@@ -159,7 +162,9 @@ async function getData(
 
     if (leadGenError) throw leadGenError;
 
-    const batchUsersWithLeads = new Set(batchLeadGenData?.map(lead => lead.user_id) || []);
+    const batchUsersWithLeads = new Set(
+      batchLeadGenData?.map((lead) => lead.user_id) || []
+    );
 
     // Process each user in this batch
     for (const user of batch) {
@@ -168,21 +173,25 @@ async function getData(
 
       try {
         // Check if user is actually a guest
-        const { data: isGuest, error: guestError } = await supabase.rpc('is_user_guest', {
-          user_uuid: user.id,
-        });
-        
+        const { data: isGuest, error: guestError } = await supabase.rpc(
+          'is_user_guest',
+          {
+            user_uuid: user.id,
+          }
+        );
+
         if (guestError || !isGuest) continue;
 
         // Get attendance count
-        const { count: attendanceCount, error: attendanceError } = await supabase
-          .from('user_group_attendance')
-          .select('*', { count: 'exact', head: true })
-          .eq('user_id', user.id)
-          .in('status', ['PRESENT', 'LATE']);
+        const { count: attendanceCount, error: attendanceError } =
+          await supabase
+            .from('user_group_attendance')
+            .select('*', { count: 'exact', head: true })
+            .eq('user_id', user.id)
+            .in('status', ['PRESENT', 'LATE']);
 
         if (attendanceError) continue;
-        
+
         // Only include users who meet the attendance threshold
         if ((attendanceCount || 0) >= threshold) {
           eligibleUsers.push({
@@ -214,7 +223,8 @@ async function getData(
 
   // Transform the data to match our GuestUserLead interface
   const transformedData: GuestUserLead[] = paginatedUsers.map((user: any) => {
-    const userGroup = user.workspace_user_groups_users?.[0]?.workspace_user_groups;
+    const userGroup =
+      user.workspace_user_groups_users?.[0]?.workspace_user_groups;
     return {
       id: user.id,
       full_name: user.full_name,

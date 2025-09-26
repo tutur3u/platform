@@ -99,9 +99,9 @@ export default function FollowUpClient({
   });
 
   // Local state: selected manager's display name
-  const [selectedManagerName, setSelectedManagerName] = useState<string | undefined>(
-    undefined
-  );
+  const [selectedManagerName, setSelectedManagerName] = useState<
+    string | undefined
+  >(undefined);
 
   // Initialize/reset selected manager when group or list changes
   useEffect(() => {
@@ -117,17 +117,23 @@ export default function FollowUpClient({
   }, [groupManagersQuery.data, groupId]);
   const effectiveManagerName = selectedManagerName;
 
-  const getConfig = (id: string) => configsQuery.data?.find((c) => c.id === id)?.value;
+  const getConfig = (id: string) =>
+    configsQuery.data?.find((c) => c.id === id)?.value;
 
   const parseDynamicText = (text?: string | null): ReactNode => {
     if (!text) return '';
-    
+
     // Simple dynamic text parsing for common placeholders
     return text
       .replace(/{{user_name}}/g, userName || 'Unknown User')
       .replace(/{{group_name}}/g, selectedGroup?.name || 'Unknown Group')
       .replace(/{{date}}/g, new Date().toLocaleDateString())
-      .replace(/{{score}}/g, (typeof mockReport?.score === 'number' ? mockReport?.score?.toFixed(1) : undefined) || 'N/A')
+      .replace(
+        /{{score}}/g,
+        (typeof mockReport?.score === 'number'
+          ? mockReport?.score?.toFixed(1)
+          : undefined) || 'N/A'
+      )
       .replace(/{{group_manager_name}}/g, effectiveManagerName || '');
   };
 
@@ -145,8 +151,10 @@ export default function FollowUpClient({
   // Hydrate form with email credentials when available from server
   useEffect(() => {
     if (emailCredentials) {
-      if (emailCredentials.source_name) form.setValue('source_name', emailCredentials.source_name);
-      if (emailCredentials.source_email) form.setValue('source_email', emailCredentials.source_email);
+      if (emailCredentials.source_name)
+        form.setValue('source_name', emailCredentials.source_name);
+      if (emailCredentials.source_email)
+        form.setValue('source_email', emailCredentials.source_email);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [emailCredentials?.source_name, emailCredentials?.source_email]);
@@ -307,7 +315,9 @@ export default function FollowUpClient({
           const rules = (sheet as CSSStyleSheet).cssRules;
           if (!rules) continue;
           const cssText = Array.from(rules)
-            .map((r) => (r as CSSStyleRule | CSSImportRule | CSSMediaRule).cssText)
+            .map(
+              (r) => (r as CSSStyleRule | CSSImportRule | CSSMediaRule).cssText
+            )
             .join('\n');
           if (cssText) collected.push(cssText);
         } catch (_) {
@@ -380,7 +390,10 @@ export default function FollowUpClient({
         p_post_id: undefined,
       };
 
-      const { data, error } = await supabase.rpc('create_guest_lead_email', payload);
+      const { data, error } = await supabase.rpc(
+        'create_guest_lead_email',
+        payload
+      );
       if (error) throw error;
       return data as { status: string; mail_id?: string };
     },
@@ -403,7 +416,7 @@ export default function FollowUpClient({
               Fill out the email details and see the live preview on the right.
             </p>
           </div>
-          
+
           {/* Group and Manager Selection */}
           <Card>
             <CardContent className="grid gap-4 pt-6">
@@ -416,7 +429,12 @@ export default function FollowUpClient({
                   selected={groupId ?? ''}
                   placeholder="Select group"
                   onChange={(val) => {
-                    const next = typeof val === 'string' ? val : Array.isArray(val) ? val[0] : '';
+                    const next =
+                      typeof val === 'string'
+                        ? val
+                        : Array.isArray(val)
+                          ? val[0]
+                          : '';
                     setSelectedGroupId(next || undefined);
                     // reset manager when changing group
                     setSelectedManagerName(undefined);
@@ -432,9 +450,16 @@ export default function FollowUpClient({
                   options={managerOptions}
                   selected={selectedManagerName ?? ''}
                   placeholder="Select manager"
-                  disabled={groupManagersQuery.isLoading || managerOptions.length === 0}
+                  disabled={
+                    groupManagersQuery.isLoading || managerOptions.length === 0
+                  }
                   onChange={(val) => {
-                    const next = typeof val === 'string' ? val : Array.isArray(val) ? val[0] : '';
+                    const next =
+                      typeof val === 'string'
+                        ? val
+                        : Array.isArray(val)
+                          ? val[0]
+                          : '';
                     setSelectedManagerName(next || undefined);
                   }}
                 />
@@ -478,8 +503,12 @@ export default function FollowUpClient({
                   id="source_email"
                   type="email"
                   value={form.watch('source_email')}
-                  onChange={(e) => form.setValue('source_email', e.target.value)}
-                  placeholder={emailCredentials?.source_email || 'you@example.com'}
+                  onChange={(e) =>
+                    form.setValue('source_email', e.target.value)
+                  }
+                  placeholder={
+                    emailCredentials?.source_email || 'you@example.com'
+                  }
                   disabled
                 />
               </div>
@@ -508,7 +537,8 @@ export default function FollowUpClient({
                   placeholder="Enter the main content for the report...\n\nYou can use placeholders like {{user_name}}, {{group_name}}, {{date}}, {{score}}"
                 />
                 <p className="text-xs text-muted-foreground">
-                  This content will be included in the report. The full report preview will be sent as the email body.
+                  This content will be included in the report. The full report
+                  preview will be sent as the email body.
                 </p>
               </div>
 
@@ -547,22 +577,25 @@ export default function FollowUpClient({
           )}
 
           {/* Performance Metrics Section */}
-          {healthcareVitalsQuery.data && healthcareVitalsQuery.data.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">Performance Metrics</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ScoreDisplay
-                  healthcareVitals={healthcareVitalsQuery.data}
-                  healthcareVitalsLoading={healthcareVitalsQuery.isLoading}
-                  factorEnabled={ENABLE_FACTOR_CALCULATION}
-                  scores={mockReport?.scores}
-                  isNew={true}
-                />
-              </CardContent>
-            </Card>
-          )}
+          {healthcareVitalsQuery.data &&
+            healthcareVitalsQuery.data.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-base">
+                    Performance Metrics
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ScoreDisplay
+                    healthcareVitals={healthcareVitalsQuery.data}
+                    healthcareVitalsLoading={healthcareVitalsQuery.isLoading}
+                    factorEnabled={ENABLE_FACTOR_CALCULATION}
+                    scores={mockReport?.scores}
+                    isNew={true}
+                  />
+                </CardContent>
+              </Card>
+            )}
         </div>
 
         {/* Right Column - Full Height Report Preview */}
@@ -573,7 +606,7 @@ export default function FollowUpClient({
               Preview updates as you type in the form.
             </p>
           </div>
-          
+
           <div className="flex-1 px-6 pb-6 overflow-y-auto">
             {mockReport && configsQuery.data ? (
               <ReportPreview
@@ -585,16 +618,21 @@ export default function FollowUpClient({
                 data={{
                   title: parseDynamicText(form.watch('subject')) as string,
                   content: parseDynamicText(form.watch('content')) as string,
-                  score: typeof mockReport.score === 'number'
-                    ? mockReport.score.toFixed(1)
-                    : (mockReport.score ? String(mockReport.score) : ''),
+                  score:
+                    typeof mockReport.score === 'number'
+                      ? mockReport.score.toFixed(1)
+                      : mockReport.score
+                        ? String(mockReport.score)
+                        : '',
                   feedback: '',
                 }}
               />
             ) : (
               <div className="flex items-center justify-center h-full">
                 <div className="text-center">
-                  <p className="text-muted-foreground">No report data available for preview</p>
+                  <p className="text-muted-foreground">
+                    No report data available for preview
+                  </p>
                   {!groupId && (
                     <p className="text-sm text-muted-foreground mt-2">
                       User needs to be assigned to a group to show report data.

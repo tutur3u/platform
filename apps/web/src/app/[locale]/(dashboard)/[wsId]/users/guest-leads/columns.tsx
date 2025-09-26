@@ -133,15 +133,16 @@ export const getGuestLeadColumns = (
     cell: ({ row }) => {
       const user = row.original;
       const hasLead = user.has_lead_generation;
-      
+
       return (
         <div className="flex items-center gap-2">
           <Button
             size="sm"
-            variant={hasLead ? "outline" : "default"}
-            className={hasLead ? 
-              "border-dynamic-blue/30 bg-dynamic-blue/10 text-dynamic-blue hover:bg-dynamic-blue/15" : 
-              "bg-dynamic-orange hover:bg-dynamic-orange/90"
+            variant={hasLead ? 'outline' : 'default'}
+            className={
+              hasLead
+                ? 'border-dynamic-blue/30 bg-dynamic-blue/10 text-dynamic-blue hover:bg-dynamic-blue/15'
+                : 'bg-dynamic-orange hover:bg-dynamic-orange/90'
             }
             asChild
           >
