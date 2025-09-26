@@ -26,6 +26,14 @@ import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent } from '@tuturuuu/ui/card';
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@tuturuuu/ui/dialog';
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -37,6 +45,7 @@ import {
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
 import { useHorizontalScroll } from '@tuturuuu/ui/hooks/useHorizontalScroll';
+import { toast } from '@tuturuuu/ui/sonner';
 import { coordinateGetter } from '@tuturuuu/utils/keyboard-preset';
 import { useMoveTask, useMoveTaskToBoard } from '@tuturuuu/utils/task-helper';
 import { hasDraggableData } from '@tuturuuu/utils/task-helpers';
@@ -46,6 +55,7 @@ import {
   buildEstimationIndices,
   mapEstimationPoints,
 } from '../../shared/estimation-mapping';
+import { TaskEditDialog } from '../../shared/task-edit-dialog';
 import { BoardSelector } from '../board-selector';
 import { LightweightTaskCard } from './task';
 import { BoardColumn } from './task-list';
@@ -96,6 +106,11 @@ export function KanbanBoard({
   const [isMultiSelectMode, setIsMultiSelectMode] = useState(false);
   const [boardSelectorOpen, setBoardSelectorOpen] = useState(false);
   const [bulkWorking, setBulkWorking] = useState(false);
+  const [createDialog, setCreateDialog] = useState<{
+    open: boolean;
+    list: TaskList | null;
+  }>({ open: false, list: null });
+  const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
   const pickedUpTaskColumn = useRef<string | null>(null);
   const queryClient = useQueryClient();
   const moveTaskMutation = useMoveTask(boardId);
@@ -509,6 +524,36 @@ export function KanbanBoard({
     } catch (e) {
       console.error('Bulk remove label failed', e);
       if (prev) queryClient.setQueryData(['tasks', boardId], prev);
+    } finally {
+      setBulkWorking(false);
+    }
+  }
+
+  async function bulkDeleteTasks() {
+    if (selectedTasks.size === 0) return;
+    setBulkWorking(true);
+    const supabase = createClient();
+    const ids = Array.from(selectedTasks);
+    const prev = queryClient.getQueryData(['tasks', boardId]) as
+      | Task[]
+      | undefined;
+    try {
+      if (prev) {
+        queryClient.setQueryData(
+          ['tasks', boardId],
+          prev.filter((t) => !ids.includes(t.id))
+        );
+      }
+      const { error } = await supabase.from('tasks').delete().in('id', ids);
+      if (error) throw error;
+      await queryClient.invalidateQueries({ queryKey: ['tasks', boardId] });
+      clearSelection();
+      setBulkDeleteOpen(false);
+      toast.success('Deleted selected tasks');
+    } catch (e) {
+      console.error('Bulk delete failed', e);
+      if (prev) queryClient.setQueryData(['tasks', boardId], prev);
+      toast.error('Failed to delete selected tasks');
     } finally {
       setBulkWorking(false);
     }
@@ -1146,6 +1191,14 @@ export function KanbanBoard({
                     ))}
                   </DropdownMenuSubContent>
                 </DropdownMenuSub>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onClick={() => setBulkDeleteOpen(true)}
+                  className="text-dynamic-red focus:text-dynamic-red"
+                  disabled={bulkWorking}
+                >
+                  Delete selected…
+                </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
             <Button
@@ -1237,6 +1290,9 @@ export function KanbanBoard({
                         tasks={columnTasks}
                         isPersonalWorkspace={workspace.personal}
                         onUpdate={handleUpdate}
+                        onAddTask={(list) =>
+                          setCreateDialog({ open: true, list })
+                        }
                         selectedTasks={selectedTasks}
                         isMultiSelectMode={isMultiSelectMode}
                         onTaskSelect={handleTaskSelect}
@@ -1271,6 +1327,61 @@ export function KanbanBoard({
         onMove={handleBoardMove}
         isMoving={moveTaskToBoardMutation.isPending}
       />
+
+      {/* Central Create Task Dialog to avoid clipping/stacking issues */}
+      <TaskEditDialog
+        task={
+          {
+            id: 'new',
+            name: '',
+            description: '',
+            priority: null,
+            start_date: null,
+            end_date: null,
+            estimation_points: null,
+            list_id: createDialog.list?.id || (columns[0]?.id as any),
+            labels: [],
+            archived: false,
+            assignees: [],
+          } as any
+        }
+        boardId={boardId}
+        isOpen={createDialog.open}
+        onClose={() => setCreateDialog({ open: false, list: null })}
+        onUpdate={handleUpdate}
+        availableLists={columns}
+        mode="create"
+      />
+
+      {/* Bulk delete confirmation */}
+      <Dialog open={bulkDeleteOpen} onOpenChange={setBulkDeleteOpen}>
+        <DialogContent className="sm:max-w-[420px]">
+          <DialogHeader>
+            <DialogTitle>Delete selected tasks</DialogTitle>
+            <DialogDescription>
+              This action cannot be undone. It will permanently remove{' '}
+              {selectedTasks.size} selected task
+              {selectedTasks.size === 1 ? '' : 's'}.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setBulkDeleteOpen(false)}
+              disabled={bulkWorking}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={bulkDeleteTasks}
+              disabled={bulkWorking}
+            >
+              {bulkWorking ? 'Deleting…' : 'Delete'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

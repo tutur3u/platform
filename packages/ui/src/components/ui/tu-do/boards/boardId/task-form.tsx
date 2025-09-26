@@ -1,3 +1,4 @@
+'use client';
 import { useQuery } from '@tanstack/react-query';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { TaskPriority } from '@tuturuuu/types/primitives/Priority';
@@ -10,10 +11,10 @@ import {
   CardTitle,
 } from '@tuturuuu/ui/card';
 import { DateTimePicker } from '@tuturuuu/ui/date-time-picker';
-import { useToast } from '@tuturuuu/ui/hooks/use-toast';
 import { Flag, Plus, Sparkles, Users, X } from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
+import { toast } from '@tuturuuu/ui/sonner';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { cn } from '@tuturuuu/utils/format';
 import { createTask } from '@tuturuuu/utils/task-helper';
@@ -28,7 +29,6 @@ interface Props {
 }
 
 export function TaskForm({ listId, onTaskCreated }: Props) {
-  const { toast } = useToast();
   const [isAdding, setIsAdding] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -193,11 +193,7 @@ export function TaskForm({ listId, onTaskCreated }: Props) {
       }
 
       // Show user-friendly error message
-      toast({
-        title: 'Error creating task',
-        description: errorMessage,
-        variant: 'destructive',
-      });
+      toast.error(errorMessage || 'Error creating task');
     } finally {
       setIsSubmitting(false);
     }
@@ -214,15 +210,15 @@ export function TaskForm({ listId, onTaskCreated }: Props) {
   const getPriorityColor = (p: string) => {
     switch (p) {
       case 'critical':
-        return 'border-red-500 bg-red-50 text-red-700 hover:bg-red-100 dark:bg-red-950 dark:text-red-300';
+        return 'border-dynamic-red/70 bg-dynamic-red/10 text-dynamic-red hover:bg-dynamic-red/15';
       case 'high':
-        return 'border-yellow-500 bg-yellow-50 text-yellow-700 hover:bg-yellow-100 dark:bg-yellow-950 dark:text-yellow-300';
+        return 'border-dynamic-orange/70 bg-dynamic-orange/10 text-dynamic-orange hover:bg-dynamic-orange/15';
       case 'normal':
-        return 'border-green-500 bg-green-50 text-green-700 hover:bg-green-100 dark:bg-green-950 dark:text-green-300';
+        return 'border-dynamic-yellow/70 bg-dynamic-yellow/10 text-dynamic-yellow hover:bg-dynamic-yellow/15';
       case 'low':
-        return 'border-gray-300 bg-gray-50 text-gray-700 hover:bg-gray-100 dark:bg-gray-800 dark:text-gray-300';
+        return 'border-dynamic-blue/70 bg-dynamic-blue/10 text-dynamic-blue hover:bg-dynamic-blue/15';
       default:
-        return 'border-gray-300 bg-gray-50 text-gray-700 hover:bg-gray-100 dark:bg-gray-800 dark:text-gray-300';
+        return 'border-dynamic-gray/60 bg-dynamic-surface/5 text-foreground hover:bg-dynamic-surface/10';
     }
   };
 
@@ -232,12 +228,10 @@ export function TaskForm({ listId, onTaskCreated }: Props) {
         variant="ghost"
         className={cn(
           'flex h-auto w-full items-center justify-start gap-2 p-3',
-          'text-gray-600 dark:text-gray-400',
-          'hover:text-gray-800 dark:hover:text-gray-200',
-          'hover:bg-gradient-to-r hover:from-gray-50 hover:to-gray-100',
-          'dark:hover:from-gray-900 dark:hover:to-gray-800',
-          'rounded-lg border border-gray-300 border-dashed dark:border-gray-700',
-          'hover:border-gray-400 dark:hover:border-gray-600',
+          'text-muted-foreground hover:text-foreground',
+          'hover:bg-muted/40',
+          'rounded-lg border border-dynamic-gray/40 border-dashed',
+          'hover:border-dynamic-gray/60',
           'transition-all duration-200'
         )}
         onClick={() => setIsAdding(true)}
@@ -329,7 +323,7 @@ export function TaskForm({ listId, onTaskCreated }: Props) {
                       className={cn(
                         'h-8 px-3 text-xs transition-all duration-200',
                         selectedAssignees.includes(member.id) &&
-                          'border-blue-300 bg-blue-50 text-blue-700 dark:border-blue-700 dark:bg-blue-950 dark:text-blue-300'
+                          'border-dynamic-blue/40 bg-dynamic-blue/10 text-dynamic-blue'
                       )}
                       onClick={() => handleQuickAssign(member.id)}
                     >
@@ -349,7 +343,7 @@ export function TaskForm({ listId, onTaskCreated }: Props) {
             type="button"
             variant="ghost"
             size="sm"
-            className="h-8 px-3 text-gray-600 text-xs dark:text-gray-400"
+            className="h-8 px-3 text-muted-foreground text-xs"
             onClick={() => setIsExpanded(!isExpanded)}
           >
             {isExpanded ? 'Hide' : 'Show'} advanced options

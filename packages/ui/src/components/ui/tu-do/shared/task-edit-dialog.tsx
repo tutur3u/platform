@@ -71,7 +71,8 @@ export function TaskEditDialog({
   onClose,
   onUpdate,
   availableLists: propAvailableLists,
-}: TaskEditDialogProps) {
+  mode = 'edit',
+}: TaskEditDialogProps & { mode?: 'edit' | 'create' }) {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [name, setName] = useState(task.name);
@@ -332,6 +333,10 @@ export function TaskEditDialog({
       newDate = target;
     }
     setEndDate(newDate);
+    if (mode === 'create') {
+      // Defer persistence to save
+      return;
+    }
     setIsLoading(true);
     const taskUpdates: Partial<Task> = { end_date: newDate?.toISOString() };
     updateTaskMutation.mutate(
@@ -365,6 +370,10 @@ export function TaskEditDialog({
   const updateEstimation = async (points: number | null) => {
     if (points === estimationPoints) return;
     setEstimationPoints(points);
+    if (mode === 'create') {
+      // Will be saved on create
+      return;
+    }
     setEstimationSaving(true);
     try {
       const supabase = createClient();
@@ -391,6 +400,13 @@ export function TaskEditDialog({
     const exists = selectedLabels.some((l) => l.id === label.id);
     const supabase = createClient();
     try {
+      if (mode === 'create') {
+        // Local toggle only; persist on create
+        setSelectedLabels((prev) =>
+          exists ? prev.filter((l) => l.id !== label.id) : [label, ...prev]
+        );
+        return;
+      }
       if (exists) {
         // remove
         const { error } = await supabase
@@ -431,7 +447,49 @@ export function TaskEditDialog({
       ? JSON.stringify(description)
       : undefined;
 
-    // Prepare task updates
+    if (mode === 'create') {
+      try {
+        const supabase = createClient();
+        const { createTask } = await import('@tuturuuu/utils/task-helper');
+        const taskData: Partial<Task> = {
+          name: name.trim(),
+          description: descriptionString,
+          priority: priority,
+          start_date: startDate?.toISOString(),
+          end_date: endDate?.toISOString(),
+          estimation_points: estimationPoints ?? null,
+        } as any;
+        const newTask = await createTask(supabase, selectedListId, taskData);
+
+        if (selectedLabels.length > 0) {
+          await supabase
+            .from('task_labels')
+            .insert(
+              selectedLabels.map((l) => ({
+                task_id: newTask.id,
+                label_id: l.id,
+              }))
+            );
+        }
+
+        invalidateTaskCaches(queryClient, boardId);
+        toast({ title: 'Task created', description: 'New task added.' });
+        onUpdate();
+        onClose();
+      } catch (error: any) {
+        console.error('Error creating task:', error);
+        toast({
+          title: 'Error creating task',
+          description: error.message || 'Please try again later',
+          variant: 'destructive',
+        });
+      } finally {
+        setIsLoading(false);
+      }
+      return;
+    }
+
+    // Prepare task updates (edit mode)
     const taskUpdates: Partial<Task> = {
       name: name.trim(),
       description: descriptionString,
