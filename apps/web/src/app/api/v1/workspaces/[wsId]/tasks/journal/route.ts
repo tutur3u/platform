@@ -164,6 +164,303 @@ type CandidateTask = {
 
 export const maxDuration = 45;
 
+// Helper: authenticate and restrict to Tuturuuu email
+async function getAuthorizedUser(
+  supabase: Awaited<ReturnType<typeof createClient>>
+) {
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser();
+
+  if (authError || !user) {
+    return {
+      kind: 'error' as const,
+      status: 401 as const,
+      body: { error: 'Unauthorized' },
+    };
+  }
+
+  if (!isValidTuturuuuEmail(user.email)) {
+    return {
+      kind: 'error' as const,
+      status: 403 as const,
+      body: { error: 'This feature is limited to Tuturuuu team members.' },
+    };
+  }
+
+  return { kind: 'ok' as const, user };
+}
+
+// Helper: parse and validate request body
+function parseRequestBody(rawBody: unknown) {
+  const parsed = requestSchema.safeParse(rawBody);
+  if (!parsed.success) {
+    return {
+      kind: 'error' as const,
+      status: 400 as const,
+      body: { error: 'Invalid payload', details: parsed.error.flatten() },
+    };
+  }
+  return { kind: 'ok' as const, data: parsed.data };
+}
+
+// Helper: ensure workspace membership
+async function ensureWorkspaceAccess(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  wsId: string,
+  userId: string
+) {
+  const { data: memberCheck } = await supabase
+    .from('workspace_members')
+    .select('user_id')
+    .eq('ws_id', wsId)
+    .eq('user_id', userId)
+    .maybeSingle();
+
+  if (!memberCheck) {
+    return {
+      kind: 'error' as const,
+      status: 403 as const,
+      body: { error: 'Workspace access denied' },
+    };
+  }
+  return { kind: 'ok' as const };
+}
+
+// Helper: verify list access (optional if preview-only)
+async function getListIfProvided(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  listId: string | undefined,
+  wsId: string
+) {
+  if (!listId)
+    return {
+      kind: 'ok' as const,
+      list: null as { id: string; name: string | null } | null,
+    };
+
+  const { data: listData, error: listError } = await supabase
+    .from('task_lists')
+    .select('id, name, workspace_boards!inner(id, ws_id)')
+    .eq('id', listId)
+    .eq('workspace_boards.ws_id', wsId)
+    .maybeSingle();
+
+  if (listError) {
+    console.error('Error checking task list:', listError);
+    return {
+      kind: 'error' as const,
+      status: 500 as const,
+      body: { error: 'Unable to verify task list' },
+    };
+  }
+
+  if (!listData) {
+    return {
+      kind: 'error' as const,
+      status: 404 as const,
+      body: { error: 'List not found or access denied' },
+    };
+  }
+
+  return {
+    kind: 'ok' as const,
+    list: { id: listData.id, name: listData.name },
+  };
+}
+
+// Helper: compute time context strings
+function computeTimeContext(clientTimezone?: string, clientTimestamp?: string) {
+  const timezoneContext = (clientTimezone ?? '').trim() || 'UTC';
+  let baseTime = clientTimestamp
+    ? dayjs.tz(clientTimestamp, timezoneContext)
+    : dayjs().tz(timezoneContext);
+  if (!baseTime.isValid()) {
+    baseTime = dayjs().tz(timezoneContext);
+  }
+  const clientIsoTimestamp = baseTime.toISOString();
+  const localTimeDescription = baseTime.format('dddd, MMMM D YYYY h:mm A z');
+  return { timezoneContext, clientIsoTimestamp, localTimeDescription };
+}
+
+// Helper: build system prompt
+function buildSystemPrompt(
+  generateDescriptions: boolean,
+  generatePriority: boolean,
+  generateLabels: boolean,
+  localTimeDescription: string,
+  timezoneContext: string,
+  clientIsoTimestamp: string
+) {
+  const promptInstructions = [
+    'You are an executive assistant turning raw journal notes into actionable tasks.',
+    `Return between 1 and ${MAX_AI_TASKS} tasks that capture distinct follow-ups from the note.`,
+    generateDescriptions
+      ? 'Each task must include a concise, verb-led title and a short description with clear next steps.'
+      : 'Only provide a concise, verb-led title. Leave the description field empty.',
+    generatePriority
+      ? `Assign one of the available priority values (${TaskPriorities.join(', ')}) when confident; otherwise omit the priority field.`
+      : 'Do not assign a priority for any task.',
+    generateLabels
+      ? `Provide up to ${MAX_LABEL_SUGGESTIONS} labelSuggestions per task. Suggestions must be short keywords (1-2 words), lowercase, no duplicates, reflecting themes from the task.`
+      : 'Return an empty array for labelSuggestions.',
+    'If the journal note contains an explicit deadline, provide dueDate as an ISO date (YYYY-MM-DD). Otherwise omit the field.',
+    `The user's local time when they submitted this entry is ${localTimeDescription} (timezone: ${timezoneContext}, ISO: ${clientIsoTimestamp}). Interpret temporal references relative to this time.`,
+    'When the journal references times like “tonight”, “tomorrow morning”, or similar, convert them into an exact calendar date in the user’s timezone and populate dueDate with that ISO date.',
+    'Do not invent requirements or reference this instruction. Focus on concrete outcomes the user should pursue.',
+  ];
+  return promptInstructions.join('\n');
+}
+
+// Helper: normalize provided tasks
+function normalizeProvidedTasks(
+  tasks: z.infer<typeof providedTaskSchema>[] | undefined
+) {
+  if (!tasks?.length) return null;
+  return tasks
+    .map((task) => ({
+      title: task.title.trim(),
+      description: (task.description ?? '').trim(),
+      priority: task.priority ?? undefined,
+      dueDate: task.dueDate ?? null,
+      labels: Array.isArray(task.labels)
+        ? task.labels
+            .map((label) => ({
+              id: label.id?.trim() || undefined,
+              name: label.name.trim(),
+            }))
+            .filter((label) => label.name.length > 0)
+        : [],
+      labelSuggestions: (task.labelSuggestions ?? []).map((label) =>
+        label.trim()
+      ),
+    }))
+    .filter((task) => task.title.length > 0);
+}
+
+// Helper: generate AI tasks
+async function generateAiTasks(systemPrompt: string, trimmedEntry: string) {
+  const prompt = `${systemPrompt}\n\nJournal note:\n"""\n${trimmedEntry}\n"""`;
+  const { object } = await generateObject({
+    model: google('gemini-2.5-flash-lite'),
+    schema: quickJournalTaskSchema,
+    prompt,
+  });
+  return (object.tasks || [])
+    .map((task) => ({
+      title: task.title?.trim() ?? '',
+      description: task.description?.trim() ?? '',
+      priority: task.priority,
+      dueDate: task.dueDate ?? null,
+      labels: [],
+      labelSuggestions: Array.isArray(task.labelSuggestions)
+        ? task.labelSuggestions.map((label) => label.trim())
+        : [],
+    }))
+    .filter((task) => task.title.length > 0);
+}
+
+// Helper: build candidate tasks from source
+function buildCandidateTasks(
+  sourceTasks: Array<any>,
+  options: {
+    generateDescriptions: boolean;
+    generatePriority: boolean;
+    generateLabels: boolean;
+    timezoneContext: string;
+  }
+) {
+  const candidateTasks: CandidateTask[] = [];
+  for (const task of sourceTasks) {
+    if (candidateTasks.length >= MAX_AI_TASKS) break;
+
+    const trimmedTitle = task.title?.trim().slice(0, MAX_TITLE_LENGTH) ?? '';
+    if (!trimmedTitle) continue;
+
+    const formattedTitle =
+      trimmedTitle[0]?.toUpperCase() + trimmedTitle.slice(1);
+    const rawDescription = (task.description ?? '')
+      .trim()
+      .slice(0, MAX_DESCRIPTION_LENGTH);
+    const descriptionValue = options.generateDescriptions ? rawDescription : '';
+    const priorityValue =
+      options.generatePriority && task.priority && isTaskPriority(task.priority)
+        ? task.priority
+        : null;
+    const seedSuggestions =
+      options.generateLabels && Array.isArray(task.labelSuggestions)
+        ? task.labelSuggestions.filter(Boolean)
+        : [];
+    const labelSuggestions = options.generateLabels
+      ? deriveLabelSuggestions(formattedTitle, rawDescription, seedSuggestions)
+      : [];
+    const labelsPayload: ProvidedLabel[] = Array.isArray((task as any).labels)
+      ? (task as any).labels
+      : [];
+    const dueDateValue = normalizeDueDate(
+      (task as any).dueDate ?? null,
+      options.timezoneContext
+    );
+
+    candidateTasks.push({
+      title: formattedTitle,
+      description: descriptionValue,
+      priority: priorityValue,
+      labelSuggestions,
+      labels: labelsPayload,
+      dueDate: dueDateValue,
+    });
+  }
+  return candidateTasks;
+}
+
+// Helper: preview response payload
+function buildPreviewPayload(candidateTasks: CandidateTask[]) {
+  return candidateTasks.map((task, index) => ({
+    id: `preview-${index}`,
+    name: task.title,
+    description: task.description || null,
+    priority: task.priority ?? null,
+    labelSuggestions: task.labelSuggestions,
+    dueDate: task.dueDate,
+    labels: task.labels,
+  }));
+}
+
+// Helper: load existing labels map
+async function loadLabelNameMap(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  wsId: string
+) {
+  const labelNameMap = new Map<
+    string,
+    { id: string; name: string; color: string }
+  >();
+  const { data: existingLabels, error: labelsError } = await supabase
+    .from('workspace_task_labels')
+    .select('id, name, color')
+    .eq('ws_id', wsId);
+
+  if (labelsError) {
+    console.error('Error fetching workspace labels:', labelsError);
+    return {
+      kind: 'error' as const,
+      status: 500 as const,
+      body: { error: 'Failed to load workspace labels' },
+    };
+  }
+
+  (existingLabels ?? []).forEach((label) => {
+    const normalized = normalizeLabelName(label.name);
+    if (normalized) {
+      labelNameMap.set(normalized, label);
+    }
+  });
+
+  return { kind: 'ok' as const, labelNameMap };
+}
+
 export async function POST(
   req: Request,
   { params }: { params: Promise<{ wsId: string }> }
@@ -172,34 +469,18 @@ export async function POST(
     const { wsId } = await params;
     const supabase = await createClient();
 
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
-
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const authResult = await getAuthorizedUser(supabase);
+    if (authResult.kind === 'error') {
+      return NextResponse.json(authResult.body, { status: authResult.status });
     }
-
-    if (!isValidTuturuuuEmail(user.email)) {
-      return NextResponse.json(
-        { error: 'This feature is limited to Tuturuuu team members.' },
-        { status: 403 }
-      );
-    }
+    const user = authResult.user;
 
     const rawBody = await req.json();
-    const parsedBody = requestSchema.safeParse(rawBody);
-
-    if (!parsedBody.success) {
-      return NextResponse.json(
-        {
-          error: 'Invalid payload',
-          details: parsedBody.error.flatten(),
-        },
-        { status: 400 }
-      );
+    const bodyResult = parseRequestBody(rawBody);
+    if (bodyResult.kind === 'error') {
+      return NextResponse.json(bodyResult.body, { status: bodyResult.status });
     }
+    const parsedBody = { success: true, data: bodyResult.data } as const;
 
     const {
       entry,
@@ -230,102 +511,34 @@ export async function POST(
       );
     }
 
-    const { data: memberCheck } = await supabase
-      .from('workspace_members')
-      .select('user_id')
-      .eq('ws_id', wsId)
-      .eq('user_id', user.id)
-      .maybeSingle();
-
-    if (!memberCheck) {
-      return NextResponse.json(
-        { error: 'Workspace access denied' },
-        { status: 403 }
-      );
+    const wsAccess = await ensureWorkspaceAccess(supabase, wsId, user.id);
+    if (wsAccess.kind === 'error') {
+      return NextResponse.json(wsAccess.body, { status: wsAccess.status });
     }
 
     let listCheck: { id: string; name: string | null } | null = null;
     if (listId) {
-      const { data: listData, error: listError } = await supabase
-        .from('task_lists')
-        .select('id, name, workspace_boards!inner(id, ws_id)')
-        .eq('id', listId)
-        .eq('workspace_boards.ws_id', wsId)
-        .maybeSingle();
-
-      if (listError) {
-        console.error('Error checking task list:', listError);
-        return NextResponse.json(
-          { error: 'Unable to verify task list' },
-          { status: 500 }
-        );
+      const listResult = await getListIfProvided(supabase, listId, wsId);
+      if (listResult.kind === 'error') {
+        return NextResponse.json(listResult.body, {
+          status: listResult.status,
+        });
       }
-
-      if (!listData) {
-        return NextResponse.json(
-          { error: 'List not found or access denied' },
-          { status: 404 }
-        );
-      }
-
-      listCheck = { id: listData.id, name: listData.name };
+      listCheck = listResult.list;
     }
 
-    const timezoneContext = (clientTimezone ?? '').trim() || 'UTC';
-    let baseTime = clientTimestamp
-      ? dayjs.tz(clientTimestamp, timezoneContext)
-      : dayjs().tz(timezoneContext);
+    const { timezoneContext, clientIsoTimestamp, localTimeDescription } =
+      computeTimeContext(clientTimezone, clientTimestamp);
+    const systemPrompt = buildSystemPrompt(
+      generateDescriptions,
+      generatePriority,
+      generateLabels,
+      localTimeDescription,
+      timezoneContext,
+      clientIsoTimestamp
+    );
 
-    if (!baseTime.isValid()) {
-      baseTime = dayjs().tz(timezoneContext);
-    }
-
-    const clientIsoTimestamp = baseTime.toISOString();
-    const localTimeDescription = baseTime.format('dddd, MMMM D YYYY h:mm A z');
-
-    const promptInstructions = [
-      'You are an executive assistant turning raw journal notes into actionable tasks.',
-      `Return between 1 and ${MAX_AI_TASKS} tasks that capture distinct follow-ups from the note.`,
-      generateDescriptions
-        ? 'Each task must include a concise, verb-led title and a short description with clear next steps.'
-        : 'Only provide a concise, verb-led title. Leave the description field empty.',
-      generatePriority
-        ? `Assign one of the available priority values (${TaskPriorities.join(
-            ', '
-          )}) when confident; otherwise omit the priority field.`
-        : 'Do not assign a priority for any task.',
-      generateLabels
-        ? `Provide up to ${MAX_LABEL_SUGGESTIONS} labelSuggestions per task. Suggestions must be short keywords (1-2 words), lowercase, no duplicates, reflecting themes from the task.`
-        : 'Return an empty array for labelSuggestions.',
-      'If the journal note contains an explicit deadline, provide dueDate as an ISO date (YYYY-MM-DD). Otherwise omit the field.',
-      `The user's local time when they submitted this entry is ${localTimeDescription} (timezone: ${timezoneContext}, ISO: ${clientIsoTimestamp}). Interpret temporal references relative to this time.`,
-      'When the journal references times like “tonight”, “tomorrow morning”, or similar, convert them into an exact calendar date in the user’s timezone and populate dueDate with that ISO date.',
-      'Do not invent requirements or reference this instruction. Focus on concrete outcomes the user should pursue.',
-    ];
-
-    const systemPrompt = promptInstructions.join('\n');
-
-    const providedTasks = tasks?.length
-      ? tasks
-          .map((task) => ({
-            title: task.title.trim(),
-            description: (task.description ?? '').trim(),
-            priority: task.priority ?? undefined,
-            dueDate: task.dueDate ?? null,
-            labels: Array.isArray(task.labels)
-              ? task.labels
-                  .map((label) => ({
-                    id: label.id?.trim() || undefined,
-                    name: label.name.trim(),
-                  }))
-                  .filter((label) => label.name.length > 0)
-              : [],
-            labelSuggestions: (task.labelSuggestions ?? []).map((label) =>
-              label.trim()
-            ),
-          }))
-          .filter((task) => task.title.length > 0)
-      : null;
+    const providedTasks = normalizeProvidedTasks(tasks);
 
     let aiTasks:
       | {
@@ -340,26 +553,7 @@ export async function POST(
 
     if (shouldInvokeAI) {
       try {
-        const prompt = `${systemPrompt}\n\nJournal note:\n"""\n${trimmedEntry}\n"""`;
-
-        const { object } = await generateObject({
-          model: google('gemini-2.5-flash-lite'),
-          schema: quickJournalTaskSchema,
-          prompt,
-        });
-
-        aiTasks = (object.tasks || [])
-          .map((task) => ({
-            title: task.title?.trim() ?? '',
-            description: task.description?.trim() ?? '',
-            priority: task.priority,
-            dueDate: task.dueDate ?? null,
-            labels: [],
-            labelSuggestions: Array.isArray(task.labelSuggestions)
-              ? task.labelSuggestions.map((label) => label.trim())
-              : [],
-          }))
-          .filter((task) => task.title.length > 0);
+        aiTasks = await generateAiTasks(systemPrompt, trimmedEntry);
       } catch (generationError) {
         console.error('Quick journal AI generation failed:', generationError);
         return NextResponse.json(
@@ -377,64 +571,12 @@ export async function POST(
     }
 
     const sourceTasks = providedTasks ?? aiTasks ?? [];
-
-    const candidateTasks: CandidateTask[] = [];
-
-    for (const task of sourceTasks) {
-      if (candidateTasks.length >= MAX_AI_TASKS) {
-        break;
-      }
-
-      const trimmedTitle = task.title?.trim().slice(0, MAX_TITLE_LENGTH) ?? '';
-      if (!trimmedTitle) {
-        continue;
-      }
-
-      const formattedTitle =
-        trimmedTitle[0]?.toUpperCase() + trimmedTitle.slice(1);
-
-      const rawDescription = (task.description ?? '')
-        .trim()
-        .slice(0, MAX_DESCRIPTION_LENGTH);
-
-      const descriptionValue = generateDescriptions ? rawDescription : '';
-
-      const priorityValue =
-        generatePriority && task.priority && isTaskPriority(task.priority)
-          ? task.priority
-          : null;
-
-      const seedSuggestions =
-        generateLabels && Array.isArray(task.labelSuggestions)
-          ? task.labelSuggestions.filter(Boolean)
-          : [];
-
-      const labelSuggestions = generateLabels
-        ? deriveLabelSuggestions(
-            formattedTitle,
-            rawDescription,
-            seedSuggestions
-          )
-        : [];
-
-      const labelsPayload: ProvidedLabel[] = Array.isArray((task as any).labels)
-        ? (task as any).labels
-        : [];
-
-      const dueDateValue = normalizeDueDate(
-        (task as any).dueDate ?? null,
-        timezoneContext
-      );
-
-      candidateTasks.push({
-        title: formattedTitle,
-        description: descriptionValue,
-        priority: priorityValue,
-        labelSuggestions,
-        labels: labelsPayload,
-        dueDate: dueDateValue,
-      });
-    }
+    const candidateTasks = buildCandidateTasks(sourceTasks, {
+      generateDescriptions,
+      generatePriority,
+      generateLabels,
+      timezoneContext,
+    });
 
     if (!candidateTasks.length) {
       return NextResponse.json(
@@ -444,16 +586,7 @@ export async function POST(
     }
 
     if (previewOnly || !listCheck) {
-      const previewPayload = candidateTasks.map((task, index) => ({
-        id: `preview-${index}`,
-        name: task.title,
-        description: task.description || null,
-        priority: task.priority ?? null,
-        labelSuggestions: task.labelSuggestions,
-        dueDate: task.dueDate,
-        labels: task.labels,
-      }));
-
+      const previewPayload = buildPreviewPayload(candidateTasks);
       return NextResponse.json(
         {
           tasks: previewPayload,
@@ -468,32 +601,13 @@ export async function POST(
       );
     }
 
-    const labelNameMap = new Map<
-      string,
-      { id: string; name: string; color: string }
-    >();
-
-    if (!previewOnly) {
-      const { data: existingLabels, error: labelsError } = await supabase
-        .from('workspace_task_labels')
-        .select('id, name, color')
-        .eq('ws_id', wsId);
-
-      if (labelsError) {
-        console.error('Error fetching workspace labels:', labelsError);
-        return NextResponse.json(
-          { error: 'Failed to load workspace labels' },
-          { status: 500 }
-        );
-      }
-
-      (existingLabels ?? []).forEach((label) => {
-        const normalized = normalizeLabelName(label.name);
-        if (normalized) {
-          labelNameMap.set(normalized, label);
-        }
+    const labelMapResult = await loadLabelNameMap(supabase, wsId);
+    if (labelMapResult.kind === 'error') {
+      return NextResponse.json(labelMapResult.body, {
+        status: labelMapResult.status,
       });
     }
+    const labelNameMap = labelMapResult.labelNameMap;
 
     const ensureLabelId = async (label: ProvidedLabel) => {
       if (label.id) {
