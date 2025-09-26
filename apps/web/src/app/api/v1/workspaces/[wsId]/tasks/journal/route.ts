@@ -6,6 +6,7 @@ import {
   TaskPriorities,
   type TaskPriority,
 } from '@tuturuuu/types/primitives/Priority';
+import { isValidTuturuuuEmail } from '@tuturuuu/utils/email/client';
 import { generateObject } from 'ai';
 import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone';
@@ -178,6 +179,13 @@ export async function POST(
 
     if (authError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    if (!isValidTuturuuuEmail(user.email)) {
+      return NextResponse.json(
+        { error: 'This feature is limited to Tuturuuu team members.' },
+        { status: 403 }
+      );
     }
 
     const rawBody = await req.json();

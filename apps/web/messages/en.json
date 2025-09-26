@@ -4604,6 +4604,8 @@
       "labels_task_suggestions_show_more": "+{count} more",
       "labels_task_suggestions_show_less": "Show less",
       "labels_task_suggestions_create_note": "Selected new labels will be created and assigned automatically.",
+      "restricted_title": "Quick journal is limited",
+      "restricted_description": "Only Tuturuuu team members can turn notes into tasks automatically.",
       "labels_suggestions_heading": "Suggested new labels",
       "labels_suggestions_hint": "These keywords appear in your tasks but are not labels yet."
     }

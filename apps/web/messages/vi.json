@@ -4510,6 +4510,8 @@
       "labels_task_suggestions_show_more": "+{count} nhãn",
       "labels_task_suggestions_show_less": "Thu gọn",
       "labels_task_suggestions_create_note": "Các nhãn mới được chọn sẽ được tạo và gắn tự động.",
+      "restricted_title": "Tính năng Quick journal bị giới hạn",
+      "restricted_description": "Chỉ thành viên Tuturuuu mới có thể tự động chuyển ghi chú thành tác vụ.",
       "labels_suggestions_heading": "Gợi ý nhãn mới",
       "labels_suggestions_hint": "Những từ khóa này xuất hiện trong tác vụ nhưng chưa có nhãn tương ứng."
     }

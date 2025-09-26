@@ -167,6 +167,11 @@ const formatDueDateForPayload = (value: Date | undefined) =>
 
 interface QuickJournalProps {
   wsId: string;
+  enabled?: boolean;
+}
+
+interface QuickJournalContentProps {
+  wsId: string;
 }
 
 interface WorkspaceBoardResponse {
@@ -263,7 +268,7 @@ const LABEL_COLOR_CLASSES: Record<string, string> = {
   gray: 'border-dynamic-muted/30 bg-dynamic-muted/10 text-dynamic-muted-foreground',
 };
 
-export default function QuickJournal({ wsId }: QuickJournalProps) {
+function QuickJournalContent({ wsId }: QuickJournalContentProps) {
   const t = useTranslations('dashboard.quick_journal');
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -1472,4 +1477,24 @@ export default function QuickJournal({ wsId }: QuickJournalProps) {
       </Dialog>
     </>
   );
+}
+
+export default function QuickJournal({
+  wsId,
+  enabled = true,
+}: QuickJournalProps) {
+  const t = useTranslations('dashboard.quick_journal');
+
+  if (!enabled) {
+    return (
+      <Card className="border-dynamic-muted/50">
+        <CardHeader>
+          <CardTitle>{t('restricted_title')}</CardTitle>
+          <CardDescription>{t('restricted_description')}</CardDescription>
+        </CardHeader>
+      </Card>
+    );
+  }
+
+  return <QuickJournalContent wsId={wsId} />;
 }
