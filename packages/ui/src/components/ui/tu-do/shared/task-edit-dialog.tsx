@@ -462,14 +462,12 @@ export function TaskEditDialog({
         const newTask = await createTask(supabase, selectedListId, taskData);
 
         if (selectedLabels.length > 0) {
-          await supabase
-            .from('task_labels')
-            .insert(
-              selectedLabels.map((l) => ({
-                task_id: newTask.id,
-                label_id: l.id,
-              }))
-            );
+          await supabase.from('task_labels').insert(
+            selectedLabels.map((l) => ({
+              task_id: newTask.id,
+              label_id: l.id,
+            }))
+          );
         }
 
         invalidateTaskCaches(queryClient, boardId);
