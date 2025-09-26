@@ -41,6 +41,7 @@ import {
   ListTodo,
   Logs,
   Mail,
+  Mails,
   MessageCircleIcon,
   Package,
   PencilLine,
@@ -706,6 +707,12 @@ export async function WorkspaceNavigationLinks({
               title: t('workspace-users-tabs.reports'),
               href: `/${personalOrWsId}/users/reports`,
               icon: <ClipboardList className="h-5 w-5" />,
+              disabled: withoutPermission('manage_users'),
+            },
+            {
+              title: t('workspace-users-tabs.guest_leads'),
+              href: `/${personalOrWsId}/users/guest-leads`,
+              icon: <Mails className="h-5 w-5" />,
               disabled: withoutPermission('manage_users'),
             },
             {

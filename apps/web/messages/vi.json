@@ -49,6 +49,10 @@
   },
   "common": {
     "requires_attendance": "Yêu cầu điểm danh",
+  "view_email": "Xem Email",
+  "contacted": "Đã liên hệ",
+  "send_email": "Gửi Email",
+  "pending": "Đang chờ",
     "success": "Thành công",
     "report-problem": "Để lại góp ý",
     "report-problem-description": "Hãy giúp chúng tôi cải thiện bằng cách báo cáo các vấn đề bạn gặp phải. Phản hồi của bạn rất có giá trị đối với chúng tôi.",
@@ -1044,6 +1048,7 @@
     "activities": "Hoạt động",
     "billing": "Thanh toán"
   },
+
   "workspace-users-tabs": {
     "overview": "Tổng quan",
     "database": "Danh sách",
@@ -1051,7 +1056,32 @@
     "group_tags": "Gắn thẻ nhóm",
     "attendance": "Điểm danh",
     "reports": "Báo cáo",
-    "fields": "Trường thông tin"
+    "fields": "Trường thông tin",
+    "guest_leads": "Khách hàng tiềm năng"
+  },
+  "guest-lead-data-table": {
+    "id": "Mã số",
+    "full_name": "Họ và tên",
+    "email": "Email",
+    "phone": "Số điện thoại",
+    "attendance_count": "Số lần điểm danh",
+  "group": "Nhóm",
+  "group_name": "Tên nhóm",
+    "status": "Trạng thái",
+    "created_at": "Ngày tạo",
+    "actions": "Hành động",
+    "has_lead_generation": "Đã tạo khách hàng tiềm năng"
+  },
+
+  "users": {
+    "guest_leads": {
+      "plural": "Khách hàng tiềm năng",
+      "singular": "Khách hàng tiềm năng",
+      "description": "Quản lý khách hàng tiềm năng là khách vãng lai và email theo dõi trong không gian làm việc của bạn.",
+      "create_settings_tooltip": "Tạo cài đặt khách hàng tiềm năng để bật tính năng tạo lead.",
+      "create_settings": "Tạo cài đặt"
+    },
+    "guest_user_checkup_threshold": "Ngưỡng kiểm tra khách vãng lai"
   },
   "healthcare-tabs": {
     "overview": "Tổng quan",

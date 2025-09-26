@@ -3,7 +3,7 @@ import type { ProductPromotion } from '@tuturuuu/types/primitives/ProductPromoti
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Separator } from '@tuturuuu/ui/separator';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
-import { getWorkspaceUser } from '@tuturuuu/utils/workspace-helper';
+import { getWorkspace, getWorkspaceUser } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 import { CustomDataTable } from '@/components/custom-data-table';
@@ -37,7 +37,9 @@ export default async function WorkspacePromotionsPage({
   searchParams,
 }: Props) {
   const t = await getTranslations();
-  const { wsId } = await params;
+  const { wsId: id } = await params;
+  const workspace = await getWorkspace(id);
+  const wsId = workspace.id;
   const { data, count } = await getData(wsId, await searchParams);
 
   const user = await getCurrentUser(true);
