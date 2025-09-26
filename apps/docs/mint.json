@@ -37,7 +37,10 @@
   "navigation": [
     {
       "group": "Get Started",
-      "pages": ["introduction", "organization-guide"]
+      "pages": [
+        "introduction",
+        "organization-guide"
+      ]
     },
     {
       "group": "Development Tools",
@@ -62,23 +65,36 @@
     },
     {
       "group": "Examples",
-      "pages": ["examples/index"]
+      "pages": [
+        "examples/index"
+      ]
     },
     {
       "group": "Features",
-      "pages": ["features/meet-together", "features/user-management"]
+      "pages": [
+        "features/meet-together",
+        "features/command-center-dashboard",
+        "features/user-management"
+      ]
     },
     {
       "group": "AI Features",
-      "pages": ["ai-structured-data"]
+      "pages": [
+        "ai-structured-data"
+      ]
     },
     {
       "group": "Personalization",
-      "pages": ["personalization/themes", "personalization/language"]
+      "pages": [
+        "personalization/themes",
+        "personalization/language"
+      ]
     },
     {
       "group": "API References",
-      "pages": ["api-reference/endpoint/generate"]
+      "pages": [
+        "api-reference/endpoint/generate"
+      ]
     },
     {
       "group": "Experiments",
