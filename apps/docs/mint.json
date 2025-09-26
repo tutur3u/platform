@@ -36,88 +36,67 @@
   ],
   "navigation": [
     {
-      "group": "Get Started",
+      "group": "Overview",
       "pages": [
-        "introduction",
-        "organization-guide"
+        "overview/vision",
+        "overview/organization-guide"
       ]
     },
     {
-      "group": "Development Tools",
+      "group": "Platform",
       "pages": [
-        "development-tools/index",
-        "development-tools/development",
-        "development-tools/monorepo-architecture",
-        "development-tools/git-conventions",
-        "development-tools/local-supabase-development",
-        "development-tools/ci-cd-pipelines",
-        "development-tools/cleaning-clone",
-        "development-tools/documenting"
+        "platform/index",
+        "platform/features/command-center-dashboard",
+        "platform/features/meet-together",
+        "platform/features/user-management",
+        "platform/ai/structured-data",
+        "platform/components/index",
+        "platform/components/workspace-wrapper",
+        "platform/components/workspace-wrapper-quick-reference",
+        "platform/personalization/themes",
+        "platform/personalization/language"
       ]
     },
     {
-      "group": "Components",
+      "group": "Build",
       "pages": [
-        "components/index",
-        "components/workspace-wrapper",
-        "components/workspace-wrapper-quick-reference"
+        "build/index",
+        "build/development-tools/index",
+        "build/development-tools/development",
+        "build/development-tools/monorepo-architecture",
+        "build/development-tools/git-conventions",
+        "build/development-tools/local-supabase-development",
+        "build/development-tools/ci-cd-pipelines",
+        "build/development-tools/cleaning-clone",
+        "build/development-tools/documenting"
       ]
     },
     {
-      "group": "Examples",
+      "group": "Learn",
       "pages": [
-        "examples/index"
+        "learn/index",
+        "learn/examples/index",
+        "learn/experiments/form-builder",
+        "learn/experiments/calendar",
+        "learn/experiments/finance",
+        "learn/experiments/project-management",
+        "learn/experiments/ai-chat",
+        "learn/prompt-engineering/introduction",
+        "learn/prompt-engineering/prompt-design-strategies/prompt-design-strategies",
+        "learn/prompt-engineering/prompt-design-strategies/01-clear-instructions",
+        "learn/prompt-engineering/prompt-design-strategies/02-few-shot-examples",
+        "learn/prompt-engineering/prompt-design-strategies/03-context-strategies",
+        "learn/prompt-engineering/prompt-design-strategies/04-prefixes-and-patterns",
+        "learn/prompt-engineering/prompt-design-strategies/05-modular-prompts",
+        "learn/prompt-engineering/prompt-design-strategies/06-parameters-and-iteration",
+        "learn/prompt-engineering/prompt-design-strategies/07-fallback-caution"
       ]
     },
     {
-      "group": "Features",
+      "group": "Reference",
       "pages": [
-        "features/meet-together",
-        "features/command-center-dashboard",
-        "features/user-management"
-      ]
-    },
-    {
-      "group": "AI Features",
-      "pages": [
-        "ai-structured-data"
-      ]
-    },
-    {
-      "group": "Personalization",
-      "pages": [
-        "personalization/themes",
-        "personalization/language"
-      ]
-    },
-    {
-      "group": "API References",
-      "pages": [
-        "api-reference/endpoint/generate"
-      ]
-    },
-    {
-      "group": "Experiments",
-      "pages": [
-        "experiments/form-builder",
-        "experiments/calendar",
-        "experiments/finance",
-        "experiments/project-management",
-        "experiments/ai-chat"
-      ]
-    },
-    {
-      "group": "Prompt Engineering",
-      "pages": [
-        "prompt-engineering/introduction",
-        "prompt-engineering/prompt-design-strategies/prompt-design-strategies",
-        "prompt-engineering/prompt-design-strategies/01-clear-instructions",
-        "prompt-engineering/prompt-design-strategies/02-few-shot-examples",
-        "prompt-engineering/prompt-design-strategies/03-context-strategies",
-        "prompt-engineering/prompt-design-strategies/04-prefixes-and-patterns",
-        "prompt-engineering/prompt-design-strategies/05-modular-prompts",
-        "prompt-engineering/prompt-design-strategies/06-parameters-and-iteration",
-        "prompt-engineering/prompt-design-strategies/07-fallback-caution"
+        "reference/index",
+        "reference/api-reference/endpoint/generate"
       ]
     }
   ],
