@@ -12,7 +12,7 @@ import {
 } from 'ai';
 import { NextResponse } from 'next/server';
 
-const DEFAULT_MODEL_NAME = 'gemini-1.5-flash-002';
+const DEFAULT_MODEL_NAME = 'gemini-2.5-flash-lite';
 export const runtime = 'edge';
 export const maxDuration = 60;
 export const preferredRegion = 'sin1';

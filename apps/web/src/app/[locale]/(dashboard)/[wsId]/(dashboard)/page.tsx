@@ -11,6 +11,7 @@ import WorkspaceWrapper from '@/components/workspace-wrapper';
 import UpcomingCalendarEvents from './calendar/upcoming-events';
 import Countdown from './countdown';
 import DashboardCardSkeleton from './dashboard-card-skeleton';
+import QuickJournal from './quick-journal';
 import NewlyCreatedTasks from './tasks/newly-created-tasks';
 import TasksAssignedToMe from './tasks/tasks-assigned-to-me';
 import TimeTrackingMetrics from './time-tracker/time-tracking-metrics';
@@ -56,6 +57,10 @@ export default async function WorkspaceHomePage({ params }: Props) {
             {isInternalUser && wsId === ROOT_WORKSPACE_ID && <Countdown />}
             {currentUser && (
               <div className="grid gap-4 pb-4 md:grid-cols-2">
+                <div className="md:col-span-2">
+                  <QuickJournal wsId={wsId} />
+                </div>
+
                 {!isPersonal && (
                   <Suspense fallback={<DashboardCardSkeleton />}>
                     <NewlyCreatedTasks wsId={wsId} />
