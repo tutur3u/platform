@@ -170,6 +170,20 @@ export type Database = {
         };
         Returns: string;
       };
+      create_guest_lead_email: {
+        Args: {
+          p_content: string;
+          p_email: string;
+          p_post_id?: string;
+          p_receiver_id: string;
+          p_sender_id: string;
+          p_source_email: string;
+          p_source_name: string;
+          p_subject: string;
+          p_ws_id: string;
+        };
+        Returns: Json;
+      };
       extract_domain: {
         Args: {
           url: string;
@@ -3242,6 +3256,80 @@ export type Database = {
           user_group_id?: null | string;
           valid_until?: null | string;
           wallet_id?: string;
+          ws_id?: string;
+        };
+      };
+      guest_users_lead_generation: {
+        Insert: {
+          created_at?: string;
+          id?: number;
+          mail_id: string;
+          user_id: string;
+          ws_id: string;
+        };
+        Relationships: [
+          {
+            columns: ['mail_id'];
+            foreignKeyName: 'guest_users_lead_generation_mail_id_fkey';
+            isOneToOne: false;
+            referencedColumns: ['id'];
+            referencedRelation: 'sent_emails';
+          },
+          {
+            columns: ['user_id'];
+            foreignKeyName: 'guest_users_lead_generation_user_id_fkey';
+            isOneToOne: false;
+            referencedColumns: ['id'];
+            referencedRelation: 'distinct_invoice_creators';
+          },
+          {
+            columns: ['user_id'];
+            foreignKeyName: 'guest_users_lead_generation_user_id_fkey';
+            isOneToOne: false;
+            referencedColumns: ['user_id'];
+            referencedRelation: 'group_user_with_attendance';
+          },
+          {
+            columns: ['user_id'];
+            foreignKeyName: 'guest_users_lead_generation_user_id_fkey';
+            isOneToOne: false;
+            referencedColumns: ['id'];
+            referencedRelation: 'workspace_users';
+          },
+          {
+            columns: ['user_id'];
+            foreignKeyName: 'guest_users_lead_generation_user_id_fkey';
+            isOneToOne: false;
+            referencedColumns: ['id'];
+            referencedRelation: 'workspace_users_with_groups';
+          },
+          {
+            columns: ['ws_id'];
+            foreignKeyName: 'guest_users_lead_generation_ws_id_fkey';
+            isOneToOne: false;
+            referencedColumns: ['id'];
+            referencedRelation: 'workspace_link_counts';
+          },
+          {
+            columns: ['ws_id'];
+            foreignKeyName: 'guest_users_lead_generation_ws_id_fkey';
+            isOneToOne: false;
+            referencedColumns: ['id'];
+            referencedRelation: 'workspaces';
+          },
+        ];
+        Row: {
+          created_at: string;
+          id: number;
+          mail_id: string;
+          user_id: string;
+          ws_id: string;
+        };
+        Update: {
+          created_at?: string;
+          id?: number;
+          mail_id?: string;
+          user_id?: string;
           ws_id?: string;
         };
       };
@@ -9815,6 +9903,7 @@ export type Database = {
       workspace_settings: {
         Insert: {
           created_at?: string;
+          guest_user_checkup_threshold?: null | number;
           referral_count_cap?: number;
           referral_increment_percent?: number;
           referral_promotion_id?: null | string;
@@ -9853,6 +9942,7 @@ export type Database = {
         ];
         Row: {
           created_at: string;
+          guest_user_checkup_threshold: null | number;
           referral_count_cap: number;
           referral_increment_percent: number;
           referral_promotion_id: null | string;
@@ -9861,6 +9951,7 @@ export type Database = {
         };
         Update: {
           created_at?: string;
+          guest_user_checkup_threshold?: null | number;
           referral_count_cap?: number;
           referral_increment_percent?: number;
           referral_promotion_id?: null | string;
