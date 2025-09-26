@@ -95,10 +95,7 @@
     },
     {
       "group": "Reference",
-      "pages": [
-        "reference/index",
-        "reference/api-reference/endpoint/generate"
-      ]
+      "pages": ["reference/index", "reference/api-reference/endpoint/generate"]
     }
   ],
   "footerSocials": {
