@@ -17,6 +17,8 @@ export const metadata: Metadata = {
 export const dynamic = 'force-static';
 export const revalidate = 3600; // Revalidate the data every hour
 
+const MAX_CONTRIBUTORS = 20;
+
 export interface GithubUser {
   login: string;
   id: number;
@@ -114,13 +116,72 @@ async function fetchGithubContributors(
   repo: string = GITHUB_REPO
 ): Promise<GithubContributor[]> {
   try {
-    const { data } = await octokit.repos.listContributors({
+    const { data } = await octokit.repos.get({ owner, repo });
+
+    if (!data.fork || !data.parent) {
+      const { data } = await octokit.repos.listContributors({
+        owner,
+        repo,
+        per_page: MAX_CONTRIBUTORS,
+      });
+
+      return data as GithubContributor[];
+    }
+
+    const parentOwner = data.parent.owner.login;
+    const parentRepo = data.parent.name;
+
+    const forkCommits = await octokit.paginate(octokit.repos.listCommits, {
       owner,
       repo,
-      per_page: 25,
+      per_page: 100,
     });
 
-    return data as GithubContributor[];
+    const parentCommits = await octokit.paginate(octokit.repos.listCommits, {
+      owner: parentOwner,
+      repo: parentRepo,
+      per_page: 100,
+    });
+
+    const parentCommitShas = new Set(parentCommits.map((commit) => commit.sha));
+
+    const uniqueForkCommits = forkCommits.filter(
+      (commit) => !parentCommitShas.has(commit.sha)
+    );
+
+    const contributorsMap = new Map<
+      string,
+      {
+        login: string;
+        id: number;
+        avatar_url: string;
+        html_url: string;
+        contributions: number;
+      }
+    >();
+
+    uniqueForkCommits.forEach((commit) => {
+      if (commit.author) {
+        const login = commit.author.login;
+        const existing = contributorsMap.get(login);
+
+        if (existing) {
+          existing.contributions += 1;
+        } else {
+          contributorsMap.set(login, {
+            login: commit.author.login,
+            id: commit.author.id,
+            avatar_url: commit.author.avatar_url,
+            html_url: commit.author.html_url,
+            contributions: 1,
+          });
+        }
+      }
+    });
+
+    return Array.from(contributorsMap.values())
+      .sort((a, b) => b.contributions - a.contributions)
+      .slice(0, MAX_CONTRIBUTORS);
   } catch (error) {
     console.error('Error fetching GitHub contributors:', error);
     return [];
@@ -179,26 +240,20 @@ async function getGithubData() {
     // Fetch contributors
     const contributors = await fetchGithubContributors(octokit, owner, repo);
 
-    // Enrich top 25 contributors with user details
+    // Enrich contributors with user details
     const enrichedContributors = await Promise.all(
-      contributors.map(async (contributor, index) => {
+      contributors.map(async (contributor) => {
         // Only fetch details for top contributors to minimize API calls
-        if (index < 25) {
-          try {
-            const userDetails = await fetchGithubUser(
-              octokit,
-              contributor.login
-            );
-            return { ...contributor, userDetails };
-          } catch (err) {
-            console.warn(
-              `Failed to fetch details for ${contributor.login}:`,
-              err
-            );
-            return contributor;
-          }
+        try {
+          const userDetails = await fetchGithubUser(octokit, contributor.login);
+          return { ...contributor, userDetails };
+        } catch (err) {
+          console.warn(
+            `Failed to fetch details for ${contributor.login}:`,
+            err
+          );
+          return contributor;
         }
-        return contributor;
       })
     );
 

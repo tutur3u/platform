@@ -402,8 +402,7 @@ export default function ContributorsClient({
             <p className="mx-auto max-w-2xl text-muted-foreground">
               Meet the amazing developers who have contributed the most to
               making NCT Hub better. These are the top{' '}
-              {Math.min(20, githubData.contributors.length)} contributors by
-              commit count.
+              {githubData.contributors.length} contributors by commit count.
             </p>
           </div>
 
