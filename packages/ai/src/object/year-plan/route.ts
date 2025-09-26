@@ -118,7 +118,7 @@ export async function POST(req: Request) {
 
     try {
       const result = streamObject({
-        model: vertex('gemini-1.5-flash'),
+        model: vertex('gemini-2.5-flash-lite'),
         maxOutputTokens: 8192,
         providerOptions: {
           vertex: {

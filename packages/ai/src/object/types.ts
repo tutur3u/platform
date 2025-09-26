@@ -36,6 +36,50 @@ export const quizOptionExplanationSchema = z.object({
     ),
 });
 
+export const quickJournalTaskSchema = z.object({
+  tasks: z
+    .array(
+      z.object({
+        title: z
+          .string()
+          .min(1)
+          .max(120)
+          .describe('Concise, action-oriented title for the task'),
+        description: z
+          .string()
+          .max(4000)
+          .optional()
+          .describe(
+            'Optional summary of the task with actionable next steps when requested'
+          ),
+        priority: z
+          .enum(['critical', 'high', 'normal', 'low'])
+          .optional()
+          .describe('Relative urgency for the task'),
+        labelSuggestions: z
+          .array(
+            z
+              .string()
+              .min(1)
+              .max(48)
+              .describe('Short keyword or phrase recommended as a label')
+          )
+          .max(6)
+          .optional()
+          .describe('Suggested labels that align with the task content'),
+        dueDate: z
+          .string()
+          .optional()
+          .describe(
+            'ISO 8601 date (YYYY-MM-DD) when an explicit due date is mentioned; omit otherwise'
+          ),
+      })
+    )
+    .min(1)
+    .max(50)
+    .describe('List of actionable tasks derived from the journal entry'),
+});
+
 const resourceSchema = z.object({
   title: z.string().describe('Title of the resource'),
   url: z.string().describe('URL or link to the resource'),
