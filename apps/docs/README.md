@@ -8,7 +8,8 @@ The documentation workspace is now organized around the lifecycle of building wi
 apps/docs/
 ├── overview/                # Vision, mission, company playbooks
 │   ├── vision.mdx
-│   └── organization-guide.mdx
+│   ├── organization-guide.mdx
+│   └── agent-operating-manual.mdx
 ├── platform/                # Product experience, AI, components, personalization
 │   ├── index.mdx
 │   ├── ai/structured-data.mdx
