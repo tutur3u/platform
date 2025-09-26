@@ -2,7 +2,7 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
-import { validateEmail, validateOtp } from '@tuturuuu/utils/email';
+import { validateEmail, validateOtp } from '@tuturuuu/utils/email/server';
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
 

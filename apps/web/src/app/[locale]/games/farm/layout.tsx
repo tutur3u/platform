@@ -1,4 +1,5 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
+import { isValidTuturuuuEmail } from '@tuturuuu/utils/email/client';
 import { notFound } from 'next/navigation';
 import type React from 'react';
 
@@ -13,11 +14,7 @@ export default async function FarmGameLayout({
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (
-    !user?.email?.includes('@tuturuuu.com') &&
-    !user?.email?.includes('@xwf.tuturuuu.com')
-  )
-    notFound();
+  if (!isValidTuturuuuEmail(user?.email)) notFound();
 
   return children;
 }

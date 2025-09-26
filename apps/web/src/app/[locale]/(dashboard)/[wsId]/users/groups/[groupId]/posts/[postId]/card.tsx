@@ -18,12 +18,12 @@ import {
   X,
 } from '@tuturuuu/ui/icons';
 import { Textarea } from '@tuturuuu/ui/textarea';
+import { isEmail } from '@tuturuuu/utils/email/client';
 import { cn } from '@tuturuuu/utils/format';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import useEmail from '@/hooks/useEmail';
-import { isEmail } from '@/utils/email-helper';
 
 interface Props {
   user: WorkspaceUser;

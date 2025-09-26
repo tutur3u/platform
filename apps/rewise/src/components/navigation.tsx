@@ -1,9 +1,10 @@
 'use client';
 
 import type { User } from '@tuturuuu/types/primitives/User';
+import { isValidTuturuuuEmail } from '@tuturuuu/utils/email/client';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { type ReactNode, useEffect, useState } from 'react';
+import { type ReactNode, useCallback, useEffect, useState } from 'react';
 import { DEV_MODE, PROD_MODE } from '@/constants/common';
 
 export interface NavLink {
@@ -40,7 +41,7 @@ export function Navigation({
 }: Props) {
   const pathname = usePathname();
 
-  const scrollActiveLinksIntoView = () => {
+  const scrollActiveLinksIntoView = useCallback(() => {
     const activeWorkspaceLink = document.getElementById('active-ws-navlink');
     const activeLink = document.getElementById('active-navlink');
 
@@ -61,14 +62,14 @@ export function Navigation({
         })
       );
     }
-  };
+  }, []);
 
   const [urlToLoad, setUrlToLoad] = useState<string>();
 
   useEffect(() => {
     if (urlToLoad) setUrlToLoad(undefined);
     scrollActiveLinksIntoView();
-  }, [pathname]);
+  }, [urlToLoad, scrollActiveLinksIntoView]);
 
   return (
     <div className="scrollbar-none mb-4 flex flex-none gap-1 overflow-x-auto font-semibold">
@@ -82,8 +83,7 @@ export function Navigation({
         // If the link requires root membership, check if user email ends with @tuturuuu.com
         if (
           link?.requireRootMember &&
-          (!currentUser?.email?.endsWith('@tuturuuu.com') ||
-            !currentUser?.email?.endsWith('@xwf.tuturuuu.com'))
+          !isValidTuturuuuEmail(currentUser?.email)
         )
           return null;
 

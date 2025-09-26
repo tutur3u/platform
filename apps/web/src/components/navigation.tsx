@@ -2,6 +2,7 @@
 
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
+import { isValidTuturuuuEmail } from '@tuturuuu/utils/email/client';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { type ReactNode, useCallback, useEffect, useState } from 'react';
@@ -89,8 +90,7 @@ export function Navigation({
         // If the link requires root membership, check if user email ends with @tuturuuu.com
         if (
           link?.requireRootMember &&
-          (!currentUser?.email?.endsWith('@tuturuuu.com') ||
-            !currentUser?.email?.endsWith('@xwf.tuturuuu.com'))
+          !isValidTuturuuuEmail(currentUser?.email)
         )
           return null;
 

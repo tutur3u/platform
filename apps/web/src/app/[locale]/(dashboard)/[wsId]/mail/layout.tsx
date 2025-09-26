@@ -1,3 +1,4 @@
+import { isValidTuturuuuEmail } from '@tuturuuu/utils/email/client';
 import { getCurrentSupabaseUser } from '@tuturuuu/utils/user-helper';
 import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import { redirect } from 'next/navigation';
@@ -16,11 +17,7 @@ export default async function Layout({ children, params }: LayoutProps) {
   const user = await getCurrentSupabaseUser();
 
   if (!workspace.personal) redirect(`/personal/mail`);
-  if (
-    !user?.email?.endsWith('@tuturuuu.com') &&
-    !user?.email?.endsWith('@xwf.tuturuuu.com')
-  )
-    redirect(`/personal`);
+  if (!isValidTuturuuuEmail(user?.email)) redirect(`/personal`);
 
   return children;
 }

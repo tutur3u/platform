@@ -1,5 +1,5 @@
+import { isIncompleteEmail } from '@tuturuuu/utils/email/client';
 import { describe, expect, it } from 'vitest';
-import { isIncompleteEmail } from '@/utils/email-helper';
 
 describe('isIncompleteEmail', () => {
   it('should return false for empty string', () => {

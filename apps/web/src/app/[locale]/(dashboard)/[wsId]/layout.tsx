@@ -104,10 +104,7 @@ export default async function Layout({ children, params }: LayoutProps) {
     });
   }
 
-  const SHOW_PERSONAL_WORKSPACE_PROMPT =
-    !existingPersonal &&
-    (user.email?.endsWith('@tuturuuu.com') ||
-      user.email?.endsWith('@xwf.tuturuuu.com'));
+  const SHOW_PERSONAL_WORKSPACE_PROMPT = !existingPersonal;
 
   if (SHOW_PERSONAL_WORKSPACE_PROMPT && eligibleWorkspaces?.length === 0)
     return (

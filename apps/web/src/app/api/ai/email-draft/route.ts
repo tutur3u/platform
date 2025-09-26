@@ -1,5 +1,6 @@
 import { google } from '@ai-sdk/google';
 import { createClient } from '@tuturuuu/supabase/next/server';
+import { isValidTuturuuuEmail } from '@tuturuuu/utils/email/client';
 import { generateObject } from 'ai';
 import { emailDraftSchema } from './schema';
 
@@ -27,16 +28,11 @@ export async function POST(req: Request) {
     }
 
     // Check if user has authorized email domain
-    if (
-      !(
-        user.email.endsWith('@tuturuuu.com') ||
-        user.email.endsWith('@xwf.tuturuuu.com')
-      )
-    ) {
-      console.error('User is not a @tuturuuu.com or @xwf.tuturuuu.com email');
+    if (!isValidTuturuuuEmail(user.email)) {
+      console.error('User is not using a valid Tuturuuu email');
       return Response.json(
         {
-          message: 'Only @tuturuuu.com or @xwf.tuturuuu.com emails are allowed',
+          message: 'Only Tuturuuu emails are allowed',
         },
         { status: 401 }
       );

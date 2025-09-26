@@ -222,7 +222,7 @@ function parseEmailThread(content: string): ThreadMessage[] {
             },
           });
         }
-      } else if (messageContent && messageContent.trim()) {
+      } else if (messageContent?.trim()) {
         // Handle other patterns
         const isDateFirst = pattern.isDateFirst;
         let from, date;
@@ -473,6 +473,7 @@ function ThreadMessageItem({
           )}
           {!confidentialMode && isCollapsed && message.content.length > 150 && (
             <button
+              type="button"
               onClick={() => setIsCollapsed(false)}
               className="mt-2 font-medium text-primary text-xs hover:text-primary/80"
             >

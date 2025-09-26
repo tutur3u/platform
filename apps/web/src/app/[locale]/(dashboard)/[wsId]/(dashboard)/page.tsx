@@ -1,6 +1,7 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
 import type { AuroraForecast } from '@tuturuuu/types/db';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
+import { isValidTuturuuuEmail } from '@tuturuuu/utils/email/client';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
@@ -47,10 +48,7 @@ export default async function WorkspaceHomePage({ params }: Props) {
           wsId, // This is the validated UUID, not the legacy identifier
         });
 
-        const isInternalUser =
-          currentUser?.email?.endsWith('@tuturuuu.com') ||
-          currentUser?.email?.endsWith('@xwf.tuturuuu.com');
-
+        const isInternalUser = isValidTuturuuuEmail(currentUser?.email);
         const disableCalendar = withoutPermission('manage_calendar');
 
         return (

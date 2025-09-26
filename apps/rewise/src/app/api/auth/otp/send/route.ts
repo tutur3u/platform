@@ -3,7 +3,7 @@ import {
   checkIfUserExists,
   generateRandomPassword,
   validateEmail,
-} from '@tuturuuu/utils/email';
+} from '@tuturuuu/utils/email/server';
 import { NextResponse } from 'next/server';
 
 export const runtime = 'edge';

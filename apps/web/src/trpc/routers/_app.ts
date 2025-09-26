@@ -7,7 +7,7 @@ import {
   generateRandomPassword,
   validateEmail,
   validateOtp,
-} from '@tuturuuu/utils/email';
+} from '@tuturuuu/utils/email/server';
 import { z } from 'zod';
 import { baseProcedure, createTRPCRouter } from '../init';
 

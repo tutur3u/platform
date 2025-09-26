@@ -6,6 +6,7 @@ import { Checkbox } from '@tuturuuu/ui/checkbox';
 import { CirclePlus } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
+import { isValidTuturuuuEmail } from '@tuturuuu/utils/email/client';
 import { cn } from '@tuturuuu/utils/format';
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
@@ -52,10 +53,10 @@ function groupLinksByDate(
 ): GroupedLinks {
   return links.reduce((acc: GroupedLinks, link) => {
     if (configs.showFavorites && link.pinned) {
-      if (!acc['Favorites']) {
-        acc['Favorites'] = [];
+      if (!acc.Favorites) {
+        acc.Favorites = [];
       }
-      acc['Favorites'].push(link);
+      acc.Favorites.push(link);
     } else if (link.createdAt) {
       const dateTag = getDateTag(locale, t, new Date(link.createdAt));
       if (!acc[dateTag]) {
@@ -107,11 +108,7 @@ export function Nav({
     if (link?.disableOnProduction && PROD_MODE) return null;
 
     // If the link requires root membership, check if user email ends with @tuturuuu.com
-    if (
-      link?.requireRootMember &&
-      (!currentUser?.email?.endsWith('@tuturuuu.com') ||
-        !currentUser?.email?.endsWith('@xwf.tuturuuu.com'))
-    )
+    if (link?.requireRootMember && !isValidTuturuuuEmail(currentUser?.email))
       return null;
 
     // If the link is only allowed for certain roles, check if the current role is allowed
@@ -327,6 +324,7 @@ export function Nav({
                     </>
                   );
                 }
+                return null;
               })}
             {links.length === 0 ? (
               <div className="flex items-center justify-center text-center opacity-50">
@@ -348,6 +346,7 @@ export function Nav({
                     </div>
                   );
                 }
+                return null;
               })
             )}
           </>

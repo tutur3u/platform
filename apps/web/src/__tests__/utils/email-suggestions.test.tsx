@@ -1,5 +1,5 @@
+import { suggestEmails } from '@tuturuuu/utils/email/client';
 import { describe, expect, it } from 'vitest';
-import { suggestEmails } from '@/utils/email-helper';
 
 describe('suggestEmails', () => {
   it('should suggest common email domains for a simple username', () => {

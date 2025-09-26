@@ -4,6 +4,7 @@ import {
   createClient,
 } from '@tuturuuu/supabase/next/server';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
+import { isValidTuturuuuEmail } from '@tuturuuu/utils/email/client';
 import DOMPurify from 'isomorphic-dompurify';
 import juice from 'juice';
 import { difference } from 'lodash';
@@ -52,15 +53,10 @@ export async function POST(
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }
 
-  if (
-    !(
-      user.email?.endsWith('@tuturuuu.com') ||
-      user.email?.endsWith('@xwf.tuturuuu.com')
-    )
-  ) {
-    console.error('User is not a @tuturuuu.com or @xwf.tuturuuu.com email');
+  if (!isValidTuturuuuEmail(user.email)) {
+    console.error('User is not using a valid Tuturuuu email');
     return NextResponse.json(
-      { message: 'Only @tuturuuu.com or @xwf.tuturuuu.com emails are allowed' },
+      { message: 'Only Tuturuuu emails are allowed' },
       { status: 401 }
     );
   }

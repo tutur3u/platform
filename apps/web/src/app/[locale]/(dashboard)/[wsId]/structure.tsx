@@ -8,6 +8,7 @@ import { Structure as BaseStructure } from '@tuturuuu/ui/custom/structure';
 import { WorkspaceSelect } from '@tuturuuu/ui/custom/workspace-select';
 import { ArrowLeft } from '@tuturuuu/ui/icons';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
+import { isValidTuturuuuEmail } from '@tuturuuu/utils/email/client';
 import { cn } from '@tuturuuu/utils/format';
 import { setCookie } from 'cookies-next';
 import Image from 'next/image';
@@ -320,12 +321,9 @@ export function Structure({
 
       if (link.disabled) return [];
       if (link.disableOnProduction && PROD_MODE) return [];
-      if (
-        link.requireRootMember &&
-        (!user?.email?.endsWith('@tuturuuu.com') ||
-          !user?.email?.endsWith('@xwf.tuturuuu.com'))
-      )
+      if (link.requireRootMember && !isValidTuturuuuEmail(user?.email))
         return [];
+
       if (link.requireRootWorkspace && !isRootWorkspace) return [];
       // Do not filter by allowedRoles here; this is handled in `Navigation` where role context exists
 
