@@ -1356,6 +1356,11 @@ values
     ('user3@tuturuuu.com', true, false, false, false),
     ('user4@tuturuuu.com', true, false, false, false);
 
+update public.platform_user_roles
+set
+    allow_workspace_creation = true
+where user_id = '00000000-0000-0000-0000-000000000001';
+
 insert into
     public.nova_teams (id, name, description, goals)
 values
