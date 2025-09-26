@@ -2,8 +2,6 @@ import { createClient } from '@tuturuuu/supabase/next/server';
 import type { GuestUserLead } from '@tuturuuu/types/primitives/GuestUserLead';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Separator } from '@tuturuuu/ui/separator';
-import { getCurrentUser } from '@tuturuuu/utils/user-helper';
-import { getWorkspaceUser } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 import { CustomDataTable } from '@/components/custom-data-table';
@@ -41,7 +39,7 @@ export default async function GuestUserLeadsPage({
   const wsId = workspace.id;
   const { data, count } = await getData(wsId, searchParamsResolved);
 
-  const user = await getCurrentUser(true);
+  // const user = await getCurrentUser(true);
   // const wsUser = await getWorkspaceUser(wsId, user?.id!);
 
   const settingsRow = await getWorkspaceSettings(wsId);
@@ -127,6 +125,7 @@ async function getData(
       )
     `)
     .eq('ws_id', wsId)
+    .eq('archived', false)
     .eq('workspace_user_groups_users.workspace_user_groups.is_guest', true);
 
   // Add search functionality
@@ -142,48 +141,68 @@ async function getData(
     return { data: [] as GuestUserLead[], count: 0 };
   }
 
-  // Filter users who are actually guests using the is_user_guest function
-  const guestUsers = [];
-  for (const user of workspaceUsers) {
-    const { data: isGuest, error: guestError } = await supabase.rpc('is_user_guest', {
-      user_uuid: user.id,
-    });
-    
-    if (guestError) continue; // Skip users with errors
-    if (!isGuest) continue; // Skip non-guest users
+  // Limit concurrent operations to prevent stack overflow
+  const BATCH_SIZE = 50;
+  const eligibleUsers = [];
+  
+  // Process users in batches to avoid stack overflow
+  for (let batchStart = 0; batchStart < workspaceUsers.length; batchStart += BATCH_SIZE) {
+    const batch = workspaceUsers.slice(batchStart, batchStart + BATCH_SIZE);
+    const batchUserIds = batch.map(user => user.id);
 
-    // Calculate attendance count for this user
-    const { count: attendanceCount, error: attendanceError } = await supabase
-      .from('user_group_attendance')
-      .select('*', { count: 'exact', head: true })
-      .eq('user_id', user.id)
-      .in('status', ['PRESENT', 'LATE']);
+    // Get lead generation data for this batch
+    const { data: batchLeadGenData, error: leadGenError } = await supabase
+      .from('guest_users_lead_generation')
+      .select('user_id')
+      .eq('ws_id', wsId)
+      .in('user_id', batchUserIds);
 
-    if (attendanceError) continue; // Skip users with attendance errors
-    
-    // Only include users who meet the attendance threshold
-    if ((attendanceCount || 0) >= threshold) {
-      guestUsers.push({
-        ...user,
-        attendance_count: attendanceCount || 0,
-      });
+    if (leadGenError) throw leadGenError;
+
+    const batchUsersWithLeads = new Set(batchLeadGenData?.map(lead => lead.user_id) || []);
+
+    // Process each user in this batch
+    for (const user of batch) {
+      // Skip if user already has lead generation record
+      if (batchUsersWithLeads.has(user.id)) continue;
+
+      try {
+        // Check if user is actually a guest
+        const { data: isGuest, error: guestError } = await supabase.rpc('is_user_guest', {
+          user_uuid: user.id,
+        });
+        
+        if (guestError || !isGuest) continue;
+
+        // Get attendance count
+        const { count: attendanceCount, error: attendanceError } = await supabase
+          .from('user_group_attendance')
+          .select('*', { count: 'exact', head: true })
+          .eq('user_id', user.id)
+          .in('status', ['PRESENT', 'LATE']);
+
+        if (attendanceError) continue;
+        
+        // Only include users who meet the attendance threshold
+        if ((attendanceCount || 0) >= threshold) {
+          eligibleUsers.push({
+            id: user.id,
+            full_name: user.full_name,
+            email: user.email,
+            phone: user.phone,
+            gender: user.gender,
+            created_at: user.created_at,
+            attendance_count: attendanceCount || 0,
+            workspace_user_groups_users: user.workspace_user_groups_users,
+          });
+        }
+      } catch (error) {
+        // Skip users that cause errors
+        console.error(`Error processing user ${user.id}:`, error);
+        continue;
+      }
     }
   }
-
-  // Check which users already have lead generation records
-  const userIds = guestUsers.map(user => user.id);
-  const { data: leadGenData, error: leadGenError } = await supabase
-    .from('guest_users_lead_generation')
-    .select('user_id')
-    .eq('ws_id', wsId)
-    .in('user_id', userIds);
-
-  if (leadGenError) throw leadGenError;
-
-  const usersWithLeads = new Set(leadGenData?.map((lead: any) => lead.user_id) || []);
-
-  // Filter out users who already have lead generation records
-  const eligibleUsers = guestUsers.filter(user => !usersWithLeads.has(user.id));
 
   // Apply pagination to the filtered results
   const totalCount = eligibleUsers.length;

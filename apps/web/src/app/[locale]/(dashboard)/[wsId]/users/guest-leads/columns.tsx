@@ -145,7 +145,7 @@ export const getGuestLeadColumns = (
             }
             asChild
           >
-            <Link href={`./${user.id}/send-email`}>
+            <Link href={`./${user.id}/follow-up`}>
               <Mail className="h-4 w-4 mr-1" />
               {hasLead ? t('common.view_email') : t('common.send_email')}
             </Link>

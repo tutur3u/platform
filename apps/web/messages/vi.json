@@ -49,10 +49,10 @@
   },
   "common": {
     "requires_attendance": "Yêu cầu điểm danh",
-  "view_email": "Xem Email",
-  "contacted": "Đã liên hệ",
-  "send_email": "Gửi Email",
-  "pending": "Đang chờ",
+    "view_email": "Xem Email",
+    "contacted": "Đã liên hệ",
+    "send_email": "Liên lạc",
+    "pending": "Đang chờ",
     "success": "Thành công",
     "report-problem": "Để lại góp ý",
     "report-problem-description": "Hãy giúp chúng tôi cải thiện bằng cách báo cáo các vấn đề bạn gặp phải. Phản hồi của bạn rất có giá trị đối với chúng tôi.",
@@ -1048,7 +1048,6 @@
     "activities": "Hoạt động",
     "billing": "Thanh toán"
   },
-
   "workspace-users-tabs": {
     "overview": "Tổng quan",
     "database": "Danh sách",
@@ -1065,14 +1064,13 @@
     "email": "Email",
     "phone": "Số điện thoại",
     "attendance_count": "Số lần điểm danh",
-  "group": "Nhóm",
-  "group_name": "Tên nhóm",
+    "group": "Nhóm",
+    "group_name": "Tên nhóm",
     "status": "Trạng thái",
     "created_at": "Ngày tạo",
     "actions": "Hành động",
     "has_lead_generation": "Đã tạo khách hàng tiềm năng"
   },
-
   "users": {
     "guest_leads": {
       "plural": "Khách hàng tiềm năng",
