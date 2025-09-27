@@ -54,6 +54,7 @@
         "platform/components/index",
         "platform/components/workspace-wrapper",
         "platform/components/workspace-wrapper-quick-reference",
+        "platform/workspace-routing",
         "platform/personalization/themes",
         "platform/personalization/language"
       ]
