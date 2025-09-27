@@ -194,6 +194,15 @@ Use Biome (user-run only; agent must not execute commands directly).
 2. Accept dry-run flag where feasible.
 3. Log concise summary; avoid verbose diff dumps unless necessary.
 
+#### 4.12 Add Documentation Page
+1. Create `.mdx` file in appropriate `apps/docs` subdirectory (e.g., `platform/`, `build/`, `learn/`).
+2. **CRITICAL**: Add page to `apps/docs/mint.json` navigation in the appropriate group.
+3. Add frontmatter with `title`, `description`, and `updatedAt` fields.
+4. Use proper heading hierarchy (start with H1, use H2/H3 for subsections).
+5. Cross-link related documentation where relevant.
+6. Add code examples with proper syntax highlighting.
+7. Update any existing documentation that references changed functionality.
+
 ### 5. Coding Standards & Conventions
 
 #### 5.1 Git Hygiene
@@ -251,7 +260,8 @@ Follow Conventional Commits & Branch naming (see `apps/docs/git-conventions.mdx`
 
 #### 5.10 Documentation Drift Prevention
 - When modifying a public API or schema: update corresponding `.mdx` in `apps/docs` same PR.
-- Add “Updated: <yyyy-mm-dd>” line in doc frontmatter if materially changed.
+- Add "Updated: <yyyy-mm-dd>" line in doc frontmatter if materially changed.
+- **CRITICAL**: Add new documentation files to `apps/docs/mint.json` navigation configuration. Documentation files are not visible unless explicitly added to the navigation structure in the appropriate group.
 
 #### 5.11 Tailwind Dynamic Color Policy
 All Next.js apps use Tailwind CSS v4.1+ with dynamic color design tokens. Hard-coded palette utility classes (e.g. `text-blue-500`, `bg-purple-300/10`, `border-green-600/20`) are **forbidden**.
@@ -681,6 +691,7 @@ Agent Responsibilities:
 | Create shared pkg | Follow 4.2 workflow | Include README + test |
 | Add API route | Create `app/api/.../route.ts` | Validate input early |
 | Add AI endpoint | See 4.4 | Use schema + auth + feature flag |
+| Add docs page | Create `.mdx` in `apps/docs/` + add to `mint.json` | **CRITICAL: Add to navigation or won't be visible** |
 | Edge runtime | `export const runtime = 'edge'` | Only if required |
 | Supabase admin client | Import from `@tuturuuu/supabase` | Avoid direct REST calls |
 | Escape hatch escalation | Open issue `policy-gap` | Provide context & proposal |
@@ -694,7 +705,8 @@ Top 5 Failure Causes → Fix Fast:
 2. Unformatted code → run `bun format:fix`.
 3. Lint errors → run `bun lint:fix` then address residuals.
 4. Migration ordering error → rename with later timestamp.
-5. Release workflow skipped → ensure PR title `chore(@tuturuuu/<pkg>): ...`.
+5. Documentation not visible → add page to `mint.json` navigation.
+6. Release workflow skipped → ensure PR title `chore(@tuturuuu/<pkg>): ...`.
 
 Escalate if: multi-app breaking refactor, destructive schema change, data backfill >30 LOC, new external service, auth/token contract change.
 

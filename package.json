@@ -5,6 +5,7 @@
     "build": "turbo run build",
     "buildx": "turbo test lint build",
     "dev": "turbo run dev --parallel",
+    "dev:docs": "cd apps/docs && mintlify dev",
     "dev:web": "turbo run dev -F @tuturuuu/web",
     "dev:calendar": "turbo run dev -F @tuturuuu/calendar -F @tuturuuu/web",
     "dev:rewise": "turbo run dev -F @tuturuuu/rewise -F @tuturuuu/web",
