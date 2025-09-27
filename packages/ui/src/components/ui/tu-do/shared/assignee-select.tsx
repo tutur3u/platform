@@ -116,18 +116,16 @@ export function AssigneeSelect({ taskId, assignees = [], onUpdate }: Props) {
           throw new Error(error.message || 'Failed to remove assignee');
         }
       } else {
-        const { error } = await supabase
-          .from('task_assignees')
-          .upsert(
-            {
-              task_id: taskId,
-              user_id: memberId,
-            },
-            {
-              onConflict: 'task_id,user_id',
-              ignoreDuplicates: true,
-            }
-          );
+        const { error } = await supabase.from('task_assignees').upsert(
+          {
+            task_id: taskId,
+            user_id: memberId,
+          },
+          {
+            onConflict: 'task_id,user_id',
+            ignoreDuplicates: true,
+          }
+        );
 
         if (error) {
           console.error('Add assignee error:', error);

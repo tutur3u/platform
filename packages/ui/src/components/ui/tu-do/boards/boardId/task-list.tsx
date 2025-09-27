@@ -987,13 +987,14 @@ function VirtualizedTaskListInner({
   clearAllFilters,
 }: VirtualizedTaskListProps) {
   const scrollRef = useRef<HTMLDivElement | null>(null);
-  const { setNodeRef: setDroppableRef, isOver: isColumnDragOver } = useDroppable({
-    id: `column-surface-${column.id}`,
-    data: {
-      type: 'ColumnSurface',
-      columnId: String(column.id),
-    },
-  });
+  const { setNodeRef: setDroppableRef, isOver: isColumnDragOver } =
+    useDroppable({
+      id: `column-surface-${column.id}`,
+      data: {
+        type: 'ColumnSurface',
+        columnId: String(column.id),
+      },
+    });
   const attachScrollableRef = useCallback(
     (node: HTMLDivElement | null) => {
       scrollRef.current = node;
