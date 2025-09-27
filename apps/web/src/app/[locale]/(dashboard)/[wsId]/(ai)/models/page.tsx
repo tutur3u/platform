@@ -5,6 +5,7 @@ import { Separator } from '@tuturuuu/ui/separator';
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 import { CustomDataTable } from '@/components/custom-data-table';
+import WorkspaceWrapper from '@/components/workspace-wrapper';
 import { getColumns } from './columns';
 import ModelForm from './form';
 
@@ -31,37 +32,42 @@ export default async function WorkspaceModelsPage({
   params,
   searchParams,
 }: Props) {
-  const t = await getTranslations();
-  const { locale, wsId } = await params;
-  const { data, count } = await getData(wsId, await searchParams);
-
-  const models = data.map((m) => ({
-    ...m,
-    href: `/${wsId}/models/${m.id}`,
-  }));
-
   return (
-    <>
-      <FeatureSummary
-        pluralTitle={t('ws-models.plural')}
-        singularTitle={t('ws-models.singular')}
-        description={t('ws-models.description')}
-        createTitle={t('ws-models.create')}
-        createDescription={t('ws-models.create_description')}
-        form={<ModelForm wsId={wsId} />}
-      />
-      <Separator className="my-4" />
-      <CustomDataTable
-        data={models}
-        namespace="user-data-table"
-        columnGenerator={getColumns}
-        extraData={{ locale, wsId }}
-        count={count}
-        defaultVisibility={{
-          id: false,
-        }}
-      />
-    </>
+    <WorkspaceWrapper params={params}>
+      {async ({ wsId, locale }) => {
+        const t = await getTranslations();
+        const { data, count } = await getData(wsId, await searchParams);
+
+        const models = data.map((m) => ({
+          ...m,
+          href: `/${wsId}/models/${m.id}`,
+        }));
+
+        return (
+          <>
+            <FeatureSummary
+              pluralTitle={t('ws-models.plural')}
+              singularTitle={t('ws-models.singular')}
+              description={t('ws-models.description')}
+              createTitle={t('ws-models.create')}
+              createDescription={t('ws-models.create_description')}
+              form={<ModelForm wsId={wsId} />}
+            />
+            <Separator className="my-4" />
+            <CustomDataTable
+              data={models}
+              namespace="user-data-table"
+              columnGenerator={getColumns}
+              extraData={{ locale, wsId }}
+              count={count}
+              defaultVisibility={{
+                id: false,
+              }}
+            />
+          </>
+        );
+      }}
+    </WorkspaceWrapper>
   );
 }
 

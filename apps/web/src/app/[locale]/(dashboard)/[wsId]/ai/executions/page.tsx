@@ -7,6 +7,7 @@ import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
+import WorkspaceWrapper from '@/components/workspace-wrapper';
 import { CostExport } from './components/cost-export';
 import { ExecutionsTable } from './components/executions-table';
 import { PerformanceMetrics } from './components/performance-metrics';
@@ -35,56 +36,64 @@ export default async function WorkspaceAIExecutionsPage({
   params,
   searchParams,
 }: Props) {
-  const t = await getTranslations();
-  const { locale, wsId } = await params;
-
-  const { withoutPermission } = await getPermissions({
-    wsId,
-  });
-
-  if (wsId !== ROOT_WORKSPACE_ID || withoutPermission('manage_workspace_roles'))
-    redirect(`/${wsId}`);
-
-  // Fetch data in parallel for better performance
-  const [executionData, analyticsData, allTimeStats] = await Promise.all([
-    getData(wsId, await searchParams),
-    AIExecutionAnalyticsService.getLast30DaysStats(wsId),
-    AIExecutionAnalyticsService.getAllTimeStats(wsId), // Get all-time stats for total counts
-  ]);
-
-  const { data, count } = executionData;
-  const executions = data;
-
   return (
-    <>
-      <FeatureSummary
-        pluralTitle={t('ws-ai-executions.plural')}
-        singularTitle={t('ws-ai-executions.singular')}
-        description={t('ws-ai-executions.description')}
-      />
-      <Separator className="my-4" />
+    <WorkspaceWrapper params={params}>
+      {async ({ wsId, locale }) => {
+        const t = await getTranslations();
 
-      {/* Analytics Dashboard */}
-      <div className="space-y-6">
-        <PerformanceMetrics
-          executions={data}
-          analyticsData={{
-            ...analyticsData,
-            summary: allTimeStats.summary,
-          }}
-        />
-      </div>
+        const { withoutPermission } = await getPermissions({
+          wsId,
+        });
 
-      <Separator className="my-4" />
-      <CostExport executions={data} />
-      <Separator className="my-4" />
-      <ExecutionsTable
-        executions={executions}
-        count={count}
-        locale={locale}
-        wsId={wsId}
-      />
-    </>
+        if (
+          wsId !== ROOT_WORKSPACE_ID ||
+          withoutPermission('manage_workspace_roles')
+        )
+          redirect(`/${wsId}`);
+
+        // Fetch data in parallel for better performance
+        const [executionData, analyticsData, allTimeStats] = await Promise.all([
+          getData(wsId, await searchParams),
+          AIExecutionAnalyticsService.getLast30DaysStats(wsId),
+          AIExecutionAnalyticsService.getAllTimeStats(wsId), // Get all-time stats for total counts
+        ]);
+
+        const { data, count } = executionData;
+        const executions = data;
+
+        return (
+          <>
+            <FeatureSummary
+              pluralTitle={t('ws-ai-executions.plural')}
+              singularTitle={t('ws-ai-executions.singular')}
+              description={t('ws-ai-executions.description')}
+            />
+            <Separator className="my-4" />
+
+            {/* Analytics Dashboard */}
+            <div className="space-y-6">
+              <PerformanceMetrics
+                executions={data}
+                analyticsData={{
+                  ...analyticsData,
+                  summary: allTimeStats.summary,
+                }}
+              />
+            </div>
+
+            <Separator className="my-4" />
+            <CostExport executions={data} />
+            <Separator className="my-4" />
+            <ExecutionsTable
+              executions={executions}
+              count={count}
+              locale={locale}
+              wsId={wsId}
+            />
+          </>
+        );
+      }}
+    </WorkspaceWrapper>
   );
 }
 

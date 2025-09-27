@@ -5,6 +5,7 @@ import { Separator } from '@tuturuuu/ui/separator';
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 import { CustomDataTable } from '@/components/custom-data-table';
+import WorkspaceWrapper from '@/components/workspace-wrapper';
 import { getColumns } from '../columns';
 import ModelForm from '../form';
 
@@ -33,39 +34,44 @@ export default async function WorkspaceDatasetsPage({
   params,
   searchParams,
 }: Props) {
-  const t = await getTranslations();
-  const { locale, wsId } = await params;
-  const { data, count } = await getData(wsId, await searchParams);
-
-  const datasets = data.map((m) => ({
-    ...m,
-    href: `/${wsId}/datasets/${m.id}`,
-  }));
-
   return (
-    <>
-      <FeatureSummary
-        pluralTitle={t('ws-datasets.plural')}
-        singularTitle={t('ws-datasets.singular')}
-        description={t('ws-datasets.description')}
-        createTitle={t('ws-datasets.create')}
-        createDescription={t('ws-datasets.create_description')}
-        form={<ModelForm wsId={wsId} />}
-      />
-      <Separator className="my-4" />
-      <CustomDataTable
-        data={datasets}
-        namespace="user-data-table"
-        columnGenerator={getColumns}
-        extraData={{ locale, wsId }}
-        count={count}
-        defaultVisibility={{
-          id: false,
-          description: false,
-          created_at: false,
-        }}
-      />
-    </>
+    <WorkspaceWrapper params={params}>
+      {async ({ wsId, locale }) => {
+        const t = await getTranslations();
+        const { data, count } = await getData(wsId, await searchParams);
+
+        const datasets = data.map((m) => ({
+          ...m,
+          href: `/${wsId}/datasets/${m.id}`,
+        }));
+
+        return (
+          <>
+            <FeatureSummary
+              pluralTitle={t('ws-datasets.plural')}
+              singularTitle={t('ws-datasets.singular')}
+              description={t('ws-datasets.description')}
+              createTitle={t('ws-datasets.create')}
+              createDescription={t('ws-datasets.create_description')}
+              form={<ModelForm wsId={wsId} />}
+            />
+            <Separator className="my-4" />
+            <CustomDataTable
+              data={datasets}
+              namespace="user-data-table"
+              columnGenerator={getColumns}
+              extraData={{ locale, wsId }}
+              count={count}
+              defaultVisibility={{
+                id: false,
+                description: false,
+                created_at: false,
+              }}
+            />
+          </>
+        );
+      }}
+    </WorkspaceWrapper>
   );
 }
 
