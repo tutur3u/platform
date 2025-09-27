@@ -93,9 +93,7 @@
         "learn/index",
         {
           "group": "Examples",
-          "pages": [
-            "learn/examples/index"
-          ]
+          "pages": ["learn/examples/index"]
         },
         {
           "group": "Experiments",
