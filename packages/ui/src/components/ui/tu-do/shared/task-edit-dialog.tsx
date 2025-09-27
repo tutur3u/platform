@@ -34,7 +34,7 @@ import {
   useUpdateTask,
 } from '@tuturuuu/utils/task-helper';
 import { addDays } from 'date-fns';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   buildEstimationIndices,
   mapEstimationPoints,
@@ -64,7 +64,7 @@ interface BoardEstimationConfig {
   count_unestimated_issues?: boolean;
 }
 
-export function TaskEditDialog({
+function TaskEditDialogComponent({
   task,
   boardId,
   isOpen,
@@ -125,6 +125,7 @@ export function TaskEditDialog({
   const [creatingLabel, setCreatingLabel] = useState(false);
 
   const queryClient = useQueryClient();
+  const previousTaskIdRef = useRef<string | null>(null);
 
   // Use the React Query mutation hook for updating tasks
   const updateTaskMutation = useUpdateTask(boardId);
@@ -166,16 +167,20 @@ export function TaskEditDialog({
       };
     }
   }, []);
-  // Reset form when task changes
+  // Reset form when task changes - only when task ID changes to prevent excessive re-renders
   useEffect(() => {
-    setName(task.name);
-    setDescription(parseDescription(task.description));
-    setPriority(task.priority || null);
-    setStartDate(task.start_date ? new Date(task.start_date) : undefined);
-    setEndDate(task.end_date ? new Date(task.end_date) : undefined);
-    setSelectedListId(task.list_id);
-    setEstimationPoints(task.estimation_points ?? null);
-    setSelectedLabels(task.labels || []);
+    // Only update form if task ID actually changed
+    if (previousTaskIdRef.current !== task.id) {
+      setName(task.name);
+      setDescription(parseDescription(task.description));
+      setPriority(task.priority || null);
+      setStartDate(task.start_date ? new Date(task.start_date) : undefined);
+      setEndDate(task.end_date ? new Date(task.end_date) : undefined);
+      setSelectedListId(task.list_id);
+      setEstimationPoints(task.estimation_points ?? null);
+      setSelectedLabels(task.labels || []);
+      previousTaskIdRef.current = task.id;
+    }
   }, [task, parseDescription]);
 
   const fetchLabels = useCallback(async (wsId: string) => {
@@ -200,27 +205,29 @@ export function TaskEditDialog({
     }
   }, []);
 
-  // Fetch board estimation config & labels on open
-  useEffect(() => {
+  // Fetch board estimation config & labels on open - memoize to prevent unnecessary re-runs
+  const fetchBoardConfig = useCallback(async () => {
     if (!isOpen) return;
-    (async () => {
-      try {
-        const supabase = createClient();
-        const { data: board, error: boardErr } = await supabase
-          .from('workspace_boards')
-          .select(
-            'estimation_type, extended_estimation, allow_zero_estimates, count_unestimated_issues, ws_id'
-          )
-          .eq('id', boardId)
-          .single();
-        if (boardErr) throw boardErr;
-        setBoardConfig(board as any);
-        if ((board as any)?.ws_id) await fetchLabels((board as any).ws_id);
-      } catch (e) {
-        console.error('Failed loading board config or labels', e);
-      }
-    })();
+    try {
+      const supabase = createClient();
+      const { data: board, error: boardErr } = await supabase
+        .from('workspace_boards')
+        .select(
+          'estimation_type, extended_estimation, allow_zero_estimates, count_unestimated_issues, ws_id'
+        )
+        .eq('id', boardId)
+        .single();
+      if (boardErr) throw boardErr;
+      setBoardConfig(board as any);
+      if ((board as any)?.ws_id) await fetchLabels((board as any).ws_id);
+    } catch (e) {
+      console.error('Failed loading board config or labels', e);
+    }
   }, [isOpen, boardId, fetchLabels]);
+
+  useEffect(() => {
+    fetchBoardConfig();
+  }, [fetchBoardConfig]);
 
   const handleCreateLabel = async () => {
     if (!newLabelName.trim() || !boardConfig) return;
@@ -570,16 +577,22 @@ export function TaskEditDialog({
     return map[color] || map.gray;
   };
 
-  // Build estimation indices via shared util
-  const estimationIndices: number[] = boardConfig?.estimation_type
-    ? buildEstimationIndices({
-        extended: boardConfig?.extended_estimation,
-        allowZero: boardConfig?.allow_zero_estimates,
-      })
-    : [];
+  // Build estimation indices via shared util - memoize to prevent recalculation
+  const estimationIndices: number[] = useMemo(() => {
+    return boardConfig?.estimation_type
+      ? buildEstimationIndices({
+          extended: boardConfig?.extended_estimation,
+          allowZero: boardConfig?.allow_zero_estimates,
+        })
+      : [];
+  }, [
+    boardConfig?.estimation_type,
+    boardConfig?.extended_estimation,
+    boardConfig?.allow_zero_estimates,
+  ]);
 
   return (
-    <Dialog open={isOpen} onOpenChange={handleClose}>
+    <Dialog open={isOpen} onOpenChange={handleClose} modal={true}>
       <DialogContent className="flex max-h-[85vh] flex-col gap-0 p-0 sm:max-w-[720px]">
         <DialogHeader className="px-6 pt-6 pb-4">
           <DialogTitle>Edit Task</DialogTitle>
@@ -957,4 +970,10 @@ export function TaskEditDialog({
       </DialogContent>
     </Dialog>
   );
+}
+
+export function TaskEditDialog(
+  props: TaskEditDialogProps & { mode?: 'edit' | 'create' }
+) {
+  return <TaskEditDialogComponent {...props} />;
 }

@@ -77,7 +77,7 @@ import {
   isTomorrow,
   isYesterday,
 } from 'date-fns';
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { memo, useCallback, useEffect, useRef, useState } from 'react';
 import { AssigneeSelect } from '../../shared/assignee-select';
 import {
   buildEstimationIndices,
@@ -121,6 +121,25 @@ function TaskCardInner({
   const [customDateDialogOpen, setCustomDateDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [isClosingDialog, setIsClosingDialog] = useState(false);
+
+  // Memoize the close handler to prevent unnecessary re-renders
+  const handleDialogClose = useCallback(() => {
+    setIsClosingDialog(true);
+    setEditDialogOpen(false);
+    // Reset the closing flag after a short delay to allow the dialog to fully close
+    setTimeout(() => {
+      setIsClosingDialog(false);
+    }, 100);
+  }, []);
+
+  // Helper function to prevent event propagation and execute action
+  const preventPropagation = useCallback((action: () => void) => {
+    return (e: React.MouseEvent) => {
+      e.stopPropagation();
+      action();
+    };
+  }, []);
 
   // Estimation & labels state
   const [boardConfig, setBoardConfig] = useState<any>(null);
@@ -839,7 +858,16 @@ function TaskCardInner({
       data-id={task.id}
       ref={setNodeRef}
       style={style}
-      onClick={(e) => onSelect?.(task.id, e)}
+      onClick={(e) => {
+        // Handle multi-select functionality
+        onSelect?.(task.id, e);
+
+        // Only open edit dialog if not in multi-select mode, not dragging, dialog is not already open, and not in the process of closing
+        if (!e.shiftKey && !isDragging && !editDialogOpen && !isClosingDialog) {
+          setEditDialogOpen(true);
+          setIsClosingDialog(false);
+        }
+      }}
       // Apply sortable listeners/attributes to the full card so the whole surface remains draggable
       {...attributes}
       {...listeners}
@@ -896,12 +924,6 @@ function TaskCardInner({
                     ? 'text-muted-foreground line-through'
                     : '-mx-1 -my-0.5 rounded-sm px-1 py-0.5 text-foreground active:bg-muted/50'
                 )}
-                onClick={(e) => {
-                  // Don't allow editing when Shift is held (multi-select mode)
-                  if (!e.shiftKey) {
-                    setEditDialogOpen(true);
-                  }
-                }}
                 aria-label={`Edit task: ${task.name}`}
                 title="Click to edit task"
               >
@@ -943,11 +965,14 @@ function TaskCardInner({
                   align="end"
                   className="w-56"
                   sideOffset={5}
+                  onClick={(e) => {
+                    e.stopPropagation(); // Prevent triggering task card click
+                  }}
                 >
                   {/* Quick Completion Action */}
                   {canMoveToCompletion && (
                     <DropdownMenuItem
-                      onClick={handleMoveToCompletion}
+                      onClick={preventPropagation(handleMoveToCompletion)}
                       className="cursor-pointer"
                       disabled={isLoading}
                     >
@@ -963,7 +988,7 @@ function TaskCardInner({
                   {canMoveToClose &&
                     targetClosedList?.id !== targetCompletionList?.id && (
                       <DropdownMenuItem
-                        onClick={handleMoveToClose}
+                        onClick={preventPropagation(handleMoveToClose)}
                         className="cursor-pointer"
                         disabled={isLoading}
                       >
@@ -995,10 +1020,10 @@ function TaskCardInner({
                     </DropdownMenuSubTrigger>
                     <DropdownMenuSubContent>
                       <DropdownMenuItem
-                        onClick={() => {
+                        onClick={preventPropagation(() => {
                           handlePriorityChange(null);
                           setMenuOpen(false);
-                        }}
+                        })}
                         className={cn(
                           'cursor-pointer text-muted-foreground',
                           !task.priority && 'bg-muted/50'
@@ -1014,10 +1039,10 @@ function TaskCardInner({
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem
-                        onClick={() => {
+                        onClick={preventPropagation(() => {
                           handlePriorityChange('critical');
                           setMenuOpen(false);
-                        }}
+                        })}
                         className={cn(
                           'cursor-pointer',
                           task.priority === 'critical' &&
@@ -1123,10 +1148,10 @@ function TaskCardInner({
                     </DropdownMenuSubTrigger>
                     <DropdownMenuSubContent>
                       <DropdownMenuItem
-                        onClick={() => {
+                        onClick={preventPropagation(() => {
                           handleDueDateChange(0);
                           setMenuOpen(false);
-                        }}
+                        })}
                         className="cursor-pointer"
                       >
                         <div className="flex items-center gap-2">Today</div>
@@ -1213,7 +1238,9 @@ function TaskCardInner({
                           return (
                             <DropdownMenuItem
                               key={idx}
-                              onClick={() => updateEstimationPoints(idx)}
+                              onClick={preventPropagation(() =>
+                                updateEstimationPoints(idx)
+                              )}
                               className={cn(
                                 'flex cursor-pointer items-center justify-between',
                                 task.estimation_points === idx &&
@@ -1237,7 +1264,9 @@ function TaskCardInner({
                         })}
                         <DropdownMenuSeparator />
                         <DropdownMenuItem
-                          onClick={() => updateEstimationPoints(null)}
+                          onClick={preventPropagation(() =>
+                            updateEstimationPoints(null)
+                          )}
                           className={cn(
                             'cursor-pointer text-muted-foreground',
                             task.estimation_points == null && 'bg-muted/50'
@@ -1277,7 +1306,9 @@ function TaskCardInner({
                             return (
                               <DropdownMenuItem
                                 key={label.id}
-                                onClick={() => toggleTaskLabel(label.id)}
+                                onClick={preventPropagation(() =>
+                                  toggleTaskLabel(label.id)
+                                )}
                                 disabled={labelsSaving === label.id}
                                 className={cn(
                                   'flex cursor-pointer items-center justify-between',
@@ -1338,7 +1369,9 @@ function TaskCardInner({
                           .map((list) => (
                             <DropdownMenuItem
                               key={list.id}
-                              onClick={() => handleMoveToList(list.id)}
+                              onClick={preventPropagation(() =>
+                                handleMoveToList(list.id)
+                              )}
                               className="cursor-pointer"
                               disabled={isLoading}
                             >
@@ -1419,10 +1452,10 @@ function TaskCardInner({
 
                   <DropdownMenuSeparator />
                   <DropdownMenuItem
-                    onClick={() => {
+                    onClick={preventPropagation(() => {
                       setDeleteDialogOpen(true);
                       setMenuOpen(false);
-                    }}
+                    })}
                   >
                     <Trash2 className="h-4 w-4 text-dynamic-red" />
                     Delete task
@@ -1580,10 +1613,11 @@ function TaskCardInner({
         </DialogContent>
       </Dialog>
       <TaskEditDialog
+        key={task.id} // Force re-mount when task ID changes
         task={task}
         boardId={boardId}
         isOpen={editDialogOpen}
-        onClose={() => setEditDialogOpen(false)}
+        onClose={handleDialogClose}
         onUpdate={onUpdate}
         availableLists={availableLists}
       />
@@ -1978,5 +2012,5 @@ function LightweightTaskCardInner({
   );
 }
 
-export const LightweightTaskCard = React.memo(LightweightTaskCardInner);
+export const LightweightTaskCard = memo(LightweightTaskCardInner);
 LightweightTaskCard.displayName = 'LightweightTaskCard';
