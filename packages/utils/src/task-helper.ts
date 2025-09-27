@@ -86,17 +86,7 @@ export async function getTasks(supabase: SupabaseClient, boardId: string) {
       throw error;
     }
 
-    const transformedTasks = data.map((task) => ({
-      ...task,
-      assignees: transformAssignees(
-        task.assignees as (TaskAssignee & { user: User })[]
-      ),
-      labels:
-        task.labels?.map((taskLabel: any) => taskLabel.label).filter(Boolean) ||
-        [],
-    }));
-
-    return transformedTasks as Task[];
+    return data.map((task) => transformTaskRecord(task));
   } catch (error) {
     console.error('Error in getTasks:', error);
     throw error;
@@ -274,6 +264,27 @@ export function transformAssignees(
   );
 }
 
+type TaskLabelEntry = {
+  label?: NonNullable<Task['labels']>[number] | null;
+};
+
+function transformTaskRecord(task: any): Task {
+  const normalizedLabels =
+    (task.labels as TaskLabelEntry[] | null | undefined)
+      ?.map((entry) => entry.label)
+      .filter(
+        (label): label is NonNullable<Task['labels']>[number] => Boolean(label)
+      ) ?? [];
+
+  return {
+    ...task,
+    assignees: transformAssignees(
+      task.assignees as (TaskAssignee & { user: User })[]
+    ),
+    labels: normalizedLabels,
+  } as Task;
+}
+
 // Utility function to invalidate all task-related caches consistently
 export function invalidateTaskCaches(
   queryClient: QueryClient,
@@ -426,6 +437,14 @@ export async function moveTask(
             display_name,
             avatar_url
           )
+        ),
+        labels:task_labels(
+          label:workspace_task_labels(
+            id,
+            name,
+            color,
+            created_at
+          )
         )
       `
     )
@@ -440,12 +459,7 @@ export async function moveTask(
   console.log('📊 Updated task data:', data);
 
   // Transform the nested assignees data
-  const transformedTask = {
-    ...data,
-    assignees: transformAssignees(
-      data.assignees as (TaskAssignee & { user: User })[]
-    ),
-  };
+  const transformedTask = transformTaskRecord(data);
 
   console.log('🔄 Task data transformed');
   console.log('📊 Final transformed task:', transformedTask);
@@ -556,6 +570,14 @@ export async function moveTaskToBoard(
             display_name,
             avatar_url
           )
+        ),
+        labels:task_labels(
+          label:workspace_task_labels(
+            id,
+            name,
+            color,
+            created_at
+          )
         )
       `
     )
@@ -570,12 +592,7 @@ export async function moveTaskToBoard(
   console.log('📊 Updated task data:', data);
 
   // Transform the nested assignees data
-  const transformedTask = {
-    ...data,
-    assignees: transformAssignees(
-      data.assignees as (TaskAssignee & { user: User })[]
-    ),
-  };
+  const transformedTask = transformTaskRecord(data);
 
   console.log('🔄 Task data transformed');
   console.log('📊 Final transformed task:', transformedTask);
