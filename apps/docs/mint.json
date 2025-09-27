@@ -47,16 +47,30 @@
       "group": "Platform",
       "pages": [
         "platform/index",
-        "platform/features/command-center-dashboard",
-        "platform/features/meet-together",
-        "platform/features/user-management",
-        "platform/ai/structured-data",
-        "platform/components/index",
-        "platform/components/workspace-wrapper",
-        "platform/components/workspace-wrapper-quick-reference",
-        "platform/workspace-routing",
-        "platform/personalization/themes",
-        "platform/personalization/language"
+        {
+          "group": "Features",
+          "pages": [
+            "platform/features/command-center-dashboard",
+            "platform/features/meet-together",
+            "platform/features/user-management"
+          ]
+        },
+        {
+          "group": "Architecture",
+          "pages": [
+            "platform/architecture/routing",
+            "platform/components/workspace-wrapper",
+            "platform/components/workspace-wrapper-quick-reference",
+            "platform/ai/structured-data"
+          ]
+        },
+        {
+          "group": "Personalization",
+          "pages": [
+            "platform/personalization/themes",
+            "platform/personalization/language"
+          ]
+        }
       ]
     },
     {
@@ -77,21 +91,41 @@
       "group": "Learn",
       "pages": [
         "learn/index",
-        "learn/examples/index",
-        "learn/experiments/form-builder",
-        "learn/experiments/calendar",
-        "learn/experiments/finance",
-        "learn/experiments/project-management",
-        "learn/experiments/ai-chat",
-        "learn/prompt-engineering/introduction",
-        "learn/prompt-engineering/prompt-design-strategies/prompt-design-strategies",
-        "learn/prompt-engineering/prompt-design-strategies/01-clear-instructions",
-        "learn/prompt-engineering/prompt-design-strategies/02-few-shot-examples",
-        "learn/prompt-engineering/prompt-design-strategies/03-context-strategies",
-        "learn/prompt-engineering/prompt-design-strategies/04-prefixes-and-patterns",
-        "learn/prompt-engineering/prompt-design-strategies/05-modular-prompts",
-        "learn/prompt-engineering/prompt-design-strategies/06-parameters-and-iteration",
-        "learn/prompt-engineering/prompt-design-strategies/07-fallback-caution"
+        {
+          "group": "Examples",
+          "pages": [
+            "learn/examples/index"
+          ]
+        },
+        {
+          "group": "Experiments",
+          "pages": [
+            "learn/experiments/form-builder",
+            "learn/experiments/calendar",
+            "learn/experiments/finance",
+            "learn/experiments/project-management",
+            "learn/experiments/ai-chat"
+          ]
+        },
+        {
+          "group": "Guides",
+          "pages": [
+            "learn/guides/prompt-engineering/introduction",
+            {
+              "group": "Prompt Design Strategies",
+              "pages": [
+                "learn/guides/prompt-engineering/prompt-design-strategies/overview",
+                "learn/guides/prompt-engineering/prompt-design-strategies/clear-instructions",
+                "learn/guides/prompt-engineering/prompt-design-strategies/few-shot-examples",
+                "learn/guides/prompt-engineering/prompt-design-strategies/context-strategies",
+                "learn/guides/prompt-engineering/prompt-design-strategies/prefixes-patterns",
+                "learn/guides/prompt-engineering/prompt-design-strategies/modular-prompts",
+                "learn/guides/prompt-engineering/prompt-design-strategies/parameters-iteration",
+                "learn/guides/prompt-engineering/prompt-design-strategies/fallback-caution"
+              ]
+            }
+          ]
+        }
       ]
     },
     {
