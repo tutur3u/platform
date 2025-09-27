@@ -1,4 +1,4 @@
-import { useDndMonitor } from '@dnd-kit/core';
+import { useDndMonitor, useDroppable } from '@dnd-kit/core';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { useQuery } from '@tanstack/react-query';
@@ -987,6 +987,20 @@ function VirtualizedTaskListInner({
   clearAllFilters,
 }: VirtualizedTaskListProps) {
   const scrollRef = useRef<HTMLDivElement | null>(null);
+  const { setNodeRef: setDroppableRef, isOver: isColumnDragOver } = useDroppable({
+    id: `column-surface-${column.id}`,
+    data: {
+      type: 'ColumnSurface',
+      columnId: String(column.id),
+    },
+  });
+  const attachScrollableRef = useCallback(
+    (node: HTMLDivElement | null) => {
+      scrollRef.current = node;
+      setDroppableRef(node);
+    },
+    [setDroppableRef]
+  );
   const [viewportHeight, setViewportHeight] = useState(0);
   const [scrollTop, setScrollTop] = useState(0);
   const [avgHeight, setAvgHeight] = useState(ESTIMATED_ITEM_HEIGHT);
@@ -1122,8 +1136,12 @@ function VirtualizedTaskListInner({
 
   return (
     <div
-      ref={scrollRef}
-      className="h-full flex-1 space-y-2 overflow-y-auto p-3"
+      ref={attachScrollableRef}
+      className={cn(
+        'h-full flex-1 space-y-2 overflow-y-auto p-3 transition-colors',
+        isColumnDragOver &&
+          'rounded-lg bg-dynamic-blue/5 ring-1 ring-dynamic-blue/30'
+      )}
       // When not virtualizing we still want consistent styling
       data-virtualized={shouldVirtualize ? 'true' : 'false'}
     >

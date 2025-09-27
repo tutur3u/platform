@@ -6,6 +6,7 @@ import type { TaskPriority } from '@tuturuuu/types/primitives/Priority';
 import type { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
+import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Card } from '@tuturuuu/ui/card';
@@ -212,11 +213,11 @@ function TaskCardInner({
   });
 
   const style: React.CSSProperties = {
-    transform: CSS.Transform.toString(transform),
+    transform: isDragging ? CSS.Transform.toString(transform) : undefined,
     // Disable transition while actively dragging for perf
     transition: isDragging ? undefined : transition,
     height: 'var(--task-height)',
-    willChange: 'transform',
+    willChange: isDragging ? 'transform' : undefined,
   };
 
   const now = new Date();
@@ -832,20 +833,6 @@ function TaskCardInner({
   // Memoize drag handle for performance
   // Removed explicit drag handle – entire card is now draggable for better UX.
   // Keep attributes/listeners to spread onto root interactive area.
-
-  // Hide the source card during drag (unless in overlay)
-  // Show a lightweight placeholder in original position during drag (improves spatial feedback)
-  if (isDragging && !isOverlay) {
-    return (
-      <div
-        className={cn(
-          'h-[var(--task-height)] w-full rounded-lg border-2 border-dynamic-blue/40 border-dashed bg-dynamic-blue/5 opacity-60'
-        )}
-        style={{ height: 'var(--task-height)' }}
-        aria-hidden="true"
-      />
-    );
-  }
 
   return (
     <Card
@@ -1764,6 +1751,17 @@ export const TaskCard = React.memo(TaskCardInner, (prev, next) => {
     .sort()
     .join('|');
   if (aLabels !== bLabels) return false;
+  const aAssignees = (a.assignees || [])
+    .map((assignee) => assignee.id)
+    .filter(Boolean)
+    .sort()
+    .join('|');
+  const bAssignees = (b.assignees || [])
+    .map((assignee) => assignee.id)
+    .filter(Boolean)
+    .sort()
+    .join('|');
+  if (aAssignees !== bAssignees) return false;
   return true;
 });
 
@@ -1825,50 +1823,160 @@ export function MeasuredTaskCard({
   );
 }
 
-// Lightweight drag overlay version
-export function LightweightTaskCard({ task }: { task: Task }) {
-  const labels = {
-    critical: 'Urgent',
-    high: 'High',
-    normal: 'Medium',
-    low: 'Low',
-  };
+interface LightweightTaskCardProps {
+  task: Task;
+  destination?: Pick<TaskList, 'id' | 'name' | 'status' | 'color'> | null;
+}
 
+function getAssigneeInitials(name?: string | null, email?: string | null) {
+  if (name) {
+    const parts = name.trim().split(/\s+/).filter(Boolean);
+    if (parts.length === 1) return parts?.[0]?.slice(0, 2).toUpperCase();
+    if (parts.length > 1) {
+      return (
+        (parts?.[0]?.[0] || '') + (parts?.[parts.length - 1]?.[0] || '')
+      ).toUpperCase();
+    }
+  }
+  if (email) return email.slice(0, 2).toUpperCase();
+  return '??';
+}
+
+const destinationTone: Record<SupportedColor, string> = {
+  GRAY: 'bg-dynamic-gray/15 text-foreground/80 ring-dynamic-gray/30',
+  RED: 'bg-dynamic-red/15 text-dynamic-red ring-dynamic-red/30',
+  BLUE: 'bg-dynamic-blue/15 text-dynamic-blue ring-dynamic-blue/30',
+  GREEN: 'bg-dynamic-green/15 text-dynamic-green ring-dynamic-green/30',
+  YELLOW: 'bg-dynamic-yellow/15 text-dynamic-yellow ring-dynamic-yellow/30',
+  ORANGE: 'bg-dynamic-orange/15 text-dynamic-orange ring-dynamic-orange/30',
+  PURPLE: 'bg-dynamic-purple/15 text-dynamic-purple ring-dynamic-purple/30',
+  PINK: 'bg-dynamic-pink/15 text-dynamic-pink ring-dynamic-pink/30',
+  INDIGO: 'bg-dynamic-indigo/15 text-dynamic-indigo ring-dynamic-indigo/30',
+  CYAN: 'bg-dynamic-cyan/15 text-dynamic-cyan ring-dynamic-cyan/30',
+};
+
+const priorityLabels: Record<NonNullable<Task['priority']>, string> = {
+  critical: 'Urgent',
+  high: 'High',
+  normal: 'Medium',
+  low: 'Low',
+};
+
+function LightweightTaskCardInner({
+  task,
+  destination,
+}: LightweightTaskCardProps) {
   const descriptionText = getDescriptionText(task.description);
-  // Ensure deterministic ordering of labels (case-insensitive alphabetical)
   const sortedLabels = task.labels
     ? [...task.labels].sort((a, b) =>
         a.name.toLowerCase().localeCompare(b.name.toLowerCase())
       )
     : [];
+  const dueDate = task.end_date ? new Date(task.end_date) : null;
+  const now = Date.now();
+  const dueDisplay = dueDate
+    ? formatDistanceToNow(dueDate, { addSuffix: true })
+    : null;
+  const isOverdue = Boolean(dueDate && dueDate.getTime() < now);
+  const assignees = task.assignees ? [...task.assignees] : [];
+  const visibleAssignees = assignees.slice(0, 3);
+  const extraAssignees = Math.max(
+    0,
+    assignees.length - visibleAssignees.length
+  );
+  const destinationColorClass = destination
+    ? destinationTone[(destination.color as SupportedColor) || 'GRAY'] ||
+      destinationTone.GRAY
+    : null;
 
   return (
-    <Card className="pointer-events-none w-full max-w-[350px] scale-105 select-none border-2 border-primary/20 bg-background opacity-95 shadow-xl ring-2 ring-primary/20">
-      <div className="flex flex-col gap-2 p-4">
-        <div className="truncate font-semibold text-base">{task.name}</div>
-        {descriptionText && (
-          <div className="line-clamp-1 whitespace-pre-line text-muted-foreground text-sm">
-            {descriptionText.replace(/\n/g, ' • ')}
+    <Card className="pointer-events-none w-full max-w-[340px] select-none overflow-hidden border border-dynamic-gray/40 bg-background/95 shadow-xl ring-1 ring-dynamic-blue/20 backdrop-blur">
+      <div className="flex flex-col gap-3 p-4">
+        {destination && (
+          <div className="flex items-center justify-between text-[11px] text-muted-foreground">
+            <span
+              className={cn(
+                'inline-flex items-center gap-1 rounded-md px-2 py-1 font-medium ring-1 ring-inset',
+                destinationColorClass
+              )}
+            >
+              <Move className="h-3 w-3" />
+              {destination.name}
+            </span>
+            {destination.status && (
+              <span className="text-[10px] text-muted-foreground/80 uppercase tracking-wide">
+                {destination.status.replace(/_/g, ' ')}
+              </span>
+            )}
           </div>
         )}
-        <div className="flex flex-wrap items-center gap-2">
-          {task.priority && (
-            <Badge variant="secondary" className="text-xs">
-              {labels[task.priority as keyof typeof labels]}
-            </Badge>
+        <div className="space-y-1">
+          <div className="truncate font-semibold text-base leading-snug">
+            {task.name}
+          </div>
+          {descriptionText && (
+            <div className="line-clamp-2 whitespace-pre-line text-muted-foreground text-xs">
+              {descriptionText.replace(/\n/g, ' • ')}
+            </div>
           )}
-          {/* Labels */}
-          {sortedLabels.length > 0 && (
-            <TaskLabelsDisplay labels={sortedLabels} size="sm" />
-          )}
-          {/* Estimation */}
-          <TaskEstimationDisplay
-            points={task.estimation_points}
-            size="sm"
-            showIcon={false}
-          />
         </div>
+        <div className="flex flex-wrap items-center gap-1.5 text-[11px]">
+          {dueDisplay && (
+            <span
+              className={cn(
+                'inline-flex items-center gap-1 rounded-md bg-dynamic-surface/70 px-2 py-1 font-medium',
+                isOverdue ? 'text-dynamic-red' : 'text-dynamic-green'
+              )}
+            >
+              <Calendar className="h-3 w-3" />
+              {dueDisplay}
+            </span>
+          )}
+          {task.priority && (
+            <span className="inline-flex items-center gap-1 rounded-md bg-dynamic-surface/70 px-2 py-1 font-medium text-foreground/80">
+              <Flag className="h-3 w-3" />
+              {priorityLabels[task.priority]}
+            </span>
+          )}
+          {typeof task.estimation_points === 'number' && (
+            <span className="inline-flex items-center gap-1 rounded-md bg-dynamic-surface/70 px-2 py-1 font-medium text-foreground/80">
+              <Timer className="h-3 w-3" />
+              {task.estimation_points}
+            </span>
+          )}
+        </div>
+        {sortedLabels.length > 0 && (
+          <TaskLabelsDisplay labels={sortedLabels} size="sm" />
+        )}
+        {visibleAssignees.length > 0 && (
+          <div className="flex items-center gap-1.5">
+            {visibleAssignees.map((assignee) => (
+              <Avatar
+                key={assignee.id}
+                className="h-6 w-6 border border-background/60 bg-dynamic-surface"
+              >
+                {assignee.avatar_url ? (
+                  <AvatarImage
+                    src={assignee.avatar_url}
+                    alt={assignee.display_name || assignee.email || 'Assignee'}
+                  />
+                ) : null}
+                <AvatarFallback>
+                  {getAssigneeInitials(assignee.display_name, assignee.email)}
+                </AvatarFallback>
+              </Avatar>
+            ))}
+            {extraAssignees > 0 && (
+              <span className="rounded-full bg-dynamic-surface/70 px-2 py-0.5 text-[11px] text-muted-foreground">
+                +{extraAssignees}
+              </span>
+            )}
+          </div>
+        )}
       </div>
     </Card>
   );
 }
+
+export const LightweightTaskCard = React.memo(LightweightTaskCardInner);
+LightweightTaskCard.displayName = 'LightweightTaskCard';

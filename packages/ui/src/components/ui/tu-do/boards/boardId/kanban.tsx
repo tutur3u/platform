@@ -102,6 +102,9 @@ export function KanbanBoard({
 }: Props) {
   const [activeColumn, setActiveColumn] = useState<TaskList | null>(null);
   const [activeTask, setActiveTask] = useState<Task | null>(null);
+  const [hoverTargetListId, setHoverTargetListId] = useState<string | null>(
+    null
+  );
   const [selectedTasks, setSelectedTasks] = useState<Set<string>>(new Set());
   const [isMultiSelectMode, setIsMultiSelectMode] = useState(false);
   const [boardSelectorOpen, setBoardSelectorOpen] = useState(false);
@@ -241,12 +244,74 @@ export function KanbanBoard({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [clearSelection, handleCrossBoardMove, selectedTasks]);
 
+  const processDragOver = useCallback(
+    (event: DragOverEvent) => {
+      const { active, over } = event;
+      if (!over) {
+        if ((processDragOver as any).lastTargetListId) {
+          (processDragOver as any).lastTargetListId = null;
+          setHoverTargetListId(null);
+        }
+        return;
+      }
+
+      const activeType = active.data?.current?.type;
+      if (!activeType) return;
+
+      if (activeType === 'Task') {
+        const activeTask = active.data?.current?.task;
+        if (!activeTask) return;
+
+        let targetListId: string;
+        if (over.data?.current?.type === 'Column') {
+          targetListId = String(over.id);
+        } else if (over.data?.current?.type === 'Task') {
+          targetListId = String(over.data.current.task.list_id);
+        } else if (over.data?.current?.type === 'ColumnSurface') {
+          const columnId = over.data.current.columnId || over.id;
+          if (!columnId) return;
+          targetListId = String(columnId);
+        } else {
+          return;
+        }
+
+        const originalListId = pickedUpTaskColumn.current;
+        if (!originalListId) return;
+
+        const sourceListExists = columns.some(
+          (col) => String(col.id) === originalListId
+        );
+        const targetListExists = columns.some(
+          (col) => String(col.id) === targetListId
+        );
+
+        if (!sourceListExists || !targetListExists) return;
+
+        // Skip if target list unchanged for current drag set to avoid redundant cache writes
+        // Stash lastTargetListId directly on function to skip redundant writes
+        if ((processDragOver as any).lastTargetListId === targetListId) {
+          if (hoverTargetListId !== targetListId) {
+            setHoverTargetListId(targetListId);
+          }
+          return;
+        }
+        (processDragOver as any).lastTargetListId = targetListId;
+        setHoverTargetListId(targetListId);
+
+        console.log('🔄 onDragOver - hovering list:', targetListId);
+      }
+    },
+    [columns.some, hoverTargetListId]
+  );
+
   // Global drag state reset on mouseup/touchend
   useEffect(() => {
     function handleGlobalPointerUp() {
       setActiveColumn(null);
       setActiveTask(null);
+      setHoverTargetListId(null);
       pickedUpTaskColumn.current = null;
+      (processDragOver as any).lastTargetListId = null;
     }
     window.addEventListener('mouseup', handleGlobalPointerUp);
     window.addEventListener('touchend', handleGlobalPointerUp);
@@ -254,9 +319,13 @@ export function KanbanBoard({
       window.removeEventListener('mouseup', handleGlobalPointerUp);
       window.removeEventListener('touchend', handleGlobalPointerUp);
     };
-  }, []);
+  }, [processDragOver]);
 
   const columnsId = useMemo(() => columns.map((col) => col.id), [columns]);
+  const hoverTargetColumn = useMemo(() => {
+    if (!hoverTargetListId) return null;
+    return columns.find((col) => String(col.id) === hoverTargetListId) || null;
+  }, [columns, hoverTargetListId]);
 
   // Fetch board config for estimation settings (estimation_type, extended_estimation, allow_zero_estimates)
   useEffect(() => {
@@ -599,6 +668,7 @@ export function KanbanBoard({
 
       pickedUpTaskColumn.current = String(task.list_id);
       console.log('📋 pickedUpTaskColumn set to:', pickedUpTaskColumn.current);
+      setHoverTargetListId(String(task.list_id));
 
       // Use more specific selector for better reliability
       // Prefer data-id selector over generic querySelector
@@ -626,73 +696,6 @@ export function KanbanBoard({
   // rAF throttling for onDragOver to reduce cache churn
   const dragOverRaf = useRef<number | null>(null);
   const lastOverArgs = useRef<DragOverEvent | null>(null);
-
-  function processDragOver(event: DragOverEvent) {
-    const { active, over } = event;
-    if (!over) return;
-
-    const activeType = active.data?.current?.type;
-    if (!activeType) return;
-
-    if (activeType === 'Task') {
-      const activeTask = active.data?.current?.task;
-      if (!activeTask) return;
-
-      let targetListId: string;
-      if (over.data?.current?.type === 'Column') {
-        targetListId = String(over.id);
-      } else if (over.data?.current?.type === 'Task') {
-        targetListId = String(over.data.current.task.list_id);
-      } else {
-        return;
-      }
-
-      const originalListId = pickedUpTaskColumn.current;
-      if (!originalListId) return;
-
-      const sourceListExists = columns.some(
-        (col) => String(col.id) === originalListId
-      );
-      const targetListExists = columns.some(
-        (col) => String(col.id) === targetListId
-      );
-
-      if (!sourceListExists || !targetListExists) return;
-
-      // Skip if target list unchanged for current drag set to avoid redundant cache writes
-      // Stash lastTargetListId directly on function to skip redundant writes
-      if ((processDragOver as any).lastTargetListId === targetListId) {
-        return;
-      }
-      (processDragOver as any).lastTargetListId = targetListId;
-
-      console.log('🔄 onDragOver - updating tasks to list:', targetListId);
-
-      // Optimistically update the tasks in the cache for preview
-      queryClient.setQueryData(
-        ['tasks', boardId],
-        (oldData: Task[] | undefined) => {
-          if (!oldData) return oldData;
-
-          // If multi-select mode, update all selected tasks
-          if (isMultiSelectMode && selectedTasks.size > 1) {
-            console.log(
-              '🔄 onDragOver - Optimistically updating multiple tasks to list:',
-              targetListId
-            );
-            return oldData.map((t) =>
-              selectedTasks.has(t.id) ? { ...t, list_id: targetListId } : t
-            );
-          } else {
-            // Single task update
-            return oldData.map((t) =>
-              t.id === activeTask.id ? { ...t, list_id: targetListId } : t
-            );
-          }
-        }
-      );
-    }
-  }
 
   function onDragOver(event: DragOverEvent) {
     lastOverArgs.current = event;
@@ -726,7 +729,10 @@ export function KanbanBoard({
                 '0 8px 32px rgba(0,0,0,0.12), 0 4px 16px rgba(0,0,0,0.08)',
             }}
           >
-            <LightweightTaskCard task={activeTask} />
+            <LightweightTaskCard
+              task={activeTask}
+              destination={hoverTargetColumn}
+            />
 
             {/* Stacked effect layers */}
             <div
@@ -754,8 +760,10 @@ export function KanbanBoard({
     }
 
     // Single task overlay
-    return <LightweightTaskCard task={activeTask} />;
-  }, [activeTask, isMultiSelectMode, selectedTasks]);
+    return (
+      <LightweightTaskCard task={activeTask} destination={hoverTargetColumn} />
+    );
+  }, [activeTask, hoverTargetColumn, isMultiSelectMode, selectedTasks]);
 
   const MemoizedColumnOverlay = useMemo(
     () =>
@@ -785,8 +793,10 @@ export function KanbanBoard({
     // Always reset drag state, even on invalid drop
     setActiveColumn(null);
     setActiveTask(null);
+    setHoverTargetListId(null);
     pickedUpTaskColumn.current = null;
     dragStartCardLeft.current = null;
+    (processDragOver as any).lastTargetListId = null;
 
     if (!over) {
       console.log('❌ No drop target detected, state reset.');
@@ -827,6 +837,17 @@ export function KanbanBoard({
         targetListId = String(targetTask.list_id);
         console.log('📋 Dropping on task, targetListId:', targetListId);
         console.log('📋 Target task details:', targetTask);
+      } else if (overType === 'ColumnSurface') {
+        const columnId = over.data?.current?.columnId || over.id;
+        if (!columnId) {
+          console.log('❌ No column surface id, state reset.');
+          return;
+        }
+        targetListId = String(columnId);
+        console.log(
+          '📋 Dropping on column surface, targetListId:',
+          targetListId
+        );
       } else {
         console.log('❌ Invalid drop type:', overType, 'state reset.');
         return;
