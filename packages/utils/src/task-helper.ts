@@ -272,8 +272,8 @@ function transformTaskRecord(task: any): Task {
   const normalizedLabels =
     (task.labels as TaskLabelEntry[] | null | undefined)
       ?.map((entry) => entry.label)
-      .filter(
-        (label): label is NonNullable<Task['labels']>[number] => Boolean(label)
+      .filter((label): label is NonNullable<Task['labels']>[number] =>
+        Boolean(label)
       ) ?? [];
 
   return {
