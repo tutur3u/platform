@@ -359,8 +359,7 @@ export function AssigneeSelect({ taskId, assignees = [], onUpdate }: Props) {
                     <CommandItem
                       key={member.id}
                       value={`${member.display_name} ${member.email}`}
-                      onSelect={(e) => {
-                        e?.stopPropagation?.();
+                      onSelect={() => {
                         handleSelect(member.id);
                       }}
                       disabled={assigneeMutation.isPending}
@@ -398,8 +397,7 @@ export function AssigneeSelect({ taskId, assignees = [], onUpdate }: Props) {
               {uniqueAssignedMembers.length > 0 && (
                 <CommandGroup>
                   <CommandItem
-                    onSelect={(e) => {
-                      e?.stopPropagation?.();
+                    onSelect={() => {
                       handleRemoveAll();
                     }}
                     disabled={assigneeMutation.isPending}
@@ -421,8 +419,7 @@ export function AssigneeSelect({ taskId, assignees = [], onUpdate }: Props) {
                     <CommandItem
                       key={member.id}
                       value={`${member.display_name} ${member.email}`}
-                      onSelect={(e) => {
-                        e?.stopPropagation?.();
+                      onSelect={() => {
                         handleSelect(member.id);
                       }}
                       disabled={assigneeMutation.isPending}
