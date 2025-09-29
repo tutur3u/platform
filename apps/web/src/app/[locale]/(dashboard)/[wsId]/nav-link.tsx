@@ -11,7 +11,7 @@ interface NavLinkProps {
   wsId: string;
   link: NavLinkType;
   isCollapsed: boolean;
-  onSubMenuClick: (links: NavLinkType[], title: string) => void;
+  onSubMenuClick: (links: (NavLinkType | null)[], title: string) => void;
   onClick: () => void;
 }
 
@@ -26,22 +26,24 @@ export function NavLink({
   const hasChildren = children && children.length > 0;
 
   // Recursive function to check if any nested child matches the pathname
-  const hasActiveChild = (navLinks: NavLinkType[]): boolean => {
-    return navLinks.some((child) => {
-      const childMatches =
-        child.href &&
-        (child.matchExact
-          ? pathname === child.href
-          : pathname.startsWith(child.href));
+  const hasActiveChild = (navLinks: (NavLinkType | null)[]): boolean => {
+    return (
+      navLinks?.some((child) => {
+        const childMatches =
+          child?.href &&
+          (child.matchExact
+            ? pathname === child.href
+            : pathname.startsWith(child.href));
 
-      if (childMatches) return true;
+        if (childMatches) return true;
 
-      if (child.children) {
-        return hasActiveChild(child.children);
-      }
+        if (child?.children) {
+          return hasActiveChild(child.children);
+        }
 
-      return false;
-    });
+        return false;
+      }) ?? false
+    );
   };
 
   const isActive =
@@ -80,7 +82,7 @@ export function NavLink({
       if (onLinkClick) {
         onLinkClick();
       } else if (hasChildren) {
-        onSubMenuClick(children!, title);
+        onSubMenuClick(children, title);
       } else if (href) {
         onClick();
       }
