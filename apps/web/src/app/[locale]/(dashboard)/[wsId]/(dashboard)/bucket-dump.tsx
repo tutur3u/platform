@@ -46,7 +46,6 @@ import {
 } from '@tuturuuu/ui/select';
 import { toast } from '@tuturuuu/ui/sonner';
 import { Textarea } from '@tuturuuu/ui/textarea';
-import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 
@@ -61,14 +60,6 @@ interface Note {
   created_at: string;
   updated_at: string;
   archived: boolean;
-}
-
-interface TaskProject {
-  id: string;
-  name: string;
-  description: string | null;
-  status: string;
-  created_at: string;
 }
 
 interface WorkspaceBoardResponse {
@@ -148,30 +139,6 @@ function BucketDumpContent({ wsId }: { wsId: string }) {
     },
     enabled: Boolean(wsId),
     staleTime: 30_000,
-  });
-
-  // Fetch task projects
-  const { data: projects = [], isLoading: projectsLoading } = useQuery<
-    TaskProject[]
-  >({
-    queryKey: ['workspace', wsId, 'task-projects'],
-    queryFn: async () => {
-      const response = await fetch(`/api/v1/workspaces/${wsId}/task-projects`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        cache: 'no-store',
-      });
-
-      if (!response.ok) {
-        throw new Error(t('errors.fetch_projects'));
-      }
-
-      return (await response.json()) as TaskProject[];
-    },
-    enabled: Boolean(wsId),
-    staleTime: 60_000,
   });
 
   // Fetch boards and lists for task conversion
@@ -453,7 +420,7 @@ function BucketDumpContent({ wsId }: { wsId: string }) {
   // Server already filtered; show what we got
   const displayedNotes = notes;
 
-  const isLoading = notesLoading || projectsLoading || boardsLoading;
+  const isLoading = notesLoading || boardsLoading;
   const isCreating = createNoteMutation.isPending;
   const isDeleting = deleteNoteMutation.isPending;
   const isUpdating = updateNoteMutation.isPending;
@@ -635,62 +602,6 @@ function BucketDumpContent({ wsId }: { wsId: string }) {
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Projects list */}
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <h3 className="font-medium text-sm">{t('projects_heading')}</h3>
-              <Badge variant="outline" className="text-xs">
-                {projects.length}
-              </Badge>
-            </div>
-
-            {projectsLoading ? (
-              <div className="flex items-center justify-center py-4">
-                <Loader2 className="h-5 w-5 animate-spin text-dynamic-purple" />
-              </div>
-            ) : projects.length === 0 ? (
-              <div className="rounded-lg border border-dynamic-muted/30 bg-dynamic-muted/10 p-3 text-center">
-                <p className="text-muted-foreground text-sm">
-                  {t('no_projects')}
-                </p>
-              </div>
-            ) : (
-              <div className="space-y-2">
-                {projects.map((project) => (
-                  <div
-                    key={project.id}
-                    className="rounded-lg border border-dynamic-surface/30 bg-background/80 p-3"
-                  >
-                    <div className="space-y-1">
-                      <div className="flex items-center justify-between">
-                        <h4 className="font-medium text-sm">{project.name}</h4>
-                        <Badge
-                          variant="outline"
-                          className={cn(
-                            'text-xs',
-                            project.status === 'active'
-                              ? 'border-dynamic-green/40 bg-dynamic-green/10 text-dynamic-green'
-                              : 'border-dynamic-muted/40 bg-dynamic-muted/10 text-muted-foreground'
-                          )}
-                        >
-                          {project.status}
-                        </Badge>
-                      </div>
-                      {project.description && (
-                        <p className="text-muted-foreground text-xs">
-                          {project.description}
-                        </p>
-                      )}
-                      <p className="text-muted-foreground text-xs">
-                        {new Date(project.created_at).toLocaleDateString()}
-                      </p>
                     </div>
                   </div>
                 ))}

@@ -6327,6 +6327,127 @@ export type Database = {
           updated_at?: null | string;
         };
       };
+      task_cycle_tasks: {
+        Insert: {
+          created_at?: null | string;
+          cycle_id: string;
+          task_id: string;
+        };
+        Relationships: [
+          {
+            columns: ['cycle_id'];
+            foreignKeyName: 'task_cycle_tasks_cycle_id_fkey';
+            isOneToOne: false;
+            referencedColumns: ['id'];
+            referencedRelation: 'task_cycles';
+          },
+          {
+            columns: ['task_id'];
+            foreignKeyName: 'task_cycle_tasks_task_id_fkey';
+            isOneToOne: false;
+            referencedColumns: ['id'];
+            referencedRelation: 'tasks';
+          },
+        ];
+        Row: {
+          created_at: null | string;
+          cycle_id: string;
+          task_id: string;
+        };
+        Update: {
+          created_at?: null | string;
+          cycle_id?: string;
+          task_id?: string;
+        };
+      };
+      task_cycles: {
+        Insert: {
+          archived?: boolean | null;
+          created_at?: null | string;
+          creator_id?: string;
+          deleted?: boolean | null;
+          description?: null | string;
+          end_date?: null | string;
+          id?: string;
+          name: string;
+          start_date?: null | string;
+          status?: null | string;
+          updated_at?: null | string;
+          ws_id: string;
+        };
+        Relationships: [
+          {
+            columns: ['creator_id'];
+            foreignKeyName: 'task_cycles_creator_id_fkey';
+            isOneToOne: false;
+            referencedColumns: ['user_id'];
+            referencedRelation: 'nova_user_challenge_leaderboard';
+          },
+          {
+            columns: ['creator_id'];
+            foreignKeyName: 'task_cycles_creator_id_fkey';
+            isOneToOne: false;
+            referencedColumns: ['user_id'];
+            referencedRelation: 'nova_user_leaderboard';
+          },
+          {
+            columns: ['creator_id'];
+            foreignKeyName: 'task_cycles_creator_id_fkey';
+            isOneToOne: false;
+            referencedColumns: ['id'];
+            referencedRelation: 'shortened_links_creator_stats';
+          },
+          {
+            columns: ['creator_id'];
+            foreignKeyName: 'task_cycles_creator_id_fkey';
+            isOneToOne: false;
+            referencedColumns: ['id'];
+            referencedRelation: 'users';
+          },
+          {
+            columns: ['ws_id'];
+            foreignKeyName: 'task_cycles_ws_id_fkey';
+            isOneToOne: false;
+            referencedColumns: ['id'];
+            referencedRelation: 'workspace_link_counts';
+          },
+          {
+            columns: ['ws_id'];
+            foreignKeyName: 'task_cycles_ws_id_fkey';
+            isOneToOne: false;
+            referencedColumns: ['id'];
+            referencedRelation: 'workspaces';
+          },
+        ];
+        Row: {
+          archived: boolean | null;
+          created_at: null | string;
+          creator_id: string;
+          deleted: boolean | null;
+          description: null | string;
+          end_date: null | string;
+          id: string;
+          name: string;
+          start_date: null | string;
+          status: null | string;
+          updated_at: null | string;
+          ws_id: string;
+        };
+        Update: {
+          archived?: boolean | null;
+          created_at?: null | string;
+          creator_id?: string;
+          deleted?: boolean | null;
+          description?: null | string;
+          end_date?: null | string;
+          id?: string;
+          name?: string;
+          start_date?: null | string;
+          status?: null | string;
+          updated_at?: null | string;
+          ws_id?: string;
+        };
+      };
       task_initiatives: {
         Insert: {
           archived?: boolean | null;

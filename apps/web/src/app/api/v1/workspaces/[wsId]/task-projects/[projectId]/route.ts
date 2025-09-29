@@ -50,7 +50,19 @@ export async function PUT(
       .update({ name, description: description || null })
       .eq('id', projectId)
       .eq('ws_id', wsId)
-      .select('*')
+      .select(`
+        *,
+        task_project_tasks(
+          task:tasks(
+            id,
+            name,
+            completed,
+            task_lists(
+              name
+            )
+          )
+        )
+      `)
       .single();
 
     if (updateError) {
@@ -65,15 +77,34 @@ export async function PUT(
       return NextResponse.json({ error: 'Project not found' }, { status: 404 });
     }
 
-    return NextResponse.json(updatedProject);
+    return NextResponse.json({
+      id: updatedProject.id,
+      name: updatedProject.name,
+      description: updatedProject.description,
+      created_at: updatedProject.created_at,
+      creator_id: updatedProject.creator_id,
+      creator: null,
+      tasksCount: updatedProject.task_project_tasks?.length ?? 0,
+      linkedTasks:
+        updatedProject.task_project_tasks?.flatMap((link) =>
+          link.task
+            ? [
+                {
+                  id: link.task.id,
+                  name: link.task.name,
+                  completed: link.task.completed,
+                  listName: link.task.task_lists?.name ?? null,
+                },
+              ]
+            : []
+        ) ?? [],
+    });
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        { error: error.errors[0].message },
-        { status: 400 }
+      return NextResponse.json({ error: error.message },
+        { 400 }
       );
-    }
-    console.error(
+   console.error(
       'Error in PUT /api/v1/workspaces/[wsId]/task-projects/[projectId]:',
       error
     );

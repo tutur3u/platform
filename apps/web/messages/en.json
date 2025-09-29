@@ -4669,7 +4669,14 @@
         "converted_to_project": "Note converted to project successfully",
         "project_created": "Project created successfully",
         "project_updated": "Project updated successfully",
-        "project_deleted": "Project deleted successfully"
+        "project_deleted": "Project deleted successfully",
+        "initiative_created": "Initiative created successfully",
+        "initiative_updated": "Initiative updated successfully",
+        "initiative_deleted": "Initiative deleted successfully",
+        "project_linked": "Project linked to initiative",
+        "project_unlinked": "Project removed from initiative",
+        "task_linked": "Task linked to project",
+        "task_unlinked": "Task removed from project"
       },
       "errors": {
         "fetch_notes": "Failed to load notes",
@@ -4685,7 +4692,19 @@
         "delete_project": "Failed to delete project",
         "empty_note": "Note content cannot be empty",
         "no_list_selected": "Please select a task list",
-        "empty_project_name": "Project name is required"
+        "empty_project_name": "Project name is required",
+        "fetch_initiatives": "Failed to load initiatives",
+        "create_initiative": "Failed to create initiative",
+        "update_initiative": "Failed to update initiative",
+        "delete_initiative": "Failed to delete initiative",
+        "empty_initiative_name": "Initiative name is required",
+        "link_project": "Failed to link project to initiative",
+        "unlink_project": "Failed to unlink project from initiative",
+        "no_project_selected": "Please select a project",
+        "fetch_tasks": "Failed to load tasks",
+        "link_task": "Failed to link task to project",
+        "unlink_task": "Failed to unlink task from project",
+        "no_task_selected": "Please select a task"
       },
       "restricted_title": "Bucket Dump Restricted",
       "restricted_description": "You don't have permission to use the Bucket Dump feature."

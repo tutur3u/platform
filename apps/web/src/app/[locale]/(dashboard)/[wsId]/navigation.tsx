@@ -386,8 +386,8 @@ export async function WorkspaceNavigationLinks({
             },
             {
               title: t('sidebar_tabs.initiatives'),
+              href: `/${personalOrWsId}/tasks/initiatives`,
               icon: <Sparkle className="h-4 w-4" />,
-              tempDisabled: true,
               matchExact: true,
             },
             {
@@ -397,9 +397,8 @@ export async function WorkspaceNavigationLinks({
             },
             {
               title: t('sidebar_tabs.cycles'),
+              href: `/${personalOrWsId}/tasks/cycles`,
               icon: <RotateCcw className="h-4 w-4" />,
-              tempDisabled: true,
-              matchExact: true,
             },
             {
               title: t('sidebar_tabs.labels'),

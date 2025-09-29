@@ -44,6 +44,16 @@ export default async function TaskProjectsPage({ params }: Props) {
               id,
               display_name,
               avatar_url
+            ),
+            task_project_tasks(
+              task:tasks(
+                id,
+                name,
+                completed,
+                task_lists(
+                  name
+                )
+              )
             )
           `)
           .eq('ws_id', wsId)
@@ -53,6 +63,29 @@ export default async function TaskProjectsPage({ params }: Props) {
           console.error('Error fetching task projects:', projectsError);
           notFound();
         }
+
+        const formattedProjects = (projects ?? []).map((project) => ({
+          id: project.id,
+          name: project.name,
+          description: project.description,
+          created_at: project.created_at,
+          creator_id: project.creator_id,
+          creator: project.creator,
+          tasksCount: project.task_project_tasks?.length ?? 0,
+          linkedTasks:
+            project.task_project_tasks?.flatMap((link) =>
+              link.task
+                ? [
+                    {
+                      id: link.task.id,
+                      name: link.task.name,
+                      completed: link.task.completed,
+                      listName: link.task.task_lists?.name ?? null,
+                    },
+                  ]
+                : []
+            ) ?? [],
+        }));
 
         return (
           <div className="space-y-6">
@@ -66,7 +99,7 @@ export default async function TaskProjectsPage({ params }: Props) {
 
             <TaskProjectsClient
               wsId={wsId}
-              initialProjects={projects || []}
+              initialProjects={formattedProjects}
               currentUserId={currentUser.id}
             />
           </div>

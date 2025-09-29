@@ -1,6 +1,7 @@
 'use client';
 
 import { useMutation, useQuery } from '@tanstack/react-query';
+import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import {
   Card,
@@ -27,6 +28,7 @@ import {
   Archive,
   Calendar,
   Edit3,
+  Link,
   Loader2,
   MoreVertical,
   Plus,
@@ -35,10 +37,24 @@ import {
 } from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@tuturuuu/ui/select';
 import { toast } from '@tuturuuu/ui/sonner';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { useTranslations } from 'next-intl';
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+
+interface LinkedTask {
+  id: string;
+  name: string;
+  completed: boolean | null;
+  listName: string | null;
+}
 
 interface TaskProject {
   id: string;
@@ -50,13 +66,22 @@ interface TaskProject {
     id: string;
     display_name: string | null;
     avatar_url: string | null;
-  };
+  } | null;
+  tasksCount: number;
+  linkedTasks: LinkedTask[];
 }
 
 interface TaskProjectsClientProps {
   wsId: string;
   initialProjects: TaskProject[];
   currentUserId: string;
+}
+
+interface TaskOption {
+  id: string;
+  name: string;
+  completed: boolean | null;
+  listName: string | null;
 }
 
 export function TaskProjectsClient({
@@ -67,15 +92,17 @@ export function TaskProjectsClient({
 
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const [editingProject, setEditingProject] = useState<TaskProject | null>(
+  const [editingProject, setEditingProject] = useState<TaskProject | null>(null);
+  const [managingProject, setManagingProject] = useState<TaskProject | null>(
     null
   );
+
   const [newProjectName, setNewProjectName] = useState('');
   const [newProjectDescription, setNewProjectDescription] = useState('');
   const [editProjectName, setEditProjectName] = useState('');
   const [editProjectDescription, setEditProjectDescription] = useState('');
+  const [taskToLink, setTaskToLink] = useState('');
 
-  // Fetch projects
   const {
     data: projects = initialProjects,
     isLoading: projectsLoading,
@@ -92,7 +119,60 @@ export function TaskProjectsClient({
     initialData: initialProjects,
   });
 
-  // Create project mutation
+
+const {
+  data: availableTaskOptions = [],
+  isLoading: tasksLoading,
+  error: tasksError,
+} = useQuery<TaskOption[]>({
+  queryKey: ['workspace', wsId, 'tasks-for-projects'],
+  queryFn: async () => {
+    const response = await fetch(`/api/v1/workspaces/${wsId}/tasks?limit=200`);
+    if (!response.ok) {
+      throw new Error(t('errors.fetch_tasks'));
+    }
+
+    const payload = await response.json();
+    const rawTasks = Array.isArray(payload)
+      ? payload
+      : Array.isArray(payload?.tasks)
+        ? payload.tasks
+        : [];
+
+    return rawTasks
+      .map((task: Record<string, unknown>) => ({
+        id: String(task.id ?? ''),
+        name:
+          typeof task.name === 'string' && task.name.trim().length > 0
+            ? task.name
+            : 'Untitled task',
+        completed:
+          typeof task.completed === 'boolean' ? task.completed : null,
+        listName:
+          typeof task.list_name === 'string' ? task.list_name : null,
+      }))
+      .filter((task) => Boolean(task.id));
+  },
+  enabled: Boolean(managingProject),
+  staleTime: 60_000,
+});
+
+  useEffect(() => {
+    if (!managingProject) {
+      return;
+    }
+    const updated = projects.find((project) => project.id === managingProject.id);
+    if (updated && updated !== managingProject) {
+      setManagingProject(updated);
+    }
+  }, [projects, managingProject]);
+
+  useEffect(() => {
+    if (availableTaskOptions.length === 0) {
+      setTaskToLink('');
+    }
+  }, [availableTaskOptions.length]);
+
   const createProjectMutation = useMutation({
     mutationFn: async ({
       name,
@@ -124,7 +204,6 @@ export function TaskProjectsClient({
     },
   });
 
-  // Update project mutation
   const updateProjectMutation = useMutation({
     mutationFn: async ({
       projectId,
@@ -162,7 +241,6 @@ export function TaskProjectsClient({
     },
   });
 
-  // Delete project mutation
   const deleteProjectMutation = useMutation({
     mutationFn: async (projectId: string) => {
       const response = await fetch(
@@ -182,6 +260,87 @@ export function TaskProjectsClient({
     },
     onError: (error: Error) => {
       toast.error(error.message || t('errors.delete_project'));
+    },
+  });
+
+  const linkTaskMutation = useMutation({
+    mutationFn: async ({
+      projectId,
+      taskId,
+    }: {
+      projectId: string;
+      taskId: string;
+    }) => {
+      const response = await fetch(
+        `/api/v1/workspaces/${wsId}/task-projects/${projectId}/tasks`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ taskId }),
+        }
+      );
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || t('errors.link_task'));
+      }
+      return response.json() as Promise<{ linkedTask: LinkedTask }>;
+    },
+    onSuccess: (data, variables) => {
+      toast.success(t('success.task_linked'));
+      setTaskToLink('');
+      setManagingProject((previous) =>
+        previous
+          ? {
+              ...previous,
+              tasksCount: previous.tasksCount + 1,
+              linkedTasks: [...previous.linkedTasks, data.linkedTask],
+            }
+          : previous
+      );
+      refetchProjects();
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || t('errors.link_task'));
+    },
+  });
+
+  const unlinkTaskMutation = useMutation({
+    mutationFn: async ({
+      projectId,
+      taskId,
+    }: {
+      projectId: string;
+      taskId: string;
+    }) => {
+      const response = await fetch(
+        `/api/v1/workspaces/${wsId}/task-projects/${projectId}/tasks/${taskId}`,
+        {
+          method: 'DELETE',
+        }
+      );
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || t('errors.unlink_task'));
+      }
+      return response.json();
+    },
+    onSuccess: (_data, variables) => {
+      toast.success(t('success.task_unlinked'));
+      setManagingProject((previous) =>
+        previous
+          ? {
+              ...previous,
+              tasksCount: Math.max(previous.tasksCount - 1, 0),
+              linkedTasks: previous.linkedTasks.filter(
+                (task) => task.id !== variables.taskId
+              ),
+            }
+          : previous
+      );
+      refetchProjects();
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || t('errors.unlink_task'));
     },
   });
 
@@ -219,9 +378,53 @@ export function TaskProjectsClient({
     deleteProjectMutation.mutate(projectId);
   };
 
+  const handleOpenManageTasks = (project: TaskProject) => {
+    setManagingProject(project);
+    setTaskToLink('');
+  };
+
+  const handleCloseManageTasks = () => {
+    setManagingProject(null);
+    setTaskToLink('');
+  };
+
+  const handleLinkTask = () => {
+    if (!managingProject) {
+      return;
+    }
+    if (!taskToLink) {
+      toast.error(t('errors.no_task_selected'));
+      return;
+    }
+    linkTaskMutation.mutate({
+      projectId: managingProject.id,
+      taskId: taskToLink,
+    });
+  };
+
+  const handleUnlinkTask = (taskId: string) => {
+    if (!managingProject) {
+      return;
+    }
+    unlinkTaskMutation.mutate({
+      projectId: managingProject.id,
+      taskId,
+    });
+  };
+
   const isCreating = createProjectMutation.isPending;
   const isUpdating = updateProjectMutation.isPending;
   const isDeleting = deleteProjectMutation.isPending;
+  const isLinking = linkTaskMutation.isPending;
+  const isUnlinking = unlinkTaskMutation.isPending;
+
+  const filteredTaskOptions = useMemo(() => {
+    if (!managingProject) {
+      return [] as TaskOption[];
+    }
+    const linkedIds = new Set(managingProject.linkedTasks.map((task) => task.id));
+    return availableTaskOptions.filter((task) => !linkedIds.has(task.id));
+  }, [availableTaskOptions, managingProject]);
 
   return (
     <>
@@ -229,7 +432,7 @@ export function TaskProjectsClient({
         <div>
           <h2 className="font-semibold text-lg">All Projects</h2>
           <p className="text-muted-foreground text-sm">
-            {projects.length} project{projects.length !== 1 ? 's' : ''} total
+            {projects.length} project{projects.length === 1 ? '' : 's'} total
           </p>
         </div>
         <Button onClick={() => setIsCreateDialogOpen(true)}>
@@ -250,10 +453,7 @@ export function TaskProjectsClient({
             <p className="text-center text-muted-foreground">
               Create your first project to start organizing tasks across boards.
             </p>
-            <Button
-              className="mt-4"
-              onClick={() => setIsCreateDialogOpen(true)}
-            >
+            <Button className="mt-4" onClick={() => setIsCreateDialogOpen(true)}>
               <Plus className="mr-2 h-4 w-4" />
               Create Project
             </Button>
@@ -304,33 +504,57 @@ export function TaskProjectsClient({
                   </DropdownMenu>
                 </div>
               </CardHeader>
-              <CardContent className="pt-0">
-                <div className="flex items-center gap-4 text-muted-foreground text-sm">
+              <CardContent className="pt-0 space-y-3">
+                <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
                   <div className="flex items-center gap-1">
                     <User className="h-3 w-3" />
                     <span>{project.creator?.display_name || 'Unknown'}</span>
                   </div>
                   <div className="flex items-center gap-1">
                     <Calendar className="h-3 w-3" />
-                    <span>
-                      {new Date(project.created_at).toLocaleDateString()}
-                    </span>
+                    <span>{new Date(project.created_at).toLocaleDateString()}</span>
                   </div>
+                  <Badge variant="outline" className="text-xs">
+                    {project.tasksCount} linked task
+                    {project.tasksCount === 1 ? '' : 's'}
+                  </Badge>
                 </div>
+
+                {project.linkedTasks.length > 0 ? (
+                  <div className="flex flex-wrap gap-2">
+                    {project.linkedTasks.map((task) => (
+                      <Badge key={task.id} variant="outline" className="text-xs">
+                        {task.name}
+                      </Badge>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground">
+                    No tasks linked yet.
+                  </p>
+                )}
+
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => handleOpenManageTasks(project)}
+                  disabled={isLinking || isUnlinking}
+                >
+                  <Link className="mr-2 h-4 w-4" />
+                  Manage Tasks
+                </Button>
               </CardContent>
             </Card>
           ))}
         </div>
       )}
 
-      {/* Create Project Dialog */}
       <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Create New Project</DialogTitle>
             <DialogDescription>
-              Create a new task project to organize tasks across multiple
-              boards.
+              Create a new task project to organize tasks across multiple boards.
             </DialogDescription>
           </DialogHeader>
 
@@ -348,10 +572,7 @@ export function TaskProjectsClient({
               />
             </div>
             <div className="space-y-2">
-              <Label
-                htmlFor="project-description"
-                className="font-medium text-sm"
-              >
+              <Label htmlFor="project-description" className="font-medium text-sm">
                 Description (Optional)
               </Label>
               <Textarea
@@ -387,7 +608,6 @@ export function TaskProjectsClient({
         </DialogContent>
       </Dialog>
 
-      {/* Edit Project Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
         <DialogContent>
           <DialogHeader>
@@ -397,10 +617,7 @@ export function TaskProjectsClient({
 
           <div className="space-y-4 py-2">
             <div className="space-y-2">
-              <Label
-                htmlFor="edit-project-name"
-                className="font-medium text-sm"
-              >
+              <Label htmlFor="edit-project-name" className="font-medium text-sm">
                 Project Name
               </Label>
               <Input
@@ -412,10 +629,7 @@ export function TaskProjectsClient({
               />
             </div>
             <div className="space-y-2">
-              <Label
-                htmlFor="edit-project-description"
-                className="font-medium text-sm"
-              >
+              <Label htmlFor="edit-project-description" className="font-medium text-sm">
                 Description (Optional)
               </Label>
               <Textarea
@@ -445,6 +659,125 @@ export function TaskProjectsClient({
                 </>
               ) : (
                 'Update Project'
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={Boolean(managingProject)}
+        onOpenChange={(open) => {
+          if (!open) {
+            handleCloseManageTasks();
+          }
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Manage Linked Tasks</DialogTitle>
+            <DialogDescription>
+              Link existing tasks to this project or remove them.
+            </DialogDescription>
+          </DialogHeader>
+
+          {managingProject ? (
+            <div className="space-y-4 py-2">
+              <div className="space-y-2">
+                <Label className="font-medium text-sm">Linked Tasks</Label>
+                {managingProject.linkedTasks.length > 0 ? (
+                  <div className="space-y-2">
+                    {managingProject.linkedTasks.map((task) => (
+                      <div
+                        key={task.id}
+                        className="flex items-center justify-between rounded-md border border-dynamic-surface/40 bg-dynamic-surface/25 px-3 py-2"
+                      >
+                        <div>
+                          <p className="text-sm font-medium">{task.name}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {task.listName ?? 'Unassigned list'}
+                          </p>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-dynamic-red hover:text-dynamic-red focus-visible:text-dynamic-red"
+                          onClick={() => handleUnlinkTask(task.id)}
+                          disabled={isUnlinking}
+                        >
+                          <Trash2 className="mr-2 h-4 w-4" />
+                          Remove
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground">
+                    No tasks linked yet.
+                  </p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label className="font-medium text-sm">Link a Task</Label>
+                <Select
+                  value={taskToLink}
+                  onValueChange={setTaskToLink}
+                  disabled={
+                    tasksLoading || filteredTaskOptions.length === 0 || isLinking
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select task" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {tasksLoading ? (
+                      <SelectItem disabled value="loading">
+                        Loading tasks...
+                      </SelectItem>
+                    ) : filteredTaskOptions.length === 0 ? (
+                      <SelectItem disabled value="none">
+                        No available tasks
+                      </SelectItem>
+                    ) : (
+                      filteredTaskOptions.map((task) => (
+                        <SelectItem key={task.id} value={task.id}>
+                          {task.name}
+                        </SelectItem>
+                      ))
+                    )}
+                  </SelectContent>
+                </Select>
+                {tasksError ? (
+                  <p className="text-sm text-dynamic-red">
+                    {(tasksError as Error).message}
+                  </p>
+                ) : filteredTaskOptions.length === 0 && !tasksLoading ? (
+                  <p className="text-sm text-muted-foreground">
+                    All workspace tasks are already linked.
+                  </p>
+                ) : null}
+              </div>
+            </div>
+          ) : null}
+
+          <DialogFooter className="gap-2">
+            <Button variant="ghost" onClick={handleCloseManageTasks}>
+              Close
+            </Button>
+            <Button
+              onClick={handleLinkTask}
+              disabled={
+                !taskToLink || isLinking || filteredTaskOptions.length === 0
+              }
+            >
+              {isLinking ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Linking...
+                </>
+              ) : (
+                'Link Task'
               )}
             </Button>
           </DialogFooter>
