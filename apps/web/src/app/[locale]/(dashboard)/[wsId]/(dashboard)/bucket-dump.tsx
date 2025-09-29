@@ -60,6 +60,7 @@ interface Note {
   content: string;
   created_at: string;
   updated_at: string;
+  archived: boolean;
 }
 
 interface TaskProject {
@@ -115,21 +116,29 @@ function BucketDumpContent({ wsId }: { wsId: string }) {
   const [projectDescription, setProjectDescription] = useState('');
   const [showArchived, setShowArchived] = useState(false);
 
-  // Fetch notes
+  // Fetch notes (server-driven archived filter)
   const {
     data: notes = [],
     isLoading: notesLoading,
     refetch: refetchNotes,
   } = useQuery<Note[]>({
-    queryKey: ['workspace', wsId, 'notes'],
+    queryKey: [
+      'workspace',
+      wsId,
+      'notes',
+      showArchived ? 'archived' : 'active',
+    ],
     queryFn: async () => {
-      const response = await fetch(`/api/v1/workspaces/${wsId}/notes`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        cache: 'no-store',
-      });
+      const response = await fetch(
+        `/api/v1/workspaces/${wsId}/notes?archived=${showArchived ? '1' : '0'}`,
+        {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          cache: 'no-store',
+        }
+      );
 
       if (!response.ok) {
         throw new Error(t('errors.fetch_notes'));
@@ -413,7 +422,7 @@ function BucketDumpContent({ wsId }: { wsId: string }) {
       convertToProjectMutation.mutate({
         noteId: selectedNote.id,
         name: projectName.trim(),
-        description: projectDescription.trim() || null,
+        description: projectDescription.trim() || '',
       });
     }
   };
@@ -441,10 +450,8 @@ function BucketDumpContent({ wsId }: { wsId: string }) {
         }));
     }) ?? [];
 
-  // Separate active and archived notes
-  const activeNotes = notes.filter((note) => !note.is_converted);
-  const archivedNotes = notes.filter((note) => note.is_converted);
-  const displayedNotes = showArchived ? archivedNotes : activeNotes;
+  // Server already filtered; show what we got
+  const displayedNotes = notes;
 
   const isLoading = notesLoading || projectsLoading || boardsLoading;
   const isCreating = createNoteMutation.isPending;
@@ -548,7 +555,7 @@ function BucketDumpContent({ wsId }: { wsId: string }) {
                   <div
                     key={note.id}
                     className={`group rounded-lg border p-3 transition ${
-                      note.is_converted
+                      note.archived
                         ? 'border-dynamic-green/30 bg-dynamic-green/5'
                         : 'border-dynamic-surface/30 bg-background/80 hover:border-dynamic-purple/30'
                     }`}
@@ -557,7 +564,7 @@ function BucketDumpContent({ wsId }: { wsId: string }) {
                       <div className="flex-1 space-y-1">
                         <p
                           className={`text-sm leading-relaxed ${
-                            note.is_converted
+                            note.archived
                               ? 'text-muted-foreground line-through'
                               : 'text-foreground'
                           }`}
@@ -568,15 +575,11 @@ function BucketDumpContent({ wsId }: { wsId: string }) {
                           <p className="text-muted-foreground text-xs">
                             {new Date(note.created_at).toLocaleDateString()}
                           </p>
-                          {note.is_converted && (
+                          {note.archived && (
                             <Badge
                               variant="outline"
                               className="text-dynamic-green text-xs"
-                            >
-                              {note.converted_to_task_id
-                                ? t('converted_to_task')
-                                : t('converted_to_project')}
-                            </Badge>
+                            ></Badge>
                           )}
                         </div>
                       </div>
@@ -590,7 +593,7 @@ function BucketDumpContent({ wsId }: { wsId: string }) {
                                 isConverting ||
                                 isDeleting ||
                                 isUpdating ||
-                                note.is_converted
+                                note.archived
                               }
                               className="h-8 w-8 p-0"
                             >
@@ -598,7 +601,7 @@ function BucketDumpContent({ wsId }: { wsId: string }) {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                            {!note.is_converted ? (
+                            {!note.archived ? (
                               <>
                                 <DropdownMenuItem
                                   onClick={() => handleConvertNote(note)}

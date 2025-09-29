@@ -58,7 +58,7 @@ export async function POST(
     }
 
     // Check if note is already converted
-    if (note.is_converted) {
+    if (note.archived) {
       return NextResponse.json(
         { error: 'Note already converted' },
         { status: 400 }
@@ -115,8 +115,7 @@ export async function POST(
     const { error: updateError } = await supabase
       .from('notes')
       .update({
-        is_converted: true,
-        converted_to_task_id: task.id,
+        archived: true,
       })
       .eq('id', noteId);
 
@@ -134,10 +133,7 @@ export async function POST(
     });
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        { error: error.errors[0].message },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: error.message }, { status: 400 });
     }
     console.error(
       'Error in POST /api/v1/workspaces/[wsId]/notes/[noteId]/convert-to-task:',

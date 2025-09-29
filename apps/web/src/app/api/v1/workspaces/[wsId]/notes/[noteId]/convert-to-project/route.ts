@@ -47,7 +47,7 @@ export async function POST(
     // Verify note exists in this workspace
     const { data: note, error: noteError } = await supabase
       .from('notes')
-      .select('id, content, creator_id, ws_id, is_converted')
+      .select('id, content, creator_id, ws_id, archived')
       .eq('id', noteId)
       .eq('ws_id', wsId)
       .single();
@@ -62,7 +62,7 @@ export async function POST(
     }
 
     // Check if note is already converted
-    if (note.is_converted) {
+    if (note.archived) {
       return NextResponse.json(
         { error: 'Note already converted' },
         { status: 400 }
@@ -93,8 +93,7 @@ export async function POST(
     const { error: updateError } = await supabase
       .from('notes')
       .update({
-        is_converted: true,
-        converted_to_project_id: project.id,
+        archived: true,
       })
       .eq('id', noteId);
 
@@ -112,10 +111,7 @@ export async function POST(
     });
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        { error: error.errors[0].message },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: error.message }, { status: 400 });
     }
     console.error(
       'Error in POST /api/v1/workspaces/[wsId]/notes/[noteId]/convert-to-project:',

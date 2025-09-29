@@ -11,7 +11,7 @@ const createNoteSchema = z.object({
 });
 
 export async function GET(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ wsId: string }> }
 ) {
   try {
@@ -39,13 +39,22 @@ export async function GET(
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
+    // Determine archived filter
+    const archivedParam = new URL(request.url).searchParams.get('archived');
+    const archived = archivedParam === '1' || archivedParam === 'true';
+
     // Fetch notes
-    const { data: notes, error: notesError } = await supabase
+    let query = supabase
       .from('notes')
       .select('*')
       .eq('ws_id', wsId)
-      .eq('creator_id', user.id)
-      .order('created_at', { ascending: false });
+      .eq('creator_id', user.id);
+
+    query = archived ? query.eq('archived', true) : query.eq('archived', false);
+
+    const { data: notes, error: notesError } = await query.order('created_at', {
+      ascending: false,
+    });
 
     if (notesError) {
       console.error('Error fetching notes:', notesError);
@@ -120,10 +129,7 @@ export async function POST(
     return NextResponse.json(note);
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        { error: error.errors[0].message },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: error.message }, { status: 400 });
     }
     console.error('Error in POST /api/v1/workspaces/[wsId]/notes:', error);
     return NextResponse.json(

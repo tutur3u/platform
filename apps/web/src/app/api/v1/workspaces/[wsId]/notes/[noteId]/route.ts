@@ -68,10 +68,7 @@ export async function PUT(
     return NextResponse.json(updatedNote);
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        { error: error.errors[0].message },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: error.message }, { status: 400 });
     }
     console.error(
       'Error in PUT /api/v1/workspaces/[wsId]/notes/[noteId]:',
