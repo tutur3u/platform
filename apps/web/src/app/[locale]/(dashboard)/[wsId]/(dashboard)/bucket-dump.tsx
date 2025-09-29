@@ -546,7 +546,9 @@ function BucketDumpContent({ wsId }: { wsId: string }) {
                             <Badge
                               variant="outline"
                               className="text-dynamic-green text-xs"
-                            ></Badge>
+                            >
+                              {t('actions.archived')}
+                            </Badge>
                           )}
                         </div>
                       </div>
