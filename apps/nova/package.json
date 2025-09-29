@@ -46,7 +46,7 @@
     "dayjs": "^1.11.18",
     "framer-motion": "^12.23.22",
     "jotai": "^2.15.0",
-    "juice": "^11.0.1",
+    "juice": "^11.0.2",
     "lodash": "^4.17.21",
     "moment": "^2.30.1",
     "negotiator": "^1.0.0",
@@ -80,5 +80,5 @@
     "typescript": "^5.9.2",
     "vitest": "^3.2.4"
   },
-  "packageManager": "bun@1.2.22"
+  "packageManager": "bun@1.2.23"
 }

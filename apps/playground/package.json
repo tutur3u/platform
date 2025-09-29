@@ -41,5 +41,5 @@
     "postcss": "^8.5.6",
     "typescript": "^5.9.2"
   },
-  "packageManager": "bun@1.2.22"
+  "packageManager": "bun@1.2.23"
 }

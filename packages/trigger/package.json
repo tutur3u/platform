@@ -26,5 +26,5 @@
     "@trigger.dev/build": "^4.0.4",
     "@tuturuuu/typescript-config": "workspace:*"
   },
-  "packageManager": "bun@1.2.22"
+  "packageManager": "bun@1.2.23"
 }
