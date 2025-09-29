@@ -7,7 +7,6 @@ import { Suspense } from 'react';
 
 // Base params that all pages must have
 interface BaseParams {
-  locale: string;
   wsId: string;
 }
 
@@ -46,7 +45,7 @@ export default async function WorkspaceWrapper<
   TParams extends BaseParams = BaseParams,
 >({ params, children, fallback }: WorkspaceWrapperProps<TParams>) {
   const resolvedParams = await params;
-  const { wsId, locale } = resolvedParams;
+  const { wsId } = resolvedParams;
   const workspace = await getWorkspace(wsId);
 
   if (!workspace) {
@@ -63,7 +62,6 @@ export default async function WorkspaceWrapper<
     <Suspense fallback={fallback}>
       {children({
         workspace,
-        locale,
         wsId: validatedWsId,
         isPersonal: workspace.personal,
         isRoot: workspace.id === ROOT_WORKSPACE_ID,

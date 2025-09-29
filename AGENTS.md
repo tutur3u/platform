@@ -404,7 +404,42 @@ import { toast } from '@tuturuuu/ui/sonner';
 No behavioral API change expected; if an edge case arises (missing variant / prop), escalate instead of shim‑patching locally.
 
 #### 5.14 Dialog Components
-#### 5.15 Estimation Points Mapping (Boards)
+#### 5.15 Task Management Hierarchy Context
+The platform implements a hierarchical task management system with the following structure:
+
+**Hierarchy (top to bottom):**
+1. **Workspaces** - Each workspace can have multiple members and contains all task management entities
+2. **Task Initiatives** - High-level strategic initiatives that group multiple projects
+3. **Task Projects** - Cross-functional projects that can coordinate tasks from different boards
+4. **Task Boards** - Workspace-scoped boards (via `workspace_boards` table) that contain task lists
+5. **Task Lists** - Columns within boards that organize tasks
+6. **Tasks** - Individual work items within lists
+
+**Key Relationships:**
+- Workspaces → Task Initiatives (1:many)
+- Task Initiatives → Task Projects (many:many via `task_project_initiatives`)
+- Task Projects → Tasks (many:many via `task_project_tasks`) - enables cross-board coordination
+- Workspaces → Task Boards (1:many via `workspace_boards`)
+- Task Boards → Task Lists (1:many)
+- Task Lists → Tasks (1:many)
+
+**Bucket Dump Feature:**
+- **Notes** - Quick notes that can be converted to tasks or projects
+- **Conversion Flow**: Notes → Tasks (assigned to converted notes bucket) OR Notes → Projects (ready to receive tasks)
+- Notes are workspace-scoped and user-created
+- Projects can coordinate tasks across multiple boards within the same workspace
+
+**Database Tables:**
+- `notes` - Quick notes for bucket dump
+- `task_projects` - Cross-board project coordination
+- `task_initiatives` - Strategic initiative grouping
+- `task_project_initiatives` - Project-initiative junction
+- `task_project_tasks` - Task-project junction (cross-board)
+- `workspace_boards` - Workspace-scoped task boards
+- `task_lists` - Board columns
+- `tasks` - Individual work items
+
+#### 5.16 Estimation Points Mapping (Boards)
 To ensure consistent display of task estimation points across all views (task cards, bulk actions, timelines) a single shared mapping utility must be used.
 
 Rules:
