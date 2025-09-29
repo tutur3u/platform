@@ -93,7 +93,7 @@
     "@tuturuuu/typescript-config": "workspace:*",
     "@types/lodash": "^4.17.20",
     "@types/node": "^24.5.2",
-    "@types/react": "^19.1.13",
+    "@types/react": "^19.1.15",
     "@types/react-resizable": "^3.0.8",
     "@types/react-syntax-highlighter": "^15.5.13",
     "autoprefixer": "^10.4.21",

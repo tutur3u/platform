@@ -16,8 +16,8 @@
     "@tuturuuu/types": "workspace:*",
     "@tuturuuu/typescript-config": "workspace:*",
     "@types/node": "^24.5.2",
-    "@types/react": "^19.1.13",
-    "@vitejs/plugin-react": "^5.0.3",
+    "@types/react": "^19.1.15",
+    "@vitejs/plugin-react": "^5.0.4",
     "@vitest/coverage-v8": "^3.2.4",
     "typescript": "^5.9.2",
     "vite": "^7.1.7"
