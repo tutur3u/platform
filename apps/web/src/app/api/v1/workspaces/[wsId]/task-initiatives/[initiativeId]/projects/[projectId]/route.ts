@@ -6,7 +6,9 @@ export async function DELETE(
   _request: NextRequest,
   {
     params,
-  }: { params: Promise<{ wsId: string; initiativeId: string; projectId: string }> }
+  }: {
+    params: Promise<{ wsId: string; initiativeId: string; projectId: string }>;
+  }
 ) {
   try {
     const { wsId, initiativeId, projectId } = await params;

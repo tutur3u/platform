@@ -98,18 +98,23 @@ const STATUS_BADGE_CLASS: Record<InitiativeStatus, string> = {
   cancelled: 'bg-dynamic-red/15 text-dynamic-red border-transparent',
 };
 
-export function TaskInitiativesClient({ wsId, initialInitiatives }: TaskInitiativesClientProps) {
+export function TaskInitiativesClient({
+  wsId,
+  initialInitiatives,
+}: TaskInitiativesClientProps) {
   const t = useTranslations('dashboard.bucket_dump');
 
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const [editingInitiative, setEditingInitiative] = useState<TaskInitiative | null>(null);
+  const [editingInitiative, setEditingInitiative] =
+    useState<TaskInitiative | null>(null);
   const [newInitiativeName, setNewInitiativeName] = useState('');
   const [newInitiativeDescription, setNewInitiativeDescription] = useState('');
   const [newInitiativeStatus, setNewInitiativeStatus] =
     useState<InitiativeStatus>('active');
   const [editInitiativeName, setEditInitiativeName] = useState('');
-  const [editInitiativeDescription, setEditInitiativeDescription] = useState('');
+  const [editInitiativeDescription, setEditInitiativeDescription] =
+    useState('');
   const [editInitiativeStatus, setEditInitiativeStatus] =
     useState<InitiativeStatus>('active');
   const [managingInitiative, setManagingInitiative] =
@@ -132,7 +137,9 @@ export function TaskInitiativesClient({ wsId, initialInitiatives }: TaskInitiati
   } = useQuery<TaskInitiative[]>({
     queryKey: ['workspace', wsId, 'task-initiatives'],
     queryFn: async () => {
-      const response = await fetch(`/api/v1/workspaces/${wsId}/task-initiatives`);
+      const response = await fetch(
+        `/api/v1/workspaces/${wsId}/task-initiatives`
+      );
       if (!response.ok) {
         throw new Error(t('errors.fetch_initiatives'));
       }
@@ -154,13 +161,17 @@ export function TaskInitiativesClient({ wsId, initialInitiatives }: TaskInitiati
         throw new Error(t('errors.fetch_projects'));
       }
       const rawProjects = await response.json();
-      return (rawProjects as Array<{ id: string; name: string; status?: string | null }>).map(
-        (project) => ({
-          id: project.id,
-          name: project.name,
-          status: project.status ?? null,
-        })
-      );
+      return (
+        rawProjects as Array<{
+          id: string;
+          name: string;
+          status?: string | null;
+        }>
+      ).map((project) => ({
+        id: project.id,
+        name: project.name,
+        status: project.status ?? null,
+      }));
     },
     enabled: Boolean(managingInitiative),
     staleTime: 60_000,
@@ -204,11 +215,14 @@ export function TaskInitiativesClient({ wsId, initialInitiatives }: TaskInitiati
       description?: string;
       status: InitiativeStatus;
     }) => {
-      const response = await fetch(`/api/v1/workspaces/${wsId}/task-initiatives`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, description, status }),
-      });
+      const response = await fetch(
+        `/api/v1/workspaces/${wsId}/task-initiatives`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, description, status }),
+        }
+      );
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
         throw new Error(errorData.error || t('errors.create_initiative'));
@@ -495,7 +509,10 @@ export function TaskInitiativesClient({ wsId, initialInitiatives }: TaskInitiati
               Create your first initiative to coordinate related projects and
               outcomes.
             </p>
-            <Button className="mt-4" onClick={() => setIsCreateDialogOpen(true)}>
+            <Button
+              className="mt-4"
+              onClick={() => setIsCreateDialogOpen(true)}
+            >
               <Plus className="mr-2 h-4 w-4" />
               Create Initiative
             </Button>
@@ -509,11 +526,15 @@ export function TaskInitiativesClient({ wsId, initialInitiatives }: TaskInitiati
                 <div className="flex items-start justify-between">
                   <div className="flex-1 space-y-2">
                     <div className="flex flex-col gap-2">
-                      <CardTitle className="text-base">{initiative.name}</CardTitle>
+                      <CardTitle className="text-base">
+                        {initiative.name}
+                      </CardTitle>
                       {renderStatusBadge(initiative.status)}
                     </div>
                     {initiative.description && (
-                      <CardDescription>{initiative.description}</CardDescription>
+                      <CardDescription>
+                        {initiative.description}
+                      </CardDescription>
                     )}
                   </div>
                   <DropdownMenu>
@@ -562,7 +583,9 @@ export function TaskInitiativesClient({ wsId, initialInitiatives }: TaskInitiati
                   </div>
                   <div className="flex items-center gap-1">
                     <Calendar className="h-3 w-3" />
-                    <span>{new Date(initiative.created_at).toLocaleDateString()}</span>
+                    <span>
+                      {new Date(initiative.created_at).toLocaleDateString()}
+                    </span>
                   </div>
                 </div>
                 <div className="mt-4 space-y-3">
@@ -691,7 +714,10 @@ export function TaskInitiativesClient({ wsId, initialInitiatives }: TaskInitiati
 
           <div className="space-y-4 py-2">
             <div className="space-y-2">
-              <Label htmlFor="edit-initiative-name" className="font-medium text-sm">
+              <Label
+                htmlFor="edit-initiative-name"
+                className="font-medium text-sm"
+              >
                 Initiative Name
               </Label>
               <Input
@@ -826,7 +852,9 @@ export function TaskInitiativesClient({ wsId, initialInitiatives }: TaskInitiati
                   value={projectToLink}
                   onValueChange={setProjectToLink}
                   disabled={
-                    projectsLoading || availableProjects.length === 0 || isLinking
+                    projectsLoading ||
+                    availableProjects.length === 0 ||
+                    isLinking
                   }
                 >
                   <SelectTrigger>
