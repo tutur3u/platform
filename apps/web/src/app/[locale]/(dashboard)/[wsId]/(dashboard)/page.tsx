@@ -59,7 +59,7 @@ export default async function WorkspaceHomePage({ params }: Props) {
             {currentUser && (
               <div className="grid gap-4 pb-4 md:grid-cols-2">
                 <div className="md:col-span-2">
-                  <QuickJournal wsId={wsId} enabled={isInternalUser} />
+                  <QuickJournal wsId={wsId} enabled={true} />
                 </div>
 
                 <div className="md:col-span-2">

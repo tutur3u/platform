@@ -6,7 +6,6 @@ import {
   TaskPriorities,
   type TaskPriority,
 } from '@tuturuuu/types/primitives/Priority';
-import { isValidTuturuuuEmail } from '@tuturuuu/utils/email/client';
 import { generateObject } from 'ai';
 import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone';
@@ -181,13 +180,13 @@ async function getAuthorizedUser(
     };
   }
 
-  if (!isValidTuturuuuEmail(user.email)) {
-    return {
-      kind: 'error' as const,
-      status: 403 as const,
-      body: { error: 'This feature is limited to Tuturuuu team members.' },
-    };
-  }
+  // if (!isValidTuturuuuEmail(user.email)) {
+  //   return {
+  //     kind: 'error' as const,
+  //     status: 403 as const,
+  //     body: { error: 'This feature is limited to Tuturuuu team members.' },
+  //   };
+  // }
 
   return { kind: 'ok' as const, user };
 }
