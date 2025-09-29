@@ -15,6 +15,7 @@ import type { WorkspaceConfig } from '@tuturuuu/types/primitives/WorkspaceConfig
 import UserMonthAttendance from '../../attendance/user-month-attendance';
 import ScoreDisplay from '../../reports/[reportId]/score-display';
 import ReportPreview from '@tuturuuu/ui/custom/report-preview';
+import EmailReportPreview from '@tuturuuu/ui/custom/email-report-preview';
 import { useLocale, useTranslations } from 'next-intl';
 import type { ReactNode } from 'react';
 import { CardHeader, CardTitle } from '@tuturuuu/ui/card';
@@ -300,69 +301,42 @@ export default function FollowUpClient({
     [groupManagersQuery.data]
   );
 
-  const extractReportHtml = (): string => {
-    const printableArea = document.getElementById('printable-area');
-    if (!printableArea) {
-      throw new Error('Report preview not found');
+  const extractReportHtml = async (): Promise<string> => {
+    if (!mockReport || !configsQuery.data) {
+      throw new Error('Report data not available');
     }
 
-    // Serialize accessible stylesheets into a single <style> block (avoid external links)
-    const inlineStyles = (() => {
-      const collected: string[] = [];
-      for (const sheet of Array.from(document.styleSheets)) {
-        try {
-          // Attempt to read cssRules; will throw on cross-origin sheets
-          const rules = (sheet as CSSStyleSheet).cssRules;
-          if (!rules) continue;
-          const cssText = Array.from(rules)
-            .map(
-              (r) => (r as CSSStyleRule | CSSImportRule | CSSMediaRule).cssText
-            )
-            .join('\n');
-          if (cssText) collected.push(cssText);
-        } catch (_) {
-          // Skip cross-origin stylesheets we cannot access due to CORS
-          continue;
-        }
-      }
-      return `<style>\n${collected.join('\n')}\n</style>`;
-    })();
-
-    // Create the HTML content for email
-    const emailContent = `
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <meta charset="utf-8">
-          <title>${parseDynamicText(form.watch('subject')) || 'Follow-up Report'}</title>
-          <meta name="viewport" content="width=device-width, initial-scale=1">
-          ${inlineStyles}
-          <style>
-            body {
-              margin: 0;
-              padding: 20px;
-              font-family: system-ui, -apple-system, sans-serif;
-              background: white;
-              color: black;
-            }
-            #printable-area {
-              height: auto !important;
-              width: auto !important;
-              max-width: none !important;
-              border: none !important;
-              border-radius: 0 !important;
-              box-shadow: none !important;
-              margin: 0 !important;
-              background: white !important;
-              color: black !important;
-            }
-          </style>
-        </head>
-        <body>
-          ${printableArea.outerHTML}
-        </body>
-      </html>
-    `;
+    // Import required dependencies
+    const { inlineEmailStyles } = await import('@/utils/email-css');
+    const { renderToString } = await import('react-dom/server');
+    const React = await import('react');
+    
+    const emailTitle = parseDynamicText(form.watch('subject')) as string || 'Follow-up Report';
+    
+    // Create the email report component
+    const emailReportElement = React.createElement(EmailReportPreview, {
+      t: (key: string) => key, // Simple fallback for translations
+      lang: locale,
+      parseDynamicText: parseDynamicText,
+      getConfig: getConfig,
+      data: {
+        title: parseDynamicText(form.watch('subject')) as string,
+        content: parseDynamicText(form.watch('content')) as string,
+        score:
+          typeof mockReport.score === 'number'
+            ? mockReport.score.toFixed(1)
+            : mockReport.score
+              ? String(mockReport.score)
+              : '',
+        feedback: '',
+      },
+    });
+    
+    // Render the email report to HTML string
+    const reportHTML = renderToString(emailReportElement);
+    
+    // Apply email-safe CSS inlining using Juice
+    const emailContent = inlineEmailStyles(reportHTML, emailTitle);
 
     return emailContent;
   };
@@ -375,7 +349,7 @@ export default function FollowUpClient({
       if (!authUser) throw new Error('User not authenticated');
 
       // Extract the report HTML
-      const reportHtml = extractReportHtml();
+      const reportHtml = await extractReportHtml();
 
       // Map to RPC payload
       const payload = {
@@ -546,7 +520,7 @@ export default function FollowUpClient({
                 <Button
                   type="button"
                   disabled={mutation.isPending}
-                  onClick={() => mutation.mutate(form.getValues() as any)}
+                  onClick={() => mutation.mutate(form.getValues())}
                   className="w-full sm:w-auto"
                 >
                   {mutation.isPending ? 'Sending...' : 'Send Email'}

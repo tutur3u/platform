@@ -399,6 +399,28 @@ export type Database = {
         };
         Returns: number;
       };
+      get_guest_user_leads: {
+        Args: {
+          p_page?: number;
+          p_page_size?: number;
+          p_search?: string;
+          p_threshold?: number;
+          p_ws_id: string;
+        };
+        Returns: {
+          attendance_count: number;
+          created_at: string;
+          email: string;
+          full_name: string;
+          gender: string;
+          group_id: string;
+          group_name: string;
+          has_lead_generation: boolean;
+          id: string;
+          phone: string;
+          total_count: number;
+        }[];
+      };
       get_healthcare_checkups_count: {
         Args: {
           ws_id: string;

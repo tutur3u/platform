@@ -1,0 +1,243 @@
+/* Email-safe CSS for ReportPreview component */
+
+/* Base email styles */
+body {
+  margin: 0;
+  padding: 20px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  background: white;
+  color: black;
+  line-height: 1.5;
+}
+
+/* Container styles */
+.report-container {
+  max-width: 100%;
+  margin: 0 auto;
+  background: white;
+  color: black;
+}
+
+.report-content {
+  border: 1px solid black;
+  border-radius: 8px;
+  padding: 32px;
+  background: white;
+  color: black;
+}
+
+/* Header styles */
+.report-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 32px;
+  margin-bottom: 16px;
+}
+
+.brand-info {
+  text-align: center;
+}
+
+.brand-name {
+  font-weight: bold;
+  font-size: 18px;
+  text-align: center;
+  margin-bottom: 8px;
+}
+
+.brand-location {
+  font-weight: 600;
+  text-align: center;
+  margin-bottom: 8px;
+}
+
+.brand-phone {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  text-align: center;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+/* Separator */
+.separator {
+  border-top: 1px solid #e5e5e5;
+  margin: 16px 0;
+}
+
+/* Title */
+.report-title {
+  text-align: center;
+  font-weight: bold;
+  color: black;
+  font-size: 18px;
+  text-transform: uppercase;
+  margin: 16px 0;
+}
+
+/* Intro text */
+.report-intro {
+  margin-top: 8px;
+  white-space: pre-wrap;
+  text-align: left;
+  font-size: 14px;
+  color: black;
+}
+
+/* Content sections container */
+.report-sections {
+  margin: 16px 0;
+  display: flex;
+  flex-direction: row;
+  border: 2px solid black;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+/* Individual sections */
+.report-section {
+  flex: 1;
+}
+
+.report-section-content {
+  flex: 2;
+}
+
+.report-section-header {
+  display: flex;
+  height: 80px;
+  align-items: center;
+  justify-content: center;
+  white-space: pre-wrap;
+  padding: 8px;
+  text-align: center;
+  font-weight: bold;
+  font-size: 14px;
+  color: black;
+}
+
+.report-section-body {
+  min-height: 96px;
+  border-top: 2px solid black;
+  padding: 8px;
+  font-weight: 600;
+}
+
+.report-section-left-border {
+  border-left: 2px solid black;
+}
+
+/* Content section body */
+.content-body {
+  text-overflow: ellipsis;
+  white-space: pre-line;
+  word-break: break-words;
+  text-align: left;
+}
+
+.content-body-center {
+  text-align: center;
+  text-decoration: underline;
+}
+
+/* Score section body */
+.score-body {
+  display: flex;
+  min-height: 96px;
+  justify-content: center;
+  align-items: center;
+  text-overflow: ellipsis;
+  white-space: pre-line;
+  word-break: break-words;
+  text-align: center;
+}
+
+.score-value {
+  font-weight: bold;
+  font-size: 24px;
+  text-decoration: underline;
+  color: #dc2626;
+}
+
+.score-empty {
+  font-weight: 600;
+  opacity: 0.5;
+}
+
+/* Feedback section body */
+.feedback-body {
+  text-overflow: ellipsis;
+  white-space: pre-line;
+  word-break: break-words;
+  font-weight: 600;
+  text-align: left;
+}
+
+.feedback-body-center {
+  text-align: center;
+  text-decoration: underline;
+}
+
+/* Footer text */
+.report-footer {
+  text-align: left;
+  font-size: 14px;
+  color: black;
+  margin-top: 16px;
+}
+
+.report-closing {
+  font-weight: 600;
+  color: black;
+}
+
+/* Utility classes for email */
+.text-empty {
+  opacity: 0.5;
+}
+
+.mb-8 {
+  margin-bottom: 8px;
+}
+
+.mb-16 {
+  margin-bottom: 16px;
+}
+
+.font-semibold {
+  font-weight: 600;
+}
+
+.font-bold {
+  font-weight: bold;
+}
+
+/* Media query for better mobile support */
+@media only screen and (max-width: 600px) {
+  body {
+    padding: 10px;
+  }
+  
+  .report-content {
+    padding: 16px;
+  }
+  
+  .report-header {
+    flex-direction: column;
+    gap: 16px;
+  }
+  
+  .report-sections {
+    flex-direction: column;
+  }
+  
+  .report-section-left-border {
+    border-left: none;
+    border-top: 2px solid black;
+  }
+}

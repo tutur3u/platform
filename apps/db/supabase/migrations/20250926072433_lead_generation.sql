@@ -150,8 +150,8 @@ on "public"."guest_users_lead_generation"
 as permissive
 for all
 to public
-using (is_org_member(ws_id, auth.uid()))
-with check (is_org_member(ws_id, auth.uid()));
+using (is_org_member(auth.uid(), ws_id))
+with check (is_org_member(auth.uid(), ws_id));
 
 
 CREATE TRIGGER before_insert_guest_lead_generation BEFORE INSERT ON public.guest_users_lead_generation FOR EACH ROW EXECUTE FUNCTION check_guest_lead_generation_conditions();

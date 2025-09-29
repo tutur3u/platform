@@ -107,137 +107,37 @@ async function getData(
     return { data: [] as GuestUserLead[], count: 0 };
   }
 
-  // First, get all workspace users
-  let userQueryBuilder = supabase
-    .from('workspace_users')
-    .select(`
-      id,
-      full_name,
-      email,
-      phone,
-      gender,
-      created_at,
-      workspace_user_groups_users!inner(
-        workspace_user_groups!inner(id, name, is_guest)
-      )
-    `)
-    .eq('ws_id', wsId)
-    .eq('archived', false)
-    .eq('workspace_user_groups_users.workspace_user_groups.is_guest', true);
+  // Use the optimized RPC function instead of N+1 queries
+  const { data: results, error } = await supabase.rpc('get_guest_user_leads', {
+    p_ws_id: wsId,
+    p_threshold: threshold,
+    p_search: q || undefined,
+    p_page: parseInt(page, 10),
+    p_page_size: parseInt(pageSize, 10),
+  });
 
-  // Add search functionality
-  if (q) {
-    userQueryBuilder = userQueryBuilder.or(
-      `full_name.ilike.%${q}%,email.ilike.%${q}%`
-    );
-  }
+  if (error) throw error;
 
-  const { data: workspaceUsers, error: usersError } = await userQueryBuilder;
-
-  if (usersError) throw usersError;
-
-  if (!workspaceUsers || workspaceUsers.length === 0) {
+  if (!results || results.length === 0) {
     return { data: [] as GuestUserLead[], count: 0 };
   }
 
-  // Limit concurrent operations to prevent stack overflow
-  const BATCH_SIZE = 50;
-  const eligibleUsers = [];
-
-  // Process users in batches to avoid stack overflow
-  for (
-    let batchStart = 0;
-    batchStart < workspaceUsers.length;
-    batchStart += BATCH_SIZE
-  ) {
-    const batch = workspaceUsers.slice(batchStart, batchStart + BATCH_SIZE);
-    const batchUserIds = batch.map((user) => user.id);
-
-    // Get lead generation data for this batch
-    const { data: batchLeadGenData, error: leadGenError } = await supabase
-      .from('guest_users_lead_generation')
-      .select('user_id')
-      .eq('ws_id', wsId)
-      .in('user_id', batchUserIds);
-
-    if (leadGenError) throw leadGenError;
-
-    const batchUsersWithLeads = new Set(
-      batchLeadGenData?.map((lead) => lead.user_id) || []
-    );
-
-    // Process each user in this batch
-    for (const user of batch) {
-      // Skip if user already has lead generation record
-      if (batchUsersWithLeads.has(user.id)) continue;
-
-      try {
-        // Check if user is actually a guest
-        const { data: isGuest, error: guestError } = await supabase.rpc(
-          'is_user_guest',
-          {
-            user_uuid: user.id,
-          }
-        );
-
-        if (guestError || !isGuest) continue;
-
-        // Get attendance count
-        const { count: attendanceCount, error: attendanceError } =
-          await supabase
-            .from('user_group_attendance')
-            .select('*', { count: 'exact', head: true })
-            .eq('user_id', user.id)
-            .in('status', ['PRESENT', 'LATE']);
-
-        if (attendanceError) continue;
-
-        // Only include users who meet the attendance threshold
-        if ((attendanceCount || 0) >= threshold) {
-          eligibleUsers.push({
-            id: user.id,
-            full_name: user.full_name,
-            email: user.email,
-            phone: user.phone,
-            gender: user.gender,
-            created_at: user.created_at,
-            attendance_count: attendanceCount || 0,
-            workspace_user_groups_users: user.workspace_user_groups_users,
-          });
-        }
-      } catch (error) {
-        // Skip users that cause errors
-        console.error(`Error processing user ${user.id}:`, error);
-        continue;
-      }
-    }
-  }
-
-  // Apply pagination to the filtered results
-  const totalCount = eligibleUsers.length;
-  const parsedPage = parseInt(page, 10);
-  const parsedSize = parseInt(pageSize, 10);
-  const start = (parsedPage - 1) * parsedSize;
-  const end = start + parsedSize;
-  const paginatedUsers = eligibleUsers.slice(start, end);
-
   // Transform the data to match our GuestUserLead interface
-  const transformedData: GuestUserLead[] = paginatedUsers.map((user: any) => {
-    const userGroup =
-      user.workspace_user_groups_users?.[0]?.workspace_user_groups;
-    return {
-      id: user.id,
-      full_name: user.full_name,
-      email: user.email,
-      phone: user.phone,
-      gender: user.gender,
-      attendance_count: user.attendance_count,
-      group_id: userGroup?.id || null,
-      group_name: userGroup?.name || null,
-      has_lead_generation: false, // These are all users without lead generation records
-      created_at: user.created_at,
-    };
-  });
+  const transformedData: GuestUserLead[] = results.map((user) => ({
+    id: user.id,
+    full_name: user.full_name,
+    email: user.email,
+    phone: user.phone,
+    gender: user.gender,
+    attendance_count: user.attendance_count,
+    group_id: user.group_id,
+    group_name: user.group_name,
+    has_lead_generation: user.has_lead_generation,
+    created_at: user.created_at,
+  }));
+
+  // Get total count from the first result (all rows have the same total_count)
+  const totalCount = results[0]?.total_count || 0;
 
   return { data: transformedData, count: totalCount };
 }

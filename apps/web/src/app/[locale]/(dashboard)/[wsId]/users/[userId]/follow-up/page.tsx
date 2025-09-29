@@ -50,7 +50,6 @@ export default async function GuestLeadFollowUpPage({ params }: Props) {
     .eq('ws_id', wsId)
     .maybeSingle();
 
-  console.log(emailCreds);
 
   return (
     <div className="flex w-full flex-col gap-4">

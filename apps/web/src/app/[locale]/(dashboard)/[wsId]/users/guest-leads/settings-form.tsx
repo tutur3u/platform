@@ -69,10 +69,14 @@ export function GuestLeadSettingsForm({ wsId, data, onFinish }: Props) {
     },
   });
 
-  async function onSubmit(values: z.infer<typeof FormSchema>) {
-    setLoading(true);
-    await mutation.mutateAsync(values).finally(() => setLoading(false));
+async function onSubmit(values: z.infer<typeof FormSchema>) {
+  setLoading(true);
+  try {
+    await mutation.mutateAsync(values);
+  } finally {
+    setLoading(false);
   }
+}
 
   return (
     <Form {...form}>
