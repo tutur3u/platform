@@ -161,14 +161,14 @@ export default function WorkspaceSettingsForm({
     },
   });
 
-async function onSubmit(values: z.infer<typeof FormSchema>) {
-  setLoading(true);
-  try {
-    await mutation.mutateAsync(values);
-  } finally {
-    setLoading(false);
+  async function onSubmit(values: z.infer<typeof FormSchema>) {
+    setLoading(true);
+    try {
+      await mutation.mutateAsync(values);
+    } finally {
+      setLoading(false);
+    }
   }
-}
 
   // Use React Query to consume hydrated data from server and map to options
   const mappedOptions = useMemo<ComboboxOptions[]>(() => {

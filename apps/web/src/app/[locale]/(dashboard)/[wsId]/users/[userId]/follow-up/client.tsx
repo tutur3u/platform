@@ -310,9 +310,10 @@ export default function FollowUpClient({
     const { inlineEmailStyles } = await import('@/utils/email-css');
     const { renderToString } = await import('react-dom/server');
     const React = await import('react');
-    
-    const emailTitle = parseDynamicText(form.watch('subject')) as string || 'Follow-up Report';
-    
+
+    const emailTitle =
+      (parseDynamicText(form.watch('subject')) as string) || 'Follow-up Report';
+
     // Create the email report component
     const emailReportElement = React.createElement(EmailReportPreview, {
       t: (key: string) => key, // Simple fallback for translations
@@ -331,10 +332,10 @@ export default function FollowUpClient({
         feedback: '',
       },
     });
-    
+
     // Render the email report to HTML string
     const reportHTML = renderToString(emailReportElement);
-    
+
     // Apply email-safe CSS inlining using Juice
     const emailContent = inlineEmailStyles(reportHTML, emailTitle);
 

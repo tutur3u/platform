@@ -245,14 +245,14 @@ const getEmailCSS = (): string => {
 /**
  * Inlines CSS styles into HTML using Juice library for better email client compatibility.
  * This replaces the fragile document.styleSheets iteration approach.
- * 
+ *
  * @param html The HTML content to inline styles into
  * @param title Optional title for the email
  * @returns HTML string with inlined CSS styles
  */
 export const inlineEmailStyles = (html: string, title?: string): string => {
   const emailCSS = getEmailCSS();
-  
+
   // Create a complete HTML document with our dedicated email CSS
   const completeHTML = `
     <!DOCTYPE html>
@@ -298,7 +298,7 @@ export const inlineEmailStyles = (html: string, title?: string): string => {
 /**
  * Extracts just the body content from inlined HTML for use in email content.
  * This is useful when you only need the body content without the full HTML document structure.
- * 
+ *
  * @param inlinedHTML Full HTML document with inlined styles
  * @returns Just the body content with inlined styles
  */
@@ -309,7 +309,7 @@ export const extractEmailBody = (inlinedHTML: string): string => {
     if (bodyMatch && bodyMatch[1]) {
       return bodyMatch[1].trim();
     }
-    
+
     // Fallback: return the original content if no body tags found
     return inlinedHTML;
   } catch (error) {
