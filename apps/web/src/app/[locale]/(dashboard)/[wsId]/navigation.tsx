@@ -137,25 +137,6 @@ export async function WorkspaceNavigationLinks({
     },
     null,
     {
-      title: t('sidebar_tabs.tumeet'),
-      href: `/${personalOrWsId}/tumeet`,
-      icon: <SquaresIntersect className="h-5 w-5" />,
-      children: [
-        {
-          title: t('sidebar_tabs.plans'),
-          href: `/${personalOrWsId}/tumeet/plans`,
-          icon: <VectorSquare className="h-5 w-5" />,
-        },
-        {
-          title: t('sidebar_tabs.meetings'),
-          href: `/${personalOrWsId}/tumeet/meetings`,
-          icon: <SquareUserRound className="h-5 w-5" />,
-          requireRootWorkspace: true,
-          requireRootMember: true,
-        },
-      ],
-    },
-    {
       title: t('sidebar_tabs.tasks'),
       href: `/${personalOrWsId}/tasks/boards`,
       icon: <CircleCheck className="h-5 w-5" />,
@@ -397,6 +378,25 @@ export async function WorkspaceNavigationLinks({
           title: t('sidebar_tabs.productivity'),
           icon: <BriefcaseBusiness className="h-5 w-5" />,
           children: [
+            {
+              title: t('sidebar_tabs.tumeet'),
+              href: `/${personalOrWsId}/tumeet`,
+              icon: <SquaresIntersect className="h-5 w-5" />,
+              children: [
+                {
+                  title: t('sidebar_tabs.plans'),
+                  href: `/${personalOrWsId}/tumeet/plans`,
+                  icon: <VectorSquare className="h-5 w-5" />,
+                },
+                {
+                  title: t('sidebar_tabs.meetings'),
+                  href: `/${personalOrWsId}/tumeet/meetings`,
+                  icon: <SquareUserRound className="h-5 w-5" />,
+                  requireRootWorkspace: true,
+                  requireRootMember: true,
+                },
+              ],
+            },
             {
               title: t('sidebar_tabs.calendar'),
               icon: <Calendar className="h-5 w-5" />,

@@ -10,7 +10,7 @@ interface NavProps {
   wsId: string;
   isCollapsed: boolean;
   links: (NavLinkType | null)[];
-  onSubMenuClick: (links: NavLinkType[], title: string) => void;
+  onSubMenuClick: (links: (NavLinkType | null)[], title: string) => void;
   onClick: () => void;
   className?: string;
 }
@@ -47,7 +47,7 @@ export function Nav({
               <div
                 key={`nav-divider-${index}`}
                 className={cn(
-                  'my-2 border-b',
+                  'my-1 border-b',
                   isCollapsed ? 'mx-auto w-1/2' : 'w-auto'
                 )}
               />
