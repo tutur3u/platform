@@ -392,9 +392,8 @@ export async function WorkspaceNavigationLinks({
             },
             {
               title: t('sidebar_tabs.projects'),
+              href: `/${personalOrWsId}/tasks/projects`,
               icon: <Box className="h-4 w-4" />,
-              tempDisabled: true,
-              matchExact: true,
             },
             {
               title: t('sidebar_tabs.cycles'),

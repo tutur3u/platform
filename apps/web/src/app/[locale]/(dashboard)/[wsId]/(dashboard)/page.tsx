@@ -8,6 +8,7 @@ import type { Metadata } from 'next';
 import { Suspense } from 'react';
 import LoadingStatisticCard from '@/components/loading-statistic-card';
 import WorkspaceWrapper from '@/components/workspace-wrapper';
+import BucketDump from './bucket-dump';
 import UpcomingCalendarEvents from './calendar/upcoming-events';
 import Countdown from './countdown';
 import DashboardCardSkeleton from './dashboard-card-skeleton';
@@ -59,6 +60,10 @@ export default async function WorkspaceHomePage({ params }: Props) {
               <div className="grid gap-4 pb-4 md:grid-cols-2">
                 <div className="md:col-span-2">
                   <QuickJournal wsId={wsId} enabled={isInternalUser} />
+                </div>
+
+                <div className="md:col-span-2">
+                  <BucketDump wsId={wsId} enabled={isInternalUser} />
                 </div>
 
                 {!isPersonal && (
