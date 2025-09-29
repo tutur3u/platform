@@ -215,7 +215,7 @@ export async function WorkspaceNavigationLinks({
     },
     null,
     {
-      title: 'More',
+      title: t('sidebar_tabs.more_tools'),
       icon: <SquareChevronRight className="h-5 w-5" />,
       children: [
         {
