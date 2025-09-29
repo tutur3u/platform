@@ -45,7 +45,8 @@ import {
 } from '@tuturuuu/ui/select';
 import { toast } from '@tuturuuu/ui/sonner';
 import { Textarea } from '@tuturuuu/ui/textarea';
-import { useMemo, useState } from 'react';
+import dayjs from 'dayjs';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
 type CycleStatus = 'planned' | 'active' | 'completed' | 'cancelled';
 
@@ -109,6 +110,7 @@ export function TaskCyclesClient({
   const [editStatus, setEditStatus] = useState<CycleStatus>('planned');
   const [editStartDate, setEditStartDate] = useState('');
   const [editEndDate, setEditEndDate] = useState('');
+  const [isNameAuto, setIsNameAuto] = useState(true);
 
   const statusOptions = useMemo(
     () =>
@@ -260,6 +262,71 @@ export function TaskCyclesClient({
       end_date: toISOorNull(newEndDate),
     });
   };
+
+  // Helpers for date suggestions
+  const formatYMD = useCallback((d: dayjs.Dayjs) => d.format('YYYY-MM-DD'), []);
+  const mondayOfWeek = useCallback((d: dayjs.Dayjs) => {
+    const dow = d.day(); // 0..6 (Sun..Sat)
+    const diff = dow === 0 ? -6 : 1 - dow; // shift to Monday
+    return d.add(diff, 'day').startOf('day');
+  }, []);
+  const sundayOfWeek = (d: dayjs.Dayjs) => mondayOfWeek(d).add(6, 'day');
+
+  const suggestNameFromRange = useCallback(
+    (start: string | null, end: string | null) => {
+      if (!start || !end) return 'New Cycle';
+      const s = dayjs(start);
+      const e = dayjs(end);
+      // Example: Sprint Oct 1 → Oct 14, 2025
+      const sameMonth = s.month() === e.month() && s.year() === e.year();
+      const startFmt = sameMonth ? s.format('MMM D') : s.format('MMM D');
+      const endFmt = e.format('MMM D, YYYY');
+      return `Sprint ${startFmt} → ${endFmt}`;
+    },
+    []
+  );
+
+  const setRange = useCallback(
+    (start: dayjs.Dayjs, end: dayjs.Dayjs) => {
+      const s = formatYMD(start);
+      const e = formatYMD(end);
+      setNewStartDate(s);
+      setNewEndDate(e);
+      if (isNameAuto) setNewName(suggestNameFromRange(s, e));
+    },
+    [formatYMD, isNameAuto, suggestNameFromRange]
+  );
+
+  // Initialize defaults when opening create dialog
+  useEffect(() => {
+    if (isCreateDialogOpen) {
+      const today = dayjs();
+      // Default: next 2-week sprint starting next Monday
+      const nextMonday = mondayOfWeek(
+        today.add(7 - ((today.day() + 6) % 7), 'day')
+      );
+      const end = nextMonday.add(13, 'day');
+      setRange(nextMonday, end);
+      if (isNameAuto)
+        setNewName(suggestNameFromRange(formatYMD(nextMonday), formatYMD(end)));
+    }
+  }, [
+    isCreateDialogOpen,
+    formatYMD,
+    isNameAuto,
+    mondayOfWeek,
+    setRange,
+    suggestNameFromRange,
+  ]);
+
+  // Keep suggested name in sync if user hasn't typed custom name
+  useEffect(() => {
+    if (isNameAuto) {
+      setNewName(
+        suggestNameFromRange(newStartDate || null, newEndDate || null)
+      );
+    }
+  }, [newStartDate, newEndDate, isNameAuto, suggestNameFromRange]);
 
   const handleEdit = (cycle: TaskCycle) => {
     setEditingCycle(cycle);
@@ -420,7 +487,10 @@ export function TaskCyclesClient({
                 id="cycle-name"
                 placeholder="Sprint 1"
                 value={newName}
-                onChange={(e) => setNewName(e.target.value)}
+                onChange={(e) => {
+                  setNewName(e.target.value);
+                  setIsNameAuto(e.target.value.trim().length === 0);
+                }}
                 disabled={createMutation.isPending}
               />
             </div>
@@ -466,6 +536,7 @@ export function TaskCyclesClient({
                 </Label>
                 <Input
                   id="start-date"
+                  type="date"
                   placeholder="2025-10-01"
                   value={newStartDate}
                   onChange={(e) => setNewStartDate(e.target.value)}
@@ -478,12 +549,69 @@ export function TaskCyclesClient({
                 </Label>
                 <Input
                   id="end-date"
+                  type="date"
                   placeholder="2025-10-14"
                   value={newEndDate}
                   onChange={(e) => setNewEndDate(e.target.value)}
                   disabled={createMutation.isPending}
                 />
               </div>
+            </div>
+
+            {/* Quick range picks */}
+            <div className="flex flex-wrap gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  const start = mondayOfWeek(dayjs());
+                  const end = sundayOfWeek(dayjs());
+                  setRange(start, end);
+                }}
+                disabled={createMutation.isPending}
+              >
+                This week
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  const start = mondayOfWeek(dayjs().add(7, 'day'));
+                  const end = start.add(6, 'day');
+                  setRange(start, end);
+                }}
+                disabled={createMutation.isPending}
+              >
+                Next week
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  const start = mondayOfWeek(dayjs().add(7, 'day'));
+                  const end = start.add(13, 'day');
+                  setRange(start, end);
+                }}
+                disabled={createMutation.isPending}
+              >
+                2 weeks (next)
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  const start = dayjs();
+                  const end = start.add(13, 'day');
+                  setRange(start, end);
+                }}
+                disabled={createMutation.isPending}
+              >
+                14 days from today
+              </Button>
             </div>
           </div>
 
