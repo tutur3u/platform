@@ -27,11 +27,7 @@
     "vitest": "^3.2.4"
   },
   "exports": {
-    ".": "./src/index.ts",
-    "./*": "./src/*.ts",
-    "./next/server": "./src/next/server.ts",
-    "./next/common": "./src/next/common.ts",
-    "./next/client": "./src/next/client.ts"
+    "./*": "./src/*.ts"
   },
   "packageManager": "bun@1.2.22"
 }
