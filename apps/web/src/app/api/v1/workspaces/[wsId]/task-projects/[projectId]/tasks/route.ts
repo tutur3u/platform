@@ -105,10 +105,9 @@ export async function POST(
     });
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return NextResponse.json({ error: error.message },
-        { 400 }
-      );
-   console.error(
+      return NextResponse.json({ error: error.message }, { status: 400 });
+    }
+    console.error(
       'Error in POST /api/v1/workspaces/[wsId]/task-projects/[projectId]/tasks:',
       error
     );

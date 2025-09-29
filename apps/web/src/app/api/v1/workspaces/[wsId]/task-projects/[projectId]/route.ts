@@ -101,10 +101,9 @@ export async function PUT(
     });
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return NextResponse.json({ error: error.message },
-        { 400 }
-      );
-   console.error(
+      return NextResponse.json({ error: error.message }, { status: 400 });
+    }
+    console.error(
       'Error in PUT /api/v1/workspaces/[wsId]/task-projects/[projectId]:',
       error
     );

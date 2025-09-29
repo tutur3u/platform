@@ -72,12 +72,25 @@ export default async function TaskCyclesPage({ params }: Props) {
           notFound();
         }
 
+        const toCycleStatus = (value: string | null) => {
+          const allowed = [
+            'planned',
+            'active',
+            'completed',
+            'cancelled',
+          ] as const;
+          if (!value) return null;
+          return allowed.includes(value as (typeof allowed)[number])
+            ? (value as (typeof allowed)[number])
+            : null;
+        };
+
         const cycles =
           (cyclesData as CycleRow[] | null)?.map((cycle) => ({
             id: cycle.id,
             name: cycle.name,
             description: cycle.description,
-            status: cycle.status,
+            status: toCycleStatus(cycle.status),
             start_date: cycle.start_date,
             end_date: cycle.end_date,
             created_at: cycle.created_at,

@@ -1,7 +1,7 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
-import z from 'zod';
+import { z } from 'zod';
 
 export async function GET(
   _request: NextRequest,

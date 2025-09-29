@@ -28,14 +28,16 @@ type InitiativeRow = {
     display_name: string | null;
     avatar_url: string | null;
   } | null;
-  task_project_initiatives: {
-    project_id: string;
-    project: {
-      id: string;
-      name: string;
-      status: string | null;
-    } | null;
-  }[] | null;
+  task_project_initiatives:
+    | {
+        project_id: string;
+        project: {
+          id: string;
+          name: string;
+          status: string | null;
+        } | null;
+      }[]
+    | null;
 };
 
 export default async function TaskInitiativesPage({ params }: Props) {
@@ -82,12 +84,25 @@ export default async function TaskInitiativesPage({ params }: Props) {
           notFound();
         }
 
+        const toInitiativeStatus = (value: string | null) => {
+          const allowed = [
+            'active',
+            'completed',
+            'on_hold',
+            'cancelled',
+          ] as const;
+          if (!value) return null;
+          return allowed.includes(value as (typeof allowed)[number])
+            ? (value as (typeof allowed)[number])
+            : null;
+        };
+
         const initiatives =
           (initiativesData as InitiativeRow[] | null)?.map((initiative) => ({
             id: initiative.id,
             name: initiative.name,
             description: initiative.description,
-            status: initiative.status,
+            status: toInitiativeStatus(initiative.status),
             created_at: initiative.created_at,
             creator: initiative.creator,
             projectsCount: initiative.task_project_initiatives?.length ?? 0,

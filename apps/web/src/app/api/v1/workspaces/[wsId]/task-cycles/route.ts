@@ -14,8 +14,8 @@ const createCycleSchema = z.object({
   name: z.string().min(1, 'Cycle name is required').max(255),
   description: z.string().max(1000).optional(),
   status: cycleStatusSchema.optional(),
-  start_date: z.string().date().optional().or(z.string().length(0)),
-  end_date: z.string().date().optional().or(z.string().length(0)),
+  start_date: z.string().datetime().optional().or(z.string().length(0)),
+  end_date: z.string().datetime().optional().or(z.string().length(0)),
 });
 
 type CycleRow = {

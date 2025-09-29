@@ -92,7 +92,9 @@ export function TaskProjectsClient({
 
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const [editingProject, setEditingProject] = useState<TaskProject | null>(null);
+  const [editingProject, setEditingProject] = useState<TaskProject | null>(
+    null
+  );
   const [managingProject, setManagingProject] = useState<TaskProject | null>(
     null
   );
@@ -119,49 +121,51 @@ export function TaskProjectsClient({
     initialData: initialProjects,
   });
 
+  const {
+    data: availableTaskOptions = [],
+    isLoading: tasksLoading,
+    error: tasksError,
+  } = useQuery<TaskOption[]>({
+    queryKey: ['workspace', wsId, 'tasks-for-projects'],
+    queryFn: async () => {
+      const response = await fetch(
+        `/api/v1/workspaces/${wsId}/tasks?limit=200`
+      );
+      if (!response.ok) {
+        throw new Error(t('errors.fetch_tasks'));
+      }
 
-const {
-  data: availableTaskOptions = [],
-  isLoading: tasksLoading,
-  error: tasksError,
-} = useQuery<TaskOption[]>({
-  queryKey: ['workspace', wsId, 'tasks-for-projects'],
-  queryFn: async () => {
-    const response = await fetch(`/api/v1/workspaces/${wsId}/tasks?limit=200`);
-    if (!response.ok) {
-      throw new Error(t('errors.fetch_tasks'));
-    }
+      const payload = await response.json();
+      const rawTasks = Array.isArray(payload)
+        ? payload
+        : Array.isArray(payload?.tasks)
+          ? payload.tasks
+          : [];
 
-    const payload = await response.json();
-    const rawTasks = Array.isArray(payload)
-      ? payload
-      : Array.isArray(payload?.tasks)
-        ? payload.tasks
-        : [];
-
-    return rawTasks
-      .map((task: Record<string, unknown>) => ({
-        id: String(task.id ?? ''),
-        name:
-          typeof task.name === 'string' && task.name.trim().length > 0
-            ? task.name
-            : 'Untitled task',
-        completed:
-          typeof task.completed === 'boolean' ? task.completed : null,
-        listName:
-          typeof task.list_name === 'string' ? task.list_name : null,
-      }))
-      .filter((task) => Boolean(task.id));
-  },
-  enabled: Boolean(managingProject),
-  staleTime: 60_000,
-});
+      return rawTasks
+        .map((task: Record<string, unknown>) => ({
+          id: String(task.id ?? ''),
+          name:
+            typeof task.name === 'string' && task.name.trim().length > 0
+              ? task.name
+              : 'Untitled task',
+          completed:
+            typeof task.completed === 'boolean' ? task.completed : null,
+          listName: typeof task.list_name === 'string' ? task.list_name : null,
+        }))
+        .filter((task: TaskOption) => Boolean(task.id));
+    },
+    enabled: Boolean(managingProject),
+    staleTime: 60_000,
+  });
 
   useEffect(() => {
     if (!managingProject) {
       return;
     }
-    const updated = projects.find((project) => project.id === managingProject.id);
+    const updated = projects.find(
+      (project) => project.id === managingProject.id
+    );
     if (updated && updated !== managingProject) {
       setManagingProject(updated);
     }
@@ -285,7 +289,7 @@ const {
       }
       return response.json() as Promise<{ linkedTask: LinkedTask }>;
     },
-    onSuccess: (data, variables) => {
+    onSuccess: (data) => {
       toast.success(t('success.task_linked'));
       setTaskToLink('');
       setManagingProject((previous) =>
@@ -422,7 +426,9 @@ const {
     if (!managingProject) {
       return [] as TaskOption[];
     }
-    const linkedIds = new Set(managingProject.linkedTasks.map((task) => task.id));
+    const linkedIds = new Set(
+      managingProject.linkedTasks.map((task) => task.id)
+    );
     return availableTaskOptions.filter((task) => !linkedIds.has(task.id));
   }, [availableTaskOptions, managingProject]);
 
@@ -453,7 +459,10 @@ const {
             <p className="text-center text-muted-foreground">
               Create your first project to start organizing tasks across boards.
             </p>
-            <Button className="mt-4" onClick={() => setIsCreateDialogOpen(true)}>
+            <Button
+              className="mt-4"
+              onClick={() => setIsCreateDialogOpen(true)}
+            >
               <Plus className="mr-2 h-4 w-4" />
               Create Project
             </Button>
@@ -504,15 +513,17 @@ const {
                   </DropdownMenu>
                 </div>
               </CardHeader>
-              <CardContent className="pt-0 space-y-3">
-                <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
+              <CardContent className="space-y-3 pt-0">
+                <div className="flex flex-wrap items-center gap-4 text-muted-foreground text-sm">
                   <div className="flex items-center gap-1">
                     <User className="h-3 w-3" />
                     <span>{project.creator?.display_name || 'Unknown'}</span>
                   </div>
                   <div className="flex items-center gap-1">
                     <Calendar className="h-3 w-3" />
-                    <span>{new Date(project.created_at).toLocaleDateString()}</span>
+                    <span>
+                      {new Date(project.created_at).toLocaleDateString()}
+                    </span>
                   </div>
                   <Badge variant="outline" className="text-xs">
                     {project.tasksCount} linked task
@@ -523,13 +534,17 @@ const {
                 {project.linkedTasks.length > 0 ? (
                   <div className="flex flex-wrap gap-2">
                     {project.linkedTasks.map((task) => (
-                      <Badge key={task.id} variant="outline" className="text-xs">
+                      <Badge
+                        key={task.id}
+                        variant="outline"
+                        className="text-xs"
+                      >
                         {task.name}
                       </Badge>
                     ))}
                   </div>
                 ) : (
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-muted-foreground text-sm">
                     No tasks linked yet.
                   </p>
                 )}
@@ -554,7 +569,8 @@ const {
           <DialogHeader>
             <DialogTitle>Create New Project</DialogTitle>
             <DialogDescription>
-              Create a new task project to organize tasks across multiple boards.
+              Create a new task project to organize tasks across multiple
+              boards.
             </DialogDescription>
           </DialogHeader>
 
@@ -572,7 +588,10 @@ const {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="project-description" className="font-medium text-sm">
+              <Label
+                htmlFor="project-description"
+                className="font-medium text-sm"
+              >
                 Description (Optional)
               </Label>
               <Textarea
@@ -617,7 +636,10 @@ const {
 
           <div className="space-y-4 py-2">
             <div className="space-y-2">
-              <Label htmlFor="edit-project-name" className="font-medium text-sm">
+              <Label
+                htmlFor="edit-project-name"
+                className="font-medium text-sm"
+              >
                 Project Name
               </Label>
               <Input
@@ -629,7 +651,10 @@ const {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="edit-project-description" className="font-medium text-sm">
+              <Label
+                htmlFor="edit-project-description"
+                className="font-medium text-sm"
+              >
                 Description (Optional)
               </Label>
               <Textarea
@@ -693,8 +718,8 @@ const {
                         className="flex items-center justify-between rounded-md border border-dynamic-surface/40 bg-dynamic-surface/25 px-3 py-2"
                       >
                         <div>
-                          <p className="text-sm font-medium">{task.name}</p>
-                          <p className="text-xs text-muted-foreground">
+                          <p className="font-medium text-sm">{task.name}</p>
+                          <p className="text-muted-foreground text-xs">
                             {task.listName ?? 'Unassigned list'}
                           </p>
                         </div>
@@ -712,7 +737,7 @@ const {
                     ))}
                   </div>
                 ) : (
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-muted-foreground text-sm">
                     No tasks linked yet.
                   </p>
                 )}
@@ -724,7 +749,9 @@ const {
                   value={taskToLink}
                   onValueChange={setTaskToLink}
                   disabled={
-                    tasksLoading || filteredTaskOptions.length === 0 || isLinking
+                    tasksLoading ||
+                    filteredTaskOptions.length === 0 ||
+                    isLinking
                   }
                 >
                   <SelectTrigger>
@@ -749,11 +776,11 @@ const {
                   </SelectContent>
                 </Select>
                 {tasksError ? (
-                  <p className="text-sm text-dynamic-red">
+                  <p className="text-dynamic-red text-sm">
                     {(tasksError as Error).message}
                   </p>
                 ) : filteredTaskOptions.length === 0 && !tasksLoading ? (
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-muted-foreground text-sm">
                     All workspace tasks are already linked.
                   </p>
                 ) : null}

@@ -68,7 +68,7 @@ export default async function TaskProjectsPage({ params }: Props) {
           id: project.id,
           name: project.name,
           description: project.description,
-          created_at: project.created_at,
+          created_at: project.created_at ?? new Date().toISOString(),
           creator_id: project.creator_id,
           creator: project.creator,
           tasksCount: project.task_project_tasks?.length ?? 0,
