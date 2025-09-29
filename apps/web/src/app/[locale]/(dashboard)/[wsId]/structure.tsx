@@ -34,7 +34,7 @@ interface MailProps {
   workspace: Workspace | null;
   defaultCollapsed: boolean;
   user: WorkspaceUser | null;
-  links: NavLink[];
+  links: (NavLink | null)[];
   actions: ReactNode;
   userPopover: ReactNode;
   children: ReactNode;
@@ -91,7 +91,7 @@ export function Structure({
 
   // Recursive function to check if any nested child matches the pathname
   const hasActiveChild = useCallback(
-    (navLinks: NavLink[]): boolean => {
+    (navLinks: (NavLink | null)[]): boolean => {
       return navLinks.some((child) => {
         const childMatches =
           (child?.href &&
@@ -112,7 +112,7 @@ export function Structure({
           return true;
         }
 
-        if (child.children) {
+        if (child?.children) {
           return hasActiveChild(child.children);
         }
 
@@ -125,11 +125,11 @@ export function Structure({
   // Universal helper function to find active navigation structure
   const findActiveNavigation = useCallback(
     (
-      navLinks: NavLink[],
+      navLinks: (NavLink | null)[],
       currentPath: string
     ): {
-      currentLinks: NavLink[];
-      history: NavLink[][]; // stack of previous levels
+      currentLinks: (NavLink | null)[];
+      history: (NavLink | null)[][]; // stack of previous levels
       titleHistory: string[];
       direction: 'forward' | 'backward';
     } | null => {
@@ -191,8 +191,8 @@ export function Structure({
   );
 
   const [navState, setNavState] = useState<{
-    currentLinks: NavLink[];
-    history: NavLink[][]; // stack of previous levels
+    currentLinks: (NavLink | null)[];
+    history: (NavLink | null)[][]; // stack of previous levels
     titleHistory: string[];
     direction: 'forward' | 'backward';
   }>(() => {
@@ -204,16 +204,14 @@ export function Structure({
     }
 
     // Flatten links with a single child
-    const flattenedLinks = links
-      .flatMap((link) =>
-        link?.children && link.children.length === 1
-          ? [link.children[0] as NavLink]
-          : [link]
-      )
-      .filter(Boolean) as NavLink[];
+    const flattenedLinks = links.flatMap((link) =>
+      link?.children && link.children.length === 1
+        ? [link.children[0] as NavLink]
+        : [link]
+    );
     return {
       currentLinks: flattenedLinks,
-      history: [] as NavLink[][],
+      history: [] as (NavLink | null)[][],
       titleHistory: [],
       direction: 'forward' as const,
     };
@@ -230,16 +228,14 @@ export function Structure({
       // Check if we're currently in a submenu and if any of its children still match the current path
       if (prevState.history.length > 0) {
         // Flatten links with a single child
-        const flattenedLinks = links
-          .flatMap((link) =>
-            link?.children && link.children.length === 1
-              ? [link.children[0] as NavLink]
-              : [link]
-          )
-          .filter(Boolean) as NavLink[];
+        const flattenedLinks = links.flatMap((link) =>
+          link?.children && link.children.length === 1
+            ? [link.children[0] as NavLink]
+            : [link]
+        );
         return {
           currentLinks: flattenedLinks,
-          history: [] as NavLink[][],
+          history: [] as (NavLink | null)[][],
           titleHistory: [],
           direction: 'backward',
         };
@@ -262,7 +258,10 @@ export function Structure({
     }
   };
 
-  const handleNavChange = (newLinks: NavLink[], parentTitle: string) => {
+  const handleNavChange = (
+    newLinks: (NavLink | null)[],
+    parentTitle: string
+  ) => {
     setNavState((prevState) => ({
       currentLinks: newLinks,
       history: [...prevState.history, prevState.currentLinks],
@@ -315,9 +314,12 @@ export function Structure({
 
   const isRootWorkspace = wsId === ROOT_WORKSPACE_ID;
 
-  const getFilteredLinks = (linksToFilter: NavLink[] | undefined): NavLink[] =>
+  const getFilteredLinks = (
+    linksToFilter: (NavLink | null)[] | undefined
+  ): (NavLink | null)[] =>
     (linksToFilter || []).flatMap((link) => {
-      if (!link) return [];
+      // Preserve null separators
+      if (!link) return [null];
 
       if (link.disabled) return [];
       if (link.disableOnProduction && PROD_MODE) return [];
@@ -332,7 +334,12 @@ export function Structure({
         if (filteredChildren.length === 0) {
           return [];
         }
-        return [{ ...link, children: filteredChildren }];
+        return [
+          {
+            ...link,
+            children: filteredChildren.filter(Boolean) as NavLink[],
+          },
+        ];
       }
       // Flatten links with a single child
       if (link.children && link.children.length === 1) {
@@ -357,6 +364,7 @@ export function Structure({
       ? [backButton, ...filteredCurrentLinks]
       : filteredCurrentLinks
   )
+    .filter((l): l is NavLink => Boolean(l))
     .filter(
       (link) =>
         (link.href &&

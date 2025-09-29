@@ -47,7 +47,7 @@ export function Nav({
               <div
                 key={`nav-divider-${index}`}
                 className={cn(
-                  'my-2 ml-4 border-b',
+                  'my-2 border-b',
                   isCollapsed ? 'mx-auto w-1/2' : 'w-auto'
                 )}
               />

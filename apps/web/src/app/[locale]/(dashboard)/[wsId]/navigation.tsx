@@ -134,6 +134,85 @@ export async function WorkspaceNavigationLinks({
       icon: <ChartArea className="h-5 w-5" />,
       matchExact: true,
     },
+    null,
+    {
+      title: t('sidebar_tabs.tumeet'),
+      href: `/${personalOrWsId}/tumeet`,
+      icon: <SquaresIntersect className="h-5 w-5" />,
+      children: [
+        {
+          title: t('sidebar_tabs.plans'),
+          href: `/${personalOrWsId}/tumeet/plans`,
+          icon: <VectorSquare className="h-5 w-5" />,
+        },
+        {
+          title: t('sidebar_tabs.meetings'),
+          href: `/${personalOrWsId}/tumeet/meetings`,
+          icon: <SquareUserRound className="h-5 w-5" />,
+          requireRootWorkspace: true,
+          requireRootMember: true,
+        },
+      ],
+    },
+    {
+      title: t('sidebar_tabs.tasks'),
+      href: `/${personalOrWsId}/tasks/boards`,
+      icon: <CircleCheck className="h-5 w-5" />,
+      disabled: ENABLE_AI_ONLY || withoutPermission('manage_projects'),
+      experimental: 'beta',
+      children: [
+        {
+          title: t('sidebar_tabs.all_boards'),
+          href: `/${personalOrWsId}/tasks/boards`,
+          icon: <ListTodo className="h-4 w-4" />,
+        },
+        {
+          title: t('sidebar_tabs.my_tasks'),
+          icon: <UserRound className="h-4 w-4" />,
+          tempDisabled: true,
+          matchExact: true,
+        },
+        {
+          title: t('sidebar_tabs.initiatives'),
+          href: `/${personalOrWsId}/tasks/initiatives`,
+          icon: <Sparkle className="h-4 w-4" />,
+          matchExact: true,
+        },
+        {
+          title: t('sidebar_tabs.projects'),
+          href: `/${personalOrWsId}/tasks/projects`,
+          icon: <Box className="h-4 w-4" />,
+        },
+        {
+          title: t('sidebar_tabs.cycles'),
+          href: `/${personalOrWsId}/tasks/cycles`,
+          icon: <RotateCcw className="h-4 w-4" />,
+        },
+        {
+          title: t('sidebar_tabs.labels'),
+          href: `/${personalOrWsId}/tasks/labels`,
+          icon: <Tags className="h-4 w-4" />,
+        },
+        {
+          title: t('sidebar_tabs.estimates'),
+          icon: <Icon iconNode={hexagons3} className="h-4 w-4" />,
+          href: `/${personalOrWsId}/tasks/estimates`,
+        },
+        {
+          title: t('sidebar_tabs.teams'),
+          icon: <SquareUserRound className="h-4 w-4" />,
+          tempDisabled: true,
+          matchExact: true,
+        },
+        {
+          title: t('sidebar_tabs.members'),
+          icon: <Users className="h-4 w-4" />,
+          tempDisabled: true,
+          matchExact: true,
+        },
+      ],
+    },
+    null,
     {
       title: t('sidebar_tabs.ai_lab'),
       icon: <Box className="h-5 w-5" />,
@@ -340,89 +419,12 @@ export async function WorkspaceNavigationLinks({
             : undefined,
         },
         {
-          title: t('sidebar_tabs.tumeet'),
-          href: `/${personalOrWsId}/tumeet`,
-          icon: <SquaresIntersect className="h-5 w-5" />,
-          children: [
-            {
-              title: t('sidebar_tabs.plans'),
-              href: `/${personalOrWsId}/tumeet/plans`,
-              icon: <VectorSquare className="h-5 w-5" />,
-            },
-            {
-              title: t('sidebar_tabs.meetings'),
-              href: `/${personalOrWsId}/tumeet/meetings`,
-              icon: <SquareUserRound className="h-5 w-5" />,
-              requireRootWorkspace: true,
-              requireRootMember: true,
-            },
-          ],
-        },
-        {
           title: t('sidebar_tabs.polls'),
           href: `/${personalOrWsId}/polls`,
           icon: <Vote className="h-5 w-5" />,
           disabled: !DEV_MODE,
           requireRootWorkspace: true,
           requireRootMember: true,
-        },
-        {
-          title: t('sidebar_tabs.tasks'),
-          href: `/${personalOrWsId}/tasks/boards`,
-          icon: <CircleCheck className="h-5 w-5" />,
-          disabled: ENABLE_AI_ONLY || withoutPermission('manage_projects'),
-          experimental: 'beta',
-          children: [
-            {
-              title: t('sidebar_tabs.all_boards'),
-              href: `/${personalOrWsId}/tasks/boards`,
-              icon: <ListTodo className="h-4 w-4" />,
-            },
-            {
-              title: t('sidebar_tabs.my_tasks'),
-              icon: <UserRound className="h-4 w-4" />,
-              tempDisabled: true,
-              matchExact: true,
-            },
-            {
-              title: t('sidebar_tabs.initiatives'),
-              href: `/${personalOrWsId}/tasks/initiatives`,
-              icon: <Sparkle className="h-4 w-4" />,
-              matchExact: true,
-            },
-            {
-              title: t('sidebar_tabs.projects'),
-              href: `/${personalOrWsId}/tasks/projects`,
-              icon: <Box className="h-4 w-4" />,
-            },
-            {
-              title: t('sidebar_tabs.cycles'),
-              href: `/${personalOrWsId}/tasks/cycles`,
-              icon: <RotateCcw className="h-4 w-4" />,
-            },
-            {
-              title: t('sidebar_tabs.labels'),
-              href: `/${personalOrWsId}/tasks/labels`,
-              icon: <Tags className="h-4 w-4" />,
-            },
-            {
-              title: t('sidebar_tabs.estimates'),
-              icon: <Icon iconNode={hexagons3} className="h-4 w-4" />,
-              href: `/${personalOrWsId}/tasks/estimates`,
-            },
-            {
-              title: t('sidebar_tabs.teams'),
-              icon: <SquareUserRound className="h-4 w-4" />,
-              tempDisabled: true,
-              matchExact: true,
-            },
-            {
-              title: t('sidebar_tabs.members'),
-              icon: <Users className="h-4 w-4" />,
-              tempDisabled: true,
-              matchExact: true,
-            },
-          ],
         },
         {
           title: t('sidebar_tabs.mail'),
@@ -862,23 +864,6 @@ export async function WorkspaceNavigationLinks({
         },
       ],
     },
-    allowDiscordIntegrations
-      ? {
-          title: t('sidebar_tabs.integrations'),
-          icon: <Bot className="h-5 w-5" />,
-          href: `/${personalOrWsId}/integrations`,
-          aliases: [`/${personalOrWsId}/integrations/discord`],
-          children: [
-            {
-              title: 'Discord',
-              href: `/${personalOrWsId}/integrations/discord`,
-              icon: <Bot className="h-5 w-5" />,
-              disabled: !allowDiscordIntegrations,
-            },
-          ],
-          disabled: !allowDiscordIntegrations,
-        }
-      : null,
     {
       title: t('common.settings'),
       icon: <Settings className="h-5 w-5" />,
@@ -942,6 +927,23 @@ export async function WorkspaceNavigationLinks({
           href: `/${personalOrWsId}/usage`,
           icon: <ChartColumnStacked className="h-5 w-5" />,
         },
+        allowDiscordIntegrations
+          ? {
+              title: t('sidebar_tabs.integrations'),
+              icon: <Bot className="h-5 w-5" />,
+              href: `/${personalOrWsId}/integrations`,
+              aliases: [`/${personalOrWsId}/integrations/discord`],
+              children: [
+                {
+                  title: 'Discord',
+                  href: `/${personalOrWsId}/integrations/discord`,
+                  icon: <Bot className="h-5 w-5" />,
+                  disabled: !allowDiscordIntegrations,
+                },
+              ],
+              disabled: !allowDiscordIntegrations,
+            }
+          : null,
         {
           title: t('workspace-settings-layout.api_keys'),
           href: `/${personalOrWsId}/api-keys`,
@@ -994,5 +996,6 @@ export async function WorkspaceNavigationLinks({
     },
   ];
 
-  return (navLinks satisfies (NavLink | null)[]).filter(Boolean) as NavLink[];
+  // Preserve null entries as separators; rendering components handle them
+  return navLinks satisfies (NavLink | null)[];
 }
