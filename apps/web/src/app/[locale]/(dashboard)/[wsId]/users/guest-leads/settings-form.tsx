@@ -7,7 +7,7 @@ import {
   FormField,
   FormItem,
   FormLabel,
-  FormMessage
+  FormMessage,
 } from '@tuturuuu/ui/form';
 import { useForm } from '@tuturuuu/ui/hooks/use-form';
 import { toast } from '@tuturuuu/ui/sonner';
@@ -19,7 +19,6 @@ import { useState } from 'react';
 import { z } from 'zod';
 import { useMutation } from '@tanstack/react-query';
 import { createClient } from '@tuturuuu/supabase/next/client';
-
 
 interface Props {
   wsId: string;
@@ -33,11 +32,7 @@ const FormSchema = z.object({
   guest_user_checkup_threshold: z.coerce.number().int().min(1).max(100),
 });
 
-export function GuestLeadSettingsForm({
-  wsId,
-  data,
-  onFinish,
-}: Props) {
+export function GuestLeadSettingsForm({ wsId, data, onFinish }: Props) {
   const t = useTranslations();
   const [loading, setLoading] = useState(false);
   const router = useRouter();

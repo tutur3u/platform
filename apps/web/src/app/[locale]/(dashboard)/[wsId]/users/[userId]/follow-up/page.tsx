@@ -1,4 +1,7 @@
-import { createAdminClient, createClient } from '@tuturuuu/supabase/next/server';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
 import type { Metadata } from 'next';
 import FollowUpClient from './client';
 import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
@@ -47,7 +50,7 @@ export default async function GuestLeadFollowUpPage({ params }: Props) {
     .eq('ws_id', wsId)
     .maybeSingle();
 
-    console.log(emailCreds);
+  console.log(emailCreds);
 
   return (
     <div className="flex w-full flex-col gap-4">
@@ -67,5 +70,3 @@ export default async function GuestLeadFollowUpPage({ params }: Props) {
     </div>
   );
 }
-
-

@@ -52,7 +52,7 @@ export default function EmailReportPreview({
 
   const parseDynamicText = (text?: string | null): ReactNode => {
     if (!text) return '';
-    
+
     // Simple dynamic text parsing for common placeholders
     return text
       .replace(/{{user_name}}/g, report.user_name || 'Unknown User')
