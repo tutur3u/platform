@@ -1,22 +1,18 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
 import type { ProductPromotion } from '@tuturuuu/types/primitives/ProductPromotion';
+import { Button } from '@tuturuuu/ui/button';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
+import { Settings } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
-import {
-  getWorkspace,
-  getWorkspaceUser,
-} from '@tuturuuu/utils/workspace-helper';
+import { getWorkspaceUser } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 import { CustomDataTable } from '@/components/custom-data-table';
+import WorkspaceWrapper from '@/components/workspace-wrapper';
 import { getPromotionColumns } from './columns';
 import { PromotionForm } from './form';
 import WorkspaceSettingsForm from './settings-form';
-// removed React Query hydration for regular promotions per request
-import { Button } from '@tuturuuu/ui/button';
-import { Settings } from '@tuturuuu/ui/icons';
-// removed tooltip to ensure DialogTrigger receives clicks
 
 export const metadata: Metadata = {
   title: 'Promotions',
@@ -40,80 +36,84 @@ export default async function WorkspacePromotionsPage({
   searchParams,
 }: Props) {
   const t = await getTranslations();
-  const { wsId: id } = await params;
-  const workspace = await getWorkspace(id);
-  const wsId = workspace.id;
-  const { data, count } = await getData(wsId, await searchParams);
-
-  const user = await getCurrentUser(true);
-  const wsUser = await getWorkspaceUser(wsId, user?.id!);
-
-  const promotions = data.map(({ value, use_ratio, ...rest }) => ({
-    ...rest,
-    value: use_ratio
-      ? `${value}%`
-      : Intl.NumberFormat('vi-VN', {
-          style: 'currency',
-          currency: 'VND',
-        }).format(parseInt(value.toString())),
-    use_ratio,
-  }));
-
-  const settingsRow = await getWorkspaceSettings(wsId);
-
-  // Derive regular promotions from the already-fetched data
-  const regularPromotions = data
-    .filter((p) => p.promo_type === 'REGULAR')
-    .map((p) => ({
-      id: p.id as string,
-      name: p.name as string | null,
-      code: p.code as string | null,
-      value: p.value as number,
-      use_ratio: p.use_ratio as boolean,
-    }));
 
   return (
-    <>
-      <FeatureSummary
-        pluralTitle={t('ws-inventory-promotions.plural')}
-        singularTitle={t('ws-inventory-promotions.singular')}
-        description={t('ws-inventory-promotions.description')}
-        createTitle={t('ws-inventory-promotions.create')}
-        createDescription={t('ws-inventory-promotions.create_description')}
-        form={<PromotionForm wsId={wsId} wsUserId={wsUser.virtual_user_id} />}
-        settingsData={settingsRow ? settingsRow : undefined}
-        settingsForm={
-          <WorkspaceSettingsForm
-            wsId={wsId}
-            regularPromotions={regularPromotions}
-          />
-        }
-        settingsTrigger={
-          !settingsRow ? (
-            <Button
-              size="xs"
-              className="w-full md:w-fit border border-dynamic-red/30 bg-dynamic-red/10 text-dynamic-red hover:bg-dynamic-red/15"
-              title={t('ws-inventory-promotions.create_settings_tooltip')}
-            >
-              <Settings className="h-4 w-4" />
-              {t('ws-inventory-promotions.create_settings')}
-            </Button>
-          ) : undefined
-        }
-        settingsTitle={t('common.settings')}
-      />
-      <Separator className="my-4" />
-      <CustomDataTable
-        data={promotions}
-        columnGenerator={getPromotionColumns}
-        namespace="promotion-data-table"
-        count={count}
-        defaultVisibility={{
-          id: false,
-          created_at: false,
-        }}
-      />
-    </>
+    <WorkspaceWrapper params={params}>
+      {async ({ wsId }) => {
+        const { data, count } = await getData(wsId, await searchParams);
+
+        const user = await getCurrentUser(true);
+        const wsUser = await getWorkspaceUser(wsId, user?.id!);
+
+        const promotions = data.map(({ value, use_ratio, ...rest }) => ({
+          ...rest,
+          value: use_ratio
+            ? `${value}%`
+            : Intl.NumberFormat('vi-VN', {
+                style: 'currency',
+                currency: 'VND',
+              }).format(parseInt(value.toString())),
+          use_ratio,
+        }));
+
+        const settingsRow = await getWorkspaceSettings(wsId);
+
+        // Derive regular promotions from the already-fetched data
+        const regularPromotions = data
+          .filter((p) => p.promo_type === 'REGULAR')
+          .map((p) => ({
+            id: p.id as string,
+            name: p.name as string | null,
+            code: p.code as string | null,
+            value: p.value as number,
+            use_ratio: p.use_ratio as boolean,
+          }));
+
+        return (
+          <>
+            <FeatureSummary
+              pluralTitle={t('ws-inventory-promotions.plural')}
+              singularTitle={t('ws-inventory-promotions.singular')}
+              description={t('ws-inventory-promotions.description')}
+              createTitle={t('ws-inventory-promotions.create')}
+              createDescription={t('ws-inventory-promotions.create_description')}
+              form={<PromotionForm wsId={wsId} wsUserId={wsUser.virtual_user_id} />}
+              settingsData={settingsRow ? settingsRow : undefined}
+              settingsForm={
+                <WorkspaceSettingsForm
+                  wsId={wsId}
+                  regularPromotions={regularPromotions}
+                />
+              }
+              settingsTrigger={
+                !settingsRow ? (
+                  <Button
+                    size="xs"
+                    className="w-full md:w-fit border border-dynamic-red/30 bg-dynamic-red/10 text-dynamic-red hover:bg-dynamic-red/15"
+                    title={t('ws-inventory-promotions.create_settings_tooltip')}
+                  >
+                    <Settings className="h-4 w-4" />
+                    {t('ws-inventory-promotions.create_settings')}
+                  </Button>
+                ) : undefined
+              }
+              settingsTitle={t('common.settings')}
+            />
+            <Separator className="my-4" />
+            <CustomDataTable
+              data={promotions}
+              columnGenerator={getPromotionColumns}
+              namespace="promotion-data-table"
+              count={count}
+              defaultVisibility={{
+                id: false,
+                created_at: false,
+              }}
+            />
+          </>
+        );
+      }}
+    </WorkspaceWrapper>
   );
 }
 
