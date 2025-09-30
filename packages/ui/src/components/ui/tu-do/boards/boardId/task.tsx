@@ -868,6 +868,12 @@ function TaskCardInner({
           setIsClosingDialog(false);
         }
       }}
+      onContextMenu={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        // Open the context menu (actions dropdown)
+        setMenuOpen(true);
+      }}
       // Apply sortable listeners/attributes to the full card so the whole surface remains draggable
       {...attributes}
       {...listeners}

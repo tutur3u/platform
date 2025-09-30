@@ -167,10 +167,13 @@ function TaskEditDialogComponent({
       };
     }
   }, []);
-  // Reset form when task changes - only when task ID changes to prevent excessive re-renders
+  // Reset form when task changes or dialog opens
   useEffect(() => {
-    // Only update form if task ID actually changed
-    if (previousTaskIdRef.current !== task.id) {
+    // Update form if task ID changed OR if dialog just opened (for create mode with 'new' ID)
+    if (
+      previousTaskIdRef.current !== task.id ||
+      (isOpen && task.id === 'new')
+    ) {
       setName(task.name);
       setDescription(parseDescription(task.description));
       setPriority(task.priority || null);
@@ -181,7 +184,7 @@ function TaskEditDialogComponent({
       setSelectedLabels(task.labels || []);
       previousTaskIdRef.current = task.id;
     }
-  }, [task, parseDescription]);
+  }, [task, parseDescription, isOpen]);
 
   const fetchLabels = useCallback(async (wsId: string) => {
     try {
@@ -672,7 +675,7 @@ function TaskEditDialogComponent({
                       ?.name || 'Select list'}
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent className="w-full">
+                <DropdownMenuContent className="z-[110] w-full">
                   {availableLists.map((list) => (
                     <DropdownMenuItem
                       key={list.id}
