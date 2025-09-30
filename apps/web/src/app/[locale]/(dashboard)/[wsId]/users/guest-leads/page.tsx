@@ -41,10 +41,7 @@ export default async function GuestUserLeadsPage({
 
   return (
     <>
-      <GuestLeadHeader
-        settingsRow={settingsRow}
-        wsId={wsId}
-      />
+      <GuestLeadHeader settingsRow={settingsRow} wsId={wsId} />
       <Separator className="my-4" />
       <CustomDataTable
         data={data}

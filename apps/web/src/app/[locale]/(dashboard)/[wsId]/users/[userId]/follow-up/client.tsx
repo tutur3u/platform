@@ -99,8 +99,6 @@ export default function FollowUpClient({
     },
   });
 
-
-
   // Local state: selected manager's display name
   const [selectedManagerName, setSelectedManagerName] = useState<
     string | undefined
@@ -118,7 +116,7 @@ export default function FollowUpClient({
     if (selectedManagerName === undefined) setSelectedManagerName(names[0]);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [groupManagersQuery.data, groupId]);
-  
+
   const effectiveManagerName = selectedManagerName;
 
   const parseDynamicText = (text?: string | null): ReactNode => {
@@ -127,7 +125,10 @@ export default function FollowUpClient({
     // Simple dynamic text parsing for common placeholders
     return text
       .replace(/{{user_name}}/g, userName || t('users.follow_up.unknown_user'))
-      .replace(/{{group_name}}/g, selectedGroup?.name || t('users.follow_up.unknown_group'))
+      .replace(
+        /{{group_name}}/g,
+        selectedGroup?.name || t('users.follow_up.unknown_group')
+      )
       .replace(/{{date}}/g, new Date().toLocaleDateString())
       .replace(
         /{{score}}/g,
@@ -142,10 +143,10 @@ export default function FollowUpClient({
   // Compute default subject with localized format
   const defaultSubject = useMemo(() => {
     if (!emailCredentials?.source_name) return '';
-    
+
     const today = new Date();
     const formattedDate = `${today.getDate().toString().padStart(2, '0')}/${(today.getMonth() + 1).toString().padStart(2, '0')}/${today.getFullYear()}`;
-    
+
     return t('users.follow_up.trial_period_report_subject', {
       sourceName: emailCredentials.source_name,
       date: formattedDate,
@@ -159,7 +160,9 @@ export default function FollowUpClient({
       source_name: emailCredentials?.source_name || '',
       source_email: emailCredentials?.source_email || '',
       subject: defaultSubject,
-      content: t('users.follow_up.default_content', { userName: userName ?? '' }),
+      content: t('users.follow_up.default_content', {
+        userName: userName ?? '',
+      }),
       to_email: userEmail ?? '',
     },
   });
@@ -312,50 +315,62 @@ export default function FollowUpClient({
     const { render } = await import('@react-email/render');
     const React = await import('react');
     const LeadGenerationEmailTemplate = (
-      await import('@/app/[locale]/(dashboard)/[wsId]/mail/lead-generation-email-template')
+      await import(
+        '@/app/[locale]/(dashboard)/[wsId]/mail/lead-generation-email-template'
+      )
     ).default;
-    
+
     // Get config helper
-    const getConfig = (id: string) => configsQuery.data?.find((c) => c.id === id)?.value;
-    
+    const getConfig = (id: string) =>
+      configsQuery.data?.find((c) => c.id === id)?.value;
+
     // Helper to parse config values that may contain dynamic placeholders
-    const parseConfigText = (configValue: string | undefined | null): string => {
+    const parseConfigText = (
+      configValue: string | undefined | null
+    ): string => {
       if (!configValue) return '';
       return parseDynamicText(configValue) as string;
     };
-    
+
     // Create the lead generation email template
     const emailElement = React.createElement(LeadGenerationEmailTemplate, {
       leadName: userName,
       className: selectedGroup?.name ?? undefined,
       teacherName: effectiveManagerName,
-      avgScore: typeof mockReport.score === 'number' ? mockReport.score : undefined,
+      avgScore:
+        typeof mockReport.score === 'number' ? mockReport.score : undefined,
       comments: parseDynamicText(form.watch('content')) as string,
       currentDate: new Date().toLocaleDateString(),
       minimumAttendance: minimumAttendance,
-      
+
       // Required configs - parse dynamic text
       brandLogoUrl: getConfig('BRAND_LOGO_URL') || '',
       brandName: parseConfigText(getConfig('BRAND_NAME')),
       brandPhone: parseConfigText(getConfig('BRAND_PHONE_NUMBER')),
       emailTitle: parseConfigText(getConfig('LEAD_EMAIL_TITLE')),
       emailGreeting: parseConfigText(getConfig('LEAD_EMAIL_GREETING')),
-      tableHeaderComments: parseConfigText(getConfig('LEAD_EMAIL_TABLE_HEADER_COMMENTS')),
-      tableHeaderScore: parseConfigText(getConfig('LEAD_EMAIL_TABLE_HEADER_SCORE')),
+      tableHeaderComments: parseConfigText(
+        getConfig('LEAD_EMAIL_TABLE_HEADER_COMMENTS')
+      ),
+      tableHeaderScore: parseConfigText(
+        getConfig('LEAD_EMAIL_TABLE_HEADER_SCORE')
+      ),
       emailFooter: parseConfigText(getConfig('LEAD_EMAIL_FOOTER')),
       signatureTitle: parseConfigText(getConfig('LEAD_EMAIL_SIGNATURE_TITLE')),
       signatureName: parseConfigText(getConfig('LEAD_EMAIL_SIGNATURE_NAME')),
-      
+
       // Optional configs - parse dynamic text
       brandLocation: parseConfigText(getConfig('BRAND_LOCATION')) || undefined,
-      tableScoreScale: parseConfigText(getConfig('LEAD_EMAIL_TABLE_SCORE_SCALE')) || undefined,
-      emptyCommentsPlaceholder: parseConfigText(getConfig('LEAD_EMAIL_EMPTY_COMMENTS')) || undefined,
-      emptyScorePlaceholder: parseConfigText(getConfig('LEAD_EMAIL_EMPTY_SCORE')) || undefined,
+      tableScoreScale:
+        parseConfigText(getConfig('LEAD_EMAIL_TABLE_SCORE_SCALE')) || undefined,
+      emptyCommentsPlaceholder:
+        parseConfigText(getConfig('LEAD_EMAIL_EMPTY_COMMENTS')) || undefined,
+      emptyScorePlaceholder:
+        parseConfigText(getConfig('LEAD_EMAIL_EMPTY_SCORE')) || undefined,
     });
-    
+
     // Render the email template to HTML string
     const reportHTML = await render(emailElement);
-    
 
     return reportHTML;
   };
@@ -405,7 +420,9 @@ export default function FollowUpClient({
         {/* Left Column - Form and Attendance */}
         <div className="flex flex-col space-y-4 overflow-y-auto p-6">
           <div>
-            <h2 className="text-lg font-semibold">{t('users.follow_up.compose_email')}</h2>
+            <h2 className="text-lg font-semibold">
+              {t('users.follow_up.compose_email')}
+            </h2>
             <p className="text-sm text-muted-foreground">
               {t('users.follow_up.compose_email_description')}
             </p>
@@ -437,7 +454,9 @@ export default function FollowUpClient({
                       {t('users.follow_up.minimum_attendance_not_set')}
                     </h3>
                     <p className="mt-1 text-muted-foreground text-sm">
-                      {t('users.follow_up.minimum_attendance_not_set_description')}
+                      {t(
+                        'users.follow_up.minimum_attendance_not_set_description'
+                      )}
                     </p>
                   </div>
                 </div>
@@ -449,7 +468,9 @@ export default function FollowUpClient({
           <Card>
             <CardContent className="grid gap-4 pt-6">
               <div className="grid gap-2">
-                <label className="text-sm font-medium">{t('users.follow_up.group')}</label>
+                <label className="text-sm font-medium">
+                  {t('users.follow_up.group')}
+                </label>
                 <Combobox
                   key="group-combobox"
                   t={t}
@@ -471,7 +492,9 @@ export default function FollowUpClient({
               </div>
 
               <div className="grid gap-2">
-                <label className="text-sm font-medium">{t('users.follow_up.group_manager')}</label>
+                <label className="text-sm font-medium">
+                  {t('users.follow_up.group_manager')}
+                </label>
                 <Combobox
                   key="manager-combobox"
                   t={t}
@@ -505,7 +528,9 @@ export default function FollowUpClient({
                   id="to_email"
                   value={form.watch('to_email')}
                   onChange={(e) => form.setValue('to_email', e.target.value)}
-                  placeholder={userEmail || t('users.follow_up.user_email_placeholder')}
+                  placeholder={
+                    userEmail || t('users.follow_up.user_email_placeholder')
+                  }
                   disabled
                 />
               </div>
@@ -518,7 +543,10 @@ export default function FollowUpClient({
                   id="source_name"
                   value={form.watch('source_name')}
                   onChange={(e) => form.setValue('source_name', e.target.value)}
-                  placeholder={emailCredentials?.source_name || t('users.follow_up.sender_name_placeholder')}
+                  placeholder={
+                    emailCredentials?.source_name ||
+                    t('users.follow_up.sender_name_placeholder')
+                  }
                   disabled
                 />
               </div>
@@ -535,7 +563,8 @@ export default function FollowUpClient({
                     form.setValue('source_email', e.target.value)
                   }
                   placeholder={
-                    emailCredentials?.source_email || t('users.follow_up.sender_email_placeholder')
+                    emailCredentials?.source_email ||
+                    t('users.follow_up.sender_email_placeholder')
                   }
                   disabled
                 />
@@ -573,9 +602,15 @@ export default function FollowUpClient({
                   disabled={mutation.isPending || !effectiveManagerName}
                   onClick={() => mutation.mutate(form.getValues())}
                   className="w-full sm:w-auto"
-                  title={!effectiveManagerName ? t('users.follow_up.select_manager_warning') : undefined}
+                  title={
+                    !effectiveManagerName
+                      ? t('users.follow_up.select_manager_warning')
+                      : undefined
+                  }
                 >
-                  {mutation.isPending ? t('users.follow_up.sending') : t('users.follow_up.send_email')}
+                  {mutation.isPending
+                    ? t('users.follow_up.sending')
+                    : t('users.follow_up.send_email')}
                 </Button>
               </div>
               {!effectiveManagerName && (
@@ -590,7 +625,9 @@ export default function FollowUpClient({
           {userName && (
             <Card>
               <CardHeader>
-                <CardTitle className="text-base">{t('users.follow_up.attendance_overview')}</CardTitle>
+                <CardTitle className="text-base">
+                  {t('users.follow_up.attendance_overview')}
+                </CardTitle>
               </CardHeader>
               <CardContent>
                 <UserMonthAttendance
@@ -632,7 +669,9 @@ export default function FollowUpClient({
         {/* Right Column - Full Height Report Preview */}
         <div className="flex flex-col h-full overflow-hidden">
           <div className="p-6 pb-4">
-            <h2 className="text-lg font-semibold">{t('users.follow_up.live_preview')}</h2>
+            <h2 className="text-lg font-semibold">
+              {t('users.follow_up.live_preview')}
+            </h2>
             <p className="text-sm text-muted-foreground">
               {t('users.follow_up.live_preview_description')}
             </p>
@@ -642,13 +681,18 @@ export default function FollowUpClient({
             {mockReport && configsQuery.data ? (
               <LeadGenerationPreview
                 t={t}
-                getConfig={(id: string) => configsQuery.data?.find((c) => c.id === id)?.value}
+                getConfig={(id: string) =>
+                  configsQuery.data?.find((c) => c.id === id)?.value
+                }
                 parseDynamicText={parseDynamicText}
                 leadData={{
                   leadName: userName,
                   className: selectedGroup?.name ?? undefined,
                   teacherName: effectiveManagerName,
-                  avgScore: typeof mockReport.score === 'number' ? mockReport.score : undefined,
+                  avgScore:
+                    typeof mockReport.score === 'number'
+                      ? mockReport.score
+                      : undefined,
                   comments: parseDynamicText(form.watch('content')) as string,
                   currentDate: new Date().toLocaleDateString(),
                   minimumAttendance: minimumAttendance,

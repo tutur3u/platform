@@ -131,7 +131,7 @@ export const leadGenerationConfigs: (WorkspaceConfig & {
     id: 'LEAD_EMAIL_SIGNATURE_NAME',
     type: 'TEXT',
     defaultValue: '',
-  }
+  },
 ];
 
 // Combined list for backward compatibility
