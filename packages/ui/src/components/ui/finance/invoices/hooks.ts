@@ -5,6 +5,7 @@ import type { Wallet } from '@tuturuuu/types/primitives/Wallet';
 import type { TransactionCategory } from '@tuturuuu/types/primitives/TransactionCategory';
 import type { Transaction } from '@tuturuuu/types/primitives/Transaction';
 import type { Invoice } from '@tuturuuu/types/primitives/Invoice';
+import type { PendingInvoice } from '@tuturuuu/types/primitives/PendingInvoice';
 import type { Product, Promotion, UserGroupProducts } from './types';
 
 // React Query hooks for data fetching
@@ -427,6 +428,60 @@ export const useAvailablePromotions = (wsId: string, userId: string) => {
     staleTime: 5 * 60 * 1000,
     gcTime: 10 * 60 * 1000,
     refetchOnWindowFocus: false,
+    retry: 3,
+  });
+};
+
+// Get Pending Invoices for a workspace
+export const usePendingInvoices = (
+  wsId: string,
+  page?: string,
+  pageSize?: string
+) => {
+  return useQuery({
+    queryKey: ['pending-invoices', wsId, page, pageSize],
+    queryFn: async () => {
+      const supabase = createClient();
+
+      // Calculate limit and offset
+      const parsedPage = page ? parseInt(page) : 1;
+      const parsedSize = pageSize ? parseInt(pageSize) : 10;
+      const offset = (parsedPage - 1) * parsedSize;
+
+      // Fetch data with pagination
+      const { data, error } = await supabase.rpc('get_pending_invoices', {
+        p_ws_id: wsId,
+        p_limit: parsedSize,
+        p_offset: offset,
+      });
+
+      if (error) {
+        console.error('❌ Pending invoices fetch error:', error);
+        throw error;
+      }
+
+      // Fetch total count
+      const { data: countData, error: countError } = await supabase.rpc(
+        'get_pending_invoices_count',
+        {
+          p_ws_id: wsId,
+        }
+      );
+
+      if (countError) {
+        console.error('❌ Pending invoices count error:', countError);
+        throw countError;
+      }
+
+      return {
+        data: (data || []) as PendingInvoice[],
+        count: (countData as number) || 0,
+      };
+    },
+    enabled: !!wsId,
+    staleTime: 2 * 60 * 1000, // 2 minutes - more frequent refresh for pending data
+    gcTime: 5 * 60 * 1000, // 5 minutes
+    refetchOnWindowFocus: true, // Refetch when window gains focus
     retry: 3,
   });
 };

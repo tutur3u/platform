@@ -1417,6 +1417,20 @@
     "note": "Note",
     "created_at": "Created at"
   },
+  "pending-invoice-data-table": {
+    "user_id": "User ID",
+    "user_name": "Customer",
+    "group_id": "Group ID",
+    "group_name": "Group",
+    "months_owed": "Months Owed",
+    "attendance_days": "Attendance Days",
+    "total_sessions": "Total Sessions",
+    "potential_total": "Amount Due",
+    "customer": "Customer",
+    "group": "Group",
+    "actions": "Actions",
+    "create_invoice": "Create Invoice"
+  },
   "product-data-table": {
     "id": "ID",
     "name": "Name",
@@ -2958,7 +2972,9 @@
     "edit_invoice_description": "Make modifications to invoice details",
     "creator": "Invoice Creator",
     "print_after_create": "Print after Creation",
-    "print_after_create_tooltip": "Prints invoice after creation"
+    "print_after_create_tooltip": "Prints invoice after creation",
+    "created_invoices": "Created Invoices",
+    "pending_invoices": "Pending Invoices"
   },
   "ws-inventory-products": {
     "plural": "Products",

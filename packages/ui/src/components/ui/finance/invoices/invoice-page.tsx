@@ -5,10 +5,12 @@ import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { CustomDataTable } from '@tuturuuu/ui/custom/tables/custom-data-table';
 import { Plus } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
 import { invoiceColumns } from './columns';
+import { PendingInvoicesTable } from './pending-invoices-table';
 
 interface Props {
   wsId: string;
@@ -51,19 +53,34 @@ export default async function InvoicesPage({ wsId: id, searchParams }: Props) {
         }
       />
       <Separator className="my-4" />
-      <CustomDataTable
-        data={data}
-        columnGenerator={invoiceColumns}
-        namespace="invoice-data-table"
-        count={count}
-        defaultVisibility={{
-          id: false,
-          customer_id: false,
-          price: false,
-          total_diff: false,
-          note: false,
-        }}
-      />
+      <Tabs defaultValue="created" className="w-full">
+        <TabsList className="mb-4">
+          <TabsTrigger value="created">
+            {t('ws-invoices.created_invoices')}
+          </TabsTrigger>
+          <TabsTrigger value="pending">
+            {t('ws-invoices.pending_invoices')}
+          </TabsTrigger>
+        </TabsList>
+        <TabsContent value="created">
+          <CustomDataTable
+            data={data}
+            columnGenerator={invoiceColumns}
+            namespace="invoice-data-table"
+            count={count}
+            defaultVisibility={{
+              id: false,
+              customer_id: false,
+              price: false,
+              total_diff: false,
+              note: false,
+            }}
+          />
+        </TabsContent>
+        <TabsContent value="pending">
+          <PendingInvoicesTable wsId={wsId} />
+        </TabsContent>
+      </Tabs>
     </>
   );
 }

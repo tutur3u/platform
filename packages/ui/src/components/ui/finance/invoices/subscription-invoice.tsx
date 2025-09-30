@@ -62,6 +62,11 @@ interface Props {
   wsId: string;
   selectedUserId: string;
   onSelectedUserIdChange: (value: string) => void;
+  selectedGroupId?: string;
+  onSelectedGroupIdChange?: (value: string) => void;
+  selectedMonth?: string;
+  onSelectedMonthChange?: (value: string) => void;
+  prefillAmount?: number; // Total attendance days to prefill product quantities
   createMultipleInvoices: boolean;
   printAfterCreate?: boolean;
 }
@@ -128,10 +133,16 @@ const buildAutoSelectedProductsForGroup = (
 
     if (!chosenInventory) continue;
 
+    // Respect stock limits: if inventory has limited stock, cap quantity at available amount
+    const finalQuantity =
+      chosenInventory.amount === null
+        ? attendanceDays
+        : Math.min(attendanceDays, chosenInventory.amount);
+
     results.push({
       product,
       inventory: chosenInventory,
-      quantity: attendanceDays,
+      quantity: finalQuantity,
     } as SelectedProductItem);
   }
 
@@ -208,6 +219,11 @@ export function SubscriptionInvoice({
   wsId,
   selectedUserId,
   onSelectedUserIdChange,
+  selectedGroupId: externalSelectedGroupId,
+  onSelectedGroupIdChange: externalOnSelectedGroupIdChange,
+  selectedMonth: externalSelectedMonth,
+  onSelectedMonthChange: externalOnSelectedMonthChange,
+  prefillAmount,
   createMultipleInvoices,
   printAfterCreate = false,
 }: Props) {
@@ -239,13 +255,32 @@ export function SubscriptionInvoice({
   const [isCreating, setIsCreating] = useState(false);
   const router = useRouter();
 
-  // Subscription-specific state
-  const [selectedGroupId, setSelectedGroupId] = useState<string>('');
-  const [selectedMonth, setSelectedMonth] = useState<string>(
+  // Subscription-specific state - use external props if provided, otherwise internal state
+  const [internalSelectedGroupId, setInternalSelectedGroupId] = useState<string>('');
+  const [internalSelectedMonth, setInternalSelectedMonth] = useState<string>(
     new Date()
       .toISOString()
       .slice(0, 7) // Current month in YYYY-MM format
   );
+  
+  const selectedGroupId = externalSelectedGroupId ?? internalSelectedGroupId;
+  const setSelectedGroupId = externalOnSelectedGroupIdChange ?? setInternalSelectedGroupId;
+  const selectedMonth = externalSelectedMonth ?? internalSelectedMonth;
+  const setSelectedMonth = externalOnSelectedMonthChange ?? setInternalSelectedMonth;
+  
+  // Initialize from external props
+  useEffect(() => {
+    if (externalSelectedGroupId && externalSelectedGroupId !== internalSelectedGroupId) {
+      setInternalSelectedGroupId(externalSelectedGroupId);
+    }
+  }, [externalSelectedGroupId, internalSelectedGroupId]);
+  
+  useEffect(() => {
+    if (externalSelectedMonth && externalSelectedMonth !== internalSelectedMonth) {
+      setInternalSelectedMonth(externalSelectedMonth);
+    }
+  }, [externalSelectedMonth, internalSelectedMonth]);
+  
   const [subscriptionProducts, setSubscriptionProducts] = useState<
     Array<{
       product: {
@@ -348,7 +383,8 @@ export function SubscriptionInvoice({
     // Reset one-time fallback toast when switching groups
     fallbackToastShownRef.current = false;
 
-    const attendanceDays = getEffectiveAttendanceDays(userAttendance);
+    // Use prefillAmount if provided, otherwise calculate from attendance
+    const attendanceDays = prefillAmount ?? getEffectiveAttendanceDays(userAttendance);
 
     const { autoSelected, fallbackTriggered } =
       buildAutoSelectedProductsForGroup(
@@ -368,7 +404,7 @@ export function SubscriptionInvoice({
       );
       fallbackToastShownRef.current = true;
     }
-  }, [selectedGroupId, groupProducts, products]);
+  }, [selectedGroupId, groupProducts, products, prefillAmount]);
 
   // Auto-add group products based on attendance when group is selected
   useEffect(() => {
@@ -376,7 +412,8 @@ export function SubscriptionInvoice({
       return;
     }
 
-    const attendanceDays = getEffectiveAttendanceDays(userAttendance);
+    // Use prefillAmount if provided, otherwise calculate from attendance
+    const attendanceDays = prefillAmount ?? getEffectiveAttendanceDays(userAttendance);
     if (attendanceDays === 0) return;
 
     const { autoSelected, fallbackTriggered } =
@@ -401,16 +438,22 @@ export function SubscriptionInvoice({
         );
 
         if (existingIndex >= 0) {
-          // Update existing item with attendance-based quantity
+          // Update existing item with attendance-based quantity (respecting stock limits)
           const existingItem = updated[existingIndex];
           if (existingItem) {
+            // Respect stock limits when updating quantity
+            const maxQuantity =
+              existingItem.inventory.amount === null
+                ? attendanceDays
+                : Math.min(attendanceDays, existingItem.inventory.amount);
+            
             updated[existingIndex] = {
               ...existingItem,
-              quantity: attendanceDays,
+              quantity: maxQuantity,
             };
           }
         } else {
-          // Add new item
+          // Add new item (already has correct quantity from buildAutoSelectedProductsForGroup)
           updated.push(newItem);
         }
       });
@@ -427,7 +470,7 @@ export function SubscriptionInvoice({
       );
       fallbackToastShownRef.current = true;
     }
-  }, [selectedGroupId, groupProducts, products, userAttendance?.length]);
+  }, [selectedGroupId, groupProducts, products, userAttendance?.length, prefillAmount]);
 
   // Calculate totals for manual product selection
   const subscriptionSubtotal = useMemo(() => {

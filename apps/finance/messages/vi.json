@@ -1253,6 +1253,18 @@
     "note": "Ghi chú",
     "created_at": "Tạo lúc"
   },
+  "pending-invoice-data-table": {
+    "user_id": "Mã học viên",
+    "user_name": "Khách hàng",
+    "group_id": "Mã nhóm",
+    "group_name": "Nhóm",
+    "months_owed": "Các tháng chưa thanh toán",
+    "attendance_days": "Số buổi tham gia",
+    "total_sessions": "Tổng số buổi",
+    "potential_total": "Số tiền cần thanh toán",
+    "customer": "Khách hàng",
+    "group": "Nhóm"
+  },
   "product-data-table": {
     "id": "Mã số",
     "name": "Tên",
