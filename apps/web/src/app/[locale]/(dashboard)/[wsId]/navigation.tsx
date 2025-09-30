@@ -1,3 +1,5 @@
+import type { NavLink } from '@/components/navigation';
+import { DEV_MODE } from '@/constants/common';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import {
   Activity,
@@ -79,14 +81,12 @@ import {
   Warehouse,
 } from '@tuturuuu/ui/icons';
 import {
-  ROOT_WORKSPACE_ID,
   resolveWorkspaceId,
+  ROOT_WORKSPACE_ID,
 } from '@tuturuuu/utils/constants';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
 import { getPermissions, verifySecret } from '@tuturuuu/utils/workspace-helper';
 import { getTranslations } from 'next-intl/server';
-import type { NavLink } from '@/components/navigation';
-import { DEV_MODE } from '@/constants/common';
 
 export async function WorkspaceNavigationLinks({
   wsId,
@@ -974,6 +974,39 @@ export async function WorkspaceNavigationLinks({
           disabled: withoutPermission('view_infrastructure'),
           requireRootWorkspace: true,
           requireRootMember: true,
+          children: [
+            {
+              title: t('infrastructure-tabs.overview'),
+              href: `/${personalOrWsId}/infrastructure`,
+              icon: <LayoutDashboard className="h-5 w-5" />,
+              matchExact: true,
+            },
+            {
+              title: t('infrastructure-tabs.users'),
+              href: `/${personalOrWsId}/infrastructure/users`,
+              icon: <Users className="h-5 w-5" />,
+            },
+            {
+              title: t('infrastructure-tabs.workspaces'),
+              href: `/${personalOrWsId}/infrastructure/workspaces`,
+              icon: <Blocks className="h-5 w-5" />,
+            },
+            {
+              title: t('infrastructure-tabs.timezones'),
+              href: `/${personalOrWsId}/infrastructure/timezones`,
+              icon: <Clock className="h-5 w-5" />,
+            },
+            {
+              title: t('infrastructure-tabs.ai_whitelisted_emails'),
+              href: `/${personalOrWsId}/infrastructure/ai/whitelist/emails`,
+              icon: <Mail className="h-5 w-5" />,
+            },
+            {
+              title: t('ws-ai-whitelist-domains.plural'),
+              href: `/${personalOrWsId}/infrastructure/ai/whitelist/domains`,
+              icon: <Database className="h-5 w-5" />,
+            },
+          ],
         },
         {
           title: t('workspace-settings-layout.platform_roles'),

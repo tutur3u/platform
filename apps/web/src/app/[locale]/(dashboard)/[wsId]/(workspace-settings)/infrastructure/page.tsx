@@ -1,10 +1,10 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
-import tzs from '@tuturuuu/utils/timezones';
+import { Separator } from '@tuturuuu/ui/separator';
 import { enforceRootWorkspaceAdmin } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
-import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
-import StatisticCard from '../../../../../../components/cards/StatisticCard';
+import { notFound } from 'next/navigation';
+import UserRegistrationChart from './_components/user-registration-chart';
 
 export const metadata: Metadata = {
   title: 'Infrastructure',
@@ -26,95 +26,46 @@ export default async function InfrastructureOverviewPage({ params }: Props) {
 
   const t = await getTranslations();
 
-  const users = await getUserCount();
-  const workspaces = await getWorkspaceCount();
-  const timezones = tzs.length;
-  const aiWhitelistedEmails = await getAIWhitelistedEmailsCount();
-  const aiWhitelistedDomains = await getAIWhitelistedDomainsCount();
+  const userRegistrationData = await getUserRegistrationData();
 
   return (
-    <div className="grid flex-col gap-4 md:grid-cols-2 xl:grid-cols-4">
-      <StatisticCard
-        title={t('infrastructure-tabs.users')}
-        value={users}
-        href={`/${wsId}/infrastructure/users`}
-      />
+    <>
+      <div className="flex flex-col gap-4 rounded-lg border border-border bg-foreground/5 p-4">
+        <div>
+          <h1 className="font-bold text-2xl">
+            {t('workspace-settings-layout.infrastructure')}
+          </h1>
+          <p className="text-foreground/80">
+            Monitor and manage your platform infrastructure, users, and
+            resources.
+          </p>
+        </div>
+      </div>
 
-      <StatisticCard
-        title={t('infrastructure-tabs.workspaces')}
-        value={workspaces}
-        href={`/${wsId}/infrastructure/workspaces`}
-      />
+      <Separator className="my-4" />
 
-      <StatisticCard
-        title={t('infrastructure-tabs.timezones')}
-        value={timezones}
-        href={`/${wsId}/infrastructure/timezones`}
-      />
-
-      <StatisticCard
-        title={t('infrastructure-tabs.ai_whitelisted_emails')}
-        value={aiWhitelistedEmails}
-        href={`/${wsId}/infrastructure/ai/whitelist/emails`}
-      />
-
-      <StatisticCard
-        title={t('ws-ai-whitelist-domains.plural')}
-        value={aiWhitelistedDomains}
-        href={`/${wsId}/infrastructure/ai/whitelist/domains`}
-      />
-    </div>
+      {/* Analytics Chart */}
+      <div className="rounded-lg border border-border bg-foreground/5 p-4">
+        <UserRegistrationChart data={userRegistrationData} />
+      </div>
+    </>
   );
 }
 
-async function getUserCount() {
+async function getUserRegistrationData() {
   const supabaseAdmin = await createAdminClient();
   if (!supabaseAdmin) notFound();
 
-  const { count } = await supabaseAdmin.from('users').select('*', {
-    count: 'exact',
-    head: true,
-  });
+  const { data } = await supabaseAdmin
+    .from('users')
+    .select('created_at')
+    .order('created_at', { ascending: true });
 
-  return count;
-}
-
-async function getWorkspaceCount() {
-  const supabaseAdmin = await createAdminClient();
-  if (!supabaseAdmin) notFound();
-
-  const { count } = await supabaseAdmin.from('workspaces').select('*', {
-    count: 'exact',
-    head: true,
-  });
-
-  return count;
-}
-
-async function getAIWhitelistedEmailsCount() {
-  const supabaseAdmin = await createAdminClient();
-  if (!supabaseAdmin) notFound();
-
-  const { count } = await supabaseAdmin
-    .from('ai_whitelisted_emails')
-    .select('*', {
-      count: 'exact',
-      head: true,
-    });
-
-  return count;
-}
-
-async function getAIWhitelistedDomainsCount() {
-  const supabaseAdmin = await createAdminClient();
-  if (!supabaseAdmin) notFound();
-
-  const { count } = await supabaseAdmin
-    .from('ai_whitelisted_domains')
-    .select('*', {
-      count: 'exact',
-      head: true,
-    });
-
-  return count;
+  return (data
+    ?.filter((user) => user.created_at)
+    ?.map((user) => ({
+      date: user.created_at,
+      count: 1,
+      created_at: user.created_at,
+    })) || []) as { date: string; count: number; created_at: string }[];
 }
