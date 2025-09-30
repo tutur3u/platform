@@ -309,16 +309,11 @@ export default function FollowUpClient({
     if (!mockReport || !configsQuery.data) {
       throw new Error('Report data not available');
     }
-
-    // Import required dependencies
-    const { inlineEmailStyles } = await import('@/utils/email-css');
     const { render } = await import('@react-email/render');
     const React = await import('react');
     const LeadGenerationEmailTemplate = (
       await import('@/app/[locale]/(dashboard)/[wsId]/mail/lead-generation-email-template')
     ).default;
-    
-    const emailTitle = parseDynamicText(form.watch('subject')) as string || 'Follow-up Report';
     
     // Get config helper
     const getConfig = (id: string) => configsQuery.data?.find((c) => c.id === id)?.value;
@@ -354,9 +349,6 @@ export default function FollowUpClient({
       // Optional configs - parse dynamic text
       brandLocation: parseConfigText(getConfig('BRAND_LOCATION')) || undefined,
       tableScoreScale: parseConfigText(getConfig('LEAD_EMAIL_TABLE_SCORE_SCALE')) || undefined,
-      brandLogoWidth: getConfig('LEAD_EMAIL_BRAND_LOGO_WIDTH') ?? undefined,
-      brandLogoHeight: getConfig('LEAD_EMAIL_BRAND_LOGO_HEIGHT') ?? undefined,
-      titleColor: getConfig('LEAD_EMAIL_TITLE_COLOR') ?? undefined,
       emptyCommentsPlaceholder: parseConfigText(getConfig('LEAD_EMAIL_EMPTY_COMMENTS')) || undefined,
       emptyScorePlaceholder: parseConfigText(getConfig('LEAD_EMAIL_EMPTY_SCORE')) || undefined,
     });
@@ -364,10 +356,8 @@ export default function FollowUpClient({
     // Render the email template to HTML string
     const reportHTML = await render(emailElement);
     
-    // Apply email-safe CSS inlining using Juice
-    const emailContent = inlineEmailStyles(reportHTML, emailTitle);
 
-    return emailContent;
+    return reportHTML;
   };
 
   const mutation = useMutation({

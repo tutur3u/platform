@@ -26,6 +26,17 @@ AS $$
 DECLARE
   offset_count integer;
 BEGIN
+
+  -- Validate input parameters
+  IF p_page < 1 THEN
+    RAISE EXCEPTION 'Page number must be >= 1, got %', p_page;
+  END IF;
+  IF p_page_size < 1 OR p_page_size > 1000 THEN
+    RAISE EXCEPTION 'Page size must be between 1 and 1000, got %', p_page_size;
+  END IF;
+  IF p_threshold < 0 THEN
+    RAISE EXCEPTION 'Threshold must be >= 0, got %', p_threshold;
+  END IF;
   -- Calculate offset for pagination
   offset_count := (p_page - 1) * p_page_size;
   
@@ -93,7 +104,7 @@ BEGIN
     pu.group_name,
     pu.has_lead_generation,
     pu.created_at,
-    COALESCE(pu.total_count, 0) as total_count
+    pu.total_count
   FROM paginated_users pu;
 END;
 $$;
@@ -115,6 +126,15 @@ DECLARE
   attendance_threshold SMALLINT;
   attendance_count INTEGER;
 BEGIN
+
+  -- Check 0: Verify the user belongs to the workspace
+  IF NOT EXISTS (SELECT 1 FROM public.workspace_users WHERE id = p_user_id AND ws_id = p_ws_id) THEN
+    RETURN jsonb_build_object(
+      'eligible', false,
+      'reason', 'User does not belong to the specified workspace',
+      'details', jsonb_build_object()
+    );
+  END IF;
   -- Check 1: Verify the user is a guest
   SELECT public.is_user_guest(p_user_id) INTO is_guest_user;
 
@@ -165,8 +185,6 @@ BEGIN
       )
     );
   END IF;
-
-
 
   -- All checks passed
   RETURN jsonb_build_object(

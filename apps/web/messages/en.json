@@ -1836,6 +1836,8 @@
   "ws-reports": {
     "report": "Report",
     "reports": "Reports",
+    "report_template": "Report Template",
+    "lead_generation": "Lead Generation",
     "user_data": "User Statistics",
     "no_scores": "No scores data",
     "average_score": "Average score",

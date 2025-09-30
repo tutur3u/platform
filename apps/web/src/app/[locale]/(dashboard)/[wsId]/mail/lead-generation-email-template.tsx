@@ -34,21 +34,13 @@ interface Props {
   signatureName: string;             // LEAD_EMAIL_SIGNATURE_NAME - Signer's name
   
   // 🟡 OPTIONAL CONFIG VARIABLES - Can be added for more flexibility:
-  brandLogoWidth?: string;           // LEAD_EMAIL_BRAND_LOGO_WIDTH - Logo width (default: "100")
-  brandLogoHeight?: string;          // LEAD_EMAIL_BRAND_LOGO_HEIGHT - Logo height (default: "38")
-  titleColor?: string;               // LEAD_EMAIL_TITLE_COLOR - Title text color (default: "blue-700")
   emptyCommentsPlaceholder?: string; // LEAD_EMAIL_EMPTY_COMMENTS - Placeholder when no comments
   emptyScorePlaceholder?: string;    // LEAD_EMAIL_EMPTY_SCORE - Placeholder when no score
 }
 
 const LeadGenerationEmailTemplate = ({
-  leadName,
-  className,
-  teacherName,
   avgScore,
   comments,
-  currentDate,
-  minimumAttendance,
   brandLogoUrl,
   brandName,
   brandLocation,

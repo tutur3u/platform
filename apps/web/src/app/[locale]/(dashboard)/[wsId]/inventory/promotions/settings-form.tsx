@@ -156,7 +156,6 @@ export default function WorkspaceSettingsForm({
       router.refresh();
     },
     onError: () => {
-      setLoading(false);
       toast.error(t('common.error'));
     },
   });

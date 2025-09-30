@@ -64,13 +64,12 @@ export default async function WorkspaceReportsSettingsPage({
   }));
 
   const leadGenConfigsData = leadGenData
-    .filter((config) => typeof config.id === 'string' && config.id.length > 0)
+    .filter((config): config is typeof config & { id: string } => !!config.id) // Filter out configs without id and narrow type
     .map((config) => ({
       ...config,
       ws_id: wsId,
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      name: config?.id ? t(`ws-reports.${config.id.toLowerCase()}` as any) : '',
-      id: config.id as string, // ensure id is string
+      name: t(`ws-reports.${config.id.toLowerCase()}` as any),
     }));
 
   const getReportConfig = (id: string) => reportConfigsData.find((c) => c.id === id)?.value;
@@ -113,8 +112,8 @@ export default async function WorkspaceReportsSettingsPage({
 
       <Tabs defaultValue="report" className="w-full">
         <TabsList className="grid w-full grid-cols-2 lg:w-[400px]">
-          <TabsTrigger value="report">Report Template</TabsTrigger>
-          <TabsTrigger value="lead-generation">Lead Generation</TabsTrigger>
+          <TabsTrigger value="report">{t('ws-reports.report_template')}</TabsTrigger>
+          <TabsTrigger value="lead-generation">{t('ws-reports.lead_generation')}</TabsTrigger>
         </TabsList>
 
         <TabsContent value="report" className="mt-4">
@@ -154,7 +153,6 @@ export default async function WorkspaceReportsSettingsPage({
 
             <LeadGenerationPreview
               configs={leadGenConfigsData}
-              show
             />
           </div>
         </TabsContent>
@@ -171,7 +169,7 @@ async function getConfigs(
   const supabase = await createClient();
 
   // Get the list of config IDs from the provided configsList
-  const configIds = configsList.map((c) => c.id);
+  const configIds = configsList.map((c) => c.id).filter((id): id is string => id !== undefined);
 
   const queryBuilder = supabase
     .from('workspace_configs')

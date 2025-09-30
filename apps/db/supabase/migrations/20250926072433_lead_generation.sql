@@ -63,7 +63,7 @@ BEGIN
   SELECT COUNT(*)
   INTO attendance_count
   FROM public.user_group_attendance
-  WHERE user_id = NEW.user_id AND status IN ('PRESENT', 'LATE');
+  WHERE user_id = NEW.user_id AND ws_id = NEW.ws_id AND status IN ('PRESENT', 'LATE');
 
   -- Block the insert if attendance is BELOW the minimum required threshold
   IF attendance_count < attendance_threshold THEN

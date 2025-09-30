@@ -64,7 +64,6 @@ export function GuestLeadSettingsForm({ wsId, data, onFinish }: Props) {
       }
     },
     onError: () => {
-      setLoading(false);
       toast.error(t('common.error'));
     },
   });
