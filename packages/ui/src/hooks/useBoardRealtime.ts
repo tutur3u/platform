@@ -2,10 +2,12 @@ import { useQueryClient } from '@tanstack/react-query';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 
 export function useBoardRealtime(
   boardId: string,
+  taskIds: string[],
+  listIds: string[],
   options?: {
     onTaskChange?: (
       task: Task,
@@ -18,28 +20,9 @@ export function useBoardRealtime(
   }
 ) {
   const queryClient = useQueryClient();
-  const [listIds, setListIds] = useState<string[]>([]);
 
   useEffect(() => {
-    if (!boardId) return;
-
-    const supabase = createClient();
-
-    const fetchListIds = async () => {
-      const { data: lists } = await supabase
-        .from('task_lists')
-        .select('id')
-        .eq('board_id', boardId);
-
-      const ids = lists?.map((list) => list.id) || [];
-      setListIds(ids);
-    };
-
-    fetchListIds();
-  }, [boardId]);
-
-  useEffect(() => {
-    if (!boardId || listIds.length === 0) return;
+    if (!boardId || taskIds.length === 0 || listIds.length === 0) return;
 
     let mounted = true;
     const supabase = createClient();
@@ -118,12 +101,6 @@ export function useBoardRealtime(
 
           const { eventType, old: oldRecord, new: newRecord } = payload;
 
-          if (eventType === 'INSERT' && newRecord) {
-            setListIds((prev) => [...prev, newRecord.id]);
-          } else if (eventType === 'DELETE' && oldRecord) {
-            setListIds((prev) => prev.filter((id) => id !== oldRecord.id));
-          }
-
           if (options?.onListChange && (oldRecord || newRecord)) {
             options.onListChange(
               (oldRecord || newRecord) as TaskList,
@@ -135,6 +112,47 @@ export function useBoardRealtime(
           queryClient.invalidateQueries({ queryKey: ['tasks', boardId] });
         }
       )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'task_assignees',
+          filter: `task_id=in.(${taskIds.join(',')})`,
+        },
+        async (_payload) => {
+          if (!mounted) return;
+
+          queryClient.invalidateQueries({ queryKey: ['tasks', boardId] });
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'task_labels',
+          filter: `task_id=in.(${taskIds.join(',')})`,
+        },
+        async (_payload) => {
+          if (!mounted) return;
+
+          queryClient.invalidateQueries({ queryKey: ['tasks', boardId] });
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'workspace_task_labels',
+        },
+        async (_payload) => {
+          if (!mounted) return;
+
+          queryClient.invalidateQueries({ queryKey: ['tasks', boardId] });
+        }
+      )
       .subscribe();
 
     return () => {
@@ -143,6 +161,7 @@ export function useBoardRealtime(
     };
   }, [
     boardId,
+    taskIds,
     listIds,
     queryClient,
     options?.onTaskChange,
