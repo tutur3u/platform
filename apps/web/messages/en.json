@@ -1068,7 +1068,7 @@
       "create_settings_tooltip": "Create guest lead settings to enable lead generation.",
       "create_settings": "Create Settings"
     },
-    "guest_user_checkup_threshold": "Guest user checkup threshold",
+    "guest_user_checkup_threshold": "Minimum Attendance",
     "follow_up": {
       "trial_period_report_subject": "{sourceName} | Trial Period Report {date} for {userName}",
       "compose_email": "Compose Email",
@@ -1102,6 +1102,9 @@
       "unknown_user": "Unknown User",
       "unknown_group": "Unknown Group",
       "na": "N/A"
+    },
+    "guest_lead_threshold": {
+      "description": "Modify the minimum amount of date a user has to attend to be elligible for a follow up email"
     }
   },
   "healthcare-tabs": {

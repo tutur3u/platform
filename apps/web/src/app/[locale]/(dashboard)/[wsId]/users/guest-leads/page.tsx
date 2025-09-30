@@ -1,15 +1,11 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
 import type { GuestUserLead } from '@tuturuuu/types/primitives/GuestUserLead';
-import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Separator } from '@tuturuuu/ui/separator';
 import type { Metadata } from 'next';
-import { getTranslations } from 'next-intl/server';
 import { CustomDataTable } from '@/components/custom-data-table';
 import { getGuestLeadColumns } from './columns';
-import { GuestLeadSettingsForm } from './settings-form';
-import { Button } from '@tuturuuu/ui/button';
-import { Settings } from '@tuturuuu/ui/icons';
 import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
+import { GuestLeadHeader } from './header';
 
 export const metadata: Metadata = {
   title: 'Guest User Leads',
@@ -32,7 +28,6 @@ export default async function GuestUserLeadsPage({
   params,
   searchParams,
 }: Props) {
-  const t = await getTranslations();
   const { wsId: id } = await params;
   const searchParamsResolved = await searchParams;
   const workspace = await getWorkspace(id);
@@ -46,27 +41,9 @@ export default async function GuestUserLeadsPage({
 
   return (
     <>
-      <FeatureSummary
-        pluralTitle={t('users.guest_leads.plural')}
-        singularTitle={t('users.guest_leads.singular')}
-        description={t('users.guest_leads.description')}
-        settingsData={settingsRow ? settingsRow : undefined}
-        settingsForm={
-          <GuestLeadSettingsForm wsId={wsId} data={settingsRow ?? undefined} />
-        }
-        settingsTrigger={
-          !settingsRow?.guest_user_checkup_threshold ? (
-            <Button
-              size="xs"
-              className="w-full md:w-fit border border-dynamic-red/30 bg-dynamic-red/10 text-dynamic-red hover:bg-dynamic-red/15"
-              title={t('users.guest_leads.create_settings_tooltip')}
-            >
-              <Settings className="h-4 w-4" />
-              {t('users.guest_leads.create_settings')}
-            </Button>
-          ) : undefined
-        }
-        settingsTitle={t('common.settings')}
+      <GuestLeadHeader
+        settingsRow={settingsRow}
+        wsId={wsId}
       />
       <Separator className="my-4" />
       <CustomDataTable

@@ -1079,7 +1079,7 @@
       "create_settings_tooltip": "Tạo cài đặt khách hàng tiềm năng để bật tính năng tạo lead.",
       "create_settings": "Tạo cài đặt"
     },
-    "guest_user_checkup_threshold": "Ngưỡng kiểm tra khách vãng lai",
+    "guest_user_checkup_threshold": "Số ngày tham dự tối thiểu",
     "follow_up": {
       "trial_period_report_subject": "{sourceName} | Báo cáo thời gian học thử {date} cho {userName}",
       "compose_email": "Soạn Email",
@@ -1113,6 +1113,9 @@
       "unknown_user": "Người dùng không xác định",
       "unknown_group": "Nhóm không xác định",
       "na": "N/A"
+    },
+    "guest_lead_threshold": {
+      "description": "Sửa đổi số lượng ngày tối thiểu mà người dùng phải tham dự"
     }
   },
   "healthcare-tabs": {
