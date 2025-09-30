@@ -97,3 +97,88 @@ BEGIN
   FROM paginated_users pu;
 END;
 $$;
+
+
+-- RPC function to check if a guest user is eligible for lead generation email
+-- This can be called from the client to validate before attempting to send
+
+CREATE OR REPLACE FUNCTION public.check_guest_lead_eligibility(
+  p_ws_id uuid,
+  p_user_id uuid
+)
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY INVOKER
+AS $function$
+DECLARE
+  is_guest_user BOOLEAN;
+  attendance_threshold SMALLINT;
+  attendance_count INTEGER;
+BEGIN
+  -- Check 1: Verify the user is a guest
+  SELECT public.is_user_guest(p_user_id) INTO is_guest_user;
+
+  IF NOT is_guest_user THEN
+    RETURN jsonb_build_object(
+      'eligible', false,
+      'reason', 'User is not a guest user',
+      'details', jsonb_build_object(
+        'is_guest', false
+      )
+    );
+  END IF;
+
+  -- Check 2: Verify attendance threshold is configured
+  SELECT ws.guest_user_checkup_threshold
+  INTO attendance_threshold
+  FROM public.workspace_settings ws
+  WHERE ws.ws_id = p_ws_id;
+
+  IF attendance_threshold IS NULL THEN
+    RETURN jsonb_build_object(
+      'eligible', false,
+      'reason', 'Attendance threshold not configured for workspace',
+      'details', jsonb_build_object(
+        'is_guest', true,
+        'threshold_configured', false
+      )
+    );
+  END IF;
+
+  -- Check 3: Calculate attendance count
+  SELECT COUNT(*)
+  INTO attendance_count
+  FROM public.user_group_attendance
+  WHERE user_id = p_user_id AND status IN ('PRESENT', 'LATE');
+
+  -- Check 4: Verify attendance meets minimum threshold
+  IF attendance_count < attendance_threshold THEN
+    RETURN jsonb_build_object(
+      'eligible', false,
+      'reason', format('User attendance count (%s) does not meet minimum threshold (%s)', attendance_count, attendance_threshold),
+      'details', jsonb_build_object(
+        'is_guest', true,
+        'threshold_configured', true,
+        'attendance_count', attendance_count,
+        'required_threshold', attendance_threshold,
+        'meets_threshold', false
+      )
+    );
+  END IF;
+
+
+
+  -- All checks passed
+  RETURN jsonb_build_object(
+    'eligible', true,
+    'reason', 'User meets all eligibility criteria',
+    'details', jsonb_build_object(
+      'is_guest', true,
+      'threshold_configured', true,
+      'attendance_count', attendance_count,
+      'required_threshold', attendance_threshold,
+      'meets_threshold', true
+    )
+  );
+END;
+$function$;
