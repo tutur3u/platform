@@ -130,6 +130,13 @@ export type Database = {
         };
         Returns: boolean;
       };
+      check_guest_lead_eligibility: {
+        Args: {
+          p_user_id: string;
+          p_ws_id: string;
+        };
+        Returns: Json;
+      };
       check_ws_creator: {
         Args: {
           ws_id: string;

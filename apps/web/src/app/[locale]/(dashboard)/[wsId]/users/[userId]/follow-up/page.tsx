@@ -3,6 +3,7 @@ import {
   createClient,
 } from '@tuturuuu/supabase/next/server';
 import type { Metadata } from 'next';
+import { notFound } from 'next/navigation';
 import FollowUpClient from './client';
 import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
 
@@ -27,6 +28,26 @@ export default async function GuestLeadFollowUpPage({ params }: Props) {
 
   const supabase = await createClient();
   const sbAdmin = await createAdminClient();
+
+  // Check if user is eligible for lead generation email
+  const { data: eligibility, error: eligibilityError } = await supabase.rpc(
+    'check_guest_lead_eligibility',
+    {
+      p_ws_id: wsId,
+      p_user_id: userId,
+    }
+  );
+
+  // If not eligible or error occurred, show 404
+  if (
+    eligibilityError ||
+    !eligibility ||
+    typeof eligibility !== 'object' ||
+    !('eligible' in eligibility) ||
+    !eligibility.eligible
+  ) {
+    notFound();
+  }
 
   // Fetch user info and their groups for context
   const { data: user } = await supabase
