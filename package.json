@@ -43,6 +43,7 @@
     "format-and-lint": "biome check",
     "format-and-lint:fix": "biome check --write",
     "gemini": "bunx @google/gemini-cli",
+    "claude": "bunx @anthropic-ai/claude-code",
     "stop": "cd apps/db && bun sb:stop",
     "sb:status": "cd apps/db && bun sb:status",
     "sb:start": "cd apps/db && bun sb:start",
