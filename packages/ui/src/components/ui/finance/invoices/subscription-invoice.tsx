@@ -256,31 +256,40 @@ export function SubscriptionInvoice({
   const router = useRouter();
 
   // Subscription-specific state - use external props if provided, otherwise internal state
-  const [internalSelectedGroupId, setInternalSelectedGroupId] = useState<string>('');
+  const [internalSelectedGroupId, setInternalSelectedGroupId] =
+    useState<string>('');
   const [internalSelectedMonth, setInternalSelectedMonth] = useState<string>(
     new Date()
       .toISOString()
       .slice(0, 7) // Current month in YYYY-MM format
   );
-  
+
   const selectedGroupId = externalSelectedGroupId ?? internalSelectedGroupId;
-  const setSelectedGroupId = externalOnSelectedGroupIdChange ?? setInternalSelectedGroupId;
+  const setSelectedGroupId =
+    externalOnSelectedGroupIdChange ?? setInternalSelectedGroupId;
   const selectedMonth = externalSelectedMonth ?? internalSelectedMonth;
-  const setSelectedMonth = externalOnSelectedMonthChange ?? setInternalSelectedMonth;
-  
+  const setSelectedMonth =
+    externalOnSelectedMonthChange ?? setInternalSelectedMonth;
+
   // Initialize from external props
   useEffect(() => {
-    if (externalSelectedGroupId && externalSelectedGroupId !== internalSelectedGroupId) {
+    if (
+      externalSelectedGroupId &&
+      externalSelectedGroupId !== internalSelectedGroupId
+    ) {
       setInternalSelectedGroupId(externalSelectedGroupId);
     }
   }, [externalSelectedGroupId, internalSelectedGroupId]);
-  
+
   useEffect(() => {
-    if (externalSelectedMonth && externalSelectedMonth !== internalSelectedMonth) {
+    if (
+      externalSelectedMonth &&
+      externalSelectedMonth !== internalSelectedMonth
+    ) {
       setInternalSelectedMonth(externalSelectedMonth);
     }
   }, [externalSelectedMonth, internalSelectedMonth]);
-  
+
   const [subscriptionProducts, setSubscriptionProducts] = useState<
     Array<{
       product: {
@@ -384,7 +393,8 @@ export function SubscriptionInvoice({
     fallbackToastShownRef.current = false;
 
     // Use prefillAmount if provided, otherwise calculate from attendance
-    const attendanceDays = prefillAmount ?? getEffectiveAttendanceDays(userAttendance);
+    const attendanceDays =
+      prefillAmount ?? getEffectiveAttendanceDays(userAttendance);
 
     const { autoSelected, fallbackTriggered } =
       buildAutoSelectedProductsForGroup(
@@ -413,7 +423,8 @@ export function SubscriptionInvoice({
     }
 
     // Use prefillAmount if provided, otherwise calculate from attendance
-    const attendanceDays = prefillAmount ?? getEffectiveAttendanceDays(userAttendance);
+    const attendanceDays =
+      prefillAmount ?? getEffectiveAttendanceDays(userAttendance);
     if (attendanceDays === 0) return;
 
     const { autoSelected, fallbackTriggered } =
@@ -446,7 +457,7 @@ export function SubscriptionInvoice({
               existingItem.inventory.amount === null
                 ? attendanceDays
                 : Math.min(attendanceDays, existingItem.inventory.amount);
-            
+
             updated[existingIndex] = {
               ...existingItem,
               quantity: maxQuantity,
@@ -470,7 +481,13 @@ export function SubscriptionInvoice({
       );
       fallbackToastShownRef.current = true;
     }
-  }, [selectedGroupId, groupProducts, products, userAttendance?.length, prefillAmount]);
+  }, [
+    selectedGroupId,
+    groupProducts,
+    products,
+    userAttendance?.length,
+    prefillAmount,
+  ]);
 
   // Calculate totals for manual product selection
   const subscriptionSubtotal = useMemo(() => {

@@ -76,13 +76,15 @@ export const pendingInvoiceColumns = (
     cell: ({ row }) => {
       const monthsValue = row.getValue<string>('months_owed');
       if (!monthsValue) return <div className="min-w-48">-</div>;
-      
+
       // Parse the comma-separated months and format as range
-      const months = monthsValue.split(',').map(m => m.trim());
+      const months = monthsValue.split(',').map((m) => m.trim());
       const startMonth = moment(months[0] + '-01').format('MMM YYYY');
-      const endMonth = moment(months[months.length - 1] + '-01').format('MMM YYYY');
+      const endMonth = moment(months[months.length - 1] + '-01').format(
+        'MMM YYYY'
+      );
       const formattedRange = `${startMonth} → ${endMonth}`;
-      
+
       return (
         <div className="min-w-48">
           <span className="inline-flex items-center rounded-md bg-dynamic-blue/10 px-2.5 py-1 text-xs font-medium text-dynamic-blue">
@@ -159,24 +161,24 @@ export const pendingInvoiceColumns = (
       const groupId = row.getValue<string>('group_id');
       const monthsOwed = row.getValue<string>('months_owed');
       const attendanceDays = row.getValue<number>('attendance_days');
-      
+
       // Parse the months and get the LAST (most recent) unpaid month
-      const months = monthsOwed?.split(',').map(m => m.trim()).filter(Boolean) || [];
+      const months =
+        monthsOwed
+          ?.split(',')
+          .map((m) => m.trim())
+          .filter(Boolean) || [];
       const lastUnpaidMonth = months[months.length - 1] || '';
-      
+
       if (!wsId) return null;
-      
+
       // Build the URL with query params
       // Include amount (total attendance_days across all unpaid months) for prefilling
       const createInvoiceUrl = `/${wsId}/finance/invoices/new?type=subscription&user_id=${userId}&group_id=${groupId}&month=${lastUnpaidMonth}&amount=${attendanceDays}`;
-      
+
       return (
         <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            asChild
-          >
+          <Button variant="outline" size="sm" asChild>
             <Link href={createInvoiceUrl}>
               <FileText className="mr-2 h-4 w-4" />
               {t(`${namespace}.create_invoice`)}
