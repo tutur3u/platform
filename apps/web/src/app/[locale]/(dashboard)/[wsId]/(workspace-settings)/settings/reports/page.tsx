@@ -50,9 +50,17 @@ export default async function WorkspaceReportsSettingsPage({
   if (withoutPermission('manage_user_report_templates'))
     redirect(`/${wsId}/settings`);
 
-  const { data: reportData } = await getConfigs(wsId, await searchParams, reportConfigs);
-  const { data: leadGenData } = await getConfigs(wsId, await searchParams, leadGenerationConfigs);
-  
+  const { data: reportData } = await getConfigs(
+    wsId,
+    await searchParams,
+    reportConfigs
+  );
+  const { data: leadGenData } = await getConfigs(
+    wsId,
+    await searchParams,
+    leadGenerationConfigs
+  );
+
   const locale = await getLocale();
   const t = await getTranslations();
 
@@ -72,7 +80,8 @@ export default async function WorkspaceReportsSettingsPage({
       name: t(`ws-reports.${config.id.toLowerCase()}` as any),
     }));
 
-  const getReportConfig = (id: string) => reportConfigsData.find((c) => c.id === id)?.value;
+  const getReportConfig = (id: string) =>
+    reportConfigsData.find((c) => c.id === id)?.value;
 
   const parseDynamicText = (text?: string | null): ReactNode => {
     if (!text) return '';
@@ -112,8 +121,12 @@ export default async function WorkspaceReportsSettingsPage({
 
       <Tabs defaultValue="report" className="w-full">
         <TabsList className="grid w-full grid-cols-2 lg:w-[400px]">
-          <TabsTrigger value="report">{t('ws-reports.report_template')}</TabsTrigger>
-          <TabsTrigger value="lead-generation">{t('ws-reports.lead_generation')}</TabsTrigger>
+          <TabsTrigger value="report">
+            {t('ws-reports.report_template')}
+          </TabsTrigger>
+          <TabsTrigger value="lead-generation">
+            {t('ws-reports.lead_generation')}
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="report" className="mt-4">
@@ -151,9 +164,7 @@ export default async function WorkspaceReportsSettingsPage({
               }}
             />
 
-            <LeadGenerationPreview
-              configs={leadGenConfigsData}
-            />
+            <LeadGenerationPreview configs={leadGenConfigsData} />
           </div>
         </TabsContent>
       </Tabs>
@@ -169,7 +180,9 @@ async function getConfigs(
   const supabase = await createClient();
 
   // Get the list of config IDs from the provided configsList
-  const configIds = configsList.map((c) => c.id).filter((id): id is string => id !== undefined);
+  const configIds = configsList
+    .map((c) => c.id)
+    .filter((id): id is string => id !== undefined);
 
   const queryBuilder = supabase
     .from('workspace_configs')

@@ -11,31 +11,31 @@ interface Props {
   minimumAttendance?: number;
 
   // 🔴 REQUIRED CONFIG VARIABLES - Reuses existing report config variables:
-  
+
   // Brand/Header configs (shared with report-preview)
-  brandLogoUrl: string;              // BRAND_LOGO_URL - Logo image URL
-  brandName: string;                 // BRAND_NAME - Organization name
-  brandLocation?: string;            // BRAND_LOCATION - Location address (supports multiple lines with \n)
-  brandPhone: string;                // BRAND_PHONE_NUMBER - Contact phone number
-  
+  brandLogoUrl: string; // BRAND_LOGO_URL - Logo image URL
+  brandName: string; // BRAND_NAME - Organization name
+  brandLocation?: string; // BRAND_LOCATION - Location address (supports multiple lines with \n)
+  brandPhone: string; // BRAND_PHONE_NUMBER - Contact phone number
+
   // Email content configs
-  emailTitle: string;                // LEAD_EMAIL_TITLE - Main email title
-  emailGreeting: string;             // LEAD_EMAIL_GREETING - Opening greeting text
-                                     // Supports: {{leadName}}, {{className}}, {{teacherName}}, {{currentDate}}
-  
+  emailTitle: string; // LEAD_EMAIL_TITLE - Main email title
+  emailGreeting: string; // LEAD_EMAIL_GREETING - Opening greeting text
+  // Supports: {{leadName}}, {{className}}, {{teacherName}}, {{currentDate}}
+
   // Table configs
-  tableHeaderComments: string;       // LEAD_EMAIL_TABLE_HEADER_COMMENTS - Left column header
-  tableHeaderScore: string;          // LEAD_EMAIL_TABLE_HEADER_SCORE - Right column header
-  tableScoreScale?: string;          // LEAD_EMAIL_TABLE_SCORE_SCALE - Score scale description
-  
+  tableHeaderComments: string; // LEAD_EMAIL_TABLE_HEADER_COMMENTS - Left column header
+  tableHeaderScore: string; // LEAD_EMAIL_TABLE_HEADER_SCORE - Right column header
+  tableScoreScale?: string; // LEAD_EMAIL_TABLE_SCORE_SCALE - Score scale description
+
   // Footer configs
-  emailFooter: string;               // LEAD_EMAIL_FOOTER - Closing message/footer text
-  signatureTitle: string;            // LEAD_EMAIL_SIGNATURE_TITLE - Signer's title
-  signatureName: string;             // LEAD_EMAIL_SIGNATURE_NAME - Signer's name
-  
+  emailFooter: string; // LEAD_EMAIL_FOOTER - Closing message/footer text
+  signatureTitle: string; // LEAD_EMAIL_SIGNATURE_TITLE - Signer's title
+  signatureName: string; // LEAD_EMAIL_SIGNATURE_NAME - Signer's name
+
   // 🟡 OPTIONAL CONFIG VARIABLES - Can be added for more flexibility:
   emptyCommentsPlaceholder?: string; // LEAD_EMAIL_EMPTY_COMMENTS - Placeholder when no comments
-  emptyScorePlaceholder?: string;    // LEAD_EMAIL_EMPTY_SCORE - Placeholder when no score
+  emptyScorePlaceholder?: string; // LEAD_EMAIL_EMPTY_SCORE - Placeholder when no score
 }
 
 const LeadGenerationEmailTemplate = ({
@@ -64,17 +64,12 @@ const LeadGenerationEmailTemplate = ({
           {/* Header with Logo and Brand Info */}
           <div className="flex items-center justify-between gap-8">
             {brandLogoUrl && (
-              <Img
-                src={brandLogoUrl}
-                alt={`${brandName} Logo`}
-              />
+              <Img src={brandLogoUrl} alt={`${brandName} Logo`} />
             )}
 
             <div className="text-center">
               {brandName && (
-                <div className="text-center font-bold text-xl">
-                  {brandName}
-                </div>
+                <div className="text-center font-bold text-xl">{brandName}</div>
               )}
 
               {brandLocation && (
@@ -116,16 +111,48 @@ const LeadGenerationEmailTemplate = ({
 
             {/* Table */}
             <div className="mt-6">
-              <table style={{ width: '100%', borderCollapse: 'collapse', border: '1px solid black' }}>
+              <table
+                style={{
+                  width: '100%',
+                  borderCollapse: 'collapse',
+                  border: '1px solid black',
+                }}
+              >
                 <thead>
                   <tr>
-                    <th style={{ border: '1px solid black', backgroundColor: '#f9fafb', padding: '0.75rem', textAlign: 'center', fontWeight: 700, fontSize: '0.875rem', textTransform: 'uppercase' }}>
+                    <th
+                      style={{
+                        border: '1px solid black',
+                        backgroundColor: '#f9fafb',
+                        padding: '0.75rem',
+                        textAlign: 'center',
+                        fontWeight: 700,
+                        fontSize: '0.875rem',
+                        textTransform: 'uppercase',
+                      }}
+                    >
                       {tableHeaderComments}
                     </th>
-                    <th style={{ border: '1px solid black', backgroundColor: '#f9fafb', padding: '0.75rem', textAlign: 'center', fontWeight: 700, fontSize: '0.875rem' }}>
+                    <th
+                      style={{
+                        border: '1px solid black',
+                        backgroundColor: '#f9fafb',
+                        padding: '0.75rem',
+                        textAlign: 'center',
+                        fontWeight: 700,
+                        fontSize: '0.875rem',
+                      }}
+                    >
                       {tableHeaderScore}
                       {tableScoreScale && (
-                        <div style={{ marginTop: '0.25rem', fontWeight: 400, fontSize: '0.75rem', textTransform: 'none' }}>
+                        <div
+                          style={{
+                            marginTop: '0.25rem',
+                            fontWeight: 400,
+                            fontSize: '0.75rem',
+                            textTransform: 'none',
+                          }}
+                        >
                           {tableScoreScale}
                         </div>
                       )}
@@ -134,14 +161,36 @@ const LeadGenerationEmailTemplate = ({
                 </thead>
                 <tbody>
                   <tr>
-                    <td style={{ border: '1px solid black', padding: '1rem', verticalAlign: 'top' }}>
-                      <div style={{ minHeight: '200px', textAlign: 'justify', fontSize: '0.875rem', lineHeight: '1.625' }}>
+                    <td
+                      style={{
+                        border: '1px solid black',
+                        padding: '1rem',
+                        verticalAlign: 'top',
+                      }}
+                    >
+                      <div
+                        style={{
+                          minHeight: '200px',
+                          textAlign: 'justify',
+                          fontSize: '0.875rem',
+                          lineHeight: '1.625',
+                        }}
+                      >
                         {comments || emptyCommentsPlaceholder}
                       </div>
                     </td>
-                    <td style={{ border: '1px solid black', padding: '1rem', textAlign: 'center', verticalAlign: 'top' }}>
+                    <td
+                      style={{
+                        border: '1px solid black',
+                        padding: '1rem',
+                        textAlign: 'center',
+                        verticalAlign: 'top',
+                      }}
+                    >
                       <div style={{ minHeight: '200px', fontSize: '0.875rem' }}>
-                        {avgScore !== undefined ? avgScore : emptyScorePlaceholder}
+                        {avgScore !== undefined
+                          ? avgScore
+                          : emptyScorePlaceholder}
                       </div>
                     </td>
                   </tr>
@@ -165,9 +214,7 @@ const LeadGenerationEmailTemplate = ({
                   </div>
                 )}
                 {signatureName && (
-                  <div className="font-bold text-sm">
-                    {signatureName}
-                  </div>
+                  <div className="font-bold text-sm">{signatureName}</div>
                 )}
               </div>
             )}

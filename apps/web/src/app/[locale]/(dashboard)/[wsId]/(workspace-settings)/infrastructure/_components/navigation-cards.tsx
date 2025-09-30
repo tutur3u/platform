@@ -31,7 +31,9 @@ export default function NavigationCards({ cards }: Props) {
               <h3 className="mb-1 font-semibold text-lg transition-colors group-hover:text-primary">
                 {card.title}
               </h3>
-              <p className="text-muted-foreground text-sm">{card.description}</p>
+              <p className="text-muted-foreground text-sm">
+                {card.description}
+              </p>
               {card.count !== undefined && (
                 <div className="mt-3">
                   <span className="inline-flex items-center rounded-full bg-primary/10 px-2.5 py-0.5 font-medium text-primary text-sm">

@@ -31,13 +31,11 @@ export default async function GuestLeadFollowUpPage({ params }: Props) {
         const sbAdmin = await createAdminClient();
 
         // Check if user is eligible for lead generation email
-        const { data: eligibility, error: eligibilityError } = await supabase.rpc(
-          'check_guest_lead_eligibility',
-          {
+        const { data: eligibility, error: eligibilityError } =
+          await supabase.rpc('check_guest_lead_eligibility', {
             p_ws_id: wsId,
             p_user_id: userId,
-          }
-        );
+          });
 
         // If not eligible or error occurred, show 404
         if (

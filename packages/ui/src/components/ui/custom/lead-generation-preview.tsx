@@ -1,6 +1,6 @@
 'use client';
 
-import type { ReactNode} from 'react';
+import type { ReactNode } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../card';
 import { Separator } from '../separator';
 
@@ -65,7 +65,10 @@ export default function LeadGenerationPreview({
           leadData.currentDate || new Date().toLocaleDateString()
         )
         .replace(/{{avgScore}}/g, leadData.avgScore?.toString() || '')
-        .replace(/{{minimumAttendance}}/g, leadData.minimumAttendance?.toString() || '');
+        .replace(
+          /{{minimumAttendance}}/g,
+          leadData.minimumAttendance?.toString() || ''
+        );
     }
 
     // Split the text into segments of dynamic keys and plain text for display
@@ -93,7 +96,7 @@ export default function LeadGenerationPreview({
     className: '{{className}}',
     teacherName: '{{teacherName}}',
     avgScore: '90.1',
-    comments: 'Sample comments about the lead\'s performance...',
+    comments: "Sample comments about the lead's performance...",
   };
 
   const brandLogoUrl = getConfig('BRAND_LOGO_URL');
@@ -108,7 +111,9 @@ export default function LeadGenerationPreview({
   const emailFooter = getConfig('LEAD_EMAIL_FOOTER');
   const signatureTitle = getConfig('LEAD_EMAIL_SIGNATURE_TITLE');
   const signatureName = getConfig('LEAD_EMAIL_SIGNATURE_NAME');
-  const emptyCommentsPlaceholder = getConfig('LEAD_EMAIL_EMPTY_COMMENTS') || '...........................................................';
+  const emptyCommentsPlaceholder =
+    getConfig('LEAD_EMAIL_EMPTY_COMMENTS') ||
+    '...........................................................';
   const emptyScorePlaceholder = getConfig('LEAD_EMAIL_EMPTY_SCORE') || '...';
 
   // Check for missing required configs
@@ -153,7 +158,7 @@ export default function LeadGenerationPreview({
 
   const previewContent = (
     <div
-          className={`h-full rounded-lg border p-4 ${theme === 'dark' ? 'text-foreground' : 'text-black'} md:p-12 print:border-0 print:rounded-none print:h-auto print:p-8 print:text-black print:bg-white`}
+      className={`h-full rounded-lg border p-4 ${theme === 'dark' ? 'text-foreground' : 'text-black'} md:p-12 print:border-0 print:rounded-none print:h-auto print:p-8 print:text-black print:bg-white`}
     >
       {/* Header with Logo and Brand Info */}
       <div className="flex items-center justify-between gap-8">
@@ -163,31 +168,29 @@ export default function LeadGenerationPreview({
             alt="logo"
             // onLoad={() => setIsLogoLoaded(true)}
           />
-            )}
+        )}
 
         <div className="text-center">
           {brandName && (
-            <div className="text-center font-bold text-xlTh">
-              {brandName}
-            </div>
+            <div className="text-center font-bold text-xlTh">{brandName}</div>
           )}
 
           {brandLocation && (
             <div className="text-center font-semibold text-wrap whitespace-pre-wrap text-sm">
               {brandLocation}
             </div>
-              )}
+          )}
 
           {brandPhone && (
             <div className="flex flex-wrap items-center justify-center gap-2 break-keep text-center font-semibold text-sm print:gap-2">
               {brandPhone}
-                </div>
-              )}
             </div>
-          </div>
-        {(!!brandName || !!brandLocation || !!brandPhone) && (
-            <Separator className="my-4" />
-            )}
+          )}
+        </div>
+      </div>
+      {(!!brandName || !!brandLocation || !!brandPhone) && (
+        <Separator className="my-4" />
+      )}
 
       {/* Main Content */}
       <div className="p-3">
@@ -200,7 +203,9 @@ export default function LeadGenerationPreview({
 
         {/* Greeting */}
         {emailGreeting && (
-          <div className={`mt-2 whitespace-pre-wrap text-left text-sm ${theme === 'dark' ? 'text-foreground' : 'text-black'} print:text-black`}>
+          <div
+            className={`mt-2 whitespace-pre-wrap text-left text-sm ${theme === 'dark' ? 'text-foreground' : 'text-black'} print:text-black`}
+          >
             {parseDynamicText(emailGreeting)}
           </div>
         )}
@@ -227,14 +232,16 @@ export default function LeadGenerationPreview({
               <tr>
                 <td className="border border-black p-4 align-top">
                   <div className="min-h-[200px] text-justify text-sm leading-relaxed">
-                    {typeof sampleData.comments === 'string' && sampleData.comments
+                    {typeof sampleData.comments === 'string' &&
+                    sampleData.comments
                       ? sampleData.comments
                       : emptyCommentsPlaceholder}
                   </div>
                 </td>
                 <td className="border border-black p-4 text-center align-top">
                   <div className="min-h-[200px] text-sm">
-                    {sampleData.avgScore !== undefined && sampleData.avgScore !== null
+                    {sampleData.avgScore !== undefined &&
+                    sampleData.avgScore !== null
                       ? sampleData.avgScore
                       : emptyScorePlaceholder}
                   </div>
@@ -246,7 +253,9 @@ export default function LeadGenerationPreview({
 
         {/* Footer */}
         {emailFooter && (
-          <div className={`mt-4 whitespace-pre-wrap text-left text-sm ${theme === 'dark' ? 'text-foreground' : 'text-black'} print:text-black`}>
+          <div
+            className={`mt-4 whitespace-pre-wrap text-left text-sm ${theme === 'dark' ? 'text-foreground' : 'text-black'} print:text-black`}
+          >
             {parseDynamicText(emailFooter)}
           </div>
         )}
@@ -260,16 +269,13 @@ export default function LeadGenerationPreview({
               </div>
             )}
             {signatureName && (
-              <div className="font-bold text-sm">
-                {signatureName}
-              </div>
+              <div className="font-bold text-sm">{signatureName}</div>
             )}
           </div>
         )}
       </div>
     </div>
   );
-
 
   if (showCard) {
     return (
@@ -299,4 +305,3 @@ export default function LeadGenerationPreview({
     </div>
   );
 }
-

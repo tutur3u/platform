@@ -76,8 +76,12 @@ export default async function WorkspacePromotionsPage({
               singularTitle={t('ws-inventory-promotions.singular')}
               description={t('ws-inventory-promotions.description')}
               createTitle={t('ws-inventory-promotions.create')}
-              createDescription={t('ws-inventory-promotions.create_description')}
-              form={<PromotionForm wsId={wsId} wsUserId={wsUser.virtual_user_id} />}
+              createDescription={t(
+                'ws-inventory-promotions.create_description'
+              )}
+              form={
+                <PromotionForm wsId={wsId} wsUserId={wsUser.virtual_user_id} />
+              }
               settingsData={settingsRow ? settingsRow : undefined}
               settingsForm={
                 <WorkspaceSettingsForm
