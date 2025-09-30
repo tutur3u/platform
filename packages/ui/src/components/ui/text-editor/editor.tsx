@@ -174,7 +174,7 @@ export function RichTextEditor({
 
         for (let i = 0; i < items.length; i++) {
           const item = items[i];
-          if (item.type.startsWith('image/')) {
+          if (item?.type.startsWith('image/')) {
             event.preventDefault();
             const file = item.getAsFile();
             if (!file) continue;
@@ -193,12 +193,16 @@ export function RichTextEditor({
               .then((url) => {
                 const { state } = view;
                 const { from } = state.selection;
+                if (state.schema.nodes.image) {
                 const transaction = state.tr.insert(
-                  from,
-                  state.schema.nodes.image.create({ src: url })
-                );
-                view.dispatch(transaction);
-                toast.success('Image uploaded successfully');
+                    from,
+                    state.schema.nodes.image.create({ src: url })
+                  );
+                  view.dispatch(transaction);
+                  toast.success('Image uploaded successfully');
+                } else {
+                  toast.error('Image node not found');
+                }
               })
               .catch((error) => {
                 console.error('Failed to upload pasted image:', error);
