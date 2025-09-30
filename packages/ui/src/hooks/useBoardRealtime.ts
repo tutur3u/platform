@@ -55,16 +55,13 @@ export function useBoardRealtime(
           filter: `list_id=in.(${listIds.join(',')})`,
         },
         async (payload) => {
-          const { eventType, old: oldRecord, new: newRecord } = payload;
-
           if (!mounted) return;
+
+          const { eventType, old: oldRecord, new: newRecord } = payload;
 
           // Call custom callback if provided
           if (options?.onTaskChange && (oldRecord || newRecord)) {
-            options.onTaskChange(
-              (oldRecord || newRecord) as Task,
-              eventType as 'INSERT' | 'UPDATE' | 'DELETE'
-            );
+            options.onTaskChange((oldRecord || newRecord) as Task, eventType);
           }
 
           // Update React Query cache
@@ -117,9 +114,9 @@ export function useBoardRealtime(
           filter: `board_id=eq.${boardId}`,
         },
         (payload) => {
-          const { eventType, old: oldRecord, new: newRecord } = payload;
-
           if (!mounted) return;
+
+          const { eventType, old: oldRecord, new: newRecord } = payload;
 
           if (eventType === 'INSERT' && newRecord) {
             setListIds((prev) => [...prev, newRecord.id]);
@@ -130,7 +127,7 @@ export function useBoardRealtime(
           if (options?.onListChange && (oldRecord || newRecord)) {
             options.onListChange(
               (oldRecord || newRecord) as TaskList,
-              eventType as 'INSERT' | 'UPDATE' | 'DELETE'
+              eventType
             );
           }
 

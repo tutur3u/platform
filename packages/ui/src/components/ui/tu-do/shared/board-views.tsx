@@ -23,10 +23,12 @@ export type ViewType = 'kanban' | 'status-grouped' | 'list' | 'timeline';
 
 interface Props {
   workspace: Workspace;
-  board: TaskBoard & { tasks: Task[]; lists: TaskList[] };
+  board: TaskBoard;
+  tasks: Task[];
+  lists: TaskList[];
 }
 
-export function BoardViews({ workspace, board }: Props) {
+export function BoardViews({ workspace, board, tasks, lists }: Props) {
   const [currentView, setCurrentView] = useState<ViewType>('kanban');
   const [selectedLabels, setSelectedLabels] = useState<TaskLabel[]>([]);
   // Local per-session optimistic overrides (e.g., timeline resize) so switching views preserves changes
@@ -38,10 +40,10 @@ export function BoardViews({ workspace, board }: Props) {
   // Filter tasks based on selected labels
   const filteredTasks = useMemo(() => {
     if (selectedLabels.length === 0) {
-      return board.tasks;
+      return tasks;
     }
 
-    return board.tasks.filter((task) => {
+    return tasks.filter((task) => {
       // If task has no labels, exclude it from results
       if (!task.labels || task.labels.length === 0) {
         return false;
@@ -52,7 +54,7 @@ export function BoardViews({ workspace, board }: Props) {
         task.labels?.some((taskLabel) => taskLabel.id === selectedLabel.id)
       );
     });
-  }, [board.tasks, selectedLabels]);
+  }, [tasks, selectedLabels]);
 
   // Apply optimistic overrides so views receive up-to-date edits (durations, name, dates) even before refetch.
   const effectiveTasks = useMemo(() => {
@@ -83,7 +85,7 @@ export function BoardViews({ workspace, board }: Props) {
       case 'status-grouped':
         return (
           <StatusGroupedBoard
-            lists={board.lists}
+            lists={lists}
             tasks={effectiveTasks}
             boardId={board.id}
             onUpdate={handleUpdate}
@@ -97,7 +99,7 @@ export function BoardViews({ workspace, board }: Props) {
             workspace={workspace}
             boardId={board.id}
             tasks={effectiveTasks}
-            lists={board.lists}
+            lists={lists}
             isLoading={false}
           />
         );
@@ -106,7 +108,7 @@ export function BoardViews({ workspace, board }: Props) {
           <ListView
             boardId={board.id}
             tasks={effectiveTasks}
-            lists={board.lists}
+            lists={lists}
             isPersonalWorkspace={workspace.personal}
           />
         );
@@ -114,14 +116,14 @@ export function BoardViews({ workspace, board }: Props) {
         return (
           <TimelineBoard
             tasks={effectiveTasks}
-            lists={board.lists}
+            lists={lists}
             onTaskPartialUpdate={handleTaskPartialUpdate}
           />
         );
       default:
         return (
           <StatusGroupedBoard
-            lists={board.lists}
+            lists={lists}
             tasks={effectiveTasks}
             boardId={board.id}
             onUpdate={handleUpdate}
@@ -136,6 +138,8 @@ export function BoardViews({ workspace, board }: Props) {
     <div className="-m-2 md:-mx-4 flex h-[calc(100vh-1rem)] flex-1 flex-col">
       <BoardHeader
         board={board}
+        tasks={tasks}
+        lists={lists}
         currentView={currentView}
         onViewChange={setCurrentView}
         selectedLabels={selectedLabels}

@@ -6,6 +6,7 @@ import type { Workspace } from '@tuturuuu/types/db';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskBoard } from '@tuturuuu/types/primitives/TaskBoard';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
+import { useBoardRealtime } from '@tuturuuu/ui/hooks/useBoardRealtime';
 import {
   getTaskBoard,
   getTaskLists,
@@ -74,6 +75,15 @@ export function BoardClient({
     enabled: isClient, // Only enable after hydration
   });
 
+  useBoardRealtime(boardId, {
+    onTaskChange: (task, eventType) => {
+      console.log(`🔄 Task ${eventType}:`, task);
+    },
+    onListChange: (list, eventType) => {
+      console.log(`🔄 Task list ${eventType}:`, list);
+    },
+  });
+
   // Ensure board is not null and has required properties before rendering
   if (!board || !board.id) {
     return (
@@ -88,13 +98,9 @@ export function BoardClient({
   return (
     <BoardViews
       workspace={workspace}
-      board={
-        {
-          ...board,
-          tasks,
-          lists,
-        } as TaskBoard & { tasks: Task[]; lists: TaskList[] }
-      }
+      board={board}
+      tasks={tasks}
+      lists={lists}
     />
   );
 }

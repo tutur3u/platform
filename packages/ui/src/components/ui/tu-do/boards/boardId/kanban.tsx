@@ -44,7 +44,6 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
-import { useBoardRealtime } from '@tuturuuu/ui/hooks/useBoardRealtime';
 import { useHorizontalScroll } from '@tuturuuu/ui/hooks/useHorizontalScroll';
 import { toast } from '@tuturuuu/ui/sonner';
 import { coordinateGetter } from '@tuturuuu/utils/keyboard-preset';
@@ -129,22 +128,6 @@ export function KanbanBoard({
   const boardRef = useRef<HTMLDivElement>(null);
   const dragStartCardLeft = useRef<number | null>(null);
   const overlayWidth = 350; // Column width
-
-  useBoardRealtime(boardId, {
-    onTaskChange: (task, eventType) => {
-      // Handle task selection cleanup on delete
-      if (eventType === 'DELETE') {
-        setSelectedTasks((prev) => {
-          const newSet = new Set(prev);
-          newSet.delete(task.id);
-          return newSet;
-        });
-      }
-    },
-    onListChange: (list, eventType) => {
-      console.log(`🔄 Task list ${eventType}:`, list);
-    },
-  });
 
   const handleUpdate = useCallback(() => {
     // Invalidate the tasks query to trigger a refetch
