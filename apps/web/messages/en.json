@@ -49,6 +49,10 @@
   },
   "common": {
     "requires_attendance": "Requires attendance",
+    "view_email": "View Email",
+    "contacted": "Contacted",
+    "send_email": "Follow Up",
+    "pending": "Pending",
     "success": "Success",
     "report-problem": "Leave a Feedback",
     "report-problem-description": "Help us improve by reporting issues you've encountered. Your feedback is valuable to us.",
@@ -1019,6 +1023,19 @@
       "this_year": "This Year"
     }
   },
+  "guest-lead-data-table": {
+    "id": "ID",
+    "full_name": "Full Name",
+    "email": "Email",
+    "phone": "Phone",
+    "attendance_count": "Attendance Count",
+    "group": "Group",
+    "group_name": "Group Name",
+    "status": "Status",
+    "created_at": "Created At",
+    "actions": "Actions",
+    "has_lead_generation": "Has Lead Generation"
+  },
   "team-tabs": {
     "overview": "Overview",
     "members": "Members",
@@ -1041,7 +1058,55 @@
     "group_tags": "Group Tags",
     "attendance": "Attendance",
     "reports": "Reports",
-    "fields": "Fields"
+    "fields": "Fields",
+    "guest_leads": "Guest Leads"
+  },
+  "users": {
+    "guest_leads": {
+      "plural": "Guest User Leads",
+      "singular": "Guest User Lead",
+      "description": "Manage guest user leads and follow-up emails in your workspace.",
+      "create_settings_tooltip": "Create guest lead settings to enable lead generation.",
+      "create_settings": "Create Settings"
+    },
+    "guest_user_checkup_threshold": "Minimum Attendance",
+    "follow_up": {
+      "trial_period_report_subject": "{sourceName} | Trial Period Report {date} for {userName}",
+      "compose_email": "Compose Email",
+      "compose_email_description": "Send a follow-up email to the user",
+      "minimum_attendance_not_set": "Minimum Attendance Not Set",
+      "minimum_attendance_not_set_description": "Please set minimum attendance requirements before sending reports",
+      "group": "Group",
+      "select_group": "Select Group",
+      "group_manager": "Group Manager",
+      "select_manager": "Select Manager",
+      "select_manager_warning": "Please select a manager before proceeding",
+      "to": "To",
+      "user_email_placeholder": "user@example.com",
+      "sender_name": "Sender Name",
+      "sender_name_placeholder": "Your Name",
+      "sender_email": "Sender Email",
+      "sender_email_placeholder": "your.email@example.com",
+      "subject": "Subject",
+      "subject_placeholder": "Email subject line",
+      "report_content": "Report Content",
+      "report_content_placeholder": "Enter the email content here...",
+      "sending": "Sending...",
+      "send_email": "Send Email",
+      "attendance_overview": "Attendance Overview",
+      "performance_metrics": "Performance Metrics",
+      "live_preview": "Live Preview",
+      "live_preview_description": "See how your email will look before sending",
+      "no_report_data": "No Report Data Available",
+      "no_group_assigned": "No Group Assigned",
+      "default_content": "Default Content",
+      "unknown_user": "Unknown User",
+      "unknown_group": "Unknown Group",
+      "na": "N/A"
+    },
+    "guest_lead_threshold": {
+      "description": "Modify the minimum amount of date a user has to attend to be elligible for a follow up email"
+    }
   },
   "healthcare-tabs": {
     "overview": "Overview",
@@ -1772,6 +1837,8 @@
   "ws-reports": {
     "report": "Report",
     "reports": "Reports",
+    "report_template": "Report Template",
+    "lead_generation": "Lead Generation",
     "user_data": "User Statistics",
     "no_scores": "No scores data",
     "average_score": "Average score",

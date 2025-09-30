@@ -1,14 +1,19 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
 import type { WorkspaceConfig } from '@tuturuuu/types/primitives/WorkspaceConfig';
+import LeadGenerationPreview from '@tuturuuu/ui/custom/lead-generation-preview';
 import ReportPreview from '@tuturuuu/ui/custom/report-preview';
 import { Separator } from '@tuturuuu/ui/separator';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { getPermissions, getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { getLocale, getTranslations } from 'next-intl/server';
 import type { ReactNode } from 'react';
 import { CustomDataTable } from '@/components/custom-data-table';
-import { availableConfigs } from '@/constants/configs/reports';
+import {
+  leadGenerationConfigs,
+  reportConfigs,
+} from '@/constants/configs/reports';
 import { configColumns } from './columns';
 
 export const metadata: Metadata = {
@@ -45,18 +50,38 @@ export default async function WorkspaceReportsSettingsPage({
   if (withoutPermission('manage_user_report_templates'))
     redirect(`/${wsId}/settings`);
 
-  const { data } = await getConfigs(wsId, await searchParams);
+  const { data: reportData } = await getConfigs(
+    wsId,
+    await searchParams,
+    reportConfigs
+  );
+  const { data: leadGenData } = await getConfigs(
+    wsId,
+    await searchParams,
+    leadGenerationConfigs
+  );
+
   const locale = await getLocale();
   const t = await getTranslations();
 
-  const configs = data.map((config) => ({
+  const reportConfigsData = reportData.map((config) => ({
     ...config,
     ws_id: wsId,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     name: config?.id ? t(`ws-reports.${config.id.toLowerCase()}` as any) : '',
   }));
 
-  const getConfig = (id: string) => configs.find((c) => c.id === id)?.value;
+  const leadGenConfigsData = leadGenData
+    .filter((config): config is typeof config & { id: string } => !!config.id) // Filter out configs without id and narrow type
+    .map((config) => ({
+      ...config,
+      ws_id: wsId,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      name: t(`ws-reports.${config.id.toLowerCase()}` as any),
+    }));
+
+  const getReportConfig = (id: string) =>
+    reportConfigsData.find((c) => c.id === id)?.value;
 
   const parseDynamicText = (text?: string | null): ReactNode => {
     if (!text) return '';
@@ -93,36 +118,77 @@ export default async function WorkspaceReportsSettingsPage({
         </div>
       </div>
       <Separator className="my-4" />
-      <div className="grid gap-4 xl:grid-cols-2">
-        <CustomDataTable
-          columnGenerator={configColumns}
-          namespace="api-key-data-table"
-          data={configs}
-          defaultVisibility={{
-            id: false,
-            updated_at: false,
-            created_at: false,
-          }}
-        />
 
-        <ReportPreview
-          t={t}
-          lang={locale}
-          parseDynamicText={parseDynamicText}
-          getConfig={getConfig}
-        />
-      </div>
+      <Tabs defaultValue="report" className="w-full">
+        <TabsList className="grid w-full grid-cols-2 lg:w-[400px]">
+          <TabsTrigger value="report">
+            {t('ws-reports.report_template')}
+          </TabsTrigger>
+          <TabsTrigger value="lead-generation">
+            {t('ws-reports.lead_generation')}
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="report" className="mt-4">
+          <div className="grid gap-4 xl:grid-cols-2">
+            <CustomDataTable
+              columnGenerator={configColumns}
+              namespace="api-key-data-table"
+              data={reportConfigsData}
+              defaultVisibility={{
+                id: false,
+                updated_at: false,
+                created_at: false,
+              }}
+            />
+
+            <ReportPreview
+              t={t}
+              lang={locale}
+              parseDynamicText={parseDynamicText}
+              getConfig={getReportConfig}
+            />
+          </div>
+        </TabsContent>
+
+        <TabsContent value="lead-generation" className="mt-4">
+          <div className="grid gap-4 xl:grid-cols-2">
+            <CustomDataTable
+              columnGenerator={configColumns}
+              namespace="api-key-data-table"
+              data={leadGenConfigsData}
+              defaultVisibility={{
+                id: false,
+                updated_at: false,
+                created_at: false,
+              }}
+            />
+
+            <LeadGenerationPreview configs={leadGenConfigsData} />
+          </div>
+        </TabsContent>
+      </Tabs>
     </>
   );
 }
 
-async function getConfigs(wsId: string, { q }: SearchParams) {
+async function getConfigs(
+  wsId: string,
+  { q }: SearchParams,
+  configsList: (WorkspaceConfig & { defaultValue: string })[]
+) {
   const supabase = await createClient();
+
+  // Get the list of config IDs from the provided configsList
+  const configIds = configsList
+    .map((c) => c.id)
+    .filter((id): id is string => id !== undefined);
 
   const queryBuilder = supabase
     .from('workspace_configs')
     .select('*')
     .eq('ws_id', wsId)
+    .in('id', configIds) // Only fetch configs that are in the provided list
     .order('created_at', { ascending: false });
 
   if (q) queryBuilder.ilike('name', `%${q}%`);
@@ -130,24 +196,21 @@ async function getConfigs(wsId: string, { q }: SearchParams) {
   const { data: rawData, error } = await queryBuilder;
   if (error) throw error;
 
-  // Create a copy of availableConfigs to include in the response
+  // Create a copy of configsList to include in the response
   const configs = [
-    ...availableConfigs.map(({ defaultValue, ...rest }) => ({
+    ...configsList.map(({ defaultValue, ...rest }) => ({
       ...rest,
       value: defaultValue,
     })),
   ];
 
-  // If rawData is not empty, merge it with availableConfigs
+  // If rawData is not empty, merge it with configsList
   if (rawData && rawData.length) {
     rawData.forEach((config) => {
       const index = configs.findIndex((c) => c.id === config.id);
       if (index !== -1) {
         // Replace the default config with the one from the database
         configs[index] = { ...configs[index], ...config };
-      } else {
-        // If the config does not exist in availableConfigs, add it
-        configs.push(config);
       }
     });
   }
