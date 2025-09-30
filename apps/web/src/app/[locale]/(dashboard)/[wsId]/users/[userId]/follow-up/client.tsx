@@ -14,9 +14,8 @@ import type { WorkspaceUserReport } from '@tuturuuu/types/db';
 import type { WorkspaceConfig } from '@tuturuuu/types/primitives/WorkspaceConfig';
 import UserMonthAttendance from '../../attendance/user-month-attendance';
 import ScoreDisplay from '../../reports/[reportId]/score-display';
-import ReportPreview from '@tuturuuu/ui/custom/report-preview';
-import EmailReportPreview from '@tuturuuu/ui/custom/email-report-preview';
-import { useLocale, useTranslations } from 'next-intl';
+import LeadGenerationEmailPreview from './lead-generation-email-preview';
+import { useTranslations } from 'next-intl';
 import type { ReactNode } from 'react';
 import { CardHeader, CardTitle } from '@tuturuuu/ui/card';
 import { availableConfigs } from '@/constants/configs/reports';
@@ -56,7 +55,6 @@ export default function FollowUpClient({
   userGroups?: Array<{ id: string; name: string | null }>;
 }) {
   const supabase = createClient();
-  const locale = useLocale();
   const t = useTranslations();
 
   // Group selection state based on user's groups
@@ -116,10 +114,8 @@ export default function FollowUpClient({
     if (selectedManagerName === undefined) setSelectedManagerName(names[0]);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [groupManagersQuery.data, groupId]);
+  
   const effectiveManagerName = selectedManagerName;
-
-  const getConfig = (id: string) =>
-    configsQuery.data?.find((c) => c.id === id)?.value;
 
   const parseDynamicText = (text?: string | null): ReactNode => {
     if (!text) return '';
@@ -308,32 +304,50 @@ export default function FollowUpClient({
 
     // Import required dependencies
     const { inlineEmailStyles } = await import('@/utils/email-css');
-    const { renderToString } = await import('react-dom/server');
+    const { render } = await import('@tuturuuu/transactional/react/email');
     const React = await import('react');
+    const LeadGenerationEmailTemplate = (
+      await import('@/app/[locale]/(dashboard)/[wsId]/mail/lead-generation-email-template')
+    ).default;
     
     const emailTitle = parseDynamicText(form.watch('subject')) as string || 'Follow-up Report';
     
-    // Create the email report component
-    const emailReportElement = React.createElement(EmailReportPreview, {
-      t: (key: string) => key, // Simple fallback for translations
-      lang: locale,
-      parseDynamicText: parseDynamicText,
-      getConfig: getConfig,
-      data: {
-        title: parseDynamicText(form.watch('subject')) as string,
-        content: parseDynamicText(form.watch('content')) as string,
-        score:
-          typeof mockReport.score === 'number'
-            ? mockReport.score.toFixed(1)
-            : mockReport.score
-              ? String(mockReport.score)
-              : '',
-        feedback: '',
-      },
+    // Get config helper
+    const getConfig = (id: string) => configsQuery.data?.find((c) => c.id === id)?.value;
+    
+    // Create the lead generation email template
+    const emailElement = React.createElement(LeadGenerationEmailTemplate, {
+      leadName: userName,
+      className: selectedGroup?.name ?? undefined,
+      teacherName: effectiveManagerName,
+      avgScore: typeof mockReport.score === 'number' ? mockReport.score : undefined,
+      comments: parseDynamicText(form.watch('content')) as string,
+      currentDate: new Date().toLocaleDateString(),
+      
+      // Required configs
+      brandLogoUrl: getConfig('BRAND_LOGO_URL') || '',
+      brandName: getConfig('BRAND_NAME') || '',
+      brandPhone: getConfig('BRAND_PHONE_NUMBER') || '',
+      emailTitle: getConfig('LEAD_EMAIL_TITLE') || '',
+      emailGreeting: getConfig('LEAD_EMAIL_GREETING') || '',
+      tableHeaderComments: getConfig('LEAD_EMAIL_TABLE_HEADER_COMMENTS') || '',
+      tableHeaderScore: getConfig('LEAD_EMAIL_TABLE_HEADER_SCORE') || '',
+      emailFooter: getConfig('LEAD_EMAIL_FOOTER') || '',
+      signatureTitle: getConfig('LEAD_EMAIL_SIGNATURE_TITLE') || '',
+      signatureName: getConfig('LEAD_EMAIL_SIGNATURE_NAME') || '',
+      
+      // Optional configs
+      brandLocation: getConfig('BRAND_LOCATION') ?? undefined,
+      tableScoreScale: getConfig('LEAD_EMAIL_TABLE_SCORE_SCALE') ?? undefined,
+      brandLogoWidth: getConfig('LEAD_EMAIL_BRAND_LOGO_WIDTH') ?? undefined,
+      brandLogoHeight: getConfig('LEAD_EMAIL_BRAND_LOGO_HEIGHT') ?? undefined,
+      titleColor: getConfig('LEAD_EMAIL_TITLE_COLOR') ?? undefined,
+      emptyCommentsPlaceholder: getConfig('LEAD_EMAIL_EMPTY_COMMENTS') ?? undefined,
+      emptyScorePlaceholder: getConfig('LEAD_EMAIL_EMPTY_SCORE') ?? undefined,
     });
     
-    // Render the email report to HTML string
-    const reportHTML = renderToString(emailReportElement);
+    // Render the email template to HTML string
+    const reportHTML = await render(emailElement);
     
     // Apply email-safe CSS inlining using Juice
     const emailContent = inlineEmailStyles(reportHTML, emailTitle);
@@ -583,22 +597,15 @@ export default function FollowUpClient({
 
           <div className="flex-1 px-6 pb-6 overflow-y-auto">
             {mockReport && configsQuery.data ? (
-              <ReportPreview
-                t={(key: string) => key} // Simple fallback for translations
-                lang={locale}
-                parseDynamicText={parseDynamicText}
-                getConfig={getConfig}
-                theme="light"
-                data={{
-                  title: parseDynamicText(form.watch('subject')) as string,
-                  content: parseDynamicText(form.watch('content')) as string,
-                  score:
-                    typeof mockReport.score === 'number'
-                      ? mockReport.score.toFixed(1)
-                      : mockReport.score
-                        ? String(mockReport.score)
-                        : '',
-                  feedback: '',
+              <LeadGenerationEmailPreview
+                configs={configsQuery.data}
+                leadData={{
+                  leadName: userName,
+                  className: selectedGroup?.name ?? undefined,
+                  teacherName: effectiveManagerName,
+                  avgScore: typeof mockReport.score === 'number' ? mockReport.score : undefined,
+                  comments: parseDynamicText(form.watch('content')) as string,
+                  currentDate: new Date().toLocaleDateString(),
                 }}
               />
             ) : (
