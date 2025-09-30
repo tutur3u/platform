@@ -145,6 +145,7 @@ function TaskEditDialogComponent({
   const hasUnsavedChangesRef = useRef<boolean>(false);
   const quickDueRef = useRef<(days: number | null) => void>(() => {});
   const updateEstimationRef = useRef<(points: number | null) => void>(() => {});
+  const [workspaceId, setWorkspaceId] = useState<string | null>(null);
 
   // Use the React Query mutation hook for updating tasks
   const updateTaskMutation = useUpdateTask(boardId);
@@ -272,7 +273,11 @@ function TaskEditDialogComponent({
         .single();
       if (boardErr) throw boardErr;
       setBoardConfig(board as any);
-      if ((board as any)?.ws_id) await fetchLabels((board as any).ws_id);
+      const wsId = (board as any)?.ws_id;
+      if (wsId) {
+        setWorkspaceId(wsId);
+        await fetchLabels(wsId);
+      }
     } catch (e) {
       console.error('Failed loading board config or labels', e);
     }
@@ -666,6 +671,48 @@ function TaskEditDialogComponent({
   };
 
   // Label selection handlers
+  // Handle image upload to Supabase storage
+  const handleImageUpload = useCallback(
+    async (file: File): Promise<string> => {
+      if (!workspaceId) {
+        throw new Error('Workspace ID not found');
+      }
+
+      const supabase = createClient();
+
+      // Generate unique filename
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
+      const filePath = `${workspaceId}/task-images/${fileName}`;
+
+      // Upload to Supabase storage
+      const { data, error } = await supabase.storage
+        .from('workspaces')
+        .upload(filePath, file, {
+          contentType: file.type,
+          upsert: false,
+        });
+
+      if (error) {
+        console.error('Upload error:', error);
+        throw new Error('Failed to upload image');
+      }
+
+      // Get signed URL (valid for 1 year)
+      const { data: signedUrlData, error: signedUrlError } = await supabase.storage
+        .from('workspaces')
+        .createSignedUrl(data.path, 31536000); // 365 days in seconds
+
+      if (signedUrlError) {
+        console.error('Signed URL error:', signedUrlError);
+        throw new Error('Failed to generate signed URL');
+      }
+
+      return signedUrlData.signedUrl;
+    },
+    [workspaceId]
+  );
+
   const toggleLabel = async (label: WorkspaceTaskLabel) => {
     const exists = selectedLabels.some((l) => l.id === label.id);
     const supabase = createClient();
@@ -1130,6 +1177,8 @@ function TaskEditDialogComponent({
                   writePlaceholder="Add a detailed description, attach files, or use markdown..."
                   titlePlaceholder=""
                   className="h-full border-0 bg-transparent px-4 focus-visible:outline-0 focus-visible:ring-0 md:px-8"
+                  workspaceId={workspaceId || undefined}
+                  onImageUpload={handleImageUpload}
                 />
               </div>
             </div>

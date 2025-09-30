@@ -10,17 +10,20 @@ import {
   Heading2,
   Heading3,
   Highlighter,
+  ImageIcon,
   Italic,
   Link,
   List,
   ListOrdered,
+  Loader2,
   Strikethrough,
   Subscript,
   Superscript,
 } from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
+import { toast } from '@tuturuuu/ui/sonner';
 import { Toggle } from '@tuturuuu/ui/toggle';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 type LinkEditorContext = 'bubble' | 'popover' | null;
 
@@ -30,9 +33,15 @@ interface ToolBarProps {
   onSave: () => void;
   saveButtonLabel?: string;
   savedButtonLabel?: string;
+  workspaceId?: string;
+  onImageUpload?: (file: File) => Promise<string>;
 }
 
-export function ToolBar({ editor }: ToolBarProps) {
+export function ToolBar({
+  editor,
+  workspaceId,
+  onImageUpload,
+}: ToolBarProps) {
   const [linkEditorContext, setLinkEditorContext] =
     useState<LinkEditorContext>(null);
   const [linkHref, setLinkHref] = useState('');
@@ -43,6 +52,8 @@ export function ToolBar({ editor }: ToolBarProps) {
   } | null>(null);
   const [isEditingLink, setIsEditingLink] = useState(false);
   const [, setEditorVersion] = useState(0);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const closeLinkEditor = useCallback((context?: 'bubble' | 'popover') => {
     setLinkEditorContext((current) => {
@@ -246,6 +257,50 @@ export function ToolBar({ editor }: ToolBarProps) {
     [closeLinkEditor, editor, isEditingLink]
   );
 
+  const handleImageUpload = useCallback(
+    async (event: React.ChangeEvent<HTMLInputElement>) => {
+      const file = event.target.files?.[0];
+      if (!file || !editor || !onImageUpload) return;
+
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        toast.error('Please select an image file');
+        return;
+      }
+
+      // Validate file size (max 5MB)
+      const maxSize = 5 * 1024 * 1024;
+      if (file.size > maxSize) {
+        toast.error('Image size must be less than 5MB');
+        return;
+      }
+
+      try {
+        setIsUploadingImage(true);
+        const url = await onImageUpload(file);
+
+        // Insert image at current cursor position
+        editor.chain().focus().setImage({ src: url }).run();
+
+        toast.success('Image uploaded successfully');
+      } catch (error) {
+        console.error('Failed to upload image:', error);
+        toast.error('Failed to upload image. Please try again.');
+      } finally {
+        setIsUploadingImage(false);
+        // Reset file input
+        if (fileInputRef.current) {
+          fileInputRef.current.value = '';
+        }
+      }
+    },
+    [editor, onImageUpload]
+  );
+
+  const triggerImageUpload = useCallback(() => {
+    fileInputRef.current?.click();
+  }, []);
+
   const renderFormattingOptions = useCallback(
     (source: 'bubble' | 'popover') => (
       <div className="flex flex-wrap gap-2">
@@ -267,9 +322,33 @@ export function ToolBar({ editor }: ToolBarProps) {
         >
           <Link className="size-4" />
         </Toggle>
+        {workspaceId && onImageUpload && (
+          <Toggle
+            key={`image-${source}`}
+            pressed={false}
+            onPressedChange={triggerImageUpload}
+            disabled={isUploadingImage}
+            className="h-8 w-8 rounded-md border border-transparent transition-colors data-[state=on]:border-foreground/10 data-[state=on]:bg-dynamic-surface/80 data-[state=on]:text-foreground"
+          >
+            {isUploadingImage ? (
+              <Loader2 className="size-4 animate-spin" />
+            ) : (
+              <ImageIcon className="size-4" />
+            )}
+          </Toggle>
+        )}
       </div>
     ),
-    [editor, formattingOptions, linkEditorContext, openLinkEditor]
+    [
+      editor,
+      formattingOptions,
+      linkEditorContext,
+      openLinkEditor,
+      workspaceId,
+      onImageUpload,
+      triggerImageUpload,
+      isUploadingImage,
+    ]
   );
 
   const renderLinkEditor = useCallback(
@@ -317,26 +396,35 @@ export function ToolBar({ editor }: ToolBarProps) {
   if (!editor) return null;
 
   return (
-    <BubbleMenu
-      editor={editor}
-      className="z-50"
-      shouldShow={({ editor: bubbleEditor, from, to }) => {
-        if (!bubbleEditor.isEditable) return false;
-        if (!bubbleEditor.isFocused) return false;
-        if (from === to) return false;
-        if (
-          bubbleEditor.isActive('codeBlock') ||
-          bubbleEditor.isActive('image')
-        ) {
-          return false;
-        }
-        return true;
-      }}
-    >
-      <div className="pointer-events-auto flex flex-col gap-2 rounded-lg border border-dynamic-border bg-background p-2">
-        {renderFormattingOptions('bubble')}
-        {linkEditorContext === 'bubble' ? renderLinkEditor('bubble') : null}
-      </div>
-    </BubbleMenu>
+    <>
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        onChange={handleImageUpload}
+        className="hidden"
+      />
+      <BubbleMenu
+        editor={editor}
+        className="z-50"
+        shouldShow={({ editor: bubbleEditor, from, to }) => {
+          if (!bubbleEditor.isEditable) return false;
+          if (!bubbleEditor.isFocused) return false;
+          if (from === to) return false;
+          if (
+            bubbleEditor.isActive('codeBlock') ||
+            bubbleEditor.isActive('image')
+          ) {
+            return false;
+          }
+          return true;
+        }}
+      >
+        <div className="pointer-events-auto flex flex-col gap-2 rounded-lg border border-dynamic-border bg-background p-2">
+          {renderFormattingOptions('bubble')}
+          {linkEditorContext === 'bubble' ? renderLinkEditor('bubble') : null}
+        </div>
+      </BubbleMenu>
+    </>
   );
 }
