@@ -50,6 +50,12 @@ export default async function GuestLeadFollowUpPage({ params }: Props) {
     .eq('ws_id', wsId)
     .maybeSingle();
 
+  const {data: minimumAttendance} = await supabase
+    .from('workspace_settings')
+    .select('guest_user_checkup_threshold')
+    .eq('ws_id', wsId)
+    .maybeSingle();
+
 
   return (
     <div className="flex w-full flex-col gap-4">
@@ -65,6 +71,7 @@ export default async function GuestLeadFollowUpPage({ params }: Props) {
             name: ug.group.name,
           })) ?? []
         }
+        minimumAttendance={minimumAttendance?.guest_user_checkup_threshold ?? undefined}
       />
     </div>
   );

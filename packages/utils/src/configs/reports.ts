@@ -1,6 +1,7 @@
 import type { WorkspaceConfig } from '@tuturuuu/types/primitives/WorkspaceConfig';
 
-export const availableConfigs: (WorkspaceConfig & {
+// Report template configs
+export const reportConfigs: (WorkspaceConfig & {
   defaultValue: string;
 })[] = [
   {
@@ -63,4 +64,82 @@ export const availableConfigs: (WorkspaceConfig & {
     type: 'TEXT',
     defaultValue: '',
   },
+];
+
+// Lead generation email template configs
+export const leadGenerationConfigs: (WorkspaceConfig & {
+  defaultValue: string;
+})[] = [
+  // Shared brand configs (already in report template)
+  {
+    id: 'BRAND_LOGO_URL',
+    type: 'URL',
+    defaultValue: '',
+  },
+  {
+    id: 'BRAND_NAME',
+    type: 'TEXT',
+    defaultValue: '',
+  },
+  {
+    id: 'BRAND_LOCATION',
+    type: 'TEXT',
+    defaultValue: '',
+  },
+  {
+    id: 'BRAND_PHONE_NUMBER',
+    type: 'TEXT',
+    defaultValue: '',
+  },
+  // Lead generation specific configs
+  {
+    id: 'LEAD_EMAIL_TITLE',
+    type: 'TEXT',
+    defaultValue: '',
+  },
+  {
+    id: 'LEAD_EMAIL_GREETING',
+    type: 'TEXT',
+    defaultValue: '',
+  },
+  {
+    id: 'LEAD_EMAIL_TABLE_HEADER_COMMENTS',
+    type: 'TEXT',
+    defaultValue: '',
+  },
+  {
+    id: 'LEAD_EMAIL_TABLE_HEADER_SCORE',
+    type: 'TEXT',
+    defaultValue: '',
+  },
+  {
+    id: 'LEAD_EMAIL_TABLE_SCORE_SCALE',
+    type: 'TEXT',
+    defaultValue: '',
+  },
+  {
+    id: 'LEAD_EMAIL_FOOTER',
+    type: 'TEXT',
+    defaultValue: '',
+  },
+  {
+    id: 'LEAD_EMAIL_SIGNATURE_TITLE',
+    type: 'TEXT',
+    defaultValue: '',
+  },
+  {
+    id: 'LEAD_EMAIL_SIGNATURE_NAME',
+    type: 'TEXT',
+    defaultValue: '',
+  }
+];
+
+// Combined list for backward compatibility
+export const availableConfigs: (WorkspaceConfig & {
+  defaultValue: string;
+})[] = [
+  ...reportConfigs,
+  ...leadGenerationConfigs.filter(
+    (config) => !reportConfigs.some((rc) => rc.id === config.id)
+  ),
 ];

@@ -1,3 +1,7 @@
-import { availableConfigs } from '@tuturuuu/utils/configs/reports';
+import {
+  availableConfigs,
+  leadGenerationConfigs,
+  reportConfigs,
+} from '@tuturuuu/utils/configs/reports';
 
-export { availableConfigs };
+export { availableConfigs, leadGenerationConfigs, reportConfigs };

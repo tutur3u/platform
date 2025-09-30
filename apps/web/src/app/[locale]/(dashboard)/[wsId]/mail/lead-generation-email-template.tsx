@@ -8,6 +8,7 @@ interface Props {
   avgScore?: number;
   comments?: string;
   currentDate?: string;
+  minimumAttendance?: number;
 
   // 🔴 REQUIRED CONFIG VARIABLES - Reuses existing report config variables:
   
@@ -47,6 +48,7 @@ const LeadGenerationEmailTemplate = ({
   avgScore,
   comments,
   currentDate,
+  minimumAttendance,
   brandLogoUrl,
   brandName,
   brandLocation,
@@ -59,104 +61,128 @@ const LeadGenerationEmailTemplate = ({
   emailFooter,
   signatureTitle,
   signatureName,
-  brandLogoWidth = '100',
-  brandLogoHeight = '38',
-  titleColor = 'blue-700',
   emptyCommentsPlaceholder = '...........................................................',
   emptyScorePlaceholder = '...',
 }: Props) => {
-  // Parse dynamic text with variable replacements
-  const parseDynamicText = (text: string): string => {
-    return text
-      .replace(/{{leadName}}/g, leadName || '')
-      .replace(/{{className}}/g, className || '')
-      .replace(/{{teacherName}}/g, teacherName || '')
-      .replace(/{{currentDate}}/g, currentDate || new Date().toLocaleDateString())
-      .replace(/{{avgScore}}/g, avgScore?.toString() || '');
-  };
-
   return (
-    <Html>
-      <Head />
-      <Tailwind>
-        <div className="m-4 rounded-lg border bg-white p-6 font-sans text-[14px] text-black leading-6">
-          {/* Header */}
-          <div className="text-center">
-            <Img
-              src={brandLogoUrl}
-              width={brandLogoWidth}
-              height={brandLogoHeight}
-              alt={`${brandName} Logo`}
-              className="mx-auto"
-            />
-            <div className="mt-2 font-bold text-lg">{brandName}</div>
-            {brandLocation && (
-              <div
-                className="text-sm"
-                dangerouslySetInnerHTML={{
-                  __html: brandLocation.replace(/\n/g, '<br />'),
-                }}
+    <Tailwind>
+      <Html>
+        <Head />
+        <div className="m-4 rounded-lg border bg-white p-4 font-sans text-black md:p-12">
+          {/* Header with Logo and Brand Info */}
+          <div className="flex items-center justify-between gap-8">
+            {brandLogoUrl && (
+              <Img
+                src={brandLogoUrl}
+                alt={`${brandName} Logo`}
               />
             )}
-            <div className="mt-1 text-sm">{brandPhone}</div>
+
+            <div className="text-center">
+              {brandName && (
+                <div className="text-center font-bold text-xl">
+                  {brandName}
+                </div>
+              )}
+
+              {brandLocation && (
+                <div
+                  className="text-center font-semibold text-wrap whitespace-pre-wrap text-sm"
+                  dangerouslySetInnerHTML={{
+                    __html: brandLocation.replace(/\n/g, '<br />'),
+                  }}
+                />
+              )}
+
+              {brandPhone && (
+                <div className="flex flex-wrap items-center justify-center gap-2 break-keep text-center font-semibold text-sm">
+                  {brandPhone}
+                </div>
+              )}
+            </div>
           </div>
 
-          {/* Title */}
-          <div
-            className={`mt-4 text-center font-bold text-${titleColor} text-lg uppercase`}
-          >
-            {emailTitle}
-          </div>
+          {(brandName || brandLocation || brandPhone) && (
+            <div className="my-4 h-px w-full bg-border" />
+          )}
 
-          {/* Greeting */}
-          <p className="mt-4 whitespace-pre-line">
-            {parseDynamicText(emailGreeting)}
-          </p>
+          {/* Main Content */}
+          <div className="p-3">
+            {/* Title */}
+            {emailTitle && (
+              <div className="text-center font-bold uppercase tracking-wide text-2xl text-blue-700">
+                {emailTitle}
+              </div>
+            )}
 
-          {/* Comments + Score Table */}
-          <table className="mt-4 w-full border-collapse border border-black text-sm">
-            <thead>
-              <tr>
-                <th className="w-[70%] border border-black p-2 text-center">
-                  {tableHeaderComments}
-                </th>
-                <th className="w-[30%] border border-black p-2 text-center">
-                  {tableHeaderScore}
-                  {tableScoreScale && (
-                    <>
-                      {' '}
-                      <br /> {tableScoreScale}
-                    </>
-                  )}
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td className="whitespace-pre-line border border-black p-4 align-top">
-                  {comments || emptyCommentsPlaceholder}
-                </td>
-                <td className="border border-black p-4 text-center align-top">
-                  {avgScore !== undefined ? avgScore : emptyScorePlaceholder}
-                </td>
-              </tr>
-            </tbody>
-          </table>
+            {/* Greeting */}
+            {emailGreeting && (
+              <div className="mt-2 whitespace-pre-wrap text-left text-sm text-black">
+                {emailGreeting}
+              </div>
+            )}
 
-          {/* Footer Note */}
-          <p className="mt-4 text-sm whitespace-pre-line">
-            {parseDynamicText(emailFooter)}
-          </p>
+            {/* Table */}
+            <div className="mt-6">
+              <table style={{ width: '100%', borderCollapse: 'collapse', border: '1px solid black' }}>
+                <thead>
+                  <tr>
+                    <th style={{ border: '1px solid black', backgroundColor: '#f9fafb', padding: '0.75rem', textAlign: 'center', fontWeight: 700, fontSize: '0.875rem', textTransform: 'uppercase' }}>
+                      {tableHeaderComments}
+                    </th>
+                    <th style={{ border: '1px solid black', backgroundColor: '#f9fafb', padding: '0.75rem', textAlign: 'center', fontWeight: 700, fontSize: '0.875rem' }}>
+                      {tableHeaderScore}
+                      {tableScoreScale && (
+                        <div style={{ marginTop: '0.25rem', fontWeight: 400, fontSize: '0.75rem', textTransform: 'none' }}>
+                          {tableScoreScale}
+                        </div>
+                      )}
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td style={{ border: '1px solid black', padding: '1rem', verticalAlign: 'top' }}>
+                      <div style={{ minHeight: '200px', textAlign: 'justify', fontSize: '0.875rem', lineHeight: '1.625' }}>
+                        {comments || emptyCommentsPlaceholder}
+                      </div>
+                    </td>
+                    <td style={{ border: '1px solid black', padding: '1rem', textAlign: 'center', verticalAlign: 'top' }}>
+                      <div style={{ minHeight: '200px', fontSize: '0.875rem' }}>
+                        {avgScore !== undefined ? avgScore : emptyScorePlaceholder}
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
 
-          {/* Signature */}
-          <div className="mt-6 text-right font-semibold">
-            {signatureTitle}
-            <br />
-            {signatureName}
+            {/* Footer */}
+            {emailFooter && (
+              <div className="mt-4 whitespace-pre-wrap text-left text-sm text-black">
+                {emailFooter}
+              </div>
+            )}
+
+            {/* Signature */}
+            {(signatureTitle || signatureName) && (
+              <div className="mt-8 text-center">
+                {signatureTitle && (
+                  <div className="font-semibold text-sm italic">
+                    {signatureTitle}
+                  </div>
+                )}
+                {signatureName && (
+                  <div className="font-bold text-sm">
+                    {signatureName}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
-      </Tailwind>
-    </Html>
+      </Html>
+    </Tailwind>
   );
 };
 

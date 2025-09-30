@@ -32,7 +32,7 @@ export default function ReportPreview({
         <div
           className={`h-full rounded-lg border p-4 ${theme === 'dark' ? 'text-foreground' : 'text-black'} md:p-12 print:border-0 print:rounded-none print:h-auto print:p-8 print:text-black print:bg-white`}
         >
-          <div className="flex flex-wrap items-center justify-between gap-8">
+          <div className="flex items-center justify-between gap-8">
             {getConfig('BRAND_LOGO_URL') && (
               <img
                 src={getConfig('BRAND_LOGO_URL')!}
@@ -49,7 +49,7 @@ export default function ReportPreview({
               )}
 
               {getConfig('BRAND_LOCATION') && (
-                <div className="text-center font-semibold">
+                <div className="text-center font-semibold text-balance">
                   {getConfig('BRAND_LOCATION')}
                 </div>
               )}
