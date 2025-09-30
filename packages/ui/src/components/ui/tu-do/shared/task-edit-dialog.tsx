@@ -699,9 +699,10 @@ function TaskEditDialogComponent({
       }
 
       // Get signed URL (valid for 1 year)
-      const { data: signedUrlData, error: signedUrlError } = await supabase.storage
-        .from('workspaces')
-        .createSignedUrl(data.path, 31536000); // 365 days in seconds
+      const { data: signedUrlData, error: signedUrlError } =
+        await supabase.storage
+          .from('workspaces')
+          .createSignedUrl(data.path, 31536000); // 365 days in seconds
 
       if (signedUrlError) {
         console.error('Signed URL error:', signedUrlError);
