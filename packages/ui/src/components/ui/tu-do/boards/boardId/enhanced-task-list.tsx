@@ -35,8 +35,9 @@ import { Input } from '@tuturuuu/ui/input';
 import { cn } from '@tuturuuu/utils/format';
 import { useState } from 'react';
 import { toast } from 'sonner';
+// import { TaskForm } from './task-form';
+import { TaskEditDialog } from '../../shared/task-edit-dialog';
 import { TaskCard } from './task';
-import { TaskForm } from './task-form';
 
 interface Props {
   list: TaskList;
@@ -46,6 +47,7 @@ interface Props {
   isOverlay?: boolean;
   hideTasksMode?: boolean;
   isPersonalWorkspace?: boolean;
+  onAddTask?: (list: TaskList) => void;
 }
 
 const colorClasses: Record<SupportedColor, string> = {
@@ -90,6 +92,7 @@ export function EnhancedTaskList({
   isOverlay = false,
   hideTasksMode = false,
   isPersonalWorkspace = false,
+  onAddTask,
 }: Props) {
   const [isEditing, setIsEditing] = useState(false);
   const [editName, setEditName] = useState(list.name);
@@ -434,25 +437,44 @@ export function EnhancedTaskList({
       {/* Add Task Form */}
       {!isClosed && !hideTasksMode && (
         <div className="border-t p-2 backdrop-blur-sm">
-          {showTaskForm ? (
-            <TaskForm
-              listId={list.id}
-              onTaskCreated={() => {
-                setShowTaskForm(false);
-                onUpdate();
-              }}
-            />
-          ) : (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setShowTaskForm(true)}
-              className="w-full justify-start text-muted-foreground text-xs hover:text-foreground"
-            >
-              + Add task
-            </Button>
-          )}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() =>
+              onAddTask ? onAddTask(list) : setShowTaskForm(true)
+            }
+            className="w-full justify-start rounded-lg border border-dynamic-gray/40 border-dashed text-muted-foreground text-xs transition-all hover:border-dynamic-gray/60 hover:bg-muted/40 hover:text-foreground"
+          >
+            + Add task
+          </Button>
         </div>
+      )}
+
+      {/* Local fallback dialog when parent handler not provided */}
+      {!onAddTask && (
+        <TaskEditDialog
+          task={
+            {
+              id: 'new',
+              name: '',
+              description: '',
+              priority: null,
+              start_date: null,
+              end_date: null,
+              estimation_points: null,
+              list_id: list.id,
+              labels: [],
+              archived: false,
+              assignees: [],
+            } as any
+          }
+          boardId={boardId}
+          isOpen={showTaskForm}
+          onClose={() => setShowTaskForm(false)}
+          onUpdate={onUpdate}
+          availableLists={[list]}
+          mode="create"
+        />
       )}
 
       {/* Delete Confirmation Dialog */}

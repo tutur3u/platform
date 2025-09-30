@@ -123,7 +123,7 @@ export function CommandPalette(props: CommandPaletteProps & LegacyProps) {
       api: apiEndpoint,
       credentials: 'include',
       body: {
-        model: defaultModel?.value || 'gemini-1.5-flash-002',
+        model: defaultModel?.value || 'gemini-2.5-flash-lite',
         wsId: workspaceId ?? ROOT_WORKSPACE_ID,
       },
     }),
@@ -157,7 +157,7 @@ export function CommandPalette(props: CommandPaletteProps & LegacyProps) {
           body: JSON.stringify({
             // Use explicit id so client and server stay in sync
             id,
-            model: defaultModel?.value || 'gemini-1.5-flash-002',
+            model: defaultModel?.value || 'gemini-2.5-flash-lite',
             message: firstMessage,
           }),
         });

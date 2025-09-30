@@ -5,16 +5,23 @@ import { notFound } from 'next/navigation';
 import type { ReactNode } from 'react';
 import { Suspense } from 'react';
 
-interface WorkspaceWrapperProps {
-  params: Promise<{
-    wsId: string;
-  }>;
-  children: (props: {
-    workspace: Workspace & { role: WorkspaceUserRole; joined: boolean };
-    wsId: string; // The validated UUID from workspace.id
-    isPersonal: boolean;
-    isRoot: boolean;
-  }) => ReactNode;
+// Base params that all pages must have
+interface BaseParams {
+  wsId: string;
+}
+
+// Generic interface for workspace wrapper props that preserves additional params
+interface WorkspaceWrapperProps<TParams extends BaseParams = BaseParams> {
+  params: Promise<TParams>;
+  children: (
+    props: {
+      workspace: Workspace & { role: WorkspaceUserRole; joined: boolean };
+      wsId: string; // The validated UUID from workspace.id
+      isPersonal: boolean;
+      isRoot: boolean;
+      // Spread the additional params to maintain their types
+    } & Omit<TParams, 'wsId'>
+  ) => ReactNode;
   fallback?: ReactNode;
 }
 
@@ -30,13 +37,15 @@ interface WorkspaceWrapperProps {
  * The children function receives:
  * - workspace: The full workspace object with role and joined status
  * - wsId: The validated UUID from workspace.id (not the legacy identifier)
+ * - All additional params from the original params object (excluding wsId)
+ *
+ * @template TParams - The type of params object, must extend BaseParams
  */
-export default async function WorkspaceWrapper({
-  params,
-  children,
-  fallback,
-}: WorkspaceWrapperProps) {
-  const { wsId } = await params;
+export default async function WorkspaceWrapper<
+  TParams extends BaseParams = BaseParams,
+>({ params, children, fallback }: WorkspaceWrapperProps<TParams>) {
+  const resolvedParams = await params;
+  const { wsId } = resolvedParams;
   const workspace = await getWorkspace(wsId);
 
   if (!workspace) {
@@ -46,6 +55,9 @@ export default async function WorkspaceWrapper({
   // Extract the validated UUID from the workspace object
   const validatedWsId = workspace.id;
 
+  // Extract additional params (excluding wsId) to pass to children
+  const { wsId: _, ...additionalParams } = resolvedParams;
+
   return (
     <Suspense fallback={fallback}>
       {children({
@@ -53,6 +65,7 @@ export default async function WorkspaceWrapper({
         wsId: validatedWsId,
         isPersonal: workspace.personal,
         isRoot: workspace.id === ROOT_WORKSPACE_ID,
+        ...additionalParams,
       })}
     </Suspense>
   );

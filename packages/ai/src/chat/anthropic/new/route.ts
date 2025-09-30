@@ -10,7 +10,7 @@ export const preferredRegion = 'sin1';
 const HUMAN_PROMPT = '\n\nHuman:';
 const AI_PROMPT = '\n\nAssistant:';
 
-const DEFAULT_MODEL_NAME = 'gemini-1.5-flash-002';
+const DEFAULT_MODEL_NAME = 'gemini-2.5-flash-lite';
 
 export async function POST(req: Request) {
   try {

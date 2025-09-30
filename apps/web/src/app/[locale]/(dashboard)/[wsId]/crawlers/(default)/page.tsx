@@ -7,6 +7,7 @@ import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 import { CustomDataTable } from '@/components/custom-data-table';
+import WorkspaceWrapper from '@/components/workspace-wrapper';
 import { getColumns } from '../columns';
 import ModelForm from '../form';
 import UncrawledUrlsCount from '../uncrawled-urls-count';
@@ -34,65 +35,71 @@ interface Props {
 }
 
 export default async function CrawledUrlsPage({ params, searchParams }: Props) {
-  const t = await getTranslations();
-  const { locale, wsId } = await params;
-
-  const awaitedSearchParams = await searchParams;
-
-  const page = parseInt(awaitedSearchParams.page || '1') || 1;
-  const pageSize = parseInt(awaitedSearchParams.pageSize || '50') || 50;
-  const domain = awaitedSearchParams.domain;
-  const search = awaitedSearchParams.search;
-
-  const { data, count } = await getCrawledUrls({
-    page,
-    pageSize,
-    domain,
-    search,
-  });
-
   return (
-    <div className="space-y-8">
-      <FeatureSummary
-        pluralTitle={t('ws-crawlers.plural')}
-        singularTitle={t('ws-crawlers.singular')}
-        description={t('ws-crawlers.description')}
-        createTitle={t('ws-crawlers.create')}
-        createDescription={t('ws-crawlers.create_description')}
-        form={<ModelForm wsId={wsId} />}
-      />
+    <WorkspaceWrapper params={params}>
+      {async ({ wsId, locale }) => {
+        const t = await getTranslations();
 
-      <div className="space-y-4">
-        <Card>
-          <CardHeader>
-            <CardTitle>Quick Stats</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <UncrawledUrlsCount wsId={wsId} />
-          </CardContent>
-        </Card>
+        const awaitedSearchParams = await searchParams;
 
-        <Card>
-          <CardHeader className="flex-row items-center justify-between space-y-0">
-            <CardTitle>Crawled URLs ({count})</CardTitle>
-            <CrawlerFilters wsId={wsId} />
-          </CardHeader>
-          <CardContent>
-            <CustomDataTable
-              data={data}
-              namespace="crawled-url-data-table"
-              columnGenerator={getColumns}
-              extraData={{ locale, wsId }}
-              count={count}
-              pageSize={pageSize}
-              defaultVisibility={{
-                id: false,
-              }}
+        const page = parseInt(awaitedSearchParams.page || '1', 10) || 1;
+        const pageSize =
+          parseInt(awaitedSearchParams.pageSize || '50', 10) || 50;
+        const domain = awaitedSearchParams.domain;
+        const search = awaitedSearchParams.search;
+
+        const { data, count } = await getCrawledUrls({
+          page,
+          pageSize,
+          domain,
+          search,
+        });
+
+        return (
+          <div className="space-y-8">
+            <FeatureSummary
+              pluralTitle={t('ws-crawlers.plural')}
+              singularTitle={t('ws-crawlers.singular')}
+              description={t('ws-crawlers.description')}
+              createTitle={t('ws-crawlers.create')}
+              createDescription={t('ws-crawlers.create_description')}
+              form={<ModelForm wsId={wsId} />}
             />
-          </CardContent>
-        </Card>
-      </div>
-    </div>
+
+            <div className="space-y-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Quick Stats</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <UncrawledUrlsCount wsId={wsId} />
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="flex-row items-center justify-between space-y-0">
+                  <CardTitle>Crawled URLs ({count})</CardTitle>
+                  <CrawlerFilters wsId={wsId} />
+                </CardHeader>
+                <CardContent>
+                  <CustomDataTable
+                    data={data}
+                    namespace="crawled-url-data-table"
+                    columnGenerator={getColumns}
+                    extraData={{ locale, wsId }}
+                    count={count}
+                    pageSize={pageSize}
+                    defaultVisibility={{
+                      id: false,
+                    }}
+                  />
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        );
+      }}
+    </WorkspaceWrapper>
   );
 }
 

@@ -1,0 +1,74 @@
+---
+title: 'Agent Operating Manual'
+description: 'Field guide summarizing the AGENTS.md policies for autonomous contributors inside the Tuturuuu monorepo.'
+updated: '2025-09-26'
+---
+
+# Agent Operating Manual
+
+This page distills the canonical rules defined in [AGENTS.md](https://github.com/tutur3u/platform/blob/main/AGENTS.md). Treat the original document as the source of truth—this guide exists to make the most important expectations discoverable inside the docs site.
+
+## Core Principles
+
+- **Least privilege** – Touch only the files required for the task and keep changes scoped.
+- **Deterministic & reproducible** – Generated artefacts must come from scripted commands; rerunning the workflow should produce the same result.
+- **Security first** – Never surface secret values. Reference environment variables by name and keep sensitive flows audited.
+- **Document intent** – When behaviour changes, update tests and docs alongside the code so the platform stays explainable.
+- **Human-in-the-loop** – Escalate when work exceeds the documented boundaries (e.g., major refactors, new third-party services, complex data backfills).
+
+## Capability Matrix
+
+| Domain | You May | You Must | Never |
+| --- | --- | --- | --- |
+| **Code (TS/JS)** | Build Next.js App Router routes, React server/client components, shared packages | Add/adjust tests & types, update related docs | Ship breaking public API changes without a `BREAKING` note |
+| **Code (Python)** | Modify apps under `apps/*` (python) with env isolation | Maintain pinned requirements / lockfiles | Blend unrelated refactors into feature work |
+| **Database (Supabase)** | Author migrations in `apps/db/supabase/migrations`, run typegen | Commit regenerated `@tuturuuu/types` output | Hand-edit generated type files |
+| **AI Endpoints** | Add handlers under `app/api/...` using Vercel AI SDK | Enforce auth + feature flags, validate payloads | Expose provider keys or skip validation |
+| **Tooling** | Adjust configs (`biome.json`, `turbo.json`, etc.) | Document the rationale | Remove caching or security settings silently |
+| **Docs** | Update `.md`/`.mdx` for accuracy | Cross-link neighbouring guides | Invent behaviour that is not implemented |
+| **Dependencies** | `bun add --workspace` / remove deps | Prefer `workspace:*` for internal packages | Add duplicate versions already satisfied |
+
+## Mandatory Guardrails
+
+1. Do not run long-lived dev/build commands unless a human requests it (e.g., `bun dev`, `bun run build`).
+2. **Supabase apply is user-only** – prepare migrations, but the user runs `bun sb:push` / `bun sb:linkpush`.
+3. **Biome format/lint is user-only** – surface issues, but let the user execute `bun lint` / `bun format`.
+4. Avoid committing noisy logs; add diagnostics only when they materially aid debugging.
+5. Never commit credentials, tokens, or destructive migrations without a reversible plan.
+
+## Escalate When…
+
+- A migration needs >30 lines of backfill logic.
+- A refactor would touch more than three apps or five packages.
+- Introducing a new external service, adjusting auth flows, or changing env-var contracts.
+
+## Canonical Workflows (Cheat Sheet)
+
+- **Add/Update dependency** – scope → `bun add --workspace` → ensure types/docs → run targeted build.
+- **New shared package** – scaffold under `packages/`, add `package.json` + `tsconfig`, export via `src/index.ts`, add tests & README, then build/test.
+- **Next.js API route** – implement under `app/api/.../route.ts`, enforce auth, validate with Zod, add tests or docs.
+- **AI structured endpoint** – define schema in `packages/ai`, use `generateObject`/`streamObject`, guard feature flags, redact secrets, handle errors gracefully.
+- **Supabase migration** – run `bun sb:new`, author additive SQL, request user to apply and regenerate types via `bun sb:typegen`, commit regenerated files together.
+
+See AGENTS.md §4 for full step-by-step instructions across all workflows.
+
+## Collaboration Protocol
+
+- Roles: Execution (ship code/docs), Review (verify lint/type/test/build), Architecture (cross-cutting improvements), Knowledge (docs & schema sync).
+- Only one agent modifies a file set at a time; reviewers work read-only unless paired.
+- Prefer linear history (rebases) and group commits by concern (schema vs code vs docs).
+
+## Tooling & Environment Rules
+
+- Single package manager: **Bun**. Use workspace filters (`bun --filter ...`) to target apps/packages.
+- Supabase lifecycle via scripts: `sb:start`, `sb:stop`, `sb:new`, `sb:up`, `sb:typegen` (user applies pushes).
+- Do not invent new caches; rely on Turborepo + Bun caching.
+- Python services (`apps/discord/`) maintain their own pinned dependencies and README instructions.
+
+## Testing & Quality Expectations
+
+- Add happy-path and edge-case coverage where feasible; default to Vitest via `bun run test` or filtered scope.
+- For DB changes, provide migrations, request the user apply them, then verify regenerated types.
+- Performance-sensitive changes should document rationale in-code (≤3 lines) plus PR notes.
+
+For deeper detail—such as React Query policy, toast usage rules, or Tailwind dynamic color guidance—refer directly to [AGENTS.md](https://github.com/tutur3u/platform/blob/main/AGENTS.md#readme).

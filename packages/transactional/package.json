@@ -8,14 +8,14 @@
   },
   "dependencies": {
     "@react-email/components": "^0.5.5",
-    "@react-email/preview-server": "^4.2.11",
+    "@react-email/preview-server": "^4.2.12",
     "react": "^19.1.1",
-    "react-email": "^4.2.11"
+    "react-email": "^4.2.12"
   },
   "devDependencies": {
     "@tuturuuu/typescript-config": "workspace:*",
-    "@types/node": "^24.5.2",
-    "@types/react": "^19.1.13"
+    "@types/node": "^24.6.0",
+    "@types/react": "^19.1.15"
   },
-  "packageManager": "bun@1.2.22"
+  "packageManager": "bun@1.2.23"
 }

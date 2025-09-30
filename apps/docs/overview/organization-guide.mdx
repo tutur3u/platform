@@ -1,0 +1,60 @@
+---
+title: 'Documentation Organization Guide'
+description: 'Understand the Tuturuuu documentation structure and how to extend it.'
+updated: '2025-09-26'
+---
+
+# Documentation Organization Guide
+
+Welcome to the reorganized Tuturuuu documentation space. This guide explains the new structure so you can find information quickly and add new content with confidence.
+
+## 🧭 Top-Level Map
+
+| Section | Purpose | Key Entry Points |
+|---------|---------|------------------|
+| **Overview** | Vision, mission, and company playbooks | [Vision & Mission](/overview/vision), [Agent Operating Manual](/overview/agent-operating-manual) |
+| **Platform** | Product experience, AI systems, shared components, personalization | [Platform Overview](/platform/index) |
+| **Build** | Local setup, monorepo workflows, CI/CD | [Build & Ship](/build/index) |
+| **Learn** | Examples, experiments, prompt engineering | [Learn & Experiment](/learn/index) |
+| **Reference** | Stable APIs and integration contracts | [Reference Home](/reference/index) |
+
+Each section contains focused subpages that keep related content together. Navigation in the sidebar follows this same hierarchy.
+
+## 📂 Directory Layout
+
+```text
+apps/docs/
+├── overview/             # Company vision and organizational guides
+├── platform/             # Product experience, AI, components, personalization
+├── build/                # Development tooling and workflows
+├── learn/                # Examples, experiments, prompt engineering
+└── reference/            # API contracts and schemas
+```
+
+Assets such as images remain in `apps/docs/images/`. Shared assets for navigation (logo, favicon) sit alongside `mint.json`.
+
+## ✍️ Adding New Content
+
+1. **Pick a Section** – Choose the directory that matches your topic. When in doubt, align with how end users will search for the information.
+2. **Create the File** – Use front matter with `title`, `description`, and `updated` fields. Example:
+
+   ```mdx
+   ---
+   title: 'My Guide'
+   description: 'Brief purpose statement.'
+   updated: '2025-09-26'
+   ---
+   ```
+3. **Cross-Link Thoughtfully** – Prefer absolute links such as `/platform/features/command-center-dashboard` so moves do not break references.
+4. **Update Navigation** – Add the new page to `apps/docs/mint.json` in the appropriate group.
+
+## ✅ Conventions to Remember
+
+- **Navigation** mirrors the directory layout; keep related pages together.
+- **Diagrams** use Mermaid 10.8.0 syntax.
+- **Images** belong in `apps/docs/images/` and are referenced with absolute paths (`/images/...`).
+- **Docs Linting** relies on Biome; run formatting and lint checks before submitting changes.
+
+Need inspiration for structuring a new guide? Browse the [Platform Overview](/platform/index) and [Build & Ship](/build/index) pages—they demonstrate the preferred narrative pattern (context → diagrams → next steps).
+
+If anything feels missing or confusing, open an issue with the `docs` label so we can continue improving the experience together.

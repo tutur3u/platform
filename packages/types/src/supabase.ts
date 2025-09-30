@@ -4536,6 +4536,82 @@ export type Database = {
           user_id?: string;
         };
       };
+      notes: {
+        Insert: {
+          archived?: boolean | null;
+          content: string;
+          created_at?: null | string;
+          creator_id?: string;
+          deleted?: boolean | null;
+          id?: string;
+          updated_at?: null | string;
+          ws_id: string;
+        };
+        Relationships: [
+          {
+            columns: ['creator_id'];
+            foreignKeyName: 'notes_creator_id_fkey';
+            isOneToOne: false;
+            referencedColumns: ['user_id'];
+            referencedRelation: 'nova_user_challenge_leaderboard';
+          },
+          {
+            columns: ['creator_id'];
+            foreignKeyName: 'notes_creator_id_fkey';
+            isOneToOne: false;
+            referencedColumns: ['user_id'];
+            referencedRelation: 'nova_user_leaderboard';
+          },
+          {
+            columns: ['creator_id'];
+            foreignKeyName: 'notes_creator_id_fkey';
+            isOneToOne: false;
+            referencedColumns: ['id'];
+            referencedRelation: 'shortened_links_creator_stats';
+          },
+          {
+            columns: ['creator_id'];
+            foreignKeyName: 'notes_creator_id_fkey';
+            isOneToOne: false;
+            referencedColumns: ['id'];
+            referencedRelation: 'users';
+          },
+          {
+            columns: ['ws_id'];
+            foreignKeyName: 'notes_ws_id_fkey';
+            isOneToOne: false;
+            referencedColumns: ['id'];
+            referencedRelation: 'workspace_link_counts';
+          },
+          {
+            columns: ['ws_id'];
+            foreignKeyName: 'notes_ws_id_fkey';
+            isOneToOne: false;
+            referencedColumns: ['id'];
+            referencedRelation: 'workspaces';
+          },
+        ];
+        Row: {
+          archived: boolean | null;
+          content: string;
+          created_at: null | string;
+          creator_id: string;
+          deleted: boolean | null;
+          id: string;
+          updated_at: null | string;
+          ws_id: string;
+        };
+        Update: {
+          archived?: boolean | null;
+          content?: string;
+          created_at?: null | string;
+          creator_id?: string;
+          deleted?: boolean | null;
+          id?: string;
+          updated_at?: null | string;
+          ws_id?: string;
+        };
+      };
       nova_challenge_criteria: {
         Insert: {
           challenge_id: string;
@@ -6368,6 +6444,209 @@ export type Database = {
           updated_at?: null | string;
         };
       };
+      task_cycle_tasks: {
+        Insert: {
+          created_at?: null | string;
+          cycle_id: string;
+          task_id: string;
+        };
+        Relationships: [
+          {
+            columns: ['cycle_id'];
+            foreignKeyName: 'task_cycle_tasks_cycle_id_fkey';
+            isOneToOne: false;
+            referencedColumns: ['id'];
+            referencedRelation: 'task_cycles';
+          },
+          {
+            columns: ['task_id'];
+            foreignKeyName: 'task_cycle_tasks_task_id_fkey';
+            isOneToOne: false;
+            referencedColumns: ['id'];
+            referencedRelation: 'tasks';
+          },
+        ];
+        Row: {
+          created_at: null | string;
+          cycle_id: string;
+          task_id: string;
+        };
+        Update: {
+          created_at?: null | string;
+          cycle_id?: string;
+          task_id?: string;
+        };
+      };
+      task_cycles: {
+        Insert: {
+          archived?: boolean | null;
+          created_at?: null | string;
+          creator_id?: string;
+          deleted?: boolean | null;
+          description?: null | string;
+          end_date?: null | string;
+          id?: string;
+          name: string;
+          start_date?: null | string;
+          status?: null | string;
+          updated_at?: null | string;
+          ws_id: string;
+        };
+        Relationships: [
+          {
+            columns: ['creator_id'];
+            foreignKeyName: 'task_cycles_creator_id_fkey';
+            isOneToOne: false;
+            referencedColumns: ['user_id'];
+            referencedRelation: 'nova_user_challenge_leaderboard';
+          },
+          {
+            columns: ['creator_id'];
+            foreignKeyName: 'task_cycles_creator_id_fkey';
+            isOneToOne: false;
+            referencedColumns: ['user_id'];
+            referencedRelation: 'nova_user_leaderboard';
+          },
+          {
+            columns: ['creator_id'];
+            foreignKeyName: 'task_cycles_creator_id_fkey';
+            isOneToOne: false;
+            referencedColumns: ['id'];
+            referencedRelation: 'shortened_links_creator_stats';
+          },
+          {
+            columns: ['creator_id'];
+            foreignKeyName: 'task_cycles_creator_id_fkey';
+            isOneToOne: false;
+            referencedColumns: ['id'];
+            referencedRelation: 'users';
+          },
+          {
+            columns: ['ws_id'];
+            foreignKeyName: 'task_cycles_ws_id_fkey';
+            isOneToOne: false;
+            referencedColumns: ['id'];
+            referencedRelation: 'workspace_link_counts';
+          },
+          {
+            columns: ['ws_id'];
+            foreignKeyName: 'task_cycles_ws_id_fkey';
+            isOneToOne: false;
+            referencedColumns: ['id'];
+            referencedRelation: 'workspaces';
+          },
+        ];
+        Row: {
+          archived: boolean | null;
+          created_at: null | string;
+          creator_id: string;
+          deleted: boolean | null;
+          description: null | string;
+          end_date: null | string;
+          id: string;
+          name: string;
+          start_date: null | string;
+          status: null | string;
+          updated_at: null | string;
+          ws_id: string;
+        };
+        Update: {
+          archived?: boolean | null;
+          created_at?: null | string;
+          creator_id?: string;
+          deleted?: boolean | null;
+          description?: null | string;
+          end_date?: null | string;
+          id?: string;
+          name?: string;
+          start_date?: null | string;
+          status?: null | string;
+          updated_at?: null | string;
+          ws_id?: string;
+        };
+      };
+      task_initiatives: {
+        Insert: {
+          archived?: boolean | null;
+          created_at?: null | string;
+          creator_id?: string;
+          deleted?: boolean | null;
+          description?: null | string;
+          id?: string;
+          name: string;
+          status?: null | string;
+          updated_at?: null | string;
+          ws_id: string;
+        };
+        Relationships: [
+          {
+            columns: ['creator_id'];
+            foreignKeyName: 'task_initiatives_creator_id_fkey';
+            isOneToOne: false;
+            referencedColumns: ['user_id'];
+            referencedRelation: 'nova_user_challenge_leaderboard';
+          },
+          {
+            columns: ['creator_id'];
+            foreignKeyName: 'task_initiatives_creator_id_fkey';
+            isOneToOne: false;
+            referencedColumns: ['user_id'];
+            referencedRelation: 'nova_user_leaderboard';
+          },
+          {
+            columns: ['creator_id'];
+            foreignKeyName: 'task_initiatives_creator_id_fkey';
+            isOneToOne: false;
+            referencedColumns: ['id'];
+            referencedRelation: 'shortened_links_creator_stats';
+          },
+          {
+            columns: ['creator_id'];
+            foreignKeyName: 'task_initiatives_creator_id_fkey';
+            isOneToOne: false;
+            referencedColumns: ['id'];
+            referencedRelation: 'users';
+          },
+          {
+            columns: ['ws_id'];
+            foreignKeyName: 'task_initiatives_ws_id_fkey';
+            isOneToOne: false;
+            referencedColumns: ['id'];
+            referencedRelation: 'workspace_link_counts';
+          },
+          {
+            columns: ['ws_id'];
+            foreignKeyName: 'task_initiatives_ws_id_fkey';
+            isOneToOne: false;
+            referencedColumns: ['id'];
+            referencedRelation: 'workspaces';
+          },
+        ];
+        Row: {
+          archived: boolean | null;
+          created_at: null | string;
+          creator_id: string;
+          deleted: boolean | null;
+          description: null | string;
+          id: string;
+          name: string;
+          status: null | string;
+          updated_at: null | string;
+          ws_id: string;
+        };
+        Update: {
+          archived?: boolean | null;
+          created_at?: null | string;
+          creator_id?: string;
+          deleted?: boolean | null;
+          description?: null | string;
+          id?: string;
+          name?: string;
+          status?: null | string;
+          updated_at?: null | string;
+          ws_id?: string;
+        };
+      };
       task_labels: {
         Insert: {
           label_id: string;
@@ -6471,6 +6750,154 @@ export type Database = {
           name?: null | string;
           position?: null | number;
           status?: Database['public']['Enums']['task_board_status'] | null;
+        };
+      };
+      task_project_initiatives: {
+        Insert: {
+          created_at?: null | string;
+          initiative_id: string;
+          project_id: string;
+        };
+        Relationships: [
+          {
+            columns: ['initiative_id'];
+            foreignKeyName: 'task_project_initiatives_initiative_id_fkey';
+            isOneToOne: false;
+            referencedColumns: ['id'];
+            referencedRelation: 'task_initiatives';
+          },
+          {
+            columns: ['project_id'];
+            foreignKeyName: 'task_project_initiatives_project_id_fkey';
+            isOneToOne: false;
+            referencedColumns: ['id'];
+            referencedRelation: 'task_projects';
+          },
+        ];
+        Row: {
+          created_at: null | string;
+          initiative_id: string;
+          project_id: string;
+        };
+        Update: {
+          created_at?: null | string;
+          initiative_id?: string;
+          project_id?: string;
+        };
+      };
+      task_project_tasks: {
+        Insert: {
+          created_at?: null | string;
+          project_id: string;
+          task_id: string;
+        };
+        Relationships: [
+          {
+            columns: ['project_id'];
+            foreignKeyName: 'task_project_tasks_project_id_fkey';
+            isOneToOne: false;
+            referencedColumns: ['id'];
+            referencedRelation: 'task_projects';
+          },
+          {
+            columns: ['task_id'];
+            foreignKeyName: 'task_project_tasks_task_id_fkey';
+            isOneToOne: false;
+            referencedColumns: ['id'];
+            referencedRelation: 'tasks';
+          },
+        ];
+        Row: {
+          created_at: null | string;
+          project_id: string;
+          task_id: string;
+        };
+        Update: {
+          created_at?: null | string;
+          project_id?: string;
+          task_id?: string;
+        };
+      };
+      task_projects: {
+        Insert: {
+          archived?: boolean | null;
+          created_at?: null | string;
+          creator_id?: string;
+          deleted?: boolean | null;
+          description?: null | string;
+          id?: string;
+          name: string;
+          status?: null | string;
+          updated_at?: null | string;
+          ws_id: string;
+        };
+        Relationships: [
+          {
+            columns: ['creator_id'];
+            foreignKeyName: 'task_projects_creator_id_fkey';
+            isOneToOne: false;
+            referencedColumns: ['user_id'];
+            referencedRelation: 'nova_user_challenge_leaderboard';
+          },
+          {
+            columns: ['creator_id'];
+            foreignKeyName: 'task_projects_creator_id_fkey';
+            isOneToOne: false;
+            referencedColumns: ['user_id'];
+            referencedRelation: 'nova_user_leaderboard';
+          },
+          {
+            columns: ['creator_id'];
+            foreignKeyName: 'task_projects_creator_id_fkey';
+            isOneToOne: false;
+            referencedColumns: ['id'];
+            referencedRelation: 'shortened_links_creator_stats';
+          },
+          {
+            columns: ['creator_id'];
+            foreignKeyName: 'task_projects_creator_id_fkey';
+            isOneToOne: false;
+            referencedColumns: ['id'];
+            referencedRelation: 'users';
+          },
+          {
+            columns: ['ws_id'];
+            foreignKeyName: 'task_projects_ws_id_fkey';
+            isOneToOne: false;
+            referencedColumns: ['id'];
+            referencedRelation: 'workspace_link_counts';
+          },
+          {
+            columns: ['ws_id'];
+            foreignKeyName: 'task_projects_ws_id_fkey';
+            isOneToOne: false;
+            referencedColumns: ['id'];
+            referencedRelation: 'workspaces';
+          },
+        ];
+        Row: {
+          archived: boolean | null;
+          created_at: null | string;
+          creator_id: string;
+          deleted: boolean | null;
+          description: null | string;
+          id: string;
+          name: string;
+          status: null | string;
+          updated_at: null | string;
+          ws_id: string;
+        };
+        Update: {
+          archived?: boolean | null;
+          created_at?: null | string;
+          creator_id?: string;
+          deleted?: boolean | null;
+          description?: null | string;
+          id?: string;
+          name?: string;
+          status?: null | string;
+          updated_at?: null | string;
+          ws_id?: string;
         };
       };
       tasks: {

@@ -17,12 +17,12 @@
   "devDependencies": {
     "@tuturuuu/types": "workspace:*",
     "@tuturuuu/typescript-config": "workspace:*",
-    "@types/node": "^24.5.2",
-    "@types/react": "^19.1.13",
+    "@types/node": "^24.6.0",
+    "@types/react": "^19.1.15",
     "typescript": "^5.9.2"
   },
   "exports": {
     "./*": "./src/*.ts"
   },
-  "packageManager": "bun@1.2.22"
+  "packageManager": "bun@1.2.23"
 }

@@ -23,7 +23,7 @@ export interface NavLink {
   disabledRoles?: string[];
   isBack?: boolean;
   onClick?: () => void;
-  children?: NavLink[];
+  children?: (NavLink | null)[];
   aliases?: string[];
   requireRootMember?: boolean;
   requireRootWorkspace?: boolean;

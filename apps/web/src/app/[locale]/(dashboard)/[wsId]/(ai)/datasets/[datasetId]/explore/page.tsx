@@ -2,6 +2,7 @@ import { createClient } from '@tuturuuu/supabase/next/server';
 import { Card, CardContent } from '@tuturuuu/ui/card';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
+import WorkspaceWrapper from '@/components/workspace-wrapper';
 import { DataExplorer } from './data-explorer';
 
 export const metadata: Metadata = {
@@ -17,19 +18,24 @@ interface Props {
 }
 
 export default async function ExploreDatasetPage({ params }: Props) {
-  const { wsId, datasetId } = await params;
-  const dataset = await getDataset(datasetId);
-
-  if (!dataset) notFound();
-
   return (
-    <div className="space-y-6">
-      <Card>
-        <CardContent className="pt-6">
-          <DataExplorer wsId={wsId} dataset={dataset} />
-        </CardContent>
-      </Card>
-    </div>
+    <WorkspaceWrapper params={params}>
+      {async ({ wsId, datasetId }) => {
+        const dataset = await getDataset(datasetId);
+
+        if (!dataset) notFound();
+
+        return (
+          <div className="space-y-6">
+            <Card>
+              <CardContent className="pt-6">
+                <DataExplorer wsId={wsId} dataset={dataset} />
+              </CardContent>
+            </Card>
+          </div>
+        );
+      }}
+    </WorkspaceWrapper>
   );
 }
 

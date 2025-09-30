@@ -116,10 +116,16 @@ export function AssigneeSelect({ taskId, assignees = [], onUpdate }: Props) {
           throw new Error(error.message || 'Failed to remove assignee');
         }
       } else {
-        const { error } = await supabase.from('task_assignees').insert({
-          task_id: taskId,
-          user_id: memberId,
-        });
+        const { error } = await supabase.from('task_assignees').upsert(
+          {
+            task_id: taskId,
+            user_id: memberId,
+          },
+          {
+            onConflict: 'task_id,user_id',
+            ignoreDuplicates: true,
+          }
+        );
 
         if (error) {
           console.error('Add assignee error:', error);
@@ -283,11 +289,11 @@ export function AssigneeSelect({ taskId, assignees = [], onUpdate }: Props) {
           disabled={isLoading}
           size="xs"
           onClick={(e) => {
+            e.stopPropagation(); // Always prevent event propagation to task card
             // Prevent popover from opening when shift is held down
             // (user might be about to select multiple tasks for bulk action)
             if (e.shiftKey) {
               e.preventDefault();
-              e.stopPropagation();
             }
           }}
         >
@@ -325,6 +331,9 @@ export function AssigneeSelect({ taskId, assignees = [], onUpdate }: Props) {
         className="w-80 border-0 bg-white/95 p-0 shadow-2xl backdrop-blur-sm dark:bg-gray-900/95"
         align="start"
         side="bottom"
+        onClick={(e) => {
+          e.stopPropagation(); // Prevent triggering task card click
+        }}
       >
         <div className="/50 overflow-hidden rounded-xl border dark:border-gray-700/50">
           <Command>
@@ -350,7 +359,9 @@ export function AssigneeSelect({ taskId, assignees = [], onUpdate }: Props) {
                     <CommandItem
                       key={member.id}
                       value={`${member.display_name} ${member.email}`}
-                      onSelect={() => handleSelect(member.id)}
+                      onSelect={() => {
+                        handleSelect(member.id);
+                      }}
                       disabled={assigneeMutation.isPending}
                       className="mx-1 my-1 gap-3 rounded-lg px-3 py-3 transition-all duration-200 hover:bg-gradient-to-r hover:from-green-100 hover:to-emerald-100 disabled:opacity-50 dark:hover:from-green-900/20 dark:hover:to-emerald-900/20"
                     >
@@ -386,7 +397,9 @@ export function AssigneeSelect({ taskId, assignees = [], onUpdate }: Props) {
               {uniqueAssignedMembers.length > 0 && (
                 <CommandGroup>
                   <CommandItem
-                    onSelect={handleRemoveAll}
+                    onSelect={() => {
+                      handleRemoveAll();
+                    }}
                     disabled={assigneeMutation.isPending}
                     className="mx-1 my-1 gap-3 rounded-lg px-3 py-2 text-red-600 transition-all duration-200 hover:bg-red-50 hover:text-red-700 disabled:opacity-50 dark:text-red-400 dark:hover:bg-red-900/20 dark:hover:text-red-300"
                   >
@@ -406,7 +419,9 @@ export function AssigneeSelect({ taskId, assignees = [], onUpdate }: Props) {
                     <CommandItem
                       key={member.id}
                       value={`${member.display_name} ${member.email}`}
-                      onSelect={() => handleSelect(member.id)}
+                      onSelect={() => {
+                        handleSelect(member.id);
+                      }}
                       disabled={assigneeMutation.isPending}
                       className="mx-1 my-1 gap-3 rounded-lg px-3 py-3 transition-all duration-200 hover:bg-gradient-to-r hover:from-blue-100 hover:to-indigo-100 disabled:opacity-50 dark:hover:from-blue-900/20 dark:hover:to-indigo-900/20"
                     >

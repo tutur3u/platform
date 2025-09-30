@@ -26,6 +26,7 @@ interface DateTimePickerProps {
   minTime?: string;
   scrollIntoViewOnOpen?: boolean;
   pickerButtonRef?: React.RefObject<HTMLButtonElement | null>;
+  disabled?: boolean;
 }
 
 // Utility to find the nearest scrollable parent
@@ -53,6 +54,7 @@ export function DateTimePicker({
   minTime,
   scrollIntoViewOnOpen = false,
   pickerButtonRef,
+  disabled = false,
 }: DateTimePickerProps) {
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(date);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
@@ -251,6 +253,7 @@ export function DateTimePicker({
               'w-full justify-start text-left font-normal',
               !date && 'text-muted-foreground'
             )}
+            disabled={disabled}
           >
             <CalendarIcon className="mr-2 h-4 w-4" />
             {date ? (

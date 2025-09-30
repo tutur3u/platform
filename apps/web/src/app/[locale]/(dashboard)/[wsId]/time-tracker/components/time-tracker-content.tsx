@@ -31,6 +31,7 @@ import {
   SelectValue,
 } from '@tuturuuu/ui/select';
 import { toast } from '@tuturuuu/ui/sonner';
+import { getDescriptionText } from '@tuturuuu/ui/utils/text-helper';
 import { cn } from '@tuturuuu/utils/format';
 import { priorityCompare } from '@tuturuuu/utils/task-helper';
 import dayjs from 'dayjs';
@@ -475,7 +476,9 @@ export default function TimeTrackerContent({
             method: 'POST',
             body: JSON.stringify({
               title: task.name,
-              description: task.description || `Working on: ${task.name}`,
+              description: task.description
+                ? getDescriptionText(task.description)
+                : `Working on: ${task.name}`,
               task_id: task.id,
               category_id:
                 categories.find((c) => c.name.toLowerCase().includes('work'))
@@ -988,7 +991,7 @@ export default function TimeTrackerContent({
                                   </div>
                                   {task.description && (
                                     <p className="mb-3 line-clamp-2 text-gray-600 text-xs dark:text-gray-400">
-                                      {task.description}
+                                      {getDescriptionText(task.description)}
                                     </p>
                                   )}
 
@@ -1322,7 +1325,7 @@ export default function TimeTrackerContent({
                         </div>
                         {task.description && (
                           <p className="mb-2 line-clamp-2 text-gray-600 text-sm dark:text-gray-400">
-                            {task.description}
+                            {getDescriptionText(task.description)}
                           </p>
                         )}
                         <div className="flex items-center gap-2 text-gray-500 text-xs dark:text-gray-400">

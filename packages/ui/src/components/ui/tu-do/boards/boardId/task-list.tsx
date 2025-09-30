@@ -1,4 +1,4 @@
-import { useDndMonitor } from '@dnd-kit/core';
+import { useDndMonitor, useDroppable } from '@dnd-kit/core';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { useQuery } from '@tanstack/react-query';
@@ -46,10 +46,10 @@ import React, {
   useRef,
   useState,
 } from 'react';
+import { TaskEditDialog } from '../../shared/task-edit-dialog';
 import { ListActions } from './list-actions';
 import { statusIcons } from './status-section';
 import { MeasuredTaskCard } from './task';
-import { TaskForm } from './task-form';
 
 type SortOption =
   | 'none'
@@ -102,6 +102,7 @@ interface BoardColumnProps {
   isMultiSelectMode?: boolean;
   isPersonalWorkspace?: boolean;
   onTaskSelect?: (taskId: string, event: React.MouseEvent) => void;
+  onAddTask?: (list: TaskList) => void;
 }
 
 function BoardColumnInner({
@@ -114,7 +115,9 @@ function BoardColumnInner({
   onTaskSelect,
   isMultiSelectMode,
   isPersonalWorkspace,
+  onAddTask,
 }: BoardColumnProps) {
+  const [localCreateOpen, setLocalCreateOpen] = useState(false);
   const params = useParams();
   const wsId = params.wsId as string;
 
@@ -902,8 +905,44 @@ function BoardColumnInner({
       />
 
       <div className="rounded-b-xl border-t p-3 backdrop-blur-sm">
-        <TaskForm listId={column.id} onTaskCreated={handleUpdate} />
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() =>
+            onAddTask ? onAddTask(column) : setLocalCreateOpen(true)
+          }
+          className="w-full justify-start rounded-lg border border-dynamic-gray/40 border-dashed text-muted-foreground text-xs transition-all hover:border-dynamic-gray/60 hover:bg-muted/40 hover:text-foreground"
+        >
+          + Add task
+        </Button>
       </div>
+
+      {/* Local fallback modal if parent handler not provided */}
+      {!onAddTask && (
+        <TaskEditDialog
+          task={
+            {
+              id: 'new',
+              name: '',
+              description: '',
+              priority: null,
+              start_date: null,
+              end_date: null,
+              estimation_points: null,
+              list_id: column.id,
+              labels: [],
+              archived: false,
+              assignees: [],
+            } as any
+          }
+          boardId={boardId}
+          isOpen={localCreateOpen}
+          onClose={() => setLocalCreateOpen(false)}
+          onUpdate={handleUpdate}
+          availableLists={[column]}
+          mode="create"
+        />
+      )}
     </Card>
   );
 }
@@ -948,6 +987,21 @@ function VirtualizedTaskListInner({
   clearAllFilters,
 }: VirtualizedTaskListProps) {
   const scrollRef = useRef<HTMLDivElement | null>(null);
+  const { setNodeRef: setDroppableRef, isOver: isColumnDragOver } =
+    useDroppable({
+      id: `column-surface-${column.id}`,
+      data: {
+        type: 'ColumnSurface',
+        columnId: String(column.id),
+      },
+    });
+  const attachScrollableRef = useCallback(
+    (node: HTMLDivElement | null) => {
+      scrollRef.current = node;
+      setDroppableRef(node);
+    },
+    [setDroppableRef]
+  );
   const [viewportHeight, setViewportHeight] = useState(0);
   const [scrollTop, setScrollTop] = useState(0);
   const [avgHeight, setAvgHeight] = useState(ESTIMATED_ITEM_HEIGHT);
@@ -1083,8 +1137,12 @@ function VirtualizedTaskListInner({
 
   return (
     <div
-      ref={scrollRef}
-      className="h-full flex-1 space-y-2 overflow-y-auto p-3"
+      ref={attachScrollableRef}
+      className={cn(
+        'h-full flex-1 space-y-2 overflow-y-auto p-3 transition-colors',
+        isColumnDragOver &&
+          'rounded-lg bg-dynamic-blue/5 ring-1 ring-dynamic-blue/30'
+      )}
       // When not virtualizing we still want consistent styling
       data-virtualized={shouldVirtualize ? 'true' : 'false'}
     >

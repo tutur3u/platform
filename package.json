@@ -5,6 +5,7 @@
     "build": "turbo run build",
     "buildx": "turbo test lint build",
     "dev": "turbo run dev --parallel",
+    "dev:docs": "cd apps/docs && mintlify dev",
     "dev:web": "turbo run dev -F @tuturuuu/web",
     "dev:calendar": "turbo run dev -F @tuturuuu/calendar -F @tuturuuu/web",
     "dev:rewise": "turbo run dev -F @tuturuuu/rewise -F @tuturuuu/web",
@@ -42,6 +43,7 @@
     "format-and-lint": "biome check",
     "format-and-lint:fix": "biome check --write",
     "gemini": "bunx @google/gemini-cli",
+    "claude": "bunx @anthropic-ai/claude-code",
     "stop": "cd apps/db && bun sb:stop",
     "sb:status": "cd apps/db && bun sb:status",
     "sb:start": "cd apps/db && bun sb:start",
@@ -77,7 +79,7 @@
   "engines": {
     "node": ">=22"
   },
-  "packageManager": "bun@1.2.22",
+  "packageManager": "bun@1.2.23",
   "workspaces": ["apps/*", "packages/*"],
   "trustedDependencies": [
     "@tailwindcss/oxide",

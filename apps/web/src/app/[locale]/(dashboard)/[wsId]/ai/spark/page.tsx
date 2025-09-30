@@ -4,6 +4,7 @@ import { getCurrentUser } from '@tuturuuu/utils/user-helper';
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
+import WorkspaceWrapper from '@/components/workspace-wrapper';
 import SparkClientPage from './client-page';
 
 export const metadata: Metadata = {
@@ -17,10 +18,9 @@ export default async function SparkPage({
   params: Promise<{ wsId: string }>;
 }) {
   const t = await getTranslations('common');
-  const { wsId } = await params;
   const user = await getCurrentUser();
-  if (!user?.email) redirect('/login');
 
+  if (!user?.email) redirect('/login');
   const adminSb = await createAdminClient();
 
   const { data: whitelisted, error } = await adminSb
@@ -36,5 +36,9 @@ export default async function SparkPage({
       </div>
     );
 
-  return <SparkClientPage wsId={wsId} />;
+  return (
+    <WorkspaceWrapper params={params}>
+      {({ wsId }) => <SparkClientPage wsId={wsId} />}
+    </WorkspaceWrapper>
+  );
 }

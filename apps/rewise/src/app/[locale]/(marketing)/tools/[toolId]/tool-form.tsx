@@ -23,7 +23,7 @@ export function ToolForm({ tool }: { tool: Tool }) {
     const res = await fetch(`/api/ai/chat/google/new`, {
       method: 'POST',
       body: JSON.stringify({
-        model: 'gemini-1.5-flash-002',
+        model: 'gemini-2.5-flash-lite',
         message: input,
       }),
     });

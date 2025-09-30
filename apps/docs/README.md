@@ -1,168 +1,114 @@
 # Tuturuuu Documentation
 
-This directory contains the comprehensive documentation for the Tuturuuu platform, organized for easy navigation and maintenance.
+The documentation workspace is now organized around the lifecycle of building with Tuturuuu—understand the vision, explore the platform, build confidently, learn continuously, and reference stable contracts.
 
 ## 📁 Directory Structure
 
 ```text
-docs/
-├── components/                    # Reusable UI components
-│   ├── index.mdx                 # Components overview
-│   ├── workspace-wrapper.mdx     # WorkspaceWrapper documentation
-│   └── workspace-wrapper-quick-reference.mdx
-├── development-tools/            # Development guides and tools
-│   ├── index.mdx                 # Development tools overview
-│   ├── development.mdx           # Development setup
-│   ├── monorepo-architecture.mdx # Project structure
-│   ├── git-conventions.mdx       # Git workflow
-│   ├── local-supabase-development.mdx
-│   ├── ci-cd-pipelines.mdx
-│   ├── cleaning-clone.mdx
-│   └── documenting.mdx
-├── examples/                     # Code examples and samples
-│   ├── index.mdx                 # Examples overview
-│   └── components/               # Component examples
-│       └── workspace-wrapper-example.tsx
-├── features/                     # Feature documentation
-│   ├── meet-together.mdx
-│   └── user-management.mdx
-├── personalization/              # Personalization features
-│   ├── themes.mdx
-│   └── language.mdx
-├── prompt-engineering/           # AI prompt engineering
-│   ├── introduction.mdx
-│   └── prompt-design-strategies/
-├── api-reference/                # API documentation
-│   ├── introduction.mdx
-│   └── endpoint/
-└── experiments/                  # Experimental features
-    ├── form-builder.mdx
-    ├── calendar.mdx
-    ├── finance.mdx
-    ├── project-management.mdx
-    └── ai-chat.mdx
+apps/docs/
+├── overview/                # Vision, mission, company playbooks
+│   ├── vision.mdx
+│   ├── organization-guide.mdx
+│   └── agent-operating-manual.mdx
+├── platform/                # Product experience, AI, components, personalization
+│   ├── index.mdx
+│   ├── ai/structured-data.mdx
+│   ├── features/
+│   │   ├── command-center-dashboard.mdx
+│   │   ├── meet-together.mdx
+│   │   └── user-management.mdx
+│   ├── components/
+│   │   ├── index.mdx
+│   │   ├── workspace-wrapper.mdx
+│   │   └── workspace-wrapper-quick-reference.mdx
+│   └── personalization/
+│       ├── themes.mdx
+│       └── language.mdx
+├── build/                   # Development tooling and workflows
+│   ├── index.mdx
+│   └── development-tools/
+│       ├── index.mdx
+│       ├── development.mdx
+│       ├── monorepo-architecture.mdx
+│       ├── git-conventions.mdx
+│       ├── local-supabase-development.mdx
+│       ├── ci-cd-pipelines.mdx
+│       ├── cleaning-clone.mdx
+│       └── documenting.mdx
+├── learn/                   # Examples, experiments, prompt engineering
+│   ├── index.mdx
+│   ├── examples/index.mdx
+│   ├── experiments/
+│   │   ├── form-builder.mdx
+│   │   ├── calendar.mdx
+│   │   ├── finance.mdx
+│   │   ├── project-management.mdx
+│   │   └── ai-chat.mdx
+│   └── prompt-engineering/
+│       ├── introduction.mdx
+│       └── prompt-design-strategies/
+└── reference/               # API contracts and schemas
+    ├── index.mdx
+    └── api-reference/endpoint/generate.mdx
 ```
 
-## 🎯 Organization Principles
+Static assets (images, favicon, logos) live alongside `mint.json` at the root of `apps/docs/`.
 
-### 1. **Logical Grouping**
+## 🧭 Organization Principles
 
-- **Get Started**: Introduction and quick start
-- **Development Tools**: Everything needed for development
-- **Components**: Reusable UI components and utilities
-- **Examples**: Practical code samples
-- **Features**: Platform features and capabilities
-- **AI Features**: AI-specific functionality
-- **Personalization**: User customization options
-- **API References**: API documentation
-- **Experiments**: Experimental and beta features
-- **Prompt Engineering**: AI prompt design strategies
+1. **Lifecycle-Oriented** – Content flows from vision → platform → build → learn → reference.
+2. **Single Source of Truth** – Each topic lives in exactly one place, with cross-links instead of duplicates.
+3. **Absolute Links** – Use absolute paths (e.g., `/platform/index`) to keep navigation resilient to future moves.
+4. **Mermaid 10.8.0** – All diagrams conform to Mermaid 10.8.0 syntax for consistent rendering.
 
-### 2. **Hierarchical Structure**
+## ✍️ Authoring Guidelines
 
-- Each section has an `index.mdx` file for overview
-- Related documentation is grouped together
-- Clear navigation paths between related topics
-
-### 3. **Consistent Naming**
-
-- Files use kebab-case (`workspace-wrapper.mdx`)
-- Directories use kebab-case (`development-tools/`)
-- Index files are always `index.mdx`
-
-## 📝 Documentation Standards
-
-### File Structure
-
-Each documentation file should include:
+### Front Matter Template
 
 ```mdx
 ---
-title: "Page Title"
-description: "Brief description of the page content"
-updatedAt: "YYYY-MM-DD"
+title: 'Page Title'
+description: 'Short purpose statement.'
+updated: 'YYYY-MM-DD'
 ---
-
-# Page Title
-
-Content goes here...
 ```
 
-### Code Examples
+- Use `updated` when making meaningful edits.
+- Keep titles sentence case; avoid title case unless it is a proper noun.
 
-- Use proper syntax highlighting
-- Include TypeScript types
-- Show both server and client examples
-- Include error handling
+### Content Checklist
 
-### Cross-References
+- Provide context before diving into steps.
+- Include diagrams when they clarify complex relationships.
+- Cross-link related docs using absolute paths.
+- Close with “Next steps” or related resources where helpful.
 
-- Link to related documentation
-- Use relative paths for internal links
-- Include "See also" sections
+## 🔧 Maintaining Navigation
 
-## 🔧 Maintenance
+All sidebar navigation lives in `apps/docs/mint.json`. When adding a page:
 
-### Adding New Documentation
+1. Place the file in the correct directory.
+2. Update the relevant `index.mdx` with a pointer to your new doc.
+3. Add the path to the appropriate `navigation` group in `mint.json` (e.g., `platform/index`).
+4. Run `bun --filter @tuturuuu/docs dev` to verify links render correctly.
 
-1. **Choose the right section** based on content type
-2. **Create the file** with proper frontmatter
-3. **Update the index** file in the section
-4. **Add to navigation** in `mint.json`
-5. **Cross-reference** from related pages
+## 🚀 Quick Start for Contributors
 
-### Updating Existing Documentation
+1. Review the [Build & Ship](/build/index) section for environment setup and workflows.
+2. Read the [Documentation Organization Guide](/overview/organization-guide) to understand how we structure content.
+3. When documenting a product area, reference the [Platform Overview](/platform/index) for framing and terminology.
 
-1. **Update the `updatedAt`** field
-2. **Check cross-references** still work
-3. **Update examples** if APIs change
-4. **Test code samples** still work
+## 🤝 Contributing Tips
 
-### File Naming Conventions
+- Favor smaller, focused PRs that touch a single section.
+- Include screenshots or diagrams when introducing new UI/UX flows.
+- Update `updated` timestamps so readers can track freshness.
+- If a change impacts multiple sections, coordinate with docs maintainers before merging.
 
-- **Components**: `component-name.mdx`
-- **Features**: `feature-name.mdx`
-- **Tools**: `tool-name.mdx`
-- **Examples**: `example-name.mdx`
-- **Index files**: Always `index.mdx`
+## 📚 Useful Resources
 
-## 🚀 Getting Started
+- [Mintlify Documentation](https://mintlify.com/docs)
+- [MDX Guide](https://mdxjs.com/)
+- [Mermaid 10.8.0 Syntax](https://mermaid.js.org/syntax/)
 
-### For Contributors
-
-1. Read the [Development Tools](../development-tools) section
-2. Check existing documentation before creating new
-3. Follow the established patterns
-4. Update this README if adding new sections
-
-### For Users
-
-1. Start with [Introduction](./introduction)
-2. Follow the [Development Tools](../development-tools) for setup
-3. Check [Components](../components) for reusable components
-4. Look at [Examples](../examples) for implementation patterns
-
-## 📊 Documentation Metrics
-
-- **Total Pages**: ~25 documentation pages
-- **Code Examples**: 10+ practical examples
-- **Components**: 1 documented component (WorkspaceWrapper)
-- **Features**: 2 documented features
-- **Last Updated**: 2024-12-19
-
-## 🤝 Contributing
-
-When contributing to documentation:
-
-1. **Follow the structure** outlined above
-2. **Use consistent formatting** and naming
-3. **Include practical examples** with real code
-4. **Test all code samples** before committing
-5. **Update cross-references** when moving content
-6. **Keep the README updated** with any structural changes
-
-## 📚 Resources
-
-- [Mintlify Documentation](https://mintlify.com/docs) - Documentation platform
-- [MDX Guide](https://mdxjs.com/) - Markdown with JSX
-- [TypeScript Documentation](https://www.typescriptlang.org/docs/) - TypeScript reference
+Thanks for helping us keep the Tuturuuu knowledge base world-class.

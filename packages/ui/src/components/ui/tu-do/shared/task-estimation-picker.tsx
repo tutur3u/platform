@@ -107,10 +107,10 @@ export function TaskEstimationPicker({
   };
 
   const estimationValues = useMemo(() => {
-    if (!boardConfig.estimation_type) return [];
+    if (!boardConfig || !boardConfig.estimation_type) return [];
     const indices = buildEstimationIndices({
-      extended: boardConfig.extended_estimation,
-      allowZero: boardConfig.allow_zero_estimates,
+      extended: !!boardConfig.extended_estimation,
+      allowZero: !!boardConfig.allow_zero_estimates,
     });
     // Always include a null option first for clearing estimation
     const options: {
@@ -123,11 +123,7 @@ export function TaskEstimationPicker({
       options.push({ value: idx, label });
     }
     return options;
-  }, [
-    boardConfig.estimation_type,
-    boardConfig.extended_estimation,
-    boardConfig.allow_zero_estimates,
-  ]);
+  }, [boardConfig]);
 
   // If board is not configured for estimation, show message
   if (!isLoading && (!boardConfig || !boardConfig.estimation_type)) {

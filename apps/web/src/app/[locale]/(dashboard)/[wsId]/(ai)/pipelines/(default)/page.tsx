@@ -7,6 +7,7 @@ import { Separator } from '@tuturuuu/ui/separator';
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 import { CustomDataTable } from '@/components/custom-data-table';
+import WorkspaceWrapper from '@/components/workspace-wrapper';
 import { getColumns } from '../columns';
 import ModelForm from '../form';
 
@@ -32,35 +33,41 @@ interface Props {
 }
 
 export default async function CrawledUrlsPage({ params, searchParams }: Props) {
-  const t = await getTranslations();
-  const { locale, wsId } = await params;
-  const { data, count } = await getData(wsId, await searchParams);
-
-  const pageSize = parseInt((await searchParams)?.pageSize || '50') || 50;
-
   return (
-    <>
-      <FeatureSummary
-        pluralTitle={t('ws-crawlers.plural')}
-        singularTitle={t('ws-crawlers.singular')}
-        description={t('ws-crawlers.description')}
-        createTitle={t('ws-crawlers.create')}
-        createDescription={t('ws-crawlers.create_description')}
-        form={<ModelForm wsId={wsId} />}
-      />
-      <Separator className="my-4" />
-      <CustomDataTable
-        data={data}
-        namespace="crawled-url-data-table"
-        columnGenerator={getColumns}
-        extraData={{ locale, wsId }}
-        count={count}
-        pageSize={pageSize}
-        defaultVisibility={{
-          id: false,
-        }}
-      />
-    </>
+    <WorkspaceWrapper params={params}>
+      {async ({ wsId, locale }) => {
+        const t = await getTranslations();
+        const { data, count } = await getData(wsId, await searchParams);
+
+        const pageSize =
+          parseInt((await searchParams)?.pageSize || '50', 10) || 50;
+
+        return (
+          <>
+            <FeatureSummary
+              pluralTitle={t('ws-crawlers.plural')}
+              singularTitle={t('ws-crawlers.singular')}
+              description={t('ws-crawlers.description')}
+              createTitle={t('ws-crawlers.create')}
+              createDescription={t('ws-crawlers.create_description')}
+              form={<ModelForm wsId={wsId} />}
+            />
+            <Separator className="my-4" />
+            <CustomDataTable
+              data={data}
+              namespace="crawled-url-data-table"
+              columnGenerator={getColumns}
+              extraData={{ locale, wsId }}
+              count={count}
+              pageSize={pageSize}
+              defaultVisibility={{
+                id: false,
+              }}
+            />
+          </>
+        );
+      }}
+    </WorkspaceWrapper>
   );
 }
 
