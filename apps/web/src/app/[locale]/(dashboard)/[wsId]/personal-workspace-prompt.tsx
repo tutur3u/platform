@@ -78,7 +78,7 @@ export default function PersonalWorkspacePrompt({
   return (
     <Dialog open onOpenChange={() => {}}>
       <DialogContent
-        showXIcon={false}
+        showCloseButton={false}
         onEscapeKeyDown={(e) => e.preventDefault()}
         onInteractOutside={(e) => e.preventDefault()}
       >

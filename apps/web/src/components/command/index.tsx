@@ -329,7 +329,7 @@ export function CommandPalette(props: CommandPaletteProps & LegacyProps) {
     <CommandDialog
       open={open}
       onOpenChange={setOpenAction}
-      showXIcon={false}
+      showCloseButton={false}
       contentClassName="sm:max-w-4xl w-[min(96vw,1024px)] backdrop-blur-sm"
       aria-label="Jarvis AI Assistant"
     >
