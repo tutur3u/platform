@@ -194,7 +194,7 @@ export function RichTextEditor({
                 const { state } = view;
                 const { from } = state.selection;
                 if (state.schema.nodes.image) {
-                const transaction = state.tr.insert(
+                  const transaction = state.tr.insert(
                     from,
                     state.schema.nodes.image.create({ src: url })
                   );
