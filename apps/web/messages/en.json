@@ -4828,5 +4828,16 @@
   "ws-promotions": {
     "no_promotion": "No promotion",
     "search_promotions": "Search promotions"
+  },
+  "ws-tasks": {
+    "my_tasks_description": "View and manage all tasks assigned to you across all boards",
+    "overdue": "Overdue",
+    "due_today": "Due Today",
+    "upcoming": "Upcoming",
+    "completed": "Completed",
+    "no_due_date": "No Due Date",
+    "last_30_days": "Last 30 Days",
+    "no_tasks": "No Tasks Found",
+    "no_tasks_assigned": "You don't have any tasks assigned to you yet"
   }
 }

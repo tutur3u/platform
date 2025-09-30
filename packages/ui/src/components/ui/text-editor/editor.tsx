@@ -44,13 +44,12 @@ export function RichTextEditor({
 }: RichTextEditorProps) {
   const [hasChanges, setHasChanges] = useState(false);
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   const debouncedOnChange = useCallback(
     debounce((newContent: JSONContent) => {
       onChange?.(hasTextContent(newContent) ? newContent : null);
       setHasChanges(false);
     }, 500),
-    [onChange]
+    []
   );
 
   useEffect(() => {
@@ -61,16 +60,16 @@ export function RichTextEditor({
 
   const getEditorClasses = useMemo(() => {
     const baseClasses = [
-      'border rounded-md bg-white dark:bg-foreground/5 py-2 px-3',
-      'prose dark:prose-invert max-w-none overflow-y-auto ',
+      'border border-dynamic-border rounded-md bg-transparent',
+      'prose dark:prose-invert max-w-none overflow-y-auto',
       '[&_*:is(p,h1,h2,h3).is-empty::before]:content-[attr(data-placeholder)]',
-      '[&_*:is(p,h1,h2,h3).is-empty::before]:text-gray-400',
+      '[&_*:is(p,h1,h2,h3).is-empty::before]:text-muted-foreground',
       '[&_*:is(p,h1,h2,h3).is-empty::before]:float-left',
       '[&_*:is(p,h1,h2,h3).is-empty::before]:h-0',
       '[&_*:is(p,h1,h2,h3).is-empty::before]:pointer-events-none',
       '[&_li]:my-1 [&_li_h1]:text-4xl [&_li_h2]:text-3xl [&_li_h3]:text-2xl',
       className,
-    ];
+    ].filter(Boolean);
     return baseClasses.join(' ');
   }, [className]);
 
@@ -110,7 +109,7 @@ export function RichTextEditor({
         defaultProtocol: 'https',
         HTMLAttributes: {
           class:
-            'text-blue-600 hover:text-blue-800 underline cursor-pointer transition-colors',
+            'text-dynamic-blue hover:text-dynamic-blue/80 underline cursor-pointer transition-colors',
           rel: 'noopener noreferrer',
           target: '_blank',
         },
@@ -157,7 +156,7 @@ export function RichTextEditor({
   }, [editor, readOnly, debouncedOnChange]);
 
   return (
-    <div className={`space-y-2`}>
+    <div className="group relative h-full">
       {!readOnly && (
         <ToolBar
           editor={editor}
@@ -167,7 +166,7 @@ export function RichTextEditor({
           savedButtonLabel={savedButtonLabel}
         />
       )}
-      <EditorContent editor={editor} />
+      <EditorContent editor={editor} className="h-full" />
     </div>
   );
 }

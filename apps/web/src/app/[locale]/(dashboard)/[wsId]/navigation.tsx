@@ -150,8 +150,8 @@ export async function WorkspaceNavigationLinks({
         },
         {
           title: t('sidebar_tabs.my_tasks'),
+          href: `/${personalOrWsId}/tasks/my-tasks`,
           icon: <UserRound className="h-4 w-4" />,
-          tempDisabled: true,
           matchExact: true,
         },
         {

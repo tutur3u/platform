@@ -15,7 +15,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { cn } from '@tuturuuu/utils/format';
 import { format, parse } from 'date-fns';
 import { CalendarIcon, Check, Clock, Edit } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Separator } from './separator';
 
 interface DateTimePickerProps {
@@ -27,6 +27,8 @@ interface DateTimePickerProps {
   scrollIntoViewOnOpen?: boolean;
   pickerButtonRef?: React.RefObject<HTMLButtonElement | null>;
   disabled?: boolean;
+  showFooterControls?: boolean;
+  allowClear?: boolean;
 }
 
 // Utility to find the nearest scrollable parent
@@ -55,14 +57,24 @@ export function DateTimePicker({
   scrollIntoViewOnOpen = false,
   pickerButtonRef,
   disabled = false,
+  showFooterControls = true,
+  allowClear = true,
 }: DateTimePickerProps) {
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(date);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
-  const [isManualTimeEntry, setIsManualTimeEntry] = useState(false);
+  const [isManualTimeEntry, setIsManualTimeEntry] = useState(true);
   const [manualTimeInput, setManualTimeInput] = useState(
     date ? format(date, 'HH:mm') : ''
   );
   const popoverRef = useRef<HTMLDivElement>(null);
+
+  // Internal helper to allow propagating undefined without changing public prop type
+  const updateDate = (next?: Date) => {
+    // Cast to satisfy prop type while allowing undefined for clear
+    // Consumers using optional chaining will handle undefined safely
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (setDate as any)(next);
+  };
 
   // Keep manualTimeInput in sync with date prop
   useEffect(() => {
@@ -119,13 +131,11 @@ export function DateTimePicker({
       selectedDate.setMinutes(date.getMinutes());
     }
     setSelectedDate(selectedDate);
-    setDate(selectedDate);
+    updateDate(selectedDate);
     setIsCalendarOpen(false);
   };
 
   const handleTimeChange = (timeString: string) => {
-    if (!selectedDate) return;
-
     // Parse the time string (format: "HH:MM")
     const parts = timeString.split(':');
     if (parts.length !== 2) return;
@@ -140,7 +150,8 @@ export function DateTimePicker({
 
     if (Number.isNaN(hours) || Number.isNaN(minutes)) return;
 
-    const newDate = new Date(selectedDate);
+    const baseDate = selectedDate ?? date ?? minDate ?? new Date();
+    const newDate = new Date(baseDate);
     newDate.setHours(hours);
     newDate.setMinutes(minutes);
 
@@ -159,7 +170,8 @@ export function DateTimePicker({
     }
 
     setSelectedDate(newDate);
-    setDate(newDate);
+    updateDate(newDate);
+    setIsCalendarOpen(false);
   };
 
   const handleManualTimeSubmit = (e?: React.KeyboardEvent) => {
@@ -167,22 +179,22 @@ export function DateTimePicker({
 
     try {
       if (/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/.test(manualTimeInput)) {
-        if (date) {
-          const [h, m] = manualTimeInput.split(':').map(Number);
-          if (
-            typeof h === 'number' &&
-            !Number.isNaN(h) &&
-            typeof m === 'number' &&
-            !Number.isNaN(m)
-          ) {
-            const newDate = new Date(date);
-            newDate.setHours(h);
-            newDate.setMinutes(m);
-            setSelectedDate(newDate);
-            setDate(newDate);
-            setIsManualTimeEntry(false);
-            return;
-          }
+        const [h, m] = manualTimeInput.split(':').map(Number);
+        if (
+          typeof h === 'number' &&
+          !Number.isNaN(h) &&
+          typeof m === 'number' &&
+          !Number.isNaN(m)
+        ) {
+          const baseDate = selectedDate ?? date ?? minDate ?? new Date();
+          const newDate = new Date(baseDate);
+          newDate.setHours(h);
+          newDate.setMinutes(m);
+          setSelectedDate(newDate);
+          updateDate(newDate);
+          setIsManualTimeEntry(false);
+          setIsCalendarOpen(false);
+          return;
         }
       }
     } catch (error) {
@@ -202,42 +214,49 @@ export function DateTimePicker({
   };
 
   // Generate time options in 15-minute increments
-  const timeOptions = Array.from({ length: 24 * 4 }, (_, i) => {
-    const hour = Math.floor(i / 4);
-    const minute = (i % 4) * 15;
-    const formattedHour = hour.toString().padStart(2, '0');
-    const formattedMinute = minute.toString().padStart(2, '0');
-    const value = `${formattedHour}:${formattedMinute}`;
-    const display = format(parse(value, 'HH:mm', new Date()), 'h:mm a');
-    return { value, display };
-  });
+  const timeOptions = useMemo(
+    () =>
+      Array.from({ length: 24 * 4 }, (_, i) => {
+        const hour = Math.floor(i / 4);
+        const minute = (i % 4) * 15;
+        const formattedHour = hour.toString().padStart(2, '0');
+        const formattedMinute = minute.toString().padStart(2, '0');
+        const value = `${formattedHour}:${formattedMinute}`;
+        const display = format(parse(value, 'HH:mm', new Date()), 'h:mm a');
+        return { value, display };
+      }),
+    []
+  );
 
   // Filter time options for end time picker
-  let filteredTimeOptions = timeOptions;
-  if (minTime && date && minDate) {
-    // Only restrict if the selected date is the same as minDate
-    if (
-      date.getFullYear() === minDate.getFullYear() &&
-      date.getMonth() === minDate.getMonth() &&
-      date.getDate() === minDate.getDate()
-    ) {
-      filteredTimeOptions = timeOptions.filter((time) => time.value > minTime);
-    } else if (date > minDate) {
-      // If end date is after start date, show all times
-      filteredTimeOptions = timeOptions;
+  const filteredTimeOptions = useMemo(() => {
+    let options = timeOptions;
+    if (minTime && date && minDate) {
+      // Only restrict if the selected date is the same as minDate
+      if (
+        date.getFullYear() === minDate.getFullYear() &&
+        date.getMonth() === minDate.getMonth() &&
+        date.getDate() === minDate.getDate()
+      ) {
+        options = timeOptions.filter((time) => time.value > minTime);
+      } else if (date > minDate) {
+        // If end date is after start date, show all times
+        options = timeOptions;
+      }
     }
-  }
-  // After filtering, ensure the selected time is always present in the dropdown
-  if (date) {
-    const customValue = `${format(date, 'HH')}:${format(date, 'mm')}`;
-    if (!filteredTimeOptions.some((t) => t.value === customValue)) {
-      filteredTimeOptions = [
-        ...filteredTimeOptions,
-        { value: customValue, display: format(date, 'h:mm a') },
-      ];
-      filteredTimeOptions.sort((a, b) => a.value.localeCompare(b.value));
+    // After filtering, ensure the selected time is always present in the dropdown
+    if (date) {
+      const customValue = `${format(date, 'HH')}:${format(date, 'mm')}`;
+      if (!options.some((t) => t.value === customValue)) {
+        options = [
+          ...options,
+          { value: customValue, display: format(date, 'h:mm a') },
+        ];
+        options.sort((a, b) => a.value.localeCompare(b.value));
+      }
     }
-  }
+    return options;
+  }, [date, minDate, minTime, timeOptions]);
 
   // If the filtered list is empty, show an error message
   const noValidTimes = filteredTimeOptions.length === 0;
@@ -254,6 +273,11 @@ export function DateTimePicker({
               !date && 'text-muted-foreground'
             )}
             disabled={disabled}
+            aria-label={
+              date
+                ? `Selected ${format(date, 'PPP p')}`
+                : 'Open date and time picker'
+            }
           >
             <CalendarIcon className="mr-2 h-4 w-4" />
             {date ? (
@@ -280,18 +304,24 @@ export function DateTimePicker({
           sideOffset={4}
           avoidCollisions={true}
           collisionPadding={8}
+          aria-label="Date and time selector"
         >
           {showTimeSelect ? (
-            <Tabs defaultValue="date" className="w-full p-2">
+            <Tabs defaultValue="time" className="w-full p-2">
               <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="date" className="flex items-center gap-1">
+                <TabsTrigger
+                  value="date"
+                  className="flex items-center gap-1"
+                  aria-label="Select date"
+                >
                   <CalendarIcon className="h-3 w-3" />
                   Date
                 </TabsTrigger>
                 <TabsTrigger
                   value="time"
                   className="flex items-center gap-1"
-                  disabled={noValidTimes || !date}
+                  disabled={noValidTimes}
+                  aria-label="Select time"
                 >
                   <Clock className="h-3 w-3" />
                   Time
@@ -320,89 +350,139 @@ export function DateTimePicker({
                         }
                       : undefined
                   }
+                  aria-label="Calendar selector"
                 />
               </TabsContent>
 
               <TabsContent value="time" className="mt-0 min-w-xs p-0">
-                {selectedDate && (
-                  <div className="space-y-4 p-4">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <Clock className="h-4 w-4 text-muted-foreground" />
-                        <span className="font-medium text-sm">Select time</span>
-                      </div>
-                      <span className="text-muted-foreground text-xs">
-                        {date ? format(date, 'MMM d, yyyy') : ''}
-                      </span>
+                <div className="space-y-4 p-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Clock className="h-4 w-4 text-muted-foreground" />
+                      <span className="font-medium text-sm">Select time</span>
                     </div>
+                    <span className="text-muted-foreground text-xs">
+                      {date ? format(date, 'MMM d, yyyy') : ''}
+                    </span>
+                  </div>
 
-                    {isManualTimeEntry ? (
-                      <div className="flex items-center gap-2">
-                        <Input
-                          value={manualTimeInput}
-                          onChange={(e) => setManualTimeInput(e.target.value)}
-                          onKeyDown={handleManualTimeKeyDown}
-                          placeholder="HH:MM"
-                          className="flex-1"
-                        />
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => handleManualTimeSubmit()}
-                        >
-                          <Check className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    ) : (
-                      <div className="flex items-center gap-2">
-                        <Select
-                          value={
-                            noValidTimes
-                              ? undefined
-                              : date
-                                ? `${format(date, 'HH')}:${format(date, 'mm')}`
-                                : undefined
-                          }
-                          onValueChange={handleTimeChange}
-                          disabled={noValidTimes}
-                        >
-                          <SelectTrigger className="flex-1">
-                            <SelectValue
-                              placeholder={
-                                noValidTimes
-                                  ? 'Invalid time selection'
-                                  : 'Select time'
-                              }
-                            />
-                          </SelectTrigger>
-                          <SelectContent className="max-h-[200px]">
-                            {filteredTimeOptions.map((time) => (
-                              <SelectItem key={time.value} value={time.value}>
-                                {time.display}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => setIsManualTimeEntry(true)}
-                          title="Enter time manually"
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    )}
+                  {isManualTimeEntry ? (
+                    <div className="flex items-center gap-2">
+                      <Input
+                        value={manualTimeInput}
+                        onChange={(e) => setManualTimeInput(e.target.value)}
+                        onKeyDown={handleManualTimeKeyDown}
+                        placeholder="HH:MM"
+                        className="flex-1"
+                        aria-label="Enter time manually in HH:MM"
+                      />
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => handleManualTimeSubmit()}
+                        aria-label="Confirm manual time"
+                      >
+                        <Check className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      <Select
+                        value={
+                          noValidTimes
+                            ? undefined
+                            : date
+                              ? `${format(date, 'HH')}:${format(date, 'mm')}`
+                              : undefined
+                        }
+                        onValueChange={handleTimeChange}
+                        disabled={noValidTimes}
+                        aria-label="Time options"
+                      >
+                        <SelectTrigger className="flex-1">
+                          <SelectValue
+                            placeholder={
+                              noValidTimes
+                                ? 'Invalid time selection'
+                                : 'Select time'
+                            }
+                          />
+                        </SelectTrigger>
+                        <SelectContent className="max-h-[200px]">
+                          {filteredTimeOptions.map((time) => (
+                            <SelectItem key={time.value} value={time.value}>
+                              {time.display}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => setIsManualTimeEntry(true)}
+                        title="Enter time manually"
+                        aria-label="Switch to manual time entry"
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  )}
 
-                    {noValidTimes && (
-                      <div className="text-destructive text-xs">
-                        No valid end times available. Please select an earlier
-                        start time or check your time selection.
-                      </div>
+                  {noValidTimes && (
+                    <div className="text-destructive text-xs">
+                      No valid end times available. Please select an earlier
+                      start time or check your time selection.
+                    </div>
+                  )}
+                </div>
+              </TabsContent>
+              {showFooterControls && (
+                <div className="flex items-center justify-between border-t p-2">
+                  <div className="flex items-center gap-2">
+                    {allowClear && (date || selectedDate) && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          setSelectedDate(undefined);
+                          updateDate(undefined);
+                          setIsCalendarOpen(false);
+                        }}
+                        aria-label="Clear selection"
+                      >
+                        Clear
+                      </Button>
                     )}
                   </div>
-                )}
-              </TabsContent>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        const now = new Date();
+                        let next = now;
+                        if (minDate && now < minDate) {
+                          next = new Date(minDate);
+                        }
+                        setSelectedDate(next);
+                        setDate(next);
+                        setIsCalendarOpen(false);
+                      }}
+                      aria-label="Set to now"
+                    >
+                      Now
+                    </Button>
+                    <Button
+                      variant="default"
+                      size="sm"
+                      onClick={() => setIsCalendarOpen(false)}
+                      aria-label="Done"
+                    >
+                      Done
+                    </Button>
+                  </div>
+                </div>
+              )}
             </Tabs>
           ) : (
             <Calendar
@@ -425,6 +505,7 @@ export function DateTimePicker({
                     }
                   : undefined
               }
+              aria-label="Calendar selector"
             />
           )}
         </PopoverContent>
