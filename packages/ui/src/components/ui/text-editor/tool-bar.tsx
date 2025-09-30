@@ -37,11 +37,7 @@ interface ToolBarProps {
   onImageUpload?: (file: File) => Promise<string>;
 }
 
-export function ToolBar({
-  editor,
-  workspaceId,
-  onImageUpload,
-}: ToolBarProps) {
+export function ToolBar({ editor, workspaceId, onImageUpload }: ToolBarProps) {
   const [linkEditorContext, setLinkEditorContext] =
     useState<LinkEditorContext>(null);
   const [linkHref, setLinkHref] = useState('');
