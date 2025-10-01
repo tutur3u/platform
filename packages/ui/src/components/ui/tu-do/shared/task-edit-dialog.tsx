@@ -25,6 +25,8 @@ import {
   Flag,
   ListTodo,
   Loader2,
+  Plus,
+  Search,
   Settings,
   Tag,
   Timer,
@@ -137,6 +139,13 @@ function TaskEditDialogComponent({
   const [hasDraft, setHasDraft] = useState(false);
   const [createMultiple, setCreateMultiple] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [showMobileSidebar, setShowMobileSidebar] = useState(false);
+  const [workspaceMembers, setWorkspaceMembers] = useState<any[]>([]);
+  const [loadingMembers, setLoadingMembers] = useState(false);
+  const [selectedAssignees, setSelectedAssignees] = useState<any[]>(
+    task.assignees || []
+  );
+  const [assigneeSearchQuery, setAssigneeSearchQuery] = useState('');
 
   const queryClient = useQueryClient();
   const previousTaskIdRef = useRef<string | null>(null);
@@ -146,6 +155,9 @@ function TaskEditDialogComponent({
   const quickDueRef = useRef<(days: number | null) => void>(() => {});
   const updateEstimationRef = useRef<(points: number | null) => void>(() => {});
   const [workspaceId, setWorkspaceId] = useState<string | null>(null);
+  const flushEditorPendingRef = useRef<(() => JSONContent | null) | undefined>(
+    undefined
+  );
 
   // Use the React Query mutation hook for updating tasks
   const updateTaskMutation = useUpdateTask(boardId);
@@ -205,6 +217,7 @@ function TaskEditDialogComponent({
         setSelectedListId(task.list_id);
         setEstimationPoints(task.estimation_points ?? null);
         setSelectedLabels(task.labels || []);
+        setSelectedAssignees(task.assignees || []);
       } else {
         // Edit mode: load task data
         setName(task.name);
@@ -215,6 +228,7 @@ function TaskEditDialogComponent({
         setSelectedListId(task.list_id);
         setEstimationPoints(task.estimation_points ?? null);
         setSelectedLabels(task.labels || []);
+        setSelectedAssignees(task.assignees || []);
       }
       previousTaskIdRef.current = task.id;
     }
@@ -231,6 +245,7 @@ function TaskEditDialogComponent({
       setSelectedListId(task.list_id);
       setEstimationPoints(task.estimation_points ?? null);
       setSelectedLabels(task.labels || []);
+      setSelectedAssignees(task.assignees || []);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, mode, task, parseDescription]);
@@ -259,6 +274,51 @@ function TaskEditDialogComponent({
     }
   }, []);
 
+  const fetchWorkspaceMembers = useCallback(async (wsId: string) => {
+    console.log('🔍 Fetching workspace members for wsId:', wsId);
+    try {
+      setLoadingMembers(true);
+      const supabase = createClient();
+      const { data: members, error } = await supabase
+        .from('workspace_members')
+        .select(
+          `
+          user_id,
+          users!inner(
+            id,
+            display_name
+          )
+        `
+        )
+        .eq('ws_id', wsId);
+
+      if (error) {
+        console.error('Error fetching workspace members:', error);
+        throw error;
+      }
+
+      if (members) {
+        console.log('📋 Fetched workspace members:', members);
+        // Transform and sort by display_name
+        const transformedMembers = members.map((m: any) => ({
+          user_id: m.user_id,
+          display_name: m.users?.display_name || 'Unknown User',
+        }));
+        const sortedMembers = transformedMembers.sort((a, b) =>
+          (a.display_name || '').localeCompare(b.display_name || '')
+        );
+        console.log('✅ Setting workspace members:', sortedMembers);
+        setWorkspaceMembers(sortedMembers);
+      } else {
+        console.log('⚠️ No members data returned');
+      }
+    } catch (e) {
+      console.error('Failed fetching workspace members', e);
+    } finally {
+      setLoadingMembers(false);
+    }
+  }, []);
+
   // Fetch board estimation config & labels on open - memoize to prevent unnecessary re-runs
   const fetchBoardConfig = useCallback(async () => {
     if (!isOpen) return;
@@ -276,12 +336,12 @@ function TaskEditDialogComponent({
       const wsId = (board as any)?.ws_id;
       if (wsId) {
         setWorkspaceId(wsId);
-        await fetchLabels(wsId);
+        await Promise.all([fetchLabels(wsId), fetchWorkspaceMembers(wsId)]);
       }
     } catch (e) {
       console.error('Failed loading board config or labels', e);
     }
-  }, [isOpen, boardId, fetchLabels]);
+  }, [isOpen, boardId, fetchLabels, fetchWorkspaceMembers]);
 
   useEffect(() => {
     fetchBoardConfig();
@@ -476,10 +536,11 @@ function TaskEditDialogComponent({
     return hasName && hasUnsavedChanges && !isLoading;
   }, [mode, name, hasUnsavedChanges, isLoading]);
 
-  // Global keyboard shortcut: Cmd/Ctrl + Enter to save
+  // Global keyboard shortcuts: Cmd/Ctrl + Enter to save, Cmd/Ctrl + Delete to delete
   useEffect(() => {
     if (!isOpen) return;
     const handleKeyDown = (e: KeyboardEvent) => {
+      // Save shortcut: Cmd/Ctrl + Enter
       if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
         e.preventDefault();
         if (canSave) {
@@ -487,11 +548,23 @@ function TaskEditDialogComponent({
         } else if (!hasUnsavedChangesRef.current) {
           handleCloseRef.current();
         }
+        return;
+      }
+
+      // Delete shortcut: Cmd/Ctrl + Delete (only in edit mode)
+      if (
+        (e.metaKey || e.ctrlKey) &&
+        (e.key === 'Delete' || e.key === 'Backspace') &&
+        mode === 'edit'
+      ) {
+        e.preventDefault();
+        setShowDeleteConfirm(true);
+        return;
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, canSave]);
+  }, [isOpen, canSave, mode]);
 
   const handleCreateLabel = async () => {
     if (!newLabelName.trim() || !boardConfig) return;
@@ -757,8 +830,58 @@ function TaskEditDialogComponent({
     }
   };
 
+  const toggleAssignee = async (member: any) => {
+    const exists = selectedAssignees.some((a) => a.user_id === member.user_id);
+    const supabase = createClient();
+    try {
+      if (mode === 'create') {
+        // Local toggle only; persist on create
+        setSelectedAssignees((prev) =>
+          exists
+            ? prev.filter((a) => a.user_id !== member.user_id)
+            : [...prev, member]
+        );
+        return;
+      }
+      if (exists) {
+        // remove
+        const { error } = await supabase
+          .from('task_assignees')
+          .delete()
+          .eq('task_id', task.id)
+          .eq('user_id', member.user_id);
+        if (error) throw error;
+        setSelectedAssignees((prev) =>
+          prev.filter((a) => a.user_id !== member.user_id)
+        );
+      } else {
+        const { error } = await supabase
+          .from('task_assignees')
+          .insert({ task_id: task.id, user_id: member.user_id });
+        if (error) throw error;
+        setSelectedAssignees((prev) => [...prev, member]);
+      }
+      invalidateTaskCaches(queryClient, boardId);
+      onUpdate();
+    } catch (e: any) {
+      toast({
+        title: 'Assignee update failed',
+        description: e.message || 'Unable to update assignees',
+        variant: 'destructive',
+      });
+    }
+  };
+
   const handleSave = async () => {
     if (!name.trim()) return;
+
+    // Flush any pending editor changes before saving and get current content
+    let currentDescription = description;
+    if (flushEditorPendingRef.current) {
+      const flushedContent = flushEditorPendingRef.current();
+      // Use the flushed content directly
+      currentDescription = flushedContent;
+    }
 
     setIsSaving(true);
     setIsLoading(true);
@@ -772,9 +895,10 @@ function TaskEditDialogComponent({
     } catch {}
 
     // Convert JSONContent to string for storage
-    const descriptionString = description
-      ? JSON.stringify(description)
-      : undefined;
+    // Important: Use null explicitly instead of undefined to ensure DB field is cleared
+    const descriptionString: string | null = currentDescription
+      ? JSON.stringify(currentDescription)
+      : null;
 
     if (mode === 'create') {
       try {
@@ -795,6 +919,15 @@ function TaskEditDialogComponent({
             selectedLabels.map((l) => ({
               task_id: newTask.id,
               label_id: l.id,
+            }))
+          );
+        }
+
+        if (selectedAssignees.length > 0) {
+          await supabase.from('task_assignees').insert(
+            selectedAssignees.map((a) => ({
+              task_id: newTask.id,
+              user_id: a.user_id,
             }))
           );
         }
@@ -839,9 +972,10 @@ function TaskEditDialogComponent({
     }
 
     // Prepare task updates (edit mode)
-    const taskUpdates: Partial<Task> = {
+    // Note: We need to include description even if it's null to clear it in the database
+    const taskUpdates: any = {
       name: name.trim(),
-      description: descriptionString,
+      description: descriptionString, // Explicitly null when empty, not undefined
       priority: priority,
       start_date: startDate?.toISOString(),
       end_date: endDate?.toISOString(),
@@ -1057,6 +1191,7 @@ function TaskEditDialogComponent({
         <DialogContent
           showCloseButton={false}
           className="!inset-0 !top-0 !left-0 !max-w-none !translate-x-0 !translate-y-0 !rounded-none data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:slide-out-to-bottom-2 data-[state=open]:slide-in-from-bottom-2 flex h-screen max-h-screen w-screen gap-0 border-0 p-0"
+          onContextMenu={(e) => e.preventDefault()}
         >
           {/* Main content area - Task title and description */}
           <div className="flex min-w-0 flex-1 flex-col bg-background">
@@ -1180,30 +1315,58 @@ function TaskEditDialogComponent({
                   className="h-full border-0 bg-transparent px-4 focus-visible:outline-0 focus-visible:ring-0 md:px-8"
                   workspaceId={workspaceId || undefined}
                   onImageUpload={handleImageUpload}
+                  flushPendingRef={flushEditorPendingRef}
                 />
               </div>
             </div>
           </div>
 
-          {/* Simplified Right sidebar */}
-          <div className="flex w-[380px] shrink-0 flex-col border-l bg-gradient-to-b from-muted/20 to-muted/5 shadow-lg">
+          {/* Simplified Right sidebar - hidden on mobile by default */}
+          <div
+            className={cn(
+              'fixed inset-y-0 right-0 z-50 flex w-full flex-col border-l bg-background shadow-lg transition-transform duration-300 sm:w-[380px] md:relative md:z-auto md:translate-x-0 md:bg-gradient-to-b md:from-muted/20 md:to-muted/5 md:shadow-none',
+              showMobileSidebar
+                ? 'translate-x-0'
+                : 'translate-x-full md:translate-x-0'
+            )}
+          >
             {/* Sidebar header with icon */}
-            <div className="border-b bg-background/60 px-6 py-4 backdrop-blur-sm">
-              <div className="flex items-center gap-2">
-                <Settings className="h-4 w-4 text-dynamic-orange" />
-                <h3 className="font-semibold text-foreground text-sm tracking-tight">
-                  Task Options
-                </h3>
+            <div className="border-border/50 border-b bg-gradient-to-b from-background/95 to-background/80 px-6 py-4 backdrop-blur-md">
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2.5">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-dynamic-orange/10">
+                    <Settings className="h-4 w-4 text-dynamic-orange" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-foreground text-sm leading-none tracking-tight">
+                      Task Options
+                    </h3>
+                    <p className="mt-1 text-muted-foreground text-xs">
+                      Configure task settings
+                    </p>
+                  </div>
+                </div>
+                {/* Close button for mobile */}
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 shrink-0 md:hidden"
+                  onClick={() => setShowMobileSidebar(false)}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
               </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto">
-              <div className="space-y-3 p-4 md:space-y-4 md:p-6">
+            <div className="scrollbar-thin flex-1 overflow-y-auto">
+              <div className="space-y-4 p-4 md:space-y-5 md:p-6">
                 {/* Essential Options - Always Visible */}
                 {/* List Selection */}
-                <div className="space-y-2 rounded-md border bg-muted/20 p-3">
-                  <Label className="flex items-center gap-2 font-medium text-foreground text-sm">
-                    <ListTodo className="h-4 w-4 text-dynamic-orange" />
+                <div className="space-y-2.5 rounded-lg border border-border/60 bg-gradient-to-br from-muted/30 to-muted/10 p-3.5 shadow-sm transition-shadow hover:shadow-md">
+                  <Label className="flex items-center gap-2 font-semibold text-foreground text-sm">
+                    <div className="flex h-5 w-5 items-center justify-center rounded-md bg-dynamic-orange/15">
+                      <ListTodo className="h-3.5 w-3.5 text-dynamic-orange" />
+                    </div>
                     List
                   </Label>
                   <DropdownMenu>
@@ -1248,9 +1411,11 @@ function TaskEditDialogComponent({
                 </div>
 
                 {/* Priority (Dropdown) */}
-                <div className="space-y-2 rounded-md border bg-muted/20 p-3">
-                  <Label className="flex items-center gap-2 font-medium text-foreground text-sm">
-                    <Flag className="h-4 w-4 text-dynamic-orange" />
+                <div className="space-y-2.5 rounded-lg border border-border/60 bg-gradient-to-br from-muted/30 to-muted/10 p-3.5 shadow-sm transition-shadow hover:shadow-md">
+                  <Label className="flex items-center gap-2 font-semibold text-foreground text-sm">
+                    <div className="flex h-5 w-5 items-center justify-center rounded-md bg-dynamic-orange/15">
+                      <Flag className="h-3.5 w-3.5 text-dynamic-orange" />
+                    </div>
                     Priority
                   </Label>
                   <DropdownMenu>
@@ -1321,9 +1486,11 @@ function TaskEditDialogComponent({
 
                 {/* Estimation (Dropdown) */}
                 {boardConfig?.estimation_type && (
-                  <div className="space-y-2 rounded-md border bg-muted/20 p-3">
-                    <Label className="flex items-center gap-2 font-medium text-foreground text-sm">
-                      <Timer className="h-4 w-4 text-dynamic-orange" />
+                  <div className="space-y-2.5 rounded-lg border border-border/60 bg-gradient-to-br from-muted/30 to-muted/10 p-3.5 shadow-sm transition-shadow hover:shadow-md">
+                    <Label className="flex items-center gap-2 font-semibold text-foreground text-sm">
+                      <div className="flex h-5 w-5 items-center justify-center rounded-md bg-dynamic-orange/15">
+                        <Timer className="h-3.5 w-3.5 text-dynamic-orange" />
+                      </div>
                       Estimation
                     </Label>
                     <DropdownMenu>
@@ -1374,10 +1541,12 @@ function TaskEditDialogComponent({
                 )}
 
                 {/* Quick Due Date */}
-                <div className="space-y-2 rounded-md border bg-muted/20 p-3">
-                  <Label className="flex items-center justify-between gap-2 font-medium text-foreground text-sm">
+                <div className="space-y-2.5 rounded-lg border border-border/60 bg-gradient-to-br from-muted/30 to-muted/10 p-3.5 shadow-sm transition-shadow hover:shadow-md">
+                  <Label className="flex items-center justify-between gap-2 font-semibold text-foreground text-sm">
                     <span className="flex items-center gap-2">
-                      <Calendar className="h-4 w-4 text-dynamic-orange" />
+                      <div className="flex h-5 w-5 items-center justify-center rounded-md bg-dynamic-orange/15">
+                        <Calendar className="h-3.5 w-3.5 text-dynamic-orange" />
+                      </div>
                       Due Date
                     </span>
                     <span className="flex items-center gap-3">
@@ -1458,9 +1627,11 @@ function TaskEditDialogComponent({
                 {showAdvancedOptions && (
                   <div className="slide-in-from-top-2 animate-in space-y-4 duration-200">
                     {/* Custom Date Pickers */}
-                    <div className="space-y-2 rounded-md border bg-muted/20 p-3">
-                      <Label className="flex items-center gap-2 font-medium text-foreground text-sm">
-                        <Calendar className="h-4 w-4 text-dynamic-orange" />
+                    <div className="space-y-2.5 rounded-lg border border-border/60 bg-gradient-to-br from-muted/30 to-muted/10 p-3.5 shadow-sm">
+                      <Label className="flex items-center gap-2 font-semibold text-foreground text-sm">
+                        <div className="flex h-5 w-5 items-center justify-center rounded-md bg-dynamic-orange/15">
+                          <Calendar className="h-3.5 w-3.5 text-dynamic-orange" />
+                        </div>
                         Dates
                       </Label>
                       <div className="space-y-3">
@@ -1490,10 +1661,12 @@ function TaskEditDialogComponent({
                     {/* Estimation Section moved above as dropdown */}
 
                     {/* Labels Section */}
-                    <div className="space-y-2 rounded-md border bg-muted/20 p-3">
+                    <div className="space-y-2.5 rounded-lg border border-border/60 bg-gradient-to-br from-muted/30 to-muted/10 p-3.5 shadow-sm">
                       <Label className="flex items-center justify-between gap-2">
-                        <span className="flex items-center gap-2 font-medium text-foreground text-sm">
-                          <Tag className="h-4 w-4 text-dynamic-orange" />
+                        <span className="flex items-center gap-2 font-semibold text-foreground text-sm">
+                          <div className="flex h-5 w-5 items-center justify-center rounded-md bg-dynamic-orange/15">
+                            <Tag className="h-3.5 w-3.5 text-dynamic-orange" />
+                          </div>
                           Labels
                         </span>
                         {boardConfig && (
@@ -1612,43 +1785,201 @@ function TaskEditDialogComponent({
                       )}
                     </div>
 
-                    {/* Current Assignees Display */}
-                    {task.assignees && task.assignees.length > 0 && (
-                      <div className="space-y-2">
-                        <Label className="flex items-center gap-2 font-medium text-foreground text-sm">
-                          <Users className="h-4 w-4 text-dynamic-orange" />
+                    {/* Assignees Section */}
+                    <div className="space-y-2.5 rounded-lg border border-border/60 bg-gradient-to-br from-muted/30 to-muted/10 p-3.5 shadow-sm">
+                      <Label className="flex items-center justify-between gap-2">
+                        <span className="flex items-center gap-2 font-semibold text-foreground text-sm">
+                          <div className="flex h-5 w-5 items-center justify-center rounded-md bg-dynamic-orange/15">
+                            <Users className="h-3.5 w-3.5 text-dynamic-orange" />
+                          </div>
                           Assignees
+                        </span>
+                        {selectedAssignees.length > 0 && (
                           <Badge
                             variant="secondary"
-                            className="ml-auto h-4 w-4 rounded-full p-0 text-[10px]"
+                            className="h-5 rounded-full px-2 font-semibold text-[10px]"
                           >
-                            {task.assignees.length}
+                            {selectedAssignees.length}
                           </Badge>
-                        </Label>
-                        <div className="flex flex-wrap gap-2">
-                          {task.assignees.map((assignee, index) => (
-                            <div
-                              key={`${assignee?.id || (assignee as any)?.user_id || assignee?.email || 'assignee'}-${index}`}
-                              className="flex items-center gap-2 rounded-lg bg-gradient-to-r from-muted/80 to-muted/60 px-3 py-2 text-xs ring-1 ring-dynamic-orange/10 transition-all hover:ring-dynamic-orange/20"
-                            >
-                              <div className="flex h-4 w-4 items-center justify-center rounded-full bg-dynamic-orange/20 ring-1 ring-dynamic-orange/30">
-                                <Users className="h-3 w-3 text-dynamic-orange" />
-                              </div>
-                              <span className="font-medium">
-                                {assignee.display_name ||
-                                  assignee.email?.split('@')[0] ||
-                                  'Unknown User'}
-                              </span>
-                            </div>
-                          ))}
+                        )}
+                      </Label>
+
+                      {loadingMembers ? (
+                        <div className="flex flex-col items-center justify-center gap-3 rounded-lg bg-muted/30 py-8">
+                          <Loader2 className="h-5 w-5 animate-spin text-dynamic-orange" />
+                          <p className="text-muted-foreground text-xs">
+                            Loading members...
+                          </p>
                         </div>
-                      </div>
-                    )}
+                      ) : workspaceMembers.length === 0 ? (
+                        <div className="flex flex-col items-center justify-center gap-3 rounded-lg border-2 border-muted-foreground/20 border-dashed bg-muted/20 py-8">
+                          <Users className="h-5 w-5 text-muted-foreground/40" />
+                          <p className="text-center text-muted-foreground text-xs">
+                            No workspace members
+                          </p>
+                        </div>
+                      ) : (
+                        <div className="space-y-2.5">
+                          {/* Search input */}
+                          <div className="relative">
+                            <Search className="-translate-y-1/2 pointer-events-none absolute top-1/2 left-2.5 h-3.5 w-3.5 text-muted-foreground" />
+                            <Input
+                              type="text"
+                              placeholder="Search members..."
+                              value={assigneeSearchQuery}
+                              onChange={(e) =>
+                                setAssigneeSearchQuery(e.target.value)
+                              }
+                              className="h-8 border-muted-foreground/20 bg-background/50 pl-8 text-xs placeholder:text-muted-foreground/50"
+                            />
+                            {assigneeSearchQuery && (
+                              <button
+                                type="button"
+                                onClick={() => setAssigneeSearchQuery('')}
+                                className="-translate-y-1/2 absolute top-1/2 right-2 rounded-full p-0.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                              >
+                                <X className="h-3 w-3" />
+                              </button>
+                            )}
+                          </div>
+
+                          {/* Selected assignees (if any) */}
+                          {selectedAssignees.length > 0 && (
+                            <div className="space-y-1.5">
+                              <p className="font-medium text-[10px] text-muted-foreground uppercase tracking-wide">
+                                Selected ({selectedAssignees.length})
+                              </p>
+                              <div className="flex flex-wrap gap-1.5">
+                                {selectedAssignees.map((assignee) => (
+                                  <Button
+                                    key={assignee.user_id}
+                                    type="button"
+                                    variant="default"
+                                    size="xs"
+                                    onClick={() => toggleAssignee(assignee)}
+                                    className="h-7 gap-1.5 rounded-full border border-dynamic-orange/30 bg-dynamic-orange/15 px-3 font-medium text-dynamic-orange text-xs shadow-sm transition-all hover:border-dynamic-orange/50 hover:bg-dynamic-orange/25"
+                                  >
+                                    <div className="flex h-4 w-4 items-center justify-center rounded-full bg-dynamic-orange/20 font-bold text-[10px]">
+                                      {(assignee.display_name ||
+                                        'Unknown')[0]?.toUpperCase()}
+                                    </div>
+                                    {assignee.display_name || 'Unknown'}
+                                    <X className="h-3 w-3 opacity-70" />
+                                  </Button>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Available members */}
+                          <div className="space-y-1.5">
+                            {(() => {
+                              const filteredMembers = workspaceMembers.filter(
+                                (member) => {
+                                  const isSelected = selectedAssignees.some(
+                                    (a) => a.user_id === member.user_id
+                                  );
+                                  const matchesSearch =
+                                    !assigneeSearchQuery ||
+                                    (member.display_name || '')
+                                      .toLowerCase()
+                                      .includes(
+                                        assigneeSearchQuery.toLowerCase()
+                                      );
+                                  return !isSelected && matchesSearch;
+                                }
+                              );
+
+                              if (filteredMembers.length === 0) {
+                                return assigneeSearchQuery ? (
+                                  <div className="flex flex-col items-center justify-center gap-2 rounded-lg bg-muted/30 py-6">
+                                    <Search className="h-4 w-4 text-muted-foreground/40" />
+                                    <p className="text-center text-muted-foreground text-xs">
+                                      No members found
+                                    </p>
+                                  </div>
+                                ) : (
+                                  <div className="rounded-lg bg-muted/30 py-3 text-center">
+                                    <p className="text-muted-foreground text-xs">
+                                      All members assigned
+                                    </p>
+                                  </div>
+                                );
+                              }
+
+                              return (
+                                <>
+                                  <p className="font-medium text-[10px] text-muted-foreground uppercase tracking-wide">
+                                    Available ({filteredMembers.length})
+                                  </p>
+                                  <div className="flex max-h-48 flex-col gap-1 overflow-y-auto">
+                                    {filteredMembers.map((member) => (
+                                      <button
+                                        key={member.user_id}
+                                        type="button"
+                                        onClick={() => toggleAssignee(member)}
+                                        className="group flex items-center gap-2.5 rounded-md border border-transparent bg-background/50 px-3 py-2 text-left transition-all hover:border-dynamic-orange/30 hover:bg-dynamic-orange/5"
+                                      >
+                                        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-muted font-semibold text-muted-foreground text-xs transition-colors group-hover:bg-dynamic-orange/20 group-hover:text-dynamic-orange">
+                                          {(member.display_name ||
+                                            'Unknown')[0]?.toUpperCase()}
+                                        </div>
+                                        <span className="flex-1 truncate text-sm">
+                                          {member.display_name || 'Unknown'}
+                                        </span>
+                                        <Plus className="h-3.5 w-3.5 shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
+                                      </button>
+                                    ))}
+                                  </div>
+                                </>
+                              );
+                            })()}
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 )}
               </div>
             </div>
           </div>
+
+          {/* Mobile floating action buttons */}
+          <div className="fixed right-4 bottom-4 z-40 flex flex-col gap-2 md:hidden">
+            {/* Save button */}
+            <Button
+              variant="default"
+              size="lg"
+              onClick={handleSave}
+              disabled={!canSave}
+              className="h-14 w-14 rounded-full bg-dynamic-orange shadow-lg hover:bg-dynamic-orange/90"
+            >
+              {isLoading ? (
+                <Loader2 className="h-6 w-6 animate-spin" />
+              ) : (
+                <Check className="h-6 w-6" />
+              )}
+            </Button>
+            {/* Options button */}
+            <Button
+              variant="secondary"
+              size="lg"
+              onClick={() => setShowMobileSidebar(true)}
+              className="h-14 w-14 rounded-full shadow-lg"
+            >
+              <Settings className="h-6 w-6" />
+            </Button>
+          </div>
+
+          {/* Mobile overlay */}
+          {showMobileSidebar && (
+            <button
+              type="button"
+              className="fixed inset-0 z-40 bg-black/70 backdrop-blur-sm md:hidden"
+              onClick={() => setShowMobileSidebar(false)}
+              aria-label="Close sidebar"
+            />
+          )}
         </DialogContent>
       </Dialog>
 

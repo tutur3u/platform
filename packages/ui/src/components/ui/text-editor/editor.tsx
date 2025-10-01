@@ -1,25 +1,39 @@
 'use client';
 
 import Highlight from '@tiptap/extension-highlight';
-import Image from '@tiptap/extension-image';
 import Link from '@tiptap/extension-link';
 import Placeholder from '@tiptap/extension-placeholder';
 import Strike from '@tiptap/extension-strike';
 import Subscript from '@tiptap/extension-subscript';
 import Superscript from '@tiptap/extension-superscript';
 import TextAlign from '@tiptap/extension-text-align';
+import Youtube from '@tiptap/extension-youtube';
 import { EditorContent, type JSONContent, useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
+import ImageResize from 'tiptap-extension-resize-image';
 import { toast } from '@tuturuuu/ui/sonner';
 import { debounce } from 'lodash';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ToolBar } from './tool-bar';
 
-const hasTextContent = (node: JSONContent): boolean => {
+const hasContent = (node: JSONContent): boolean => {
+  // Check for text content
   if (node.text && node.text.trim().length > 0) return true;
-  if (node.content) {
-    return node.content.some((child: JSONContent) => hasTextContent(child));
+
+  // Check for media content (images, videos, YouTube embeds, etc.)
+  if (
+    node.type &&
+    ['image', 'imageResize', 'youtube', 'video'].includes(node.type)
+  ) {
+    return true;
   }
+
+  // Recursively check children
+  if (node.content && node.content.length > 0) {
+    return node.content.some((child: JSONContent) => hasContent(child));
+  }
+
+  // Empty paragraphs or empty doc should return false
   return false;
 };
 
@@ -34,6 +48,9 @@ interface RichTextEditorProps {
   className?: string;
   workspaceId?: string;
   onImageUpload?: (file: File) => Promise<string>;
+  flushPendingRef?: React.MutableRefObject<
+    (() => JSONContent | null) | undefined
+  >;
 }
 
 export function RichTextEditor({
@@ -47,6 +64,7 @@ export function RichTextEditor({
   className,
   workspaceId,
   onImageUpload,
+  flushPendingRef,
 }: RichTextEditorProps) {
   const [hasChanges, setHasChanges] = useState(false);
   const [isUploadingPastedImage, setIsUploadingPastedImage] = useState(false);
@@ -54,19 +72,28 @@ export function RichTextEditor({
   // Use refs to ensure we have stable references for handlers
   const onImageUploadRef = useRef(onImageUpload);
   const workspaceIdRef = useRef(workspaceId);
+  const onChangeRef = useRef(onChange);
+  const debouncedOnChangeRef = useRef<ReturnType<typeof debounce> | null>(null);
 
   useEffect(() => {
     onImageUploadRef.current = onImageUpload;
     workspaceIdRef.current = workspaceId;
-  }, [onImageUpload, workspaceId]);
+    onChangeRef.current = onChange;
+  }, [onImageUpload, workspaceId, onChange]);
 
-  const debouncedOnChange = useCallback(
-    debounce((newContent: JSONContent) => {
-      onChange?.(hasTextContent(newContent) ? newContent : null);
-      setHasChanges(false);
-    }, 500),
+  const debouncedOnChange = useMemo(
+    () =>
+      debounce((newContent: JSONContent) => {
+        onChangeRef.current?.(hasContent(newContent) ? newContent : null);
+        setHasChanges(false);
+      }, 500),
     []
   );
+
+  // Store debounced function ref for flushing
+  useEffect(() => {
+    debouncedOnChangeRef.current = debouncedOnChange;
+  }, [debouncedOnChange]);
 
   useEffect(() => {
     return () => {
@@ -119,7 +146,7 @@ export function RichTextEditor({
       }),
       Highlight,
       Link.configure({
-        openOnClick: false,
+        openOnClick: true,
         autolink: true,
         linkOnPaste: true,
         defaultProtocol: 'https',
@@ -142,11 +169,20 @@ export function RichTextEditor({
       Strike,
       Subscript,
       Superscript,
-      Image.configure({
+      ImageResize.configure({
         inline: true,
         allowBase64: false,
         HTMLAttributes: {
-          class: 'max-w-full h-auto rounded-md',
+          class: 'rounded-md',
+        },
+      }),
+      Youtube.configure({
+        controls: true,
+        nocookie: true,
+        width: 640,
+        height: 360,
+        HTMLAttributes: {
+          class: 'rounded-md my-4',
         },
       }),
     ],
@@ -157,7 +193,7 @@ export function RichTextEditor({
       attributes: {
         class: getEditorClasses,
       },
-      handleKeyDown: (view, event) => {
+      handleKeyDown: (_, event) => {
         // Prevent Ctrl+Enter / Cmd+Enter from creating a new line
         // Let the parent component handle the save action
         if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') {
@@ -193,14 +229,18 @@ export function RichTextEditor({
               .then((url) => {
                 const { state } = view;
                 const { from } = state.selection;
-                if (state.schema.nodes.image) {
+                // ImageResize extension uses 'imageResize' node name
+                const imageNode =
+                  state.schema.nodes.imageResize || state.schema.nodes.image;
+                if (imageNode) {
                   const transaction = state.tr.insert(
                     from,
-                    state.schema.nodes.image.create({ src: url })
+                    imageNode.create({ src: url })
                   );
                   view.dispatch(transaction);
                   toast.success('Image uploaded successfully');
                 } else {
+                  console.error('Available nodes:', Object.keys(state.schema.nodes));
                   toast.error('Image node not found');
                 }
               })
@@ -237,6 +277,27 @@ export function RichTextEditor({
       debouncedOnChange(editor.getJSON());
     }
   }, [editor, readOnly, debouncedOnChange]);
+
+  // Expose flush method via ref - returns current content
+  useEffect(() => {
+    if (!flushPendingRef || !editor) return;
+
+    flushPendingRef.current = () => {
+      // Flush pending debounced changes immediately
+      if (debouncedOnChangeRef.current) {
+        debouncedOnChangeRef.current.flush();
+      }
+      // Get current editor content
+      const currentContent = editor.getJSON();
+      const finalContent = hasContent(currentContent) ? currentContent : null;
+
+      // Also call onChange to update parent state
+      onChangeRef.current?.(finalContent);
+
+      // Return the content so caller can use it immediately
+      return finalContent;
+    };
+  }, [editor, flushPendingRef]);
 
   return (
     <div className="group relative h-full">
