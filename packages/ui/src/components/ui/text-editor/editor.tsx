@@ -14,6 +14,7 @@ import { toast } from '@tuturuuu/ui/sonner';
 import { debounce } from 'lodash';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import ImageResize from 'tiptap-extension-resize-image';
+// @expect-error No types available
 import Video from 'tiptap-extension-video';
 import { ToolBar } from './tool-bar';
 
