@@ -137,11 +137,8 @@ export function KanbanBoard({
 
   // Clean up selectedTasks when tasks are deleted
   useEffect(() => {
-    const currentTasks = queryClient.getQueryData(['tasks', boardId]) as
-      | Task[]
-      | undefined;
-    if (currentTasks) {
-      const currentTaskIds = new Set(currentTasks.map((task) => task.id));
+    if (tasks) {
+      const currentTaskIds = new Set(tasks.map((task) => task.id));
       setSelectedTasks((prev) => {
         const validSelectedTasks = new Set(
           [...prev].filter((taskId) => currentTaskIds.has(taskId))
@@ -151,7 +148,7 @@ export function KanbanBoard({
           : prev;
       });
     }
-  }, [queryClient, boardId]);
+  }, [tasks]);
 
   // Multi-select handlers
   const handleTaskSelect = useCallback(
