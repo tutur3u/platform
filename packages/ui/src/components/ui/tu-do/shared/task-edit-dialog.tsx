@@ -1296,7 +1296,10 @@ function TaskEditDialogComponent({
         <DialogContent
           showCloseButton={false}
           className="!inset-0 !top-0 !left-0 !max-w-none !translate-x-0 !translate-y-0 !rounded-none data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:slide-out-to-bottom-2 data-[state=open]:slide-in-from-bottom-2 flex h-screen max-h-screen w-screen gap-0 border-0 p-0"
-          onContextMenu={(e) => e.preventDefault()}
+          onContextMenu={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+          }}
         >
           {/* Main content area - Task title and description */}
           <div className="flex min-w-0 flex-1 flex-col bg-background">
