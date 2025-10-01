@@ -22,14 +22,39 @@ export function useBoardRealtime(
   const queryClient = useQueryClient();
 
   useEffect(() => {
-    if (!boardId || taskIds.length === 0 || listIds.length === 0) return;
+    if (!boardId) return;
 
     let mounted = true;
     const supabase = createClient();
 
-    const channel = supabase
-      .channel(`board-realtime-${boardId}`)
-      .on(
+    const channel = supabase.channel(`board-realtime-${boardId}`);
+
+    channel.on(
+      'postgres_changes',
+      {
+        event: '*',
+        schema: 'public',
+        table: 'task_lists',
+        filter: `board_id=eq.${boardId}`,
+      },
+      (payload) => {
+        if (!mounted) return;
+
+        const { eventType, old: oldRecord, new: newRecord } = payload;
+
+        if (options?.onListChange && (oldRecord || newRecord)) {
+          options.onListChange((oldRecord || newRecord) as TaskList, eventType);
+        }
+
+        queryClient.invalidateQueries({
+          queryKey: ['task_lists', boardId],
+        });
+        queryClient.invalidateQueries({ queryKey: ['tasks', boardId] });
+      }
+    );
+
+    if (listIds.length > 0) {
+      channel.on(
         'postgres_changes',
         {
           event: '*',
@@ -87,73 +112,55 @@ export function useBoardRealtime(
 
           queryClient.invalidateQueries({ queryKey: ['tasks', boardId] });
         }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'task_lists',
-          filter: `board_id=eq.${boardId}`,
-        },
-        (payload) => {
-          if (!mounted) return;
+      );
+    }
+    if (taskIds.length > 0) {
+      channel
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'task_assignees',
+            filter: `task_id=in.(${taskIds.join(',')})`,
+          },
+          async (_payload) => {
+            if (!mounted) return;
 
-          const { eventType, old: oldRecord, new: newRecord } = payload;
-
-          if (options?.onListChange && (oldRecord || newRecord)) {
-            options.onListChange(
-              (oldRecord || newRecord) as TaskList,
-              eventType
-            );
+            queryClient.invalidateQueries({ queryKey: ['tasks', boardId] });
           }
+        )
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'task_labels',
+            filter: `task_id=in.(${taskIds.join(',')})`,
+          },
+          async (_payload) => {
+            if (!mounted) return;
 
-          queryClient.invalidateQueries({ queryKey: ['task_lists', boardId] });
-          queryClient.invalidateQueries({ queryKey: ['tasks', boardId] });
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'task_assignees',
-          filter: `task_id=in.(${taskIds.join(',')})`,
-        },
-        async (_payload) => {
-          if (!mounted) return;
+            queryClient.invalidateQueries({ queryKey: ['tasks', boardId] });
+          }
+        )
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'workspace_task_labels',
+            filter: `task_id=in.(${taskIds.join(',')})`,
+          },
+          async (_payload) => {
+            if (!mounted) return;
 
-          queryClient.invalidateQueries({ queryKey: ['tasks', boardId] });
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'task_labels',
-          filter: `task_id=in.(${taskIds.join(',')})`,
-        },
-        async (_payload) => {
-          if (!mounted) return;
+            queryClient.invalidateQueries({ queryKey: ['tasks', boardId] });
+          }
+        );
+    }
 
-          queryClient.invalidateQueries({ queryKey: ['tasks', boardId] });
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'workspace_task_labels',
-        },
-        async (_payload) => {
-          if (!mounted) return;
-
-          queryClient.invalidateQueries({ queryKey: ['tasks', boardId] });
-        }
-      )
-      .subscribe();
+    channel.subscribe();
 
     return () => {
       mounted = false;

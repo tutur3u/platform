@@ -237,7 +237,10 @@ export function ListView({
       let hasUpdates = false;
 
       if (bulkEditData.priority !== 'keep') {
-        updateData.priority = bulkEditData.priority as TaskPriority | null;
+        updateData.priority =
+          bulkEditData.priority !== 'none'
+            ? (bulkEditData.priority as TaskPriority)
+            : null;
         hasUpdates = true;
       }
 
@@ -1548,6 +1551,7 @@ export function ListView({
                   <SelectItem value="high">High</SelectItem>
                   <SelectItem value="normal">Medium</SelectItem>
                   <SelectItem value="low">Low</SelectItem>
+                  <SelectItem value="none">None</SelectItem>
                 </SelectContent>
               </Select>
             </div>
