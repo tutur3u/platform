@@ -281,7 +281,7 @@ export function BoardHeader({
           <OnlineUsersAvatars
             presenceState={presenceState}
             currentUserId={currentUserId}
-            maxDisplay={5}
+            maxDisplay={3}
           />
           {/* Controls */}
           <div className="flex items-center gap-3">

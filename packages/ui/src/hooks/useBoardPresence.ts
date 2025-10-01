@@ -5,7 +5,6 @@ import { useEffect, useRef, useState } from 'react';
 
 export interface BoardPresenceState {
   user: User;
-  presence_ref: string;
   online_at: string;
 }
 
@@ -34,7 +33,14 @@ export function useBoardPresence(boardId?: string) {
 
         setCurrentUserId(user.id);
 
-        const channel = supabase.channel(`board_presence_${boardId}`);
+        const channel = supabase.channel(`board_presence_${boardId}`, {
+          config: {
+            presence: {
+              key: user.id,
+              enabled: true,
+            },
+          },
+        });
 
         // Set up presence listeners
         channel
@@ -58,7 +64,6 @@ export function useBoardPresence(boardId?: string) {
             if (status !== 'SUBSCRIBED') return;
 
             const presenceTrackStatus = await channel.track({
-              presence_ref: crypto.randomUUID(),
               user: {
                 id: user.id,
                 display_name: userData?.display_name,
