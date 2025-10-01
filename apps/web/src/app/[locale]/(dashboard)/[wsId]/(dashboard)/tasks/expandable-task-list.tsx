@@ -320,9 +320,7 @@ export default function ExpandableTaskList({
                   {task.assignees && task.assignees.length > 0 && (
                     <div className="flex items-center gap-1.5 rounded-lg bg-dynamic-blue/10 px-2.5 py-1.5 font-semibold text-[11px] text-dynamic-blue shadow-sm ring-1 ring-dynamic-blue/20 transition-colors hover:bg-dynamic-blue/20">
                       <UserRound className="h-3.5 w-3.5" />
-                      <span>
-                        {task.assignees.length}
-                      </span>
+                      <span>{task.assignees.length}</span>
                     </div>
                   )}
                 </div>
@@ -356,7 +354,8 @@ export default function ExpandableTaskList({
               <>
                 <ChevronDown className="h-4 w-4 transition-transform group-hover:translate-y-0.5" />
                 <span>
-                  Show {tasks.length - initialLimit} More Task{tasks.length - initialLimit !== 1 ? 's' : ''}
+                  Show {tasks.length - initialLimit} More Task
+                  {tasks.length - initialLimit !== 1 ? 's' : ''}
                 </span>
               </>
             )}
