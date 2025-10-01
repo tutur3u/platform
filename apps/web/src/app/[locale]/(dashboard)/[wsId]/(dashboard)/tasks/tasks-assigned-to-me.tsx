@@ -19,59 +19,132 @@ export default async function TasksAssignedToMe({
 }: TasksAssignedToMeProps) {
   const supabase = await createClient();
   const t = await getTranslations('dashboard');
-  // Get tasks assigned to the current user
-  const queryBuilder = supabase
-    .from('tasks')
+
+  // Use RPC function to get all accessible tasks
+  const { data: rpcTasks, error: tasksError } = await supabase.rpc(
+    'get_user_accessible_tasks',
+    {
+      p_user_id: userId,
+      p_ws_id: wsId,
+      p_include_deleted: false,
+      p_list_statuses: ['not_started', 'active'],
+    }
+  );
+
+  if (tasksError) {
+    console.error('Error fetching assigned tasks:', tasksError);
+    return null;
+  }
+
+  // Map RPC results to match expected structure
+  const allTasks = rpcTasks?.map((task) => ({
+    id: task.task_id,
+    name: task.task_name,
+    description: task.task_description,
+    creator_id: task.task_creator_id,
+    list_id: task.task_list_id,
+    start_date: task.task_start_date,
+    end_date: task.task_end_date,
+    priority: task.task_priority,
+    completed: task.task_completed,
+    archived: task.task_archived,
+    deleted: task.task_deleted,
+    estimation_points: task.task_estimation_points,
+    created_at: task.task_created_at,
+    calendar_hours: task.task_calendar_hours,
+    total_duration: task.task_total_duration,
+    is_splittable: task.task_is_splittable,
+    min_split_duration_minutes: task.task_min_split_duration_minutes,
+    max_split_duration_minutes: task.task_max_split_duration_minutes,
+  }));
+
+  // Fetch related data for all tasks
+  const taskIds = allTasks?.map((t) => t.id) || [];
+
+  // Fetch assignees for all tasks
+  const { data: assigneesData } = await supabase
+    .from('task_assignees')
     .select(
       `
-      *,
-      list:task_lists!inner(
+      task_id,
+      user:users(
         id,
-        name,
-        status,
-        board:workspace_boards!inner(
-          id,
-          name,
-          ws_id,
-          estimation_type,
-          extended_estimation,
-          allow_zero_estimates,
-          workspaces(id, name, personal)
-        )
-      ),
-      assignees:task_assignees!inner(
-        user:users(
-          id,
-          display_name,
-          avatar_url
-        )
-      ),
-      labels:task_labels(
-        label:workspace_task_labels(
-          id,
-          name,
-          color,
-          created_at
-        )
+        display_name,
+        avatar_url
       )
     `
     )
-    .eq('assignees.user_id', userId)
-    .eq('deleted', false)
-    .in('list.status', ['not_started', 'active']) // Only active tasks
-    .order('priority', { ascending: false })
-    .order('end_date', { ascending: true });
+    .in('task_id', taskIds);
 
-  if (!isPersonal) {
-    queryBuilder.eq('list.board.ws_id', wsId);
-  }
+  // Fetch labels for all tasks
+  const { data: labelsData } = await supabase
+    .from('task_labels')
+    .select(
+      `
+      task_id,
+      label:workspace_task_labels(
+        id,
+        name,
+        color,
+        created_at
+      )
+    `
+    )
+    .in('task_id', taskIds);
 
-  const { data: assignedTasks, error } = await queryBuilder;
+  // Fetch list and board data
+  const listIds = allTasks?.map((t) => t.list_id).filter(Boolean) || [];
+  const { data: listsData } = await supabase
+    .from('task_lists')
+    .select(
+      `
+      id,
+      name,
+      status,
+      board:workspace_boards!inner(
+        id,
+        name,
+        ws_id,
+        estimation_type,
+        extended_estimation,
+        allow_zero_estimates,
+        workspaces(id, name, personal)
+      )
+    `
+    )
+    .in('id', listIds);
 
-  if (error) {
-    console.error('Error fetching assigned tasks:', error);
-    return null;
-  }
+  // Map the data to match the expected structure
+  const assignedTasks = allTasks
+    ?.map((task) => ({
+      ...task,
+      list: listsData?.find((l) => l.id === task.list_id),
+      assignees: assigneesData
+        ?.filter((a) => a.task_id === task.id)
+        .map((a) => ({ user: a.user })),
+      labels: labelsData
+        ?.filter((l) => l.task_id === task.id)
+        .map((l) => ({ label: l.label })),
+    }))
+    .sort((a, b) => {
+      // Sort by priority first
+      const priorityOrder = { critical: 4, high: 3, normal: 2, low: 1 };
+      const aPriority = priorityOrder[a.priority || 'normal'] || 0;
+      const bPriority = priorityOrder[b.priority || 'normal'] || 0;
+
+      if (aPriority !== bPriority) {
+        return bPriority - aPriority;
+      }
+
+      // Then by end_date
+      if (a.end_date && b.end_date) {
+        return a.end_date > b.end_date ? 1 : -1;
+      }
+      if (a.end_date) return -1;
+      if (b.end_date) return 1;
+
+      return 0;
+    });
 
   return (
     <Card className="group overflow-hidden border-dynamic-orange/20 transition-all duration-300 hover:border-dynamic-orange/30 hover:shadow-lg">
@@ -82,7 +155,7 @@ export default async function TasksAssignedToMe({
           </div>
           <div className="line-clamp-1">{t('my_tasks')}</div>
         </CardTitle>
-        <Link href={`/${wsId}/tasks/boards`}>
+        <Link href={`/${wsId}/tasks/my-tasks`}>
           <Button
             variant="ghost"
             size="sm"
@@ -114,7 +187,7 @@ export default async function TasksAssignedToMe({
               </p>
             </div>
             <div className="mt-8">
-              <Link href={`/${wsId}/tasks/boards`}>
+              <Link href={`/${wsId}/tasks/my-tasks`}>
                 <Button
                   variant="outline"
                   size="sm"

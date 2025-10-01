@@ -307,7 +307,13 @@ function TaskEditDialogComponent({
           display_name: m.users?.display_name || 'Unknown User',
           avatar_url: m.users?.avatar_url,
         }));
-        const sortedMembers = transformedMembers.sort((a, b) =>
+
+        // Deduplicate by user_id to ensure unique keys
+        const uniqueMembers = Array.from(
+          new Map(transformedMembers.map(m => [m.user_id, m])).values()
+        );
+
+        const sortedMembers = uniqueMembers.sort((a, b) =>
           (a.display_name || '').localeCompare(b.display_name || '')
         );
         console.log('✅ Setting workspace members:', sortedMembers);
