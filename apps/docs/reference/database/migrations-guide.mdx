@@ -1,0 +1,606 @@
+---
+title: "Database Migrations Guide"
+description: "Best practices for creating, testing, and deploying Supabase migrations"
+---
+
+# Database Migrations Guide
+
+The Tuturuuu platform uses Supabase migrations to manage database schema changes with version control and reproducibility.
+
+## Migration Workflow
+
+```
+┌─────────────────────────────────────────────────────┐
+│  1. Make schema changes locally                      │
+│     ├─ Edit tables in Supabase Studio               │
+│     ├─ OR write SQL migration manually              │
+│     └─ Test changes                                  │
+└─────────────────┬───────────────────────────────────┘
+                  │
+┌─────────────────▼───────────────────────────────────┐
+│  2. Generate migration                               │
+│     ├─ bun sb:diff (from Studio changes)            │
+│     ├─ OR bun sb:new (blank migration)              │
+│     └─ Review generated SQL                          │
+└─────────────────┬───────────────────────────────────┘
+                  │
+┌─────────────────▼───────────────────────────────────┐
+│  3. Test migration locally                           │
+│     ├─ bun sb:reset (fresh DB)                      │
+│     ├─ Verify schema                                │
+│     └─ Test RLS policies                            │
+└─────────────────┬───────────────────────────────────┘
+                  │
+┌─────────────────▼───────────────────────────────────┐
+│  4. Commit migration                                 │
+│     ├─ git add apps/db/supabase/migrations/          │
+│     ├─ git commit                                    │
+│     └─ Push to repository                           │
+└─────────────────┬───────────────────────────────────┘
+                  │
+┌─────────────────▼───────────────────────────────────┐
+│  5. Deploy (USER ONLY - AGENTS NEVER)               │
+│     ├─ bun sb:push (production)                     │
+│     ├─ OR apply via CI/CD                           │
+│     └─ Verify in production                         │
+└─────────────────────────────────────────────────────┘
+```
+
+## Creating Migrations
+
+### Method 1: Generate from Studio Changes
+
+**Best for:** Visual schema editing, quick table creation
+
+1. **Make changes in Supabase Studio:**
+   ```bash
+   bun sb:start
+   # Open http://localhost:8003
+   # Make changes in Table Editor
+   ```
+
+2. **Generate migration:**
+   ```bash
+   bun sb:diff
+   ```
+
+3. **Review generated file:**
+   ```bash
+   # apps/db/supabase/migrations/20250101120000_add_new_table.sql
+   ```
+
+### Method 2: Manual SQL Migration
+
+**Best for:** Complex changes, custom functions, data migrations
+
+1. **Create blank migration:**
+   ```bash
+   bun sb:new add_custom_function
+   ```
+
+2. **Edit migration file:**
+   ```sql
+   -- apps/db/supabase/migrations/20250101120000_add_custom_function.sql
+
+   -- Create custom function
+   CREATE OR REPLACE FUNCTION get_user_task_count(user_uuid uuid)
+   RETURNS integer AS $$
+     SELECT COUNT(*)::integer
+     FROM workspace_tasks
+     WHERE created_by = user_uuid;
+   $$ LANGUAGE sql SECURITY DEFINER;
+   ```
+
+## Migration File Structure
+
+### Naming Convention
+
+```
+[timestamp]_[descriptive_name].sql
+```
+
+Examples:
+```
+20250101120000_create_tasks_table.sql
+20250101130000_add_task_priority_column.sql
+20250101140000_update_task_rls_policies.sql
+```
+
+### File Template
+
+```sql
+-- Migration: [Description]
+-- Created: [Date]
+-- Author: [Name]
+
+-- Create table
+CREATE TABLE IF NOT EXISTS table_name (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  created_at timestamptz DEFAULT now()
+);
+
+-- Add indexes
+CREATE INDEX idx_table_name_column ON table_name(column);
+
+-- Enable RLS
+ALTER TABLE table_name ENABLE ROW LEVEL SECURITY;
+
+-- Add RLS policies
+CREATE POLICY "policy_name"
+ON table_name
+FOR SELECT
+USING (true);
+
+-- Add comments
+COMMENT ON TABLE table_name IS 'Description of table';
+COMMENT ON COLUMN table_name.column IS 'Description of column';
+```
+
+## Common Migration Patterns
+
+### Creating Tables
+
+```sql
+-- Create workspace-scoped table
+CREATE TABLE workspace_resources (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  ws_id text NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE,
+  name text NOT NULL,
+  description text,
+  created_by uuid REFERENCES workspace_users(id) ON DELETE SET NULL,
+  created_at timestamptz DEFAULT now(),
+  updated_at timestamptz DEFAULT now()
+);
+
+-- Add indexes
+CREATE INDEX idx_workspace_resources_ws_id ON workspace_resources(ws_id);
+CREATE INDEX idx_workspace_resources_created_by ON workspace_resources(created_by);
+
+-- Enable RLS
+ALTER TABLE workspace_resources ENABLE ROW LEVEL SECURITY;
+
+-- Add policies
+CREATE POLICY "workspace_members_can_view"
+ON workspace_resources FOR SELECT
+USING (
+  ws_id IN (
+    SELECT ws_id FROM workspace_members WHERE user_id = auth.uid()
+  )
+);
+
+CREATE POLICY "permission_required_to_modify"
+ON workspace_resources FOR ALL
+USING (
+  ws_id IN (
+    SELECT wm.ws_id FROM workspace_members wm
+    JOIN workspace_role_permissions wrp
+      ON wrp.ws_id = wm.ws_id AND wrp.role_id = wm.role
+    WHERE wm.user_id = auth.uid()
+      AND wrp.permission = 'manage_resources'
+  )
+);
+```
+
+### Adding Columns
+
+```sql
+-- Add nullable column
+ALTER TABLE workspace_tasks
+ADD COLUMN priority integer;
+
+-- Add column with default
+ALTER TABLE workspace_tasks
+ADD COLUMN status text DEFAULT 'pending';
+
+-- Add NOT NULL column (requires default or backfill)
+ALTER TABLE workspace_tasks
+ADD COLUMN category text DEFAULT 'general' NOT NULL;
+
+-- Update existing rows (if needed)
+UPDATE workspace_tasks
+SET category = 'important'
+WHERE priority >= 4;
+```
+
+### Modifying Columns
+
+```sql
+-- Rename column
+ALTER TABLE workspace_tasks
+RENAME COLUMN old_name TO new_name;
+
+-- Change column type
+ALTER TABLE workspace_tasks
+ALTER COLUMN priority TYPE smallint USING priority::smallint;
+
+-- Add constraint
+ALTER TABLE workspace_tasks
+ADD CONSTRAINT priority_range CHECK (priority BETWEEN 0 AND 5);
+
+-- Drop constraint
+ALTER TABLE workspace_tasks
+DROP CONSTRAINT priority_range;
+```
+
+### Creating Indexes
+
+```sql
+-- Standard index
+CREATE INDEX idx_tasks_ws_id ON workspace_tasks(ws_id);
+
+-- Composite index
+CREATE INDEX idx_tasks_ws_list ON workspace_tasks(ws_id, list_id);
+
+-- Partial index
+CREATE INDEX idx_incomplete_tasks
+ON workspace_tasks(ws_id)
+WHERE completed = false;
+
+-- Unique index
+CREATE UNIQUE INDEX idx_unique_task_name
+ON workspace_tasks(ws_id, name);
+
+-- GIN index for JSONB
+CREATE INDEX idx_metadata_gin ON workspace_tasks USING GIN (metadata);
+
+-- Text search index
+CREATE INDEX idx_tasks_search
+ON workspace_tasks USING GIN (to_tsvector('english', name || ' ' || COALESCE(description, '')));
+```
+
+### Creating Functions
+
+```sql
+-- Simple function
+CREATE OR REPLACE FUNCTION get_workspace_task_count(workspace_id text)
+RETURNS integer AS $$
+  SELECT COUNT(*)::integer
+  FROM workspace_tasks
+  WHERE ws_id = workspace_id;
+$$ LANGUAGE sql SECURITY DEFINER;
+
+-- Function with complex logic
+CREATE OR REPLACE FUNCTION complete_task_with_notification(task_uuid uuid)
+RETURNS void AS $$
+DECLARE
+  task_name text;
+  task_ws_id text;
+BEGIN
+  -- Update task
+  UPDATE workspace_tasks
+  SET completed = true, completed_at = now()
+  WHERE id = task_uuid
+  RETURNING name, ws_id INTO task_name, task_ws_id;
+
+  -- Create notification (example)
+  INSERT INTO notifications (ws_id, message, type)
+  VALUES (task_ws_id, format('Task "%s" completed', task_name), 'success');
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+```
+
+### Creating Triggers
+
+```sql
+-- Update updated_at timestamp trigger
+CREATE OR REPLACE FUNCTION update_updated_at()
+RETURNS trigger AS $$
+BEGIN
+  NEW.updated_at = now();
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trigger_update_workspace_tasks_updated_at
+  BEFORE UPDATE ON workspace_tasks
+  FOR EACH ROW
+  EXECUTE FUNCTION update_updated_at();
+```
+
+### Creating Enums
+
+```sql
+-- Create enum
+CREATE TYPE task_status AS ENUM ('pending', 'in_progress', 'completed', 'cancelled');
+
+-- Add enum column
+ALTER TABLE workspace_tasks
+ADD COLUMN status task_status DEFAULT 'pending';
+
+-- Modify enum (add value)
+ALTER TYPE task_status ADD VALUE 'on_hold';
+
+-- Cannot remove enum values - requires recreation
+```
+
+## Data Migrations
+
+### Safe Data Migration Pattern
+
+```sql
+-- 1. Add new column
+ALTER TABLE workspace_tasks
+ADD COLUMN new_priority integer;
+
+-- 2. Backfill data
+UPDATE workspace_tasks
+SET new_priority = CASE
+  WHEN old_priority = 'high' THEN 5
+  WHEN old_priority = 'medium' THEN 3
+  WHEN old_priority = 'low' THEN 1
+  ELSE 0
+END;
+
+-- 3. Make NOT NULL (if needed)
+ALTER TABLE workspace_tasks
+ALTER COLUMN new_priority SET NOT NULL;
+
+-- 4. Drop old column (in separate migration after verification)
+-- ALTER TABLE workspace_tasks DROP COLUMN old_priority;
+```
+
+### Batch Processing Large Migrations
+
+```sql
+-- For tables with millions of rows, batch the updates
+DO $$
+DECLARE
+  batch_size integer := 1000;
+  rows_updated integer;
+BEGIN
+  LOOP
+    UPDATE workspace_tasks
+    SET new_column = calculate_value(old_column)
+    WHERE id IN (
+      SELECT id FROM workspace_tasks
+      WHERE new_column IS NULL
+      LIMIT batch_size
+    );
+
+    GET DIAGNOSTICS rows_updated = ROW_COUNT;
+    EXIT WHEN rows_updated = 0;
+
+    -- Commit after each batch
+    COMMIT;
+  END LOOP;
+END $$;
+```
+
+## Testing Migrations
+
+### Local Testing
+
+```bash
+# Reset to clean state
+bun sb:reset
+
+# Verify schema
+bun sb:status
+
+# Check migration list
+ls apps/db/supabase/migrations/
+
+# Test specific queries
+psql -h localhost -U postgres -d postgres -c "SELECT * FROM workspace_tasks LIMIT 5;"
+```
+
+### Test RLS Policies
+
+```sql
+-- Set user context for testing
+SET request.jwt.claim.sub = 'user-uuid-here';
+
+-- Test query with RLS
+SELECT * FROM workspace_tasks WHERE ws_id = 'workspace-123';
+
+-- Reset context
+RESET request.jwt.claim.sub;
+```
+
+### Verify Indexes
+
+```sql
+-- Check if index is being used
+EXPLAIN ANALYZE
+SELECT * FROM workspace_tasks WHERE ws_id = 'workspace-123';
+
+-- List all indexes on table
+SELECT indexname, indexdef
+FROM pg_indexes
+WHERE tablename = 'workspace_tasks';
+```
+
+## Migration Checklist
+
+Before committing a migration:
+
+- [ ] Migration file has descriptive name
+- [ ] All tables have RLS enabled
+- [ ] RLS policies are tested
+- [ ] Indexes added for foreign keys
+- [ ] Indexes added for frequently queried columns
+- [ ] Comments added for complex logic
+- [ ] Data migration is idempotent
+- [ ] Migration tested with `bun sb:reset`
+- [ ] Type generation updated (`bun sb:typegen`)
+- [ ] Breaking changes documented
+
+## Deploying Migrations
+
+### ⚠️ AGENTS: NEVER RUN THESE COMMANDS
+
+Agents should prepare migrations but NEVER deploy them. Only users should run:
+
+```bash
+# Link to remote project (one-time setup)
+bun sb:link
+
+# Push migrations to production
+bun sb:push
+```
+
+### Agent Workflow
+
+**Agents should:**
+1. Create migration file
+2. Test locally with `bun sb:reset`
+3. Run `bun sb:typegen`
+4. Commit files
+5. **Instruct user to run `bun sb:push`**
+
+**Agents should NEVER:**
+- Run `bun sb:push`
+- Run `bun sb:linkpush`
+- Deploy to production
+
+## Rollback Strategy
+
+### Simple Rollback
+
+```sql
+-- Create reverse migration
+-- apps/db/supabase/migrations/20250101150000_rollback_add_priority.sql
+
+ALTER TABLE workspace_tasks DROP COLUMN priority;
+```
+
+### Complex Rollback
+
+```sql
+-- apps/db/supabase/migrations/20250101150000_rollback_task_status_enum.sql
+
+-- 1. Add back old column
+ALTER TABLE workspace_tasks ADD COLUMN old_status text;
+
+-- 2. Convert data
+UPDATE workspace_tasks
+SET old_status = CASE
+  WHEN status = 'pending' THEN 'todo'
+  WHEN status = 'in_progress' THEN 'doing'
+  WHEN status = 'completed' THEN 'done'
+END;
+
+-- 3. Drop new column
+ALTER TABLE workspace_tasks DROP COLUMN status;
+
+-- 4. Rename old column
+ALTER TABLE workspace_tasks RENAME COLUMN old_status TO status;
+
+-- 5. Drop enum type
+DROP TYPE task_status;
+```
+
+## Common Issues
+
+### Issue: Migration Fails on Production
+
+**Cause:** Local Supabase version differs from production
+
+**Solution:**
+```bash
+# Check Supabase version
+bun sb:status
+
+# Update Supabase CLI
+bun add -g supabase
+
+# Recreate local instance
+bun sb:stop
+bun sb:start
+```
+
+### Issue: Type Generation Fails
+
+**Cause:** Migration has syntax errors
+
+**Solution:**
+```bash
+# Reset database
+bun sb:reset
+
+# Check migration syntax
+cat apps/db/supabase/migrations/[migration-file].sql
+
+# Fix errors and retry
+bun sb:typegen
+```
+
+### Issue: RLS Policy Conflicts
+
+**Cause:** Multiple policies on same table/operation
+
+**Solution:**
+```sql
+-- List all policies
+SELECT policyname, permissive, roles, cmd, qual
+FROM pg_policies
+WHERE tablename = 'workspace_tasks';
+
+-- Drop conflicting policy
+DROP POLICY "old_policy" ON workspace_tasks;
+```
+
+## Best Practices
+
+### ✅ DO
+
+1. **Use descriptive names**
+   ```sql
+   20250101_add_task_priority_with_validation.sql
+   ```
+
+2. **Add indexes for foreign keys**
+   ```sql
+   CREATE INDEX idx_tasks_ws_id ON workspace_tasks(ws_id);
+   ```
+
+3. **Enable RLS on all tables**
+   ```sql
+   ALTER TABLE table_name ENABLE ROW LEVEL SECURITY;
+   ```
+
+4. **Add comments for clarity**
+   ```sql
+   COMMENT ON TABLE workspace_tasks IS 'User tasks within workspaces';
+   ```
+
+5. **Test migrations locally first**
+   ```bash
+   bun sb:reset
+   ```
+
+### ❌ DON'T
+
+1. **Don't skip RLS**
+   ```sql
+   -- ❌ Bad: No RLS
+   CREATE TABLE table_name (...);
+   ```
+
+2. **Don't use DROP without backup**
+   ```sql
+   -- ❌ Dangerous
+   DROP TABLE important_data;
+   ```
+
+3. **Don't modify old migrations**
+   ```sql
+   -- ❌ Bad: Modifying committed migration
+   ```
+
+4. **Don't deploy without testing**
+   ```bash
+   # ❌ Bad: Skip local testing
+   bun sb:push
+   ```
+
+## Related Documentation
+
+- [Database Schema Overview](/reference/database/schema-overview)
+- [RLS Policies](/reference/database/rls-policies)
+- [Supabase Client](/reference/packages/supabase)
+
+## External Resources
+
+- [Supabase Migrations](https://supabase.com/docs/guides/cli/local-development#database-migrations)
+- [PostgreSQL ALTER TABLE](https://www.postgresql.org/docs/current/sql-altertable.html)

@@ -1,0 +1,602 @@
+---
+title: "@tuturuuu/supabase"
+description: "Supabase client creation patterns and utilities"
+---
+
+# @tuturuuu/supabase
+
+The `@tuturuuu/supabase` package provides type-safe Supabase client utilities for the Tuturuuu platform with different privilege levels and execution contexts.
+
+## Installation
+
+```bash
+# Already included in monorepo workspace
+import { createClient, createAdminClient } from '@tuturuuu/supabase/server';
+```
+
+## Client Types
+
+### `createClient()` - User-Scoped Client
+
+**Use Case:** Standard operations respecting Row-Level Security (RLS) policies.
+
+**Context:** Server Components, Server Actions, API Routes
+
+**Privilege Level:** Current authenticated user
+
+```typescript
+import { createClient } from '@tuturuuu/supabase/server';
+
+export default async function TaskPage() {
+  const supabase = createClient();
+
+  // Queries respect RLS policies
+  const { data: tasks } = await supabase
+    .from('workspace_tasks')
+    .select('*')
+    .eq('ws_id', 'workspace-id');
+
+  // User can only see tasks they have permission to view
+  return <div>{tasks?.length} tasks</div>;
+}
+```
+
+**Important:**
+- ✅ Respects RLS policies
+- ✅ Safe for user-initiated operations
+- ❌ Cannot bypass workspace isolation
+- ❌ Cannot perform privileged operations
+
+### `createAdminClient()` - Service Role Client
+
+**Use Case:** Privileged operations bypassing RLS (admin tasks, system operations).
+
+**Context:** Server-side only (never expose to client)
+
+**Privilege Level:** Service role (bypasses RLS)
+
+```typescript
+import { createAdminClient } from '@tuturuuu/supabase/server';
+
+export async function createWorkspace(name: string, ownerId: string) {
+  const supabase = createAdminClient();
+
+  // Bypasses RLS - can insert into any workspace
+  const { data: workspace } = await supabase
+    .from('workspaces')
+    .insert({ name })
+    .select()
+    .single();
+
+  // Add owner as member
+  await supabase
+    .from('workspace_members')
+    .insert({
+      ws_id: workspace.id,
+      user_id: ownerId,
+      role: 'owner',
+    });
+
+  return workspace;
+}
+```
+
+**⚠️ Critical Security Warning:**
+- ✅ Only use server-side
+- ✅ Only for privileged operations
+- ❌ NEVER expose to client
+- ❌ NEVER use for user-initiated queries (always prefer `createClient()`)
+
+### `createDynamicClient()` - Middleware Client
+
+**Use Case:** Middleware and edge runtime contexts.
+
+**Context:** Next.js middleware, edge functions
+
+```typescript
+import { createDynamicClient } from '@tuturuuu/supabase/server';
+import { NextRequest } from 'next/server';
+
+export async function middleware(request: NextRequest) {
+  const supabase = createDynamicClient();
+
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) {
+    return Response.redirect('/login');
+  }
+}
+```
+
+## Common Patterns
+
+### Authentication
+
+#### Get Current User
+
+```typescript
+import { createClient } from '@tuturuuu/supabase/server';
+
+export async function getCurrentUser() {
+  const supabase = createClient();
+  const { data: { user }, error } = await supabase.auth.getUser();
+
+  if (error || !user) {
+    return null;
+  }
+
+  return user;
+}
+```
+
+#### Server Action with Auth Check
+
+```typescript
+'use server';
+
+import { createClient } from '@tuturuuu/supabase/server';
+
+export async function createTask(formData: FormData) {
+  const supabase = createClient();
+
+  // Check authentication
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    throw new Error('Unauthorized');
+  }
+
+  // Perform operation (RLS policies apply)
+  const { data, error } = await supabase
+    .from('workspace_tasks')
+    .insert({
+      name: formData.get('name') as string,
+      ws_id: formData.get('wsId') as string,
+      created_by: user.id,
+    })
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+}
+```
+
+### Workspace Operations
+
+#### Get User's Workspaces
+
+```typescript
+import { createClient } from '@tuturuuu/supabase/server';
+
+export async function getUserWorkspaces(userId: string) {
+  const supabase = createClient();
+
+  const { data: memberships } = await supabase
+    .from('workspace_members')
+    .select(`
+      ws_id,
+      role,
+      pending,
+      workspaces (
+        id,
+        name,
+        logo_url
+      )
+    `)
+    .eq('user_id', userId)
+    .eq('pending', false);
+
+  return memberships?.map((m) => m.workspaces) || [];
+}
+```
+
+#### Check Workspace Permission
+
+```typescript
+import { createClient } from '@tuturuuu/supabase/server';
+import type { Database } from '@tuturuuu/types';
+
+type Permission = Database['public']['Enums']['workspace_role_permission'];
+
+export async function hasPermission(
+  userId: string,
+  wsId: string,
+  permission: Permission
+): Promise<boolean> {
+  const supabase = createClient();
+
+  const { data } = await supabase
+    .from('workspace_members')
+    .select(`
+      role,
+      workspace_role_permissions!inner (
+        permission
+      )
+    `)
+    .eq('user_id', userId)
+    .eq('ws_id', wsId)
+    .eq('workspace_role_permissions.permission', permission)
+    .limit(1);
+
+  return (data?.length || 0) > 0;
+}
+```
+
+### Data Fetching
+
+#### Paginated Query
+
+```typescript
+import { createClient } from '@tuturuuu/supabase/server';
+
+export async function getTasks(wsId: string, page = 0, pageSize = 20) {
+  const supabase = createClient();
+
+  const from = page * pageSize;
+  const to = from + pageSize - 1;
+
+  const { data: tasks, error, count } = await supabase
+    .from('workspace_tasks')
+    .select('*', { count: 'exact' })
+    .eq('ws_id', wsId)
+    .order('created_at', { ascending: false })
+    .range(from, to);
+
+  if (error) throw error;
+
+  return {
+    tasks,
+    totalCount: count,
+    currentPage: page,
+    totalPages: Math.ceil((count || 0) / pageSize),
+  };
+}
+```
+
+#### Filtered Query with Relations
+
+```typescript
+import { createClient } from '@tuturuuu/supabase/server';
+
+export async function getTasksWithAssignees(wsId: string, completed?: boolean) {
+  const supabase = createClient();
+
+  let query = supabase
+    .from('workspace_tasks')
+    .select(`
+      *,
+      task_assignees (
+        workspace_users (
+          id,
+          display_name,
+          avatar_url
+        )
+      ),
+      task_lists (
+        id,
+        name
+      )
+    `)
+    .eq('ws_id', wsId);
+
+  if (completed !== undefined) {
+    query = query.eq('completed', completed);
+  }
+
+  const { data, error } = await query;
+  if (error) throw error;
+
+  return data;
+}
+```
+
+### Realtime Subscriptions
+
+```typescript
+'use client';
+
+import { createClient } from '@tuturuuu/supabase/client';
+import { useEffect, useState } from 'react';
+import type { Database } from '@tuturuuu/types';
+
+type Task = Database['public']['Tables']['workspace_tasks']['Row'];
+
+export function useTaskSubscription(wsId: string) {
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const supabase = createClient();
+
+  useEffect(() => {
+    // Initial fetch
+    supabase
+      .from('workspace_tasks')
+      .select('*')
+      .eq('ws_id', wsId)
+      .then(({ data }) => setTasks(data || []));
+
+    // Subscribe to changes
+    const channel = supabase
+      .channel(`workspace_tasks:${wsId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'workspace_tasks',
+          filter: `ws_id=eq.${wsId}`,
+        },
+        (payload) => {
+          if (payload.eventType === 'INSERT') {
+            setTasks((prev) => [...prev, payload.new as Task]);
+          } else if (payload.eventType === 'UPDATE') {
+            setTasks((prev) =>
+              prev.map((task) =>
+                task.id === payload.new.id ? (payload.new as Task) : task
+              )
+            );
+          } else if (payload.eventType === 'DELETE') {
+            setTasks((prev) => prev.filter((task) => task.id !== payload.old.id));
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      channel.unsubscribe();
+    };
+  }, [wsId]);
+
+  return tasks;
+}
+```
+
+## Type Safety
+
+### Using Generated Types
+
+```typescript
+import type { Database } from '@tuturuuu/types';
+import { createClient } from '@tuturuuu/supabase/server';
+
+type Task = Database['public']['Tables']['workspace_tasks']['Row'];
+type TaskInsert = Database['public']['Tables']['workspace_tasks']['Insert'];
+type TaskUpdate = Database['public']['Tables']['workspace_tasks']['Update'];
+
+export async function createTypedTask(task: TaskInsert): Promise<Task> {
+  const supabase = createClient();
+
+  const { data, error } = await supabase
+    .from('workspace_tasks')
+    .insert(task)
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+}
+```
+
+### Custom Type Helpers
+
+```typescript
+import type { Database } from '@tuturuuu/types';
+
+// Extract table types
+export type Tables<T extends keyof Database['public']['Tables']> =
+  Database['public']['Tables'][T]['Row'];
+
+export type Enums<T extends keyof Database['public']['Enums']> =
+  Database['public']['Enums'][T];
+
+// Usage
+type Task = Tables<'workspace_tasks'>;
+type Permission = Enums<'workspace_role_permission'>;
+```
+
+## Error Handling
+
+### Standard Pattern
+
+```typescript
+import { createClient } from '@tuturuuu/supabase/server';
+
+export async function getTask(taskId: string) {
+  const supabase = createClient();
+
+  const { data, error } = await supabase
+    .from('workspace_tasks')
+    .select('*')
+    .eq('id', taskId)
+    .single();
+
+  if (error) {
+    console.error('Failed to fetch task:', error);
+    throw new Error(`Task not found: ${taskId}`);
+  }
+
+  return data;
+}
+```
+
+### With Try-Catch
+
+```typescript
+import { createClient } from '@tuturuuu/supabase/server';
+
+export async function safeGetTask(taskId: string) {
+  try {
+    const supabase = createClient();
+
+    const { data, error } = await supabase
+      .from('workspace_tasks')
+      .select('*')
+      .eq('id', taskId)
+      .single();
+
+    if (error) throw error;
+    return { data, error: null };
+  } catch (error) {
+    console.error('Error fetching task:', error);
+    return { data: null, error };
+  }
+}
+```
+
+## Storage Operations
+
+### Upload File
+
+```typescript
+import { createClient } from '@tuturuuu/supabase/server';
+
+export async function uploadAvatar(userId: string, file: File) {
+  const supabase = createClient();
+
+  const fileName = `${userId}-${Date.now()}.${file.name.split('.').pop()}`;
+  const filePath = `avatars/${fileName}`;
+
+  const { data, error } = await supabase.storage
+    .from('public')
+    .upload(filePath, file, {
+      cacheControl: '3600',
+      upsert: false,
+    });
+
+  if (error) throw error;
+
+  const { data: { publicUrl } } = supabase.storage
+    .from('public')
+    .getPublicUrl(filePath);
+
+  return publicUrl;
+}
+```
+
+### Download File
+
+```typescript
+import { createClient } from '@tuturuuu/supabase/server';
+
+export async function downloadFile(path: string) {
+  const supabase = createClient();
+
+  const { data, error } = await supabase.storage
+    .from('public')
+    .download(path);
+
+  if (error) throw error;
+  return data; // Blob
+}
+```
+
+## Best Practices
+
+### ✅ DO
+
+1. **Use `createClient()` by default**
+   ```typescript
+   const supabase = createClient(); // Respects RLS
+   ```
+
+2. **Check authentication early**
+   ```typescript
+   const { data: { user } } = await supabase.auth.getUser();
+   if (!user) throw new Error('Unauthorized');
+   ```
+
+3. **Handle errors explicitly**
+   ```typescript
+   const { data, error } = await supabase.from('table').select();
+   if (error) throw error;
+   ```
+
+4. **Use TypeScript types**
+   ```typescript
+   import type { Database } from '@tuturuuu/types';
+   ```
+
+5. **Limit data fetching**
+   ```typescript
+   .select('id, name, created_at') // Only needed fields
+   .limit(20) // Pagination
+   ```
+
+### ❌ DON'T
+
+1. **Never use `createAdminClient()` for user operations**
+   ```typescript
+   // ❌ Bad: Bypasses RLS
+   const supabase = createAdminClient();
+   const tasks = await supabase.from('workspace_tasks').select();
+   ```
+
+2. **Don't expose service role key**
+   ```typescript
+   // ❌ Bad: Never do this
+   const client = createClient(process.env.SUPABASE_SERVICE_ROLE_KEY);
+   ```
+
+3. **Don't ignore errors**
+   ```typescript
+   // ❌ Bad: Silent failure
+   const { data } = await supabase.from('table').select();
+   return data; // Could be null!
+   ```
+
+4. **Don't fetch unnecessary data**
+   ```typescript
+   // ❌ Bad: Over-fetching
+   .select('*')
+   .order('created_at')
+   // No limit!
+   ```
+
+## Testing
+
+### Mock Supabase Client
+
+```typescript
+// __mocks__/@tuturuuu/supabase/server.ts
+export const createClient = vi.fn(() => ({
+  from: vi.fn(() => ({
+    select: vi.fn(() => ({
+      eq: vi.fn(() => ({
+        single: vi.fn(() => Promise.resolve({ data: mockData, error: null })),
+      })),
+    })),
+  })),
+  auth: {
+    getUser: vi.fn(() =>
+      Promise.resolve({ data: { user: mockUser }, error: null })
+    ),
+  },
+}));
+```
+
+### Test Example
+
+```typescript
+import { describe, it, expect, vi } from 'vitest';
+import { getTask } from './tasks';
+
+vi.mock('@tuturuuu/supabase/server');
+
+describe('getTask', () => {
+  it('should fetch task by ID', async () => {
+    const task = await getTask('task-123');
+    expect(task).toBeDefined();
+    expect(task.id).toBe('task-123');
+  });
+});
+```
+
+## Related Documentation
+
+- [Database Schema](/reference/database/schema-overview)
+- [RLS Policies](/reference/database/rls-policies)
+- [Authentication](/platform/architecture/authentication)
+- [Authorization](/platform/architecture/authorization)
+
+## External Resources
+
+- [Supabase JavaScript Client Docs](https://supabase.com/docs/reference/javascript)
+- [Supabase Auth Helpers](https://supabase.com/docs/guides/auth/auth-helpers)
