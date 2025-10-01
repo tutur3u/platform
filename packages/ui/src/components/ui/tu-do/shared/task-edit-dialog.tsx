@@ -6,9 +6,9 @@ import { createClient } from '@tuturuuu/supabase/next/client';
 import type { TaskPriority } from '@tuturuuu/types/primitives/Priority';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
+import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
-import { Checkbox } from '@tuturuuu/ui/checkbox';
 import { DateTimePicker } from '@tuturuuu/ui/date-time-picker';
 import { Dialog, DialogContent, DialogTitle } from '@tuturuuu/ui/dialog';
 import {
@@ -36,6 +36,7 @@ import {
 } from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
+import { Switch } from '@tuturuuu/ui/switch';
 import { RichTextEditor } from '@tuturuuu/ui/text-editor/editor';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { cn } from '@tuturuuu/utils/format';
@@ -286,7 +287,8 @@ function TaskEditDialogComponent({
           user_id,
           users!inner(
             id,
-            display_name
+            display_name,
+            avatar_url
           )
         `
         )
@@ -303,6 +305,7 @@ function TaskEditDialogComponent({
         const transformedMembers = members.map((m: any) => ({
           user_id: m.user_id,
           display_name: m.users?.display_name || 'Unknown User',
+          avatar_url: m.users?.avatar_url,
         }));
         const sortedMembers = transformedMembers.sort((a, b) =>
           (a.display_name || '').localeCompare(b.display_name || '')
@@ -1147,24 +1150,126 @@ function TaskEditDialogComponent({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, boardConfig?.estimation_type]);
 
-  const getLabelColorClasses = (color: string) => {
-    const map: Record<string, string> = {
-      red: 'bg-red-100 text-red-700 border-red-200 dark:bg-red-900/30 dark:text-red-300 dark:border-red-800',
-      orange:
-        'bg-orange-100 text-orange-700 border-orange-200 dark:bg-orange-900/30 dark:text-orange-300 dark:border-orange-800',
-      yellow:
-        'bg-yellow-100 text-yellow-700 border-yellow-200 dark:bg-yellow-900/30 dark:text-yellow-300 dark:border-yellow-800',
-      green:
-        'bg-green-100 text-green-700 border-green-200 dark:bg-green-900/30 dark:text-green-300 dark:border-green-800',
-      blue: 'bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-800',
-      indigo:
-        'bg-indigo-100 text-indigo-700 border-indigo-200 dark:bg-indigo-900/30 dark:text-indigo-300 dark:border-indigo-800',
-      purple:
-        'bg-purple-100 text-purple-700 border-purple-200 dark:bg-purple-900/30 dark:text-purple-300 dark:border-purple-800',
-      pink: 'bg-pink-100 text-pink-700 border-pink-200 dark:bg-pink-900/30 dark:text-pink-300 dark:border-pink-800',
-      gray: 'bg-gray-100 text-gray-700 border-gray-200 dark:bg-gray-900/30 dark:text-gray-300 dark:border-gray-800',
+  // Label color utilities (matching task-labels-display.tsx approach)
+  const normalizeHex = (input: string): string | null => {
+    if (!input) return null;
+    let c = input.trim();
+    if (c.startsWith('#')) c = c.slice(1);
+    if (c.length === 3) {
+      c = c
+        .split('')
+        .map((ch) => ch + ch)
+        .join('');
+    }
+    if (c.length !== 6) return null;
+    if (!/^[0-9a-fA-F]{6}$/.test(c)) return null;
+    return '#' + c.toLowerCase();
+  };
+
+  const hexToRgb = (hex: string) => {
+    const n = normalizeHex(hex);
+    if (!n) return null;
+    const r = parseInt(n.substring(1, 3), 16);
+    const g = parseInt(n.substring(3, 5), 16);
+    const b = parseInt(n.substring(5, 7), 16);
+    return { r, g, b };
+  };
+
+  const luminance = ({ r, g, b }: { r: number; g: number; b: number }) => {
+    const channel = (v: number) => {
+      const s = v / 255;
+      return s <= 0.03928 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4;
     };
-    return map[color] || map.gray;
+    return 0.2126 * channel(r) + 0.7152 * channel(g) + 0.0722 * channel(b);
+  };
+
+  const adjust = (hex: string, factor: number) => {
+    const rgb = hexToRgb(hex);
+    if (!rgb) return hex;
+    const rN = rgb.r / 255;
+    const gN = rgb.g / 255;
+    const bN = rgb.b / 255;
+    const max = Math.max(rN, gN, bN);
+    const min = Math.min(rN, gN, bN);
+    let h = 0;
+    const l = (max + min) / 2;
+    const d = max - min;
+    let s = 0;
+    if (d !== 0) {
+      s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+      switch (max) {
+        case rN:
+          h = (gN - bN) / d + (gN < bN ? 6 : 0);
+          break;
+        case gN:
+          h = (bN - rN) / d + 2;
+          break;
+        default:
+          h = (rN - gN) / d + 4;
+      }
+      h /= 6;
+    }
+    const targetL = Math.min(
+      1,
+      Math.max(0, l * (factor >= 1 ? 1 + (factor - 1) * 0.75 : factor))
+    );
+    const targetS = factor > 1 && targetL > 0.7 ? s * 0.85 : s;
+    const hue2rgb = (p: number, q: number, t: number) => {
+      if (t < 0) t += 1;
+      if (t > 1) t -= 1;
+      if (t < 1 / 6) return p + (q - p) * 6 * t;
+      if (t < 1 / 2) return q;
+      if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6;
+      return p;
+    };
+    const q =
+      targetL < 0.5
+        ? targetL * (1 + targetS)
+        : targetL + targetS - targetL * targetS;
+    const p = 2 * targetL - q;
+    const r = Math.round(hue2rgb(p, q, h + 1 / 3) * 255);
+    const g = Math.round(hue2rgb(p, q, h) * 255);
+    const b = Math.round(hue2rgb(p, q, h - 1 / 3) * 255);
+    return '#' + [r, g, b].map((v) => v.toString(16).padStart(2, '0')).join('');
+  };
+
+  const computeAccessibleLabelStyles = (raw: string) => {
+    const nameMap: Record<string, string> = {
+      red: '#ef4444',
+      orange: '#f97316',
+      amber: '#f59e0b',
+      yellow: '#eab308',
+      lime: '#84cc16',
+      green: '#22c55e',
+      emerald: '#10b981',
+      teal: '#14b8a6',
+      cyan: '#06b6d4',
+      sky: '#0ea5e9',
+      blue: '#3b82f6',
+      indigo: '#6366f1',
+      violet: '#8b5cf6',
+      purple: '#a855f7',
+      fuchsia: '#d946ef',
+      pink: '#ec4899',
+      rose: '#f43f5e',
+      gray: '#6b7280',
+      slate: '#64748b',
+      zinc: '#71717a',
+    };
+    const baseHex = normalizeHex(raw) || nameMap[raw.toLowerCase?.()] || null;
+    if (!baseHex) return null;
+    const rgb = hexToRgb(baseHex);
+    if (!rgb) return null;
+    const lum = luminance(rgb);
+    const bg = baseHex + '1a'; // 10% opacity
+    const border = baseHex + '4d'; // 30% opacity
+    let text = baseHex;
+    if (lum < 0.22) {
+      text = adjust(baseHex, 1.25);
+    } else if (lum > 0.82) {
+      text = adjust(baseHex, 0.65);
+    }
+    return { bg, border, text };
   };
 
   // Build estimation indices via shared util - memoize to prevent recalculation
@@ -1210,10 +1315,9 @@ function TaskEditDialogComponent({
               <div className="flex items-center gap-1 md:gap-2">
                 {isCreateMode && (
                   <label className="hidden items-center gap-2 text-muted-foreground text-xs md:flex">
-                    <Checkbox
+                    <Switch
                       checked={createMultiple}
                       onCheckedChange={(v) => setCreateMultiple(Boolean(v))}
-                      className="h-3.5 w-3.5"
                     />
                     Create multiple
                   </label>
@@ -1761,6 +1865,9 @@ function TaskEditDialogComponent({
                             const active = selectedLabels.some(
                               (l) => l.id === label.id
                             );
+                            const styles = computeAccessibleLabelStyles(
+                              label.color
+                            );
                             return (
                               <Button
                                 key={label.id}
@@ -1772,9 +1879,17 @@ function TaskEditDialogComponent({
                                   'h-7 border px-3 text-xs transition-all',
                                   !active &&
                                     'bg-background hover:border-dynamic-orange/50',
-                                  active && getLabelColorClasses(label.color),
                                   active && 'shadow-sm'
                                 )}
+                                style={
+                                  active && styles
+                                    ? {
+                                        backgroundColor: styles.bg,
+                                        borderColor: styles.border,
+                                        color: styles.text,
+                                      }
+                                    : undefined
+                                }
                               >
                                 {label.name || 'Unnamed'}
                                 {active && <X className="ml-1.5 h-3 w-3" />}
@@ -1859,10 +1974,16 @@ function TaskEditDialogComponent({
                                     onClick={() => toggleAssignee(assignee)}
                                     className="h-7 gap-1.5 rounded-full border border-dynamic-orange/30 bg-dynamic-orange/15 px-3 font-medium text-dynamic-orange text-xs shadow-sm transition-all hover:border-dynamic-orange/50 hover:bg-dynamic-orange/25"
                                   >
-                                    <div className="flex h-4 w-4 items-center justify-center rounded-full bg-dynamic-orange/20 font-bold text-[10px]">
-                                      {(assignee.display_name ||
-                                        'Unknown')[0]?.toUpperCase()}
-                                    </div>
+                                    <Avatar className="h-4 w-4">
+                                      <AvatarImage
+                                        src={assignee.avatar_url}
+                                        alt={assignee.display_name || 'Unknown'}
+                                      />
+                                      <AvatarFallback className="bg-dynamic-orange/20 font-bold text-[9px]">
+                                        {(assignee.display_name ||
+                                          'Unknown')[0]?.toUpperCase()}
+                                      </AvatarFallback>
+                                    </Avatar>
                                     {assignee.display_name || 'Unknown'}
                                     <X className="h-3 w-3 opacity-70" />
                                   </Button>
@@ -1920,10 +2041,18 @@ function TaskEditDialogComponent({
                                         onClick={() => toggleAssignee(member)}
                                         className="group flex items-center gap-2.5 rounded-md border border-transparent bg-background/50 px-3 py-2 text-left transition-all hover:border-dynamic-orange/30 hover:bg-dynamic-orange/5"
                                       >
-                                        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-muted font-semibold text-muted-foreground text-xs transition-colors group-hover:bg-dynamic-orange/20 group-hover:text-dynamic-orange">
-                                          {(member.display_name ||
-                                            'Unknown')[0]?.toUpperCase()}
-                                        </div>
+                                        <Avatar className="h-7 w-7 shrink-0">
+                                          <AvatarImage
+                                            src={member.avatar_url}
+                                            alt={
+                                              member.display_name || 'Unknown'
+                                            }
+                                          />
+                                          <AvatarFallback className="bg-muted font-semibold text-muted-foreground text-xs group-hover:bg-dynamic-orange/20 group-hover:text-dynamic-orange">
+                                            {(member.display_name ||
+                                              'Unknown')[0]?.toUpperCase()}
+                                          </AvatarFallback>
+                                        </Avatar>
                                         <span className="flex-1 truncate text-sm">
                                           {member.display_name || 'Unknown'}
                                         </span>
