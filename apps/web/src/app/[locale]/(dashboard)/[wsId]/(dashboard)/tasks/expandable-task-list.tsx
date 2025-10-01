@@ -10,6 +10,7 @@ import {
   Clock,
   UserRound,
 } from '@tuturuuu/ui/icons';
+import { TaskEditDialog } from '@tuturuuu/ui/tu-do/shared/task-edit-dialog';
 import { TaskEstimationDisplay } from '@tuturuuu/ui/tu-do/shared/task-estimation-display';
 import { TaskLabelsDisplay } from '@tuturuuu/ui/tu-do/shared/task-labels-display';
 import { getDescriptionText } from '@tuturuuu/ui/utils/text-helper';
@@ -78,8 +79,27 @@ export default function ExpandableTaskList({
   initialLimit = 5,
 }: ExpandableTaskListProps) {
   const [showAll, setShowAll] = useState(false);
+  const [editingTask, setEditingTask] = useState<Task | null>(null);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const displayedTasks = showAll ? tasks : tasks.slice(0, initialLimit);
   const hasMoreTasks = tasks.length > initialLimit;
+
+  const handleEditTask = (task: Task, e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setEditingTask(task);
+    setIsEditDialogOpen(true);
+  };
+
+  const handleCloseEditDialog = () => {
+    setIsEditDialogOpen(false);
+    setEditingTask(null);
+  };
+
+  const handleUpdateTask = () => {
+    // Trigger refresh by re-rendering
+    window.location.reload();
+  };
 
   const getPriorityColor = (priority: string | null) => {
     switch (priority) {
@@ -135,150 +155,137 @@ export default function ExpandableTaskList({
         const now = new Date();
 
         return (
-          <div
+          <button
             key={task.id}
+            type="button"
             className={cn(
-              'group relative rounded-xl border bg-gradient-to-br p-4 transition-all duration-300 hover:scale-[1.02] hover:shadow-md',
+              'group relative w-full cursor-pointer rounded-xl border p-4 text-left transition-all duration-300 hover:shadow-lg',
               taskOverdue && !task.archived
-                ? 'border-dynamic-red/30 from-dynamic-red/5 via-dynamic-red/3 to-dynamic-red/10 shadow-sm ring-1 ring-dynamic-red/20'
-                : 'border-dynamic-orange/20 from-dynamic-orange/5 via-dynamic-orange/3 to-dynamic-red/5 hover:border-dynamic-orange/30'
+                ? 'border-dynamic-red/30 bg-dynamic-red/5 shadow-sm ring-1 ring-dynamic-red/20'
+                : 'border-dynamic-orange/20 bg-dynamic-orange/5 hover:border-dynamic-orange/30'
             )}
+            onClick={(e) => handleEditTask(task, e)}
           >
-            {/* Overdue indicator */}
+            {/* Overdue indicator - Enhanced */}
             {taskOverdue && !task.archived && (
-              <div className="absolute top-0 right-0 h-0 w-0 border-t-[20px] border-t-dynamic-red border-l-[20px] border-l-transparent">
-                <AlertCircle className="-top-4 -right-[18px] absolute h-3 w-3" />
+              <div className="absolute top-3 right-3 flex items-center gap-1.5 rounded-full bg-dynamic-red/15 px-3 py-1 ring-1 ring-dynamic-red/30 backdrop-blur-sm">
+                <AlertCircle className="h-3.5 w-3.5 text-dynamic-red" />
+                <span className="font-bold text-[10px] text-dynamic-red tracking-widest">
+                  OVERDUE
+                </span>
               </div>
             )}
 
-            <div className="flex items-start justify-between gap-3">
-              <div className="flex-1 space-y-3">
+            {/* Main content area */}
+            <div className="flex items-start gap-4">
+              {/* Left side - Task info */}
+              <div className="min-w-0 flex-1 space-y-3">
+                {/* Task name and priority badge */}
                 <div className="flex items-start gap-3">
-                  <div className="min-w-0 flex-1">
-                    <h4 className="line-clamp-1 font-semibold text-foreground text-sm transition-colors duration-200">
-                      {task.name}
-                    </h4>
-                    {task.description && (
-                      <p className="mt-1.5 line-clamp-2 text-muted-foreground text-xs leading-relaxed">
-                        {getDescriptionText(task.description)}
-                      </p>
-                    )}
-
-                    {/* Dates section */}
-                    {(startDate || endDate) && (
-                      <div className="mt-3 space-y-1.5">
-                        {startDate && startDate > now && (
-                          <div className="flex items-center gap-1.5 rounded-md bg-dynamic-blue/5 px-2 py-1 text-muted-foreground">
-                            <Clock className="h-3 w-3 shrink-0 text-dynamic-blue" />
-                            <span className="truncate font-medium text-xs">
-                              Starts {formatSmartDate(startDate)}
-                            </span>
-                          </div>
-                        )}
-                        {endDate && (
-                          <div
-                            className={cn(
-                              'flex items-center gap-1.5 rounded-md px-2 py-1',
-                              taskOverdue && !task.archived
-                                ? 'bg-dynamic-red/10 font-medium text-dynamic-red'
-                                : 'bg-dynamic-orange/5 text-muted-foreground'
-                            )}
-                          >
-                            <Calendar
-                              className={cn(
-                                'h-3 w-3 shrink-0',
-                                taskOverdue && !task.archived
-                                  ? 'text-dynamic-red'
-                                  : 'text-dynamic-orange'
-                              )}
-                            />
-                            <span className="truncate font-medium text-xs">
-                              Due {formatSmartDate(endDate)}
-                            </span>
-                            {taskOverdue && !task.archived && (
-                              <Badge className="ml-1 h-4 bg-dynamic-red px-1.5 font-bold text-[9px] text-white tracking-wide shadow-sm">
-                                OVERDUE
-                              </Badge>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    )}
-
-                    <div className="mt-3 flex flex-wrap items-center gap-2 text-xs">
-                      <div className="flex items-center gap-2">
-                        {isPersonal && task.list?.board?.ws_id && (
-                          <>
-                            <Link
-                              href={`/${task.list.board.ws_id}`}
-                              className={cn(
-                                'rounded-md px-2 py-1 font-medium transition-all duration-200 hover:scale-105',
-                                task.list?.board?.workspaces?.personal
-                                  ? 'bg-dynamic-purple/10 text-dynamic-purple hover:bg-dynamic-purple/20'
-                                  : 'bg-dynamic-blue/10 text-dynamic-blue hover:bg-dynamic-blue/20'
-                              )}
-                            >
-                              {task.list?.board?.workspaces?.personal ? (
-                                <UserRound className="h-3 w-3" />
-                              ) : (
-                                task.list?.board?.workspaces?.name
-                              )}
-                            </Link>
-                            <span className="text-muted-foreground">•</span>
-                          </>
-                        )}
-                        {task.list?.board?.id && task.list?.board?.ws_id && (
-                          <>
-                            <Link
-                              href={`/${task.list.board.ws_id}/tasks/boards/${task.list.board.id}`}
-                              className="rounded-md bg-dynamic-green/10 px-2 py-1 font-medium text-dynamic-green transition-all duration-200 hover:scale-105 hover:bg-dynamic-green/20"
-                            >
-                              {task.list?.board?.name || 'Board'}
-                            </Link>
-                            <span className="text-muted-foreground">•</span>
-                          </>
-                        )}
-                        {task.list?.name &&
-                          task.list?.board?.id &&
-                          task.list?.board?.ws_id && (
-                            <Link
-                              href={`/${task.list.board.ws_id}/tasks/boards/${task.list.board.id}`}
-                              className="rounded-md bg-dynamic-orange/10 px-2 py-1 font-medium text-dynamic-orange transition-all duration-200 hover:scale-105 hover:bg-dynamic-orange/20"
-                            >
-                              {task.list.name}
-                            </Link>
-                          )}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div className="flex min-w-0 flex-col items-end gap-2.5">
-                {/* Top row: Priority and Estimation */}
-                <div className="flex items-center gap-2">
+                  <h4 className="line-clamp-2 flex-1 font-semibold text-foreground text-sm leading-snug transition-colors duration-200">
+                    {task.name}
+                  </h4>
                   {task.priority && (
                     <Badge
                       className={cn(
-                        'font-bold text-xs shadow-sm transition-all duration-200 hover:scale-105',
+                        'shrink-0 font-semibold text-[10px] tracking-wide shadow-sm',
                         getPriorityColor(task.priority)
                       )}
                     >
                       {getPriorityLabel(task.priority)}
                     </Badge>
                   )}
-                  {task.estimation_points && (
-                    <TaskEstimationDisplay
-                      points={task.estimation_points}
-                      size="sm"
-                      showIcon={false}
-                      estimationType={task.list?.board?.estimation_type}
-                    />
+                </div>
+
+                {/* Metadata row - Improved layout */}
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-xs">
+                  {/* Board/List context */}
+                  {task.list?.board?.id && task.list?.board?.ws_id && (
+                    <Link
+                      href={`/${task.list.board.ws_id}/tasks/boards/${task.list.board.id}`}
+                      onClick={(e) => e.stopPropagation()}
+                      className="group/link flex items-center gap-1.5 rounded-md bg-dynamic-green/10 px-2 py-1 font-medium text-dynamic-green transition-all hover:bg-dynamic-green/20"
+                    >
+                      <span className="truncate group-hover/link:underline">
+                        {task.list?.board?.name || 'Board'}
+                      </span>
+                    </Link>
+                  )}
+
+                  {task.list?.name && (
+                    <>
+                      <span className="text-foreground">→</span>
+                      <span className="truncate rounded-md bg-dynamic-purple/10 px-2 py-1 text-dynamic-purple">
+                        {task.list.name}
+                      </span>
+                    </>
+                  )}
+
+                  {/* Workspace badge for personal view */}
+                  {isPersonal && task.list?.board?.ws_id && (
+                    <>
+                      <span className="text-muted-foreground/30">•</span>
+                      <Link
+                        href={`/${task.list.board.ws_id}`}
+                        onClick={(e) => e.stopPropagation()}
+                        className={cn(
+                          'group/ws flex items-center gap-1.5 rounded-md px-2 py-1 font-medium transition-all',
+                          task.list?.board?.workspaces?.personal
+                            ? 'bg-dynamic-purple/10 text-dynamic-purple hover:bg-dynamic-purple/20'
+                            : 'bg-dynamic-blue/10 text-dynamic-blue hover:bg-dynamic-blue/20'
+                        )}
+                      >
+                        {task.list?.board?.workspaces?.personal ? (
+                          <>
+                            <UserRound className="h-3.5 w-3.5" />
+                            <span className="truncate group-hover/ws:underline">
+                              Personal
+                            </span>
+                          </>
+                        ) : (
+                          <span className="truncate group-hover/ws:underline">
+                            {task.list?.board?.workspaces?.name}
+                          </span>
+                        )}
+                      </Link>
+                    </>
+                  )}
+
+                  {/* Date info - most important */}
+                  {(endDate || (startDate && startDate > now)) && (
+                    <span className="text-muted-foreground/30">•</span>
+                  )}
+
+                  {endDate && (
+                    <div
+                      className={cn(
+                        'flex items-center gap-1.5 rounded-md px-2 py-1 transition-colors',
+                        taskOverdue && !task.archived
+                          ? 'bg-dynamic-red/10 font-semibold text-dynamic-red'
+                          : 'bg-dynamic-orange/10 text-dynamic-orange'
+                      )}
+                    >
+                      <Calendar className="h-3.5 w-3.5 shrink-0" />
+                      <span className="truncate">
+                        {formatSmartDate(endDate)}
+                      </span>
+                    </div>
+                  )}
+
+                  {startDate && startDate > now && (
+                    <div className="flex items-center gap-1.5 rounded-md bg-dynamic-blue/10 px-2 py-1 text-dynamic-blue">
+                      <Clock className="h-3.5 w-3.5 shrink-0" />
+                      <span className="truncate">
+                        Starts {formatSmartDate(startDate)}
+                      </span>
+                    </div>
                   )}
                 </div>
 
-                {/* Labels row */}
-                {task.labels && task.labels.length > 0 && (
-                  <div className="flex justify-end">
+                {/* Bottom row - labels, estimation, assignees - Enhanced */}
+                <div className="flex flex-wrap items-center gap-2.5">
+                  {/* Labels */}
+                  {task.labels && task.labels.length > 0 && (
                     <TaskLabelsDisplay
                       labels={task.labels
                         .map((tl) => tl.label)
@@ -287,46 +294,78 @@ export default function ExpandableTaskList({
                             label !== null
                         )}
                       size="sm"
-                      maxDisplay={2}
+                      maxDisplay={4}
                     />
-                  </div>
-                )}
+                  )}
 
-                {/* Assignees count */}
-                <div className="font-medium text-dynamic-orange/70 text-xs">
-                  {task.assignees && task.assignees.length > 1 && (
-                    <span className="rounded-md bg-dynamic-orange/10 px-2 py-1">
-                      +{task.assignees.length - 1} others
-                    </span>
+                  {/* Estimation */}
+                  {task.estimation_points !== null &&
+                    task.estimation_points !== undefined && (
+                      <TaskEstimationDisplay
+                        points={task.estimation_points}
+                        size="sm"
+                        showIcon={true}
+                        estimationType={task.list?.board?.estimation_type}
+                      />
+                    )}
+
+                  {/* Assignees */}
+                  {task.assignees && task.assignees.length > 0 && (
+                    <div className="flex items-center gap-1.5 rounded-md bg-dynamic-blue/10 px-2 py-1 text-[10px] text-dynamic-blue ring-1 ring-dynamic-blue/20">
+                      <UserRound className="h-3.5 w-3.5" />
+                      <span className="font-medium">
+                        {task.assignees.length}
+                      </span>
+                    </div>
                   )}
                 </div>
+
+                {/* Description - only show if exists */}
+                {task.description && (
+                  <p className="line-clamp-2 rounded-md bg-muted/40 px-3 py-2 text-muted-foreground text-xs leading-relaxed">
+                    {getDescriptionText(task.description)}
+                  </p>
+                )}
               </div>
             </div>
-          </div>
+          </button>
         );
       })}
 
       {hasMoreTasks && (
-        <div className="flex justify-center pt-4">
+        <div className="flex justify-center pt-6">
           <Button
             variant="ghost"
             size="sm"
             onClick={() => setShowAll(!showAll)}
-            className="h-9 px-4 transition-all duration-200 hover:scale-105 hover:bg-dynamic-orange/10 hover:text-dynamic-orange hover:shadow-sm"
+            className="group h-10 gap-2 px-6 transition-all duration-200 hover:scale-105 hover:bg-dynamic-orange/10 hover:text-dynamic-orange hover:shadow-md"
           >
             {showAll ? (
               <>
-                <ChevronUp className="mr-1.5 h-3.5 w-3.5" />
-                Show Less
+                <ChevronUp className="h-4 w-4 transition-transform" />
+                <span className="font-medium">Show Less</span>
               </>
             ) : (
               <>
-                <ChevronDown className="mr-1.5 h-3.5 w-3.5" />
-                Show {tasks.length - initialLimit} More
+                <ChevronDown className="h-4 w-4 transition-transform" />
+                <span className="font-medium">
+                  Show {tasks.length - initialLimit} More Tasks
+                </span>
               </>
             )}
           </Button>
         </div>
+      )}
+
+      {/* Task Edit Dialog */}
+      {editingTask && (
+        <TaskEditDialog
+          task={editingTask as any}
+          boardId={editingTask.list?.board?.id || ''}
+          isOpen={isEditDialogOpen}
+          onClose={handleCloseEditDialog}
+          onUpdate={handleUpdateTask}
+        />
       )}
     </div>
   );

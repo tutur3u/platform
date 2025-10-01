@@ -1,3 +1,4 @@
+import WorkspaceWrapper from '@/components/workspace-wrapper';
 import NewInvoicePage from '@tuturuuu/ui/finance/invoices/new-invoice-page';
 import type { Metadata } from 'next';
 
@@ -13,7 +14,9 @@ interface Props {
 }
 
 export default async function WorkspaceInvoicesPage({ params }: Props) {
-  const { wsId } = await params;
-
-  return <NewInvoicePage wsId={wsId} />;
+  return (
+    <WorkspaceWrapper params={params}>
+      {({ wsId }) => <NewInvoicePage wsId={wsId} />}
+    </WorkspaceWrapper>
+  );
 }

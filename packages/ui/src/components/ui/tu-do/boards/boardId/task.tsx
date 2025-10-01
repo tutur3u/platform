@@ -118,6 +118,7 @@ function TaskCardInner({
 }: TaskCardProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [menuGuardUntil, setMenuGuardUntil] = useState(0);
   const [customDateDialogOpen, setCustomDateDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
@@ -134,12 +135,32 @@ function TaskCardInner({
   }, []);
 
   // Helper function to prevent event propagation and execute action
-  const preventPropagation = useCallback((action: () => void) => {
-    return (e: React.MouseEvent) => {
-      e.stopPropagation();
+  const preventPropagation = useCallback(
+    (action: () => void) => {
+      return (e: React.MouseEvent) => {
+        e.stopPropagation();
+        // Guard against immediate accidental selection after right-click open
+        if (Date.now() < menuGuardUntil) return;
+        action();
+      };
+    },
+    [menuGuardUntil]
+  );
+
+  // Guarded select handler for Radix DropdownMenuItem to avoid immediate action on context open
+  const handleMenuItemSelect = useCallback(
+    (e: Event, action: () => void) => {
+      if (Date.now() < menuGuardUntil) {
+        // Keep menu open by preventing default close
+        if (e && typeof (e as any).preventDefault === 'function') {
+          (e as any).preventDefault();
+        }
+        return;
+      }
       action();
-    };
-  }, []);
+    },
+    [menuGuardUntil]
+  );
 
   // Estimation & labels state
   const [boardConfig, setBoardConfig] = useState<any>(null);
@@ -863,10 +884,26 @@ function TaskCardInner({
         onSelect?.(task.id, e);
 
         // Only open edit dialog if not in multi-select mode, not dragging, dialog is not already open, and not in the process of closing
-        if (!e.shiftKey && !isDragging && !editDialogOpen && !isClosingDialog) {
+        if (
+          !e.shiftKey &&
+          !isDragging &&
+          !editDialogOpen &&
+          !isClosingDialog &&
+          !menuOpen &&
+          !deleteDialogOpen &&
+          !customDateDialogOpen &&
+          !newLabelDialogOpen
+        ) {
           setEditDialogOpen(true);
           setIsClosingDialog(false);
         }
+      }}
+      onContextMenu={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        // Open the context menu (actions dropdown) and guard first click briefly
+        setMenuOpen(true);
+        setMenuGuardUntil(Date.now() + 200);
       }}
       // Apply sortable listeners/attributes to the full card so the whole surface remains draggable
       {...attributes}
@@ -972,7 +1009,12 @@ function TaskCardInner({
                   {/* Quick Completion Action */}
                   {canMoveToCompletion && (
                     <DropdownMenuItem
-                      onClick={preventPropagation(handleMoveToCompletion)}
+                      onSelect={(e) =>
+                        handleMenuItemSelect(
+                          e as unknown as Event,
+                          handleMoveToCompletion
+                        )
+                      }
                       className="cursor-pointer"
                       disabled={isLoading}
                     >
@@ -988,7 +1030,12 @@ function TaskCardInner({
                   {canMoveToClose &&
                     targetClosedList?.id !== targetCompletionList?.id && (
                       <DropdownMenuItem
-                        onClick={preventPropagation(handleMoveToClose)}
+                        onSelect={(e) =>
+                          handleMenuItemSelect(
+                            e as unknown as Event,
+                            handleMoveToClose
+                          )
+                        }
                         className="cursor-pointer"
                         disabled={isLoading}
                       >
@@ -1020,10 +1067,12 @@ function TaskCardInner({
                     </DropdownMenuSubTrigger>
                     <DropdownMenuSubContent>
                       <DropdownMenuItem
-                        onClick={preventPropagation(() => {
-                          handlePriorityChange(null);
-                          setMenuOpen(false);
-                        })}
+                        onSelect={(e) =>
+                          handleMenuItemSelect(e as unknown as Event, () => {
+                            handlePriorityChange(null);
+                            setMenuOpen(false);
+                          })
+                        }
                         className={cn(
                           'cursor-pointer text-muted-foreground',
                           !task.priority && 'bg-muted/50'
@@ -1039,10 +1088,12 @@ function TaskCardInner({
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem
-                        onClick={preventPropagation(() => {
-                          handlePriorityChange('critical');
-                          setMenuOpen(false);
-                        })}
+                        onSelect={(e) =>
+                          handleMenuItemSelect(e as unknown as Event, () => {
+                            handlePriorityChange('critical');
+                            setMenuOpen(false);
+                          })
+                        }
                         className={cn(
                           'cursor-pointer',
                           task.priority === 'critical' &&
@@ -1063,10 +1114,12 @@ function TaskCardInner({
                         </div>
                       </DropdownMenuItem>
                       <DropdownMenuItem
-                        onClick={() => {
-                          handlePriorityChange('high');
-                          setMenuOpen(false);
-                        }}
+                        onSelect={(e) =>
+                          handleMenuItemSelect(e as unknown as Event, () => {
+                            handlePriorityChange('high');
+                            setMenuOpen(false);
+                          })
+                        }
                         className={cn(
                           'cursor-pointer',
                           task.priority === 'high' &&
@@ -1087,10 +1140,12 @@ function TaskCardInner({
                         </div>
                       </DropdownMenuItem>
                       <DropdownMenuItem
-                        onClick={() => {
-                          handlePriorityChange('normal');
-                          setMenuOpen(false);
-                        }}
+                        onSelect={(e) =>
+                          handleMenuItemSelect(e as unknown as Event, () => {
+                            handlePriorityChange('normal');
+                            setMenuOpen(false);
+                          })
+                        }
                         className={cn(
                           'cursor-pointer',
                           task.priority === 'normal' &&
@@ -1108,10 +1163,12 @@ function TaskCardInner({
                         </div>
                       </DropdownMenuItem>
                       <DropdownMenuItem
-                        onClick={() => {
-                          handlePriorityChange('low');
-                          setMenuOpen(false);
-                        }}
+                        onSelect={(e) =>
+                          handleMenuItemSelect(e as unknown as Event, () => {
+                            handlePriorityChange('low');
+                            setMenuOpen(false);
+                          })
+                        }
                         className={cn(
                           'cursor-pointer',
                           task.priority === 'low' &&
@@ -1148,37 +1205,45 @@ function TaskCardInner({
                     </DropdownMenuSubTrigger>
                     <DropdownMenuSubContent>
                       <DropdownMenuItem
-                        onClick={preventPropagation(() => {
-                          handleDueDateChange(0);
-                          setMenuOpen(false);
-                        })}
+                        onSelect={(e) =>
+                          handleMenuItemSelect(e as unknown as Event, () => {
+                            handleDueDateChange(0);
+                            setMenuOpen(false);
+                          })
+                        }
                         className="cursor-pointer"
                       >
                         <div className="flex items-center gap-2">Today</div>
                       </DropdownMenuItem>
                       <DropdownMenuItem
-                        onClick={() => {
-                          handleDueDateChange(1);
-                          setMenuOpen(false);
-                        }}
+                        onSelect={(e) =>
+                          handleMenuItemSelect(e as unknown as Event, () => {
+                            handleDueDateChange(1);
+                            setMenuOpen(false);
+                          })
+                        }
                         className="cursor-pointer"
                       >
                         <div className="flex items-center gap-2">Tomorrow</div>
                       </DropdownMenuItem>
                       <DropdownMenuItem
-                        onClick={() => {
-                          handleDueDateChange(7);
-                          setMenuOpen(false);
-                        }}
+                        onSelect={(e) =>
+                          handleMenuItemSelect(e as unknown as Event, () => {
+                            handleDueDateChange(7);
+                            setMenuOpen(false);
+                          })
+                        }
                         className="cursor-pointer"
                       >
                         <div className="flex items-center gap-2">Next Week</div>
                       </DropdownMenuItem>
                       <DropdownMenuItem
-                        onClick={() => {
-                          handleDueDateChange(30);
-                          setMenuOpen(false);
-                        }}
+                        onSelect={(e) =>
+                          handleMenuItemSelect(e as unknown as Event, () => {
+                            handleDueDateChange(30);
+                            setMenuOpen(false);
+                          })
+                        }
                         className="cursor-pointer"
                       >
                         <div className="flex items-center gap-2">
@@ -1187,11 +1252,16 @@ function TaskCardInner({
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem
-                        onClick={() => {
-                          setMenuOpen(false);
-                          // Use setTimeout to prevent interference with dropdown closing
-                          setTimeout(() => setCustomDateDialogOpen(true), 100);
-                        }}
+                        onSelect={(e) =>
+                          handleMenuItemSelect(e as unknown as Event, () => {
+                            setMenuOpen(false);
+                            // Use setTimeout to prevent interference with dropdown closing
+                            setTimeout(
+                              () => setCustomDateDialogOpen(true),
+                              100
+                            );
+                          })
+                        }
                         className="cursor-pointer"
                       >
                         <div className="flex items-center gap-2">
@@ -1203,10 +1273,15 @@ function TaskCardInner({
                         <>
                           <DropdownMenuSeparator />
                           <DropdownMenuItem
-                            onClick={() => {
-                              handleDueDateChange(null);
-                              setMenuOpen(false);
-                            }}
+                            onSelect={(e) =>
+                              handleMenuItemSelect(
+                                e as unknown as Event,
+                                () => {
+                                  handleDueDateChange(null);
+                                  setMenuOpen(false);
+                                }
+                              )
+                            }
                             className="cursor-pointer text-muted-foreground"
                           >
                             <X className="h-4 w-4" />
@@ -1238,9 +1313,11 @@ function TaskCardInner({
                           return (
                             <DropdownMenuItem
                               key={idx}
-                              onClick={preventPropagation(() =>
-                                updateEstimationPoints(idx)
-                              )}
+                              onSelect={(e) =>
+                                handleMenuItemSelect(e, () =>
+                                  updateEstimationPoints(idx)
+                                )
+                              }
                               className={cn(
                                 'flex cursor-pointer items-center justify-between',
                                 task.estimation_points === idx &&
@@ -1264,9 +1341,11 @@ function TaskCardInner({
                         })}
                         <DropdownMenuSeparator />
                         <DropdownMenuItem
-                          onClick={preventPropagation(() =>
-                            updateEstimationPoints(null)
-                          )}
+                          onSelect={(e) =>
+                            handleMenuItemSelect(e, () =>
+                              updateEstimationPoints(null)
+                            )
+                          }
                           className={cn(
                             'cursor-pointer text-muted-foreground',
                             task.estimation_points == null && 'bg-muted/50'
@@ -1306,9 +1385,11 @@ function TaskCardInner({
                             return (
                               <DropdownMenuItem
                                 key={label.id}
-                                onClick={preventPropagation(() =>
-                                  toggleTaskLabel(label.id)
-                                )}
+                                onSelect={(e) =>
+                                  handleMenuItemSelect(e, () =>
+                                    toggleTaskLabel(label.id)
+                                  )
+                                }
                                 disabled={labelsSaving === label.id}
                                 className={cn(
                                   'flex cursor-pointer items-center justify-between',
@@ -1336,10 +1417,12 @@ function TaskCardInner({
                         <>
                           <DropdownMenuSeparator />
                           <DropdownMenuItem
-                            onClick={() => {
-                              setNewLabelDialogOpen(true);
-                              setMenuOpen(false);
-                            }}
+                            onSelect={(e) =>
+                              handleMenuItemSelect(e, () => {
+                                setNewLabelDialogOpen(true);
+                                setMenuOpen(false);
+                              })
+                            }
                             className="flex cursor-pointer items-center gap-2 text-muted-foreground hover:text-foreground"
                           >
                             <Plus className="h-4 w-4" />

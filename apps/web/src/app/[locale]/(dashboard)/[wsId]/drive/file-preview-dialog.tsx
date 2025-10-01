@@ -400,7 +400,7 @@ export function FilePreviewDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         className="!max-w-[90vw] flex h-[90vh] w-full !sm:max-w-6xl flex-col overflow-y-auto"
-        showXIcon={false}
+        showCloseButton={false}
       >
         <DialogHeader>
           <div className="flex items-center justify-between">

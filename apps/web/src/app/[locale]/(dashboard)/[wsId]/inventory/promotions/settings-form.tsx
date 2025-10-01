@@ -156,14 +156,17 @@ export default function WorkspaceSettingsForm({
       router.refresh();
     },
     onError: () => {
-      setLoading(false);
       toast.error(t('common.error'));
     },
   });
 
   async function onSubmit(values: z.infer<typeof FormSchema>) {
     setLoading(true);
-    await mutation.mutateAsync(values).finally(() => setLoading(false));
+    try {
+      await mutation.mutateAsync(values);
+    } finally {
+      setLoading(false);
+    }
   }
 
   // Use React Query to consume hydrated data from server and map to options
