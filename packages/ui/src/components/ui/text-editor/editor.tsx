@@ -240,7 +240,10 @@ export function RichTextEditor({
                   view.dispatch(transaction);
                   toast.success('Image uploaded successfully');
                 } else {
-                  console.error('Available nodes:', Object.keys(state.schema.nodes));
+                  console.error(
+                    'Available nodes:',
+                    Object.keys(state.schema.nodes)
+                  );
                   toast.error('Image node not found');
                 }
               })
