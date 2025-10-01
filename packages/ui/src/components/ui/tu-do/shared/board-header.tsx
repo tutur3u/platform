@@ -48,7 +48,7 @@ import { useRouter } from 'next/navigation';
 import { useMemo, useState } from 'react';
 import { LabelFilter } from '../boards/boardId/label-filter';
 import type { ViewType } from './board-views';
-import { OnlineUsersAvatars } from './online-users-avatars';
+import { UserPresenceAvatars } from './user-presence-avatars';
 
 interface TaskLabel {
   id: string;
@@ -278,7 +278,7 @@ export function BoardHeader({
 
         <div className="flex flex-col items-center gap-2 sm:flex-row">
           {/* Online Users */}
-          <OnlineUsersAvatars
+          <UserPresenceAvatars
             presenceState={presenceState}
             currentUserId={currentUserId}
             maxDisplay={3}

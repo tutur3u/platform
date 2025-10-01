@@ -8,17 +8,17 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { cn } from '@tuturuuu/utils/format';
 import { getInitials } from '@tuturuuu/utils/name-helper';
 
-interface OnlineUsersAvatarsProps {
+interface UserPresenceAvatarsProps {
   presenceState: RealtimePresenceState<BoardPresenceState>;
   currentUserId?: string;
   maxDisplay?: number;
 }
 
-export function OnlineUsersAvatars({
+export function UserPresenceAvatars({
   presenceState,
   currentUserId,
   maxDisplay = 5,
-}: OnlineUsersAvatarsProps) {
+}: UserPresenceAvatarsProps) {
   const uniqueUsers = Object.entries(presenceState).flatMap(
     ([, presences]) => presences[0]?.user
   );
