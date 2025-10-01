@@ -18,7 +18,7 @@ import {
 import StarterKit from '@tiptap/starter-kit';
 import { toast } from '@tuturuuu/ui/sonner';
 import { debounce } from 'lodash';
-import { Plugin, PluginKey } from 'prosemirror-state';
+import { Plugin, PluginKey, TextSelection } from 'prosemirror-state';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import ImageResize from 'tiptap-extension-resize-image';
 import { ToolBar } from './tool-bar';
@@ -195,6 +195,10 @@ interface RichTextEditorProps {
   flushPendingRef?: React.MutableRefObject<
     (() => JSONContent | null) | undefined
   >;
+  onArrowUp?: (cursorOffset?: number) => void;
+  onArrowLeft?: () => void;
+  editorRef?: React.MutableRefObject<any>;
+  initialCursorOffset?: number | null;
 }
 
 export function RichTextEditor({
@@ -209,6 +213,10 @@ export function RichTextEditor({
   workspaceId,
   onImageUpload,
   flushPendingRef,
+  onArrowUp,
+  onArrowLeft,
+  editorRef: externalEditorRef,
+  initialCursorOffset,
 }: RichTextEditorProps) {
   const [hasChanges, setHasChanges] = useState(false);
   const [isUploadingPastedImage, setIsUploadingPastedImage] = useState(false);
@@ -217,13 +225,17 @@ export function RichTextEditor({
   const onImageUploadRef = useRef(onImageUpload);
   const workspaceIdRef = useRef(workspaceId);
   const onChangeRef = useRef(onChange);
+  const onArrowUpRef = useRef(onArrowUp);
+  const onArrowLeftRef = useRef(onArrowLeft);
   const debouncedOnChangeRef = useRef<ReturnType<typeof debounce> | null>(null);
 
   useEffect(() => {
     onImageUploadRef.current = onImageUpload;
     workspaceIdRef.current = workspaceId;
     onChangeRef.current = onChange;
-  }, [onImageUpload, workspaceId, onChange]);
+    onArrowUpRef.current = onArrowUp;
+    onArrowLeftRef.current = onArrowLeft;
+  }, [onImageUpload, workspaceId, onChange, onArrowUp, onArrowLeft]);
 
   const debouncedOnChange = useMemo(
     () =>
@@ -261,6 +273,11 @@ export function RichTextEditor({
   }, [className]);
 
   const editor = useEditor({
+    onCreate: ({ editor }) => {
+      if (externalEditorRef) {
+        externalEditorRef.current = editor;
+      }
+    },
     extensions: [
       StarterKit.configure({
         link: false,
@@ -342,13 +359,126 @@ export function RichTextEditor({
       attributes: {
         class: getEditorClasses,
       },
-      handleKeyDown: (_, event) => {
+      handleKeyDown: (view, event) => {
         // Prevent Ctrl+Enter / Cmd+Enter from creating a new line
         // Let the parent component handle the save action
         if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') {
           event.preventDefault();
           return true;
         }
+
+        const { state, dispatch } = view;
+        const { selection } = state;
+        const { $from } = selection;
+
+        // Handle Backspace
+        if (event.key === 'Backspace' && onArrowUpRef.current) {
+          console.log('Backspace at pos:', $from.pos);
+
+          // Check if we're on the first line
+          const coordsAtCursor = view.coordsAtPos($from.pos);
+          const coordsAtStart = view.coordsAtPos(1);
+          const isOnFirstLine =
+            coordsAtCursor &&
+            coordsAtStart &&
+            Math.abs(coordsAtCursor.top - coordsAtStart.top) < 5;
+
+          console.log('Is on first line:', isOnFirstLine);
+
+          if (isOnFirstLine) {
+            const firstChild = state.doc.firstChild;
+            console.log('First child:', {
+              type: firstChild?.type.name,
+              text: firstChild?.textContent,
+              isEmpty: firstChild?.textContent.trim() === '',
+              nodeSize: firstChild?.nodeSize,
+            });
+
+            // If cursor is at the absolute start (position 1)
+            if ($from.pos === 1) {
+              const firstChild = state.doc.firstChild;
+
+              // If first line is empty and there's a second line, delete the empty line
+              if (firstChild && firstChild.textContent.trim() === '') {
+                const secondChild = state.doc.maybeChild(1);
+                if (secondChild) {
+                  console.log(
+                    'Empty first line - manually deleting via commands'
+                  );
+                  event.preventDefault();
+
+                  // Use commands to delete the node
+                  const tr = state.tr;
+                  const nodeSize = firstChild.nodeSize;
+
+                  // Delete from position 0 to end of first child (including the node itself)
+                  tr.delete(0, nodeSize);
+
+                  // Dispatch and trigger onChange manually
+                  dispatch(tr);
+
+                  // Manually trigger onChange since we're in handleKeyDown
+                  if (!readOnly && onChangeRef.current) {
+                    const newJson = tr.doc.toJSON();
+                    onChangeRef.current(hasContent(newJson) ? newJson : null);
+                  }
+
+                  return true;
+                }
+              }
+
+              // If first line is NOT empty, go to title
+              console.log('Non-empty first line - going to title');
+              event.preventDefault();
+              onArrowUpRef.current();
+              return true;
+            }
+          }
+        }
+
+        // Handle ArrowUp when on the first line
+        if (event.key === 'ArrowUp' && onArrowUpRef.current) {
+          // Try to resolve a position one line up by checking textBetween
+          // If we're at the very start of the document (pos 1), go to title
+          if ($from.pos === 1) {
+            event.preventDefault();
+            onArrowUpRef.current(0); // At the start, offset is 0
+            return true;
+          }
+
+          // Check if we're in a position where up arrow won't move us
+          // This happens when we're on the first line of the first block
+          const coordsAtCursor = view.coordsAtPos($from.pos);
+          const coordsAtStart = view.coordsAtPos(1);
+
+          // If cursor is on the same line as the start, go to title
+          if (
+            coordsAtCursor &&
+            coordsAtStart &&
+            Math.abs(coordsAtCursor.top - coordsAtStart.top) < 5
+          ) {
+            event.preventDefault();
+
+            // Calculate character offset from start of the first line
+            // Position 1 is the start of the document, $from.pos is current cursor
+            // Since we're on the first line, the offset is simply the distance from position 1
+            const offset = $from.pos - 1;
+
+            onArrowUpRef.current(offset);
+            return true;
+          }
+        }
+
+        // Handle ArrowLeft when at the very start of the document
+        if (event.key === 'ArrowLeft' && onArrowLeftRef.current) {
+          // If we're at position 1 (start of document), go back to title
+          if ($from.pos === 1) {
+            event.preventDefault();
+            onArrowLeftRef.current();
+            return true;
+          }
+        }
+
         return false;
       },
       handlePaste: (view, event) => {
@@ -465,6 +595,42 @@ export function RichTextEditor({
     if (editor) editor.setEditable(!readOnly);
   }, [editor, readOnly]);
 
+  // Handle initial cursor positioning when focusing from title
+  useEffect(() => {
+    if (
+      editor &&
+      initialCursorOffset !== null &&
+      initialCursorOffset !== undefined
+    ) {
+      // Use requestAnimationFrame to ensure editor is fully ready
+      requestAnimationFrame(() => {
+        try {
+          const doc = editor.state.doc;
+          const firstNode = doc.firstChild;
+
+          if (firstNode) {
+            // Calculate position: 1 (start of doc) + offset within first line
+            // Cap it at the length of the first text node
+            const firstTextLength = firstNode.textContent.length;
+            const actualOffset = Math.min(initialCursorOffset, firstTextLength);
+            const newPos = Math.max(
+              1,
+              Math.min(1 + actualOffset, doc.content.size - 1)
+            );
+
+            // Create a text selection at the target position
+            const tr = editor.state.tr.setSelection(
+              TextSelection.near(doc.resolve(newPos))
+            );
+            editor.view.dispatch(tr);
+          }
+        } catch (error) {
+          console.error('Error setting cursor position:', error);
+        }
+      });
+    }
+  }, [editor, initialCursorOffset]);
+
   const handleSave = useCallback(() => {
     if (editor && !readOnly) {
       setHasChanges(true);
@@ -511,7 +677,7 @@ export function RichTextEditor({
         <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-background/50 backdrop-blur-sm">
           <div className="flex items-center gap-2 rounded-lg border bg-background px-4 py-2 shadow-lg">
             <div className="h-4 w-4 animate-spin rounded-full border-2 border-dynamic-orange border-t-transparent" />
-            <span className="text-sm">Uploading image...</span>
+            <span className="text-sm">Uploading media...</span>
           </div>
         </div>
       )}

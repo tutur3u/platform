@@ -42,9 +42,11 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { cn } from '@tuturuuu/utils/format';
 import {
   invalidateTaskCaches,
+  useBoardConfig,
   useUpdateTask,
+  useWorkspaceLabels,
 } from '@tuturuuu/utils/task-helper';
-import { addDays } from 'date-fns';
+import dayjs from 'dayjs';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   buildEstimationIndices,
@@ -66,13 +68,6 @@ interface WorkspaceTaskLabel {
   name: string;
   color: string;
   created_at: string;
-}
-
-interface BoardEstimationConfig {
-  estimation_type?: string | null;
-  extended_estimation?: boolean;
-  allow_zero_estimates?: boolean;
-  count_unestimated_issues?: boolean;
 }
 
 function TaskEditDialogComponent({
@@ -120,16 +115,35 @@ function TaskEditDialogComponent({
   const [estimationPoints, setEstimationPoints] = useState<
     number | null | undefined
   >(task.estimation_points ?? null);
-  const [availableLabels, setAvailableLabels] = useState<WorkspaceTaskLabel[]>(
-    []
-  );
   const [selectedLabels, setSelectedLabels] = useState<WorkspaceTaskLabel[]>(
     task.labels || []
   );
-  const [boardConfig, setBoardConfig] = useState<BoardEstimationConfig | null>(
-    null
+
+  // Use React Query hooks for shared data (cached across all components)
+  const { data: boardConfig } = useBoardConfig(boardId);
+  const [workspaceId, setWorkspaceId] = useState<string | null>(
+    boardConfig?.ws_id || null
   );
-  const [labelsLoading, setLabelsLoading] = useState(false);
+  const { data: workspaceLabelsData = [], isLoading: labelsLoading } =
+    useWorkspaceLabels(workspaceId);
+
+  // Keep local state for available labels to allow manipulation
+  const [availableLabels, setAvailableLabels] = useState<WorkspaceTaskLabel[]>(
+    []
+  );
+
+  // Sync workspace labels to local state
+  useEffect(() => {
+    setAvailableLabels(workspaceLabelsData);
+  }, [workspaceLabelsData]);
+
+  // Update workspace ID when board config loads
+  useEffect(() => {
+    if (boardConfig?.ws_id && workspaceId !== boardConfig.ws_id) {
+      setWorkspaceId(boardConfig.ws_id);
+    }
+  }, [boardConfig, workspaceId]);
+
   const [, setEstimationSaving] = useState(false);
   const [newLabelName, setNewLabelName] = useState('');
   const [newLabelColor, setNewLabelColor] = useState('gray');
@@ -155,10 +169,15 @@ function TaskEditDialogComponent({
   const hasUnsavedChangesRef = useRef<boolean>(false);
   const quickDueRef = useRef<(days: number | null) => void>(() => {});
   const updateEstimationRef = useRef<(points: number | null) => void>(() => {});
-  const [workspaceId, setWorkspaceId] = useState<string | null>(null);
   const flushEditorPendingRef = useRef<(() => JSONContent | null) | undefined>(
     undefined
   );
+  const titleInputRef = useRef<HTMLInputElement>(null);
+  const editorRef = useRef<HTMLDivElement>(null);
+
+  // Track cursor position for smart vertical navigation
+  const lastCursorPositionRef = useRef<number | null>(null);
+  const targetEditorCursorRef = useRef<number | null>(null);
 
   // Use the React Query mutation hook for updating tasks
   const updateTaskMutation = useUpdateTask(boardId);
@@ -200,40 +219,52 @@ function TaskEditDialogComponent({
       };
     }
   }, []);
+
   // Reset form when task changes or dialog opens
   useEffect(() => {
-    // Update form if task ID changed OR if dialog just opened (for create mode with 'new' ID)
-    if (
-      previousTaskIdRef.current !== task.id ||
-      (isOpen && task.id === 'new')
-    ) {
-      // For create mode, reset to task props (which should be empty for new tasks)
-      // The draft restoration effect will run after this and override if needed
-      if (isOpen && (mode === 'create' || task.id === 'new')) {
-        setName(task.name || '');
-        setDescription(parseDescription(task.description) || null);
-        setPriority(task.priority || null);
-        setStartDate(task.start_date ? new Date(task.start_date) : undefined);
-        setEndDate(task.end_date ? new Date(task.end_date) : undefined);
-        setSelectedListId(task.list_id);
-        setEstimationPoints(task.estimation_points ?? null);
-        setSelectedLabels(task.labels || []);
-        setSelectedAssignees(task.assignees || []);
-      } else {
-        // Edit mode: load task data
-        setName(task.name);
-        setDescription(parseDescription(task.description));
-        setPriority(task.priority || null);
-        setStartDate(task.start_date ? new Date(task.start_date) : undefined);
-        setEndDate(task.end_date ? new Date(task.end_date) : undefined);
-        setSelectedListId(task.list_id);
-        setEstimationPoints(task.estimation_points ?? null);
-        setSelectedLabels(task.labels || []);
-        setSelectedAssignees(task.assignees || []);
-      }
+    // In edit mode, when dialog opens, always reload task data to ensure we have the latest
+    // This handles the case where task was edited previously and we're reopening the dialog
+    if (isOpen && mode === 'edit') {
+      console.log('🔍 TaskEditDialog opened with task data:', {
+        taskId: task.id,
+        name: task.name,
+        descriptionType: typeof task.description,
+        descriptionPreview:
+          typeof task.description === 'string'
+            ? task.description.substring(0, 100)
+            : JSON.stringify(task.description)?.substring(0, 100),
+        hasDescription: !!task.description,
+        rawDescription: task.description,
+      });
+      setName(task.name);
+      setDescription(parseDescription(task.description));
+      setPriority(task.priority || null);
+      setStartDate(task.start_date ? new Date(task.start_date) : undefined);
+      setEndDate(task.end_date ? new Date(task.end_date) : undefined);
+      setSelectedListId(task.list_id);
+      setEstimationPoints(task.estimation_points ?? null);
+      setSelectedLabels(task.labels || []);
+      setSelectedAssignees(task.assignees || []);
       previousTaskIdRef.current = task.id;
     }
-  }, [task, parseDescription, isOpen, mode]);
+    // For create mode, only load when task ID changes or dialog opens with 'new' ID
+    else if (
+      isOpen &&
+      (mode === 'create' || task.id === 'new') &&
+      (previousTaskIdRef.current !== task.id || task.id === 'new')
+    ) {
+      setName(task.name || '');
+      setDescription(parseDescription(task.description) || null);
+      setPriority(task.priority || null);
+      setStartDate(task.start_date ? new Date(task.start_date) : undefined);
+      setEndDate(task.end_date ? new Date(task.end_date) : undefined);
+      setSelectedListId(task.list_id);
+      setEstimationPoints(task.estimation_points ?? null);
+      setSelectedLabels(task.labels || []);
+      setSelectedAssignees(task.assignees || []);
+      previousTaskIdRef.current = task.id;
+    }
+  }, [task, task.description, parseDescription, isOpen, mode]);
 
   // Reset transient edits when closing without saving in edit mode
   useEffect(() => {
@@ -251,32 +282,7 @@ function TaskEditDialogComponent({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, mode, task, parseDescription]);
 
-  const fetchLabels = useCallback(async (wsId: string) => {
-    try {
-      setLabelsLoading(true);
-      const supabase = createClient();
-      const { data: labels, error: labelsErr } = await supabase
-        .from('workspace_task_labels')
-        .select('id,name,color,created_at')
-        .eq('ws_id', wsId)
-        .order('created_at');
-      if (!labelsErr && labels)
-        setAvailableLabels(
-          (labels as any).sort((a: any, b: any) =>
-            (a?.name || '')
-              .toLowerCase()
-              .localeCompare((b?.name || '').toLowerCase())
-          )
-        );
-    } catch (e) {
-      console.error('Failed fetching labels', e);
-    } finally {
-      setLabelsLoading(false);
-    }
-  }, []);
-
   const fetchWorkspaceMembers = useCallback(async (wsId: string) => {
-    console.log('🔍 Fetching workspace members for wsId:', wsId);
     try {
       setLoadingMembers(true);
       const supabase = createClient();
@@ -300,7 +306,6 @@ function TaskEditDialogComponent({
       }
 
       if (members) {
-        console.log('📋 Fetched workspace members:', members);
         // Transform and sort by display_name
         const transformedMembers = members.map((m: any) => ({
           user_id: m.user_id,
@@ -316,10 +321,7 @@ function TaskEditDialogComponent({
         const sortedMembers = uniqueMembers.sort((a, b) =>
           (a.display_name || '').localeCompare(b.display_name || '')
         );
-        console.log('✅ Setting workspace members:', sortedMembers);
         setWorkspaceMembers(sortedMembers);
-      } else {
-        console.log('⚠️ No members data returned');
       }
     } catch (e) {
       console.error('Failed fetching workspace members', e);
@@ -328,33 +330,12 @@ function TaskEditDialogComponent({
     }
   }, []);
 
-  // Fetch board estimation config & labels on open - memoize to prevent unnecessary re-runs
-  const fetchBoardConfig = useCallback(async () => {
-    if (!isOpen) return;
-    try {
-      const supabase = createClient();
-      const { data: board, error: boardErr } = await supabase
-        .from('workspace_boards')
-        .select(
-          'estimation_type, extended_estimation, allow_zero_estimates, count_unestimated_issues, ws_id'
-        )
-        .eq('id', boardId)
-        .single();
-      if (boardErr) throw boardErr;
-      setBoardConfig(board as any);
-      const wsId = (board as any)?.ws_id;
-      if (wsId) {
-        setWorkspaceId(wsId);
-        await Promise.all([fetchLabels(wsId), fetchWorkspaceMembers(wsId)]);
-      }
-    } catch (e) {
-      console.error('Failed loading board config or labels', e);
-    }
-  }, [isOpen, boardId, fetchLabels, fetchWorkspaceMembers]);
-
+  // Fetch workspace members when workspace ID is available
   useEffect(() => {
-    fetchBoardConfig();
-  }, [fetchBoardConfig]);
+    if (isOpen && workspaceId) {
+      fetchWorkspaceMembers(workspaceId);
+    }
+  }, [isOpen, workspaceId, fetchWorkspaceMembers]);
 
   // ------- Draft persistence (create mode) -------------------------------------
   const draftStorageKey = useMemo(
@@ -545,7 +526,7 @@ function TaskEditDialogComponent({
     return hasName && hasUnsavedChanges && !isLoading;
   }, [mode, name, hasUnsavedChanges, isLoading]);
 
-  // Global keyboard shortcuts: Cmd/Ctrl + Enter to save, Cmd/Ctrl + Delete to delete
+  // Global keyboard shortcuts: Cmd/Ctrl + Enter to save
   useEffect(() => {
     if (!isOpen) return;
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -559,21 +540,10 @@ function TaskEditDialogComponent({
         }
         return;
       }
-
-      // Delete shortcut: Cmd/Ctrl + Delete (only in edit mode)
-      if (
-        (e.metaKey || e.ctrlKey) &&
-        (e.key === 'Delete' || e.key === 'Backspace') &&
-        mode === 'edit'
-      ) {
-        e.preventDefault();
-        setShowDeleteConfirm(true);
-        return;
-      }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, canSave, mode]);
+  }, [isOpen, canSave]);
 
   const handleCreateLabel = async () => {
     if (!newLabelName.trim() || !boardConfig) return;
@@ -635,7 +605,7 @@ function TaskEditDialogComponent({
           });
         } else {
           // Invalidate caches so parent task list reflects new label
-          invalidateTaskCaches(queryClient, boardId);
+          await invalidateTaskCaches(queryClient, boardId);
           onUpdate();
           // Dispatch global event so other open components can refresh
           if (typeof window !== 'undefined') {
@@ -666,16 +636,16 @@ function TaskEditDialogComponent({
   // End date change helper (preserve 23:59 default if only date picked)
   const handleEndDateChange = (date: Date | undefined) => {
     if (date) {
-      const selectedDate = new Date(date);
+      let selectedDate = dayjs(date);
       if (
-        selectedDate.getHours() === 0 &&
-        selectedDate.getMinutes() === 0 &&
-        selectedDate.getSeconds() === 0 &&
-        selectedDate.getMilliseconds() === 0
+        selectedDate.hour() === 0 &&
+        selectedDate.minute() === 0 &&
+        selectedDate.second() === 0 &&
+        selectedDate.millisecond() === 0
       ) {
-        selectedDate.setHours(23, 59, 59, 999);
+        selectedDate = selectedDate.endOf('day');
       }
-      setEndDate(selectedDate);
+      setEndDate(selectedDate.toDate());
     } else {
       setEndDate(undefined);
     }
@@ -685,9 +655,7 @@ function TaskEditDialogComponent({
   const handleQuickDueDate = (days: number | null) => {
     let newDate: Date | undefined;
     if (days !== null) {
-      const target = addDays(new Date(), days);
-      target.setHours(23, 59, 59, 999);
-      newDate = target;
+      newDate = dayjs().add(days, 'day').endOf('day').toDate();
     }
     setEndDate(newDate);
     if (mode === 'create') {
@@ -695,12 +663,23 @@ function TaskEditDialogComponent({
       return;
     }
     setIsLoading(true);
-    const taskUpdates: Partial<Task> = { end_date: newDate?.toISOString() };
+    const taskUpdates: Partial<Task> = {
+      end_date: newDate ? newDate.toISOString() : null,
+    };
     updateTaskMutation.mutate(
       { taskId: task.id, updates: taskUpdates },
       {
-        onSuccess: () => {
-          invalidateTaskCaches(queryClient, boardId);
+        onSuccess: async () => {
+          await invalidateTaskCaches(queryClient, boardId);
+
+          // Wait for the refetch to complete before closing
+          if (boardId) {
+            await queryClient.refetchQueries({
+              queryKey: ['tasks', boardId],
+              type: 'active',
+            });
+          }
+
           toast({
             title: 'Due date updated',
             description: newDate
@@ -739,7 +718,7 @@ function TaskEditDialogComponent({
         .update({ estimation_points: points })
         .eq('id', task.id);
       if (error) throw error;
-      invalidateTaskCaches(queryClient, boardId);
+      await invalidateTaskCaches(queryClient, boardId);
     } catch (e: any) {
       console.error('Failed updating estimation', e);
       toast({
@@ -829,7 +808,7 @@ function TaskEditDialogComponent({
           })
         );
       }
-      invalidateTaskCaches(queryClient, boardId);
+      await invalidateTaskCaches(queryClient, boardId);
     } catch (e: any) {
       toast({
         title: 'Label update failed',
@@ -870,7 +849,7 @@ function TaskEditDialogComponent({
         if (error) throw error;
         setSelectedAssignees((prev) => [...prev, member]);
       }
-      invalidateTaskCaches(queryClient, boardId);
+      await invalidateTaskCaches(queryClient, boardId);
       onUpdate();
     } catch (e: any) {
       toast({
@@ -917,8 +896,8 @@ function TaskEditDialogComponent({
           name: name.trim(),
           description: descriptionString,
           priority: priority,
-          start_date: startDate?.toISOString(),
-          end_date: endDate?.toISOString(),
+          start_date: startDate ? startDate.toISOString() : null,
+          end_date: endDate ? endDate.toISOString() : null,
           estimation_points: estimationPoints ?? null,
         } as any;
         const newTask = await createTask(supabase, selectedListId, taskData);
@@ -941,7 +920,7 @@ function TaskEditDialogComponent({
           );
         }
 
-        invalidateTaskCaches(queryClient, boardId);
+        await invalidateTaskCaches(queryClient, boardId);
         toast({ title: 'Task created', description: 'New task added.' });
         onUpdate();
         if (createMultiple) {
@@ -981,13 +960,13 @@ function TaskEditDialogComponent({
     }
 
     // Prepare task updates (edit mode)
-    // Note: We need to include description even if it's null to clear it in the database
+    // Note: We need to include description, start_date, and end_date even if null to clear them in the database
     const taskUpdates: any = {
       name: name.trim(),
       description: descriptionString, // Explicitly null when empty, not undefined
       priority: priority,
-      start_date: startDate?.toISOString(),
-      end_date: endDate?.toISOString(),
+      start_date: startDate ? startDate.toISOString() : null, // Explicitly null when undefined
+      end_date: endDate ? endDate.toISOString() : null, // Explicitly null when undefined
       list_id: selectedListId,
     };
 
@@ -997,9 +976,17 @@ function TaskEditDialogComponent({
         updates: taskUpdates,
       },
       {
-        onSuccess: () => {
-          // Force cache invalidation
-          invalidateTaskCaches(queryClient, boardId);
+        onSuccess: async () => {
+          console.log('✅ Task update successful, refreshing data...');
+
+          // Invalidate all task-related caches
+          await invalidateTaskCaches(queryClient, boardId);
+
+          // Force refetch and wait for it to complete with fresh data
+          await queryClient.refetchQueries({
+            queryKey: ['tasks', boardId],
+            type: 'active',
+          });
 
           toast({
             title: 'Task updated',
@@ -1298,7 +1285,12 @@ function TaskEditDialogComponent({
 
   return (
     <>
-      <Dialog open={isOpen} onOpenChange={handleDialogOpenChange} modal={true}>
+      <Dialog
+        key="main-dialog"
+        open={isOpen}
+        onOpenChange={handleDialogOpenChange}
+        modal={true}
+      >
         <DialogContent
           showCloseButton={false}
           className="!inset-0 !top-0 !left-0 !max-w-none !translate-x-0 !translate-y-0 !rounded-none data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:slide-out-to-bottom-2 data-[state=open]:slide-in-from-bottom-2 flex h-screen max-h-screen w-screen gap-0 border-0 p-0"
@@ -1411,8 +1403,60 @@ function TaskEditDialogComponent({
                 {/* Task Name - Large and prominent with underline effect */}
                 <div className="group">
                   <Input
+                    ref={titleInputRef}
                     value={name}
                     onChange={(e) => setName(e.target.value)}
+                    onKeyDown={(e) => {
+                      // Enter key moves to description
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        const editorElement = editorRef.current?.querySelector(
+                          '.ProseMirror'
+                        ) as HTMLElement;
+                        if (editorElement) {
+                          editorElement.focus();
+                          // Clear the target cursor so it goes to the start
+                          targetEditorCursorRef.current = null;
+                        }
+                      }
+
+                      if (e.key === 'ArrowDown') {
+                        e.preventDefault();
+                        const input = e.currentTarget;
+                        const cursorPosition = input.selectionStart ?? 0;
+
+                        // Store cursor position for smart navigation
+                        lastCursorPositionRef.current = cursorPosition;
+                        targetEditorCursorRef.current = cursorPosition;
+
+                        // Focus the editor - cursor positioning will be handled by the editor via prop
+                        const editorElement = editorRef.current?.querySelector(
+                          '.ProseMirror'
+                        ) as HTMLElement;
+                        if (editorElement) {
+                          editorElement.focus();
+                        }
+                      }
+
+                      // Right arrow at end of title moves to description
+                      if (e.key === 'ArrowRight') {
+                        const input = e.currentTarget;
+                        const cursorPosition = input.selectionStart ?? 0;
+                        const textLength = input.value.length;
+
+                        // Only move if cursor is at the end
+                        if (cursorPosition === textLength) {
+                          e.preventDefault();
+                          const editorElement =
+                            editorRef.current?.querySelector(
+                              '.ProseMirror'
+                            ) as HTMLElement;
+                          if (editorElement) {
+                            editorElement.focus();
+                          }
+                        }
+                      }
+                    }}
                     placeholder="What needs to be done?"
                     className="h-auto border-0 bg-transparent p-4 font-bold text-2xl text-foreground leading-tight tracking-tight transition-colors placeholder:text-muted-foreground/30 focus-visible:outline-0 focus-visible:ring-0 md:px-8 md:pt-10 md:pb-6 md:text-2xl"
                     autoFocus
@@ -1420,16 +1464,49 @@ function TaskEditDialogComponent({
                 </div>
 
                 {/* Task Description - Full editor experience with subtle border */}
-                <RichTextEditor
-                  content={description}
-                  onChange={setDescription}
-                  writePlaceholder="Add a detailed description, attach files, or use markdown..."
-                  titlePlaceholder=""
-                  className="h-full border-0 bg-transparent px-4 focus-visible:outline-0 focus-visible:ring-0 md:px-8"
-                  workspaceId={workspaceId || undefined}
-                  onImageUpload={handleImageUpload}
-                  flushPendingRef={flushEditorPendingRef}
-                />
+                <div ref={editorRef} className="h-full">
+                  <RichTextEditor
+                    content={description}
+                    onChange={setDescription}
+                    writePlaceholder="Add a detailed description, attach files, or use markdown..."
+                    titlePlaceholder=""
+                    className="h-full border-0 bg-transparent px-4 focus-visible:outline-0 focus-visible:ring-0 md:px-8"
+                    workspaceId={workspaceId || undefined}
+                    onImageUpload={handleImageUpload}
+                    flushPendingRef={flushEditorPendingRef}
+                    initialCursorOffset={targetEditorCursorRef.current}
+                    onArrowUp={(cursorOffset) => {
+                      // Focus the title input when pressing arrow up at the start
+                      if (titleInputRef.current) {
+                        titleInputRef.current.focus();
+
+                        // Apply smart cursor positioning
+                        if (cursorOffset !== undefined) {
+                          const textLength = titleInputRef.current.value.length;
+                          // Use the stored position from last down arrow, or the offset from editor
+                          const targetPosition =
+                            lastCursorPositionRef.current ??
+                            Math.min(cursorOffset, textLength);
+                          titleInputRef.current.setSelectionRange(
+                            targetPosition,
+                            targetPosition
+                          );
+                          // Clear the stored position after use
+                          lastCursorPositionRef.current = null;
+                        }
+                      }
+                    }}
+                    onArrowLeft={() => {
+                      // Focus the title input at the end when pressing arrow left at the start
+                      if (titleInputRef.current) {
+                        titleInputRef.current.focus();
+                        // Set cursor to the end of the input
+                        const length = titleInputRef.current.value.length;
+                        titleInputRef.current.setSelectionRange(length, length);
+                      }
+                    }}
+                  />
+                </div>
               </div>
             </div>
           </div>
@@ -1774,6 +1851,8 @@ function TaskEditDialogComponent({
                             date={startDate}
                             setDate={setStartDate}
                             showTimeSelect={true}
+                            allowClear={true}
+                            showFooterControls={true}
                           />
                         </div>
                         <div className="space-y-1">
@@ -1784,6 +1863,8 @@ function TaskEditDialogComponent({
                             date={endDate}
                             setDate={handleEndDateChange}
                             showTimeSelect={true}
+                            allowClear={true}
+                            showFooterControls={true}
                           />
                         </div>
                       </div>
@@ -1800,25 +1881,6 @@ function TaskEditDialogComponent({
                           </div>
                           Labels
                         </span>
-                        {boardConfig && (
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            className="h-6 px-2 text-[10px] text-muted-foreground transition-colors hover:text-dynamic-orange"
-                            onClick={() =>
-                              (boardConfig as any)?.ws_id &&
-                              fetchLabels((boardConfig as any).ws_id)
-                            }
-                            disabled={labelsLoading}
-                          >
-                            {labelsLoading ? (
-                              <Loader2 className="h-3 w-3 animate-spin" />
-                            ) : (
-                              'Refresh'
-                            )}
-                          </Button>
-                        )}
                       </Label>
                       {boardConfig && (
                         <div className="space-y-2">
@@ -2141,6 +2203,7 @@ function TaskEditDialogComponent({
 
       {/* Delete confirmation dialog */}
       <Dialog
+        key="delete-dialog"
         open={showDeleteConfirm}
         onOpenChange={setShowDeleteConfirm}
         modal={true}
@@ -2177,7 +2240,7 @@ function TaskEditDialogComponent({
                     .delete()
                     .eq('id', task.id);
                   if (error) throw error;
-                  invalidateTaskCaches(queryClient, boardId);
+                  await invalidateTaskCaches(queryClient, boardId);
                   toast({ title: 'Task deleted' });
                   setShowDeleteConfirm(false);
                   onUpdate();

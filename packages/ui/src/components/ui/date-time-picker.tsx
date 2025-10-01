@@ -20,7 +20,7 @@ import { Separator } from './separator';
 
 interface DateTimePickerProps {
   date?: Date;
-  setDate: (date: Date) => void;
+  setDate: (date: Date | undefined) => void;
   showTimeSelect?: boolean;
   minDate?: Date;
   minTime?: string;
@@ -68,13 +68,15 @@ export function DateTimePicker({
   );
   const popoverRef = useRef<HTMLDivElement>(null);
 
-  // Internal helper to allow propagating undefined without changing public prop type
+  // Update date directly without casting workaround
   const updateDate = (next?: Date) => {
-    // Cast to satisfy prop type while allowing undefined for clear
-    // Consumers using optional chaining will handle undefined safely
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (setDate as any)(next);
+    setDate(next);
   };
+
+  // Keep selectedDate in sync with date prop
+  useEffect(() => {
+    setSelectedDate(date);
+  }, [date]);
 
   // Keep manualTimeInput in sync with date prop
   useEffect(() => {

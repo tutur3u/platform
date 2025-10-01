@@ -47,7 +47,11 @@ import {
 import { useHorizontalScroll } from '@tuturuuu/ui/hooks/useHorizontalScroll';
 import { toast } from '@tuturuuu/ui/sonner';
 import { coordinateGetter } from '@tuturuuu/utils/keyboard-preset';
-import { useMoveTask, useMoveTaskToBoard } from '@tuturuuu/utils/task-helper';
+import {
+  useBoardConfig,
+  useMoveTask,
+  useMoveTaskToBoard,
+} from '@tuturuuu/utils/task-helper';
 import { hasDraggableData } from '@tuturuuu/utils/task-helpers';
 import { ArrowRightLeft, Flag, MinusCircle, Tags, Timer } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -118,7 +122,9 @@ export function KanbanBoard({
   const queryClient = useQueryClient();
   const moveTaskMutation = useMoveTask(boardId);
   const moveTaskToBoardMutation = useMoveTaskToBoard(boardId);
-  const [boardConfig, setBoardConfig] = useState<any>(null);
+
+  // Use React Query hook for board config (shared cache)
+  const { data: boardConfig } = useBoardConfig(boardId);
 
   const columns: TaskList[] = lists.map((list) => ({
     ...list,
@@ -341,30 +347,6 @@ export function KanbanBoard({
     if (!hoverTargetListId) return null;
     return columns.find((col) => String(col.id) === hoverTargetListId) || null;
   }, [columns, hoverTargetListId]);
-
-  // Fetch board config for estimation settings (estimation_type, extended_estimation, allow_zero_estimates)
-  useEffect(() => {
-    let active = true;
-    (async () => {
-      try {
-        const supabase = createClient();
-        const { data, error } = await supabase
-          .from('workspace_boards')
-          .select(
-            'id, estimation_type, extended_estimation, allow_zero_estimates'
-          )
-          .eq('id', boardId)
-          .single();
-        if (error) throw error;
-        if (active) setBoardConfig(data);
-      } catch (e) {
-        console.error('Failed loading board config for estimation', e);
-      }
-    })();
-    return () => {
-      active = false;
-    };
-  }, [boardId]);
 
   const estimationOptions = useMemo(() => {
     if (!boardConfig?.estimation_type) return [] as number[];

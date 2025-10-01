@@ -337,50 +337,7 @@ export function StatusGroupedBoard({
   ];
 
   return (
-    <div className="h-full w-full">
-      {hideTasksMode && (
-        <div className="mb-4 border-b pb-2">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="rounded-full bg-dynamic-blue/20 p-2">
-                <svg
-                  className="h-5 w-5 text-dynamic-blue/80"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                  role="img"
-                  aria-label="Board structure view icon"
-                >
-                  <title>Board Structure View</title>
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"
-                  />
-                </svg>
-              </div>
-              <div>
-                <h2 className="font-semibold text-foreground text-lg">
-                  Board Structure View
-                </h2>
-                <p className="text-muted-foreground text-sm">
-                  Viewing task lists and organization without individual tasks
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center gap-2 text-muted-foreground text-sm">
-              <span className="rounded-full bg-dynamic-gray/20 px-3 py-1">
-                {lists.length} lists
-              </span>
-              <span className="rounded-full bg-dynamic-purple/20 px-3 py-1">
-                {tasks.length} tasks (hidden)
-              </span>
-            </div>
-          </div>
-        </div>
-      )}
-
+    <div className="h-full w-full p-2">
       <DndContext
         sensors={sensors}
         collisionDetection={closestCorners}
@@ -390,7 +347,7 @@ export function StatusGroupedBoard({
       >
         <div
           className={cn(
-            'grid h-full grid-cols-1 gap-4 overflow-y-auto lg:grid-cols-2 xl:grid-cols-4',
+            'grid h-full grid-cols-1 gap-3 overflow-y-auto pb-4 lg:grid-cols-2 xl:grid-cols-4',
             hideTasksMode && 'pt-0'
           )}
         >
@@ -417,7 +374,7 @@ export function StatusGroupedBoard({
 
         <DragOverlay>
           {activeTask && (
-            <div className="rotate-2 opacity-95">
+            <div className="rotate-2 scale-105 opacity-95 shadow-2xl transition-all">
               <TaskCard
                 task={activeTask}
                 taskList={lists.find((l) => l.id === activeTask.list_id)}
@@ -428,7 +385,7 @@ export function StatusGroupedBoard({
             </div>
           )}
           {activeList && (
-            <div className="rotate-1 opacity-95">
+            <div className="rotate-1 scale-105 opacity-95 shadow-2xl transition-all">
               <EnhancedTaskList
                 list={activeList}
                 tasks={tasksByList[activeList.id] || []}

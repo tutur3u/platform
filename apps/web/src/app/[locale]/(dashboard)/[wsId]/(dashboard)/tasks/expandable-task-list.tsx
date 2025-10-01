@@ -1,5 +1,7 @@
 'use client';
 
+import { createClient } from '@tuturuuu/supabase/next/client';
+import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -22,7 +24,7 @@ import {
   isYesterday,
 } from 'date-fns';
 import Link from 'next/link';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 interface Task {
   id: string;
@@ -81,13 +83,41 @@ export default function ExpandableTaskList({
   const [showAll, setShowAll] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const displayedTasks = showAll ? tasks : tasks.slice(0, initialLimit);
-  const hasMoreTasks = tasks.length > initialLimit;
+  const [localTasks, setLocalTasks] = useState<Task[]>(tasks);
+
+  // Update local tasks when props change
+  useEffect(() => {
+    setLocalTasks(tasks);
+  }, [tasks]);
+
+  const displayedTasks = showAll
+    ? localTasks
+    : localTasks.slice(0, initialLimit);
+  const hasMoreTasks = localTasks.length > initialLimit;
 
   const handleEditTask = (task: Task, e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    setEditingTask(task);
+
+    // Transform task data to match TaskEditDialog expected format
+    // Convert labels from [{ label: {...} }] to [{...}]
+    // Convert assignees from [{ user: {...} }] to [{...}]
+    const transformedTask = {
+      ...task,
+      labels: task.labels
+        ?.map((tl) => tl.label)
+        .filter((label): label is NonNullable<typeof label> => label !== null),
+      assignees: task.assignees
+        ?.map((ta) => ta.user)
+        .filter((user): user is NonNullable<typeof user> => user !== null)
+        .map((user) => ({
+          id: user.id,
+          display_name: user.display_name,
+          avatar_url: user.avatar_url,
+        })),
+    };
+
+    setEditingTask(transformedTask as any);
     setIsEditDialogOpen(true);
   };
 
@@ -97,9 +127,69 @@ export default function ExpandableTaskList({
   };
 
   const handleUpdateTask = () => {
-    // Trigger refresh by re-rendering
-    window.location.reload();
+    // Task updates are handled by the polling mechanism
+    // Just close the dialog when save is complete
   };
+
+  // Poll for updates while dialog is open
+  useEffect(() => {
+    if (!isEditDialogOpen || !editingTask) return;
+
+    const pollForUpdates = async () => {
+      const supabase = createClient();
+      const { data: updatedTask } = await supabase
+        .from('tasks')
+        .select(
+          `
+          *,
+          list:task_lists!inner(
+            id,
+            name,
+            status,
+            board:workspace_boards!inner(
+              id,
+              name,
+              ws_id,
+              estimation_type,
+              extended_estimation,
+              allow_zero_estimates,
+              workspaces(id, name, personal)
+            )
+          ),
+          assignees:task_assignees(
+            user:users(
+              id,
+              display_name,
+              avatar_url
+            )
+          ),
+          labels:task_labels(
+            label:workspace_task_labels(
+              id,
+              name,
+              color,
+              created_at
+            )
+          )
+        `
+        )
+        .eq('id', editingTask.id)
+        .single();
+
+      if (updatedTask) {
+        // Update local tasks with the fresh data
+        setLocalTasks((prevTasks) =>
+          prevTasks.map((task) =>
+            task.id === updatedTask.id ? updatedTask : task
+          )
+        );
+      }
+    };
+
+    const intervalId = setInterval(pollForUpdates, 1000); // Poll every second
+
+    return () => clearInterval(intervalId);
+  }, [isEditDialogOpen, editingTask]);
 
   const getPriorityColor = (priority: string | null) => {
     switch (priority) {
@@ -168,7 +258,7 @@ export default function ExpandableTaskList({
           >
             {/* Overdue indicator - Enhanced with animation */}
             {taskOverdue && !task.archived && (
-              <div className="absolute top-4 right-4 flex items-center gap-1.5 rounded-full bg-dynamic-red px-3 py-1.5 shadow-lg ring-2 ring-dynamic-red/30 animate-pulse">
+              <div className="absolute top-4 right-4 flex animate-pulse items-center gap-1.5 rounded-full bg-dynamic-red px-3 py-1.5 shadow-lg ring-2 ring-dynamic-red/30">
                 <AlertCircle className="h-3.5 w-3.5 text-white" />
                 <span className="font-bold text-[10px] text-white tracking-widest">
                   OVERDUE
@@ -182,7 +272,7 @@ export default function ExpandableTaskList({
               <div className="min-w-0 flex-1 space-y-3">
                 {/* Task name and priority badge */}
                 <div className="flex items-start gap-3">
-                  <h4 className="line-clamp-2 flex-1 font-bold text-foreground text-base leading-snug transition-colors duration-200 group-hover:text-primary">
+                  <h4 className="line-clamp-2 flex-1 font-bold text-base text-foreground leading-snug transition-colors duration-200 group-hover:text-primary">
                     {task.name}
                   </h4>
                   {task.priority && (
@@ -290,43 +380,68 @@ export default function ExpandableTaskList({
                 </div>
 
                 {/* Bottom row - labels, estimation, assignees - Enhanced */}
-                <div className="flex flex-wrap items-center gap-2.5">
+                <div className="flex flex-wrap items-center gap-2">
+                  {/* Assignees */}
+                  {task.assignees && task.assignees.length > 0 && (
+                    <div className="-space-x-2 flex">
+                      {task.assignees.slice(0, 3).map((assignee) => (
+                        <Avatar
+                          key={assignee.user?.id}
+                          className="h-7 w-7 border-2 border-background shadow-md ring-1 ring-border/50 transition-all duration-200 hover:z-10 hover:scale-110 hover:ring-primary/30"
+                        >
+                          <AvatarImage
+                            src={assignee.user?.avatar_url || undefined}
+                            alt={assignee.user?.display_name || 'User'}
+                          />
+                          <AvatarFallback className="font-semibold text-xs">
+                            {(assignee.user?.display_name || 'U')
+                              .charAt(0)
+                              .toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
+                      ))}
+                      {task.assignees.length > 3 && (
+                        <div className="flex h-7 w-7 items-center justify-center rounded-full border-2 border-background bg-gradient-to-br from-primary/20 to-primary/10 font-bold text-[10px] text-primary shadow-md ring-1 ring-border/50 transition-all duration-200 hover:z-10 hover:scale-110 hover:ring-primary/30">
+                          +{task.assignees.length - 3}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
                   {/* Labels */}
                   {task.labels && task.labels.length > 0 && (
-                    <TaskLabelsDisplay
-                      labels={task.labels
-                        .map((tl) => tl.label)
-                        .filter(
-                          (label): label is NonNullable<typeof label> =>
-                            label !== null
-                        )}
-                      size="sm"
-                      maxDisplay={4}
-                    />
+                    <>
+                      <div className="h-5 w-[1px] bg-border" />
+                      <TaskLabelsDisplay
+                        labels={task.labels
+                          .map((tl) => tl.label)
+                          .filter(
+                            (label): label is NonNullable<typeof label> =>
+                              label !== null
+                          )}
+                        size="sm"
+                        maxDisplay={4}
+                      />
+                    </>
                   )}
 
                   {/* Estimation */}
                   {task.estimation_points !== null &&
                     task.estimation_points !== undefined && (
-                      <TaskEstimationDisplay
-                        points={task.estimation_points}
-                        size="sm"
-                        showIcon={true}
-                        estimationType={task.list?.board?.estimation_type}
-                      />
+                      <>
+                        <div className="h-5 w-[1px] bg-border" />
+                        <TaskEstimationDisplay
+                          points={task.estimation_points}
+                          size="sm"
+                          showIcon={true}
+                          estimationType={task.list?.board?.estimation_type}
+                        />
+                      </>
                     )}
-
-                  {/* Assignees */}
-                  {task.assignees && task.assignees.length > 0 && (
-                    <div className="flex items-center gap-1.5 rounded-lg bg-dynamic-blue/10 px-2.5 py-1.5 font-semibold text-[11px] text-dynamic-blue shadow-sm ring-1 ring-dynamic-blue/20 transition-colors hover:bg-dynamic-blue/20">
-                      <UserRound className="h-3.5 w-3.5" />
-                      <span>{task.assignees.length}</span>
-                    </div>
-                  )}
                 </div>
 
                 {/* Description - only show if exists */}
-                {task.description && (
+                {task.description && getDescriptionText(task.description) && (
                   <p className="line-clamp-2 rounded-lg border border-border/50 bg-muted/30 px-3.5 py-2.5 text-muted-foreground text-xs leading-relaxed shadow-sm backdrop-blur-sm">
                     {getDescriptionText(task.description)}
                   </p>
@@ -347,7 +462,7 @@ export default function ExpandableTaskList({
           >
             {showAll ? (
               <>
-                <ChevronUp className="h-4 w-4 transition-transform group-hover:-translate-y-0.5" />
+                <ChevronUp className="group-hover:-translate-y-0.5 h-4 w-4 transition-transform" />
                 <span>Show Less</span>
               </>
             ) : (

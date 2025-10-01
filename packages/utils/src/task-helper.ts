@@ -286,16 +286,26 @@ function transformTaskRecord(task: any): Task {
 }
 
 // Utility function to invalidate all task-related caches consistently
-export function invalidateTaskCaches(
+export async function invalidateTaskCaches(
   queryClient: QueryClient,
   boardId?: string
 ) {
+  const promises: Promise<void>[] = [];
+
   if (boardId) {
-    queryClient.invalidateQueries({ queryKey: ['tasks', boardId] });
-    queryClient.invalidateQueries({ queryKey: ['task_lists', boardId] });
+    promises.push(
+      queryClient.invalidateQueries({ queryKey: ['tasks', boardId] })
+    );
+    promises.push(
+      queryClient.invalidateQueries({ queryKey: ['task_lists', boardId] })
+    );
   }
   // Always invalidate time tracker since task availability affects it
-  queryClient.invalidateQueries({ queryKey: ['time-tracking-data'] });
+  promises.push(
+    queryClient.invalidateQueries({ queryKey: ['time-tracking-data'] })
+  );
+
+  await Promise.all(promises);
 }
 
 // Utility function to sync task archived status with list status
@@ -706,22 +716,24 @@ export function useUpdateTask(boardId: string) {
     },
     onSuccess: (updatedTask) => {
       // Update the cache with the server response
+      // Preserve joined data (assignees, labels) from cache since updateTask doesn't fetch them
       queryClient.setQueryData(
         ['tasks', boardId],
         (old: Task[] | undefined) => {
           if (!old) return old;
           return old.map((task) => {
             if (task.id === updatedTask.id) {
-              return updatedTask;
+              return {
+                ...updatedTask,
+                // Preserve joined data from cache
+                assignees: task.assignees,
+                labels: task.labels,
+              };
             }
             return task;
           });
         }
       );
-    },
-    onSettled: () => {
-      // Ensure data consistency
-      queryClient.invalidateQueries({ queryKey: ['tasks', boardId] });
     },
   });
 }
@@ -800,10 +812,6 @@ export function useCreateTask(boardId: string) {
         }
       );
     },
-    onSettled: () => {
-      // Ensure data consistency
-      queryClient.invalidateQueries({ queryKey: ['tasks', boardId] });
-    },
   });
 }
 
@@ -852,10 +860,6 @@ export function useDeleteTask(boardId: string) {
         title: 'Success',
         description: 'Task deleted successfully.',
       });
-    },
-    onSettled: () => {
-      // Ensure data consistency
-      queryClient.invalidateQueries({ queryKey: ['tasks', boardId] });
     },
   });
 }
@@ -1662,5 +1666,73 @@ export function useMoveAllTasksFromList(currentBoardId: string) {
         description: `Moved ${data.movedCount} task${data.movedCount !== 1 ? 's' : ''} successfully`,
       });
     },
+  });
+}
+
+// Workspace Labels Hook
+export interface WorkspaceLabel {
+  id: string;
+  name: string;
+  color: string;
+  created_at: string;
+  ws_id: string;
+}
+
+export function useWorkspaceLabels(wsId: string | null | undefined) {
+  return useQuery({
+    queryKey: ['workspace-labels', wsId],
+    queryFn: async () => {
+      if (!wsId) return [];
+
+      const supabase = createClient();
+      const { data: labels, error } = await supabase
+        .from('workspace_task_labels')
+        .select('id, name, color, created_at, ws_id')
+        .eq('ws_id', wsId)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      // Sort alphabetically by name
+      return (labels || []).sort((a, b) =>
+        a.name.toLowerCase().localeCompare(b.name.toLowerCase())
+      ) as WorkspaceLabel[];
+    },
+    enabled: Boolean(wsId),
+    staleTime: 5 * 60 * 1000, // 5 minutes - labels don't change often
+    refetchOnWindowFocus: false,
+  });
+}
+
+// Board Config Hook
+export interface BoardConfig {
+  id: string;
+  estimation_type: string | null;
+  extended_estimation: boolean;
+  allow_zero_estimates: boolean;
+  ws_id: string;
+}
+
+export function useBoardConfig(boardId: string | null | undefined) {
+  return useQuery({
+    queryKey: ['board-config', boardId],
+    queryFn: async () => {
+      if (!boardId) return null;
+
+      const supabase = createClient();
+      const { data: board, error } = await supabase
+        .from('workspace_boards')
+        .select(
+          'id, estimation_type, extended_estimation, allow_zero_estimates, ws_id'
+        )
+        .eq('id', boardId)
+        .single();
+
+      if (error) throw error;
+      return board as BoardConfig;
+    },
+    enabled: Boolean(boardId),
+    staleTime: 10 * 60 * 1000, // 10 minutes - board config rarely changes
+    refetchOnWindowFocus: false,
   });
 }

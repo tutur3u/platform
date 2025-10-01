@@ -45,9 +45,12 @@ import {
   CheckCircle2,
   ChevronLeft,
   ChevronRight,
+  ChevronsLeft,
+  ChevronsRight,
   Clock,
   Flag,
   HelpCircle,
+  List,
   MoreHorizontal,
   RefreshCw,
   Search,
@@ -86,8 +89,10 @@ import {
   isTomorrow,
   isWithinInterval,
 } from 'date-fns';
+import Image from 'next/image';
 import { useParams } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
+import { getDescriptionText } from '../../../../utils/text-helper';
 import { TaskEditDialog } from './task-edit-dialog';
 
 interface Props {
@@ -655,14 +660,30 @@ export function ListView({
   }
 
   function renderPriority(priority: TaskPriority | null) {
+    const getPriorityIcon = () => {
+      switch (priority) {
+        case 'critical':
+          return '🔥';
+        case 'high':
+          return '⬆️';
+        case 'normal':
+          return '➡️';
+        case 'low':
+          return '⬇️';
+        default:
+          return null;
+      }
+    };
+
     return (
       <Badge
         variant="outline"
         className={cn(
-          'font-medium',
+          'gap-1.5 font-medium shadow-sm transition-all',
           priorityColors[priority as keyof typeof priorityColors]
         )}
       >
+        {getPriorityIcon() && <span>{getPriorityIcon()}</span>}
         {priorityLabels[priority as keyof typeof priorityLabels]}
       </Badge>
     );
@@ -718,9 +739,26 @@ export function ListView({
     : null;
 
   return (
-    <div className="mt-2 flex h-full flex-col gap-4">
+    <div className="flex h-full flex-col gap-4 p-4 md:p-6">
+      {/* Header Section */}
+      <div className="flex items-center justify-between rounded-xl border border-border/60 bg-gradient-to-r from-dynamic-orange/5 via-card to-card p-4 shadow-sm backdrop-blur-sm md:p-5">
+        <div className="flex items-center gap-3">
+          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-dynamic-orange/10 ring-1 ring-dynamic-orange/20 md:h-12 md:w-12">
+            <List className="h-5 w-5 text-dynamic-orange md:h-6 md:w-6" />
+          </div>
+          <div>
+            <h2 className="font-bold text-foreground text-lg tracking-tight md:text-xl">
+              Task List
+            </h2>
+            <p className="text-muted-foreground text-xs md:text-sm">
+              Manage and organize your tasks
+            </p>
+          </div>
+        </div>
+      </div>
+
       {/* Toolbar */}
-      <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-4 rounded-xl border border-border/60 bg-background p-4 shadow-sm backdrop-blur-sm transition-shadow hover:shadow-md md:p-6">
         {/* Search and Actions Row */}
         <div className="flex items-center gap-4">
           <div className="relative flex-1">
@@ -731,7 +769,7 @@ export function ListView({
               onChange={(e) =>
                 setFilters({ ...filters, search: e.target.value })
               }
-              className="pr-9 pl-9"
+              className="h-10 border-border/60 bg-background/50 pr-9 pl-9 shadow-sm backdrop-blur-sm transition-all focus:border-primary/50 focus:shadow-md"
             />
             {filters.search && (
               <Button
@@ -747,7 +785,7 @@ export function ListView({
           </div>
 
           {/* Table Actions */}
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             {/* Priority Filter */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -755,17 +793,18 @@ export function ListView({
                   variant="outline"
                   size="sm"
                   className={cn(
-                    'h-8 gap-1.5 px-3 text-xs',
-                    filters.priorities.size > 0 &&
-                      'border-primary bg-primary/5 text-primary hover:bg-primary/10'
+                    'h-9 gap-2 px-3 text-xs shadow-sm transition-all',
+                    filters.priorities.size > 0
+                      ? 'border-dynamic-orange/50 bg-dynamic-orange/10 font-semibold text-dynamic-orange shadow-dynamic-orange/20 hover:bg-dynamic-orange/15'
+                      : 'hover:border-primary/30 hover:bg-muted/50'
                   )}
                 >
                   <Flag className="h-3.5 w-3.5" />
-                  Priority
+                  <span className="hidden sm:inline">Priority</span>
                   {filters.priorities.size > 0 && (
                     <Badge
                       variant="secondary"
-                      className="ml-1 h-4 w-4 rounded-full p-0 text-xs"
+                      className="h-5 w-5 rounded-full bg-dynamic-orange p-0 font-bold text-[10px] text-white"
                     >
                       {filters.priorities.size}
                     </Badge>
@@ -811,17 +850,18 @@ export function ListView({
                   variant="outline"
                   size="sm"
                   className={cn(
-                    'h-8 gap-1.5 px-3 text-xs',
-                    filters.statuses.size > 0 &&
-                      'border-primary bg-primary/5 text-primary hover:bg-primary/10'
+                    'h-9 gap-2 px-3 text-xs shadow-sm transition-all',
+                    filters.statuses.size > 0
+                      ? 'border-dynamic-green/50 bg-dynamic-green/10 font-semibold text-dynamic-green shadow-dynamic-green/20 hover:bg-dynamic-green/15'
+                      : 'hover:border-primary/30 hover:bg-muted/50'
                   )}
                 >
                   <CheckCircle2 className="h-3.5 w-3.5" />
-                  Status
+                  <span className="hidden sm:inline">Status</span>
                   {filters.statuses.size > 0 && (
                     <Badge
                       variant="secondary"
-                      className="ml-1 h-4 w-4 rounded-full p-0 text-xs"
+                      className="h-5 w-5 rounded-full bg-dynamic-green p-0 font-bold text-[10px] text-white"
                     >
                       {filters.statuses.size}
                     </Badge>
@@ -867,17 +907,18 @@ export function ListView({
                     variant="outline"
                     size="sm"
                     className={cn(
-                      'h-8 gap-1.5 px-3 text-xs',
-                      filters.assignees.size > 0 &&
-                        'border-primary bg-primary/5 text-primary hover:bg-primary/10'
+                      'h-9 gap-2 px-3 text-xs shadow-sm transition-all',
+                      filters.assignees.size > 0
+                        ? 'border-dynamic-blue/50 bg-dynamic-blue/10 font-semibold text-dynamic-blue shadow-dynamic-blue/20 hover:bg-dynamic-blue/15'
+                        : 'hover:border-primary/30 hover:bg-muted/50'
                     )}
                   >
                     <Users className="h-3.5 w-3.5" />
-                    Assignees
+                    <span className="hidden sm:inline">Assignees</span>
                     {filters.assignees.size > 0 && (
                       <Badge
                         variant="secondary"
-                        className="ml-1 h-4 w-4 rounded-full p-0 text-xs"
+                        className="h-5 w-5 rounded-full bg-dynamic-blue p-0 font-bold text-[10px] text-white"
                       >
                         {filters.assignees.size}
                       </Badge>
@@ -999,8 +1040,15 @@ export function ListView({
                 value: 'all' | 'overdue' | 'today' | 'this_week' | 'no_date'
               ) => setFilters({ ...filters, dateFilter: value })}
             >
-              <SelectTrigger className="h-8 w-[130px]">
-                <Calendar className="mr-2 h-4 w-4" />
+              <SelectTrigger
+                className={cn(
+                  'h-9 w-[140px] text-xs shadow-sm transition-all',
+                  filters.dateFilter !== 'all'
+                    ? 'border-dynamic-purple/50 bg-dynamic-purple/10 font-semibold text-dynamic-purple hover:bg-dynamic-purple/15'
+                    : 'hover:border-primary/30 hover:bg-muted/50'
+                )}
+              >
+                <Calendar className="mr-2 h-3.5 w-3.5" />
                 <SelectValue />
               </SelectTrigger>
               <SelectContent className="max-h-64 overflow-y-auto">
@@ -1015,7 +1063,11 @@ export function ListView({
             {/* More Actions */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm" className="h-8 w-8 p-0">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-9 w-9 p-0 shadow-sm transition-all hover:border-primary/30 hover:bg-muted/50"
+                >
                   <Settings2 className="h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
@@ -1093,35 +1145,42 @@ export function ListView({
                 variant="ghost"
                 size="sm"
                 onClick={clearAllFilters}
-                className="h-8"
+                className="h-9 gap-2 text-dynamic-red text-xs shadow-sm transition-all hover:bg-dynamic-red/10 hover:text-dynamic-red"
               >
-                <X className="mr-2 h-4 w-4" />
-                Clear
+                <X className="h-4 w-4" />
+                <span className="hidden sm:inline">Clear</span>
               </Button>
             )}
           </div>
         </div>
 
         {/* Results and Filter Summary */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2 text-muted-foreground text-sm">
-            <span>
-              {filteredAndSortedTasks.length} of {tasks.length} task
-              {tasks.length !== 1 ? 's' : ''}
-            </span>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 rounded-lg border border-border/60 bg-muted/30 px-3 py-1.5 shadow-sm backdrop-blur-sm">
+              <span className="font-semibold text-foreground text-sm">
+                {filteredAndSortedTasks.length}
+              </span>
+              <span className="text-muted-foreground text-xs">of</span>
+              <span className="text-muted-foreground text-sm">
+                {tasks.length} task{tasks.length !== 1 ? 's' : ''}
+              </span>
+            </div>
             {hasActiveFilters && (
-              <span className="text-xs">
-                •{' '}
+              <Badge
+                variant="secondary"
+                className="bg-dynamic-blue/10 px-2 py-1 font-medium text-dynamic-blue text-xs"
+              >
                 {filteredAndSortedTasks.length !== tasks.length
                   ? 'Filtered'
                   : 'All shown'}
-              </span>
+              </Badge>
             )}
           </div>
 
           {/* Page Size */}
           <div className="flex items-center gap-2">
-            <span className="text-muted-foreground text-sm">Rows per page</span>
+            <span className="text-muted-foreground text-xs">Rows per page</span>
             <Select
               value={pageSize.toString()}
               onValueChange={(value) => {
@@ -1129,7 +1188,7 @@ export function ListView({
                 setCurrentPage(1);
               }}
             >
-              <SelectTrigger className="h-8 w-[70px]">
+              <SelectTrigger className="h-8 w-[70px] border-border/60 text-xs shadow-sm">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent className="max-h-64 overflow-y-auto">
@@ -1144,35 +1203,37 @@ export function ListView({
       </div>
 
       {filteredAndSortedTasks.length === 0 ? (
-        <div className="flex flex-1 flex-col items-center justify-center gap-4 text-center">
-          <div className="rounded-full bg-muted p-6">
-            <Search className="h-8 w-8 text-muted-foreground" />
+        <div className="flex flex-1 flex-col items-center justify-center gap-6 rounded-lg border bg-card p-12 text-center shadow-sm">
+          <div className="rounded-full bg-muted/50 p-8">
+            <Search className="h-10 w-10 text-muted-foreground" />
           </div>
-          <div className="space-y-2">
-            <h3 className="font-semibold text-lg">
+          <div className="space-y-3">
+            <h3 className="font-semibold text-xl">
               {filters.search ? 'No tasks found' : 'No tasks yet'}
             </h3>
-            <p className="max-w-sm text-muted-foreground text-sm">
+            <p className="max-w-md text-muted-foreground">
               {filters.search
-                ? `No tasks match "${filters.search}". Try adjusting your search terms.`
-                : 'Get started by creating your first task.'}
+                ? `No tasks match "${filters.search}". Try adjusting your search terms or filters.`
+                : 'Get started by creating your first task in the board view.'}
             </p>
           </div>
-          {filters.search && (
+          {(filters.search || hasActiveFilters) && (
             <Button
               variant="outline"
-              onClick={() => setFilters({ ...filters, search: '' })}
+              onClick={clearAllFilters}
+              className="gap-2"
             >
-              Clear search
+              <X className="h-4 w-4" />
+              Clear all filters
             </Button>
           )}
         </div>
       ) : (
-        <div className="relative flex-1 overflow-auto rounded-lg border bg-card">
+        <div className="relative flex-1 overflow-auto rounded-xl border border-border/60 bg-card shadow-md backdrop-blur-sm">
           <TooltipProvider>
             <Table>
-              <TableHeader className="sticky top-0 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-                <TableRow className="border-b">
+              <TableHeader className="sticky top-0 z-10 border-border/60 border-b bg-background backdrop-blur-md">
+                <TableRow className="border-b hover:bg-transparent">
                   <TableHead className="w-[40px] text-center">
                     <Checkbox
                       checked={
@@ -1311,10 +1372,25 @@ export function ListView({
                   <TableRow
                     key={task.id}
                     className={cn(
-                      'group transition-colors hover:bg-muted/50',
-                      task.archived && 'opacity-75',
-                      selectedTasks.has(task.id) && 'bg-muted/50'
+                      'group cursor-pointer transition-all hover:bg-muted/50 hover:shadow-sm',
+                      task.archived && 'opacity-60',
+                      selectedTasks.has(task.id) && 'bg-muted/50 shadow-sm',
+                      task.end_date &&
+                        new Date(task.end_date) < new Date() &&
+                        !task.archived &&
+                        'border-l-2 border-l-dynamic-red/50'
                     )}
+                    onClick={(e) => {
+                      // Don't open if clicking on checkbox or action button
+                      if (
+                        (e.target as HTMLElement).closest(
+                          'input[type="checkbox"], button'
+                        )
+                      ) {
+                        return;
+                      }
+                      setSelectedTaskId(task.id);
+                    }}
                   >
                     <TableCell className="text-center">
                       <Checkbox
@@ -1334,17 +1410,44 @@ export function ListView({
                       <TableCell className="py-4">
                         <div className="space-y-1">
                           <div
-                            className={cn('font-medium leading-none', {
-                              'text-muted-foreground line-through':
-                                task.archived,
-                            })}
+                            className={cn(
+                              'font-medium leading-none transition-colors group-hover:text-primary',
+                              {
+                                'text-muted-foreground line-through':
+                                  task.archived,
+                              }
+                            )}
                           >
                             {task.name}
                           </div>
-                          {task.description && (
-                            <p className="scrollbar-none group-hover:scrollbar-thin scrollbar-track-transparent scrollbar-thumb-muted-foreground/30 group-hover:scrollbar-thumb-muted-foreground/50 line-clamp-1 max-h-20 overflow-y-auto whitespace-pre-line text-muted-foreground text-sm leading-relaxed">
-                              {task.description}
-                            </p>
+                          {task.description &&
+                            getDescriptionText(task.description) && (
+                              <p className="scrollbar-none group-hover:scrollbar-thin scrollbar-track-transparent scrollbar-thumb-muted-foreground/30 group-hover:scrollbar-thumb-muted-foreground/50 line-clamp-1 max-h-20 overflow-y-auto whitespace-pre-line text-muted-foreground text-sm leading-relaxed">
+                                {getDescriptionText(task.description)}
+                              </p>
+                            )}
+                          {task.labels && task.labels.length > 0 && (
+                            <div className="flex flex-wrap items-center gap-1 pt-1">
+                              {task.labels.slice(0, 3).map((label) => (
+                                <Badge
+                                  key={label.id}
+                                  variant="outline"
+                                  style={{
+                                    backgroundColor: `color-mix(in srgb, ${label.color} 15%, transparent)`,
+                                    borderColor: `color-mix(in srgb, ${label.color} 30%, transparent)`,
+                                    color: label.color,
+                                  }}
+                                  className="text-xs"
+                                >
+                                  {label.name}
+                                </Badge>
+                              ))}
+                              {task.labels.length > 3 && (
+                                <Badge variant="secondary" className="text-xs">
+                                  +{task.labels.length - 3}
+                                </Badge>
+                              )}
+                            </div>
                           )}
                         </div>
                       </TableCell>
@@ -1370,13 +1473,58 @@ export function ListView({
                     )}
                     {columnVisibility.assignees && (
                       <TableCell>
-                        {task.assignees && task.assignees.length > 0 && (
-                          <div className="flex items-center gap-1.5">
-                            <Users className="h-3.5 w-3.5 text-muted-foreground" />
-                            <span className="font-medium text-sm">
-                              {task.assignees.length}
-                            </span>
+                        {task.assignees && task.assignees.length > 0 ? (
+                          <div className="-space-x-2 flex">
+                            {task.assignees.slice(0, 3).map((assignee) => (
+                              <div
+                                key={assignee.id}
+                                className="relative inline-flex h-7 w-7 items-center justify-center overflow-hidden rounded-full border-2 border-background bg-muted ring-1 ring-border transition-transform hover:z-10 hover:scale-110"
+                                title={
+                                  assignee.display_name ||
+                                  assignee.email ||
+                                  'User'
+                                }
+                              >
+                                {assignee.avatar_url ? (
+                                  <Image
+                                    src={assignee.avatar_url}
+                                    alt={
+                                      assignee.display_name ||
+                                      assignee.email ||
+                                      'User'
+                                    }
+                                    width={28}
+                                    height={28}
+                                    className="h-full w-full object-cover"
+                                  />
+                                ) : (
+                                  <span className="font-medium text-xs">
+                                    {(
+                                      assignee.display_name ||
+                                      assignee.email ||
+                                      '?'
+                                    )
+                                      .slice(0, 2)
+                                      .toUpperCase()}
+                                  </span>
+                                )}
+                              </div>
+                            ))}
+                            {task.assignees.length > 3 && (
+                              <div
+                                className="relative inline-flex h-7 w-7 items-center justify-center overflow-hidden rounded-full border-2 border-background bg-muted ring-1 ring-border"
+                                title={`+${task.assignees.length - 3} more`}
+                              >
+                                <span className="font-medium text-xs">
+                                  +{task.assignees.length - 3}
+                                </span>
+                              </div>
+                            )}
                           </div>
+                        ) : (
+                          <span className="text-muted-foreground text-xs">
+                            Unassigned
+                          </span>
                         )}
                       </TableCell>
                     )}
@@ -1415,25 +1563,39 @@ export function ListView({
 
       {/* Pagination */}
       {filteredAndSortedTasks.length > 0 && totalPages > 1 && (
-        <div className="flex items-center justify-between border-t pt-4">
-          <div className="flex items-center gap-2 text-muted-foreground text-sm">
-            <span>
-              Showing {(currentPage - 1) * pageSize + 1}-
-              {Math.min(currentPage * pageSize, filteredAndSortedTasks.length)}{' '}
-              of {filteredAndSortedTasks.length} results
-            </span>
+        <div className="flex flex-col gap-3 rounded-xl border border-border/60 bg-background p-4 shadow-sm backdrop-blur-sm sm:flex-row sm:items-center sm:justify-between md:p-5">
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 rounded-lg border border-border/60 bg-muted/30 px-3 py-1.5 shadow-sm backdrop-blur-sm">
+              <span className="text-foreground text-sm">
+                {(currentPage - 1) * pageSize + 1}-
+                {Math.min(
+                  currentPage * pageSize,
+                  filteredAndSortedTasks.length
+                )}
+              </span>
+              <span className="text-muted-foreground text-xs">of</span>
+              <span className="text-muted-foreground text-sm">
+                {filteredAndSortedTasks.length}
+              </span>
+            </div>
             {selectedTasks.size > 0 && (
-              <>
-                <Separator orientation="vertical" className="h-4" />
-                <span>{selectedTasks.size} selected</span>
-              </>
+              <Badge
+                variant="secondary"
+                className="bg-dynamic-orange/10 px-2.5 py-1 font-semibold text-dynamic-orange text-xs"
+              >
+                {selectedTasks.size} selected
+              </Badge>
             )}
           </div>
 
-          <div className="flex items-center gap-2">
-            <div className="flex items-center gap-1 text-muted-foreground text-sm">
-              <span>
-                Page {currentPage} of {totalPages}
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 rounded-lg border border-border/60 bg-muted/30 px-3 py-1.5 shadow-sm backdrop-blur-sm">
+              <span className="font-medium text-foreground text-sm">
+                {currentPage}
+              </span>
+              <span className="text-muted-foreground text-xs">of</span>
+              <span className="text-muted-foreground text-sm">
+                {totalPages}
               </span>
             </div>
             <div className="flex items-center gap-1">
@@ -1442,17 +1604,18 @@ export function ListView({
                 size="sm"
                 onClick={() => setCurrentPage(1)}
                 disabled={!hasPreviousPage}
-                className="h-8 w-8 p-0"
+                className="h-9 w-9 p-0 shadow-sm transition-all hover:bg-muted/50 disabled:opacity-30"
+                title="First page"
               >
-                <ChevronLeft className="h-4 w-4" />
-                <ChevronLeft className="-ml-2 h-4 w-4" />
+                <ChevronsLeft className="h-4 w-4" />
               </Button>
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => setCurrentPage(currentPage - 1)}
                 disabled={!hasPreviousPage}
-                className="h-8 w-8 p-0"
+                className="h-9 w-9 p-0 shadow-sm transition-all hover:bg-muted/50 disabled:opacity-30"
+                title="Previous page"
               >
                 <ChevronLeft className="h-4 w-4" />
               </Button>
@@ -1461,7 +1624,8 @@ export function ListView({
                 size="sm"
                 onClick={() => setCurrentPage(currentPage + 1)}
                 disabled={!hasNextPage}
-                className="h-8 w-8 p-0"
+                className="h-9 w-9 p-0 shadow-sm transition-all hover:bg-muted/50 disabled:opacity-30"
+                title="Next page"
               >
                 <ChevronRight className="h-4 w-4" />
               </Button>
@@ -1470,10 +1634,10 @@ export function ListView({
                 size="sm"
                 onClick={() => setCurrentPage(totalPages)}
                 disabled={!hasNextPage}
-                className="h-8 w-8 p-0"
+                className="h-9 w-9 p-0 shadow-sm transition-all hover:bg-muted/50 disabled:opacity-30"
+                title="Last page"
               >
-                <ChevronRight className="h-4 w-4" />
-                <ChevronRight className="-ml-2 h-4 w-4" />
+                <ChevronsRight className="h-4 w-4" />
               </Button>
             </div>
           </div>
@@ -1482,24 +1646,43 @@ export function ListView({
 
       {/* Bulk Actions for Selected Tasks */}
       {selectedTasks.size > 0 && (
-        <div className="-translate-x-1/2 fixed bottom-6 left-1/2 z-50 flex transform items-center gap-3 rounded-lg border bg-background p-3 shadow-lg">
-          <span className="font-medium text-sm">
-            {selectedTasks.size} task{selectedTasks.size !== 1 ? 's' : ''}{' '}
-            selected
-          </span>
-          <Separator orientation="vertical" className="h-4" />
-          <div className="flex items-center gap-1">
+        <div className="-translate-x-1/2 slide-in-from-bottom-4 fixed bottom-6 left-1/2 z-50 flex transform animate-in items-center gap-3 rounded-lg border bg-background p-4 shadow-xl backdrop-blur-sm">
+          <div className="flex items-center gap-2">
+            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10">
+              <CheckCircle2 className="h-4 w-4 text-primary" />
+            </div>
+            <span className="font-semibold text-sm">
+              {selectedTasks.size} task{selectedTasks.size !== 1 ? 's' : ''}{' '}
+              selected
+            </span>
+          </div>
+          <Separator orientation="vertical" className="h-6" />
+          <div className="flex items-center gap-2">
             <Button
               variant="outline"
               size="sm"
               onClick={() => setSelectedTasks(new Set())}
+              className="h-8"
             >
+              <X className="mr-1.5 h-3.5 w-3.5" />
               Cancel
             </Button>
-            <Button variant="outline" size="sm" onClick={handleBulkEdit}>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleBulkEdit}
+              className="h-8"
+            >
+              <Settings2 className="mr-1.5 h-3.5 w-3.5" />
               Edit
             </Button>
-            <Button variant="destructive" size="sm" onClick={handleBulkDelete}>
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={handleBulkDelete}
+              className="h-8"
+            >
+              <X className="mr-1.5 h-3.5 w-3.5" />
               Delete
             </Button>
           </div>

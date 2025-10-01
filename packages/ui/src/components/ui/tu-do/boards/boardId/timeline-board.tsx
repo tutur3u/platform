@@ -21,7 +21,9 @@ import {
   TooltipTrigger,
 } from '@tuturuuu/ui/tooltip';
 import { cn } from '@tuturuuu/utils/format';
+import dayjs from 'dayjs';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { getDescriptionText } from '../../../../../utils/text-helper';
 
 export interface TimelineProps {
   tasks: Task[];
@@ -52,16 +54,10 @@ interface TimelineSpan {
  * - Ensures at least one day width
  */
 export function computeTimelineSpans(tasks: Task[], lists: TaskList[]) {
-  const DAY = 24 * 60 * 60 * 1000;
   const datedTasks: TimelineSpan[] = [];
   const unscheduled: Task[] = [];
   const listById = new Map(lists.map((l) => [String(l.id), l] as const));
-  const today = new Date();
-  const todayMid = new Date(
-    today.getFullYear(),
-    today.getMonth(),
-    today.getDate()
-  );
+  const todayMid = dayjs().startOf('day');
 
   for (const task of tasks) {
     if (!task.start_date && !task.end_date) {
@@ -69,37 +65,26 @@ export function computeTimelineSpans(tasks: Task[], lists: TaskList[]) {
       continue;
     }
     // Derive start/end
-    const rawStart = task.start_date
-      ? new Date(task.start_date)
-      : task.end_date
-        ? new Date(task.end_date)
-        : todayMid;
-    const rawEnd = task.end_date ? new Date(task.end_date) : rawStart;
+    const rawStart = dayjs(
+      task.start_date || task.end_date || todayMid.toDate()
+    );
+    const rawEnd = dayjs(task.end_date || rawStart.toDate());
+
     // Normalize to midnight boundaries
-    const start = new Date(
-      rawStart.getFullYear(),
-      rawStart.getMonth(),
-      rawStart.getDate()
-    );
-    const end = new Date(
-      rawEnd.getFullYear(),
-      rawEnd.getMonth(),
-      rawEnd.getDate()
-    );
-    const durationDays = Math.max(
-      1,
-      Math.round((end.getTime() - start.getTime()) / DAY) + 1
-    );
+    const start = rawStart.startOf('day');
+    const end = rawEnd.startOf('day');
+
+    const durationDays = Math.max(1, end.diff(start, 'day') + 1);
     const list = listById.get(String(task.list_id));
     const span: Omit<TimelineSpan, 'rowIndex'> = {
       task,
-      start,
-      end,
+      start: start.toDate(),
+      end: end.toDate(),
       durationDays,
       list,
-      isPast: end < todayMid,
-      isOngoing: start <= todayMid && end >= todayMid,
-      isFuture: start > todayMid,
+      isPast: end.isBefore(todayMid),
+      isOngoing: !start.isAfter(todayMid) && !end.isBefore(todayMid),
+      isFuture: start.isAfter(todayMid),
     };
     datedTasks.push({ ...span, rowIndex: 0 });
   }
@@ -136,13 +121,13 @@ export function computeTimelineSpans(tasks: Task[], lists: TaskList[]) {
         (min, s) => (s.start < min ? s.start : min),
         datedTasks[0]!.start
       )
-    : todayMid;
+    : todayMid.toDate();
   const maxDate = datedTasks.length
     ? datedTasks.reduce(
         (max, s) => (s.end > max ? s.end : max),
         datedTasks[0]!.end
       )
-    : todayMid;
+    : todayMid.toDate();
 
   return {
     spans: datedTasks,
@@ -156,23 +141,27 @@ export function computeTimelineSpans(tasks: Task[], lists: TaskList[]) {
 // Generate array of dates (midnights) inclusive
 function enumerateDays(start: Date, end: Date) {
   const days: Date[] = [];
-  const cursor = new Date(start);
-  while (cursor <= end) {
-    days.push(new Date(cursor));
-    cursor.setDate(cursor.getDate() + 1);
+  let cursor = dayjs(start).startOf('day');
+  const endDate = dayjs(end).startOf('day');
+  while (cursor.isBefore(endDate) || cursor.isSame(endDate, 'day')) {
+    days.push(cursor.toDate());
+    cursor = cursor.add(1, 'day');
   }
   return days;
 }
 
 // Nice label for a date (month change markers)
 function formatDayLabel(d: Date) {
-  return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+  return dayjs(d).format('MMM D');
 }
 
 // Week boundary check
 function isWeekStart(d: Date) {
-  return d.getDay() === 1; // Monday start convention
+  return dayjs(d).day() === 1; // Monday start convention
 }
+
+// Alias for use inside map where shadowing occurs
+const isWeekStart_ = isWeekStart;
 
 // --- Component -------------------------------------------------------------
 export function TimelineBoard({
@@ -256,14 +245,7 @@ export function TimelineBoard({
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
-    const todayIndex = days.findIndex((d) => {
-      const now = new Date();
-      return (
-        d.getFullYear() === now.getFullYear() &&
-        d.getMonth() === now.getMonth() &&
-        d.getDate() === now.getDate()
-      );
-    });
+    const todayIndex = days.findIndex((d) => dayjs(d).isSame(dayjs(), 'day'));
     if (todayIndex >= 0) {
       // 44px per column initial assumption (tailwind width) * index
       requestAnimationFrame(() => {
@@ -289,12 +271,7 @@ export function TimelineBoard({
     density === 'compact' ? 30 : density === 'comfortable' ? 40 : 50;
   const rowGap = density === 'expanded' ? 10 : 6;
 
-  const today = new Date();
-  const todayMid = new Date(
-    today.getFullYear(),
-    today.getMonth(),
-    today.getDate()
-  );
+  const todayMid = dayjs().startOf('day').toDate();
 
   const toggleScale = useCallback(() => {
     setScale((s) => (s === 'day' ? 'week' : 'day'));
@@ -312,18 +289,26 @@ export function TimelineBoard({
     });
   };
 
+  const scrollToToday = useCallback(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const todayIndex = days.findIndex((d) => dayjs(d).isSame(dayjs(), 'day'));
+    if (todayIndex >= 0) {
+      el.scrollTo({
+        left: Math.max(
+          0,
+          todayIndex * dayWidth - el.clientWidth / 2 + dayWidth / 2
+        ),
+        behavior: 'smooth',
+      });
+    }
+  }, [days, dayWidth]);
+
   // Recenter on today when density changes to keep context
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
-    const todayIndex = days.findIndex((d) => {
-      const now = new Date();
-      return (
-        d.getFullYear() === now.getFullYear() &&
-        d.getMonth() === now.getMonth() &&
-        d.getDate() === now.getDate()
-      );
-    });
+    const todayIndex = days.findIndex((d) => dayjs(d).isSame(dayjs(), 'day'));
     if (todayIndex >= 0) {
       requestAnimationFrame(() => {
         el.scrollLeft = Math.max(
@@ -339,32 +324,73 @@ export function TimelineBoard({
   // Resize pointer handlers
   useEffect(() => {
     if (!resizing) return;
-    const DAY_MS = 24 * 60 * 60 * 1000;
-    const normalize = (d: Date) =>
-      new Date(d.getFullYear(), d.getMonth(), d.getDate());
+
+    const originalTask = localTasks.find((t) => t.id === resizing.taskId);
+    const originalStartDate = originalTask?.start_date
+      ? dayjs(originalTask.start_date)
+      : null;
+    const originalEndDate = originalTask?.end_date
+      ? dayjs(originalTask.end_date)
+      : null;
+
+    const hasStartTime =
+      originalStartDate &&
+      originalStartDate.valueOf() !==
+        originalStartDate.startOf('day').valueOf();
+
+    const hasEndTime =
+      originalEndDate &&
+      originalEndDate.valueOf() !== originalEndDate.endOf('day').valueOf() &&
+      originalEndDate.valueOf() !== originalEndDate.startOf('day').valueOf();
 
     const applyDraft = (dayDelta: number) => {
       if (!resizing) return;
-      let newStart = new Date(resizing.originalStart);
-      let newEnd = new Date(resizing.originalEnd);
+      let newStart = dayjs(resizing.originalStart);
+      let newEnd = dayjs(resizing.originalEnd);
+
       if (resizing.side === 'start') {
-        newStart.setDate(newStart.getDate() + dayDelta);
-        // Clamp not after end - ensure at least 1 day
-        if (newStart > newEnd) newStart = new Date(newEnd.getTime());
+        newStart = newStart.add(dayDelta, 'day');
+        if (hasStartTime && originalStartDate) {
+          newStart = newStart
+            .hour(originalStartDate.hour())
+            .minute(originalStartDate.minute())
+            .second(originalStartDate.second())
+            .millisecond(originalStartDate.millisecond());
+        } else {
+          newStart = newStart.startOf('day');
+        }
+        if (newStart.isAfter(newEnd)) {
+          newStart = newEnd;
+        }
       } else {
-        newEnd.setDate(newEnd.getDate() + dayDelta);
-        if (newEnd < newStart) newEnd = new Date(newStart.getTime());
+        // resizing.side === 'end'
+        newEnd = newEnd.add(dayDelta, 'day');
+        if (hasEndTime && originalEndDate) {
+          newEnd = newEnd
+            .hour(originalEndDate.hour())
+            .minute(originalEndDate.minute())
+            .second(originalEndDate.second())
+            .millisecond(originalEndDate.millisecond());
+        } else {
+          newEnd = newEnd.endOf('day');
+        }
+        if (newEnd.isBefore(newStart)) {
+          newEnd = newStart;
+        }
       }
-      // Enforce inclusive duration >= 1 day
-      if (Math.round((newEnd.getTime() - newStart.getTime()) / DAY_MS) < 0) {
-        // adjust depending on edge
-        if (resizing.side === 'start') newStart = new Date(newEnd.getTime());
-        else newEnd = new Date(newStart.getTime());
+
+      if (newEnd.startOf('day').isBefore(newStart.startOf('day'))) {
+        if (resizing.side === 'start') {
+          newStart = newEnd;
+          if (!hasStartTime) newStart = newStart.startOf('day');
+        } else {
+          newEnd = newStart;
+          if (!hasEndTime) newEnd = newEnd.endOf('day');
+        }
       }
-      newStart = normalize(newStart);
-      newEnd = normalize(newEnd);
+
       setResizeDraft({
-        [resizing.taskId]: { start: newStart, end: newEnd },
+        [resizing.taskId]: { start: newStart.toDate(), end: newEnd.toDate() },
       });
     };
 
@@ -419,7 +445,7 @@ export function TimelineBoard({
       window.removeEventListener('pointermove', handleMove);
       window.removeEventListener('pointerup', handleUp);
     };
-  }, [resizing, dayWidth, resizeDraft, tasks, onTaskPartialUpdate]);
+  }, [resizing, dayWidth, resizeDraft, tasks, localTasks, onTaskPartialUpdate]);
 
   return (
     <>
@@ -430,44 +456,70 @@ export function TimelineBoard({
         <div className="flex items-center justify-between gap-4 border-b bg-background/80 px-2 py-2 backdrop-blur-sm md:px-4">
           <div className="flex items-center gap-3 text-muted-foreground text-sm">
             <Clock className="h-4 w-4" />
-            <span>
-              {spans.length} scheduled task{spans.length !== 1 ? 's' : ''}
-            </span>
+            <span className="font-medium">{spans.length} scheduled</span>
             {unscheduled.length > 0 && (
-              <span className="rounded bg-dynamic-amber/20 px-2 py-0.5 text-dynamic-amber/90 text-xs">
-                {unscheduled.length} unscheduled
-              </span>
+              <TooltipProvider delayDuration={200}>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span className="cursor-help rounded-md bg-dynamic-amber/20 px-2 py-1 font-medium text-dynamic-amber text-xs">
+                      {unscheduled.length} unscheduled
+                    </span>
+                  </TooltipTrigger>
+                  <TooltipContent className="max-w-xs text-xs">
+                    <p>
+                      {unscheduled.length} task
+                      {unscheduled.length !== 1 ? 's' : ''} without dates.
+                      Switch to Board or List view to manage unscheduled tasks.
+                    </p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
             )}
             <TooltipProvider delayDuration={200}>
               <Tooltip>
                 <TooltipTrigger asChild>
                   <button
                     type="button"
-                    className="inline-flex items-center gap-1 text-xs underline-offset-2 hover:underline focus:outline-none"
+                    className="inline-flex items-center gap-1 text-xs underline-offset-2 opacity-60 transition-opacity hover:underline hover:opacity-100 focus:outline-none"
                     aria-label="Timeline help"
                   >
                     <Info className="h-3.5 w-3.5" /> Help
                   </button>
                 </TooltipTrigger>
                 <TooltipContent className="max-w-xs text-xs">
-                  Drag horizontally (trackpad / shift+wheel) to explore. Bars
-                  show task duration. Today is highlighted.
+                  <p className="mb-2 font-medium">Timeline Navigation</p>
+                  <ul className="space-y-1 text-[11px]">
+                    <li>• Drag horizontally to explore timeline</li>
+                    <li>• Click task bars to edit details</li>
+                    <li>• Drag bar edges to resize duration</li>
+                    <li>• Use density controls to zoom</li>
+                  </ul>
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
           </div>
           <div className="flex items-center gap-2">
-            <div className="hidden items-center overflow-hidden rounded-md border bg-background/60 md:flex">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={scrollToToday}
+              className="h-7 px-3 text-xs"
+              aria-label="Scroll to today"
+            >
+              Today
+            </Button>
+            <div className="flex items-center overflow-hidden rounded-md border bg-background/60">
               <Button
                 size="sm"
                 variant="ghost"
                 className="h-7 px-2 text-[11px]"
                 onClick={() => adjustDensity(-1)}
                 disabled={density === 'compact'}
+                aria-label="Decrease density"
               >
                 -
               </Button>
-              <span className="min-w-[86px] select-none px-2 text-center text-[11px] capitalize tracking-wide">
+              <span className="min-w-[86px] select-none px-2 text-center font-medium text-[11px] capitalize tracking-wide">
                 {density}
               </span>
               <Button
@@ -476,6 +528,7 @@ export function TimelineBoard({
                 className="h-7 px-2 text-[11px]"
                 onClick={() => adjustDensity(1)}
                 disabled={density === 'expanded'}
+                aria-label="Increase density"
               >
                 +
               </Button>
@@ -484,9 +537,9 @@ export function TimelineBoard({
               size="sm"
               variant="outline"
               onClick={toggleScale}
-              className="h-7 px-2 text-xs"
+              className="hidden h-7 px-2 text-xs md:flex"
             >
-              {scale === 'day' ? 'Week view' : 'Day view'}
+              {scale === 'day' ? 'Week' : 'Day'}
             </Button>
           </div>
         </div>
@@ -494,7 +547,7 @@ export function TimelineBoard({
         <div className="relative flex-1 overflow-hidden">
           <div
             ref={containerRef}
-            className="relative h-full w-full overflow-auto"
+            className="relative h-full w-full overflow-auto scroll-smooth"
             aria-describedby="timeline-help"
           >
             {/* Header grid (CSS Grid for perfect alignment) */}
@@ -504,26 +557,35 @@ export function TimelineBoard({
             >
               {days.map((d, idx) => {
                 const isToday = d.getTime() === todayMid.getTime();
+                const isWeekStart = isWeekStart_(d);
                 return (
                   <div
                     key={idx}
                     className={cn(
-                      'relative flex h-12 flex-col items-center justify-center font-medium text-[10px] md:text-xs',
-                      isToday && 'bg-dynamic-blue/15 text-dynamic-blue'
+                      'relative flex h-12 flex-col items-center justify-center border-border/30 border-r font-medium text-[10px] transition-colors md:text-xs',
+                      isToday && 'bg-dynamic-blue/15 text-dynamic-blue',
+                      isWeekStart && !isToday && 'bg-muted/30'
                     )}
                     data-today={isToday || undefined}
                   >
-                    <span className="leading-tight">{formatDayLabel(d)}</span>
                     <span
                       className={cn(
-                        'mt-0.5 text-[9px] opacity-0',
-                        isWeekStart(d) && 'opacity-60'
+                        'leading-tight',
+                        isToday && 'font-semibold'
+                      )}
+                    >
+                      {formatDayLabel(d)}
+                    </span>
+                    <span
+                      className={cn(
+                        'mt-0.5 text-[9px] transition-opacity',
+                        isWeekStart ? 'opacity-60' : 'opacity-0'
                       )}
                     >
                       W{getWeekNumber(d)}
                     </span>
                     {isToday && (
-                      <span className="absolute inset-x-1 bottom-0 h-1 rounded-full bg-dynamic-blue/60" />
+                      <span className="absolute inset-x-0 bottom-0 h-1 bg-dynamic-blue shadow-sm" />
                     )}
                   </div>
                 );
@@ -565,7 +627,7 @@ export function TimelineBoard({
               if (idx < 0) return null;
               return (
                 <div
-                  className="pointer-events-none absolute top-12 bottom-0 z-10 w-px bg-dynamic-blue/70"
+                  className="pointer-events-none absolute top-12 bottom-0 z-10 w-0.5 bg-dynamic-blue shadow-sm"
                   style={{ left: idx * dayWidth + dayWidth / 2 }}
                   aria-hidden="true"
                 />
@@ -591,12 +653,12 @@ export function TimelineBoard({
                 const colSpan = span.durationDays; // inclusive
                 const statusColor =
                   span.list?.status === 'done' || span.list?.status === 'closed'
-                    ? 'bg-dynamic-green/50 border-dynamic-green/60'
+                    ? 'bg-dynamic-green/60 border-dynamic-green/70 text-foreground hover:bg-dynamic-green/70'
                     : span.isOngoing
-                      ? 'bg-dynamic-blue/40 border-dynamic-blue/60'
+                      ? 'bg-dynamic-blue/50 border-dynamic-blue/70 text-foreground hover:bg-dynamic-blue/60'
                       : span.isFuture
-                        ? 'bg-dynamic-purple/40 border-dynamic-purple/60'
-                        : 'bg-dynamic-foreground/30 border-dynamic-foreground/40';
+                        ? 'bg-dynamic-purple/50 border-dynamic-purple/70 text-foreground hover:bg-dynamic-purple/60'
+                        : 'bg-dynamic-foreground/40 border-dynamic-foreground/50 text-foreground/80 hover:bg-dynamic-foreground/50';
                 return (
                   <TooltipProvider key={span.task.id} delayDuration={150}>
                     <Tooltip>
@@ -604,10 +666,10 @@ export function TimelineBoard({
                         <button
                           type="button"
                           className={cn(
-                            'group relative col-span-[var(--col-span)] col-start-[var(--col-start)] row-start-[var(--row-start)] flex h-full items-start justify-start rounded-md border px-2 py-1 text-left text-[11px] text-foreground/90 leading-tight shadow-sm outline-none ring-offset-background backdrop-blur-sm transition-shadow focus-visible:ring-2 focus-visible:ring-dynamic-blue/60',
+                            'group relative col-span-[var(--col-span)] col-start-[var(--col-start)] row-start-[var(--row-start)] flex h-full items-start justify-start rounded-md border-2 px-2 py-1 text-left text-[11px] leading-tight shadow-md outline-none ring-offset-background backdrop-blur-sm transition-all duration-150 hover:scale-[1.02] hover:shadow-lg focus-visible:ring-2 focus-visible:ring-dynamic-blue focus-visible:ring-offset-1',
                             statusColor,
                             resizing?.taskId === span.task.id &&
-                              'border-dynamic-blue/70 ring-1 ring-dynamic-blue/40'
+                              'scale-[1.02] border-dynamic-blue shadow-xl ring-2 ring-dynamic-blue/40'
                           )}
                           style={{
                             // Map logical indices to CSS custom properties consumed in arbitrary Tailwind selectors.
@@ -621,27 +683,31 @@ export function TimelineBoard({
                             if (resizing) return;
                             setEditingTask(span.task);
                             setEditName(span.task.name);
-                            setEditStart(span.start.toISOString().slice(0, 10));
-                            setEditEnd(span.end.toISOString().slice(0, 10));
+                            setEditStart(
+                              dayjs(span.start).format('YYYY-MM-DD')
+                            );
+                            setEditEnd(dayjs(span.end).format('YYYY-MM-DD'));
                           }}
                         >
                           <div className="flex w-full flex-col">
                             <div className="flex items-center gap-1 pr-2">
-                              <span className="truncate font-medium text-[11px] tracking-tight">
+                              <span className="truncate font-semibold text-[11px] tracking-tight">
                                 {span.task.name}
                               </span>
                             </div>
-                            <div className="mt-0.5 flex items-center gap-1 text-[9px] opacity-70">
-                              <span>{span.durationDays}d</span>
+                            <div className="mt-0.5 flex items-center gap-1.5 text-[9px] opacity-80">
+                              <span className="font-medium">
+                                {span.durationDays}d
+                              </span>
                               {span.list?.status && (
-                                <span className="rounded bg-background/40 px-1 py-px">
+                                <span className="rounded bg-background/50 px-1.5 py-0.5 font-medium uppercase tracking-wide">
                                   {span.list.status}
                                 </span>
                               )}
                             </div>
                             {/* Resize handles */}
                             <div
-                              className="absolute inset-y-0 left-0 w-2 cursor-col-resize rounded-l-md bg-gradient-to-r from-background/40 to-transparent opacity-0 transition-opacity group-hover:opacity-100"
+                              className="absolute inset-y-0 left-0 w-3 cursor-col-resize rounded-l-md bg-gradient-to-r from-background/60 to-transparent opacity-0 transition-all hover:w-4 hover:from-background/80 group-hover:opacity-100"
                               aria-hidden="true"
                               onPointerDown={(e) => {
                                 e.preventDefault();
@@ -656,7 +722,7 @@ export function TimelineBoard({
                               }}
                             />
                             <div
-                              className="absolute inset-y-0 right-0 w-2 cursor-col-resize rounded-r-md bg-gradient-to-l from-background/40 to-transparent opacity-0 transition-opacity group-hover:opacity-100"
+                              className="absolute inset-y-0 right-0 w-3 cursor-col-resize rounded-r-md bg-gradient-to-l from-background/60 to-transparent opacity-0 transition-all hover:w-4 hover:from-background/80 group-hover:opacity-100"
                               aria-hidden="true"
                               onPointerDown={(e) => {
                                 e.preventDefault();
@@ -673,49 +739,44 @@ export function TimelineBoard({
                           </div>
                         </button>
                       </TooltipTrigger>
-                      <TooltipContent className="max-w-xs">
-                        <p className="mb-1 font-medium text-sm">
+                      <TooltipContent className="max-w-sm">
+                        <p className="mb-1 font-semibold text-sm">
                           {span.task.name}
                         </p>
-                        <p className="text-xs opacity-80">
-                          {span.start.toDateString()} –{' '}
-                          {span.end.toDateString()}
-                        </p>
-                        {span.task.description && (
-                          <p className="mt-2 line-clamp-4 text-xs opacity-70">
-                            {span.task.description}
-                          </p>
+                        <div className="mb-2 flex items-center gap-2 text-xs opacity-90">
+                          <span>{dayjs(span.start).format('MMM D, YYYY')}</span>
+                          <span>→</span>
+                          <span>{dayjs(span.end).format('MMM D, YYYY')}</span>
+                        </div>
+                        {span.list && (
+                          <div className="mb-2 flex items-center gap-2 text-xs">
+                            <span className="opacity-70">List:</span>
+                            <span className="font-medium">
+                              {span.list.name}
+                            </span>
+                            {span.list.status && (
+                              <span className="rounded bg-dynamic-foreground/10 px-1.5 py-0.5 text-[10px] uppercase">
+                                {span.list.status}
+                              </span>
+                            )}
+                          </div>
                         )}
+                        {span.task.description &&
+                          getDescriptionText(span.task.description) && (
+                            <p className="mt-2 line-clamp-4 border-border/40 border-t pt-2 text-xs opacity-80">
+                              {getDescriptionText(span.task.description)}
+                            </p>
+                          )}
+                        <p className="mt-2 text-[10px] italic opacity-60">
+                          Click to edit • Drag edges to resize
+                        </p>
                       </TooltipContent>
                     </Tooltip>
                   </TooltipProvider>
                 );
               })}
 
-              {/* Unscheduled bucket */}
-              {unscheduled.length > 0 && (
-                <div className="mt-10 space-y-2">
-                  <div className="mb-1 flex items-center gap-2 pl-2 font-medium text-muted-foreground text-xs">
-                    <span className="h-2 w-2 rounded-full bg-dynamic-amber/70" />{' '}
-                    Unscheduled ({unscheduled.length})
-                  </div>
-                  <div className="flex flex-wrap gap-2 pl-2">
-                    {unscheduled.slice(0, 40).map((t) => (
-                      <div
-                        key={t.id}
-                        className="rounded border bg-background/60 px-2 py-1 text-[11px] shadow-sm hover:bg-background/80"
-                      >
-                        {t.name}
-                      </div>
-                    ))}
-                    {unscheduled.length > 40 && (
-                      <div className="text-[11px] italic opacity-60">
-                        +{unscheduled.length - 40} more…
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
+              {/* Removed unscheduled section - users can manage unscheduled tasks in Board/List views */}
             </div>
           </div>
         </div>
@@ -748,8 +809,8 @@ export function TimelineBoard({
               endStr = tmp;
             }
 
-            const startISO = startStr ? new Date(startStr).toISOString() : null;
-            const endISO = endStr ? new Date(endStr).toISOString() : null;
+            const startISO = startStr ? dayjs(startStr).toISOString() : null;
+            const endISO = endStr ? dayjs(endStr).toISOString() : null;
 
             const supabase = createClient();
             await supabase

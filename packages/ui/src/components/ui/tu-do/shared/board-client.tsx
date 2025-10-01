@@ -11,6 +11,7 @@ import {
   getTaskBoard,
   getTaskLists,
   getTasks,
+  useWorkspaceLabels,
 } from '@tuturuuu/utils/task-helper';
 import { useEffect, useMemo, useState } from 'react';
 import { BoardViews } from './board-views';
@@ -52,12 +53,9 @@ export function BoardClient({
     queryKey: ['tasks', boardId],
     queryFn: async () => {
       const supabase = createClient();
-      return getTasks(supabase, boardId);
+      return await getTasks(supabase, boardId);
     },
     initialData: initialTasks,
-    staleTime: 5 * 60 * 1000, // Increased to 5 minutes to match other queries
-    refetchOnWindowFocus: false, // Disable to prevent hydration issues
-    refetchOnMount: false, // Disable initial refetch on mount
     enabled: mounted, // Only enable after hydration
   });
 
@@ -72,6 +70,9 @@ export function BoardClient({
     refetchOnMount: false, // Disable initial refetch on mount
     enabled: mounted, // Only enable after hydration
   });
+
+  // Fetch workspace labels once at the board level
+  const { data: workspaceLabels = [] } = useWorkspaceLabels(board?.ws_id);
 
   const taskIds = useMemo(() => tasks.map((task) => task.id), [tasks]);
   const listIds = useMemo(() => lists.map((list) => list.id), [lists]);
@@ -102,6 +103,7 @@ export function BoardClient({
       board={board}
       tasks={tasks}
       lists={lists}
+      workspaceLabels={workspaceLabels}
     />
   );
 }
