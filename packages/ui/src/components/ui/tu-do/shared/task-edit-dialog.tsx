@@ -1169,7 +1169,7 @@ function TaskEditDialogComponent({
     }
     if (c.length !== 6) return null;
     if (!/^[0-9a-fA-F]{6}$/.test(c)) return null;
-    return '#' + c.toLowerCase();
+    return `#${c.toLowerCase()}`;
   };
 
   const hexToRgb = (hex: string) => {
@@ -1236,7 +1236,7 @@ function TaskEditDialogComponent({
     const r = Math.round(hue2rgb(p, q, h + 1 / 3) * 255);
     const g = Math.round(hue2rgb(p, q, h) * 255);
     const b = Math.round(hue2rgb(p, q, h - 1 / 3) * 255);
-    return '#' + [r, g, b].map((v) => v.toString(16).padStart(2, '0')).join('');
+    return `#${[r, g, b].map((v) => v.toString(16).padStart(2, '0')).join('')}`;
   };
 
   const computeAccessibleLabelStyles = (raw: string) => {
@@ -1267,8 +1267,8 @@ function TaskEditDialogComponent({
     const rgb = hexToRgb(baseHex);
     if (!rgb) return null;
     const lum = luminance(rgb);
-    const bg = baseHex + '1a'; // 10% opacity
-    const border = baseHex + '4d'; // 30% opacity
+    const bg = `${baseHex}1a`; // 10% opacity
+    const border = `${baseHex}4d`; // 30% opacity
     let text = baseHex;
     if (lum < 0.22) {
       text = adjust(baseHex, 1.25);
