@@ -42,7 +42,14 @@ The platform is a cohesive suite of applications and AI services that behave lik
 -   `apps/docs`: The documentation website, built with Mintlify.
 -   `apps/rewise`: An AI-powered chatbot for everyday tasks.
 -   `apps/nova`: A prompt engineering platform to learn, practice, and innovate with AI.
+-   `apps/calendar`: Smart calendar with Google Calendar sync and AI-powered scheduling.
+-   `apps/finance`: Finance management and wallet tracking.
+-   `apps/tudo`: Hierarchical task management with bucket dump feature.
+-   `apps/tumeet`: Meeting management with AI transcription and summaries.
+-   `apps/shortener`: URL shortener service with analytics.
 -   `packages/`: Shared packages for UI components, AI schemas, Supabase clients, types, and more.
+
+See the [Platform Architecture](https://docs.tuturuuu.com/platform) documentation for detailed information.
 
 ## Prerequisites
 
@@ -85,6 +92,29 @@ The platform is a cohesive suite of applications and AI services that behave lik
 -   `bun sb:stop`: Stop the local Supabase instance.
 -   `bun devx`: Start the full stack with a persisted database.
 -   `bun devrs`: Start the full stack with a clean, seeded database.
+
+For a complete list of commands and workflows, see the [Development Guide](https://docs.tuturuuu.com/build/development-tools/development).
+
+## Documentation
+
+Comprehensive documentation is available at **[docs.tuturuuu.com](https://docs.tuturuuu.com)**:
+
+### For Developers
+-   **[Platform Architecture](https://docs.tuturuuu.com/platform/architecture/routing)** - System design, tRPC, authentication, and authorization
+-   **[Database Reference](https://docs.tuturuuu.com/reference/database/schema-overview)** - Complete schema and RLS policies
+-   **[Package Reference](https://docs.tuturuuu.com/reference/packages/supabase)** - API documentation for shared packages
+-   **[Development Tools](https://docs.tuturuuu.com/build/development-tools)** - Monorepo setup, Supabase workflows, and testing
+
+### For AI Agents
+-   **[Agent Operating Manual](https://docs.tuturuuu.com/overview/agent-operating-manual)** - Guidelines for AI assistants working in this codebase
+-   **[CLAUDE.md](./CLAUDE.md)** - Detailed operational instructions and guardrails
+
+### Key Documentation
+-   **Database**: 377 migrations covering tasks, AI, calendar, finance, meetings, education, and more
+-   **Authentication**: Email/password, OAuth, MFA, and cross-app token authentication
+-   **Authorization**: RBAC with 30+ granular workspace permissions
+-   **Background Jobs**: Trigger.dev jobs for calendar sync and task scheduling
+-   **Type Safety**: Generated TypeScript types from Supabase schema
 
 ## Contribution Guidelines
 
