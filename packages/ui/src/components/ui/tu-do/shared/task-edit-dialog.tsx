@@ -1529,12 +1529,16 @@ function TaskEditDialogComponent({
                     <DropdownMenuTrigger asChild>
                       <Button
                         variant="outline"
-                        className="h-8 w-full justify-between text-xs transition-all hover:border-dynamic-orange/50 hover:bg-dynamic-orange/5 md:text-sm"
+                        className={cn(
+                          'h-8 w-full justify-between text-xs transition-all hover:border-dynamic-orange/50 hover:bg-dynamic-orange/5 md:text-sm',
+                          priority === 'critical' &&
+                            'border-dynamic-red bg-dynamic-red/10 font-semibold text-dynamic-red hover:bg-dynamic-red/20'
+                        )}
                       >
                         <span className="truncate">
                           {priority
                             ? priority === 'critical'
-                              ? 'Urgent'
+                              ? '🔥 Urgent'
                               : priority === 'high'
                                 ? 'High'
                                 : priority === 'normal'
@@ -1549,25 +1553,39 @@ function TaskEditDialogComponent({
                       {[
                         {
                           value: 'critical',
-                          label: 'Urgent',
+                          label: '🔥 Urgent',
                           dot: 'bg-dynamic-red',
+                          className: 'font-semibold text-dynamic-red',
                         },
                         {
                           value: 'high',
                           label: 'High',
                           dot: 'bg-dynamic-orange',
+                          className: '',
                         },
                         {
                           value: 'normal',
                           label: 'Medium',
                           dot: 'bg-dynamic-yellow',
+                          className: '',
                         },
-                        { value: 'low', label: 'Low', dot: 'bg-dynamic-blue' },
+                        {
+                          value: 'low',
+                          label: 'Low',
+                          dot: 'bg-dynamic-blue',
+                          className: '',
+                        },
                       ].map((opt) => (
                         <DropdownMenuItem
                           key={opt.value}
                           onClick={() => setPriority(opt.value as TaskPriority)}
-                          className="cursor-pointer"
+                          className={cn(
+                            'cursor-pointer',
+                            opt.className,
+                            priority === opt.value &&
+                              opt.value === 'critical' &&
+                              'bg-dynamic-red/10'
+                          )}
                         >
                           <span
                             className={cn(

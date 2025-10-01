@@ -55,9 +55,9 @@ import {
   Timer,
   Trash2,
   Turtle,
+  unicornHead,
   UserMinus,
   UserStar,
-  unicornHead,
   X,
 } from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
@@ -817,7 +817,7 @@ function TaskCardInner({
     if (!task.priority) return '';
     switch (task.priority) {
       case 'critical':
-        return 'border-dynamic-red/70';
+        return 'border-dynamic-red shadow-sm shadow-dynamic-red/20';
       case 'high':
         return 'border-dynamic-orange/70';
       case 'normal':
@@ -832,7 +832,8 @@ function TaskCardInner({
   const getPriorityIndicator = () => {
     if (!task.priority) return null;
     const colors = {
-      critical: 'bg-dynamic-red/10 border-dynamic-red/30 text-dynamic-red',
+      critical:
+        'bg-dynamic-red/20 border-dynamic-red/50 text-dynamic-red shadow-sm shadow-dynamic-red/50',
       high: 'bg-dynamic-orange/10 border-dynamic-orange/30 text-dynamic-orange',
       normal:
         'bg-dynamic-yellow/10 border-dynamic-yellow/30 text-dynamic-yellow',
@@ -851,7 +852,8 @@ function TaskCardInner({
         variant="secondary"
         className={cn(
           'p-1 text-xs',
-          colors[task.priority as keyof typeof colors]
+          colors[task.priority as keyof typeof colors],
+          task.priority === 'critical' && 'animate-pulse font-semibold'
         )}
       >
         {labels[task.priority as keyof typeof labels]}
@@ -2050,8 +2052,20 @@ function LightweightTaskCardInner({
             </span>
           )}
           {task.priority && (
-            <span className="inline-flex items-center gap-1 rounded-md bg-dynamic-surface/70 px-2 py-1 font-medium text-foreground/80">
-              <Flag className="h-3 w-3" />
+            <span
+              className={cn(
+                'inline-flex items-center gap-1 rounded-md px-2 py-1 font-medium',
+                task.priority === 'critical'
+                  ? 'animate-pulse bg-dynamic-red text-white shadow-dynamic-red/50 shadow-sm'
+                  : 'bg-dynamic-surface/70 text-foreground/80'
+              )}
+            >
+              <Flag
+                className={cn(
+                  'h-3 w-3',
+                  task.priority === 'critical' ? 'h-3.5 w-3.5' : ''
+                )}
+              />
               {priorityLabels[task.priority]}
             </span>
           )}

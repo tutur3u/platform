@@ -134,7 +134,7 @@ interface Member {
 
 // Priority labels constant - defined once outside component for performance
 const priorityLabels = {
-  critical: 'Urgent',
+  critical: '🔥 Urgent',
   high: 'High',
   normal: 'Medium',
   low: 'Low',
@@ -143,12 +143,11 @@ const priorityLabels = {
 
 const priorityColors = {
   critical:
-    'border-pink-600 bg-pink-50 text-pink-700 dark:bg-pink-950 dark:text-pink-300',
-  high: 'border-red-500 bg-red-50 text-red-700 dark:bg-red-950 dark:text-red-300',
-  normal:
-    'border-yellow-500 bg-yellow-50 text-yellow-700 dark:bg-yellow-950 dark:text-yellow-300',
-  low: 'border-green-500 bg-green-50 text-green-700 dark:bg-green-950 dark:text-green-300',
-  null: 'border-gray-300 bg-gray-50 text-gray-700 dark:bg-gray-800 dark:text-gray-300',
+    'border-dynamic-red bg-dynamic-red text-white shadow-sm shadow-dynamic-red/30 font-semibold',
+  high: 'border-dynamic-orange/30 bg-dynamic-orange/10 text-dynamic-orange',
+  normal: 'border-dynamic-yellow/30 bg-dynamic-yellow/10 text-dynamic-yellow',
+  low: 'border-dynamic-blue/30 bg-dynamic-blue/10 text-dynamic-blue',
+  null: 'border-dynamic-gray/30 bg-dynamic-gray/10 text-foreground/70',
 };
 
 const SKELETON_KEYS: string[] = ['a', 'b', 'c', 'd', 'e'];
@@ -1547,7 +1546,7 @@ export function ListView({
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="keep">Keep current</SelectItem>
-                  <SelectItem value="critical">Urgent</SelectItem>
+                  <SelectItem value="critical">🔥 Urgent</SelectItem>
                   <SelectItem value="high">High</SelectItem>
                   <SelectItem value="normal">Medium</SelectItem>
                   <SelectItem value="low">Low</SelectItem>
