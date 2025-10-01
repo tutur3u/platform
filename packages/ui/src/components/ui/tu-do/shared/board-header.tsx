@@ -57,7 +57,9 @@ interface TaskLabel {
 }
 
 interface Props {
-  board: TaskBoard & { tasks: Task[]; lists: TaskList[] };
+  board: TaskBoard;
+  tasks: Task[];
+  lists: TaskList[];
   currentView: ViewType;
   onViewChange: (view: ViewType) => void;
   selectedLabels: TaskLabel[];
@@ -66,6 +68,8 @@ interface Props {
 
 export function BoardHeader({
   board,
+  tasks,
+  lists,
   currentView,
   onViewChange,
   selectedLabels,
@@ -79,18 +83,18 @@ export function BoardHeader({
 
   // Calculate board statistics
   const stats = useMemo(() => {
-    const totalTasks = board.tasks.length;
-    const totalLists = board.lists.length;
-    const completedTasks = board.tasks.filter((task) => {
-      const taskList = board.lists.find((list) => list.id === task.list_id);
+    const totalTasks = tasks.length;
+    const totalLists = lists.length;
+    const completedTasks = tasks.filter((task) => {
+      const taskList = lists.find((list) => list.id === task.list_id);
       return (
         task.archived ||
         taskList?.status === 'done' ||
         taskList?.status === 'closed'
       );
     }).length;
-    const activeTasks = board.tasks.filter((task) => {
-      const taskList = board.lists.find((list) => list.id === task.list_id);
+    const activeTasks = tasks.filter((task) => {
+      const taskList = lists.find((list) => list.id === task.list_id);
       return !task.archived && taskList?.status === 'active';
     }).length;
     const completionRate =
@@ -103,7 +107,7 @@ export function BoardHeader({
       activeTasks,
       completionRate,
     };
-  }, [board.tasks, board.lists]);
+  }, [tasks, lists]);
 
   async function handleEdit() {
     if (!editedName.trim() || editedName === board.name) {

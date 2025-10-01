@@ -237,7 +237,10 @@ export function ListView({
       let hasUpdates = false;
 
       if (bulkEditData.priority !== 'keep') {
-        updateData.priority = bulkEditData.priority as TaskPriority | null;
+        updateData.priority =
+          bulkEditData.priority !== 'none'
+            ? (bulkEditData.priority as TaskPriority)
+            : null;
         hasUpdates = true;
       }
 
@@ -247,12 +250,12 @@ export function ListView({
       }
 
       if (hasUpdates) {
+        console.log('🔄 Updating tasks:', updateData);
         // Use normal Supabase update query instead of RPC
         const { error } = await supabase
           .from('tasks')
           .update(updateData)
           .in('id', taskIds);
-
         if (error) throw error;
       }
 
@@ -318,66 +321,6 @@ export function ListView({
   useEffect(() => {
     setLocalTasks(tasks);
   }, [tasks]);
-
-  useEffect(() => {
-    let mounted = true;
-    const supabase = createClient();
-
-    // Initial data fetch
-    async function loadData() {
-      try {
-        setIsLoading(true);
-        const tasks = await getTasks(supabase, boardId);
-        if (mounted) setLocalTasks(tasks);
-      } catch (error) {
-        console.error('Failed to load tasks:', error);
-      } finally {
-        if (mounted) setIsLoading(false);
-      }
-    }
-
-    // Set up real-time subscriptions
-    const tasksSubscription = supabase
-      .channel('tasks-channel')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'tasks',
-        },
-        async () => {
-          const tasks = await getTasks(supabase, boardId);
-          if (mounted) {
-            setLocalTasks(tasks);
-            queryClient.invalidateQueries({ queryKey: ['tasks', boardId] });
-          }
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'task_assignees',
-        },
-        async () => {
-          const tasks = await getTasks(supabase, boardId);
-          if (mounted) {
-            setLocalTasks(tasks);
-            queryClient.invalidateQueries({ queryKey: ['tasks', boardId] });
-          }
-        }
-      )
-      .subscribe();
-
-    loadData();
-
-    return () => {
-      mounted = false;
-      tasksSubscription.unsubscribe();
-    };
-  }, [boardId, queryClient]);
 
   // Get unique values for filters
   const filterOptions = useMemo(() => {
@@ -1604,11 +1547,11 @@ export function ListView({
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="keep">Keep current</SelectItem>
-                  <SelectItem value="0">No Priority</SelectItem>
-                  <SelectItem value="1">Urgent</SelectItem>
-                  <SelectItem value="2">High</SelectItem>
-                  <SelectItem value="3">Medium</SelectItem>
-                  <SelectItem value="4">Low</SelectItem>
+                  <SelectItem value="critical">Urgent</SelectItem>
+                  <SelectItem value="high">High</SelectItem>
+                  <SelectItem value="normal">Medium</SelectItem>
+                  <SelectItem value="low">Low</SelectItem>
+                  <SelectItem value="none">None</SelectItem>
                 </SelectContent>
               </Select>
             </div>

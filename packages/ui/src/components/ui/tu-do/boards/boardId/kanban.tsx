@@ -44,7 +44,6 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
-import { useBoardRealtime } from '@tuturuuu/ui/hooks/useBoardRealtime';
 import { useHorizontalScroll } from '@tuturuuu/ui/hooks/useHorizontalScroll';
 import { toast } from '@tuturuuu/ui/sonner';
 import { coordinateGetter } from '@tuturuuu/utils/keyboard-preset';
@@ -130,27 +129,26 @@ export function KanbanBoard({
   const dragStartCardLeft = useRef<number | null>(null);
   const overlayWidth = 350; // Column width
 
-  useBoardRealtime(boardId, {
-    onTaskChange: (task, eventType) => {
-      // Handle task selection cleanup on delete
-      if (eventType === 'DELETE') {
-        setSelectedTasks((prev) => {
-          const newSet = new Set(prev);
-          newSet.delete(task.id);
-          return newSet;
-        });
-      }
-    },
-    onListChange: (list, eventType) => {
-      console.log(`🔄 Task list ${eventType}:`, list);
-    },
-  });
-
   const handleUpdate = useCallback(() => {
     // Invalidate the tasks query to trigger a refetch
     queryClient.invalidateQueries({ queryKey: ['tasks', boardId] });
     queryClient.invalidateQueries({ queryKey: ['task_lists', boardId] });
   }, [queryClient, boardId]);
+
+  // Clean up selectedTasks when tasks are deleted
+  useEffect(() => {
+    if (tasks) {
+      const currentTaskIds = new Set(tasks.map((task) => task.id));
+      setSelectedTasks((prev) => {
+        const validSelectedTasks = new Set(
+          [...prev].filter((taskId) => currentTaskIds.has(taskId))
+        );
+        return validSelectedTasks.size !== prev.size
+          ? validSelectedTasks
+          : prev;
+      });
+    }
+  }, [tasks]);
 
   // Multi-select handlers
   const handleTaskSelect = useCallback(
