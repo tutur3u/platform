@@ -67,15 +67,15 @@
     "@types/js-cookie": "^3.0.6",
     "@types/lodash": "^4.17.20",
     "@types/negotiator": "^0.6.4",
-    "@types/node": "^24.6.0",
-    "@types/react": "^19.1.15",
+    "@types/node": "^24.6.1",
+    "@types/react": "^19.1.16",
     "@types/react-dom": "^19.1.9",
     "@types/uuid": "^11.0.0",
     "@vitejs/plugin-react": "^5.0.4",
     "autoprefixer": "^10.4.21",
     "jsdom": "^27.0.0",
     "postcss": "^8.5.6",
-    "typescript": "^5.9.2",
+    "typescript": "^5.9.3",
     "vitest": "^3.2.4"
   },
   "packageManager": "bun@1.2.23"
