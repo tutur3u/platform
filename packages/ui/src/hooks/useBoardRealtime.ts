@@ -2,7 +2,23 @@ import { useQueryClient } from '@tanstack/react-query';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
-import { useEffect } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
+
+// Custom hook to create stable array references
+function useStableArray<T>(array: T[]): T[] {
+  const ref = useRef<T[]>(array);
+  const prevArrayRef = useRef<T[]>(array);
+
+  if (
+    array.length !== prevArrayRef.current.length ||
+    array.some((item, index) => item !== prevArrayRef.current[index])
+  ) {
+    ref.current = array;
+    prevArrayRef.current = array;
+  }
+
+  return ref.current;
+}
 
 export function useBoardRealtime(
   boardId: string,
@@ -20,6 +36,35 @@ export function useBoardRealtime(
   }
 ) {
   const queryClient = useQueryClient();
+
+  // Create stable array references to prevent unnecessary re-subscriptions
+  const stableTaskIds = useStableArray(taskIds);
+  const stableListIds = useStableArray(listIds);
+
+  // Memoize callbacks to prevent unnecessary re-subscriptions
+  const onTaskChangeRef = useRef(options?.onTaskChange);
+  const onListChangeRef = useRef(options?.onListChange);
+
+  // Update refs when callbacks change
+  useEffect(() => {
+    onTaskChangeRef.current = options?.onTaskChange;
+    onListChangeRef.current = options?.onListChange;
+  }, [options?.onTaskChange, options?.onListChange]);
+
+  // Create stable callback functions
+  const handleTaskChange = useCallback(
+    (task: Task, eventType: 'INSERT' | 'UPDATE' | 'DELETE') => {
+      onTaskChangeRef.current?.(task, eventType);
+    },
+    []
+  );
+
+  const handleListChange = useCallback(
+    (list: TaskList, eventType: 'INSERT' | 'UPDATE' | 'DELETE') => {
+      onListChangeRef.current?.(list, eventType);
+    },
+    []
+  );
 
   useEffect(() => {
     if (!boardId) return;
@@ -42,8 +87,8 @@ export function useBoardRealtime(
 
         const { eventType, old: oldRecord, new: newRecord } = payload;
 
-        if (options?.onListChange && (oldRecord || newRecord)) {
-          options.onListChange((oldRecord || newRecord) as TaskList, eventType);
+        if (oldRecord || newRecord) {
+          handleListChange((oldRecord || newRecord) as TaskList, eventType);
         }
 
         queryClient.invalidateQueries({
@@ -53,14 +98,14 @@ export function useBoardRealtime(
       }
     );
 
-    if (listIds.length > 0) {
+    if (stableListIds.length > 0) {
       channel.on(
         'postgres_changes',
         {
           event: '*',
           schema: 'public',
           table: 'tasks',
-          filter: `list_id=in.(${listIds.join(',')})`,
+          filter: `list_id=in.(${stableListIds.join(',')})`,
         },
         async (payload) => {
           if (!mounted) return;
@@ -68,8 +113,8 @@ export function useBoardRealtime(
           const { eventType, old: oldRecord, new: newRecord } = payload;
 
           // Call custom callback if provided
-          if (options?.onTaskChange && (oldRecord || newRecord)) {
-            options.onTaskChange((oldRecord || newRecord) as Task, eventType);
+          if (oldRecord || newRecord) {
+            handleTaskChange((oldRecord || newRecord) as Task, eventType);
           }
 
           // Update React Query cache
@@ -129,7 +174,7 @@ export function useBoardRealtime(
         const newRecord = payload.new as { task_id?: string } | undefined;
         const oldRecord = payload.old as { task_id?: string } | undefined;
         const taskId = newRecord?.task_id || oldRecord?.task_id;
-        if (taskId && taskIds.includes(taskId)) {
+        if (taskId && stableTaskIds.includes(taskId)) {
           queryClient.invalidateQueries({ queryKey: ['tasks', boardId] });
         }
       }
@@ -150,7 +195,7 @@ export function useBoardRealtime(
         const newRecord = payload.new as { task_id?: string } | undefined;
         const oldRecord = payload.old as { task_id?: string } | undefined;
         const taskId = newRecord?.task_id || oldRecord?.task_id;
-        if (taskId && taskIds.includes(taskId)) {
+        if (taskId && stableTaskIds.includes(taskId)) {
           queryClient.invalidateQueries({ queryKey: ['tasks', boardId] });
         }
       }
@@ -181,10 +226,10 @@ export function useBoardRealtime(
     };
   }, [
     boardId,
-    taskIds,
-    listIds,
+    stableTaskIds,
+    stableListIds,
     queryClient,
-    options?.onTaskChange,
-    options?.onListChange,
+    handleTaskChange,
+    handleListChange,
   ]);
 }
