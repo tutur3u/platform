@@ -310,7 +310,7 @@ function TaskEditDialogComponent({
 
         // Deduplicate by user_id to ensure unique keys
         const uniqueMembers = Array.from(
-          new Map(transformedMembers.map(m => [m.user_id, m])).values()
+          new Map(transformedMembers.map((m) => [m.user_id, m])).values()
         );
 
         const sortedMembers = uniqueMembers.sort((a, b) =>
