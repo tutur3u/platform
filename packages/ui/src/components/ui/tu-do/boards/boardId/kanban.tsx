@@ -135,6 +135,24 @@ export function KanbanBoard({
     queryClient.invalidateQueries({ queryKey: ['task_lists', boardId] });
   }, [queryClient, boardId]);
 
+  // Clean up selectedTasks when tasks are deleted
+  useEffect(() => {
+    const currentTasks = queryClient.getQueryData(['tasks', boardId]) as
+      | Task[]
+      | undefined;
+    if (currentTasks) {
+      const currentTaskIds = new Set(currentTasks.map((task) => task.id));
+      setSelectedTasks((prev) => {
+        const validSelectedTasks = new Set(
+          [...prev].filter((taskId) => currentTaskIds.has(taskId))
+        );
+        return validSelectedTasks.size !== prev.size
+          ? validSelectedTasks
+          : prev;
+      });
+    }
+  }, [queryClient, boardId]);
+
   // Multi-select handlers
   const handleTaskSelect = useCallback(
     (taskId: string, event: React.MouseEvent) => {

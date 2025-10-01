@@ -114,51 +114,64 @@ export function useBoardRealtime(
         }
       );
     }
-    if (taskIds.length > 0) {
-      channel
-        .on(
-          'postgres_changes',
-          {
-            event: '*',
-            schema: 'public',
-            table: 'task_assignees',
-            filter: `task_id=in.(${taskIds.join(',')})`,
-          },
-          async (_payload) => {
-            if (!mounted) return;
+    // Listen for changes to task assignees (no filter - catches all tasks including newly created ones)
+    channel.on(
+      'postgres_changes',
+      {
+        event: '*',
+        schema: 'public',
+        table: 'task_assignees',
+      },
+      async (payload) => {
+        if (!mounted) return;
 
-            queryClient.invalidateQueries({ queryKey: ['tasks', boardId] });
-          }
-        )
-        .on(
-          'postgres_changes',
-          {
-            event: '*',
-            schema: 'public',
-            table: 'task_labels',
-            filter: `task_id=in.(${taskIds.join(',')})`,
-          },
-          async (_payload) => {
-            if (!mounted) return;
+        // Only invalidate if the task belongs to one of our lists
+        const newRecord = payload.new as { task_id?: string } | undefined;
+        const oldRecord = payload.old as { task_id?: string } | undefined;
+        const taskId = newRecord?.task_id || oldRecord?.task_id;
+        if (taskId && taskIds.includes(taskId)) {
+          queryClient.invalidateQueries({ queryKey: ['tasks', boardId] });
+        }
+      }
+    );
 
-            queryClient.invalidateQueries({ queryKey: ['tasks', boardId] });
-          }
-        )
-        .on(
-          'postgres_changes',
-          {
-            event: '*',
-            schema: 'public',
-            table: 'workspace_task_labels',
-            filter: `task_id=in.(${taskIds.join(',')})`,
-          },
-          async (_payload) => {
-            if (!mounted) return;
+    // Listen for changes to task labels (no filter - catches all tasks including newly created ones)
+    channel.on(
+      'postgres_changes',
+      {
+        event: '*',
+        schema: 'public',
+        table: 'task_labels',
+      },
+      async (payload) => {
+        if (!mounted) return;
 
-            queryClient.invalidateQueries({ queryKey: ['tasks', boardId] });
-          }
-        );
-    }
+        // Only invalidate if the task belongs to one of our lists
+        const newRecord = payload.new as { task_id?: string } | undefined;
+        const oldRecord = payload.old as { task_id?: string } | undefined;
+        const taskId = newRecord?.task_id || oldRecord?.task_id;
+        if (taskId && taskIds.includes(taskId)) {
+          queryClient.invalidateQueries({ queryKey: ['tasks', boardId] });
+        }
+      }
+    );
+
+    // Listen for changes to workspace labels (affects all tasks in the workspace)
+    // Note: workspace_task_labels has ws_id, not task_id
+    channel.on(
+      'postgres_changes',
+      {
+        event: '*',
+        schema: 'public',
+        table: 'workspace_task_labels',
+      },
+      async (_payload) => {
+        if (!mounted) return;
+
+        // Invalidate all tasks since label definitions changed
+        queryClient.invalidateQueries({ queryKey: ['tasks', boardId] });
+      }
+    );
 
     channel.subscribe();
 
