@@ -10,10 +10,11 @@ import TextAlign from '@tiptap/extension-text-align';
 import Youtube from '@tiptap/extension-youtube';
 import { EditorContent, type JSONContent, useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
-import ImageResize from 'tiptap-extension-resize-image';
 import { toast } from '@tuturuuu/ui/sonner';
 import { debounce } from 'lodash';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import ImageResize from 'tiptap-extension-resize-image';
+import Video from 'tiptap-extension-video';
 import { ToolBar } from './tool-bar';
 
 const hasContent = (node: JSONContent): boolean => {
@@ -185,6 +186,14 @@ export function RichTextEditor({
           class: 'rounded-md my-4',
         },
       }),
+      Video.configure({
+        inline: false,
+        allowBase64: false,
+        HTMLAttributes: {
+          class: 'rounded-md my-4',
+          controls: true,
+        },
+      }),
     ],
     content,
     editable: !readOnly,
@@ -203,53 +212,95 @@ export function RichTextEditor({
         return false;
       },
       handlePaste: (view, event) => {
-        // Handle image paste
+        // Handle image and video paste
         const items = event.clipboardData?.items;
         if (!items || !onImageUploadRef.current || !workspaceIdRef.current)
           return false;
 
         for (let i = 0; i < items.length; i++) {
           const item = items[i];
-          if (item?.type.startsWith('image/')) {
+          if (!item) continue;
+
+          // Debug: Log the MIME type to console
+          console.log('Pasted item type:', item.type);
+
+          const isImage = item.type.startsWith('image/');
+          const isVideo = item.type.startsWith('video/');
+
+          if (isImage || isVideo) {
             event.preventDefault();
             const file = item.getAsFile();
             if (!file) continue;
 
-            // Validate file size (max 5MB)
-            const maxSize = 5 * 1024 * 1024;
+            console.log('Detected file:', {
+              name: file.name,
+              type: file.type,
+              size: file.size,
+              isImage,
+              isVideo,
+            });
+
+            // Validate file size (max 50MB for videos, 5MB for images)
+            const maxSize = isVideo ? 50 * 1024 * 1024 : 5 * 1024 * 1024;
             if (file.size > maxSize) {
-              toast.error('Image size must be less than 5MB');
+              toast.error(
+                isVideo
+                  ? 'Video size must be less than 50MB'
+                  : 'Image size must be less than 5MB'
+              );
               return true;
             }
 
-            // Upload image asynchronously
+            // Upload file asynchronously
             setIsUploadingPastedImage(true);
             onImageUploadRef
               .current(file)
               .then((url) => {
                 const { state } = view;
                 const { from } = state.selection;
-                // ImageResize extension uses 'imageResize' node name
-                const imageNode =
-                  state.schema.nodes.imageResize || state.schema.nodes.image;
-                if (imageNode) {
-                  const transaction = state.tr.insert(
-                    from,
-                    imageNode.create({ src: url })
-                  );
-                  view.dispatch(transaction);
-                  toast.success('Image uploaded successfully');
-                } else {
-                  console.error(
-                    'Available nodes:',
-                    Object.keys(state.schema.nodes)
-                  );
-                  toast.error('Image node not found');
+
+                if (isImage) {
+                  // ImageResize extension uses 'imageResize' node name
+                  const imageNode =
+                    state.schema.nodes.imageResize || state.schema.nodes.image;
+                  if (imageNode) {
+                    const transaction = state.tr.insert(
+                      from,
+                      imageNode.create({ src: url })
+                    );
+                    view.dispatch(transaction);
+                    toast.success('Image uploaded successfully');
+                  } else {
+                    console.error(
+                      'Available nodes:',
+                      Object.keys(state.schema.nodes)
+                    );
+                    toast.error('Image node not found');
+                  }
+                } else if (isVideo) {
+                  // Video node
+                  const videoNode = state.schema.nodes.video;
+                  if (videoNode) {
+                    const transaction = state.tr.insert(
+                      from,
+                      videoNode.create({ src: url })
+                    );
+                    view.dispatch(transaction);
+                    toast.success('Video uploaded successfully');
+                  } else {
+                    console.error(
+                      'Available nodes:',
+                      Object.keys(state.schema.nodes)
+                    );
+                    toast.error('Video node not found');
+                  }
                 }
               })
               .catch((error) => {
-                console.error('Failed to upload pasted image:', error);
-                toast.error('Failed to upload image. Please try again.');
+                console.error('Failed to upload pasted file:', error);
+                toast.error(
+                  `Failed to upload ${isVideo ? 'video' : 'image'}. Please try again.`
+                );
               })
               .finally(() => {
                 setIsUploadingPastedImage(false);
