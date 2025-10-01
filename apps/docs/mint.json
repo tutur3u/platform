@@ -79,10 +79,7 @@
         },
         {
           "group": "Applications",
-          "pages": [
-            "platform/applications/nova",
-            "platform/applications/tudo"
-          ]
+          "pages": ["platform/applications/nova", "platform/applications/tudo"]
         }
       ]
     },
@@ -153,16 +150,11 @@
         },
         {
           "group": "Packages",
-          "pages": [
-            "reference/packages/supabase",
-            "reference/packages/trigger"
-          ]
+          "pages": ["reference/packages/supabase", "reference/packages/trigger"]
         },
         {
           "group": "API Reference",
-          "pages": [
-            "reference/api-reference/endpoint/generate"
-          ]
+          "pages": ["reference/api-reference/endpoint/generate"]
         }
       ]
     }
