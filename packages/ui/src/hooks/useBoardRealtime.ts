@@ -2,23 +2,9 @@ import { useQueryClient } from '@tanstack/react-query';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
-import { useCallback, useEffect, useRef } from 'react';
-
-// Custom hook to create stable array references
-function useStableArray<T>(array: T[]): T[] {
-  const ref = useRef<T[]>(array);
-  const prevArrayRef = useRef<T[]>(array);
-
-  if (
-    array.length !== prevArrayRef.current.length ||
-    array.some((item, index) => item !== prevArrayRef.current[index])
-  ) {
-    ref.current = array;
-    prevArrayRef.current = array;
-  }
-
-  return ref.current;
-}
+import { useEffect } from 'react';
+import { useCallbackRef } from './use-callback-ref';
+import { useStableArray } from './use-stable-array';
 
 export function useBoardRealtime(
   boardId: string,
@@ -37,33 +23,20 @@ export function useBoardRealtime(
 ) {
   const queryClient = useQueryClient();
 
-  // Create stable array references to prevent unnecessary re-subscriptions
   const stableTaskIds = useStableArray(taskIds);
   const stableListIds = useStableArray(listIds);
 
-  // Memoize callbacks to prevent unnecessary re-subscriptions
-  const onTaskChangeRef = useRef(options?.onTaskChange);
-  const onListChangeRef = useRef(options?.onListChange);
-
-  // Update refs when callbacks change
-  useEffect(() => {
-    onTaskChangeRef.current = options?.onTaskChange;
-    onListChangeRef.current = options?.onListChange;
-  }, [options?.onTaskChange, options?.onListChange]);
-
   // Create stable callback functions
-  const handleTaskChange = useCallback(
+  const handleTaskChange = useCallbackRef(
     (task: Task, eventType: 'INSERT' | 'UPDATE' | 'DELETE') => {
-      onTaskChangeRef.current?.(task, eventType);
-    },
-    []
+      options?.onTaskChange?.(task, eventType);
+    }
   );
 
-  const handleListChange = useCallback(
+  const handleListChange = useCallbackRef(
     (list: TaskList, eventType: 'INSERT' | 'UPDATE' | 'DELETE') => {
-      onListChangeRef.current?.(list, eventType);
-    },
-    []
+      options?.onListChange?.(list, eventType);
+    }
   );
 
   useEffect(() => {
@@ -210,11 +183,24 @@ export function useBoardRealtime(
         schema: 'public',
         table: 'workspace_task_labels',
       },
-      async (_payload) => {
+      async (payload) => {
         if (!mounted) return;
 
-        // Invalidate all tasks since label definitions changed
-        queryClient.invalidateQueries({ queryKey: ['tasks', boardId] });
+        const newRecord = payload.new as { id?: string } | undefined;
+        const oldRecord = payload.old as { id?: string } | undefined;
+        const labelId = newRecord?.id || oldRecord?.id;
+
+        if (!labelId) return;
+
+        const { data: inferredTask } = await supabase
+          .from('task_labels')
+          .select('task_id')
+          .eq('label_id', labelId)
+          .single();
+
+        if (inferredTask && stableTaskIds.includes(inferredTask.task_id)) {
+          queryClient.invalidateQueries({ queryKey: ['tasks', boardId] });
+        }
       }
     );
 
