@@ -270,18 +270,33 @@ const StackedSessionItem = ({
     : stackedSession?.sessions.slice(0, INITIAL_SESSION_LIMIT);
 
   return (
-    <div className="group rounded-lg border transition-all hover:bg-accent/50 hover:shadow-sm">
-      <div className="p-4">
-        <div className="flex items-start justify-between gap-4">
-          <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-2">
-              <h4 className="truncate font-semibold text-base">
+    <div className="group rounded-xl border border-border/60 bg-gradient-to-br from-background to-muted/5 shadow-sm transition-all hover:border-border hover:shadow-md">
+      <div className="p-3 md:p-5">
+        {/* Mobile-optimized layout */}
+        <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between md:gap-4">
+          <div className="min-w-0 flex-1 space-y-2 md:space-y-2.5">
+            {/* Title row with duration on mobile */}
+            <div className="flex items-start justify-between gap-2">
+              <h4 className="min-w-0 flex-1 break-words font-semibold text-base leading-tight md:text-lg">
                 {stackedSession?.title}
               </h4>
+              {/* Duration badge - visible on mobile */}
+              <div className="shrink-0 rounded-lg bg-dynamic-orange/10 px-2.5 py-1 ring-1 ring-dynamic-orange/20 md:hidden">
+                <div className="font-bold font-mono text-dynamic-orange text-sm">
+                  {formatDuration(stackedSession?.totalDuration)}
+                </div>
+              </div>
+            </div>
+
+            {/* Badges row */}
+            <div className="flex flex-wrap items-center gap-1.5 md:gap-2">
               {stackedSession?.sessions.length > 1 && (
-                <Badge variant="secondary" className="font-medium text-xs">
+                <Badge
+                  variant="secondary"
+                  className="shrink-0 font-medium text-xs shadow-sm"
+                >
                   <Layers className="mr-1 h-3 w-3" />
-                  {stackedSession?.sessions.length} sessions
+                  {stackedSession?.sessions.length}
                 </Badge>
               )}
               {/* Show manual entry badge if any session in the stack is a manual entry */}
@@ -310,22 +325,24 @@ const StackedSessionItem = ({
                     className="border-dynamic-orange/20 bg-dynamic-orange/10 font-medium text-dynamic-orange text-xs"
                   >
                     <Edit className="mr-1 h-3 w-3" />
-                    Manual Entry
+                    Manual
                   </Badge>
                 )}
             </div>
 
+            {/* Description */}
             {stackedSession?.description && (
-              <p className="mt-1 line-clamp-2 text-muted-foreground text-sm">
+              <p className="line-clamp-2 text-muted-foreground text-sm leading-relaxed">
                 {stackedSession?.description}
               </p>
             )}
 
-            <div className="mt-3 flex flex-wrap items-center gap-2">
+            {/* Category and Task */}
+            <div className="flex flex-wrap items-center gap-1.5 md:gap-2">
               {stackedSession?.category && (
                 <Badge
                   className={cn(
-                    'font-medium text-white text-xs',
+                    'shrink-0 font-medium text-white text-xs shadow-sm',
                     getCategoryColor(stackedSession?.category.color || 'BLUE')
                   )}
                 >
@@ -333,15 +350,15 @@ const StackedSessionItem = ({
                 </Badge>
               )}
               {stackedSession?.task && (
-                <div className="flex items-center gap-1.5 rounded-md border border-dynamic-blue/20 bg-gradient-to-r from-dynamic-blue/10 to-dynamic-blue/5 px-2 py-1">
-                  <CheckCircle className="h-3 w-3 text-dynamic-blue" />
-                  <span className="font-medium text-dynamic-blue text-xs">
+                <div className="flex min-w-0 items-center gap-1.5 rounded-md border border-dynamic-blue/20 bg-gradient-to-r from-dynamic-blue/10 to-dynamic-blue/5 px-2 py-1">
+                  <CheckCircle className="h-3 w-3 shrink-0 text-dynamic-blue" />
+                  <span className="truncate font-medium text-dynamic-blue text-xs">
                     {stackedSession?.task.name}
                   </span>
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="ml-1 h-3 w-3 p-0 text-dynamic-blue/60 hover:text-dynamic-blue"
+                    className="ml-auto h-3 w-3 shrink-0 p-0 text-dynamic-blue/60 hover:text-dynamic-blue"
                   >
                     <ExternalLink className="h-2.5 w-2.5" />
                   </Button>
@@ -385,6 +402,41 @@ const StackedSessionItem = ({
                 </span>
               </div>
             </div>
+
+            {/* Time display - responsive */}
+            <div className="flex flex-wrap items-center gap-1.5 text-muted-foreground text-xs">
+              <Clock className="h-3 w-3 shrink-0" />
+              <span className="break-all">
+                {stackedSession?.sessions.length > 1 ? (
+                  <>
+                    {firstStartTime.format('MMM D')}
+                    {lastEndTime &&
+                      !firstStartTime.isSame(lastEndTime, 'day') && (
+                        <span> - {lastEndTime.format('MMM D')}</span>
+                      )}
+                  </>
+                ) : (
+                  <>
+                    {firstStartTime.format('MMM D')} •{' '}
+                    {firstStartTime.format('h:mm A')}
+                    {lastEndTime && (
+                      <span> - {lastEndTime.format('h:mm A')}</span>
+                    )}
+                  </>
+                )}
+                {stackedSession?.sessions.some((s) => s.is_running) && (
+                  <Badge
+                    variant="secondary"
+                    className="ml-1 inline-flex text-xs"
+                  >
+                    <div className="mr-1 h-2 w-2 animate-pulse rounded-full bg-green-500" />
+                    Active
+                  </Badge>
+                )}
+              </span>
+            </div>
+
+            {/* Task location */}
             {stackedSession?.task &&
               (() => {
                 const taskWithDetails = tasks?.find(
@@ -392,72 +444,30 @@ const StackedSessionItem = ({
                 );
                 return taskWithDetails?.board_name &&
                   taskWithDetails?.list_name ? (
-                  <div className="mt-2 flex items-center gap-2 text-muted-foreground text-xs">
-                    <div className="flex items-center gap-1">
-                      <MapPin className="h-3 w-3" />
-                      <span>{taskWithDetails.board_name}</span>
-                    </div>
-                    <span>•</span>
-                    <div className="flex items-center gap-1">
-                      <Tag className="h-3 w-3" />
-                      <span>{taskWithDetails.list_name}</span>
-                    </div>
+                  <div className="flex flex-wrap items-center gap-1.5 text-muted-foreground text-xs">
+                    <MapPin className="h-3 w-3 shrink-0" />
+                    <span className="break-all">
+                      {taskWithDetails.board_name} • {taskWithDetails.list_name}
+                    </span>
                   </div>
                 ) : null;
               })()}
           </div>
 
-          <div className="flex items-start gap-3">
-            <div className="text-right">
-              <p className="font-bold text-primary text-xl">
+          {/* Duration and Actions - desktop only */}
+          <div className="hidden items-start gap-2 md:flex">
+            <div className="shrink-0 rounded-lg bg-dynamic-orange/10 px-3 py-2 text-right ring-1 ring-dynamic-orange/20">
+              <div className="font-bold font-mono text-dynamic-orange text-lg">
                 {formatDuration(stackedSession?.totalDuration)}
-              </p>
-              {stackedSession?.sessions.length > 1 && (
-                <p className="font-medium text-muted-foreground text-xs">
-                  Total time • {stackedSession?.sessions.length} sessions
-                  <span className="ml-1">
-                    across{' '}
-                    {
-                      new Set(
-                        stackedSession?.sessions.map((s) =>
-                          dayjs
-                            .utc(s.start_time)
-                            .tz(userTimezone)
-                            .format('MMM D')
-                        )
-                      ).size
-                    }{' '}
-                    {new Set(
-                      stackedSession?.sessions.map((s) =>
-                        dayjs.utc(s.start_time).tz(userTimezone).format('MMM D')
-                      )
-                    ).size === 1
-                      ? 'day'
-                      : 'days'}
-                  </span>
-                </p>
-              )}
-              {lastEndTime && stackedSession?.sessions.length <= 1 && (
-                <p className="text-muted-foreground text-xs">
-                  Ended at {lastEndTime.format('h:mm A')}
-                </p>
-              )}
-              {stackedSession?.sessions.some((s) => s.is_running) && (
-                <div className="mt-1">
-                  <Badge variant="secondary" className="text-xs">
-                    <div className="mr-1 h-2 w-2 animate-pulse rounded-full bg-green-500" />
-                    Active session
-                  </Badge>
-                </div>
-              )}
+              </div>
             </div>
 
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-1.5">
               {stackedSession?.sessions.length > 1 && (
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="h-8 w-8 p-0 transition-all hover:bg-muted"
+                  className="h-9 w-9 p-0 transition-all hover:bg-muted md:h-10 md:w-10"
                   onClick={() => setIsExpanded(!isExpanded)}
                   title={
                     isExpanded
@@ -466,9 +476,9 @@ const StackedSessionItem = ({
                   }
                 >
                   {isExpanded ? (
-                    <ChevronUp className="h-4 w-4" />
+                    <ChevronUp className="h-4 w-4 md:h-5 md:w-5" />
                   ) : (
-                    <ChevronDown className="h-4 w-4" />
+                    <ChevronDown className="h-4 w-4 md:h-5 md:w-5" />
                   )}
                 </Button>
               )}
@@ -478,9 +488,10 @@ const StackedSessionItem = ({
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="h-8 w-8 p-0 opacity-0 transition-opacity group-hover:opacity-100"
+                    className="h-9 w-9 p-0 opacity-100 transition-opacity md:h-10 md:w-10 md:opacity-0 md:group-hover:opacity-100"
+                    title="More options"
                   >
-                    <MoreHorizontal className="h-4 w-4" />
+                    <MoreHorizontal className="h-4 w-4 md:h-5 md:w-5" />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
@@ -489,25 +500,25 @@ const StackedSessionItem = ({
                     disabled={actionStates[`resume-${latestSession.id}`]}
                   >
                     {actionStates[`resume-${latestSession.id}`] ? (
-                      <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                      <RefreshCw className="h-4 w-4 animate-spin" />
                     ) : (
-                      <RotateCcw className="mr-2 h-4 w-4" />
+                      <RotateCcw className="h-4 w-4" />
                     )}
                     Start New Session
                   </DropdownMenuItem>
                   {stackedSession?.sessions.length <= 1 && (
                     <>
                       <DropdownMenuItem onClick={() => onEdit(latestSession)}>
-                        <Edit className="mr-2 h-4 w-4" />
+                        <Edit className="h-4 w-4" />
                         Edit Session
                       </DropdownMenuItem>
                       <DropdownMenuItem onClick={() => onMove(latestSession)}>
-                        <Move className="mr-2 h-4 w-4" />
+                        <Move className="h-4 w-4" />
                         Move to Another Workspace
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem onClick={() => onDelete(latestSession)}>
-                        <Trash2 className="mr-2 h-4 w-4" />
+                        <Trash2 className="h-4 w-4" />
                         Delete Session
                       </DropdownMenuItem>
                     </>
@@ -516,6 +527,69 @@ const StackedSessionItem = ({
               </DropdownMenu>
             </div>
           </div>
+        </div>
+
+        {/* Mobile action bar */}
+        <div className="mt-3 flex items-center justify-between gap-2 border-t pt-3 md:hidden">
+          <div className="flex items-center gap-1.5">
+            {stackedSession?.sessions.length > 1 && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-9 flex-1"
+                onClick={() => setIsExpanded(!isExpanded)}
+              >
+                {isExpanded ? (
+                  <>
+                    <ChevronUp className="mr-1.5 h-4 w-4" />
+                    Hide Details
+                  </>
+                ) : (
+                  <>
+                    <ChevronDown className="mr-1.5 h-4 w-4" />
+                    Show {stackedSession?.sessions.length} Sessions
+                  </>
+                )}
+              </Button>
+            )}
+          </div>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="sm" className="h-9 px-3">
+                <MoreHorizontal className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem
+                onClick={() => onResume(latestSession)}
+                disabled={actionStates[`resume-${latestSession.id}`]}
+              >
+                {actionStates[`resume-${latestSession.id}`] ? (
+                  <RefreshCw className="h-4 w-4 animate-spin" />
+                ) : (
+                  <RotateCcw className="h-4 w-4" />
+                )}
+                Start New Session
+              </DropdownMenuItem>
+              {stackedSession?.sessions.length <= 1 && (
+                <>
+                  <DropdownMenuItem onClick={() => onEdit(latestSession)}>
+                    <Edit className="h-4 w-4" />
+                    Edit Session
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => onMove(latestSession)}>
+                    <Move className="h-4 w-4" />
+                    Move to Another Workspace
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => onDelete(latestSession)}>
+                    <Trash2 className="h-4 w-4" />
+                    Delete Session
+                  </DropdownMenuItem>
+                </>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
 
@@ -722,7 +796,7 @@ const StackedSessionItem = ({
                                 <Button
                                   variant="ghost"
                                   size="sm"
-                                  className="h-7 w-7 p-0 opacity-0 transition-opacity group-hover:opacity-100"
+                                  className="h-7 w-7 p-0 opacity-100 transition-opacity md:opacity-0 md:group-hover:opacity-100"
                                 >
                                   <MoreHorizontal className="h-3 w-3" />
                                 </Button>
@@ -731,20 +805,20 @@ const StackedSessionItem = ({
                                 <DropdownMenuItem
                                   onClick={() => onEdit(session)}
                                 >
-                                  <Edit className="mr-2 h-3 w-3" />
+                                  <Edit className="h-3 w-3" />
                                   Edit
                                 </DropdownMenuItem>
                                 <DropdownMenuItem
                                   onClick={() => onMove(session)}
                                 >
-                                  <Move className="mr-2 h-3 w-3" />
+                                  <Move className="h-3 w-3" />
                                   Move
                                 </DropdownMenuItem>
                                 <DropdownMenuSeparator />
                                 <DropdownMenuItem
                                   onClick={() => onDelete(session)}
                                 >
-                                  <Trash2 className="mr-2 h-3 w-3" />
+                                  <Trash2 className="h-3 w-3" />
                                   Delete
                                 </DropdownMenuItem>
                               </DropdownMenuContent>
@@ -1456,43 +1530,45 @@ export function SessionHistory({
 
   return (
     <>
-      <Card>
-        <CardHeader className="gap-4">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <CardTitle className="flex items-center gap-2">
-              <History className="h-5 w-5" />
-              Session History
-              {(sessionsForPeriod?.length || 0) > 0 && (
-                <div className="text-muted-foreground text-xs">
-                  {sessionsForPeriod?.length} sessions
-                </div>
-              )}
+      <Card className="shadow-sm">
+        <CardHeader className="gap-4 p-4 md:p-6">
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <CardTitle className="flex items-center gap-2 text-xl md:text-2xl">
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-dynamic-orange/10 ring-1 ring-dynamic-orange/20">
+                <History className="h-5 w-5 text-dynamic-orange md:h-6 md:w-6" />
+              </div>
+              <div>
+                <div className="font-bold tracking-tight">Session History</div>
+                {(sessionsForPeriod?.length || 0) > 0 && (
+                  <div className="font-normal text-muted-foreground text-xs md:text-sm">
+                    {sessionsForPeriod?.length} session
+                    {sessionsForPeriod?.length !== 1 ? 's' : ''}
+                  </div>
+                )}
+              </div>
             </CardTitle>
 
-            <div className="flex flex-col gap-3 md:flex-row md:items-center">
-              <Button
-                onClick={openMissedEntryDialog}
-                size="sm"
-                className="flex items-center gap-2"
-              >
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+              <Button onClick={openMissedEntryDialog} size="sm">
                 <Plus className="h-4 w-4" />
-                Add Missed Entry
+                <span className="hidden sm:inline">Add Missed Entry</span>
+                <span className="sm:hidden">Add Entry</span>
               </Button>
 
-              <div className="flex flex-wrap items-center gap-2">
-                <div className="relative">
+              <div className="flex items-center gap-2">
+                <div className="relative flex-1 sm:flex-none">
                   <Search className="-translate-y-1/2 absolute top-1/2 left-3 h-4 w-4 text-muted-foreground" />
                   <Input
                     placeholder="Search sessions..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-48 pl-10 md:w-64"
+                    className="h-9 w-full pl-10 sm:w-48 md:h-10 md:w-64"
                   />
                   {searchQuery && (
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="-translate-y-1/2 absolute top-1/2 right-1 h-6 w-6 p-0"
+                      className="-translate-y-1/2 absolute top-1/2 right-1 h-6 w-6 p-0 hover:bg-transparent"
                       onClick={() => setSearchQuery('')}
                     >
                       ×
@@ -1501,20 +1577,28 @@ export function SessionHistory({
                 </div>
                 <Popover>
                   <PopoverTrigger asChild>
-                    <Button variant="outline" size="sm">
-                      <Filter className="mr-2 h-4 w-4" />
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="relative h-9 md:h-10"
+                    >
+                      <Filter className="h-4 w-4 md:mr-2" />
                       {(filterCategoryId !== 'all' ||
                         filterDuration !== 'all' ||
                         filterProductivity !== 'all' ||
                         filterTimeOfDay !== 'all' ||
                         filterProjectContext !== 'all' ||
                         filterSessionQuality !== 'all') && (
-                        <div className="ml-1 h-2 w-2 rounded-full bg-primary" />
+                        <div className="-top-1 -right-1 absolute h-2 w-2 rounded-full bg-dynamic-orange ring-2 ring-background" />
                       )}
-                      Smart Filters
+                      <span className="hidden md:inline">Filters</span>
                     </Button>
                   </PopoverTrigger>
-                  <PopoverContent className="w-96" align="end">
+                  <PopoverContent
+                    className="w-[calc(100vw-2rem)] sm:w-96"
+                    align="end"
+                    side="bottom"
+                  >
                     <div className="space-y-4">
                       <div className="flex items-center justify-between">
                         <h4 className="font-medium">
@@ -1778,38 +1862,42 @@ export function SessionHistory({
           </div>
 
           <div className="flex flex-col justify-between gap-4 border-t pt-4 md:flex-row md:items-center">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
               {(['day', 'week', 'month'] as ViewMode[]).map((mode) => (
                 <Button
                   key={mode}
-                  variant={viewMode === mode ? 'secondary' : 'ghost'}
+                  variant={viewMode === mode ? 'default' : 'ghost'}
                   size="sm"
                   onClick={() => setViewMode(mode)}
-                  className="capitalize"
+                  className={cn(
+                    'h-9 min-w-[70px] flex-1 capitalize transition-all sm:flex-none md:h-10'
+                  )}
                 >
                   {mode}
                 </Button>
               ))}
             </div>
 
-            <div className="flex items-center justify-between gap-2 md:justify-end">
-              <div className="flex items-center gap-2">
+            <div className="flex items-center justify-between gap-3 md:justify-end">
+              <div className="flex w-full items-center gap-2">
                 <Button
                   variant="outline"
                   size="icon"
                   onClick={goToPrevious}
-                  className="h-8 w-8"
+                  className="h-9 w-9 shrink-0 transition-all hover:border-dynamic-orange/50 hover:bg-dynamic-orange/5 md:h-10 md:w-10"
+                  title="Previous"
                 >
                   <ChevronLeft className="h-4 w-4" />
                 </Button>
-                <div className="min-w-[180px] text-center font-medium text-sm">
+                <div className="w-full min-w-[140px] text-center font-semibold text-sm md:min-w-[180px] md:text-base">
                   {formatPeriod}
                 </div>
                 <Button
                   variant="outline"
                   size="icon"
                   onClick={goToNext}
-                  className="h-8 w-8"
+                  className="h-9 w-9 shrink-0 transition-all hover:border-dynamic-orange/50 hover:bg-dynamic-orange/5 md:h-10 md:w-10"
+                  title="Next"
                 >
                   <ChevronRight className="h-4 w-4" />
                 </Button>
@@ -1819,7 +1907,7 @@ export function SessionHistory({
                   variant="outline"
                   size="sm"
                   onClick={goToToday}
-                  className="text-xs"
+                  className="h-9 whitespace-nowrap text-xs md:h-10 md:text-sm"
                 >
                   {viewMode === 'day'
                     ? 'Today'
@@ -1832,20 +1920,29 @@ export function SessionHistory({
           </div>
         </CardHeader>
 
-        <CardContent>
+        <CardContent className="p-4 md:p-6">
           {sessionsForPeriod?.length === 0 ? (
-            <div className="py-16 text-center">
-              <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-muted/50">
-                <Clock className="h-10 w-10 text-muted-foreground" />
+            <div className="flex flex-col items-center justify-center py-12 md:py-16">
+              <div className="mb-4 flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-dynamic-orange/10 to-dynamic-orange/5 ring-1 ring-dynamic-orange/20 md:h-24 md:w-24">
+                <Clock className="h-10 w-10 text-dynamic-orange md:h-12 md:w-12" />
               </div>
-              <h3 className="font-medium text-lg text-muted-foreground">
+              <h3 className="font-semibold text-foreground text-lg md:text-xl">
                 No sessions for this {viewMode}
               </h3>
-              <p className="mt-2 text-muted-foreground text-sm">
+              <p className="mt-2 max-w-md text-center text-muted-foreground text-sm leading-relaxed md:text-base">
                 {sessions?.length === 0
                   ? 'Start tracking time to see your sessions here'
                   : 'Try a different time period or adjusting your filters'}
               </p>
+              {sessions?.length === 0 && (
+                <Button
+                  onClick={openMissedEntryDialog}
+                  className="mt-6 bg-dynamic-orange text-white hover:bg-dynamic-orange/90"
+                >
+                  <Plus className="h-4 w-4" />
+                  Add Your First Entry
+                </Button>
+              )}
             </div>
           ) : viewMode === 'month' ? (
             // Enhanced Month View Layout
@@ -2213,7 +2310,7 @@ export function SessionHistory({
                             </div>
                           )}
                         </div>
-                        <div className="mt-3 space-y-3">
+                        <div className="mt-4 space-y-3 md:space-y-4">
                           {groupSessions.map((session) => (
                             <StackedSessionItem
                               key={session.id}
@@ -2637,12 +2734,12 @@ export function SessionHistory({
               >
                 {isCreatingMissedEntry ? (
                   <>
-                    <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                    <RefreshCw className="h-4 w-4 animate-spin" />
                     Adding...
                   </>
                 ) : (
                   <>
-                    <Plus className="mr-2 h-4 w-4" />
+                    <Plus className="h-4 w-4" />
                     Add Entry
                   </>
                 )}
