@@ -19,9 +19,9 @@ export function UserPresenceAvatars({
   currentUserId,
   maxDisplay = 5,
 }: UserPresenceAvatarsProps) {
-  const uniqueUsers = Object.entries(presenceState).flatMap(
-    ([, presences]) => presences[0]?.user
-  );
+  const uniqueUsers = Object.entries(presenceState)
+    .map(([, presences]) => presences[0]?.user)
+    .filter(Boolean);
 
   const displayUsers = uniqueUsers.slice(0, maxDisplay);
   const remainingCount = Math.max(0, uniqueUsers.length - maxDisplay);
