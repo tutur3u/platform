@@ -6,9 +6,9 @@ import { createClient } from '@tuturuuu/supabase/next/client';
 import type { TaskPriority } from '@tuturuuu/types/primitives/Priority';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
+import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
-import { Checkbox } from '@tuturuuu/ui/checkbox';
 import { DateTimePicker } from '@tuturuuu/ui/date-time-picker';
 import { Dialog, DialogContent, DialogTitle } from '@tuturuuu/ui/dialog';
 import {
@@ -36,14 +36,17 @@ import {
 } from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
+import { Switch } from '@tuturuuu/ui/switch';
 import { RichTextEditor } from '@tuturuuu/ui/text-editor/editor';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { cn } from '@tuturuuu/utils/format';
 import {
   invalidateTaskCaches,
+  useBoardConfig,
   useUpdateTask,
+  useWorkspaceLabels,
 } from '@tuturuuu/utils/task-helper';
-import { addDays } from 'date-fns';
+import dayjs from 'dayjs';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   buildEstimationIndices,
@@ -65,13 +68,6 @@ interface WorkspaceTaskLabel {
   name: string;
   color: string;
   created_at: string;
-}
-
-interface BoardEstimationConfig {
-  estimation_type?: string | null;
-  extended_estimation?: boolean;
-  allow_zero_estimates?: boolean;
-  count_unestimated_issues?: boolean;
 }
 
 function TaskEditDialogComponent({
@@ -119,16 +115,35 @@ function TaskEditDialogComponent({
   const [estimationPoints, setEstimationPoints] = useState<
     number | null | undefined
   >(task.estimation_points ?? null);
-  const [availableLabels, setAvailableLabels] = useState<WorkspaceTaskLabel[]>(
-    []
-  );
   const [selectedLabels, setSelectedLabels] = useState<WorkspaceTaskLabel[]>(
     task.labels || []
   );
-  const [boardConfig, setBoardConfig] = useState<BoardEstimationConfig | null>(
-    null
+
+  // Use React Query hooks for shared data (cached across all components)
+  const { data: boardConfig } = useBoardConfig(boardId);
+  const [workspaceId, setWorkspaceId] = useState<string | null>(
+    boardConfig?.ws_id || null
   );
-  const [labelsLoading, setLabelsLoading] = useState(false);
+  const { data: workspaceLabelsData = [], isLoading: labelsLoading } =
+    useWorkspaceLabels(workspaceId);
+
+  // Keep local state for available labels to allow manipulation
+  const [availableLabels, setAvailableLabels] = useState<WorkspaceTaskLabel[]>(
+    []
+  );
+
+  // Sync workspace labels to local state
+  useEffect(() => {
+    setAvailableLabels(workspaceLabelsData);
+  }, [workspaceLabelsData]);
+
+  // Update workspace ID when board config loads
+  useEffect(() => {
+    if (boardConfig?.ws_id && workspaceId !== boardConfig.ws_id) {
+      setWorkspaceId(boardConfig.ws_id);
+    }
+  }, [boardConfig, workspaceId]);
+
   const [, setEstimationSaving] = useState(false);
   const [newLabelName, setNewLabelName] = useState('');
   const [newLabelColor, setNewLabelColor] = useState('gray');
@@ -154,10 +169,15 @@ function TaskEditDialogComponent({
   const hasUnsavedChangesRef = useRef<boolean>(false);
   const quickDueRef = useRef<(days: number | null) => void>(() => {});
   const updateEstimationRef = useRef<(points: number | null) => void>(() => {});
-  const [workspaceId, setWorkspaceId] = useState<string | null>(null);
   const flushEditorPendingRef = useRef<(() => JSONContent | null) | undefined>(
     undefined
   );
+  const titleInputRef = useRef<HTMLInputElement>(null);
+  const editorRef = useRef<HTMLDivElement>(null);
+
+  // Track cursor position for smart vertical navigation
+  const lastCursorPositionRef = useRef<number | null>(null);
+  const targetEditorCursorRef = useRef<number | null>(null);
 
   // Use the React Query mutation hook for updating tasks
   const updateTaskMutation = useUpdateTask(boardId);
@@ -199,40 +219,52 @@ function TaskEditDialogComponent({
       };
     }
   }, []);
+
   // Reset form when task changes or dialog opens
   useEffect(() => {
-    // Update form if task ID changed OR if dialog just opened (for create mode with 'new' ID)
-    if (
-      previousTaskIdRef.current !== task.id ||
-      (isOpen && task.id === 'new')
-    ) {
-      // For create mode, reset to task props (which should be empty for new tasks)
-      // The draft restoration effect will run after this and override if needed
-      if (isOpen && (mode === 'create' || task.id === 'new')) {
-        setName(task.name || '');
-        setDescription(parseDescription(task.description) || null);
-        setPriority(task.priority || null);
-        setStartDate(task.start_date ? new Date(task.start_date) : undefined);
-        setEndDate(task.end_date ? new Date(task.end_date) : undefined);
-        setSelectedListId(task.list_id);
-        setEstimationPoints(task.estimation_points ?? null);
-        setSelectedLabels(task.labels || []);
-        setSelectedAssignees(task.assignees || []);
-      } else {
-        // Edit mode: load task data
-        setName(task.name);
-        setDescription(parseDescription(task.description));
-        setPriority(task.priority || null);
-        setStartDate(task.start_date ? new Date(task.start_date) : undefined);
-        setEndDate(task.end_date ? new Date(task.end_date) : undefined);
-        setSelectedListId(task.list_id);
-        setEstimationPoints(task.estimation_points ?? null);
-        setSelectedLabels(task.labels || []);
-        setSelectedAssignees(task.assignees || []);
-      }
+    // In edit mode, when dialog opens, always reload task data to ensure we have the latest
+    // This handles the case where task was edited previously and we're reopening the dialog
+    if (isOpen && mode === 'edit') {
+      console.log('🔍 TaskEditDialog opened with task data:', {
+        taskId: task.id,
+        name: task.name,
+        descriptionType: typeof task.description,
+        descriptionPreview:
+          typeof task.description === 'string'
+            ? task.description.substring(0, 100)
+            : JSON.stringify(task.description)?.substring(0, 100),
+        hasDescription: !!task.description,
+        rawDescription: task.description,
+      });
+      setName(task.name);
+      setDescription(parseDescription(task.description));
+      setPriority(task.priority || null);
+      setStartDate(task.start_date ? new Date(task.start_date) : undefined);
+      setEndDate(task.end_date ? new Date(task.end_date) : undefined);
+      setSelectedListId(task.list_id);
+      setEstimationPoints(task.estimation_points ?? null);
+      setSelectedLabels(task.labels || []);
+      setSelectedAssignees(task.assignees || []);
       previousTaskIdRef.current = task.id;
     }
-  }, [task, parseDescription, isOpen, mode]);
+    // For create mode, only load when task ID changes or dialog opens with 'new' ID
+    else if (
+      isOpen &&
+      (mode === 'create' || task.id === 'new') &&
+      (previousTaskIdRef.current !== task.id || task.id === 'new')
+    ) {
+      setName(task.name || '');
+      setDescription(parseDescription(task.description) || null);
+      setPriority(task.priority || null);
+      setStartDate(task.start_date ? new Date(task.start_date) : undefined);
+      setEndDate(task.end_date ? new Date(task.end_date) : undefined);
+      setSelectedListId(task.list_id);
+      setEstimationPoints(task.estimation_points ?? null);
+      setSelectedLabels(task.labels || []);
+      setSelectedAssignees(task.assignees || []);
+      previousTaskIdRef.current = task.id;
+    }
+  }, [task, task.description, parseDescription, isOpen, mode]);
 
   // Reset transient edits when closing without saving in edit mode
   useEffect(() => {
@@ -250,32 +282,7 @@ function TaskEditDialogComponent({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, mode, task, parseDescription]);
 
-  const fetchLabels = useCallback(async (wsId: string) => {
-    try {
-      setLabelsLoading(true);
-      const supabase = createClient();
-      const { data: labels, error: labelsErr } = await supabase
-        .from('workspace_task_labels')
-        .select('id,name,color,created_at')
-        .eq('ws_id', wsId)
-        .order('created_at');
-      if (!labelsErr && labels)
-        setAvailableLabels(
-          (labels as any).sort((a: any, b: any) =>
-            (a?.name || '')
-              .toLowerCase()
-              .localeCompare((b?.name || '').toLowerCase())
-          )
-        );
-    } catch (e) {
-      console.error('Failed fetching labels', e);
-    } finally {
-      setLabelsLoading(false);
-    }
-  }, []);
-
   const fetchWorkspaceMembers = useCallback(async (wsId: string) => {
-    console.log('🔍 Fetching workspace members for wsId:', wsId);
     try {
       setLoadingMembers(true);
       const supabase = createClient();
@@ -286,7 +293,8 @@ function TaskEditDialogComponent({
           user_id,
           users!inner(
             id,
-            display_name
+            display_name,
+            avatar_url
           )
         `
         )
@@ -298,19 +306,22 @@ function TaskEditDialogComponent({
       }
 
       if (members) {
-        console.log('📋 Fetched workspace members:', members);
         // Transform and sort by display_name
         const transformedMembers = members.map((m: any) => ({
           user_id: m.user_id,
           display_name: m.users?.display_name || 'Unknown User',
+          avatar_url: m.users?.avatar_url,
         }));
-        const sortedMembers = transformedMembers.sort((a, b) =>
+
+        // Deduplicate by user_id to ensure unique keys
+        const uniqueMembers = Array.from(
+          new Map(transformedMembers.map((m) => [m.user_id, m])).values()
+        );
+
+        const sortedMembers = uniqueMembers.sort((a, b) =>
           (a.display_name || '').localeCompare(b.display_name || '')
         );
-        console.log('✅ Setting workspace members:', sortedMembers);
         setWorkspaceMembers(sortedMembers);
-      } else {
-        console.log('⚠️ No members data returned');
       }
     } catch (e) {
       console.error('Failed fetching workspace members', e);
@@ -319,33 +330,12 @@ function TaskEditDialogComponent({
     }
   }, []);
 
-  // Fetch board estimation config & labels on open - memoize to prevent unnecessary re-runs
-  const fetchBoardConfig = useCallback(async () => {
-    if (!isOpen) return;
-    try {
-      const supabase = createClient();
-      const { data: board, error: boardErr } = await supabase
-        .from('workspace_boards')
-        .select(
-          'estimation_type, extended_estimation, allow_zero_estimates, count_unestimated_issues, ws_id'
-        )
-        .eq('id', boardId)
-        .single();
-      if (boardErr) throw boardErr;
-      setBoardConfig(board as any);
-      const wsId = (board as any)?.ws_id;
-      if (wsId) {
-        setWorkspaceId(wsId);
-        await Promise.all([fetchLabels(wsId), fetchWorkspaceMembers(wsId)]);
-      }
-    } catch (e) {
-      console.error('Failed loading board config or labels', e);
-    }
-  }, [isOpen, boardId, fetchLabels, fetchWorkspaceMembers]);
-
+  // Fetch workspace members when workspace ID is available
   useEffect(() => {
-    fetchBoardConfig();
-  }, [fetchBoardConfig]);
+    if (isOpen && workspaceId) {
+      fetchWorkspaceMembers(workspaceId);
+    }
+  }, [isOpen, workspaceId, fetchWorkspaceMembers]);
 
   // ------- Draft persistence (create mode) -------------------------------------
   const draftStorageKey = useMemo(
@@ -536,7 +526,7 @@ function TaskEditDialogComponent({
     return hasName && hasUnsavedChanges && !isLoading;
   }, [mode, name, hasUnsavedChanges, isLoading]);
 
-  // Global keyboard shortcuts: Cmd/Ctrl + Enter to save, Cmd/Ctrl + Delete to delete
+  // Global keyboard shortcuts: Cmd/Ctrl + Enter to save
   useEffect(() => {
     if (!isOpen) return;
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -550,21 +540,10 @@ function TaskEditDialogComponent({
         }
         return;
       }
-
-      // Delete shortcut: Cmd/Ctrl + Delete (only in edit mode)
-      if (
-        (e.metaKey || e.ctrlKey) &&
-        (e.key === 'Delete' || e.key === 'Backspace') &&
-        mode === 'edit'
-      ) {
-        e.preventDefault();
-        setShowDeleteConfirm(true);
-        return;
-      }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, canSave, mode]);
+  }, [isOpen, canSave]);
 
   const handleCreateLabel = async () => {
     if (!newLabelName.trim() || !boardConfig) return;
@@ -626,7 +605,7 @@ function TaskEditDialogComponent({
           });
         } else {
           // Invalidate caches so parent task list reflects new label
-          invalidateTaskCaches(queryClient, boardId);
+          await invalidateTaskCaches(queryClient, boardId);
           onUpdate();
           // Dispatch global event so other open components can refresh
           if (typeof window !== 'undefined') {
@@ -657,16 +636,16 @@ function TaskEditDialogComponent({
   // End date change helper (preserve 23:59 default if only date picked)
   const handleEndDateChange = (date: Date | undefined) => {
     if (date) {
-      const selectedDate = new Date(date);
+      let selectedDate = dayjs(date);
       if (
-        selectedDate.getHours() === 0 &&
-        selectedDate.getMinutes() === 0 &&
-        selectedDate.getSeconds() === 0 &&
-        selectedDate.getMilliseconds() === 0
+        selectedDate.hour() === 0 &&
+        selectedDate.minute() === 0 &&
+        selectedDate.second() === 0 &&
+        selectedDate.millisecond() === 0
       ) {
-        selectedDate.setHours(23, 59, 59, 999);
+        selectedDate = selectedDate.endOf('day');
       }
-      setEndDate(selectedDate);
+      setEndDate(selectedDate.toDate());
     } else {
       setEndDate(undefined);
     }
@@ -676,9 +655,7 @@ function TaskEditDialogComponent({
   const handleQuickDueDate = (days: number | null) => {
     let newDate: Date | undefined;
     if (days !== null) {
-      const target = addDays(new Date(), days);
-      target.setHours(23, 59, 59, 999);
-      newDate = target;
+      newDate = dayjs().add(days, 'day').endOf('day').toDate();
     }
     setEndDate(newDate);
     if (mode === 'create') {
@@ -686,12 +663,23 @@ function TaskEditDialogComponent({
       return;
     }
     setIsLoading(true);
-    const taskUpdates: Partial<Task> = { end_date: newDate?.toISOString() };
+    const taskUpdates: Partial<Task> = {
+      end_date: newDate ? newDate.toISOString() : null,
+    };
     updateTaskMutation.mutate(
       { taskId: task.id, updates: taskUpdates },
       {
-        onSuccess: () => {
-          invalidateTaskCaches(queryClient, boardId);
+        onSuccess: async () => {
+          await invalidateTaskCaches(queryClient, boardId);
+
+          // Wait for the refetch to complete before closing
+          if (boardId) {
+            await queryClient.refetchQueries({
+              queryKey: ['tasks', boardId],
+              type: 'active',
+            });
+          }
+
           toast({
             title: 'Due date updated',
             description: newDate
@@ -730,7 +718,7 @@ function TaskEditDialogComponent({
         .update({ estimation_points: points })
         .eq('id', task.id);
       if (error) throw error;
-      invalidateTaskCaches(queryClient, boardId);
+      await invalidateTaskCaches(queryClient, boardId);
     } catch (e: any) {
       console.error('Failed updating estimation', e);
       toast({
@@ -820,7 +808,7 @@ function TaskEditDialogComponent({
           })
         );
       }
-      invalidateTaskCaches(queryClient, boardId);
+      await invalidateTaskCaches(queryClient, boardId);
     } catch (e: any) {
       toast({
         title: 'Label update failed',
@@ -861,7 +849,7 @@ function TaskEditDialogComponent({
         if (error) throw error;
         setSelectedAssignees((prev) => [...prev, member]);
       }
-      invalidateTaskCaches(queryClient, boardId);
+      await invalidateTaskCaches(queryClient, boardId);
       onUpdate();
     } catch (e: any) {
       toast({
@@ -908,8 +896,8 @@ function TaskEditDialogComponent({
           name: name.trim(),
           description: descriptionString,
           priority: priority,
-          start_date: startDate?.toISOString(),
-          end_date: endDate?.toISOString(),
+          start_date: startDate ? startDate.toISOString() : null,
+          end_date: endDate ? endDate.toISOString() : null,
           estimation_points: estimationPoints ?? null,
         } as any;
         const newTask = await createTask(supabase, selectedListId, taskData);
@@ -932,7 +920,7 @@ function TaskEditDialogComponent({
           );
         }
 
-        invalidateTaskCaches(queryClient, boardId);
+        await invalidateTaskCaches(queryClient, boardId);
         toast({ title: 'Task created', description: 'New task added.' });
         onUpdate();
         if (createMultiple) {
@@ -972,13 +960,13 @@ function TaskEditDialogComponent({
     }
 
     // Prepare task updates (edit mode)
-    // Note: We need to include description even if it's null to clear it in the database
+    // Note: We need to include description, start_date, and end_date even if null to clear them in the database
     const taskUpdates: any = {
       name: name.trim(),
       description: descriptionString, // Explicitly null when empty, not undefined
       priority: priority,
-      start_date: startDate?.toISOString(),
-      end_date: endDate?.toISOString(),
+      start_date: startDate ? startDate.toISOString() : null, // Explicitly null when undefined
+      end_date: endDate ? endDate.toISOString() : null, // Explicitly null when undefined
       list_id: selectedListId,
     };
 
@@ -988,9 +976,17 @@ function TaskEditDialogComponent({
         updates: taskUpdates,
       },
       {
-        onSuccess: () => {
-          // Force cache invalidation
-          invalidateTaskCaches(queryClient, boardId);
+        onSuccess: async () => {
+          console.log('✅ Task update successful, refreshing data...');
+
+          // Invalidate all task-related caches
+          await invalidateTaskCaches(queryClient, boardId);
+
+          // Force refetch and wait for it to complete with fresh data
+          await queryClient.refetchQueries({
+            queryKey: ['tasks', boardId],
+            type: 'active',
+          });
 
           toast({
             title: 'Task updated',
@@ -1147,24 +1143,126 @@ function TaskEditDialogComponent({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, boardConfig?.estimation_type]);
 
-  const getLabelColorClasses = (color: string) => {
-    const map: Record<string, string> = {
-      red: 'bg-red-100 text-red-700 border-red-200 dark:bg-red-900/30 dark:text-red-300 dark:border-red-800',
-      orange:
-        'bg-orange-100 text-orange-700 border-orange-200 dark:bg-orange-900/30 dark:text-orange-300 dark:border-orange-800',
-      yellow:
-        'bg-yellow-100 text-yellow-700 border-yellow-200 dark:bg-yellow-900/30 dark:text-yellow-300 dark:border-yellow-800',
-      green:
-        'bg-green-100 text-green-700 border-green-200 dark:bg-green-900/30 dark:text-green-300 dark:border-green-800',
-      blue: 'bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-800',
-      indigo:
-        'bg-indigo-100 text-indigo-700 border-indigo-200 dark:bg-indigo-900/30 dark:text-indigo-300 dark:border-indigo-800',
-      purple:
-        'bg-purple-100 text-purple-700 border-purple-200 dark:bg-purple-900/30 dark:text-purple-300 dark:border-purple-800',
-      pink: 'bg-pink-100 text-pink-700 border-pink-200 dark:bg-pink-900/30 dark:text-pink-300 dark:border-pink-800',
-      gray: 'bg-gray-100 text-gray-700 border-gray-200 dark:bg-gray-900/30 dark:text-gray-300 dark:border-gray-800',
+  // Label color utilities (matching task-labels-display.tsx approach)
+  const normalizeHex = (input: string): string | null => {
+    if (!input) return null;
+    let c = input.trim();
+    if (c.startsWith('#')) c = c.slice(1);
+    if (c.length === 3) {
+      c = c
+        .split('')
+        .map((ch) => ch + ch)
+        .join('');
+    }
+    if (c.length !== 6) return null;
+    if (!/^[0-9a-fA-F]{6}$/.test(c)) return null;
+    return `#${c.toLowerCase()}`;
+  };
+
+  const hexToRgb = (hex: string) => {
+    const n = normalizeHex(hex);
+    if (!n) return null;
+    const r = parseInt(n.substring(1, 3), 16);
+    const g = parseInt(n.substring(3, 5), 16);
+    const b = parseInt(n.substring(5, 7), 16);
+    return { r, g, b };
+  };
+
+  const luminance = ({ r, g, b }: { r: number; g: number; b: number }) => {
+    const channel = (v: number) => {
+      const s = v / 255;
+      return s <= 0.03928 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4;
     };
-    return map[color] || map.gray;
+    return 0.2126 * channel(r) + 0.7152 * channel(g) + 0.0722 * channel(b);
+  };
+
+  const adjust = (hex: string, factor: number) => {
+    const rgb = hexToRgb(hex);
+    if (!rgb) return hex;
+    const rN = rgb.r / 255;
+    const gN = rgb.g / 255;
+    const bN = rgb.b / 255;
+    const max = Math.max(rN, gN, bN);
+    const min = Math.min(rN, gN, bN);
+    let h = 0;
+    const l = (max + min) / 2;
+    const d = max - min;
+    let s = 0;
+    if (d !== 0) {
+      s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+      switch (max) {
+        case rN:
+          h = (gN - bN) / d + (gN < bN ? 6 : 0);
+          break;
+        case gN:
+          h = (bN - rN) / d + 2;
+          break;
+        default:
+          h = (rN - gN) / d + 4;
+      }
+      h /= 6;
+    }
+    const targetL = Math.min(
+      1,
+      Math.max(0, l * (factor >= 1 ? 1 + (factor - 1) * 0.75 : factor))
+    );
+    const targetS = factor > 1 && targetL > 0.7 ? s * 0.85 : s;
+    const hue2rgb = (p: number, q: number, t: number) => {
+      if (t < 0) t += 1;
+      if (t > 1) t -= 1;
+      if (t < 1 / 6) return p + (q - p) * 6 * t;
+      if (t < 1 / 2) return q;
+      if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6;
+      return p;
+    };
+    const q =
+      targetL < 0.5
+        ? targetL * (1 + targetS)
+        : targetL + targetS - targetL * targetS;
+    const p = 2 * targetL - q;
+    const r = Math.round(hue2rgb(p, q, h + 1 / 3) * 255);
+    const g = Math.round(hue2rgb(p, q, h) * 255);
+    const b = Math.round(hue2rgb(p, q, h - 1 / 3) * 255);
+    return `#${[r, g, b].map((v) => v.toString(16).padStart(2, '0')).join('')}`;
+  };
+
+  const computeAccessibleLabelStyles = (raw: string) => {
+    const nameMap: Record<string, string> = {
+      red: '#ef4444',
+      orange: '#f97316',
+      amber: '#f59e0b',
+      yellow: '#eab308',
+      lime: '#84cc16',
+      green: '#22c55e',
+      emerald: '#10b981',
+      teal: '#14b8a6',
+      cyan: '#06b6d4',
+      sky: '#0ea5e9',
+      blue: '#3b82f6',
+      indigo: '#6366f1',
+      violet: '#8b5cf6',
+      purple: '#a855f7',
+      fuchsia: '#d946ef',
+      pink: '#ec4899',
+      rose: '#f43f5e',
+      gray: '#6b7280',
+      slate: '#64748b',
+      zinc: '#71717a',
+    };
+    const baseHex = normalizeHex(raw) || nameMap[raw.toLowerCase?.()] || null;
+    if (!baseHex) return null;
+    const rgb = hexToRgb(baseHex);
+    if (!rgb) return null;
+    const lum = luminance(rgb);
+    const bg = `${baseHex}1a`; // 10% opacity
+    const border = `${baseHex}4d`; // 30% opacity
+    let text = baseHex;
+    if (lum < 0.22) {
+      text = adjust(baseHex, 1.25);
+    } else if (lum > 0.82) {
+      text = adjust(baseHex, 0.65);
+    }
+    return { bg, border, text };
   };
 
   // Build estimation indices via shared util - memoize to prevent recalculation
@@ -1187,11 +1285,19 @@ function TaskEditDialogComponent({
 
   return (
     <>
-      <Dialog open={isOpen} onOpenChange={handleDialogOpenChange} modal={true}>
+      <Dialog
+        key="main-dialog"
+        open={isOpen}
+        onOpenChange={handleDialogOpenChange}
+        modal={true}
+      >
         <DialogContent
           showCloseButton={false}
           className="!inset-0 !top-0 !left-0 !max-w-none !translate-x-0 !translate-y-0 !rounded-none data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:slide-out-to-bottom-2 data-[state=open]:slide-in-from-bottom-2 flex h-screen max-h-screen w-screen gap-0 border-0 p-0"
-          onContextMenu={(e) => e.preventDefault()}
+          onContextMenu={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+          }}
         >
           {/* Main content area - Task title and description */}
           <div className="flex min-w-0 flex-1 flex-col bg-background">
@@ -1210,10 +1316,9 @@ function TaskEditDialogComponent({
               <div className="flex items-center gap-1 md:gap-2">
                 {isCreateMode && (
                   <label className="hidden items-center gap-2 text-muted-foreground text-xs md:flex">
-                    <Checkbox
+                    <Switch
                       checked={createMultiple}
                       onCheckedChange={(v) => setCreateMultiple(Boolean(v))}
-                      className="h-3.5 w-3.5"
                     />
                     Create multiple
                   </label>
@@ -1298,8 +1403,60 @@ function TaskEditDialogComponent({
                 {/* Task Name - Large and prominent with underline effect */}
                 <div className="group">
                   <Input
+                    ref={titleInputRef}
                     value={name}
                     onChange={(e) => setName(e.target.value)}
+                    onKeyDown={(e) => {
+                      // Enter key moves to description
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        const editorElement = editorRef.current?.querySelector(
+                          '.ProseMirror'
+                        ) as HTMLElement;
+                        if (editorElement) {
+                          editorElement.focus();
+                          // Clear the target cursor so it goes to the start
+                          targetEditorCursorRef.current = null;
+                        }
+                      }
+
+                      if (e.key === 'ArrowDown') {
+                        e.preventDefault();
+                        const input = e.currentTarget;
+                        const cursorPosition = input.selectionStart ?? 0;
+
+                        // Store cursor position for smart navigation
+                        lastCursorPositionRef.current = cursorPosition;
+                        targetEditorCursorRef.current = cursorPosition;
+
+                        // Focus the editor - cursor positioning will be handled by the editor via prop
+                        const editorElement = editorRef.current?.querySelector(
+                          '.ProseMirror'
+                        ) as HTMLElement;
+                        if (editorElement) {
+                          editorElement.focus();
+                        }
+                      }
+
+                      // Right arrow at end of title moves to description
+                      if (e.key === 'ArrowRight') {
+                        const input = e.currentTarget;
+                        const cursorPosition = input.selectionStart ?? 0;
+                        const textLength = input.value.length;
+
+                        // Only move if cursor is at the end
+                        if (cursorPosition === textLength) {
+                          e.preventDefault();
+                          const editorElement =
+                            editorRef.current?.querySelector(
+                              '.ProseMirror'
+                            ) as HTMLElement;
+                          if (editorElement) {
+                            editorElement.focus();
+                          }
+                        }
+                      }
+                    }}
                     placeholder="What needs to be done?"
                     className="h-auto border-0 bg-transparent p-4 font-bold text-2xl text-foreground leading-tight tracking-tight transition-colors placeholder:text-muted-foreground/30 focus-visible:outline-0 focus-visible:ring-0 md:px-8 md:pt-10 md:pb-6 md:text-2xl"
                     autoFocus
@@ -1307,16 +1464,49 @@ function TaskEditDialogComponent({
                 </div>
 
                 {/* Task Description - Full editor experience with subtle border */}
-                <RichTextEditor
-                  content={description}
-                  onChange={setDescription}
-                  writePlaceholder="Add a detailed description, attach files, or use markdown..."
-                  titlePlaceholder=""
-                  className="h-full border-0 bg-transparent px-4 focus-visible:outline-0 focus-visible:ring-0 md:px-8"
-                  workspaceId={workspaceId || undefined}
-                  onImageUpload={handleImageUpload}
-                  flushPendingRef={flushEditorPendingRef}
-                />
+                <div ref={editorRef} className="h-full">
+                  <RichTextEditor
+                    content={description}
+                    onChange={setDescription}
+                    writePlaceholder="Add a detailed description, attach files, or use markdown..."
+                    titlePlaceholder=""
+                    className="h-full border-0 bg-transparent px-4 focus-visible:outline-0 focus-visible:ring-0 md:px-8"
+                    workspaceId={workspaceId || undefined}
+                    onImageUpload={handleImageUpload}
+                    flushPendingRef={flushEditorPendingRef}
+                    initialCursorOffset={targetEditorCursorRef.current}
+                    onArrowUp={(cursorOffset) => {
+                      // Focus the title input when pressing arrow up at the start
+                      if (titleInputRef.current) {
+                        titleInputRef.current.focus();
+
+                        // Apply smart cursor positioning
+                        if (cursorOffset !== undefined) {
+                          const textLength = titleInputRef.current.value.length;
+                          // Use the stored position from last down arrow, or the offset from editor
+                          const targetPosition =
+                            lastCursorPositionRef.current ??
+                            Math.min(cursorOffset, textLength);
+                          titleInputRef.current.setSelectionRange(
+                            targetPosition,
+                            targetPosition
+                          );
+                          // Clear the stored position after use
+                          lastCursorPositionRef.current = null;
+                        }
+                      }
+                    }}
+                    onArrowLeft={() => {
+                      // Focus the title input at the end when pressing arrow left at the start
+                      if (titleInputRef.current) {
+                        titleInputRef.current.focus();
+                        // Set cursor to the end of the input
+                        const length = titleInputRef.current.value.length;
+                        titleInputRef.current.setSelectionRange(length, length);
+                      }
+                    }}
+                  />
+                </div>
               </div>
             </div>
           </div>
@@ -1422,12 +1612,16 @@ function TaskEditDialogComponent({
                     <DropdownMenuTrigger asChild>
                       <Button
                         variant="outline"
-                        className="h-8 w-full justify-between text-xs transition-all hover:border-dynamic-orange/50 hover:bg-dynamic-orange/5 md:text-sm"
+                        className={cn(
+                          'h-8 w-full justify-between text-xs transition-all hover:border-dynamic-orange/50 hover:bg-dynamic-orange/5 md:text-sm',
+                          priority === 'critical' &&
+                            'border-dynamic-red bg-dynamic-red/10 font-semibold text-dynamic-red hover:bg-dynamic-red/20'
+                        )}
                       >
                         <span className="truncate">
                           {priority
                             ? priority === 'critical'
-                              ? 'Urgent'
+                              ? '🔥 Urgent'
                               : priority === 'high'
                                 ? 'High'
                                 : priority === 'normal'
@@ -1442,25 +1636,39 @@ function TaskEditDialogComponent({
                       {[
                         {
                           value: 'critical',
-                          label: 'Urgent',
+                          label: '🔥 Urgent',
                           dot: 'bg-dynamic-red',
+                          className: 'font-semibold text-dynamic-red',
                         },
                         {
                           value: 'high',
                           label: 'High',
                           dot: 'bg-dynamic-orange',
+                          className: '',
                         },
                         {
                           value: 'normal',
                           label: 'Medium',
                           dot: 'bg-dynamic-yellow',
+                          className: '',
                         },
-                        { value: 'low', label: 'Low', dot: 'bg-dynamic-blue' },
+                        {
+                          value: 'low',
+                          label: 'Low',
+                          dot: 'bg-dynamic-blue',
+                          className: '',
+                        },
                       ].map((opt) => (
                         <DropdownMenuItem
                           key={opt.value}
                           onClick={() => setPriority(opt.value as TaskPriority)}
-                          className="cursor-pointer"
+                          className={cn(
+                            'cursor-pointer',
+                            opt.className,
+                            priority === opt.value &&
+                              opt.value === 'critical' &&
+                              'bg-dynamic-red/10'
+                          )}
                         >
                           <span
                             className={cn(
@@ -1643,6 +1851,8 @@ function TaskEditDialogComponent({
                             date={startDate}
                             setDate={setStartDate}
                             showTimeSelect={true}
+                            allowClear={true}
+                            showFooterControls={true}
                           />
                         </div>
                         <div className="space-y-1">
@@ -1653,6 +1863,8 @@ function TaskEditDialogComponent({
                             date={endDate}
                             setDate={handleEndDateChange}
                             showTimeSelect={true}
+                            allowClear={true}
+                            showFooterControls={true}
                           />
                         </div>
                       </div>
@@ -1669,25 +1881,6 @@ function TaskEditDialogComponent({
                           </div>
                           Labels
                         </span>
-                        {boardConfig && (
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            className="h-6 px-2 text-[10px] text-muted-foreground transition-colors hover:text-dynamic-orange"
-                            onClick={() =>
-                              (boardConfig as any)?.ws_id &&
-                              fetchLabels((boardConfig as any).ws_id)
-                            }
-                            disabled={labelsLoading}
-                          >
-                            {labelsLoading ? (
-                              <Loader2 className="h-3 w-3 animate-spin" />
-                            ) : (
-                              'Refresh'
-                            )}
-                          </Button>
-                        )}
                       </Label>
                       {boardConfig && (
                         <div className="space-y-2">
@@ -1761,6 +1954,9 @@ function TaskEditDialogComponent({
                             const active = selectedLabels.some(
                               (l) => l.id === label.id
                             );
+                            const styles = computeAccessibleLabelStyles(
+                              label.color
+                            );
                             return (
                               <Button
                                 key={label.id}
@@ -1772,9 +1968,17 @@ function TaskEditDialogComponent({
                                   'h-7 border px-3 text-xs transition-all',
                                   !active &&
                                     'bg-background hover:border-dynamic-orange/50',
-                                  active && getLabelColorClasses(label.color),
                                   active && 'shadow-sm'
                                 )}
+                                style={
+                                  active && styles
+                                    ? {
+                                        backgroundColor: styles.bg,
+                                        borderColor: styles.border,
+                                        color: styles.text,
+                                      }
+                                    : undefined
+                                }
                               >
                                 {label.name || 'Unnamed'}
                                 {active && <X className="ml-1.5 h-3 w-3" />}
@@ -1859,10 +2063,16 @@ function TaskEditDialogComponent({
                                     onClick={() => toggleAssignee(assignee)}
                                     className="h-7 gap-1.5 rounded-full border border-dynamic-orange/30 bg-dynamic-orange/15 px-3 font-medium text-dynamic-orange text-xs shadow-sm transition-all hover:border-dynamic-orange/50 hover:bg-dynamic-orange/25"
                                   >
-                                    <div className="flex h-4 w-4 items-center justify-center rounded-full bg-dynamic-orange/20 font-bold text-[10px]">
-                                      {(assignee.display_name ||
-                                        'Unknown')[0]?.toUpperCase()}
-                                    </div>
+                                    <Avatar className="h-4 w-4">
+                                      <AvatarImage
+                                        src={assignee.avatar_url}
+                                        alt={assignee.display_name || 'Unknown'}
+                                      />
+                                      <AvatarFallback className="bg-dynamic-orange/20 font-bold text-[9px]">
+                                        {(assignee.display_name ||
+                                          'Unknown')[0]?.toUpperCase()}
+                                      </AvatarFallback>
+                                    </Avatar>
                                     {assignee.display_name || 'Unknown'}
                                     <X className="h-3 w-3 opacity-70" />
                                   </Button>
@@ -1920,10 +2130,18 @@ function TaskEditDialogComponent({
                                         onClick={() => toggleAssignee(member)}
                                         className="group flex items-center gap-2.5 rounded-md border border-transparent bg-background/50 px-3 py-2 text-left transition-all hover:border-dynamic-orange/30 hover:bg-dynamic-orange/5"
                                       >
-                                        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-muted font-semibold text-muted-foreground text-xs transition-colors group-hover:bg-dynamic-orange/20 group-hover:text-dynamic-orange">
-                                          {(member.display_name ||
-                                            'Unknown')[0]?.toUpperCase()}
-                                        </div>
+                                        <Avatar className="h-7 w-7 shrink-0">
+                                          <AvatarImage
+                                            src={member.avatar_url}
+                                            alt={
+                                              member.display_name || 'Unknown'
+                                            }
+                                          />
+                                          <AvatarFallback className="bg-muted font-semibold text-muted-foreground text-xs group-hover:bg-dynamic-orange/20 group-hover:text-dynamic-orange">
+                                            {(member.display_name ||
+                                              'Unknown')[0]?.toUpperCase()}
+                                          </AvatarFallback>
+                                        </Avatar>
                                         <span className="flex-1 truncate text-sm">
                                           {member.display_name || 'Unknown'}
                                         </span>
@@ -1985,6 +2203,7 @@ function TaskEditDialogComponent({
 
       {/* Delete confirmation dialog */}
       <Dialog
+        key="delete-dialog"
         open={showDeleteConfirm}
         onOpenChange={setShowDeleteConfirm}
         modal={true}
@@ -2021,7 +2240,7 @@ function TaskEditDialogComponent({
                     .delete()
                     .eq('id', task.id);
                   if (error) throw error;
-                  invalidateTaskCaches(queryClient, boardId);
+                  await invalidateTaskCaches(queryClient, boardId);
                   toast({ title: 'Task deleted' });
                   setShowDeleteConfirm(false);
                   onUpdate();

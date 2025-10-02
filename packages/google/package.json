@@ -9,14 +9,14 @@
     ".": "./src/core/index.ts"
   },
   "dependencies": {
-    "googleapis": "^160.0.0",
+    "googleapis": "^161.0.0",
     "google-auth-library": "^10.4.0"
   },
   "devDependencies": {
     "@tuturuuu/types": "workspace:*",
     "@tuturuuu/typescript-config": "workspace:*",
     "@types/node": "^24.6.1",
-    "@types/react": "^19.1.16",
+    "@types/react": "^19.1.17",
     "@vitejs/plugin-react": "^5.0.4",
     "@vitest/coverage-v8": "^3.2.4",
     "typescript": "^5.9.3",

@@ -1,6 +1,6 @@
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { TaskPriority } from '@tuturuuu/types/primitives/Priority';
 import type { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
@@ -55,9 +55,9 @@ import {
   Timer,
   Trash2,
   Turtle,
+  unicornHead,
   UserMinus,
   UserStar,
-  unicornHead,
   X,
 } from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
@@ -66,8 +66,10 @@ import { getDescriptionText } from '@tuturuuu/ui/utils/text-helper';
 import { cn } from '@tuturuuu/utils/format';
 import {
   moveTask,
+  useBoardConfig,
   useDeleteTask,
   useUpdateTask,
+  useWorkspaceLabels,
 } from '@tuturuuu/utils/task-helper';
 import {
   addDays,
@@ -162,10 +164,12 @@ function TaskCardInner({
     [menuGuardUntil]
   );
 
-  // Estimation & labels state
-  const [boardConfig, setBoardConfig] = useState<any>(null);
-  const [workspaceLabels, setWorkspaceLabels] = useState<any[]>([]);
-  const [labelsLoading, setLabelsLoading] = useState(false);
+  // Use React Query hooks for shared data (cached across all task cards)
+  const { data: boardConfig } = useBoardConfig(boardId);
+  const { data: workspaceLabels = [], isLoading: labelsLoading } =
+    useWorkspaceLabels(boardConfig?.ws_id);
+
+  // Local state for UI interactions
   const [estimationSaving, setEstimationSaving] = useState(false);
   const [labelsSaving, setLabelsSaving] = useState<string | null>(null);
 
@@ -178,6 +182,7 @@ function TaskCardInner({
   // Track initial mount to avoid duplicate fetch storms
   const updateTaskMutation = useUpdateTask(boardId);
   const deleteTaskMutation = useDeleteTask(boardId);
+  const queryClient = useQueryClient();
 
   // Fetch available task lists using React Query (same key as other components)
   const { data: queryAvailableLists = [] } = useQuery({
@@ -272,78 +277,6 @@ function TaskCardInner({
     if (isYesterday(date)) return 'Yesterday';
     return formatDistanceToNow(date, { addSuffix: true });
   };
-
-  // Shared label fetcher
-  const fetchWorkspaceLabels = useCallback(async (wsId: string) => {
-    setLabelsLoading(true);
-    try {
-      const supabase = createClient();
-      const { data: labels, error } = await supabase
-        .from('workspace_task_labels')
-        .select('id, name, color, created_at')
-        .eq('ws_id', wsId)
-        .order('created_at', { ascending: false });
-      if (!error) {
-        setWorkspaceLabels(
-          (labels || []).sort((a, b) =>
-            a.name.toLowerCase().localeCompare(b.name.toLowerCase())
-          )
-        );
-      }
-    } catch (e) {
-      console.error('Failed fetching labels', e);
-    } finally {
-      setLabelsLoading(false);
-    }
-  }, []);
-
-  // Initial load + board config
-  useEffect(() => {
-    let mounted = true;
-    (async () => {
-      try {
-        const supabase = createClient();
-        const { data: board } = await supabase
-          .from('workspace_boards')
-          .select(
-            'id, estimation_type, extended_estimation, allow_zero_estimates, ws_id'
-          )
-          .eq('id', boardId)
-          .single();
-        if (!mounted) return;
-        setBoardConfig(board);
-        if (board?.ws_id) await fetchWorkspaceLabels(board.ws_id);
-      } catch (e) {
-        console.error('Failed loading board config or labels', e);
-      } finally {
-        // no-op
-      }
-    })();
-    return () => {
-      mounted = false;
-    };
-  }, [boardId, fetchWorkspaceLabels]);
-
-  // Listen for global label created events to refresh labels list
-  useEffect(() => {
-    function handleGlobalLabelCreated(e: any) {
-      const wsId = e?.detail?.wsId;
-      if (wsId && boardConfig?.ws_id === wsId) {
-        // Avoid race: small delay to ensure backend commit
-        setTimeout(() => fetchWorkspaceLabels(wsId), 120);
-      }
-    }
-    window.addEventListener(
-      'workspace-label-created',
-      handleGlobalLabelCreated as EventListener
-    );
-    return () => {
-      window.removeEventListener(
-        'workspace-label-created',
-        handleGlobalLabelCreated as EventListener
-      );
-    };
-  }, [boardConfig?.ws_id, fetchWorkspaceLabels]);
 
   async function handleArchiveToggle() {
     if (!onUpdate) return;
@@ -508,6 +441,23 @@ function TaskCardInner({
     setIsLoading(true);
     const supabase = createClient();
 
+    // Cancel any outgoing refetches
+    await queryClient.cancelQueries({ queryKey: ['tasks', boardId] });
+
+    // Snapshot the previous value
+    const previousTasks = queryClient.getQueryData(['tasks', boardId]);
+
+    // Optimistically update the cache
+    queryClient.setQueryData(['tasks', boardId], (old: any[] | undefined) => {
+      if (!old) return old;
+      return old.map((t) => {
+        if (t.id === task.id) {
+          return { ...t, assignees: [] };
+        }
+        return t;
+      });
+    });
+
     try {
       const { error } = await supabase
         .from('task_assignees')
@@ -522,9 +472,9 @@ function TaskCardInner({
         title: 'Success',
         description: 'All assignees removed from task',
       });
-
-      onUpdate?.();
     } catch (error) {
+      // Rollback on error
+      queryClient.setQueryData(['tasks', boardId], previousTasks);
       console.error('Failed to remove all assignees:', error);
       toast({
         title: 'Error',
@@ -540,6 +490,27 @@ function TaskCardInner({
   async function handleRemoveAssignee(assigneeId: string) {
     setIsLoading(true);
     const supabase = createClient();
+
+    // Cancel any outgoing refetches
+    await queryClient.cancelQueries({ queryKey: ['tasks', boardId] });
+
+    // Snapshot the previous value
+    const previousTasks = queryClient.getQueryData(['tasks', boardId]);
+
+    // Optimistically update the cache
+    queryClient.setQueryData(['tasks', boardId], (old: any[] | undefined) => {
+      if (!old) return old;
+      return old.map((t) => {
+        if (t.id === task.id) {
+          return {
+            ...t,
+            assignees:
+              t.assignees?.filter((a: any) => a.id !== assigneeId) || [],
+          };
+        }
+        return t;
+      });
+    });
 
     try {
       const { error } = await supabase
@@ -557,9 +528,9 @@ function TaskCardInner({
         title: 'Success',
         description: `${assignee?.display_name || assignee?.email || 'Assignee'} removed from task`,
       });
-
-      onUpdate?.();
     } catch (error) {
+      // Rollback on error
+      queryClient.setQueryData(['tasks', boardId], previousTasks);
       console.error('Failed to remove assignee:', error);
       toast({
         title: 'Error',
@@ -579,8 +550,8 @@ function TaskCardInner({
     }
 
     setIsLoading(true);
-    const supabase = createClient();
 
+    const supabase = createClient();
     try {
       await moveTask(supabase, task.id, targetListId);
 
@@ -591,8 +562,7 @@ function TaskCardInner({
         title: 'Success',
         description: `Task moved to ${targetList?.name || 'selected list'}`,
       });
-
-      onUpdate?.();
+      onUpdate();
     } catch (error) {
       console.error('Failed to move task:', error);
       toast({
@@ -659,18 +629,10 @@ function TaskCardInner({
     if (points === task.estimation_points) return;
     setEstimationSaving(true);
     try {
-      const supabase = createClient();
-      const { error } = await supabase
-        .from('tasks')
-        .update({ estimation_points: points })
-        .eq('id', task.id);
-      if (error) throw error;
-      toast({
-        title: 'Estimation updated',
-        description:
-          points == null ? 'Cleared estimation' : `Set to ${points} pts`,
+      await updateTaskMutation.mutateAsync({
+        taskId: task.id,
+        updates: { estimation_points: points },
       });
-      onUpdate?.();
     } catch (e: any) {
       console.error('Failed to update estimation', e);
       toast({
@@ -688,6 +650,42 @@ function TaskCardInner({
     setLabelsSaving(labelId);
     const supabase = createClient();
     const active = task.labels?.some((l) => l.id === labelId);
+
+    // Cancel any outgoing refetches
+    await queryClient.cancelQueries({ queryKey: ['tasks', boardId] });
+
+    // Snapshot the previous value
+    const previousTasks = queryClient.getQueryData(['tasks', boardId]);
+
+    // Find the label details from workspace labels
+    const label = workspaceLabels.find((l) => l.id === labelId);
+
+    // Optimistically update the cache
+    queryClient.setQueryData(['tasks', boardId], (old: any[] | undefined) => {
+      if (!old) return old;
+      return old.map((t) => {
+        if (t.id === task.id) {
+          if (active) {
+            // Remove the label
+            return {
+              ...t,
+              labels: t.labels?.filter((l: any) => l.id !== labelId) || [],
+            };
+          } else {
+            // Add the label
+            return {
+              ...t,
+              labels: [
+                ...(t.labels || []),
+                label || { id: labelId, name: 'Unknown', color: '#3b82f6' },
+              ],
+            };
+          }
+        }
+        return t;
+      });
+    });
+
     try {
       if (active) {
         const { error } = await supabase
@@ -702,9 +700,13 @@ function TaskCardInner({
           .insert({ task_id: task.id, label_id: labelId });
         if (error) throw error;
       }
-      // Fire refetch
-      onUpdate?.();
+      // Success - mark query as needing refetch but don't force it immediately
+      queryClient.setQueryData(['tasks', boardId], (old: any[] | undefined) => {
+        return old; // Return unchanged to signal success without triggering render
+      });
     } catch (e: any) {
+      // Rollback on error
+      queryClient.setQueryData(['tasks', boardId], previousTasks);
       toast({
         title: 'Label update failed',
         description: e.message || 'Unable to toggle label',
@@ -741,29 +743,45 @@ function TaskCardInner({
 
       const newLabel = await response.json();
 
-      // Add the new label to the workspace labels list (sorted)
-      setWorkspaceLabels((prev) =>
-        [newLabel, ...prev].sort((a, b) =>
-          a.name.toLowerCase().localeCompare(b.name.toLowerCase())
-        )
-      );
-
       // Auto-apply the newly created label to this task
       try {
         const supabase = createClient();
+
+        // Cancel any outgoing refetches
+        await queryClient.cancelQueries({ queryKey: ['tasks', boardId] });
+
+        // Snapshot the previous value
+        const previousTasks = queryClient.getQueryData(['tasks', boardId]);
+
+        // Optimistically update the cache
+        queryClient.setQueryData(
+          ['tasks', boardId],
+          (old: any[] | undefined) => {
+            if (!old) return old;
+            return old.map((t) => {
+              if (t.id === task.id) {
+                return {
+                  ...t,
+                  labels: [...(t.labels || []), newLabel],
+                };
+              }
+              return t;
+            });
+          }
+        );
+
         const { error: linkErr } = await supabase
           .from('task_labels')
           .insert({ task_id: task.id, label_id: newLabel.id });
         if (linkErr) {
+          // Rollback on error
+          queryClient.setQueryData(['tasks', boardId], previousTasks);
           toast({
             title: 'Label created (not applied)',
             description:
               'The label was created but could not be attached to the task. Refresh and try manually.',
             variant: 'destructive',
           });
-        } else {
-          // Trigger parent refetch so task prop includes new label
-          onUpdate?.();
         }
       } catch (applyErr: any) {
         console.error('Failed to auto-apply new label', applyErr);
@@ -779,12 +797,10 @@ function TaskCardInner({
         description: `"${newLabel.name}" label created and applied to this task`,
       });
 
-      // Dispatch global event so other task cards can refresh
-      window.dispatchEvent(
-        new CustomEvent('workspace-label-created', {
-          detail: { wsId: boardConfig.ws_id, label: newLabel },
-        })
-      );
+      // Invalidate workspace labels cache so all task cards get the new label
+      queryClient.invalidateQueries({
+        queryKey: ['workspace-labels', boardConfig.ws_id],
+      });
     } catch (e: any) {
       toast({
         title: 'Failed to create label',
@@ -817,7 +833,7 @@ function TaskCardInner({
     if (!task.priority) return '';
     switch (task.priority) {
       case 'critical':
-        return 'border-dynamic-red/70';
+        return 'border-dynamic-red shadow-sm shadow-dynamic-red/20';
       case 'high':
         return 'border-dynamic-orange/70';
       case 'normal':
@@ -832,7 +848,8 @@ function TaskCardInner({
   const getPriorityIndicator = () => {
     if (!task.priority) return null;
     const colors = {
-      critical: 'bg-dynamic-red/10 border-dynamic-red/30 text-dynamic-red',
+      critical:
+        'bg-dynamic-red/20 border-dynamic-red/50 text-dynamic-red shadow-sm shadow-dynamic-red/50',
       high: 'bg-dynamic-orange/10 border-dynamic-orange/30 text-dynamic-orange',
       normal:
         'bg-dynamic-yellow/10 border-dynamic-yellow/30 text-dynamic-yellow',
@@ -851,7 +868,8 @@ function TaskCardInner({
         variant="secondary"
         className={cn(
           'p-1 text-xs',
-          colors[task.priority as keyof typeof colors]
+          colors[task.priority as keyof typeof colors],
+          task.priority === 'critical' && 'animate-pulse font-semibold'
         )}
       >
         {labels[task.priority as keyof typeof labels]}
@@ -972,16 +990,7 @@ function TaskCardInner({
           <div className="flex items-center justify-end gap-1">
             {/* Main Actions Menu - With integrated date picker */}
             {!isOverlay && (
-              <DropdownMenu
-                open={menuOpen}
-                onOpenChange={async (open) => {
-                  setMenuOpen(open);
-                  // On open, ensure labels are current (fetch only if we have ws and already initialized)
-                  if (open && boardConfig?.ws_id) {
-                    await fetchWorkspaceLabels(boardConfig.ws_id);
-                  }
-                }}
-              >
+              <DropdownMenu open={menuOpen} onOpenChange={setMenuOpen}>
                 <DropdownMenuTrigger asChild>
                   <Button
                     variant="ghost"
@@ -1848,6 +1857,7 @@ export const TaskCard = React.memo(TaskCardInner, (prev, next) => {
   const keys: (keyof typeof a)[] = [
     'id',
     'name',
+    'description',
     'priority',
     'archived',
     'end_date',
@@ -2050,8 +2060,20 @@ function LightweightTaskCardInner({
             </span>
           )}
           {task.priority && (
-            <span className="inline-flex items-center gap-1 rounded-md bg-dynamic-surface/70 px-2 py-1 font-medium text-foreground/80">
-              <Flag className="h-3 w-3" />
+            <span
+              className={cn(
+                'inline-flex items-center gap-1 rounded-md px-2 py-1 font-medium',
+                task.priority === 'critical'
+                  ? 'animate-pulse bg-dynamic-red text-white shadow-dynamic-red/50 shadow-sm'
+                  : 'bg-dynamic-surface/70 text-foreground/80'
+              )}
+            >
+              <Flag
+                className={cn(
+                  'h-3 w-3',
+                  task.priority === 'critical' ? 'h-3.5 w-3.5' : ''
+                )}
+              />
               {priorityLabels[task.priority]}
             </span>
           )}

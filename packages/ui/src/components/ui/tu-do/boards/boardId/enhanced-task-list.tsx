@@ -259,7 +259,7 @@ export function EnhancedTaskList({
       )}
     >
       {/* List Header */}
-      <div className="flex items-center gap-2 rounded-lg border-b p-3">
+      <div className="flex items-center gap-2 rounded-lg p-3">
         {/* Drag Handle */}
         <div
           {...listAttributes}

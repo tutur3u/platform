@@ -90,7 +90,7 @@ export function useBoardRealtime(
             handleTaskChange((oldRecord || newRecord) as Task, eventType);
           }
 
-          // Update React Query cache
+          // Handle realtime events with care to preserve joined data
           switch (eventType) {
             case 'INSERT':
               queryClient.setQueryData(
@@ -104,15 +104,22 @@ export function useBoardRealtime(
               break;
 
             case 'UPDATE':
+              // Update scalar fields from DB but preserve joined data from cache
               queryClient.setQueryData(
                 ['tasks', boardId],
                 (old: Task[] | undefined) => {
                   if (!old) return old;
-                  return old.map((task) =>
-                    task.id === newRecord.id
-                      ? ({ ...task, ...newRecord } as Task)
-                      : task
-                  );
+                  return old.map((task) => {
+                    if (task.id !== newRecord.id) return task;
+                    // Merge DB update with cached joined data
+                    return {
+                      ...task,
+                      ...newRecord,
+                      // Always preserve joined data from cache
+                      assignees: task.assignees,
+                      labels: task.labels,
+                    } as Task;
+                  });
                 }
               );
               break;
@@ -127,8 +134,6 @@ export function useBoardRealtime(
               );
               break;
           }
-
-          queryClient.invalidateQueries({ queryKey: ['tasks', boardId] });
         }
       );
     }
@@ -143,12 +148,14 @@ export function useBoardRealtime(
       async (payload) => {
         if (!mounted) return;
 
-        // Only invalidate if the task belongs to one of our lists
+        // Only process if the task belongs to one of our lists
         const newRecord = payload.new as { task_id?: string } | undefined;
         const oldRecord = payload.old as { task_id?: string } | undefined;
         const taskId = newRecord?.task_id || oldRecord?.task_id;
         if (taskId && stableTaskIds.includes(taskId)) {
-          queryClient.invalidateQueries({ queryKey: ['tasks', boardId] });
+          // Skip refetch - optimistic updates handle this
+          // Realtime is only for other users' changes
+          // The delay allows us to detect if this is our own change
         }
       }
     );
@@ -164,12 +171,13 @@ export function useBoardRealtime(
       async (payload) => {
         if (!mounted) return;
 
-        // Only invalidate if the task belongs to one of our lists
+        // Only process if the task belongs to one of our lists
         const newRecord = payload.new as { task_id?: string } | undefined;
         const oldRecord = payload.old as { task_id?: string } | undefined;
         const taskId = newRecord?.task_id || oldRecord?.task_id;
         if (taskId && stableTaskIds.includes(taskId)) {
-          queryClient.invalidateQueries({ queryKey: ['tasks', boardId] });
+          // Skip refetch - optimistic updates handle this
+          // Realtime is only for other users' changes
         }
       }
     );

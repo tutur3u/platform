@@ -1,5 +1,7 @@
 'use client';
 
+import { createClient } from '@tuturuuu/supabase/next/client';
+import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -22,7 +24,7 @@ import {
   isYesterday,
 } from 'date-fns';
 import Link from 'next/link';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 interface Task {
   id: string;
@@ -81,13 +83,41 @@ export default function ExpandableTaskList({
   const [showAll, setShowAll] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const displayedTasks = showAll ? tasks : tasks.slice(0, initialLimit);
-  const hasMoreTasks = tasks.length > initialLimit;
+  const [localTasks, setLocalTasks] = useState<Task[]>(tasks);
+
+  // Update local tasks when props change
+  useEffect(() => {
+    setLocalTasks(tasks);
+  }, [tasks]);
+
+  const displayedTasks = showAll
+    ? localTasks
+    : localTasks.slice(0, initialLimit);
+  const hasMoreTasks = localTasks.length > initialLimit;
 
   const handleEditTask = (task: Task, e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    setEditingTask(task);
+
+    // Transform task data to match TaskEditDialog expected format
+    // Convert labels from [{ label: {...} }] to [{...}]
+    // Convert assignees from [{ user: {...} }] to [{...}]
+    const transformedTask = {
+      ...task,
+      labels: task.labels
+        ?.map((tl) => tl.label)
+        .filter((label): label is NonNullable<typeof label> => label !== null),
+      assignees: task.assignees
+        ?.map((ta) => ta.user)
+        .filter((user): user is NonNullable<typeof user> => user !== null)
+        .map((user) => ({
+          id: user.id,
+          display_name: user.display_name,
+          avatar_url: user.avatar_url,
+        })),
+    };
+
+    setEditingTask(transformedTask as any);
     setIsEditDialogOpen(true);
   };
 
@@ -97,9 +127,69 @@ export default function ExpandableTaskList({
   };
 
   const handleUpdateTask = () => {
-    // Trigger refresh by re-rendering
-    window.location.reload();
+    // Task updates are handled by the polling mechanism
+    // Just close the dialog when save is complete
   };
+
+  // Poll for updates while dialog is open
+  useEffect(() => {
+    if (!isEditDialogOpen || !editingTask) return;
+
+    const pollForUpdates = async () => {
+      const supabase = createClient();
+      const { data: updatedTask } = await supabase
+        .from('tasks')
+        .select(
+          `
+          *,
+          list:task_lists!inner(
+            id,
+            name,
+            status,
+            board:workspace_boards!inner(
+              id,
+              name,
+              ws_id,
+              estimation_type,
+              extended_estimation,
+              allow_zero_estimates,
+              workspaces(id, name, personal)
+            )
+          ),
+          assignees:task_assignees(
+            user:users(
+              id,
+              display_name,
+              avatar_url
+            )
+          ),
+          labels:task_labels(
+            label:workspace_task_labels(
+              id,
+              name,
+              color,
+              created_at
+            )
+          )
+        `
+        )
+        .eq('id', editingTask.id)
+        .single();
+
+      if (updatedTask) {
+        // Update local tasks with the fresh data
+        setLocalTasks((prevTasks) =>
+          prevTasks.map((task) =>
+            task.id === updatedTask.id ? updatedTask : task
+          )
+        );
+      }
+    };
+
+    const intervalId = setInterval(pollForUpdates, 1000); // Poll every second
+
+    return () => clearInterval(intervalId);
+  }, [isEditDialogOpen, editingTask]);
 
   const getPriorityColor = (priority: string | null) => {
     switch (priority) {
@@ -159,18 +249,18 @@ export default function ExpandableTaskList({
             key={task.id}
             type="button"
             className={cn(
-              'group relative w-full cursor-pointer rounded-xl border p-4 text-left transition-all duration-300 hover:shadow-lg',
+              'group relative w-full cursor-pointer overflow-hidden rounded-xl border p-5 text-left shadow-sm transition-all duration-300 hover:scale-[1.02] hover:shadow-xl',
               taskOverdue && !task.archived
-                ? 'border-dynamic-red/30 bg-dynamic-red/5 shadow-sm ring-1 ring-dynamic-red/20'
-                : 'border-dynamic-orange/20 bg-dynamic-orange/5 hover:border-dynamic-orange/30'
+                ? 'border-dynamic-red/30 bg-gradient-to-br from-dynamic-red/5 via-dynamic-red/3 to-transparent ring-2 ring-dynamic-red/20'
+                : 'border-border/50 bg-gradient-to-br from-card via-card/95 to-card/90 hover:border-primary/30 hover:ring-2 hover:ring-primary/10'
             )}
             onClick={(e) => handleEditTask(task, e)}
           >
-            {/* Overdue indicator - Enhanced */}
+            {/* Overdue indicator - Enhanced with animation */}
             {taskOverdue && !task.archived && (
-              <div className="absolute top-3 right-3 flex items-center gap-1.5 rounded-full bg-dynamic-red/15 px-3 py-1 ring-1 ring-dynamic-red/30 backdrop-blur-sm">
-                <AlertCircle className="h-3.5 w-3.5 text-dynamic-red" />
-                <span className="font-bold text-[10px] text-dynamic-red tracking-widest">
+              <div className="absolute top-4 right-4 flex animate-pulse items-center gap-1.5 rounded-full bg-dynamic-red px-3 py-1.5 shadow-lg ring-2 ring-dynamic-red/30">
+                <AlertCircle className="h-3.5 w-3.5 text-white" />
+                <span className="font-bold text-[10px] text-white tracking-widest">
                   OVERDUE
                 </span>
               </div>
@@ -182,13 +272,13 @@ export default function ExpandableTaskList({
               <div className="min-w-0 flex-1 space-y-3">
                 {/* Task name and priority badge */}
                 <div className="flex items-start gap-3">
-                  <h4 className="line-clamp-2 flex-1 font-semibold text-foreground text-sm leading-snug transition-colors duration-200">
+                  <h4 className="line-clamp-2 flex-1 font-bold text-base text-foreground leading-snug transition-colors duration-200 group-hover:text-primary">
                     {task.name}
                   </h4>
                   {task.priority && (
                     <Badge
                       className={cn(
-                        'shrink-0 font-semibold text-[10px] tracking-wide shadow-sm',
+                        'shrink-0 font-bold text-[10px] uppercase tracking-wider shadow-md ring-1',
                         getPriorityColor(task.priority)
                       )}
                     >
@@ -197,14 +287,46 @@ export default function ExpandableTaskList({
                   )}
                 </div>
 
-                {/* Metadata row - Improved layout */}
-                <div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-xs">
-                  {/* Board/List context */}
+                {/* Metadata row - Workspace → Board → List hierarchy */}
+                <div className="flex flex-wrap items-center gap-x-2 gap-y-2 text-xs">
+                  {/* Workspace badge - Always show for personal view */}
+                  {isPersonal && task.list?.board?.ws_id && (
+                    <Link
+                      href={`/${task.list.board.ws_id}`}
+                      onClick={(e) => e.stopPropagation()}
+                      className={cn(
+                        'group/ws flex items-center gap-1.5 rounded-lg px-2.5 py-1 font-semibold shadow-sm ring-1 transition-all',
+                        task.list?.board?.workspaces?.personal
+                          ? 'bg-dynamic-purple/10 text-dynamic-purple ring-dynamic-purple/20 hover:bg-dynamic-purple/20 hover:shadow-md'
+                          : 'bg-dynamic-blue/10 text-dynamic-blue ring-dynamic-blue/20 hover:bg-dynamic-blue/20 hover:shadow-md'
+                      )}
+                    >
+                      {task.list?.board?.workspaces?.personal ? (
+                        <>
+                          <UserRound className="h-3.5 w-3.5" />
+                          <span className="truncate group-hover/ws:underline">
+                            Personal
+                          </span>
+                        </>
+                      ) : (
+                        <span className="truncate group-hover/ws:underline">
+                          {task.list?.board?.workspaces?.name}
+                        </span>
+                      )}
+                    </Link>
+                  )}
+
+                  {/* Arrow separator after workspace */}
+                  {isPersonal && task.list?.board?.ws_id && (
+                    <span className="text-muted-foreground/40">→</span>
+                  )}
+
+                  {/* Board name */}
                   {task.list?.board?.id && task.list?.board?.ws_id && (
                     <Link
                       href={`/${task.list.board.ws_id}/tasks/boards/${task.list.board.id}`}
                       onClick={(e) => e.stopPropagation()}
-                      className="group/link flex items-center gap-1.5 rounded-md bg-dynamic-green/10 px-2 py-1 font-medium text-dynamic-green transition-all hover:bg-dynamic-green/20"
+                      className="group/link flex items-center gap-1.5 rounded-lg bg-dynamic-green/10 px-2.5 py-1 font-semibold text-dynamic-green shadow-sm ring-1 ring-dynamic-green/20 transition-all hover:bg-dynamic-green/20 hover:shadow-md"
                     >
                       <span className="truncate group-hover/link:underline">
                         {task.list?.board?.name || 'Board'}
@@ -212,57 +334,31 @@ export default function ExpandableTaskList({
                     </Link>
                   )}
 
+                  {/* Arrow separator after board */}
+                  {task.list?.board?.id && task.list?.name && (
+                    <span className="text-muted-foreground/40">→</span>
+                  )}
+
+                  {/* List name */}
                   {task.list?.name && (
-                    <>
-                      <span className="text-foreground">→</span>
-                      <span className="truncate rounded-md bg-dynamic-purple/10 px-2 py-1 text-dynamic-purple">
-                        {task.list.name}
-                      </span>
-                    </>
+                    <span className="truncate rounded-lg bg-dynamic-purple/10 px-2.5 py-1 font-semibold text-dynamic-purple shadow-sm ring-1 ring-dynamic-purple/20">
+                      {task.list.name}
+                    </span>
                   )}
 
-                  {/* Workspace badge for personal view */}
-                  {isPersonal && task.list?.board?.ws_id && (
-                    <>
-                      <span className="text-muted-foreground/30">•</span>
-                      <Link
-                        href={`/${task.list.board.ws_id}`}
-                        onClick={(e) => e.stopPropagation()}
-                        className={cn(
-                          'group/ws flex items-center gap-1.5 rounded-md px-2 py-1 font-medium transition-all',
-                          task.list?.board?.workspaces?.personal
-                            ? 'bg-dynamic-purple/10 text-dynamic-purple hover:bg-dynamic-purple/20'
-                            : 'bg-dynamic-blue/10 text-dynamic-blue hover:bg-dynamic-blue/20'
-                        )}
-                      >
-                        {task.list?.board?.workspaces?.personal ? (
-                          <>
-                            <UserRound className="h-3.5 w-3.5" />
-                            <span className="truncate group-hover/ws:underline">
-                              Personal
-                            </span>
-                          </>
-                        ) : (
-                          <span className="truncate group-hover/ws:underline">
-                            {task.list?.board?.workspaces?.name}
-                          </span>
-                        )}
-                      </Link>
-                    </>
-                  )}
-
-                  {/* Date info - most important */}
+                  {/* Separator before dates */}
                   {(endDate || (startDate && startDate > now)) && (
                     <span className="text-muted-foreground/30">•</span>
                   )}
 
+                  {/* Due date */}
                   {endDate && (
                     <div
                       className={cn(
-                        'flex items-center gap-1.5 rounded-md px-2 py-1 transition-colors',
+                        'flex items-center gap-1.5 rounded-lg px-2.5 py-1 font-medium shadow-sm ring-1 transition-colors',
                         taskOverdue && !task.archived
-                          ? 'bg-dynamic-red/10 font-semibold text-dynamic-red'
-                          : 'bg-dynamic-orange/10 text-dynamic-orange'
+                          ? 'bg-dynamic-red/10 text-dynamic-red ring-dynamic-red/20'
+                          : 'bg-dynamic-orange/10 text-dynamic-orange ring-dynamic-orange/20'
                       )}
                     >
                       <Calendar className="h-3.5 w-3.5 shrink-0" />
@@ -272,8 +368,9 @@ export default function ExpandableTaskList({
                     </div>
                   )}
 
+                  {/* Start date (if upcoming) */}
                   {startDate && startDate > now && (
-                    <div className="flex items-center gap-1.5 rounded-md bg-dynamic-blue/10 px-2 py-1 text-dynamic-blue">
+                    <div className="flex items-center gap-1.5 rounded-lg bg-dynamic-blue/10 px-2.5 py-1 font-medium text-dynamic-blue shadow-sm ring-1 ring-dynamic-blue/20">
                       <Clock className="h-3.5 w-3.5 shrink-0" />
                       <span className="truncate">
                         Starts {formatSmartDate(startDate)}
@@ -283,46 +380,69 @@ export default function ExpandableTaskList({
                 </div>
 
                 {/* Bottom row - labels, estimation, assignees - Enhanced */}
-                <div className="flex flex-wrap items-center gap-2.5">
+                <div className="flex flex-wrap items-center gap-2">
+                  {/* Assignees */}
+                  {task.assignees && task.assignees.length > 0 && (
+                    <div className="-space-x-2 flex">
+                      {task.assignees.slice(0, 3).map((assignee) => (
+                        <Avatar
+                          key={assignee.user?.id}
+                          className="h-7 w-7 border-2 border-background shadow-md ring-1 ring-border/50 transition-all duration-200 hover:z-10 hover:scale-110 hover:ring-primary/30"
+                        >
+                          <AvatarImage
+                            src={assignee.user?.avatar_url || undefined}
+                            alt={assignee.user?.display_name || 'User'}
+                          />
+                          <AvatarFallback className="font-semibold text-xs">
+                            {(assignee.user?.display_name || 'U')
+                              .charAt(0)
+                              .toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
+                      ))}
+                      {task.assignees.length > 3 && (
+                        <div className="flex h-7 w-7 items-center justify-center rounded-full border-2 border-background bg-gradient-to-br from-primary/20 to-primary/10 font-bold text-[10px] text-primary shadow-md ring-1 ring-border/50 transition-all duration-200 hover:z-10 hover:scale-110 hover:ring-primary/30">
+                          +{task.assignees.length - 3}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
                   {/* Labels */}
                   {task.labels && task.labels.length > 0 && (
-                    <TaskLabelsDisplay
-                      labels={task.labels
-                        .map((tl) => tl.label)
-                        .filter(
-                          (label): label is NonNullable<typeof label> =>
-                            label !== null
-                        )}
-                      size="sm"
-                      maxDisplay={4}
-                    />
+                    <>
+                      <div className="h-5 w-[1px] bg-border" />
+                      <TaskLabelsDisplay
+                        labels={task.labels
+                          .map((tl) => tl.label)
+                          .filter(
+                            (label): label is NonNullable<typeof label> =>
+                              label !== null
+                          )}
+                        size="sm"
+                        maxDisplay={4}
+                      />
+                    </>
                   )}
 
                   {/* Estimation */}
                   {task.estimation_points !== null &&
                     task.estimation_points !== undefined && (
-                      <TaskEstimationDisplay
-                        points={task.estimation_points}
-                        size="sm"
-                        showIcon={true}
-                        estimationType={task.list?.board?.estimation_type}
-                      />
+                      <>
+                        <div className="h-5 w-[1px] bg-border" />
+                        <TaskEstimationDisplay
+                          points={task.estimation_points}
+                          size="sm"
+                          showIcon={true}
+                          estimationType={task.list?.board?.estimation_type}
+                        />
+                      </>
                     )}
-
-                  {/* Assignees */}
-                  {task.assignees && task.assignees.length > 0 && (
-                    <div className="flex items-center gap-1.5 rounded-md bg-dynamic-blue/10 px-2 py-1 text-[10px] text-dynamic-blue ring-1 ring-dynamic-blue/20">
-                      <UserRound className="h-3.5 w-3.5" />
-                      <span className="font-medium">
-                        {task.assignees.length}
-                      </span>
-                    </div>
-                  )}
                 </div>
 
                 {/* Description - only show if exists */}
-                {task.description && (
-                  <p className="line-clamp-2 rounded-md bg-muted/40 px-3 py-2 text-muted-foreground text-xs leading-relaxed">
+                {task.description && getDescriptionText(task.description) && (
+                  <p className="line-clamp-2 rounded-lg border border-border/50 bg-muted/30 px-3.5 py-2.5 text-muted-foreground text-xs leading-relaxed shadow-sm backdrop-blur-sm">
                     {getDescriptionText(task.description)}
                   </p>
                 )}
@@ -335,21 +455,22 @@ export default function ExpandableTaskList({
       {hasMoreTasks && (
         <div className="flex justify-center pt-6">
           <Button
-            variant="ghost"
-            size="sm"
+            variant="outline"
+            size="default"
             onClick={() => setShowAll(!showAll)}
-            className="group h-10 gap-2 px-6 transition-all duration-200 hover:scale-105 hover:bg-dynamic-orange/10 hover:text-dynamic-orange hover:shadow-md"
+            className="group h-11 gap-2.5 rounded-xl border-2 px-8 font-semibold shadow-sm transition-all duration-200 hover:scale-105 hover:border-primary hover:bg-primary/5 hover:shadow-lg"
           >
             {showAll ? (
               <>
-                <ChevronUp className="h-4 w-4 transition-transform" />
-                <span className="font-medium">Show Less</span>
+                <ChevronUp className="group-hover:-translate-y-0.5 h-4 w-4 transition-transform" />
+                <span>Show Less</span>
               </>
             ) : (
               <>
-                <ChevronDown className="h-4 w-4 transition-transform" />
-                <span className="font-medium">
-                  Show {tasks.length - initialLimit} More Tasks
+                <ChevronDown className="h-4 w-4 transition-transform group-hover:translate-y-0.5" />
+                <span>
+                  Show {tasks.length - initialLimit} More Task
+                  {tasks.length - initialLimit !== 1 ? 's' : ''}
                 </span>
               </>
             )}

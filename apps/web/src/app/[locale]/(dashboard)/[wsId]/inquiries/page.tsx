@@ -1,7 +1,11 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
+import WorkspaceWrapper from '@/components/workspace-wrapper';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
 import type { Product, SupportInquiry, SupportType } from '@tuturuuu/types/db';
+import { isValidTuturuuuEmail } from '@tuturuuu/utils/email/client';
 import type { Metadata } from 'next';
-import { redirect } from 'next/navigation';
 import { InquiriesClient } from './inquiries-client';
 
 export const metadata: Metadata = {
@@ -28,6 +32,8 @@ interface PageProps {
   searchParams: Promise<{
     type?: SupportType;
     product?: Product;
+    page?: string;
+    limit?: string;
   }>;
 }
 
@@ -35,90 +41,151 @@ export default async function InquiriesPage({
   params,
   searchParams,
 }: PageProps) {
-  const { wsId } = await params;
-  const { type, product } = await searchParams;
-
-  const supabase = await createClient();
-
-  // Check if user is authenticated and has access
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) redirect('/login');
-
-  // Check if user has access to this workspace (root workspace only)
-  const { data: workspace } = await supabase
-    .from('workspaces')
-    .select('id, name')
-    .eq('id', wsId)
-    .single();
-
-  if (!workspace) redirect('/');
-
-  // Build query with optional filters
-  let query = supabase
-    .from('support_inquiries')
-    .select(`
-      *,
-      users!fk_support_inquiries_creator_id(
-        id,
-        display_name,
-        avatar_url,
-        user_private_details(
-          email
-        )
-      )
-    `)
-    .order('created_at', { ascending: false });
-
-  // Apply filters if provided
-  if (type) {
-    query = query.eq('type', type);
-  }
-  if (product) {
-    query = query.eq('product', product);
-  }
-
-  const { data: inquiries, error } = await query;
-
-  if (error) {
-    console.error('Error fetching inquiries:', error);
-    return <div>Error loading inquiries</div>;
-  }
-
-  // Get available filter options
-  const { data: supportTypes } = await supabase
-    .from('support_inquiries')
-    .select('type')
-    .not('type', 'is', null);
-
-  const { data: products } = await supabase
-    .from('support_inquiries')
-    .select('product')
-    .not('product', 'is', null);
-
-  const uniqueTypes = [
-    ...new Set(supportTypes?.map((item) => item.type) || []),
-  ];
-  const uniqueProducts = [
-    ...new Set(products?.map((item) => item.product) || []),
-  ];
-
   return (
-    <div className="container mx-auto py-6">
-      <div className="mb-6">
-        <h1 className="font-bold text-3xl">Support Inquiries</h1>
-        <p className="text-muted-foreground">
-          Manage and review support inquiries from users.
-        </p>
-      </div>
+    <WorkspaceWrapper params={params}>
+      {async () => {
+        const { type, product, page, limit } = await searchParams;
 
-      <InquiriesClient
-        inquiries={inquiries as ExtendedSupportInquiry[]}
-        availableTypes={uniqueTypes}
-        availableProducts={uniqueProducts}
-        currentFilters={{ type, product }}
-      />
-    </div>
+        const currentPage = Number.parseInt(page || '1', 10);
+        const pageLimit = Number.parseInt(limit || '10', 10);
+        const offset = (currentPage - 1) * pageLimit;
+
+        const supabase = await createClient();
+
+        // Verify user has valid Tuturuuu email
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+
+        if (!isValidTuturuuuEmail(user?.email)) {
+          return (
+            <div className="container mx-auto py-6">
+              <div className="text-destructive">
+                Access denied. Only valid tuturuuu.com accounts can view
+                inquiries.
+              </div>
+            </div>
+          );
+        }
+
+        const sbAdmin = await createAdminClient();
+
+        // Build count query with optional filters
+        let countQuery = sbAdmin
+          .from('support_inquiries')
+          .select('*', { count: 'exact', head: true });
+
+        if (type) {
+          countQuery = countQuery.eq('type', type);
+        }
+
+        if (product) {
+          countQuery = countQuery.eq('product', product);
+        }
+
+        const { count: totalCount } = await countQuery;
+
+        // Build data query with optional filters and pagination
+        let query = sbAdmin
+          .from('support_inquiries')
+          .select(`
+            *,
+            users(
+              id,
+              display_name,
+              avatar_url,
+              user_private_details(
+                email
+              )
+            )
+          `)
+          .order('created_at', { ascending: false })
+          .range(offset, offset + pageLimit - 1);
+
+        if (type) {
+          query = query.eq('type', type);
+        }
+
+        if (product) {
+          query = query.eq('product', product);
+        }
+
+        const { data: inquiries, error } = await query;
+
+        if (error) {
+          console.error('Error fetching inquiries:', error);
+          return <div>Error loading inquiries</div>;
+        }
+
+        // Get available filter options
+        const { data: supportTypes } = await sbAdmin
+          .from('support_inquiries')
+          .select('type')
+          .not('type', 'is', null);
+
+        const { data: products } = await sbAdmin
+          .from('support_inquiries')
+          .select('product')
+          .not('product', 'is', null);
+
+        const uniqueTypes = [
+          ...new Set(supportTypes?.map((item) => item.type) || []),
+        ];
+
+        const uniqueProducts = [
+          ...new Set(products?.map((item) => item.product) || []),
+        ];
+
+        const totalPages = Math.ceil((totalCount || 0) / pageLimit);
+
+        return (
+          <div className="container mx-auto px-4 py-6 md:px-8">
+            {/* Enhanced Header with gradient */}
+            <div className="mb-6 rounded-lg border bg-gradient-to-r from-dynamic-orange/5 via-background to-background p-6 backdrop-blur-sm md:mb-8 md:p-8">
+              <div className="flex items-center gap-3 md:gap-4">
+                <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-dynamic-orange/10 ring-1 ring-dynamic-orange/20 md:h-14 md:w-14">
+                  <svg
+                    className="h-6 w-6 text-dynamic-orange md:h-7 md:w-7"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                    aria-label="Support Inquiries"
+                  >
+                    <title>Support Inquiries</title>
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"
+                    />
+                  </svg>
+                </div>
+                <div className="flex min-w-0 flex-col gap-1">
+                  <h1 className="truncate font-bold text-2xl tracking-tight md:text-3xl">
+                    Support Inquiries
+                  </h1>
+                  <p className="text-muted-foreground text-sm md:text-base">
+                    Manage and review support inquiries from users.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <InquiriesClient
+              inquiries={inquiries as ExtendedSupportInquiry[]}
+              availableTypes={uniqueTypes}
+              availableProducts={uniqueProducts}
+              currentFilters={{ type, product }}
+              pagination={{
+                currentPage,
+                pageLimit,
+                totalCount: totalCount || 0,
+                totalPages,
+              }}
+            />
+          </div>
+        );
+      }}
+    </WorkspaceWrapper>
   );
 }

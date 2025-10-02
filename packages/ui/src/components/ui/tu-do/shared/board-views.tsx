@@ -5,6 +5,7 @@ import type { Workspace } from '@tuturuuu/types/db';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskBoard } from '@tuturuuu/types/primitives/TaskBoard';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
+import type { WorkspaceLabel } from '@tuturuuu/utils/task-helper';
 import { useMemo, useState } from 'react';
 import { KanbanBoard } from '../boards/boardId/kanban';
 import { StatusGroupedBoard } from '../boards/boardId/status-grouped-board';
@@ -26,6 +27,7 @@ interface Props {
   board: TaskBoard;
   tasks: Task[];
   lists: TaskList[];
+  workspaceLabels: WorkspaceLabel[];
 }
 
 export function BoardViews({ workspace, board, tasks, lists }: Props) {
@@ -145,7 +147,7 @@ export function BoardViews({ workspace, board, tasks, lists }: Props) {
         selectedLabels={selectedLabels}
         onLabelsChange={setSelectedLabels}
       />
-      <div className="h-full flex-1 overflow-hidden">{renderView()}</div>
+      <div className="h-full overflow-hidden">{renderView()}</div>
     </div>
   );
 }
