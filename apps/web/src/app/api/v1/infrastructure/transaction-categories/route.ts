@@ -20,7 +20,10 @@ export async function GET(req: Request) {
     .from('transaction_categories')
     .select('*', { count: 'exact' })
     .eq('ws_id', wsId)
-    .range(Number.parseInt(offset, 10), Number.parseInt(offset, 10) + Number.parseInt(limit, 10) - 1);
+    .range(
+      Number.parseInt(offset, 10),
+      Number.parseInt(offset, 10) + Number.parseInt(limit, 10) - 1
+    );
 
   if (error) {
     console.error('Error fetching transaction_categories:', error);

@@ -20,7 +20,10 @@ export async function GET(req: Request) {
     .from('workspace_promotions')
     .select('*', { count: 'exact' })
     .eq('ws_id', wsId)
-    .range(Number.parseInt(offset, 10), Number.parseInt(offset, 10) + Number.parseInt(limit, 10) - 1);
+    .range(
+      Number.parseInt(offset, 10),
+      Number.parseInt(offset, 10) + Number.parseInt(limit, 10) - 1
+    );
 
   if (error) {
     console.error('Error fetching workspace promotions:', error);
