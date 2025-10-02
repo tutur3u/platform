@@ -134,7 +134,9 @@ function TaskEditDialogComponent({
 
   // Sync workspace labels to local state
   useEffect(() => {
-    setAvailableLabels(workspaceLabelsData);
+    if (workspaceLabelsData.length > 0) {
+      setAvailableLabels(workspaceLabelsData);
+    }
   }, [workspaceLabelsData]);
 
   // Update workspace ID when board config loads

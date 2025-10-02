@@ -2,23 +2,9 @@ import { useQueryClient } from '@tanstack/react-query';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
-import { useCallback, useEffect, useRef } from 'react';
-
-// Custom hook to create stable array references
-function useStableArray<T>(array: T[]): T[] {
-  const ref = useRef<T[]>(array);
-  const prevArrayRef = useRef<T[]>(array);
-
-  if (
-    array.length !== prevArrayRef.current.length ||
-    array.some((item, index) => item !== prevArrayRef.current[index])
-  ) {
-    ref.current = array;
-    prevArrayRef.current = array;
-  }
-
-  return ref.current;
-}
+import { useEffect } from 'react';
+import { useCallbackRef } from './use-callback-ref';
+import { useStableArray } from './use-stable-array';
 
 export function useBoardRealtime(
   boardId: string,
@@ -37,41 +23,26 @@ export function useBoardRealtime(
 ) {
   const queryClient = useQueryClient();
 
-  // Create stable array references to prevent unnecessary re-subscriptions
   const stableTaskIds = useStableArray(taskIds);
   const stableListIds = useStableArray(listIds);
 
-  // Memoize callbacks to prevent unnecessary re-subscriptions
-  const onTaskChangeRef = useRef(options?.onTaskChange);
-  const onListChangeRef = useRef(options?.onListChange);
-
-  // Update refs when callbacks change
-  useEffect(() => {
-    onTaskChangeRef.current = options?.onTaskChange;
-    onListChangeRef.current = options?.onListChange;
-  }, [options?.onTaskChange, options?.onListChange]);
-
   // Create stable callback functions
-  const handleTaskChange = useCallback(
+  const handleTaskChange = useCallbackRef(
     (task: Task, eventType: 'INSERT' | 'UPDATE' | 'DELETE') => {
-      onTaskChangeRef.current?.(task, eventType);
-    },
-    []
+      options?.onTaskChange?.(task, eventType);
+    }
   );
 
-  const handleListChange = useCallback(
+  const handleListChange = useCallbackRef(
     (list: TaskList, eventType: 'INSERT' | 'UPDATE' | 'DELETE') => {
-      onListChangeRef.current?.(list, eventType);
-    },
-    []
+      options?.onListChange?.(list, eventType);
+    }
   );
 
   useEffect(() => {
     if (!boardId) return;
 
-    let mounted = true;
     const supabase = createClient();
-
     const channel = supabase.channel(`board-realtime-${boardId}`);
 
     channel.on(
@@ -83,8 +54,6 @@ export function useBoardRealtime(
         filter: `board_id=eq.${boardId}`,
       },
       (payload) => {
-        if (!mounted) return;
-
         const { eventType, old: oldRecord, new: newRecord } = payload;
 
         if (oldRecord || newRecord) {
@@ -108,8 +77,6 @@ export function useBoardRealtime(
           filter: `list_id=in.(${stableListIds.join(',')})`,
         },
         async (payload) => {
-          if (!mounted) return;
-
           const { eventType, old: oldRecord, new: newRecord } = payload;
 
           // Call custom callback if provided
@@ -131,21 +98,14 @@ export function useBoardRealtime(
               break;
 
             case 'UPDATE':
-              // Update scalar fields from DB but preserve joined data from cache
+              // Update scalar fields from DB
               queryClient.setQueryData(
                 ['tasks', boardId],
                 (old: Task[] | undefined) => {
                   if (!old) return old;
                   return old.map((task) => {
                     if (task.id !== newRecord.id) return task;
-                    // Merge DB update with cached joined data
-                    return {
-                      ...task,
-                      ...newRecord,
-                      // Always preserve joined data from cache
-                      assignees: task.assignees,
-                      labels: task.labels,
-                    } as Task;
+                    return { ...task, ...newRecord } as Task;
                   });
                 }
               );
@@ -173,16 +133,12 @@ export function useBoardRealtime(
         table: 'task_assignees',
       },
       async (payload) => {
-        if (!mounted) return;
-
         // Only process if the task belongs to one of our lists
         const newRecord = payload.new as { task_id?: string } | undefined;
         const oldRecord = payload.old as { task_id?: string } | undefined;
         const taskId = newRecord?.task_id || oldRecord?.task_id;
         if (taskId && stableTaskIds.includes(taskId)) {
-          // Skip refetch - optimistic updates handle this
-          // Realtime is only for other users' changes
-          // The delay allows us to detect if this is our own change
+          queryClient.invalidateQueries({ queryKey: ['tasks', boardId] });
         }
       }
     );
@@ -196,15 +152,12 @@ export function useBoardRealtime(
         table: 'task_labels',
       },
       async (payload) => {
-        if (!mounted) return;
-
         // Only process if the task belongs to one of our lists
         const newRecord = payload.new as { task_id?: string } | undefined;
         const oldRecord = payload.old as { task_id?: string } | undefined;
         const taskId = newRecord?.task_id || oldRecord?.task_id;
         if (taskId && stableTaskIds.includes(taskId)) {
-          // Skip refetch - optimistic updates handle this
-          // Realtime is only for other users' changes
+          queryClient.invalidateQueries({ queryKey: ['tasks', boardId] });
         }
       }
     );
@@ -218,19 +171,40 @@ export function useBoardRealtime(
         schema: 'public',
         table: 'workspace_task_labels',
       },
-      async (_payload) => {
-        if (!mounted) return;
+      async (payload) => {
+        const newRecord = payload.new as { id?: string } | undefined;
+        const oldRecord = payload.old as { id?: string } | undefined;
+        const labelId = newRecord?.id || oldRecord?.id;
 
-        // Invalidate all tasks since label definitions changed
-        queryClient.invalidateQueries({ queryKey: ['tasks', boardId] });
+        if (!labelId) return;
+
+        const { data: linkedTasks, error } = await supabase
+          .from('task_labels')
+          .select('task_id')
+          .eq('label_id', labelId);
+
+        if (error) {
+          console.error(
+            'Failed to fetch task_labels for workspace label:',
+            error
+          );
+          return;
+        }
+
+        if (
+          linkedTasks?.some(
+            ({ task_id }) => task_id && stableTaskIds.includes(task_id)
+          )
+        ) {
+          queryClient.invalidateQueries({ queryKey: ['tasks', boardId] });
+        }
       }
     );
 
     channel.subscribe();
 
     return () => {
-      mounted = false;
-      channel.unsubscribe();
+      supabase.removeChannel(channel);
     };
   }, [
     boardId,
