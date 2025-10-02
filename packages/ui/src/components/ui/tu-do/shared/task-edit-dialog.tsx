@@ -530,6 +530,7 @@ function TaskEditDialogComponent({
         : undefined,
       end: task?.end_date ? new Date(task?.end_date).toISOString() : undefined,
       listId: task?.list_id,
+      estimationPoints: task?.estimation_points ?? null,
     } as const;
   }, [task, parseDescription]);
 
@@ -541,8 +542,9 @@ function TaskEditDialogComponent({
       start: startDate?.toISOString(),
       end: endDate?.toISOString(),
       listId: selectedListId,
+      estimationPoints: estimationPoints ?? null,
     } as const;
-  }, [name, description, priority, startDate, endDate, selectedListId]);
+  }, [name, description, priority, startDate, endDate, selectedListId, estimationPoints]);
 
   const hasUnsavedChanges = useMemo(() => {
     return (
@@ -551,7 +553,8 @@ function TaskEditDialogComponent({
       initialSnapshot.priority !== currentSnapshot.priority ||
       initialSnapshot.start !== currentSnapshot.start ||
       initialSnapshot.end !== currentSnapshot.end ||
-      initialSnapshot.listId !== currentSnapshot.listId
+      initialSnapshot.listId !== currentSnapshot.listId ||
+      initialSnapshot.estimationPoints !== currentSnapshot.estimationPoints
     );
   }, [initialSnapshot, currentSnapshot]);
 
@@ -1072,7 +1075,7 @@ function TaskEditDialogComponent({
     }
 
     // Prepare task updates (edit mode)
-    // Note: We need to include description, start_date, and end_date even if null to clear them in the database
+    // Note: We need to include description, start_date, end_date, and estimation_points even if null to clear them in the database
     const taskUpdates: any = {
       name: name.trim(),
       description: descriptionString, // Explicitly null when empty, not undefined
@@ -1080,6 +1083,7 @@ function TaskEditDialogComponent({
       start_date: startDate ? startDate.toISOString() : null, // Explicitly null when undefined
       end_date: endDate ? endDate.toISOString() : null, // Explicitly null when undefined
       list_id: selectedListId,
+      estimation_points: estimationPoints ?? null, // Include estimation points
     };
 
     if (task?.id)
