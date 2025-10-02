@@ -16,7 +16,7 @@ import type {
 } from '@tuturuuu/types/primitives/TaskBoard';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import type { User } from '@tuturuuu/types/primitives/User';
-import { toast } from '@tuturuuu/ui/hooks/use-toast';
+import { toast } from '@tuturuuu/ui/sonner';
 
 export async function getTaskBoard(supabase: SupabaseClient, boardId: string) {
   const { data, error } = await supabase
@@ -741,10 +741,8 @@ export function useUpdateTask(boardId: string) {
       }
 
       console.error('Failed to update task:', err);
-      toast({
-        title: 'Error',
-        description: 'Failed to update task. Please try again.',
-        variant: 'destructive',
+      toast.error('Failed to update task', {
+        description: 'Please try again.',
       });
     },
     onSuccess: (updatedTask) => {
@@ -828,10 +826,8 @@ export function useCreateTask(boardId: string) {
       }
 
       console.error('Failed to create task:', err);
-      toast({
-        title: 'Error',
-        description: 'Failed to create task. Please try again.',
-        variant: 'destructive',
+      toast.error('Failed to create task', {
+        description: 'Please try again.',
       });
     },
     onSuccess: (newTask, _, context) => {
@@ -862,7 +858,12 @@ export function useDeleteTask(boardId: string) {
       await queryClient.cancelQueries({ queryKey: ['tasks', boardId] });
 
       // Snapshot the previous value
-      const previousTasks = queryClient.getQueryData(['tasks', boardId]);
+      const previousTasks = queryClient.getQueryData(['tasks', boardId]) as
+        | Task[]
+        | undefined;
+
+      // Find the task being deleted to store it for potential undo
+      const deletedTask = previousTasks?.find((task) => task.id === taskId);
 
       // Optimistically remove the task from the cache
       queryClient.setQueryData(
@@ -873,7 +874,7 @@ export function useDeleteTask(boardId: string) {
         }
       );
 
-      return { previousTasks };
+      return { previousTasks, deletedTask };
     },
     onError: (err, _, context) => {
       // Rollback optimistic update on error
@@ -882,17 +883,55 @@ export function useDeleteTask(boardId: string) {
       }
 
       console.error('Failed to delete task:', err);
-      toast({
-        title: 'Error',
-        description: 'Failed to delete task. Please try again.',
-        variant: 'destructive',
+      toast.error('Failed to delete task', {
+        description: 'Please try again.',
       });
     },
-    onSuccess: () => {
+    onSuccess: (_, taskId, context) => {
+      const deletedTask = context?.deletedTask;
+
       // Task is already removed from cache optimistically
-      toast({
-        title: 'Success',
-        description: 'Task deleted successfully.',
+      // Show toast with undo action
+      toast.success('Task deleted', {
+        description: deletedTask?.name || 'Task has been removed',
+        action: deletedTask
+          ? {
+              label: 'Undo',
+              onClick: async () => {
+                // Restore the task by setting deleted to false
+                const supabase = createClient();
+                try {
+                  const { error } = await supabase
+                    .from('tasks')
+                    .update({ deleted: false })
+                    .eq('id', taskId);
+
+                  if (error) throw error;
+
+                  // Add the task back to the cache
+                  queryClient.setQueryData(
+                    ['tasks', boardId],
+                    (old: Task[] | undefined) => {
+                      if (!old) return [deletedTask];
+                      // Check if task is already in cache (shouldn't be, but safety check)
+                      const exists = old.some((task) => task.id === taskId);
+                      if (exists) return old;
+                      return [...old, deletedTask];
+                    }
+                  );
+
+                  toast.success('Task restored', {
+                    description: `"${deletedTask.name}" has been restored`,
+                  });
+                } catch (error) {
+                  console.error('Failed to restore task:', error);
+                  toast.error('Failed to restore task', {
+                    description: 'Please try again or refresh the page.',
+                  });
+                }
+              },
+            }
+          : undefined,
       });
     },
   });
@@ -979,10 +1018,8 @@ export function useMoveTask(boardId: string) {
       }
 
       console.error('Failed to move task:', err);
-      toast({
-        title: 'Error',
-        description: 'Failed to move task. Please try again.',
-        variant: 'destructive',
+      toast.error('Failed to move task', {
+        description: 'Please try again.',
       });
     },
     onSuccess: (updatedTask) => {
@@ -1174,10 +1211,8 @@ export function useMoveTaskToBoard(currentBoardId: string) {
       }
 
       console.error('Failed to move task to board:', err);
-      toast({
-        title: 'Error',
-        description: 'Failed to move task to board. Please try again.',
-        variant: 'destructive',
+      toast.error('Failed to move task to board', {
+        description: 'Please try again.',
       });
     },
     onSuccess: (result) => {
@@ -1239,12 +1274,11 @@ export function useMoveTaskToBoard(currentBoardId: string) {
 
       console.log('✅ Cache updated with server response');
 
-      toast({
-        title: 'Success',
-        description: result.movedToDifferentBoard
-          ? 'Task moved to different board successfully'
-          : 'Task moved successfully',
-      });
+      toast.success(
+        result.movedToDifferentBoard
+          ? 'Task moved to different board'
+          : 'Task moved successfully'
+      );
     },
   });
 }
@@ -1399,18 +1433,11 @@ export function useCreateBoardWithTemplate(wsId: string) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['workspace-boards', wsId] });
-      toast({
-        title: 'Success',
-        description: 'Task board created successfully',
-      });
+      toast.success('Task board created successfully');
     },
     onError: (error) => {
       console.error('Error creating board:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to create task board',
-        variant: 'destructive',
-      });
+      toast.error('Failed to create task board');
     },
   });
 }
@@ -1433,21 +1460,13 @@ export function useUpdateTaskListStatus(boardId: string) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['task-lists', boardId] });
-      toast({
-        title: 'Success',
-        description: 'List status updated successfully',
-      });
+      toast.success('List status updated successfully');
     },
     onError: (error) => {
       console.error('Error updating list status:', error);
-      toast({
-        title: 'Error',
-        description:
-          error instanceof Error
-            ? error.message
-            : 'Failed to update list status',
-        variant: 'destructive',
-      });
+      toast.error(
+        error instanceof Error ? error.message : 'Failed to update list status'
+      );
     },
   });
 }
@@ -1661,10 +1680,8 @@ export function useMoveAllTasksFromList(currentBoardId: string) {
       }
 
       console.error('❌ Bulk list move failed:', err);
-      toast({
-        title: 'Error',
-        description: `Failed to move all tasks from list: ${err instanceof Error ? err.message : 'Unknown error'}`,
-        variant: 'destructive',
+      toast.error('Failed to move all tasks from list', {
+        description: err instanceof Error ? err.message : 'Unknown error',
       });
     },
     onSuccess: (data, variables) => {
@@ -1695,10 +1712,9 @@ export function useMoveAllTasksFromList(currentBoardId: string) {
         });
       }
 
-      toast({
-        title: 'Success',
-        description: `Moved ${data.movedCount} task${data.movedCount !== 1 ? 's' : ''} successfully`,
-      });
+      toast.success(
+        `Moved ${data.movedCount} task${data.movedCount !== 1 ? 's' : ''} successfully`
+      );
     },
   });
 }
