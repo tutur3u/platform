@@ -104,21 +104,14 @@ export function useBoardRealtime(
               break;
 
             case 'UPDATE':
-              // Update scalar fields from DB but preserve joined data from cache
+              // Update scalar fields from DB
               queryClient.setQueryData(
                 ['tasks', boardId],
                 (old: Task[] | undefined) => {
                   if (!old) return old;
                   return old.map((task) => {
                     if (task.id !== newRecord.id) return task;
-                    // Merge DB update with cached joined data
-                    return {
-                      ...task,
-                      ...newRecord,
-                      // Always preserve joined data from cache
-                      assignees: task.assignees,
-                      labels: task.labels,
-                    } as Task;
+                    return { ...task, ...newRecord } as Task;
                   });
                 }
               );
@@ -153,9 +146,7 @@ export function useBoardRealtime(
         const oldRecord = payload.old as { task_id?: string } | undefined;
         const taskId = newRecord?.task_id || oldRecord?.task_id;
         if (taskId && stableTaskIds.includes(taskId)) {
-          // Skip refetch - optimistic updates handle this
-          // Realtime is only for other users' changes
-          // The delay allows us to detect if this is our own change
+          queryClient.invalidateQueries({ queryKey: ['tasks', boardId] });
         }
       }
     );
@@ -176,8 +167,7 @@ export function useBoardRealtime(
         const oldRecord = payload.old as { task_id?: string } | undefined;
         const taskId = newRecord?.task_id || oldRecord?.task_id;
         if (taskId && stableTaskIds.includes(taskId)) {
-          // Skip refetch - optimistic updates handle this
-          // Realtime is only for other users' changes
+          queryClient.invalidateQueries({ queryKey: ['tasks', boardId] });
         }
       }
     );
@@ -200,13 +190,16 @@ export function useBoardRealtime(
 
         if (!labelId) return;
 
-        const { data: inferredTask } = await supabase
+        const { data: linkedTasks } = await supabase
           .from('task_labels')
           .select('task_id')
-          .eq('label_id', labelId)
-          .single();
+          .eq('label_id', labelId);
 
-        if (inferredTask && stableTaskIds.includes(inferredTask.task_id)) {
+        if (
+          linkedTasks?.some(
+            ({ task_id }) => task_id && stableTaskIds.includes(task_id)
+          )
+        ) {
           queryClient.invalidateQueries({ queryKey: ['tasks', boardId] });
         }
       }

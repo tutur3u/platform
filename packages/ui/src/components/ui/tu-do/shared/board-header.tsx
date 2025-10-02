@@ -84,7 +84,6 @@ export function BoardHeader({
 
   // Track online users on this board
   const { presenceState, currentUserId } = useBoardPresence(board.id);
-  console.log(JSON.stringify(presenceState, null, 2));
 
   // Calculate board statistics
   const stats = useMemo(() => {
