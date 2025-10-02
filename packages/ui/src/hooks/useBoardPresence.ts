@@ -17,9 +17,11 @@ export function useBoardPresence(boardId?: string) {
 
   useEffect(() => {
     if (!boardId) return;
+
+    const supabase = createClient();
+
     const setupPresence = async () => {
       try {
-        const supabase = createClient();
         const {
           data: { user },
         } = await supabase.auth.getUser();
@@ -43,18 +45,11 @@ export function useBoardPresence(boardId?: string) {
         });
 
         // Set up presence listeners
-        channel
-          .on('presence', { event: 'sync' }, () => {
-            const newState =
-              channel.presenceState() as RealtimePresenceState<BoardPresenceState>;
-            setPresenceState({ ...newState });
-          })
-          .on('presence', { event: 'join' }, ({ key, newPresences }) => {
-            console.log('User joined board:', key, newPresences);
-          })
-          .on('presence', { event: 'leave' }, ({ key, leftPresences }) => {
-            console.log('User left board:', key, leftPresences);
-          });
+        channel.on('presence', { event: 'sync' }, () => {
+          const newState =
+            channel.presenceState() as RealtimePresenceState<BoardPresenceState>;
+          setPresenceState({ ...newState });
+        });
 
         channelRef.current = channel;
 
@@ -87,8 +82,7 @@ export function useBoardPresence(boardId?: string) {
 
     return () => {
       if (channelRef.current) {
-        channelRef.current.untrack();
-        channelRef.current.unsubscribe();
+        supabase.removeChannel(channelRef.current);
       }
     };
   }, [boardId]);
