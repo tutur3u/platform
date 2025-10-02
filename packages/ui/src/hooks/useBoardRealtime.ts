@@ -42,9 +42,7 @@ export function useBoardRealtime(
   useEffect(() => {
     if (!boardId) return;
 
-    let mounted = true;
     const supabase = createClient();
-
     const channel = supabase.channel(`board-realtime-${boardId}`);
 
     channel.on(
@@ -56,8 +54,6 @@ export function useBoardRealtime(
         filter: `board_id=eq.${boardId}`,
       },
       (payload) => {
-        if (!mounted) return;
-
         const { eventType, old: oldRecord, new: newRecord } = payload;
 
         if (oldRecord || newRecord) {
@@ -81,8 +77,6 @@ export function useBoardRealtime(
           filter: `list_id=in.(${stableListIds.join(',')})`,
         },
         async (payload) => {
-          if (!mounted) return;
-
           const { eventType, old: oldRecord, new: newRecord } = payload;
 
           // Call custom callback if provided
@@ -139,8 +133,6 @@ export function useBoardRealtime(
         table: 'task_assignees',
       },
       async (payload) => {
-        if (!mounted) return;
-
         // Only process if the task belongs to one of our lists
         const newRecord = payload.new as { task_id?: string } | undefined;
         const oldRecord = payload.old as { task_id?: string } | undefined;
@@ -160,8 +152,6 @@ export function useBoardRealtime(
         table: 'task_labels',
       },
       async (payload) => {
-        if (!mounted) return;
-
         // Only process if the task belongs to one of our lists
         const newRecord = payload.new as { task_id?: string } | undefined;
         const oldRecord = payload.old as { task_id?: string } | undefined;
@@ -182,18 +172,24 @@ export function useBoardRealtime(
         table: 'workspace_task_labels',
       },
       async (payload) => {
-        if (!mounted) return;
-
         const newRecord = payload.new as { id?: string } | undefined;
         const oldRecord = payload.old as { id?: string } | undefined;
         const labelId = newRecord?.id || oldRecord?.id;
 
         if (!labelId) return;
 
-        const { data: linkedTasks } = await supabase
+        const { data: linkedTasks, error } = await supabase
           .from('task_labels')
           .select('task_id')
           .eq('label_id', labelId);
+
+        if (error) {
+          console.error(
+            'Failed to fetch task_labels for workspace label:',
+            error
+          );
+          return;
+        }
 
         if (
           linkedTasks?.some(
@@ -208,8 +204,7 @@ export function useBoardRealtime(
     channel.subscribe();
 
     return () => {
-      mounted = false;
-      channel.unsubscribe();
+      supabase.removeChannel(channel);
     };
   }, [
     boardId,
