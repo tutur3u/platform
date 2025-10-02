@@ -10,7 +10,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { KanbanBoard } from '../boards/boardId/kanban';
 import { StatusGroupedBoard } from '../boards/boardId/status-grouped-board';
 import { TimelineBoard } from '../boards/boardId/timeline-board';
-import { BoardHeader } from '../shared/board-header';
+import { BoardHeader, type ListStatusFilter } from '../shared/board-header';
 import { ListView } from '../shared/list-view';
 import { TaskEditDialog } from '../shared/task-edit-dialog';
 
@@ -34,6 +34,8 @@ interface Props {
 export function BoardViews({ workspace, board, tasks, lists }: Props) {
   const [currentView, setCurrentView] = useState<ViewType>('kanban');
   const [selectedLabels, setSelectedLabels] = useState<TaskLabel[]>([]);
+  const [listStatusFilter, setListStatusFilter] =
+    useState<ListStatusFilter>('active');
   // Local per-session optimistic overrides (e.g., timeline resize) so switching views preserves changes
   const [taskOverrides, setTaskOverrides] = useState<
     Record<string, Partial<Task>>
@@ -41,13 +43,26 @@ export function BoardViews({ workspace, board, tasks, lists }: Props) {
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const queryClient = useQueryClient();
 
-  // Filter tasks based on selected labels
+  // Filter lists based on selected status filter
+  const filteredLists = useMemo(() => {
+    if (listStatusFilter === 'all') {
+      return lists;
+    }
+    return lists.filter((list) => list.status === listStatusFilter);
+  }, [lists, listStatusFilter]);
+
+  // Filter tasks based on selected labels AND filtered lists
   const filteredTasks = useMemo(() => {
+    // First, filter by list status
+    const listIds = new Set(filteredLists.map((list) => list.id));
+    const result = tasks.filter((task) => listIds.has(task.list_id));
+
+    // Then filter by selected labels if any
     if (selectedLabels.length === 0) {
-      return tasks;
+      return result;
     }
 
-    return tasks.filter((task) => {
+    return result.filter((task) => {
       // If task has no labels, exclude it from results
       if (!task.labels || task.labels.length === 0) {
         return false;
@@ -58,7 +73,7 @@ export function BoardViews({ workspace, board, tasks, lists }: Props) {
         task.labels?.some((taskLabel) => taskLabel.id === selectedLabel.id)
       );
     });
-  }, [tasks, selectedLabels]);
+  }, [tasks, selectedLabels, filteredLists]);
 
   // Apply optimistic overrides so views receive up-to-date edits (durations, name, dates) even before refetch.
   const effectiveTasks = useMemo(() => {
@@ -118,7 +133,7 @@ export function BoardViews({ workspace, board, tasks, lists }: Props) {
       case 'status-grouped':
         return (
           <StatusGroupedBoard
-            lists={lists}
+            lists={filteredLists}
             tasks={effectiveTasks}
             boardId={board.id}
             onUpdate={handleUpdate}
@@ -132,7 +147,7 @@ export function BoardViews({ workspace, board, tasks, lists }: Props) {
             workspace={workspace}
             boardId={board.id}
             tasks={effectiveTasks}
-            lists={lists}
+            lists={filteredLists}
             isLoading={false}
           />
         );
@@ -141,7 +156,7 @@ export function BoardViews({ workspace, board, tasks, lists }: Props) {
           <ListView
             boardId={board.id}
             tasks={effectiveTasks}
-            lists={lists}
+            lists={filteredLists}
             isPersonalWorkspace={workspace.personal}
           />
         );
@@ -149,14 +164,14 @@ export function BoardViews({ workspace, board, tasks, lists }: Props) {
         return (
           <TimelineBoard
             tasks={effectiveTasks}
-            lists={lists}
+            lists={filteredLists}
             onTaskPartialUpdate={handleTaskPartialUpdate}
           />
         );
       default:
         return (
           <StatusGroupedBoard
-            lists={lists}
+            lists={filteredLists}
             tasks={effectiveTasks}
             boardId={board.id}
             onUpdate={handleUpdate}
@@ -177,6 +192,8 @@ export function BoardViews({ workspace, board, tasks, lists }: Props) {
         onViewChange={setCurrentView}
         selectedLabels={selectedLabels}
         onLabelsChange={setSelectedLabels}
+        listStatusFilter={listStatusFilter}
+        onListStatusFilterChange={setListStatusFilter}
       />
       <div className="h-full overflow-hidden">{renderView()}</div>
 
@@ -186,7 +203,7 @@ export function BoardViews({ workspace, board, tasks, lists }: Props) {
         isOpen={createDialogOpen}
         onClose={() => setCreateDialogOpen(false)}
         onUpdate={handleUpdate}
-        availableLists={lists}
+        availableLists={filteredLists}
       />
     </div>
   );

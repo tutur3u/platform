@@ -35,6 +35,7 @@ import { useBoardPresence } from '@tuturuuu/ui/hooks/useBoardPresence';
 import {
   BarChart3,
   CalendarDays,
+  ChevronDown,
   Layers,
   LayoutGrid,
   List,
@@ -57,6 +58,8 @@ interface TaskLabel {
   created_at: string;
 }
 
+export type ListStatusFilter = 'all' | 'active' | 'not_started';
+
 interface Props {
   board: TaskBoard;
   tasks: Task[];
@@ -65,6 +68,8 @@ interface Props {
   onViewChange: (view: ViewType) => void;
   selectedLabels: TaskLabel[];
   onLabelsChange: (labels: TaskLabel[]) => void;
+  listStatusFilter: ListStatusFilter;
+  onListStatusFilterChange: (filter: ListStatusFilter) => void;
 }
 
 export function BoardHeader({
@@ -75,6 +80,8 @@ export function BoardHeader({
   onViewChange,
   selectedLabels,
   onLabelsChange,
+  listStatusFilter,
+  onListStatusFilterChange,
 }: Props) {
   const [isLoading, setIsLoading] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -284,29 +291,89 @@ export function BoardHeader({
           />
           {/* Controls */}
           <div className="flex items-center gap-3">
-            {/* View Switcher */}
+            {/* List Status Filter Tabs */}
             <div className="flex items-center gap-1 rounded-lg border bg-background/80 p-1 backdrop-blur-sm">
-              {Object.entries(viewConfig).map(([view, config]) => {
-                const Icon = config.icon;
-                const isActive = currentView === view;
-                return (
-                  <Button
-                    key={view}
-                    variant="ghost"
-                    size="sm"
-                    className={cn(
-                      'gap-2 transition-all duration-200',
-                      isActive && 'bg-primary/10 text-primary shadow-sm'
-                    )}
-                    onClick={() => onViewChange(view as ViewType)}
-                    title={config.description}
-                  >
-                    <Icon className="h-4 w-4" />
-                    <span className="hidden md:inline">{config.label}</span>
-                  </Button>
-                );
-              })}
+              <Button
+                variant="ghost"
+                size="sm"
+                className={cn(
+                  'gap-2 transition-all duration-200',
+                  listStatusFilter === 'all' &&
+                    'bg-primary/10 text-primary shadow-sm'
+                )}
+                onClick={() => onListStatusFilterChange('all')}
+              >
+                <span>All tasks</span>
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                className={cn(
+                  'gap-2 transition-all duration-200',
+                  listStatusFilter === 'active' &&
+                    'bg-primary/10 text-primary shadow-sm'
+                )}
+                onClick={() => onListStatusFilterChange('active')}
+              >
+                <span>Active</span>
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                className={cn(
+                  'gap-2 transition-all duration-200',
+                  listStatusFilter === 'not_started' &&
+                    'bg-primary/10 text-primary shadow-sm'
+                )}
+                onClick={() => onListStatusFilterChange('not_started')}
+              >
+                <span>Backlog</span>
+              </Button>
             </div>
+
+            {/* View Switcher Dropdown */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="gap-2 transition-all duration-200"
+                >
+                  {(() => {
+                    const Icon = viewConfig[currentView].icon;
+                    return (
+                      <>
+                        <Icon className="h-4 w-4" />
+                        <span className="hidden md:inline">
+                          {viewConfig[currentView].label}
+                        </span>
+                        <ChevronDown className="h-4 w-4 opacity-50" />
+                      </>
+                    );
+                  })()}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                {Object.entries(viewConfig).map(([view, config]) => {
+                  const Icon = config.icon;
+                  return (
+                    <DropdownMenuItem
+                      key={view}
+                      onClick={() => onViewChange(view as ViewType)}
+                      className="gap-2"
+                    >
+                      <Icon className="h-4 w-4" />
+                      <div className="flex flex-col">
+                        <span className="font-medium">{config.label}</span>
+                        <span className="text-muted-foreground text-xs">
+                          {config.description}
+                        </span>
+                      </div>
+                    </DropdownMenuItem>
+                  );
+                })}
+              </DropdownMenuContent>
+            </DropdownMenu>
 
             {/* Label Filter */}
             <LabelFilter

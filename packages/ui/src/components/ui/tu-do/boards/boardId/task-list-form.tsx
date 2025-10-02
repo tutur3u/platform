@@ -2,7 +2,6 @@ import { createClient } from '@tuturuuu/supabase/next/client';
 import type { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
 import type { TaskBoardStatus } from '@tuturuuu/types/primitives/TaskBoard';
 import { Button } from '@tuturuuu/ui/button';
-import { Plus } from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
 import { useState } from 'react';
 
@@ -104,15 +103,5 @@ export function TaskListForm({
     );
   }
 
-  // Legacy mode - show add button first
-  return (
-    <Button
-      variant="ghost"
-      className="flex h-full w-[350px] items-center gap-2 border-dashed"
-      onClick={() => setIsAdding(true)}
-    >
-      <Plus className="h-4 w-4" />
-      Add new list
-    </Button>
-  );
+  return null;
 }
