@@ -14,7 +14,8 @@ import { CalendarIcon, TrophyIcon, UsersIcon } from '@ncthub/ui/icons';
 import { cn } from '@ncthub/utils/format';
 import { motion } from 'framer-motion';
 import Image from 'next/image';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import Confetti from 'react-confetti';
 
 const categoryColors = {
   Hackathon: 'default',
@@ -43,37 +44,69 @@ export function TopThreeAchivements({
 }: {
   achievements: Achievement[];
 }) {
+  const [windowDimensions, setWindowDimensions] = useState({
+    width: 0,
+    height: 0,
+  });
+
+  // Handle window resize and confetti
+  useEffect(() => {
+    const handleResize = () => {
+      setWindowDimensions({
+        width: window.innerWidth,
+        height: window.innerHeight,
+      });
+    };
+
+    window.addEventListener('resize', handleResize);
+    handleResize();
+
+    return () => {
+      window.removeEventListener('resize', handleResize);
+    };
+  }, []);
+
   return (
-    <motion.div
-      variants={container}
-      initial="hidden"
-      whileInView="show"
-      viewport={{ once: true, amount: 0.2 }}
-      className="mx-auto grid max-w-[80%] grid-cols-1 gap-6 md:grid-cols-2"
-    >
-      {achievements.map((achievement, index) => (
-        <AchievementDialog
-          key={achievement.id}
-          achievement={achievement}
-          trigger={
-            <motion.div
-              variants={item}
-              className={cn(
-                index === 0 && 'col-span-1 md:col-span-2',
-                index === 1 && 'col-span-1',
-                index === 2 && 'col-span-1'
-              )}
-            >
-              {index === 0 ? (
-                <SpecialAchievementCard achievement={achievement} />
-              ) : (
-                <AchievementCard achievement={achievement} />
-              )}
-            </motion.div>
-          }
-        />
-      ))}
-    </motion.div>
+    <>
+      {/* Confetti Celebration */}
+      <Confetti
+        width={windowDimensions.width}
+        height={windowDimensions.height}
+        numberOfPieces={200}
+        recycle={false}
+        colors={['#FF5733', '#33FF57', '#3357FF', '#F3FF33', '#FF33F3']}
+      />
+      <motion.div
+        variants={container}
+        initial="hidden"
+        whileInView="show"
+        viewport={{ once: true, amount: 0.2 }}
+        className="mx-auto grid max-w-[80%] grid-cols-1 gap-6 md:grid-cols-2"
+      >
+        {achievements.map((achievement, index) => (
+          <AchievementDialog
+            key={achievement.id}
+            achievement={achievement}
+            trigger={
+              <motion.div
+                variants={item}
+                className={cn(
+                  index === 0 && 'col-span-1 md:col-span-2',
+                  index === 1 && 'col-span-1',
+                  index === 2 && 'col-span-1'
+                )}
+              >
+                {index === 0 ? (
+                  <SpecialAchievementCard achievement={achievement} />
+                ) : (
+                  <AchievementCard achievement={achievement} />
+                )}
+              </motion.div>
+            }
+          />
+        ))}
+      </motion.div>
+    </>
   );
 }
 
