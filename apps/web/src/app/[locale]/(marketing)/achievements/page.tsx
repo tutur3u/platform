@@ -1,5 +1,7 @@
 import { OtherAchivements, TopThreeAchivements } from './client';
 import { achievements } from './data';
+import { Badge } from '@ncthub/ui/badge';
+import { Award } from '@ncthub/ui/icons';
 import { Separator } from '@ncthub/ui/separator';
 import type { Metadata } from 'next';
 
@@ -15,11 +17,23 @@ export default function AchievementsPage() {
   return (
     <div className="container mx-auto">
       <section className="px-4 py-8 sm:px-6 lg:px-8">
-        <div className="my-12 text-center">
-          <h1 className="bg-gradient-to-br from-purple-600 via-pink-500 to-orange-400 bg-clip-text text-5xl font-bold tracking-tight text-transparent md:text-6xl">
-            Hall of Fame
+        <div className="my-12 space-y-8 text-center">
+          <div className="inline-flex items-center justify-center">
+            <Badge
+              variant="outline"
+              className="border-[#5FC6E5]/50 px-3 py-1 text-base text-[#5FC6E5]"
+            >
+              <Award className="h-5 w-5 text-[#FBC721] md:h-6 md:w-6" />
+              Warriors of the Stage
+            </Badge>
+          </div>
+          <h1 className="text-5xl font-bold tracking-tight md:text-6xl">
+            Hall of{' '}
+            <span className="border-b-4 border-[#FBC721] text-[#5FC6E5]">
+              Fame
+            </span>
           </h1>
-          <p className="mx-auto mt-6 max-w-2xl text-sm text-muted-foreground md:text-lg">
+          <p className="mx-auto max-w-2xl text-lg text-foreground/80 md:text-xl">
             Celebrating our teams&apos; outstanding achievements in
             competitions, hackathons, and innovation challenges. Discover the
             brilliant minds behind groundbreaking solutions and innovative
