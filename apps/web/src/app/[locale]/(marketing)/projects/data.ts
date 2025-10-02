@@ -17,6 +17,129 @@ const NCT_REPO_URL = 'https://github.com/rmit-nct/hub';
 
 export const projects: Project[] = [
   {
+    name: 'Neo Agent Meeting',
+    description:
+      'A Next.js-based agent that listens to Microsoft Teams meetings, transcribes audio using OpenAI’s Whisper, and generates structured meeting minutes with Google Gemini. The system integrates Microsoft Graph API for meeting access and automates the entire workflow from audio capture to final summary.',
+    type: 'software',
+    techStack: ['Next.js', 'TypeScript', 'Tailwind CSS', 'Microsoft Graph API', 'OpenAI Whisper', 'Google Gemini'],
+    status: 'ongoing',
+    semester: 'B/2025',
+    manager: 'Nguyen Gia Khang',
+    members: [
+      {
+        name: 'Nguyen Gia Khang',
+        role: 'Leader, Developer',
+      },
+      {
+        name: 'Nguyen Nghia Hiep',
+        role: 'Developer',
+      },
+      {
+        name: 'Pham Hoang Duong',
+        role: 'Developer',
+      },
+      {
+        name: 'Nguyen An Nhien',
+        role: 'Developer',
+      },
+    ],
+    purpose:
+      'The purpose of this project is to explore the integration of cutting-edge AI tools and APIs to automate meeting documentation. By combining Next.js for the interface, Microsoft Graph API for Teams integration, Whisper for transcription, and Gemini for natural language generation, the project provides members with experience in building intelligent productivity tools that enhance collaboration and efficiency in real-world workflows.',
+  },
+  {
+    name: 'Neo Rust App',
+    description:
+      'A console-based application in Rust for managing a library’s operations, such as adding, borrowing, returning, and tracking books.',
+    type: 'software',
+    techStack: ['Rust'],
+    status: 'completed',
+    semester: 'B/2025',
+    manager: 'Nguyen Nghia Hiep',
+    members: [
+      {
+        name: 'Nguyen Nghia Hiep',
+        role: 'Leader, Developer',
+      },
+      {
+        name: 'Nguyen Ngoc Luong',
+        role: 'Developer',
+      },
+      {
+        name: 'Tran Vinh Trong',
+        role: 'Developer',
+      },
+    ],
+    purpose:
+      'The purpose of this project is to help members learn Rust fundamentals, including ownership, borrowing, error handling, and data management, while building a practical system that simulates real-world library operations.',
+    githubUrl: 'https://github.com/rmit-nct/neo-rust-library',
+  },
+  {
+    name: 'Neo Coffee App',
+    description:
+      'A console-based application in C++ for managing a coffee store’s operations, including adding, updating, viewing, and deleting menu items or sales records.',
+    type: 'software',
+    techStack: ['C++'],
+    status: 'completed',
+    semester: 'B/2025',
+    manager: 'Pham Van Thanh Dat',
+    members: [
+      {
+        name: 'Pham Van Thanh Dat',
+        role: 'Leader, Developer',
+      },
+      {
+        name: 'Pham Le Hoang Phu',
+        role: 'Developer',
+      },
+      {
+        name: 'Nguyen Ngoc Hiep',
+        role: 'Developer',
+      },
+      {
+        name: 'Dang Minh Tam',
+        role: 'Developer',
+      },
+    ],
+    purpose:
+      'The purpose of this project is to help members apply core C++ concepts such as file handling, data structures, and object-oriented programming while simulating real-world store management tasks.',
+    githubUrl: 'https://github.com/rmit-nct/neo-coffee-app-console',
+  },
+  {
+    name: 'Neo What Weather',
+    description:
+      'A weather forecast website using React, TypeScript, Tailwind CSS, and a Weather API to display real-time weather updates.',
+    type: 'software',
+    techStack: ['React', 'TypeScript', 'Tailwind CSS', 'OpenWeather API'],
+    status: 'completed',
+    semester: 'B/2025',
+    manager: 'Vo Minh Khoi',
+    members: [
+      {
+        name: 'Vo Minh Khoi',
+        role: 'Leader, Developer',
+      },
+      {
+        name: 'Nguyen Van Hoang Tri',
+        role: 'Developer',
+      },
+      {
+        name: 'Huynh Tan Phuc',
+        role: 'Developer',
+      },
+      {
+        name: 'Pham Minh Dat',
+        role: 'Developer',
+      },
+      {
+        name: 'Dao Tien Dung',
+        role: 'Developer',
+      },
+    ],
+    purpose:
+      'The purpose of this project is to provide our club members with hands-on experience in modern web development by building a weather forecast website using React, TypeScript, Tailwind CSS, and an external Weather API. Through this project, members will strengthen their understanding of component-based architecture, type safety, and responsive design, while also learning how to integrate third-party APIs into real-world applications. Beyond technical skills, the project encourages collaboration, problem-solving, and best practices in front-end development, preparing members for more advanced projects and professional opportunities.',
+    githubUrl: 'https://github.com/rmit-nct/neo-what-weather',
+  },
+  {
     name: 'Neo Storage Console',
     description:
       'A console-based application for user authentication and item tracking. Provides a simple, local solution for managing item ownership without web complexity.',
@@ -48,7 +171,7 @@ export const projects: Project[] = [
       },
     ],
     purpose:
-      'This research project aims to demystify blockchain technology beyond buzzwords, covering consensus mechanisms (PoW), smart contracts, digital signatures, and real-world applications in healthcare and supply chains. Through practical Python implementation, it demonstrates how blockchain data is securely linked, verified, and made immutable.',
+      'The purpose of this project is to develop a console-based storage management system using C++. This project aims to help members strengthen their understanding of fundamental programming concepts such as file handling, data structures, object-oriented programming, and memory management. By simulating real-world storage operations (such as adding, updating, searching, and deleting records), the project will provide practical experience in designing efficient algorithms, structuring code for scalability, and improving problem-solving skills in a low-level programming environment.',
     githubUrl: 'https://github.com/rmit-nct/neo-storage-console',
   },
   {
