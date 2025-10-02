@@ -47,7 +47,8 @@ export function TopThreeAchivements({
     <motion.div
       variants={container}
       initial="hidden"
-      animate="show"
+      whileInView="show"
+      viewport={{ once: true, amount: 0.2 }}
       className="mx-auto grid max-w-[80%] grid-cols-1 gap-6 md:grid-cols-2"
     >
       {achievements.map((achievement, index) => (
@@ -85,7 +86,8 @@ export function OtherAchivements({
     <motion.div
       variants={container}
       initial="hidden"
-      animate="show"
+      whileInView="show"
+      viewport={{ once: true, amount: 0.2 }}
       className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3"
     >
       {achievements.map((achievement) => (
