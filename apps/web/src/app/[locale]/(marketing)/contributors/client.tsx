@@ -85,8 +85,6 @@ function generateContributionTimeline(
     contributions: 0,
   }));
 
-  // For demo purposes, randomly distribute contributions across months
-  // In a real app, you would parse commit dates from the API
   const totalContributions = contributors.reduce(
     (sum, contributor) => sum + contributor.contributions,
     0
