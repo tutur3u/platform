@@ -10,15 +10,15 @@
     "@tuturuuu/utils": "workspace:*",
     "dayjs": "^1.11.18",
     "next": "^15.5.4",
-    "react": "^19.1.1",
-    "react-dom": "^19.1.1",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
     "zod": "^4.1.11"
   },
   "devDependencies": {
     "@tuturuuu/types": "workspace:*",
     "@tuturuuu/typescript-config": "workspace:*",
-    "@types/node": "^24.6.1",
-    "@types/react": "^19.1.17",
+    "@types/node": "^24.6.2",
+    "@types/react": "^19.2.0",
     "typescript": "^5.9.3"
   },
   "exports": {

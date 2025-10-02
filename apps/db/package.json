@@ -18,8 +18,8 @@
     "sb:typegen": "bun supabase gen types typescript --local --schema public > ../../packages/types/src/supabase.ts && node ./scripts/sort-types.js && biome format --write ../../packages/types/src/supabase.ts"
   },
   "devDependencies": {
-    "@biomejs/biome": "^2.2.4",
-    "supabase": "^2.47.2",
+    "@biomejs/biome": "^2.2.5",
+    "supabase": "^2.48.3",
     "typescript": "^5.9.3"
   },
   "packageManager": "bun@1.2.23"

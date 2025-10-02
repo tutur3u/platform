@@ -18,13 +18,13 @@
     "@tuturuuu/ui": "workspace:*",
     "@tuturuuu/utils": "workspace:*",
     "next": "^15.5.4",
-    "react": "^19.1.1"
+    "react": "^19.2.0"
   },
   "devDependencies": {
     "@tuturuuu/typescript-config": "workspace:*",
-    "@types/node": "^24.6.1",
-    "@types/react": "^19.1.17",
-    "@types/react-dom": "^19.1.10",
+    "@types/node": "^24.6.2",
+    "@types/react": "^19.2.0",
+    "@types/react-dom": "^19.2.0",
     "typescript": "^5.9.3"
   },
   "packageManager": "bun@1.2.23"
