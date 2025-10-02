@@ -1568,105 +1568,99 @@ function TaskCardInner({
           )}
         </div>
         {/* Dates Section (improved layout & conditional rendering) */}
-        {(startDate || endDate) && (
-          <div className="mb-1 space-y-0.5 text-[10px] leading-snug">
-            {/* Show start only if in the future (hide historical start for visual simplicity) */}
-            {startDate && startDate > now && (
-              <div className="flex items-center gap-1 text-muted-foreground">
-                <Clock className="h-2.5 w-2.5 shrink-0" />
-                <span className="truncate">
-                  Starts {formatSmartDate(startDate)}
-                </span>
-              </div>
-            )}
-            {endDate && (
-              <div
-                className={cn(
-                  'flex items-center gap-1',
-                  isOverdue && !task.archived
-                    ? 'font-medium text-dynamic-red'
-                    : 'text-muted-foreground'
-                )}
-              >
-                <Calendar className="h-2.5 w-2.5 shrink-0" />
-                <span className="truncate">Due {formatSmartDate(endDate)}</span>
-                {isOverdue && !task.archived ? (
-                  <Badge className="ml-1 h-4 bg-dynamic-red px-1 font-semibold text-[9px] text-white tracking-wide">
-                    OVERDUE
-                  </Badge>
-                ) : (
-                  <span className="ml-1 hidden text-[10px] text-muted-foreground md:inline">
-                    {format(endDate, "MMM dd 'at' h:mm a")}
+        {/* Hide dates when task is in done/closed list */}
+        {(startDate || endDate) &&
+          taskList?.status !== 'done' &&
+          taskList?.status !== 'closed' && (
+            <div className="mb-1 space-y-0.5 text-[10px] leading-snug">
+              {/* Show start only if in the future (hide historical start for visual simplicity) */}
+              {startDate && startDate > now && (
+                <div className="flex items-center gap-1 text-muted-foreground">
+                  <Clock className="h-2.5 w-2.5 shrink-0" />
+                  <span className="truncate">
+                    Starts {formatSmartDate(startDate)}
                   </span>
-                )}
+                </div>
+              )}
+              {endDate && (
+                <div
+                  className={cn(
+                    'flex items-center gap-1',
+                    isOverdue && !task.archived
+                      ? 'font-medium text-dynamic-red'
+                      : 'text-muted-foreground'
+                  )}
+                >
+                  <Calendar className="h-2.5 w-2.5 shrink-0" />
+                  <span className="truncate">
+                    Due {formatSmartDate(endDate)}
+                  </span>
+                  {isOverdue && !task.archived ? (
+                    <Badge className="ml-1 h-4 bg-dynamic-red px-1 font-semibold text-[9px] text-white tracking-wide">
+                      OVERDUE
+                    </Badge>
+                  ) : (
+                    <span className="ml-1 hidden text-[10px] text-muted-foreground md:inline">
+                      {format(endDate, "MMM dd 'at' h:mm a")}
+                    </span>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+        {/* Bottom Row: Three-column layout for assignee, priority, and checkbox, with only one tag visible and +N tooltip for extras */}
+        {/* Hide bottom row entirely when in done/closed list */}
+        {taskList?.status !== 'done' && taskList?.status !== 'closed' && (
+          <div className="flex h-8 min-w-0 items-center gap-x-1 overflow-hidden whitespace-nowrap">
+            {/* Priority */}
+            {!task.archived && task.priority && (
+              <div className="min-w-0 max-w-[80px] overflow-hidden">
+                {getPriorityIndicator()}
               </div>
             )}
+            {/* Estimation Points */}
+            {!task.archived && task.estimation_points && (
+              <div className="min-w-0 flex-shrink-0">
+                <TaskEstimationDisplay
+                  points={task.estimation_points}
+                  size="sm"
+                  estimationType={boardConfig?.estimation_type}
+                  showIcon
+                />
+              </div>
+            )}
+            {/* Labels */}
+            {!task.archived && task.labels && task.labels.length > 0 && (
+              <div className="flex min-w-0 flex-shrink-0 flex-wrap gap-1">
+                {/* Sort labels for deterministic display order */}
+                <TaskLabelsDisplay
+                  labels={[...task.labels].sort((a, b) =>
+                    a.name.toLowerCase().localeCompare(b.name.toLowerCase())
+                  )}
+                  size="sm"
+                />
+              </div>
+            )}
+            {/* Checkbox: always at far right */}
+            <div className="ml-auto flex-shrink-0">
+              <Checkbox
+                checked={task.archived}
+                className={cn(
+                  'h-4 w-4 transition-all duration-200',
+                  'data-[state=checked]:border-dynamic-green/70 data-[state=checked]:bg-dynamic-green/70',
+                  'hover:scale-110 hover:border-primary/50',
+                  getListColorClasses(taskList?.color as SupportedColor),
+                  isOverdue &&
+                    !task.archived &&
+                    'border-dynamic-red/70 bg-dynamic-red/10 ring-1 ring-dynamic-red/20'
+                )}
+                disabled={isLoading}
+                onCheckedChange={handleArchiveToggle}
+                onClick={(e) => e.stopPropagation()}
+              />
+            </div>
           </div>
         )}
-        {/* Bottom Row: Three-column layout for assignee, priority, and checkbox, with only one tag visible and +N tooltip for extras */}
-        <div className="flex h-8 min-w-0 items-center gap-x-1 overflow-hidden whitespace-nowrap">
-          {/* Priority */}
-          {!task.archived && task.priority && (
-            <div className="min-w-0 max-w-[80px] overflow-hidden">
-              {getPriorityIndicator()}
-            </div>
-          )}
-          {/* Estimation Points */}
-          {!task.archived && task.estimation_points && (
-            <div className="min-w-0 flex-shrink-0">
-              <TaskEstimationDisplay
-                points={task.estimation_points}
-                size="sm"
-                estimationType={boardConfig?.estimation_type}
-                showIcon
-              />
-            </div>
-          )}
-          {/* Labels */}
-          {!task.archived && task.labels && task.labels.length > 0 && (
-            <div className="flex min-w-0 flex-shrink-0 flex-wrap gap-1">
-              {/* Sort labels for deterministic display order */}
-              <TaskLabelsDisplay
-                labels={[...task.labels].sort((a, b) =>
-                  a.name.toLowerCase().localeCompare(b.name.toLowerCase())
-                )}
-                size="sm"
-              />
-            </div>
-          )}
-          {/* Checkbox: always at far right */}
-          <div className="ml-auto flex-shrink-0">
-            <Checkbox
-              checked={task.archived}
-              className={cn(
-                'h-4 w-4 transition-all duration-200',
-                'data-[state=checked]:border-dynamic-green/70 data-[state=checked]:bg-dynamic-green/70',
-                'hover:scale-110 hover:border-primary/50',
-                getListColorClasses(taskList?.color as SupportedColor),
-                isOverdue &&
-                  !task.archived &&
-                  'border-dynamic-red/70 bg-dynamic-red/10 ring-1 ring-dynamic-red/20'
-              )}
-              style={
-                !task.archived && taskList?.status === 'done'
-                  ? {
-                      animation: 'pulse 4s ease-in-out infinite',
-                      borderColor: 'rgb(245 158 11 / 0.3)',
-                      backgroundColor: 'rgb(245 158 11 / 0.6)',
-                    }
-                  : undefined
-              }
-              disabled={isLoading}
-              onCheckedChange={handleArchiveToggle}
-              onClick={(e) => e.stopPropagation()}
-              title={
-                !task.archived && taskList?.status === 'done'
-                  ? 'Task is in Done list but not individually checked'
-                  : undefined
-              }
-            />
-          </div>
-        </div>
       </div>
       <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <DialogContent className="sm:max-w-[425px]">
