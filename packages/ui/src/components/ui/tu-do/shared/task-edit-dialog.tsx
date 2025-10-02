@@ -54,7 +54,7 @@ import {
 } from './estimation-mapping';
 
 interface TaskEditDialogProps {
-  task: Task;
+  task?: Task;
   boardId: string;
   isOpen: boolean;
   onClose: () => void;
@@ -81,10 +81,10 @@ function TaskEditDialogComponent({
 }: TaskEditDialogProps & { mode?: 'edit' | 'create' }) {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
-  const [name, setName] = useState(task.name);
+  const [name, setName] = useState(task?.name);
   const [description, setDescription] = useState<JSONContent | null>(() => {
     // Try to parse existing description as JSON, fallback to creating simple text content
-    if (task.description) {
+    if (task?.description) {
       try {
         return JSON.parse(task.description);
       } catch {
@@ -103,20 +103,22 @@ function TaskEditDialogComponent({
     return null;
   });
   const [priority, setPriority] = useState<TaskPriority | null>(
-    task.priority || null
+    task?.priority || null
   );
   const [startDate, setStartDate] = useState<Date | undefined>(
-    task.start_date ? new Date(task.start_date) : undefined
+    task?.start_date ? new Date(task.start_date) : undefined
   );
   const [endDate, setEndDate] = useState<Date | undefined>(
-    task.end_date ? new Date(task.end_date) : undefined
+    task?.end_date ? new Date(task.end_date) : undefined
   );
-  const [selectedListId, setSelectedListId] = useState<string>(task.list_id);
+  const [selectedListId, setSelectedListId] = useState<string>(
+    task?.list_id || ''
+  );
   const [estimationPoints, setEstimationPoints] = useState<
     number | null | undefined
-  >(task.estimation_points ?? null);
+  >(task?.estimation_points ?? null);
   const [selectedLabels, setSelectedLabels] = useState<WorkspaceTaskLabel[]>(
-    task.labels || []
+    task?.labels || []
   );
 
   // Use React Query hooks for shared data (cached across all components)
@@ -160,7 +162,7 @@ function TaskEditDialogComponent({
   const [workspaceMembers, setWorkspaceMembers] = useState<any[]>([]);
   const [loadingMembers, setLoadingMembers] = useState(false);
   const [selectedAssignees, setSelectedAssignees] = useState<any[]>(
-    task.assignees || []
+    task?.assignees || []
   );
   const [assigneeSearchQuery, setAssigneeSearchQuery] = useState('');
 
@@ -227,59 +229,48 @@ function TaskEditDialogComponent({
     // In edit mode, when dialog opens, always reload task data to ensure we have the latest
     // This handles the case where task was edited previously and we're reopening the dialog
     if (isOpen && mode === 'edit') {
-      console.log('🔍 TaskEditDialog opened with task data:', {
-        taskId: task.id,
-        name: task.name,
-        descriptionType: typeof task.description,
-        descriptionPreview:
-          typeof task.description === 'string'
-            ? task.description.substring(0, 100)
-            : JSON.stringify(task.description)?.substring(0, 100),
-        hasDescription: !!task.description,
-        rawDescription: task.description,
-      });
-      setName(task.name);
-      setDescription(parseDescription(task.description));
-      setPriority(task.priority || null);
-      setStartDate(task.start_date ? new Date(task.start_date) : undefined);
-      setEndDate(task.end_date ? new Date(task.end_date) : undefined);
-      setSelectedListId(task.list_id);
-      setEstimationPoints(task.estimation_points ?? null);
-      setSelectedLabels(task.labels || []);
-      setSelectedAssignees(task.assignees || []);
-      previousTaskIdRef.current = task.id;
+      setName(task?.name);
+      setDescription(parseDescription(task?.description));
+      setPriority(task?.priority || null);
+      setStartDate(task?.start_date ? new Date(task?.start_date) : undefined);
+      setEndDate(task?.end_date ? new Date(task?.end_date) : undefined);
+      setSelectedListId(task?.list_id || '');
+      setEstimationPoints(task?.estimation_points ?? null);
+      setSelectedLabels(task?.labels || []);
+      setSelectedAssignees(task?.assignees || []);
+      if (task?.id) previousTaskIdRef.current = task.id;
     }
     // For create mode, only load when task ID changes or dialog opens with 'new' ID
     else if (
       isOpen &&
-      (mode === 'create' || task.id === 'new') &&
-      (previousTaskIdRef.current !== task.id || task.id === 'new')
+      (mode === 'create' || task?.id === 'new') &&
+      (previousTaskIdRef.current !== task?.id || task?.id === 'new')
     ) {
-      setName(task.name || '');
-      setDescription(parseDescription(task.description) || null);
-      setPriority(task.priority || null);
-      setStartDate(task.start_date ? new Date(task.start_date) : undefined);
-      setEndDate(task.end_date ? new Date(task.end_date) : undefined);
-      setSelectedListId(task.list_id);
-      setEstimationPoints(task.estimation_points ?? null);
-      setSelectedLabels(task.labels || []);
-      setSelectedAssignees(task.assignees || []);
-      previousTaskIdRef.current = task.id;
+      setName(task?.name || '');
+      setDescription(parseDescription(task?.description) || null);
+      setPriority(task?.priority || null);
+      setStartDate(task?.start_date ? new Date(task?.start_date) : undefined);
+      setEndDate(task?.end_date ? new Date(task?.end_date) : undefined);
+      setSelectedListId(task?.list_id || '');
+      setEstimationPoints(task?.estimation_points ?? null);
+      setSelectedLabels(task?.labels || []);
+      setSelectedAssignees(task?.assignees || []);
+      if (task?.id) previousTaskIdRef.current = task.id;
     }
-  }, [task, task.description, parseDescription, isOpen, mode]);
+  }, [task, task?.description, parseDescription, isOpen, mode]);
 
   // Reset transient edits when closing without saving in edit mode
   useEffect(() => {
     if (!isOpen && previousTaskIdRef.current && mode !== 'create') {
-      setName(task.name);
-      setDescription(parseDescription(task.description));
-      setPriority(task.priority || null);
-      setStartDate(task.start_date ? new Date(task.start_date) : undefined);
-      setEndDate(task.end_date ? new Date(task.end_date) : undefined);
-      setSelectedListId(task.list_id);
-      setEstimationPoints(task.estimation_points ?? null);
-      setSelectedLabels(task.labels || []);
-      setSelectedAssignees(task.assignees || []);
+      setName(task?.name);
+      setDescription(parseDescription(task?.description));
+      setPriority(task?.priority || null);
+      setStartDate(task?.start_date ? new Date(task?.start_date) : undefined);
+      setEndDate(task?.end_date ? new Date(task?.end_date) : undefined);
+      setSelectedListId(task?.list_id || '');
+      setEstimationPoints(task?.estimation_points ?? null);
+      setSelectedLabels(task?.labels || []);
+      setSelectedAssignees(task?.assignees || []);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, mode, task, parseDescription]);
@@ -412,10 +403,10 @@ function TaskEditDialogComponent({
 
   // Ensure origin list from the entry point is respected in create mode
   useEffect(() => {
-    if (isOpen && isCreateMode && task.list_id) {
+    if (isOpen && isCreateMode && task?.list_id) {
       setSelectedListId(task.list_id);
     }
-  }, [isOpen, isCreateMode, task.list_id]);
+  }, [isOpen, isCreateMode, task?.list_id]);
 
   // If opening in edit mode, proactively clear any stale create draft for this board
   useEffect(() => {
@@ -489,14 +480,14 @@ function TaskEditDialogComponent({
   // Build initial and current snapshots for change detection
   const initialSnapshot = useMemo(() => {
     return {
-      name: (task.name || '').trim(),
-      description: JSON.stringify(parseDescription(task.description) || null),
-      priority: task.priority || null,
-      start: task.start_date
-        ? new Date(task.start_date).toISOString()
+      name: (task?.name || '').trim(),
+      description: JSON.stringify(parseDescription(task?.description) || null),
+      priority: task?.priority || null,
+      start: task?.start_date
+        ? new Date(task?.start_date).toISOString()
         : undefined,
-      end: task.end_date ? new Date(task.end_date).toISOString() : undefined,
-      listId: task.list_id,
+      end: task?.end_date ? new Date(task?.end_date).toISOString() : undefined,
+      listId: task?.list_id,
     } as const;
   }, [task, parseDescription]);
 
@@ -591,37 +582,41 @@ function TaskEditDialogComponent({
           )
         );
 
-        // Attempt to link label to this task in DB
-        const { error: linkErr } = await supabase
-          .from('task_labels')
-          .insert({ task_id: task.id, label_id: (data as any).id });
-        if (linkErr) {
-          // Rollback local selection if link fails
-          setSelectedLabels((prev) =>
-            prev.filter((l) => l.id !== (data as any).id)
-          );
-          toast({
-            title: 'Label created (not linked)',
-            description: 'Label saved but could not be attached to task.',
-            variant: 'destructive',
-          });
-        } else {
-          // Invalidate caches so parent task list reflects new label
-          await invalidateTaskCaches(queryClient, boardId);
-          onUpdate();
-          // Dispatch global event so other open components can refresh
-          if (typeof window !== 'undefined') {
-            window.dispatchEvent(
-              new CustomEvent('workspace-label-created', {
-                detail: { wsId, label: data },
-              })
+        if (task?.id) {
+          // Attempt to link label to this task in DB
+          const { error: linkErr } = await supabase
+            .from('task_labels')
+            .insert({ task_id: task?.id, label_id: (data as any).id });
+
+          if (linkErr) {
+            // Rollback local selection if link fails
+            setSelectedLabels((prev) =>
+              prev.filter((l) => l.id !== (data as any).id)
             );
+            toast({
+              title: 'Label created (not linked)',
+              description: 'Label saved but could not be attached to task.',
+              variant: 'destructive',
+            });
+          } else {
+            // Invalidate caches so parent task list reflects new label
+            await invalidateTaskCaches(queryClient, boardId);
+            onUpdate();
+            // Dispatch global event so other open components can refresh
+            if (typeof window !== 'undefined') {
+              window.dispatchEvent(
+                new CustomEvent('workspace-label-created', {
+                  detail: { wsId, label: data },
+                })
+              );
+            }
+            toast({
+              title: 'Label created & linked',
+              description: 'New label added and attached to this task.',
+            });
           }
-          toast({
-            title: 'Label created & linked',
-            description: 'New label added and attached to this task.',
-          });
         }
+
         setNewLabelName('');
       }
     } catch (e: any) {
@@ -668,40 +663,42 @@ function TaskEditDialogComponent({
     const taskUpdates: Partial<Task> = {
       end_date: newDate ? newDate.toISOString() : null,
     };
-    updateTaskMutation.mutate(
-      { taskId: task.id, updates: taskUpdates },
-      {
-        onSuccess: async () => {
-          await invalidateTaskCaches(queryClient, boardId);
 
-          // Wait for the refetch to complete before closing
-          if (boardId) {
-            await queryClient.refetchQueries({
-              queryKey: ['tasks', boardId],
-              type: 'active',
+    if (task?.id)
+      updateTaskMutation.mutate(
+        { taskId: task?.id, updates: taskUpdates },
+        {
+          onSuccess: async () => {
+            await invalidateTaskCaches(queryClient, boardId);
+
+            // Wait for the refetch to complete before closing
+            if (boardId) {
+              await queryClient.refetchQueries({
+                queryKey: ['tasks', boardId],
+                type: 'active',
+              });
+            }
+
+            toast({
+              title: 'Due date updated',
+              description: newDate
+                ? `Due date set to ${newDate.toLocaleDateString()}`
+                : 'Due date removed',
             });
-          }
-
-          toast({
-            title: 'Due date updated',
-            description: newDate
-              ? `Due date set to ${newDate.toLocaleDateString()}`
-              : 'Due date removed',
-          });
-          onUpdate();
-          onClose();
-        },
-        onError: (error: any) => {
-          console.error('Error updating due date:', error);
-          toast({
-            title: 'Error updating due date',
-            description: error.message || 'Please try again later',
-            variant: 'destructive',
-          });
-        },
-        onSettled: () => setIsLoading(false),
-      }
-    );
+            onUpdate();
+            onClose();
+          },
+          onError: (error: any) => {
+            console.error('Error updating due date:', error);
+            toast({
+              title: 'Error updating due date',
+              description: error.message || 'Please try again later',
+              variant: 'destructive',
+            });
+          },
+          onSettled: () => setIsLoading(false),
+        }
+      );
   };
 
   // Handle estimation save (optimistic local update + API call)
@@ -715,6 +712,8 @@ function TaskEditDialogComponent({
     setEstimationSaving(true);
     try {
       const supabase = createClient();
+
+      if (!task?.id) throw new Error('Task ID not found');
       const { error } = await supabase
         .from('tasks')
         .update({ estimation_points: points })
@@ -789,6 +788,7 @@ function TaskEditDialogComponent({
         return;
       }
       if (exists) {
+        if (!task?.id) return;
         // remove
         const { error } = await supabase
           .from('task_labels')
@@ -798,6 +798,7 @@ function TaskEditDialogComponent({
         if (error) throw error;
         setSelectedLabels((prev) => prev.filter((l) => l.id !== label.id));
       } else {
+        if (!task?.id) return;
         const { error } = await supabase
           .from('task_labels')
           .insert({ task_id: task.id, label_id: label.id });
@@ -834,6 +835,7 @@ function TaskEditDialogComponent({
         return;
       }
       if (exists) {
+        if (!task?.id) return;
         // remove
         const { error } = await supabase
           .from('task_assignees')
@@ -845,6 +847,7 @@ function TaskEditDialogComponent({
           prev.filter((a) => a.user_id !== member.user_id)
         );
       } else {
+        if (!task?.id) return;
         const { error } = await supabase
           .from('task_assignees')
           .insert({ task_id: task.id, user_id: member.user_id });
@@ -863,7 +866,7 @@ function TaskEditDialogComponent({
   };
 
   const handleSave = async () => {
-    if (!name.trim()) return;
+    if (!name?.trim()) return;
 
     // Flush any pending editor changes before saving and get current content
     let currentDescription = description;
@@ -972,45 +975,46 @@ function TaskEditDialogComponent({
       list_id: selectedListId,
     };
 
-    updateTaskMutation.mutate(
-      {
-        taskId: task.id,
-        updates: taskUpdates,
-      },
-      {
-        onSuccess: async () => {
-          console.log('✅ Task update successful, refreshing data...');
-
-          // Invalidate all task-related caches
-          await invalidateTaskCaches(queryClient, boardId);
-
-          // Force refetch and wait for it to complete with fresh data
-          await queryClient.refetchQueries({
-            queryKey: ['tasks', boardId],
-            type: 'active',
-          });
-
-          toast({
-            title: 'Task updated',
-            description: 'The task has been successfully updated.',
-          });
-          onUpdate();
-          onClose();
+    if (task?.id)
+      updateTaskMutation.mutate(
+        {
+          taskId: task.id,
+          updates: taskUpdates,
         },
-        onError: (error) => {
-          console.error('Error updating task:', error);
-          toast({
-            title: 'Error updating task',
-            description: error.message || 'Please try again later',
-            variant: 'destructive',
-          });
-        },
-        onSettled: () => {
-          setIsLoading(false);
-          setIsSaving(false);
-        },
-      }
-    );
+        {
+          onSuccess: async () => {
+            console.log('✅ Task update successful, refreshing data...');
+
+            // Invalidate all task-related caches
+            await invalidateTaskCaches(queryClient, boardId);
+
+            // Force refetch and wait for it to complete with fresh data
+            await queryClient.refetchQueries({
+              queryKey: ['tasks', boardId],
+              type: 'active',
+            });
+
+            toast({
+              title: 'Task updated',
+              description: 'The task has been successfully updated.',
+            });
+            onUpdate();
+            onClose();
+          },
+          onError: (error) => {
+            console.error('Error updating task:', error);
+            toast({
+              title: 'Error updating task',
+              description: error.message || 'Please try again later',
+              variant: 'destructive',
+            });
+          },
+          onSettled: () => {
+            setIsLoading(false);
+            setIsSaving(false);
+          },
+        }
+      );
   };
   // Keep the ref pointing to the latest handleSave on every render (no hook deps warnings)
   handleSaveRef.current = handleSave;
@@ -2234,14 +2238,18 @@ function TaskEditDialogComponent({
             <Button
               variant="destructive"
               size="sm"
+              disabled={isLoading}
               onClick={async () => {
                 try {
-                  const supabase = createClient();
-                  const { error } = await supabase
-                    .from('tasks')
-                    .delete()
-                    .eq('id', task.id);
-                  if (error) throw error;
+                  if (task?.id) {
+                    const supabase = createClient();
+                    const { error } = await supabase
+                      .from('tasks')
+                      .delete()
+                      .eq('id', task.id);
+                    if (error) throw error;
+                  }
+
                   await invalidateTaskCaches(queryClient, boardId);
                   toast({ title: 'Task deleted' });
                   setShowDeleteConfirm(false);

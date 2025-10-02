@@ -245,8 +245,33 @@ export function KanbanBoard({
   // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
+      // Ignore shortcuts when typing in input fields
+      const target = event.target as HTMLElement;
+      const isInputField =
+        target.tagName === 'INPUT' ||
+        target.tagName === 'TEXTAREA' ||
+        target.isContentEditable;
+
       if (event.key === 'Escape') {
         clearSelection();
+      }
+
+      // C to create a new task (in the first list)
+      if (
+        event.key.toLowerCase() === 'c' &&
+        !event.ctrlKey &&
+        !event.metaKey &&
+        !event.shiftKey &&
+        !event.altKey &&
+        !isInputField
+      ) {
+        event.preventDefault();
+        event.stopPropagation();
+        // Open create dialog with the first list
+        const firstList = columns[0];
+        if (firstList) {
+          setCreateDialog({ open: true, list: firstList });
+        }
       }
 
       // Ctrl/Cmd + M to move selected tasks to another board
@@ -263,7 +288,7 @@ export function KanbanBoard({
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [clearSelection, handleCrossBoardMove, selectedTasks]);
+  }, [clearSelection, handleCrossBoardMove, selectedTasks, columns]);
 
   const processDragOver = useCallback(
     (event: DragOverEvent) => {

@@ -6,12 +6,13 @@ import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskBoard } from '@tuturuuu/types/primitives/TaskBoard';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import type { WorkspaceLabel } from '@tuturuuu/utils/task-helper';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { KanbanBoard } from '../boards/boardId/kanban';
 import { StatusGroupedBoard } from '../boards/boardId/status-grouped-board';
 import { TimelineBoard } from '../boards/boardId/timeline-board';
 import { BoardHeader } from '../shared/board-header';
 import { ListView } from '../shared/list-view';
+import { TaskEditDialog } from '../shared/task-edit-dialog';
 
 interface TaskLabel {
   id: string;
@@ -37,6 +38,7 @@ export function BoardViews({ workspace, board, tasks, lists }: Props) {
   const [taskOverrides, setTaskOverrides] = useState<
     Record<string, Partial<Task>>
   >({});
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const queryClient = useQueryClient();
 
   // Filter tasks based on selected labels
@@ -81,6 +83,35 @@ export function BoardViews({ workspace, board, tasks, lists }: Props) {
       queryClient.invalidateQueries({ queryKey: ['task_lists', board.id] }),
     ]);
   };
+
+  // Global keyboard shortcuts for all views
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      // Ignore shortcuts when typing in input fields
+      const target = event.target as HTMLElement;
+      const isInputField =
+        target.tagName === 'INPUT' ||
+        target.tagName === 'TEXTAREA' ||
+        target.isContentEditable;
+
+      // C to create a new task (in the first list)
+      if (
+        event.key.toLowerCase() === 'c' &&
+        !event.ctrlKey &&
+        !event.metaKey &&
+        !event.shiftKey &&
+        !event.altKey &&
+        !isInputField
+      ) {
+        event.preventDefault();
+        event.stopPropagation();
+        setCreateDialogOpen(true);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   const renderView = () => {
     switch (currentView) {
@@ -148,6 +179,15 @@ export function BoardViews({ workspace, board, tasks, lists }: Props) {
         onLabelsChange={setSelectedLabels}
       />
       <div className="h-full overflow-hidden">{renderView()}</div>
+
+      {/* Global task creation dialog */}
+      <TaskEditDialog
+        boardId={board.id}
+        isOpen={createDialogOpen}
+        onClose={() => setCreateDialogOpen(false)}
+        onUpdate={handleUpdate}
+        availableLists={lists}
+      />
     </div>
   );
 }
