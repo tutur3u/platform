@@ -42,13 +42,17 @@ import {
   CircleFadingArrowUpIcon,
   CircleSlash,
   Clock,
+  FileText,
   Flag,
   horseHead,
   Icon,
+  Image as ImageIcon,
+  Link2,
   List,
   Loader2,
   MoreHorizontal,
   Move,
+  Play,
   Plus,
   Rabbit,
   Tag,
@@ -62,7 +66,10 @@ import {
 } from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
-import { getDescriptionText } from '@tuturuuu/ui/utils/text-helper';
+import {
+  getDescriptionMetadata,
+  getDescriptionText,
+} from '@tuturuuu/ui/utils/text-helper';
 import { cn } from '@tuturuuu/utils/format';
 import {
   moveTask,
@@ -976,6 +983,9 @@ function TaskCardInner({
     );
   };
 
+  // Get description metadata for indicators
+  const descriptionMeta = getDescriptionMetadata(task.description);
+
   // Use task list color if available, otherwise use priority or default
   const getCardColorClasses = () => {
     if (taskList?.color) {
@@ -1836,6 +1846,62 @@ function TaskCardInner({
                 />
               </div>
             )}
+            {/* Description indicators */}
+            {!task.archived &&
+              (descriptionMeta.hasText ||
+                descriptionMeta.hasImages ||
+                descriptionMeta.hasVideos ||
+                descriptionMeta.hasLinks) && (
+                <div className="flex min-w-0 flex-shrink-0 items-center gap-0.5">
+                  {descriptionMeta.hasText && (
+                    <div
+                      className="flex items-center gap-0.5 rounded bg-dynamic-surface/50 py-0.5"
+                      title="Has description"
+                    >
+                      <FileText className="h-3.5 w-3.5 text-muted-foreground" />
+                    </div>
+                  )}
+                  {descriptionMeta.hasImages && (
+                    <div
+                      className="flex items-center gap-0.5 rounded bg-dynamic-surface/50 py-0.5"
+                      title={`${descriptionMeta.imageCount} image${descriptionMeta.imageCount > 1 ? 's' : ''}`}
+                    >
+                      <ImageIcon className="h-3.5 w-3.5 text-muted-foreground" />
+                      {descriptionMeta.imageCount > 1 && (
+                        <span className="text-[9px] text-muted-foreground">
+                          {descriptionMeta.imageCount}
+                        </span>
+                      )}
+                    </div>
+                  )}
+                  {descriptionMeta.hasVideos && (
+                    <div
+                      className="flex items-center gap-0.5 rounded bg-dynamic-surface/50 py-0.5"
+                      title={`${descriptionMeta.videoCount} video${descriptionMeta.videoCount > 1 ? 's' : ''}`}
+                    >
+                      <Play className="h-3.5 w-3.5 text-muted-foreground" />
+                      {descriptionMeta.videoCount > 1 && (
+                        <span className="text-[9px] text-muted-foreground">
+                          {descriptionMeta.videoCount}
+                        </span>
+                      )}
+                    </div>
+                  )}
+                  {descriptionMeta.hasLinks && (
+                    <div
+                      className="flex items-center gap-0.5 rounded bg-dynamic-surface/50 px-1 py-0.5"
+                      title={`${descriptionMeta.linkCount} link${descriptionMeta.linkCount > 1 ? 's' : ''}`}
+                    >
+                      <Link2 className="h-2.5 w-2.5 text-muted-foreground" />
+                      {descriptionMeta.linkCount > 1 && (
+                        <span className="text-[9px] text-muted-foreground">
+                          {descriptionMeta.linkCount}
+                        </span>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
             {/* Checkbox: always at far right */}
             <div className="ml-auto flex-shrink-0">
               <Checkbox
