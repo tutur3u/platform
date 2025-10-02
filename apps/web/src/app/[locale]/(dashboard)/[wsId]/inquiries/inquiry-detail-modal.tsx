@@ -11,6 +11,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@tuturuuu/ui/dialog';
+import { toast } from '@tuturuuu/ui/sonner';
 import { format } from 'date-fns';
 import {
   CheckCircleIcon,
@@ -21,7 +22,8 @@ import {
   ZoomInIcon,
 } from 'lucide-react';
 import Image from 'next/image';
-import { useCallback, useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { ExtendedSupportInquiry } from './page';
 
 // Custom hook for generating signed URLs
@@ -80,6 +82,7 @@ interface InquiryDetailModalProps {
   inquiry: ExtendedSupportInquiry;
   isOpen: boolean;
   onClose: () => void;
+  onUpdate?: () => void;
 }
 
 const SUPPORT_TYPE_LABELS: Record<SupportType, string> = {
@@ -117,14 +120,80 @@ export function InquiryDetailModal({
   inquiry,
   isOpen,
   onClose,
+  onUpdate,
 }: InquiryDetailModalProps) {
+  const router = useRouter();
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [isResolvingUpdating, setIsResolvingUpdating] = useState(false);
+  const hasMarkedAsRead = useRef(false);
 
   const inquiryId = inquiry.id;
   const { imageUrls, isLoading } = useSignedImageUrls(
     inquiryId,
     inquiry.images
   );
+
+  const updateInquiry = useCallback(
+    async (
+      updates: { is_read?: boolean; is_resolved?: boolean },
+      showToast = true
+    ) => {
+      const isResolvingUpdate = updates.is_resolved !== undefined;
+      if (isResolvingUpdate) {
+        setIsResolvingUpdating(true);
+      }
+
+      try {
+        const response = await fetch(`/api/v1/inquiries/${inquiry.id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(updates),
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to update inquiry');
+        }
+
+        if (showToast) {
+          toast.success('Inquiry updated successfully');
+        }
+        onUpdate?.();
+        router.refresh();
+      } catch (error) {
+        console.error('Error updating inquiry:', error);
+        if (showToast) {
+          toast.error('Failed to update inquiry');
+        }
+      } finally {
+        if (isResolvingUpdate) {
+          setIsResolvingUpdating(false);
+        }
+      }
+    },
+    [inquiry.id, onUpdate, router]
+  );
+
+  // Mark as read when modal opens (only once)
+  useEffect(() => {
+    if (isOpen && !inquiry.is_read && !hasMarkedAsRead.current) {
+      hasMarkedAsRead.current = true;
+      updateInquiry({ is_read: true }, false); // Don't show toast for auto-read
+    }
+
+    // Reset the ref when modal closes
+    if (!isOpen) {
+      hasMarkedAsRead.current = false;
+    }
+  }, [isOpen, inquiry.is_read, updateInquiry]);
+
+  const handleResolve = async () => {
+    await updateInquiry({ is_resolved: true });
+    onClose();
+  };
+
+  const handleReopen = () => {
+    updateInquiry({ is_resolved: false });
+  };
 
   const handleImageClick = (imagePath: string) => {
     const signedUrl = imageUrls[imagePath];
@@ -146,20 +215,52 @@ export function InquiryDetailModal({
         >
           {/* Main content area */}
           <div className="flex min-w-0 flex-1 flex-col bg-background">
-            {/* Minimalist Header */}
-            <div className="flex items-center justify-between border-b px-4 py-3 md:px-8">
+            {/* Header with Actions */}
+            <div className="flex items-center justify-between gap-4 border-b px-4 py-3 md:px-8">
               <DialogTitle className="font-semibold text-foreground text-lg md:text-xl">
                 Support Inquiry
               </DialogTitle>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8 text-muted-foreground hover:text-foreground"
-                onClick={onClose}
-                title="Close (Esc)"
-              >
-                <XIcon className="h-4 w-4" />
-              </Button>
+              <div className="flex items-center gap-2">
+                {inquiry.is_resolved ? (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleReopen}
+                    disabled={isResolvingUpdating}
+                    className="transition-all hover:border-dynamic-orange/50 hover:bg-dynamic-orange/5"
+                  >
+                    {isResolvingUpdating ? (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : (
+                      <ClockIcon className="mr-2 h-4 w-4" />
+                    )}
+                    Reopen
+                  </Button>
+                ) : (
+                  <Button
+                    variant="default"
+                    size="sm"
+                    onClick={handleResolve}
+                    disabled={isResolvingUpdating}
+                  >
+                    {isResolvingUpdating ? (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : (
+                      <CheckCircleIcon className="mr-2 h-4 w-4" />
+                    )}
+                    Mark as Resolved
+                  </Button>
+                )}
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                  onClick={onClose}
+                  title="Close (Esc)"
+                >
+                  <XIcon className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
 
             {/* Main scrollable area */}

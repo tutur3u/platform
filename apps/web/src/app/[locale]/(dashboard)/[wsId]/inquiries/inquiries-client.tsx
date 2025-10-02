@@ -45,6 +45,7 @@ interface InquiriesClientProps {
   currentFilters: {
     type?: SupportType;
     product?: Product;
+    status?: 'all' | 'unread' | 'read' | 'open' | 'resolved';
   };
   pagination: {
     currentPage: number;
@@ -98,7 +99,7 @@ export function InquiriesClient({
     useState<ExtendedSupportInquiry | null>(null);
 
   const updateFilters = (
-    key: 'type' | 'product',
+    key: 'type' | 'product' | 'status',
     value: string | undefined
   ) => {
     const params = new URLSearchParams(searchParams.toString());
@@ -132,7 +133,8 @@ export function InquiriesClient({
     router.push(window.location.pathname);
   };
 
-  const hasActiveFilters = currentFilters.type || currentFilters.product;
+  const hasActiveFilters =
+    currentFilters.type || currentFilters.product || currentFilters.status;
 
   const { currentPage, pageLimit, totalCount, totalPages } = pagination;
 
@@ -160,7 +162,7 @@ export function InquiriesClient({
             </div>
           </CardHeader>
           <CardContent className="space-y-4 p-4 md:p-6">
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
               <div className="space-y-2.5">
                 <label className="flex items-center gap-2 font-semibold text-foreground text-sm">
                   <div className="flex h-5 w-5 items-center justify-center rounded-md bg-dynamic-orange/15">
@@ -207,6 +209,30 @@ export function InquiriesClient({
                         {PRODUCT_LABELS[product]}
                       </SelectItem>
                     ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2.5">
+                <label className="flex items-center gap-2 font-semibold text-foreground text-sm">
+                  <div className="flex h-5 w-5 items-center justify-center rounded-md bg-dynamic-orange/15">
+                    <FilterIcon className="h-3.5 w-3.5 text-dynamic-orange" />
+                  </div>
+                  Status
+                </label>
+                <Select
+                  value={currentFilters.status || 'open'}
+                  onValueChange={(value) => updateFilters('status', value)}
+                >
+                  <SelectTrigger className="h-9 transition-all hover:border-dynamic-orange/50 hover:bg-dynamic-orange/5">
+                    <SelectValue placeholder="Open (unresolved)" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All statuses</SelectItem>
+                    <SelectItem value="unread">Unread</SelectItem>
+                    <SelectItem value="read">Read</SelectItem>
+                    <SelectItem value="open">Open (unresolved)</SelectItem>
+                    <SelectItem value="resolved">Resolved</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -497,6 +523,10 @@ export function InquiriesClient({
           inquiry={selectedInquiry}
           isOpen={!!selectedInquiry}
           onClose={() => setSelectedInquiry(null)}
+          onUpdate={() => {
+            // Optionally close the modal after update, or keep it open
+            // setSelectedInquiry(null);
+          }}
         />
       )}
     </>

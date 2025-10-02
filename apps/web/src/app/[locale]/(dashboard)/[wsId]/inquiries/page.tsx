@@ -32,6 +32,7 @@ interface PageProps {
   searchParams: Promise<{
     type?: SupportType;
     product?: Product;
+    status?: 'all' | 'unread' | 'read' | 'open' | 'resolved';
     page?: string;
     limit?: string;
   }>;
@@ -44,7 +45,7 @@ export default async function InquiriesPage({
   return (
     <WorkspaceWrapper params={params}>
       {async () => {
-        const { type, product, page, limit } = await searchParams;
+        const { type, product, status, page, limit } = await searchParams;
 
         const currentPage = Number.parseInt(page || '1', 10);
         const pageLimit = Number.parseInt(limit || '10', 10);
@@ -83,6 +84,22 @@ export default async function InquiriesPage({
           countQuery = countQuery.eq('product', product);
         }
 
+        // Default to showing unresolved inquiries if no status filter is set
+        if (status) {
+          if (status === 'unread') {
+            countQuery = countQuery.eq('is_read', false);
+          } else if (status === 'read') {
+            countQuery = countQuery.eq('is_read', true);
+          } else if (status === 'open') {
+            countQuery = countQuery.eq('is_resolved', false);
+          } else if (status === 'resolved') {
+            countQuery = countQuery.eq('is_resolved', true);
+          }
+        } else {
+          // Default: show only unresolved inquiries
+          countQuery = countQuery.eq('is_resolved', false);
+        }
+
         const { count: totalCount } = await countQuery;
 
         // Build data query with optional filters and pagination
@@ -108,6 +125,22 @@ export default async function InquiriesPage({
 
         if (product) {
           query = query.eq('product', product);
+        }
+
+        // Default to showing unresolved inquiries if no status filter is set
+        if (status) {
+          if (status === 'unread') {
+            query = query.eq('is_read', false);
+          } else if (status === 'read') {
+            query = query.eq('is_read', true);
+          } else if (status === 'open') {
+            query = query.eq('is_resolved', false);
+          } else if (status === 'resolved') {
+            query = query.eq('is_resolved', true);
+          }
+        } else {
+          // Default: show only unresolved inquiries
+          query = query.eq('is_resolved', false);
         }
 
         const { data: inquiries, error } = await query;
@@ -175,7 +208,7 @@ export default async function InquiriesPage({
               inquiries={inquiries as ExtendedSupportInquiry[]}
               availableTypes={uniqueTypes}
               availableProducts={uniqueProducts}
-              currentFilters={{ type, product }}
+              currentFilters={{ type, product, status }}
               pagination={{
                 currentPage,
                 pageLimit,
