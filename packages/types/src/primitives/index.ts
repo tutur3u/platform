@@ -11,6 +11,7 @@ export * from './EducationAccessRequest';
 export * from './Entity';
 export * from './EventParticipant';
 export * from './Invoice';
+export * from './PendingInvoice';
 export * from './MeetTogetherPlan';
 export * from './Poll';
 export * from './Priority';

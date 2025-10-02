@@ -1242,6 +1242,18 @@
     "note": "Note",
     "created_at": "Created at"
   },
+  "pending-invoice-data-table": {
+    "user_id": "User ID",
+    "user_name": "Customer",
+    "group_id": "Group ID",
+    "group_name": "Group",
+    "months_owed": "Months Owed",
+    "attendance_days": "Attendance Days",
+    "total_sessions": "Total Sessions",
+    "potential_total": "Amount Due",
+    "customer": "Customer",
+    "group": "Group"
+  },
   "product-data-table": {
     "id": "ID",
     "name": "Name",

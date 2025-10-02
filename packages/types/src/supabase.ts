@@ -561,6 +561,29 @@ export type Database = {
         };
         Returns: number;
       };
+      get_pending_invoices: {
+        Args: {
+          p_limit?: number;
+          p_offset?: number;
+          p_ws_id: string;
+        };
+        Returns: {
+          attendance_days: number;
+          group_id: string;
+          group_name: string;
+          months_owed: string;
+          potential_total: number;
+          total_sessions: number;
+          user_id: string;
+          user_name: string;
+        }[];
+      };
+      get_pending_invoices_count: {
+        Args: {
+          p_ws_id: string;
+        };
+        Returns: number;
+      };
       get_period_summary_stats: {
         Args: {
           p_period?: string;

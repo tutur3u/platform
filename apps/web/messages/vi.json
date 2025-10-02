@@ -1428,6 +1428,20 @@
     "note": "Ghi chú",
     "created_at": "Tạo lúc"
   },
+  "pending-invoice-data-table": {
+    "user_id": "Mã học viên",
+    "user_name": "Khách hàng",
+    "group_id": "Mã nhóm",
+    "group_name": "Nhóm",
+    "months_owed": "Các tháng chưa thanh toán",
+    "attendance_days": "Số buổi tham gia",
+    "total_sessions": "Tổng số buổi",
+    "potential_total": "Số tiền cần thanh toán",
+    "customer": "Khách hàng",
+    "group": "Nhóm",
+    "actions": "Hành động",
+    "create_invoice": "Tạo hóa đơn"
+  },
   "product-data-table": {
     "id": "Mã số",
     "name": "Tên",
@@ -3008,7 +3022,9 @@
     "edit_invoice_description": "Chỉnh sửa thông tin hóa đơn",
     "creator": "Người tạo hóa đơn",
     "print_after_create": "In hóa đơn",
-    "print_after_create_tooltip": "In hóa đơn sau khi tạo thành công"
+    "print_after_create_tooltip": "In hóa đơn sau khi tạo thành công",
+    "created_invoices": "Hóa đơn đã tạo",
+    "pending_invoices": "Hóa đơn chưa được thanh toán"
   },
   "ws-inventory-products": {
     "plural": "Sản phẩm",
