@@ -544,7 +544,15 @@ function TaskEditDialogComponent({
       listId: selectedListId,
       estimationPoints: estimationPoints ?? null,
     } as const;
-  }, [name, description, priority, startDate, endDate, selectedListId, estimationPoints]);
+  }, [
+    name,
+    description,
+    priority,
+    startDate,
+    endDate,
+    selectedListId,
+    estimationPoints,
+  ]);
 
   const hasUnsavedChanges = useMemo(() => {
     return (
