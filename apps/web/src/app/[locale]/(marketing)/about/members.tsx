@@ -11,6 +11,7 @@ import {
   SelectValue,
 } from '@ncthub/ui/select';
 import { AnimatePresence, motion } from 'framer-motion';
+import { Crown } from 'lucide-react';
 import { useState } from 'react';
 
 const cardVariants = {
@@ -58,9 +59,22 @@ export default function Members() {
 
   return (
     <div className="flex flex-col items-center px-2 py-4">
-      <p className="mt-8 w-full bg-gradient-to-r from-yellow-400 via-red-500 to-pink-500 bg-clip-text p-3 text-center text-4xl font-black tracking-tight text-transparent md:text-5xl lg:text-6xl dark:from-yellow-300 dark:via-red-400 dark:to-pink-400">
-        Meet Our Team
-      </p>
+      <motion.h1
+        className="mt-4 mb-8 text-center text-6xl font-extrabold"
+        initial={{ opacity: 0, y: 20 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6 }}
+      >
+        <span className="border-b-4 border-[#5FC6E5] pb-2">Meet Our Team</span>
+        <motion.div
+          className="ml-3 inline-block"
+          initial={{ rotate: 0 }}
+          whileInView={{ rotate: 360 }}
+          transition={{ duration: 0.8, delay: 0.3 }}
+        >
+          <Crown className="h-8 w-8 text-[#FBC721]" />
+        </motion.div>
+      </motion.h1>
 
       <div className="relative mx-auto mt-4 mb-8 max-w-4xl rounded-lg border border-border bg-card p-4 text-center text-base tracking-wide text-foreground/80 md:p-6 md:text-lg">
         {selectedGeneration === 7 ? (
@@ -68,10 +82,7 @@ export default function Members() {
             RMIT Neo Culture Tech Club mostly operates technical events,
             workshops, trainings, etc… related to technology. Our target
             students are from the house of{' '}
-            <span className="font-bold text-red-500 dark:text-red-400">
-              SSET
-            </span>
-            .
+            <span className="font-bold text-[#5FC6E5]">SSET</span>.
           </>
         ) : (
           <>
@@ -86,55 +97,38 @@ export default function Members() {
 
       <div className="my-4">
         <div className="w-full px-2 text-center text-base font-medium text-muted-foreground md:px-40 md:text-lg">
-          {selectedGeneration === 7 ? (
-            <>
-              Our club has 4 core teams:{' '}
-              {departments.map((department, index) => (
-                <span key={department.name}>
-                  <span
-                    className={`font-semibold ${department.color} cursor-pointer transition-all duration-200 hover:underline ${
-                      lockedDepartment === department.name
-                        ? 'rounded px-1 underline ring-2 ring-current'
-                        : ''
-                    }`}
-                    onMouseEnter={() => setHoveredDepartment(department.name)}
-                    onMouseLeave={() => setHoveredDepartment(null)}
-                    onClick={() => handleDepartmentClick(department.name)}
-                  >
-                    {department.name}
-                  </span>
-                  {index < departments.length - 1 && ', '}
-                </span>
-              ))}
-              , with a dedicated{' '}
+          Our club has 4 core teams:{' '}
+          {departments.map((department, index) => (
+            <span key={department.name}>
               <span
-                className={`cursor-pointer font-semibold text-dynamic-pink transition-all duration-200 hover:underline ${
-                  lockedDepartment === 'Executive Board'
+                className={`font-semibold ${department.color} cursor-pointer transition-all duration-200 hover:underline ${
+                  lockedDepartment === department.name
                     ? 'rounded px-1 underline ring-2 ring-current'
                     : ''
                 }`}
-                onMouseEnter={() => setHoveredDepartment('Executive Board')}
+                onMouseEnter={() => setHoveredDepartment(department.name)}
                 onMouseLeave={() => setHoveredDepartment(null)}
-                onClick={() => handleDepartmentClick('Executive Board')}
+                onClick={() => handleDepartmentClick(department.name)}
               >
-                Executive Board
-              </span>{' '}
-              to oversee the operations of the club.
-            </>
-          ) : (
-            <>
-              These visionary leaders established the{' '}
-              <span className="font-semibold text-[#FBC721]">
-                organizational foundation
-              </span>{' '}
-              that made today's NEO possible. Through their dedication and
-              innovation, they created lasting{' '}
-              <span className="font-semibold text-[#5FC6E5]">
-                systems and culture
-              </span>{' '}
-              that continue to inspire new generations.
-            </>
-          )}
+                {department.name}
+              </span>
+              {index < departments.length - 1 && ', '}
+            </span>
+          ))}
+          , with a dedicated{' '}
+          <span
+            className={`cursor-pointer font-semibold text-dynamic-pink transition-all duration-200 hover:underline ${
+              lockedDepartment === 'Executive Board'
+                ? 'rounded px-1 underline ring-2 ring-current'
+                : ''
+            }`}
+            onMouseEnter={() => setHoveredDepartment('Executive Board')}
+            onMouseLeave={() => setHoveredDepartment(null)}
+            onClick={() => handleDepartmentClick('Executive Board')}
+          >
+            Executive Board
+          </span>{' '}
+          to oversee the operations of the club.
         </div>
       </div>
 
