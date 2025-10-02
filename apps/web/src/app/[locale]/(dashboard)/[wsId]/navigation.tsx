@@ -139,22 +139,23 @@ export async function WorkspaceNavigationLinks({
     null,
     {
       title: t('sidebar_tabs.tasks'),
-      href: `/${personalOrWsId}/tasks/boards`,
+      href: `/${personalOrWsId}/tasks`,
       icon: <CircleCheck className="h-5 w-5" />,
       disabled: ENABLE_AI_ONLY || withoutPermission('manage_projects'),
       experimental: 'beta',
       children: [
-        {
-          title: t('sidebar_tabs.all_boards'),
-          href: `/${personalOrWsId}/tasks/boards`,
-          icon: <ListTodo className="h-4 w-4" />,
-        },
         {
           title: t('sidebar_tabs.my_tasks'),
           href: `/${personalOrWsId}/tasks/my-tasks`,
           icon: <UserRound className="h-4 w-4" />,
           matchExact: true,
         },
+        {
+          title: t('sidebar_tabs.all_boards'),
+          href: `/${personalOrWsId}/tasks/boards`,
+          icon: <ListTodo className="h-4 w-4" />,
+        },
+        null,
         {
           title: t('sidebar_tabs.initiatives'),
           href: `/${personalOrWsId}/tasks/initiatives`,
@@ -166,6 +167,7 @@ export async function WorkspaceNavigationLinks({
           href: `/${personalOrWsId}/tasks/projects`,
           icon: <Box className="h-4 w-4" />,
         },
+        null,
         {
           title: t('sidebar_tabs.cycles'),
           href: `/${personalOrWsId}/tasks/cycles`,
@@ -181,6 +183,7 @@ export async function WorkspaceNavigationLinks({
           icon: <Icon iconNode={hexagons3} className="h-4 w-4" />,
           href: `/${personalOrWsId}/tasks/estimates`,
         },
+        null,
         {
           title: t('sidebar_tabs.teams'),
           icon: <SquareUserRound className="h-4 w-4" />,
