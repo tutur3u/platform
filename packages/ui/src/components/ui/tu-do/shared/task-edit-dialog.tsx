@@ -10,7 +10,12 @@ import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { DateTimePicker } from '@tuturuuu/ui/date-time-picker';
-import { Dialog, DialogContent, DialogTitle } from '@tuturuuu/ui/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogTitle,
+} from '@tuturuuu/ui/dialog';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -19,6 +24,7 @@ import {
 } from '@tuturuuu/ui/dropdown-menu';
 import { useToast } from '@tuturuuu/ui/hooks/use-toast';
 import {
+  Box,
   Calendar,
   Check,
   ChevronDown,
@@ -165,6 +171,12 @@ function TaskEditDialogComponent({
     task?.assignees || []
   );
   const [assigneeSearchQuery, setAssigneeSearchQuery] = useState('');
+  const [taskProjects, setTaskProjects] = useState<any[]>([]);
+  const [loadingProjects, setLoadingProjects] = useState(false);
+  const [selectedProjects, setSelectedProjects] = useState<any[]>(
+    task?.projects || []
+  );
+  const [projectSearchQuery, setProjectSearchQuery] = useState('');
 
   const queryClient = useQueryClient();
   const previousTaskIdRef = useRef<string | null>(null);
@@ -238,6 +250,7 @@ function TaskEditDialogComponent({
       setEstimationPoints(task?.estimation_points ?? null);
       setSelectedLabels(task?.labels || []);
       setSelectedAssignees(task?.assignees || []);
+      setSelectedProjects(task?.projects || []);
       if (task?.id) previousTaskIdRef.current = task.id;
     }
     // For create mode, only load when task ID changes or dialog opens with 'new' ID
@@ -255,6 +268,7 @@ function TaskEditDialogComponent({
       setEstimationPoints(task?.estimation_points ?? null);
       setSelectedLabels(task?.labels || []);
       setSelectedAssignees(task?.assignees || []);
+      setSelectedProjects(task?.projects || []);
       if (task?.id) previousTaskIdRef.current = task.id;
     }
   }, [task, task?.description, parseDescription, isOpen, mode]);
@@ -271,6 +285,7 @@ function TaskEditDialogComponent({
       setEstimationPoints(task?.estimation_points ?? null);
       setSelectedLabels(task?.labels || []);
       setSelectedAssignees(task?.assignees || []);
+      setSelectedProjects(task?.projects || []);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, mode, task, parseDescription]);
@@ -323,12 +338,39 @@ function TaskEditDialogComponent({
     }
   }, []);
 
-  // Fetch workspace members when workspace ID is available
+  const fetchTaskProjects = useCallback(async (wsId: string) => {
+    try {
+      setLoadingProjects(true);
+      const supabase = createClient();
+      const { data: projects, error } = await supabase
+        .from('task_projects')
+        .select('id, name, status')
+        .eq('ws_id', wsId)
+        .eq('deleted', false)
+        .order('name');
+
+      if (error) {
+        console.error('Error fetching task projects:', error);
+        throw error;
+      }
+
+      if (projects) {
+        setTaskProjects(projects);
+      }
+    } catch (e) {
+      console.error('Failed fetching task projects', e);
+    } finally {
+      setLoadingProjects(false);
+    }
+  }, []);
+
+  // Fetch workspace members and projects when workspace ID is available
   useEffect(() => {
     if (isOpen && workspaceId) {
       fetchWorkspaceMembers(workspaceId);
+      fetchTaskProjects(workspaceId);
     }
-  }, [isOpen, workspaceId, fetchWorkspaceMembers]);
+  }, [isOpen, workspaceId, fetchWorkspaceMembers, fetchTaskProjects]);
 
   // ------- Draft persistence (create mode) -------------------------------------
   const draftStorageKey = useMemo(
@@ -865,6 +907,62 @@ function TaskEditDialogComponent({
     }
   };
 
+  const toggleProject = async (project: any) => {
+    const exists = selectedProjects.some((p) => p.id === project.id);
+    const supabase = createClient();
+    try {
+      if (mode === 'create') {
+        // Local toggle only; persist on create
+        setSelectedProjects((prev) =>
+          exists ? prev.filter((p) => p.id !== project.id) : [...prev, project]
+        );
+        return;
+      }
+      if (exists) {
+        if (!task?.id) return;
+        // remove
+        const { error } = await supabase
+          .from('task_project_tasks')
+          .delete()
+          .eq('task_id', task.id)
+          .eq('project_id', project.id);
+        if (error) throw error;
+        setSelectedProjects((prev) => prev.filter((p) => p.id !== project.id));
+      } else {
+        if (!task?.id) return;
+        const { error } = await supabase
+          .from('task_project_tasks')
+          .insert({ task_id: task.id, project_id: project.id });
+
+        // Handle duplicate key error gracefully
+        if (error) {
+          // Error code 23505 is duplicate key violation in PostgreSQL
+          if (error.code === '23505') {
+            // Project is already linked - just update local state to reflect reality
+            toast({
+              title: 'Already linked',
+              description: 'This project is already linked to the task',
+            });
+            // Sync with server state
+            await invalidateTaskCaches(queryClient, boardId);
+            onUpdate();
+            return;
+          }
+          throw error;
+        }
+        setSelectedProjects((prev) => [...prev, project]);
+      }
+      await invalidateTaskCaches(queryClient, boardId);
+      onUpdate();
+    } catch (e: any) {
+      toast({
+        title: 'Project update failed',
+        description: e.message || 'Unable to update projects',
+        variant: 'destructive',
+      });
+    }
+  };
+
   const handleSave = async () => {
     if (!name?.trim()) return;
 
@@ -921,6 +1019,15 @@ function TaskEditDialogComponent({
             selectedAssignees.map((a) => ({
               task_id: newTask.id,
               user_id: a.user_id,
+            }))
+          );
+        }
+
+        if (selectedProjects.length > 0) {
+          await supabase.from('task_project_tasks').insert(
+            selectedProjects.map((p) => ({
+              task_id: newTask.id,
+              project_id: p.id,
             }))
           );
         }
@@ -1317,6 +1424,11 @@ function TaskEditDialogComponent({
                   <DialogTitle className="truncate font-semibold text-base text-foreground md:text-lg">
                     {mode === 'create' ? 'Create New Task' : 'Edit Task'}
                   </DialogTitle>
+                  <DialogDescription className="sr-only">
+                    {mode === 'create'
+                      ? 'Create a new task with details, assignments, and project associations'
+                      : 'Edit task details, assignments, and project associations'}
+                  </DialogDescription>
                 </div>
               </div>
               <div className="flex items-center gap-1 md:gap-2">
@@ -1995,6 +2107,162 @@ function TaskEditDialogComponent({
                       )}
                     </div>
 
+                    {/* Projects Section */}
+                    <div className="space-y-2.5 rounded-lg border border-border/60 bg-gradient-to-br from-muted/30 to-muted/10 p-3.5 shadow-sm">
+                      <Label className="flex items-center justify-between gap-2">
+                        <span className="flex items-center gap-2 font-semibold text-foreground text-sm">
+                          <div className="flex h-5 w-5 items-center justify-center rounded-md bg-dynamic-orange/15">
+                            <Box className="h-3.5 w-3.5 text-dynamic-orange" />
+                          </div>
+                          Projects
+                        </span>
+                        {selectedProjects.length > 0 && (
+                          <Badge
+                            variant="secondary"
+                            className="h-5 rounded-full px-2 font-semibold text-[10px]"
+                          >
+                            {selectedProjects.length}
+                          </Badge>
+                        )}
+                      </Label>
+
+                      {loadingProjects ? (
+                        <div className="flex flex-col items-center justify-center gap-3 rounded-lg bg-muted/30 py-8">
+                          <Loader2 className="h-5 w-5 animate-spin text-dynamic-orange" />
+                          <p className="text-muted-foreground text-xs">
+                            Loading projects...
+                          </p>
+                        </div>
+                      ) : taskProjects.length === 0 ? (
+                        <div className="flex flex-col items-center justify-center gap-3 rounded-lg border-2 border-muted-foreground/20 border-dashed bg-muted/20 py-8">
+                          <Box className="h-5 w-5 text-muted-foreground/40" />
+                          <p className="text-center text-muted-foreground text-xs">
+                            No projects available
+                          </p>
+                        </div>
+                      ) : (
+                        <div className="space-y-2.5">
+                          {/* Search input */}
+                          <div className="relative">
+                            <Search className="-translate-y-1/2 pointer-events-none absolute top-1/2 left-2.5 h-3.5 w-3.5 text-muted-foreground" />
+                            <Input
+                              type="text"
+                              placeholder="Search projects..."
+                              value={projectSearchQuery}
+                              onChange={(e) =>
+                                setProjectSearchQuery(e.target.value)
+                              }
+                              className="h-8 border-muted-foreground/20 bg-background/50 pl-8 text-xs placeholder:text-muted-foreground/50"
+                            />
+                            {projectSearchQuery && (
+                              <button
+                                type="button"
+                                onClick={() => setProjectSearchQuery('')}
+                                className="-translate-y-1/2 absolute top-1/2 right-2 rounded-full p-0.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                              >
+                                <X className="h-3 w-3" />
+                              </button>
+                            )}
+                          </div>
+
+                          {/* Selected projects (if any) */}
+                          {selectedProjects.length > 0 && (
+                            <div className="space-y-1.5">
+                              <p className="font-medium text-[10px] text-muted-foreground uppercase tracking-wide">
+                                Selected ({selectedProjects.length})
+                              </p>
+                              <div className="flex flex-wrap gap-1.5">
+                                {selectedProjects.map((project) => (
+                                  <Button
+                                    key={`selected-project-${project.id}`}
+                                    type="button"
+                                    variant="default"
+                                    size="xs"
+                                    onClick={() => toggleProject(project)}
+                                    className="h-7 gap-1.5 rounded-full border border-dynamic-orange/30 bg-dynamic-orange/15 px-3 font-medium text-dynamic-orange text-xs shadow-sm transition-all hover:border-dynamic-orange/50 hover:bg-dynamic-orange/25"
+                                  >
+                                    {project.name}
+                                    <X className="h-3 w-3 opacity-70" />
+                                  </Button>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Available projects */}
+                          <div className="space-y-1.5">
+                            {(() => {
+                              const filteredProjects = taskProjects.filter(
+                                (project) => {
+                                  const isSelected = selectedProjects.some(
+                                    (p) => p.id === project.id
+                                  );
+                                  const matchesSearch =
+                                    !projectSearchQuery ||
+                                    (project.name || '')
+                                      .toLowerCase()
+                                      .includes(
+                                        projectSearchQuery.toLowerCase()
+                                      );
+                                  return !isSelected && matchesSearch;
+                                }
+                              );
+
+                              if (filteredProjects.length === 0) {
+                                return projectSearchQuery ? (
+                                  <div className="flex flex-col items-center justify-center gap-2 rounded-lg bg-muted/30 py-6">
+                                    <Search className="h-4 w-4 text-muted-foreground/40" />
+                                    <p className="text-center text-muted-foreground text-xs">
+                                      No projects found
+                                    </p>
+                                  </div>
+                                ) : (
+                                  <div className="rounded-lg bg-muted/30 py-3 text-center">
+                                    <p className="text-muted-foreground text-xs">
+                                      All projects selected
+                                    </p>
+                                  </div>
+                                );
+                              }
+
+                              return (
+                                <>
+                                  <p className="font-medium text-[10px] text-muted-foreground uppercase tracking-wide">
+                                    Available ({filteredProjects.length})
+                                  </p>
+                                  <div className="flex max-h-48 flex-col gap-1 overflow-y-auto">
+                                    {filteredProjects.map((project) => (
+                                      <button
+                                        key={`available-project-${project.id}`}
+                                        type="button"
+                                        onClick={() => toggleProject(project)}
+                                        className="group flex items-center gap-2.5 rounded-md border border-transparent bg-background/50 px-3 py-2 text-left transition-all hover:border-dynamic-orange/30 hover:bg-dynamic-orange/5"
+                                      >
+                                        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-dynamic-orange/10">
+                                          <ListTodo className="h-4 w-4 text-dynamic-orange" />
+                                        </div>
+                                        <div className="flex-1 truncate">
+                                          <span className="block truncate text-sm">
+                                            {project.name}
+                                          </span>
+                                          {project.status && (
+                                            <span className="block text-muted-foreground text-xs">
+                                              {project.status}
+                                            </span>
+                                          )}
+                                        </div>
+                                        <Plus className="h-3.5 w-3.5 shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
+                                      </button>
+                                    ))}
+                                  </div>
+                                </>
+                              );
+                            })()}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
                     {/* Assignees Section */}
                     <div className="space-y-2.5 rounded-lg border border-border/60 bg-gradient-to-br from-muted/30 to-muted/10 p-3.5 shadow-sm">
                       <Label className="flex items-center justify-between gap-2">
@@ -2062,7 +2330,7 @@ function TaskEditDialogComponent({
                               <div className="flex flex-wrap gap-1.5">
                                 {selectedAssignees.map((assignee) => (
                                   <Button
-                                    key={assignee.user_id}
+                                    key={`selected-assignee-${assignee.user_id}`}
                                     type="button"
                                     variant="default"
                                     size="xs"
@@ -2131,7 +2399,7 @@ function TaskEditDialogComponent({
                                   <div className="flex max-h-48 flex-col gap-1 overflow-y-auto">
                                     {filteredMembers.map((member) => (
                                       <button
-                                        key={member.user_id}
+                                        key={`available-member-${member.user_id}`}
                                         type="button"
                                         onClick={() => toggleAssignee(member)}
                                         className="group flex items-center gap-2.5 rounded-md border border-transparent bg-background/50 px-3 py-2 text-left transition-all hover:border-dynamic-orange/30 hover:bg-dynamic-orange/5"
@@ -2221,10 +2489,10 @@ function TaskEditDialogComponent({
             </div>
             <div className="flex-1">
               <DialogTitle className="text-base">Delete task?</DialogTitle>
-              <p className="mt-1 text-muted-foreground text-sm">
+              <DialogDescription className="mt-1 text-muted-foreground text-sm">
                 This action cannot be undone. The task will be permanently
                 removed.
-              </p>
+              </DialogDescription>
             </div>
           </div>
           <div className="flex justify-end gap-2 pt-2">

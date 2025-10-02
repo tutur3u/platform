@@ -24,6 +24,11 @@ export interface Task {
     avatar_url?: string;
     handle?: string;
   }[];
+  projects?: {
+    id: string;
+    name: string;
+    status: string;
+  }[];
 }
 
 export interface TaskAssignee {

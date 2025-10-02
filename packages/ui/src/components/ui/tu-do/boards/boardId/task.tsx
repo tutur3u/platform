@@ -13,7 +13,6 @@ import { Card } from '@tuturuuu/ui/card';
 import { Checkbox } from '@tuturuuu/ui/checkbox';
 import { ColorPicker } from '@tuturuuu/ui/color-picker';
 import { DateTimePicker } from '@tuturuuu/ui/date-time-picker';
-
 import {
   Dialog,
   DialogContent,
@@ -35,6 +34,7 @@ import {
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import {
   AlertCircle,
+  Box,
   Calendar,
   Check,
   CheckCircle2,
@@ -136,19 +136,6 @@ function TaskCardInner({
     }, 100);
   }, []);
 
-  // Helper function to prevent event propagation and execute action
-  const preventPropagation = useCallback(
-    (action: () => void) => {
-      return (e: React.MouseEvent) => {
-        e.stopPropagation();
-        // Guard against immediate accidental selection after right-click open
-        if (Date.now() < menuGuardUntil) return;
-        action();
-      };
-    },
-    [menuGuardUntil]
-  );
-
   // Guarded select handler for Radix DropdownMenuItem to avoid immediate action on context open
   const handleMenuItemSelect = useCallback(
     (e: Event, action: () => void) => {
@@ -172,12 +159,34 @@ function TaskCardInner({
   // Local state for UI interactions
   const [estimationSaving, setEstimationSaving] = useState(false);
   const [labelsSaving, setLabelsSaving] = useState<string | null>(null);
+  const [projectsSaving, setProjectsSaving] = useState<string | null>(null);
 
   // New label creation state
   const [newLabelDialogOpen, setNewLabelDialogOpen] = useState(false);
   const [newLabelName, setNewLabelName] = useState('');
   const [newLabelColor, setNewLabelColor] = useState(NEW_LABEL_COLOR);
   const [creatingLabel, setCreatingLabel] = useState(false);
+
+  // Fetch workspace projects
+  const { data: workspaceProjects = [], isLoading: projectsLoading } = useQuery(
+    {
+      queryKey: ['task_projects', boardConfig?.ws_id],
+      queryFn: async () => {
+        if (!boardConfig?.ws_id) return [];
+        const supabase = createClient();
+        const { data, error } = await supabase
+          .from('task_projects')
+          .select('id, name, status')
+          .eq('ws_id', boardConfig.ws_id)
+          .eq('deleted', false)
+          .order('name');
+
+        if (error) throw error;
+        return data || [];
+      },
+      enabled: !!boardConfig?.ws_id,
+    }
+  );
 
   // Track initial mount to avoid duplicate fetch storms
   const updateTaskMutation = useUpdateTask(boardId);
@@ -717,6 +726,96 @@ function TaskCardInner({
     }
   }
 
+  // Toggle a project for the task (quick projects submenu)
+  async function toggleTaskProject(projectId: string) {
+    setProjectsSaving(projectId);
+    const supabase = createClient();
+    const active = task.projects?.some((p) => p.id === projectId);
+
+    // Cancel any outgoing refetches
+    await queryClient.cancelQueries({ queryKey: ['tasks', boardId] });
+
+    // Snapshot the previous value
+    const previousTasks = queryClient.getQueryData(['tasks', boardId]);
+
+    // Find the project details from workspace projects
+    const project = workspaceProjects.find((p) => p.id === projectId);
+
+    // Optimistically update the cache
+    queryClient.setQueryData(['tasks', boardId], (old: any[] | undefined) => {
+      if (!old) return old;
+      return old.map((t) => {
+        if (t.id === task.id) {
+          if (active) {
+            // Remove the project
+            return {
+              ...t,
+              projects:
+                t.projects?.filter((p: any) => p.id !== projectId) || [],
+            };
+          } else {
+            // Add the project
+            return {
+              ...t,
+              projects: [
+                ...(t.projects || []),
+                project || { id: projectId, name: 'Unknown', status: null },
+              ],
+            };
+          }
+        }
+        return t;
+      });
+    });
+
+    try {
+      if (active) {
+        const { error } = await supabase
+          .from('task_project_tasks')
+          .delete()
+          .eq('task_id', task.id)
+          .eq('project_id', projectId);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from('task_project_tasks')
+          .insert({ task_id: task.id, project_id: projectId });
+
+        // Handle duplicate key error gracefully
+        if (error) {
+          // Error code 23505 is duplicate key violation in PostgreSQL
+          if (error.code === '23505') {
+            // Project is already linked - just update cache to reflect reality
+            toast({
+              title: 'Already linked',
+              description: 'This project is already linked to the task',
+            });
+            // Fetch current state to sync cache
+            await queryClient.invalidateQueries({
+              queryKey: ['tasks', boardId],
+            });
+            return;
+          }
+          throw error;
+        }
+      }
+      // Success - mark query as needing refetch but don't force it immediately
+      queryClient.setQueryData(['tasks', boardId], (old: any[] | undefined) => {
+        return old; // Return unchanged to signal success without triggering render
+      });
+    } catch (e: any) {
+      // Rollback on error
+      queryClient.setQueryData(['tasks', boardId], previousTasks);
+      toast({
+        title: 'Project update failed',
+        description: e.message || 'Unable to toggle project',
+        variant: 'destructive',
+      });
+    } finally {
+      setProjectsSaving(null);
+    }
+  }
+
   // Create a new label
   async function createNewLabel() {
     if (!newLabelName.trim() || !boardConfig?.ws_id) return;
@@ -921,7 +1020,7 @@ function TaskCardInner({
         e.stopPropagation();
         // Open the context menu (actions dropdown) and guard first click briefly
         setMenuOpen(true);
-        setMenuGuardUntil(Date.now() + 200);
+        setMenuGuardUntil(Date.now() + 300);
       }}
       // Apply sortable listeners/attributes to the full card so the whole surface remains draggable
       {...attributes}
@@ -1442,6 +1541,69 @@ function TaskCardInner({
                     </DropdownMenuSubContent>
                   </DropdownMenuSub>
 
+                  {/* Projects Submenu */}
+                  <DropdownMenuSub>
+                    <DropdownMenuSubTrigger>
+                      <Box className="h-4 w-4 text-dynamic-sky" />
+                      Projects
+                    </DropdownMenuSubTrigger>
+                    <DropdownMenuSubContent>
+                      {projectsLoading && (
+                        <div className="px-2 py-1 text-muted-foreground text-xs">
+                          Loading...
+                        </div>
+                      )}
+                      {!projectsLoading && workspaceProjects.length === 0 && (
+                        <div className="px-2 py-2 text-center text-muted-foreground text-xs">
+                          No projects available
+                        </div>
+                      )}
+                      <div className="grid gap-1">
+                        {!projectsLoading &&
+                          workspaceProjects.length > 0 &&
+                          workspaceProjects.map((project: any) => {
+                            const active = task.projects?.some(
+                              (p) => p.id === project.id
+                            );
+                            return (
+                              <DropdownMenuItem
+                                key={project.id}
+                                onSelect={(e) =>
+                                  handleMenuItemSelect(e, () =>
+                                    toggleTaskProject(project.id)
+                                  )
+                                }
+                                disabled={projectsSaving === project.id}
+                                className={cn(
+                                  'flex cursor-pointer items-center justify-between',
+                                  active &&
+                                    'bg-dynamic-indigo/10 text-dynamic-sky'
+                                )}
+                              >
+                                <div className="flex items-center gap-2">
+                                  <Box className="h-4 w-4 text-dynamic-sky" />
+                                  <span className="truncate">
+                                    {project.name}
+                                  </span>
+                                </div>
+                                {active && <Check className="h-4 w-4" />}
+                              </DropdownMenuItem>
+                            );
+                          })}
+                      </div>
+                      {!projectsLoading &&
+                        task.projects &&
+                        task.projects.length > 0 && (
+                          <>
+                            <DropdownMenuSeparator />
+                            <div className="px-2 pt-1 pb-1 text-[10px] text-muted-foreground">
+                              {task.projects.length} assigned
+                            </div>
+                          </>
+                        )}
+                    </DropdownMenuSubContent>
+                  </DropdownMenuSub>
+
                   <DropdownMenuSeparator />
 
                   {/* Move to List Actions */}
@@ -1461,9 +1623,12 @@ function TaskCardInner({
                           .map((list) => (
                             <DropdownMenuItem
                               key={list.id}
-                              onClick={preventPropagation(() =>
-                                handleMoveToList(list.id)
-                              )}
+                              onSelect={(e) =>
+                                handleMenuItemSelect(
+                                  e as unknown as Event,
+                                  () => handleMoveToList(list.id)
+                                )
+                              }
                               className="cursor-pointer"
                               disabled={isLoading}
                             >
@@ -1514,7 +1679,12 @@ function TaskCardInner({
                           {task.assignees.map((assignee) => (
                             <DropdownMenuItem
                               key={assignee.id}
-                              onClick={() => handleRemoveAssignee(assignee.id)}
+                              onSelect={(e) =>
+                                handleMenuItemSelect(
+                                  e as unknown as Event,
+                                  () => handleRemoveAssignee(assignee.id)
+                                )
+                              }
                               className="cursor-pointer text-muted-foreground"
                               disabled={isLoading}
                             >
@@ -1529,7 +1699,12 @@ function TaskCardInner({
                             <>
                               <DropdownMenuSeparator />
                               <DropdownMenuItem
-                                onClick={handleRemoveAllAssignees}
+                                onSelect={(e) =>
+                                  handleMenuItemSelect(
+                                    e as unknown as Event,
+                                    handleRemoveAllAssignees
+                                  )
+                                }
                                 className="cursor-pointer text-dynamic-red hover:bg-dynamic-red/10 hover:text-dynamic-red/90"
                                 disabled={isLoading}
                               >
@@ -1544,10 +1719,13 @@ function TaskCardInner({
 
                   <DropdownMenuSeparator />
                   <DropdownMenuItem
-                    onClick={preventPropagation(() => {
-                      setDeleteDialogOpen(true);
-                      setMenuOpen(false);
-                    })}
+                    onSelect={(e) =>
+                      handleMenuItemSelect(e as unknown as Event, () => {
+                        setDeleteDialogOpen(true);
+                        setMenuOpen(false);
+                      })
+                    }
+                    className="cursor-pointer"
                   >
                     <Trash2 className="h-4 w-4 text-dynamic-red" />
                     Delete task
@@ -1616,6 +1794,23 @@ function TaskCardInner({
             {!task.archived && task.priority && (
               <div className="min-w-0 max-w-[80px] overflow-hidden">
                 {getPriorityIndicator()}
+              </div>
+            )}
+            {/* Project indicator */}
+            {!task.archived && task.projects && task.projects.length > 0 && (
+              <div className="min-w-0 flex-shrink-0">
+                <Badge
+                  variant="secondary"
+                  className={cn(
+                    'h-5 border px-2 text-[10px]',
+                    'border-dynamic-sky/30 bg-dynamic-sky/10 text-dynamic-sky'
+                  )}
+                >
+                  <Box className="h-2.5 w-2.5" />
+                  {task.projects.length === 1
+                    ? task.projects[0]?.name
+                    : `${task.projects.length} projects`}
+                </Badge>
               </div>
             )}
             {/* Estimation Points */}
@@ -1883,6 +2078,17 @@ export const TaskCard = React.memo(TaskCardInner, (prev, next) => {
     .sort()
     .join('|');
   if (aAssignees !== bAssignees) return false;
+  const aProjects = (a.projects || [])
+    .map((project) => project.id)
+    .filter(Boolean)
+    .sort()
+    .join('|');
+  const bProjects = (b.projects || [])
+    .map((project) => project.id)
+    .filter(Boolean)
+    .sort()
+    .join('|');
+  if (aProjects !== bProjects) return false;
   return true;
 });
 

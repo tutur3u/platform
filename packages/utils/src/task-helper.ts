@@ -71,6 +71,13 @@ export async function getTasks(supabase: SupabaseClient, boardId: string) {
               color,
               created_at
             )
+          ),
+          projects:task_project_tasks(
+            project:task_projects(
+              id,
+              name,
+              status
+            )
           )
         `
       )
@@ -268,6 +275,10 @@ type TaskLabelEntry = {
   label?: NonNullable<Task['labels']>[number] | null;
 };
 
+type TaskProjectEntry = {
+  project?: NonNullable<Task['projects']>[number] | null;
+};
+
 function transformTaskRecord(task: any): Task {
   const normalizedLabels =
     (task.labels as TaskLabelEntry[] | null | undefined)
@@ -276,12 +287,20 @@ function transformTaskRecord(task: any): Task {
         Boolean(label)
       ) ?? [];
 
+  const normalizedProjects =
+    (task.projects as TaskProjectEntry[] | null | undefined)
+      ?.map((entry) => entry.project)
+      .filter((project): project is NonNullable<Task['projects']>[number] =>
+        Boolean(project)
+      ) ?? [];
+
   return {
     ...task,
     assignees: transformAssignees(
       task.assignees as (TaskAssignee & { user: User })[]
     ),
     labels: normalizedLabels,
+    projects: normalizedProjects,
   } as Task;
 }
 
@@ -455,6 +474,13 @@ export async function moveTask(
             color,
             created_at
           )
+        ),
+        projects:task_project_tasks(
+          project:task_projects(
+            id,
+            name,
+            status
+          )
         )
       `
     )
@@ -588,6 +614,13 @@ export async function moveTaskToBoard(
             color,
             created_at
           )
+        ),
+        projects:task_project_tasks(
+          project:task_projects(
+            id,
+            name,
+            status
+          )
         )
       `
     )
@@ -716,7 +749,7 @@ export function useUpdateTask(boardId: string) {
     },
     onSuccess: (updatedTask) => {
       // Update the cache with the server response
-      // Preserve joined data (assignees, labels) from cache since updateTask doesn't fetch them
+      // Preserve joined data (assignees, labels, projects) from cache since updateTask doesn't fetch them
       queryClient.setQueryData(
         ['tasks', boardId],
         (old: Task[] | undefined) => {
@@ -728,6 +761,7 @@ export function useUpdateTask(boardId: string) {
                 // Preserve joined data from cache
                 assignees: task.assignees,
                 labels: task.labels,
+                projects: task.projects,
               };
             }
             return task;
