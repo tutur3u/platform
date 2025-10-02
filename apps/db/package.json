@@ -20,7 +20,7 @@
   "devDependencies": {
     "@biomejs/biome": "^2.2.4",
     "supabase": "^2.47.2",
-    "typescript": "^5.9.2"
+    "typescript": "^5.9.3"
   },
   "packageManager": "bun@1.2.23"
 }

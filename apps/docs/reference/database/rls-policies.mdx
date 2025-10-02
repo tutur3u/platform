@@ -1,0 +1,466 @@
+---
+title: "Row-Level Security (RLS) Policies"
+description: "Security model and RLS policy patterns in the Tuturuuu platform"
+---
+
+# Row-Level Security (RLS) Policies
+
+The Tuturuuu platform implements comprehensive Row-Level Security (RLS) policies to enforce workspace-based multi-tenancy and granular permission controls.
+
+## Security Model Overview
+
+### Core Principles
+
+1. **Workspace Isolation**: All workspace-scoped resources are isolated via RLS policies
+2. **Permission-Based Access**: Actions require specific workspace role permissions
+3. **User Ownership**: Users can only access resources they own or have permission to view
+4. **Fail-Secure Default**: No access unless explicitly granted by policy
+
+### Architecture
+
+```
+┌─────────────────────────────────────────┐
+│         PostgreSQL Database             │
+│  ┌───────────────────────────────────┐  │
+│  │   RLS Policies (113+ policies)     │  │
+│  ├───────────────────────────────────┤  │
+│  │  1. Workspace Membership Check     │  │
+│  │  2. Permission Verification        │  │
+│  │  3. Ownership Validation           │  │
+│  └───────────────────────────────────┘  │
+└─────────────────────────────────────────┘
+```
+
+## Policy Patterns
+
+### Pattern 1: Workspace Membership Check
+
+**Use Case:** User must be a member of the workspace to access resources.
+
+**Example:** `workspace_tasks` SELECT policy
+
+```sql
+CREATE POLICY "Users can view tasks in their workspaces"
+ON workspace_tasks
+FOR SELECT
+USING (
+  ws_id IN (
+    SELECT ws_id
+    FROM workspace_members
+    WHERE user_id = auth.uid()
+  )
+);
+```
+
+**Key Components:**
+- `auth.uid()`: Gets the authenticated user's ID
+- Subquery checks `workspace_members` table
+- Returns only rows matching user's workspaces
+
+### Pattern 2: Permission-Based Access
+
+**Use Case:** User needs specific workspace permission to perform action.
+
+**Example:** Task UPDATE policy
+
+```sql
+CREATE POLICY "Users can update tasks with manage_tasks permission"
+ON workspace_tasks
+FOR UPDATE
+USING (
+  ws_id IN (
+    SELECT wm.ws_id
+    FROM workspace_members wm
+    JOIN workspace_role_permissions wrp
+      ON wrp.ws_id = wm.ws_id
+      AND wrp.role_id = wm.role
+    WHERE wm.user_id = auth.uid()
+      AND wrp.permission = 'manage_tasks'
+  )
+);
+```
+
+**Permission Enum Values:**
+- `manage_infrastructure_settings`
+- `manage_workspace_settings`
+- `manage_workspace_security`
+- `manage_users`
+- `manage_user_groups`
+- `manage_user_roles`
+- `manage_finance`
+- `manage_calendar`
+- `manage_documents`
+- `manage_inventory`
+- `ai_lab_assistant`
+- `view_disabled_users`
+- `disable_user`
+
+### Pattern 3: User Ownership
+
+**Use Case:** User can only access resources they created.
+
+**Example:** `notes` policies
+
+```sql
+-- SELECT
+CREATE POLICY "Users can view their own notes"
+ON notes
+FOR SELECT
+USING (created_by = auth.uid());
+
+-- INSERT
+CREATE POLICY "Users can create their own notes"
+ON notes
+FOR INSERT
+WITH CHECK (created_by = auth.uid());
+
+-- UPDATE
+CREATE POLICY "Users can update their own notes"
+ON notes
+FOR UPDATE
+USING (created_by = auth.uid());
+
+-- DELETE
+CREATE POLICY "Users can delete their own notes"
+ON notes
+FOR DELETE
+USING (created_by = auth.uid());
+```
+
+### Pattern 4: Combined Workspace + Permission
+
+**Use Case:** Workspace membership AND specific permission required.
+
+**Example:** Calendar event management
+
+```sql
+CREATE POLICY "Users can manage calendar events with permission"
+ON workspace_calendar_events
+FOR ALL
+USING (
+  ws_id IN (
+    SELECT wm.ws_id
+    FROM workspace_members wm
+    JOIN workspace_role_permissions wrp
+      ON wrp.ws_id = wm.ws_id
+      AND wrp.role_id = wm.role
+    WHERE wm.user_id = auth.uid()
+      AND wrp.permission IN ('manage_calendar', 'manage_workspace_settings')
+  )
+);
+```
+
+### Pattern 5: Public Read, Restricted Write
+
+**Use Case:** All workspace members can view, only privileged users can modify.
+
+**Example:** Workspace settings
+
+```sql
+-- Read: any workspace member
+CREATE POLICY "Members can view workspace settings"
+ON workspaces
+FOR SELECT
+USING (
+  id IN (
+    SELECT ws_id FROM workspace_members WHERE user_id = auth.uid()
+  )
+);
+
+-- Write: requires permission
+CREATE POLICY "Users can update workspace with permission"
+ON workspaces
+FOR UPDATE
+USING (
+  id IN (
+    SELECT wm.ws_id
+    FROM workspace_members wm
+    JOIN workspace_role_permissions wrp
+      ON wrp.ws_id = wm.ws_id AND wrp.role_id = wm.role
+    WHERE wm.user_id = auth.uid()
+      AND wrp.permission = 'manage_workspace_settings'
+  )
+);
+```
+
+### Pattern 6: Cross-Table Permission Inheritance
+
+**Use Case:** Permission check depends on related table's policies.
+
+**Example:** Task project members inherit from project permissions
+
+```sql
+CREATE POLICY "Project members can view project tasks"
+ON task_project_tasks
+FOR SELECT
+USING (
+  project_id IN (
+    SELECT id FROM task_projects
+    -- task_projects has its own RLS policy checking workspace membership
+  )
+);
+```
+
+## Common RLS Helpers
+
+### Get User Workspaces
+
+```sql
+CREATE FUNCTION get_user_workspaces(user_uuid uuid)
+RETURNS TABLE(ws_id text) AS $$
+  SELECT ws_id
+  FROM workspace_members
+  WHERE user_id = user_uuid
+    AND pending = false;
+$$ LANGUAGE sql SECURITY DEFINER;
+```
+
+### Check Workspace Permission
+
+```sql
+CREATE FUNCTION has_workspace_permission(
+  user_uuid uuid,
+  workspace_id text,
+  required_permission workspace_role_permission
+)
+RETURNS boolean AS $$
+  SELECT EXISTS (
+    SELECT 1
+    FROM workspace_members wm
+    JOIN workspace_role_permissions wrp
+      ON wrp.ws_id = wm.ws_id
+      AND wrp.role_id = wm.role
+    WHERE wm.user_id = user_uuid
+      AND wm.ws_id = workspace_id
+      AND wrp.permission = required_permission
+  );
+$$ LANGUAGE sql SECURITY DEFINER;
+```
+
+## Policy Testing
+
+### Enable RLS (Always Required)
+
+```sql
+ALTER TABLE table_name ENABLE ROW LEVEL SECURITY;
+```
+
+### Test Policy as User
+
+```sql
+-- Impersonate user for testing
+SET request.jwt.claim.sub = 'user-uuid-here';
+
+-- Run queries to verify policy
+SELECT * FROM workspace_tasks WHERE ws_id = 'workspace-123';
+
+-- Reset
+RESET request.jwt.claim.sub;
+```
+
+### Verify Policy Coverage
+
+```sql
+-- Check if all tables have RLS enabled
+SELECT tablename
+FROM pg_tables
+WHERE schemaname = 'public'
+  AND tablename NOT IN (
+    SELECT tablename
+    FROM pg_tables t
+    JOIN pg_class c ON c.relname = t.tablename
+    WHERE c.relrowsecurity = true
+  );
+```
+
+## Security Best Practices
+
+### 1. Always Enable RLS
+
+```sql
+-- ✅ Good
+CREATE TABLE my_table (...);
+ALTER TABLE my_table ENABLE ROW LEVEL SECURITY;
+
+-- ❌ Bad
+CREATE TABLE my_table (...);
+-- Forgot to enable RLS!
+```
+
+### 2. Use SECURITY DEFINER Carefully
+
+Only use `SECURITY DEFINER` for helper functions that need elevated privileges:
+
+```sql
+-- ✅ Good: Helper needs admin access
+CREATE FUNCTION admin_helper() ... SECURITY DEFINER;
+
+-- ❌ Bad: Bypasses RLS unnecessarily
+CREATE FUNCTION simple_query() ... SECURITY DEFINER;
+```
+
+### 3. Test Policies Thoroughly
+
+Always test:
+- ✅ Users can access their own data
+- ✅ Users cannot access other workspaces' data
+- ✅ Permission checks work correctly
+- ✅ Edge cases (pending invites, disabled users)
+
+### 4. Avoid Policy Conflicts
+
+```sql
+-- ❌ Bad: Multiple policies may conflict
+CREATE POLICY "policy_1" ON table FOR SELECT USING (...);
+CREATE POLICY "policy_2" ON table FOR SELECT USING (...);
+-- Which one applies?
+
+-- ✅ Good: One comprehensive policy per operation
+CREATE POLICY "select_policy" ON table FOR SELECT USING (
+  condition_1 OR condition_2
+);
+```
+
+### 5. Performance Considerations
+
+```sql
+-- ❌ Bad: Subquery runs for every row
+CREATE POLICY "slow_policy" ON table FOR SELECT USING (
+  column IN (SELECT id FROM expensive_query)
+);
+
+-- ✅ Good: Use indexed foreign keys
+CREATE POLICY "fast_policy" ON table FOR SELECT USING (
+  ws_id = (SELECT ws_id FROM workspace_members WHERE user_id = auth.uid() LIMIT 1)
+);
+```
+
+## Common Policy Patterns by Table Type
+
+### Workspace-Scoped Resources
+
+```sql
+ALTER TABLE resource ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "workspace_members_can_view"
+ON resource FOR SELECT
+USING (ws_id IN (SELECT ws_id FROM workspace_members WHERE user_id = auth.uid()));
+
+CREATE POLICY "permission_required_to_modify"
+ON resource FOR ALL
+USING (
+  ws_id IN (
+    SELECT wm.ws_id FROM workspace_members wm
+    JOIN workspace_role_permissions wrp
+      ON wrp.ws_id = wm.ws_id AND wrp.role_id = wm.role
+    WHERE wm.user_id = auth.uid()
+      AND wrp.permission = 'specific_permission'
+  )
+);
+```
+
+### User-Owned Resources
+
+```sql
+ALTER TABLE user_resource ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "users_can_manage_own"
+ON user_resource FOR ALL
+USING (user_id = auth.uid());
+```
+
+### Public Read Resources
+
+```sql
+ALTER TABLE public_resource ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "anyone_can_read"
+ON public_resource FOR SELECT
+USING (true);
+
+CREATE POLICY "admin_can_write"
+ON public_resource FOR ALL
+USING (
+  EXISTS (
+    SELECT 1 FROM workspace_members wm
+    JOIN workspace_role_permissions wrp
+      ON wrp.ws_id = wm.ws_id AND wrp.role_id = wm.role
+    WHERE wm.user_id = auth.uid()
+      AND wrp.permission = 'manage_infrastructure_settings'
+  )
+);
+```
+
+## Debugging RLS Issues
+
+### Check Active Policies
+
+```sql
+SELECT schemaname, tablename, policyname, permissive, roles, cmd, qual
+FROM pg_policies
+WHERE tablename = 'your_table_name';
+```
+
+### Test as Specific User
+
+```sql
+-- In Supabase SQL Editor
+SELECT set_config('request.jwt.claim.sub', 'user-uuid', false);
+SELECT * FROM workspace_tasks; -- Runs with RLS as that user
+```
+
+### Bypass RLS for Admin Operations
+
+Use `createAdminClient()` from `@tuturuuu/supabase` in server-side code:
+
+```typescript
+import { createAdminClient } from '@tuturuuu/supabase/server';
+
+const supabase = createAdminClient();
+// This client bypasses RLS - use carefully!
+```
+
+## Migration Example
+
+When adding a new table, always include RLS:
+
+```sql
+-- Create table
+CREATE TABLE new_feature (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  ws_id text REFERENCES workspaces(id) ON DELETE CASCADE,
+  name text NOT NULL,
+  created_by uuid REFERENCES workspace_users(id),
+  created_at timestamptz DEFAULT now()
+);
+
+-- Enable RLS
+ALTER TABLE new_feature ENABLE ROW LEVEL SECURITY;
+
+-- Add policies
+CREATE POLICY "workspace_members_can_view"
+ON new_feature FOR SELECT
+USING (ws_id IN (
+  SELECT ws_id FROM workspace_members WHERE user_id = auth.uid()
+));
+
+CREATE POLICY "permission_required_to_modify"
+ON new_feature FOR ALL
+USING (ws_id IN (
+  SELECT wm.ws_id FROM workspace_members wm
+  JOIN workspace_role_permissions wrp
+    ON wrp.ws_id = wm.ws_id AND wrp.role_id = wm.role
+  WHERE wm.user_id = auth.uid()
+    AND wrp.permission = 'manage_specific_feature'
+));
+
+-- Add indexes for policy performance
+CREATE INDEX idx_new_feature_ws_id ON new_feature(ws_id);
+CREATE INDEX idx_new_feature_created_by ON new_feature(created_by);
+```
+
+## Related Documentation
+
+- [Database Schema Overview](/reference/database/schema-overview)
+- [Permission System](/platform/architecture/authorization)
+- [Supabase Client Usage](/reference/packages/supabase)

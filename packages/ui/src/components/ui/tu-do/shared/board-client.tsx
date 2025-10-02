@@ -6,13 +6,14 @@ import type { Workspace } from '@tuturuuu/types/db';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskBoard } from '@tuturuuu/types/primitives/TaskBoard';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
+import { useBoardRealtime } from '@tuturuuu/ui/hooks/useBoardRealtime';
 import {
   getTaskBoard,
   getTaskLists,
   getTasks,
+  useWorkspaceLabels,
 } from '@tuturuuu/utils/task-helper';
-import { useParams } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { BoardViews } from './board-views';
 
 interface Props {
@@ -28,12 +29,11 @@ export function BoardClient({
   initialTasks,
   initialLists,
 }: Props) {
-  const params = useParams();
-  const boardId = params.boardId as string;
-  const [isClient, setIsClient] = useState(false);
+  const boardId = initialBoard.id;
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    setIsClient(true);
+    setMounted(true);
   }, []);
 
   // Use React Query with initial data from SSR
@@ -46,20 +46,17 @@ export function BoardClient({
     initialData: initialBoard,
     staleTime: 5 * 60 * 1000, // 5 minutes
     refetchOnMount: false, // Disable initial refetch on mount
-    enabled: isClient, // Only enable after hydration
+    enabled: mounted, // Only enable after hydration
   });
 
   const { data: tasks = initialTasks } = useQuery({
     queryKey: ['tasks', boardId],
     queryFn: async () => {
       const supabase = createClient();
-      return getTasks(supabase, boardId);
+      return await getTasks(supabase, boardId);
     },
     initialData: initialTasks,
-    staleTime: 5 * 60 * 1000, // Increased to 5 minutes to match other queries
-    refetchOnWindowFocus: false, // Disable to prevent hydration issues
-    refetchOnMount: false, // Disable initial refetch on mount
-    enabled: isClient, // Only enable after hydration
+    enabled: mounted, // Only enable after hydration
   });
 
   const { data: lists = initialLists } = useQuery({
@@ -71,7 +68,22 @@ export function BoardClient({
     initialData: initialLists,
     staleTime: 5 * 60 * 1000, // 5 minutes
     refetchOnMount: false, // Disable initial refetch on mount
-    enabled: isClient, // Only enable after hydration
+    enabled: mounted, // Only enable after hydration
+  });
+
+  // Fetch workspace labels once at the board level
+  const { data: workspaceLabels = [] } = useWorkspaceLabels(board?.ws_id);
+
+  const taskIds = useMemo(() => tasks.map((task) => task.id), [tasks]);
+  const listIds = useMemo(() => lists.map((list) => list.id), [lists]);
+
+  useBoardRealtime(boardId, taskIds, listIds, {
+    onTaskChange: (task, eventType) => {
+      console.log(`🔄 Task ${eventType}:`, task);
+    },
+    onListChange: (list, eventType) => {
+      console.log(`🔄 Task list ${eventType}:`, list);
+    },
   });
 
   // Ensure board is not null and has required properties before rendering
@@ -88,13 +100,10 @@ export function BoardClient({
   return (
     <BoardViews
       workspace={workspace}
-      board={
-        {
-          ...board,
-          tasks,
-          lists,
-        } as TaskBoard & { tasks: Task[]; lists: TaskList[] }
-      }
+      board={board}
+      tasks={tasks}
+      lists={lists}
+      workspaceLabels={workspaceLabels}
     />
   );
 }

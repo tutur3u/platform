@@ -1,0 +1,663 @@
+---
+title: "Nova - Prompt Engineering Platform"
+description: "Architecture and implementation of the Nova prompt engineering platform"
+---
+
+# Nova - Prompt Engineering Platform
+
+Nova is Tuturuuu's prompt engineering platform designed to help users learn, practice, and compete in AI prompt engineering challenges.
+
+## Overview
+
+Nova provides an interactive environment where users can:
+- Learn prompt engineering through structured problems
+- Practice with real-world test cases
+- Compete in timed challenges
+- Submit prompts for automated evaluation
+- Track progress through sessions and scores
+
+## Architecture
+
+```
+┌─────────────────────────────────────────────────────────┐
+│                    Nova Platform                         │
+│  ┌────────────────────────────────────────────────────┐ │
+│  │  Problem Catalog                                    │ │
+│  │  ├─ Problems (difficulty, description)             │ │
+│  │  ├─ Test Cases (public & hidden)                   │ │
+│  │  └─ Evaluation Criteria                            │ │
+│  └────────────────────────────────────────────────────┘ │
+│  ┌────────────────────────────────────────────────────┐ │
+│  │  Challenge System                                   │ │
+│  │  ├─ Timed Challenges                               │ │
+│  │  ├─ User Sessions                                  │ │
+│  │  └─ Submission Queue                               │ │
+│  └────────────────────────────────────────────────────┘ │
+│  ┌────────────────────────────────────────────────────┐ │
+│  │  Evaluation Engine                                  │ │
+│  │  ├─ Prompt Execution                               │ │
+│  │  ├─ Test Case Validation                           │ │
+│  │  └─ Score Calculation                              │ │
+│  └────────────────────────────────────────────────────┘ │
+└─────────────────────────────────────────────────────────┘
+```
+
+## Database Schema
+
+### Core Tables
+
+#### `nova_problems`
+Challenge problems with difficulty levels.
+
+```sql
+CREATE TABLE nova_problems (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  title text NOT NULL,
+  description text NOT NULL,
+  difficulty text NOT NULL, -- easy, medium, hard
+  created_by uuid REFERENCES workspace_users(id),
+  created_at timestamptz DEFAULT now()
+);
+```
+
+#### `nova_challenges`
+Specific challenge instances with time constraints.
+
+```sql
+CREATE TABLE nova_challenges (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  problem_id uuid REFERENCES nova_problems(id) ON DELETE CASCADE,
+  title text NOT NULL,
+  start_time timestamptz NOT NULL,
+  end_time timestamptz NOT NULL,
+  created_at timestamptz DEFAULT now()
+);
+```
+
+#### `nova_test_cases`
+Test cases for validating prompt submissions.
+
+```sql
+CREATE TABLE nova_test_cases (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  problem_id uuid REFERENCES nova_problems(id) ON DELETE CASCADE,
+  input jsonb NOT NULL,
+  expected_output jsonb NOT NULL,
+  is_hidden boolean DEFAULT false, -- Hidden test cases
+  weight numeric DEFAULT 1.0, -- Score weight
+  created_at timestamptz DEFAULT now()
+);
+```
+
+**Key Features:**
+- `is_hidden`: Prevents users from seeing test case details
+- `weight`: Allows different test cases to contribute differently to final score
+- `input`/`expected_output`: Flexible JSONB for any data structure
+
+#### `nova_submissions`
+User prompt submissions with scores.
+
+```sql
+CREATE TABLE nova_submissions (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  challenge_id uuid REFERENCES nova_challenges(id) ON DELETE CASCADE,
+  user_id uuid REFERENCES workspace_users(id) ON DELETE CASCADE,
+  prompt text NOT NULL,
+  score numeric,
+  evaluation_results jsonb,
+  submitted_at timestamptz DEFAULT now()
+);
+```
+
+**Evaluation Results Structure:**
+```json
+{
+  "total_score": 85,
+  "test_cases": [
+    {
+      "test_case_id": "uuid",
+      "passed": true,
+      "score": 10,
+      "execution_time_ms": 1234
+    }
+  ],
+  "feedback": "Good performance on basic cases..."
+}
+```
+
+#### `nova_sessions`
+User problem-solving sessions.
+
+```sql
+CREATE TABLE nova_sessions (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id uuid REFERENCES workspace_users(id) ON DELETE CASCADE,
+  problem_id uuid REFERENCES nova_problems(id) ON DELETE CASCADE,
+  started_at timestamptz DEFAULT now(),
+  completed_at timestamptz,
+  final_score numeric
+);
+```
+
+#### `nova_user_roles`
+Role assignments for Nova platform access.
+
+```sql
+CREATE TABLE nova_user_roles (
+  user_id uuid REFERENCES workspace_users(id) ON DELETE CASCADE,
+  role text NOT NULL, -- admin, creator, participant
+  granted_at timestamptz DEFAULT now(),
+  PRIMARY KEY (user_id, role)
+);
+```
+
+#### `nova_team_management`
+Team-based challenge participation.
+
+```sql
+CREATE TABLE nova_team_management (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  name text NOT NULL,
+  created_by uuid REFERENCES workspace_users(id),
+  created_at timestamptz DEFAULT now()
+);
+```
+
+#### `nova_criterias`
+Custom evaluation criteria for problems.
+
+```sql
+CREATE TABLE nova_criterias (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  problem_id uuid REFERENCES nova_problems(id) ON DELETE CASCADE,
+  name text NOT NULL,
+  description text,
+  weight numeric DEFAULT 1.0,
+  created_at timestamptz DEFAULT now()
+);
+```
+
+## Key Features
+
+### 1. Problem Creation
+
+Creating a new prompt engineering problem:
+
+```typescript
+'use server';
+
+import { createClient } from '@tuturuuu/supabase/server';
+
+export async function createProblem(data: {
+  title: string;
+  description: string;
+  difficulty: 'easy' | 'medium' | 'hard';
+  testCases: Array<{
+    input: any;
+    expectedOutput: any;
+    isHidden?: boolean;
+    weight?: number;
+  }>;
+}) {
+  const supabase = createClient();
+
+  // Create problem
+  const { data: problem, error: problemError } = await supabase
+    .from('nova_problems')
+    .insert({
+      title: data.title,
+      description: data.description,
+      difficulty: data.difficulty,
+    })
+    .select()
+    .single();
+
+  if (problemError) throw problemError;
+
+  // Create test cases
+  const testCases = data.testCases.map((tc) => ({
+    problem_id: problem.id,
+    input: tc.input,
+    expected_output: tc.expectedOutput,
+    is_hidden: tc.isHidden ?? false,
+    weight: tc.weight ?? 1.0,
+  }));
+
+  const { error: testCasesError } = await supabase
+    .from('nova_test_cases')
+    .insert(testCases);
+
+  if (testCasesError) throw testCasesError;
+
+  return problem;
+}
+```
+
+### 2. Challenge Management
+
+Create a timed challenge:
+
+```typescript
+'use server';
+
+import { createClient } from '@tuturuuu/supabase/server';
+
+export async function createChallenge(data: {
+  problemId: string;
+  title: string;
+  startTime: Date;
+  endTime: Date;
+}) {
+  const supabase = createClient();
+
+  const { data: challenge, error } = await supabase
+    .from('nova_challenges')
+    .insert({
+      problem_id: data.problemId,
+      title: data.title,
+      start_time: data.startTime.toISOString(),
+      end_time: data.endTime.toISOString(),
+    })
+    .select()
+    .single();
+
+  if (error) throw error;
+  return challenge;
+}
+```
+
+### 3. Session Tracking
+
+Start a problem-solving session:
+
+```typescript
+'use server';
+
+import { createClient } from '@tuturuuu/supabase/server';
+
+export async function startSession(problemId: string) {
+  const supabase = createClient();
+
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('Unauthorized');
+
+  const { data: session, error } = await supabase
+    .from('nova_sessions')
+    .insert({
+      user_id: user.id,
+      problem_id: problemId,
+    })
+    .select()
+    .single();
+
+  if (error) throw error;
+  return session;
+}
+```
+
+Complete a session:
+
+```typescript
+'use server';
+
+import { createClient } from '@tuturuuu/supabase/server';
+
+export async function completeSession(sessionId: string, score: number) {
+  const supabase = createClient();
+
+  const { data, error } = await supabase
+    .from('nova_sessions')
+    .update({
+      completed_at: new Date().toISOString(),
+      final_score: score,
+    })
+    .eq('id', sessionId)
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+}
+```
+
+### 4. Prompt Submission & Evaluation
+
+Submit a prompt for evaluation:
+
+```typescript
+'use server';
+
+import { createClient } from '@tuturuuu/supabase/server';
+import { evaluatePrompt } from '@/lib/nova/evaluation';
+
+export async function submitPrompt(data: {
+  challengeId: string;
+  prompt: string;
+}) {
+  const supabase = createClient();
+
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('Unauthorized');
+
+  // Get challenge and problem details
+  const { data: challenge } = await supabase
+    .from('nova_challenges')
+    .select('*, nova_problems(*)')
+    .eq('id', data.challengeId)
+    .single();
+
+  if (!challenge) throw new Error('Challenge not found');
+
+  // Check if challenge is active
+  const now = new Date();
+  const startTime = new Date(challenge.start_time);
+  const endTime = new Date(challenge.end_time);
+
+  if (now < startTime || now > endTime) {
+    throw new Error('Challenge is not active');
+  }
+
+  // Get test cases
+  const { data: testCases } = await supabase
+    .from('nova_test_cases')
+    .select('*')
+    .eq('problem_id', challenge.problem_id);
+
+  if (!testCases) throw new Error('No test cases found');
+
+  // Evaluate prompt against test cases
+  const evaluationResults = await evaluatePrompt(data.prompt, testCases);
+
+  // Calculate total score
+  const totalScore = evaluationResults.test_cases.reduce(
+    (sum, result) => sum + result.score,
+    0
+  );
+
+  // Save submission
+  const { data: submission, error } = await supabase
+    .from('nova_submissions')
+    .insert({
+      challenge_id: data.challengeId,
+      user_id: user.id,
+      prompt: data.prompt,
+      score: totalScore,
+      evaluation_results: evaluationResults,
+    })
+    .select()
+    .single();
+
+  if (error) throw error;
+  return submission;
+}
+```
+
+### 5. Evaluation Engine
+
+Example evaluation logic:
+
+```typescript
+// lib/nova/evaluation.ts
+import { generateObject } from 'ai';
+import { createGoogleGenerativeAI } from '@ai-sdk/google';
+import { z } from 'zod';
+
+interface TestCase {
+  id: string;
+  input: any;
+  expected_output: any;
+  weight: number;
+}
+
+export async function evaluatePrompt(
+  userPrompt: string,
+  testCases: TestCase[]
+) {
+  const google = createGoogleGenerativeAI({
+    apiKey: process.env.GOOGLE_GENERATIVE_AI_API_KEY,
+  });
+
+  const results = await Promise.all(
+    testCases.map(async (testCase) => {
+      try {
+        const startTime = Date.now();
+
+        // Execute user's prompt with test case input
+        const { object } = await generateObject({
+          model: google('gemini-2.0-flash-exp'),
+          prompt: `${userPrompt}\n\nInput: ${JSON.stringify(testCase.input)}`,
+          schema: z.object({
+            output: z.any(),
+          }),
+        });
+
+        const executionTime = Date.now() - startTime;
+
+        // Compare output with expected output
+        const passed = deepEqual(object.output, testCase.expected_output);
+
+        return {
+          test_case_id: testCase.id,
+          passed,
+          score: passed ? testCase.weight * 10 : 0,
+          execution_time_ms: executionTime,
+        };
+      } catch (error) {
+        return {
+          test_case_id: testCase.id,
+          passed: false,
+          score: 0,
+          error: (error as Error).message,
+        };
+      }
+    })
+  );
+
+  const totalScore = results.reduce((sum, r) => sum + r.score, 0);
+  const passedCount = results.filter((r) => r.passed).length;
+
+  return {
+    total_score: totalScore,
+    test_cases: results,
+    feedback: `Passed ${passedCount}/${testCases.length} test cases`,
+  };
+}
+
+function deepEqual(a: any, b: any): boolean {
+  return JSON.stringify(a) === JSON.stringify(b);
+}
+```
+
+## User Interface Components
+
+### Problem List
+
+```tsx
+'use client';
+
+import { trpc } from '@/trpc/client';
+
+export function ProblemList() {
+  const { data: problems, isLoading } = trpc.nova.problems.list.useQuery();
+
+  if (isLoading) return <div>Loading...</div>;
+
+  return (
+    <div>
+      {problems?.map((problem) => (
+        <div key={problem.id}>
+          <h3>{problem.title}</h3>
+          <span>{problem.difficulty}</span>
+          <p>{problem.description}</p>
+        </div>
+      ))}
+    </div>
+  );
+}
+```
+
+### Prompt Submission Form
+
+```tsx
+'use client';
+
+import { useState } from 'react';
+import { submitPrompt } from './actions';
+
+export function PromptSubmissionForm({ challengeId }: { challengeId: string }) {
+  const [prompt, setPrompt] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [result, setResult] = useState<any>(null);
+
+  async function handleSubmit() {
+    setSubmitting(true);
+    try {
+      const submission = await submitPrompt({ challengeId, prompt });
+      setResult(submission);
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  return (
+    <div>
+      <textarea
+        value={prompt}
+        onChange={(e) => setPrompt(e.target.value)}
+        placeholder="Enter your prompt here..."
+        rows={10}
+      />
+      <button onClick={handleSubmit} disabled={submitting}>
+        {submitting ? 'Submitting...' : 'Submit Prompt'}
+      </button>
+
+      {result && (
+        <div>
+          <h3>Score: {result.score}</h3>
+          <pre>{JSON.stringify(result.evaluation_results, null, 2)}</pre>
+        </div>
+      )}
+    </div>
+  );
+}
+```
+
+## Role Management
+
+### Assign Nova Roles
+
+```typescript
+'use server';
+
+import { createClient } from '@tuturuuu/supabase/server';
+
+export async function assignNovaRole(
+  userId: string,
+  role: 'admin' | 'creator' | 'participant'
+) {
+  const supabase = createClient();
+
+  const { error } = await supabase
+    .from('nova_user_roles')
+    .upsert({
+      user_id: userId,
+      role,
+    });
+
+  if (error) throw error;
+  return { success: true };
+}
+```
+
+### Check Nova Permissions
+
+```typescript
+import { createClient } from '@tuturuuu/supabase/server';
+
+export async function hasNovaRole(
+  userId: string,
+  role: 'admin' | 'creator' | 'participant'
+): Promise<boolean> {
+  const supabase = createClient();
+
+  const { data, error } = await supabase
+    .from('nova_user_roles')
+    .select('role')
+    .eq('user_id', userId)
+    .eq('role', role)
+    .limit(1);
+
+  if (error) return false;
+  return (data?.length || 0) > 0;
+}
+```
+
+## Best Practices
+
+### ✅ DO
+
+1. **Validate challenge timing**
+   ```typescript
+   if (now < challenge.start_time || now > challenge.end_time) {
+     throw new Error('Challenge not active');
+   }
+   ```
+
+2. **Use hidden test cases**
+   ```typescript
+   { is_hidden: true } // Prevents gaming the system
+   ```
+
+3. **Weight test cases appropriately**
+   ```typescript
+   { weight: 2.0 } // Critical test cases worth more
+   ```
+
+4. **Track evaluation performance**
+   ```typescript
+   const startTime = Date.now();
+   // ... execution
+   const executionTime = Date.now() - startTime;
+   ```
+
+5. **Provide detailed feedback**
+   ```typescript
+   feedback: `Passed ${passedCount}/${total} test cases. Areas for improvement: ...`
+   ```
+
+### ❌ DON'T
+
+1. **Don't expose hidden test cases**
+   ```typescript
+   // ❌ Bad
+   .select('*') // Includes hidden test cases
+   ```
+
+2. **Don't skip timing validation**
+   ```typescript
+   // ❌ Bad: Allow submissions anytime
+   ```
+
+3. **Don't use simple string comparison**
+   ```typescript
+   // ❌ Bad
+   output === expected
+   // ✅ Good
+   deepEqual(output, expected)
+   ```
+
+## Related Documentation
+
+- [AI Integration](/platform/ai/structured-data) - AI model usage
+- [Database Schema](/reference/database/schema-overview) - Nova tables
+- [Authentication](/platform/architecture/authentication) - User sessions
+
+## Future Enhancements
+
+- **Team challenges** - Collaborative prompt engineering
+- **Leaderboards** - Real-time ranking system
+- **Prompt history** - Version control for submissions
+- **Advanced metrics** - Token usage, latency analysis
+- **Custom evaluation** - User-defined scoring functions

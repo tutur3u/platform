@@ -6,9 +6,9 @@
     "access": "public"
   },
   "dependencies": {
-    "@ai-sdk/amazon-bedrock": "^3.0.28",
+    "@ai-sdk/amazon-bedrock": "^3.0.29",
     "@ai-sdk/anthropic": "^2.0.22",
-    "@ai-sdk/azure": "^2.0.41",
+    "@ai-sdk/azure": "^2.0.42",
     "@ai-sdk/cerebras": "^1.0.21",
     "@ai-sdk/cohere": "^2.0.12",
     "@ai-sdk/deepgram": "^1.0.11",
@@ -25,7 +25,7 @@
     "@ai-sdk/lmnt": "^1.0.11",
     "@ai-sdk/luma": "^1.0.11",
     "@ai-sdk/mistral": "^2.0.17",
-    "@ai-sdk/openai": "^2.0.41",
+    "@ai-sdk/openai": "^2.0.42",
     "@ai-sdk/openai-compatible": "^1.0.19",
     "@ai-sdk/perplexity": "^2.0.11",
     "@ai-sdk/react": "^2.0.59",
@@ -46,9 +46,9 @@
   "devDependencies": {
     "@tuturuuu/types": "workspace:*",
     "@tuturuuu/typescript-config": "workspace:*",
-    "@types/node": "^24.6.0",
-    "@types/react": "^19.1.15",
-    "typescript": "^5.9.2"
+    "@types/node": "^24.6.1",
+    "@types/react": "^19.1.17",
+    "typescript": "^5.9.3"
   },
   "exports": {
     "./*": "./src/*.ts"

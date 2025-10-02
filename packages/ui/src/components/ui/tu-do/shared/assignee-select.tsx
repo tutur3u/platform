@@ -3,25 +3,11 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
-import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from '@tuturuuu/ui/command';
-import { toast } from '@tuturuuu/ui/hooks/use-toast';
-import {
-  Crown,
-  Loader2,
-  UserCircle,
-  UserMinus,
-  UserPlus,
-} from '@tuturuuu/ui/icons';
+import { Search, UserCircle, UserMinus, UserPlus, X } from '@tuturuuu/ui/icons';
+import { Input } from '@tuturuuu/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
+import { toast } from '@tuturuuu/ui/sonner';
 import { cn } from '@tuturuuu/utils/format';
 import { useParams } from 'next/navigation';
 import { useState } from 'react';
@@ -46,7 +32,7 @@ interface Props {
   onUpdate?: () => void;
 }
 
-export function AssigneeSelect({ taskId, assignees = [], onUpdate }: Props) {
+export function AssigneeSelect({ taskId, assignees = [] }: Props) {
   const [open, setOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const params = useParams();
@@ -186,16 +172,9 @@ export function AssigneeSelect({ taskId, assignees = [], onUpdate }: Props) {
       const errorMessage =
         err instanceof Error ? err.message : 'Unknown error occurred';
       console.error('Failed to update task assignees:', err);
-      toast({
-        title: 'Error',
+      toast('Error', {
         description: `Failed to update assignees: ${errorMessage}`,
-        variant: 'destructive',
       });
-    },
-    onSuccess: () => {
-      // Invalidate and refetch tasks to ensure consistency
-      queryClient.invalidateQueries({ queryKey: ['tasks', boardId] });
-      onUpdate?.();
     },
     onSettled: () => {
       setOpen(false);
@@ -259,35 +238,18 @@ export function AssigneeSelect({ taskId, assignees = [], onUpdate }: Props) {
       .values()
   );
 
-  const getRoleColor = (role?: string) => {
-    switch (role?.toLowerCase()) {
-      case 'owner':
-      case 'admin':
-        return 'bg-gradient-to-r from-amber-100 to-orange-100 text-amber-800 dark:from-amber-900/30 dark:to-orange-900/30 dark:text-amber-300';
-      case 'manager':
-        return 'bg-gradient-to-r from-purple-100 to-pink-100 text-purple-800 dark:from-purple-900/30 dark:to-pink-900/30 dark:text-purple-300';
-      default:
-        return 'bg-gradient-to-r from-blue-100 to-indigo-100 text-blue-800 dark:from-blue-900/30 dark:to-indigo-900/30 dark:text-blue-300';
-    }
-  };
-
-  const getRoleIcon = (role?: string) => {
-    if (role?.toLowerCase() === 'owner' || role?.toLowerCase() === 'admin') {
-      return <Crown className="h-3 w-3" />;
-    }
-    return null;
-  };
-
-  const isLoading = isFetchingMembers || assigneeMutation.isPending;
-
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <Button
           variant="link"
           aria-expanded={open}
-          disabled={isLoading}
+          disabled={isFetchingMembers}
           size="xs"
+          className={cn(
+            'transition-opacity duration-200',
+            assigneeMutation.isPending && 'opacity-50'
+          )}
           onClick={(e) => {
             e.stopPropagation(); // Always prevent event propagation to task card
             // Prevent popover from opening when shift is held down
@@ -307,7 +269,7 @@ export function AssigneeSelect({ taskId, assignees = [], onUpdate }: Props) {
                   >
                     <Avatar className="h-4 w-4 border border-background shadow-sm">
                       <AvatarImage src={assignee.avatar_url} />
-                      <AvatarFallback>
+                      <AvatarFallback className="bg-muted font-semibold text-[9px]">
                         {assignee.display_name?.[0] ||
                           assignee.email?.[0] ||
                           '?'}
@@ -322,140 +284,144 @@ export function AssigneeSelect({ taskId, assignees = [], onUpdate }: Props) {
               <UserCircle className="h-4 w-4" />
             </div>
           )}
-          {isLoading ? (
-            <Loader2 className="ml-1 h-2 w-2 animate-spin text-gray-500" />
-          ) : undefined}
         </Button>
       </PopoverTrigger>
       <PopoverContent
-        className="w-80 border-0 bg-white/95 p-0 shadow-2xl backdrop-blur-sm dark:bg-gray-900/95"
+        className="w-80 border p-3 shadow-lg"
         align="start"
         side="bottom"
         onClick={(e) => {
           e.stopPropagation(); // Prevent triggering task card click
         }}
       >
-        <div className="/50 overflow-hidden rounded-xl border dark:border-gray-700/50">
-          <Command>
-            <div className="border-gray-100 border-b bg-gradient-to-r from-gray-50 to-slate-50 dark:border-gray-800 dark:from-gray-900 dark:to-slate-900">
-              <CommandInput
-                placeholder="Search workspace members..."
-                value={searchQuery}
-                onValueChange={setSearchQuery}
-                className="border-0 bg-transparent text-sm focus:ring-0"
-              />
-            </div>
-            <CommandList className="max-h-72">
-              <CommandEmpty className="py-6 text-center text-muted-foreground text-sm">
-                <UserPlus className="mx-auto mb-2 h-8 w-8 opacity-50" />
-                No members found.
-              </CommandEmpty>
-              {uniqueAssignedMembers.length > 0 && (
-                <CommandGroup
-                  heading="Assigned"
-                  className="bg-gradient-to-r from-green-50 to-emerald-50 px-2 py-2 font-semibold text-green-700 text-xs dark:from-green-950/20 dark:to-emerald-950/20 dark:text-green-400"
-                >
+        <div className="space-y-3">
+          <div className="relative">
+            <Search className="-translate-y-1/2 absolute top-1/2 left-3 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search members..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="h-9 border-0 bg-muted/50 pl-9 text-sm focus-visible:ring-0"
+            />
+          </div>
+          <div
+            className={cn(
+              'space-y-3 transition-opacity duration-200',
+              assigneeMutation.isPending && 'pointer-events-none opacity-50'
+            )}
+          >
+            {/* Selected Assignees */}
+            {uniqueAssignedMembers.length > 0 && (
+              <div className="space-y-1.5">
+                <p className="font-medium text-[10px] text-muted-foreground uppercase tracking-wide">
+                  Assigned ({uniqueAssignedMembers.length})
+                </p>
+                <div className="flex flex-wrap gap-1.5">
                   {uniqueAssignedMembers.map((member) => (
-                    <CommandItem
+                    <Button
                       key={member.id}
-                      value={`${member.display_name} ${member.email}`}
-                      onSelect={() => {
-                        handleSelect(member.id);
-                      }}
-                      disabled={assigneeMutation.isPending}
-                      className="mx-1 my-1 gap-3 rounded-lg px-3 py-3 transition-all duration-200 hover:bg-gradient-to-r hover:from-green-100 hover:to-emerald-100 disabled:opacity-50 dark:hover:from-green-900/20 dark:hover:to-emerald-900/20"
+                      type="button"
+                      variant="default"
+                      size="xs"
+                      onClick={() => handleSelect(member.id)}
+                      className="h-7 gap-1.5 rounded-full border border-dynamic-orange/30 bg-dynamic-orange/15 px-3 font-medium text-dynamic-orange text-xs shadow-sm transition-all hover:border-dynamic-orange/50 hover:bg-dynamic-orange/25"
                     >
-                      <Avatar className="h-8 w-8 shadow-sm ring-2 ring-green-200 dark:ring-green-800">
+                      <Avatar className="h-4 w-4">
                         <AvatarImage src={member.avatar_url} />
-                        <AvatarFallback className="bg-gradient-to-br from-green-100 to-emerald-100 text-green-700 dark:from-green-900 dark:to-emerald-900 dark:text-green-300">
+                        <AvatarFallback className="bg-dynamic-orange/20 font-bold text-[9px]">
                           {member.display_name?.[0] || member.email?.[0] || '?'}
                         </AvatarFallback>
                       </Avatar>
-                      <div className="min-w-0 flex-1">
-                        <div className="truncate font-medium text-gray-900 text-sm dark:text-gray-100">
-                          {member.display_name || member.email}
-                        </div>
-                        {member.role_title && (
-                          <div className="mt-1 flex items-center gap-1.5">
-                            {getRoleIcon(member.role)}
-                            <Badge
-                              variant="outline"
-                              className={cn(
-                                'h-5 border-0 px-2 font-medium text-[10px]',
-                                getRoleColor(member.role)
-                              )}
-                            >
-                              {member.role_title}
-                            </Badge>
-                          </div>
-                        )}
-                      </div>
-                    </CommandItem>
+                      {member.display_name || member.email}
+                      <X className="h-3 w-3 opacity-70" />
+                    </Button>
                   ))}
-                </CommandGroup>
-              )}
-              {uniqueAssignedMembers.length > 0 && (
-                <CommandGroup>
-                  <CommandItem
-                    onSelect={() => {
-                      handleRemoveAll();
-                    }}
-                    disabled={assigneeMutation.isPending}
-                    className="mx-1 my-1 gap-3 rounded-lg px-3 py-2 text-red-600 transition-all duration-200 hover:bg-red-50 hover:text-red-700 disabled:opacity-50 dark:text-red-400 dark:hover:bg-red-900/20 dark:hover:text-red-300"
+                </div>
+                {uniqueAssignedMembers.length > 1 && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="xs"
+                    onClick={handleRemoveAll}
+                    className="mt-1 h-6 w-full text-dynamic-red text-xs hover:bg-dynamic-red/10 hover:text-dynamic-red"
                   >
-                    <UserMinus className="h-4 w-4" />
-                    <span className="font-medium text-sm">
-                      Remove all assignees
-                    </span>
-                  </CommandItem>
-                </CommandGroup>
-              )}
-              {uniqueUnassignedMembers.length > 0 && (
-                <CommandGroup
-                  heading="Available Members"
-                  className="bg-gradient-to-r from-blue-50 to-indigo-50 px-2 py-2 font-semibold text-blue-700 text-xs dark:from-blue-950/20 dark:to-indigo-950/20 dark:text-blue-400"
-                >
-                  {uniqueUnassignedMembers.map((member) => (
-                    <CommandItem
-                      key={member.id}
-                      value={`${member.display_name} ${member.email}`}
-                      onSelect={() => {
-                        handleSelect(member.id);
-                      }}
-                      disabled={assigneeMutation.isPending}
-                      className="mx-1 my-1 gap-3 rounded-lg px-3 py-3 transition-all duration-200 hover:bg-gradient-to-r hover:from-blue-100 hover:to-indigo-100 disabled:opacity-50 dark:hover:from-blue-900/20 dark:hover:to-indigo-900/20"
-                    >
-                      <Avatar className="h-8 w-8 shadow-sm ring-2 ring-blue-200 dark:ring-blue-800">
-                        <AvatarImage src={member.avatar_url} />
-                        <AvatarFallback className="bg-gradient-to-br from-blue-100 to-indigo-100 text-blue-700 dark:from-blue-900 dark:to-indigo-900 dark:text-blue-300">
-                          {member.display_name?.[0] || member.email?.[0] || '?'}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="min-w-0 flex-1">
-                        <div className="truncate font-medium text-gray-900 text-sm dark:text-gray-100">
-                          {member.display_name || member.email}
-                        </div>
-                        {member.role_title && (
-                          <div className="mt-1 flex items-center gap-1.5">
-                            {getRoleIcon(member.role)}
-                            <Badge
-                              variant="outline"
-                              className={cn(
-                                'h-5 border-0 px-2 font-medium text-[10px]',
-                                getRoleColor(member.role)
-                              )}
-                            >
-                              {member.role_title}
-                            </Badge>
-                          </div>
-                        )}
-                      </div>
-                    </CommandItem>
-                  ))}
-                </CommandGroup>
-              )}
-            </CommandList>
-          </Command>
+                    <UserMinus className="mr-1 h-3 w-3" />
+                    Remove all
+                  </Button>
+                )}
+              </div>
+            )}
+
+            {/* Available Members */}
+            <div className="space-y-1.5">
+              {(() => {
+                const filteredMembers = uniqueUnassignedMembers.filter(
+                  (member) =>
+                    !searchQuery ||
+                    (member.display_name || '')
+                      .toLowerCase()
+                      .includes(searchQuery.toLowerCase()) ||
+                    (member.email || '')
+                      .toLowerCase()
+                      .includes(searchQuery.toLowerCase())
+                );
+
+                if (filteredMembers.length === 0) {
+                  return searchQuery ? (
+                    <div className="flex flex-col items-center justify-center gap-2 rounded-lg bg-muted/30 py-6">
+                      <UserPlus className="h-4 w-4 text-muted-foreground/40" />
+                      <p className="text-center text-muted-foreground text-xs">
+                        No members found
+                      </p>
+                    </div>
+                  ) : uniqueAssignedMembers.length > 0 ? (
+                    <div className="rounded-lg bg-muted/30 py-3 text-center">
+                      <p className="text-muted-foreground text-xs">
+                        All members assigned
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="rounded-lg bg-muted/30 py-3 text-center">
+                      <p className="text-muted-foreground text-xs">
+                        No members available
+                      </p>
+                    </div>
+                  );
+                }
+
+                return (
+                  <>
+                    <p className="font-medium text-[10px] text-muted-foreground uppercase tracking-wide">
+                      Available ({filteredMembers.length})
+                    </p>
+                    <div className="flex max-h-48 flex-col gap-1 overflow-y-auto">
+                      {filteredMembers.map((member) => (
+                        <button
+                          key={member.id}
+                          type="button"
+                          onClick={() => handleSelect(member.id)}
+                          className="group flex items-center gap-2.5 rounded-md border border-transparent bg-background/50 px-3 py-2 text-left transition-all hover:border-dynamic-orange/30 hover:bg-dynamic-orange/5"
+                        >
+                          <Avatar className="h-7 w-7 shrink-0">
+                            <AvatarImage src={member.avatar_url} />
+                            <AvatarFallback className="bg-muted font-semibold text-muted-foreground text-xs group-hover:bg-dynamic-orange/20 group-hover:text-dynamic-orange">
+                              {member.display_name?.[0] ||
+                                member.email?.[0] ||
+                                '?'}
+                            </AvatarFallback>
+                          </Avatar>
+                          <span className="flex-1 truncate text-sm">
+                            {member.display_name || member.email}
+                          </span>
+                          <UserPlus className="h-3.5 w-3.5 shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
+                        </button>
+                      ))}
+                    </div>
+                  </>
+                );
+              })()}
+            </div>
+          </div>
         </div>
       </PopoverContent>
     </Popover>

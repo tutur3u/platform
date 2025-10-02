@@ -6,6 +6,7 @@ import {
   AlignLeft,
   AlignRight,
   Bold,
+  FileVideo,
   Heading1,
   Heading2,
   Heading3,
@@ -19,6 +20,7 @@ import {
   Strikethrough,
   Subscript,
   Superscript,
+  YoutubeIcon,
 } from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
 import { toast } from '@tuturuuu/ui/sonner';
@@ -49,7 +51,11 @@ export function ToolBar({ editor, workspaceId, onImageUpload }: ToolBarProps) {
   const [isEditingLink, setIsEditingLink] = useState(false);
   const [, setEditorVersion] = useState(0);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const [isUploadingVideo, setIsUploadingVideo] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const videoInputRef = useRef<HTMLInputElement>(null);
+  const [showYoutubeInput, setShowYoutubeInput] = useState(false);
+  const [youtubeUrl, setYoutubeUrl] = useState('');
 
   const closeLinkEditor = useCallback((context?: 'bubble' | 'popover') => {
     setLinkEditorContext((current) => {
@@ -276,9 +282,23 @@ export function ToolBar({ editor, workspaceId, onImageUpload }: ToolBarProps) {
         const url = await onImageUpload(file);
 
         // Insert image at current cursor position
-        editor.chain().focus().setImage({ src: url }).run();
+        // Use direct node insertion for ImageResize extension
+        const { state } = editor.view;
+        const { from } = state.selection;
+        const imageNode =
+          state.schema.nodes.imageResize || state.schema.nodes.image;
 
-        toast.success('Image uploaded successfully');
+        if (imageNode) {
+          const transaction = state.tr.insert(
+            from,
+            imageNode.create({ src: url })
+          );
+          editor.view.dispatch(transaction);
+          toast.success('Image uploaded successfully');
+        } else {
+          console.error('Available nodes:', Object.keys(state.schema.nodes));
+          toast.error('Image node not found');
+        }
       } catch (error) {
         console.error('Failed to upload image:', error);
         toast.error('Failed to upload image. Please try again.');
@@ -296,6 +316,72 @@ export function ToolBar({ editor, workspaceId, onImageUpload }: ToolBarProps) {
   const triggerImageUpload = useCallback(() => {
     fileInputRef.current?.click();
   }, []);
+
+  const handleVideoUpload = useCallback(
+    async (event: React.ChangeEvent<HTMLInputElement>) => {
+      const file = event.target.files?.[0];
+      if (!file || !editor || !onImageUpload) return;
+
+      // Validate file type
+      if (!file.type.startsWith('video/')) {
+        toast.error('Please select a video file');
+        return;
+      }
+
+      // Validate file size (max 50MB)
+      const maxSize = 50 * 1024 * 1024;
+      if (file.size > maxSize) {
+        toast.error('Video size must be less than 50MB');
+        return;
+      }
+
+      try {
+        setIsUploadingVideo(true);
+        // Reuse the same upload handler for videos
+        const url = await onImageUpload(file);
+
+        // Insert video at current cursor position
+        const { state } = editor.view;
+        const { from } = state.selection;
+        const videoNode = state.schema.nodes.video;
+
+        if (videoNode) {
+          const transaction = state.tr.insert(
+            from,
+            videoNode.create({ src: url })
+          );
+          editor.view.dispatch(transaction);
+          toast.success('Video uploaded successfully');
+        } else {
+          console.error('Available nodes:', Object.keys(state.schema.nodes));
+          toast.error('Video node not found');
+        }
+      } catch (error) {
+        console.error('Failed to upload video:', error);
+        toast.error('Failed to upload video. Please try again.');
+      } finally {
+        setIsUploadingVideo(false);
+        // Reset file input
+        if (videoInputRef.current) {
+          videoInputRef.current.value = '';
+        }
+      }
+    },
+    [editor, onImageUpload]
+  );
+
+  const triggerVideoUpload = useCallback(() => {
+    videoInputRef.current?.click();
+  }, []);
+
+  const handleAddYoutube = useCallback(() => {
+    if (!youtubeUrl || !editor) return;
+
+    editor.chain().focus().setYoutubeVideo({ src: youtubeUrl }).run();
+    setYoutubeUrl('');
+    setShowYoutubeInput(false);
+    toast.success('YouTube video added');
+  }, [editor, youtubeUrl]);
 
   const renderFormattingOptions = useCallback(
     (source: 'bubble' | 'popover') => (
@@ -319,20 +405,43 @@ export function ToolBar({ editor, workspaceId, onImageUpload }: ToolBarProps) {
           <Link className="size-4" />
         </Toggle>
         {workspaceId && onImageUpload && (
-          <Toggle
-            key={`image-${source}`}
-            pressed={false}
-            onPressedChange={triggerImageUpload}
-            disabled={isUploadingImage}
-            className="h-8 w-8 rounded-md border border-transparent transition-colors data-[state=on]:border-foreground/10 data-[state=on]:bg-dynamic-surface/80 data-[state=on]:text-foreground"
-          >
-            {isUploadingImage ? (
-              <Loader2 className="size-4 animate-spin" />
-            ) : (
-              <ImageIcon className="size-4" />
-            )}
-          </Toggle>
+          <>
+            <Toggle
+              key={`image-${source}`}
+              pressed={false}
+              onPressedChange={triggerImageUpload}
+              disabled={isUploadingImage}
+              className="h-8 w-8 rounded-md border border-transparent transition-colors data-[state=on]:border-foreground/10 data-[state=on]:bg-dynamic-surface/80 data-[state=on]:text-foreground"
+            >
+              {isUploadingImage ? (
+                <Loader2 className="size-4 animate-spin" />
+              ) : (
+                <ImageIcon className="size-4" />
+              )}
+            </Toggle>
+            <Toggle
+              key={`video-${source}`}
+              pressed={false}
+              onPressedChange={triggerVideoUpload}
+              disabled={isUploadingVideo}
+              className="h-8 w-8 rounded-md border border-transparent transition-colors data-[state=on]:border-foreground/10 data-[state=on]:bg-dynamic-surface/80 data-[state=on]:text-foreground"
+            >
+              {isUploadingVideo ? (
+                <Loader2 className="size-4 animate-spin" />
+              ) : (
+                <FileVideo className="size-4" />
+              )}
+            </Toggle>
+          </>
         )}
+        <Toggle
+          key={`youtube-${source}`}
+          pressed={showYoutubeInput}
+          onPressedChange={() => setShowYoutubeInput(!showYoutubeInput)}
+          className="h-8 w-8 rounded-md border border-transparent transition-colors data-[state=on]:border-foreground/10 data-[state=on]:bg-dynamic-surface/80 data-[state=on]:text-foreground"
+        >
+          <YoutubeIcon className="size-4" />
+        </Toggle>
       </div>
     ),
     [
@@ -344,7 +453,56 @@ export function ToolBar({ editor, workspaceId, onImageUpload }: ToolBarProps) {
       onImageUpload,
       triggerImageUpload,
       isUploadingImage,
+      triggerVideoUpload,
+      isUploadingVideo,
+      showYoutubeInput,
     ]
+  );
+
+  const renderYoutubeInput = useCallback(
+    () => (
+      <div className="space-y-2 rounded-md border border-dynamic-border bg-dynamic-surface/80 p-3">
+        <div className="space-y-1">
+          <label className="font-medium text-muted-foreground text-xs">
+            YouTube URL
+          </label>
+          <Input
+            value={youtubeUrl}
+            onChange={(event) => setYoutubeUrl(event.target.value)}
+            placeholder="https://www.youtube.com/watch?v=..."
+            type="url"
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                handleAddYoutube();
+              }
+            }}
+          />
+        </div>
+        <div className="flex items-center justify-end gap-2">
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={() => {
+              setShowYoutubeInput(false);
+              setYoutubeUrl('');
+            }}
+          >
+            Cancel
+          </Button>
+          <Button
+            type="button"
+            size="sm"
+            onClick={handleAddYoutube}
+            disabled={!youtubeUrl.trim()}
+          >
+            Add Video
+          </Button>
+        </div>
+      </div>
+    ),
+    [youtubeUrl, handleAddYoutube]
   );
 
   const renderLinkEditor = useCallback(
@@ -400,6 +558,13 @@ export function ToolBar({ editor, workspaceId, onImageUpload }: ToolBarProps) {
         onChange={handleImageUpload}
         className="hidden"
       />
+      <input
+        ref={videoInputRef}
+        type="file"
+        accept="video/*"
+        onChange={handleVideoUpload}
+        className="hidden"
+      />
       <BubbleMenu
         editor={editor}
         className="z-50"
@@ -419,6 +584,7 @@ export function ToolBar({ editor, workspaceId, onImageUpload }: ToolBarProps) {
         <div className="pointer-events-auto flex flex-col gap-2 rounded-lg border border-dynamic-border bg-background p-2">
           {renderFormattingOptions('bubble')}
           {linkEditorContext === 'bubble' ? renderLinkEditor('bubble') : null}
+          {showYoutubeInput ? renderYoutubeInput() : null}
         </div>
       </BubbleMenu>
     </>

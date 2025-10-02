@@ -1,6 +1,7 @@
 {
   "$schema": "https://mintlify.com/schema.json",
   "name": "Tuturuuu Docs",
+  "description": "Comprehensive documentation for the Tuturuuu intelligent operating system for modern work",
   "logo": {
     "dark": "/logo/dark.svg",
     "light": "/logo/light.svg",
@@ -59,6 +60,11 @@
           "group": "Architecture",
           "pages": [
             "platform/architecture/routing",
+            "platform/architecture/data-fetching",
+            "platform/architecture/api-routes",
+            "platform/architecture/trpc",
+            "platform/architecture/authentication",
+            "platform/architecture/authorization",
             "platform/components/workspace-wrapper",
             "platform/components/workspace-wrapper-quick-reference",
             "platform/ai/structured-data"
@@ -70,6 +76,10 @@
             "platform/personalization/themes",
             "platform/personalization/language"
           ]
+        },
+        {
+          "group": "Applications",
+          "pages": ["platform/applications/nova", "platform/applications/tudo"]
         }
       ]
     },
@@ -128,7 +138,25 @@
     },
     {
       "group": "Reference",
-      "pages": ["reference/index", "reference/api-reference/endpoint/generate"]
+      "pages": [
+        "reference/index",
+        {
+          "group": "Database",
+          "pages": [
+            "reference/database/schema-overview",
+            "reference/database/rls-policies",
+            "reference/database/migrations-guide"
+          ]
+        },
+        {
+          "group": "Packages",
+          "pages": ["reference/packages/supabase", "reference/packages/trigger"]
+        },
+        {
+          "group": "API Reference",
+          "pages": ["reference/api-reference/endpoint/generate"]
+        }
+      ]
     }
   ],
   "footerSocials": {

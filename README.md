@@ -6,230 +6,125 @@
 
 ![Tuturuuu Cover](/public/cover.png)
 
-This monorepo contains multiple applications and services that make up the Tuturuuu ecosystem. It's powered by Turborepo for efficient management of multiple packages. View our documentation at [**docs.tuturuuu.com**](https://docs.tuturuuu.com).
+This monorepo contains the applications and services that make up the Tuturuuu ecosystem. It's a Turborepo-powered monorepo using `bun` for package management. For full documentation, visit [**docs.tuturuuu.com**](https://docs.tuturuuu.com).
+
+## Our Vision: The Intelligent OS for Modern Work
+
+Tuturuuu is building the world's first intelligent, open-source operating system for modern work and life. Our mission is to wage war on digital noise by creating a unified platform that automates administrative work and eliminates the friction of context-switching. We believe technology should be an extension of human will, not a cage for our attention.
+
+Our vision is to create a future where technology unlocks humanity's potential, liberating our collective focus to solve the world's most important challenges. We are entering the **Third Era of technology: the Age of Partners**, where AI acts as an intelligent partner to amplify human potential.
+
+## The Tuturuuu Ecosystem
+
+The platform is a cohesive suite of applications and AI services that behave like a single organism, designed to create a seamless flow state and preserve focus.
+
+### Application Layer: Tools for Flow
+
+-   **Command Center:** A GTD-aligned dashboard that provides a single, glanceable view of your daily tasks, appointments, and reminders.
+-   **TuPlan (Smart Calendar):** AI-powered auto-scheduling that allocates time based on deadlines, priorities, and your personal work rhythms.
+-   **TuDo (Smart Tasks):** A centralized task hub that captures actions from emails, chats, and meetings, and then schedules them in TuPlan.
+-   **TuMeet (Smart Meetings):** An end-to-end meeting solution with collaborative planning, location intelligence, and AI-generated summaries.
+-   **TuMail & TuChat (Smart Communications):** An integrated communications hub where AI surfaces commitments and routes them to TuDo and TuPlan.
+-   **TuDrive (Unified Storage):** Secure cloud storage woven through tasks, documents, and conversations for effortless knowledge flow.
+-   **TuTrack (Mindful Time Tracking):** Lightweight time tracking with Pomodoro rhythms to encourage focused work.
+
+### AI Core: The Architecture of Intelligence
+
+-   **Mira (Soul & Voice):** The empathetic conversational interface that acts as a warm, trustworthy AI partner.
+-   **Aurora (Nervous System):** The contextual engine that links related emails, tasks, files, and events, creating our primary data moat.
+-   **Rewise (Collective Mind):** An aggregator of leading AI models (Gemini, OpenAI, Anthropic) to ensure Mira always has access to the best knowledge.
+-   **Nova (Conscience & Forge):** Our prompt-engineering and alignment platform that shapes how Mira reasons and guarantees safety.
+-   **Crystal (Bridge to Humanity):** The multi-modal embodiment of Mira, enabling real-time collaboration via voice, video, and screen sharing.
 
 ## Project Structure
 
-- `apps/web`: Web application for Tuturuuu platform
-- `apps/docs`: Documentation website powered by Mintlify
-- `apps/rewise`: AI-powered chatbot for everyday tasks
-- `apps/nova`: Prompt engineering platform that allows everyone to Learn, Practice, Innovate, and Compete. Similar to Leetcode for Algorithms and Kaggle for Machine Learning & AI
+-   `apps/web`: The main web application for the Tuturuuu platform, including the Command Center.
+-   `apps/docs`: The documentation website, built with Mintlify.
+-   `apps/rewise`: An AI-powered chatbot for everyday tasks.
+-   `apps/nova`: A prompt engineering platform to learn, practice, and innovate with AI.
+-   `apps/calendar`: Smart calendar with Google Calendar sync and AI-powered scheduling.
+-   `apps/finance`: Finance management and wallet tracking.
+-   `apps/tudo`: Hierarchical task management with bucket dump feature.
+-   `apps/tumeet`: Meeting management with AI transcription and summaries.
+-   `apps/shortener`: URL shortener service with analytics.
+-   `packages/`: Shared packages for UI components, AI schemas, Supabase clients, types, and more.
 
-## Features
-
-Tuturuuu services include:
-
-- Task management (upcoming)
-- Calendar scheduling and management (upcoming)
-- Finance management
-- User management (personal and enterprise, internal and external)
-- Inventory management
-- Mailing services (integrated with user management for group-scoped post notifications)
-- Workspace permission management
-- Granular permission control
-- API & Secrets system
-- External migration support
-- AI chat with deep integration across all features and products
+See the [Platform Architecture](https://docs.tuturuuu.com/platform) documentation for detailed information.
 
 ## Prerequisites
 
-- [Node.js](https://nodejs.org/) (v22+)
-- [bun](https://bun.sh/) (v1.2+) - Install with:
-  - **macOS/Linux**: `curl -fsSL https://bun.sh/install | bash`
-  - **Windows**: `powershell -c "irm bun.sh/install.ps1 | iex"`
-- [Docker](https://www.docker.com/) (latest)
+-   [Node.js](https://nodejs.org/) (v22+)
+-   [bun](https://bun.sh/) (v1.2+)
+-   [Docker](https://www.docker.com/) (latest)
 
 ## Getting Started
 
-1. **Clone the repository:**
+1.  **Clone the repository:**
+    ```bash
+    git clone https://github.com/tutur3u/platform.git
+    cd platform
+    ```
 
-   ```bash
-   git clone https://github.com/tutur3u/platform.git
-   cd platform
-   ```
+2.  **Install dependencies:**
+    ```bash
+    bun i
+    ```
 
-2. **Configure Tiptap Pro Registry:**
+3.  **Start the Supabase local development environment:**
+    ```bash
+    bun sb:start
+    ```
 
-   > This step is no longer needed.
+4.  **Set up environment files:**
+    Copy `.env.example` to `.env.local` in each app directory and add the Supabase URLs and keys from the previous step.
 
-3. **Install dependencies:**
+5.  **Run the development server:**
+    ```bash
+    bun dev
+    ```
 
-   ```bash
-   bun i
-   ```
+## Key Commands
 
-4. **Start the Supabase local development environment:**
+-   `bun dev`: Start all apps in development mode.
+-   `bun build`: Build all apps and packages.
+-   `bun test`: Run all tests.
+-   `bun sb:start`: Start the local Supabase instance.
+-   `bun sb:stop`: Stop the local Supabase instance.
+-   `bun devx`: Start the full stack with a persisted database.
+-   `bun devrs`: Start the full stack with a clean, seeded database.
 
-   ```bash
-   bun sb:start
-   ```
+For a complete list of commands and workflows, see the [Development Guide](https://docs.tuturuuu.com/build/development-tools/development).
 
-   This will provide the necessary URLs and keys for local development.
+## Documentation
 
-5. **Create environment files:**
+Comprehensive documentation is available at **[docs.tuturuuu.com](https://docs.tuturuuu.com)**:
 
-   Create a `.env.local` file in each app directory (`apps/*/.env.local`) using the corresponding `.env.example` template and add the Supabase URLs and keys from the previous step.
+### For Developers
+-   **[Platform Architecture](https://docs.tuturuuu.com/platform/architecture/routing)** - System design, tRPC, authentication, and authorization
+-   **[Database Reference](https://docs.tuturuuu.com/reference/database/schema-overview)** - Complete schema and RLS policies
+-   **[Package Reference](https://docs.tuturuuu.com/reference/packages/supabase)** - API documentation for shared packages
+-   **[Development Tools](https://docs.tuturuuu.com/build/development-tools)** - Monorepo setup, Supabase workflows, and testing
 
-6. **Start the desired application(s):**
+### For AI Agents
+-   **[Agent Operating Manual](https://docs.tuturuuu.com/overview/agent-operating-manual)** - Guidelines for AI assistants working in this codebase
+-   **[CLAUDE.md](./CLAUDE.md)** - Detailed operational instructions and guardrails
 
-   Use the appropriate bun scripts to start the applications.
+### Key Documentation
+-   **Database**: 377 migrations covering tasks, AI, calendar, finance, meetings, education, and more
+-   **Authentication**: Email/password, OAuth, MFA, and cross-app token authentication
+-   **Authorization**: RBAC with 30+ granular workspace permissions
+-   **Background Jobs**: Trigger.dev jobs for calendar sync and task scheduling
+-   **Type Safety**: Generated TypeScript types from Supabase schema
 
-   ```bash
-   bun dev
-   ```
+## Contribution Guidelines
+
+We welcome contributions! Please read our [CONTRIBUTING.md](./CONTRIBUTING.md) file for guidelines on how to submit pull requests, report issues, and suggest improvements. For security vulnerabilities, please follow our [security policy](./SECURITY.md).
 
 ## Community & Support
 
-If you have any questions, feel free to reach out to our community or support team:
+-   Follow us on [X/Twitter](https://x.com/tutur3u) for updates.
+-   Join our [GitHub Discussions](https://github.com/orgs/tutur3u/discussions) for support and conversation.
 
-- Follow us on [X/Twitter](https://x.com/tutur3u) for updates and announcements.
-- Check out our [GitHub Discussions](https://github.com/orgs/tutur3u/discussions) for more in-depth conversations and support.
-
-## Development Tools
-
-This turborepo has some additional tools already setup for you:
-
-- [Tailwind CSS](https://tailwindcss.com/) for styles
-- [Shadcn UI](https://ui.shadcn.com/) for UI components
-- [TypeScript](https://www.typescriptlang.org/) for static type checking
-- [ESLint](https://eslint.org/) for code linting
-- [Prettier](https://prettier.io) for code formatting
-- [Biome](https://biomejs.dev) for code linting and formatting
-- [Vitest](https://vitest.dev/) for testing
-
-> If you're using VS Code, you can install following the recommended extensions
-> that will help you with the development process:
->
-> - [ESLint](https://marketplace.visualstudio.com/items?itemName=dbaeumer.vscode-eslint)
-> - [Prettier](https://marketplace.visualstudio.com/items?itemName=esbenp.prettier-vscode)
-> - [Biome](https://marketplace.visualstudio.com/items?itemName=biomejs.biome)
-> - [Vitest](https://marketplace.visualstudio.com/items?itemName=vitest.explorer)
-> - [Tailwind CSS IntelliSense](https://marketplace.visualstudio.com/items?itemName=bradlc.vscode-tailwindcss)
-> - [Version Lens](https://marketplace.visualstudio.com/items?itemName=pflannery.vscode-versionlens)
-> - [Error Lens](https://marketplace.visualstudio.com/items?itemName=usernamehw.errorlens)
-> - [Pretty TypeScript Errors](https://marketplace.visualstudio.com/items?itemName=YoavBls.pretty-ts-errors)
-> - [Material Icon Theme](https://marketplace.visualstudio.com/items?itemName=PKief.material-icon-theme)
-
-### Build
-
-To build all apps and packages, run the following command:
-
-```bash
-bun run build
-```
-
-### Develop
-
-To develop all apps and packages (without requiring a local setup), run the following command:
-
-```bash
-bun dev
-```
-
-To stop development apps and packages that are running on your local machine, run the following command:
-
-```bash
-bun stop
-```
-
-#### Supabase
-
-To start a local supabase instance (database), run the following command:
-
-```bash
-bun sb:start
-```
-
-> [!NOTE]
-> This command will start a local supabase instance on your machine. You can access the **Supabase Studio Dashboard** by visiting <http://localhost:8003>
->
-> You can access the **InBucket service** that handles all email sending operations on your local machine by visiting <http://localhost:8004>
-
-#### Supabase Prerequisites
-
-> [!WARNING]
-> You need to have Docker installed and running on your machine to start a local
-> supabase instance.
-
-### Stop Local Supabase Instance
-
-To stop the local supabase instance, run the following command:
-
-```bash
-bun sb:stop
-```
-
-#### Better Development Experience
-
-In case you want to run all local development servers, run the following command:
-
-```bash
-bun devx
-```
-
-Running `devx` will:
-
-1. Stop the currently running supabase instance and save current data as backup (if there is any)
-2. Install all dependencies
-3. Start a new supabase instance (using backed up data)
-4. Start all Next.js apps in development mode
-
-If you want to have the same procedure without the backup, you can run `bun devrs` instead. This will:
-
-1. Stop the currently running supabase instance (if there is any)
-2. Install all dependencies
-3. Start a new supabase instance (with clean data from seed.sql)
-4. Start all Next.js apps in development mode
-
-> In case you don't want to run a local supabase instance, you can run `bun dev` instead.
-
-#### Local development
-
-There are 5 seed accounts that are already set up for local development:
-
-1. <local@tuturuuu.com>
-2. <user1@tuturuuu.com>
-3. <user2@tuturuuu.com>
-4. <user3@tuturuuu.com>
-5. <user4@tuturuuu.com>
-
-### Test
-
-To run all tests, run the following command:
-
-```bash
-bun run test
-```
-
-> Note: Tests are still a work in progress. We're currently working on adding tests to all packages to ensure the best quality possible.
-
-## Additional Information
-
-### Contribution Guidelines
-
-We welcome contributions! Please read our [CONTRIBUTING.md](./CONTRIBUTING.md) file for guidelines on how to submit pull requests, report issues, and suggest improvements. If there is any security vulnerability, please report it responsibly by following our [security policy](./SECURITY.md). For more detailed information, please refer to our [Code of Conduct](./CODE_OF_CONDUCT.md).
-
-### Troubleshooting
-
-Common issues and their solutions:
-
-1. **Supabase connection issues**: Ensure Docker is running and you've correctly set the Supabase URLs and keys in your `.env.local` files.
-2. **Build errors**: Make sure you're using the correct Node.js version (v20+) and have run `bun i` to install all dependencies.
-
-### Performance Optimization
-
-To improve build and development performance:
-
-- Use `bun` for faster package installation, better disk space usage, and significantly improved startup times (4x faster than Node.js). See [Bun's design goals](https://bun.sh/docs#design-goals) for more details.
-- Leverage Turborepo's caching capabilities by utilizing remote caching.
-
-### Learning Resources
-
-- [Turborepo Handbook](https://turbo.build/repo/docs): Learn more about monorepo management with Turborepo.
-- [Next.js Documentation](https://nextjs.org/docs): In-depth guide for Next.js, the framework used in our apps.
-- [Next.js Learn](https://nextjs.org/learn): Interactive Next.js & React learning courses.
-- [Supabase Documentation](https://supabase.io/docs): Learn about our database and backend services.
-
-### License
+## License
 
 This project is licensed under the Apache License, Version 2.0. See the [LICENSE](./LICENSE) file for more details.

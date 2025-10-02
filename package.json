@@ -4,6 +4,7 @@
   "scripts": {
     "build": "turbo run build",
     "buildx": "turbo test lint build",
+    "clean": "rm bun.lock && bunx npkill --delete-all -y",
     "dev": "turbo run dev --parallel",
     "dev:docs": "cd apps/docs && mintlify dev",
     "dev:web": "turbo run dev -F @tuturuuu/web",
@@ -42,8 +43,8 @@
     "lint:fix": "biome lint --write",
     "format-and-lint": "biome check",
     "format-and-lint:fix": "biome check --write",
-    "gemini": "bunx @google/gemini-cli",
-    "claude": "bunx @anthropic-ai/claude-code",
+    "gemini": "bunx @google/gemini-cli@latest",
+    "claude": "bunx @anthropic-ai/claude-code@latest",
     "stop": "cd apps/db && bun sb:stop",
     "sb:status": "cd apps/db && bun sb:status",
     "sb:start": "cd apps/db && bun sb:start",

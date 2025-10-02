@@ -1,0 +1,626 @@
+---
+title: "Database Schema Overview"
+description: "Complete reference for the Tuturuuu platform database schema"
+---
+
+# Database Schema Overview
+
+The Tuturuuu platform uses Supabase (PostgreSQL) with a comprehensive multi-tenant architecture. This document provides an overview of the database schema, organized by domain.
+
+## Core Architecture
+
+### Multi-Tenancy Model
+
+The database implements **workspace-based multi-tenancy** where:
+- Each workspace is isolated via Row-Level Security (RLS) policies
+- Users can belong to multiple workspaces
+- Resources are scoped to workspaces using `ws_id` foreign keys
+- Permissions are managed through workspace roles and granular permissions
+
+### Key Design Principles
+
+1. **Security First**: All tables have RLS policies enforcing workspace isolation
+2. **Audit Trails**: Many tables include `created_at` and `updated_at` timestamps
+3. **Soft Deletes**: Critical tables support soft deletion patterns
+4. **Hierarchical Structures**: Support for nested organizational structures (tasks, calendars, etc.)
+
+## Schema Domains
+
+### User & Workspace Management
+
+#### `workspace_users`
+Primary user table with workspace association.
+
+**Key Fields:**
+- `id` (uuid, PK)
+- `display_name` (text)
+- `email` (text)
+- `phone` (text)
+- `avatar_url` (text)
+
+#### `workspaces`
+Workspace container for multi-tenant organization.
+
+**Key Fields:**
+- `id` (text, PK)
+- `name` (text)
+- `logo_url` (text)
+- `created_at` (timestamptz)
+
+#### `workspace_members`
+Links users to workspaces with roles.
+
+**Key Fields:**
+- `id` (uuid, PK)
+- `ws_id` (text, FK → workspaces)
+- `user_id` (uuid, FK → workspace_users)
+- `role` (text)
+- `pending` (boolean) - invitation status
+
+#### `workspace_role_permissions`
+Granular permission system for workspace roles.
+
+**Key Fields:**
+- `ws_id` (text, FK → workspaces)
+- `role_id` (text)
+- `permission` (workspace_role_permission enum)
+- `created_at` (timestamptz)
+
+**Available Permissions:**
+- Infrastructure: `manage_infrastructure_settings`
+- Workspace: `manage_workspace_settings`, `manage_workspace_security`
+- Users: `manage_users`, `manage_user_groups`, `manage_user_roles`
+- Finance: `manage_finance`, `ai_lab_assistant`
+- Calendar: `manage_calendar`, `manage_external_users`
+- Documents: `manage_documents`
+- Inventory: `manage_inventory`
+- Disabled Users: `view_disabled_users`, `disable_user`
+
+### Task Management Hierarchy
+
+The platform implements a 6-level hierarchical task management system:
+
+```
+Workspaces (top-level)
+└── Task Initiatives (strategic grouping)
+    └── Task Projects (cross-board coordination)
+        └── Workspace Boards (kanban boards)
+            └── Task Lists (columns)
+                └── Workspace Tasks (work items)
+```
+
+#### `notes`
+Unstructured notes that can be converted to tasks or projects (Bucket Dump feature).
+
+**Key Fields:**
+- `id` (uuid, PK)
+- `ws_id` (text, FK → workspaces)
+- `title` (text)
+- `content` (text)
+- `created_by` (uuid, FK → workspace_users)
+
+#### `task_initiatives`
+Strategic initiatives grouping multiple projects.
+
+**Key Fields:**
+- `id` (text, PK)
+- `ws_id` (text, FK → workspaces)
+- `name` (text)
+- `description` (text)
+- `start_date` (date)
+- `end_date` (date)
+
+#### `task_projects`
+Cross-functional projects coordinating tasks across boards.
+
+**Key Fields:**
+- `id` (text, PK)
+- `ws_id` (text, FK → workspaces)
+- `name` (text)
+- `description` (text)
+
+**Relationships:**
+- `task_project_initiatives` - links projects to initiatives
+- `task_project_tasks` - links tasks to projects
+
+#### `workspace_boards`
+Kanban-style task boards.
+
+**Key Fields:**
+- `id` (uuid, PK)
+- `ws_id` (text, FK → workspaces)
+- `name` (text)
+- `description` (text)
+- `created_at` (timestamptz)
+
+#### `task_lists`
+Columns within boards (e.g., "To Do", "In Progress", "Done").
+
+**Key Fields:**
+- `id` (text, PK)
+- `board_id` (uuid, FK → workspace_boards)
+- `name` (text)
+- `position` (integer) - display order
+
+#### `workspace_tasks`
+Individual work items.
+
+**Key Fields:**
+- `id` (text, PK)
+- `ws_id` (text, FK → workspaces)
+- `list_id` (text, FK → task_lists)
+- `name` (text)
+- `description` (text)
+- `priority` (integer)
+- `completed` (boolean)
+- `start_date` (date)
+- `due_date` (date)
+- `created_by` (uuid, FK → workspace_users)
+
+**Related Tables:**
+- `task_cycles` - sprint/iteration grouping
+- `task_labels` - categorization tags
+- `task_estimates` - effort estimation (fibonacci, exponential, linear, t-shirt)
+- `task_statuses` - custom status definitions per board
+
+### AI Features
+
+#### `ai_providers`
+Supported AI providers (OpenAI, Anthropic, Google Vertex AI, Gemini, etc.).
+
+**Key Fields:**
+- `id` (text, PK)
+- `name` (text)
+- `value` (text) - provider identifier
+
+#### `ai_models`
+Available AI models per provider.
+
+**Key Fields:**
+- `id` (text, PK)
+- `provider` (text, FK → ai_providers)
+- `name` (text)
+- `model` (text) - model identifier
+- `input_price` (numeric) - per million tokens
+- `output_price` (numeric) - per million tokens
+
+#### `ai_chats`
+Persistent chat sessions.
+
+**Key Fields:**
+- `id` (uuid, PK)
+- `ws_id` (text, FK → workspaces)
+- `title` (text)
+- `model` (text, FK → ai_models)
+- `creator_id` (uuid, FK → workspace_users)
+
+#### `ai_chat_messages`
+Individual messages within chat sessions.
+
+**Key Fields:**
+- `id` (uuid, PK)
+- `chat_id` (uuid, FK → ai_chats)
+- `role` (text) - user, assistant, system
+- `content` (text)
+- `created_at` (timestamptz)
+
+#### `workspace_ai_executions`
+Token usage tracking for billing.
+
+**Key Fields:**
+- `id` (uuid, PK)
+- `ws_id` (text, FK → workspaces)
+- `model` (text, FK → ai_models)
+- `input_tokens` (integer)
+- `output_tokens` (integer)
+- `total_cost` (numeric)
+
+#### `ai_whitelisted_emails`
+Email whitelist for AI feature access.
+
+### Calendar System
+
+#### `workspace_calendar_events`
+Calendar events with Google Calendar sync support.
+
+**Key Fields:**
+- `id` (uuid, PK)
+- `ws_id` (text, FK → workspaces)
+- `title` (text)
+- `description` (text)
+- `start_at` (timestamptz)
+- `end_at` (timestamptz)
+- `location` (text)
+- `google_event_id` (text) - for sync
+- `creator_id` (uuid, FK → workspace_users)
+
+#### `calendar_event_participants`
+Event attendees.
+
+**Key Fields:**
+- `event_id` (uuid, FK → workspace_calendar_events)
+- `user_id` (uuid, FK → workspace_users)
+- `attending` (boolean)
+
+#### `calendar_sync_states`
+Tracks synchronization state with Google Calendar.
+
+**Key Fields:**
+- `ws_id` (text, PK, FK → workspaces)
+- `sync_token` (text) - Google sync token
+- `last_synced_at` (timestamptz)
+- `is_syncing` (boolean) - prevents concurrent syncs
+
+#### `calendar_auth_tokens`
+OAuth tokens for Google Calendar integration.
+
+**Key Fields:**
+- `user_id` (uuid, PK, FK → workspace_users)
+- `access_token` (text, encrypted)
+- `refresh_token` (text, encrypted)
+- `expires_at` (timestamptz)
+
+#### `workspace_calendar_sync_log`
+Audit trail for sync operations.
+
+**Key Fields:**
+- `id` (uuid, PK)
+- `ws_id` (text, FK → workspaces)
+- `sync_type` (text) - full, incremental, batched
+- `started_at` (timestamptz)
+- `completed_at` (timestamptz)
+- `error` (text)
+
+### Finance Management
+
+#### `workspace_wallets`
+Primary wallet for workspace financial tracking.
+
+**Key Fields:**
+- `id` (uuid, PK)
+- `ws_id` (text, FK → workspaces)
+- `name` (text)
+- `balance` (numeric)
+- `currency` (text)
+
+#### `credit_wallets`
+Credit-based wallet system.
+
+**Key Fields:**
+- `id` (uuid, PK)
+- `ws_id` (text, FK → workspaces)
+- `balance` (numeric) - credit amount
+- `currency` (text)
+
+#### `wallet_transactions`
+Financial transaction history.
+
+**Key Fields:**
+- `id` (uuid, PK)
+- `wallet_id` (uuid, FK → workspace_wallets)
+- `amount` (numeric)
+- `description` (text)
+- `type` (text) - income, expense, transfer
+- `category_id` (uuid, FK → transaction_categories)
+- `created_at` (timestamptz)
+
+### Meeting Management
+
+#### `meeting_plans`
+Scheduled meetings with metadata.
+
+**Key Fields:**
+- `id` (uuid, PK)
+- `ws_id` (text, FK → workspaces)
+- `title` (text)
+- `description` (text)
+- `start_time` (timestamptz)
+- `end_time` (timestamptz)
+
+#### `meeting_plan_timeblocks`
+Time allocations within meetings.
+
+**Key Fields:**
+- `id` (uuid, PK)
+- `meeting_id` (uuid, FK → meeting_plans)
+- `title` (text)
+- `duration` (integer) - minutes
+- `position` (integer)
+
+#### `meeting_guest_accounts`
+External participant management.
+
+**Key Fields:**
+- `id` (uuid, PK)
+- `email` (text)
+- `display_name` (text)
+- `ws_id` (text, FK → workspaces)
+
+#### `meeting_recordings`
+Meeting transcription and recording storage.
+
+**Key Fields:**
+- `id` (uuid, PK)
+- `meeting_id` (uuid, FK → meeting_plans)
+- `transcription` (text)
+- `summary` (text) - AI-generated
+- `recording_url` (text)
+
+### Nova Platform (Prompt Engineering)
+
+#### `nova_problems`
+Prompt engineering challenge problems.
+
+**Key Fields:**
+- `id` (uuid, PK)
+- `title` (text)
+- `description` (text)
+- `difficulty` (text) - easy, medium, hard
+- `created_by` (uuid, FK → workspace_users)
+
+#### `nova_challenges`
+Specific challenge instances.
+
+**Key Fields:**
+- `id` (uuid, PK)
+- `problem_id` (uuid, FK → nova_problems)
+- `title` (text)
+- `start_time` (timestamptz)
+- `end_time` (timestamptz)
+
+#### `nova_test_cases`
+Test cases for validating prompt submissions.
+
+**Key Fields:**
+- `id` (uuid, PK)
+- `problem_id` (uuid, FK → nova_problems)
+- `input` (jsonb)
+- `expected_output` (jsonb)
+- `is_hidden` (boolean) - public vs private tests
+
+#### `nova_submissions`
+User prompt submissions.
+
+**Key Fields:**
+- `id` (uuid, PK)
+- `challenge_id` (uuid, FK → nova_challenges)
+- `user_id` (uuid, FK → workspace_users)
+- `prompt` (text)
+- `score` (numeric)
+- `submitted_at` (timestamptz)
+
+#### `nova_sessions`
+Active problem-solving sessions.
+
+**Key Fields:**
+- `id` (uuid, PK)
+- `user_id` (uuid, FK → workspace_users)
+- `problem_id` (uuid, FK → nova_problems)
+- `started_at` (timestamptz)
+- `completed_at` (timestamptz)
+
+### Education System
+
+#### `courses`
+Educational course catalog.
+
+**Key Fields:**
+- `id` (uuid, PK)
+- `ws_id` (text, FK → workspaces)
+- `title` (text)
+- `description` (text)
+- `instructor_id` (uuid, FK → workspace_users)
+
+#### `course_modules`
+Course content structure.
+
+**Key Fields:**
+- `id` (uuid, PK)
+- `course_id` (uuid, FK → courses)
+- `title` (text)
+- `content` (text)
+- `position` (integer)
+
+#### `course_module_completion_status`
+Student progress tracking.
+
+**Key Fields:**
+- `user_id` (uuid, FK → workspace_users)
+- `module_id` (uuid, FK → course_modules)
+- `completed_at` (timestamptz)
+
+#### `course_certificates`
+Achievement certificates.
+
+**Key Fields:**
+- `id` (uuid, PK)
+- `user_id` (uuid, FK → workspace_users)
+- `course_id` (uuid, FK → courses)
+- `template` (text) - elegant, modern, original
+- `issued_at` (timestamptz)
+
+#### `quiz_sets`
+Quiz collections.
+
+**Key Fields:**
+- `id` (uuid, PK)
+- `ws_id` (text, FK → workspaces)
+- `title` (text)
+- `questions` (jsonb)
+
+#### `quiz_attempts`
+User quiz submissions.
+
+**Key Fields:**
+- `id` (uuid, PK)
+- `quiz_id` (uuid, FK → quiz_sets)
+- `user_id` (uuid, FK → workspace_users)
+- `score` (numeric)
+- `answers` (jsonb)
+- `completed_at` (timestamptz)
+
+#### `flashcard_sets`
+Flashcard study materials.
+
+**Key Fields:**
+- `id` (uuid, PK)
+- `ws_id` (text, FK → workspaces)
+- `title` (text)
+- `cards` (jsonb) - array of {front, back}
+
+### Time Tracking
+
+#### `time_tracking_sessions`
+Hierarchical time tracking with daily structure.
+
+**Key Fields:**
+- `id` (uuid, PK)
+- `ws_id` (text, FK → workspaces)
+- `user_id` (uuid, FK → workspace_users)
+- `task_id` (text, FK → workspace_tasks)
+- `start_time` (timestamptz)
+- `end_time` (timestamptz)
+- `duration` (integer) - seconds
+- `date` (date) - for daily hierarchy
+
+**Related Tables:**
+- `workspace_calendar_hour_settings` - categorizes hours (work, meeting, personal)
+
+### URL Shortener
+
+#### `shortened_links`
+Short URL mappings.
+
+**Key Fields:**
+- `id` (uuid, PK)
+- `ws_id` (text, FK → workspaces)
+- `short_code` (text, unique)
+- `original_url` (text)
+- `created_by` (uuid, FK → workspace_users)
+- `expires_at` (timestamptz)
+
+#### `shortened_link_analytics`
+Click tracking.
+
+**Key Fields:**
+- `id` (uuid, PK)
+- `link_id` (uuid, FK → shortened_links)
+- `clicked_at` (timestamptz)
+- `ip_address` (inet)
+- `user_agent` (text)
+- `referrer` (text)
+
+### Subscriptions & Billing
+
+#### `workspace_subscriptions`
+Workspace subscription status.
+
+**Key Fields:**
+- `ws_id` (text, PK, FK → workspaces)
+- `product_id` (text, FK → workspace_subscription_products)
+- `status` (text) - active, canceled, expired
+- `started_at` (timestamptz)
+- `expires_at` (timestamptz)
+
+#### `workspace_subscription_products`
+Available subscription tiers.
+
+**Key Fields:**
+- `id` (text, PK)
+- `name` (text)
+- `price` (numeric)
+- `currency` (text)
+- `features` (jsonb)
+
+### Additional Features
+
+#### `user_referrals`
+Referral tracking system (added September 2025).
+
+**Key Fields:**
+- `id` (uuid, PK)
+- `referrer_id` (uuid, FK → workspace_users)
+- `referred_id` (uuid, FK → workspace_users)
+- `created_at` (timestamptz)
+
+#### `whiteboards`
+Real-time collaborative whiteboard (added June 2025).
+
+**Key Fields:**
+- `id` (uuid, PK)
+- `ws_id` (text, FK → workspaces)
+- `title` (text)
+- `content` (jsonb) - whiteboard state
+
+#### `support_inquiries`
+Support ticket system.
+
+**Key Fields:**
+- `id` (uuid, PK)
+- `type` (text) - bug, feature-request, job-application, support
+- `subject` (text)
+- `description` (text)
+- `status` (text) - open, in-progress, resolved
+- `created_by` (uuid, FK → workspace_users)
+
+#### `discord_guild_integrations`
+Discord server integration metadata.
+
+**Key Fields:**
+- `guild_id` (text, PK)
+- `ws_id` (text, FK → workspaces)
+- `enabled` (boolean)
+
+## Database Functions
+
+The schema includes several PostgreSQL functions for complex operations:
+
+### `atomic_sync_token_operation`
+Atomically updates calendar sync tokens to prevent race conditions.
+
+**Usage:** Calendar synchronization coordination
+
+### User Creation Triggers
+Automatically create related records when new users are added.
+
+### Task Board Member Management
+Helper functions for managing board access permissions.
+
+### AI Pricing Helpers
+Calculate AI model costs based on token usage.
+
+## Migration Management
+
+Migrations are stored in `/apps/db/supabase/migrations/` with timestamp prefixes:
+
+```
+20250929042000_add_notes.sql
+20250929060000_add_task_cycles.sql
+20250911083732_add_task_labels_and_estimates.sql
+...
+```
+
+See [Migration Guide](/reference/database/migrations-guide) for workflow details.
+
+## Related Documentation
+
+- [RLS Policies](/reference/database/rls-policies) - Security model and policy patterns
+- [Task Hierarchy](/reference/database/task-hierarchy) - Detailed task management data model
+- [Database Functions](/reference/database/functions-triggers) - Stored procedures reference
+- [Migration Guide](/reference/database/migrations-guide) - Migration workflow
+
+## Type Generation
+
+After schema changes, regenerate TypeScript types:
+
+```bash
+bun sb:typegen
+```
+
+Generated types are exported from `@tuturuuu/types`:
+
+```typescript
+import type { Database } from '@tuturuuu/types';
+
+type Task = Database['public']['Tables']['workspace_tasks']['Row'];
+```

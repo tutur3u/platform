@@ -716,6 +716,34 @@ export type Database = {
           ws_id: string;
         }[];
       };
+      get_user_accessible_tasks: {
+        Args: {
+          p_include_deleted?: boolean;
+          p_list_statuses?: Database['public']['Enums']['task_board_status'][];
+          p_user_id: string;
+          p_ws_id?: string;
+        };
+        Returns: {
+          task_archived: boolean;
+          task_calendar_hours: Database['public']['Enums']['calendar_hours'];
+          task_completed: boolean;
+          task_created_at: string;
+          task_creator_id: string;
+          task_deleted: boolean;
+          task_description: string;
+          task_end_date: string;
+          task_estimation_points: number;
+          task_id: string;
+          task_is_splittable: boolean;
+          task_list_id: string;
+          task_max_split_duration_minutes: number;
+          task_min_split_duration_minutes: number;
+          task_name: string;
+          task_priority: Database['public']['Enums']['task_priority'];
+          task_start_date: string;
+          task_total_duration: number;
+        }[];
+      };
       get_user_role: {
         Args: {
           user_id: string;

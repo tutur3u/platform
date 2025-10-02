@@ -6,9 +6,9 @@ import { createClient } from '@tuturuuu/supabase/next/client';
 import type { TaskPriority } from '@tuturuuu/types/primitives/Priority';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
+import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
-import { Checkbox } from '@tuturuuu/ui/checkbox';
 import { DateTimePicker } from '@tuturuuu/ui/date-time-picker';
 import { Dialog, DialogContent, DialogTitle } from '@tuturuuu/ui/dialog';
 import {
@@ -25,6 +25,8 @@ import {
   Flag,
   ListTodo,
   Loader2,
+  Plus,
+  Search,
   Settings,
   Tag,
   Timer,
@@ -34,14 +36,17 @@ import {
 } from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
+import { Switch } from '@tuturuuu/ui/switch';
 import { RichTextEditor } from '@tuturuuu/ui/text-editor/editor';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { cn } from '@tuturuuu/utils/format';
 import {
   invalidateTaskCaches,
+  useBoardConfig,
   useUpdateTask,
+  useWorkspaceLabels,
 } from '@tuturuuu/utils/task-helper';
-import { addDays } from 'date-fns';
+import dayjs from 'dayjs';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   buildEstimationIndices,
@@ -63,13 +68,6 @@ interface WorkspaceTaskLabel {
   name: string;
   color: string;
   created_at: string;
-}
-
-interface BoardEstimationConfig {
-  estimation_type?: string | null;
-  extended_estimation?: boolean;
-  allow_zero_estimates?: boolean;
-  count_unestimated_issues?: boolean;
 }
 
 function TaskEditDialogComponent({
@@ -117,16 +115,35 @@ function TaskEditDialogComponent({
   const [estimationPoints, setEstimationPoints] = useState<
     number | null | undefined
   >(task.estimation_points ?? null);
-  const [availableLabels, setAvailableLabels] = useState<WorkspaceTaskLabel[]>(
-    []
-  );
   const [selectedLabels, setSelectedLabels] = useState<WorkspaceTaskLabel[]>(
     task.labels || []
   );
-  const [boardConfig, setBoardConfig] = useState<BoardEstimationConfig | null>(
-    null
+
+  // Use React Query hooks for shared data (cached across all components)
+  const { data: boardConfig } = useBoardConfig(boardId);
+  const [workspaceId, setWorkspaceId] = useState<string | null>(
+    boardConfig?.ws_id || null
   );
-  const [labelsLoading, setLabelsLoading] = useState(false);
+  const { data: workspaceLabelsData = [], isLoading: labelsLoading } =
+    useWorkspaceLabels(workspaceId);
+
+  // Keep local state for available labels to allow manipulation
+  const [availableLabels, setAvailableLabels] = useState<WorkspaceTaskLabel[]>(
+    []
+  );
+
+  // Sync workspace labels to local state
+  useEffect(() => {
+    setAvailableLabels(workspaceLabelsData);
+  }, [workspaceLabelsData]);
+
+  // Update workspace ID when board config loads
+  useEffect(() => {
+    if (boardConfig?.ws_id && workspaceId !== boardConfig.ws_id) {
+      setWorkspaceId(boardConfig.ws_id);
+    }
+  }, [boardConfig, workspaceId]);
+
   const [, setEstimationSaving] = useState(false);
   const [newLabelName, setNewLabelName] = useState('');
   const [newLabelColor, setNewLabelColor] = useState('gray');
@@ -137,6 +154,13 @@ function TaskEditDialogComponent({
   const [hasDraft, setHasDraft] = useState(false);
   const [createMultiple, setCreateMultiple] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [showMobileSidebar, setShowMobileSidebar] = useState(false);
+  const [workspaceMembers, setWorkspaceMembers] = useState<any[]>([]);
+  const [loadingMembers, setLoadingMembers] = useState(false);
+  const [selectedAssignees, setSelectedAssignees] = useState<any[]>(
+    task.assignees || []
+  );
+  const [assigneeSearchQuery, setAssigneeSearchQuery] = useState('');
 
   const queryClient = useQueryClient();
   const previousTaskIdRef = useRef<string | null>(null);
@@ -145,7 +169,15 @@ function TaskEditDialogComponent({
   const hasUnsavedChangesRef = useRef<boolean>(false);
   const quickDueRef = useRef<(days: number | null) => void>(() => {});
   const updateEstimationRef = useRef<(points: number | null) => void>(() => {});
-  const [workspaceId, setWorkspaceId] = useState<string | null>(null);
+  const flushEditorPendingRef = useRef<(() => JSONContent | null) | undefined>(
+    undefined
+  );
+  const titleInputRef = useRef<HTMLInputElement>(null);
+  const editorRef = useRef<HTMLDivElement>(null);
+
+  // Track cursor position for smart vertical navigation
+  const lastCursorPositionRef = useRef<number | null>(null);
+  const targetEditorCursorRef = useRef<number | null>(null);
 
   // Use the React Query mutation hook for updating tasks
   const updateTaskMutation = useUpdateTask(boardId);
@@ -187,38 +219,52 @@ function TaskEditDialogComponent({
       };
     }
   }, []);
+
   // Reset form when task changes or dialog opens
   useEffect(() => {
-    // Update form if task ID changed OR if dialog just opened (for create mode with 'new' ID)
-    if (
-      previousTaskIdRef.current !== task.id ||
-      (isOpen && task.id === 'new')
-    ) {
-      // For create mode, reset to task props (which should be empty for new tasks)
-      // The draft restoration effect will run after this and override if needed
-      if (isOpen && (mode === 'create' || task.id === 'new')) {
-        setName(task.name || '');
-        setDescription(parseDescription(task.description) || null);
-        setPriority(task.priority || null);
-        setStartDate(task.start_date ? new Date(task.start_date) : undefined);
-        setEndDate(task.end_date ? new Date(task.end_date) : undefined);
-        setSelectedListId(task.list_id);
-        setEstimationPoints(task.estimation_points ?? null);
-        setSelectedLabels(task.labels || []);
-      } else {
-        // Edit mode: load task data
-        setName(task.name);
-        setDescription(parseDescription(task.description));
-        setPriority(task.priority || null);
-        setStartDate(task.start_date ? new Date(task.start_date) : undefined);
-        setEndDate(task.end_date ? new Date(task.end_date) : undefined);
-        setSelectedListId(task.list_id);
-        setEstimationPoints(task.estimation_points ?? null);
-        setSelectedLabels(task.labels || []);
-      }
+    // In edit mode, when dialog opens, always reload task data to ensure we have the latest
+    // This handles the case where task was edited previously and we're reopening the dialog
+    if (isOpen && mode === 'edit') {
+      console.log('🔍 TaskEditDialog opened with task data:', {
+        taskId: task.id,
+        name: task.name,
+        descriptionType: typeof task.description,
+        descriptionPreview:
+          typeof task.description === 'string'
+            ? task.description.substring(0, 100)
+            : JSON.stringify(task.description)?.substring(0, 100),
+        hasDescription: !!task.description,
+        rawDescription: task.description,
+      });
+      setName(task.name);
+      setDescription(parseDescription(task.description));
+      setPriority(task.priority || null);
+      setStartDate(task.start_date ? new Date(task.start_date) : undefined);
+      setEndDate(task.end_date ? new Date(task.end_date) : undefined);
+      setSelectedListId(task.list_id);
+      setEstimationPoints(task.estimation_points ?? null);
+      setSelectedLabels(task.labels || []);
+      setSelectedAssignees(task.assignees || []);
       previousTaskIdRef.current = task.id;
     }
-  }, [task, parseDescription, isOpen, mode]);
+    // For create mode, only load when task ID changes or dialog opens with 'new' ID
+    else if (
+      isOpen &&
+      (mode === 'create' || task.id === 'new') &&
+      (previousTaskIdRef.current !== task.id || task.id === 'new')
+    ) {
+      setName(task.name || '');
+      setDescription(parseDescription(task.description) || null);
+      setPriority(task.priority || null);
+      setStartDate(task.start_date ? new Date(task.start_date) : undefined);
+      setEndDate(task.end_date ? new Date(task.end_date) : undefined);
+      setSelectedListId(task.list_id);
+      setEstimationPoints(task.estimation_points ?? null);
+      setSelectedLabels(task.labels || []);
+      setSelectedAssignees(task.assignees || []);
+      previousTaskIdRef.current = task.id;
+    }
+  }, [task, task.description, parseDescription, isOpen, mode]);
 
   // Reset transient edits when closing without saving in edit mode
   useEffect(() => {
@@ -231,61 +277,65 @@ function TaskEditDialogComponent({
       setSelectedListId(task.list_id);
       setEstimationPoints(task.estimation_points ?? null);
       setSelectedLabels(task.labels || []);
+      setSelectedAssignees(task.assignees || []);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, mode, task, parseDescription]);
 
-  const fetchLabels = useCallback(async (wsId: string) => {
+  const fetchWorkspaceMembers = useCallback(async (wsId: string) => {
     try {
-      setLabelsLoading(true);
+      setLoadingMembers(true);
       const supabase = createClient();
-      const { data: labels, error: labelsErr } = await supabase
-        .from('workspace_task_labels')
-        .select('id,name,color,created_at')
-        .eq('ws_id', wsId)
-        .order('created_at');
-      if (!labelsErr && labels)
-        setAvailableLabels(
-          (labels as any).sort((a: any, b: any) =>
-            (a?.name || '')
-              .toLowerCase()
-              .localeCompare((b?.name || '').toLowerCase())
+      const { data: members, error } = await supabase
+        .from('workspace_members')
+        .select(
+          `
+          user_id,
+          users!inner(
+            id,
+            display_name,
+            avatar_url
           )
+        `
+        )
+        .eq('ws_id', wsId);
+
+      if (error) {
+        console.error('Error fetching workspace members:', error);
+        throw error;
+      }
+
+      if (members) {
+        // Transform and sort by display_name
+        const transformedMembers = members.map((m: any) => ({
+          user_id: m.user_id,
+          display_name: m.users?.display_name || 'Unknown User',
+          avatar_url: m.users?.avatar_url,
+        }));
+
+        // Deduplicate by user_id to ensure unique keys
+        const uniqueMembers = Array.from(
+          new Map(transformedMembers.map((m) => [m.user_id, m])).values()
         );
+
+        const sortedMembers = uniqueMembers.sort((a, b) =>
+          (a.display_name || '').localeCompare(b.display_name || '')
+        );
+        setWorkspaceMembers(sortedMembers);
+      }
     } catch (e) {
-      console.error('Failed fetching labels', e);
+      console.error('Failed fetching workspace members', e);
     } finally {
-      setLabelsLoading(false);
+      setLoadingMembers(false);
     }
   }, []);
 
-  // Fetch board estimation config & labels on open - memoize to prevent unnecessary re-runs
-  const fetchBoardConfig = useCallback(async () => {
-    if (!isOpen) return;
-    try {
-      const supabase = createClient();
-      const { data: board, error: boardErr } = await supabase
-        .from('workspace_boards')
-        .select(
-          'estimation_type, extended_estimation, allow_zero_estimates, count_unestimated_issues, ws_id'
-        )
-        .eq('id', boardId)
-        .single();
-      if (boardErr) throw boardErr;
-      setBoardConfig(board as any);
-      const wsId = (board as any)?.ws_id;
-      if (wsId) {
-        setWorkspaceId(wsId);
-        await fetchLabels(wsId);
-      }
-    } catch (e) {
-      console.error('Failed loading board config or labels', e);
-    }
-  }, [isOpen, boardId, fetchLabels]);
-
+  // Fetch workspace members when workspace ID is available
   useEffect(() => {
-    fetchBoardConfig();
-  }, [fetchBoardConfig]);
+    if (isOpen && workspaceId) {
+      fetchWorkspaceMembers(workspaceId);
+    }
+  }, [isOpen, workspaceId, fetchWorkspaceMembers]);
 
   // ------- Draft persistence (create mode) -------------------------------------
   const draftStorageKey = useMemo(
@@ -476,10 +526,11 @@ function TaskEditDialogComponent({
     return hasName && hasUnsavedChanges && !isLoading;
   }, [mode, name, hasUnsavedChanges, isLoading]);
 
-  // Global keyboard shortcut: Cmd/Ctrl + Enter to save
+  // Global keyboard shortcuts: Cmd/Ctrl + Enter to save
   useEffect(() => {
     if (!isOpen) return;
     const handleKeyDown = (e: KeyboardEvent) => {
+      // Save shortcut: Cmd/Ctrl + Enter
       if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
         e.preventDefault();
         if (canSave) {
@@ -487,6 +538,7 @@ function TaskEditDialogComponent({
         } else if (!hasUnsavedChangesRef.current) {
           handleCloseRef.current();
         }
+        return;
       }
     };
     window.addEventListener('keydown', handleKeyDown);
@@ -553,7 +605,7 @@ function TaskEditDialogComponent({
           });
         } else {
           // Invalidate caches so parent task list reflects new label
-          invalidateTaskCaches(queryClient, boardId);
+          await invalidateTaskCaches(queryClient, boardId);
           onUpdate();
           // Dispatch global event so other open components can refresh
           if (typeof window !== 'undefined') {
@@ -584,16 +636,16 @@ function TaskEditDialogComponent({
   // End date change helper (preserve 23:59 default if only date picked)
   const handleEndDateChange = (date: Date | undefined) => {
     if (date) {
-      const selectedDate = new Date(date);
+      let selectedDate = dayjs(date);
       if (
-        selectedDate.getHours() === 0 &&
-        selectedDate.getMinutes() === 0 &&
-        selectedDate.getSeconds() === 0 &&
-        selectedDate.getMilliseconds() === 0
+        selectedDate.hour() === 0 &&
+        selectedDate.minute() === 0 &&
+        selectedDate.second() === 0 &&
+        selectedDate.millisecond() === 0
       ) {
-        selectedDate.setHours(23, 59, 59, 999);
+        selectedDate = selectedDate.endOf('day');
       }
-      setEndDate(selectedDate);
+      setEndDate(selectedDate.toDate());
     } else {
       setEndDate(undefined);
     }
@@ -603,9 +655,7 @@ function TaskEditDialogComponent({
   const handleQuickDueDate = (days: number | null) => {
     let newDate: Date | undefined;
     if (days !== null) {
-      const target = addDays(new Date(), days);
-      target.setHours(23, 59, 59, 999);
-      newDate = target;
+      newDate = dayjs().add(days, 'day').endOf('day').toDate();
     }
     setEndDate(newDate);
     if (mode === 'create') {
@@ -613,12 +663,23 @@ function TaskEditDialogComponent({
       return;
     }
     setIsLoading(true);
-    const taskUpdates: Partial<Task> = { end_date: newDate?.toISOString() };
+    const taskUpdates: Partial<Task> = {
+      end_date: newDate ? newDate.toISOString() : null,
+    };
     updateTaskMutation.mutate(
       { taskId: task.id, updates: taskUpdates },
       {
-        onSuccess: () => {
-          invalidateTaskCaches(queryClient, boardId);
+        onSuccess: async () => {
+          await invalidateTaskCaches(queryClient, boardId);
+
+          // Wait for the refetch to complete before closing
+          if (boardId) {
+            await queryClient.refetchQueries({
+              queryKey: ['tasks', boardId],
+              type: 'active',
+            });
+          }
+
           toast({
             title: 'Due date updated',
             description: newDate
@@ -657,7 +718,7 @@ function TaskEditDialogComponent({
         .update({ estimation_points: points })
         .eq('id', task.id);
       if (error) throw error;
-      invalidateTaskCaches(queryClient, boardId);
+      await invalidateTaskCaches(queryClient, boardId);
     } catch (e: any) {
       console.error('Failed updating estimation', e);
       toast({
@@ -747,7 +808,7 @@ function TaskEditDialogComponent({
           })
         );
       }
-      invalidateTaskCaches(queryClient, boardId);
+      await invalidateTaskCaches(queryClient, boardId);
     } catch (e: any) {
       toast({
         title: 'Label update failed',
@@ -757,8 +818,58 @@ function TaskEditDialogComponent({
     }
   };
 
+  const toggleAssignee = async (member: any) => {
+    const exists = selectedAssignees.some((a) => a.user_id === member.user_id);
+    const supabase = createClient();
+    try {
+      if (mode === 'create') {
+        // Local toggle only; persist on create
+        setSelectedAssignees((prev) =>
+          exists
+            ? prev.filter((a) => a.user_id !== member.user_id)
+            : [...prev, member]
+        );
+        return;
+      }
+      if (exists) {
+        // remove
+        const { error } = await supabase
+          .from('task_assignees')
+          .delete()
+          .eq('task_id', task.id)
+          .eq('user_id', member.user_id);
+        if (error) throw error;
+        setSelectedAssignees((prev) =>
+          prev.filter((a) => a.user_id !== member.user_id)
+        );
+      } else {
+        const { error } = await supabase
+          .from('task_assignees')
+          .insert({ task_id: task.id, user_id: member.user_id });
+        if (error) throw error;
+        setSelectedAssignees((prev) => [...prev, member]);
+      }
+      await invalidateTaskCaches(queryClient, boardId);
+      onUpdate();
+    } catch (e: any) {
+      toast({
+        title: 'Assignee update failed',
+        description: e.message || 'Unable to update assignees',
+        variant: 'destructive',
+      });
+    }
+  };
+
   const handleSave = async () => {
     if (!name.trim()) return;
+
+    // Flush any pending editor changes before saving and get current content
+    let currentDescription = description;
+    if (flushEditorPendingRef.current) {
+      const flushedContent = flushEditorPendingRef.current();
+      // Use the flushed content directly
+      currentDescription = flushedContent;
+    }
 
     setIsSaving(true);
     setIsLoading(true);
@@ -772,9 +883,10 @@ function TaskEditDialogComponent({
     } catch {}
 
     // Convert JSONContent to string for storage
-    const descriptionString = description
-      ? JSON.stringify(description)
-      : undefined;
+    // Important: Use null explicitly instead of undefined to ensure DB field is cleared
+    const descriptionString: string | null = currentDescription
+      ? JSON.stringify(currentDescription)
+      : null;
 
     if (mode === 'create') {
       try {
@@ -784,8 +896,8 @@ function TaskEditDialogComponent({
           name: name.trim(),
           description: descriptionString,
           priority: priority,
-          start_date: startDate?.toISOString(),
-          end_date: endDate?.toISOString(),
+          start_date: startDate ? startDate.toISOString() : null,
+          end_date: endDate ? endDate.toISOString() : null,
           estimation_points: estimationPoints ?? null,
         } as any;
         const newTask = await createTask(supabase, selectedListId, taskData);
@@ -799,7 +911,16 @@ function TaskEditDialogComponent({
           );
         }
 
-        invalidateTaskCaches(queryClient, boardId);
+        if (selectedAssignees.length > 0) {
+          await supabase.from('task_assignees').insert(
+            selectedAssignees.map((a) => ({
+              task_id: newTask.id,
+              user_id: a.user_id,
+            }))
+          );
+        }
+
+        await invalidateTaskCaches(queryClient, boardId);
         toast({ title: 'Task created', description: 'New task added.' });
         onUpdate();
         if (createMultiple) {
@@ -839,12 +960,13 @@ function TaskEditDialogComponent({
     }
 
     // Prepare task updates (edit mode)
-    const taskUpdates: Partial<Task> = {
+    // Note: We need to include description, start_date, and end_date even if null to clear them in the database
+    const taskUpdates: any = {
       name: name.trim(),
-      description: descriptionString,
+      description: descriptionString, // Explicitly null when empty, not undefined
       priority: priority,
-      start_date: startDate?.toISOString(),
-      end_date: endDate?.toISOString(),
+      start_date: startDate ? startDate.toISOString() : null, // Explicitly null when undefined
+      end_date: endDate ? endDate.toISOString() : null, // Explicitly null when undefined
       list_id: selectedListId,
     };
 
@@ -854,9 +976,17 @@ function TaskEditDialogComponent({
         updates: taskUpdates,
       },
       {
-        onSuccess: () => {
-          // Force cache invalidation
-          invalidateTaskCaches(queryClient, boardId);
+        onSuccess: async () => {
+          console.log('✅ Task update successful, refreshing data...');
+
+          // Invalidate all task-related caches
+          await invalidateTaskCaches(queryClient, boardId);
+
+          // Force refetch and wait for it to complete with fresh data
+          await queryClient.refetchQueries({
+            queryKey: ['tasks', boardId],
+            type: 'active',
+          });
 
           toast({
             title: 'Task updated',
@@ -1013,24 +1143,126 @@ function TaskEditDialogComponent({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, boardConfig?.estimation_type]);
 
-  const getLabelColorClasses = (color: string) => {
-    const map: Record<string, string> = {
-      red: 'bg-red-100 text-red-700 border-red-200 dark:bg-red-900/30 dark:text-red-300 dark:border-red-800',
-      orange:
-        'bg-orange-100 text-orange-700 border-orange-200 dark:bg-orange-900/30 dark:text-orange-300 dark:border-orange-800',
-      yellow:
-        'bg-yellow-100 text-yellow-700 border-yellow-200 dark:bg-yellow-900/30 dark:text-yellow-300 dark:border-yellow-800',
-      green:
-        'bg-green-100 text-green-700 border-green-200 dark:bg-green-900/30 dark:text-green-300 dark:border-green-800',
-      blue: 'bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-800',
-      indigo:
-        'bg-indigo-100 text-indigo-700 border-indigo-200 dark:bg-indigo-900/30 dark:text-indigo-300 dark:border-indigo-800',
-      purple:
-        'bg-purple-100 text-purple-700 border-purple-200 dark:bg-purple-900/30 dark:text-purple-300 dark:border-purple-800',
-      pink: 'bg-pink-100 text-pink-700 border-pink-200 dark:bg-pink-900/30 dark:text-pink-300 dark:border-pink-800',
-      gray: 'bg-gray-100 text-gray-700 border-gray-200 dark:bg-gray-900/30 dark:text-gray-300 dark:border-gray-800',
+  // Label color utilities (matching task-labels-display.tsx approach)
+  const normalizeHex = (input: string): string | null => {
+    if (!input) return null;
+    let c = input.trim();
+    if (c.startsWith('#')) c = c.slice(1);
+    if (c.length === 3) {
+      c = c
+        .split('')
+        .map((ch) => ch + ch)
+        .join('');
+    }
+    if (c.length !== 6) return null;
+    if (!/^[0-9a-fA-F]{6}$/.test(c)) return null;
+    return `#${c.toLowerCase()}`;
+  };
+
+  const hexToRgb = (hex: string) => {
+    const n = normalizeHex(hex);
+    if (!n) return null;
+    const r = parseInt(n.substring(1, 3), 16);
+    const g = parseInt(n.substring(3, 5), 16);
+    const b = parseInt(n.substring(5, 7), 16);
+    return { r, g, b };
+  };
+
+  const luminance = ({ r, g, b }: { r: number; g: number; b: number }) => {
+    const channel = (v: number) => {
+      const s = v / 255;
+      return s <= 0.03928 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4;
     };
-    return map[color] || map.gray;
+    return 0.2126 * channel(r) + 0.7152 * channel(g) + 0.0722 * channel(b);
+  };
+
+  const adjust = (hex: string, factor: number) => {
+    const rgb = hexToRgb(hex);
+    if (!rgb) return hex;
+    const rN = rgb.r / 255;
+    const gN = rgb.g / 255;
+    const bN = rgb.b / 255;
+    const max = Math.max(rN, gN, bN);
+    const min = Math.min(rN, gN, bN);
+    let h = 0;
+    const l = (max + min) / 2;
+    const d = max - min;
+    let s = 0;
+    if (d !== 0) {
+      s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+      switch (max) {
+        case rN:
+          h = (gN - bN) / d + (gN < bN ? 6 : 0);
+          break;
+        case gN:
+          h = (bN - rN) / d + 2;
+          break;
+        default:
+          h = (rN - gN) / d + 4;
+      }
+      h /= 6;
+    }
+    const targetL = Math.min(
+      1,
+      Math.max(0, l * (factor >= 1 ? 1 + (factor - 1) * 0.75 : factor))
+    );
+    const targetS = factor > 1 && targetL > 0.7 ? s * 0.85 : s;
+    const hue2rgb = (p: number, q: number, t: number) => {
+      if (t < 0) t += 1;
+      if (t > 1) t -= 1;
+      if (t < 1 / 6) return p + (q - p) * 6 * t;
+      if (t < 1 / 2) return q;
+      if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6;
+      return p;
+    };
+    const q =
+      targetL < 0.5
+        ? targetL * (1 + targetS)
+        : targetL + targetS - targetL * targetS;
+    const p = 2 * targetL - q;
+    const r = Math.round(hue2rgb(p, q, h + 1 / 3) * 255);
+    const g = Math.round(hue2rgb(p, q, h) * 255);
+    const b = Math.round(hue2rgb(p, q, h - 1 / 3) * 255);
+    return `#${[r, g, b].map((v) => v.toString(16).padStart(2, '0')).join('')}`;
+  };
+
+  const computeAccessibleLabelStyles = (raw: string) => {
+    const nameMap: Record<string, string> = {
+      red: '#ef4444',
+      orange: '#f97316',
+      amber: '#f59e0b',
+      yellow: '#eab308',
+      lime: '#84cc16',
+      green: '#22c55e',
+      emerald: '#10b981',
+      teal: '#14b8a6',
+      cyan: '#06b6d4',
+      sky: '#0ea5e9',
+      blue: '#3b82f6',
+      indigo: '#6366f1',
+      violet: '#8b5cf6',
+      purple: '#a855f7',
+      fuchsia: '#d946ef',
+      pink: '#ec4899',
+      rose: '#f43f5e',
+      gray: '#6b7280',
+      slate: '#64748b',
+      zinc: '#71717a',
+    };
+    const baseHex = normalizeHex(raw) || nameMap[raw.toLowerCase?.()] || null;
+    if (!baseHex) return null;
+    const rgb = hexToRgb(baseHex);
+    if (!rgb) return null;
+    const lum = luminance(rgb);
+    const bg = `${baseHex}1a`; // 10% opacity
+    const border = `${baseHex}4d`; // 30% opacity
+    let text = baseHex;
+    if (lum < 0.22) {
+      text = adjust(baseHex, 1.25);
+    } else if (lum > 0.82) {
+      text = adjust(baseHex, 0.65);
+    }
+    return { bg, border, text };
   };
 
   // Build estimation indices via shared util - memoize to prevent recalculation
@@ -1053,10 +1285,19 @@ function TaskEditDialogComponent({
 
   return (
     <>
-      <Dialog open={isOpen} onOpenChange={handleDialogOpenChange} modal={true}>
+      <Dialog
+        key="main-dialog"
+        open={isOpen}
+        onOpenChange={handleDialogOpenChange}
+        modal={true}
+      >
         <DialogContent
           showCloseButton={false}
           className="!inset-0 !top-0 !left-0 !max-w-none !translate-x-0 !translate-y-0 !rounded-none data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:slide-out-to-bottom-2 data-[state=open]:slide-in-from-bottom-2 flex h-screen max-h-screen w-screen gap-0 border-0 p-0"
+          onContextMenu={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+          }}
         >
           {/* Main content area - Task title and description */}
           <div className="flex min-w-0 flex-1 flex-col bg-background">
@@ -1075,10 +1316,9 @@ function TaskEditDialogComponent({
               <div className="flex items-center gap-1 md:gap-2">
                 {isCreateMode && (
                   <label className="hidden items-center gap-2 text-muted-foreground text-xs md:flex">
-                    <Checkbox
+                    <Switch
                       checked={createMultiple}
                       onCheckedChange={(v) => setCreateMultiple(Boolean(v))}
-                      className="h-3.5 w-3.5"
                     />
                     Create multiple
                   </label>
@@ -1163,8 +1403,60 @@ function TaskEditDialogComponent({
                 {/* Task Name - Large and prominent with underline effect */}
                 <div className="group">
                   <Input
+                    ref={titleInputRef}
                     value={name}
                     onChange={(e) => setName(e.target.value)}
+                    onKeyDown={(e) => {
+                      // Enter key moves to description
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        const editorElement = editorRef.current?.querySelector(
+                          '.ProseMirror'
+                        ) as HTMLElement;
+                        if (editorElement) {
+                          editorElement.focus();
+                          // Clear the target cursor so it goes to the start
+                          targetEditorCursorRef.current = null;
+                        }
+                      }
+
+                      if (e.key === 'ArrowDown') {
+                        e.preventDefault();
+                        const input = e.currentTarget;
+                        const cursorPosition = input.selectionStart ?? 0;
+
+                        // Store cursor position for smart navigation
+                        lastCursorPositionRef.current = cursorPosition;
+                        targetEditorCursorRef.current = cursorPosition;
+
+                        // Focus the editor - cursor positioning will be handled by the editor via prop
+                        const editorElement = editorRef.current?.querySelector(
+                          '.ProseMirror'
+                        ) as HTMLElement;
+                        if (editorElement) {
+                          editorElement.focus();
+                        }
+                      }
+
+                      // Right arrow at end of title moves to description
+                      if (e.key === 'ArrowRight') {
+                        const input = e.currentTarget;
+                        const cursorPosition = input.selectionStart ?? 0;
+                        const textLength = input.value.length;
+
+                        // Only move if cursor is at the end
+                        if (cursorPosition === textLength) {
+                          e.preventDefault();
+                          const editorElement =
+                            editorRef.current?.querySelector(
+                              '.ProseMirror'
+                            ) as HTMLElement;
+                          if (editorElement) {
+                            editorElement.focus();
+                          }
+                        }
+                      }
+                    }}
                     placeholder="What needs to be done?"
                     className="h-auto border-0 bg-transparent p-4 font-bold text-2xl text-foreground leading-tight tracking-tight transition-colors placeholder:text-muted-foreground/30 focus-visible:outline-0 focus-visible:ring-0 md:px-8 md:pt-10 md:pb-6 md:text-2xl"
                     autoFocus
@@ -1172,38 +1464,99 @@ function TaskEditDialogComponent({
                 </div>
 
                 {/* Task Description - Full editor experience with subtle border */}
-                <RichTextEditor
-                  content={description}
-                  onChange={setDescription}
-                  writePlaceholder="Add a detailed description, attach files, or use markdown..."
-                  titlePlaceholder=""
-                  className="h-full border-0 bg-transparent px-4 focus-visible:outline-0 focus-visible:ring-0 md:px-8"
-                  workspaceId={workspaceId || undefined}
-                  onImageUpload={handleImageUpload}
-                />
+                <div ref={editorRef} className="h-full">
+                  <RichTextEditor
+                    content={description}
+                    onChange={setDescription}
+                    writePlaceholder="Add a detailed description, attach files, or use markdown..."
+                    titlePlaceholder=""
+                    className="h-full border-0 bg-transparent px-4 focus-visible:outline-0 focus-visible:ring-0 md:px-8"
+                    workspaceId={workspaceId || undefined}
+                    onImageUpload={handleImageUpload}
+                    flushPendingRef={flushEditorPendingRef}
+                    initialCursorOffset={targetEditorCursorRef.current}
+                    onArrowUp={(cursorOffset) => {
+                      // Focus the title input when pressing arrow up at the start
+                      if (titleInputRef.current) {
+                        titleInputRef.current.focus();
+
+                        // Apply smart cursor positioning
+                        if (cursorOffset !== undefined) {
+                          const textLength = titleInputRef.current.value.length;
+                          // Use the stored position from last down arrow, or the offset from editor
+                          const targetPosition =
+                            lastCursorPositionRef.current ??
+                            Math.min(cursorOffset, textLength);
+                          titleInputRef.current.setSelectionRange(
+                            targetPosition,
+                            targetPosition
+                          );
+                          // Clear the stored position after use
+                          lastCursorPositionRef.current = null;
+                        }
+                      }
+                    }}
+                    onArrowLeft={() => {
+                      // Focus the title input at the end when pressing arrow left at the start
+                      if (titleInputRef.current) {
+                        titleInputRef.current.focus();
+                        // Set cursor to the end of the input
+                        const length = titleInputRef.current.value.length;
+                        titleInputRef.current.setSelectionRange(length, length);
+                      }
+                    }}
+                  />
+                </div>
               </div>
             </div>
           </div>
 
-          {/* Simplified Right sidebar */}
-          <div className="flex w-[380px] shrink-0 flex-col border-l bg-gradient-to-b from-muted/20 to-muted/5 shadow-lg">
+          {/* Simplified Right sidebar - hidden on mobile by default */}
+          <div
+            className={cn(
+              'fixed inset-y-0 right-0 z-50 flex w-full flex-col border-l bg-background shadow-lg transition-transform duration-300 sm:w-[380px] md:relative md:z-auto md:translate-x-0 md:bg-gradient-to-b md:from-muted/20 md:to-muted/5 md:shadow-none',
+              showMobileSidebar
+                ? 'translate-x-0'
+                : 'translate-x-full md:translate-x-0'
+            )}
+          >
             {/* Sidebar header with icon */}
-            <div className="border-b bg-background/60 px-6 py-4 backdrop-blur-sm">
-              <div className="flex items-center gap-2">
-                <Settings className="h-4 w-4 text-dynamic-orange" />
-                <h3 className="font-semibold text-foreground text-sm tracking-tight">
-                  Task Options
-                </h3>
+            <div className="border-border/50 border-b bg-gradient-to-b from-background/95 to-background/80 px-6 py-4 backdrop-blur-md">
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2.5">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-dynamic-orange/10">
+                    <Settings className="h-4 w-4 text-dynamic-orange" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-foreground text-sm leading-none tracking-tight">
+                      Task Options
+                    </h3>
+                    <p className="mt-1 text-muted-foreground text-xs">
+                      Configure task settings
+                    </p>
+                  </div>
+                </div>
+                {/* Close button for mobile */}
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 shrink-0 md:hidden"
+                  onClick={() => setShowMobileSidebar(false)}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
               </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto">
-              <div className="space-y-3 p-4 md:space-y-4 md:p-6">
+            <div className="scrollbar-thin flex-1 overflow-y-auto">
+              <div className="space-y-4 p-4 md:space-y-5 md:p-6">
                 {/* Essential Options - Always Visible */}
                 {/* List Selection */}
-                <div className="space-y-2 rounded-md border bg-muted/20 p-3">
-                  <Label className="flex items-center gap-2 font-medium text-foreground text-sm">
-                    <ListTodo className="h-4 w-4 text-dynamic-orange" />
+                <div className="space-y-2.5 rounded-lg border border-border/60 bg-gradient-to-br from-muted/30 to-muted/10 p-3.5 shadow-sm transition-shadow hover:shadow-md">
+                  <Label className="flex items-center gap-2 font-semibold text-foreground text-sm">
+                    <div className="flex h-5 w-5 items-center justify-center rounded-md bg-dynamic-orange/15">
+                      <ListTodo className="h-3.5 w-3.5 text-dynamic-orange" />
+                    </div>
                     List
                   </Label>
                   <DropdownMenu>
@@ -1248,21 +1601,27 @@ function TaskEditDialogComponent({
                 </div>
 
                 {/* Priority (Dropdown) */}
-                <div className="space-y-2 rounded-md border bg-muted/20 p-3">
-                  <Label className="flex items-center gap-2 font-medium text-foreground text-sm">
-                    <Flag className="h-4 w-4 text-dynamic-orange" />
+                <div className="space-y-2.5 rounded-lg border border-border/60 bg-gradient-to-br from-muted/30 to-muted/10 p-3.5 shadow-sm transition-shadow hover:shadow-md">
+                  <Label className="flex items-center gap-2 font-semibold text-foreground text-sm">
+                    <div className="flex h-5 w-5 items-center justify-center rounded-md bg-dynamic-orange/15">
+                      <Flag className="h-3.5 w-3.5 text-dynamic-orange" />
+                    </div>
                     Priority
                   </Label>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button
                         variant="outline"
-                        className="h-8 w-full justify-between text-xs transition-all hover:border-dynamic-orange/50 hover:bg-dynamic-orange/5 md:text-sm"
+                        className={cn(
+                          'h-8 w-full justify-between text-xs transition-all hover:border-dynamic-orange/50 hover:bg-dynamic-orange/5 md:text-sm',
+                          priority === 'critical' &&
+                            'border-dynamic-red bg-dynamic-red/10 font-semibold text-dynamic-red hover:bg-dynamic-red/20'
+                        )}
                       >
                         <span className="truncate">
                           {priority
                             ? priority === 'critical'
-                              ? 'Urgent'
+                              ? '🔥 Urgent'
                               : priority === 'high'
                                 ? 'High'
                                 : priority === 'normal'
@@ -1277,25 +1636,39 @@ function TaskEditDialogComponent({
                       {[
                         {
                           value: 'critical',
-                          label: 'Urgent',
+                          label: '🔥 Urgent',
                           dot: 'bg-dynamic-red',
+                          className: 'font-semibold text-dynamic-red',
                         },
                         {
                           value: 'high',
                           label: 'High',
                           dot: 'bg-dynamic-orange',
+                          className: '',
                         },
                         {
                           value: 'normal',
                           label: 'Medium',
                           dot: 'bg-dynamic-yellow',
+                          className: '',
                         },
-                        { value: 'low', label: 'Low', dot: 'bg-dynamic-blue' },
+                        {
+                          value: 'low',
+                          label: 'Low',
+                          dot: 'bg-dynamic-blue',
+                          className: '',
+                        },
                       ].map((opt) => (
                         <DropdownMenuItem
                           key={opt.value}
                           onClick={() => setPriority(opt.value as TaskPriority)}
-                          className="cursor-pointer"
+                          className={cn(
+                            'cursor-pointer',
+                            opt.className,
+                            priority === opt.value &&
+                              opt.value === 'critical' &&
+                              'bg-dynamic-red/10'
+                          )}
                         >
                           <span
                             className={cn(
@@ -1321,9 +1694,11 @@ function TaskEditDialogComponent({
 
                 {/* Estimation (Dropdown) */}
                 {boardConfig?.estimation_type && (
-                  <div className="space-y-2 rounded-md border bg-muted/20 p-3">
-                    <Label className="flex items-center gap-2 font-medium text-foreground text-sm">
-                      <Timer className="h-4 w-4 text-dynamic-orange" />
+                  <div className="space-y-2.5 rounded-lg border border-border/60 bg-gradient-to-br from-muted/30 to-muted/10 p-3.5 shadow-sm transition-shadow hover:shadow-md">
+                    <Label className="flex items-center gap-2 font-semibold text-foreground text-sm">
+                      <div className="flex h-5 w-5 items-center justify-center rounded-md bg-dynamic-orange/15">
+                        <Timer className="h-3.5 w-3.5 text-dynamic-orange" />
+                      </div>
                       Estimation
                     </Label>
                     <DropdownMenu>
@@ -1374,10 +1749,12 @@ function TaskEditDialogComponent({
                 )}
 
                 {/* Quick Due Date */}
-                <div className="space-y-2 rounded-md border bg-muted/20 p-3">
-                  <Label className="flex items-center justify-between gap-2 font-medium text-foreground text-sm">
+                <div className="space-y-2.5 rounded-lg border border-border/60 bg-gradient-to-br from-muted/30 to-muted/10 p-3.5 shadow-sm transition-shadow hover:shadow-md">
+                  <Label className="flex items-center justify-between gap-2 font-semibold text-foreground text-sm">
                     <span className="flex items-center gap-2">
-                      <Calendar className="h-4 w-4 text-dynamic-orange" />
+                      <div className="flex h-5 w-5 items-center justify-center rounded-md bg-dynamic-orange/15">
+                        <Calendar className="h-3.5 w-3.5 text-dynamic-orange" />
+                      </div>
                       Due Date
                     </span>
                     <span className="flex items-center gap-3">
@@ -1458,9 +1835,11 @@ function TaskEditDialogComponent({
                 {showAdvancedOptions && (
                   <div className="slide-in-from-top-2 animate-in space-y-4 duration-200">
                     {/* Custom Date Pickers */}
-                    <div className="space-y-2 rounded-md border bg-muted/20 p-3">
-                      <Label className="flex items-center gap-2 font-medium text-foreground text-sm">
-                        <Calendar className="h-4 w-4 text-dynamic-orange" />
+                    <div className="space-y-2.5 rounded-lg border border-border/60 bg-gradient-to-br from-muted/30 to-muted/10 p-3.5 shadow-sm">
+                      <Label className="flex items-center gap-2 font-semibold text-foreground text-sm">
+                        <div className="flex h-5 w-5 items-center justify-center rounded-md bg-dynamic-orange/15">
+                          <Calendar className="h-3.5 w-3.5 text-dynamic-orange" />
+                        </div>
                         Dates
                       </Label>
                       <div className="space-y-3">
@@ -1472,6 +1851,8 @@ function TaskEditDialogComponent({
                             date={startDate}
                             setDate={setStartDate}
                             showTimeSelect={true}
+                            allowClear={true}
+                            showFooterControls={true}
                           />
                         </div>
                         <div className="space-y-1">
@@ -1482,6 +1863,8 @@ function TaskEditDialogComponent({
                             date={endDate}
                             setDate={handleEndDateChange}
                             showTimeSelect={true}
+                            allowClear={true}
+                            showFooterControls={true}
                           />
                         </div>
                       </div>
@@ -1490,31 +1873,14 @@ function TaskEditDialogComponent({
                     {/* Estimation Section moved above as dropdown */}
 
                     {/* Labels Section */}
-                    <div className="space-y-2 rounded-md border bg-muted/20 p-3">
+                    <div className="space-y-2.5 rounded-lg border border-border/60 bg-gradient-to-br from-muted/30 to-muted/10 p-3.5 shadow-sm">
                       <Label className="flex items-center justify-between gap-2">
-                        <span className="flex items-center gap-2 font-medium text-foreground text-sm">
-                          <Tag className="h-4 w-4 text-dynamic-orange" />
+                        <span className="flex items-center gap-2 font-semibold text-foreground text-sm">
+                          <div className="flex h-5 w-5 items-center justify-center rounded-md bg-dynamic-orange/15">
+                            <Tag className="h-3.5 w-3.5 text-dynamic-orange" />
+                          </div>
                           Labels
                         </span>
-                        {boardConfig && (
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            className="h-6 px-2 text-[10px] text-muted-foreground transition-colors hover:text-dynamic-orange"
-                            onClick={() =>
-                              (boardConfig as any)?.ws_id &&
-                              fetchLabels((boardConfig as any).ws_id)
-                            }
-                            disabled={labelsLoading}
-                          >
-                            {labelsLoading ? (
-                              <Loader2 className="h-3 w-3 animate-spin" />
-                            ) : (
-                              'Refresh'
-                            )}
-                          </Button>
-                        )}
                       </Label>
                       {boardConfig && (
                         <div className="space-y-2">
@@ -1588,6 +1954,9 @@ function TaskEditDialogComponent({
                             const active = selectedLabels.some(
                               (l) => l.id === label.id
                             );
+                            const styles = computeAccessibleLabelStyles(
+                              label.color
+                            );
                             return (
                               <Button
                                 key={label.id}
@@ -1599,9 +1968,17 @@ function TaskEditDialogComponent({
                                   'h-7 border px-3 text-xs transition-all',
                                   !active &&
                                     'bg-background hover:border-dynamic-orange/50',
-                                  active && getLabelColorClasses(label.color),
                                   active && 'shadow-sm'
                                 )}
+                                style={
+                                  active && styles
+                                    ? {
+                                        backgroundColor: styles.bg,
+                                        borderColor: styles.border,
+                                        color: styles.text,
+                                      }
+                                    : undefined
+                                }
                               >
                                 {label.name || 'Unnamed'}
                                 {active && <X className="ml-1.5 h-3 w-3" />}
@@ -1612,48 +1989,221 @@ function TaskEditDialogComponent({
                       )}
                     </div>
 
-                    {/* Current Assignees Display */}
-                    {task.assignees && task.assignees.length > 0 && (
-                      <div className="space-y-2">
-                        <Label className="flex items-center gap-2 font-medium text-foreground text-sm">
-                          <Users className="h-4 w-4 text-dynamic-orange" />
+                    {/* Assignees Section */}
+                    <div className="space-y-2.5 rounded-lg border border-border/60 bg-gradient-to-br from-muted/30 to-muted/10 p-3.5 shadow-sm">
+                      <Label className="flex items-center justify-between gap-2">
+                        <span className="flex items-center gap-2 font-semibold text-foreground text-sm">
+                          <div className="flex h-5 w-5 items-center justify-center rounded-md bg-dynamic-orange/15">
+                            <Users className="h-3.5 w-3.5 text-dynamic-orange" />
+                          </div>
                           Assignees
+                        </span>
+                        {selectedAssignees.length > 0 && (
                           <Badge
                             variant="secondary"
-                            className="ml-auto h-4 w-4 rounded-full p-0 text-[10px]"
+                            className="h-5 rounded-full px-2 font-semibold text-[10px]"
                           >
-                            {task.assignees.length}
+                            {selectedAssignees.length}
                           </Badge>
-                        </Label>
-                        <div className="flex flex-wrap gap-2">
-                          {task.assignees.map((assignee, index) => (
-                            <div
-                              key={`${assignee?.id || (assignee as any)?.user_id || assignee?.email || 'assignee'}-${index}`}
-                              className="flex items-center gap-2 rounded-lg bg-gradient-to-r from-muted/80 to-muted/60 px-3 py-2 text-xs ring-1 ring-dynamic-orange/10 transition-all hover:ring-dynamic-orange/20"
-                            >
-                              <div className="flex h-4 w-4 items-center justify-center rounded-full bg-dynamic-orange/20 ring-1 ring-dynamic-orange/30">
-                                <Users className="h-3 w-3 text-dynamic-orange" />
-                              </div>
-                              <span className="font-medium">
-                                {assignee.display_name ||
-                                  assignee.email?.split('@')[0] ||
-                                  'Unknown User'}
-                              </span>
-                            </div>
-                          ))}
+                        )}
+                      </Label>
+
+                      {loadingMembers ? (
+                        <div className="flex flex-col items-center justify-center gap-3 rounded-lg bg-muted/30 py-8">
+                          <Loader2 className="h-5 w-5 animate-spin text-dynamic-orange" />
+                          <p className="text-muted-foreground text-xs">
+                            Loading members...
+                          </p>
                         </div>
-                      </div>
-                    )}
+                      ) : workspaceMembers.length === 0 ? (
+                        <div className="flex flex-col items-center justify-center gap-3 rounded-lg border-2 border-muted-foreground/20 border-dashed bg-muted/20 py-8">
+                          <Users className="h-5 w-5 text-muted-foreground/40" />
+                          <p className="text-center text-muted-foreground text-xs">
+                            No workspace members
+                          </p>
+                        </div>
+                      ) : (
+                        <div className="space-y-2.5">
+                          {/* Search input */}
+                          <div className="relative">
+                            <Search className="-translate-y-1/2 pointer-events-none absolute top-1/2 left-2.5 h-3.5 w-3.5 text-muted-foreground" />
+                            <Input
+                              type="text"
+                              placeholder="Search members..."
+                              value={assigneeSearchQuery}
+                              onChange={(e) =>
+                                setAssigneeSearchQuery(e.target.value)
+                              }
+                              className="h-8 border-muted-foreground/20 bg-background/50 pl-8 text-xs placeholder:text-muted-foreground/50"
+                            />
+                            {assigneeSearchQuery && (
+                              <button
+                                type="button"
+                                onClick={() => setAssigneeSearchQuery('')}
+                                className="-translate-y-1/2 absolute top-1/2 right-2 rounded-full p-0.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                              >
+                                <X className="h-3 w-3" />
+                              </button>
+                            )}
+                          </div>
+
+                          {/* Selected assignees (if any) */}
+                          {selectedAssignees.length > 0 && (
+                            <div className="space-y-1.5">
+                              <p className="font-medium text-[10px] text-muted-foreground uppercase tracking-wide">
+                                Selected ({selectedAssignees.length})
+                              </p>
+                              <div className="flex flex-wrap gap-1.5">
+                                {selectedAssignees.map((assignee) => (
+                                  <Button
+                                    key={assignee.user_id}
+                                    type="button"
+                                    variant="default"
+                                    size="xs"
+                                    onClick={() => toggleAssignee(assignee)}
+                                    className="h-7 gap-1.5 rounded-full border border-dynamic-orange/30 bg-dynamic-orange/15 px-3 font-medium text-dynamic-orange text-xs shadow-sm transition-all hover:border-dynamic-orange/50 hover:bg-dynamic-orange/25"
+                                  >
+                                    <Avatar className="h-4 w-4">
+                                      <AvatarImage
+                                        src={assignee.avatar_url}
+                                        alt={assignee.display_name || 'Unknown'}
+                                      />
+                                      <AvatarFallback className="bg-dynamic-orange/20 font-bold text-[9px]">
+                                        {(assignee.display_name ||
+                                          'Unknown')[0]?.toUpperCase()}
+                                      </AvatarFallback>
+                                    </Avatar>
+                                    {assignee.display_name || 'Unknown'}
+                                    <X className="h-3 w-3 opacity-70" />
+                                  </Button>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Available members */}
+                          <div className="space-y-1.5">
+                            {(() => {
+                              const filteredMembers = workspaceMembers.filter(
+                                (member) => {
+                                  const isSelected = selectedAssignees.some(
+                                    (a) => a.user_id === member.user_id
+                                  );
+                                  const matchesSearch =
+                                    !assigneeSearchQuery ||
+                                    (member.display_name || '')
+                                      .toLowerCase()
+                                      .includes(
+                                        assigneeSearchQuery.toLowerCase()
+                                      );
+                                  return !isSelected && matchesSearch;
+                                }
+                              );
+
+                              if (filteredMembers.length === 0) {
+                                return assigneeSearchQuery ? (
+                                  <div className="flex flex-col items-center justify-center gap-2 rounded-lg bg-muted/30 py-6">
+                                    <Search className="h-4 w-4 text-muted-foreground/40" />
+                                    <p className="text-center text-muted-foreground text-xs">
+                                      No members found
+                                    </p>
+                                  </div>
+                                ) : (
+                                  <div className="rounded-lg bg-muted/30 py-3 text-center">
+                                    <p className="text-muted-foreground text-xs">
+                                      All members assigned
+                                    </p>
+                                  </div>
+                                );
+                              }
+
+                              return (
+                                <>
+                                  <p className="font-medium text-[10px] text-muted-foreground uppercase tracking-wide">
+                                    Available ({filteredMembers.length})
+                                  </p>
+                                  <div className="flex max-h-48 flex-col gap-1 overflow-y-auto">
+                                    {filteredMembers.map((member) => (
+                                      <button
+                                        key={member.user_id}
+                                        type="button"
+                                        onClick={() => toggleAssignee(member)}
+                                        className="group flex items-center gap-2.5 rounded-md border border-transparent bg-background/50 px-3 py-2 text-left transition-all hover:border-dynamic-orange/30 hover:bg-dynamic-orange/5"
+                                      >
+                                        <Avatar className="h-7 w-7 shrink-0">
+                                          <AvatarImage
+                                            src={member.avatar_url}
+                                            alt={
+                                              member.display_name || 'Unknown'
+                                            }
+                                          />
+                                          <AvatarFallback className="bg-muted font-semibold text-muted-foreground text-xs group-hover:bg-dynamic-orange/20 group-hover:text-dynamic-orange">
+                                            {(member.display_name ||
+                                              'Unknown')[0]?.toUpperCase()}
+                                          </AvatarFallback>
+                                        </Avatar>
+                                        <span className="flex-1 truncate text-sm">
+                                          {member.display_name || 'Unknown'}
+                                        </span>
+                                        <Plus className="h-3.5 w-3.5 shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
+                                      </button>
+                                    ))}
+                                  </div>
+                                </>
+                              );
+                            })()}
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 )}
               </div>
             </div>
           </div>
+
+          {/* Mobile floating action buttons */}
+          <div className="fixed right-4 bottom-4 z-40 flex flex-col gap-2 md:hidden">
+            {/* Save button */}
+            <Button
+              variant="default"
+              size="lg"
+              onClick={handleSave}
+              disabled={!canSave}
+              className="h-14 w-14 rounded-full bg-dynamic-orange shadow-lg hover:bg-dynamic-orange/90"
+            >
+              {isLoading ? (
+                <Loader2 className="h-6 w-6 animate-spin" />
+              ) : (
+                <Check className="h-6 w-6" />
+              )}
+            </Button>
+            {/* Options button */}
+            <Button
+              variant="secondary"
+              size="lg"
+              onClick={() => setShowMobileSidebar(true)}
+              className="h-14 w-14 rounded-full shadow-lg"
+            >
+              <Settings className="h-6 w-6" />
+            </Button>
+          </div>
+
+          {/* Mobile overlay */}
+          {showMobileSidebar && (
+            <button
+              type="button"
+              className="fixed inset-0 z-40 bg-black/70 backdrop-blur-sm md:hidden"
+              onClick={() => setShowMobileSidebar(false)}
+              aria-label="Close sidebar"
+            />
+          )}
         </DialogContent>
       </Dialog>
 
       {/* Delete confirmation dialog */}
       <Dialog
+        key="delete-dialog"
         open={showDeleteConfirm}
         onOpenChange={setShowDeleteConfirm}
         modal={true}
@@ -1690,7 +2240,7 @@ function TaskEditDialogComponent({
                     .delete()
                     .eq('id', task.id);
                   if (error) throw error;
-                  invalidateTaskCaches(queryClient, boardId);
+                  await invalidateTaskCaches(queryClient, boardId);
                   toast({ title: 'Task deleted' });
                   setShowDeleteConfirm(false);
                   onUpdate();
