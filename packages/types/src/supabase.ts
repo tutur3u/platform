@@ -562,15 +562,11 @@ export type Database = {
         Returns: number;
       };
       get_pending_invoices: {
-        Args:
-          | {
-              p_limit?: number;
-              p_offset?: number;
-              p_ws_id: string;
-            }
-          | {
-              p_ws_id: string;
-            };
+        Args: {
+          p_limit?: number;
+          p_offset?: number;
+          p_ws_id: string;
+        };
         Returns: {
           attendance_days: number;
           group_id: string;

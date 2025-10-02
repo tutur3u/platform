@@ -1,11 +1,12 @@
 import { useQuery } from '@tanstack/react-query';
 import { createClient } from '@tuturuuu/supabase/next/client';
-import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
-import type { Wallet } from '@tuturuuu/types/primitives/Wallet';
-import type { TransactionCategory } from '@tuturuuu/types/primitives/TransactionCategory';
-import type { Transaction } from '@tuturuuu/types/primitives/Transaction';
 import type { Invoice } from '@tuturuuu/types/primitives/Invoice';
 import type { PendingInvoice } from '@tuturuuu/types/primitives/PendingInvoice';
+import { parseMonthsOwed } from '@tuturuuu/types/primitives/PendingInvoice';
+import type { Transaction } from '@tuturuuu/types/primitives/Transaction';
+import type { TransactionCategory } from '@tuturuuu/types/primitives/TransactionCategory';
+import type { Wallet } from '@tuturuuu/types/primitives/Wallet';
+import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import type { Product, Promotion, UserGroupProducts } from './types';
 
 // React Query hooks for data fetching
@@ -473,8 +474,17 @@ export const usePendingInvoices = (
         throw countError;
       }
 
+      // Transform months_owed from CSV string to array
+      const transformedData = (data || []).map((invoice: any) => ({
+        ...invoice,
+        months_owed:
+          typeof invoice.months_owed === 'string'
+            ? parseMonthsOwed(invoice.months_owed)
+            : invoice.months_owed,
+      })) as PendingInvoice[];
+
       return {
-        data: (data || []) as PendingInvoice[],
+        data: transformedData,
         count: (countData as number) || 0,
       };
     },

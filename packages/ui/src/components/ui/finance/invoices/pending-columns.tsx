@@ -2,11 +2,11 @@
 
 import type { ColumnDef } from '@tanstack/react-table';
 import type { PendingInvoice } from '@tuturuuu/types/primitives/PendingInvoice';
-import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
 import { Button } from '@tuturuuu/ui/button';
+import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
 import { FileText } from '@tuturuuu/ui/icons';
-import Link from 'next/link';
 import moment from 'moment';
+import Link from 'next/link';
 
 export const pendingInvoiceColumns = (
   t: any,
@@ -74,20 +74,20 @@ export const pendingInvoiceColumns = (
       />
     ),
     cell: ({ row }) => {
-      const monthsValue = row.getValue<string>('months_owed');
-      if (!monthsValue) return <div className="min-w-48">-</div>;
+      const monthsValue = row.getValue<string[]>('months_owed');
+      if (!monthsValue || monthsValue.length === 0)
+        return <div className="min-w-48">-</div>;
 
-      // Parse the comma-separated months and format as range
-      const months = monthsValue.split(',').map((m) => m.trim());
-      const startMonth = moment(months[0] + '-01').format('MMM YYYY');
-      const endMonth = moment(months[months.length - 1] + '-01').format(
-        'MMM YYYY'
-      );
+      // Format months array as range
+      const startMonth = moment(monthsValue[0] + '-01').format('MMM YYYY');
+      const endMonth = moment(
+        monthsValue[monthsValue.length - 1] + '-01'
+      ).format('MMM YYYY');
       const formattedRange = `${startMonth} → ${endMonth}`;
 
       return (
         <div className="min-w-48">
-          <span className="inline-flex items-center rounded-md bg-dynamic-blue/10 px-2.5 py-1 text-xs font-medium text-dynamic-blue">
+          <span className="inline-flex items-center rounded-md bg-dynamic-blue/10 px-2.5 py-1 font-medium text-dynamic-blue text-xs">
             {formattedRange}
           </span>
         </div>
@@ -105,7 +105,7 @@ export const pendingInvoiceColumns = (
     ),
     cell: ({ row }) => (
       <div className="min-w-24 text-center">
-        <span className="inline-flex items-center rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-800 dark:bg-green-900/30 dark:text-green-400">
+        <span className="inline-flex items-center rounded-full bg-green-100 px-2.5 py-0.5 font-medium text-green-800 text-xs dark:bg-green-900/30 dark:text-green-400">
           {row.getValue<number>('attendance_days')}
         </span>
       </div>
@@ -122,7 +122,7 @@ export const pendingInvoiceColumns = (
     ),
     cell: ({ row }) => (
       <div className="min-w-24 text-center">
-        <span className="inline-flex items-center rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-800 dark:bg-blue-900/30 dark:text-blue-400">
+        <span className="inline-flex items-center rounded-full bg-blue-100 px-2.5 py-0.5 font-medium text-blue-800 text-xs dark:bg-blue-900/30 dark:text-blue-400">
           {row.getValue<number>('total_sessions')}
         </span>
       </div>
@@ -159,16 +159,14 @@ export const pendingInvoiceColumns = (
       const wsId = row.original.ws_id;
       const userId = row.getValue<string>('user_id');
       const groupId = row.getValue<string>('group_id');
-      const monthsOwed = row.getValue<string>('months_owed');
+      const monthsOwed = row.getValue<string[]>('months_owed');
       const attendanceDays = row.getValue<number>('attendance_days');
 
-      // Parse the months and get the LAST (most recent) unpaid month
-      const months =
-        monthsOwed
-          ?.split(',')
-          .map((m) => m.trim())
-          .filter(Boolean) || [];
-      const lastUnpaidMonth = months[months.length - 1] || '';
+      // Get the LAST (most recent) unpaid month from the array
+      const lastUnpaidMonth =
+        monthsOwed && monthsOwed.length > 0
+          ? monthsOwed[monthsOwed.length - 1]
+          : '';
 
       if (!wsId) return null;
 

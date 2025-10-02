@@ -21,6 +21,14 @@ RETURNS TABLE (
   potential_total numeric
 ) AS $$
 BEGIN
+  -- Verify caller has access to the workspace
+  IF NOT EXISTS (
+    SELECT 1 FROM workspace_users
+    WHERE workspace_id = p_ws_id AND user_id = auth.uid()
+  ) THEN
+    RAISE EXCEPTION 'Unauthorized: User does not have access to workspace %', p_ws_id;
+  END IF;
+
   RETURN QUERY
   WITH user_groups AS (
     -- Get all active user groups with students
@@ -100,70 +108,46 @@ BEGIN
     WHERE to_char(session_date::timestamptz, 'YYYY-MM') = pm.month
     GROUP BY pm.group_id, pm.month
   ),
-  group_product_prices AS (
-    -- Get product pricing for each group with warehouse fallback logic
-    -- If warehouse_id is specified, try to match it; otherwise, pick first available inventory
-    -- This matches the subscription-invoice.tsx fallback behavior
-    -- Also respects stock limits: caps quantity at available amount for limited stock items
+  ranked_inventory AS (
+    -- Rank inventory products by matching priority for each group linked product
+    -- Priority: 1) exact unit+warehouse match, 2) unit-only match (prefer in-stock), 3) any product (prefer in-stock)
     SELECT
       uglp.group_id,
       uglp.product_id,
       uglp.unit_id,
-      uglp.warehouse_id,
-      COALESCE(
-        -- Try exact match first (unit + warehouse)
-        (SELECT ip.price 
-         FROM inventory_products ip 
-         WHERE ip.product_id = uglp.product_id
-           AND ip.unit_id = uglp.unit_id
-           AND ip.warehouse_id = uglp.warehouse_id
-         LIMIT 1),
-        -- Fallback: match unit only, prefer items with stock
-        (SELECT ip.price 
-         FROM inventory_products ip 
-         WHERE ip.product_id = uglp.product_id
-           AND ip.unit_id = uglp.unit_id
-         ORDER BY 
-           CASE WHEN ip.amount IS NULL OR ip.amount > 0 THEN 0 ELSE 1 END,
-           ip.warehouse_id
-         LIMIT 1),
-        -- Last resort: any inventory for this product
-        (SELECT ip.price 
-         FROM inventory_products ip 
-         WHERE ip.product_id = uglp.product_id
-         ORDER BY 
-           CASE WHEN ip.amount IS NULL OR ip.amount > 0 THEN 0 ELSE 1 END,
-           ip.warehouse_id
-         LIMIT 1),
-        0
-      ) as price,
-      COALESCE(
-        -- Try exact match first (unit + warehouse)
-        (SELECT ip.amount 
-         FROM inventory_products ip 
-         WHERE ip.product_id = uglp.product_id
-           AND ip.unit_id = uglp.unit_id
-           AND ip.warehouse_id = uglp.warehouse_id
-         LIMIT 1),
-        -- Fallback: match unit only, prefer items with stock
-        (SELECT ip.amount 
-         FROM inventory_products ip 
-         WHERE ip.product_id = uglp.product_id
-           AND ip.unit_id = uglp.unit_id
-         ORDER BY 
-           CASE WHEN ip.amount IS NULL OR ip.amount > 0 THEN 0 ELSE 1 END,
-           ip.warehouse_id
-         LIMIT 1),
-        -- Last resort: any inventory for this product
-        (SELECT ip.amount 
-         FROM inventory_products ip 
-         WHERE ip.product_id = uglp.product_id
-         ORDER BY 
-           CASE WHEN ip.amount IS NULL OR ip.amount > 0 THEN 0 ELSE 1 END,
-           ip.warehouse_id
-         LIMIT 1)
-      ) as stock_amount
+      uglp.warehouse_id as desired_warehouse_id,
+      ip.price,
+      ip.amount as stock_amount,
+      ROW_NUMBER() OVER (
+        PARTITION BY uglp.group_id, uglp.product_id, uglp.unit_id, uglp.warehouse_id
+        ORDER BY
+          CASE
+            -- Priority 1: Exact match (unit + warehouse)
+            WHEN ip.unit_id = uglp.unit_id AND ip.warehouse_id = uglp.warehouse_id THEN 1
+            -- Priority 2: Unit match only, prefer in-stock
+            WHEN ip.unit_id = uglp.unit_id THEN 2
+            -- Priority 3: Any product, prefer in-stock
+            ELSE 3
+          END,
+          -- Within same priority, prefer items with stock
+          CASE WHEN ip.amount IS NULL OR ip.amount > 0 THEN 0 ELSE 1 END,
+          -- Tie-breaker: warehouse_id for consistent ordering
+          ip.warehouse_id
+      ) as rank
     FROM user_group_linked_products uglp
+    LEFT JOIN inventory_products ip ON ip.product_id = uglp.product_id
+  ),
+  group_product_prices AS (
+    -- Select the best inventory match per group linked product
+    SELECT
+      group_id,
+      product_id,
+      unit_id,
+      desired_warehouse_id as warehouse_id,
+      COALESCE(price, 0) as price,
+      stock_amount
+    FROM ranked_inventory
+    WHERE rank = 1
   ),
   combined_pending AS (
     -- Combine all pending months per user-group with aggregated attendance
@@ -224,6 +208,14 @@ RETURNS bigint AS $$
 DECLARE
   result_count bigint;
 BEGIN
+  -- Verify caller has access to the workspace
+  IF NOT EXISTS (
+    SELECT 1 FROM workspace_users
+    WHERE workspace_id = p_ws_id AND user_id = auth.uid()
+  ) THEN
+    RAISE EXCEPTION 'Unauthorized: User does not have access to workspace %', p_ws_id;
+  END IF;
+
   WITH user_groups AS (
     -- Get all active user groups with students
     SELECT DISTINCT
