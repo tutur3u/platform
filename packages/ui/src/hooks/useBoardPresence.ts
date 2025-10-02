@@ -44,35 +44,69 @@ export function useBoardPresence(boardId?: string) {
           },
         });
 
-        // Set up presence listeners
-        channel.on('presence', { event: 'sync' }, () => {
-          const newState =
-            channel.presenceState() as RealtimePresenceState<BoardPresenceState>;
-          setPresenceState({ ...newState });
-        });
-
         channelRef.current = channel;
 
-        // Subscribe and track presence
-        try {
-          channel.subscribe(async (status) => {
-            if (status !== 'SUBSCRIBED') return;
+        channel
+          .on('presence', { event: 'sync' }, () => {
+            const newState =
+              channel.presenceState() as RealtimePresenceState<BoardPresenceState>;
+            setPresenceState({ ...newState });
+          })
+          .on('presence', { event: 'join' }, ({ key, newPresences }) => {
+            console.log('👋 User joined:', key, newPresences);
+          })
+          .on('presence', { event: 'leave' }, ({ key, leftPresences }) => {
+            console.log('👋 User left:', key, leftPresences);
+          })
+          .subscribe(async (status) => {
+            console.log('📡 Channel status:', status);
 
-            const presenceTrackStatus = await channel.track({
-              user: {
-                id: user.id,
-                display_name: userData?.display_name,
-                email: user.email,
-                avatar_url: userData?.avatar_url,
-              },
-              online_at: new Date().toISOString(),
-            });
+            switch (status) {
+              case 'SUBSCRIBED': {
+                const presenceTrackStatus = await channel.track({
+                  user: {
+                    id: user.id,
+                    display_name: userData?.display_name,
+                    email: user.email,
+                    avatar_url: userData?.avatar_url,
+                  },
+                  online_at: new Date().toISOString(),
+                });
 
-            console.log('Presence track status:', presenceTrackStatus);
+                console.log('Presence track status:', presenceTrackStatus);
+
+                if (presenceTrackStatus === 'timed out') {
+                  console.warn('⚠️ Presence tracking timed out, retrying...');
+                  // Retry once
+                  setTimeout(async () => {
+                    await channel.track({
+                      user: {
+                        id: user.id,
+                        display_name: userData?.display_name,
+                        email: user.email,
+                        avatar_url: userData?.avatar_url,
+                      },
+                      online_at: new Date().toISOString(),
+                    });
+                  }, 1000);
+                }
+
+                break;
+              }
+              case 'CHANNEL_ERROR':
+                console.error('❌ Channel error, connection lost');
+                break;
+              case 'TIMED_OUT':
+                console.error('❌ Channel subscription timed out');
+                break;
+              case 'CLOSED':
+                console.info('📡 Channel closed');
+                break;
+              default:
+                console.info('📡 Unknown channel status:', status);
+                break;
+            }
           });
-        } catch (error) {
-          console.error('Error subscribing to board presence channel:', error);
-        }
       } catch (error) {
         console.error('Error setting up board presence:', error);
       }
@@ -83,6 +117,7 @@ export function useBoardPresence(boardId?: string) {
     return () => {
       if (channelRef.current) {
         supabase.removeChannel(channelRef.current);
+        channelRef.current = null;
       }
     };
   }, [boardId]);
