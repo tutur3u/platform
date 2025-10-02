@@ -20,7 +20,10 @@ export async function GET(req: Request) {
     .from('inventory_products')
     .select('*, workspace_products!product_id!inner(ws_id)', { count: 'exact' })
     .eq('workspace_products.ws_id', wsId)
-    .range(Number.parseInt(offset, 10), Number.parseInt(offset, 10) + Number.parseInt(limit, 10) - 1);
+    .range(
+      Number.parseInt(offset, 10),
+      Number.parseInt(offset, 10) + Number.parseInt(limit, 10) - 1
+    );
 
   if (error) {
     console.error('Error fetching inventory_products:', error);

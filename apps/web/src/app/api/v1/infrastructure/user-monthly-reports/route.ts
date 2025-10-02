@@ -20,7 +20,10 @@ export async function GET(req: Request) {
     .from('external_user_monthly_reports')
     .select('*, workspace_users!user_id!inner(ws_id)', { count: 'exact' })
     .eq('workspace_users.ws_id', wsId)
-    .range(Number.parseInt(offset, 10), Number.parseInt(offset, 10) + Number.parseInt(limit, 10) - 1);
+    .range(
+      Number.parseInt(offset, 10),
+      Number.parseInt(offset, 10) + Number.parseInt(limit, 10) - 1
+    );
 
   if (error) {
     console.error('Error fetching external_user_monthly_reports:', error);

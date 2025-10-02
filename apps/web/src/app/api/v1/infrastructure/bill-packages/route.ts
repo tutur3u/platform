@@ -20,7 +20,10 @@ export async function GET(req: Request) {
     .from('finance_invoice_products')
     .select('*, finance_invoices!inner(ws_id)', { count: 'exact' })
     .eq('finance_invoices.ws_id', wsId)
-    .range(Number.parseInt(offset, 10), Number.parseInt(offset, 10) + Number.parseInt(limit, 10) - 1);
+    .range(
+      Number.parseInt(offset, 10),
+      Number.parseInt(offset, 10) + Number.parseInt(limit, 10) - 1
+    );
 
   if (error) {
     console.error('Error fetching finance_invoice_products:', error);

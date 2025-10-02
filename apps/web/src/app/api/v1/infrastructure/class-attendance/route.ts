@@ -20,7 +20,10 @@ export async function GET(req: Request) {
     .from('user_group_attendance')
     .select('*, workspace_user_groups!inner(ws_id)', { count: 'exact' })
     .eq('workspace_user_groups.ws_id', wsId)
-    .range(Number.parseInt(offset, 10), Number.parseInt(offset, 10) + Number.parseInt(limit, 10) - 1);
+    .range(
+      Number.parseInt(offset, 10),
+      Number.parseInt(offset, 10) + Number.parseInt(limit, 10) - 1
+    );
 
   if (error) {
     console.error('Error fetching user_group_attendance:', error);

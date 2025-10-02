@@ -18,9 +18,15 @@ export async function GET(req: Request) {
 
   const { data, error, count } = await supabase
     .from('external_user_monthly_report_logs')
-    .select('*, external_user_monthly_reports!report_id!inner(user_id), workspace_users!external_user_monthly_report_logs_user_id_fkey!inner(ws_id)', { count: 'exact' })
+    .select(
+      '*, external_user_monthly_reports!report_id!inner(user_id), workspace_users!external_user_monthly_report_logs_user_id_fkey!inner(ws_id)',
+      { count: 'exact' }
+    )
     .eq('workspace_users.ws_id', wsId)
-    .range(Number.parseInt(offset, 10), Number.parseInt(offset, 10) + Number.parseInt(limit, 10) - 1);
+    .range(
+      Number.parseInt(offset, 10),
+      Number.parseInt(offset, 10) + Number.parseInt(limit, 10) - 1
+    );
 
   if (error) {
     console.error('Error fetching external_user_monthly_report_logs:', error);

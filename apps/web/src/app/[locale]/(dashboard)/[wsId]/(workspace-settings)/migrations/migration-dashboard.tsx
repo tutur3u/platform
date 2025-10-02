@@ -682,7 +682,8 @@ export default function MigrationDashboard() {
         );
 
         // Track first difference for debugging
-        let firstDiff: { key: string; extVal: any; existVal: any } | null = null;
+        let firstDiff: { key: string; extVal: any; existVal: any } | null =
+          null;
 
         // Compare only fields present in external data
         for (const key of extKeys) {
@@ -705,9 +706,15 @@ export default function MigrationDashboard() {
           const normalizedExist = normalizeValue(existVal);
 
           // Deep comparison for nested objects/arrays
-          if (JSON.stringify(normalizedExt) !== JSON.stringify(normalizedExist)) {
+          if (
+            JSON.stringify(normalizedExt) !== JSON.stringify(normalizedExist)
+          ) {
             if (!firstDiff) {
-              firstDiff = { key, extVal: normalizedExt, existVal: normalizedExist };
+              firstDiff = {
+                key,
+                extVal: normalizedExt,
+                existVal: normalizedExist,
+              };
             }
             return true;
           }
@@ -1508,9 +1515,7 @@ export default function MigrationDashboard() {
                       <th className="pb-3 px-4 text-right font-medium">
                         Duplicates
                       </th>
-                      <th className="pb-3 pl-4 text-left font-medium">
-                        Stage
-                      </th>
+                      <th className="pb-3 pl-4 text-left font-medium">Stage</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -1524,10 +1529,7 @@ export default function MigrationDashboard() {
                         const isPaused = data?.paused;
 
                         return (
-                          <tr
-                            key={m.module}
-                            className="border-b last:border-0"
-                          >
+                          <tr key={m.module} className="border-b last:border-0">
                             <td className="py-3 pr-4 font-medium">
                               {m.name.replace(/-/g, ' ')}
                             </td>
