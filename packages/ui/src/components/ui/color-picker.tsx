@@ -1,5 +1,6 @@
 'use client';
 
+import { TextIcon } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { forwardRef, useMemo, useState } from 'react';
 import { HexColorPicker } from 'react-colorful';
@@ -64,7 +65,7 @@ const ColorPicker = forwardRef<
             variant="outline"
             disabled={disabled}
           >
-            {text || parsedValue}
+            <TextIcon className="h-4 w-4" />
           </Button>
         </PopoverTrigger>
         <PopoverContent className="flex w-full flex-col items-center justify-center gap-4">
