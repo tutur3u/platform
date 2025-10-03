@@ -121,11 +121,7 @@ export function StatusGroupedBoard({
         .eq('id', listId);
 
       if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['task_lists', boardId] });
-      toast.success('List moved successfully');
-      onUpdate();
+      return { listId, newStatus, newPosition };
     },
     onError: (error) => {
       console.error('Failed to move list:', error);
@@ -166,37 +162,40 @@ export function StatusGroupedBoard({
       overData: over.data?.current,
     });
 
-    // Task over Task (within list)
-    if (activeType === 'Task' && overType === 'Task') {
+    // Only apply optimistic updates for task movements
+    if (activeType === 'Task') {
       const activeTask = active.data?.current?.task;
-      const overTask = over.data?.current?.task;
+      if (!activeTask) return;
 
-      if (activeTask && overTask && activeTask.list_id !== overTask.list_id) {
-        // Optimistically update for preview
-        queryClient.setQueryData(
-          ['tasks', boardId],
-          (oldData: Task[] | undefined) => {
-            if (!oldData) return oldData;
-            return oldData.map((t) =>
-              t.id === activeTask.id ? { ...t, list_id: overTask.list_id } : t
-            );
-          }
-        );
+      let targetListId: string | null = null;
+
+      // Task over Task
+      if (overType === 'Task') {
+        const overTask = over.data?.current?.task;
+        targetListId = overTask?.list_id;
       }
-    }
+      // Task over List
+      else if (overType === 'List') {
+        const overList = over.data?.current?.list;
+        targetListId = overList?.id;
+      }
+      // Task over Status section
+      else if (overType === 'Status') {
+        const status = over.data?.current?.status;
+        if (status && typeof status === 'string') {
+          const statusLists = groupedLists[status as TaskBoardStatus] || [];
+          targetListId = statusLists[0]?.id || null;
+        }
+      }
 
-    // Task over List
-    if (activeType === 'Task' && overType === 'List') {
-      const activeTask = active.data?.current?.task;
-      const overList = over.data?.current?.list;
-
-      if (activeTask && overList && activeTask.list_id !== overList.id) {
+      // Apply optimistic update if target is different from current
+      if (targetListId && activeTask.list_id !== targetListId) {
         queryClient.setQueryData(
           ['tasks', boardId],
           (oldData: Task[] | undefined) => {
             if (!oldData) return oldData;
             return oldData.map((t) =>
-              t.id === activeTask.id ? { ...t, list_id: overList.id } : t
+              t.id === activeTask.id ? { ...t, list_id: targetListId } : t
             );
           }
         );
@@ -282,49 +281,168 @@ export function StatusGroupedBoard({
     if (activeType === 'List') {
       const activeList = active.data?.current?.list;
       let targetStatus: TaskBoardStatus | null = null;
+      let insertBeforeList: TaskList | null = null;
 
       if (overType === 'Status') {
         targetStatus = over.data?.current?.status;
       } else if (overType === 'List') {
         const overList = over.data?.current?.list;
         targetStatus = overList?.status;
+        insertBeforeList = overList;
       }
 
-      if (activeList && targetStatus && activeList.status !== targetStatus) {
-        // Check business rules for closed status - prevent moving to/from closed
-        if (
-          (targetStatus as string) === 'closed' ||
-          (activeList.status as string) === 'closed'
-        ) {
-          toast.error('Cannot move lists to or from closed status');
-          queryClient.invalidateQueries({
-            queryKey: ['task_lists', boardId],
-          });
-          return;
-        }
+      if (activeList && targetStatus) {
+        // Same status reordering
+        if (activeList.status === targetStatus && insertBeforeList) {
+          const statusLists = (groupedLists[targetStatus] || [])
+            .filter((l) => l.id !== activeList.id)
+            .sort((a, b) => a.position - b.position);
 
-        // Additional check: only one closed list allowed
-        if (targetStatus === 'closed') {
-          const existingClosedLists = groupedLists.closed || [];
-          if (existingClosedLists.length >= 1) {
-            toast.error('Only one closed list allowed per board');
-            queryClient.invalidateQueries({
-              queryKey: ['task_lists', boardId],
+          const insertIndex = statusLists.findIndex(
+            (l) => l.id === insertBeforeList?.id
+          );
+
+          if (insertIndex !== -1) {
+            // Reorder within same status
+            statusLists.splice(insertIndex, 0, activeList);
+
+            // Store snapshot for rollback
+            const previousLists = queryClient.getQueryData<TaskList[]>([
+              'task_lists',
+              boardId,
+            ]);
+
+            // Update positions for all lists in this status
+            const updates = statusLists.map((list, index) => ({
+              listId: list.id,
+              newStatus: targetStatus,
+              newPosition: index,
+            }));
+
+            // Optimistically update cache (no invalidation)
+            queryClient.setQueryData(
+              ['task_lists', boardId],
+              (oldData: TaskList[] | undefined) => {
+                if (!oldData) return oldData;
+                return oldData.map((list) => {
+                  const update = updates.find((u) => u.listId === list.id);
+                  return update
+                    ? { ...list, status: update.newStatus, position: update.newPosition }
+                    : list;
+                });
+              }
+            );
+
+            // Persist all position changes in background
+            Promise.allSettled(
+              updates.map((update) => moveListMutation.mutateAsync(update))
+            ).then((results) => {
+              const hasErrors = results.some((r) => r.status === 'rejected');
+              if (hasErrors) {
+                console.error('Failed to persist list reordering');
+                if (previousLists) {
+                  queryClient.setQueryData(['task_lists', boardId], previousLists);
+                } else {
+                  queryClient.invalidateQueries({
+                    queryKey: ['task_lists', boardId],
+                  });
+                }
+              } else {
+                // Success - show toast
+                toast.success('List reordered');
+              }
             });
             return;
           }
         }
 
-        // Calculate new position (append to end of status group)
-        const targetStatusLists = groupedLists[targetStatus] || [];
-        const newPosition =
-          Math.max(0, ...targetStatusLists.map((l) => l.position || 0)) + 1;
+        // Different status movement
+        if (activeList.status !== targetStatus) {
+          // Check business rules for closed status - prevent moving to/from closed
+          if (
+            (targetStatus as string) === 'closed' ||
+            (activeList.status as string) === 'closed'
+          ) {
+            toast.error('Cannot move lists to or from closed status');
+            queryClient.invalidateQueries({
+              queryKey: ['task_lists', boardId],
+            });
+            return;
+          }
 
-        moveListMutation.mutate({
-          listId: activeList.id,
-          newStatus: targetStatus,
-          newPosition,
-        });
+          // Additional check: only one closed list allowed
+          if (targetStatus === 'closed') {
+            const existingClosedLists = groupedLists.closed || [];
+            if (existingClosedLists.length >= 1) {
+              toast.error('Only one closed list allowed per board');
+              queryClient.invalidateQueries({
+                queryKey: ['task_lists', boardId],
+              });
+              return;
+            }
+          }
+
+          // Calculate new position
+          let newPosition: number;
+          if (insertBeforeList) {
+            // Insert before specific list
+            const targetStatusLists = (groupedLists[targetStatus] || []).sort(
+              (a, b) => a.position - b.position
+            );
+            const insertIndex = targetStatusLists.findIndex(
+              (l) => l.id === insertBeforeList?.id
+            );
+            newPosition =
+              insertIndex > 0
+                ? (targetStatusLists[insertIndex - 1]?.position || 0 +
+                    targetStatusLists[insertIndex]?.position || 0) / 2
+                : (targetStatusLists[0]?.position || 0) - 1;
+          } else {
+            // Append to end of status group
+            const targetStatusLists = groupedLists[targetStatus] || [];
+            newPosition =
+              Math.max(0, ...targetStatusLists.map((l) => l.position || 0)) + 1;
+          }
+
+          // Store snapshot for rollback
+          const previousLists = queryClient.getQueryData<TaskList[]>([
+            'task_lists',
+            boardId,
+          ]);
+
+          // Optimistically update cache
+          queryClient.setQueryData(
+            ['task_lists', boardId],
+            (oldData: TaskList[] | undefined) => {
+              if (!oldData) return oldData;
+              return oldData.map((list) =>
+                list.id === activeList.id
+                  ? { ...list, status: targetStatus, position: newPosition }
+                  : list
+              );
+            }
+          );
+
+          // Persist to database
+          moveListMutation.mutate(
+            {
+              listId: activeList.id,
+              newStatus: targetStatus,
+              newPosition,
+            },
+            {
+              onSuccess: () => {
+                toast.success('List moved successfully');
+              },
+              onError: () => {
+                // Rollback on error
+                if (previousLists) {
+                  queryClient.setQueryData(['task_lists', boardId], previousLists);
+                }
+              },
+            }
+          );
+        }
       }
     }
   }

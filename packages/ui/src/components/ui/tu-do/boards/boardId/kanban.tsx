@@ -74,6 +74,7 @@ import { BoardSelector } from '../board-selector';
 import { LightweightTaskCard } from './task';
 import { BoardColumn } from './task-list';
 import { TaskListForm } from './task-list-form';
+import { useMutation } from '@tanstack/react-query';
 
 
 interface Props {
@@ -107,11 +108,36 @@ export function KanbanBoard({
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
   const pickedUpTaskColumn = useRef<string | null>(null);
   const queryClient = useQueryClient();
+  const supabase = createClient();
   const moveTaskMutation = useMoveTask(boardId);
   const moveTaskToBoardMutation = useMoveTaskToBoard(boardId);
 
   // Use React Query hook for board config (shared cache)
   const { data: boardConfig } = useBoardConfig(boardId);
+
+  // Move list mutation for reordering columns
+  const moveListMutation = useMutation({
+    mutationFn: async ({
+      listId,
+      newPosition,
+    }: {
+      listId: string;
+      newPosition: number;
+    }) => {
+      const { error } = await supabase
+        .from('task_lists')
+        .update({ position: newPosition })
+        .eq('id', listId);
+
+      if (error) throw error;
+      return { listId, newPosition };
+    },
+    onError: (error) => {
+      console.error('Failed to reorder list:', error);
+      toast.error('Failed to reorder list');
+      queryClient.invalidateQueries({ queryKey: ['task_lists', boardId] });
+    },
+  });
 
   const columns: TaskList[] = lists.map((list) => ({
     ...list,
@@ -935,6 +961,94 @@ export function KanbanBoard({
 
     if (!activeType) {
       console.log('❌ No activeType, state reset.');
+      return;
+    }
+
+    // Handle column reordering
+    if (activeType === 'Column') {
+      const activeColumn = active.data?.current?.column;
+      const overColumn = over.data?.current?.column;
+
+      if (activeColumn && overColumn && activeColumn.id !== overColumn.id) {
+        console.log('🔄 Reordering columns:', {
+          activeId: activeColumn.id,
+          overId: overColumn.id,
+        });
+
+        // Find the positions in the sorted array
+        const sortedColumns = columns.sort((a, b) => {
+          const statusOrder = {
+            not_started: 0,
+            active: 1,
+            done: 2,
+            closed: 3,
+          };
+          const statusA =
+            statusOrder[a.status as keyof typeof statusOrder] ?? 999;
+          const statusB =
+            statusOrder[b.status as keyof typeof statusOrder] ?? 999;
+          if (statusA !== statusB) return statusA - statusB;
+          return a.position - b.position;
+        });
+
+        const activeIndex = sortedColumns.findIndex(
+          (col) => col.id === activeColumn.id
+        );
+        const overIndex = sortedColumns.findIndex(
+          (col) => col.id === overColumn.id
+        );
+
+        if (activeIndex !== -1 && overIndex !== -1) {
+          // Optimistically reorder in cache
+          const reorderedColumns = [...sortedColumns];
+          const [movedColumn] = reorderedColumns.splice(activeIndex, 1);
+          if (movedColumn) {
+            reorderedColumns.splice(overIndex, 0, movedColumn);
+
+            // Store snapshot for rollback
+            const previousLists = queryClient.getQueryData<TaskList[]>([
+              'task_lists',
+              boardId,
+            ]);
+
+            // Update positions for all affected columns
+            const updates = reorderedColumns.map((col, index) => ({
+              listId: col.id,
+              newPosition: index,
+            }));
+
+            // Update cache optimistically (no invalidation)
+            queryClient.setQueryData(
+              ['task_lists', boardId],
+              (oldData: TaskList[] | undefined) => {
+                if (!oldData) return oldData;
+                return oldData.map((list) => {
+                  const update = updates.find((u) => u.listId === list.id);
+                  return update ? { ...list, position: update.newPosition } : list;
+                });
+              }
+            );
+
+            // Persist to database in background
+            Promise.allSettled(
+              updates.map((update) => moveListMutation.mutateAsync(update))
+            ).then((results) => {
+              const hasErrors = results.some((r) => r.status === 'rejected');
+              if (hasErrors) {
+                // Rollback on any error
+                console.error('Failed to persist column reordering');
+                if (previousLists) {
+                  queryClient.setQueryData(['task_lists', boardId], previousLists);
+                } else {
+                  queryClient.invalidateQueries({
+                    queryKey: ['task_lists', boardId],
+                  });
+                }
+              }
+            });
+          }
+        }
+      }
       return;
     }
 
