@@ -171,10 +171,11 @@ export function TaskProjectDetail({
           />
         );
       case 'kanban':
+        // Use null boardId to prevent useBoardConfig from querying workspace_boards
         return (
           <KanbanBoard
             workspace={workspace}
-            boardId={project.id}
+            boardId={null as any}
             tasks={effectiveTasks}
             lists={filteredLists}
             isLoading={false}

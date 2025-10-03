@@ -1053,7 +1053,7 @@ function TaskCardInner({
         'group relative overflow-hidden rounded-lg border-l-4 transition-all duration-200',
         dragDisabled
           ? 'cursor-default'
-          : 'touch-none select-none cursor-grab active:cursor-grabbing',
+          : 'cursor-grab touch-none select-none active:cursor-grabbing',
         'hover:shadow-md',
         // Task list or priority-based styling
         getCardColorClasses(),
@@ -1071,7 +1071,7 @@ function TaskCardInner({
         !isDragging && !isSelected && 'hover:ring-1 hover:ring-primary/15',
         // Selection state - enhanced visual feedback
         isSelected &&
-          'border-l-primary bg-gradient-to-r from-primary/10 via-primary/5 to-transparent shadow-lg ring-2 ring-primary/60 scale-[1.01]',
+          'scale-[1.01] border-l-primary bg-gradient-to-r from-primary/10 via-primary/5 to-transparent shadow-lg ring-2 ring-primary/60',
         // Multi-select mode cursor
         isMultiSelectMode && 'cursor-pointer',
         // Visual feedback for invalid drop (dev only)
@@ -1093,8 +1093,8 @@ function TaskCardInner({
           className={cn(
             'absolute top-2 left-2 flex h-6 w-6 items-center justify-center rounded-full border-2 transition-all duration-200',
             isSelected
-              ? 'border-primary bg-primary text-primary-foreground shadow-md scale-110'
-              : 'border-border bg-background/80 text-muted-foreground shadow-sm hover:border-primary/50 hover:scale-105'
+              ? 'scale-110 border-primary bg-primary text-primary-foreground shadow-md'
+              : 'border-border bg-background/80 text-muted-foreground shadow-sm hover:scale-105 hover:border-primary/50'
           )}
         >
           {isSelected ? (
@@ -2385,7 +2385,7 @@ function LightweightTaskCardInner({
               className={cn(
                 'inline-flex items-center gap-1 rounded-md px-2 py-1 font-medium',
                 task.priority === 'critical'
-                  ? 'animate-pulse bg-dynamic-red text-white shadow-dynamic-red/50 shadow-sm'
+                  ? 'bg-dynamic-red text-white shadow-dynamic-red/50 shadow-sm'
                   : 'bg-dynamic-surface/70 text-foreground/80'
               )}
             >

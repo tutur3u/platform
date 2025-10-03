@@ -87,8 +87,8 @@ export function BoardHeader({
   const queryClient = useQueryClient();
   const router = useRouter();
 
-  // Track online users on this board
-  const { presenceState } = useBoardPresence(board.id);
+  // Track online users on this board (only for real boards, not virtual/project boards)
+  const { presenceState } = useBoardPresence(hideActions ? null : board.id);
 
   async function handleEdit() {
     if (!editedName.trim() || editedName === board.name) {

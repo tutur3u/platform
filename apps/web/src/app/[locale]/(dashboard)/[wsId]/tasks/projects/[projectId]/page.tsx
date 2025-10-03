@@ -95,7 +95,7 @@ export default async function TaskProjectPage({ params }: Props) {
           .from('task_project_tasks')
           .select(
             `
-            task:tasks(
+            task:tasks!inner(
               *,
               assignees:task_assignees(
                 user:users(
@@ -122,17 +122,20 @@ export default async function TaskProjectPage({ params }: Props) {
             )
           `
           )
-          .eq('project_id', projectId);
+          .eq('project_id', projectId)
+          .eq('task.deleted', false);
 
         if (tasksError) {
           console.error('Error fetching project tasks:', tasksError);
           notFound();
         }
 
-        // Extract and transform tasks
+        // Extract and transform tasks (filter out any null tasks and deleted ones)
         const rawTasks = (projectTasks ?? [])
           .map((pt) => pt.task)
-          .filter((task): task is NonNullable<typeof task> => task !== null);
+          .filter((task): task is NonNullable<typeof task> =>
+            task !== null && task.deleted === false
+          );
 
         // Get unique board IDs and list IDs
         const listIds = [...new Set(rawTasks.map((t) => t.list_id).filter((id): id is string => id !== null))];
