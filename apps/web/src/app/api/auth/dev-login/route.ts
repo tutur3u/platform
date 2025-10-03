@@ -1,4 +1,5 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import { checkIfUserExists, validateEmail } from '@tuturuuu/utils/email/server';
 import { NextResponse } from 'next/server';
 import { DEV_MODE } from '@/constants/common';
 
@@ -12,57 +13,86 @@ export async function POST(request: Request) {
   }
 
   try {
-    const { email } = await request.json();
+    const { email, locale } = await request.json();
 
-    if (!email) {
-      return NextResponse.json({ error: 'Email is required' }, { status: 400 });
-    }
+    const validatedEmail = await validateEmail(email);
+
+    const userId = await checkIfUserExists({ email: validatedEmail });
 
     // Get admin client for privileged operations
     const sbAdmin = await createAdminClient();
 
-    // Get user by email
-    const { data: users, error: userError } =
-      await sbAdmin.auth.admin.listUsers();
-
-    if (userError) {
-      console.error('Error listing users:', userError);
-      return NextResponse.json(
-        { error: 'Failed to find user' },
-        { status: 500 }
+    if (userId) {
+      const { error: updateError } = await sbAdmin.auth.admin.updateUserById(
+        userId,
+        {
+          user_metadata: { locale, origin: 'TUTURUUU' },
+        }
       );
-    }
 
-    const user = users.users.find((u) => u.email === email);
+      if (updateError) {
+        return { error: updateError.message };
+      }
 
-    if (!user) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 });
-    }
+      // Generate session for user using admin privileges
+      // This creates a new session token that can be used client-side
+      const { data: sessionData, error: sessionError } =
+        await sbAdmin.auth.admin.generateLink({
+          type: 'magiclink',
+          email: validatedEmail,
+          options: {
+            redirectTo: `${request.headers.get('origin')}/auth/callback`,
+          },
+        });
 
-    // Generate session for user using admin privileges
-    // This creates a new session token that can be used client-side
-    const { data: sessionData, error: sessionError } =
-      await sbAdmin.auth.admin.generateLink({
-        type: 'magiclink',
-        email: user.email!,
-        options: {
-          redirectTo: `${request.headers.get('origin')}/auth/callback`,
-        },
+      if (sessionError) {
+        console.error('Error generating session:', sessionError);
+        return NextResponse.json(
+          { error: 'Failed to generate session' },
+          { status: 500 }
+        );
+      }
+
+      // Return the session properties from the link
+      // The client will use the hashed_token from the URL
+      return NextResponse.json({
+        properties: sessionData.properties,
+      });
+    } else {
+      const { error: signUpError } = await sbAdmin.auth.admin.createUser({
+        email: validatedEmail,
+        email_confirm: true, // Auto-confirm email in dev mode
+        user_metadata: { locale, origin: 'TUTURUUU' },
       });
 
-    if (sessionError) {
-      console.error('Error generating session:', sessionError);
-      return NextResponse.json(
-        { error: 'Failed to generate session' },
-        { status: 500 }
-      );
-    }
+      if (signUpError) {
+        return NextResponse.json(
+          { error: 'Failed to create user: ', signUpError },
+          { status: 500 }
+        );
+      }
 
-    // Return the session properties from the link
-    // The client will use the hashed_token from the URL
-    return NextResponse.json({
-      properties: sessionData.properties,
-    });
+      const { data: sessionData, error: sessionError } =
+        await sbAdmin.auth.admin.generateLink({
+          type: 'magiclink',
+          email: validatedEmail,
+          options: {
+            redirectTo: `${request.headers.get('origin')}/auth/callback`,
+          },
+        });
+
+      if (sessionError) {
+        console.error('Error generating session:', sessionError);
+        return NextResponse.json(
+          { error: 'Failed to generate session' },
+          { status: 500 }
+        );
+      }
+
+      return NextResponse.json({
+        properties: sessionData.properties,
+      });
+    }
   } catch (error) {
     console.error('Dev login error:', error);
     return NextResponse.json(

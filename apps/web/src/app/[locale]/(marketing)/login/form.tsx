@@ -480,7 +480,7 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
   };
 
   const devLogin = async (email: string) => {
-    if (!DEV_MODE) return;
+    if (!DEV_MODE || !email || !locale) return;
 
     setLoading(true);
     try {
@@ -489,7 +489,7 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ email }),
+        body: JSON.stringify({ email, locale }),
       });
 
       const data = await response.json();
