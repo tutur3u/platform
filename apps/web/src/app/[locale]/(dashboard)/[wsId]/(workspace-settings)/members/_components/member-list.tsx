@@ -15,6 +15,7 @@ interface Props {
   members: User[];
   invited?: boolean;
   loading?: boolean;
+  canManageMembers?: boolean;
 }
 
 export default async function MemberList({
@@ -22,6 +23,7 @@ export default async function MemberList({
   members,
   invited,
   loading,
+  canManageMembers,
 }: Props) {
   const locale = await getLocale();
   const t = await getTranslations('ws-members');
@@ -37,10 +39,8 @@ export default async function MemberList({
         {!!workspace?.id && (
           <InviteMemberButton
             wsId={workspace?.id}
-            currentUser={{
-              ...user!,
-              role: workspace?.role,
-            }}
+            currentUser={user!}
+            canManageMembers={canManageMembers}
             label={t('invite_member')}
             variant="outline"
           />
@@ -99,7 +99,8 @@ export default async function MemberList({
           <MemberSettingsButton
             workspace={workspace}
             user={member}
-            currentUser={{ ...user!, role: workspace.role }}
+            currentUser={user!}
+            canManageMembers={canManageMembers}
           />
         </div>
       )}

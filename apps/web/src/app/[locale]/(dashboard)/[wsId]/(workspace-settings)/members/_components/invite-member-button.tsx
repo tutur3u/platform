@@ -32,6 +32,7 @@ import * as z from 'zod';
 interface Props {
   wsId: string;
   currentUser?: User;
+  canManageMembers?: boolean;
   label?: string;
   variant?: 'outline';
   disabled?: boolean;
@@ -48,6 +49,7 @@ const FormSchema = z.object({
 export default function InviteMemberButton({
   wsId,
   currentUser,
+  canManageMembers,
   label,
   variant,
   disabled,
@@ -111,7 +113,7 @@ export default function InviteMemberButton({
           </DialogDescription>
         </DialogHeader>
 
-        {currentUser?.role !== 'MEMBER' ? (
+        {canManageMembers ? (
           <>
             <Form {...form}>
               <form
@@ -154,7 +156,6 @@ export default function InviteMemberButton({
                       </FormDescription>
                     </FormItem>
                   )}
-                  disabled={currentUser?.role === 'ADMIN'}
                 />
 
                 {/* <Separator />
@@ -208,7 +209,7 @@ export default function InviteMemberButton({
         ) : (
           <div className="flex flex-col items-center justify-center gap-2 rounded-lg border border-dashed p-8">
             <p className="text-center text-muted-foreground">
-              You must be an admin or higher to invite members.
+              You do not have permission to invite members.
             </p>
           </div>
         )}
