@@ -402,8 +402,7 @@ export function StatusGroupedBoard({
             newPosition =
               insertIndex > 0
                 ? (targetStatusLists[insertIndex - 1]?.position ||
-                    0 + targetStatusLists[insertIndex]?.position ||
-                    0) / 2
+                    0 + (targetStatusLists[insertIndex]?.position || 0)) / 2
                 : (targetStatusLists[0]?.position || 0) - 1;
           } else {
             // Append to end of status group

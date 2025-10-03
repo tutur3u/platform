@@ -1,16 +1,10 @@
+import WorkspaceWrapper from '@/components/workspace-wrapper';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
-import {
-  Calendar,
-  CheckCircle2,
-  Clock,
-  Flag,
-  UserRound,
-} from '@tuturuuu/ui/icons';
+import { Calendar, Clock, Flag, UserRound } from '@tuturuuu/ui/icons';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
-import { redirect } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
-import WorkspaceWrapper from '@/components/workspace-wrapper';
+import { redirect } from 'next/navigation';
 import MyTasksContent from './my-tasks-content';
 
 interface Props {
@@ -149,13 +143,15 @@ async function MyTasksDataLoader({
   // Map the data to match the expected structure
   const tasksWithRelations = allTasks?.map((task) => ({
     ...task,
-    list: listsData?.find((l) => l.id === task.list_id),
-    assignees: assigneesData
-      ?.filter((a) => a.task_id === task.id)
-      .map((a) => ({ user: a.user })),
-    labels: labelsData
-      ?.filter((l) => l.task_id === task.id)
-      .map((l) => ({ label: l.label })),
+    list: listsData?.find((l) => l.id === task.list_id) || null,
+    assignees:
+      assigneesData
+        ?.filter((a) => a.task_id === task.id)
+        .map((a) => ({ user: a.user })) || null,
+    labels:
+      labelsData
+        ?.filter((l) => l.task_id === task.id)
+        .map((l) => ({ label: l.label })) || null,
   }));
 
   // Filter tasks by categories
