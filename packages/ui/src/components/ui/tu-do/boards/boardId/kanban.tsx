@@ -650,10 +650,22 @@ export function KanbanBoard({
     }
   }
 
+  // Detect mobile to disable drag sensors
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768); // Tailwind md breakpoint
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
-        distance: 8,
+        distance: isMobile ? 999999 : 8, // Effectively disable on mobile with very high threshold
       },
     }),
     useSensor(KeyboardSensor, {

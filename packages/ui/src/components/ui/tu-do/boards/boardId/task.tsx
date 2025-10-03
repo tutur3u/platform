@@ -241,7 +241,20 @@ function TaskCardInner({
   const canMoveToClose =
     targetClosedList && targetClosedList.id !== task.list_id;
 
+  // Detect mobile devices to disable drag and drop
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768); // Tailwind md breakpoint
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
   const dragDisabled =
+    isMobile ||
     editDialogOpen ||
     deleteDialogOpen ||
     customDateDialogOpen ||
@@ -1107,7 +1120,7 @@ function TaskCardInner({
                     className={cn(
                       'h-7 w-7 shrink-0 p-0 transition-all duration-200',
                       'hover:scale-105 hover:bg-muted',
-                      menuOpen
+                      menuOpen || isMobile
                         ? 'opacity-100'
                         : 'opacity-0 group-hover:opacity-100',
                       menuOpen && 'bg-muted ring-1 ring-border'
