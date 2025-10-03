@@ -1,5 +1,5 @@
 create table "public"."project_documents" (
-    "id" uuid not null default uuid_generate_v4(),
+    "id" uuid not null default gen_random_uuid(),
     "project_id" uuid not null,
     "name" text default ''::text,
     "content" text default ''::text,

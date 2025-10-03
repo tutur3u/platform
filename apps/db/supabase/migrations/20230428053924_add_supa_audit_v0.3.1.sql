@@ -101,7 +101,7 @@ where indrelid = $1
 create or replace function audit.to_record_id(entity_oid oid, pkey_cols text [], rec jsonb) returns uuid stable language sql as $$
 select case
         when rec is null then null
-        when pkey_cols = array []::text [] then uuid_generate_v4()
+        when pkey_cols = array []::text [] then gen_random_uuid()
         else (
             select uuid_generate_v5(
                     'fd62bc3d-8d6e-43c2-919c-802ba3762271',
@@ -113,7 +113,7 @@ select case
         )
     end $$;
 create or replace function audit.insert_update_delete_trigger() returns trigger security definer -- can not use search_path = '' here because audit.to_record_id requires
-    -- uuid_generate_v4, which may be installed in a user-defined schema
+    -- gen_random_uuid, which may be installed in a user-defined schema
     language plpgsql as $$
 declare pkey_cols text [] = audit.primary_key_columns(TG_RELID);
 record_jsonb jsonb = to_jsonb(new);

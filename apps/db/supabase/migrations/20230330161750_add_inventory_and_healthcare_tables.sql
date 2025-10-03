@@ -1,5 +1,5 @@
 create table "public"."transaction_categories" (
-    "id" uuid not null default uuid_generate_v4(),
+    "id" uuid not null default gen_random_uuid(),
     "name" text not null,
     "is_expense" boolean default true,
     "ws_id" uuid not null,
@@ -60,14 +60,14 @@ WHERE (
 END;
 $$ LANGUAGE plpgsql;
 create table "public"."product_categories" (
-    "id" uuid not null default uuid_generate_v4(),
+    "id" uuid not null default gen_random_uuid(),
     "name" text,
     "ws_id" uuid not null,
     "created_at" timestamp with time zone default now()
 );
 alter table "public"."product_categories" enable row level security;
 create table "public"."workspace_products" (
-    "id" uuid not null default uuid_generate_v4(),
+    "id" uuid not null default gen_random_uuid(),
     "category_id" uuid not null,
     "name" text,
     "manufacturer" text,
@@ -102,21 +102,21 @@ create table "public"."inventory_products" (
 );
 alter table "public"."inventory_products" enable row level security;
 create table "public"."inventory_suppliers" (
-    "id" uuid not null default uuid_generate_v4(),
+    "id" uuid not null default gen_random_uuid(),
     "name" text,
     "ws_id" uuid not null,
     "created_at" timestamp with time zone default now()
 );
 alter table "public"."inventory_suppliers" enable row level security;
 create table "public"."inventory_units" (
-    "id" uuid not null default uuid_generate_v4(),
+    "id" uuid not null default gen_random_uuid(),
     "name" text,
     "ws_id" uuid not null,
     "created_at" timestamp with time zone default now()
 );
 alter table "public"."inventory_units" enable row level security;
 create table "public"."inventory_warehouses" (
-    "id" uuid not null default uuid_generate_v4(),
+    "id" uuid not null default gen_random_uuid(),
     "name" text,
     "ws_id" uuid not null,
     "created_at" timestamp with time zone default now()
@@ -190,7 +190,7 @@ create policy "Enable all access for organization members" on "public"."inventor
 create policy "Enable all access for organization members" on "public"."product_categories" as permissive for all to authenticated using (is_org_member(auth.uid(), ws_id)) with check (is_org_member(auth.uid(), ws_id));
 create policy "Enable all access for organization members" on "public"."workspace_products" as permissive for all to authenticated using (is_org_member(auth.uid(), ws_id)) with check (is_org_member(auth.uid(), ws_id));
 create table "public"."inventory_batches" (
-    "id" uuid not null default uuid_generate_v4(),
+    "id" uuid not null default gen_random_uuid(),
     "price" bigint not null default '0'::bigint,
     "warehouse_id" uuid not null,
     "supplier_id" uuid,
@@ -198,7 +198,7 @@ create table "public"."inventory_batches" (
 );
 alter table "public"."inventory_batches" enable row level security;
 create table "public"."workspace_users" (
-    "id" uuid not null default uuid_generate_v4(),
+    "id" uuid not null default gen_random_uuid(),
     "name" text,
     "email" text,
     "phone" text,
@@ -281,7 +281,7 @@ create table "public"."healthcare_checkup_vitals" (
 );
 alter table "public"."healthcare_checkup_vitals" enable row level security;
 create table "public"."healthcare_checkups" (
-    "id" uuid not null default uuid_generate_v4(),
+    "id" uuid not null default gen_random_uuid(),
     "patient_id" uuid not null,
     "diagnosis_id" uuid,
     "checked" boolean not null default false,
@@ -296,7 +296,7 @@ create table "public"."healthcare_checkups" (
 );
 alter table "public"."healthcare_checkups" enable row level security;
 create table "public"."healthcare_diagnoses" (
-    "id" uuid not null default uuid_generate_v4(),
+    "id" uuid not null default gen_random_uuid(),
     "name" text,
     "description" text,
     "note" text,
@@ -314,7 +314,7 @@ create table "public"."healthcare_prescription_products" (
 );
 alter table "public"."healthcare_prescription_products" enable row level security;
 create table "public"."healthcare_prescriptions" (
-    "id" uuid not null default uuid_generate_v4(),
+    "id" uuid not null default gen_random_uuid(),
     "price" bigint not null,
     "price_diff" bigint not null default '0'::bigint,
     "note" text,
@@ -327,7 +327,7 @@ create table "public"."healthcare_prescriptions" (
 );
 alter table "public"."healthcare_prescriptions" enable row level security;
 create table "public"."healthcare_vital_groups" (
-    "id" uuid not null default uuid_generate_v4(),
+    "id" uuid not null default gen_random_uuid(),
     "name" text not null,
     "description" text,
     "note" text,
@@ -336,7 +336,7 @@ create table "public"."healthcare_vital_groups" (
 );
 alter table "public"."healthcare_vital_groups" enable row level security;
 create table "public"."healthcare_vitals" (
-    "id" uuid not null default uuid_generate_v4(),
+    "id" uuid not null default gen_random_uuid(),
     "name" text not null,
     "unit" text,
     "ws_id" uuid not null,

@@ -349,7 +349,7 @@ ALTER TABLE "public"."org_members" OWNER TO "postgres";
 --
 
 CREATE TABLE "public"."orgs" (
-    "id" "uuid" DEFAULT "extensions"."uuid_generate_v4"() NOT NULL,
+    "id" "uuid" DEFAULT gen_random_uuid() NOT NULL,
     "name" "text",
     "created_at" timestamp with time zone DEFAULT "now"(),
     "deleted" boolean DEFAULT false
@@ -389,7 +389,7 @@ ALTER TABLE "public"."project_members" OWNER TO "postgres";
 --
 
 CREATE TABLE "public"."projects" (
-    "id" "uuid" DEFAULT "extensions"."uuid_generate_v4"() NOT NULL,
+    "id" "uuid" DEFAULT gen_random_uuid() NOT NULL,
     "name" "text",
     "created_at" timestamp with time zone DEFAULT "now"(),
     "deleted" boolean DEFAULT false,
@@ -430,7 +430,7 @@ ALTER TABLE "public"."task_board_members" OWNER TO "postgres";
 --
 
 CREATE TABLE "public"."task_boards" (
-    "id" "uuid" DEFAULT "extensions"."uuid_generate_v4"() NOT NULL,
+    "id" "uuid" DEFAULT gen_random_uuid() NOT NULL,
     "name" "text",
     "archived" boolean DEFAULT false,
     "deleted" boolean DEFAULT false,
@@ -446,7 +446,7 @@ ALTER TABLE "public"."task_boards" OWNER TO "postgres";
 --
 
 CREATE TABLE "public"."task_lists" (
-    "id" "uuid" DEFAULT "extensions"."uuid_generate_v4"() NOT NULL,
+    "id" "uuid" DEFAULT gen_random_uuid() NOT NULL,
     "name" "text",
     "archived" boolean DEFAULT false,
     "deleted" boolean DEFAULT false,
@@ -463,7 +463,7 @@ ALTER TABLE "public"."task_lists" OWNER TO "postgres";
 --
 
 CREATE TABLE "public"."tasks" (
-    "id" "uuid" DEFAULT "extensions"."uuid_generate_v4"() NOT NULL,
+    "id" "uuid" DEFAULT gen_random_uuid() NOT NULL,
     "name" "text" NOT NULL,
     "created_at" timestamp with time zone DEFAULT "now"(),
     "archived" boolean DEFAULT false,
@@ -509,7 +509,7 @@ ALTER TABLE "public"."team_projects" OWNER TO "postgres";
 --
 
 CREATE TABLE "public"."teams" (
-    "id" "uuid" DEFAULT "extensions"."uuid_generate_v4"() NOT NULL,
+    "id" "uuid" DEFAULT gen_random_uuid() NOT NULL,
     "org_id" "uuid",
     "username" "text",
     "name" "text",
@@ -525,7 +525,7 @@ ALTER TABLE "public"."teams" OWNER TO "postgres";
 --
 
 CREATE TABLE "public"."users" (
-    "id" "uuid" DEFAULT "extensions"."uuid_generate_v4"() NOT NULL,
+    "id" "uuid" DEFAULT gen_random_uuid() NOT NULL,
     "username" "text",
     "display_name" "text",
     "deleted" boolean DEFAULT false,
@@ -1300,10 +1300,10 @@ GRANT ALL ON FUNCTION "public"."gtrgm_out"("public"."gtrgm") TO "service_role";
 
 
 --
--- Name: FUNCTION "gen_random_uuid"(); Type: ACL; Schema: extensions; Owner: supabase_admin
+-- Name: FUNCTION gen_random_uuid(); Type: ACL; Schema: extensions; Owner: supabase_admin
 --
 
--- GRANT ALL ON FUNCTION "extensions"."gen_random_uuid"() TO "dashboard_user";
+-- GRANT ALL ON FUNCTION gen_random_uuid() TO "dashboard_user";
 
 
 --
@@ -1545,10 +1545,10 @@ GRANT ALL ON FUNCTION "public"."gtrgm_out"("public"."gtrgm") TO "service_role";
 
 
 --
--- Name: FUNCTION "uuid_generate_v4"(); Type: ACL; Schema: extensions; Owner: supabase_admin
+-- Name: FUNCTION gen_random_uuid(); Type: ACL; Schema: extensions; Owner: supabase_admin
 --
 
--- GRANT ALL ON FUNCTION "extensions"."uuid_generate_v4"() TO "dashboard_user";
+-- GRANT ALL ON FUNCTION gen_random_uuid() TO "dashboard_user";
 
 
 --

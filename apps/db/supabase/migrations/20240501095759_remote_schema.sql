@@ -153,7 +153,7 @@ CREATE OR REPLACE FUNCTION audit.to_record_id(entity_oid oid, pkey_cols text[], 
 AS $function$
 select case
         when rec is null then null
-        when pkey_cols = array []::text [] then uuid_generate_v4()
+        when pkey_cols = array []::text [] then gen_random_uuid()
         else (
             select uuid_generate_v5(
                     'fd62bc3d-8d6e-43c2-919c-802ba3762271',
@@ -265,7 +265,7 @@ AS $function$ begin if not exists (
             and wul.ws_id = new.ws_id
     ) then
 insert into workspace_users (id, ws_id, display_name, email)
-select uuid_generate_v4(),
+select gen_random_uuid(),
     new.ws_id,
     u.display_name,
     up.email

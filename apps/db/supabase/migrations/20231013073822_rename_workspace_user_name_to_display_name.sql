@@ -12,7 +12,7 @@ create or replace function create_workspace_user_linked_user() returns trigger a
             and wul.ws_id = new.ws_id
     ) then
 insert into workspace_users (id, ws_id, display_name, email)
-select uuid_generate_v4(),
+select gen_random_uuid(),
     new.ws_id,
     u.display_name,
     up.email

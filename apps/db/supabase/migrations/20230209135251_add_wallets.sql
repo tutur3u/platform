@@ -1,5 +1,5 @@
 create table "public"."project_wallets" (
-    "id" uuid not null default uuid_generate_v4(),
+    "id" uuid not null default gen_random_uuid(),
     "name" text,
     "balance" numeric default '0'::numeric,
     "currency" text default 'VND'::text,

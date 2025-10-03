@@ -2,7 +2,7 @@
 
 -- Create workspace_calendar_sync_log table
 CREATE TABLE "public"."workspace_calendar_sync_log" (
-    "id" uuid NOT NULL DEFAULT uuid_generate_v4(),
+    "id" uuid NOT NULL DEFAULT gen_random_uuid(),
     "ws_id" uuid NOT NULL REFERENCES "workspaces"("id") ON DELETE CASCADE,
     "google_account_email" text,
     "sync_started_at" timestamp with time zone NOT NULL,
