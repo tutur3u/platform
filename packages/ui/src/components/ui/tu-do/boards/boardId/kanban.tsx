@@ -76,7 +76,6 @@ import { BoardColumn } from './task-list';
 import { TaskListForm } from './task-list-form';
 import { useMutation } from '@tanstack/react-query';
 
-
 interface Props {
   workspace: Workspace;
   boardId: string;
@@ -1024,7 +1023,9 @@ export function KanbanBoard({
                 if (!oldData) return oldData;
                 return oldData.map((list) => {
                   const update = updates.find((u) => u.listId === list.id);
-                  return update ? { ...list, position: update.newPosition } : list;
+                  return update
+                    ? { ...list, position: update.newPosition }
+                    : list;
                 });
               }
             );
@@ -1038,7 +1039,10 @@ export function KanbanBoard({
                 // Rollback on any error
                 console.error('Failed to persist column reordering');
                 if (previousLists) {
-                  queryClient.setQueryData(['task_lists', boardId], previousLists);
+                  queryClient.setQueryData(
+                    ['task_lists', boardId],
+                    previousLists
+                  );
                 } else {
                   queryClient.invalidateQueries({
                     queryKey: ['task_lists', boardId],

@@ -1051,7 +1051,9 @@ function TaskCardInner({
       {...(!dragDisabled && listeners)}
       className={cn(
         'group relative overflow-hidden rounded-lg border-l-4 transition-all duration-200',
-        dragDisabled ? 'cursor-default' : 'touch-none select-none cursor-grab active:cursor-grabbing',
+        dragDisabled
+          ? 'cursor-default'
+          : 'touch-none select-none cursor-grab active:cursor-grabbing',
         'hover:shadow-md',
         // Task list or priority-based styling
         getCardColorClasses(),

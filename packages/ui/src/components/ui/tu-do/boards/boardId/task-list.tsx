@@ -146,9 +146,7 @@ function BoardColumnInner({
             variant="secondary"
             className={cn(
               'px-2 py-0.5 font-medium text-xs',
-              tasks.length === 0
-                ? 'text-muted-foreground'
-                : 'text-foreground'
+              tasks.length === 0 ? 'text-muted-foreground' : 'text-foreground'
             )}
           >
             {tasks.length}
