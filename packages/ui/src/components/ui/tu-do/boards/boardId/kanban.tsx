@@ -1148,7 +1148,8 @@ export function KanbanBoard({
               </span>
             </div>
             <span className="hidden text-muted-foreground text-xs sm:inline">
-              Click cards to toggle • Drag to move • Ctrl+M board move • Esc clear
+              Click cards to toggle • Drag to move • Ctrl+M board move • Esc
+              clear
             </span>
             {bulkWorking && (
               <Badge
@@ -1331,7 +1332,10 @@ export function KanbanBoard({
                             >
                               <span
                                 className="h-3 w-3 rounded-full"
-                                style={{ backgroundColor: l.color, opacity: 0.9 }}
+                                style={{
+                                  backgroundColor: l.color,
+                                  opacity: 0.9,
+                                }}
                               />
                               {l.name}
                             </DropdownMenuItem>
@@ -1363,7 +1367,10 @@ export function KanbanBoard({
                             >
                               <span
                                 className="h-3 w-3 rounded-full ring-1 ring-border"
-                                style={{ backgroundColor: l.color, opacity: 0.3 }}
+                                style={{
+                                  backgroundColor: l.color,
+                                  opacity: 0.3,
+                                }}
                               />
                               {l.name}
                             </DropdownMenuItem>
