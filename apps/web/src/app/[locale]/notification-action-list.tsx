@@ -16,15 +16,19 @@ export type NotificationAction = {
   id: string;
   label: ReactNode;
   variant?: buttonVariant;
-  type?: 'WORKSPACE_INVITE_ACCEPT' | 'WORKSPACE_INVITE_DECLINE';
+  type?: 'WORKSPACE_INVITE_ACCEPT' | 'WORKSPACE_INVITE_DECLINE' | 'LINK';
   payload?: any;
 };
 
 interface Props {
   actions?: NotificationAction[];
+  onActionComplete?: () => void;
 }
 
-export default function NotificationActionList({ actions }: Props) {
+export default function NotificationActionList({
+  actions,
+  onActionComplete,
+}: Props) {
   const [processingAction, setProcessingAction] = useState<string>();
 
   return (
@@ -36,6 +40,7 @@ export default function NotificationActionList({ actions }: Props) {
           disabled={processingAction !== undefined}
           onStart={() => setProcessingAction(action.type)}
           onError={() => setProcessingAction(undefined)}
+          onActionComplete={onActionComplete}
         />
       ))}
     </div>

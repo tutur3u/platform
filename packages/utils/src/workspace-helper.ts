@@ -185,6 +185,37 @@ export async function getWorkspaceInvites() {
   return data;
 }
 
+export async function getUnresolvedInquiriesCount() {
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user?.email || !isValidTuturuuuEmail(user.email))
+    return { count: 0, latestDate: null };
+
+  const sbAdmin = await createAdminClient();
+
+  const { count } = await sbAdmin
+    .from('support_inquiries')
+    .select('*', { count: 'exact', head: true })
+    .eq('is_resolved', false);
+
+  const { data: latestInquiry } = await sbAdmin
+    .from('support_inquiries')
+    .select('created_at')
+    .eq('is_resolved', false)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  return {
+    count: count || 0,
+    latestDate: latestInquiry?.created_at || null,
+  };
+}
+
 export function enforceRootWorkspace(
   wsId: string,
   options: {

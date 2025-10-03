@@ -870,7 +870,10 @@
     "notifications": "Thông báo",
     "no-notifications": "Bạn không có thông báo nào.",
     "workspace-invite": "Lời mời tham gia",
-    "invited-to": "Bạn đã được mời tham gia"
+    "invited-to": "Bạn đã được mời tham gia",
+    "unresolved-inquiries": "Yêu cầu chưa xử lý",
+    "inquiries-need-attention": "yêu cầu cần xử lý",
+    "view-inquiries": "Xem yêu cầu"
   },
   "search": {
     "search": "Tìm kiếm",

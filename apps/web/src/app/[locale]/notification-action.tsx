@@ -11,6 +11,7 @@ interface Props {
   onEnd?: () => void;
   onSuccess?: () => void;
   onError?: () => void;
+  onActionComplete?: () => void;
   disabled?: boolean;
 }
 
@@ -20,6 +21,7 @@ export default function NotificationAction({
   onEnd,
   onSuccess,
   onError,
+  onActionComplete,
   disabled,
 }: Props) {
   const router = useRouter();
@@ -63,6 +65,13 @@ export default function NotificationAction({
 
       case 'WORKSPACE_INVITE_DECLINE':
         handleWorkspaceInvite({ data: payload, accept: false });
+        break;
+
+      case 'LINK':
+        if (payload?.href) {
+          router.push(payload.href);
+          onActionComplete?.();
+        }
         break;
 
       default:
