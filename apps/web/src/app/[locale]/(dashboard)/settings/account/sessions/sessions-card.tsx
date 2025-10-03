@@ -32,7 +32,7 @@ import {
 import { Progress } from '@tuturuuu/ui/progress';
 import { Separator } from '@tuturuuu/ui/separator';
 import { useTranslations } from 'next-intl';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
 interface Session {
@@ -93,7 +93,7 @@ function formatUserAgent(userAgent: string) {
 }
 
 // Time ago formatter that leverages i18n translations
-function getTimeAgoFormatter(t: ReturnType<typeof useTranslations>) {
+function getTimeAgoFormatter(t: any) {
   return (dateString: string) => {
     const date = new Date(dateString);
     const now = new Date();
@@ -130,7 +130,7 @@ export default function SessionsCard() {
 
   const formatTimeAgo = getTimeAgoFormatter(t);
 
-  const fetchSessions = async () => {
+  const fetchSessions = useCallback(async () => {
     try {
       setLoading(true);
       const response = await fetch('/api/v1/users/sessions');
@@ -149,11 +149,11 @@ export default function SessionsCard() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchSessions();
-  }, []);
+  }, [fetchSessions]);
 
   const revokeSession = async (
     sessionId: string,

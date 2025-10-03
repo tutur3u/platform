@@ -1,5 +1,6 @@
 'use client';
 
+import { ChatMessageActions } from '@/components/chat-message-actions';
 import type { UIMessage } from '@tuturuuu/ai/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { CodeBlock } from '@tuturuuu/ui/codeblock';
@@ -8,20 +9,16 @@ import { MemoizedReactMarkdown } from '@tuturuuu/ui/markdown';
 import { Separator } from '@tuturuuu/ui/separator';
 import { capitalize, cn } from '@tuturuuu/utils/format';
 import dayjs from 'dayjs';
-// Inspired by Chatbot-UI and modified to fit the needs of this project
-// @see https://github.com/mckaywrigley/chatbot-ui/blob/main/components/Chat/ChatMessage.tsx
-import { ChatMessageActions } from '@/components/chat-message-actions';
 import 'dayjs/locale/vi';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import mermaid from 'mermaid';
-import Link from 'next/link';
 import { useTranslations } from 'next-intl';
+import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import rehypeKatex from 'rehype-katex';
 import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
 
-// Memoized Mermaid Renderer with optimized performance
 const MermaidRenderer = ({ content }: { content: string }) => {
   const elementRef = useRef<HTMLDivElement>(null);
   const [svgContent, setSvgContent] = useState<string>('');
@@ -131,13 +128,7 @@ const MermaidRenderer = ({ content }: { content: string }) => {
 };
 
 // Memoized Quiz Component
-const QuizComponent = ({
-  quizContent,
-  t,
-}: {
-  quizContent: string;
-  t: ReturnType<typeof useTranslations<'ai_chat'>>;
-}) => {
+const QuizComponent = ({ quizContent, t }: { quizContent: string; t: any }) => {
   const [selectedOption, setSelectedOption] = useState<{
     isCorrect: boolean;
     text: string;
@@ -231,7 +222,7 @@ const FlashcardComponent = ({
   t,
 }: {
   flashcardContent: string;
-  t: ReturnType<typeof useTranslations<'ai_chat'>>;
+  t: any;
 }) => {
   const [revealAnswer, setRevealAnswer] = useState(false);
 
@@ -730,7 +721,6 @@ export function ChatMessage({
         <MemoizedReactMarkdown
           remarkPlugins={[remarkGfm, remarkMath]}
           rehypePlugins={[rehypeKatex]}
-          // biome-ignore lint/suspicious/noExplicitAny: <custom components>
           components={markdownComponents as any}
         >
           {message.parts

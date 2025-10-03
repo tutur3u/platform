@@ -90,7 +90,7 @@ const mockPolls = [
 
 interface PollCardProps {
   poll: (typeof mockPolls)[0];
-  t: Awaited<ReturnType<typeof getTranslations>>;
+  t: any;
 }
 
 function PollCard({ poll, t }: PollCardProps) {
@@ -264,7 +264,7 @@ function PollCard({ poll, t }: PollCardProps) {
 }
 
 interface QuickStatsProps {
-  t: Awaited<ReturnType<typeof getTranslations>>;
+  t: any;
 }
 
 function QuickStats({ t }: QuickStatsProps) {
