@@ -1221,6 +1221,13 @@ export type Database = {
         };
         Returns: Json;
       };
+      user_is_in_channel: {
+        Args: {
+          p_channel_id: string;
+          p_user_id: string;
+        };
+        Returns: boolean;
+      };
       validate_cross_app_token: {
         Args: {
           p_target_app: string;
@@ -8822,6 +8829,124 @@ export type Database = {
           triggered_by?: string;
           upserted_events?: Json | null;
           ws_id?: string;
+        };
+      };
+      workspace_chat_channels: {
+        Insert: {
+          created_at?: null | string;
+          created_by?: null | string;
+          description?: null | string;
+          id?: string;
+          is_private?: boolean | null;
+          name: string;
+          updated_at?: null | string;
+          ws_id: string;
+        };
+        Relationships: [
+          {
+            columns: ['ws_id'];
+            foreignKeyName: 'workspace_chat_channels_ws_id_fkey';
+            isOneToOne: false;
+            referencedColumns: ['id'];
+            referencedRelation: 'workspace_link_counts';
+          },
+          {
+            columns: ['ws_id'];
+            foreignKeyName: 'workspace_chat_channels_ws_id_fkey';
+            isOneToOne: false;
+            referencedColumns: ['id'];
+            referencedRelation: 'workspaces';
+          },
+        ];
+        Row: {
+          created_at: null | string;
+          created_by: null | string;
+          description: null | string;
+          id: string;
+          is_private: boolean | null;
+          name: string;
+          updated_at: null | string;
+          ws_id: string;
+        };
+        Update: {
+          created_at?: null | string;
+          created_by?: null | string;
+          description?: null | string;
+          id?: string;
+          is_private?: boolean | null;
+          name?: string;
+          updated_at?: null | string;
+          ws_id?: string;
+        };
+      };
+      workspace_chat_messages: {
+        Insert: {
+          channel_id: string;
+          content: string;
+          created_at?: null | string;
+          deleted_at?: null | string;
+          id?: string;
+          updated_at?: null | string;
+          user_id: string;
+        };
+        Relationships: [
+          {
+            columns: ['channel_id'];
+            foreignKeyName: 'workspace_chat_messages_channel_id_fkey';
+            isOneToOne: false;
+            referencedColumns: ['id'];
+            referencedRelation: 'workspace_chat_channels';
+          },
+        ];
+        Row: {
+          channel_id: string;
+          content: string;
+          created_at: null | string;
+          deleted_at: null | string;
+          id: string;
+          updated_at: null | string;
+          user_id: string;
+        };
+        Update: {
+          channel_id?: string;
+          content?: string;
+          created_at?: null | string;
+          deleted_at?: null | string;
+          id?: string;
+          updated_at?: null | string;
+          user_id?: string;
+        };
+      };
+      workspace_chat_participants: {
+        Insert: {
+          channel_id: string;
+          id?: string;
+          joined_at?: null | string;
+          last_read_at?: null | string;
+          user_id: string;
+        };
+        Relationships: [
+          {
+            columns: ['channel_id'];
+            foreignKeyName: 'workspace_chat_participants_channel_id_fkey';
+            isOneToOne: false;
+            referencedColumns: ['id'];
+            referencedRelation: 'workspace_chat_channels';
+          },
+        ];
+        Row: {
+          channel_id: string;
+          id: string;
+          joined_at: null | string;
+          last_read_at: null | string;
+          user_id: string;
+        };
+        Update: {
+          channel_id?: string;
+          id?: string;
+          joined_at?: null | string;
+          last_read_at?: null | string;
+          user_id?: string;
         };
       };
       workspace_configs: {

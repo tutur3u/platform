@@ -965,7 +965,8 @@
     "labels": "Nhãn",
     "estimates": "Ước tính",
     "integrations": "Tích hợp",
-    "more_tools": "Nhiều công cụ hơn"
+    "more_tools": "Nhiều công cụ hơn",
+    "realtime_chat": "Trò chuyện thời gian thực"
   },
   "usage": {
     "description": "Theo dõi hoạt động workspace, sử dụng tính năng và các số liệu hệ thống trong tổ chức của bạn",
