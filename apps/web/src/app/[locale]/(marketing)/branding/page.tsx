@@ -78,7 +78,10 @@ const BrandingPage = () => {
           animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: 0.1, duration: 0.6 }}
         >
-          <Badge variant="secondary" className="mb-6 px-4 py-1.5 text-sm shadow-sm">
+          <Badge
+            variant="secondary"
+            className="mb-6 px-4 py-1.5 text-sm shadow-sm"
+          >
             {t('branding.hero.badge')}
           </Badge>
         </motion.div>
@@ -174,7 +177,9 @@ const BrandingPage = () => {
         className="mx-auto max-w-6xl space-y-8 sm:space-y-12"
       >
         <div className="space-y-4">
-          <h2 className="font-semibold text-3xl sm:text-4xl">{t('branding.colors.title')}</h2>
+          <h2 className="font-semibold text-3xl sm:text-4xl">
+            {t('branding.colors.title')}
+          </h2>
           <p className="text-foreground/70 text-lg sm:text-xl">
             {t('branding.colors.description')}
           </p>
@@ -182,7 +187,9 @@ const BrandingPage = () => {
 
         <div className="space-y-8 sm:space-y-12">
           <div className="space-y-6">
-            <h3 className="font-medium text-2xl sm:text-3xl">{t('branding.colors.primaryTitle')}</h3>
+            <h3 className="font-medium text-2xl sm:text-3xl">
+              {t('branding.colors.primaryTitle')}
+            </h3>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-6 lg:grid-cols-4">
               {brandValues.map((value, index) => (
                 <motion.div
@@ -192,13 +199,19 @@ const BrandingPage = () => {
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
                   transition={{ duration: 0.3 }}
-                  whileHover={{ y: -8, scale: 1.02, transition: { duration: 0.2 } }}
+                  whileHover={{
+                    y: -8,
+                    scale: 1.02,
+                    transition: { duration: 0.2 },
+                  }}
                 >
                   <div
                     className="relative flex h-28 items-center justify-center p-4 text-white transition-all duration-300 group-hover:h-32 sm:h-32"
                     style={{ backgroundColor: value.color }}
                   >
-                    <span className="font-mono text-sm sm:text-base">{value.color}</span>
+                    <span className="font-mono text-sm sm:text-base">
+                      {value.color}
+                    </span>
                     <Button
                       variant="ghost"
                       size="icon"
@@ -213,7 +226,9 @@ const BrandingPage = () => {
                     </Button>
                   </div>
                   <div className="space-y-2 p-4 sm:p-5">
-                    <h4 className="font-semibold text-base sm:text-lg">{value.title}</h4>
+                    <h4 className="font-semibold text-base sm:text-lg">
+                      {value.title}
+                    </h4>
                     <p className="text-foreground/60 text-sm leading-relaxed">
                       {value.description}
                     </p>
@@ -224,13 +239,31 @@ const BrandingPage = () => {
           </div>
 
           <div className="space-y-6">
-            <h3 className="font-medium text-2xl sm:text-3xl">{t('branding.colors.systemTitle')}</h3>
+            <h3 className="font-medium text-2xl sm:text-3xl">
+              {t('branding.colors.systemTitle')}
+            </h3>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-6 lg:grid-cols-4">
               {[
-                { color: '#09090B', label: 'backgroundDark', textColor: 'text-white' },
-                { color: '#26292F', label: 'surfaceDark', textColor: 'text-white' },
-                { color: '#FFFFFF', label: 'backgroundLight', textColor: 'text-[#363636]' },
-                { color: '#363636', label: 'surfaceLight', textColor: 'text-white' },
+                {
+                  color: '#09090B',
+                  label: 'backgroundDark',
+                  textColor: 'text-white',
+                },
+                {
+                  color: '#26292F',
+                  label: 'surfaceDark',
+                  textColor: 'text-white',
+                },
+                {
+                  color: '#FFFFFF',
+                  label: 'backgroundLight',
+                  textColor: 'text-[#363636]',
+                },
+                {
+                  color: '#363636',
+                  label: 'surfaceLight',
+                  textColor: 'text-white',
+                },
               ].map((item, index) => (
                 <motion.div
                   key={index}
@@ -241,7 +274,9 @@ const BrandingPage = () => {
                     className={`relative flex h-28 items-center justify-center p-4 sm:h-32 ${item.textColor}`}
                     style={{ backgroundColor: item.color }}
                   >
-                    <span className="font-mono text-sm sm:text-base">{item.color}</span>
+                    <span className="font-mono text-sm sm:text-base">
+                      {item.color}
+                    </span>
                     <Button
                       variant="ghost"
                       size="icon"
@@ -280,7 +315,9 @@ const BrandingPage = () => {
         className="mx-auto max-w-6xl space-y-8"
       >
         <div className="space-y-4">
-          <h2 className="font-semibold text-3xl sm:text-4xl">{t('branding.typography.title')}</h2>
+          <h2 className="font-semibold text-3xl sm:text-4xl">
+            {t('branding.typography.title')}
+          </h2>
           <p className="text-foreground/70 text-lg sm:text-xl">
             {t('branding.typography.description')}
           </p>
@@ -298,10 +335,14 @@ const BrandingPage = () => {
             >
               <div className="space-y-8 p-6 sm:p-8 lg:p-10">
                 <div className="space-y-2">
-                  <h3 className={`font-semibold text-2xl sm:text-3xl ${font.className}`}>
+                  <h3
+                    className={`font-semibold text-2xl sm:text-3xl ${font.className}`}
+                  >
                     {font.name}
                   </h3>
-                  <p className="text-foreground/60 text-base sm:text-lg">{font.usage}</p>
+                  <p className="text-foreground/60 text-base sm:text-lg">
+                    {font.usage}
+                  </p>
                 </div>
 
                 <div className="grid gap-4 sm:gap-6">
@@ -318,12 +359,14 @@ const BrandingPage = () => {
                       <span
                         className={`text-base sm:text-lg lg:text-xl ${font.className}`}
                         style={{
-                          fontWeight: Number(weight.split(' ')[0])
+                          fontWeight: Number(weight.split(' ')[0]),
                         }}
                       >
                         The quick brown fox jumps over the lazy dog
                       </span>
-                      <span className="font-medium text-foreground/60 text-sm sm:text-base">{weight}</span>
+                      <span className="font-medium text-foreground/60 text-sm sm:text-base">
+                        {weight}
+                      </span>
                     </motion.div>
                   ))}
                 </div>
@@ -342,7 +385,9 @@ const BrandingPage = () => {
         className="mx-auto max-w-6xl space-y-8"
       >
         <div className="space-y-4">
-          <h2 className="font-semibold text-3xl sm:text-4xl">{t('branding.guidelines.title')}</h2>
+          <h2 className="font-semibold text-3xl sm:text-4xl">
+            {t('branding.guidelines.title')}
+          </h2>
           <p className="text-foreground/70 text-lg sm:text-xl">
             {t('branding.guidelines.description')}
           </p>
@@ -357,23 +402,33 @@ const BrandingPage = () => {
             transition={{ duration: 0.3 }}
             whileHover={{ y: -5, transition: { duration: 0.2 } }}
           >
-            <h3 className="mb-4 font-semibold text-xl sm:mb-6 sm:text-2xl">{t('branding.guidelines.logo.title')}</h3>
+            <h3 className="mb-4 font-semibold text-xl sm:mb-6 sm:text-2xl">
+              {t('branding.guidelines.logo.title')}
+            </h3>
             <ul className="space-y-3 text-foreground/70 sm:space-y-4">
               <li className="flex items-start gap-2">
                 <span className="mt-1.5 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-primary" />
-                <span className="text-sm sm:text-base">{t('branding.guidelines.logo.rule1')}</span>
+                <span className="text-sm sm:text-base">
+                  {t('branding.guidelines.logo.rule1')}
+                </span>
               </li>
               <li className="flex items-start gap-2">
                 <span className="mt-1.5 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-primary" />
-                <span className="text-sm sm:text-base">{t('branding.guidelines.logo.rule2')}</span>
+                <span className="text-sm sm:text-base">
+                  {t('branding.guidelines.logo.rule2')}
+                </span>
               </li>
               <li className="flex items-start gap-2">
                 <span className="mt-1.5 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-primary" />
-                <span className="text-sm sm:text-base">{t('branding.guidelines.logo.rule3')}</span>
+                <span className="text-sm sm:text-base">
+                  {t('branding.guidelines.logo.rule3')}
+                </span>
               </li>
               <li className="flex items-start gap-2">
                 <span className="mt-1.5 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-primary" />
-                <span className="text-sm sm:text-base">{t('branding.guidelines.logo.rule4')}</span>
+                <span className="text-sm sm:text-base">
+                  {t('branding.guidelines.logo.rule4')}
+                </span>
               </li>
             </ul>
           </motion.div>
@@ -386,23 +441,33 @@ const BrandingPage = () => {
             transition={{ duration: 0.3 }}
             whileHover={{ y: -5, transition: { duration: 0.2 } }}
           >
-            <h3 className="mb-4 font-semibold text-xl sm:mb-6 sm:text-2xl">{t('branding.guidelines.color.title')}</h3>
+            <h3 className="mb-4 font-semibold text-xl sm:mb-6 sm:text-2xl">
+              {t('branding.guidelines.color.title')}
+            </h3>
             <ul className="space-y-3 text-foreground/70 sm:space-y-4">
               <li className="flex items-start gap-2">
                 <span className="mt-1.5 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-primary" />
-                <span className="text-sm sm:text-base">{t('branding.guidelines.color.rule1')}</span>
+                <span className="text-sm sm:text-base">
+                  {t('branding.guidelines.color.rule1')}
+                </span>
               </li>
               <li className="flex items-start gap-2">
                 <span className="mt-1.5 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-primary" />
-                <span className="text-sm sm:text-base">{t('branding.guidelines.color.rule2')}</span>
+                <span className="text-sm sm:text-base">
+                  {t('branding.guidelines.color.rule2')}
+                </span>
               </li>
               <li className="flex items-start gap-2">
                 <span className="mt-1.5 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-primary" />
-                <span className="text-sm sm:text-base">{t('branding.guidelines.color.rule3')}</span>
+                <span className="text-sm sm:text-base">
+                  {t('branding.guidelines.color.rule3')}
+                </span>
               </li>
               <li className="flex items-start gap-2">
                 <span className="mt-1.5 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-primary" />
-                <span className="text-sm sm:text-base">{t('branding.guidelines.color.rule4')}</span>
+                <span className="text-sm sm:text-base">
+                  {t('branding.guidelines.color.rule4')}
+                </span>
               </li>
             </ul>
           </motion.div>
@@ -415,23 +480,33 @@ const BrandingPage = () => {
             transition={{ duration: 0.3 }}
             whileHover={{ y: -5, transition: { duration: 0.2 } }}
           >
-            <h3 className="mb-4 font-semibold text-xl sm:mb-6 sm:text-2xl">{t('branding.guidelines.typography.title')}</h3>
+            <h3 className="mb-4 font-semibold text-xl sm:mb-6 sm:text-2xl">
+              {t('branding.guidelines.typography.title')}
+            </h3>
             <ul className="space-y-3 text-foreground/70 sm:space-y-4">
               <li className="flex items-start gap-2">
                 <span className="mt-1.5 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-primary" />
-                <span className="text-sm sm:text-base">{t('branding.guidelines.typography.rule1')}</span>
+                <span className="text-sm sm:text-base">
+                  {t('branding.guidelines.typography.rule1')}
+                </span>
               </li>
               <li className="flex items-start gap-2">
                 <span className="mt-1.5 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-primary" />
-                <span className="text-sm sm:text-base">{t('branding.guidelines.typography.rule2')}</span>
+                <span className="text-sm sm:text-base">
+                  {t('branding.guidelines.typography.rule2')}
+                </span>
               </li>
               <li className="flex items-start gap-2">
                 <span className="mt-1.5 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-primary" />
-                <span className="text-sm sm:text-base">{t('branding.guidelines.typography.rule3')}</span>
+                <span className="text-sm sm:text-base">
+                  {t('branding.guidelines.typography.rule3')}
+                </span>
               </li>
               <li className="flex items-start gap-2">
                 <span className="mt-1.5 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-primary" />
-                <span className="text-sm sm:text-base">{t('branding.guidelines.typography.rule4')}</span>
+                <span className="text-sm sm:text-base">
+                  {t('branding.guidelines.typography.rule4')}
+                </span>
               </li>
             </ul>
           </motion.div>

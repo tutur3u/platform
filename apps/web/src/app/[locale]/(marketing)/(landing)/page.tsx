@@ -1210,12 +1210,7 @@ export default function MarketingPage() {
                     </li>
                   ))}
                 </ul>
-                <Button
-                  className="w-full"
-                  size="lg"
-                  variant="outline"
-                  asChild
-                >
+                <Button className="w-full" size="lg" variant="outline" asChild>
                   <Link href="/contact">
                     <MessageSquare className="mr-2 h-5 w-5" />
                     {t('pricing.experimental.cta')}
@@ -1249,7 +1244,9 @@ export default function MarketingPage() {
                     className="flex items-center gap-2 text-sm"
                   >
                     <CheckCircle2 className="h-5 w-5 text-dynamic-blue" />
-                    <span>{t(`pricing.future.benefits.${benefit}` as any)}</span>
+                    <span>
+                      {t(`pricing.future.benefits.${benefit}` as any)}
+                    </span>
                   </div>
                 ))}
               </div>
