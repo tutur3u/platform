@@ -1,6 +1,9 @@
 'use client';
 
+import { GITHUB_OWNER } from '@/constants/common';
+import type { User } from '@supabase/supabase-js';
 import { createClient } from '@tuturuuu/supabase/next/client';
+import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Card } from '@tuturuuu/ui/card';
 import {
@@ -12,81 +15,77 @@ import {
   FormMessage,
 } from '@tuturuuu/ui/form';
 import { useForm } from '@tuturuuu/ui/hooks/use-form';
-import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import {
   Brain,
+  Check,
+  Clock,
   Github,
   Globe,
+  LogIn,
   Mail,
   MessageCircle,
+  Rocket,
+  Send,
+  Shield,
+  Sparkles,
   Star,
+  Zap,
 } from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
 import { zodResolver } from '@tuturuuu/ui/resolvers';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@tuturuuu/ui/select';
+import { toast } from '@tuturuuu/ui/sonner';
 import { Textarea } from '@tuturuuu/ui/textarea';
+import { cn } from '@tuturuuu/utils/format';
 import { motion } from 'framer-motion';
+import { useTranslations } from 'next-intl';
+import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import * as z from 'zod';
-import { GITHUB_OWNER } from '@/constants/common';
 
 const formSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters'),
-  email: z.string().email('Please enter a valid email'),
+  email: z.email('Please enter a valid email'),
+  type: z.enum(['bug', 'feature-request', 'support', 'job-application'], {
+    error: 'Please select an inquiry type',
+  }),
+  product: z.enum([
+    'web',
+    'nova',
+    'rewise',
+    'calendar',
+    'finance',
+    'tudo',
+    'tumeet',
+    'shortener',
+    'qr',
+    'drive',
+    'mail',
+    'other',
+  ]),
   subject: z.string().min(5, 'Subject must be at least 5 characters'),
   message: z.string().min(10, 'Message must be at least 10 characters'),
 });
 
-const contactMethods = [
-  {
-    icon: <Mail className="h-6 w-6" />,
-    title: 'Email',
-    value: 'contact@tuturuuu.com',
-    href: 'mailto:contact@tuturuuu.com',
-    description: 'For general inquiries and support',
-  },
-  {
-    icon: <Github className="h-6 w-6" />,
-    title: 'GitHub',
-    value: 'github.com/tutur3u',
-    href: `https://github.com/${GITHUB_OWNER}`,
-    description: 'Explore our open source projects',
-  },
-  {
-    icon: <Globe className="h-6 w-6" />,
-    title: 'Global Support',
-    value: '24/7 Availability',
-    description: 'We are here to help, anytime',
-  },
-  {
-    icon: <MessageCircle className="h-6 w-6" />,
-    title: 'Response Time',
-    value: 'Within 24 Hours',
-    description: 'Quick and helpful responses',
-  },
-];
-
-const highlights = [
-  {
-    icon: <Brain className="h-6 w-6" />,
-    title: 'Technical Excellence',
-    description: 'Expert support from our engineering team',
-  },
-  {
-    icon: <Star className="h-6 w-6" />,
-    title: 'Premium Service',
-    description: 'Dedicated attention to your needs',
-  },
-];
-
 export default function ContactPage() {
+  const t = useTranslations('contact');
   const supabase = createClient();
   const [isLoading, setIsLoading] = useState(false);
+  const [user, setUser] = useState<User | null>(null);
 
   const form = useForm({
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: '',
       email: '',
+      type: 'support' as const,
+      product: 'other' as const,
       subject: '',
       message: '',
     },
@@ -95,68 +94,151 @@ export default function ContactPage() {
   useEffect(() => {
     const getUser = async () => {
       const {
-        data: { user },
+        data: { user: currentUser },
       } = await supabase.auth.getUser();
-      if (user?.email) {
-        form.setValue('email', user.email);
+      setUser(currentUser);
+
+      if (currentUser) {
+        // Set email from auth user
+        if (currentUser.email) {
+          form.setValue('email', currentUser.email);
+        }
+
+        // Get user profile data for name
+        const { data: profile } = await supabase
+          .from('users')
+          .select('display_name')
+          .eq('id', currentUser.id)
+          .single();
+
+        // Use display_name, fall back to email username
+        const name =
+          profile?.display_name || currentUser.email?.split('@')[0] || '';
+
+        if (name) {
+          form.setValue('name', name);
+        }
       }
     };
 
     getUser();
-  }, []);
+  }, [form.setValue, supabase.from, supabase.auth.getUser]);
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
+    if (!user) {
+      toast.error('Authentication required', {
+        description: 'Please log in to submit an inquiry.',
+      });
+      return;
+    }
+
     setIsLoading(true);
+
     const { error } = await supabase.from('support_inquiries').insert({
       name: values.name,
       email: values.email,
+      type: values.type,
+      product: values.product,
       subject: values.subject,
       message: values.message,
+      creator_id: user.id,
     });
 
     if (error) {
-      toast({
-        title: 'Error',
-        description: 'Something went wrong',
-        variant: 'destructive',
+      console.error('Error submitting inquiry:', error);
+      toast.error('Something went wrong', {
+        description: 'Please try again later or contact us directly.',
       });
     } else {
       form.reset();
-      toast({
-        title: 'Success',
-        description: 'Your message has been sent',
+      toast.success('Message sent successfully!', {
+        description: "We'll get back to you as soon as possible.",
       });
     }
     setIsLoading(false);
   }
 
+  const contactMethods = [
+    {
+      icon: Mail,
+      title: t('methods.email.title'),
+      value: 'contact@tuturuuu.com',
+      href: 'mailto:contact@tuturuuu.com',
+      description: t('methods.email.description'),
+      color: 'blue',
+    },
+    {
+      icon: Github,
+      title: t('methods.github.title'),
+      value: 'github.com/tutur3u',
+      href: `https://github.com/${GITHUB_OWNER}`,
+      description: t('methods.github.description'),
+      color: 'purple',
+    },
+    {
+      icon: Globe,
+      title: t('methods.support.title'),
+      value: t('methods.support.value'),
+      description: t('methods.support.description'),
+      color: 'green',
+    },
+    {
+      icon: Clock,
+      title: t('methods.response.title'),
+      value: t('methods.response.value'),
+      description: t('methods.response.description'),
+      color: 'orange',
+    },
+  ];
+
+  const highlights = [
+    {
+      icon: Brain,
+      title: t('highlights.technical.title'),
+      description: t('highlights.technical.description'),
+      color: 'cyan',
+    },
+    {
+      icon: Star,
+      title: t('highlights.premium.title'),
+      description: t('highlights.premium.description'),
+      color: 'yellow',
+    },
+    {
+      icon: Zap,
+      title: t('highlights.beta.title'),
+      description: t('highlights.beta.description'),
+      color: 'pink',
+    },
+  ];
+
   return (
-    <main className="relative mx-auto overflow-x-clip pb-12">
-      {/* Enhanced Floating Orbs */}
+    <main className="relative mx-auto overflow-x-clip text-balance">
+      {/* Dynamic Floating Orbs */}
       <div className="-z-10 pointer-events-none fixed inset-0">
         <motion.div
           animate={{
             scale: [1, 1.2, 1],
-            opacity: [0.3, 0.5, 0.3],
+            opacity: [0.2, 0.3, 0.2],
           }}
           transition={{
             duration: 8,
             repeat: Infinity,
-            ease: 'linear',
+            ease: 'easeInOut',
           }}
-          className="-left-32 sm:-left-64 absolute top-0 h-80 w-[20rem] rounded-full bg-linear-to-br from-purple-500/30 via-pink-500/20 to-transparent blur-3xl sm:h-160 sm:w-160"
+          className="-left-32 sm:-left-64 absolute top-0 h-96 w-96 rounded-full bg-gradient-to-br from-dynamic-purple/40 via-dynamic-pink/30 to-transparent blur-3xl sm:h-[40rem] sm:w-[40rem]"
         />
         <motion.div
           animate={{
-            scale: [1, 1.1, 1],
-            opacity: [0.2, 0.4, 0.2],
+            scale: [1, 1.15, 1],
+            opacity: [0.15, 0.25, 0.15],
           }}
           transition={{
             duration: 10,
             repeat: Infinity,
-            ease: 'linear',
+            ease: 'easeInOut',
           }}
-          className="-right-32 sm:-right-64 absolute top-[30%] h-70 w-70 rounded-full bg-linear-to-br from-blue-500/30 via-cyan-500/20 to-transparent blur-3xl sm:h-140 sm:w-140"
+          className="-right-32 sm:-right-64 absolute top-[40%] h-80 w-80 rounded-full bg-gradient-to-br from-dynamic-blue/40 via-dynamic-cyan/30 to-transparent blur-3xl sm:h-[35rem] sm:w-[35rem]"
         />
         <motion.div
           animate={{
@@ -166,371 +248,182 @@ export default function ContactPage() {
           transition={{
             duration: 12,
             repeat: Infinity,
-            ease: 'linear',
+            ease: 'easeInOut',
           }}
-          className="-bottom-32 -translate-x-1/2 sm:-bottom-64 absolute left-1/2 h-90 w-90 rounded-full bg-linear-to-br from-green-500/20 via-emerald-500/15 to-transparent blur-3xl sm:h-180 sm:w-180"
+          className="-bottom-32 -translate-x-1/2 sm:-bottom-64 absolute left-1/2 h-96 w-96 rounded-full bg-gradient-to-br from-dynamic-green/30 via-dynamic-emerald/20 to-transparent blur-3xl sm:h-[45rem] sm:w-[45rem]"
         />
       </div>
 
-      {/* Enhanced Background Patterns */}
-      <div className="-z-10 pointer-events-none fixed inset-0">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(var(--primary-rgb),0.05)_1px,transparent_1px)] bg-size-[24px_24px]" />
-        <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(var(--primary-rgb),0.02)_1px,transparent_1px)] bg-size-[120px] opacity-20" />
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: [0.1, 0.15, 0.1] }}
-          transition={{
-            duration: 5,
-            repeat: Infinity,
-            ease: 'linear',
-          }}
-          className="absolute inset-0 bg-[conic-gradient(from_0deg_at_50%_50%,rgba(var(--primary-rgb),0.05),transparent)]"
-        />
+      {/* Grid Pattern Overlay */}
+      <div className="-z-10 pointer-events-none fixed inset-0 opacity-30">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(var(--primary-rgb),0.08)_1px,transparent_1px)] bg-[size:32px_32px]" />
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(var(--primary-rgb),0.04)_1px,transparent_1px)] bg-[size:120px]" />
       </div>
 
-      <div className="container mx-auto mt-8 flex max-w-6xl flex-col gap-6 px-4 py-16 lg:gap-14 lg:py-24">
-        {/* Header */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          className="relative mb-16 text-center"
-        >
-          {/* Enhanced background effects */}
-          <div className="-z-10 pointer-events-none absolute inset-0">
-            <div className="absolute inset-0 bg-[radial-gradient(circle_500px_at_50%_50%,rgba(var(--primary-rgb),0.15),transparent)]" />
-            <div className="absolute inset-0 bg-[radial-gradient(circle_700px_at_30%_50%,rgba(var(--primary-rgb),0.1),transparent)]" />
-            <div className="absolute inset-0 bg-[radial-gradient(circle_600px_at_70%_50%,rgba(var(--primary-rgb),0.1),transparent)]" />
-            <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(var(--primary-rgb),0.05)_1px,transparent_1px)] bg-size-[40px] opacity-20" />
-            <div className="absolute inset-0 bg-[linear-gradient(to_bottom,rgba(var(--primary-rgb),0.05)_1px,transparent_1px)] bg-size-[40px] opacity-20" />
-          </div>
-
+      {/* Hero Section */}
+      <section className="relative px-4 pt-24 pb-16 sm:px-6 sm:pt-32 sm:pb-20 lg:px-8 lg:pt-40 lg:pb-24">
+        <div className="container mx-auto max-w-7xl">
           <motion.div
-            whileHover={{
-              scale: 1.1,
-              rotate: [0, 10, -10, 0],
-            }}
-            transition={{
-              rotate: {
-                duration: 0.5,
-                ease: 'easeInOut',
-              },
-            }}
-            className="group relative mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10"
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+            className="text-center"
           >
-            <div className="-inset-1 absolute animate-spin-slow rounded-2xl bg-linear-to-r from-purple-500/20 via-pink-500/20 to-purple-500/20" />
-            <div className="absolute inset-[2px] rounded-xl bg-background/80 backdrop-blur-sm" />
-            <MessageCircle className="relative h-8 w-8 text-primary transition-transform duration-300 group-hover:scale-110" />
-          </motion.div>
-
-          <motion.h1 className="mb-4 font-bold text-4xl text-foreground md:text-5xl">
-            <motion.span
-              animate={{
-                backgroundPosition: ['0% 50%', '100% 50%', '0% 50%'],
-              }}
-              transition={{
-                duration: 5,
-                repeat: Infinity,
-                ease: 'linear',
-              }}
-              className="relative bg-linear-to-r bg-size-[200%_auto] from-primary via-purple-500 to-pink-500 bg-clip-text text-transparent"
-            >
-              Let&apos;s Build Together
-            </motion.span>
-          </motion.h1>
-
-          <motion.p className="mx-auto max-w-2xl text-foreground/60 text-lg leading-relaxed">
-            Whether you&apos;re looking to innovate, collaborate, or simply
-            learn more about our technology, we&apos;re here to help. Join us in
-            our mission to create the world&apos;s best technology solutions.
-          </motion.p>
-        </motion.div>
-
-        <div className="grid gap-12 lg:grid-cols-2">
-          {/* Contact Methods */}
-          <motion.div
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.6, delay: 0.2 }}
-            className="space-y-12"
-          >
-            <div className="space-y-8">
-              <motion.h2 className="font-bold text-3xl text-foreground">
-                <motion.span
-                  animate={{
-                    backgroundPosition: ['0% 50%', '100% 50%', '0% 50%'],
-                  }}
-                  transition={{
-                    duration: 5,
-                    repeat: Infinity,
-                    ease: 'linear',
-                  }}
-                  className="relative bg-linear-to-r bg-size-[200%_auto] from-primary via-blue-500 to-cyan-500 bg-clip-text text-transparent"
-                >
-                  Get in Touch
-                </motion.span>
-              </motion.h2>
-
-              <div className="grid gap-4 sm:grid-cols-2">
-                {contactMethods.map((method, index) => (
-                  <motion.div
-                    key={method.title}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.4, delay: 0.1 * index }}
-                  >
-                    <Card className="group relative h-full overflow-hidden p-6 transition-all duration-300 hover:shadow-lg">
-                      <motion.div
-                        initial={{ opacity: 0 }}
-                        whileHover={{ opacity: 1 }}
-                        className="absolute inset-0 bg-linear-to-br from-purple-500/10 via-pink-500/5 to-transparent transition-opacity duration-300"
-                      />
-                      <motion.div
-                        animate={{
-                          rotate: [0, 360],
-                          scale: [1, 1.1, 1],
-                        }}
-                        transition={{
-                          duration: 20,
-                          repeat: Infinity,
-                          ease: 'linear',
-                        }}
-                        className="-top-8 -right-8 absolute h-24 w-24 rounded-xl bg-linear-to-br from-purple-500/20 via-pink-500/10 to-transparent blur-2xl"
-                      />
-                      <div className="relative flex flex-col gap-4">
-                        <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 transition-all duration-300 group-hover:rotate-12 group-hover:bg-primary/20">
-                          <motion.div
-                            animate={{
-                              scale: [1, 1.1, 1],
-                            }}
-                            transition={{
-                              duration: 2,
-                              repeat: Infinity,
-                              ease: 'easeInOut',
-                            }}
-                            className="text-primary"
-                          >
-                            {method.icon}
-                          </motion.div>
-                        </div>
-                        <div>
-                          <h3 className="mb-1 font-semibold">{method.title}</h3>
-                          {method.href ? (
-                            <a
-                              href={method.href}
-                              className="mb-2 block text-foreground/60 text-sm transition-colors hover:text-primary"
-                            >
-                              {method.value}
-                            </a>
-                          ) : (
-                            <p className="mb-2 text-foreground/60 text-sm">
-                              {method.value}
-                            </p>
-                          )}
-                          <p className="text-foreground/60 text-sm">
-                            {method.description}
-                          </p>
-                        </div>
-                      </div>
-                    </Card>
-                  </motion.div>
-                ))}
-              </div>
-            </div>
-
-            {/* Service Highlights */}
-            <div className="space-y-6">
-              <motion.h2 className="font-bold text-2xl text-foreground">
-                <motion.span
-                  animate={{
-                    backgroundPosition: ['0% 50%', '100% 50%', '0% 50%'],
-                  }}
-                  transition={{
-                    duration: 5,
-                    repeat: Infinity,
-                    ease: 'linear',
-                  }}
-                  className="relative bg-linear-to-r bg-size-[200%_auto] from-primary via-orange-500 to-red-500 bg-clip-text text-transparent"
-                >
-                  Why Choose Us
-                </motion.span>
-              </motion.h2>
-
-              <div className="grid gap-4">
-                {highlights.map((highlight, index) => (
-                  <motion.div
-                    key={highlight.title}
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ duration: 0.4, delay: 0.3 + 0.1 * index }}
-                  >
-                    <Card className="group relative overflow-hidden p-4 transition-all duration-300 hover:bg-foreground/5">
-                      <motion.div
-                        initial={{ opacity: 0 }}
-                        whileHover={{ opacity: 1 }}
-                        className="absolute inset-0 bg-linear-to-br from-orange-500/10 via-red-500/5 to-transparent transition-opacity duration-300"
-                      />
-                      <motion.div
-                        animate={{
-                          rotate: [0, 360],
-                          scale: [1, 1.1, 1],
-                        }}
-                        transition={{
-                          duration: 20,
-                          repeat: Infinity,
-                          ease: 'linear',
-                        }}
-                        className="-top-8 -right-8 absolute h-24 w-24 rounded-xl bg-linear-to-br from-orange-500/20 via-red-500/10 to-transparent blur-2xl"
-                      />
-                      <div className="relative flex items-start gap-4">
-                        <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 transition-all duration-300 group-hover:rotate-12 group-hover:bg-primary/20">
-                          <motion.div
-                            animate={{
-                              scale: [1, 1.1, 1],
-                            }}
-                            transition={{
-                              duration: 2,
-                              repeat: Infinity,
-                              ease: 'easeInOut',
-                            }}
-                            className="text-primary"
-                          >
-                            {highlight.icon}
-                          </motion.div>
-                        </div>
-                        <div>
-                          <h3 className="font-semibold">{highlight.title}</h3>
-                          <p className="text-foreground/60 text-sm">
-                            {highlight.description}
-                          </p>
-                        </div>
-                      </div>
-                    </Card>
-                  </motion.div>
-                ))}
-              </div>
-            </div>
-
-            {/* Founder Contact */}
             <motion.div
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.4 }}
-              className="space-y-6"
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.1, duration: 0.5 }}
             >
-              <motion.h2 className="font-bold text-2xl text-foreground">
-                <motion.span
-                  animate={{
-                    backgroundPosition: ['0% 50%', '100% 50%', '0% 50%'],
-                  }}
-                  transition={{
-                    duration: 5,
-                    repeat: Infinity,
-                    ease: 'linear',
-                  }}
-                  className="relative bg-linear-to-r bg-size-[200%_auto] from-primary via-green-500 to-emerald-500 bg-clip-text text-transparent"
-                >
-                  Connect with Our Founder
-                </motion.span>
-              </motion.h2>
-
-              <Card className="group relative overflow-hidden p-6">
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  whileHover={{ opacity: 1 }}
-                  className="absolute inset-0 bg-linear-to-br from-green-500/10 via-emerald-500/5 to-transparent transition-opacity duration-300"
-                />
-                <motion.div
-                  animate={{
-                    rotate: [0, 360],
-                    scale: [1, 1.1, 1],
-                  }}
-                  transition={{
-                    duration: 20,
-                    repeat: Infinity,
-                    ease: 'linear',
-                  }}
-                  className="-top-8 -right-8 absolute h-24 w-24 rounded-xl bg-linear-to-br from-green-500/20 via-emerald-500/10 to-transparent blur-2xl"
-                />
-                <div className="relative flex flex-col gap-4">
-                  <div>
-                    <h3 className="font-bold text-xl">Võ Hoàng Phúc</h3>
-                    <p className="text-foreground/60 text-sm">
-                      Founder & CEO, driving innovation and excellence in
-                      technology
-                    </p>
-                  </div>
-
-                  <div className="flex flex-col gap-3">
-                    <a
-                      href="mailto:phucvo@tuturuuu.com"
-                      className="flex items-center gap-2 text-foreground/60 text-sm transition-colors hover:text-primary"
-                    >
-                      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 transition-all duration-300 group-hover:rotate-12 group-hover:bg-primary/20">
-                        <Mail className="h-4 w-4 text-primary" />
-                      </div>
-                      phucvo@tuturuuu.com
-                    </a>
-                    <a
-                      href="https://github.com/vhpx"
-                      className="flex items-center gap-2 text-foreground/60 text-sm transition-colors hover:text-primary"
-                    >
-                      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 transition-all duration-300 group-hover:rotate-12 group-hover:bg-primary/20">
-                        <Github className="h-4 w-4 text-primary" />
-                      </div>
-                      @vhpx on GitHub
-                    </a>
-                  </div>
-                </div>
-              </Card>
+              <Badge
+                variant="secondary"
+                className="mb-6 border-dynamic-purple/30 bg-dynamic-purple/10 text-dynamic-purple transition-all hover:scale-105 hover:bg-dynamic-purple/20 hover:shadow-dynamic-purple/20 hover:shadow-lg"
+              >
+                <MessageCircle className="mr-1.5 h-3.5 w-3.5" />
+                {t('hero.badge')}
+              </Badge>
             </motion.div>
+
+            <motion.h1
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2, duration: 0.8 }}
+              className="mb-6 text-balance font-bold text-4xl tracking-tight sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl"
+            >
+              {t('hero.title.part1')}{' '}
+              <span className="animate-gradient bg-gradient-to-r from-dynamic-purple via-dynamic-pink to-dynamic-orange bg-clip-text text-transparent">
+                {t('hero.title.highlight')}
+              </span>
+            </motion.h1>
+
+            <motion.p
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3, duration: 0.8 }}
+              className="mx-auto mb-8 max-w-3xl text-balance text-base text-foreground/70 leading-relaxed sm:text-lg md:text-xl lg:text-2xl"
+            >
+              {t('hero.description')}
+            </motion.p>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* Contact Methods Section */}
+      <section className="relative px-4 py-16 sm:px-6 lg:px-8">
+        <div className="container mx-auto max-w-7xl">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="mb-12 text-center"
+          >
+            <h2 className="mb-4 font-bold text-3xl sm:text-4xl">
+              {t('methods.title')}
+            </h2>
+            <p className="mx-auto max-w-2xl text-foreground/60 text-lg">
+              {t('methods.subtitle')}
+            </p>
           </motion.div>
 
-          {/* Contact Form */}
-          <motion.div
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.6, delay: 0.2 }}
-          >
-            <motion.h2 className="mb-8 font-bold text-3xl text-foreground">
-              <motion.span
-                animate={{
-                  backgroundPosition: ['0% 50%', '100% 50%', '0% 50%'],
-                }}
-                transition={{
-                  duration: 5,
-                  repeat: Infinity,
-                  ease: 'linear',
-                }}
-                className="relative bg-linear-to-r bg-size-[200%_auto] from-primary via-purple-500 to-pink-500 bg-clip-text text-transparent"
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+            {contactMethods.map((method, index) => (
+              <motion.div
+                key={method.title}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: index * 0.1 }}
               >
-                Send Us a Message
-              </motion.span>
-            </motion.h2>
+                <Card
+                  className={cn(
+                    'group h-full p-6 transition-all hover:shadow-lg',
+                    `border-dynamic-${method.color}/30 bg-gradient-to-br from-dynamic-${method.color}/5 via-background to-background hover:border-dynamic-${method.color}/50 hover:shadow-dynamic-${method.color}/10`
+                  )}
+                >
+                  <div
+                    className={cn(
+                      'mb-4 flex h-12 w-12 items-center justify-center rounded-xl transition-transform group-hover:rotate-12 group-hover:scale-110',
+                      `bg-dynamic-${method.color}/10`
+                    )}
+                  >
+                    <method.icon
+                      className={cn('h-6 w-6', `text-dynamic-${method.color}`)}
+                    />
+                  </div>
+                  <h3 className="mb-2 font-semibold text-lg">{method.title}</h3>
+                  {method.href ? (
+                    <a
+                      href={method.href}
+                      className={cn(
+                        'mb-2 block text-sm transition-colors',
+                        `text-dynamic-${method.color} hover:text-dynamic-${method.color}/80`
+                      )}
+                    >
+                      {method.value}
+                    </a>
+                  ) : (
+                    <p className="mb-2 text-foreground/60 text-sm">
+                      {method.value}
+                    </p>
+                  )}
+                  <p className="text-foreground/60 text-sm">
+                    {method.description}
+                  </p>
+                </Card>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
 
-            <Card className="group relative overflow-hidden">
-              <motion.div
-                initial={{ opacity: 0 }}
-                whileHover={{ opacity: 1 }}
-                className="absolute inset-0 bg-linear-to-br from-purple-500/10 via-pink-500/5 to-transparent transition-opacity duration-300"
-              />
-              <motion.div
-                animate={{
-                  rotate: [0, 360],
-                  scale: [1, 1.1, 1],
-                }}
-                transition={{
-                  duration: 20,
-                  repeat: Infinity,
-                  ease: 'linear',
-                }}
-                className="-top-8 -right-8 absolute h-24 w-24 rounded-xl bg-linear-to-br from-purple-500/20 via-pink-500/10 to-transparent blur-2xl"
-              />
-              <div className="bg-primary/5 p-6">
-                <p className="text-foreground/80">
-                  We&apos;re excited to hear from you. Share your ideas,
-                  questions, or thoughts, and we&apos;ll get back to you as soon
-                  as possible.
-                </p>
-              </div>
-              <div className="relative p-6">
+      {/* Main Content Grid */}
+      <section className="relative px-4 py-16 sm:px-6 lg:px-8">
+        <div className="container mx-auto max-w-7xl">
+          <div className="grid gap-12 lg:grid-cols-2">
+            {/* Contact Form */}
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+            >
+              <h2 className="mb-6 font-bold text-3xl">
+                <span className="bg-gradient-to-r from-dynamic-purple via-dynamic-pink to-dynamic-orange bg-clip-text text-transparent">
+                  {t('form.title')}
+                </span>
+              </h2>
+              <p className="mb-8 text-foreground/70 leading-relaxed">
+                {t('form.description')}
+              </p>
+
+              <Card className="border-dynamic-purple/30 bg-gradient-to-br from-dynamic-purple/5 via-background to-background p-6">
+                {!user && (
+                  <div className="mb-6 rounded-lg border border-dynamic-orange/30 bg-dynamic-orange/5 p-4">
+                    <div className="flex items-start gap-3">
+                      <div className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-dynamic-orange/10">
+                        <Shield className="h-5 w-5 text-dynamic-orange" />
+                      </div>
+                      <div className="flex-1">
+                        <h4 className="mb-1 font-semibold text-sm">
+                          {t('form.authRequired.title')}
+                        </h4>
+                        <p className="mb-3 text-foreground/70 text-xs leading-relaxed">
+                          {t('form.authRequired.description')}
+                        </p>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="border-dynamic-orange/30 text-dynamic-orange hover:bg-dynamic-orange/10 hover:text-dynamic-orange"
+                          asChild
+                        >
+                          <Link href="/login">
+                            <LogIn className="mr-1.5 h-4 w-4" />
+                            {t('form.authRequired.loginButton')}
+                          </Link>
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 <Form {...form}>
                   <form
                     onSubmit={form.handleSubmit(onSubmit)}
@@ -541,11 +434,11 @@ export default function ContactPage() {
                       name="name"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Name</FormLabel>
+                          <FormLabel>{t('form.fields.name.label')}</FormLabel>
                           <FormControl>
                             <Input
-                              placeholder="Your name"
-                              className="bg-background/50 backdrop-blur-sm"
+                              placeholder={t('form.fields.name.placeholder')}
+                              disabled
                               {...field}
                             />
                           </FormControl>
@@ -559,12 +452,12 @@ export default function ContactPage() {
                       name="email"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Email</FormLabel>
+                          <FormLabel>{t('form.fields.email.label')}</FormLabel>
                           <FormControl>
                             <Input
                               type="email"
-                              placeholder="you@example.com"
-                              className="bg-background/50 backdrop-blur-sm"
+                              placeholder={t('form.fields.email.placeholder')}
+                              disabled
                               {...field}
                             />
                           </FormControl>
@@ -573,16 +466,111 @@ export default function ContactPage() {
                       )}
                     />
 
+                    <div className="grid gap-6 sm:grid-cols-2">
+                      <FormField
+                        control={form.control}
+                        name="type"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>{t('form.fields.type.label')}</FormLabel>
+                            <Select
+                              onValueChange={field.onChange}
+                              defaultValue={field.value}
+                            >
+                              <FormControl>
+                                <SelectTrigger>
+                                  <SelectValue
+                                    placeholder={t(
+                                      'form.fields.type.placeholder'
+                                    )}
+                                  />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                <SelectItem value="support">
+                                  {t('form.fields.type.options.support')}
+                                </SelectItem>
+                                <SelectItem value="bug">
+                                  {t('form.fields.type.options.bug')}
+                                </SelectItem>
+                                <SelectItem value="feature-request">
+                                  {t('form.fields.type.options.featureRequest')}
+                                </SelectItem>
+                                <SelectItem value="job-application">
+                                  {t('form.fields.type.options.jobApplication')}
+                                </SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name="product"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>
+                              {t('form.fields.product.label')}
+                            </FormLabel>
+                            <Select
+                              onValueChange={field.onChange}
+                              defaultValue={field.value}
+                            >
+                              <FormControl>
+                                <SelectTrigger>
+                                  <SelectValue
+                                    placeholder={t(
+                                      'form.fields.product.placeholder'
+                                    )}
+                                  />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                <SelectItem value="web">
+                                  {t('form.fields.product.options.web')}
+                                </SelectItem>
+                                <SelectItem value="nova">
+                                  {t('form.fields.product.options.nova')}
+                                </SelectItem>
+                                <SelectItem value="rewise">
+                                  {t('form.fields.product.options.rewise')}
+                                </SelectItem>
+                                <SelectItem value="calendar">
+                                  {t('form.fields.product.options.calendar')}
+                                </SelectItem>
+                                <SelectItem value="finance">
+                                  {t('form.fields.product.options.finance')}
+                                </SelectItem>
+                                <SelectItem value="tudo">
+                                  {t('form.fields.product.options.tudo')}
+                                </SelectItem>
+                                <SelectItem value="tumeet">
+                                  {t('form.fields.product.options.tumeet')}
+                                </SelectItem>
+                                <SelectItem value="other">
+                                  {t('form.fields.product.options.other')}
+                                </SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+
                     <FormField
                       control={form.control}
                       name="subject"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Subject</FormLabel>
+                          <FormLabel>
+                            {t('form.fields.subject.label')}
+                          </FormLabel>
                           <FormControl>
                             <Input
-                              placeholder="What's this about?"
-                              className="bg-background/50 backdrop-blur-sm"
+                              placeholder={t('form.fields.subject.placeholder')}
                               {...field}
                             />
                           </FormControl>
@@ -596,11 +584,13 @@ export default function ContactPage() {
                       name="message"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Message</FormLabel>
+                          <FormLabel>
+                            {t('form.fields.message.label')}
+                          </FormLabel>
                           <FormControl>
                             <Textarea
-                              placeholder="Tell us more about your ideas..."
-                              className="min-h-[150px] resize-none bg-background/50 backdrop-blur-sm"
+                              placeholder={t('form.fields.message.placeholder')}
+                              className="min-h-[150px] resize-none"
                               {...field}
                             />
                           </FormControl>
@@ -611,75 +601,217 @@ export default function ContactPage() {
 
                     <Button
                       type="submit"
-                      className="w-full transition-all duration-300 hover:scale-[1.02]"
+                      className="w-full"
                       size="lg"
-                      disabled={isLoading}
+                      disabled={isLoading || !user}
                     >
-                      {isLoading ? 'Sending...' : 'Send Message'}
+                      {isLoading ? (
+                        t('form.button.sending')
+                      ) : (
+                        <>
+                          <Send className="mr-2 h-5 w-5" />
+                          {t('form.button.send')}
+                        </>
+                      )}
                     </Button>
                   </form>
                 </Form>
+              </Card>
+            </motion.div>
+
+            {/* Right Column - Highlights & Founder */}
+            <motion.div
+              initial={{ opacity: 0, x: 20 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              className="space-y-8"
+            >
+              {/* Why Choose Us */}
+              <div>
+                <h2 className="mb-6 font-bold text-3xl">
+                  <span className="bg-gradient-to-r from-dynamic-blue via-dynamic-cyan to-dynamic-green bg-clip-text text-transparent">
+                    {t('highlights.title')}
+                  </span>
+                </h2>
+                <div className="space-y-4">
+                  {highlights.map((highlight, index) => (
+                    <motion.div
+                      key={highlight.title}
+                      initial={{ opacity: 0, y: 20 }}
+                      whileInView={{ opacity: 1, y: 0 }}
+                      viewport={{ once: true }}
+                      transition={{ delay: index * 0.1 }}
+                    >
+                      <Card
+                        className={cn(
+                          'group p-6 transition-all hover:shadow-lg',
+                          `border-dynamic-${highlight.color}/30 bg-gradient-to-br from-dynamic-${highlight.color}/5 via-background to-background hover:border-dynamic-${highlight.color}/50 hover:shadow-dynamic-${highlight.color}/10`
+                        )}
+                      >
+                        <div className="flex items-start gap-4">
+                          <div
+                            className={cn(
+                              'flex h-12 w-12 items-center justify-center rounded-xl transition-transform group-hover:rotate-12 group-hover:scale-110',
+                              `bg-dynamic-${highlight.color}/10`
+                            )}
+                          >
+                            <highlight.icon
+                              className={cn(
+                                'h-6 w-6',
+                                `text-dynamic-${highlight.color}`
+                              )}
+                            />
+                          </div>
+                          <div className="flex-1">
+                            <h3 className="mb-1 font-semibold text-lg">
+                              {highlight.title}
+                            </h3>
+                            <p className="text-foreground/60 text-sm">
+                              {highlight.description}
+                            </p>
+                          </div>
+                        </div>
+                      </Card>
+                    </motion.div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Founder Contact */}
+              <div>
+                <h2 className="mb-6 font-bold text-3xl">
+                  <span className="bg-gradient-to-r from-dynamic-pink via-dynamic-purple to-dynamic-blue bg-clip-text text-transparent">
+                    {t('founder.title')}
+                  </span>
+                </h2>
+                <Card className="group border-dynamic-pink/30 bg-gradient-to-br from-dynamic-pink/5 via-background to-background p-6">
+                  <div className="mb-4 flex items-start gap-4">
+                    <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-dynamic-pink/10">
+                      <Rocket className="h-8 w-8 text-dynamic-pink" />
+                    </div>
+                    <div>
+                      <h3 className="mb-1 font-bold text-xl">
+                        {t('founder.name')}
+                      </h3>
+                      <p className="text-foreground/60 text-sm">
+                        {t('founder.role')}
+                      </p>
+                    </div>
+                  </div>
+
+                  <p className="mb-6 text-foreground/70 text-sm leading-relaxed">
+                    {t('founder.description')}
+                  </p>
+
+                  <div className="space-y-3">
+                    <a
+                      href="mailto:phucvo@tuturuuu.com"
+                      className="flex items-center gap-3 rounded-lg border border-dynamic-pink/20 bg-dynamic-pink/5 p-3 transition-all hover:border-dynamic-pink/40 hover:bg-dynamic-pink/10"
+                    >
+                      <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-dynamic-pink/10">
+                        <Mail className="h-5 w-5 text-dynamic-pink" />
+                      </div>
+                      <div>
+                        <div className="font-medium text-sm">
+                          {t('founder.contact.email')}
+                        </div>
+                        <div className="text-dynamic-pink text-xs">
+                          phucvo@tuturuuu.com
+                        </div>
+                      </div>
+                    </a>
+
+                    <a
+                      href="https://github.com/vhpx"
+                      target="_blank"
+                      className="flex items-center gap-3 rounded-lg border border-dynamic-purple/20 bg-dynamic-purple/5 p-3 transition-all hover:border-dynamic-purple/40 hover:bg-dynamic-purple/10"
+                      rel="noopener"
+                    >
+                      <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-dynamic-purple/10">
+                        <Github className="h-5 w-5 text-dynamic-purple" />
+                      </div>
+                      <div>
+                        <div className="font-medium text-sm">
+                          {t('founder.contact.github')}
+                        </div>
+                        <div className="text-dynamic-purple text-xs">@vhpx</div>
+                      </div>
+                    </a>
+                  </div>
+                </Card>
+              </div>
+
+              {/* Quick Links */}
+              <Card className="border-dynamic-blue/30 bg-gradient-to-br from-dynamic-blue/5 via-background to-background p-6">
+                <h3 className="mb-4 font-semibold text-lg">
+                  {t('quickLinks.title')}
+                </h3>
+                <div className="space-y-2">
+                  <Link
+                    href="/about"
+                    className="flex items-center gap-3 rounded-lg p-2 transition-colors hover:bg-dynamic-blue/10"
+                  >
+                    <Check className="h-4 w-4 text-dynamic-blue" />
+                    <span className="text-sm">{t('quickLinks.about')}</span>
+                  </Link>
+                  <Link
+                    href="/#pricing"
+                    className="flex items-center gap-3 rounded-lg p-2 transition-colors hover:bg-dynamic-blue/10"
+                  >
+                    <Check className="h-4 w-4 text-dynamic-blue" />
+                    <span className="text-sm">{t('quickLinks.pricing')}</span>
+                  </Link>
+                  <Link
+                    href="https://github.com/tutur3u/platform"
+                    target="_blank"
+                    className="flex items-center gap-3 rounded-lg p-2 transition-colors hover:bg-dynamic-blue/10"
+                  >
+                    <Check className="h-4 w-4 text-dynamic-blue" />
+                    <span className="text-sm">{t('quickLinks.github')}</span>
+                  </Link>
+                </div>
+              </Card>
+            </motion.div>
+          </div>
+        </div>
+      </section>
+
+      {/* Response Time Banner */}
+      <section className="relative px-4 py-16 pb-32 sm:px-6 lg:px-8">
+        <div className="container mx-auto max-w-5xl">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+          >
+            <Card className="overflow-hidden border-dynamic-green/30 bg-gradient-to-br from-dynamic-green/10 via-dynamic-emerald/5 to-background p-8 text-center md:p-12">
+              <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-dynamic-green/10">
+                <Sparkles className="h-8 w-8 text-dynamic-green" />
+              </div>
+              <h2 className="mb-4 font-bold text-3xl sm:text-4xl">
+                {t('banner.title')}
+              </h2>
+              <p className="mx-auto mb-8 max-w-2xl text-foreground/70 text-lg">
+                {t('banner.description')}
+              </p>
+              <div className="flex flex-wrap items-center justify-center gap-6 text-foreground/60 text-sm">
+                <div className="flex items-center gap-2">
+                  <Clock className="h-5 w-5 text-dynamic-green" />
+                  {t('banner.features.response')}
+                </div>
+                <div className="flex items-center gap-2">
+                  <Brain className="h-5 w-5 text-dynamic-blue" />
+                  {t('banner.features.expert')}
+                </div>
+                <div className="flex items-center gap-2">
+                  <Star className="h-5 w-5 text-dynamic-yellow" />
+                  {t('banner.features.dedicated')}
+                </div>
               </div>
             </Card>
           </motion.div>
         </div>
-      </div>
-
-      {/* Enhanced Animation Styles */}
-      <style jsx global>{`
-        @keyframes float {
-          0%,
-          100% {
-            transform: translateY(0px) rotate(0deg);
-          }
-          50% {
-            transform: translateY(-10px) rotate(2deg);
-          }
-        }
-        .animate-float {
-          animation: float 4s ease-in-out infinite;
-        }
-        @keyframes spin-slow {
-          from {
-            transform: rotate(0deg);
-          }
-          to {
-            transform: rotate(360deg);
-          }
-        }
-        .animate-spin-slow {
-          animation: spin-slow 12s linear infinite;
-        }
-        @keyframes pulse-glow {
-          0%,
-          100% {
-            opacity: 0.5;
-            transform: scale(1);
-          }
-          50% {
-            opacity: 1;
-            transform: scale(1.05);
-          }
-        }
-        .animate-pulse-glow {
-          animation: pulse-glow 4s ease-in-out infinite;
-        }
-        @keyframes gradient-shift {
-          0% {
-            background-position: 0% 50%;
-          }
-          50% {
-            background-position: 100% 50%;
-          }
-          100% {
-            background-position: 0% 50%;
-          }
-        }
-        .animate-gradient {
-          animation: gradient-shift 8s ease infinite;
-          background-size: 200% 200%;
-        }
-      `}</style>
+      </section>
     </main>
   );
 }
