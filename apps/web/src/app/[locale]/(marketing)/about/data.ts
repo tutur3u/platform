@@ -171,7 +171,7 @@ export const members: {
     role: 'President',
     departments: ['Executive Board', 'Technology'],
     image: '/members/gen6/quang.png',
-    bio: "Visionary former president who transformed NEO into a recognized force in Vietnam's tech community. Quang led the strategic initiatives that positioned our club as a leader in innovation and collaboration.",
+    bio: 'Visionary former president who transformed NEO into a recognized force in tech community. Quang led the strategic initiatives that positioned our club as a leader in innovation and collaboration.',
     quote:
       "Innovation is not about saying yes to everything. It's about saying no to all but the most crucial features.",
     generation: 6,
@@ -180,13 +180,12 @@ export const members: {
       linkedin: 'https://www.linkedin.com/in/vietquang-cao-8a1307223/',
     },
   },
-
   {
     name: 'Vo Hoang Phuc',
     role: 'Technical Vice President',
     departments: ['Executive Board', 'Technology'],
     image: '/members/gen6/phuc.png',
-    bio: 'Former Technical VP who architected the robust technical infrastructure that supports our current operations. Phuc established coding standards and development practices that became the backbone of our technical excellence.',
+    bio: 'Founding architect of NCT Hub who transformed a simple vision into the thriving tech community we know today. His pioneering work established the robust systems and innovative mindset that continue to drive our success.',
     quote: 'The best way to predict the future is to invent it.',
     generation: 6,
     socials: {
@@ -226,7 +225,7 @@ export const members: {
     role: 'Head of Marcom',
     departments: ['Marketing'],
     image: '/members/gen6/khanh.png',
-    bio: "Former marketing leader who built NEO's brand identity and established our voice in the tech community. Khanh created compelling campaigns that attracted top talent and positioned us as innovators in Vietnamese tech education.",
+    bio: "Former marketing leader who built NEO's brand identity and established our voice in the tech community. Khanh created compelling campaigns that attracted top talent and positioned us as innovators in tech education.",
     quote:
       'Marketing is no longer about the stuff you make, but the stories you tell.',
     generation: 6,
