@@ -129,14 +129,16 @@ export default function RealtimeChatContent({
 
         if (participants) {
           // Get unique user IDs from participants
-          const participantUserIds = [...new Set(participants.map(p => p.user_id))];
+          const participantUserIds = [
+            ...new Set(participants.map((p) => p.user_id)),
+          ];
           const { data: participantUsers } = await supabase
             .from('users')
             .select('id, display_name, avatar_url')
             .in('id', participantUserIds);
 
           const participantUserMap = new Map(
-            participantUsers?.map(u => [u.id, u]) || []
+            participantUsers?.map((u) => [u.id, u]) || []
           );
 
           // Count how many participants have read each message and track who
@@ -260,14 +262,16 @@ export default function RealtimeChatContent({
 
             if (participants) {
               // Get unique user IDs from participants
-              const participantUserIds = [...new Set(participants.map(p => p.user_id))];
+              const participantUserIds = [
+                ...new Set(participants.map((p) => p.user_id)),
+              ];
               const { data: participantUsers } = await supabase
                 .from('users')
                 .select('id, display_name, avatar_url')
                 .in('id', participantUserIds);
 
               const participantUserMap = new Map(
-                participantUsers?.map(u => [u.id, u]) || []
+                participantUsers?.map((u) => [u.id, u]) || []
               );
 
               setMessages((msgs) => {
@@ -673,7 +677,7 @@ export default function RealtimeChatContent({
                                         0 && (
                                         <Tooltip>
                                           <TooltipTrigger asChild>
-                                            <div className='-space-x-1 flex cursor-help'>
+                                            <div className="-space-x-1 flex cursor-help">
                                               {messageReaders
                                                 .get(message.id)!
                                                 .slice(0, 3)
@@ -740,7 +744,8 @@ export default function RealtimeChatContent({
                                     {/* Status icon */}
                                     {isOptimistic ? (
                                       <Loader2 className="h-3 w-3 animate-spin text-dynamic-blue/50" />
-                                    ) : (readReceipts.get(message.id) ?? 0) > 0 ? (
+                                    ) : (readReceipts.get(message.id) ?? 0) >
+                                      0 ? (
                                       <CheckCheck className="h-3 w-3 text-dynamic-blue" />
                                     ) : (
                                       <Check className="h-3 w-3 text-dynamic-blue/50" />
