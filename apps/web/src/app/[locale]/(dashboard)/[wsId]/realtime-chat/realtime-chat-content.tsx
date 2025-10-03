@@ -515,16 +515,14 @@ export default function RealtimeChatContent({
     }
 
     // Upsert typing indicator
-    await supabase
-      .from('workspace_chat_typing_indicators')
-      .upsert(
-        {
-          channel_id: selectedChannel.id,
-          user_id: userId,
-          updated_at: new Date().toISOString(),
-        },
-        { onConflict: 'channel_id,user_id' }
-      );
+    await supabase.from('workspace_chat_typing_indicators').upsert(
+      {
+        channel_id: selectedChannel.id,
+        user_id: userId,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: 'channel_id,user_id' }
+    );
 
     // Set timeout to remove typing indicator after 3 seconds of inactivity
     typingTimeoutRef.current = setTimeout(async () => {
