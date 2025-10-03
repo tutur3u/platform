@@ -31,7 +31,11 @@ export default async function MyTasksPage({ params }: Props) {
   return (
     <WorkspaceWrapper params={params}>
       {({ wsId, isPersonal }) => (
-        <MyTasksDataLoader wsId={wsId} userId={user.id} isPersonal={isPersonal} />
+        <MyTasksDataLoader
+          wsId={wsId}
+          userId={user.id}
+          isPersonal={isPersonal}
+        />
       )}
     </WorkspaceWrapper>
   );

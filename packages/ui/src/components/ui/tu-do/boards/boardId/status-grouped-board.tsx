@@ -327,7 +327,11 @@ export function StatusGroupedBoard({
                 return oldData.map((list) => {
                   const update = updates.find((u) => u.listId === list.id);
                   return update
-                    ? { ...list, status: update.newStatus, position: update.newPosition }
+                    ? {
+                        ...list,
+                        status: update.newStatus,
+                        position: update.newPosition,
+                      }
                     : list;
                 });
               }
@@ -341,7 +345,10 @@ export function StatusGroupedBoard({
               if (hasErrors) {
                 console.error('Failed to persist list reordering');
                 if (previousLists) {
-                  queryClient.setQueryData(['task_lists', boardId], previousLists);
+                  queryClient.setQueryData(
+                    ['task_lists', boardId],
+                    previousLists
+                  );
                 } else {
                   queryClient.invalidateQueries({
                     queryKey: ['task_lists', boardId],
@@ -394,8 +401,9 @@ export function StatusGroupedBoard({
             );
             newPosition =
               insertIndex > 0
-                ? (targetStatusLists[insertIndex - 1]?.position || 0 +
-                    targetStatusLists[insertIndex]?.position || 0) / 2
+                ? (targetStatusLists[insertIndex - 1]?.position ||
+                    0 + targetStatusLists[insertIndex]?.position ||
+                    0) / 2
                 : (targetStatusLists[0]?.position || 0) - 1;
           } else {
             // Append to end of status group
@@ -437,7 +445,10 @@ export function StatusGroupedBoard({
               onError: () => {
                 // Rollback on error
                 if (previousLists) {
-                  queryClient.setQueryData(['task_lists', boardId], previousLists);
+                  queryClient.setQueryData(
+                    ['task_lists', boardId],
+                    previousLists
+                  );
                 }
               },
             }

@@ -165,7 +165,8 @@ export default function MyTasksContent({
 
   // Get available lists for selected board
   const availableLists = useMemo(() => {
-    if (!selectedBoardId || !boardsData || !Array.isArray(boardsData)) return [];
+    if (!selectedBoardId || !boardsData || !Array.isArray(boardsData))
+      return [];
     const board = boardsData.find((b: any) => b.id === selectedBoardId);
     if (!board?.task_lists) return [];
     return (board.task_lists as any[])
@@ -434,11 +435,12 @@ export default function MyTasksContent({
                   />
                 </SelectTrigger>
                 <SelectContent>
-                  {Array.isArray(boardsData) && boardsData.map((board: any) => (
-                    <SelectItem key={board.id} value={board.id}>
-                      {board.name || 'Unnamed Board'}
-                    </SelectItem>
-                  ))}
+                  {Array.isArray(boardsData) &&
+                    boardsData.map((board: any) => (
+                      <SelectItem key={board.id} value={board.id}>
+                        {board.name || 'Unnamed Board'}
+                      </SelectItem>
+                    ))}
                 </SelectContent>
               </Select>
             </div>
