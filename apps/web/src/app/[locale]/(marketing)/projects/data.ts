@@ -16,6 +16,98 @@ export type Project = {
 const NCT_REPO_URL = 'https://github.com/rmit-nct/hub';
 
 export const projects: Project[] = [
+   {
+    name: 'Neo Drone',
+    description:
+      'A drone project powered by the ESP32 microcontroller and programmed with ESP-IDF 5.0. The drone is controlled remotely using the ESP-Drone mobile app (Android), leveraging Wi-Fi communication for real-time flight control and navigation.',
+    type: 'hardware',
+    techStack: ['ESP32', 'C++', 'Dabble', 'Bluetooth Module'],
+    status: 'ongoing',
+    semester: 'B/2025',
+    manager: 'Truong Duc Qui',
+    members: [
+      {
+        name: 'Truong Duc Qui',
+        role: 'Leader, Developer',
+      },
+      {
+        name: 'Vinh Pham',
+        role: 'Developer',
+      },
+      {
+        name: 'Nguyen Do Tuong Van',
+        role: 'Developer',
+      },
+      {
+        name: 'Nguyen Ngoc Thien Ngan',
+        role: 'Developer',
+      },
+      {
+        name: 'Nguyen Quoc Thinh',
+        role: 'Developer',
+      },
+    ],
+    purpose:
+      'The purpose of this project is to introduce members to embedded development for drones using the ESP32 platform. By working with ESP-IDF 5.0, PowerShell, and the ESP-Drone app, members gain practical experience in firmware development, wireless control systems, and real-time hardware interaction. The project helps bridge the gap between IoT, robotics, and aerospace applications by demonstrating how microcontrollers can be used to build and control flying systems.',
+    githubUrl: 'https://github.com/rmit-nct/neo-spider',
+  },
+  {
+    name: 'Neo Spider',
+    description:
+      'A robotics project using an ESP32 microcontroller, Bluetooth module, and the Dabble mobile app to remotely control a spider-like robot. The system allows wireless movement control and interactive commands through a smartphone interface.',
+    type: 'hardware',
+    techStack: ['ESP32', 'C++', 'Dabble', 'Bluetooth Module'],
+    status: 'ongoing',
+    semester: 'B/2025',
+    manager: 'Tran Viet Duc',
+    members: [
+      {
+        name: 'Tran Viet Duc',
+        role: 'Leader, Developer',
+      },
+      {
+        name: 'Huynh Ngoc Tai',
+        role: 'Developer',
+      },
+      {
+        name: 'Nguyen Quoc Huy',
+        role: 'CAD Drafter, Developer',
+      },
+      {
+        name: 'Tran Quang Minh',
+        role: 'Developer',
+      },
+    ],
+    purpose:
+      'The purpose of this project is to help members explore embedded systems, wireless communication, and robotics control. By integrating the ESP32 with Bluetooth and Dabble, members gain hands-on experience in hardware programming, mobile connectivity, and real-time robot navigation, simulating practical applications in IoT and remote automation.',
+    githubUrl: 'https://github.com/rmit-nct/neo-drone',
+  },
+  {
+    name: 'Neo Display',
+    description:
+      'A C++ project using Arduino UNO to control and display information on an ST7920 LCD screen, such as text, menus, or simple graphics.',
+    type: 'hardware',
+    techStack: ['Arduino UNO', 'C++', 'ST7920'],
+    status: 'completed',
+    semester: 'B/2025',
+    manager: 'Huynh Trong Khiem',
+    members: [
+      {
+        name: 'Nguyen Gia Khang',
+        role: 'Leader, Developer',
+      },
+      {
+        name: 'Duong The Vong',
+        role: 'Developer',
+      },
+      {
+        name: 'Nguyen Tran Tuan Anh',
+        role: 'Developer',
+      },
+    ],
+    purpose:
+      'The purpose of this project is to help members learn embedded programming with Arduino, focusing on how microcontrollers communicate with external hardware. By working with the ST7920 LCD, members will gain practical experience in C++ coding for hardware, serial communication, and real-time data display.',
+  },
   {
     name: 'Neo Agent Meeting',
     description:
@@ -32,7 +124,7 @@ export const projects: Project[] = [
       },
       {
         name: 'Nguyen Nghia Hiep',
-        role: 'Developer',
+        role: 'Tester',
       },
       {
         name: 'Pham Hoang Duong',
@@ -58,7 +150,7 @@ export const projects: Project[] = [
     members: [
       {
         name: 'Nguyen Nghia Hiep',
-        role: 'Leader, Developer',
+        role: 'Leader, Tester',
       },
       {
         name: 'Nguyen Ngoc Luong',
