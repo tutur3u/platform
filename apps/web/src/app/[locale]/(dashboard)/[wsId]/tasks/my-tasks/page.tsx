@@ -1,22 +1,17 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import {
   Calendar,
   CheckCircle2,
   Clock,
   Flag,
   UserRound,
-  NotebookPen,
-  Archive,
 } from '@tuturuuu/ui/icons';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
 import { redirect } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import WorkspaceWrapper from '@/components/workspace-wrapper';
-import TaskListWithCompletion from '../../(dashboard)/tasks/task-list-with-completion';
-import QuickJournal from '../../(dashboard)/quick-journal';
-import BucketDump from '../../(dashboard)/bucket-dump';
+import MyTasksContent from './my-tasks-content';
 
 interface Props {
   params: Promise<{
@@ -36,13 +31,13 @@ export default async function MyTasksPage({ params }: Props) {
   return (
     <WorkspaceWrapper params={params}>
       {({ wsId, isPersonal }) => (
-        <MyTasksContent wsId={wsId} userId={user.id} isPersonal={isPersonal} />
+        <MyTasksDataLoader wsId={wsId} userId={user.id} isPersonal={isPersonal} />
       )}
     </WorkspaceWrapper>
   );
 }
 
-async function MyTasksContent({
+async function MyTasksDataLoader({
   wsId,
   userId,
   isPersonal,
@@ -307,110 +302,15 @@ async function MyTasksContent({
         </Card>
       </div>
 
-      {/* Tabs for organizing views */}
-      <Tabs defaultValue="tasks" className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="tasks" className="gap-2">
-            <CheckCircle2 className="h-4 w-4" />
-            {t('sidebar_tabs.my_tasks')}
-          </TabsTrigger>
-          <TabsTrigger value="journal" className="gap-2">
-            <NotebookPen className="h-4 w-4" />
-            Quick Journal
-          </TabsTrigger>
-          <TabsTrigger value="bucket" className="gap-2">
-            <Archive className="h-4 w-4" />
-            Bucket Dump
-          </TabsTrigger>
-        </TabsList>
-
-        {/* My Tasks Tab */}
-        <TabsContent value="tasks" className="space-y-6 mt-6">
-          {/* Overdue Tasks */}
-          {overdueTasks && overdueTasks.length > 0 && (
-            <Card className="border-dynamic-red/20">
-              <CardHeader className="border-dynamic-red/10 border-b bg-dynamic-red/5">
-                <CardTitle className="flex items-center gap-2 text-dynamic-red">
-                  <Clock className="h-5 w-5" />
-                  {t('ws-tasks.overdue')} ({overdueTasks.length})
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="p-6">
-                <TaskListWithCompletion
-                  tasks={overdueTasks as any}
-                  isPersonal={isPersonal}
-                  initialLimit={5}
-                />
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Due Today */}
-          {todayTasks && todayTasks.length > 0 && (
-            <Card className="border-dynamic-orange/20">
-              <CardHeader className="border-dynamic-orange/10 border-b bg-dynamic-orange/5">
-                <CardTitle className="flex items-center gap-2 text-dynamic-orange">
-                  <Calendar className="h-5 w-5" />
-                  {t('ws-tasks.due_today')} ({todayTasks.length})
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="p-6">
-                <TaskListWithCompletion
-                  tasks={todayTasks as any}
-                  isPersonal={isPersonal}
-                  initialLimit={5}
-                />
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Upcoming Tasks */}
-          {upcomingTasks && upcomingTasks.length > 0 && (
-            <Card className="border-dynamic-blue/20">
-              <CardHeader className="border-dynamic-blue/10 border-b bg-dynamic-blue/5">
-                <CardTitle className="flex items-center gap-2 text-dynamic-blue">
-                  <Flag className="h-5 w-5" />
-                  {t('ws-tasks.upcoming')} ({upcomingTasks.length})
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="p-6">
-                <TaskListWithCompletion
-                  tasks={upcomingTasks as any}
-                  isPersonal={isPersonal}
-                  initialLimit={5}
-                />
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Empty State */}
-          {totalActiveTasks === 0 && (
-            <Card>
-              <CardContent className="py-16 text-center">
-                <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-muted">
-                  <UserRound className="h-10 w-10 text-muted-foreground" />
-                </div>
-                <h3 className="mb-2 font-semibold text-lg">
-                  {t('ws-tasks.no_tasks')}
-                </h3>
-                <p className="text-muted-foreground text-sm">
-                  {t('ws-tasks.no_tasks_assigned')}
-                </p>
-              </CardContent>
-            </Card>
-          )}
-        </TabsContent>
-
-        {/* Quick Journal Tab */}
-        <TabsContent value="journal" className="mt-6">
-          <QuickJournal wsId={wsId} enabled={true} />
-        </TabsContent>
-
-        {/* Bucket Dump Tab */}
-        <TabsContent value="bucket" className="mt-6">
-          <BucketDump wsId={wsId} enabled={true} />
-        </TabsContent>
-      </Tabs>
+      {/* Tabs Content */}
+      <MyTasksContent
+        wsId={wsId}
+        isPersonal={isPersonal}
+        overdueTasks={overdueTasks}
+        todayTasks={todayTasks}
+        upcomingTasks={upcomingTasks}
+        totalActiveTasks={totalActiveTasks}
+      />
     </div>
   );
 }
