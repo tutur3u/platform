@@ -7,6 +7,7 @@ import {
   Clock,
   Flag,
   UserRound,
+  NotebookPen,
   Archive,
 } from '@tuturuuu/ui/icons';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
@@ -14,6 +15,7 @@ import { redirect } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import WorkspaceWrapper from '@/components/workspace-wrapper';
 import TaskListWithCompletion from '../../(dashboard)/tasks/task-list-with-completion';
+import QuickJournal from '../../(dashboard)/quick-journal';
 import BucketDump from '../../(dashboard)/bucket-dump';
 
 interface Props {
@@ -307,10 +309,14 @@ async function MyTasksContent({
 
       {/* Tabs for organizing views */}
       <Tabs defaultValue="tasks" className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="tasks" className="gap-2">
             <CheckCircle2 className="h-4 w-4" />
-            My Tasks
+            {t('sidebar_tabs.my_tasks')}
+          </TabsTrigger>
+          <TabsTrigger value="journal" className="gap-2">
+            <NotebookPen className="h-4 w-4" />
+            Quick Journal
           </TabsTrigger>
           <TabsTrigger value="bucket" className="gap-2">
             <Archive className="h-4 w-4" />
@@ -393,6 +399,11 @@ async function MyTasksContent({
               </CardContent>
             </Card>
           )}
+        </TabsContent>
+
+        {/* Quick Journal Tab */}
+        <TabsContent value="journal" className="mt-6">
+          <QuickJournal wsId={wsId} enabled={true} />
         </TabsContent>
 
         {/* Bucket Dump Tab */}
