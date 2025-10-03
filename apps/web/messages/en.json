@@ -3226,22 +3226,130 @@
     "join_waitlist": "Join waitlist"
   },
   "contact": {
-    "title": "Contact us",
-    "description": "Have questions or need assistance? We're here to help. Choose your preferred way to reach us.",
-    "get_in_touch": "Get in Touch",
-    "founder_contact": "Founder Contact",
-    "founder_description": "Founder & CEO",
-    "on_github": "on GitHub",
-    "send_us_a_message": "Send us a Message",
+    "hero": {
+      "badge": "Let's Connect",
+      "title": {
+        "part1": "Let's Build",
+        "highlight": "Together"
+      },
+      "description": "Whether you're looking to innovate, collaborate, request beta access to experimental features, or simply learn more about our platform, we're here to help."
+    },
+    "methods": {
+      "title": "Get in Touch",
+      "subtitle": "Choose your preferred way to reach us",
+      "email": {
+        "title": "Email",
+        "description": "For general inquiries and support"
+      },
+      "github": {
+        "title": "GitHub",
+        "description": "Explore our open source projects"
+      },
+      "support": {
+        "title": "Global Support",
+        "value": "24/7 Availability",
+        "description": "We're here to help, anytime"
+      },
+      "response": {
+        "title": "Response Time",
+        "value": "Within 24 Hours",
+        "description": "Quick and helpful responses"
+      }
+    },
     "form": {
-      "name_label": "Name",
-      "name_placeholder": "Your name",
-      "subject_label": "Subject",
-      "subject_placeholder": "How can we help?",
-      "message_label": "Message",
-      "message_placeholder": "Your message...",
-      "submit_button": "Send Message",
-      "sent_message": "Thank you for contacting us! We'll get back to you as soon as possible."
+      "title": "Send Us a Message",
+      "description": "Share your ideas, questions, or request beta access to experimental features. We'll get back to you as soon as possible.",
+      "fields": {
+        "name": {
+          "label": "Name",
+          "placeholder": "Your name"
+        },
+        "email": {
+          "label": "Email",
+          "placeholder": "you@example.com"
+        },
+        "type": {
+          "label": "Inquiry Type",
+          "placeholder": "Select type",
+          "options": {
+            "support": "General Support",
+            "bug": "Bug Report",
+            "featureRequest": "Feature Request",
+            "jobApplication": "Job Application"
+          }
+        },
+        "product": {
+          "label": "Product",
+          "placeholder": "Select product",
+          "options": {
+            "web": "Web Platform",
+            "nova": "Nova (Learning)",
+            "rewise": "Rewise (AI Chat)",
+            "calendar": "Calendar",
+            "finance": "Finance",
+            "tudo": "TuDo (Tasks)",
+            "tumeet": "TuMeet (Meetings)",
+            "other": "Other"
+          }
+        },
+        "subject": {
+          "label": "Subject",
+          "placeholder": "What's this about?"
+        },
+        "message": {
+          "label": "Message",
+          "placeholder": "Tell us about your inquiry, ideas, or request for beta access..."
+        }
+      },
+      "button": {
+        "send": "Send Message",
+        "sending": "Sending..."
+      },
+      "authRequired": {
+        "title": "Authentication Required",
+        "description": "To ensure our system is protected and your identity is verified, you must be logged in to send an inquiry. This helps us maintain a secure and trustworthy communication channel.",
+        "loginButton": "Log In to Continue"
+      }
+    },
+    "highlights": {
+      "title": "Why Choose Us",
+      "technical": {
+        "title": "Technical Excellence",
+        "description": "Expert support from our engineering team"
+      },
+      "premium": {
+        "title": "Premium Service",
+        "description": "Dedicated attention to your needs"
+      },
+      "beta": {
+        "title": "Beta Access",
+        "description": "Request early access to experimental features"
+      }
+    },
+    "founder": {
+      "title": "Connect with Our Founder",
+      "name": "Võ Hoàng Phúc",
+      "role": "Founder & CEO",
+      "description": "Driving innovation and excellence in technology. Feel free to reach out directly for partnerships, collaborations, or beta access requests.",
+      "contact": {
+        "email": "Email",
+        "github": "GitHub"
+      }
+    },
+    "quickLinks": {
+      "title": "Quick Links",
+      "about": "About Us",
+      "pricing": "Pricing",
+      "github": "GitHub Repository"
+    },
+    "banner": {
+      "title": "We're Here to Help",
+      "description": "Our team is committed to providing exceptional support and helping you get the most out of Tuturuuu.",
+      "features": {
+        "response": "24h Response Time",
+        "expert": "Expert Support",
+        "dedicated": "Dedicated Team"
+      }
     }
   },
   "marketing": {
@@ -3852,6 +3960,82 @@
         "name": "Crystal",
         "role": "Bridge to Humanity",
         "description": "Multi-modal interface for voice, video, and screen sharing"
+      }
+    },
+    "pricing": {
+      "title": {
+        "part1": "Simple,",
+        "highlight": "Transparent",
+        "part2": "Pricing"
+      },
+      "subtitle": "Get started for free during our early bird stage. All core features are included—no credit card required.",
+      "earlyBird": {
+        "badge": "Early Bird",
+        "title": "Free Forever",
+        "subtitle": "Everything you need to get started",
+        "price": "$0",
+        "period": "forever",
+        "description": "Full access to all core features during our early bird phase. We believe in earning your trust first.",
+        "features": {
+          "feature1": "Unlimited workspaces",
+          "feature2": "All productivity apps (TuPlan, TuDo, TuMeet, etc.)",
+          "feature3": "AI-powered insights",
+          "feature4": "Calendar sync & auto-scheduling",
+          "feature5": "Task management & collaboration",
+          "feature6": "Meeting transcriptions",
+          "feature7": "Analytics & reports",
+          "feature8": "Community support"
+        },
+        "cta": "Get Started Free",
+        "note": "No credit card required"
+      },
+      "experimental": {
+        "badge": "Beta Access",
+        "title": "Experimental Features",
+        "subtitle": "Cutting-edge capabilities",
+        "price": "On Request",
+        "period": "beta access",
+        "description": "Get early access to experimental features by contacting our team. Help shape the future of Tuturuuu.",
+        "features": {
+          "feature1": "Advanced AI models integration",
+          "feature2": "Custom automation workflows",
+          "feature3": "API access & webhooks",
+          "feature4": "Priority feature requests",
+          "feature5": "Direct team support",
+          "feature6": "Early access to new features",
+          "feature7": "Beta testing opportunities",
+          "feature8": "Dedicated account manager"
+        },
+        "cta": "Contact for Beta Access",
+        "note": "Available by request"
+      },
+      "future": {
+        "title": "What's Coming?",
+        "description": "We're building paid plans with advanced features. As an early bird user, you'll get special grandfathered pricing when we launch.",
+        "benefits": {
+          "benefit1": "Lock in early bird pricing forever",
+          "benefit2": "First access to premium features",
+          "benefit3": "Lifetime discount for early supporters"
+        }
+      },
+      "faq": {
+        "title": "Frequently Asked Questions",
+        "q1": {
+          "question": "Is it really free?",
+          "answer": "Yes! During our early bird stage, all core features are completely free. We want to build the best product with your feedback before introducing paid plans."
+        },
+        "q2": {
+          "question": "Will my free access change?",
+          "answer": "No. If you sign up during the early bird stage, you'll keep free access to core features even after we introduce paid plans. Plus, you'll get special pricing on future premium features."
+        },
+        "q3": {
+          "question": "How do I get experimental features?",
+          "answer": "Contact our team to request beta access. We're selectively granting access to users who want to help test and provide feedback on cutting-edge features."
+        },
+        "q4": {
+          "question": "When will paid plans launch?",
+          "answer": "We haven't set a date yet. We're focused on building the best product first. Early bird users will be notified well in advance and receive special pricing."
+        }
       }
     },
     "cta": {

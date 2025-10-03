@@ -3353,22 +3353,130 @@
     "join_waitlist": "Tham gia danh sách chờ"
   },
   "contact": {
-    "title": "Liên hệ với chúng tôi",
-    "description": "Có thắc mắc hoặc cần hỗ trợ? Chúng tôi ở đây để giúp đỡ. Hãy chọn cách ưa thích của bạn để tiếp cận chúng tôi.",
-    "get_in_touch": "Liên hệ",
-    "founder_contact": "Thông tin người sáng lập",
-    "founder_description": "Người sáng lập",
-    "on_github": "trên GitHub",
-    "send_us_a_message": "Cần hỗ trợ?",
+    "hero": {
+      "badge": "Kết Nối Cùng Chúng Tôi",
+      "title": {
+        "part1": "Cùng Xây Dựng",
+        "highlight": "Tương Lai"
+      },
+      "description": "Dù bạn muốn đổi mới, hợp tác, yêu cầu truy cập beta các tính năng thử nghiệm, hay đơn giản là tìm hiểu thêm về nền tảng của chúng tôi, chúng tôi luôn sẵn sàng hỗ trợ."
+    },
+    "methods": {
+      "title": "Liên Hệ",
+      "subtitle": "Chọn cách thức liên hệ bạn ưa thích",
+      "email": {
+        "title": "Email",
+        "description": "Cho các câu hỏi chung và hỗ trợ"
+      },
+      "github": {
+        "title": "GitHub",
+        "description": "Khám phá các dự án mã nguồn mở"
+      },
+      "support": {
+        "title": "Hỗ Trợ Toàn Cầu",
+        "value": "Có Mặt 24/7",
+        "description": "Luôn sẵn sàng hỗ trợ bạn"
+      },
+      "response": {
+        "title": "Thời Gian Phản Hồi",
+        "value": "Trong Vòng 24 Giờ",
+        "description": "Phản hồi nhanh và hữu ích"
+      }
+    },
     "form": {
-      "name_label": "Tên",
-      "name_placeholder": "Tên của bạn",
-      "subject_label": "Chủ đề",
-      "subject_placeholder": "Chúng tôi có thể giúp gì?",
-      "message_label": "Tin nhắn",
-      "message_placeholder": "Tin nhắn của bạn...",
-      "submit_button": "Gửi tin nhắn",
-      "sent_message": "Cảm ơn bạn đã liên hệ với chúng tôi! Chúng tôi sẽ phản hồi bạn sớm nhất có thể."
+      "title": "Gửi Tin Nhắn",
+      "description": "Chia sẻ ý tưởng, câu hỏi của bạn, hoặc yêu cầu truy cập beta các tính năng thử nghiệm. Chúng tôi sẽ phản hồi sớm nhất có thể.",
+      "fields": {
+        "name": {
+          "label": "Tên",
+          "placeholder": "Tên của bạn"
+        },
+        "email": {
+          "label": "Email",
+          "placeholder": "you@example.com"
+        },
+        "type": {
+          "label": "Loại Yêu Cầu",
+          "placeholder": "Chọn loại",
+          "options": {
+            "support": "Hỗ Trợ Chung",
+            "bug": "Báo Lỗi",
+            "featureRequest": "Yêu Cầu Tính Năng",
+            "jobApplication": "Ứng Tuyển"
+          }
+        },
+        "product": {
+          "label": "Sản Phẩm",
+          "placeholder": "Chọn sản phẩm",
+          "options": {
+            "web": "Nền Tảng Web",
+            "nova": "Nova (Học Tập)",
+            "rewise": "Rewise (AI Chat)",
+            "calendar": "Lịch",
+            "finance": "Tài Chính",
+            "tudo": "TuDo (Công Việc)",
+            "tumeet": "TuMeet (Cuộc Họp)",
+            "other": "Khác"
+          }
+        },
+        "subject": {
+          "label": "Tiêu đề",
+          "placeholder": "Bạn muốn nói về điều gì?"
+        },
+        "message": {
+          "label": "Tin nhắn",
+          "placeholder": "Cho chúng tôi biết về câu hỏi, ý tưởng, hoặc yêu cầu truy cập beta của bạn..."
+        }
+      },
+      "button": {
+        "send": "Gửi Tin Nhắn",
+        "sending": "Đang gửi..."
+      },
+      "authRequired": {
+        "title": "Yêu Cầu Xác Thực",
+        "description": "Để đảm bảo hệ thống được bảo vệ và danh tính của bạn được xác minh, bạn cần đăng nhập để gửi yêu cầu. Điều này giúp chúng tôi duy trì một kênh giao tiếp an toàn và đáng tin cậy.",
+        "loginButton": "Đăng Nhập để Tiếp Tục"
+      }
+    },
+    "highlights": {
+      "title": "Tại Sao Chọn Chúng Tôi",
+      "technical": {
+        "title": "Chuyên Môn Kỹ Thuật",
+        "description": "Hỗ trợ chuyên nghiệp từ đội ngũ kỹ sư"
+      },
+      "premium": {
+        "title": "Dịch Vụ Cao Cấp",
+        "description": "Quan tâm tận tình đến nhu cầu của bạn"
+      },
+      "beta": {
+        "title": "Truy Cập Beta",
+        "description": "Yêu cầu truy cập sớm các tính năng thử nghiệm"
+      }
+    },
+    "founder": {
+      "title": "Kết Nối Với Người Sáng Lập",
+      "name": "Võ Hoàng Phúc",
+      "role": "Người Sáng Lập & CEO",
+      "description": "Thúc đẩy đổi mới và xuất sắc trong công nghệ. Đừng ngần ngại liên hệ trực tiếp để hợp tác, đối tác, hoặc yêu cầu truy cập beta.",
+      "contact": {
+        "email": "Email",
+        "github": "GitHub"
+      }
+    },
+    "quickLinks": {
+      "title": "Liên Kết Nhanh",
+      "about": "Về Chúng Tôi",
+      "pricing": "Bảng Giá",
+      "github": "GitHub Repository"
+    },
+    "banner": {
+      "title": "Chúng Tôi Luôn Sẵn Sàng Hỗ Trợ",
+      "description": "Đội ngũ của chúng tôi cam kết cung cấp hỗ trợ xuất sắc và giúp bạn tận dụng tối đa Tuturuuu.",
+      "features": {
+        "response": "Phản Hồi Trong 24h",
+        "expert": "Hỗ Trợ Chuyên Nghiệp",
+        "dedicated": "Đội Ngũ Tận Tâm"
+      }
     }
   },
   "marketing": {
@@ -3893,6 +4001,82 @@
         "name": "Crystal",
         "role": "Cầu Nối Với Con Người",
         "description": "Giao diện đa phương thức hỗ trợ giọng nói, video và chia sẻ màn hình"
+      }
+    },
+    "pricing": {
+      "title": {
+        "part1": "Đơn Giản,",
+        "highlight": "Minh Bạch",
+        "part2": "Về Giá"
+      },
+      "subtitle": "Bắt đầu miễn phí trong giai đoạn ưu đãi sớm. Tất cả tính năng cốt lõi đều được bao gồm—không cần thẻ tín dụng.",
+      "earlyBird": {
+        "badge": "Ưu Đãi Sớm",
+        "title": "Miễn Phí Vĩnh Viễn",
+        "subtitle": "Mọi thứ bạn cần để bắt đầu",
+        "price": "$0",
+        "period": "mãi mãi",
+        "description": "Truy cập đầy đủ tất cả tính năng cốt lõi trong giai đoạn ưu đãi sớm. Chúng tôi tin vào việc xây dựng niềm tin trước.",
+        "features": {
+          "feature1": "Không giới hạn workspace",
+          "feature2": "Tất cả ứng dụng năng suất (TuPlan, TuDo, TuMeet, v.v.)",
+          "feature3": "Phân tích dựa trên AI",
+          "feature4": "Đồng bộ lịch & tự động sắp xếp",
+          "feature5": "Quản lý công việc & cộng tác",
+          "feature6": "Ghi âm cuộc họp",
+          "feature7": "Phân tích & báo cáo",
+          "feature8": "Hỗ trợ cộng đồng"
+        },
+        "cta": "Dùng Thử Miễn Phí",
+        "note": "Không cần thẻ tín dụng"
+      },
+      "experimental": {
+        "badge": "Truy Cập Beta",
+        "title": "Tính Năng Thử Nghiệm",
+        "subtitle": "Khả năng tiên tiến nhất",
+        "price": "Theo Yêu Cầu",
+        "period": "truy cập beta",
+        "description": "Truy cập sớm các tính năng thử nghiệm bằng cách liên hệ với đội ngũ của chúng tôi. Giúp định hình tương lai của Tuturuuu.",
+        "features": {
+          "feature1": "Tích hợp mô hình AI nâng cao",
+          "feature2": "Quy trình tự động hóa tùy chỉnh",
+          "feature3": "Truy cập API & webhooks",
+          "feature4": "Yêu cầu tính năng ưu tiên",
+          "feature5": "Hỗ trợ trực tiếp từ đội ngũ",
+          "feature6": "Truy cập sớm tính năng mới",
+          "feature7": "Cơ hội thử nghiệm beta",
+          "feature8": "Quản lý tài khoản chuyên dụng"
+        },
+        "cta": "Liên Hệ Để Truy Cập Beta",
+        "note": "Có sẵn theo yêu cầu"
+      },
+      "future": {
+        "title": "Sắp Ra Mắt?",
+        "description": "Chúng tôi đang xây dựng các gói trả phí với tính năng nâng cao. Là người dùng ưu đãi sớm, bạn sẽ nhận được giá đặc biệt khi chúng tôi ra mắt.",
+        "benefits": {
+          "benefit1": "Khóa giá ưu đãi sớm mãi mãi",
+          "benefit2": "Truy cập đầu tiên tính năng cao cấp",
+          "benefit3": "Giảm giá trọn đời cho người ủng hộ sớm"
+        }
+      },
+      "faq": {
+        "title": "Câu Hỏi Thường Gặp",
+        "q1": {
+          "question": "Có thật sự miễn phí không?",
+          "answer": "Có! Trong giai đoạn ưu đãi sớm, tất cả tính năng cốt lõi hoàn toàn miễn phí. Chúng tôi muốn xây dựng sản phẩm tốt nhất với phản hồi của bạn trước khi giới thiệu các gói trả phí."
+        },
+        "q2": {
+          "question": "Quyền truy cập miễn phí của tôi có thay đổi không?",
+          "answer": "Không. Nếu bạn đăng ký trong giai đoạn ưu đãi sớm, bạn sẽ giữ quyền truy cập miễn phí vào các tính năng cốt lõi ngay cả sau khi chúng tôi giới thiệu các gói trả phí. Thêm vào đó, bạn sẽ nhận được giá đặc biệt cho các tính năng cao cấp trong tương lai."
+        },
+        "q3": {
+          "question": "Làm thế nào để có được tính năng thử nghiệm?",
+          "answer": "Liên hệ với đội ngũ của chúng tôi để yêu cầu truy cập beta. Chúng tôi đang có chọn lọc cấp quyền truy cập cho người dùng muốn giúp thử nghiệm và cung cấp phản hồi về các tính năng tiên tiến."
+        },
+        "q4": {
+          "question": "Khi nào các gói trả phí sẽ ra mắt?",
+          "answer": "Chúng tôi chưa đặt ngày cụ thể. Chúng tôi đang tập trung xây dựng sản phẩm tốt nhất trước. Người dùng ưu đãi sớm sẽ được thông báo trước và nhận giá đặc biệt."
+        }
       }
     },
     "cta": {

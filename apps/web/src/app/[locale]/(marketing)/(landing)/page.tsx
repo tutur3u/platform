@@ -1073,6 +1073,218 @@ export default function MarketingPage() {
         </div>
       </section>
 
+      {/* Pricing Section */}
+      <section
+        id="pricing"
+        className="relative scroll-mt-20 px-4 py-24 sm:px-6 lg:px-8"
+      >
+        <div className="container mx-auto max-w-7xl">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="mb-16 text-center"
+          >
+            <h2 className="mb-4 font-bold text-4xl sm:text-5xl">
+              {t('pricing.title.part1')}{' '}
+              <span className="bg-gradient-to-r from-dynamic-green via-dynamic-cyan to-dynamic-blue bg-clip-text text-transparent">
+                {t('pricing.title.highlight')}
+              </span>{' '}
+              {t('pricing.title.part2')}
+            </h2>
+            <p className="mx-auto max-w-2xl text-foreground/60 text-lg">
+              {t('pricing.subtitle')}
+            </p>
+          </motion.div>
+
+          <div className="grid gap-8 lg:grid-cols-2">
+            {/* Early Bird Plan */}
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+            >
+              <Card className="h-full border-dynamic-green/30 bg-gradient-to-br from-dynamic-green/5 via-background to-background p-8">
+                <Badge
+                  variant="secondary"
+                  className="mb-4 border-dynamic-green/30 bg-dynamic-green/10 text-dynamic-green"
+                >
+                  <Sparkles className="mr-1.5 h-3.5 w-3.5" />
+                  {t('pricing.earlyBird.badge')}
+                </Badge>
+                <h3 className="mb-2 font-bold text-3xl">
+                  {t('pricing.earlyBird.title')}
+                </h3>
+                <p className="mb-4 text-foreground/60 text-sm">
+                  {t('pricing.earlyBird.subtitle')}
+                </p>
+                <div className="mb-6">
+                  <span className="font-bold text-5xl">
+                    {t('pricing.earlyBird.price')}
+                  </span>
+                  <span className="text-foreground/60">
+                    /{t('pricing.earlyBird.period')}
+                  </span>
+                </div>
+                <p className="mb-6 text-foreground/70 text-sm leading-relaxed">
+                  {t('pricing.earlyBird.description')}
+                </p>
+                <ul className="mb-8 space-y-3">
+                  {[
+                    'feature1',
+                    'feature2',
+                    'feature3',
+                    'feature4',
+                    'feature5',
+                    'feature6',
+                    'feature7',
+                    'feature8',
+                  ].map((feature) => (
+                    <li key={feature} className="flex items-start gap-3">
+                      <Check className="mt-0.5 h-5 w-5 shrink-0 text-dynamic-green" />
+                      <span className="text-sm">
+                        {t(`pricing.earlyBird.features.${feature}` as any)}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+                <Button className="w-full" size="lg" asChild>
+                  <Link href="/onboarding">
+                    <Rocket className="mr-2 h-5 w-5" />
+                    {t('pricing.earlyBird.cta')}
+                  </Link>
+                </Button>
+                <p className="mt-4 text-center text-foreground/60 text-sm">
+                  {t('pricing.earlyBird.note')}
+                </p>
+              </Card>
+            </motion.div>
+
+            {/* Experimental Features */}
+            <motion.div
+              initial={{ opacity: 0, x: 20 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+            >
+              <Card className="h-full border-dynamic-purple/30 bg-gradient-to-br from-dynamic-purple/5 via-background to-background p-8">
+                <Badge
+                  variant="secondary"
+                  className="mb-4 border-dynamic-purple/30 bg-dynamic-purple/10 text-dynamic-purple"
+                >
+                  <Zap className="mr-1.5 h-3.5 w-3.5" />
+                  {t('pricing.experimental.badge')}
+                </Badge>
+                <h3 className="mb-2 font-bold text-3xl">
+                  {t('pricing.experimental.title')}
+                </h3>
+                <p className="mb-4 text-foreground/60 text-sm">
+                  {t('pricing.experimental.subtitle')}
+                </p>
+                <div className="mb-6">
+                  <span className="font-bold text-5xl">
+                    {t('pricing.experimental.price')}
+                  </span>
+                  <span className="text-foreground/60">
+                    /{t('pricing.experimental.period')}
+                  </span>
+                </div>
+                <p className="mb-6 text-foreground/70 text-sm leading-relaxed">
+                  {t('pricing.experimental.description')}
+                </p>
+                <ul className="mb-8 space-y-3">
+                  {[
+                    'feature1',
+                    'feature2',
+                    'feature3',
+                    'feature4',
+                    'feature5',
+                    'feature6',
+                    'feature7',
+                    'feature8',
+                  ].map((feature) => (
+                    <li key={feature} className="flex items-start gap-3">
+                      <Check className="mt-0.5 h-5 w-5 shrink-0 text-dynamic-purple" />
+                      <span className="text-sm">
+                        {t(`pricing.experimental.features.${feature}` as any)}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+                <Button
+                  className="w-full"
+                  size="lg"
+                  variant="outline"
+                  asChild
+                >
+                  <Link href="/contact">
+                    <MessageSquare className="mr-2 h-5 w-5" />
+                    {t('pricing.experimental.cta')}
+                  </Link>
+                </Button>
+                <p className="mt-4 text-center text-foreground/60 text-sm">
+                  {t('pricing.experimental.note')}
+                </p>
+              </Card>
+            </motion.div>
+          </div>
+
+          {/* Future Plans Info */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="mt-12"
+          >
+            <Card className="border-dynamic-blue/30 bg-gradient-to-br from-dynamic-blue/5 via-background to-background p-8 text-center">
+              <h3 className="mb-4 font-bold text-2xl">
+                {t('pricing.future.title')}
+              </h3>
+              <p className="mx-auto mb-6 max-w-2xl text-foreground/70 leading-relaxed">
+                {t('pricing.future.description')}
+              </p>
+              <div className="flex flex-wrap items-center justify-center gap-6">
+                {['benefit1', 'benefit2', 'benefit3'].map((benefit) => (
+                  <div
+                    key={benefit}
+                    className="flex items-center gap-2 text-sm"
+                  >
+                    <CheckCircle2 className="h-5 w-5 text-dynamic-blue" />
+                    <span>{t(`pricing.future.benefits.${benefit}` as any)}</span>
+                  </div>
+                ))}
+              </div>
+            </Card>
+          </motion.div>
+
+          {/* FAQ Section */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="mt-16"
+          >
+            <h3 className="mb-8 text-center font-bold text-3xl">
+              {t('pricing.faq.title')}
+            </h3>
+            <div className="mx-auto grid max-w-4xl gap-6 md:grid-cols-2">
+              {['q1', 'q2', 'q3', 'q4'].map((q) => (
+                <Card
+                  key={q}
+                  className="border-foreground/10 bg-background/50 p-6"
+                >
+                  <h4 className="mb-3 font-semibold">
+                    {t(`pricing.faq.${q}.question` as any)}
+                  </h4>
+                  <p className="text-foreground/70 text-sm leading-relaxed">
+                    {t(`pricing.faq.${q}.answer` as any)}
+                  </p>
+                </Card>
+              ))}
+            </div>
+          </motion.div>
+        </div>
+      </section>
+
       {/* AI Core Section */}
       <section className="relative px-4 py-24 sm:px-6 lg:px-8">
         <div className="container mx-auto max-w-7xl">
