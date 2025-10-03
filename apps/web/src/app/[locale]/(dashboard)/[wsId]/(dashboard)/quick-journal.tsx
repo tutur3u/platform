@@ -39,8 +39,8 @@ import { invalidateTaskCaches } from '@tuturuuu/utils/task-helper';
 import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone';
 import utc from 'dayjs/plugin/utc';
-import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
+import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 dayjs.extend(utc);
@@ -1136,6 +1136,42 @@ function QuickJournalContent({ wsId }: QuickJournalContentProps) {
                   {t('generate_button')}
                 </>
               )}
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                const trimmedEntry = entry.trim();
+                if (!trimmedEntry) {
+                  toast.error(t('errors.missing_title'));
+                  return;
+                }
+                // Create manual preview without AI
+                setLastResult({
+                  tasks: [
+                    {
+                      id: 'manual-task',
+                      name: trimmedEntry,
+                      description: null,
+                      priority: null,
+                    },
+                  ],
+                  metadata: {
+                    generatedWithAI: false,
+                    totalTasks: 1,
+                  },
+                });
+                setPreviewEntry(trimmedEntry);
+                if (!selectedListId && listOptions.length > 0) {
+                  setSelectedListId(listOptions[0]?.id ?? '');
+                }
+                setPreviewOpen(true);
+              }}
+              disabled={disableGenerate}
+              className="sm:w-auto"
+            >
+              <Plus className="mr-2 h-4 w-4" />
+              Add Manually
             </Button>
           </div>
 

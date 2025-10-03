@@ -1048,10 +1048,12 @@ function TaskCardInner({
       }}
       // Apply sortable listeners/attributes to the full card so the whole surface remains draggable
       {...attributes}
-      {...listeners}
+      {...(!dragDisabled && listeners)}
       className={cn(
-        'group relative touch-none select-none overflow-hidden rounded-lg border-l-4 transition-all duration-200',
-        dragDisabled ? 'cursor-default' : 'cursor-grab active:cursor-grabbing',
+        'group relative overflow-hidden rounded-lg border-l-4 transition-all duration-200',
+        dragDisabled
+          ? 'cursor-default'
+          : 'touch-none select-none cursor-grab active:cursor-grabbing',
         'hover:shadow-md',
         // Task list or priority-based styling
         getCardColorClasses(),

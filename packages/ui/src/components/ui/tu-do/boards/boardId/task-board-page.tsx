@@ -4,6 +4,7 @@ import {
   getTaskLists,
   getTasks,
 } from '@tuturuuu/utils/task-helper';
+import { getCurrentUser } from '@tuturuuu/utils/user-helper';
 import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import { notFound, redirect } from 'next/navigation';
 import { BoardClient } from '../../shared/board-client';
@@ -31,6 +32,7 @@ export default async function TaskBoardPage({ wsId, boardId }: Props) {
 
   const tasks = await getTasks(supabase, boardId);
   const lists = await getTaskLists(supabase, boardId);
+  const currentUser = await getCurrentUser();
 
   return (
     <BoardClient
@@ -38,6 +40,7 @@ export default async function TaskBoardPage({ wsId, boardId }: Props) {
       initialBoard={board}
       initialTasks={tasks}
       initialLists={lists}
+      currentUserId={currentUser?.id}
     />
   );
 }

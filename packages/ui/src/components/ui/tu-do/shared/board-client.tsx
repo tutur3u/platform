@@ -21,6 +21,7 @@ interface Props {
   initialBoard: TaskBoard;
   initialTasks: Task[];
   initialLists: TaskList[];
+  currentUserId?: string;
 }
 
 export function BoardClient({
@@ -28,6 +29,7 @@ export function BoardClient({
   initialBoard,
   initialTasks,
   initialLists,
+  currentUserId,
 }: Props) {
   const boardId = initialBoard.id;
   const [mounted, setMounted] = useState(false);
@@ -104,6 +106,7 @@ export function BoardClient({
       tasks={tasks}
       lists={lists}
       workspaceLabels={workspaceLabels}
+      currentUserId={currentUserId}
     />
   );
 }
