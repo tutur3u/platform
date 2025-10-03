@@ -3377,813 +3377,500 @@
     "description": "Cron executions are used to view the history of cron jobs."
   },
   "landing": {
-    "headline": "Your productivity suite",
-    "subheadline": "All in one place, supercharged by AI.",
+    "hero": {
+      "badge": "The Intelligent OS for Modern Work",
+      "title": {
+        "part1": "Your Life,",
+        "part2": "In Sync"
+      },
+      "description": {
+        "part1": "Stop juggling apps. Start focusing on what matters.",
+        "part2": "unifies your calendar, tasks, meetings, and communications—powered by AI that actually understands your work."
+      },
+      "cta": {
+        "getStarted": "Get Started Free",
+        "exploreFeatures": "Explore Features",
+        "viewGitHub": "View on GitHub"
+      },
+      "trust": {
+        "openSource": "Open Source",
+        "commits": "10,000+ Commits",
+        "contributors": "30+ Contributors",
+        "freePlan": "Free Forever Plan"
+      }
+    },
+    "digitalFriction": {
+      "title": {
+        "part1": "The",
+        "highlight": "Digital Friction",
+        "part2": "Crisis"
+      },
+      "subtitle": "Modern workers are drowning in digital noise. Here's the cost.",
+      "stats": {
+        "hoursLost": {
+          "title": "21 Hours Lost",
+          "subtitle": "Every Week",
+          "description": "Average time knowledge workers waste on \"work about work\" instead of meaningful tasks",
+          "trend": "-21h/week"
+        },
+        "productivityLoss": {
+          "title": "40% Less",
+          "subtitle": "Productive Output",
+          "description": "The mental tax of context-switching between fragmented tools and notifications",
+          "trend": "-40%"
+        },
+        "globalCost": {
+          "title": "$1T+ Lost",
+          "subtitle": "Global Productivity",
+          "description": "Annual cost of digital friction and administrative overhead worldwide",
+          "trend": "$1T+/year"
+        }
+      }
+    },
     "features": {
-      "title": "Features",
-      "subtitle": "Discover powerful features designed to enhance your productivity and streamline your workflow.",
-      "ai_powered": {
-        "title": "Powered by AI",
-        "description": "Brainstorm and organize your ideas at the speed of thought, with our smart AI-powered tools."
+      "title": {
+        "part1": "Everything You Need,",
+        "highlight": "One Platform"
       },
-      "collaboration": {
-        "title": "Team Collaboration",
-        "description": "Seamless communication and collaboration features for your entire team."
+      "subtitle": "Tuturuuu brings together all your productivity tools with intelligent AI integration",
+      "tuplan": {
+        "title": "TuPlan",
+        "subtitle": "Smart Calendar",
+        "description": "AI-powered auto-scheduling that allocates time based on deadlines, priorities, and your personal work rhythms.",
+        "feature1": "Google Calendar sync",
+        "feature2": "Auto-scheduling",
+        "feature3": "Time blocking"
       },
-      "task_management": {
-        "title": "Task Management",
-        "description": "Create tasks, assign them to your team, and track their progress, all in one place."
+      "tudo": {
+        "title": "TuDo",
+        "subtitle": "Smart Tasks",
+        "description": "Centralized task hub with hierarchical organization, bucket dump feature, and seamless calendar integration.",
+        "feature1": "Kanban boards",
+        "feature2": "Hierarchical tasks",
+        "feature3": "Project management"
       },
-      "document_management": {
-        "title": "Document Management",
-        "description": "Write and maintain your documents with ease, with an intuitive and powerful document editor."
+      "tumeet": {
+        "title": "TuMeet",
+        "subtitle": "Smart Meetings",
+        "description": "End-to-end meeting solution with collaborative planning, location intelligence, and AI-generated summaries.",
+        "feature1": "Meeting plans",
+        "feature2": "AI transcription",
+        "feature3": "Action tracking"
       },
-      "finance_tracking": {
-        "title": "Finance Tracking",
-        "description": "Track your finances, and keep your team in the loop, so you can focus on what matters."
+      "tuchat": {
+        "title": "TuChat",
+        "subtitle": "Smart Communications",
+        "description": "Integrated communications hub where AI surfaces commitments and routes them to tasks and calendar.",
+        "feature1": "Team chat",
+        "feature2": "AI insights",
+        "feature3": "Auto-routing"
       },
-      "open_source": {
-        "title": "Open Source",
-        "description": "Tuturuuu is open-source, so you can contribute to the project, and make it better for everyone."
+      "tufinance": {
+        "title": "TuFinance",
+        "subtitle": "Finance Management",
+        "description": "Track expenses, manage budgets, and gain AI-powered insights into your financial health.",
+        "feature1": "Expense tracking",
+        "feature2": "Budget planning",
+        "feature3": "Financial analytics"
+      },
+      "nova": {
+        "title": "Nova",
+        "subtitle": "Learning Platform",
+        "description": "Practice prompt engineering, compete in AI challenges, and level up your skills with hands-on learning.",
+        "feature1": "AI challenges",
+        "feature2": "Skill tracking",
+        "feature3": "Leaderboards"
+      },
+      "apps": {
+        "tuplan": {
+          "title": "TuPlan",
+          "subtitle": "Smart Calendar",
+          "description": "AI-powered auto-scheduling that allocates time based on deadlines, priorities, and your personal work rhythms.",
+          "features": {
+            "sync": "Google Calendar sync",
+            "scheduling": "Auto-scheduling",
+            "blocking": "Time blocking"
+          }
+        },
+        "tudo": {
+          "title": "TuDo",
+          "subtitle": "Smart Tasks",
+          "description": "Centralized task hub with hierarchical organization, bucket dump feature, and seamless calendar integration.",
+          "features": {
+            "kanban": "Kanban boards",
+            "hierarchical": "Hierarchical tasks",
+            "management": "Project management"
+          }
+        },
+        "tumeet": {
+          "title": "TuMeet",
+          "subtitle": "Smart Meetings",
+          "description": "End-to-end meeting solution with collaborative planning, location intelligence, and AI-generated summaries.",
+          "features": {
+            "plans": "Meeting plans",
+            "transcription": "AI transcription",
+            "tracking": "Action tracking"
+          }
+        },
+        "tuchat": {
+          "title": "TuChat",
+          "subtitle": "Smart Communications",
+          "description": "Integrated communications hub where AI surfaces commitments and routes them to tasks and calendar.",
+          "features": {
+            "chat": "Team chat",
+            "insights": "AI insights",
+            "routing": "Auto-routing"
+          }
+        },
+        "tufinance": {
+          "title": "TuFinance",
+          "subtitle": "Finance Management",
+          "description": "Track expenses, manage budgets, and gain AI-powered insights into your financial health.",
+          "features": {
+            "tracking": "Expense tracking",
+            "planning": "Budget planning",
+            "analytics": "Financial analytics"
+          }
+        },
+        "nova": {
+          "title": "Nova",
+          "subtitle": "Learning Platform",
+          "description": "Practice prompt engineering, compete in AI challenges, and level up your skills with hands-on learning.",
+          "features": {
+            "challenges": "AI challenges",
+            "tracking": "Skill tracking",
+            "leaderboards": "Leaderboards"
+          }
+        }
+      }
+    },
+    "demoSection": {
+      "badge": "Live Demo",
+      "title": {
+        "part1": "See It",
+        "highlight": "In Action"
+      },
+      "subtitle": "Experience the future of work with our interactive demos. These are real, production-ready features you can use today."
+    },
+    "demo": {
+      "badge": "Live Demo",
+      "title": {
+        "part1": "See It",
+        "highlight": "In Action"
+      },
+      "subtitle": "Experience the future of work with our interactive demos. These are real, production-ready features you can use today.",
+      "taskManagement": {
+        "title": "Smart Task Management",
+        "subtitle": "Hierarchical organization with AI insights",
+        "task1": {
+          "title": "Review marketing proposal",
+          "dueDate": "Due tomorrow",
+          "priority": "High",
+          "files": "2 files",
+          "assignees": "3 assignees"
+        },
+        "task2": {
+          "title": "Implement calendar sync feature",
+          "dueDate": "Next week",
+          "priority": "Medium",
+          "tag": "Development"
+        },
+        "task3": {
+          "title": "Plan team offsite event",
+          "dueDate": "In 2 weeks",
+          "priority": "Low",
+          "tag": "Team building"
+        },
+        "aiInsight": {
+          "title": "AI Insight",
+          "description": "You have 3 high-priority tasks due this week. Consider blocking 2 hours tomorrow morning for focused work."
+        },
+        "cta": "Try Task Management"
       },
       "calendar": {
-        "description": "AI-powered scheduling that learns your preferences and optimizes your calendar automatically.",
-        "details": {
-          "1": "Intelligent scheduling based on priorities and deadlines",
-          "2": "Focus time protection during your peak productivity hours",
-          "3": "Automatic rescheduling when conflicts arise",
-          "4": "Team availability matching for optimal meeting times",
-          "5": "Natural language input for quick event creation"
+        "title": "Smart Calendar",
+        "subtitle": "AI-powered scheduling and time blocking",
+        "todaySchedule": "Today's Schedule",
+        "eventCount": "6 events",
+        "event1": {
+          "time": "9:00",
+          "period": "AM",
+          "title": "Team Standup",
+          "meta": "5 participants"
+        },
+        "event2": {
+          "time": "10:30",
+          "period": "AM",
+          "title": "Focus Time: Deep Work",
+          "meta": "AI-scheduled block"
+        },
+        "event3": {
+          "time": "2:00",
+          "period": "PM",
+          "title": "Client Presentation",
+          "meta": "Video call"
+        },
+        "stats": {
+          "focusTime": {
+            "value": "3.5h",
+            "label": "Focus Time"
+          },
+          "optimized": {
+            "value": "85%",
+            "label": "Optimized"
+          }
+        },
+        "smartSuggestion": {
+          "title": "Smart Suggestion",
+          "description": "Your calendar is 15% more efficient than last week. Consider adding another focus block on Friday."
+        },
+        "cta": "Try Smart Calendar"
+      },
+      "aiChat": {
+        "title": "AI Assistant (Mira)",
+        "subtitle": "Your proactive AI companion",
+        "userMessage1": "What's on my agenda for tomorrow?",
+        "aiResponse1": {
+          "intro": "You have 4 meetings and 2 focus blocks scheduled:",
+          "item1": "9:00 AM - Team sync (30 min)",
+          "item2": "11:00 AM - Focus: Project Alpha (2h)",
+          "item3": "2:00 PM - Client review (1h)"
+        },
+        "userMessage2": "Can you reschedule the 2 PM meeting?",
+        "aiResponse2": "I've found 3 available slots. The best option is Friday at 3 PM based on everyone's calendar. Shall I send the update?",
+        "quickActions": {
+          "tasks": "Show my tasks",
+          "reminder": "Create reminder",
+          "summary": "Weekly summary"
+        },
+        "contextAware": {
+          "title": "Context-Aware",
+          "description": "Mira understands your work patterns, preferences, and goals to provide truly personalized assistance."
+        },
+        "cta": "Chat with Mira"
+      },
+      "analytics": {
+        "title": "Analytics & Insights",
+        "subtitle": "Track productivity and patterns",
+        "metrics": {
+          "tasks": {
+            "label": "Tasks",
+            "value": "24",
+            "change": "+15% this week"
+          },
+          "focus": {
+            "label": "Focus",
+            "value": "18.5h",
+            "change": "+3.2h vs last week"
+          },
+          "meetings": {
+            "label": "Meetings",
+            "value": "12",
+            "change": "-8% this week"
+          },
+          "goals": {
+            "label": "Goals",
+            "value": "89%",
+            "subtitle": "Completion rate"
+          }
+        },
+        "productivityScore": {
+          "title": "Productivity Score",
+          "badge": "Excellent",
+          "value": "87/100",
+          "rank": "Top 10% of users"
+        },
+        "weeklyDistribution": {
+          "title": "This Week's Distribution",
+          "deepWork": {
+            "label": "Deep Work",
+            "value": "65%"
+          },
+          "meetings": {
+            "label": "Meetings",
+            "value": "20%"
+          },
+          "admin": {
+            "label": "Admin",
+            "value": "15%"
+          }
+        },
+        "performance": {
+          "title": "Performance",
+          "description": "You're spending 65% more time on deep work compared to last month. Keep it up!"
+        },
+        "cta": "View Full Dashboard"
+      },
+      "demoTexts": {
+        "taskManagement": {
+          "title": "Smart Task Management",
+          "subtitle": "Hierarchical organization with AI insights",
+          "task1Title": "Review marketing proposal",
+          "task1DueDate": "Due tomorrow",
+          "task1Priority": "High",
+          "task1Files": "2 files",
+          "task1Assignees": "3 assignees",
+          "task2Title": "Implement calendar sync feature",
+          "task2DueDate": "Next week",
+          "task2Priority": "Medium",
+          "task2Tag": "Development",
+          "task3Title": "Plan team offsite event",
+          "task3DueDate": "In 2 weeks",
+          "task3Priority": "Low",
+          "task3Tag": "Team building",
+          "aiInsightTitle": "AI Insight",
+          "aiInsightDescription": "You have 3 high-priority tasks due this week. Consider blocking 2 hours tomorrow morning for focused work.",
+          "cta": "Try Task Management"
+        },
+        "calendar": {
+          "title": "Smart Calendar",
+          "subtitle": "AI-powered scheduling and time blocking",
+          "todaySchedule": "Today's Schedule",
+          "eventCount": "6 events",
+          "event1Title": "Team Standup",
+          "event1Meta": "5 participants",
+          "event2Title": "Focus Time: Deep Work",
+          "event2Meta": "AI-scheduled block",
+          "event3Title": "Client Presentation",
+          "event3Meta": "Video call",
+          "focusTimeValue": "3.5h",
+          "focusTimeLabel": "Focus Time",
+          "optimizedValue": "85%",
+          "optimizedLabel": "Optimized",
+          "smartSuggestionTitle": "Smart Suggestion",
+          "smartSuggestionDescription": "Your calendar is 15% more efficient than last week. Consider adding another focus block on Friday.",
+          "cta": "Try Smart Calendar"
+        },
+        "aiChat": {
+          "title": "AI Assistant (Mira)",
+          "subtitle": "Your proactive AI companion",
+          "userMessage1": "What's on my agenda for tomorrow?",
+          "aiResponse1Intro": "You have 4 meetings and 2 focus blocks scheduled:",
+          "aiResponse1Item1": "9:00 AM - Team sync (30 min)",
+          "aiResponse1Item2": "11:00 AM - Focus: Project Alpha (2h)",
+          "aiResponse1Item3": "2:00 PM - Client review (1h)",
+          "userMessage2": "Can you reschedule the 2 PM meeting?",
+          "aiResponse2": "I've found 3 available slots. The best option is Friday at 3 PM based on everyone's calendar. Shall I send the update?",
+          "quickActionTasks": "Show my tasks",
+          "quickActionReminder": "Create reminder",
+          "quickActionSummary": "Weekly summary",
+          "contextAwareTitle": "Context-Aware",
+          "contextAwareDescription": "Mira understands your work patterns, preferences, and goals to provide truly personalized assistance.",
+          "cta": "Chat with Mira"
+        },
+        "analytics": {
+          "title": "Analytics & Insights",
+          "subtitle": "Track productivity and patterns",
+          "tasksLabel": "Tasks",
+          "tasksValue": "24",
+          "tasksChange": "+15% this week",
+          "focusLabel": "Focus",
+          "focusValue": "18.5h",
+          "focusChange": "+3.2h vs last week",
+          "meetingsLabel": "Meetings",
+          "meetingsValue": "12",
+          "meetingsChange": "-8% this week",
+          "goalsLabel": "Goals",
+          "goalsValue": "89%",
+          "goalsSubtitle": "Completion rate",
+          "productivityScoreTitle": "Productivity Score",
+          "productivityScoreBadge": "Excellent",
+          "productivityScoreValue": "87/100",
+          "productivityScoreRank": "Top 10% of users",
+          "weeklyDistributionTitle": "This Week's Distribution",
+          "deepWorkLabel": "Deep Work",
+          "deepWorkValue": "65%",
+          "adminLabel": "Admin",
+          "adminValue": "15%",
+          "performanceTitle": "Performance",
+          "performanceDescription": "You're spending 65% more time on deep work compared to last month. Keep it up!",
+          "cta": "View Full Dashboard"
         }
       },
-      "tasks": {
-        "description": "Seamlessly integrated task management that prioritizes your work and schedules it intelligently.",
-        "details": {
-          "1": "Automatic task prioritization based on deadlines and importance",
-          "2": "Workload balancing to prevent overcommitment",
-          "3": "Smart scheduling of tasks in your calendar",
-          "4": "Progress tracking and completion statistics",
-          "5": "Team task assignment and collaboration"
-        }
-      },
-      "meetings": {
-        "description": "Integrated video conferencing with AI-powered features to make your meetings more productive.",
-        "details": {
-          "1": "One-click meeting creation from calendar events",
-          "2": "AI-generated meeting notes and action items",
-          "3": "Real-time transcript and translation",
-          "4": "Smart follow-ups and task creation",
-          "5": "Meeting analytics and insights"
-        }
-      },
-      "chat": {
-        "description": "Built-in team chat that integrates seamlessly with your calendar, tasks, and meetings.",
-        "details": {
-          "1": "Real-time messaging with team members",
-          "2": "Direct integration with calendar events and tasks",
-          "3": "File sharing and collaboration",
-          "4": "AI-powered chat summaries and highlights",
-          "5": "Smart notifications and reminders"
-        }
-      },
-      "mail": {
-        "description": "Intelligent email management that integrates with your calendar and tasks for seamless productivity.",
-        "details": {
-          "1": "AI-powered email categorization and prioritization",
-          "2": "Smart replies and follow-up suggestions",
-          "3": "Automatic task creation from emails",
-          "4": "Meeting scheduling directly from emails",
-          "5": "Email analytics and insights"
-        }
-      }
-    },
-    "products": {
-      "title": "Products",
-      "subtitle": "Explore our suite of powerful products designed to help you work smarter, not harder.",
-      "ai_assistant": {
-        "title": "AI Assistant",
-        "description": "Smart automation and intelligent insights powered by advanced AI."
-      },
-      "meet_together": {
-        "title": "Meet Together",
-        "description": "Virtual meetings, team collaboration, and project management in one place."
-      },
-      "calendar": {
-        "title": "Calendar",
-        "description": "Smart scheduling and time management tools."
-      },
-      "documents": {
-        "title": "Documents",
-        "description": "Centralized document storage, sharing, and collaboration."
-      },
-      "drive": {
-        "title": "Drive",
-        "description": "Secure cloud storage for all your business files and data."
-      },
-      "crm": {
-        "title": "CRM",
-        "description": "Build and maintain valuable customer relationships."
-      },
-      "finance": {
-        "title": "Finance",
-        "description": "Comprehensive financial management and reporting."
-      },
-      "inventory": {
-        "title": "Inventory",
-        "description": "Real-time inventory tracking and management."
-      },
-      "tasks": {
-        "title": "Tasks",
-        "description": "Streamlined task tracking and team coordination."
-      },
-      "workflows": {
-        "title": "Workflows",
-        "description": "Automated business processes and workflows."
-      }
-    },
-    "solutions": {
-      "title": "For Every Industry",
-      "subtitle": "Tailored solutions for every industry, from small businesses to large enterprises.",
-      "industries": {
-        "manufacturing": "Manufacturing",
-        "healthcare": "Healthcare",
-        "education": "Education",
-        "retail": "Retail",
-        "real_estate": "Real Estate",
-        "hospitality": "Hospitality",
-        "construction": "Construction",
-        "pharmacies": "Pharmacies"
-      }
-    },
-    "benefits": {
-      "title": "Benefits",
-      "subtitle": "Experience the advantages of an all-in-one platform designed for modern businesses.",
-      "for_businesses": {
-        "title": "For Businesses",
-        "items": [
-          "Reduced operational costs",
-          "Improved efficiency and productivity",
-          "Better decision-making with AI insights",
-          "Enhanced team collaboration",
-          "Streamlined workflows",
-          "Scalable solutions for growth"
-        ]
-      },
-      "for_teams": {
-        "title": "For Teams",
-        "items": [
-          "Seamless communication",
-          "Real-time collaboration",
-          "Automated task management",
-          "Centralized information access",
-          "Integrated tools and features",
-          "Enhanced productivity"
-        ]
-      }
-    },
-    "how_it_works": {
-      "title": "How It Works",
-      "subtitle": "Get started with Tuturuuu in just a few simple steps",
-      "steps": {
-        "step1": {
-          "title": "Sign Up",
-          "description": "Create your account in seconds and get started with a free trial"
+      "aiCore": {
+        "title": {
+          "part1": "Powered by",
+          "highlight": "AI Intelligence"
         },
-        "step2": {
-          "title": "Set Up Your Workspace",
-          "description": "Customize your workspace and invite your team members"
+        "subtitle": "Meet Mira and the AI core that makes Tuturuuu truly intelligent",
+        "mira": {
+          "title": "Mira: Your AI Partner",
+          "description": "Mira is your proactive AI companion—the JARVIS we envisioned. She plans, reasons, and acts on your behalf, synchronizing calendars, goals, finances, and communications to surface proactive recommendations instead of passive reminders.",
+          "badges": {
+            "proactive": "Proactive AI",
+            "learning": "Always Learning"
+          }
         },
-        "step3": {
-          "title": "Start Collaborating",
-          "description": "Begin using our powerful tools to boost your productivity"
-        },
-        "step4": {
-          "title": "Scale & Grow",
-          "description": "Expand your usage as your business grows with our flexible platform"
-        }
-      }
-    },
-    "testimonials": {
-      "title": "What Our Users Say",
-      "subtitle": "Join thousands of satisfied users who trust Tuturuuu",
-      "items": [
-        {
-          "quote": "Tuturuuu has transformed how we work. The AI features are incredible!",
-          "author": "Sarah Chen",
-          "role": "Product Manager",
-          "company": "TechCorp"
-        },
-        {
-          "quote": "The best all-in-one solution we've found for our team's needs.",
-          "author": "Michael Rodriguez",
-          "role": "CEO",
-          "company": "StartupX"
-        },
-        {
-          "quote": "Intuitive interface and powerful features. Highly recommended!",
-          "author": "Emily Johnson",
-          "role": "Team Lead",
-          "company": "DesignPro"
-        }
-      ]
-    },
-    "pricing": {
-      "title": "Simple, Transparent Pricing",
-      "subtitle": "Choose the plan that's right for you",
-      "monthly": "Monthly",
-      "yearly": "Yearly",
-      "save_percent": "Save 20%",
-      "plans": {
-        "free": {
-          "title": "Free",
-          "description": "Perfect for individuals and small teams",
-          "price": "$0",
-          "period": "/month",
-          "features": [
-            "Up to 3 team members",
-            "Basic AI features",
-            "2GB storage",
-            "Community support"
-          ]
-        },
-        "pro": {
-          "title": "Pro",
-          "description": "Great for growing teams",
-          "price": "$12",
-          "period": "/user/month",
-          "features": [
-            "Unlimited team members",
-            "Advanced AI features",
-            "20GB storage per user",
-            "Priority support",
-            "Advanced analytics",
-            "Custom integrations"
-          ]
-        },
-        "enterprise": {
-          "title": "Enterprise",
-          "description": "For large organizations",
-          "price": "Custom",
-          "period": "",
-          "features": [
-            "Everything in Pro",
-            "Unlimited storage",
-            "24/7 dedicated support",
-            "Custom AI models",
-            "Advanced security",
-            "SLA guarantee"
-          ]
-        }
-      }
-    },
-    "faq": {
-      "title": "Frequently Asked Questions",
-      "subtitle": "Find answers to common questions about Tuturuuu",
-      "items": [
-        {
-          "question": "What is Tuturuuu?",
-          "answer": "Tuturuuu is an all-in-one workspace platform that combines AI-powered productivity tools, team collaboration features, and business management solutions."
-        },
-        {
-          "question": "How does the pricing work?",
-          "answer": "We offer flexible pricing plans starting from free. Our Pro plan is priced per user, and Enterprise plans are customized to your needs."
-        },
-        {
-          "question": "Can I try before I buy?",
-          "answer": "Yes! You can start with our free plan or request a demo of our Pro features."
-        },
-        {
-          "question": "How secure is my data?",
-          "answer": "We use enterprise-grade encryption and follow industry best practices to ensure your data is always secure."
-        },
-        {
-          "question": "Do you offer customer support?",
-          "answer": "Yes, we provide customer support through various channels depending on your plan, from community support to 24/7 dedicated assistance."
-        }
-      ]
-    },
-    "ai_revolution": {
-      "title": "AI Revolution",
-      "subtitle": "Experience the future of work with AI that understands, adapts, and grows with you",
-      "items": [
-        {
-          "title": "Think Faster",
-          "description": "AI-powered insights and automation help you make decisions 10x faster"
-        },
-        {
-          "title": "Work Smarter",
-          "description": "Let AI handle repetitive tasks while you focus on what matters most"
-        },
-        {
-          "title": "Grow Bigger",
-          "description": "Scale your operations effortlessly with AI that learns and adapts"
-        },
-        {
-          "title": "Stay Ahead",
-          "description": "Always be at the cutting edge with continuously evolving AI capabilities"
-        }
-      ]
-    },
-    "universal_value": {
-      "title": "For Everyone, Everywhere",
-      "subtitle": "From solo entrepreneurs to global enterprises, Tuturuuu adapts to your needs",
-      "categories": {
-        "business_size": {
-          "title": "Any Size",
-          "items": [
-            "Solopreneurs & Freelancers",
-            "Small & Medium Businesses",
-            "Large Enterprises",
-            "Global Organizations"
-          ]
-        },
-        "industries": {
-          "title": "Any Industry",
-          "items": [
-            "Technology & Innovation",
-            "Healthcare & Wellness",
-            "Education & Learning",
-            "Retail & E-commerce",
-            "Manufacturing & Production",
-            "Services & Consulting",
-            "Creative & Entertainment",
-            "Non-profit & Social Impact"
-          ]
-        },
-        "use_cases": {
-          "title": "Any Goal",
-          "items": [
-            "Streamline Operations",
-            "Boost Productivity",
-            "Enhance Collaboration",
-            "Drive Innovation",
-            "Improve Customer Experience",
-            "Scale Globally",
-            "Reduce Costs",
-            "Achieve Sustainability"
-          ]
+        "components": {
+          "aurora": {
+            "name": "Aurora",
+            "role": "Nervous System",
+            "description": "Contextual engine that links related emails, tasks, files, and events"
+          },
+          "rewise": {
+            "name": "Rewise",
+            "role": "Collective Mind",
+            "description": "Aggregator of leading AI models (OpenAI, Gemini, Anthropic)"
+          },
+          "nova": {
+            "name": "Nova",
+            "role": "Conscience & Forge",
+            "description": "Prompt-engineering platform that shapes how Mira reasons"
+          },
+          "crystal": {
+            "name": "Crystal",
+            "role": "Bridge to Humanity",
+            "description": "Multi-modal interface for voice, video, and screen sharing"
+          }
         }
       }
     },
-    "ai_features": {
-      "title": "AI at Its Core",
-      "subtitle": "Every feature is enhanced by cutting-edge artificial intelligence",
-      "features": [
-        {
-          "title": "Smart Automation",
-          "description": "Automate complex workflows with AI that learns your preferences"
-        },
-        {
-          "title": "Intelligent Insights",
-          "description": "Get actionable recommendations based on your data and industry trends"
-        },
-        {
-          "title": "Natural Collaboration",
-          "description": "Work with AI that understands context and communicates naturally"
-        },
-        {
-          "title": "Predictive Analytics",
-          "description": "Anticipate challenges and opportunities with AI-powered forecasting"
-        },
-        {
-          "title": "Adaptive Learning",
-          "description": "AI that continuously improves based on your team's usage patterns"
-        },
-        {
-          "title": "Global Intelligence",
-          "description": "Access insights from worldwide data while maintaining privacy"
-        }
-      ]
+    "aiCore": {
+      "title": {
+        "part1": "Powered by",
+        "highlight": "AI Intelligence"
+      },
+      "subtitle": "Meet Mira and the AI core that makes Tuturuuu truly intelligent",
+      "mira": {
+        "title": "Mira: Your AI Partner",
+        "description": "Mira is your proactive AI companion—the JARVIS we envisioned. She plans, reasons, and acts on your behalf, synchronizing calendars, goals, finances, and communications to surface proactive recommendations instead of passive reminders.",
+        "badge1": "Proactive AI",
+        "badge2": "Context-Aware",
+        "badge3": "Always Learning"
+      },
+      "aurora": {
+        "name": "Aurora",
+        "role": "Nervous System",
+        "description": "Contextual engine that links related emails, tasks, files, and events"
+      },
+      "rewise": {
+        "name": "Rewise",
+        "role": "Collective Mind",
+        "description": "Aggregator of leading AI models (OpenAI, Gemini, Anthropic)"
+      },
+      "nova": {
+        "name": "Nova",
+        "role": "Conscience & Forge",
+        "description": "Prompt-engineering platform that shapes how Mira reasons"
+      },
+      "crystal": {
+        "name": "Crystal",
+        "role": "Bridge to Humanity",
+        "description": "Multi-modal interface for voice, video, and screen sharing"
+      }
     },
-    "success_metrics": {
-      "title": "Real Impact",
-      "subtitle": "Join thousands of organizations achieving remarkable results",
-      "metrics": [
-        {
-          "value": "10x",
-          "label": "Faster Decision Making"
-        },
-        {
-          "value": "80%",
-          "label": "Time Saved on Routine Tasks"
-        },
-        {
-          "value": "50%",
-          "label": "Reduction in Operating Costs"
-        },
-        {
-          "value": "3x",
-          "label": "Increase in Team Productivity"
-        }
-      ]
-    },
-    "transformation": {
-      "title": "Transform Your Work",
-      "subtitle": "Experience the power of AI-driven transformation",
-      "steps": [
-        {
-          "title": "Start Instantly",
-          "description": "Get up and running in minutes with intuitive onboarding"
-        },
-        {
-          "title": "Scale Effortlessly",
-          "description": "Grow from one to thousands of users without friction"
-        },
-        {
-          "title": "Evolve Continuously",
-          "description": "Stay ahead with AI that learns and improves every day"
-        }
-      ]
-    },
-    "title_p1": "Your Complete",
-    "title_p2": "Productivity Suite",
-    "description": "Tuturuuu unifies your calendar, tasks, meetings, chat, and email in one intelligent workspace powered by AI.",
-    "cta": "Get Early Access",
-    "calendar": "Calendar",
-    "tasks": "Tasks",
-    "meetings": "Meetings",
-    "chat": "Chat",
-    "email": "Email",
-    "tuturuuu_workspace": "Tuturuuu Workspace",
-    "today": "Today",
-    "month": "Month",
-    "team_sync": "Team sync",
-    "team_sync_time": "10:00 - 11:00 AM • All team members available",
-    "quarterly_report": "Quarterly Report",
-    "task": "Task",
-    "quarterly_report_time": "Due in 3 days • 4 hours estimated • Medium priority",
-    "client_proposal": "Client Proposal",
-    "client_proposal_time": "Due tomorrow • 2 hours estimated • Auto-scheduled",
-    "my_tasks": "My Tasks",
-    "add_task": "Add task",
-    "filter": "Filter",
-    "finalize_q2_marketing_strategy": "Finalize Q2 marketing strategy",
-    "3-hours": "3 hours",
-    "high_priority": "High priority",
-    "review_product_design_mockups": "Review product design mockups",
-    "2-hours": "2 hours",
-    "medium_priority": "Medium priority",
-    "prepare_for_team_meeting": "Prepare for team meeting",
-    "1-hour": "1 hour",
-    "low_priority": "Low priority",
-    "ai_suggestion": "AI Suggestion",
-    "ai_suggestion_description": "Schedule \"Finalize Q2 marketing strategy\" for tomorrow morning when your focus is highest.",
-    "upcoming_meetings": "Upcoming Meetings",
-    "new_meeting": "New meeting",
-    "today_at_10_am": "Today, 10:00 AM",
-    "4-participants": "4 participants",
-    "join_tuturuuu": "Join with Tuturuuu",
-    "view_details": "View details",
-    "client_presentation": "Client Presentation",
-    "tomorrow_at_2_pm": "Tomorrow, 02:00 PM",
-    "2-participants": "2 participants",
-    "prepare": "Prepare",
-    "tuturuuu_features": "Tuturuuu Features",
-    "tuturuuu_features_description": "AI-generated meeting notes, real-time transcript, and smart follow-ups.",
-    "team_chat": "Team Chat",
-    "new_chat": "New chat",
-    "marketing_project": "Marketing Project",
-    "mp": "MP",
-    "5-members": "5 members",
-    "3-online": "3 online",
-    "alex": "Alex",
-    "alex-initials": "A",
-    "has_everyone_reviewed_the_latest_campaign_mockups": "Has everyone reviewed the latest campaign mockups?",
-    "10_15_am": "10:15 AM",
-    "you": "You",
-    "yes_ive_added_my_comments_in_the_shared_document": "Yes, I've added my comments in the shared document.",
-    "10_17_am": "10:17 AM",
-    "you-initials": "Y",
-    "ben": "Ben",
-    "ben-initials": "B",
-    "ill_finish_my_review_by_eod_need_to_coordinate_with_the_design_team_first": "I'll finish my review by EOD. Need to coordinate with the design team first.",
-    "10_20_am": "10:20 AM",
-    "type_a_message": "Type a message...",
-    "smart_mail": "Smart Mail",
-    "compose": "Compose",
-    "ac-initials": "AC",
-    "alex_chen": "Alex Chen",
-    "10_30_am": "10:30 AM",
-    "project_update_q2_marketing_campaign": "Project Update: Q2 Marketing Campaign",
-    "hi_team_i_wanted_to_share_the_latest_updates_on_our_q2_marketing_campaign_weve_made_significant_progress": "Hi team, I wanted to share the latest updates on our Q2 marketing campaign. We've made significant progress...",
-    "st-initials": "ST",
-    "sarah_thompson": "Sarah Thompson",
-    "yesterday": "Yesterday",
-    "client_feedback_on_proposal": "Client feedback on proposal",
-    "the_client_has_reviewed_our_proposal_and_has_some_feedback_overall_theyre_impressed_with_our_approach": "The client has reviewed our proposal and has some feedback. Overall, they're impressed with our approach...",
-    "search_emails": "Search emails...",
-    "jd-initials": "JD",
-    "john_doe": "John Doe",
-    "may_12": "May 12",
-    "meeting_follow_up_action_items": "Meeting follow-up: Action items",
-    "following_our_meeting_yesterday_ive_compiled_a_list_of_action_items_for_each_team_member": "Following our meeting yesterday, I've compiled a list of action items for each team member...",
-    "smart_mail_features_description": "AI-powered email categorization, smart replies, and follow-up reminders.",
-    "smart_mail_features": "Smart Mail Features",
-    "stats": {
-      "the": "The",
-      "impact": "Impact",
-      "real_results_from_real_users_who_have_transformed_their_productivity": "Real results from real users who have transformed their productivity.",
-      "hours_saved_weekly": "Hours Saved Weekly",
-      "our_users_report_saving_over_10_hours_every_week_on_scheduling_and_task_management": "Our users report saving over 10 hours every week on scheduling and task management",
-      "reduction_in_scheduling_time": "Reduction in Scheduling Time",
-      "tuturuuu_reduces_the_time_spent_on_scheduling_by_85_compared_to_manual_methods": "Tuturuuu reduces the time spent on scheduling by 85% compared to manual methods",
-      "user_satisfaction": "User Satisfaction",
-      "94_of_our_users_report_feeling_less_stressed_and_more_in_control_of_their_time": "94% of our users report feeling less stressed and more in control of their time",
-      "productivity_increase": "Productivity Increase",
-      "users_report_completing_3x_more_meaningful_work_after_switching_to_tuturuuu": "Users report completing 3x more meaningful work after switching to Tuturuuu"
-    },
-    "one_platform_complete_productivity": "One Platform, Complete Productivity.",
-    "tuturuuu_unifies_all_your_productivity_tools_in_one_intelligent_workspace": "Tuturuuu unifies all your productivity tools in one intelligent workspace.",
-    "week": "Week",
-    "tomorrow": "Tomorrow",
-    "due": "Due",
-    "live": "Live",
-    "inbox": "Inbox",
-    "3-new": "3 new",
-    "may_10": "May 10",
-    "seamless_integration": "Seamless Integration",
-    "tuturuuu_brings_all_your_productivity_tools_together_in_one_unified_workspace": "Tuturuuu brings all your productivity tools together in one unified workspace",
-    "everything_works_together": "Everything Works Together",
-    "no_more_switching_between_apps_or_losing_context": "No more switching between apps or losing context. Tuturuuu integrates your calendar, tasks, meetings, chat, and email in one intelligent workspace.",
-    "unified_workspace": "Unified Workspace",
-    "calendar_tasks": "Calendar + Tasks",
-    "tasks_automatically_appear_in_your_calendar_scheduled_at_the_optimal_time_based_on_priority_and_deadline": "Tasks automatically appear in your calendar, scheduled at the optimal time based on priority and deadline.",
-    "tuturuuu_meetings_integrate_with_chat_for_pre_meeting_discussions_and_post_meeting_follow_ups": "Tuturuuu meetings integrate with chat for pre-meeting discussions and post-meeting follow-ups.",
-    "meetings_chat": "Meetings + Chat",
-    "email_calendar": "Email + Calendar",
-    "emails_can_be_converted_to_calendar_events_or_tasks_with_a_single_click": "Emails can be converted to calendar events or tasks with a single click.",
-    "create_and_assign_tasks_directly_from_chat_conversations_keeping_everything_in_context": "Create and assign tasks directly from chat conversations, keeping everything in context.",
-    "chat_tasks": "Chat + Tasks",
-    "finalize_report": "Finalize report",
-    "review_design": "Review design",
-    "latest_updates_on_project": "Latest updates on project...",
-    "2_new_messages_from_clients": "2 new messages from clients...",
-    "strategic_advantages": "Strategic Advantages",
-    "why_tuturuuu_is_a_game_changer_for_your_productivity": "Why Tuturuuu is a game-changer for your productivity",
-    "stop_switching_between_apps_and_losing_context_tuturuuu_brings_your_calendar_tasks_meetings_chat_and_email_into_one_intelligent_workspace": "Stop switching between apps and losing context. Tuturuuu brings your calendar, tasks, meetings, chat, and email into one intelligent workspace.",
-    "strategic_impact": "Strategic Impact:",
-    "reduce_context_switching_by_70": "Reduce context switching by 70%",
-    "save_5_hours_weekly_on_app_switching": "Save 5+ hours weekly on app switching",
-    "maintain_complete_workflow_visibility": "Maintain complete workflow visibility",
-    "tuturuuu_s_advanced_ai_understands_your_priorities_deadlines_and_preferences_to_optimize_your_schedule_automatically": "Tuturuuu's advanced AI understands your priorities, deadlines, and preferences to optimize your schedule automatically.",
-    "ai_powered_intelligence": "AI-Powered Intelligence",
-    "reduce_scheduling_time_by_85": "Reduce scheduling time by 85%",
-    "ensure_high_priority_work_gets_done": "Ensure high-priority work gets done",
-    "prevent_burnout_through_workload_balancing": "Prevent burnout through workload balancing",
-    "join_thousands_of_professionals_who_have_reclaimed_their_time_and_reduced_scheduling_stress_with_tuturuuu": "Join thousands of professionals who have reclaimed their time and reduced scheduling stress with Tuturuuu.",
-    "ready_to_transform_your_calendar_experience": "Ready to Transform Your Calendar Experience?",
-    "get_early_access": "Get Early Access",
-    "limited_spots_available_for_our_q3_2025_early_access_program": "Limited spots available for our Q3 2025 early access program.",
-    "tuturuuu_automatically_blocks_out_time_for_deep_work_based_on_your_productivity_patterns_ensuring_you_have_uninterrupted_time_for_meaningful_work": "Tuturuuu automatically blocks out time for deep work based on your productivity patterns, ensuring you have uninterrupted time for meaningful work.",
-    "focus_time_protection": "Focus Time Protection",
-    "gain_10_hours_of_deep_work_weekly": "Gain 10+ hours of deep work weekly",
-    "increase_quality_of_work_output": "Increase quality of work output",
-    "reduce_stress_from_constant_interruptions": "Reduce stress from constant interruptions",
-    "tuturuuu_meetings_go_beyond_video_conferencing_with_ai_generated_notes_automatic_task_creation_and_smart_follow_ups": "Tuturuuu meetings go beyond video conferencing with AI-generated notes, automatic task creation, and smart follow-ups.",
-    "enhanced_meetings": "Enhanced Meetings",
-    "eliminate_manual_note_taking": "Eliminate manual note-taking",
-    "ensure_100_follow_through_on_action_items": "Ensure 100% follow-through on action items",
-    "reduce_meeting_time_by_30": "Reduce meeting time by 30%",
-    "productive_communication": "Productive Communication",
-    "tuturuuu_s_chat_and_email_systems_are_designed_for_productivity_with_task_creation_meeting_scheduling_and_ai_powered_summaries": "Tuturuuu's chat and email systems are designed for productivity, with task creation, meeting scheduling, and AI-powered summaries.",
-    "reduce_email_processing_time_by_60": "Reduce email processing time by 60%",
-    "never_miss_important_messages_or_action_items": "Never miss important messages or action items",
-    "streamline_team_communication_and_collaboration": "Streamline team communication and collaboration",
-    "tuturuuu_learns_from_your_habits_and_preferences_over_time_getting_smarter_and_more_personalized_to_make_you_increasingly_productive": "Tuturuuu learns from your habits and preferences over time, getting smarter and more personalized to make you increasingly productive.",
-    "continuous_improvement": "Continuous Improvement",
-    "productivity_increases_month_over_month": "Productivity increases month over month",
-    "personalized_experience_based_on_your_work_style": "Personalized experience based on your work style",
-    "ongoing_roi_as_the_system_gets_smarter": "Ongoing ROI as the system gets smarter",
-    "reclaim_your_time_for_what_matters": "Reclaim Your Time for What Matters",
-    "reclaim_your_time_for_what_matters_description": "Tuturuuu doesn't just manage your calendar—it gives you back time for meaningful work and life.",
-    "time_reclaimed_dashboard": "Time Reclaimed Dashboard",
-    "meaningful_work_time": "Meaningful Work Time",
-    "current": "Current",
-    "from_last_month": "from last month",
-    "task_completion_rate": "Task Completion Rate",
-    "score": "Score",
-    "outstanding": "Outstanding",
-    "time_reclaimed": "Time Reclaimed",
-    "hours": "hours",
-    "this_week": "This week",
-    "workload_balance": "Workload Balance",
-    "optimal": "Optimal",
-    "deadline_success": "Deadline Success",
-    "reduce_time_spent_on_scheduling_by_85": "Reduce time spent on scheduling by 85%",
-    "never_miss_a_deadline_again": "Never miss a deadline again",
-    "balance_workload_to_prevent_burnout": "Balance workload to prevent burnout",
-    "gain_10_hours_of_meaningful_work_time_weekly": "Gain 10+ hours of meaningful work time weekly",
-    "eliminate_the_stress_of_manual_prioritization": "Eliminate the stress of manual prioritization",
-    "ensure_team_alignment_without_endless_emails": "Ensure team alignment without endless emails",
-    "make_time_for_what_truly_matters_to_you": "Make time for what truly matters to you",
-    "simple_transparent_pricing": "Simple, Transparent Pricing",
-    "choose_the_plan_that_works_best_for_you_and_your_team": "Choose the plan that works best for you and your team.",
-    "monthly": "Monthly",
-    "annual": "Annual",
-    "most_popular": "Most Popular",
-    "custom": "Custom",
-    "savings_annually": "savings annually",
-    "features_include": "Features include",
-    "year": "Year",
-    "free": "Free",
-    "perfect_for_individuals_just_getting_started_with_ai_scheduling": "Perfect for individuals just getting started with AI scheduling.",
-    "get_started_free": "Get Started Free",
-    "pro": "Pro",
-    "advanced_features_for_professionals_who_value_their_time": "Advanced features for professionals who value their time.",
-    "coming_soon": "Coming soon",
-    "enterprise": "Enterprise",
-    "powerful_tools_for_teams_to_coordinate_and_optimize_schedules": "Powerful tools for teams to coordinate and optimize schedules.",
-    "email_notifications": "Email notifications",
-    "basic_ai_scheduling": "Basic AI scheduling",
-    "calendar_integration": "Calendar integration",
-    "3_meetings_per_day": "3 meetings per day",
-    "team_availability_view": "Team availability view",
-    "advanced_ai_features": "Advanced AI features",
-    "unlimited_meetings": "Unlimited meetings",
-    "priority_support": "Priority support",
-    "everything_in_pro": "Everything in Pro",
-    "team_calendar_management": "Team calendar management",
-    "admin_controls": "Admin controls",
-    "analytics_dashboard": "Analytics dashboard",
-    "api_access": "API access",
-    "custom_integrations": "Custom integrations",
-    "dedicated_support": "Dedicated support",
-    "sso_advanced_security": "SSO & advanced security",
-    "sla_guarantees": "SLA guarantees",
-    "who_benefits_from_tuturuuu": "Who Benefits from Tuturuuu?",
-    "tuturuuu_helps_people_from_all_walks_of_life_reclaim_their_time_and_reduce_scheduling_stress": "Tuturuuu helps people from all walks of life reclaim their time and reduce scheduling stress",
-    "pain_points": "Pain points",
-    "our_solution": "Our solution",
-    "balance_client_meetings_project_deadlines_and_personal_commitments_without_the_stress_of_manual_scheduling": "Balance client meetings, project deadlines, and personal commitments without the stress of manual scheduling.",
-    "busy_professionals": "Busy Professionals",
-    "no_time_for_deep_work": "No time for deep work",
-    "missing_deadlines": "Missing deadlines",
-    "constantly_overbooked": "Constantly overbooked",
-    "tuturuuu_automatically_balances_your_workload_protects_focus_time_and_ensures_you_never_miss_a_deadline_again": "Tuturuuu automatically balances your workload, protects focus time, and ensures you never miss a deadline again.",
-    "coordinate_team_schedules_optimize_meeting_times_and_ensure_everyone_has_balanced_workloads": "Coordinate team schedules, optimize meeting times, and ensure everyone has balanced workloads.",
-    "team_leaders": "Team Leaders",
-    "uneven_workload_distribution": "Uneven workload distribution",
-    "team_burnout": "Team burnout",
-    "difficult_to_find_meeting_times": "Difficult to find meeting times",
-    "tuturuuu_analyzes_team_availability_suggests_optimal_meeting_slots_and_helps_distribute_work_evenly_across_your_team": "Tuturuuu analyzes team availability, suggests optimal meeting slots, and helps distribute work evenly across your team.",
-    "manage_classes_study_sessions_assignments_and_social_activities_with_intelligent_scheduling": "Manage classes, study sessions, assignments, and social activities with intelligent scheduling.",
-    "students": "Students",
-    "poor_work_life_balance": "Poor work-life balance",
-    "missed_assignments": "Missed assignments",
-    "last_minute_cramming": "Last-minute cramming",
-    "tuturuuu_helps_you_plan_ahead_for_assignments_allocates_proper_study_time_and_ensures_you_maintain_a_healthy_balance": "Tuturuuu helps you plan ahead for assignments, allocates proper study time, and ensures you maintain a healthy balance.",
-    "juggle_multiple_clients_and_projects_while_maintaining_control_of_your_schedule_and_work_life_balance": "Juggle multiple clients and projects while maintaining control of your schedule and work-life balance.",
-    "freelancers": "Freelancers",
-    "tuturuuu_helps_you_manage_multiple_clients_balance_your_workload_and_ensure_you_meet_all_deadlines_without_overcommitting": "Tuturuuu helps you manage multiple clients, balance your workload, and ensure you meet all deadlines without overcommitting.",
-    "inconsistent_workload": "Inconsistent workload",
-    "difficulty_tracking_multiple_projects": "Difficulty tracking multiple projects",
-    "client_deadline_conflicts": "Client deadline conflicts",
-    "balance_family_responsibilities_work_commitments_and_personal_time_with_intelligent_scheduling": "Balance family responsibilities, work commitments, and personal time with intelligent scheduling.",
-    "parents": "Parents",
-    "no_personal_time": "No personal time",
-    "constant_overwhelm": "Constant overwhelm",
-    "missed_family_events": "Missed family events",
-    "tuturuuu_helps_you_prioritize_family_time_while_ensuring_work_commitments_are_met_giving_you_back_control_of_your_life": "Tuturuuu helps you prioritize family time while ensuring work commitments are met, giving you back control of your life.",
-    "before_and_after_tuturuuu": "Before & After Tuturuuu",
-    "see_the_transformation_in_your_calendar_and_life_when_you_switch_to_ai_powered_scheduling": "See the transformation in your calendar and life when you switch to AI-powered scheduling",
-    "split_view": "Split View",
-    "before": "Before",
-    "after": "After",
-    "traditional_calendar": "Traditional Calendar",
-    "chaotic": "Chaotic",
-    "manually_scheduling_everything_takes_hours_each_week": "Manually scheduling everything takes hours each week",
-    "constant_context_switching_between_tasks": "Constant context switching between tasks",
-    "important_tasks_get_buried_under_urgent_but_less_important_ones": "Important tasks get buried under urgent but less important ones",
-    "no_protection_for_focus_time_or_deep_work": "No protection for focus time or deep work",
-    "constantly_feeling_overwhelmed_and_behind": "Constantly feeling overwhelmed and behind",
-    "8_meetings_overbooked": "8 meetings (overbooked!)",
-    "3_scheduling_conflicts": "3 scheduling conflicts",
-    "0_protected_focus_time": "0 protected focus time",
-    "tuturuuu_ai_calendar": "Tuturuuu AI Calendar",
-    "optimized": "Optimized",
-    "ai_automatically_schedules_tasks_based_on_priority_and_deadline": "AI automatically schedules tasks based on priority and deadline",
-    "similar_tasks_are_grouped_to_minimize_context_switching": "Similar tasks are grouped to minimize context switching",
-    "important_tasks_are_prioritized_over_urgent_but_less_important_ones": "Important tasks are prioritized over urgent but less important ones",
-    "focus_time_is_protected_and_scheduled_during_your_peak_productivity_hours": "Focus time is protected and scheduled during your peak productivity hours",
-    "feeling_in_control_and_accomplishing_more_meaningful_work": "Feeling in control and accomplishing more meaningful work",
-    "4_optimized_meetings": "4 optimized meetings",
-    "4_protected_focus_blocks": "4 protected focus blocks",
-    "4_prioritized_tasks": "4 prioritized tasks",
-    "time_spent_on_manual_scheduling": "Time spent on manual scheduling",
-    "hours_of_deep_work_gained_weekly": "Hours of deep work gained weekly",
-    "users_report_reduced_stress": "Users report reduced stress",
-    "competitive_advantage": "Competitive Advantage",
-    "why_choose_tuturuuu": "Why Choose Tuturuuu?",
-    "see_how_tuturuuu_compares_to_traditional_productivity_tools_and_why_its_the_smarter_choice": "See how Tuturuuu compares to traditional productivity tools and why it's the smarter choice",
-    "discover_the_key_differences": "Discover the key differences",
-    "vs": "vs",
-    "feature": "Feature",
-    "basic_scheduling": "Basic scheduling",
-    "calendar_sharing": "Calendar sharing",
-    "ai_powered_scheduling": "AI-powered scheduling",
-    "workload_balancing": "Workload balancing",
-    "task_integration": "Task integration",
-    "team_availability_matching": "Team availability matching",
-    "google_calendar_description": "Google Calendar is great for basic scheduling, but lacks the AI-powered features that make Tuturuuu truly intelligent. Tuturuuu automatically optimizes your schedule based on priorities, deadlines, and workload.",
-    "show_less": "Show less",
-    "show_all_features": "Show all features",
-    "ready_to_upgrade_your_workflow": "Ready to upgrade your workflow?",
-    "get_started": "Get Started",
-    "calendar_comparison": "Calendar Comparison",
-    "team_meeting": "Team meeting",
-    "10_00_am_11_00_am": "10:00 AM - 11:00 AM",
-    "client_call": "Client Call",
-    "1_00_pm_2_00_pm": "1:00 PM - 2:00 PM",
-    "3_00_pm_4_00_pm": "3:00 PM - 4:00 PM",
-    "project_review": "Project Review",
-    "no_focus_time_protection": "No focus time protection",
-    "focus_time": "Focus Time",
-    "9_00_am_11_00_am": "9:00 AM - 11:00 AM",
-    "11_30_am_12_30_pm": "11:30 AM - 12:30 PM",
-    "2_00_pm_3_00_pm": "2:00 PM - 3:00 PM",
-    "ai_optimized_for_focus_time": "AI optimized for focus time",
-    "tuturuuu_advantages": "Tuturuuu Advantages:",
-    "automatically_protects_focus_time_for_deep_work_based_on_your_preferences": "Automatically protects focus time for deep work based on your preferences",
-    "balances_workload_to_prevent_burnout_and_overcommitment": "Balances workload to prevent burnout and overcommitment",
-    "intelligently_schedules_meetings_when_team_energy_is_highest_for_more_productive_collaboration": "Intelligently schedules meetings when team energy is highest for more productive collaboration",
-    "integrates_tasks_directly_into_your_calendar_with_smart_prioritization": "Integrates tasks directly into your calendar with smart prioritization",
-    "meeting_comparison": "Meeting Comparison",
-    "video_conference": "Video Conference",
-    "basic_video_conferencing": "Basic video conferencing",
-    "screen_sharing": "Screen sharing",
-    "no_ai_meeting_notes": "No AI meeting notes",
-    "no_automatic_task_creation": "No automatic task creation",
-    "ai_enhanced_video_conference": "AI-Enhanced Video Conference",
-    "advanced_video_conferencing": "Advanced video conferencing",
-    "ai_generated_meeting_notes": "AI-generated meeting notes",
-    "automatic_task_creation": "Automatic task creation",
-    "smart_follow_ups": "Smart follow-ups",
-    "ai_automatically_generates_meeting_notes_and_action_items": "AI automatically generates meeting notes and action items",
-    "creates_tasks_directly_from_meeting_discussions": "Creates tasks directly from meeting discussions",
-    "sends_smart_follow_ups_to_ensure_tasks_are_completed": "Sends smart follow-ups to ensure tasks are completed",
-    "provides_meeting_analytics_to_improve_productivity": "Provides meeting analytics to improve productivity",
-    "video_conferencing": "Video conferencing",
-    "meeting_analytics": "Meeting analytics",
-    "google_meet_description": "Google Meet provides basic video conferencing, but Tuturuuu meetings go further with AI-powered features like automatic note-taking, task creation from meetings, and smart follow-ups to ensure nothing falls through the cracks.",
-    "real_time_messaging": "Real-time messaging",
-    "file_sharing": "File sharing",
-    "group_chats": "Group chats",
-    "ai_chat_summaries": "AI chat summaries",
-    "task_creation_from_chat": "Task creation from chat",
-    "meeting_scheduling": "Meeting scheduling",
-    "messenger_description": "Messenger is great for casual chats, but Tuturuuu's chat system is designed for productivity. Create tasks directly from conversations, schedule meetings with a click, and get AI-generated summaries of important discussions.",
-    "chatgpt_description": "ChatGPT provides general AI assistance, but Tuturuuu's AI is specifically designed for productivity. It understands your calendar, tasks, and workflow to provide contextual assistance that makes you more productive.",
-    "gmail_description": "Gmail handles your emails, but Tuturuuu's smart mail system intelligently prioritizes messages, creates tasks from emails, and ensures important communications never fall through the cracks.",
-    "natural_language_understanding": "Natural language understanding",
-    "ai_assistance": "AI assistance",
-    "task_management": "Task management",
-    "email_integration": "Email integration",
-    "basic_categorization": "Basic categorization",
-    "email_management": "Email management",
-    "ai_powered_prioritization": "AI-powered prioritization",
-    "task_creation_from_emails": "Task creation from emails",
-    "product_comparison": "Product comparison",
-    "can_everyone_review_the_design_mockups": "Can everyone review the design mockups?",
-    "ill_take_a_look_this_afternoon": "I'll take a look this afternoon",
-    "basic_messaging": "Basic messaging",
-    "no_task_creation": "No task creation",
-    "no_calendar_integration": "No calendar integration",
-    "task_created": "Task Created",
-    "review_design_mockups_due_today": "Review design mockups due today",
-    "advanced_messaging": "Advanced messaging",
-    "create_tasks_directly_from_chat_conversations": "Create tasks directly from chat conversations",
-    "schedule_meetings_with_team_members_in_one_click": "Schedule meetings with team members in one click",
-    "ai_generates_summaries_of_important_discussions": "AI generates summaries of important discussions",
-    "seamless_integration_with_calendar_and_tasks": "Seamless integration with calendar and tasks",
-    "schedule_a_meeting_with_the_marketing_team_next_tuesday": "Schedule a meeting with the marketing team next Tuesday",
-    "user": "User",
-    "i_can_help_you_draft_a_message_to_schedule_that_meeting_but_i_cant_directly_access_your_calendar_or_send_invites": "I can help you draft a message to schedule that meeting, but I can't directly access your calendar or send invites.",
-    "general_ai_assistance": "General AI assistance",
-    "no_calendar_access": "No calendar access",
-    "no_task_management": "No task management",
-    "ive_scheduled_a_meeting_with_the_marketing_team_for_next_tuesday_at_2pm_when_everyone_is_available_ive_sent_calendar_invites_to_all_team_members": "I've scheduled a meeting with the marketing team for next Tuesday at 2pm, when everyone is available. I've sent calendar invites to all team members.",
-    "productivity_focused_ai": "Productivity-focused AI",
-    "full_calendar_integration": "Full calendar integration",
-    "complete_task_management": "Complete task management",
-    "ai_specifically_designed_for_productivity_and_time_management": "AI specifically designed for productivity and time management",
-    "direct_access_to_your_calendar_tasks_and_meetings": "Direct access to your calendar, tasks, and meetings",
-    "understands_your_work_context_and_preferences": "Understands your work context and preferences",
-    "takes_actions_on_your_behalf_to_save_you_time": "Takes actions on your behalf to save you time",
-    "hi_would_you_be_available_for_a_meeting_next_week_to_discuss": "Hi, would you be available for a meeting next week to discuss...",
-    "client_meeting_request": "Client Meeting Request",
-    "here_s_the_latest_update_on_the_project_we_need_to_finalize": "Here's the latest update on the project. We need to finalize...",
-    "project_update": "Project Update",
-    "basic_email_management": "Basic email management",
-    "limited_calendar_integration": "Limited calendar integration",
-    "meeting_scheduled": "Meeting scheduled",
-    "tuesday_2pm": "Tuesday, 2pm",
-    "finalize_project_details": "Finalize project details",
-    "smart_email_management": "Smart email management",
-    "seamless_calendar_integration": "Seamless calendar integration",
-    "ai_automatically_identifies_action_items_in_emails": "AI automatically identifies action items in emails",
-    "creates_tasks_and_calendar_events_directly_from_emails": "Creates tasks and calendar events directly from emails",
-    "smart_follow_up_reminders_for_important_emails": "Smart follow-up reminders for important emails",
-    "prioritizes_emails_based_on_urgency_and_importance": "Prioritizes emails based on urgency and importance"
+    "cta": {
+      "title": "Ready to Reclaim Your Time?",
+      "description": "Join thousands of professionals who've eliminated digital friction and regained focus. Start with our free plan—no credit card required.",
+      "getStarted": "Get Started Free",
+      "learnStory": "Learn Our Story",
+      "starGitHub": "Star on GitHub",
+      "trust": {
+        "openSource": "Open Source & Transparent",
+        "security": "Enterprise-Grade Security",
+        "selfHost": "Self-Hostable"
+      }
+    }
   },
   "ai-whitelist": {
     "add_email": "Add email",
@@ -4922,5 +4609,342 @@
     "last_30_days": "Last 30 Days",
     "no_tasks": "No Tasks Found",
     "no_tasks_assigned": "You don't have any tasks assigned to you yet"
+  },
+  "about": {
+    "hero": {
+      "badge": "The Age of Partners",
+      "title": {
+        "part1": "Unlocking",
+        "highlight": "Human Potential",
+        "part2": "Through Intelligent Technology"
+      },
+      "description": "We're building the world's first intelligent, open-source operating system for modern work and life. Our mission is to wage war on digital noise by creating a unified platform that automates administrative work and eliminates context-switching friction.",
+      "cta": {
+        "vision": "Explore Our Vision",
+        "openSource": "Open Source"
+      }
+    },
+    "vision": {
+      "title": {
+        "part1": "Our",
+        "highlight": "North Star"
+      },
+      "subtitle": "What drives us every day to push boundaries and innovate",
+      "mission": {
+        "title": "Mission",
+        "description": "Wage war on digital noise by building an intelligent, unified, and open platform that automates administrative work and eliminates context-switching friction."
+      },
+      "vision": {
+        "title": "Vision",
+        "description": "Create a future where technology unlocks humanity's potential—liberating our collective focus so we can solve the world's most important challenges while making world-class innovation accessible to everyone, everywhere."
+      }
+    },
+    "coreBeliefs": {
+      "title": {
+        "part1": "Our",
+        "highlight": "Core Beliefs"
+      },
+      "subtitle": "The fundamental principles that guide everything we build",
+      "focus": {
+        "title": "Focus is the New Superpower",
+        "description": "In a world engineered for distraction, the ability to sustain deep work is the defining competitive advantage."
+      },
+      "technology": {
+        "title": "Technology as Human Will",
+        "description": "Technology must be an extension of human will, not a cage for our attention. We build software to reverse the trend."
+      },
+      "transparency": {
+        "title": "Radical Transparency",
+        "description": "Foundational technology should never be a black box. Our open-source philosophy creates trust and accelerates innovation."
+      },
+      "impact": {
+        "title": "Impact Over Activity",
+        "description": "Productivity is not about doing more; it is about creating more value. We give people mental space for breakthroughs."
+      },
+      "potential": {
+        "title": "Potential Has No Postcode",
+        "description": "Brilliant ideas can emerge from any street, village, or classroom. Access to world-class tools should be universal."
+      },
+      "thirdEra": {
+        "title": "The Third Era",
+        "description": "We are entering the Age of Partners, where AI acts as an intelligent partner to amplify human potential."
+      }
+    },
+    "problem": {
+      "badge": "The Great Betrayal of Modern Work",
+      "title": {
+        "part1": "The Costs of",
+        "highlight": "Digital Friction"
+      },
+      "financial": {
+        "title": "Financial Cost",
+        "stat": "21 hours/week",
+        "description": "Lost to \"work about work\"—a trillion-dollar drag on global productivity"
+      },
+      "cognitive": {
+        "title": "Cognitive Cost",
+        "stat": "40% reduction",
+        "description": "Context-switching slashes productive output and fuels burnout"
+      },
+      "innovation": {
+        "title": "Innovation Cost",
+        "stat": "Immeasurable",
+        "description": "The next breakthrough suffocated by inboxes, meetings, and spreadsheets"
+      }
+    },
+    "ecosystem": {
+      "title": {
+        "part1": "The",
+        "highlight": "Tuturuuu Ecosystem"
+      },
+      "subtitle": "A cohesive suite of applications that behave like a single organism",
+      "tuplan": {
+        "name": "TuPlan",
+        "description": "AI-powered auto-scheduling"
+      },
+      "tudo": {
+        "name": "TuDo",
+        "description": "Smart task management"
+      },
+      "tumeet": {
+        "name": "TuMeet",
+        "description": "Intelligent meetings"
+      },
+      "tuchat": {
+        "name": "TuChat",
+        "description": "Unified communications"
+      },
+      "aiCore": {
+        "title": "AI Core",
+        "subtitle": "The Architecture of Intelligence",
+        "mira": {
+          "name": "Mira",
+          "role": "Soul & Voice"
+        },
+        "aurora": {
+          "name": "Aurora",
+          "role": "Nervous System"
+        },
+        "rewise": {
+          "name": "Rewise",
+          "role": "Collective Mind"
+        },
+        "nova": {
+          "name": "Nova",
+          "role": "Conscience & Forge"
+        },
+        "crystal": {
+          "name": "Crystal",
+          "role": "Bridge to Humanity"
+        }
+      }
+    },
+    "techStack": {
+      "title": {
+        "part1": "Built with",
+        "highlight": "Cutting-Edge Tech"
+      },
+      "subtitle": "We leverage the latest technologies to build a platform that is fast, reliable, and scalable",
+      "frontend": {
+        "category": "Frontend",
+        "tech1": "Next.js 15",
+        "tech2": "React",
+        "tech3": "TypeScript",
+        "tech4": "Tailwind CSS"
+      },
+      "backend": {
+        "category": "Backend",
+        "tech1": "Supabase",
+        "tech2": "PostgreSQL",
+        "tech3": "tRPC",
+        "tech4": "Vercel AI SDK"
+      },
+      "infrastructure": {
+        "category": "Infrastructure",
+        "tech1": "Turborepo",
+        "tech2": "Bun",
+        "tech3": "Docker",
+        "tech4": "Vercel"
+      },
+      "ai": {
+        "category": "AI & Analytics",
+        "tech1": "OpenAI",
+        "tech2": "Anthropic",
+        "tech3": "Gemini",
+        "tech4": "Vertex AI"
+      }
+    },
+    "features": {
+      "title": {
+        "part1": "More Than Just",
+        "highlight": "Productivity"
+      },
+      "subtitle": "A comprehensive suite of tools to manage every aspect of your work and life",
+      "finance": {
+        "title": "Finance Management",
+        "description": "Track expenses, manage budgets, and gain insights into your financial health with AI-powered analytics.",
+        "feature1": "Expense tracking",
+        "feature2": "Budget planning",
+        "feature3": "Financial insights"
+      },
+      "inventory": {
+        "title": "Inventory System",
+        "description": "Manage products, track stock levels, and optimize your supply chain with intelligent automation.",
+        "feature1": "Stock management",
+        "feature2": "Auto-reordering",
+        "feature3": "Analytics"
+      },
+      "learning": {
+        "title": "Learning Platform",
+        "description": "Access educational content, practice with AI challenges, and level up your skills through Nova.",
+        "feature1": "AI challenges",
+        "feature2": "Skill tracking",
+        "feature3": "Leaderboards"
+      },
+      "analytics": {
+        "title": "Analytics Dashboard",
+        "description": "Visualize your productivity patterns, track goals, and make data-driven decisions.",
+        "feature1": "Real-time metrics",
+        "feature2": "Custom reports",
+        "feature3": "Insights"
+      },
+      "security": {
+        "title": "Enterprise Security",
+        "description": "Bank-grade encryption, granular permissions, and comprehensive audit logs keep your data safe.",
+        "feature1": "Row-level security",
+        "feature2": "RBAC",
+        "feature3": "Audit trails"
+      },
+      "openSource": {
+        "title": "Open Source",
+        "description": "Full transparency with public source code, community contributions, and self-hosting options.",
+        "feature1": "Public GitHub",
+        "feature2": "Community-driven",
+        "feature3": "Self-hostable"
+      }
+    },
+    "timeline": {
+      "title": {
+        "part1": "Our",
+        "highlight": "Innovation Journey"
+      },
+      "subtitle": "From ambitious vision to transformative reality",
+      "foundation": {
+        "phase": "Foundation",
+        "period": "2024 - Early Days",
+        "title": "The Spark",
+        "description": "Recognized the Great Betrayal of Modern Work and envisioned a better future where AI serves humanity.",
+        "achievement1": "Platform architecture",
+        "achievement2": "Core team assembled"
+      },
+      "building": {
+        "phase": "Building",
+        "period": "2024 - Present",
+        "title": "Rapid Development",
+        "description": "Built the foundation with 377+ database migrations, comprehensive authentication, and AI integration.",
+        "achievement1": "TuDo task management",
+        "achievement2": "Calendar sync",
+        "achievement3": "Finance tracking",
+        "achievement4": "Nova platform"
+      },
+      "launch": {
+        "phase": "Launch",
+        "period": "April 2, 2025",
+        "title": "Official Incorporation",
+        "description": "TUTURUUU JSC officially founded, marking our commitment to building the intelligent OS for modern work.",
+        "achievement1": "Legal entity established",
+        "achievement2": "Open source release"
+      },
+      "evolution": {
+        "phase": "Evolution",
+        "period": "2025 - Future",
+        "title": "The Age of Partners",
+        "description": "Expanding Mira's capabilities, building Aurora's context graph, and making the impossible possible for everyone.",
+        "achievement1": "Multi-agent intelligence",
+        "achievement2": "Global accessibility",
+        "achievement3": "Continuous learning"
+      }
+    },
+    "community": {
+      "title": {
+        "part1": "Building a",
+        "highlight": "Global Community"
+      },
+      "subtitle": "Join thousands of builders, dreamers, and innovators shaping the future",
+      "openSource": {
+        "title": "Open Source Community",
+        "value": "10K+",
+        "description": "Contributors and users building together on GitHub"
+      },
+      "contributions": {
+        "title": "Code Contributions",
+        "value": "10,000+",
+        "description": "Git commits from 30+ contributors since 2022"
+      },
+      "milestones": {
+        "title": "Innovation Milestones",
+        "value": "50+",
+        "description": "Features and integrations shipped"
+      },
+      "culture": {
+        "title": "Our Culture",
+        "subtitle": "Values that define how we work and innovate together",
+        "builders": {
+          "title": "Builders, Not Employees",
+          "description": "Each teammate acts like a founder within their domain"
+        },
+        "optimism": {
+          "title": "Pragmatic Optimism",
+          "description": "Bold ambition paired with rigorous execution"
+        },
+        "ownership": {
+          "title": "Relentless Ownership",
+          "description": "Decisions come with accountability for outcomes"
+        },
+        "transparency": {
+          "title": "Transparency by Default",
+          "description": "Internal operations mirror our open-source ethos"
+        },
+        "vietnam": {
+          "title": "Vietnam-Rooted",
+          "description": "Global ambitions, Southeast Asian excellence"
+        },
+        "innovation": {
+          "title": "Innovation First",
+          "description": "Technology can originate from anywhere"
+        }
+      }
+    },
+    "companyInfo": {
+      "title": "TUTURUUU JOINT STOCK COMPANY",
+      "subtitle": "Building the intelligent OS for modern work",
+      "details": {
+        "title": "Company Details",
+        "taxCode": "Tax Code",
+        "taxCodeValue": "0318898402",
+        "founded": "Founded",
+        "foundedValue": "April 2, 2025",
+        "ceo": "Founder & CEO",
+        "ceoValue": "Võ Hoàng Phúc"
+      },
+      "location": {
+        "title": "Location",
+        "address1": "Tầng 14, Tòa Nhà HM Town",
+        "address2": "412 Nguyễn Thị Minh Khai",
+        "address3": "Phường 05, Quận 3",
+        "address4": "Thành phố Hồ Chí Minh, Việt Nam"
+      },
+      "links": {
+        "website": "Website",
+        "github": "GitHub",
+        "contact": "Contact"
+      }
+    },
+    "cta": {
+      "title": "Join Us in Building the Future",
+      "description": "We're assembling a team of builders who believe technology should unlock human potential. If you share our vision, let's create something extraordinary together.",
+      "contribute": "Contribute on GitHub",
+      "getInTouch": "Get in Touch"
+    }
   }
 }

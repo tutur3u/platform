@@ -34,11 +34,13 @@ import {
 } from '@tuturuuu/ui/icons';
 import { cn } from '@tuturuuu/utils/format';
 import { motion } from 'framer-motion';
+import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 
 export default function MarketingPage() {
+  const t = useTranslations('landing');
   return (
-    <main className="relative mx-auto overflow-x-clip">
+    <main className="relative mx-auto overflow-x-clip text-balance">
       {/* Dynamic Floating Orbs */}
       <div className="-z-10 pointer-events-none fixed inset-0">
         <motion.div
@@ -99,34 +101,33 @@ export default function MarketingPage() {
               className="mb-6 border-dynamic-purple/30 bg-dynamic-purple/10 text-dynamic-purple hover:bg-dynamic-purple/20"
             >
               <Sparkles className="mr-1.5 h-3.5 w-3.5" />
-              The Intelligent OS for Modern Work
+              {t('hero.badge')}
             </Badge>
 
             <h1 className="mb-6 text-balance font-bold text-5xl tracking-tight sm:text-6xl md:text-7xl lg:text-8xl">
-              Your Life,{' '}
+              {t('hero.title.part1')}{' '}
               <span className="bg-gradient-to-r from-dynamic-purple via-dynamic-pink to-dynamic-orange bg-clip-text text-transparent">
-                In Sync
+                {t('hero.title.part2')}
               </span>
             </h1>
 
             <p className="mx-auto mb-8 max-w-3xl text-balance text-foreground/70 text-lg leading-relaxed sm:text-xl md:text-2xl">
-              Stop juggling apps. Start focusing on what matters.{' '}
-              <strong className="text-foreground">Tuturuuu</strong> unifies your
-              calendar, tasks, meetings, and communications—powered by AI that
-              actually understands your work.
+              {t('hero.description.part1')}{' '}
+              <strong className="text-foreground">Tuturuuu</strong>{' '}
+              {t('hero.description.part2')}
             </p>
 
             <div className="mb-12 flex flex-wrap items-center justify-center gap-4">
               <Button size="lg" className="group" asChild>
                 <Link href="/onboarding">
-                  Get Started Free
+                  {t('hero.cta.getStarted')}
                   <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
                 </Link>
               </Button>
               <Button size="lg" variant="outline" asChild>
                 <Link href="#features">
                   <Layers className="mr-2 h-5 w-5" />
-                  Explore Features
+                  {t('hero.cta.exploreFeatures')}
                 </Link>
               </Button>
               <Button size="lg" variant="outline" asChild>
@@ -135,7 +136,7 @@ export default function MarketingPage() {
                   target="_blank"
                 >
                   <GitBranch className="mr-2 h-5 w-5" />
-                  View on GitHub
+                  {t('hero.cta.viewGitHub')}
                 </Link>
               </Button>
             </div>
@@ -144,19 +145,19 @@ export default function MarketingPage() {
             <div className="flex flex-wrap items-center justify-center gap-6 text-foreground/60 text-sm">
               <div className="flex items-center gap-2">
                 <CheckCircle2 className="h-4 w-4 text-dynamic-green" />
-                Open Source
+                {t('hero.trust.openSource')}
               </div>
               <div className="flex items-center gap-2">
                 <CheckCircle2 className="h-4 w-4 text-dynamic-green" />
-                10,000+ Commits
+                {t('hero.trust.commits')}
               </div>
               <div className="flex items-center gap-2">
                 <CheckCircle2 className="h-4 w-4 text-dynamic-green" />
-                30+ Contributors
+                {t('hero.trust.contributors')}
               </div>
               <div className="flex items-center gap-2">
                 <CheckCircle2 className="h-4 w-4 text-dynamic-green" />
-                Free Forever Plan
+                {t('hero.trust.freePlan')}
               </div>
             </div>
           </motion.div>
@@ -173,14 +174,14 @@ export default function MarketingPage() {
             className="mb-16 text-center"
           >
             <h2 className="mb-4 font-bold text-4xl sm:text-5xl">
-              The{' '}
+              {t('digitalFriction.title.part1')}{' '}
               <span className="bg-gradient-to-r from-dynamic-blue via-dynamic-cyan to-dynamic-green bg-clip-text text-transparent">
-                Digital Friction
+                {t('digitalFriction.title.highlight')}
               </span>{' '}
-              Crisis
+              {t('digitalFriction.title.part2')}
             </h2>
             <p className="mx-auto max-w-2xl text-foreground/60 text-lg">
-              Modern workers are drowning in digital noise. Here's the cost.
+              {t('digitalFriction.subtitle')}
             </p>
           </motion.div>
 
@@ -188,30 +189,28 @@ export default function MarketingPage() {
             {[
               {
                 icon: Clock,
-                title: '21 Hours Lost',
-                subtitle: 'Every Week',
-                description:
-                  'Average time knowledge workers waste on "work about work" instead of meaningful tasks',
+                titleKey: 'digitalFriction.stats.hoursLost.title',
+                subtitleKey: 'digitalFriction.stats.hoursLost.subtitle',
+                descriptionKey: 'digitalFriction.stats.hoursLost.description',
+                trendKey: 'digitalFriction.stats.hoursLost.trend',
                 color: 'red',
-                trend: '-21h/week',
               },
               {
                 icon: Brain,
-                title: '40% Less',
-                subtitle: 'Productive Output',
-                description:
-                  'The mental tax of context-switching between fragmented tools and notifications',
+                titleKey: 'digitalFriction.stats.productivityLoss.title',
+                subtitleKey: 'digitalFriction.stats.productivityLoss.subtitle',
+                descriptionKey:
+                  'digitalFriction.stats.productivityLoss.description',
+                trendKey: 'digitalFriction.stats.productivityLoss.trend',
                 color: 'orange',
-                trend: '-40%',
               },
               {
                 icon: TrendingUp,
-                title: '$1T+ Lost',
-                subtitle: 'Global Productivity',
-                description:
-                  'Annual cost of digital friction and administrative overhead worldwide',
+                titleKey: 'digitalFriction.stats.globalCost.title',
+                subtitleKey: 'digitalFriction.stats.globalCost.subtitle',
+                descriptionKey: 'digitalFriction.stats.globalCost.description',
+                trendKey: 'digitalFriction.stats.globalCost.trend',
                 color: 'yellow',
-                trend: '$1T+/year',
               },
             ].map((stat, index) => (
               <motion.div
@@ -243,13 +242,13 @@ export default function MarketingPage() {
                       `text-dynamic-${stat.color}`
                     )}
                   >
-                    {stat.title}
+                    {t(stat.titleKey as any)}
                   </div>
                   <div className="mb-3 font-medium text-foreground/80 text-sm uppercase tracking-wide">
-                    {stat.subtitle}
+                    {t(stat.subtitleKey as any)}
                   </div>
                   <p className="mb-4 text-foreground/60 text-sm leading-relaxed">
-                    {stat.description}
+                    {t(stat.descriptionKey as any)}
                   </p>
                   <Badge
                     variant="secondary"
@@ -257,7 +256,7 @@ export default function MarketingPage() {
                       `border-dynamic-${stat.color}/30 bg-dynamic-${stat.color}/10 text-dynamic-${stat.color}`
                     )}
                   >
-                    {stat.trend}
+                    {t(stat.trendKey as any)}
                   </Badge>
                 </Card>
               </motion.div>
@@ -276,14 +275,13 @@ export default function MarketingPage() {
             className="mb-16 text-center"
           >
             <h2 className="mb-4 font-bold text-4xl sm:text-5xl">
-              Everything You Need,{' '}
+              {t('features.title.part1')}{' '}
               <span className="bg-gradient-to-r from-dynamic-cyan via-dynamic-blue to-dynamic-purple bg-clip-text text-transparent">
-                One Platform
+                {t('features.title.highlight')}
               </span>
             </h2>
             <p className="mx-auto max-w-2xl text-foreground/60 text-lg">
-              Tuturuuu brings together all your productivity tools with
-              intelligent AI integration
+              {t('features.subtitle')}
             </p>
           </motion.div>
 
@@ -291,72 +289,38 @@ export default function MarketingPage() {
             {[
               {
                 icon: Calendar,
-                title: 'TuPlan',
-                subtitle: 'Smart Calendar',
-                description:
-                  'AI-powered auto-scheduling that allocates time based on deadlines, priorities, and your personal work rhythms.',
-                features: [
-                  'Google Calendar sync',
-                  'Auto-scheduling',
-                  'Time blocking',
-                ],
+                appKey: 'tuplan',
+                featureKeys: ['sync', 'scheduling', 'blocking'],
                 color: 'blue',
               },
               {
                 icon: CheckCircle2,
-                title: 'TuDo',
-                subtitle: 'Smart Tasks',
-                description:
-                  'Centralized task hub with hierarchical organization, bucket dump feature, and seamless calendar integration.',
-                features: [
-                  'Kanban boards',
-                  'Hierarchical tasks',
-                  'Project management',
-                ],
+                appKey: 'tudo',
+                featureKeys: ['kanban', 'hierarchical', 'management'],
                 color: 'green',
               },
               {
                 icon: Users,
-                title: 'TuMeet',
-                subtitle: 'Smart Meetings',
-                description:
-                  'End-to-end meeting solution with collaborative planning, location intelligence, and AI-generated summaries.',
-                features: [
-                  'Meeting plans',
-                  'AI transcription',
-                  'Action tracking',
-                ],
+                appKey: 'tumeet',
+                featureKeys: ['plans', 'transcription', 'tracking'],
                 color: 'purple',
               },
               {
                 icon: MessageSquare,
-                title: 'TuChat',
-                subtitle: 'Smart Communications',
-                description:
-                  'Integrated communications hub where AI surfaces commitments and routes them to tasks and calendar.',
-                features: ['Team chat', 'AI insights', 'Auto-routing'],
+                appKey: 'tuchat',
+                featureKeys: ['chat', 'insights', 'routing'],
                 color: 'cyan',
               },
               {
                 icon: Wallet,
-                title: 'TuFinance',
-                subtitle: 'Finance Management',
-                description:
-                  'Track expenses, manage budgets, and gain AI-powered insights into your financial health.',
-                features: [
-                  'Expense tracking',
-                  'Budget planning',
-                  'Financial analytics',
-                ],
+                appKey: 'tufinance',
+                featureKeys: ['tracking', 'planning', 'analytics'],
                 color: 'green',
               },
               {
                 icon: GraduationCap,
-                title: 'Nova',
-                subtitle: 'Learning Platform',
-                description:
-                  'Practice prompt engineering, compete in AI challenges, and level up your skills with hands-on learning.',
-                features: ['AI challenges', 'Skill tracking', 'Leaderboards'],
+                appKey: 'nova',
+                featureKeys: ['challenges', 'tracking', 'leaderboards'],
                 color: 'orange',
               },
             ].map((feature, index) => (
@@ -383,15 +347,17 @@ export default function MarketingPage() {
                       className={cn('h-6 w-6', `text-dynamic-${feature.color}`)}
                     />
                   </div>
-                  <div className="mb-1 font-bold text-xl">{feature.title}</div>
+                  <div className="mb-1 font-bold text-xl">
+                    {t(`features.apps.${feature.appKey}.title` as any)}
+                  </div>
                   <div className="mb-3 text-foreground/60 text-sm">
-                    {feature.subtitle}
+                    {t(`features.apps.${feature.appKey}.subtitle` as any)}
                   </div>
                   <p className="mb-4 text-foreground/70 text-sm leading-relaxed">
-                    {feature.description}
+                    {t(`features.apps.${feature.appKey}.description` as any)}
                   </p>
                   <div className="flex flex-wrap gap-2">
-                    {feature.features.map((feat, featIndex) => (
+                    {feature.featureKeys.map((featKey, featIndex) => (
                       <Badge
                         key={featIndex}
                         variant="secondary"
@@ -400,7 +366,9 @@ export default function MarketingPage() {
                           `border-dynamic-${feature.color}/30 bg-dynamic-${feature.color}/10 text-dynamic-${feature.color}`
                         )}
                       >
-                        {feat}
+                        {t(
+                          `features.apps.${feature.appKey}.features.${featKey}` as any
+                        )}
                       </Badge>
                     ))}
                   </div>
@@ -425,17 +393,16 @@ export default function MarketingPage() {
               className="mb-4 border-dynamic-green/30 bg-dynamic-green/10 text-dynamic-green"
             >
               <Zap className="mr-1.5 h-3.5 w-3.5" />
-              Live Demo
+              {t('demo.badge')}
             </Badge>
             <h2 className="mb-4 font-bold text-4xl sm:text-5xl">
-              See It{' '}
+              {t('demo.title.part1')}{' '}
               <span className="bg-gradient-to-r from-dynamic-green via-dynamic-cyan to-dynamic-blue bg-clip-text text-transparent">
-                In Action
+                {t('demo.title.highlight')}
               </span>
             </h2>
             <p className="mx-auto max-w-2xl text-foreground/60 text-lg">
-              Experience the future of work with our interactive demos. These
-              are real, production-ready features you can use today.
+              {t('demo.subtitle')}
             </p>
           </motion.div>
 
@@ -453,10 +420,10 @@ export default function MarketingPage() {
                   </div>
                   <div>
                     <h3 className="mb-1 font-bold text-2xl">
-                      Smart Task Management
+                      {t('demo.taskManagement.title')}
                     </h3>
                     <p className="text-foreground/60 text-sm">
-                      Hierarchical organization with AI insights
+                      {t('demo.taskManagement.subtitle')}
                     </p>
                   </div>
                 </div>
@@ -471,11 +438,11 @@ export default function MarketingPage() {
                         </div>
                         <div>
                           <div className="font-semibold text-sm">
-                            Review marketing proposal
+                            {t('demo.taskManagement.task1.title')}
                           </div>
                           <div className="flex items-center gap-2 text-foreground/50 text-xs">
                             <Clock className="h-3 w-3" />
-                            Due tomorrow
+                            {t('demo.taskManagement.task1.dueDate')}
                           </div>
                         </div>
                       </div>
@@ -483,7 +450,7 @@ export default function MarketingPage() {
                         variant="secondary"
                         className="border-dynamic-orange/30 bg-dynamic-orange/10 text-dynamic-orange text-xs"
                       >
-                        High
+                        {t('demo.taskManagement.task1.priority')}
                       </Badge>
                     </div>
                     <div className="ml-8 flex flex-wrap gap-2">
@@ -491,13 +458,15 @@ export default function MarketingPage() {
                         variant="secondary"
                         className="border-dynamic-blue/30 bg-dynamic-blue/10 text-dynamic-blue text-xs"
                       >
-                        <FileText className="mr-1 h-3 w-3" />2 files
+                        <FileText className="mr-1 h-3 w-3" />
+                        {t('demo.taskManagement.task1.files')}
                       </Badge>
                       <Badge
                         variant="secondary"
                         className="border-dynamic-purple/30 bg-dynamic-purple/10 text-dynamic-purple text-xs"
                       >
-                        <Users className="mr-1 h-3 w-3" />3 assignees
+                        <Users className="mr-1 h-3 w-3" />
+                        {t('demo.taskManagement.task1.assignees')}
                       </Badge>
                     </div>
                   </div>
@@ -510,11 +479,11 @@ export default function MarketingPage() {
                         </div>
                         <div>
                           <div className="font-semibold text-sm">
-                            Implement calendar sync feature
+                            {t('demo.taskManagement.task2.title')}
                           </div>
                           <div className="flex items-center gap-2 text-foreground/50 text-xs">
                             <Clock className="h-3 w-3" />
-                            Next week
+                            {t('demo.taskManagement.task2.dueDate')}
                           </div>
                         </div>
                       </div>
@@ -522,7 +491,7 @@ export default function MarketingPage() {
                         variant="secondary"
                         className="border-dynamic-blue/30 bg-dynamic-blue/10 text-dynamic-blue text-xs"
                       >
-                        Medium
+                        {t('demo.taskManagement.task2.priority')}
                       </Badge>
                     </div>
                     <div className="ml-8 flex flex-wrap gap-2">
@@ -531,7 +500,7 @@ export default function MarketingPage() {
                         className="border-dynamic-green/30 bg-dynamic-green/10 text-dynamic-green text-xs"
                       >
                         <Code2 className="mr-1 h-3 w-3" />
-                        Development
+                        {t('demo.taskManagement.task2.tag')}
                       </Badge>
                     </div>
                   </div>
@@ -544,11 +513,11 @@ export default function MarketingPage() {
                         </div>
                         <div>
                           <div className="font-semibold text-sm">
-                            Plan team offsite event
+                            {t('demo.taskManagement.task3.title')}
                           </div>
                           <div className="flex items-center gap-2 text-foreground/50 text-xs">
                             <Calendar className="h-3 w-3" />
-                            In 2 weeks
+                            {t('demo.taskManagement.task3.dueDate')}
                           </div>
                         </div>
                       </div>
@@ -556,7 +525,7 @@ export default function MarketingPage() {
                         variant="secondary"
                         className="border-dynamic-yellow/30 bg-dynamic-yellow/10 text-dynamic-yellow text-xs"
                       >
-                        Low
+                        {t('demo.taskManagement.task3.priority')}
                       </Badge>
                     </div>
                     <div className="ml-8 flex flex-wrap gap-2">
@@ -565,7 +534,7 @@ export default function MarketingPage() {
                         className="border-dynamic-pink/30 bg-dynamic-pink/10 text-dynamic-pink text-xs"
                       >
                         <Heart className="mr-1 h-3 w-3" />
-                        Team building
+                        {t('demo.taskManagement.task3.tag')}
                       </Badge>
                     </div>
                   </div>
@@ -576,11 +545,10 @@ export default function MarketingPage() {
                     <Sparkles className="h-5 w-5 text-dynamic-green" />
                     <div className="flex-1">
                       <div className="mb-1 font-semibold text-sm">
-                        AI Insight
+                        {t('demo.taskManagement.aiInsight.title')}
                       </div>
                       <p className="text-foreground/70 text-xs leading-relaxed">
-                        You have 3 high-priority tasks due this week. Consider
-                        blocking 2 hours tomorrow morning for focused work.
+                        {t('demo.taskManagement.aiInsight.description')}
                       </p>
                     </div>
                   </div>
@@ -589,7 +557,7 @@ export default function MarketingPage() {
                 <Button className="mt-6 w-full" variant="outline" asChild>
                   <Link href="/onboarding">
                     <Target className="mr-2 h-4 w-4" />
-                    Try Task Management
+                    {t('demo.taskManagement.cta')}
                   </Link>
                 </Button>
               </Card>
@@ -607,9 +575,11 @@ export default function MarketingPage() {
                     <Calendar className="h-7 w-7 text-dynamic-blue" />
                   </div>
                   <div>
-                    <h3 className="mb-1 font-bold text-2xl">Smart Calendar</h3>
+                    <h3 className="mb-1 font-bold text-2xl">
+                      {t('demo.calendar.title')}
+                    </h3>
                     <p className="text-foreground/60 text-sm">
-                      AI-powered scheduling and time blocking
+                      {t('demo.calendar.subtitle')}
                     </p>
                   </div>
                 </div>
@@ -619,13 +589,13 @@ export default function MarketingPage() {
                   <div className="rounded-lg border border-dynamic-blue/20 bg-background/50 p-4">
                     <div className="mb-3 flex items-center justify-between">
                       <div className="font-semibold text-sm">
-                        Today's Schedule
+                        {t('demo.calendar.todaySchedule')}
                       </div>
                       <Badge
                         variant="secondary"
                         className="border-dynamic-blue/30 bg-dynamic-blue/10 text-dynamic-blue text-xs"
                       >
-                        6 events
+                        {t('demo.calendar.eventCount')}
                       </Badge>
                     </div>
 
@@ -634,18 +604,19 @@ export default function MarketingPage() {
                       <div className="flex gap-3 rounded-md bg-dynamic-purple/10 p-3 transition-colors hover:bg-dynamic-purple/20">
                         <div className="shrink-0 text-center">
                           <div className="font-semibold text-dynamic-purple text-xs">
-                            9:00
+                            {t('demo.calendar.event1.time')}
                           </div>
                           <div className="text-[10px] text-foreground/50">
-                            AM
+                            {t('demo.calendar.event1.period')}
                           </div>
                         </div>
                         <div className="min-w-0 flex-1 border-dynamic-purple border-l-2 pl-3">
                           <div className="font-medium text-sm">
-                            Team Standup
+                            {t('demo.calendar.event1.title')}
                           </div>
                           <div className="flex items-center gap-2 text-foreground/60 text-xs">
-                            <Users className="h-3 w-3" />5 participants
+                            <Users className="h-3 w-3" />
+                            {t('demo.calendar.event1.meta')}
                           </div>
                         </div>
                       </div>
@@ -654,19 +625,19 @@ export default function MarketingPage() {
                       <div className="flex gap-3 rounded-md bg-dynamic-green/10 p-3 transition-colors hover:bg-dynamic-green/20">
                         <div className="shrink-0 text-center">
                           <div className="font-semibold text-dynamic-green text-xs">
-                            10:30
+                            {t('demo.calendar.event2.time')}
                           </div>
                           <div className="text-[10px] text-foreground/50">
-                            AM
+                            {t('demo.calendar.event2.period')}
                           </div>
                         </div>
                         <div className="min-w-0 flex-1 border-dynamic-green border-l-2 pl-3">
                           <div className="font-medium text-sm">
-                            Focus Time: Deep Work
+                            {t('demo.calendar.event2.title')}
                           </div>
                           <div className="flex items-center gap-2 text-foreground/60 text-xs">
                             <Zap className="h-3 w-3" />
-                            AI-scheduled block
+                            {t('demo.calendar.event2.meta')}
                           </div>
                         </div>
                       </div>
@@ -675,19 +646,19 @@ export default function MarketingPage() {
                       <div className="flex gap-3 rounded-md bg-dynamic-orange/10 p-3 transition-colors hover:bg-dynamic-orange/20">
                         <div className="shrink-0 text-center">
                           <div className="font-semibold text-dynamic-orange text-xs">
-                            2:00
+                            {t('demo.calendar.event3.time')}
                           </div>
                           <div className="text-[10px] text-foreground/50">
-                            PM
+                            {t('demo.calendar.event3.period')}
                           </div>
                         </div>
                         <div className="min-w-0 flex-1 border-dynamic-orange border-l-2 pl-3">
                           <div className="font-medium text-sm">
-                            Client Presentation
+                            {t('demo.calendar.event3.title')}
                           </div>
                           <div className="flex items-center gap-2 text-foreground/60 text-xs">
                             <Globe className="h-3 w-3" />
-                            Video call
+                            {t('demo.calendar.event3.meta')}
                           </div>
                         </div>
                       </div>
@@ -698,18 +669,18 @@ export default function MarketingPage() {
                   <div className="grid grid-cols-2 gap-3">
                     <div className="rounded-lg border border-dynamic-green/20 bg-dynamic-green/5 p-3 text-center">
                       <div className="mb-1 font-bold text-2xl text-dynamic-green">
-                        3.5h
+                        {t('demo.calendar.stats.focusTime.value')}
                       </div>
                       <div className="text-foreground/60 text-xs">
-                        Focus Time
+                        {t('demo.calendar.stats.focusTime.label')}
                       </div>
                     </div>
                     <div className="rounded-lg border border-dynamic-blue/20 bg-dynamic-blue/5 p-3 text-center">
                       <div className="mb-1 font-bold text-2xl text-dynamic-blue">
-                        85%
+                        {t('demo.calendar.stats.optimized.value')}
                       </div>
                       <div className="text-foreground/60 text-xs">
-                        Optimized
+                        {t('demo.calendar.stats.optimized.label')}
                       </div>
                     </div>
                   </div>
@@ -720,11 +691,10 @@ export default function MarketingPage() {
                     <Sparkles className="h-5 w-5 text-dynamic-blue" />
                     <div className="flex-1">
                       <div className="mb-1 font-semibold text-sm">
-                        Smart Suggestion
+                        {t('demo.calendar.smartSuggestion.title')}
                       </div>
                       <p className="text-foreground/70 text-xs leading-relaxed">
-                        Your calendar is 15% more efficient than last week.
-                        Consider adding another focus block on Friday.
+                        {t('demo.calendar.smartSuggestion.description')}
                       </p>
                     </div>
                   </div>
@@ -733,7 +703,7 @@ export default function MarketingPage() {
                 <Button className="mt-6 w-full" variant="outline" asChild>
                   <Link href="/onboarding">
                     <Calendar className="mr-2 h-4 w-4" />
-                    Try Smart Calendar
+                    {t('demo.calendar.cta')}
                   </Link>
                 </Button>
               </Card>
@@ -752,10 +722,10 @@ export default function MarketingPage() {
                   </div>
                   <div>
                     <h3 className="mb-1 font-bold text-2xl">
-                      AI Assistant (Mira)
+                      {t('demo.aiChat.title')}
                     </h3>
                     <p className="text-foreground/60 text-sm">
-                      Your proactive AI companion
+                      {t('demo.aiChat.subtitle')}
                     </p>
                   </div>
                 </div>
@@ -767,7 +737,7 @@ export default function MarketingPage() {
                     <div className="flex justify-end">
                       <div className="max-w-[80%] rounded-lg bg-dynamic-blue/20 px-4 py-2">
                         <p className="text-sm">
-                          What's on my agenda for tomorrow?
+                          {t('demo.aiChat.userMessage1')}
                         </p>
                       </div>
                     </div>
@@ -779,20 +749,20 @@ export default function MarketingPage() {
                       </div>
                       <div className="max-w-[80%] rounded-lg bg-dynamic-purple/10 px-4 py-2">
                         <p className="mb-2 text-sm leading-relaxed">
-                          You have 4 meetings and 2 focus blocks scheduled:
+                          {t('demo.aiChat.aiResponse1.intro')}
                         </p>
                         <ul className="space-y-1 text-sm">
                           <li className="flex items-center gap-2">
                             <CheckCircle2 className="h-3 w-3 text-dynamic-green" />
-                            9:00 AM - Team sync (30 min)
+                            {t('demo.aiChat.aiResponse1.item1')}
                           </li>
                           <li className="flex items-center gap-2">
                             <CheckCircle2 className="h-3 w-3 text-dynamic-green" />
-                            11:00 AM - Focus: Project Alpha (2h)
+                            {t('demo.aiChat.aiResponse1.item2')}
                           </li>
                           <li className="flex items-center gap-2">
                             <CheckCircle2 className="h-3 w-3 text-dynamic-green" />
-                            2:00 PM - Client review (1h)
+                            {t('demo.aiChat.aiResponse1.item3')}
                           </li>
                         </ul>
                       </div>
@@ -802,7 +772,7 @@ export default function MarketingPage() {
                     <div className="flex justify-end">
                       <div className="max-w-[80%] rounded-lg bg-dynamic-blue/20 px-4 py-2">
                         <p className="text-sm">
-                          Can you reschedule the 2 PM meeting?
+                          {t('demo.aiChat.userMessage2')}
                         </p>
                       </div>
                     </div>
@@ -828,19 +798,19 @@ export default function MarketingPage() {
                       variant="secondary"
                       className="cursor-pointer border-dynamic-blue/30 bg-dynamic-blue/10 text-dynamic-blue text-xs transition-colors hover:bg-dynamic-blue/20"
                     >
-                      Show my tasks
+                      {t('demo.aiChat.quickActions.tasks')}
                     </Badge>
                     <Badge
                       variant="secondary"
                       className="cursor-pointer border-dynamic-green/30 bg-dynamic-green/10 text-dynamic-green text-xs transition-colors hover:bg-dynamic-green/20"
                     >
-                      Create reminder
+                      {t('demo.aiChat.quickActions.reminder')}
                     </Badge>
                     <Badge
                       variant="secondary"
                       className="cursor-pointer border-dynamic-purple/30 bg-dynamic-purple/10 text-dynamic-purple text-xs transition-colors hover:bg-dynamic-purple/20"
                     >
-                      Weekly summary
+                      {t('demo.aiChat.quickActions.summary')}
                     </Badge>
                   </div>
                 </div>
@@ -850,11 +820,10 @@ export default function MarketingPage() {
                     <Brain className="h-5 w-5 text-dynamic-purple" />
                     <div className="flex-1">
                       <div className="mb-1 font-semibold text-sm">
-                        Context-Aware
+                        {t('demo.aiChat.contextAware.title')}
                       </div>
                       <p className="text-foreground/70 text-xs leading-relaxed">
-                        Mira understands your work patterns, preferences, and
-                        goals to provide truly personalized assistance.
+                        {t('demo.aiChat.contextAware.description')}
                       </p>
                     </div>
                   </div>
@@ -863,7 +832,7 @@ export default function MarketingPage() {
                 <Button className="mt-6 w-full" variant="outline" asChild>
                   <Link href="/onboarding">
                     <MessageSquare className="mr-2 h-4 w-4" />
-                    Chat with Mira
+                    {t('demo.aiChat.cta')}
                   </Link>
                 </Button>
               </Card>
@@ -882,10 +851,10 @@ export default function MarketingPage() {
                   </div>
                   <div>
                     <h3 className="mb-1 font-bold text-2xl">
-                      Analytics & Insights
+                      {t('demo.analytics.title')}
                     </h3>
                     <p className="text-foreground/60 text-sm">
-                      Track productivity and patterns
+                      {t('demo.analytics.subtitle')}
                     </p>
                   </div>
                 </div>
@@ -896,55 +865,63 @@ export default function MarketingPage() {
                     <div className="rounded-lg border border-dynamic-green/20 bg-dynamic-green/5 p-4">
                       <div className="mb-1 flex items-center gap-2">
                         <TrendingUp className="h-4 w-4 text-dynamic-green" />
-                        <span className="font-semibold text-xs">Tasks</span>
+                        <span className="font-semibold text-xs">
+                          {t('demo.analytics.metrics.tasks.label')}
+                        </span>
                       </div>
                       <div className="font-bold text-2xl text-dynamic-green">
-                        24
+                        {t('demo.analytics.metrics.tasks.value')}
                       </div>
                       <div className="flex items-center gap-1 text-foreground/60 text-xs">
                         <ArrowRight className="h-3 w-3 rotate-[-45deg]" />
-                        +15% this week
+                        {t('demo.analytics.metrics.tasks.change')}
                       </div>
                     </div>
 
                     <div className="rounded-lg border border-dynamic-blue/20 bg-dynamic-blue/5 p-4">
                       <div className="mb-1 flex items-center gap-2">
                         <Clock className="h-4 w-4 text-dynamic-blue" />
-                        <span className="font-semibold text-xs">Focus</span>
+                        <span className="font-semibold text-xs">
+                          {t('demo.analytics.metrics.focus.label')}
+                        </span>
                       </div>
                       <div className="font-bold text-2xl text-dynamic-blue">
-                        18.5h
+                        {t('demo.analytics.metrics.focus.value')}
                       </div>
                       <div className="flex items-center gap-1 text-foreground/60 text-xs">
                         <ArrowRight className="h-3 w-3 rotate-[-45deg]" />
-                        +3.2h vs last week
+                        {t('demo.analytics.metrics.focus.change')}
                       </div>
                     </div>
 
                     <div className="rounded-lg border border-dynamic-purple/20 bg-dynamic-purple/5 p-4">
                       <div className="mb-1 flex items-center gap-2">
                         <Users className="h-4 w-4 text-dynamic-purple" />
-                        <span className="font-semibold text-xs">Meetings</span>
+                        <span className="font-semibold text-xs">
+                          {t('demo.analytics.metrics.meetings.label')}
+                        </span>
                       </div>
                       <div className="font-bold text-2xl text-dynamic-purple">
-                        12
+                        {t('demo.analytics.metrics.meetings.value')}
                       </div>
                       <div className="flex items-center gap-1 text-foreground/60 text-xs">
                         <ArrowRight className="h-3 w-3 rotate-45" />
-                        -8% this week
+                        {t('demo.analytics.metrics.meetings.change')}
                       </div>
                     </div>
 
                     <div className="rounded-lg border border-dynamic-orange/20 bg-dynamic-orange/5 p-4">
                       <div className="mb-1 flex items-center gap-2">
                         <Target className="h-4 w-4 text-dynamic-orange" />
-                        <span className="font-semibold text-xs">Goals</span>
+                        <span className="font-semibold text-xs">
+                          {t('demo.analytics.metrics.goals.label')}
+                        </span>
                       </div>
                       <div className="font-bold text-2xl text-dynamic-orange">
-                        89%
+                        {t('demo.analytics.metrics.goals.value')}
                       </div>
                       <div className="text-foreground/60 text-xs">
-                        Completion rate
+                        {t('demo.analytics.metrics.goals.subtitle')}
                       </div>
                     </div>
                   </div>
@@ -953,61 +930,69 @@ export default function MarketingPage() {
                   <div className="rounded-lg border border-dynamic-cyan/20 bg-background/50 p-4">
                     <div className="mb-3 flex items-center justify-between">
                       <div className="font-semibold text-sm">
-                        Productivity Score
+                        {t('demo.analytics.productivityScore.title')}
                       </div>
                       <Badge
                         variant="secondary"
                         className="border-dynamic-cyan/30 bg-dynamic-cyan/10 text-dynamic-cyan"
                       >
-                        Excellent
+                        {t('demo.analytics.productivityScore.badge')}
                       </Badge>
                     </div>
                     <div className="mb-2 h-3 overflow-hidden rounded-full bg-dynamic-cyan/20">
                       <div className="h-full w-[87%] rounded-full bg-gradient-to-r from-dynamic-cyan to-dynamic-blue" />
                     </div>
                     <div className="flex items-center justify-between text-foreground/60 text-xs">
-                      <span>87/100</span>
-                      <span>Top 10% of users</span>
+                      <span>{t('demo.analytics.productivityScore.value')}</span>
+                      <span>{t('demo.analytics.productivityScore.rank')}</span>
                     </div>
                   </div>
 
                   {/* Weekly Breakdown */}
                   <div className="rounded-lg border border-dynamic-blue/20 bg-background/50 p-4">
                     <div className="mb-3 font-semibold text-sm">
-                      This Week's Distribution
+                      {t('demo.analytics.weeklyDistribution.title')}
                     </div>
                     <div className="space-y-2">
                       <div className="flex items-center gap-3">
                         <div className="w-24 text-foreground/60 text-xs">
-                          Deep Work
+                          {t(
+                            'demo.analytics.weeklyDistribution.deepWork.label'
+                          )}
                         </div>
                         <div className="h-2 flex-1 overflow-hidden rounded-full bg-foreground/10">
                           <div className="h-full w-[65%] bg-dynamic-green" />
                         </div>
                         <div className="w-12 text-right text-foreground/60 text-xs">
-                          65%
+                          {t(
+                            'demo.analytics.weeklyDistribution.deepWork.value'
+                          )}
                         </div>
                       </div>
                       <div className="flex items-center gap-3">
                         <div className="w-24 text-foreground/60 text-xs">
-                          Meetings
+                          {t(
+                            'demo.analytics.weeklyDistribution.meetings.label'
+                          )}
                         </div>
                         <div className="h-2 flex-1 overflow-hidden rounded-full bg-foreground/10">
                           <div className="h-full w-[20%] bg-dynamic-purple" />
                         </div>
                         <div className="w-12 text-right text-foreground/60 text-xs">
-                          20%
+                          {t(
+                            'demo.analytics.weeklyDistribution.meetings.value'
+                          )}
                         </div>
                       </div>
                       <div className="flex items-center gap-3">
                         <div className="w-24 text-foreground/60 text-xs">
-                          Admin
+                          {t('demo.analytics.weeklyDistribution.admin.label')}
                         </div>
                         <div className="h-2 flex-1 overflow-hidden rounded-full bg-foreground/10">
                           <div className="h-full w-[15%] bg-dynamic-orange" />
                         </div>
                         <div className="w-12 text-right text-foreground/60 text-xs">
-                          15%
+                          {t('demo.analytics.weeklyDistribution.admin.value')}
                         </div>
                       </div>
                     </div>
@@ -1019,11 +1004,10 @@ export default function MarketingPage() {
                     <TrendingUp className="h-5 w-5 text-dynamic-cyan" />
                     <div className="flex-1">
                       <div className="mb-1 font-semibold text-sm">
-                        Performance
+                        {t('demo.analytics.performance.title')}
                       </div>
                       <p className="text-foreground/70 text-xs leading-relaxed">
-                        You're spending 65% more time on deep work compared to
-                        last month. Keep it up!
+                        {t('demo.analytics.performance.description')}
                       </p>
                     </div>
                   </div>
@@ -1032,7 +1016,7 @@ export default function MarketingPage() {
                 <Button className="mt-6 w-full" variant="outline" asChild>
                   <Link href="/onboarding">
                     <BarChart3 className="mr-2 h-4 w-4" />
-                    View Full Dashboard
+                    {t('demo.analytics.cta')}
                   </Link>
                 </Button>
               </Card>
@@ -1051,13 +1035,13 @@ export default function MarketingPage() {
             className="mb-16 text-center"
           >
             <h2 className="mb-4 font-bold text-4xl sm:text-5xl">
-              Powered by{' '}
+              {t('demo.aiCore.title.part1')}{' '}
               <span className="bg-gradient-to-r from-dynamic-pink via-dynamic-purple to-dynamic-blue bg-clip-text text-transparent">
-                AI Intelligence
+                {t('demo.aiCore.title.highlight')}
               </span>
             </h2>
             <p className="mx-auto max-w-2xl text-foreground/60 text-lg">
-              Meet Mira and the AI core that makes Tuturuuu truly intelligent
+              {t('demo.aiCore.subtitle')}
             </p>
           </motion.div>
 
@@ -1071,14 +1055,10 @@ export default function MarketingPage() {
                   </div>
                   <div>
                     <h3 className="mb-2 font-bold text-3xl">
-                      Mira: Your AI Partner
+                      {t('demo.aiCore.mira.title')}
                     </h3>
                     <p className="mb-4 text-foreground/70 text-lg leading-relaxed">
-                      Mira is your proactive AI companion—the JARVIS we
-                      envisioned. She plans, reasons, and acts on your behalf,
-                      synchronizing calendars, goals, finances, and
-                      communications to surface proactive recommendations
-                      instead of passive reminders.
+                      {t('demo.aiCore.mira.description')}
                     </p>
                     <div className="flex flex-wrap gap-3">
                       <Badge
@@ -1086,21 +1066,21 @@ export default function MarketingPage() {
                         className="border-dynamic-pink/30 bg-dynamic-pink/10 text-dynamic-pink"
                       >
                         <Sparkles className="mr-1.5 h-3.5 w-3.5" />
-                        Proactive AI
+                        {t('demo.aiCore.mira.badges.proactive')}
                       </Badge>
                       <Badge
                         variant="secondary"
                         className="border-dynamic-purple/30 bg-dynamic-purple/10 text-dynamic-purple"
                       >
                         <Brain className="mr-1.5 h-3.5 w-3.5" />
-                        Context-Aware
+                        {t('demo.aiChat.contextAware.title')}
                       </Badge>
                       <Badge
                         variant="secondary"
                         className="border-dynamic-blue/30 bg-dynamic-blue/10 text-dynamic-blue"
                       >
                         <Zap className="mr-1.5 h-3.5 w-3.5" />
-                        Always Learning
+                        {t('demo.aiCore.mira.badges.learning')}
                       </Badge>
                     </div>
                   </div>
@@ -1111,34 +1091,30 @@ export default function MarketingPage() {
               {[
                 {
                   icon: Layers,
-                  name: 'Aurora',
-                  role: 'Nervous System',
-                  description:
-                    'Contextual engine that links related emails, tasks, files, and events',
+                  nameKey: 'demo.aiCore.components.aurora.name',
+                  roleKey: 'demo.aiCore.components.aurora.role',
+                  descriptionKey: 'demo.aiCore.components.aurora.description',
                   color: 'blue',
                 },
                 {
                   icon: Database,
-                  name: 'Rewise',
-                  role: 'Collective Mind',
-                  description:
-                    'Aggregator of leading AI models (OpenAI, Gemini, Anthropic)',
+                  nameKey: 'demo.aiCore.components.rewise.name',
+                  roleKey: 'demo.aiCore.components.rewise.role',
+                  descriptionKey: 'demo.aiCore.components.rewise.description',
                   color: 'purple',
                 },
                 {
                   icon: Cpu,
-                  name: 'Nova',
-                  role: 'Conscience & Forge',
-                  description:
-                    'Prompt-engineering platform that shapes how Mira reasons',
+                  nameKey: 'demo.aiCore.components.nova.name',
+                  roleKey: 'demo.aiCore.components.nova.role',
+                  descriptionKey: 'demo.aiCore.components.nova.description',
                   color: 'orange',
                 },
                 {
                   icon: Sparkles,
-                  name: 'Crystal',
-                  role: 'Bridge to Humanity',
-                  description:
-                    'Multi-modal interface for voice, video, and screen sharing',
+                  nameKey: 'demo.aiCore.components.crystal.name',
+                  roleKey: 'demo.aiCore.components.crystal.role',
+                  descriptionKey: 'demo.aiCore.components.crystal.description',
                   color: 'cyan',
                 },
               ].map((ai, index) => (
@@ -1159,12 +1135,14 @@ export default function MarketingPage() {
                       className={cn('h-6 w-6', `text-dynamic-${ai.color}`)}
                     />
                   </div>
-                  <h4 className="mb-1 font-bold text-lg">{ai.name}</h4>
+                  <h4 className="mb-1 font-bold text-lg">
+                    {t(ai.nameKey as any)}
+                  </h4>
                   <div className="mb-2 text-foreground/60 text-sm">
-                    {ai.role}
+                    {t(ai.roleKey as any)}
                   </div>
                   <p className="text-foreground/70 text-sm leading-relaxed">
-                    {ai.description}
+                    {t(ai.descriptionKey as any)}
                   </p>
                 </div>
               ))}
@@ -1190,25 +1168,23 @@ export default function MarketingPage() {
 
               <div className="relative text-center">
                 <h2 className="mb-4 font-bold text-4xl sm:text-5xl">
-                  Ready to Reclaim Your Time?
+                  {t('cta.title')}
                 </h2>
                 <p className="mx-auto mb-8 max-w-2xl text-foreground/70 text-lg leading-relaxed">
-                  Join thousands of professionals who've eliminated digital
-                  friction and regained focus. Start with our free plan—no
-                  credit card required.
+                  {t('cta.description')}
                 </p>
 
                 <div className="mb-8 flex flex-wrap items-center justify-center gap-4">
                   <Button size="lg" asChild>
                     <Link href="/onboarding">
                       <Rocket className="mr-2 h-5 w-5" />
-                      Get Started Free
+                      {t('cta.getStarted')}
                     </Link>
                   </Button>
                   <Button size="lg" variant="outline" asChild>
                     <Link href="/about">
                       <Heart className="mr-2 h-5 w-5" />
-                      Learn Our Story
+                      {t('cta.learnStory')}
                     </Link>
                   </Button>
                   <Button size="lg" variant="outline" asChild>
@@ -1217,7 +1193,7 @@ export default function MarketingPage() {
                       target="_blank"
                     >
                       <GitBranch className="mr-2 h-5 w-5" />
-                      Star on GitHub
+                      {t('cta.starGitHub')}
                     </Link>
                   </Button>
                 </div>
@@ -1225,15 +1201,15 @@ export default function MarketingPage() {
                 <div className="flex flex-wrap items-center justify-center gap-6 text-foreground/60 text-sm">
                   <div className="flex items-center gap-2">
                     <Shield className="h-4 w-4 text-dynamic-green" />
-                    Open Source & Transparent
+                    {t('cta.trust.openSource')}
                   </div>
                   <div className="flex items-center gap-2">
                     <Lock className="h-4 w-4 text-dynamic-blue" />
-                    Enterprise-Grade Security
+                    {t('cta.trust.security')}
                   </div>
                   <div className="flex items-center gap-2">
                     <Globe className="h-4 w-4 text-dynamic-purple" />
-                    Self-Hostable
+                    {t('cta.trust.selfHost')}
                   </div>
                 </div>
               </div>

@@ -40,9 +40,12 @@ import {
 } from '@tuturuuu/ui/icons';
 import { cn } from '@tuturuuu/utils/format';
 import { motion } from 'framer-motion';
+import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 
 export default function AboutPage() {
+  const t = useTranslations('about');
+
   return (
     <main className="relative mx-auto overflow-x-clip">
       {/* Dynamic Floating Orbs with Theme Colors */}
@@ -115,30 +118,26 @@ export default function AboutPage() {
               className="mb-6 border-dynamic-purple/30 bg-dynamic-purple/10 text-dynamic-purple hover:bg-dynamic-purple/20"
             >
               <Sparkles className="mr-1.5 h-3.5 w-3.5" />
-              The Age of Partners
+              {t('hero.badge')}
             </Badge>
 
             <h1 className="mb-6 text-balance font-bold text-5xl tracking-tight sm:text-6xl md:text-7xl">
-              Unlocking{' '}
+              {t('hero.title.part1')}{' '}
               <span className="bg-gradient-to-r from-dynamic-purple via-dynamic-pink to-dynamic-orange bg-clip-text text-transparent">
-                Human Potential
+                {t('hero.title.highlight')}
               </span>
               <br />
-              Through Intelligent Technology
+              {t('hero.title.part2')}
             </h1>
 
             <p className="mx-auto mb-12 max-w-3xl text-balance text-foreground/70 text-lg leading-relaxed sm:text-xl">
-              We&apos;re building the world&apos;s first intelligent,
-              open-source operating system for modern work and life. Our mission
-              is to wage war on digital noise by creating a unified platform
-              that automates administrative work and eliminates
-              context-switching friction.
+              {t('hero.description')}
             </p>
 
             <div className="flex flex-wrap items-center justify-center gap-4">
               <Button size="lg" className="group" asChild>
                 <Link href="#vision">
-                  Explore Our Vision
+                  {t('hero.cta.vision')}
                   <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
                 </Link>
               </Button>
@@ -148,7 +147,7 @@ export default function AboutPage() {
                   target="_blank"
                 >
                   <Globe className="mr-2 h-4 w-4" />
-                  Open Source
+                  {t('hero.cta.openSource')}
                 </Link>
               </Button>
             </div>
@@ -166,13 +165,13 @@ export default function AboutPage() {
             className="mb-16 text-center"
           >
             <h2 className="mb-4 font-bold text-4xl sm:text-5xl">
-              Our{' '}
+              {t('vision.title.part1')}{' '}
               <span className="bg-gradient-to-r from-dynamic-blue via-dynamic-cyan to-dynamic-green bg-clip-text text-transparent">
-                North Star
+                {t('vision.title.highlight')}
               </span>
             </h2>
             <p className="mx-auto max-w-2xl text-foreground/60 text-lg">
-              What drives us every day to push boundaries and innovate
+              {t('vision.subtitle')}
             </p>
           </motion.div>
 
@@ -186,11 +185,11 @@ export default function AboutPage() {
                 <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-dynamic-purple/10">
                   <Target className="h-6 w-6 text-dynamic-purple" />
                 </div>
-                <h3 className="mb-3 font-bold text-2xl">Mission</h3>
+                <h3 className="mb-3 font-bold text-2xl">
+                  {t('vision.mission.title')}
+                </h3>
                 <p className="text-foreground/70 leading-relaxed">
-                  Wage war on digital noise by building an intelligent, unified,
-                  and open platform that automates administrative work and
-                  eliminates context-switching friction.
+                  {t('vision.mission.description')}
                 </p>
               </Card>
             </motion.div>
@@ -204,12 +203,11 @@ export default function AboutPage() {
                 <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-dynamic-blue/10">
                   <Rocket className="h-6 w-6 text-dynamic-blue" />
                 </div>
-                <h3 className="mb-3 font-bold text-2xl">Vision</h3>
+                <h3 className="mb-3 font-bold text-2xl">
+                  {t('vision.vision.title')}
+                </h3>
                 <p className="text-foreground/70 leading-relaxed">
-                  Create a future where technology unlocks humanity&apos;s
-                  potential—liberating our collective focus so we can solve the
-                  world&apos;s most important challenges while making
-                  world-class innovation accessible to everyone, everywhere.
+                  {t('vision.vision.description')}
                 </p>
               </Card>
             </motion.div>
@@ -227,13 +225,13 @@ export default function AboutPage() {
             className="mb-16 text-center"
           >
             <h2 className="mb-4 font-bold text-4xl sm:text-5xl">
-              Our{' '}
+              {t('coreBeliefs.title.part1')}{' '}
               <span className="bg-gradient-to-r from-dynamic-orange via-dynamic-red to-dynamic-pink bg-clip-text text-transparent">
-                Core Beliefs
+                {t('coreBeliefs.title.highlight')}
               </span>
             </h2>
             <p className="mx-auto max-w-2xl text-foreground/60 text-lg">
-              The fundamental principles that guide everything we build
+              {t('coreBeliefs.subtitle')}
             </p>
           </motion.div>
 
@@ -241,44 +239,38 @@ export default function AboutPage() {
             {[
               {
                 icon: Zap,
-                title: 'Focus is the New Superpower',
-                description:
-                  'In a world engineered for distraction, the ability to sustain deep work is the defining competitive advantage.',
+                titleKey: 'coreBeliefs.focus.title',
+                descKey: 'coreBeliefs.focus.description',
                 color: 'yellow',
               },
               {
                 icon: Heart,
-                title: 'Technology as Human Will',
-                description:
-                  'Technology must be an extension of human will, not a cage for our attention. We build software to reverse the trend.',
+                titleKey: 'coreBeliefs.technology.title',
+                descKey: 'coreBeliefs.technology.description',
                 color: 'red',
               },
               {
                 icon: Shield,
-                title: 'Radical Transparency',
-                description:
-                  'Foundational technology should never be a black box. Our open-source philosophy creates trust and accelerates innovation.',
+                titleKey: 'coreBeliefs.transparency.title',
+                descKey: 'coreBeliefs.transparency.description',
                 color: 'blue',
               },
               {
                 icon: Target,
-                title: 'Impact Over Activity',
-                description:
-                  'Productivity is not about doing more; it is about creating more value. We give people mental space for breakthroughs.',
+                titleKey: 'coreBeliefs.impact.title',
+                descKey: 'coreBeliefs.impact.description',
                 color: 'green',
               },
               {
                 icon: Globe,
-                title: 'Potential Has No Postcode',
-                description:
-                  'Brilliant ideas can emerge from any street, village, or classroom. Access to world-class tools should be universal.',
+                titleKey: 'coreBeliefs.potential.title',
+                descKey: 'coreBeliefs.potential.description',
                 color: 'purple',
               },
               {
                 icon: Lightbulb,
-                title: 'The Third Era',
-                description:
-                  'We are entering the Age of Partners, where AI acts as an intelligent partner to amplify human potential.',
+                titleKey: 'coreBeliefs.thirdEra.title',
+                descKey: 'coreBeliefs.thirdEra.description',
                 color: 'orange',
               },
             ].map((belief, index) => (
@@ -305,9 +297,11 @@ export default function AboutPage() {
                       className={cn('h-5 w-5', `text-dynamic-${belief.color}`)}
                     />
                   </div>
-                  <h3 className="mb-2 font-semibold text-lg">{belief.title}</h3>
+                  <h3 className="mb-2 font-semibold text-lg">
+                    {t(belief.titleKey as any)}
+                  </h3>
                   <p className="text-foreground/60 text-sm leading-relaxed">
-                    {belief.description}
+                    {t(belief.descKey as any)}
                   </p>
                 </Card>
               </motion.div>
@@ -329,12 +323,12 @@ export default function AboutPage() {
               variant="secondary"
               className="mb-4 border-dynamic-red/30 bg-dynamic-red/10 text-dynamic-red"
             >
-              The Great Betrayal of Modern Work
+              {t('problem.badge')}
             </Badge>
             <h2 className="mb-4 font-bold text-4xl sm:text-5xl">
-              The Costs of{' '}
+              {t('problem.title.part1')}{' '}
               <span className="bg-gradient-to-r from-dynamic-red via-dynamic-orange to-dynamic-yellow bg-clip-text text-transparent">
-                Digital Friction
+                {t('problem.title.highlight')}
               </span>
             </h2>
           </motion.div>
@@ -343,26 +337,23 @@ export default function AboutPage() {
             {[
               {
                 icon: FileText,
-                title: 'Financial Cost',
-                stat: '21 hours/week',
-                description:
-                  'Lost to "work about work"—a trillion-dollar drag on global productivity',
+                titleKey: 'problem.financial.title',
+                statKey: 'problem.financial.stat',
+                descKey: 'problem.financial.description',
                 color: 'red',
               },
               {
                 icon: Brain,
-                title: 'Cognitive Cost',
-                stat: '40% reduction',
-                description:
-                  'Context-switching slashes productive output and fuels burnout',
+                titleKey: 'problem.cognitive.title',
+                statKey: 'problem.cognitive.stat',
+                descKey: 'problem.cognitive.description',
                 color: 'orange',
               },
               {
                 icon: Lightbulb,
-                title: 'Innovation Cost',
-                stat: 'Immeasurable',
-                description:
-                  'The next breakthrough suffocated by inboxes, meetings, and spreadsheets',
+                titleKey: 'problem.innovation.title',
+                statKey: 'problem.innovation.stat',
+                descKey: 'problem.innovation.description',
                 color: 'yellow',
               },
             ].map((cost, index) => (
@@ -389,17 +380,19 @@ export default function AboutPage() {
                       className={cn('h-7 w-7', `text-dynamic-${cost.color}`)}
                     />
                   </div>
-                  <h3 className="mb-2 font-bold text-xl">{cost.title}</h3>
+                  <h3 className="mb-2 font-bold text-xl">
+                    {t(cost.titleKey as any)}
+                  </h3>
                   <div
                     className={cn(
                       'mb-3 font-bold text-3xl',
                       `text-dynamic-${cost.color}`
                     )}
                   >
-                    {cost.stat}
+                    {t(cost.statKey as any)}
                   </div>
                   <p className="text-foreground/60 text-sm leading-relaxed">
-                    {cost.description}
+                    {t(cost.descKey as any)}
                   </p>
                 </Card>
               </motion.div>
@@ -418,14 +411,13 @@ export default function AboutPage() {
             className="mb-16 text-center"
           >
             <h2 className="mb-4 font-bold text-4xl sm:text-5xl">
-              The{' '}
+              {t('ecosystem.title.part1')}{' '}
               <span className="bg-gradient-to-r from-dynamic-cyan via-dynamic-blue to-dynamic-purple bg-clip-text text-transparent">
-                Tuturuuu Ecosystem
+                {t('ecosystem.title.highlight')}
               </span>
             </h2>
             <p className="mx-auto max-w-2xl text-foreground/60 text-lg">
-              A cohesive suite of applications that behave like a single
-              organism
+              {t('ecosystem.subtitle')}
             </p>
           </motion.div>
 
@@ -433,26 +425,26 @@ export default function AboutPage() {
             {[
               {
                 icon: Calendar,
-                name: 'TuPlan',
-                description: 'AI-powered auto-scheduling',
+                nameKey: 'ecosystem.tuplan.name',
+                descKey: 'ecosystem.tuplan.description',
                 color: 'blue',
               },
               {
                 icon: CheckCircle2,
-                name: 'TuDo',
-                description: 'Smart task management',
+                nameKey: 'ecosystem.tudo.name',
+                descKey: 'ecosystem.tudo.description',
                 color: 'green',
               },
               {
                 icon: Users,
-                name: 'TuMeet',
-                description: 'Intelligent meetings',
+                nameKey: 'ecosystem.tumeet.name',
+                descKey: 'ecosystem.tumeet.description',
                 color: 'purple',
               },
               {
                 icon: MessageSquare,
-                name: 'TuChat',
-                description: 'Unified communications',
+                nameKey: 'ecosystem.tuchat.name',
+                descKey: 'ecosystem.tuchat.description',
                 color: 'cyan',
               },
             ].map((app, index) => (
@@ -479,9 +471,11 @@ export default function AboutPage() {
                       className={cn('h-6 w-6', `text-dynamic-${app.color}`)}
                     />
                   </div>
-                  <h3 className="mb-1 font-bold text-lg">{app.name}</h3>
+                  <h3 className="mb-1 font-bold text-lg">
+                    {t(app.nameKey as any)}
+                  </h3>
                   <p className="text-foreground/60 text-sm">
-                    {app.description}
+                    {t(app.descKey as any)}
                   </p>
                 </Card>
               </motion.div>
@@ -496,41 +490,43 @@ export default function AboutPage() {
           >
             <Card className="border-dynamic-purple/30 bg-gradient-to-br from-dynamic-purple/5 via-background to-background p-8">
               <div className="mb-6 text-center">
-                <h3 className="mb-2 font-bold text-2xl">AI Core</h3>
+                <h3 className="mb-2 font-bold text-2xl">
+                  {t('ecosystem.aiCore.title')}
+                </h3>
                 <p className="text-foreground/60">
-                  The Architecture of Intelligence
+                  {t('ecosystem.aiCore.subtitle')}
                 </p>
               </div>
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
                 {[
                   {
                     icon: Bot,
-                    name: 'Mira',
-                    role: 'Soul & Voice',
+                    nameKey: 'ecosystem.aiCore.mira.name',
+                    roleKey: 'ecosystem.aiCore.mira.role',
                     color: 'pink',
                   },
                   {
                     icon: Layers,
-                    name: 'Aurora',
-                    role: 'Nervous System',
+                    nameKey: 'ecosystem.aiCore.aurora.name',
+                    roleKey: 'ecosystem.aiCore.aurora.role',
                     color: 'blue',
                   },
                   {
                     icon: Database,
-                    name: 'Rewise',
-                    role: 'Collective Mind',
+                    nameKey: 'ecosystem.aiCore.rewise.name',
+                    roleKey: 'ecosystem.aiCore.rewise.role',
                     color: 'purple',
                   },
                   {
                     icon: Cpu,
-                    name: 'Nova',
-                    role: 'Conscience & Forge',
+                    nameKey: 'ecosystem.aiCore.nova.name',
+                    roleKey: 'ecosystem.aiCore.nova.role',
                     color: 'orange',
                   },
                   {
                     icon: Sparkles,
-                    name: 'Crystal',
-                    role: 'Bridge to Humanity',
+                    nameKey: 'ecosystem.aiCore.crystal.name',
+                    roleKey: 'ecosystem.aiCore.crystal.role',
                     color: 'cyan',
                   },
                 ].map((ai, index) => (
@@ -551,8 +547,12 @@ export default function AboutPage() {
                         className={cn('h-5 w-5', `text-dynamic-${ai.color}`)}
                       />
                     </div>
-                    <h4 className="mb-1 font-semibold text-sm">{ai.name}</h4>
-                    <p className="text-foreground/50 text-xs">{ai.role}</p>
+                    <h4 className="mb-1 font-semibold text-sm">
+                      {t(ai.nameKey as any)}
+                    </h4>
+                    <p className="text-foreground/50 text-xs">
+                      {t(ai.roleKey as any)}
+                    </p>
                   </div>
                 ))}
               </div>
@@ -571,51 +571,48 @@ export default function AboutPage() {
             className="mb-16 text-center"
           >
             <h2 className="mb-4 font-bold text-4xl sm:text-5xl">
-              Built with{' '}
+              {t('techStack.title.part1')}{' '}
               <span className="bg-gradient-to-r from-dynamic-green via-dynamic-cyan to-dynamic-blue bg-clip-text text-transparent">
-                Cutting-Edge Tech
+                {t('techStack.title.highlight')}
               </span>
             </h2>
             <p className="mx-auto max-w-2xl text-foreground/60 text-lg">
-              We leverage the latest technologies to build a platform that is
-              fast, reliable, and scalable
+              {t('techStack.subtitle')}
             </p>
           </motion.div>
 
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
             {[
               {
-                category: 'Frontend',
+                categoryKey: 'techStack.frontend.category',
                 icon: Code2,
-                technologies: [
-                  'Next.js 15',
-                  'React',
-                  'TypeScript',
-                  'Tailwind CSS',
-                ],
+                techs: ['tech1', 'tech2', 'tech3', 'tech4'].map(
+                  (k) => `techStack.frontend.${k}`
+                ),
                 color: 'cyan',
               },
               {
-                category: 'Backend',
+                categoryKey: 'techStack.backend.category',
                 icon: Server,
-                technologies: [
-                  'Supabase',
-                  'PostgreSQL',
-                  'tRPC',
-                  'Vercel AI SDK',
-                ],
+                techs: ['tech1', 'tech2', 'tech3', 'tech4'].map(
+                  (k) => `techStack.backend.${k}`
+                ),
                 color: 'green',
               },
               {
-                category: 'Infrastructure',
+                categoryKey: 'techStack.infrastructure.category',
                 icon: Package,
-                technologies: ['Turborepo', 'Bun', 'Docker', 'Vercel'],
+                techs: ['tech1', 'tech2', 'tech3', 'tech4'].map(
+                  (k) => `techStack.infrastructure.${k}`
+                ),
                 color: 'blue',
               },
               {
-                category: 'AI & Analytics',
+                categoryKey: 'techStack.ai.category',
                 icon: Brain,
-                technologies: ['OpenAI', 'Anthropic', 'Gemini', 'Vertex AI'],
+                techs: ['tech1', 'tech2', 'tech3', 'tech4'].map(
+                  (k) => `techStack.ai.${k}`
+                ),
                 color: 'purple',
               },
             ].map((stack, index) => (
@@ -642,9 +639,11 @@ export default function AboutPage() {
                       className={cn('h-6 w-6', `text-dynamic-${stack.color}`)}
                     />
                   </div>
-                  <h3 className="mb-3 font-bold text-lg">{stack.category}</h3>
+                  <h3 className="mb-3 font-bold text-lg">
+                    {t(stack.categoryKey as any)}
+                  </h3>
                   <ul className="space-y-1.5">
-                    {stack.technologies.map((tech, techIndex) => (
+                    {stack.techs.map((techKey, techIndex) => (
                       <li
                         key={techIndex}
                         className="flex items-center gap-2 text-foreground/60 text-sm"
@@ -655,7 +654,7 @@ export default function AboutPage() {
                             `bg-dynamic-${stack.color}`
                           )}
                         />
-                        {tech}
+                        {t(techKey as any)}
                       </li>
                     ))}
                   </ul>
@@ -676,14 +675,13 @@ export default function AboutPage() {
             className="mb-16 text-center"
           >
             <h2 className="mb-4 font-bold text-4xl sm:text-5xl">
-              More Than Just{' '}
+              {t('features.title.part1')}{' '}
               <span className="bg-gradient-to-r from-dynamic-pink via-dynamic-purple to-dynamic-blue bg-clip-text text-transparent">
-                Productivity
+                {t('features.title.highlight')}
               </span>
             </h2>
             <p className="mx-auto max-w-2xl text-foreground/60 text-lg">
-              A comprehensive suite of tools to manage every aspect of your work
-              and life
+              {t('features.subtitle')}
             </p>
           </motion.div>
 
@@ -691,58 +689,56 @@ export default function AboutPage() {
             {[
               {
                 icon: Wallet,
-                title: 'Finance Management',
-                description:
-                  'Track expenses, manage budgets, and gain insights into your financial health with AI-powered analytics.',
-                features: [
-                  'Expense tracking',
-                  'Budget planning',
-                  'Financial insights',
-                ],
+                titleKey: 'features.finance.title',
+                descKey: 'features.finance.description',
+                features: ['feature1', 'feature2', 'feature3'].map(
+                  (k) => `features.finance.${k}`
+                ),
                 color: 'green',
               },
               {
                 icon: Folder,
-                title: 'Inventory System',
-                description:
-                  'Manage products, track stock levels, and optimize your supply chain with intelligent automation.',
-                features: ['Stock management', 'Auto-reordering', 'Analytics'],
+                titleKey: 'features.inventory.title',
+                descKey: 'features.inventory.description',
+                features: ['feature1', 'feature2', 'feature3'].map(
+                  (k) => `features.inventory.${k}`
+                ),
                 color: 'orange',
               },
               {
                 icon: GraduationCap,
-                title: 'Learning Platform',
-                description:
-                  'Access educational content, practice with AI challenges, and level up your skills through Nova.',
-                features: ['AI challenges', 'Skill tracking', 'Leaderboards'],
+                titleKey: 'features.learning.title',
+                descKey: 'features.learning.description',
+                features: ['feature1', 'feature2', 'feature3'].map(
+                  (k) => `features.learning.${k}`
+                ),
                 color: 'purple',
               },
               {
                 icon: BarChart3,
-                title: 'Analytics Dashboard',
-                description:
-                  'Visualize your productivity patterns, track goals, and make data-driven decisions.',
-                features: ['Real-time metrics', 'Custom reports', 'Insights'],
+                titleKey: 'features.analytics.title',
+                descKey: 'features.analytics.description',
+                features: ['feature1', 'feature2', 'feature3'].map(
+                  (k) => `features.analytics.${k}`
+                ),
                 color: 'blue',
               },
               {
                 icon: Lock,
-                title: 'Enterprise Security',
-                description:
-                  'Bank-grade encryption, granular permissions, and comprehensive audit logs keep your data safe.',
-                features: ['Row-level security', 'RBAC', 'Audit trails'],
+                titleKey: 'features.security.title',
+                descKey: 'features.security.description',
+                features: ['feature1', 'feature2', 'feature3'].map(
+                  (k) => `features.security.${k}`
+                ),
                 color: 'red',
               },
               {
                 icon: GitBranch,
-                title: 'Open Source',
-                description:
-                  'Full transparency with public source code, community contributions, and self-hosting options.',
-                features: [
-                  'Public GitHub',
-                  'Community-driven',
-                  'Self-hostable',
-                ],
+                titleKey: 'features.openSource.title',
+                descKey: 'features.openSource.description',
+                features: ['feature1', 'feature2', 'feature3'].map(
+                  (k) => `features.openSource.${k}`
+                ),
                 color: 'cyan',
               },
             ].map((feature, index) => (
@@ -769,12 +765,14 @@ export default function AboutPage() {
                       className={cn('h-6 w-6', `text-dynamic-${feature.color}`)}
                     />
                   </div>
-                  <h3 className="mb-2 font-bold text-xl">{feature.title}</h3>
+                  <h3 className="mb-2 font-bold text-xl">
+                    {t(feature.titleKey as any)}
+                  </h3>
                   <p className="mb-4 text-foreground/60 text-sm leading-relaxed">
-                    {feature.description}
+                    {t(feature.descKey as any)}
                   </p>
                   <div className="flex flex-wrap gap-2">
-                    {feature.features.map((feat, featIndex) => (
+                    {feature.features.map((featKey, featIndex) => (
                       <Badge
                         key={featIndex}
                         variant="secondary"
@@ -783,7 +781,7 @@ export default function AboutPage() {
                           `border-dynamic-${feature.color}/30 bg-dynamic-${feature.color}/10 text-dynamic-${feature.color}`
                         )}
                       >
-                        {feat}
+                        {t(featKey as any)}
                       </Badge>
                     ))}
                   </div>
@@ -804,13 +802,13 @@ export default function AboutPage() {
             className="mb-16 text-center"
           >
             <h2 className="mb-4 font-bold text-4xl sm:text-5xl">
-              Our{' '}
+              {t('timeline.title.part1')}{' '}
               <span className="bg-gradient-to-r from-dynamic-yellow via-dynamic-orange to-dynamic-red bg-clip-text text-transparent">
-                Innovation Journey
+                {t('timeline.title.highlight')}
               </span>
             </h2>
             <p className="mx-auto max-w-2xl text-foreground/60 text-lg">
-              From ambitious vision to transformative reality
+              {t('timeline.subtitle')}
             </p>
           </motion.div>
 
@@ -821,59 +819,53 @@ export default function AboutPage() {
             <div className="space-y-12">
               {[
                 {
-                  phase: 'Foundation',
-                  period: '2024 - Early Days',
-                  title: 'The Spark',
-                  description:
-                    'Recognized the Great Betrayal of Modern Work and envisioned a better future where AI serves humanity.',
+                  phaseKey: 'timeline.foundation.phase',
+                  periodKey: 'timeline.foundation.period',
+                  titleKey: 'timeline.foundation.title',
+                  descKey: 'timeline.foundation.description',
+                  achievements: ['achievement1', 'achievement2'].map(
+                    (k) => `timeline.foundation.${k}`
+                  ),
                   icon: Lightbulb,
                   color: 'yellow',
-                  achievements: [
-                    'Platform architecture',
-                    'Core team assembled',
-                  ],
                 },
                 {
-                  phase: 'Building',
-                  period: '2024 - Present',
-                  title: 'Rapid Development',
-                  description:
-                    'Built the foundation with 377+ database migrations, comprehensive authentication, and AI integration.',
+                  phaseKey: 'timeline.building.phase',
+                  periodKey: 'timeline.building.period',
+                  titleKey: 'timeline.building.title',
+                  descKey: 'timeline.building.description',
+                  achievements: [
+                    'achievement1',
+                    'achievement2',
+                    'achievement3',
+                    'achievement4',
+                  ].map((k) => `timeline.building.${k}`),
                   icon: Rocket,
                   color: 'blue',
-                  achievements: [
-                    'TuDo task management',
-                    'Calendar sync',
-                    'Finance tracking',
-                    'Nova platform',
-                  ],
                 },
                 {
-                  phase: 'Launch',
-                  period: 'April 2, 2025',
-                  title: 'Official Incorporation',
-                  description:
-                    'TUTURUUU JSC officially founded, marking our commitment to building the intelligent OS for modern work.',
+                  phaseKey: 'timeline.launch.phase',
+                  periodKey: 'timeline.launch.period',
+                  titleKey: 'timeline.launch.title',
+                  descKey: 'timeline.launch.description',
+                  achievements: ['achievement1', 'achievement2'].map(
+                    (k) => `timeline.launch.${k}`
+                  ),
                   icon: Building2,
                   color: 'purple',
-                  achievements: [
-                    'Legal entity established',
-                    'Open source release',
-                  ],
                 },
                 {
-                  phase: 'Evolution',
-                  period: '2025 - Future',
-                  title: 'The Age of Partners',
-                  description:
-                    "Expanding Mira's capabilities, building Aurora's context graph, and making the impossible possible for everyone.",
+                  phaseKey: 'timeline.evolution.phase',
+                  periodKey: 'timeline.evolution.period',
+                  titleKey: 'timeline.evolution.title',
+                  descKey: 'timeline.evolution.description',
+                  achievements: [
+                    'achievement1',
+                    'achievement2',
+                    'achievement3',
+                  ].map((k) => `timeline.evolution.${k}`),
                   icon: Sparkles,
                   color: 'pink',
-                  achievements: [
-                    'Multi-agent intelligence',
-                    'Global accessibility',
-                    'Continuous learning',
-                  ],
                 },
               ].map((milestone, index) => (
                 <motion.div
@@ -906,19 +898,19 @@ export default function AboutPage() {
                           `border-dynamic-${milestone.color}/30 bg-dynamic-${milestone.color}/10 text-dynamic-${milestone.color}`
                         )}
                       >
-                        {milestone.phase}
+                        {t(milestone.phaseKey as any)}
                       </Badge>
                       <h3 className="mb-1 font-bold text-2xl">
-                        {milestone.title}
+                        {t(milestone.titleKey as any)}
                       </h3>
                       <p className="mb-3 text-foreground/50 text-sm">
-                        {milestone.period}
+                        {t(milestone.periodKey as any)}
                       </p>
                       <p className="mb-4 text-foreground/70 leading-relaxed">
-                        {milestone.description}
+                        {t(milestone.descKey as any)}
                       </p>
                       <div className="flex flex-wrap gap-2">
-                        {milestone.achievements.map((achievement, achIndex) => (
+                        {milestone.achievements.map((achKey, achIndex) => (
                           <div
                             key={achIndex}
                             className="flex items-center gap-1.5 text-foreground/60 text-sm"
@@ -929,7 +921,7 @@ export default function AboutPage() {
                                 `text-dynamic-${milestone.color}`
                               )}
                             />
-                            {achievement}
+                            {t(achKey as any)}
                           </div>
                         ))}
                       </div>
@@ -970,14 +962,13 @@ export default function AboutPage() {
             className="mb-16 text-center"
           >
             <h2 className="mb-4 font-bold text-4xl sm:text-5xl">
-              Building a{' '}
+              {t('community.title.part1')}{' '}
               <span className="bg-gradient-to-r from-dynamic-green via-dynamic-cyan to-dynamic-blue bg-clip-text text-transparent">
-                Global Community
+                {t('community.title.highlight')}
               </span>
             </h2>
             <p className="mx-auto max-w-2xl text-foreground/60 text-lg">
-              Join thousands of builders, dreamers, and innovators shaping the
-              future
+              {t('community.subtitle')}
             </p>
           </motion.div>
 
@@ -985,24 +976,23 @@ export default function AboutPage() {
             {[
               {
                 icon: Users,
-                title: 'Open Source Community',
-                value: '10K+',
-                description:
-                  'Contributors and users building together on GitHub',
+                titleKey: 'community.openSource.title',
+                valueKey: 'community.openSource.value',
+                descKey: 'community.openSource.description',
                 color: 'blue',
               },
               {
                 icon: GitBranch,
-                title: 'Code Contributions',
-                value: '10,000+',
-                description: 'Git commits from 30+ contributors since 2022',
+                titleKey: 'community.contributions.title',
+                valueKey: 'community.contributions.value',
+                descKey: 'community.contributions.description',
                 color: 'green',
               },
               {
                 icon: Trophy,
-                title: 'Innovation Milestones',
-                value: '50+',
-                description: 'Features and integrations shipped',
+                titleKey: 'community.milestones.title',
+                valueKey: 'community.milestones.value',
+                descKey: 'community.milestones.description',
                 color: 'yellow',
               },
             ].map((stat, index) => (
@@ -1035,11 +1025,13 @@ export default function AboutPage() {
                       `text-dynamic-${stat.color}`
                     )}
                   >
-                    {stat.value}
+                    {t(stat.valueKey as any)}
                   </div>
-                  <h3 className="mb-2 font-semibold text-lg">{stat.title}</h3>
+                  <h3 className="mb-2 font-semibold text-lg">
+                    {t(stat.titleKey as any)}
+                  </h3>
                   <p className="text-foreground/60 text-sm">
-                    {stat.description}
+                    {t(stat.descKey as any)}
                   </p>
                 </Card>
               </motion.div>
@@ -1048,45 +1040,44 @@ export default function AboutPage() {
 
           <Card className="overflow-hidden border-dynamic-purple/30 bg-gradient-to-br from-dynamic-purple/10 via-dynamic-pink/5 to-background p-8 md:p-12">
             <div className="mb-8 text-center">
-              <h3 className="mb-3 font-bold text-3xl">Our Culture</h3>
+              <h3 className="mb-3 font-bold text-3xl">
+                {t('community.culture.title')}
+              </h3>
               <p className="mx-auto max-w-2xl text-foreground/60 text-lg">
-                Values that define how we work and innovate together
+                {t('community.culture.subtitle')}
               </p>
             </div>
 
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
               {[
                 {
-                  title: 'Builders, Not Employees',
-                  description:
-                    'Each teammate acts like a founder within their domain',
+                  titleKey: 'community.culture.builders.title',
+                  descKey: 'community.culture.builders.description',
                   icon: Settings,
                 },
                 {
-                  title: 'Pragmatic Optimism',
-                  description: 'Bold ambition paired with rigorous execution',
+                  titleKey: 'community.culture.optimism.title',
+                  descKey: 'community.culture.optimism.description',
                   icon: TrendingUp,
                 },
                 {
-                  title: 'Relentless Ownership',
-                  description:
-                    'Decisions come with accountability for outcomes',
+                  titleKey: 'community.culture.ownership.title',
+                  descKey: 'community.culture.ownership.description',
                   icon: Shield,
                 },
                 {
-                  title: 'Transparency by Default',
-                  description:
-                    'Internal operations mirror our open-source ethos',
+                  titleKey: 'community.culture.transparency.title',
+                  descKey: 'community.culture.transparency.description',
                   icon: Search,
                 },
                 {
-                  title: 'Vietnam-Rooted',
-                  description: 'Global ambitions, Southeast Asian excellence',
+                  titleKey: 'community.culture.vietnam.title',
+                  descKey: 'community.culture.vietnam.description',
                   icon: Globe,
                 },
                 {
-                  title: 'Innovation First',
-                  description: 'Technology can originate from anywhere',
+                  titleKey: 'community.culture.innovation.title',
+                  descKey: 'community.culture.innovation.description',
                   icon: Rocket,
                 },
               ].map((value, index) => (
@@ -1101,9 +1092,11 @@ export default function AboutPage() {
                   <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-lg bg-dynamic-purple/10">
                     <value.icon className="h-5 w-5 text-dynamic-purple" />
                   </div>
-                  <h4 className="mb-2 font-semibold">{value.title}</h4>
+                  <h4 className="mb-2 font-semibold">
+                    {t(value.titleKey as any)}
+                  </h4>
                   <p className="text-foreground/60 text-sm">
-                    {value.description}
+                    {t(value.descKey as any)}
                   </p>
                 </motion.div>
               ))}
@@ -1127,10 +1120,10 @@ export default function AboutPage() {
                 </div>
                 <div>
                   <h2 className="mb-2 font-bold text-3xl">
-                    TUTURUUU JOINT STOCK COMPANY
+                    {t('companyInfo.title')}
                   </h2>
                   <p className="text-foreground/60">
-                    Building the intelligent OS for modern work
+                    {t('companyInfo.subtitle')}
                   </p>
                 </div>
               </div>
@@ -1138,42 +1131,48 @@ export default function AboutPage() {
               <div className="grid gap-6 md:grid-cols-2">
                 <div>
                   <h3 className="mb-3 font-semibold text-dynamic-blue text-sm uppercase tracking-wide">
-                    Company Details
+                    {t('companyInfo.details.title')}
                   </h3>
                   <dl className="space-y-2 text-sm">
                     <div>
                       <dt className="font-medium text-foreground/50">
-                        Tax Code
+                        {t('companyInfo.details.taxCode')}
                       </dt>
-                      <dd className="text-foreground">0318898402</dd>
+                      <dd className="text-foreground">
+                        {t('companyInfo.details.taxCodeValue')}
+                      </dd>
                     </div>
                     <div>
                       <dt className="font-medium text-foreground/50">
-                        Founded
+                        {t('companyInfo.details.founded')}
                       </dt>
-                      <dd className="text-foreground">April 2, 2025</dd>
+                      <dd className="text-foreground">
+                        {t('companyInfo.details.foundedValue')}
+                      </dd>
                     </div>
                     <div>
                       <dt className="font-medium text-foreground/50">
-                        Founder & CEO
+                        {t('companyInfo.details.ceo')}
                       </dt>
-                      <dd className="text-foreground">Võ Hoàng Phúc</dd>
+                      <dd className="text-foreground">
+                        {t('companyInfo.details.ceoValue')}
+                      </dd>
                     </div>
                   </dl>
                 </div>
 
                 <div>
                   <h3 className="mb-3 font-semibold text-dynamic-blue text-sm uppercase tracking-wide">
-                    Location
+                    {t('companyInfo.location.title')}
                   </h3>
                   <p className="text-foreground/70 text-sm leading-relaxed">
-                    Tầng 14, Tòa Nhà HM Town
+                    {t('companyInfo.location.address1')}
                     <br />
-                    412 Nguyễn Thị Minh Khai
+                    {t('companyInfo.location.address2')}
                     <br />
-                    Phường 05, Quận 3
+                    {t('companyInfo.location.address3')}
                     <br />
-                    Thành phố Hồ Chí Minh, Việt Nam
+                    {t('companyInfo.location.address4')}
                   </p>
                 </div>
               </div>
@@ -1182,7 +1181,7 @@ export default function AboutPage() {
                 <Button variant="outline" size="sm" asChild>
                   <Link href="https://tuturuuu.com" target="_blank">
                     <Globe className="mr-2 h-4 w-4" />
-                    Website
+                    {t('companyInfo.links.website')}
                   </Link>
                 </Button>
                 <Button variant="outline" size="sm" asChild>
@@ -1191,13 +1190,13 @@ export default function AboutPage() {
                     target="_blank"
                   >
                     <Layers className="mr-2 h-4 w-4" />
-                    GitHub
+                    {t('companyInfo.links.github')}
                   </Link>
                 </Button>
                 <Button variant="outline" size="sm" asChild>
                   <Link href="mailto:contact@tuturuuu.com">
                     <MessageSquare className="mr-2 h-4 w-4" />
-                    Contact
+                    {t('companyInfo.links.contact')}
                   </Link>
                 </Button>
               </div>
@@ -1217,12 +1216,10 @@ export default function AboutPage() {
           >
             <Card className="overflow-hidden border-dynamic-purple/30 bg-gradient-to-br from-dynamic-purple/10 via-dynamic-pink/5 to-background p-12">
               <h2 className="mb-4 font-bold text-3xl sm:text-4xl">
-                Join Us in Building the Future
+                {t('cta.title')}
               </h2>
               <p className="mx-auto mb-8 max-w-2xl text-foreground/70 text-lg">
-                We're assembling a team of builders who believe technology
-                should unlock human potential. If you share our vision, let's
-                create something extraordinary together.
+                {t('cta.description')}
               </p>
               <div className="flex flex-wrap items-center justify-center gap-4">
                 <Button size="lg" asChild>
@@ -1231,11 +1228,13 @@ export default function AboutPage() {
                     target="_blank"
                   >
                     <Layers className="mr-2 h-5 w-5" />
-                    Contribute on GitHub
+                    {t('cta.contribute')}
                   </Link>
                 </Button>
                 <Button size="lg" variant="outline" asChild>
-                  <Link href="mailto:contact@tuturuuu.com">Get in Touch</Link>
+                  <Link href="mailto:contact@tuturuuu.com">
+                    {t('cta.getInTouch')}
+                  </Link>
                 </Button>
               </div>
             </Card>
