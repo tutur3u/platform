@@ -133,12 +133,19 @@ export default async function TaskProjectPage({ params }: Props) {
         // Extract and transform tasks (filter out any null tasks and deleted ones)
         const rawTasks = (projectTasks ?? [])
           .map((pt) => pt.task)
-          .filter((task): task is NonNullable<typeof task> =>
-            task !== null && task.deleted === false
+          .filter(
+            (task): task is NonNullable<typeof task> =>
+              task !== null && task.deleted === false
           );
 
         // Get unique board IDs and list IDs
-        const listIds = [...new Set(rawTasks.map((t) => t.list_id).filter((id): id is string => id !== null))];
+        const listIds = [
+          ...new Set(
+            rawTasks
+              .map((t) => t.list_id)
+              .filter((id): id is string => id !== null)
+          ),
+        ];
 
         // Fetch all lists for these tasks
         const { data: lists } = await supabase
@@ -158,26 +165,25 @@ export default async function TaskProjectPage({ params }: Props) {
           const normalizedLabels =
             (task.labels as TaskLabelEntry[] | null | undefined)
               ?.map((entry) => entry.label)
-              .filter(
-                (label): label is NonNullable<Task['labels']>[number] =>
-                  Boolean(label)
+              .filter((label): label is NonNullable<Task['labels']>[number] =>
+                Boolean(label)
               ) ?? [];
 
           const normalizedProjects =
             (task.projects as TaskProjectEntry[] | null | undefined)
               ?.map((entry) => entry.project)
-              .filter(
-                (proj): proj is NonNullable<Task['projects']>[number] =>
-                  Boolean(proj)
+              .filter((proj): proj is NonNullable<Task['projects']>[number] =>
+                Boolean(proj)
               ) ?? [];
 
           const normalizedAssignees =
-            (task.assignees as TaskAssigneeEntry[] | null | undefined)
-              ?.map((entry) => ({
+            (task.assignees as TaskAssigneeEntry[] | null | undefined)?.map(
+              (entry) => ({
                 id: entry.user.id,
                 display_name: entry.user.display_name ?? null,
                 avatar_url: entry.user.avatar_url ?? null,
-              })) ?? [];
+              })
+            ) ?? [];
 
           return {
             ...task,
@@ -195,7 +201,7 @@ export default async function TaskProjectPage({ params }: Props) {
               created_at: project.created_at ?? new Date().toISOString(),
             }}
             tasks={formattedTasks}
-            lists={(lists ?? []).map(list => ({
+            lists={(lists ?? []).map((list) => ({
               ...list,
               name: list.name ?? 'Untitled List',
               archived: list.archived ?? false,
