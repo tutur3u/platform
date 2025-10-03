@@ -3,7 +3,7 @@ CREATE TYPE task_board_status AS ENUM ('not_started', 'active', 'done', 'closed'
 
 -- Create status template table
 CREATE TABLE task_board_status_templates (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     name TEXT NOT NULL,
     description TEXT,
     statuses JSONB NOT NULL, -- Array of status objects with their properties

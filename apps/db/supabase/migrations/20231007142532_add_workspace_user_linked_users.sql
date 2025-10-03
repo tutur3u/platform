@@ -92,7 +92,7 @@ select to authenticated using (
 begin;
 with inserted_users as (
     insert into workspace_users (id, ws_id, name, email)
-    select uuid_generate_v4(),
+    select gen_random_uuid(),
         wm.ws_id,
         u.display_name,
         up.email
@@ -139,7 +139,7 @@ create or replace function create_workspace_user_linked_user() returns trigger a
             and wul.ws_id = new.ws_id
     ) then
 insert into workspace_users (id, ws_id, name, email)
-select uuid_generate_v4(),
+select gen_random_uuid(),
     new.ws_id,
     u.display_name,
     up.email

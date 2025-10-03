@@ -1,5 +1,5 @@
 create table "public"."wallet_transactions" (
-    "id" uuid not null default uuid_generate_v4(),
+    "id" uuid not null default gen_random_uuid(),
     "name" text,
     "amount" numeric default '0'::numeric,
     "description" text,

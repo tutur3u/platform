@@ -1,6 +1,6 @@
 -- Add public.workspace_user_roles table
 CREATE TABLE "public"."workspace_user_roles" (
-    "id" uuid not null default uuid_generate_v4(),
+    "id" uuid not null default gen_random_uuid(),
     "ws_id" uuid NOT NULL,
     "name" text NOT NULL,
     "created_at" timestamp with time zone default now()

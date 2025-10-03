@@ -73,7 +73,7 @@ create table "public"."workspace_members" (
 alter table "public"."workspace_members" enable row level security;
 
 create table "public"."workspaces" (
-    "id" uuid not null default uuid_generate_v4(),
+    "id" uuid not null default gen_random_uuid(),
     "name" text,
     "created_at" timestamp with time zone default now(),
     "deleted" boolean default false

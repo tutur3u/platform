@@ -117,7 +117,7 @@ where indrelid = $1
 CREATE OR REPLACE FUNCTION audit.to_record_id(entity_oid oid, pkey_cols text [], rec jsonb) RETURNS uuid LANGUAGE sql STABLE AS $function$
 select case
         when rec is null then null
-        when pkey_cols = array []::text [] then uuid_generate_v4()
+        when pkey_cols = array []::text [] then gen_random_uuid()
         else (
             select uuid_generate_v5(
                     'fd62bc3d-8d6e-43c2-919c-802ba3762271',

@@ -19,7 +19,7 @@ alter table "public"."task_lists" drop constraint "task_lists_board_id_fkey";
 drop table "public"."task_boards" cascade;
 
 create table "public"."project_boards" (
-    "id" uuid not null default uuid_generate_v4(),
+    "id" uuid not null default gen_random_uuid(),
     "name" text,
     "archived" boolean default false,
     "deleted" boolean default false,
