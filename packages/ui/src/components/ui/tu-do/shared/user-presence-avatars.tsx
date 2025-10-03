@@ -30,9 +30,9 @@ export function UserPresenceAvatars({
   if (uniqueUsers.length === 0) return null;
 
   return (
-    <div className="flex items-center -space-x-2">
+    <div className="-space-x-2 flex items-center">
       {/* Avatar stack with overlap */}
-      {displayUsers.map((user, index) => {
+      {displayUsers.map((user) => {
         if (!user || !user.id) return null;
         const isCurrentUser = user.id === currentUserId;
         const presences = presenceState[user.id] || [];
@@ -45,7 +45,8 @@ export function UserPresenceAvatars({
                 <Avatar
                   className={cn(
                     'size-7 border-2 border-background ring-1 ring-border transition-shadow hover:ring-2 sm:size-8',
-                    isCurrentUser && 'ring-dynamic-blue/60 hover:ring-dynamic-blue'
+                    isCurrentUser &&
+                      'ring-dynamic-blue/60 hover:ring-dynamic-blue'
                   )}
                 >
                   {user.avatar_url ? (
@@ -54,7 +55,7 @@ export function UserPresenceAvatars({
                       alt={user.display_name || user.email || 'User'}
                     />
                   ) : null}
-                  <AvatarFallback className="text-[10px] font-semibold text-foreground sm:text-xs">
+                  <AvatarFallback className="font-semibold text-[10px] text-foreground sm:text-xs">
                     {user.display_name || user.email ? (
                       getInitials(user.display_name || user.email)
                     ) : (
@@ -63,10 +64,10 @@ export function UserPresenceAvatars({
                   </AvatarFallback>
                 </Avatar>
                 {/* Online indicator dot */}
-                <div className="absolute -right-0.5 -bottom-0.5 h-2 w-2 rounded-full border-2 border-background bg-dynamic-green sm:h-2.5 sm:w-2.5" />
+                {/* <div className="-right-0.5 -bottom-0.5 absolute h-2 w-2 rounded-full border-2 border-background bg-dynamic-green sm:h-2.5 sm:w-2.5" /> */}
                 {/* Multiple sessions indicator */}
                 {presenceCount > 1 && (
-                  <div className="-right-1 -top-1 absolute flex h-3.5 w-3.5 items-center justify-center rounded-full border border-background bg-dynamic-blue text-[9px] font-bold text-white sm:h-4 sm:w-4 sm:text-[10px]">
+                  <div className="-right-1 -top-1 absolute flex h-3.5 w-3.5 items-center justify-center rounded-full border border-background bg-dynamic-blue font-bold text-[9px] text-white sm:h-4 sm:w-4 sm:text-[10px]">
                     {presenceCount}
                   </div>
                 )}
@@ -98,16 +99,14 @@ export function UserPresenceAvatars({
           <TooltipTrigger asChild>
             <div className="relative transition-transform hover:z-10 hover:scale-110">
               <Avatar className="size-7 border-2 border-background ring-1 ring-border transition-shadow hover:ring-2 sm:size-8">
-                <AvatarFallback className="bg-muted text-[10px] font-semibold text-muted-foreground sm:text-xs">
+                <AvatarFallback className="bg-muted font-semibold text-[10px] text-muted-foreground sm:text-xs">
                   +{remainingCount}
                 </AvatarFallback>
               </Avatar>
             </div>
           </TooltipTrigger>
           <TooltipContent side="bottom">
-            <p className="text-sm">
-              {remainingCount} more online
-            </p>
+            <p className="text-sm">{remainingCount} more online</p>
           </TooltipContent>
         </Tooltip>
       )}

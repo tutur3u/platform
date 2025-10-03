@@ -22,12 +22,12 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from '@tuturuuu/ui/dialog';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
 import { useBoardPresence } from '@tuturuuu/ui/hooks/useBoardPresence';
@@ -45,16 +45,9 @@ import { Input } from '@tuturuuu/ui/input';
 import { cn } from '@tuturuuu/utils/format';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
-import { LabelFilter } from '../boards/boardId/label-filter';
+import { TaskFilter, type TaskFilters } from '../boards/boardId/task-filter';
 import type { ViewType } from './board-views';
 import { UserPresenceAvatars } from './user-presence-avatars';
-
-interface TaskLabel {
-  id: string;
-  name: string;
-  color: string;
-  created_at: string;
-}
 
 export type ListStatusFilter = 'all' | 'active' | 'not_started';
 
@@ -63,9 +56,10 @@ interface Props {
   tasks: Task[];
   lists: TaskList[];
   currentView: ViewType;
+  currentUserId?: string;
   onViewChange: (view: ViewType) => void;
-  selectedLabels: TaskLabel[];
-  onLabelsChange: (labels: TaskLabel[]) => void;
+  filters: TaskFilters;
+  onFiltersChange: (filters: TaskFilters) => void;
   listStatusFilter: ListStatusFilter;
   onListStatusFilterChange: (filter: ListStatusFilter) => void;
 }
@@ -73,20 +67,22 @@ interface Props {
 export function BoardHeader({
   board,
   currentView,
+  currentUserId,
   onViewChange,
-  selectedLabels,
-  onLabelsChange,
+  filters,
+  onFiltersChange,
   listStatusFilter,
   onListStatusFilterChange,
 }: Props) {
   const [isLoading, setIsLoading] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editedName, setEditedName] = useState(board.name);
+  const [boardMenuOpen, setBoardMenuOpen] = useState(false);
   const queryClient = useQueryClient();
   const router = useRouter();
 
   // Track online users on this board
-  const { presenceState, currentUserId } = useBoardPresence(board.id);
+  const { presenceState } = useBoardPresence(board.id);
 
   async function handleEdit() {
     if (!editedName.trim() || editedName === board.name) {
@@ -153,64 +149,10 @@ export function BoardHeader({
       <div className="flex flex-wrap items-center justify-between gap-1.5 sm:gap-2">
         {/* Board Info */}
         <div className="flex min-w-0 items-center gap-1">
-          <h1 className="truncate font-bold text-base text-foreground sm:text-xl md:text-2xl">{board.name}</h1>
-          <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-            <DialogTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-6 w-6 shrink-0 opacity-50 hover:opacity-100 sm:h-7 sm:w-7"
-                disabled={isLoading}
-                onClick={() => setEditedName(board.name)}
-              >
-                <Pencil className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
-                <span className="sr-only">Edit board name</span>
-              </Button>
-            </DialogTrigger>
-              <DialogContent className="sm:max-w-[425px]">
-                <DialogHeader>
-                  <DialogTitle>Edit Board Name</DialogTitle>
-                  <DialogDescription>
-                    Change the name of your board. This will be visible to all
-                    team members.
-                  </DialogDescription>
-                </DialogHeader>
-                <div className="grid gap-4 py-4">
-                  <Input
-                    value={editedName}
-                    onChange={(e) => setEditedName(e.target.value)}
-                    placeholder="Enter board name"
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
-                        e.preventDefault();
-                        handleEdit();
-                      }
-                    }}
-                    autoFocus
-                  />
-                </div>
-                <DialogFooter>
-                  <Button
-                    variant="outline"
-                    onClick={() => setIsEditDialogOpen(false)}
-                    disabled={isLoading}
-                  >
-                    Cancel
-                  </Button>
-                  <Button
-                    onClick={handleEdit}
-                    disabled={
-                      isLoading ||
-                      !editedName.trim() ||
-                      editedName === board.name
-                    }
-                  >
-                    {isLoading ? 'Saving...' : 'Save Changes'}
-                  </Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
-          </div>
+          <h1 className="truncate font-bold text-base text-foreground sm:text-xl md:text-2xl">
+            {board.name}
+          </h1>
+        </div>
 
         {/* Controls - Compact Row */}
         <div className="flex items-center gap-1.5 sm:gap-2">
@@ -283,37 +225,38 @@ export function BoardHeader({
                 })()}
               </Button>
             </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                {Object.entries(viewConfig).map(([view, config]) => {
-                  const Icon = config.icon;
-                  return (
-                    <DropdownMenuItem
-                      key={view}
-                      onClick={() => onViewChange(view as ViewType)}
-                      className="gap-2"
-                    >
-                      <Icon className="h-4 w-4" />
-                      <div className="flex flex-col">
-                        <span className="font-medium">{config.label}</span>
-                        <span className="text-muted-foreground text-xs">
-                          {config.description}
-                        </span>
-                      </div>
-                    </DropdownMenuItem>
-                  );
-                })}
+            <DropdownMenuContent align="end">
+              {Object.entries(viewConfig).map(([view, config]) => {
+                const Icon = config.icon;
+                return (
+                  <DropdownMenuItem
+                    key={view}
+                    onClick={() => onViewChange(view as ViewType)}
+                    className="gap-2"
+                  >
+                    <Icon className="h-4 w-4" />
+                    <div className="flex flex-col">
+                      <span className="font-medium">{config.label}</span>
+                      <span className="text-muted-foreground text-xs">
+                        {config.description}
+                      </span>
+                    </div>
+                  </DropdownMenuItem>
+                );
+              })}
             </DropdownMenuContent>
           </DropdownMenu>
 
-          {/* Label Filter */}
-          <LabelFilter
+          {/* Task Filter */}
+          <TaskFilter
             wsId={board.ws_id}
-            selectedLabels={selectedLabels}
-            onLabelsChange={onLabelsChange}
+            currentUserId={currentUserId}
+            filters={filters}
+            onFiltersChange={onFiltersChange}
           />
 
-          {/* Actions Menu */}
-          <DropdownMenu>
+          {/* Board Actions Menu */}
+          <DropdownMenu open={boardMenuOpen} onOpenChange={setBoardMenuOpen}>
             <DropdownMenuTrigger asChild>
               <Button
                 variant="ghost"
@@ -325,6 +268,18 @@ export function BoardHeader({
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-[200px]">
+              <DropdownMenuItem
+                onClick={() => {
+                  setEditedName(board.name);
+                  setIsEditDialogOpen(true);
+                  setBoardMenuOpen(false);
+                }}
+                className="gap-2"
+              >
+                <Pencil className="h-4 w-4" />
+                Rename board
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
               <AlertDialog>
                 <AlertDialogTrigger asChild>
                   <DropdownMenuItem
@@ -339,9 +294,9 @@ export function BoardHeader({
                   <AlertDialogHeader>
                     <AlertDialogTitle>Are you sure?</AlertDialogTitle>
                     <AlertDialogDescription>
-                      This action cannot be undone. This will permanently
-                      delete the board &quot;{board.name}&quot; and all of its
-                      tasks and lists.
+                      This action cannot be undone. This will permanently delete
+                      the board &quot;{board.name}&quot; and all of its tasks
+                      and lists.
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
@@ -362,6 +317,50 @@ export function BoardHeader({
           </DropdownMenu>
         </div>
       </div>
+
+      {/* Edit Board Name Dialog */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Edit Board Name</DialogTitle>
+            <DialogDescription>
+              Change the name of your board. This will be visible to all team
+              members.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <Input
+              value={editedName}
+              onChange={(e) => setEditedName(e.target.value)}
+              placeholder="Enter board name"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  handleEdit();
+                }
+              }}
+              autoFocus
+            />
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setIsEditDialogOpen(false)}
+              disabled={isLoading}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleEdit}
+              disabled={
+                isLoading || !editedName.trim() || editedName === board.name
+              }
+            >
+              {isLoading ? 'Saving...' : 'Save Changes'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
