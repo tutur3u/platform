@@ -437,6 +437,24 @@ function BoardColumnInner({
             boardId={boardId}
             wsId={wsId}
             onUpdate={handleUpdate}
+            onSelectAll={
+              onTaskSelect && filteredAndSortedTasks.length > 0
+                ? () => {
+                    // Select all tasks in this list
+                    filteredAndSortedTasks.forEach((task) => {
+                      // Simulate shift+click to add to selection
+                      const fakeEvent = {
+                        shiftKey: true,
+                        ctrlKey: false,
+                        metaKey: false,
+                        preventDefault: () => {},
+                        stopPropagation: () => {},
+                      } as React.MouseEvent;
+                      onTaskSelect(task.id, fakeEvent);
+                    });
+                  }
+                : undefined
+            }
           />
         </div>
       </div>

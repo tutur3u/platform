@@ -20,6 +20,7 @@ import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import {
   Archive,
   ArrowRightLeft,
+  CheckSquare,
   MoreHorizontal,
   Pencil,
   Trash,
@@ -41,6 +42,7 @@ interface Props {
   boardId?: string;
   wsId?: string;
   onUpdate: () => void;
+  onSelectAll?: () => void;
 }
 
 export function ListActions({
@@ -51,6 +53,7 @@ export function ListActions({
   boardId = '',
   wsId = '',
   onUpdate,
+  onSelectAll,
 }: Props) {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -211,6 +214,20 @@ export function ListActions({
             </div>
             Edit
           </DropdownMenuItem>
+          {tasks.length > 0 && onSelectAll && (
+            <>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={onSelectAll}>
+                <div className="h-4 w-4">
+                  <CheckSquare className="h-4 w-4 text-dynamic-green" />
+                </div>
+                Select all tasks
+                <span className="ml-auto text-muted-foreground text-xs">
+                  ({tasks.length})
+                </span>
+              </DropdownMenuItem>
+            </>
+          )}
           {tasks.length > 0 && wsId && (
             <>
               <DropdownMenuSeparator />

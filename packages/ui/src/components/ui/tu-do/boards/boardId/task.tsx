@@ -1049,7 +1049,7 @@ function TaskCardInner({
       {...attributes}
       {...listeners}
       className={cn(
-        'group relative touch-none select-none overflow-hidden rounded-lg border-l-4 transition-all',
+        'group relative touch-none select-none overflow-hidden rounded-lg border-l-4 transition-all duration-200',
         dragDisabled ? 'cursor-default' : 'cursor-grab active:cursor-grabbing',
         'hover:shadow-md',
         // Task list or priority-based styling
@@ -1065,9 +1065,12 @@ function TaskCardInner({
           !task.archived &&
           'border-dynamic-red/70 bg-dynamic-red/10 ring-1 ring-dynamic-red/20',
         // Hover state
-        !isDragging && 'hover:ring-1 hover:ring-primary/15',
-        // Selection state
-        isSelected && 'bg-primary/5 shadow-md ring-2 ring-primary/50',
+        !isDragging && !isSelected && 'hover:ring-1 hover:ring-primary/15',
+        // Selection state - enhanced visual feedback
+        isSelected &&
+          'border-l-primary bg-gradient-to-r from-primary/10 via-primary/5 to-transparent shadow-lg ring-2 ring-primary/60 scale-[1.01]',
+        // Multi-select mode cursor
+        isMultiSelectMode && 'cursor-pointer',
         // Visual feedback for invalid drop (dev only)
         process.env.NODE_ENV === 'development' &&
           isDragging &&
@@ -1082,9 +1085,20 @@ function TaskCardInner({
         </div>
       )}
       {/* Selection indicator */}
-      {isMultiSelectMode && isSelected && (
-        <div className="absolute top-2 left-2 flex h-5 w-5 items-center justify-center rounded-full bg-primary font-bold text-primary-foreground text-xs shadow-sm">
-          <Check className="h-4 w-4" />
+      {isMultiSelectMode && (
+        <div
+          className={cn(
+            'absolute top-2 left-2 flex h-6 w-6 items-center justify-center rounded-full border-2 transition-all duration-200',
+            isSelected
+              ? 'border-primary bg-primary text-primary-foreground shadow-md scale-110'
+              : 'border-border bg-background/80 text-muted-foreground shadow-sm hover:border-primary/50 hover:scale-105'
+          )}
+        >
+          {isSelected ? (
+            <Check className="h-4 w-4 stroke-[3]" />
+          ) : (
+            <div className="h-2 w-2 rounded-full bg-current opacity-30" />
+          )}
         </div>
       )}
       <div className="p-4">

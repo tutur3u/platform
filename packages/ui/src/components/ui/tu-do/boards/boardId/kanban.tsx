@@ -53,7 +53,16 @@ import {
   useMoveTaskToBoard,
 } from '@tuturuuu/utils/task-helper';
 import { hasDraggableData } from '@tuturuuu/utils/task-helpers';
-import { ArrowRightLeft, Flag, MinusCircle, Tags, Timer } from 'lucide-react';
+import {
+  ArrowRightLeft,
+  Box,
+  Check,
+  Flag,
+  MinusCircle,
+  Plus,
+  Tags,
+  Timer,
+} from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   buildEstimationIndices,
@@ -162,14 +171,14 @@ export function KanbanBoard({
       const isCtrlPressed = event.ctrlKey || event.metaKey;
       const isShiftPressed = event.shiftKey;
 
-      if (isCtrlPressed || isShiftPressed) {
+      if (isCtrlPressed || isShiftPressed || isMultiSelectMode) {
         event.preventDefault();
         event.stopPropagation();
 
         setIsMultiSelectMode(true);
 
-        if (isCtrlPressed) {
-          // Toggle selection
+        if (isCtrlPressed || isMultiSelectMode) {
+          // Toggle selection in multi-select mode
           setSelectedTasks((prev) => {
             const newSet = new Set(prev);
             if (newSet.has(taskId)) {
@@ -190,7 +199,7 @@ export function KanbanBoard({
         setIsMultiSelectMode(false);
       }
     },
-    []
+    [isMultiSelectMode]
   );
 
   const clearSelection = useCallback(() => {
@@ -408,6 +417,24 @@ export function KanbanBoard({
     enabled: isMultiSelectMode && selectedTasks.size > 0,
   });
 
+  // Workspace projects for bulk operations
+  const { data: workspaceProjects = [] } = useQuery({
+    queryKey: ['task_projects', workspace.id],
+    queryFn: async () => {
+      const supabase = createClient();
+      const { data, error } = await supabase
+        .from('task_projects')
+        .select('id, name, status')
+        .eq('ws_id', workspace.id)
+        .eq('deleted', false)
+        .order('name');
+      if (error) throw error;
+      return data || [];
+    },
+    staleTime: 30000,
+    enabled: isMultiSelectMode && selectedTasks.size > 0,
+  });
+
   // Bulk helpers -----------------------------------------------------------
   const applyOptimistic = (updater: (t: Task) => Task) => {
     queryClient.setQueryData(['tasks', boardId], (old: Task[] | undefined) => {
@@ -615,6 +642,93 @@ export function KanbanBoard({
     } catch (e) {
       console.error('Bulk remove label failed', e);
       if (prev) queryClient.setQueryData(['tasks', boardId], prev);
+    } finally {
+      setBulkWorking(false);
+    }
+  }
+
+  async function bulkAddProject(projectId: string) {
+    if (selectedTasks.size === 0) return;
+    setBulkWorking(true);
+    const supabase = createClient();
+    const ids = Array.from(selectedTasks);
+    const prev = queryClient.getQueryData(['tasks', boardId]) as
+      | Task[]
+      | undefined;
+    try {
+      // Pre-compute tasks missing the project to avoid duplicate inserts
+      const current =
+        (queryClient.getQueryData(['tasks', boardId]) as Task[] | undefined) ||
+        [];
+      const projectMeta = workspaceProjects.find((p) => p.id === projectId);
+      const missingTaskIds = ids.filter((id) => {
+        const t = current.find((ct) => ct.id === id);
+        return !t?.projects?.some((p) => p.id === projectId);
+      });
+
+      if (missingTaskIds.length === 0) {
+        setBulkWorking(false);
+        return;
+      }
+
+      applyOptimistic((t) => {
+        if (!missingTaskIds.includes(t.id)) return t;
+        return {
+          ...t,
+          projects: [
+            ...(t.projects || []),
+            {
+              id: projectId,
+              name: projectMeta?.name || 'Project',
+              status: projectMeta?.status || null,
+            },
+          ],
+        } as Task;
+      });
+
+      const rows = missingTaskIds.map((taskId) => ({
+        task_id: taskId,
+        project_id: projectId,
+      }));
+      const { error } = await supabase
+        .from('task_project_tasks')
+        .insert(rows, { count: 'exact' });
+      if (error && !String(error.message).toLowerCase().includes('duplicate'))
+        throw error;
+      await queryClient.invalidateQueries({ queryKey: ['tasks', boardId] });
+    } catch (e) {
+      console.error('Bulk add project failed', e);
+      if (prev) queryClient.setQueryData(['tasks', boardId], prev);
+      toast.error('Failed to add project to selected tasks');
+    } finally {
+      setBulkWorking(false);
+    }
+  }
+
+  async function bulkRemoveProject(projectId: string) {
+    if (selectedTasks.size === 0) return;
+    setBulkWorking(true);
+    const supabase = createClient();
+    const ids = Array.from(selectedTasks);
+    const prev = queryClient.getQueryData(['tasks', boardId]) as
+      | Task[]
+      | undefined;
+    try {
+      applyOptimistic((t) => ({
+        ...t,
+        projects: (t.projects || []).filter((p) => p.id !== projectId),
+      }));
+      const { error } = await supabase
+        .from('task_project_tasks')
+        .delete()
+        .in('task_id', ids)
+        .eq('project_id', projectId);
+      if (error) throw error;
+      await queryClient.invalidateQueries({ queryKey: ['tasks', boardId] });
+    } catch (e) {
+      console.error('Bulk remove project failed', e);
+      if (prev) queryClient.setQueryData(['tasks', boardId], prev);
+      toast.error('Failed to remove project from selected tasks');
     } finally {
       setBulkWorking(false);
     }
@@ -1024,14 +1138,16 @@ export function KanbanBoard({
     <div className="flex h-full flex-col">
       {/* Multi-select indicator */}
       {isMultiSelectMode && selectedTasks.size > 0 && (
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b px-4 py-2">
-          <div className="flex flex-wrap items-center gap-2 text-xs md:text-sm">
-            <span className="font-medium">
-              {selectedTasks.size} task{selectedTasks.size !== 1 ? 's' : ''}{' '}
-              selected
-            </span>
-            <span className="hidden text-muted-foreground sm:inline">
-              Drag to move • Ctrl+M board move • Esc clear
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b bg-gradient-to-r from-primary/5 via-primary/3 to-transparent px-4 py-3 shadow-sm">
+          <div className="flex flex-wrap items-center gap-3 text-xs md:text-sm">
+            <div className="flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 ring-1 ring-primary/20">
+              <Check className="h-3.5 w-3.5 text-primary" />
+              <span className="font-semibold text-primary">
+                {selectedTasks.size} task{selectedTasks.size !== 1 ? 's' : ''}
+              </span>
+            </div>
+            <span className="hidden text-muted-foreground text-xs sm:inline">
+              Click cards to toggle • Drag to move • Ctrl+M board move • Esc clear
             </span>
             {bulkWorking && (
               <Badge
@@ -1242,6 +1358,54 @@ export function KanbanBoard({
                           style={{ backgroundColor: l.color, opacity: 0.3 }}
                         />
                         {l.name}
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuSubContent>
+                </DropdownMenuSub>
+                <DropdownMenuSub>
+                  <DropdownMenuSubTrigger>
+                    <Plus className="mr-2 h-3.5 w-3.5 text-dynamic-indigo" />
+                    Add Project
+                  </DropdownMenuSubTrigger>
+                  <DropdownMenuSubContent className="max-h-60 w-52 overflow-auto">
+                    {workspaceProjects.length === 0 && (
+                      <div className="px-2 py-1 text-[11px] text-muted-foreground">
+                        No projects
+                      </div>
+                    )}
+                    {workspaceProjects.map((p: any) => (
+                      <DropdownMenuItem
+                        key={p.id}
+                        disabled={bulkWorking}
+                        onClick={() => bulkAddProject(p.id)}
+                        className="flex items-center gap-2"
+                      >
+                        <Box className="h-3 w-3 text-dynamic-sky" />
+                        {p.name}
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuSubContent>
+                </DropdownMenuSub>
+                <DropdownMenuSub>
+                  <DropdownMenuSubTrigger>
+                    <MinusCircle className="mr-2 h-3.5 w-3.5 text-dynamic-red" />
+                    Remove Project
+                  </DropdownMenuSubTrigger>
+                  <DropdownMenuSubContent className="max-h-60 w-52 overflow-auto">
+                    {workspaceProjects.length === 0 && (
+                      <div className="px-2 py-1 text-[11px] text-muted-foreground">
+                        No projects
+                      </div>
+                    )}
+                    {workspaceProjects.map((p: any) => (
+                      <DropdownMenuItem
+                        key={p.id}
+                        disabled={bulkWorking}
+                        onClick={() => bulkRemoveProject(p.id)}
+                        className="flex items-center gap-2"
+                      >
+                        <Box className="h-3 w-3 text-muted-foreground opacity-50" />
+                        {p.name}
                       </DropdownMenuItem>
                     ))}
                   </DropdownMenuSubContent>
