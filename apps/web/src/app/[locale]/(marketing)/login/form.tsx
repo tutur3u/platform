@@ -22,6 +22,7 @@ import { Input } from '@tuturuuu/ui/input';
 import { InputOTP, InputOTPGroup, InputOTPSlot } from '@tuturuuu/ui/input-otp';
 import { zodResolver } from '@tuturuuu/ui/resolvers';
 import { Separator } from '@tuturuuu/ui/separator';
+import { Switch } from '@tuturuuu/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import Image from 'next/image';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -94,6 +95,7 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
   const OTPFormSchema = z.object({
     email: z.string().transform(processEmailInput).pipe(z.string().email()),
     otp: z.string(),
+    skipOtp: z.boolean().optional(),
   });
 
   const TOTPFormSchema = z.object({
@@ -106,6 +108,7 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
     defaultValues: {
       email: DEV_MODE ? 'local@tuturuuu.com' : '',
       otp: '',
+      skipOtp: false,
     },
   });
 
@@ -476,6 +479,61 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
     }
   };
 
+  const devLogin = async (email: string) => {
+    if (!DEV_MODE || !email || !locale) return;
+
+    setLoading(true);
+    try {
+      const response = await fetch('/api/auth/dev-login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, locale }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to login');
+      }
+
+      // Extract the token from the magic link properties
+      const actionLink = data.properties.action_link;
+      const url = new URL(actionLink);
+      const token = url.searchParams.get('token');
+
+      if (!token) {
+        throw new Error('No token received');
+      }
+
+      // Verify the OTP token using Supabase client
+      const { error } = await supabase.auth.verifyOtp({
+        token_hash: token,
+        type: 'magiclink',
+      });
+
+      if (error) throw error;
+
+      router.refresh();
+
+      if (await needsMFA()) {
+        setRequiresMFA(true);
+      } else {
+        window.location.reload();
+      }
+    } catch (error) {
+      console.error('Dev login error:', error);
+      toast({
+        title: t('login.failed'),
+        description: error instanceof Error ? error.message : 'Failed to login',
+        variant: 'destructive',
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleGoogleLogin = async () => {
     setLoading(true);
     const supabase = createClient();
@@ -555,7 +613,12 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
   };
 
   const onOtpSubmit = async (data: z.infer<typeof OTPFormSchema>) => {
-    const { email, otp } = data;
+    const { email, otp, skipOtp } = data;
+
+    if (DEV_MODE && skipOtp) {
+      await devLogin(email);
+      return;
+    }
 
     if (!otpSent) await sendOtp({ email });
     else if (otp) await verifyOtp({ email, otp });
@@ -849,6 +912,28 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
                           {t('login.check_email')}
                         </FormDescription>
                         <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                )}
+
+                {DEV_MODE && !otpSent && (
+                  <FormField
+                    control={otpForm.control}
+                    name="skipOtp"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-row items-center justify-between rounded-lg border border-dynamic-orange/50 bg-dynamic-orange/20 p-3">
+                        <div className="space-y-0.5">
+                          <FormLabel className="font-medium text-xs">
+                            Allow bypassing OTP verification
+                          </FormLabel>
+                        </div>
+                        <FormControl>
+                          <Switch
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                          />
+                        </FormControl>
                       </FormItem>
                     )}
                   />
