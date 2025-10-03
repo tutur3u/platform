@@ -429,9 +429,85 @@
     "join-waitlist": "Tham gia danh sách chờ"
   },
   "branding": {
-    "branding": "Thương hiệu",
-    "our-logo": "Logo của chúng tôi",
-    "colors": "Màu sắc"
+    "hero": {
+      "badge": "Nhận Diện Thương Hiệu",
+      "title": "Nhận Diện Thương Hiệu",
+      "description": "Hệ thống nhận diện này đảm bảo thương hiệu của chúng tôi luôn nhất quán, dễ nhận biết và tạo ấn tượng sâu sắc trên mọi nền tảng."
+    },
+    "colorCopied": "Đã sao chép mã màu {color}",
+    "logos": {
+      "tuturuuu": {
+        "description": "Logo chính thể hiện sự đổi mới, đáng tin cậy và xuất sắc của chúng tôi."
+      },
+      "mira": {
+        "description": "Logo AI thể hiện trí tuệ, tin cậy và sự đột phá của nền tảng."
+      }
+    },
+    "colors": {
+      "title": "Bảng Màu Thương Hiệu",
+      "description": "Bảng màu phản ánh giá trị cốt lõi và đảm bảo sự hài hòa thị giác trên mọi nền tảng.",
+      "primaryTitle": "Màu Sắc Chính",
+      "systemTitle": "Màu Sắc Hệ Thống",
+      "primary": {
+        "innovation": {
+          "title": "Đổi Mới",
+          "description": "Phá vỡ giới hạn với công nghệ tiên phong"
+        },
+        "growth": {
+          "title": "Phát Triển",
+          "description": "Tăng trưởng bền vững và cải tiến không ngừng"
+        },
+        "energy": {
+          "title": "Năng Lượng",
+          "description": "Năng động và nhiệt huyết trong mọi thử thách"
+        },
+        "impact": {
+          "title": "Tác Động",
+          "description": "Tạo ra giá trị thiết thực cho cuộc sống"
+        }
+      },
+      "system": {
+        "backgroundDark": "Nền Tối",
+        "surfaceDark": "Bề Mặt Tối",
+        "backgroundLight": "Nền Sáng",
+        "surfaceLight": "Bề Mặt Sáng"
+      }
+    },
+    "typography": {
+      "title": "Hệ Thống Chữ",
+      "description": "Bộ phông chữ được chọn lọc đảm bảo độ rõ nét và dễ đọc, đồng thời thể hiện nhất quán bản sắc thương hiệu.",
+      "inter": {
+        "usage": "Phông chữ chính cho giao diện, tiêu đề và nội dung"
+      },
+      "notoSans": {
+        "usage": "Hỗ trợ đa ngôn ngữ và bộ ký tự đặc biệt"
+      }
+    },
+    "guidelines": {
+      "title": "Nguyên Tắc Sử Dụng",
+      "description": "Tuân thủ các nguyên tắc này để duy trì tính nhất quán của thương hiệu.",
+      "logo": {
+        "title": "Nguyên Tắc Logo",
+        "rule1": "Giữ khoảng cách an toàn xung quanh logo",
+        "rule2": "Không thay đổi màu sắc logo",
+        "rule3": "Chọn phiên bản logo phù hợp với nền",
+        "rule4": "Tuân thủ kích thước tối thiểu"
+      },
+      "color": {
+        "title": "Nguyên Tắc Màu Sắc",
+        "rule1": "Dùng màu chính cho yếu tố quan trọng",
+        "rule2": "Đảm bảo độ tương phản phù hợp",
+        "rule3": "Tuân thủ tiêu chuẩn khả năng tiếp cận",
+        "rule4": "Sử dụng màu hệ thống đúng mục đích"
+      },
+      "typography": {
+        "title": "Nguyên Tắc Chữ",
+        "rule1": "Duy trì hệ thống phân cấp rõ ràng",
+        "rule2": "Chọn độ đậm phông chữ hợp lý",
+        "rule3": "Đảm bảo dễ đọc ở mọi kích cỡ",
+        "rule4": "Tuân thủ nguyên tắc khoảng cách"
+      }
+    }
   },
   "onboarding": {
     "just-a-moment": "Bước cuối cùng!",

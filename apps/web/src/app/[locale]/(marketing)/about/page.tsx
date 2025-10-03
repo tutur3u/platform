@@ -120,7 +120,7 @@ export default function AboutPage() {
             >
               <Badge
                 variant="secondary"
-                className="mb-6 border-dynamic-purple/30 bg-dynamic-purple/10 text-dynamic-purple transition-all hover:scale-105 hover:bg-dynamic-purple/20 hover:shadow-lg hover:shadow-dynamic-purple/20"
+                className="mb-6 border-dynamic-purple/30 bg-dynamic-purple/10 text-dynamic-purple transition-all hover:scale-105 hover:bg-dynamic-purple/20 hover:shadow-dynamic-purple/20 hover:shadow-lg"
               >
                 <Sparkles className="mr-1.5 h-3.5 w-3.5" />
                 {t('hero.badge')}
@@ -145,7 +145,7 @@ export default function AboutPage() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3, duration: 0.8 }}
-              className="mx-auto mb-12 max-w-3xl text-balance text-foreground/70 text-base leading-relaxed sm:text-lg md:text-xl"
+              className="mx-auto mb-12 max-w-3xl text-balance text-base text-foreground/70 leading-relaxed sm:text-lg md:text-xl"
             >
               {t('hero.description')}
             </motion.p>
@@ -844,7 +844,7 @@ export default function AboutPage() {
 
           <div className="relative">
             {/* Timeline line - hidden on mobile, visible on md+ */}
-            <div className="absolute top-0 bottom-0 left-1/2 hidden w-0.5 -translate-x-1/2 bg-gradient-to-b from-dynamic-purple via-dynamic-blue to-dynamic-green md:block" />
+            <div className="-translate-x-1/2 absolute top-0 bottom-0 left-1/2 hidden w-0.5 bg-gradient-to-b from-dynamic-purple via-dynamic-blue to-dynamic-green md:block" />
 
             <div className="space-y-8 md:space-y-12">
               {[
@@ -920,51 +920,51 @@ export default function AboutPage() {
                         index % 2 === 0 ? 'md:pr-12' : 'md:col-start-2 md:pl-12'
                       )}
                     >
-                    <Card
-                      className={cn(
-                        'p-6 transition-all hover:shadow-lg',
-                        `border-dynamic-${milestone.color}/30 bg-gradient-to-br from-dynamic-${milestone.color}/5 via-background to-background hover:border-dynamic-${milestone.color}/50 hover:shadow-dynamic-${milestone.color}/10`
-                      )}
-                    >
-                      <Badge
-                        variant="secondary"
+                      <Card
                         className={cn(
-                          'mb-3',
-                          `border-dynamic-${milestone.color}/30 bg-dynamic-${milestone.color}/10 text-dynamic-${milestone.color}`
+                          'p-6 transition-all hover:shadow-lg',
+                          `border-dynamic-${milestone.color}/30 bg-gradient-to-br from-dynamic-${milestone.color}/5 via-background to-background hover:border-dynamic-${milestone.color}/50 hover:shadow-dynamic-${milestone.color}/10`
                         )}
                       >
-                        {t(milestone.phaseKey as any)}
-                      </Badge>
-                      <h3 className="mb-1 font-bold text-2xl">
-                        {t(milestone.titleKey as any)}
-                      </h3>
-                      <p className="mb-3 text-foreground/50 text-sm">
-                        {t(milestone.periodKey as any)}
-                      </p>
-                      <p className="mb-4 text-foreground/70 leading-relaxed">
-                        {t(milestone.descKey as any)}
-                      </p>
-                      <div className="flex flex-wrap gap-2">
-                        {milestone.achievements.map((achKey, achIndex) => (
-                          <div
-                            key={achIndex}
-                            className="flex items-center gap-1.5 text-foreground/60 text-sm"
-                          >
-                            <CheckCircle2
-                              className={cn(
-                                'h-4 w-4',
-                                `text-dynamic-${milestone.color}`
-                              )}
-                            />
-                            {t(achKey as any)}
-                          </div>
-                        ))}
-                      </div>
-                    </Card>
+                        <Badge
+                          variant="secondary"
+                          className={cn(
+                            'mb-3',
+                            `border-dynamic-${milestone.color}/30 bg-dynamic-${milestone.color}/10 text-dynamic-${milestone.color}`
+                          )}
+                        >
+                          {t(milestone.phaseKey as any)}
+                        </Badge>
+                        <h3 className="mb-1 font-bold text-2xl">
+                          {t(milestone.titleKey as any)}
+                        </h3>
+                        <p className="mb-3 text-foreground/50 text-sm">
+                          {t(milestone.periodKey as any)}
+                        </p>
+                        <p className="mb-4 text-foreground/70 leading-relaxed">
+                          {t(milestone.descKey as any)}
+                        </p>
+                        <div className="flex flex-wrap gap-2">
+                          {milestone.achievements.map((achKey, achIndex) => (
+                            <div
+                              key={achIndex}
+                              className="flex items-center gap-1.5 text-foreground/60 text-sm"
+                            >
+                              <CheckCircle2
+                                className={cn(
+                                  'h-4 w-4',
+                                  `text-dynamic-${milestone.color}`
+                                )}
+                              />
+                              {t(achKey as any)}
+                            </div>
+                          ))}
+                        </div>
+                      </Card>
                     </div>
 
                     {/* Timeline node - hidden on mobile, shown on desktop */}
-                    <div className="absolute top-6 left-1/2 hidden -translate-x-1/2 md:block">
+                    <div className="-translate-x-1/2 absolute top-6 left-1/2 hidden md:block">
                       <div className="relative flex h-14 w-14 items-center justify-center rounded-full border-4 border-background bg-background shadow-lg lg:h-16 lg:w-16">
                         <div
                           className={cn(

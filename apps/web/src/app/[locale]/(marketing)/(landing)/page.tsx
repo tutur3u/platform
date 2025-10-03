@@ -103,7 +103,7 @@ export default function MarketingPage() {
             >
               <Badge
                 variant="secondary"
-                className="mb-6 border-dynamic-purple/30 bg-dynamic-purple/10 text-dynamic-purple transition-all hover:scale-105 hover:bg-dynamic-purple/20 hover:shadow-lg hover:shadow-dynamic-purple/20"
+                className="mb-6 border-dynamic-purple/30 bg-dynamic-purple/10 text-dynamic-purple transition-all hover:scale-105 hover:bg-dynamic-purple/20 hover:shadow-dynamic-purple/20 hover:shadow-lg"
               >
                 <Sparkles className="mr-1.5 h-3.5 w-3.5" />
                 {t('hero.badge')}
@@ -117,7 +117,7 @@ export default function MarketingPage() {
               className="mb-6 text-balance font-bold text-4xl tracking-tight sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl"
             >
               {t('hero.title.part1')}{' '}
-              <span className="bg-gradient-to-r from-dynamic-purple via-dynamic-pink to-dynamic-orange bg-clip-text text-transparent animate-gradient">
+              <span className="animate-gradient bg-gradient-to-r from-dynamic-purple via-dynamic-pink to-dynamic-orange bg-clip-text text-transparent">
                 {t('hero.title.part2')}
               </span>
             </motion.h1>
@@ -126,7 +126,7 @@ export default function MarketingPage() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3, duration: 0.8 }}
-              className="mx-auto mb-8 max-w-3xl text-balance text-foreground/70 text-base leading-relaxed sm:text-lg md:text-xl lg:text-2xl"
+              className="mx-auto mb-8 max-w-3xl text-balance text-base text-foreground/70 leading-relaxed sm:text-lg md:text-xl lg:text-2xl"
             >
               {t('hero.description.part1')}{' '}
               <strong className="text-foreground">Tuturuuu</strong>{' '}
@@ -306,7 +306,10 @@ export default function MarketingPage() {
       </section>
 
       {/* Features Section */}
-      <section id="features" className="relative scroll-mt-20 px-4 py-16 sm:px-6 sm:py-20 lg:px-8 lg:py-24">
+      <section
+        id="features"
+        className="relative scroll-mt-20 px-4 py-16 sm:px-6 sm:py-20 lg:px-8 lg:py-24"
+      >
         <div className="container mx-auto max-w-7xl">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -860,17 +863,21 @@ export default function MarketingPage() {
                   <div className="flex items-start gap-2 sm:items-center sm:gap-3">
                     <Brain className="mt-0.5 h-4 w-4 shrink-0 text-dynamic-purple sm:mt-0 sm:h-5 sm:w-5" />
                     <div className="flex-1">
-                      <div className="mb-1 text-sm font-semibold">
+                      <div className="mb-1 font-semibold text-sm">
                         {t('demo.aiChat.contextAware.title')}
                       </div>
-                      <p className="text-xs leading-relaxed text-foreground/70 sm:text-xs">
+                      <p className="text-foreground/70 text-xs leading-relaxed sm:text-xs">
                         {t('demo.aiChat.contextAware.description')}
                       </p>
                     </div>
                   </div>
                 </div>
 
-                <Button className="mt-4 w-full sm:mt-6" variant="outline" asChild>
+                <Button
+                  className="mt-4 w-full sm:mt-6"
+                  variant="outline"
+                  asChild
+                >
                   <Link href="/onboarding">
                     <MessageSquare className="mr-2 h-4 w-4" />
                     {t('demo.aiChat.cta')}
@@ -906,11 +913,11 @@ export default function MarketingPage() {
                     <div className="rounded-lg border border-dynamic-green/20 bg-dynamic-green/5 p-3 sm:p-4">
                       <div className="mb-1 flex items-center gap-1.5">
                         <TrendingUp className="h-3.5 w-3.5 text-dynamic-green sm:h-4 sm:w-4" />
-                        <span className="text-[10px] font-semibold sm:text-xs">
+                        <span className="font-semibold text-[10px] sm:text-xs">
                           {t('demo.analytics.metrics.tasks.label')}
                         </span>
                       </div>
-                      <div className="text-xl font-bold text-dynamic-green sm:text-2xl">
+                      <div className="font-bold text-dynamic-green text-xl sm:text-2xl">
                         {t('demo.analytics.metrics.tasks.value')}
                       </div>
                       <div className="flex items-center gap-1 text-[10px] text-foreground/60 sm:text-xs">
@@ -922,11 +929,11 @@ export default function MarketingPage() {
                     <div className="rounded-lg border border-dynamic-blue/20 bg-dynamic-blue/5 p-3 sm:p-4">
                       <div className="mb-1 flex items-center gap-1.5">
                         <Clock className="h-3.5 w-3.5 text-dynamic-blue sm:h-4 sm:w-4" />
-                        <span className="text-[10px] font-semibold sm:text-xs">
+                        <span className="font-semibold text-[10px] sm:text-xs">
                           {t('demo.analytics.metrics.focus.label')}
                         </span>
                       </div>
-                      <div className="text-xl font-bold text-dynamic-blue sm:text-2xl">
+                      <div className="font-bold text-dynamic-blue text-xl sm:text-2xl">
                         {t('demo.analytics.metrics.focus.value')}
                       </div>
                       <div className="flex items-center gap-1 text-[10px] text-foreground/60 sm:text-xs">
@@ -938,11 +945,11 @@ export default function MarketingPage() {
                     <div className="rounded-lg border border-dynamic-purple/20 bg-dynamic-purple/5 p-3 sm:p-4">
                       <div className="mb-1 flex items-center gap-1.5">
                         <Users className="h-3.5 w-3.5 text-dynamic-purple sm:h-4 sm:w-4" />
-                        <span className="text-[10px] font-semibold sm:text-xs">
+                        <span className="font-semibold text-[10px] sm:text-xs">
                           {t('demo.analytics.metrics.meetings.label')}
                         </span>
                       </div>
-                      <div className="text-xl font-bold text-dynamic-purple sm:text-2xl">
+                      <div className="font-bold text-dynamic-purple text-xl sm:text-2xl">
                         {t('demo.analytics.metrics.meetings.value')}
                       </div>
                       <div className="flex items-center gap-1 text-[10px] text-foreground/60 sm:text-xs">
@@ -954,11 +961,11 @@ export default function MarketingPage() {
                     <div className="rounded-lg border border-dynamic-orange/20 bg-dynamic-orange/5 p-3 sm:p-4">
                       <div className="mb-1 flex items-center gap-1.5">
                         <Target className="h-3.5 w-3.5 text-dynamic-orange sm:h-4 sm:w-4" />
-                        <span className="text-[10px] font-semibold sm:text-xs">
+                        <span className="font-semibold text-[10px] sm:text-xs">
                           {t('demo.analytics.metrics.goals.label')}
                         </span>
                       </div>
-                      <div className="text-xl font-bold text-dynamic-orange sm:text-2xl">
+                      <div className="font-bold text-dynamic-orange text-xl sm:text-2xl">
                         {t('demo.analytics.metrics.goals.value')}
                       </div>
                       <div className="text-[10px] text-foreground/60 sm:text-xs">

@@ -430,11 +430,6 @@
     "features-6-subtitle": "Tuturuuu is open-source, so you can contribute to the project, and make it better for everyone.",
     "join-waitlist": "Join waitlist"
   },
-  "branding": {
-    "branding": "Branding",
-    "our-logo": "Our Logo",
-    "colors": "Colors"
-  },
   "onboarding": {
     "just-a-moment": "Just a moment...",
     "just-a-moment-desc": "Accept a workspace invite to get started.",
@@ -4945,6 +4940,87 @@
       "description": "We're assembling a team of builders who believe technology should unlock human potential. If you share our vision, let's create something extraordinary together.",
       "contribute": "Contribute on GitHub",
       "getInTouch": "Get in Touch"
+    }
+  },
+  "branding": {
+    "hero": {
+      "badge": "Brand Guidelines",
+      "title": "Our Brand Identity",
+      "description": "These guidelines ensure our brand remains consistent, recognizable, and impactful across all platforms and touchpoints."
+    },
+    "colorCopied": "Copied {color} to clipboard",
+    "logos": {
+      "tuturuuu": {
+        "description": "Our primary brand mark represents innovation, trust, and excellence."
+      },
+      "mira": {
+        "description": "Our AI platform brand embodies intelligence, reliability, and innovation."
+      }
+    },
+    "colors": {
+      "title": "Color System",
+      "description": "Our color palette reflects our brand values and ensures visual harmony across all platforms.",
+      "primaryTitle": "Primary Colors",
+      "systemTitle": "System Colors",
+      "primary": {
+        "innovation": {
+          "title": "Innovation",
+          "description": "Pushing boundaries with cutting-edge technology"
+        },
+        "growth": {
+          "title": "Growth",
+          "description": "Sustainable development and continuous improvement"
+        },
+        "energy": {
+          "title": "Energy",
+          "description": "Dynamic and passionate approach to challenges"
+        },
+        "impact": {
+          "title": "Impact",
+          "description": "Making a real difference in people's lives"
+        }
+      },
+      "system": {
+        "backgroundDark": "Background Dark",
+        "surfaceDark": "Surface Dark",
+        "backgroundLight": "Background Light",
+        "surfaceLight": "Surface Light"
+      }
+    },
+    "typography": {
+      "title": "Typography",
+      "description": "Our typeface selection ensures clarity and readability while maintaining brand consistency.",
+      "inter": {
+        "usage": "Primary font for UI elements, headings, and body text"
+      },
+      "notoSans": {
+        "usage": "Multilingual support and extended character sets"
+      }
+    },
+    "guidelines": {
+      "title": "Usage Guidelines",
+      "description": "Follow these guidelines to maintain brand consistency across all applications.",
+      "logo": {
+        "title": "Logo Usage",
+        "rule1": "Maintain clear space around logos",
+        "rule2": "Never alter the logo colors",
+        "rule3": "Use appropriate logo versions for different backgrounds",
+        "rule4": "Maintain minimum size requirements"
+      },
+      "color": {
+        "title": "Color Application",
+        "rule1": "Use primary colors for key elements",
+        "rule2": "Maintain proper contrast ratios",
+        "rule3": "Follow accessibility guidelines",
+        "rule4": "Use system colors appropriately"
+      },
+      "typography": {
+        "title": "Typography Rules",
+        "rule1": "Maintain hierarchy in text elements",
+        "rule2": "Use appropriate font weights",
+        "rule3": "Ensure readability at all sizes",
+        "rule4": "Follow spacing guidelines"
+      }
     }
   }
 }
