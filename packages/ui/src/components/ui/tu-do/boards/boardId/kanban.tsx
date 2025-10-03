@@ -9,6 +9,7 @@ import {
   type DragStartEvent,
   KeyboardSensor,
   MeasuringStrategy,
+  MouseSensor,
   PointerSensor,
   useSensor,
   useSensors,
@@ -44,7 +45,6 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
-import { useHorizontalScroll } from '@tuturuuu/ui/hooks/useHorizontalScroll';
 import { ScrollArea } from '@tuturuuu/ui/scroll-area';
 import { toast } from '@tuturuuu/ui/sonner';
 import { coordinateGetter } from '@tuturuuu/utils/keyboard-preset';
@@ -75,29 +75,6 @@ import { LightweightTaskCard } from './task';
 import { BoardColumn } from './task-list';
 import { TaskListForm } from './task-list-form';
 
-// Wrapper for BoardContainer with horizontal scroll functionality
-function ScrollableBoardContainer({
-  children,
-  isDragActive,
-}: {
-  children: React.ReactNode;
-  isDragActive?: () => boolean;
-}) {
-  const { scrollContainerRef } = useHorizontalScroll({
-    enableTouchScroll: true,
-    enableMouseWheel: true,
-    isDragActive,
-  });
-
-  return (
-    <div
-      ref={scrollContainerRef}
-      className="scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent relative flex h-full w-full gap-4 overflow-x-auto"
-    >
-      {children}
-    </div>
-  );
-}
 
 interface Props {
   workspace: Workspace;
@@ -777,10 +754,11 @@ export function KanbanBoard({
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
+  // On mobile, use MouseSensor instead of PointerSensor to allow touch scrolling
   const sensors = useSensors(
-    useSensor(PointerSensor, {
+    useSensor(isMobile ? MouseSensor : PointerSensor, {
       activationConstraint: {
-        distance: isMobile ? 999999 : 8, // Effectively disable on mobile with very high threshold
+        distance: 8,
       },
     }),
     useSensor(KeyboardSensor, {
@@ -1501,9 +1479,7 @@ export function KanbanBoard({
             },
           ]}
         >
-          <ScrollableBoardContainer
-            isDragActive={() => activeColumn !== null || activeTask !== null}
-          >
+          <div className="scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent relative flex h-full w-full gap-4 overflow-x-auto">
             <SortableContext
               items={columnsId}
               strategy={horizontalListSortingStrategy}
@@ -1523,23 +1499,21 @@ export function KanbanBoard({
                     const statusB =
                       statusOrder[b.status as keyof typeof statusOrder] ?? 999;
                     if (statusA !== statusB) return statusA - statusB;
-                    return (a.position || 0) - (b.position || 0);
+                    return a.position - b.position;
                   })
-                  .map((column) => {
-                    const columnTasks = tasks.filter(
-                      (task) => task.list_id === column.id
+                  .map((list) => {
+                    const listTasks = tasks.filter(
+                      (task) => task.list_id === list.id
                     );
                     return (
                       <BoardColumn
-                        key={column.id}
-                        column={column}
+                        key={list.id}
+                        column={list}
                         boardId={boardId}
-                        tasks={columnTasks}
+                        tasks={listTasks}
                         isPersonalWorkspace={workspace.personal}
                         onUpdate={handleUpdate}
-                        onAddTask={(list) =>
-                          setCreateDialog({ open: true, list })
-                        }
+                        onAddTask={() => setCreateDialog({ open: true, list })}
                         selectedTasks={selectedTasks}
                         isMultiSelectMode={isMultiSelectMode}
                         onTaskSelect={handleTaskSelect}
@@ -1549,7 +1523,7 @@ export function KanbanBoard({
                 <TaskListForm boardId={boardId} onListCreated={handleUpdate} />
               </div>
             </SortableContext>
-          </ScrollableBoardContainer>
+          </div>
           <DragOverlay
             wrapperElement="div"
             style={{
