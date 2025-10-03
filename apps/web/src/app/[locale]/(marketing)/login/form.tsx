@@ -22,13 +22,14 @@ import { Input } from '@tuturuuu/ui/input';
 import { InputOTP, InputOTPGroup, InputOTPSlot } from '@tuturuuu/ui/input-otp';
 import { zodResolver } from '@tuturuuu/ui/resolvers';
 import { Separator } from '@tuturuuu/ui/separator';
+import { Switch } from '@tuturuuu/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import Image from 'next/image';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import { useCallback, useEffect, useState } from 'react';
 import * as z from 'zod';
-import { DEV_MODE, IS_PRODUCTION_DB, PORT } from '@/constants/common';
+import { DEV_MODE, PORT } from '@/constants/common';
 import { trpc } from '@/trpc/client';
 
 // Constants
@@ -94,6 +95,7 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
   const OTPFormSchema = z.object({
     email: z.string().transform(processEmailInput).pipe(z.string().email()),
     otp: z.string(),
+    skipOtp: z.boolean().optional(),
   });
 
   const TOTPFormSchema = z.object({
@@ -106,6 +108,7 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
     defaultValues: {
       email: DEV_MODE ? 'local@tuturuuu.com' : '',
       otp: '',
+      skipOtp: false,
     },
   });
 
@@ -477,6 +480,8 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
   };
 
   const devLogin = async (email: string) => {
+    if (!DEV_MODE) return;
+
     setLoading(true);
     try {
       const response = await fetch('/api/auth/dev-login', {
@@ -608,10 +613,9 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
   };
 
   const onOtpSubmit = async (data: z.infer<typeof OTPFormSchema>) => {
-    const { email, otp } = data;
+    const { email, otp, skipOtp } = data;
 
-    const skipOtp = DEV_MODE && IS_PRODUCTION_DB;
-    if (skipOtp) {
+    if (DEV_MODE && skipOtp) {
       await devLogin(email);
       return;
     }
@@ -913,6 +917,28 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
                   />
                 )}
 
+                {DEV_MODE && !otpSent && (
+                  <FormField
+                    control={otpForm.control}
+                    name="skipOtp"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-row items-center justify-between rounded-lg border border-dynamic-yellow/50 bg-dynamic-yellow/20 p-3">
+                        <div className="space-y-0.5">
+                          <FormLabel className="font-medium text-xs">
+                            Allow bypassing OTP verification
+                          </FormLabel>
+                        </div>
+                        <FormControl>
+                          <Switch
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                          />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
+                )}
+
                 <Button
                   type="submit"
                   variant={_isLoading ? 'outline' : undefined}
@@ -948,17 +974,6 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
                       ? `${t('login.resend')} (${resendCooldown}s)`
                       : t('login.resend')}
                   </Button>
-                )}
-
-                {DEV_MODE && IS_PRODUCTION_DB && !otpSent && (
-                  <div className="rounded-lg border border-dynamic-yellow/30 bg-dynamic-yellow/10 p-3 text-center">
-                    <p className="text-muted-foreground text-xs">
-                      <span className="font-medium">
-                        Dev Mode & Production DB:
-                      </span>{' '}
-                      OTP verification will be bypassed
-                    </p>
-                  </div>
                 )}
               </form>
             </Form>
