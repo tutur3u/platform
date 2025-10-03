@@ -55,6 +55,8 @@ export default async function WorkspaceMembersPage({
         const t = await getTranslations();
         const disableInvite = await verifyHasSecrets(wsId, ['DISABLE_INVITE']);
 
+        const canManageMembers = !withoutPermission('manage_workspace_members');
+
         return (
           <>
             <div className="flex flex-col justify-between gap-4 rounded-lg border border-border bg-foreground/5 p-4 md:flex-row md:items-start">
@@ -71,10 +73,8 @@ export default async function WorkspaceMembersPage({
                 <MemberTabs value={status || 'all'} />
                 <InviteMemberButton
                   wsId={wsId}
-                  currentUser={{
-                    ...user!,
-                    role: workspace?.role,
-                  }}
+                  currentUser={user!}
+                  canManageMembers={canManageMembers}
                   label={
                     disableInvite
                       ? t('ws-members.invite_member_disabled')
@@ -92,6 +92,7 @@ export default async function WorkspaceMembersPage({
                   workspace={workspace}
                   members={members}
                   invited={status === 'invited'}
+                  canManageMembers={canManageMembers}
                 />
               </div>
             </div>

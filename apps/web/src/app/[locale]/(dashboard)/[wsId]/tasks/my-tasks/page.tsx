@@ -1,18 +1,20 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import {
   Calendar,
   CheckCircle2,
   Clock,
   Flag,
   UserRound,
+  Archive,
 } from '@tuturuuu/ui/icons';
-import { Separator } from '@tuturuuu/ui/separator';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
 import { redirect } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import WorkspaceWrapper from '@/components/workspace-wrapper';
-import ExpandableTaskList from '../../(dashboard)/tasks/expandable-task-list';
+import TaskListWithCompletion from '../../(dashboard)/tasks/task-list-with-completion';
+import BucketDump from '../../(dashboard)/bucket-dump';
 
 interface Props {
   params: Promise<{
@@ -259,7 +261,7 @@ async function MyTasksContent({
       </div>
 
       {/* Stats Cards */}
-      <div className="grid gap-4 md:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-3">
         <Card className="border-dynamic-red/30 bg-dynamic-red/5">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="font-medium text-sm">
@@ -301,107 +303,82 @@ async function MyTasksContent({
             </div>
           </CardContent>
         </Card>
-
-        <Card className="border-dynamic-green/30 bg-dynamic-green/5">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="font-medium text-sm">
-              {t('ws-tasks.completed')}
-            </CardTitle>
-            <CheckCircle2 className="h-4 w-4 text-dynamic-green" />
-          </CardHeader>
-          <CardContent>
-            <div className="font-bold text-2xl text-dynamic-green">
-              {completedTasks?.length || 0}
-            </div>
-          </CardContent>
-        </Card>
       </div>
 
-      {/* Task Sections */}
-      <div className="space-y-6">
-        {/* Overdue Tasks */}
-        {overdueTasks && overdueTasks.length > 0 && (
-          <Card className="border-dynamic-red/20">
-            <CardHeader className="border-dynamic-red/10 border-b bg-dynamic-red/5">
-              <CardTitle className="flex items-center gap-2 text-dynamic-red">
-                <Clock className="h-5 w-5" />
-                {t('ws-tasks.overdue')} ({overdueTasks.length})
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-6">
-              <ExpandableTaskList
-                tasks={overdueTasks as any}
-                isPersonal={isPersonal}
-                initialLimit={5}
-              />
-            </CardContent>
-          </Card>
-        )}
+      {/* Tabs for organizing views */}
+      <Tabs defaultValue="tasks" className="w-full">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="tasks" className="gap-2">
+            <CheckCircle2 className="h-4 w-4" />
+            My Tasks
+          </TabsTrigger>
+          <TabsTrigger value="bucket" className="gap-2">
+            <Archive className="h-4 w-4" />
+            Bucket Dump
+          </TabsTrigger>
+        </TabsList>
 
-        {/* Due Today */}
-        {todayTasks && todayTasks.length > 0 && (
-          <Card className="border-dynamic-orange/20">
-            <CardHeader className="border-dynamic-orange/10 border-b bg-dynamic-orange/5">
-              <CardTitle className="flex items-center gap-2 text-dynamic-orange">
-                <Calendar className="h-5 w-5" />
-                {t('ws-tasks.due_today')} ({todayTasks.length})
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-6">
-              <ExpandableTaskList
-                tasks={todayTasks as any}
-                isPersonal={isPersonal}
-                initialLimit={5}
-              />
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Upcoming Tasks (including tasks with no due date) */}
-        {upcomingTasks && upcomingTasks.length > 0 && (
-          <Card className="border-dynamic-blue/20">
-            <CardHeader className="border-dynamic-blue/10 border-b bg-dynamic-blue/5">
-              <CardTitle className="flex items-center gap-2 text-dynamic-blue">
-                <Flag className="h-5 w-5" />
-                {t('ws-tasks.upcoming')} ({upcomingTasks.length})
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-6">
-              <ExpandableTaskList
-                tasks={upcomingTasks as any}
-                isPersonal={isPersonal}
-                initialLimit={5}
-              />
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Completed Tasks */}
-        {completedTasks && completedTasks.length > 0 && (
-          <>
-            <Separator />
-            <Card className="border-dynamic-green/20">
-              <CardHeader className="border-dynamic-green/10 border-b bg-dynamic-green/5">
-                <CardTitle className="flex items-center gap-2 text-dynamic-green">
-                  <CheckCircle2 className="h-5 w-5" />
-                  {t('ws-tasks.completed')} - {t('ws-tasks.last_30_days')} (
-                  {completedTasks.length})
+        {/* My Tasks Tab */}
+        <TabsContent value="tasks" className="space-y-6 mt-6">
+          {/* Overdue Tasks */}
+          {overdueTasks && overdueTasks.length > 0 && (
+            <Card className="border-dynamic-red/20">
+              <CardHeader className="border-dynamic-red/10 border-b bg-dynamic-red/5">
+                <CardTitle className="flex items-center gap-2 text-dynamic-red">
+                  <Clock className="h-5 w-5" />
+                  {t('ws-tasks.overdue')} ({overdueTasks.length})
                 </CardTitle>
               </CardHeader>
               <CardContent className="p-6">
-                <ExpandableTaskList
-                  tasks={completedTasks as any}
+                <TaskListWithCompletion
+                  tasks={overdueTasks as any}
                   isPersonal={isPersonal}
                   initialLimit={5}
                 />
               </CardContent>
             </Card>
-          </>
-        )}
+          )}
 
-        {/* Empty State */}
-        {totalActiveTasks === 0 &&
-          (!completedTasks || completedTasks.length === 0) && (
+          {/* Due Today */}
+          {todayTasks && todayTasks.length > 0 && (
+            <Card className="border-dynamic-orange/20">
+              <CardHeader className="border-dynamic-orange/10 border-b bg-dynamic-orange/5">
+                <CardTitle className="flex items-center gap-2 text-dynamic-orange">
+                  <Calendar className="h-5 w-5" />
+                  {t('ws-tasks.due_today')} ({todayTasks.length})
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-6">
+                <TaskListWithCompletion
+                  tasks={todayTasks as any}
+                  isPersonal={isPersonal}
+                  initialLimit={5}
+                />
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Upcoming Tasks */}
+          {upcomingTasks && upcomingTasks.length > 0 && (
+            <Card className="border-dynamic-blue/20">
+              <CardHeader className="border-dynamic-blue/10 border-b bg-dynamic-blue/5">
+                <CardTitle className="flex items-center gap-2 text-dynamic-blue">
+                  <Flag className="h-5 w-5" />
+                  {t('ws-tasks.upcoming')} ({upcomingTasks.length})
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-6">
+                <TaskListWithCompletion
+                  tasks={upcomingTasks as any}
+                  isPersonal={isPersonal}
+                  initialLimit={5}
+                />
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Empty State */}
+          {totalActiveTasks === 0 && (
             <Card>
               <CardContent className="py-16 text-center">
                 <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-muted">
@@ -416,7 +393,13 @@ async function MyTasksContent({
               </CardContent>
             </Card>
           )}
-      </div>
+        </TabsContent>
+
+        {/* Bucket Dump Tab */}
+        <TabsContent value="bucket" className="mt-6">
+          <BucketDump wsId={wsId} enabled={true} />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

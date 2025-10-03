@@ -36,6 +36,7 @@ interface Props {
   workspace: Workspace;
   user: User;
   currentUser: User;
+  canManageMembers?: boolean;
 }
 
 const FormSchema = z.object({
@@ -48,6 +49,7 @@ export function MemberSettingsButton({
   workspace: ws,
   user,
   currentUser,
+  canManageMembers,
 }: Props) {
   const router = useRouter();
   const t = useTranslations('ws-members');
@@ -216,10 +218,7 @@ export function MemberSettingsButton({
                   </FormDescription>
                 </FormItem>
               )}
-              disabled={
-                currentUser.role === 'MEMBER' ||
-                (currentUser.role === 'ADMIN' && user.role === 'OWNER')
-              }
+              disabled={!canManageMembers}
             />
             {/* <Separator />
             <FormField
@@ -265,30 +264,28 @@ export function MemberSettingsButton({
               )}
               disabled={currentUser.role === 'MEMBER'}
             /> */}
-            {(currentUser.role === 'ADMIN' && user.role === 'OWNER') ||
-              ((currentUser.role !== 'MEMBER' ||
-                currentUser.id === user.id) && (
-                <div className="flex justify-center gap-2">
-                  <Button
-                    type="button"
-                    variant="destructive"
-                    className="flex-none"
-                    onClick={deleteMember}
-                  >
-                    {currentUser.id === user.id
-                      ? 'Leave Workspace'
-                      : user.pending
-                        ? 'Revoke Invitation'
-                        : 'Remove Member'}
-                  </Button>
+            {(canManageMembers || currentUser.id === user.id) && (
+              <div className="flex justify-center gap-2">
+                <Button
+                  type="button"
+                  variant="destructive"
+                  className="flex-none"
+                  onClick={deleteMember}
+                >
+                  {currentUser.id === user.id
+                    ? 'Leave Workspace'
+                    : user.pending
+                      ? 'Revoke Invitation'
+                      : 'Remove Member'}
+                </Button>
 
-                  {currentUser.role === 'MEMBER' || (
-                    <Button type="submit" className="w-full">
-                      Save changes
-                    </Button>
-                  )}
-                </div>
-              ))}
+                {canManageMembers && (
+                  <Button type="submit" className="w-full">
+                    Save changes
+                  </Button>
+                )}
+              </div>
+            )}
           </form>
         </Form>
       </DialogContent>
