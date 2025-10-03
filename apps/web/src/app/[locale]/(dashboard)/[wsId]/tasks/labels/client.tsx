@@ -231,7 +231,7 @@ export default function TaskLabelsClient({ wsId, initialLabels }: Props) {
           </div>
           {labels.length > 0 && (
             <div className="relative flex-1 sm:w-64">
-              <Search className='-translate-y-1/2 absolute top-1/2 left-3 h-4 w-4 text-muted-foreground' />
+              <Search className="-translate-y-1/2 absolute top-1/2 left-3 h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder="Search labels..."
                 value={searchQuery}
@@ -294,7 +294,7 @@ export default function TaskLabelsClient({ wsId, initialLabels }: Props) {
                       aria-label={`Select color ${color}`}
                     >
                       {formData.color === color && (
-                        <Check className='m-auto h-4 w-4 text-white' />
+                        <Check className="m-auto h-4 w-4 text-white" />
                       )}
                     </button>
                   ))}
@@ -358,7 +358,7 @@ export default function TaskLabelsClient({ wsId, initialLabels }: Props) {
             </div>
             <div className="space-y-2">
               <h3 className="font-semibold text-xl">No labels yet</h3>
-              <p className='max-w-sm text-muted-foreground'>
+              <p className="max-w-sm text-muted-foreground">
                 Create your first label to start organizing and categorizing
                 your tasks efficiently
               </p>
@@ -398,7 +398,7 @@ export default function TaskLabelsClient({ wsId, initialLabels }: Props) {
               className="group relative overflow-hidden transition-all hover:shadow-md hover:scale-[1.02] cursor-pointer"
               onClick={() => openEditDialog(label)}
             >
-              <div className='p-3'>
+              <div className="p-3">
                 <div className="flex items-center justify-between gap-2 mb-3">
                   <Badge
                     variant="outline"
@@ -423,11 +423,16 @@ export default function TaskLabelsClient({ wsId, initialLabels }: Props) {
                         <span className="sr-only">Open menu</span>
                       </Button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
-                      <DropdownMenuItem onClick={(e) => {
-                        e.stopPropagation();
-                        openEditDialog(label);
-                      }}>
+                    <DropdownMenuContent
+                      align="end"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <DropdownMenuItem
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          openEditDialog(label);
+                        }}
+                      >
                         <Edit2 className="mr-2 h-4 w-4" />
                         Edit
                       </DropdownMenuItem>
@@ -510,7 +515,7 @@ export default function TaskLabelsClient({ wsId, initialLabels }: Props) {
                       aria-label={`Select color ${color}`}
                     >
                       {formData.color === color && (
-                        <Check className='m-auto h-4 w-4 text-white' />
+                        <Check className="m-auto h-4 w-4 text-white" />
                       )}
                     </button>
                   ))}
