@@ -147,6 +147,10 @@ export type Database = {
         Args: Record<PropertyKey, never>;
         Returns: undefined;
       };
+      cleanup_old_typing_indicators: {
+        Args: Record<PropertyKey, never>;
+        Returns: undefined;
+      };
       cleanup_role_inconsistencies: {
         Args: Record<PropertyKey, never>;
         Returns: undefined;
@@ -8946,6 +8950,35 @@ export type Database = {
           id?: string;
           joined_at?: null | string;
           last_read_at?: null | string;
+          user_id?: string;
+        };
+      };
+      workspace_chat_typing_indicators: {
+        Insert: {
+          channel_id: string;
+          id?: string;
+          updated_at?: null | string;
+          user_id: string;
+        };
+        Relationships: [
+          {
+            columns: ['channel_id'];
+            foreignKeyName: 'workspace_chat_typing_indicators_channel_id_fkey';
+            isOneToOne: false;
+            referencedColumns: ['id'];
+            referencedRelation: 'workspace_chat_channels';
+          },
+        ];
+        Row: {
+          channel_id: string;
+          id: string;
+          updated_at: null | string;
+          user_id: string;
+        };
+        Update: {
+          channel_id?: string;
+          id?: string;
+          updated_at?: null | string;
           user_id?: string;
         };
       };

@@ -60,6 +60,8 @@ export default function RealtimeChatContent({
   const [messageReaders, setMessageReaders] = useState<Map<string, User[]>>(
     new Map()
   );
+  const [typingUsers, setTypingUsers] = useState<Set<string>>(new Set());
+  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const supabase = createClient();
 
@@ -242,6 +244,13 @@ export default function RealtimeChatContent({
               const filtered = prev.filter((m) => !m.id.startsWith('temp-'));
               return [...filtered, newMsg];
             });
+
+            // Remove typing indicator for user who just sent a message
+            setTypingUsers((prev) => {
+              const next = new Set(prev);
+              next.delete(newMsg.user_id);
+              return next;
+            });
           }
         )
         .on(
@@ -301,6 +310,83 @@ export default function RealtimeChatContent({
                 return msgs;
               });
             }
+          }
+        )
+        .on(
+          'postgres_changes',
+          {
+            event: 'INSERT',
+            schema: 'public',
+            table: 'workspace_chat_typing_indicators',
+            filter: `channel_id=eq.${channelId}`,
+          },
+          async (payload) => {
+            const indicator = payload.new as {
+              user_id: string;
+              channel_id: string;
+            };
+            // Only show typing indicator for other users
+            if (indicator.user_id !== userId) {
+              setTypingUsers((prev) => new Set(prev).add(indicator.user_id));
+
+              // Load user info if not already loaded
+              setUsers((prevUsers) => {
+                if (!prevUsers.has(indicator.user_id)) {
+                  supabase
+                    .from('users')
+                    .select('id, display_name, avatar_url')
+                    .eq('id', indicator.user_id)
+                    .single()
+                    .then(({ data: userData }) => {
+                      if (userData) {
+                        setUsers((prev) =>
+                          new Map(prev).set(userData.id, userData)
+                        );
+                      }
+                    });
+                }
+                return prevUsers;
+              });
+            }
+          }
+        )
+        .on(
+          'postgres_changes',
+          {
+            event: 'UPDATE',
+            schema: 'public',
+            table: 'workspace_chat_typing_indicators',
+            filter: `channel_id=eq.${channelId}`,
+          },
+          async (payload) => {
+            const indicator = payload.new as {
+              user_id: string;
+              channel_id: string;
+            };
+            // Only show typing indicator for other users
+            if (indicator.user_id !== userId) {
+              setTypingUsers((prev) => new Set(prev).add(indicator.user_id));
+            }
+          }
+        )
+        .on(
+          'postgres_changes',
+          {
+            event: 'DELETE',
+            schema: 'public',
+            table: 'workspace_chat_typing_indicators',
+            filter: `channel_id=eq.${channelId}`,
+          },
+          async (payload) => {
+            const indicator = payload.old as {
+              user_id: string;
+              channel_id: string;
+            };
+            setTypingUsers((prev) => {
+              const next = new Set(prev);
+              next.delete(indicator.user_id);
+              return next;
+            });
           }
         )
         .subscribe();
@@ -378,6 +464,19 @@ export default function RealtimeChatContent({
     setNewMessage('');
     setIsSending(true);
 
+    // Clear typing indicator timeout
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current);
+      typingTimeoutRef.current = null;
+    }
+
+    // Remove typing indicator
+    await supabase
+      .from('workspace_chat_typing_indicators')
+      .delete()
+      .eq('channel_id', selectedChannel.id)
+      .eq('user_id', userId);
+
     // Optimistic update: immediately add message to UI
     const optimisticMessage: Message = {
       id: `temp-${Date.now()}`,
@@ -406,6 +505,36 @@ export default function RealtimeChatContent({
       return;
     }
   };
+
+  const broadcastTyping = useCallback(async () => {
+    if (!selectedChannel) return;
+
+    // Clear existing timeout
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current);
+    }
+
+    // Upsert typing indicator
+    await supabase
+      .from('workspace_chat_typing_indicators')
+      .upsert(
+        {
+          channel_id: selectedChannel.id,
+          user_id: userId,
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: 'channel_id,user_id' }
+      );
+
+    // Set timeout to remove typing indicator after 3 seconds of inactivity
+    typingTimeoutRef.current = setTimeout(async () => {
+      await supabase
+        .from('workspace_chat_typing_indicators')
+        .delete()
+        .eq('channel_id', selectedChannel.id)
+        .eq('user_id', userId);
+    }, 3000);
+  }, [selectedChannel, supabase, userId]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -769,6 +898,34 @@ export default function RealtimeChatContent({
                       </div>
                     );
                   })}
+
+                  {/* Typing Indicator */}
+                  {typingUsers.size > 0 && (
+                    <div className="flex gap-2 px-2 py-1">
+                      <div className="flex-shrink-0">
+                        <div className="h-7 w-7" />
+                      </div>
+                      <div className="flex min-w-0 flex-col items-start">
+                        <div className="flex items-center gap-2 rounded-lg border border-dynamic-border/50 bg-dynamic-accent/20 px-3 py-2">
+                          <div className="flex gap-1">
+                            <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-dynamic-muted-foreground [animation-delay:-0.3s]" />
+                            <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-dynamic-muted-foreground [animation-delay:-0.15s]" />
+                            <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-dynamic-muted-foreground" />
+                          </div>
+                        </div>
+                        <span className="mt-1 text-[10px] text-dynamic-muted-foreground">
+                          {Array.from(typingUsers)
+                            .map((uid) => {
+                              const user = users.get(uid);
+                              return user?.display_name || 'Someone';
+                            })
+                            .join(', ')}{' '}
+                          {typingUsers.size === 1 ? 'is' : 'are'} typing...
+                        </span>
+                      </div>
+                    </div>
+                  )}
+
                   <div ref={messagesEndRef} />
                 </div>
               )}
@@ -781,7 +938,12 @@ export default function RealtimeChatContent({
                   <Input
                     placeholder={`Message #${selectedChannel.name}`}
                     value={newMessage}
-                    onChange={(e) => setNewMessage(e.target.value)}
+                    onChange={(e) => {
+                      setNewMessage(e.target.value);
+                      if (e.target.value) {
+                        broadcastTyping();
+                      }
+                    }}
                     onKeyDown={handleKeyDown}
                     className="h-9 border-dynamic-border/50 text-sm"
                     disabled={isSending}
