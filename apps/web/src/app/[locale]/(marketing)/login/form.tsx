@@ -28,7 +28,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import { useCallback, useEffect, useState } from 'react';
 import * as z from 'zod';
-import { DEV_MODE, PORT } from '@/constants/common';
+import { DEV_MODE, IS_PRODUCTION_DB, PORT } from '@/constants/common';
 import { trpc } from '@/trpc/client';
 
 // Constants
@@ -476,6 +476,59 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
     }
   };
 
+  const devLogin = async (email: string) => {
+    setLoading(true);
+    try {
+      const response = await fetch('/api/auth/dev-login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to login');
+      }
+
+      // Extract the token from the magic link properties
+      const actionLink = data.properties.action_link;
+      const url = new URL(actionLink);
+      const token = url.searchParams.get('token');
+
+      if (!token) {
+        throw new Error('No token received');
+      }
+
+      // Verify the OTP token using Supabase client
+      const { error } = await supabase.auth.verifyOtp({
+        token_hash: token,
+        type: 'magiclink',
+      });
+
+      if (error) throw error;
+
+      router.refresh();
+
+      if (await needsMFA()) {
+        setRequiresMFA(true);
+      } else {
+        window.location.reload();
+      }
+    } catch (error) {
+      console.error('Dev login error:', error);
+      toast({
+        title: t('login.failed'),
+        description: error instanceof Error ? error.message : 'Failed to login',
+        variant: 'destructive',
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleGoogleLogin = async () => {
     setLoading(true);
     const supabase = createClient();
@@ -556,6 +609,12 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
 
   const onOtpSubmit = async (data: z.infer<typeof OTPFormSchema>) => {
     const { email, otp } = data;
+
+    const skipOtp = DEV_MODE && IS_PRODUCTION_DB;
+    if (skipOtp) {
+      await devLogin(email);
+      return;
+    }
 
     if (!otpSent) await sendOtp({ email });
     else if (otp) await verifyOtp({ email, otp });
@@ -889,6 +948,17 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
                       ? `${t('login.resend')} (${resendCooldown}s)`
                       : t('login.resend')}
                   </Button>
+                )}
+
+                {DEV_MODE && IS_PRODUCTION_DB && !otpSent && (
+                  <div className="rounded-lg border border-dynamic-yellow/30 bg-dynamic-yellow/10 p-3 text-center">
+                    <p className="text-muted-foreground text-xs">
+                      <span className="font-medium">
+                        Dev Mode & Production DB:
+                      </span>{' '}
+                      OTP verification will be bypassed
+                    </p>
+                  </div>
                 )}
               </form>
             </Form>
