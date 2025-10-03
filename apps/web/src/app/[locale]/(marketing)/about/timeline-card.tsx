@@ -26,7 +26,7 @@ export function TimelineCard({
         'relative h-full overflow-hidden border-2 border-border/50 bg-card/80 shadow-lg',
         'transition-all duration-500 ease-in-out hover:shadow-xl',
         isSelected ? 'scale-100 opacity-100' : 'scale-75 opacity-60',
-        'mx-auto w-full max-w-md py-4 md:max-w-md md:py-8 lg:max-w-lg' // Made responsive
+        'mx-auto w-full max-w-md py-4 md:py-8 lg:max-w-lg'
       )}
     >
       <div
