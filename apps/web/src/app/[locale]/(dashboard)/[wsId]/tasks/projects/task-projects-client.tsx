@@ -723,7 +723,7 @@ export function TaskProjectsClient({
           }
         }}
       >
-        <DialogContent>
+        <DialogContent className="max-h-[85vh] flex flex-col">
           <DialogHeader>
             <DialogTitle>Manage Linked Tasks</DialogTitle>
             <DialogDescription>
@@ -732,39 +732,49 @@ export function TaskProjectsClient({
           </DialogHeader>
 
           {managingProject ? (
-            <div className="space-y-4 py-2">
+            <div className="flex-1 space-y-4 overflow-y-auto py-2">
               <div className="space-y-2">
-                <Label className="font-medium text-sm">Linked Tasks</Label>
+                <div className="flex items-center justify-between">
+                  <Label className="font-medium text-sm">Linked Tasks</Label>
+                  {managingProject.linkedTasks.length > 0 && (
+                    <Badge variant="outline" className="text-xs">
+                      {managingProject.linkedTasks.length} task
+                      {managingProject.linkedTasks.length === 1 ? '' : 's'}
+                    </Badge>
+                  )}
+                </div>
                 {managingProject.linkedTasks.length > 0 ? (
-                  <div className="space-y-2">
+                  <div className="space-y-2 max-h-[300px] overflow-y-auto pr-2">
                     {managingProject.linkedTasks.map((task) => (
                       <div
                         key={task.id}
-                        className="flex items-center justify-between rounded-md border border-dynamic-surface/40 bg-dynamic-surface/25 px-3 py-2"
+                        className="flex items-center justify-between gap-2 rounded-md border border-dynamic-surface/40 bg-dynamic-surface/25 px-3 py-2"
                       >
-                        <div>
-                          <p className="font-medium text-sm">{task.name}</p>
-                          <p className="text-muted-foreground text-xs">
+                        <div className="min-w-0 flex-1">
+                          <p className="font-medium text-sm truncate">{task.name}</p>
+                          <p className="text-muted-foreground text-xs truncate">
                             {task.listName ?? 'Unassigned list'}
                           </p>
                         </div>
                         <Button
                           variant="ghost"
                           size="sm"
-                          className="text-dynamic-red hover:text-dynamic-red focus-visible:text-dynamic-red"
+                          className="shrink-0 text-dynamic-red hover:text-dynamic-red focus-visible:text-dynamic-red"
                           onClick={() => handleUnlinkTask(task.id)}
                           disabled={isUnlinking}
                         >
-                          <Trash2 className="mr-2 h-4 w-4" />
-                          Remove
+                          <Trash2 className="h-4 w-4" />
+                          <span className="sr-only">Remove</span>
                         </Button>
                       </div>
                     ))}
                   </div>
                 ) : (
-                  <p className="text-muted-foreground text-sm">
-                    No tasks linked yet.
-                  </p>
+                  <div className="flex h-24 items-center justify-center rounded-md border border-dashed">
+                    <p className="text-center text-muted-foreground text-sm">
+                      No tasks linked yet.
+                    </p>
+                  </div>
                 )}
               </div>
 
@@ -780,7 +790,7 @@ export function TaskProjectsClient({
                   }
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Select task" />
+                    <SelectValue placeholder="Select task to link" />
                   </SelectTrigger>
                   <SelectContent>
                     {tasksLoading ? (
@@ -794,7 +804,14 @@ export function TaskProjectsClient({
                     ) : (
                       filteredTaskOptions.map((task) => (
                         <SelectItem key={task.id} value={task.id}>
-                          {task.name}
+                          <div className="flex items-center gap-2">
+                            <span className="truncate">{task.name}</span>
+                            {task.listName && (
+                              <span className="text-muted-foreground text-xs">
+                                · {task.listName}
+                              </span>
+                            )}
+                          </div>
                         </SelectItem>
                       ))
                     )}
@@ -806,7 +823,7 @@ export function TaskProjectsClient({
                   </p>
                 ) : filteredTaskOptions.length === 0 && !tasksLoading ? (
                   <p className="text-muted-foreground text-sm">
-                    All workspace tasks are already linked.
+                    All workspace tasks are already linked to this project.
                   </p>
                 ) : null}
               </div>
