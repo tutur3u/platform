@@ -184,7 +184,7 @@ export function TaskBoardForm({ wsId, data, children, onFinish }: Props) {
   );
 
   const isEditMode = !!data?.id;
-  const radioId = useId();
+  const blankBoardId = useId();
 
   const formContent = (
     <div className="flex h-full max-h-[min(85vh,800px)] w-full flex-col overflow-hidden">
@@ -211,30 +211,33 @@ export function TaskBoardForm({ wsId, data, children, onFinish }: Props) {
                 onSubmit={form.handleSubmit(onSubmit)}
                 className="space-y-6"
               >
-                {/* Board Name Input */}
-                <div className="flex items-end gap-2">
-                  {DEV_MODE && <IconPicker />}
-                  <FormField
-                    control={form.control}
-                    name="name"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="font-medium text-sm sm:text-base">
-                          {t('ws-task-boards.name')}
-                        </FormLabel>
-                        <FormControl>
-                          <Input
-                            placeholder="Enter board name..."
-                            autoComplete="off"
-                            className="text-sm sm:text-base"
-                            autoFocus
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                {/* Board Name Input - Enhanced Visibility */}
+                <div className="rounded-lg border-2 bg-muted/30 p-4 sm:p-5">
+                  <div className="flex items-end gap-2">
+                    {DEV_MODE && <IconPicker />}
+                    <FormField
+                      control={form.control}
+                      name="name"
+                      render={({ field }) => (
+                        <FormItem className="w-full">
+                          <FormLabel className="font-semibold text-base sm:text-lg">
+                            {t('ws-task-boards.name')}
+                            <span className="ml-1 text-destructive">*</span>
+                          </FormLabel>
+                          <FormControl>
+                            <Input
+                              placeholder="Enter board name..."
+                              autoComplete="off"
+                              className="h-11 border-2 text-base transition-all focus-visible:ring-2 sm:h-12 sm:text-lg"
+                              autoFocus
+                              {...field}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
                 </div>
 
                 {/* Template Selection (only for new boards) */}
@@ -284,7 +287,7 @@ export function TaskBoardForm({ wsId, data, children, onFinish }: Props) {
                                   {/* Blank Template Option */}
                                   <div className="col-span-full">
                                     <Label
-                                      htmlFor="blank"
+                                      htmlFor={blankBoardId}
                                       className={cn(
                                         'flex cursor-pointer items-start space-x-3 rounded-lg border-2 p-3 transition-all duration-200 sm:space-x-4 sm:p-4',
                                         field.value === '' || !field.value
@@ -293,7 +296,7 @@ export function TaskBoardForm({ wsId, data, children, onFinish }: Props) {
                                       )}
                                     >
                                       <RadioGroupItem
-                                        id={radioId}
+                                        id={blankBoardId}
                                         value=""
                                         className="mt-0.5 sm:mt-1"
                                       />
