@@ -751,7 +751,9 @@ export function TaskProjectsClient({
                         className="flex items-center justify-between gap-2 rounded-md border border-dynamic-surface/40 bg-dynamic-surface/25 px-3 py-2"
                       >
                         <div className="min-w-0 flex-1">
-                          <p className="font-medium text-sm truncate">{task.name}</p>
+                          <p className="font-medium text-sm truncate">
+                            {task.name}
+                          </p>
                           <p className="text-muted-foreground text-xs truncate">
                             {task.listName ?? 'Unassigned list'}
                           </p>

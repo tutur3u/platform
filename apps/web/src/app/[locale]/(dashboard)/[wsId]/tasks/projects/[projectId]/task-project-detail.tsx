@@ -58,8 +58,11 @@ export function TaskProjectDetail({
     estimationRange: null,
     includeMyTasks: false,
   });
-  const [listStatusFilter, setListStatusFilter] = useState<ListStatusFilter>('active');
-  const [taskOverrides, setTaskOverrides] = useState<Record<string, Partial<Task>>>({});
+  const [listStatusFilter, setListStatusFilter] =
+    useState<ListStatusFilter>('active');
+  const [taskOverrides, setTaskOverrides] = useState<
+    Record<string, Partial<Task>>
+  >({});
 
   // Filter lists based on selected status filter
   const filteredLists = useMemo(() => {
@@ -147,7 +150,7 @@ export function TaskProjectDetail({
   const handleUpdate = async () => {
     // Refresh tasks for this project
     await queryClient.invalidateQueries({
-      queryKey: ['workspace', wsId, 'task-projects', project.id]
+      queryKey: ['workspace', wsId, 'task-projects', project.id],
     });
   };
 

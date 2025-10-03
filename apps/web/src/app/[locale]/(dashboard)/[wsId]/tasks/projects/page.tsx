@@ -68,9 +68,10 @@ export default async function TaskProjectsPage({ params }: Props) {
 
         const formattedProjects = (projects ?? []).map((project) => {
           // Filter out soft-deleted tasks
-          const activeTasks = project.task_project_tasks?.filter(
-            (link) => link.task && link.task.deleted === false
-          ) ?? [];
+          const activeTasks =
+            project.task_project_tasks?.filter(
+              (link) => link.task && link.task.deleted === false
+            ) ?? [];
 
           return {
             id: project.id,
@@ -80,19 +81,18 @@ export default async function TaskProjectsPage({ params }: Props) {
             creator_id: project.creator_id,
             creator: project.creator,
             tasksCount: activeTasks.length,
-            linkedTasks:
-              activeTasks.flatMap((link) =>
-                link.task
-                  ? [
-                      {
-                        id: link.task.id,
-                        name: link.task.name,
-                        completed: link.task.completed,
-                        listName: link.task.task_lists?.name ?? null,
-                      },
-                    ]
-                  : []
-              ),
+            linkedTasks: activeTasks.flatMap((link) =>
+              link.task
+                ? [
+                    {
+                      id: link.task.id,
+                      name: link.task.name,
+                      completed: link.task.completed,
+                      listName: link.task.task_lists?.name ?? null,
+                    },
+                  ]
+                : []
+            ),
           };
         });
 

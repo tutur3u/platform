@@ -309,9 +309,9 @@ export function BoardHeader({
                     <AlertDialogHeader>
                       <AlertDialogTitle>Are you sure?</AlertDialogTitle>
                       <AlertDialogDescription>
-                        This action cannot be undone. This will permanently delete
-                        the board &quot;{board.name}&quot; and all of its tasks
-                        and lists.
+                        This action cannot be undone. This will permanently
+                        delete the board &quot;{board.name}&quot; and all of its
+                        tasks and lists.
                       </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
