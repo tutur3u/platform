@@ -19,6 +19,22 @@ export async function POST(request: Request) {
 
     const userId = await checkIfUserExists({ email: validatedEmail });
 
+    // Get and validate origin for redirect URL
+    const origin =
+      request.headers.get('origin') || process.env.NEXT_PUBLIC_APP_URL;
+
+    if (
+      !origin ||
+      (!origin.startsWith('http://') && !origin.startsWith('https://'))
+    ) {
+      return NextResponse.json(
+        { error: 'Invalid or missing origin for redirect URL' },
+        { status: 400 }
+      );
+    }
+
+    const redirectTo = `${origin}/auth/callback`;
+
     // Get admin client for privileged operations
     const sbAdmin = await createAdminClient();
 
@@ -31,7 +47,11 @@ export async function POST(request: Request) {
       );
 
       if (updateError) {
-        return { error: updateError.message };
+        console.error('Error updating user:', updateError);
+        return NextResponse.json(
+          { error: 'Failed to update user' },
+          { status: 500 }
+        );
       }
 
       // Generate session for user using admin privileges
@@ -41,7 +61,7 @@ export async function POST(request: Request) {
           type: 'magiclink',
           email: validatedEmail,
           options: {
-            redirectTo: `${request.headers.get('origin')}/auth/callback`,
+            redirectTo,
           },
         });
 
@@ -66,8 +86,9 @@ export async function POST(request: Request) {
       });
 
       if (signUpError) {
+        console.error('Error creating user:', signUpError);
         return NextResponse.json(
-          { error: 'Failed to create user: ', signUpError },
+          { error: 'Failed to create user:' },
           { status: 500 }
         );
       }
@@ -77,7 +98,7 @@ export async function POST(request: Request) {
           type: 'magiclink',
           email: validatedEmail,
           options: {
-            redirectTo: `${request.headers.get('origin')}/auth/callback`,
+            redirectTo,
           },
         });
 
