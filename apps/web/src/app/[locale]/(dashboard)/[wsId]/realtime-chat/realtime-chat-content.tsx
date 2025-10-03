@@ -412,8 +412,8 @@ export default function RealtimeChatContent({
   }, [selectedChannel, joinChannel, loadMessages, subscribeToMessages]);
 
   useEffect(() => {
-    scrollToBottom();
-  }, [scrollToBottom]);
+    if (messages.length > 0) scrollToBottom();
+  }, [messages, scrollToBottom]);
 
   // Update read status when viewing messages
   useEffect(() => {
