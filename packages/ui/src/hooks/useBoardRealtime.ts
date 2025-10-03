@@ -10,7 +10,8 @@ export function useBoardRealtime(
   boardId: string,
   taskIds: string[],
   listIds: string[],
-  options?: {
+  options: {
+    enabled?: boolean;
     onTaskChange?: (
       task: Task,
       eventType: 'INSERT' | 'UPDATE' | 'DELETE'
@@ -21,6 +22,7 @@ export function useBoardRealtime(
     ) => void;
   }
 ) {
+  const { enabled = true, onTaskChange, onListChange } = options;
   const queryClient = useQueryClient();
 
   const stableTaskIds = useStableArray(taskIds);
@@ -29,18 +31,18 @@ export function useBoardRealtime(
   // Create stable callback functions
   const handleTaskChange = useCallbackRef(
     (task: Task, eventType: 'INSERT' | 'UPDATE' | 'DELETE') => {
-      options?.onTaskChange?.(task, eventType);
+      onTaskChange?.(task, eventType);
     }
   );
 
   const handleListChange = useCallbackRef(
     (list: TaskList, eventType: 'INSERT' | 'UPDATE' | 'DELETE') => {
-      options?.onListChange?.(list, eventType);
+      onListChange?.(list, eventType);
     }
   );
 
   useEffect(() => {
-    if (!boardId) return;
+    if (!boardId || !enabled) return;
 
     const supabase = createClient();
     const channel = supabase.channel(`board-realtime-${boardId}`);
@@ -208,6 +210,7 @@ export function useBoardRealtime(
     };
   }, [
     boardId,
+    enabled,
     stableTaskIds,
     stableListIds,
     queryClient,

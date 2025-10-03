@@ -23,7 +23,6 @@ import {
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
 import { useToast } from '@tuturuuu/ui/hooks/use-toast';
-import { usePresence } from '@tuturuuu/ui/hooks/usePresence';
 import {
   Box,
   Calendar,
@@ -59,7 +58,7 @@ import {
   buildEstimationIndices,
   mapEstimationPoints,
 } from './estimation-mapping';
-import { UserPresenceAvatars } from './user-presence-avatars';
+import { UserPresenceAvatarsComponent } from './user-presence-avatars';
 
 interface TaskEditDialogProps {
   task?: Task;
@@ -1451,7 +1450,9 @@ function TaskEditDialogComponent({
               <div className="flex items-center gap-1 md:gap-2">
                 {/* Online Users */}
                 {showUserPresence && isOpen && !isCreateMode && (
-                  <UserPresenceAvatarsComponent taskId={task?.id ?? ''} />
+                  <UserPresenceAvatarsComponent
+                    channelName={`task_presence_${task?.id}`}
+                  />
                 )}
                 {isCreateMode && (
                   <label className="hidden items-center gap-2 text-muted-foreground text-xs md:flex">
@@ -2559,21 +2560,6 @@ function TaskEditDialogComponent({
         </DialogContent>
       </Dialog>
     </>
-  );
-}
-
-// If this component is unmounted (closing the dialog), the presence state will be cleaned up
-function UserPresenceAvatarsComponent({ taskId }: { taskId: string }) {
-  const { presenceState, currentUserId } = usePresence(
-    `task_presence_${taskId}`
-  );
-
-  return (
-    <UserPresenceAvatars
-      presenceState={presenceState}
-      currentUserId={currentUserId}
-      maxDisplay={5}
-    />
   );
 }
 

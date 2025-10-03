@@ -232,15 +232,14 @@ export function BoardViews({
     <div className="-m-2 md:-mx-4 flex h-[calc(100vh-1rem)] flex-1 flex-col">
       <BoardHeader
         board={board}
-        tasks={tasks}
-        lists={lists}
-        currentView={currentView}
         currentUserId={currentUserId}
+        currentView={currentView}
         onViewChange={setCurrentView}
         filters={filters}
         onFiltersChange={setFilters}
         listStatusFilter={listStatusFilter}
         onListStatusFilterChange={setListStatusFilter}
+        isPersonalWorkspace={workspace.personal}
       />
       <div className="h-full overflow-hidden">{renderView()}</div>
 
