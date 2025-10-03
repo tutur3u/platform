@@ -14,8 +14,16 @@ const updateCycleSchema = z.object({
   name: z.string().min(1, 'Cycle name is required').max(255),
   description: z.string().max(1000).optional(),
   status: cycleStatusSchema,
-  start_date: z.string().datetime().optional().or(z.string().length(0)),
-  end_date: z.string().datetime().optional().or(z.string().length(0)),
+  start_date: z
+    .string()
+    .optional()
+    .nullable()
+    .transform((val) => (val?.trim() ? val : null)),
+  end_date: z
+    .string()
+    .optional()
+    .nullable()
+    .transform((val) => (val?.trim() ? val : null)),
 });
 
 export async function PUT(
