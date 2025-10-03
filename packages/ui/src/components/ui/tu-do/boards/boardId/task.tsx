@@ -1359,7 +1359,8 @@ function TaskCardInner({
                         }
                         className="cursor-pointer"
                       >
-                        <div className="flex items-center gap-2">Today</div>
+                        <Calendar className="h-4 w-4 text-dynamic-green" />
+                        Today
                       </DropdownMenuItem>
                       <DropdownMenuItem
                         onSelect={(e) =>
@@ -1370,7 +1371,8 @@ function TaskCardInner({
                         }
                         className="cursor-pointer"
                       >
-                        <div className="flex items-center gap-2">Tomorrow</div>
+                        <Calendar className="h-4 w-4 text-dynamic-blue" />
+                        Tomorrow
                       </DropdownMenuItem>
                       <DropdownMenuItem
                         onSelect={(e) =>
@@ -1381,7 +1383,8 @@ function TaskCardInner({
                         }
                         className="cursor-pointer"
                       >
-                        <div className="flex items-center gap-2">Next Week</div>
+                        <Calendar className="h-4 w-4 text-dynamic-purple" />
+                        Next Week
                       </DropdownMenuItem>
                       <DropdownMenuItem
                         onSelect={(e) =>
@@ -1392,9 +1395,8 @@ function TaskCardInner({
                         }
                         className="cursor-pointer"
                       >
-                        <div className="flex items-center gap-2">
-                          Next Month
-                        </div>
+                        <Calendar className="h-4 w-4 text-dynamic-orange" />
+                        Next Month
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem
@@ -1471,14 +1473,17 @@ function TaskCardInner({
                               )}
                               disabled={estimationSaving || disabledByExtended}
                             >
-                              <span>
-                                {label}
-                                {disabledByExtended && (
-                                  <span className="ml-1 text-[10px] text-muted-foreground/60">
-                                    (upgrade)
-                                  </span>
-                                )}
-                              </span>
+                              <div className="flex items-center gap-2">
+                                <Timer className="h-4 w-4 text-dynamic-pink" />
+                                <span>
+                                  {label}
+                                  {disabledByExtended && (
+                                    <span className="ml-1 text-[10px] text-muted-foreground/60">
+                                      (upgrade)
+                                    </span>
+                                  )}
+                                </span>
+                              </div>
                               {task.estimation_points === idx && (
                                 <Check className="h-4 w-4" />
                               )}
@@ -1543,7 +1548,13 @@ function TaskCardInner({
                                       'bg-dynamic-cyan/10 text-dynamic-cyan'
                                   )}
                                 >
-                                  <span className="truncate">{label.name}</span>
+                                  <div className="flex items-center gap-2">
+                                    <span
+                                      className="h-3 w-3 rounded-full"
+                                      style={{ backgroundColor: label.color, opacity: 0.9 }}
+                                    />
+                                    <span className="truncate">{label.name}</span>
+                                  </div>
                                   {active && <Check className="h-4 w-4" />}
                                 </DropdownMenuItem>
                               );
