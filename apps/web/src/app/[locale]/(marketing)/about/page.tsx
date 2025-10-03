@@ -105,43 +105,73 @@ export default function AboutPage() {
       </div>
 
       {/* Hero Section */}
-      <section className="relative px-4 pt-32 pb-20 sm:px-6 lg:px-8">
+      <section className="relative px-4 pt-24 pb-16 sm:px-6 sm:pt-32 sm:pb-20 lg:px-8 lg:pt-40 lg:pb-24">
         <div className="container mx-auto max-w-7xl">
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
+            transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
             className="text-center"
           >
-            <Badge
-              variant="secondary"
-              className="mb-6 border-dynamic-purple/30 bg-dynamic-purple/10 text-dynamic-purple hover:bg-dynamic-purple/20"
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.1, duration: 0.5 }}
             >
-              <Sparkles className="mr-1.5 h-3.5 w-3.5" />
-              {t('hero.badge')}
-            </Badge>
+              <Badge
+                variant="secondary"
+                className="mb-6 border-dynamic-purple/30 bg-dynamic-purple/10 text-dynamic-purple transition-all hover:scale-105 hover:bg-dynamic-purple/20 hover:shadow-lg hover:shadow-dynamic-purple/20"
+              >
+                <Sparkles className="mr-1.5 h-3.5 w-3.5" />
+                {t('hero.badge')}
+              </Badge>
+            </motion.div>
 
-            <h1 className="mb-6 text-balance font-bold text-5xl tracking-tight sm:text-6xl md:text-7xl">
+            <motion.h1
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2, duration: 0.8 }}
+              className="mb-6 text-balance font-bold text-4xl tracking-tight sm:text-5xl md:text-6xl lg:text-7xl"
+            >
               {t('hero.title.part1')}{' '}
               <span className="bg-gradient-to-r from-dynamic-purple via-dynamic-pink to-dynamic-orange bg-clip-text text-transparent">
                 {t('hero.title.highlight')}
               </span>
               <br />
               {t('hero.title.part2')}
-            </h1>
+            </motion.h1>
 
-            <p className="mx-auto mb-12 max-w-3xl text-balance text-foreground/70 text-lg leading-relaxed sm:text-xl">
+            <motion.p
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3, duration: 0.8 }}
+              className="mx-auto mb-12 max-w-3xl text-balance text-foreground/70 text-base leading-relaxed sm:text-lg md:text-xl"
+            >
               {t('hero.description')}
-            </p>
+            </motion.p>
 
-            <div className="flex flex-wrap items-center justify-center gap-4">
-              <Button size="lg" className="group" asChild>
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4, duration: 0.8 }}
+              className="flex flex-col flex-wrap items-center justify-center gap-3 sm:flex-row sm:gap-4"
+            >
+              <Button
+                size="lg"
+                className="group w-full shadow-lg transition-all hover:scale-105 hover:shadow-xl sm:w-auto"
+                asChild
+              >
                 <Link href="#vision">
                   {t('hero.cta.vision')}
                   <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
                 </Link>
               </Button>
-              <Button size="lg" variant="outline" asChild>
+              <Button
+                size="lg"
+                variant="outline"
+                className="w-full transition-all hover:scale-105 sm:w-auto"
+                asChild
+              >
                 <Link
                   href="https://github.com/tutur3u/platform"
                   target="_blank"
@@ -150,7 +180,7 @@ export default function AboutPage() {
                   {t('hero.cta.openSource')}
                 </Link>
               </Button>
-            </div>
+            </motion.div>
           </motion.div>
         </div>
       </section>
@@ -813,10 +843,10 @@ export default function AboutPage() {
           </motion.div>
 
           <div className="relative">
-            {/* Timeline line */}
-            <div className="absolute top-0 bottom-0 left-8 w-0.5 bg-gradient-to-b from-dynamic-purple via-dynamic-blue to-dynamic-green md:left-1/2" />
+            {/* Timeline line - hidden on mobile, visible on md+ */}
+            <div className="absolute top-0 bottom-0 left-1/2 hidden w-0.5 -translate-x-1/2 bg-gradient-to-b from-dynamic-purple via-dynamic-blue to-dynamic-green md:block" />
 
-            <div className="space-y-12">
+            <div className="space-y-8 md:space-y-12">
               {[
                 {
                   phaseKey: 'timeline.foundation.phase',
@@ -870,21 +900,26 @@ export default function AboutPage() {
               ].map((milestone, index) => (
                 <motion.div
                   key={index}
-                  initial={{ opacity: 0, x: index % 2 === 0 ? -20 : 20 }}
-                  whileInView={{ opacity: 1, x: 0 }}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
-                  transition={{ delay: index * 0.2 }}
-                  className={cn(
-                    'relative grid gap-8 md:grid-cols-2',
-                    index % 2 === 0 ? 'md:text-right' : 'md:flex-row-reverse'
-                  )}
+                  transition={{ delay: index * 0.1 }}
+                  className="relative"
                 >
-                  {/* Content */}
+                  {/* Mobile: simple stacked layout, Desktop: alternating grid */}
                   <div
-                    className={
-                      index % 2 === 0 ? 'md:pr-16' : 'md:col-start-2 md:pl-16'
-                    }
+                    className={cn(
+                      'md:grid md:grid-cols-2 md:gap-8',
+                      index % 2 === 0 ? '' : 'md:grid-flow-dense'
+                    )}
                   >
+                    {/* Content Card */}
+                    <div
+                      className={cn(
+                        'relative',
+                        index % 2 === 0 ? 'md:pr-12' : 'md:col-start-2 md:pl-12'
+                      )}
+                    >
                     <Card
                       className={cn(
                         'p-6 transition-all hover:shadow-lg',
@@ -926,23 +961,24 @@ export default function AboutPage() {
                         ))}
                       </div>
                     </Card>
-                  </div>
+                    </div>
 
-                  {/* Timeline node */}
-                  <div className="md:-translate-x-1/2 absolute top-6 left-8 md:left-1/2">
-                    <div className="relative flex h-16 w-16 items-center justify-center rounded-full border-4 border-background bg-background shadow-lg">
-                      <div
-                        className={cn(
-                          'absolute inset-1 rounded-full',
-                          `bg-dynamic-${milestone.color}/20`
-                        )}
-                      />
-                      <milestone.icon
-                        className={cn(
-                          'relative z-10 h-8 w-8',
-                          `text-dynamic-${milestone.color}`
-                        )}
-                      />
+                    {/* Timeline node - hidden on mobile, shown on desktop */}
+                    <div className="absolute top-6 left-1/2 hidden -translate-x-1/2 md:block">
+                      <div className="relative flex h-14 w-14 items-center justify-center rounded-full border-4 border-background bg-background shadow-lg lg:h-16 lg:w-16">
+                        <div
+                          className={cn(
+                            'absolute inset-1 rounded-full',
+                            `bg-dynamic-${milestone.color}/20`
+                          )}
+                        />
+                        <milestone.icon
+                          className={cn(
+                            'relative z-10 h-6 w-6 lg:h-8 lg:w-8',
+                            `text-dynamic-${milestone.color}`
+                          )}
+                        />
+                      </div>
                     </div>
                   </div>
                 </motion.div>

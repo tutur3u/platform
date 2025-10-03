@@ -88,49 +88,84 @@ export default function MarketingPage() {
       </div>
 
       {/* Hero Section */}
-      <section className="relative px-4 pt-32 pb-24 sm:px-6 lg:px-8">
+      <section className="relative px-4 pt-24 pb-16 sm:px-6 sm:pt-32 sm:pb-20 lg:px-8 lg:pt-40 lg:pb-24">
         <div className="container mx-auto max-w-7xl">
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
+            transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
             className="text-center"
           >
-            <Badge
-              variant="secondary"
-              className="mb-6 border-dynamic-purple/30 bg-dynamic-purple/10 text-dynamic-purple hover:bg-dynamic-purple/20"
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.1, duration: 0.5 }}
             >
-              <Sparkles className="mr-1.5 h-3.5 w-3.5" />
-              {t('hero.badge')}
-            </Badge>
+              <Badge
+                variant="secondary"
+                className="mb-6 border-dynamic-purple/30 bg-dynamic-purple/10 text-dynamic-purple transition-all hover:scale-105 hover:bg-dynamic-purple/20 hover:shadow-lg hover:shadow-dynamic-purple/20"
+              >
+                <Sparkles className="mr-1.5 h-3.5 w-3.5" />
+                {t('hero.badge')}
+              </Badge>
+            </motion.div>
 
-            <h1 className="mb-6 text-balance font-bold text-5xl tracking-tight sm:text-6xl md:text-7xl lg:text-8xl">
+            <motion.h1
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2, duration: 0.8 }}
+              className="mb-6 text-balance font-bold text-4xl tracking-tight sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl"
+            >
               {t('hero.title.part1')}{' '}
-              <span className="bg-gradient-to-r from-dynamic-purple via-dynamic-pink to-dynamic-orange bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-dynamic-purple via-dynamic-pink to-dynamic-orange bg-clip-text text-transparent animate-gradient">
                 {t('hero.title.part2')}
               </span>
-            </h1>
+            </motion.h1>
 
-            <p className="mx-auto mb-8 max-w-3xl text-balance text-foreground/70 text-lg leading-relaxed sm:text-xl md:text-2xl">
+            <motion.p
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3, duration: 0.8 }}
+              className="mx-auto mb-8 max-w-3xl text-balance text-foreground/70 text-base leading-relaxed sm:text-lg md:text-xl lg:text-2xl"
+            >
               {t('hero.description.part1')}{' '}
               <strong className="text-foreground">Tuturuuu</strong>{' '}
               {t('hero.description.part2')}
-            </p>
+            </motion.p>
 
-            <div className="mb-12 flex flex-wrap items-center justify-center gap-4">
-              <Button size="lg" className="group" asChild>
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4, duration: 0.8 }}
+              className="mb-12 flex flex-col flex-wrap items-center justify-center gap-3 sm:flex-row sm:gap-4"
+            >
+              <Button
+                size="lg"
+                className="group w-full shadow-lg transition-all hover:scale-105 hover:shadow-xl sm:w-auto"
+                asChild
+              >
                 <Link href="/onboarding">
                   {t('hero.cta.getStarted')}
                   <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
                 </Link>
               </Button>
-              <Button size="lg" variant="outline" asChild>
+              <Button
+                size="lg"
+                variant="outline"
+                className="w-full transition-all hover:scale-105 sm:w-auto"
+                asChild
+              >
                 <Link href="#features">
                   <Layers className="mr-2 h-5 w-5" />
                   {t('hero.cta.exploreFeatures')}
                 </Link>
               </Button>
-              <Button size="lg" variant="outline" asChild>
+              <Button
+                size="lg"
+                variant="outline"
+                className="w-full transition-all hover:scale-105 sm:w-auto"
+                asChild
+              >
                 <Link
                   href="https://github.com/tutur3u/platform"
                   target="_blank"
@@ -139,27 +174,32 @@ export default function MarketingPage() {
                   {t('hero.cta.viewGitHub')}
                 </Link>
               </Button>
-            </div>
+            </motion.div>
 
             {/* Trust Indicators */}
-            <div className="flex flex-wrap items-center justify-center gap-6 text-foreground/60 text-sm">
-              <div className="flex items-center gap-2">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.5, duration: 0.8 }}
+              className="flex flex-col flex-wrap items-center justify-center gap-4 text-foreground/60 text-sm sm:flex-row sm:gap-6"
+            >
+              <div className="flex items-center gap-2 transition-colors hover:text-foreground/80">
                 <CheckCircle2 className="h-4 w-4 text-dynamic-green" />
                 {t('hero.trust.openSource')}
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 transition-colors hover:text-foreground/80">
                 <CheckCircle2 className="h-4 w-4 text-dynamic-green" />
                 {t('hero.trust.commits')}
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 transition-colors hover:text-foreground/80">
                 <CheckCircle2 className="h-4 w-4 text-dynamic-green" />
                 {t('hero.trust.contributors')}
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 transition-colors hover:text-foreground/80">
                 <CheckCircle2 className="h-4 w-4 text-dynamic-green" />
                 {t('hero.trust.freePlan')}
               </div>
-            </div>
+            </motion.div>
           </motion.div>
         </div>
       </section>
@@ -266,13 +306,14 @@ export default function MarketingPage() {
       </section>
 
       {/* Features Section */}
-      <section id="features" className="relative px-4 py-24 sm:px-6 lg:px-8">
+      <section id="features" className="relative scroll-mt-20 px-4 py-16 sm:px-6 sm:py-20 lg:px-8 lg:py-24">
         <div className="container mx-auto max-w-7xl">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="mb-16 text-center"
+            transition={{ duration: 0.6 }}
+            className="mb-12 text-center sm:mb-16"
           >
             <h2 className="mb-4 font-bold text-4xl sm:text-5xl">
               {t('features.title.part1')}{' '}
@@ -413,25 +454,25 @@ export default function MarketingPage() {
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
             >
-              <Card className="h-full overflow-hidden border-dynamic-green/30 bg-gradient-to-br from-dynamic-green/5 via-background to-background p-8">
-                <div className="mb-6 flex items-center gap-4">
-                  <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-dynamic-green/10">
-                    <CheckCircle2 className="h-7 w-7 text-dynamic-green" />
+              <Card className="h-full overflow-hidden border-dynamic-green/30 bg-gradient-to-br from-dynamic-green/5 via-background to-background p-4 sm:p-6 md:p-8">
+                <div className="mb-4 flex flex-col gap-3 sm:mb-6 sm:flex-row sm:items-center sm:gap-4">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-dynamic-green/10 sm:h-14 sm:w-14">
+                    <CheckCircle2 className="h-6 w-6 text-dynamic-green sm:h-7 sm:w-7" />
                   </div>
                   <div>
-                    <h3 className="mb-1 font-bold text-2xl">
+                    <h3 className="mb-1 font-bold text-xl sm:text-2xl">
                       {t('demo.taskManagement.title')}
                     </h3>
-                    <p className="text-foreground/60 text-sm">
+                    <p className="text-foreground/60 text-xs sm:text-sm">
                       {t('demo.taskManagement.subtitle')}
                     </p>
                   </div>
                 </div>
 
-                <div className="space-y-4">
+                <div className="space-y-3 sm:space-y-4">
                   {/* Sample Task Cards */}
-                  <div className="group rounded-lg border border-dynamic-green/20 bg-background/50 p-4 transition-all hover:border-dynamic-green/40 hover:shadow-md">
-                    <div className="mb-2 flex items-start justify-between">
+                  <div className="group rounded-lg border border-dynamic-green/20 bg-background/50 p-3 transition-all hover:border-dynamic-green/40 hover:shadow-md sm:p-4">
+                    <div className="mb-2 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
                       <div className="flex items-center gap-3">
                         <div className="flex h-5 w-5 items-center justify-center rounded border-2 border-dynamic-green/30 transition-colors group-hover:border-dynamic-green group-hover:bg-dynamic-green/10">
                           <Check className="h-3 w-3 text-dynamic-green opacity-0 transition-opacity group-hover:opacity-100" />
@@ -569,22 +610,22 @@ export default function MarketingPage() {
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
             >
-              <Card className="h-full overflow-hidden border-dynamic-blue/30 bg-gradient-to-br from-dynamic-blue/5 via-background to-background p-8">
-                <div className="mb-6 flex items-center gap-4">
-                  <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-dynamic-blue/10">
-                    <Calendar className="h-7 w-7 text-dynamic-blue" />
+              <Card className="h-full overflow-hidden border-dynamic-blue/30 bg-gradient-to-br from-dynamic-blue/5 via-background to-background p-4 sm:p-6 md:p-8">
+                <div className="mb-4 flex flex-col gap-3 sm:mb-6 sm:flex-row sm:items-center sm:gap-4">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-dynamic-blue/10 sm:h-14 sm:w-14">
+                    <Calendar className="h-6 w-6 text-dynamic-blue sm:h-7 sm:w-7" />
                   </div>
                   <div>
-                    <h3 className="mb-1 font-bold text-2xl">
+                    <h3 className="mb-1 font-bold text-xl sm:text-2xl">
                       {t('demo.calendar.title')}
                     </h3>
-                    <p className="text-foreground/60 text-sm">
+                    <p className="text-foreground/60 text-xs sm:text-sm">
                       {t('demo.calendar.subtitle')}
                     </p>
                   </div>
                 </div>
 
-                <div className="space-y-3">
+                <div className="space-y-3 sm:space-y-4">
                   {/* Today's Schedule */}
                   <div className="rounded-lg border border-dynamic-blue/20 bg-background/50 p-4">
                     <div className="mb-3 flex items-center justify-between">
@@ -715,16 +756,16 @@ export default function MarketingPage() {
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
             >
-              <Card className="h-full overflow-hidden border-dynamic-purple/30 bg-gradient-to-br from-dynamic-purple/5 via-background to-background p-8">
-                <div className="mb-6 flex items-center gap-4">
-                  <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-dynamic-purple/10">
-                    <Bot className="h-7 w-7 text-dynamic-purple" />
+              <Card className="h-full overflow-hidden border-dynamic-purple/30 bg-gradient-to-br from-dynamic-purple/5 via-background to-background p-4 sm:p-6 md:p-8">
+                <div className="mb-4 flex flex-col gap-3 sm:mb-6 sm:flex-row sm:items-center sm:gap-4">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-dynamic-purple/10 sm:h-14 sm:w-14">
+                    <Bot className="h-6 w-6 text-dynamic-purple sm:h-7 sm:w-7" />
                   </div>
                   <div>
-                    <h3 className="mb-1 font-bold text-2xl">
+                    <h3 className="mb-1 font-bold text-xl sm:text-2xl">
                       {t('demo.aiChat.title')}
                     </h3>
-                    <p className="text-foreground/60 text-sm">
+                    <p className="text-foreground/60 text-xs sm:text-sm">
                       {t('demo.aiChat.subtitle')}
                     </p>
                   </div>
@@ -732,37 +773,37 @@ export default function MarketingPage() {
 
                 <div className="space-y-4">
                   {/* Chat Messages */}
-                  <div className="space-y-3 rounded-lg border border-dynamic-purple/20 bg-background/50 p-4">
+                  <div className="space-y-3 rounded-lg border border-dynamic-purple/20 bg-background/50 p-3 sm:p-4">
                     {/* User Message */}
                     <div className="flex justify-end">
-                      <div className="max-w-[80%] rounded-lg bg-dynamic-blue/20 px-4 py-2">
-                        <p className="text-sm">
+                      <div className="max-w-[85%] rounded-lg bg-dynamic-blue/20 px-3 py-2 sm:max-w-[80%] sm:px-4">
+                        <p className="text-xs leading-relaxed sm:text-sm">
                           {t('demo.aiChat.userMessage1')}
                         </p>
                       </div>
                     </div>
 
                     {/* AI Response */}
-                    <div className="flex gap-3">
-                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-dynamic-purple/20">
-                        <Bot className="h-4 w-4 text-dynamic-purple" />
+                    <div className="flex gap-2 sm:gap-3">
+                      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-dynamic-purple/20 sm:h-8 sm:w-8">
+                        <Bot className="h-3.5 w-3.5 text-dynamic-purple sm:h-4 sm:w-4" />
                       </div>
-                      <div className="max-w-[80%] rounded-lg bg-dynamic-purple/10 px-4 py-2">
-                        <p className="mb-2 text-sm leading-relaxed">
+                      <div className="max-w-[85%] rounded-lg bg-dynamic-purple/10 px-3 py-2 sm:max-w-[80%] sm:px-4">
+                        <p className="mb-2 text-xs leading-relaxed sm:text-sm">
                           {t('demo.aiChat.aiResponse1.intro')}
                         </p>
-                        <ul className="space-y-1 text-sm">
-                          <li className="flex items-center gap-2">
-                            <CheckCircle2 className="h-3 w-3 text-dynamic-green" />
-                            {t('demo.aiChat.aiResponse1.item1')}
+                        <ul className="space-y-1 text-xs sm:text-sm">
+                          <li className="flex items-start gap-2">
+                            <CheckCircle2 className="mt-0.5 h-3 w-3 shrink-0 text-dynamic-green" />
+                            <span>{t('demo.aiChat.aiResponse1.item1')}</span>
                           </li>
-                          <li className="flex items-center gap-2">
-                            <CheckCircle2 className="h-3 w-3 text-dynamic-green" />
-                            {t('demo.aiChat.aiResponse1.item2')}
+                          <li className="flex items-start gap-2">
+                            <CheckCircle2 className="mt-0.5 h-3 w-3 shrink-0 text-dynamic-green" />
+                            <span>{t('demo.aiChat.aiResponse1.item2')}</span>
                           </li>
-                          <li className="flex items-center gap-2">
-                            <CheckCircle2 className="h-3 w-3 text-dynamic-green" />
-                            {t('demo.aiChat.aiResponse1.item3')}
+                          <li className="flex items-start gap-2">
+                            <CheckCircle2 className="mt-0.5 h-3 w-3 shrink-0 text-dynamic-green" />
+                            <span>{t('demo.aiChat.aiResponse1.item3')}</span>
                           </li>
                         </ul>
                       </div>
@@ -770,20 +811,20 @@ export default function MarketingPage() {
 
                     {/* User Message */}
                     <div className="flex justify-end">
-                      <div className="max-w-[80%] rounded-lg bg-dynamic-blue/20 px-4 py-2">
-                        <p className="text-sm">
+                      <div className="max-w-[85%] rounded-lg bg-dynamic-blue/20 px-3 py-2 sm:max-w-[80%] sm:px-4">
+                        <p className="text-xs leading-relaxed sm:text-sm">
                           {t('demo.aiChat.userMessage2')}
                         </p>
                       </div>
                     </div>
 
                     {/* AI Response */}
-                    <div className="flex gap-3">
-                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-dynamic-purple/20">
-                        <Bot className="h-4 w-4 text-dynamic-purple" />
+                    <div className="flex gap-2 sm:gap-3">
+                      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-dynamic-purple/20 sm:h-8 sm:w-8">
+                        <Bot className="h-3.5 w-3.5 text-dynamic-purple sm:h-4 sm:w-4" />
                       </div>
-                      <div className="max-w-[80%] rounded-lg bg-dynamic-purple/10 px-4 py-2">
-                        <p className="text-sm leading-relaxed">
+                      <div className="max-w-[85%] rounded-lg bg-dynamic-purple/10 px-3 py-2 sm:max-w-[80%] sm:px-4">
+                        <p className="text-xs leading-relaxed sm:text-sm">
                           I've found 3 available slots. The best option is
                           Friday at 3 PM based on everyone's calendar. Shall I
                           send the update?
@@ -793,7 +834,7 @@ export default function MarketingPage() {
                   </div>
 
                   {/* Quick Actions */}
-                  <div className="flex flex-wrap gap-2">
+                  <div className="flex flex-wrap gap-1.5 sm:gap-2">
                     <Badge
                       variant="secondary"
                       className="cursor-pointer border-dynamic-blue/30 bg-dynamic-blue/10 text-dynamic-blue text-xs transition-colors hover:bg-dynamic-blue/20"
@@ -815,21 +856,21 @@ export default function MarketingPage() {
                   </div>
                 </div>
 
-                <div className="mt-6 rounded-lg bg-dynamic-purple/10 p-4">
-                  <div className="flex items-center gap-3">
-                    <Brain className="h-5 w-5 text-dynamic-purple" />
+                <div className="mt-4 rounded-lg bg-dynamic-purple/10 p-3 sm:mt-6 sm:p-4">
+                  <div className="flex items-start gap-2 sm:items-center sm:gap-3">
+                    <Brain className="mt-0.5 h-4 w-4 shrink-0 text-dynamic-purple sm:mt-0 sm:h-5 sm:w-5" />
                     <div className="flex-1">
-                      <div className="mb-1 font-semibold text-sm">
+                      <div className="mb-1 text-sm font-semibold">
                         {t('demo.aiChat.contextAware.title')}
                       </div>
-                      <p className="text-foreground/70 text-xs leading-relaxed">
+                      <p className="text-xs leading-relaxed text-foreground/70 sm:text-xs">
                         {t('demo.aiChat.contextAware.description')}
                       </p>
                     </div>
                   </div>
                 </div>
 
-                <Button className="mt-6 w-full" variant="outline" asChild>
+                <Button className="mt-4 w-full sm:mt-6" variant="outline" asChild>
                   <Link href="/onboarding">
                     <MessageSquare className="mr-2 h-4 w-4" />
                     {t('demo.aiChat.cta')}
@@ -844,83 +885,83 @@ export default function MarketingPage() {
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
             >
-              <Card className="h-full overflow-hidden border-dynamic-cyan/30 bg-gradient-to-br from-dynamic-cyan/5 via-background to-background p-8">
-                <div className="mb-6 flex items-center gap-4">
-                  <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-dynamic-cyan/10">
-                    <BarChart3 className="h-7 w-7 text-dynamic-cyan" />
+              <Card className="h-full overflow-hidden border-dynamic-cyan/30 bg-gradient-to-br from-dynamic-cyan/5 via-background to-background p-4 sm:p-6 md:p-8">
+                <div className="mb-4 flex flex-col gap-3 sm:mb-6 sm:flex-row sm:items-center sm:gap-4">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-dynamic-cyan/10 sm:h-14 sm:w-14">
+                    <BarChart3 className="h-6 w-6 text-dynamic-cyan sm:h-7 sm:w-7" />
                   </div>
                   <div>
-                    <h3 className="mb-1 font-bold text-2xl">
+                    <h3 className="mb-1 font-bold text-xl sm:text-2xl">
                       {t('demo.analytics.title')}
                     </h3>
-                    <p className="text-foreground/60 text-sm">
+                    <p className="text-foreground/60 text-xs sm:text-sm">
                       {t('demo.analytics.subtitle')}
                     </p>
                   </div>
                 </div>
 
-                <div className="space-y-4">
+                <div className="space-y-3 sm:space-y-4">
                   {/* Key Metrics */}
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="rounded-lg border border-dynamic-green/20 bg-dynamic-green/5 p-4">
-                      <div className="mb-1 flex items-center gap-2">
-                        <TrendingUp className="h-4 w-4 text-dynamic-green" />
-                        <span className="font-semibold text-xs">
+                  <div className="grid grid-cols-2 gap-2 sm:gap-3">
+                    <div className="rounded-lg border border-dynamic-green/20 bg-dynamic-green/5 p-3 sm:p-4">
+                      <div className="mb-1 flex items-center gap-1.5">
+                        <TrendingUp className="h-3.5 w-3.5 text-dynamic-green sm:h-4 sm:w-4" />
+                        <span className="text-[10px] font-semibold sm:text-xs">
                           {t('demo.analytics.metrics.tasks.label')}
                         </span>
                       </div>
-                      <div className="font-bold text-2xl text-dynamic-green">
+                      <div className="text-xl font-bold text-dynamic-green sm:text-2xl">
                         {t('demo.analytics.metrics.tasks.value')}
                       </div>
-                      <div className="flex items-center gap-1 text-foreground/60 text-xs">
-                        <ArrowRight className="h-3 w-3 rotate-[-45deg]" />
+                      <div className="flex items-center gap-1 text-[10px] text-foreground/60 sm:text-xs">
+                        <ArrowRight className="h-2.5 w-2.5 rotate-[-45deg] sm:h-3 sm:w-3" />
                         {t('demo.analytics.metrics.tasks.change')}
                       </div>
                     </div>
 
-                    <div className="rounded-lg border border-dynamic-blue/20 bg-dynamic-blue/5 p-4">
-                      <div className="mb-1 flex items-center gap-2">
-                        <Clock className="h-4 w-4 text-dynamic-blue" />
-                        <span className="font-semibold text-xs">
+                    <div className="rounded-lg border border-dynamic-blue/20 bg-dynamic-blue/5 p-3 sm:p-4">
+                      <div className="mb-1 flex items-center gap-1.5">
+                        <Clock className="h-3.5 w-3.5 text-dynamic-blue sm:h-4 sm:w-4" />
+                        <span className="text-[10px] font-semibold sm:text-xs">
                           {t('demo.analytics.metrics.focus.label')}
                         </span>
                       </div>
-                      <div className="font-bold text-2xl text-dynamic-blue">
+                      <div className="text-xl font-bold text-dynamic-blue sm:text-2xl">
                         {t('demo.analytics.metrics.focus.value')}
                       </div>
-                      <div className="flex items-center gap-1 text-foreground/60 text-xs">
-                        <ArrowRight className="h-3 w-3 rotate-[-45deg]" />
+                      <div className="flex items-center gap-1 text-[10px] text-foreground/60 sm:text-xs">
+                        <ArrowRight className="h-2.5 w-2.5 rotate-[-45deg] sm:h-3 sm:w-3" />
                         {t('demo.analytics.metrics.focus.change')}
                       </div>
                     </div>
 
-                    <div className="rounded-lg border border-dynamic-purple/20 bg-dynamic-purple/5 p-4">
-                      <div className="mb-1 flex items-center gap-2">
-                        <Users className="h-4 w-4 text-dynamic-purple" />
-                        <span className="font-semibold text-xs">
+                    <div className="rounded-lg border border-dynamic-purple/20 bg-dynamic-purple/5 p-3 sm:p-4">
+                      <div className="mb-1 flex items-center gap-1.5">
+                        <Users className="h-3.5 w-3.5 text-dynamic-purple sm:h-4 sm:w-4" />
+                        <span className="text-[10px] font-semibold sm:text-xs">
                           {t('demo.analytics.metrics.meetings.label')}
                         </span>
                       </div>
-                      <div className="font-bold text-2xl text-dynamic-purple">
+                      <div className="text-xl font-bold text-dynamic-purple sm:text-2xl">
                         {t('demo.analytics.metrics.meetings.value')}
                       </div>
-                      <div className="flex items-center gap-1 text-foreground/60 text-xs">
-                        <ArrowRight className="h-3 w-3 rotate-45" />
+                      <div className="flex items-center gap-1 text-[10px] text-foreground/60 sm:text-xs">
+                        <ArrowRight className="h-2.5 w-2.5 rotate-45 sm:h-3 sm:w-3" />
                         {t('demo.analytics.metrics.meetings.change')}
                       </div>
                     </div>
 
-                    <div className="rounded-lg border border-dynamic-orange/20 bg-dynamic-orange/5 p-4">
-                      <div className="mb-1 flex items-center gap-2">
-                        <Target className="h-4 w-4 text-dynamic-orange" />
-                        <span className="font-semibold text-xs">
+                    <div className="rounded-lg border border-dynamic-orange/20 bg-dynamic-orange/5 p-3 sm:p-4">
+                      <div className="mb-1 flex items-center gap-1.5">
+                        <Target className="h-3.5 w-3.5 text-dynamic-orange sm:h-4 sm:w-4" />
+                        <span className="text-[10px] font-semibold sm:text-xs">
                           {t('demo.analytics.metrics.goals.label')}
                         </span>
                       </div>
-                      <div className="font-bold text-2xl text-dynamic-orange">
+                      <div className="text-xl font-bold text-dynamic-orange sm:text-2xl">
                         {t('demo.analytics.metrics.goals.value')}
                       </div>
-                      <div className="text-foreground/60 text-xs">
+                      <div className="text-[10px] text-foreground/60 sm:text-xs">
                         {t('demo.analytics.metrics.goals.subtitle')}
                       </div>
                     </div>

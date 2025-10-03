@@ -85,20 +85,24 @@ export function Navbar({
       <div
         id="navbar-content"
         className={cn(
-          'bg-transparent px-4 py-2 font-semibold md:px-8 lg:px-16 xl:px-32',
+          'bg-background/80 px-4 py-3 font-semibold backdrop-blur-lg transition-all duration-300 md:px-8 lg:px-16 xl:px-32',
+          'border-b border-border/40 shadow-sm',
           contentClassName
         )}
       >
         <div className="relative flex items-center justify-between gap-2 md:gap-4">
-          <div className="flex w-full items-center gap-2">
+          <div className="flex w-full items-center gap-2 md:gap-4">
             <Link
               href={homeUrl}
-              className={cn('flex flex-none items-center gap-2', logoClassName)}
+              className={cn(
+                'flex flex-none items-center gap-2 transition-opacity hover:opacity-80',
+                logoClassName
+              )}
             >
               {typeof logo === 'string' ? (
                 <Image
                   src={logo}
-                  className="h-8 w-8"
+                  className="h-8 w-8 transition-transform hover:scale-105"
                   width={32}
                   height={32}
                   alt="logo"
