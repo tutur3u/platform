@@ -542,9 +542,9 @@ export default function RealtimeChatContent({
   };
 
   return (
-    <div className="flex h-[calc(100vh-4rem)] gap-3">
+    <div className="flex h-[calc(100vh-2rem)] gap-3 overflow-hidden">
       {/* Channel Sidebar */}
-      <div className="w-60 rounded-lg border border-dynamic-border/50 bg-dynamic-surface/50 p-3">
+      <div className="flex w-60 flex-col rounded-lg border border-dynamic-border/50 bg-dynamic-surface/50 p-3">
         <div className="mb-3 flex items-center justify-between">
           <h2 className="flex items-center gap-2 font-semibold text-dynamic-foreground text-sm">
             <MessageCircle className="h-4 w-4" />
@@ -598,7 +598,7 @@ export default function RealtimeChatContent({
 
         <Separator className="my-3" />
 
-        <ScrollArea className="h-[calc(100%-8rem)]">
+        <ScrollArea className="flex-1">
           <div className="space-y-0.5">
             {channels.length === 0 ? (
               <p className="p-2 text-center text-dynamic-muted-foreground text-xs">
@@ -626,11 +626,11 @@ export default function RealtimeChatContent({
       </div>
 
       {/* Chat Area */}
-      <div className="flex flex-1 flex-col rounded-lg border border-dynamic-border/50 bg-dynamic-surface/50">
+      <div className="flex min-h-0 flex-1 flex-col rounded-lg border border-dynamic-border/50 bg-dynamic-surface/50">
         {selectedChannel ? (
           <>
             {/* Header */}
-            <div className="flex items-center justify-between border-dynamic-border/50 border-b px-4 py-3">
+            <div className="flex shrink-0 items-center justify-between border-dynamic-border/50 border-b px-4 py-3">
               <div className="flex flex-col gap-0.5">
                 <h2 className="flex items-center gap-2 font-semibold text-dynamic-foreground text-sm">
                   <Hash className="h-4 w-4 text-dynamic-muted-foreground" />
@@ -656,7 +656,7 @@ export default function RealtimeChatContent({
             </div>
 
             {/* Messages */}
-            <ScrollArea className="flex-1 px-4 py-3">
+            <ScrollArea className="min-h-0 flex-1 px-4 py-3">
               {isLoadingMessages ? (
                 <div className="flex h-full items-center justify-center">
                   <Loader2 className="h-6 w-6 animate-spin text-dynamic-muted-foreground" />
@@ -930,7 +930,7 @@ export default function RealtimeChatContent({
             </ScrollArea>
 
             {/* Input */}
-            <div className="border-dynamic-border/50 border-t px-4 py-3">
+            <div className="shrink-0 border-dynamic-border/50 border-t px-4 py-3">
               <div className="flex items-end gap-2">
                 <div className="flex-1">
                   <Input
