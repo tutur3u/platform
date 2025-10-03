@@ -145,7 +145,7 @@ export function LabelFilter({ wsId, selectedLabels, onLabelsChange }: Props) {
   const hasFilters = selectedLabels.length > 0;
 
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex flex-wrap items-center gap-1 sm:gap-1.5">
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
           <Button
@@ -153,14 +153,14 @@ export function LabelFilter({ wsId, selectedLabels, onLabelsChange }: Props) {
             role="combobox"
             aria-expanded={open}
             className={cn(
-              'h-8 justify-between text-xs',
+              'h-6 gap-1 px-1.5 text-[10px] sm:h-7 sm:gap-1.5 sm:px-2 sm:text-xs',
               hasFilters && 'border-primary/50 bg-primary/5'
             )}
           >
-            <Filter className="h-3 w-3" />
-            Labels
+            <Filter className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+            <span className="hidden sm:inline">Labels</span>
             {hasFilters && (
-              <Badge variant="secondary" className="ml-1 h-4 px-1 text-[10px]">
+              <Badge variant="secondary" className="h-3.5 px-1 text-[9px] sm:h-4 sm:text-[10px]">
                 {selectedLabels.length}
               </Badge>
             )}
@@ -216,10 +216,10 @@ export function LabelFilter({ wsId, selectedLabels, onLabelsChange }: Props) {
           variant="ghost"
           size="sm"
           onClick={clearAllFilters}
-          className="h-8 px-2 text-muted-foreground text-xs hover:text-foreground"
+          className="h-6 px-1.5 text-[10px] text-muted-foreground hover:text-foreground sm:h-7 sm:px-2 sm:text-xs"
         >
-          Clear
-          <X className="ml-1 h-3 w-3" />
+          <span className="hidden sm:inline">Clear</span>
+          <X className="h-3 w-3 sm:ml-1" />
         </Button>
       )}
 
@@ -230,11 +230,11 @@ export function LabelFilter({ wsId, selectedLabels, onLabelsChange }: Props) {
             <Badge
               key={label.id}
               style={getColorStyles(label.color)}
-              className="cursor-pointer border-0 text-xs hover:opacity-80"
+              className="h-5 cursor-pointer border-0 px-1.5 text-[10px] hover:opacity-80 sm:h-6 sm:px-2 sm:text-xs"
               onClick={() => handleLabelToggle(label)}
             >
               {label.name}
-              <X className="ml-1 h-3 w-3" />
+              <X className="ml-0.5 h-2.5 w-2.5 sm:ml-1 sm:h-3 sm:w-3" />
             </Badge>
           ))}
         </div>

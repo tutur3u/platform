@@ -26,10 +26,13 @@ export function UserPresenceAvatars({
   const displayUsers = uniqueUsers.slice(0, maxDisplay);
   const remainingCount = Math.max(0, uniqueUsers.length - maxDisplay);
 
+  // Don't render anything if no users online
+  if (uniqueUsers.length === 0) return null;
+
   return (
-    <div className="flex items-center gap-1.5">
-      {/* Avatar stack */}
-      {displayUsers.map((user) => {
+    <div className="flex items-center -space-x-2">
+      {/* Avatar stack with overlap */}
+      {displayUsers.map((user, index) => {
         if (!user || !user.id) return null;
         const isCurrentUser = user.id === currentUserId;
         const presences = presenceState[user.id] || [];
@@ -38,11 +41,11 @@ export function UserPresenceAvatars({
         return (
           <Tooltip key={user.id}>
             <TooltipTrigger asChild>
-              <div className="relative">
+              <div className="relative transition-transform hover:z-10 hover:scale-110">
                 <Avatar
                   className={cn(
-                    'size-8 border-2 border-background ring-2 ring-background transition-all hover:scale-110',
-                    isCurrentUser && 'ring-dynamic-blue/50'
+                    'size-7 border-2 border-background ring-1 ring-border transition-shadow hover:ring-2 sm:size-8',
+                    isCurrentUser && 'ring-dynamic-blue/60 hover:ring-dynamic-blue'
                   )}
                 >
                   {user.avatar_url ? (
@@ -51,26 +54,26 @@ export function UserPresenceAvatars({
                       alt={user.display_name || user.email || 'User'}
                     />
                   ) : null}
-                  <AvatarFallback className="font-semibold text-foreground text-xs">
+                  <AvatarFallback className="text-[10px] font-semibold text-foreground sm:text-xs">
                     {user.display_name || user.email ? (
                       getInitials(user.display_name || user.email)
                     ) : (
-                      <User className="h-4 w-4" />
+                      <User className="h-3 w-3 sm:h-4 sm:w-4" />
                     )}
                   </AvatarFallback>
                 </Avatar>
                 {/* Online indicator dot */}
-                <div className="absolute right-0 bottom-0 h-2.5 w-2.5 rounded-full border-2 border-background bg-dynamic-green" />
+                <div className="absolute -right-0.5 -bottom-0.5 h-2 w-2 rounded-full border-2 border-background bg-dynamic-green sm:h-2.5 sm:w-2.5" />
                 {/* Multiple sessions indicator */}
                 {presenceCount > 1 && (
-                  <div className="-right-1 -top-1 absolute flex h-4 w-4 items-center justify-center rounded-full border border-background bg-dynamic-blue text-[10px] text-white">
+                  <div className="-right-1 -top-1 absolute flex h-3.5 w-3.5 items-center justify-center rounded-full border border-background bg-dynamic-blue text-[9px] font-bold text-white sm:h-4 sm:w-4 sm:text-[10px]">
                     {presenceCount}
                   </div>
                 )}
               </div>
             </TooltipTrigger>
             <TooltipContent side="bottom" className="max-w-[200px]">
-              <div className="space-y-1">
+              <div className="space-y-0.5">
                 <p className="font-medium text-sm">
                   {user.display_name || 'Unknown User'}
                   {isCurrentUser && ' (You)'}
@@ -78,10 +81,11 @@ export function UserPresenceAvatars({
                 {user.email && (
                   <p className="text-muted-foreground text-xs">{user.email}</p>
                 )}
-                <p className="text-muted-foreground text-xs">
-                  Active in {presenceCount} session
-                  {presenceCount > 1 ? 's' : ''}
-                </p>
+                {presenceCount > 1 && (
+                  <p className="text-muted-foreground text-xs">
+                    {presenceCount} active sessions
+                  </p>
+                )}
               </div>
             </TooltipContent>
           </Tooltip>
@@ -92,9 +96,9 @@ export function UserPresenceAvatars({
       {remainingCount > 0 && (
         <Tooltip>
           <TooltipTrigger asChild>
-            <div className="relative">
-              <Avatar className="size-8 border-2 border-background ring-2 ring-background transition-all hover:z-10 hover:scale-110">
-                <AvatarFallback className="bg-muted text-muted-foreground text-xs">
+            <div className="relative transition-transform hover:z-10 hover:scale-110">
+              <Avatar className="size-7 border-2 border-background ring-1 ring-border transition-shadow hover:ring-2 sm:size-8">
+                <AvatarFallback className="bg-muted text-[10px] font-semibold text-muted-foreground sm:text-xs">
                   +{remainingCount}
                 </AvatarFallback>
               </Avatar>
@@ -102,7 +106,7 @@ export function UserPresenceAvatars({
           </TooltipTrigger>
           <TooltipContent side="bottom">
             <p className="text-sm">
-              {remainingCount} more user{remainingCount > 1 ? 's' : ''} online
+              {remainingCount} more online
             </p>
           </TooltipContent>
         </Tooltip>
