@@ -86,7 +86,11 @@ function TaskEditDialogComponent({
   onUpdate,
   availableLists: propAvailableLists,
   mode = 'edit',
-}: TaskEditDialogProps & { mode?: 'edit' | 'create' }) {
+  showUserPresence = false,
+}: TaskEditDialogProps & {
+  mode?: 'edit' | 'create';
+  showUserPresence?: boolean;
+}) {
   const isCreateMode = mode === 'create';
 
   const { toast } = useToast();
@@ -1446,7 +1450,7 @@ function TaskEditDialogComponent({
               </div>
               <div className="flex items-center gap-1 md:gap-2">
                 {/* Online Users */}
-                {isOpen && !isCreateMode && (
+                {showUserPresence && isOpen && !isCreateMode && (
                   <UserPresenceAvatarsComponent taskId={task?.id ?? ''} />
                 )}
                 {isCreateMode && (
@@ -2558,6 +2562,7 @@ function TaskEditDialogComponent({
   );
 }
 
+// If this component is unmounted (closing the dialog), the presence state will be cleaned up
 function UserPresenceAvatarsComponent({ taskId }: { taskId: string }) {
   const { presenceState, currentUserId } = usePresence(
     `task_presence_${taskId}`
@@ -2573,7 +2578,10 @@ function UserPresenceAvatarsComponent({ taskId }: { taskId: string }) {
 }
 
 export function TaskEditDialog(
-  props: TaskEditDialogProps & { mode?: 'edit' | 'create' }
+  props: TaskEditDialogProps & {
+    mode?: 'edit' | 'create';
+    showUserPresence?: boolean;
+  }
 ) {
   return <TaskEditDialogComponent {...props} />;
 }

@@ -712,6 +712,7 @@ export function ListView({
             const supabase = createClient();
             getTasks(supabase, boardId).then(setLocalTasks);
           }}
+          showUserPresence={true}
         />
       )}
 

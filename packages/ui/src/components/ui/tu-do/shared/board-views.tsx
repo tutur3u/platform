@@ -251,6 +251,7 @@ export function BoardViews({
         onClose={() => setCreateDialogOpen(false)}
         onUpdate={handleUpdate}
         availableLists={filteredLists}
+        mode="create"
       />
     </div>
   );
