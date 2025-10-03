@@ -45,6 +45,7 @@ import {
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
 import { useHorizontalScroll } from '@tuturuuu/ui/hooks/useHorizontalScroll';
+import { ScrollArea } from '@tuturuuu/ui/scroll-area';
 import { toast } from '@tuturuuu/ui/sonner';
 import { coordinateGetter } from '@tuturuuu/utils/keyboard-preset';
 import {
@@ -1313,26 +1314,31 @@ export function KanbanBoard({
                     <Tags className="mr-2 h-3.5 w-3.5 text-dynamic-cyan" />
                     Add Label
                   </DropdownMenuSubTrigger>
-                  <DropdownMenuSubContent className="max-h-60 w-52 overflow-auto">
-                    {workspaceLabels.length === 0 && (
+                  <DropdownMenuSubContent className="max-h-[400px] w-52 overflow-hidden p-0">
+                    {workspaceLabels.length === 0 ? (
                       <div className="px-2 py-1 text-[11px] text-muted-foreground">
                         No labels
                       </div>
+                    ) : (
+                      <ScrollArea className="h-[min(300px,calc(100vh-200px))]">
+                        <div className="p-1">
+                          {workspaceLabels.map((l) => (
+                            <DropdownMenuItem
+                              key={l.id}
+                              disabled={bulkWorking}
+                              onClick={() => bulkAddLabel(l.id)}
+                              className="flex items-center gap-2"
+                            >
+                              <span
+                                className="h-3 w-3 rounded-full"
+                                style={{ backgroundColor: l.color, opacity: 0.9 }}
+                              />
+                              {l.name}
+                            </DropdownMenuItem>
+                          ))}
+                        </div>
+                      </ScrollArea>
                     )}
-                    {workspaceLabels.map((l) => (
-                      <DropdownMenuItem
-                        key={l.id}
-                        disabled={bulkWorking}
-                        onClick={() => bulkAddLabel(l.id)}
-                        className="flex items-center gap-2"
-                      >
-                        <span
-                          className="h-3 w-3 rounded-full"
-                          style={{ backgroundColor: l.color, opacity: 0.9 }}
-                        />
-                        {l.name}
-                      </DropdownMenuItem>
-                    ))}
                   </DropdownMenuSubContent>
                 </DropdownMenuSub>
                 <DropdownMenuSub>
@@ -1340,26 +1346,31 @@ export function KanbanBoard({
                     <MinusCircle className="mr-2 h-3.5 w-3.5 text-dynamic-red" />
                     Remove Label
                   </DropdownMenuSubTrigger>
-                  <DropdownMenuSubContent className="max-h-60 w-52 overflow-auto">
-                    {workspaceLabels.length === 0 && (
+                  <DropdownMenuSubContent className="max-h-[400px] w-52 overflow-hidden p-0">
+                    {workspaceLabels.length === 0 ? (
                       <div className="px-2 py-1 text-[11px] text-muted-foreground">
                         No labels
                       </div>
+                    ) : (
+                      <ScrollArea className="h-[min(300px,calc(100vh-200px))]">
+                        <div className="p-1">
+                          {workspaceLabels.map((l) => (
+                            <DropdownMenuItem
+                              key={l.id}
+                              disabled={bulkWorking}
+                              onClick={() => bulkRemoveLabel(l.id)}
+                              className="flex items-center gap-2"
+                            >
+                              <span
+                                className="h-3 w-3 rounded-full ring-1 ring-border"
+                                style={{ backgroundColor: l.color, opacity: 0.3 }}
+                              />
+                              {l.name}
+                            </DropdownMenuItem>
+                          ))}
+                        </div>
+                      </ScrollArea>
                     )}
-                    {workspaceLabels.map((l) => (
-                      <DropdownMenuItem
-                        key={l.id}
-                        disabled={bulkWorking}
-                        onClick={() => bulkRemoveLabel(l.id)}
-                        className="flex items-center gap-2"
-                      >
-                        <span
-                          className="h-3 w-3 rounded-full ring-1 ring-border"
-                          style={{ backgroundColor: l.color, opacity: 0.3 }}
-                        />
-                        {l.name}
-                      </DropdownMenuItem>
-                    ))}
                   </DropdownMenuSubContent>
                 </DropdownMenuSub>
                 <DropdownMenuSub>
@@ -1367,23 +1378,28 @@ export function KanbanBoard({
                     <Plus className="mr-2 h-3.5 w-3.5 text-dynamic-indigo" />
                     Add Project
                   </DropdownMenuSubTrigger>
-                  <DropdownMenuSubContent className="max-h-60 w-52 overflow-auto">
-                    {workspaceProjects.length === 0 && (
+                  <DropdownMenuSubContent className="max-h-[400px] w-52 overflow-hidden p-0">
+                    {workspaceProjects.length === 0 ? (
                       <div className="px-2 py-1 text-[11px] text-muted-foreground">
                         No projects
                       </div>
+                    ) : (
+                      <ScrollArea className="h-[min(300px,calc(100vh-200px))]">
+                        <div className="p-1">
+                          {workspaceProjects.map((p: any) => (
+                            <DropdownMenuItem
+                              key={p.id}
+                              disabled={bulkWorking}
+                              onClick={() => bulkAddProject(p.id)}
+                              className="flex items-center gap-2"
+                            >
+                              <Box className="h-3 w-3 text-dynamic-sky" />
+                              {p.name}
+                            </DropdownMenuItem>
+                          ))}
+                        </div>
+                      </ScrollArea>
                     )}
-                    {workspaceProjects.map((p: any) => (
-                      <DropdownMenuItem
-                        key={p.id}
-                        disabled={bulkWorking}
-                        onClick={() => bulkAddProject(p.id)}
-                        className="flex items-center gap-2"
-                      >
-                        <Box className="h-3 w-3 text-dynamic-sky" />
-                        {p.name}
-                      </DropdownMenuItem>
-                    ))}
                   </DropdownMenuSubContent>
                 </DropdownMenuSub>
                 <DropdownMenuSub>
@@ -1391,23 +1407,28 @@ export function KanbanBoard({
                     <MinusCircle className="mr-2 h-3.5 w-3.5 text-dynamic-red" />
                     Remove Project
                   </DropdownMenuSubTrigger>
-                  <DropdownMenuSubContent className="max-h-60 w-52 overflow-auto">
-                    {workspaceProjects.length === 0 && (
+                  <DropdownMenuSubContent className="max-h-[400px] w-52 overflow-hidden p-0">
+                    {workspaceProjects.length === 0 ? (
                       <div className="px-2 py-1 text-[11px] text-muted-foreground">
                         No projects
                       </div>
+                    ) : (
+                      <ScrollArea className="h-[min(300px,calc(100vh-200px))]">
+                        <div className="p-1">
+                          {workspaceProjects.map((p: any) => (
+                            <DropdownMenuItem
+                              key={p.id}
+                              disabled={bulkWorking}
+                              onClick={() => bulkRemoveProject(p.id)}
+                              className="flex items-center gap-2"
+                            >
+                              <Box className="h-3 w-3 text-muted-foreground opacity-50" />
+                              {p.name}
+                            </DropdownMenuItem>
+                          ))}
+                        </div>
+                      </ScrollArea>
                     )}
-                    {workspaceProjects.map((p: any) => (
-                      <DropdownMenuItem
-                        key={p.id}
-                        disabled={bulkWorking}
-                        onClick={() => bulkRemoveProject(p.id)}
-                        className="flex items-center gap-2"
-                      >
-                        <Box className="h-3 w-3 text-muted-foreground opacity-50" />
-                        {p.name}
-                      </DropdownMenuItem>
-                    ))}
                   </DropdownMenuSubContent>
                 </DropdownMenuSub>
                 <DropdownMenuSeparator />

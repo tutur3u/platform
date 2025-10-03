@@ -66,6 +66,7 @@ import {
 } from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
+import { ScrollArea } from '@tuturuuu/ui/scroll-area';
 import {
   getDescriptionMetadata,
   getDescriptionText,
@@ -1509,7 +1510,7 @@ function TaskCardInner({
                       <Tag className="h-4 w-4 text-dynamic-cyan" />
                       Labels
                     </DropdownMenuSubTrigger>
-                    <DropdownMenuSubContent>
+                    <DropdownMenuSubContent className="max-h-[400px] w-56 overflow-hidden p-0">
                       {labelsLoading && (
                         <div className="px-2 py-1 text-muted-foreground text-xs">
                           Loading...
@@ -1520,47 +1521,47 @@ function TaskCardInner({
                           No labels yet. Create your first label below.
                         </div>
                       )}
-                      <div className="grid gap-1">
-                        {!labelsLoading &&
-                          workspaceLabels.length > 0 &&
-                          workspaceLabels.map((label) => {
-                            const active = task.labels?.some(
-                              (l) => l.id === label.id
-                            );
-                            return (
-                              <DropdownMenuItem
-                                key={label.id}
-                                onSelect={(e) =>
-                                  handleMenuItemSelect(e, () =>
-                                    toggleTaskLabel(label.id)
-                                  )
-                                }
-                                disabled={labelsSaving === label.id}
-                                className={cn(
-                                  'flex cursor-pointer items-center justify-between',
-                                  active &&
-                                    'bg-dynamic-cyan/10 text-dynamic-cyan'
-                                )}
-                              >
-                                <span className="truncate">{label.name}</span>
-                                {active && <Check className="h-4 w-4" />}
-                              </DropdownMenuItem>
-                            );
-                          })}
-                      </div>
+                      {!labelsLoading && workspaceLabels.length > 0 && (
+                        <ScrollArea className="h-[min(300px,calc(100vh-200px))]">
+                          <div className="p-1">
+                            {workspaceLabels.map((label) => {
+                              const active = task.labels?.some(
+                                (l) => l.id === label.id
+                              );
+                              return (
+                                <DropdownMenuItem
+                                  key={label.id}
+                                  onSelect={(e) =>
+                                    handleMenuItemSelect(e, () =>
+                                      toggleTaskLabel(label.id)
+                                    )
+                                  }
+                                  disabled={labelsSaving === label.id}
+                                  className={cn(
+                                    'flex cursor-pointer items-center justify-between',
+                                    active &&
+                                      'bg-dynamic-cyan/10 text-dynamic-cyan'
+                                  )}
+                                >
+                                  <span className="truncate">{label.name}</span>
+                                  {active && <Check className="h-4 w-4" />}
+                                </DropdownMenuItem>
+                              );
+                            })}
+                          </div>
+                        </ScrollArea>
+                      )}
                       {!labelsLoading &&
                         task.labels &&
                         task.labels.length > 0 && (
-                          <>
-                            <DropdownMenuSeparator />
+                          <div className="border-t bg-background">
                             <div className="px-2 pt-1 pb-1 text-[10px] text-muted-foreground">
                               {task.labels.length} applied
                             </div>
-                          </>
+                          </div>
                         )}
                       {!labelsLoading && (
-                        <>
-                          <DropdownMenuSeparator />
+                        <div className="border-t bg-background">
                           <DropdownMenuItem
                             onSelect={(e) =>
                               handleMenuItemSelect(e, () => {
@@ -1573,7 +1574,7 @@ function TaskCardInner({
                             <Plus className="h-4 w-4" />
                             Add New Label
                           </DropdownMenuItem>
-                        </>
+                        </div>
                       )}
                     </DropdownMenuSubContent>
                   </DropdownMenuSub>
@@ -1584,7 +1585,7 @@ function TaskCardInner({
                       <Box className="h-4 w-4 text-dynamic-sky" />
                       Projects
                     </DropdownMenuSubTrigger>
-                    <DropdownMenuSubContent>
+                    <DropdownMenuSubContent className="max-h-[400px] w-56 overflow-hidden p-0">
                       {projectsLoading && (
                         <div className="px-2 py-1 text-muted-foreground text-xs">
                           Loading...
@@ -1595,48 +1596,49 @@ function TaskCardInner({
                           No projects available
                         </div>
                       )}
-                      <div className="grid gap-1">
-                        {!projectsLoading &&
-                          workspaceProjects.length > 0 &&
-                          workspaceProjects.map((project: any) => {
-                            const active = task.projects?.some(
-                              (p) => p.id === project.id
-                            );
-                            return (
-                              <DropdownMenuItem
-                                key={project.id}
-                                onSelect={(e) =>
-                                  handleMenuItemSelect(e, () =>
-                                    toggleTaskProject(project.id)
-                                  )
-                                }
-                                disabled={projectsSaving === project.id}
-                                className={cn(
-                                  'flex cursor-pointer items-center justify-between',
-                                  active &&
-                                    'bg-dynamic-indigo/10 text-dynamic-sky'
-                                )}
-                              >
-                                <div className="flex items-center gap-2">
-                                  <Box className="h-4 w-4 text-dynamic-sky" />
-                                  <span className="truncate">
-                                    {project.name}
-                                  </span>
-                                </div>
-                                {active && <Check className="h-4 w-4" />}
-                              </DropdownMenuItem>
-                            );
-                          })}
-                      </div>
+                      {!projectsLoading && workspaceProjects.length > 0 && (
+                        <ScrollArea className="h-[min(300px,calc(100vh-200px))]">
+                          <div className="p-1">
+                            {workspaceProjects.map((project: any) => {
+                              const active = task.projects?.some(
+                                (p) => p.id === project.id
+                              );
+                              return (
+                                <DropdownMenuItem
+                                  key={project.id}
+                                  onSelect={(e) =>
+                                    handleMenuItemSelect(e, () =>
+                                      toggleTaskProject(project.id)
+                                    )
+                                  }
+                                  disabled={projectsSaving === project.id}
+                                  className={cn(
+                                    'flex cursor-pointer items-center justify-between',
+                                    active &&
+                                      'bg-dynamic-indigo/10 text-dynamic-sky'
+                                  )}
+                                >
+                                  <div className="flex items-center gap-2">
+                                    <Box className="h-4 w-4 text-dynamic-sky" />
+                                    <span className="truncate">
+                                      {project.name}
+                                    </span>
+                                  </div>
+                                  {active && <Check className="h-4 w-4" />}
+                                </DropdownMenuItem>
+                              );
+                            })}
+                          </div>
+                        </ScrollArea>
+                      )}
                       {!projectsLoading &&
                         task.projects &&
                         task.projects.length > 0 && (
-                          <>
-                            <DropdownMenuSeparator />
+                          <div className="border-t bg-background">
                             <div className="px-2 pt-1 pb-1 text-[10px] text-muted-foreground">
                               {task.projects.length} assigned
                             </div>
-                          </>
+                          </div>
                         )}
                     </DropdownMenuSubContent>
                   </DropdownMenuSub>
@@ -1654,43 +1656,47 @@ function TaskCardInner({
                           <span>Move</span>
                         </div>
                       </DropdownMenuSubTrigger>
-                      <DropdownMenuSubContent>
-                        {availableLists
-                          .filter((list) => list.id !== task.list_id)
-                          .map((list) => (
-                            <DropdownMenuItem
-                              key={list.id}
-                              onSelect={(e) =>
-                                handleMenuItemSelect(
-                                  e as unknown as Event,
-                                  () => handleMoveToList(list.id)
-                                )
-                              }
-                              className="cursor-pointer"
-                              disabled={isLoading}
-                            >
-                              <div className="flex w-full items-center justify-between">
-                                <div className="flex items-center gap-3">
-                                  {list.status === 'done' && (
-                                    <CheckCircle2 className="h-4 w-4 text-dynamic-green" />
-                                  )}
-                                  {list.status === 'closed' && (
-                                    <CircleSlash className="h-4 w-4 text-dynamic-purple" />
-                                  )}
-                                  {list.status === 'not_started' && (
-                                    <CircleDashed className="h-4 w-4 opacity-70" />
-                                  )}
-                                  {list.status === 'active' && (
-                                    <CircleFadingArrowUpIcon className="h-4 w-4 text-dynamic-blue" />
-                                  )}
-                                  {list.name}
-                                </div>
-                              </div>
-                            </DropdownMenuItem>
-                          ))}
-                        {availableLists.filter(
-                          (list) => list.id !== task.list_id
-                        ).length === 0 && (
+                      <DropdownMenuSubContent className="max-h-[400px] w-56 overflow-hidden p-0">
+                        {availableLists.filter((list) => list.id !== task.list_id)
+                          .length > 0 ? (
+                          <ScrollArea className="h-[min(300px,calc(100vh-200px))]">
+                            <div className="p-1">
+                              {availableLists
+                                .filter((list) => list.id !== task.list_id)
+                                .map((list) => (
+                                  <DropdownMenuItem
+                                    key={list.id}
+                                    onSelect={(e) =>
+                                      handleMenuItemSelect(
+                                        e as unknown as Event,
+                                        () => handleMoveToList(list.id)
+                                      )
+                                    }
+                                    className="cursor-pointer"
+                                    disabled={isLoading}
+                                  >
+                                    <div className="flex w-full items-center justify-between">
+                                      <div className="flex items-center gap-3">
+                                        {list.status === 'done' && (
+                                          <CheckCircle2 className="h-4 w-4 text-dynamic-green" />
+                                        )}
+                                        {list.status === 'closed' && (
+                                          <CircleSlash className="h-4 w-4 text-dynamic-purple" />
+                                        )}
+                                        {list.status === 'not_started' && (
+                                          <CircleDashed className="h-4 w-4 opacity-70" />
+                                        )}
+                                        {list.status === 'active' && (
+                                          <CircleFadingArrowUpIcon className="h-4 w-4 text-dynamic-blue" />
+                                        )}
+                                        {list.name}
+                                      </div>
+                                    </div>
+                                  </DropdownMenuItem>
+                                ))}
+                            </div>
+                          </ScrollArea>
+                        ) : (
                           <DropdownMenuItem
                             disabled
                             className="text-muted-foreground"
@@ -1712,29 +1718,32 @@ function TaskCardInner({
                           <UserStar className="h-4 w-4 text-dynamic-yellow" />
                           Assignees
                         </DropdownMenuSubTrigger>
-                        <DropdownMenuSubContent>
-                          {task.assignees.map((assignee) => (
-                            <DropdownMenuItem
-                              key={assignee.id}
-                              onSelect={(e) =>
-                                handleMenuItemSelect(
-                                  e as unknown as Event,
-                                  () => handleRemoveAssignee(assignee.id)
-                                )
-                              }
-                              className="cursor-pointer text-muted-foreground"
-                              disabled={isLoading}
-                            >
-                              <X className="h-4 w-4" />
-                              Remove{' '}
-                              {assignee.display_name ||
-                                assignee.email?.split('@')[0] ||
-                                'User'}
-                            </DropdownMenuItem>
-                          ))}
+                        <DropdownMenuSubContent className="max-h-[400px] w-56 overflow-hidden p-0">
+                          <ScrollArea className="h-[min(300px,calc(100vh-200px))]">
+                            <div className="p-1">
+                              {task.assignees.map((assignee) => (
+                                <DropdownMenuItem
+                                  key={assignee.id}
+                                  onSelect={(e) =>
+                                    handleMenuItemSelect(
+                                      e as unknown as Event,
+                                      () => handleRemoveAssignee(assignee.id)
+                                    )
+                                  }
+                                  className="cursor-pointer text-muted-foreground"
+                                  disabled={isLoading}
+                                >
+                                  <X className="h-4 w-4" />
+                                  Remove{' '}
+                                  {assignee.display_name ||
+                                    assignee.email?.split('@')[0] ||
+                                    'User'}
+                                </DropdownMenuItem>
+                              ))}
+                            </div>
+                          </ScrollArea>
                           {task.assignees.length > 1 && (
-                            <>
-                              <DropdownMenuSeparator />
+                            <div className="border-t bg-background">
                               <DropdownMenuItem
                                 onSelect={(e) =>
                                   handleMenuItemSelect(
@@ -1748,7 +1757,7 @@ function TaskCardInner({
                                 <UserMinus className="h-4 w-4" />
                                 Remove all assignees
                               </DropdownMenuItem>
-                            </>
+                            </div>
                           )}
                         </DropdownMenuSubContent>
                       </DropdownMenuSub>
