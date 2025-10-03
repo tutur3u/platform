@@ -358,7 +358,9 @@ export default function TaskListWithCompletion({
                 ) : (
                   <Checkbox
                     checked={false}
-                    onCheckedChange={() => handleToggleComplete(task, {} as any)}
+                    onCheckedChange={() =>
+                      handleToggleComplete(task, {} as any)
+                    }
                     className="h-5 w-5 transition-all hover:scale-110 hover:border-primary"
                   />
                 )}
