@@ -32,6 +32,7 @@ import {
 } from '@tuturuuu/ui/dropdown-menu';
 import { useBoardPresence } from '@tuturuuu/ui/hooks/useBoardPresence';
 import {
+  ArrowLeft,
   CalendarDays,
   ChevronDown,
   Layers,
@@ -43,6 +44,7 @@ import {
 } from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
 import { cn } from '@tuturuuu/utils/format';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { TaskFilter, type TaskFilters } from '../boards/boardId/task-filter';
@@ -62,6 +64,8 @@ interface Props {
   onFiltersChange: (filters: TaskFilters) => void;
   listStatusFilter: ListStatusFilter;
   onListStatusFilterChange: (filter: ListStatusFilter) => void;
+  backUrl?: string;
+  hideActions?: boolean;
 }
 
 export function BoardHeader({
@@ -73,6 +77,8 @@ export function BoardHeader({
   onFiltersChange,
   listStatusFilter,
   onListStatusFilterChange,
+  backUrl,
+  hideActions = false,
 }: Props) {
   const [isLoading, setIsLoading] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -148,7 +154,15 @@ export function BoardHeader({
     <div className="-mt-2 border-b p-1.5 md:px-4 md:py-2">
       <div className="flex flex-wrap items-center justify-between gap-1.5 sm:gap-2">
         {/* Board Info */}
-        <div className="flex min-w-0 items-center gap-1">
+        <div className="flex min-w-0 items-center gap-2">
+          {backUrl && (
+            <Link
+              href={backUrl}
+              className="text-muted-foreground transition-colors hover:text-foreground"
+            >
+              <ArrowLeft className="h-5 w-5" />
+            </Link>
+          )}
           <h1 className="truncate font-bold text-base text-foreground sm:text-xl md:text-2xl">
             {board.name}
           </h1>
@@ -256,65 +270,67 @@ export function BoardHeader({
           />
 
           {/* Board Actions Menu */}
-          <DropdownMenu open={boardMenuOpen} onOpenChange={setBoardMenuOpen}>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-6 w-6 transition-all hover:bg-muted sm:h-7 sm:w-7"
-              >
-                <MoreHorizontal className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                <span className="sr-only">Open board menu</span>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-[200px]">
-              <DropdownMenuItem
-                onClick={() => {
-                  setEditedName(board.name);
-                  setIsEditDialogOpen(true);
-                  setBoardMenuOpen(false);
-                }}
-                className="gap-2"
-              >
-                <Pencil className="h-4 w-4" />
-                Rename board
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <DropdownMenuItem
-                    onSelect={(e) => e.preventDefault()}
-                    className="gap-2 text-dynamic-red/80 focus:text-dynamic-red"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                    Delete board
-                  </DropdownMenuItem>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      This action cannot be undone. This will permanently delete
-                      the board &quot;{board.name}&quot; and all of its tasks
-                      and lists.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel disabled={isLoading}>
-                      Cancel
-                    </AlertDialogCancel>
-                    <AlertDialogAction
-                      onClick={handleDelete}
-                      disabled={isLoading}
-                      className="bg-dynamic-red/90 text-white hover:bg-dynamic-red"
+          {!hideActions && (
+            <DropdownMenu open={boardMenuOpen} onOpenChange={setBoardMenuOpen}>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-6 w-6 transition-all hover:bg-muted sm:h-7 sm:w-7"
+                >
+                  <MoreHorizontal className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                  <span className="sr-only">Open board menu</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-[200px]">
+                <DropdownMenuItem
+                  onClick={() => {
+                    setEditedName(board.name);
+                    setIsEditDialogOpen(true);
+                    setBoardMenuOpen(false);
+                  }}
+                  className="gap-2"
+                >
+                  <Pencil className="h-4 w-4" />
+                  Rename board
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <DropdownMenuItem
+                      onSelect={(e) => e.preventDefault()}
+                      className="gap-2 text-dynamic-red/80 focus:text-dynamic-red"
                     >
-                      {isLoading ? 'Deleting...' : 'Delete Board'}
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
-            </DropdownMenuContent>
-          </DropdownMenu>
+                      <Trash2 className="h-4 w-4" />
+                      Delete board
+                    </DropdownMenuItem>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        This action cannot be undone. This will permanently delete
+                        the board &quot;{board.name}&quot; and all of its tasks
+                        and lists.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel disabled={isLoading}>
+                        Cancel
+                      </AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={handleDelete}
+                        disabled={isLoading}
+                        className="bg-dynamic-red/90 text-white hover:bg-dynamic-red"
+                      >
+                        {isLoading ? 'Deleting...' : 'Delete Board'}
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
         </div>
       </div>
 

@@ -28,6 +28,7 @@ import {
   Archive,
   Calendar,
   Edit3,
+  ExternalLink,
   Link,
   Loader2,
   MoreVertical,
@@ -47,6 +48,7 @@ import {
 import { toast } from '@tuturuuu/ui/sonner';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { useTranslations } from 'next-intl';
+import NextLink from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 
 interface LinkedTask {
@@ -532,16 +534,28 @@ export function TaskProjectsClient({
                 </div>
 
                 {project.linkedTasks.length > 0 ? (
-                  <div className="flex flex-wrap gap-2">
-                    {project.linkedTasks.map((task) => (
-                      <Badge
-                        key={task.id}
-                        variant="outline"
-                        className="text-xs"
-                      >
-                        {task.name}
-                      </Badge>
-                    ))}
+                  <div className="space-y-2">
+                    <p className="text-muted-foreground text-xs">
+                      {project.linkedTasks.length > 3
+                        ? `Showing 3 of ${project.linkedTasks.length} tasks`
+                        : 'Linked tasks:'}
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      {project.linkedTasks.slice(0, 3).map((task) => (
+                        <Badge
+                          key={task.id}
+                          variant="outline"
+                          className="text-xs"
+                        >
+                          {task.name}
+                        </Badge>
+                      ))}
+                      {project.linkedTasks.length > 3 && (
+                        <Badge variant="outline" className="text-xs">
+                          +{project.linkedTasks.length - 3} more
+                        </Badge>
+                      )}
+                    </div>
                   </div>
                 ) : (
                   <p className="text-muted-foreground text-sm">
@@ -549,15 +563,26 @@ export function TaskProjectsClient({
                   </p>
                 )}
 
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => handleOpenManageTasks(project)}
-                  disabled={isLinking || isUnlinking}
-                >
-                  <Link className="mr-2 h-4 w-4" />
-                  Manage Tasks
-                </Button>
+                <div className="flex gap-2">
+                  <NextLink
+                    href={`/${wsId}/tasks/projects/${project.id}`}
+                    className="flex-1"
+                  >
+                    <Button size="sm" variant="default" className="w-full">
+                      <ExternalLink className="mr-2 h-4 w-4" />
+                      View Project
+                    </Button>
+                  </NextLink>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => handleOpenManageTasks(project)}
+                    disabled={isLinking || isUnlinking}
+                  >
+                    <Link className="mr-2 h-4 w-4" />
+                    Link Tasks
+                  </Button>
+                </div>
               </CardContent>
             </Card>
           ))}
