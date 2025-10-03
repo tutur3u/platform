@@ -23,6 +23,7 @@ import {
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
 import { useToast } from '@tuturuuu/ui/hooks/use-toast';
+import { usePresence } from '@tuturuuu/ui/hooks/usePresence';
 import {
   Box,
   Calendar,
@@ -58,6 +59,7 @@ import {
   buildEstimationIndices,
   mapEstimationPoints,
 } from './estimation-mapping';
+import { UserPresenceAvatars } from './user-presence-avatars';
 
 interface TaskEditDialogProps {
   task?: Task;
@@ -85,6 +87,8 @@ function TaskEditDialogComponent({
   availableLists: propAvailableLists,
   mode = 'edit',
 }: TaskEditDialogProps & { mode?: 'edit' | 'create' }) {
+  const isCreateMode = mode === 'create';
+
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [name, setName] = useState(task?.name || '');
@@ -240,7 +244,7 @@ function TaskEditDialogComponent({
   useEffect(() => {
     // In edit mode, when dialog opens, always reload task data to ensure we have the latest
     // This handles the case where task was edited previously and we're reopening the dialog
-    if (isOpen && mode === 'edit') {
+    if (isOpen && !isCreateMode) {
       setName(task?.name || '');
       setDescription(parseDescription(task?.description));
       setPriority(task?.priority || null);
@@ -256,7 +260,7 @@ function TaskEditDialogComponent({
     // For create mode, only load when task ID changes or dialog opens with 'new' ID
     else if (
       isOpen &&
-      (mode === 'create' || task?.id === 'new') &&
+      (isCreateMode || task?.id === 'new') &&
       (previousTaskIdRef.current !== task?.id || task?.id === 'new')
     ) {
       setName(task?.name || '');
@@ -271,11 +275,11 @@ function TaskEditDialogComponent({
       setSelectedProjects(task?.projects || []);
       if (task?.id) previousTaskIdRef.current = task.id;
     }
-  }, [task, task?.description, parseDescription, isOpen, mode]);
+  }, [task, parseDescription, isOpen, isCreateMode]);
 
   // Reset transient edits when closing without saving in edit mode
   useEffect(() => {
-    if (!isOpen && previousTaskIdRef.current && mode !== 'create') {
+    if (!isOpen && previousTaskIdRef.current && !isCreateMode) {
       setName(task?.name || '');
       setDescription(parseDescription(task?.description));
       setPriority(task?.priority || null);
@@ -287,8 +291,7 @@ function TaskEditDialogComponent({
       setSelectedAssignees(task?.assignees || []);
       setSelectedProjects(task?.projects || []);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isOpen, mode, task, parseDescription]);
+  }, [isOpen, isCreateMode, task, parseDescription]);
 
   const fetchWorkspaceMembers = useCallback(async (wsId: string) => {
     try {
@@ -377,7 +380,6 @@ function TaskEditDialogComponent({
     () => `tu-do:task-draft:${boardId}`,
     [boardId]
   );
-  const isCreateMode = mode === 'create';
 
   // Load draft when opening in create mode (skip for edit mode)
   useEffect(() => {
@@ -568,9 +570,9 @@ function TaskEditDialogComponent({
 
   const canSave = useMemo(() => {
     const hasName = !!(name || '').trim();
-    if (mode === 'create') return hasName && !isLoading;
+    if (isCreateMode) return hasName && !isLoading;
     return hasName && hasUnsavedChanges && !isLoading;
-  }, [mode, name, hasUnsavedChanges, isLoading]);
+  }, [isCreateMode, name, hasUnsavedChanges, isLoading]);
 
   // Global keyboard shortcuts: Cmd/Ctrl + Enter to save
   useEffect(() => {
@@ -708,7 +710,7 @@ function TaskEditDialogComponent({
       newDate = dayjs().add(days, 'day').endOf('day').toDate();
     }
     setEndDate(newDate);
-    if (mode === 'create') {
+    if (isCreateMode) {
       // Defer persistence to save
       return;
     }
@@ -758,7 +760,7 @@ function TaskEditDialogComponent({
   const updateEstimation = async (points: number | null) => {
     if (points === estimationPoints) return;
     setEstimationPoints(points);
-    if (mode === 'create' || !task?.id || task?.id === 'new') {
+    if (isCreateMode || !task?.id || task?.id === 'new') {
       // Will be saved on create
       return;
     }
@@ -832,7 +834,7 @@ function TaskEditDialogComponent({
     const exists = selectedLabels.some((l) => l.id === label.id);
     const supabase = createClient();
     try {
-      if (mode === 'create') {
+      if (isCreateMode) {
         // Local toggle only; persist on create
         setSelectedLabels((prev) =>
           exists ? prev.filter((l) => l.id !== label.id) : [label, ...prev]
@@ -877,7 +879,7 @@ function TaskEditDialogComponent({
     const exists = selectedAssignees.some((a) => a.user_id === member.user_id);
     const supabase = createClient();
     try {
-      if (mode === 'create') {
+      if (isCreateMode) {
         // Local toggle only; persist on create
         setSelectedAssignees((prev) =>
           exists
@@ -921,7 +923,7 @@ function TaskEditDialogComponent({
     const exists = selectedProjects.some((p) => p.id === project.id);
     const supabase = createClient();
     try {
-      if (mode === 'create') {
+      if (isCreateMode) {
         // Local toggle only; persist on create
         setSelectedProjects((prev) =>
           exists ? prev.filter((p) => p.id !== project.id) : [...prev, project]
@@ -1001,7 +1003,7 @@ function TaskEditDialogComponent({
       ? JSON.stringify(currentDescription)
       : null;
 
-    if (mode === 'create') {
+    if (isCreateMode) {
       try {
         const supabase = createClient();
         const { createTask } = await import('@tuturuuu/utils/task-helper');
@@ -1433,16 +1435,20 @@ function TaskEditDialogComponent({
                 </div>
                 <div className="flex min-w-0 flex-col gap-0.5">
                   <DialogTitle className="truncate font-semibold text-base text-foreground md:text-lg">
-                    {mode === 'create' ? 'Create New Task' : 'Edit Task'}
+                    {isCreateMode ? 'Create New Task' : 'Edit Task'}
                   </DialogTitle>
                   <DialogDescription className="sr-only">
-                    {mode === 'create'
+                    {isCreateMode
                       ? 'Create a new task with details, assignments, and project associations'
                       : 'Edit task details, assignments, and project associations'}
                   </DialogDescription>
                 </div>
               </div>
               <div className="flex items-center gap-1 md:gap-2">
+                {/* Online Users */}
+                {isOpen && !isCreateMode && (
+                  <UserPresenceAvatarsComponent taskId={task?.id ?? ''} />
+                )}
                 {isCreateMode && (
                   <label className="hidden items-center gap-2 text-muted-foreground text-xs md:flex">
                     <Switch
@@ -1452,7 +1458,7 @@ function TaskEditDialogComponent({
                     Create multiple
                   </label>
                 )}
-                {mode !== 'create' && (
+                {!isCreateMode && (
                   <Button
                     variant="ghost"
                     size="icon"
@@ -1514,7 +1520,7 @@ function TaskEditDialogComponent({
                       ) : (
                         <>
                           <Check className="h-4 w-4" />
-                          {mode === 'create' ? 'Create Task' : 'Save Changes'}
+                          {isCreateMode ? 'Create Task' : 'Save Changes'}
                         </>
                       )}
                     </Button>
@@ -2549,6 +2555,20 @@ function TaskEditDialogComponent({
         </DialogContent>
       </Dialog>
     </>
+  );
+}
+
+function UserPresenceAvatarsComponent({ taskId }: { taskId: string }) {
+  const { presenceState, currentUserId } = usePresence(
+    `task_presence_${taskId}`
+  );
+
+  return (
+    <UserPresenceAvatars
+      presenceState={presenceState}
+      currentUserId={currentUserId}
+      maxDisplay={5}
+    />
   );
 }
 

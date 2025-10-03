@@ -30,7 +30,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
-import { useBoardPresence } from '@tuturuuu/ui/hooks/useBoardPresence';
+import { usePresence } from '@tuturuuu/ui/hooks/usePresence';
 import {
   CalendarDays,
   ChevronDown,
@@ -82,7 +82,7 @@ export function BoardHeader({
   const router = useRouter();
 
   // Track online users on this board
-  const { presenceState } = useBoardPresence(board.id);
+  const { presenceState } = usePresence(`board_presence_${board.id}`);
 
   async function handleEdit() {
     if (!editedName.trim() || editedName === board.name) {
@@ -160,7 +160,7 @@ export function BoardHeader({
           <UserPresenceAvatars
             presenceState={presenceState}
             currentUserId={currentUserId}
-            maxDisplay={3}
+            maxDisplay={5}
           />
 
           {/* List Status Filter Tabs */}
