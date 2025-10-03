@@ -1,6 +1,7 @@
 'use client';
 
 import Highlight from '@tiptap/extension-highlight';
+import Image from '@tiptap/extension-image';
 import Link from '@tiptap/extension-link';
 import Placeholder from '@tiptap/extension-placeholder';
 import Strike from '@tiptap/extension-strike';
@@ -330,6 +331,13 @@ export function RichTextEditor({
       Strike,
       Subscript,
       Superscript,
+      Image.configure({
+        inline: true,
+        allowBase64: false,
+        HTMLAttributes: {
+          class: 'rounded-md',
+        },
+      }),
       ImageResize.configure({
         inline: true,
         allowBase64: false,
