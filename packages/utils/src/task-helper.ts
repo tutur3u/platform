@@ -177,6 +177,7 @@ export async function createTask(
     priority: TaskPriority | null;
     start_date: string | null;
     end_date: string | null;
+    estimation_points: number | null;
     archived: boolean;
     created_at: string;
   } = {
@@ -186,6 +187,7 @@ export async function createTask(
     priority: task.priority || null,
     start_date: task.start_date || null,
     end_date: task.end_date || null,
+    estimation_points: task.estimation_points ?? null,
     archived: false,
     created_at: new Date().toISOString(),
   };

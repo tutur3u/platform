@@ -87,7 +87,7 @@ function TaskEditDialogComponent({
 }: TaskEditDialogProps & { mode?: 'edit' | 'create' }) {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
-  const [name, setName] = useState(task?.name);
+  const [name, setName] = useState(task?.name || '');
   const [description, setDescription] = useState<JSONContent | null>(() => {
     // Try to parse existing description as JSON, fallback to creating simple text content
     if (task?.description) {
@@ -241,7 +241,7 @@ function TaskEditDialogComponent({
     // In edit mode, when dialog opens, always reload task data to ensure we have the latest
     // This handles the case where task was edited previously and we're reopening the dialog
     if (isOpen && mode === 'edit') {
-      setName(task?.name);
+      setName(task?.name || '');
       setDescription(parseDescription(task?.description));
       setPriority(task?.priority || null);
       setStartDate(task?.start_date ? new Date(task?.start_date) : undefined);
@@ -276,7 +276,7 @@ function TaskEditDialogComponent({
   // Reset transient edits when closing without saving in edit mode
   useEffect(() => {
     if (!isOpen && previousTaskIdRef.current && mode !== 'create') {
-      setName(task?.name);
+      setName(task?.name || '');
       setDescription(parseDescription(task?.description));
       setPriority(task?.priority || null);
       setStartDate(task?.start_date ? new Date(task?.start_date) : undefined);
@@ -758,7 +758,7 @@ function TaskEditDialogComponent({
   const updateEstimation = async (points: number | null) => {
     if (points === estimationPoints) return;
     setEstimationPoints(points);
-    if (mode === 'create') {
+    if (mode === 'create' || !task?.id || task?.id === 'new') {
       // Will be saved on create
       return;
     }
@@ -766,7 +766,6 @@ function TaskEditDialogComponent({
     try {
       const supabase = createClient();
 
-      if (!task?.id) throw new Error('Task ID not found');
       const { error } = await supabase
         .from('tasks')
         .update({ estimation_points: points })
