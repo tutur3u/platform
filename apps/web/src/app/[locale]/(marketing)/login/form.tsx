@@ -922,7 +922,7 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
                     control={otpForm.control}
                     name="skipOtp"
                     render={({ field }) => (
-                      <FormItem className="flex flex-row items-center justify-between rounded-lg border border-dynamic-yellow/50 bg-dynamic-yellow/20 p-3">
+                      <FormItem className="flex flex-row items-center justify-between rounded-lg border border-dynamic-orange/50 bg-dynamic-orange/20 p-3">
                         <div className="space-y-0.5">
                           <FormLabel className="font-medium text-xs">
                             Allow bypassing OTP verification
