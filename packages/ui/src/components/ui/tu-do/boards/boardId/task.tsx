@@ -1551,9 +1551,14 @@ function TaskCardInner({
                                   <div className="flex items-center gap-2">
                                     <span
                                       className="h-3 w-3 rounded-full"
-                                      style={{ backgroundColor: label.color, opacity: 0.9 }}
+                                      style={{
+                                        backgroundColor: label.color,
+                                        opacity: 0.9,
+                                      }}
                                     />
-                                    <span className="truncate">{label.name}</span>
+                                    <span className="truncate">
+                                      {label.name}
+                                    </span>
                                   </div>
                                   {active && <Check className="h-4 w-4" />}
                                 </DropdownMenuItem>
@@ -1668,8 +1673,9 @@ function TaskCardInner({
                         </div>
                       </DropdownMenuSubTrigger>
                       <DropdownMenuSubContent className="max-h-[400px] w-56 overflow-hidden p-0">
-                        {availableLists.filter((list) => list.id !== task.list_id)
-                          .length > 0 ? (
+                        {availableLists.filter(
+                          (list) => list.id !== task.list_id
+                        ).length > 0 ? (
                           <ScrollArea className="h-[min(300px,calc(100vh-200px))]">
                             <div className="p-1">
                               {availableLists
