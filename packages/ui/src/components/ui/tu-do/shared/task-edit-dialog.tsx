@@ -54,6 +54,7 @@ import {
 } from '@tuturuuu/utils/task-helper';
 import dayjs from 'dayjs';
 import type { LucideIcon } from 'lucide-react';
+import Image from 'next/image';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import {
@@ -97,6 +98,15 @@ const createInitialSuggestionState = (): SuggestionState => ({
   position: null,
 });
 
+// Normalize text for search: remove diacritics and convert to lowercase
+const normalizeForSearch = (text: string): string => {
+  return text
+    .normalize('NFD') // Decompose combined characters
+    .replace(/[\u0300-\u036f]/g, '') // Remove diacritical marks
+    .toLowerCase()
+    .trim();
+};
+
 const isSameSuggestionState = (
   a: SuggestionState,
   b: SuggestionState
@@ -123,6 +133,58 @@ const isSameSuggestionState = (
   }
 
   return true;
+};
+
+type MentionOptionType = 'user' | 'workspace' | 'task';
+
+interface MentionOption {
+  id: string;
+  label: string;
+  subtitle?: string;
+  avatarUrl?: string | null;
+  type: MentionOptionType;
+  payload?: Record<string, unknown>;
+}
+
+const mentionGroupOrder: Array<{ type: MentionOptionType; title: string }> = [
+  { type: 'user', title: 'People' },
+  { type: 'workspace', title: 'Workspaces' },
+  { type: 'task', title: 'Tasks' },
+];
+
+const mentionTypeStyles: Record<
+  MentionOptionType,
+  {
+    badgeClass: string;
+    avatarFallback: string;
+    avatarClass: string;
+    prefix: string;
+  }
+> = {
+  user: {
+    badgeClass:
+      'border border-dynamic-green/40 bg-dynamic-green/10 text-dynamic-green',
+    avatarFallback: '@',
+    avatarClass:
+      'bg-dynamic-green/20 text-dynamic-green border border-dynamic-green/30',
+    prefix: '@',
+  },
+  workspace: {
+    badgeClass:
+      'border border-dynamic-orange/40 bg-dynamic-orange/10 text-dynamic-orange',
+    avatarFallback: 'W',
+    avatarClass:
+      'bg-dynamic-orange/20 text-dynamic-orange border border-dynamic-orange/30',
+    prefix: '@',
+  },
+  task: {
+    badgeClass:
+      'border border-dynamic-blue/40 bg-dynamic-blue/10 text-dynamic-blue',
+    avatarFallback: '#',
+    avatarClass:
+      'bg-dynamic-blue/20 text-dynamic-blue border border-dynamic-blue/30',
+    prefix: '#',
+  },
 };
 
 interface SlashCommandDefinition {
@@ -246,6 +308,12 @@ function TaskEditDialogComponent({
     task?.projects || []
   );
   const [projectSearchQuery, setProjectSearchQuery] = useState('');
+  const [, setWorkspaceDetails] = useState<any | null>(null);
+  const [workspaceDetailsLoading, setWorkspaceDetailsLoading] = useState(false);
+  const [allWorkspaces, setAllWorkspaces] = useState<any[]>([]);
+  const [allWorkspacesLoading, setAllWorkspacesLoading] = useState(false);
+  const [workspaceTasks, setWorkspaceTasks] = useState<any[]>([]);
+  const [workspaceTasksLoading, setWorkspaceTasksLoading] = useState(false);
   const [editorInstance, setEditorInstance] = useState<Editor | null>(null);
   const [slashState, setSlashState] = useState<SuggestionState>(
     createInitialSuggestionState
@@ -257,7 +325,9 @@ function TaskEditDialogComponent({
   const [mentionHighlightIndex, setMentionHighlightIndex] = useState(0);
   const slashListRef = useRef<HTMLDivElement | null>(null);
   const mentionListRef = useRef<HTMLDivElement | null>(null);
-  const suggestionMenuWidth = 304;
+  const suggestionMenuWidth = 360;
+  const previousMentionHighlightRef = useRef(0);
+  const previousSlashHighlightRef = useRef(0);
 
   const queryClient = useQueryClient();
   const previousTaskIdRef = useRef<string | null>(null);
@@ -302,8 +372,18 @@ function TaskEditDialogComponent({
       setEditorInstance(null);
       setSlashHighlightIndex(0);
       setMentionHighlightIndex(0);
+      previousMentionHighlightRef.current = 0;
+      previousSlashHighlightRef.current = 0;
     }
   }, [isOpen]);
+
+  useEffect(() => {
+    if (!workspaceId) {
+      setWorkspaceDetails(null);
+      setWorkspaceTasks([]);
+      setAllWorkspaces([]);
+    }
+  }, [workspaceId]);
 
   const slashCommands = useMemo<SlashCommandDefinition[]>(() => {
     const commands: SlashCommandDefinition[] = [
@@ -396,30 +476,140 @@ function TaskEditDialogComponent({
 
   const filteredSlashCommands = useMemo(() => {
     if (!slashState.open) return [] as SlashCommandDefinition[];
-    const normalizedQuery = slashState.query.trim().toLowerCase();
+    const normalizedQuery = normalizeForSearch(slashState.query.trim());
 
     return slashCommands.filter((command) => {
       if (command.disabled) return false;
       if (!normalizedQuery) return true;
-      const haystack = [command.label, ...command.keywords];
-      return haystack.some((text) =>
-        text.toLowerCase().includes(normalizedQuery)
+
+      const searchTexts = [
+        command.label,
+        command.description || '',
+        ...command.keywords,
+      ];
+
+      // Try exact match first (case-insensitive with diacritics normalized)
+      const normalizedTexts = searchTexts.map(normalizeForSearch);
+
+      // Check if any text contains the query
+      if (normalizedTexts.some((text) => text.includes(normalizedQuery))) {
+        return true;
+      }
+
+      // Try matching individual words (for partial matching)
+      const queryWords = normalizedQuery.split(/\s+/);
+      return queryWords.every((word) =>
+        normalizedTexts.some((text) => text.includes(word))
       );
     });
   }, [slashCommands, slashState.open, slashState.query]);
 
-  const filteredMentionMembers = useMemo(() => {
-    if (!mentionState.open) return [] as typeof workspaceMembers;
-    const normalizedQuery = mentionState.query.trim().toLowerCase();
+  const mentionUserOptions = useMemo<MentionOption[]>(
+    () =>
+      [...workspaceMembers]
+        .sort((a, b) =>
+          (a?.display_name || '').localeCompare(b?.display_name || '')
+        )
+        .map((member: any) => ({
+          id: member.user_id,
+          label: member.display_name || 'Unknown member',
+          subtitle: undefined,
+          avatarUrl: member.avatar_url,
+          type: 'user',
+          payload: member,
+        })),
+    [workspaceMembers]
+  );
 
-    const results = workspaceMembers.filter((member) => {
-      const name = (member?.display_name || '').toLowerCase();
-      if (!normalizedQuery) return true;
-      return name.includes(normalizedQuery);
+  const mentionWorkspaceOptions = useMemo<MentionOption[]>(() => {
+    return allWorkspaces
+      .filter((ws) => !ws.personal)
+      .map((ws) => ({
+        id: ws.id,
+        label: ws.name || 'Workspace',
+        subtitle: ws.handle ? `@${ws.handle}` : ws.id.slice(0, 8),
+        avatarUrl: null,
+        type: 'workspace' as const,
+        payload: ws,
+      }));
+  }, [allWorkspaces]);
+
+  const mentionTaskOptions = useMemo<MentionOption[]>(
+    () =>
+      [...workspaceTasks]
+        .filter((taskItem: any) => taskItem.id !== task?.id)
+        .map((task: any) => {
+          const subtitleParts: string[] = [];
+          if (task.list?.name) subtitleParts.push(task.list.name);
+          return {
+            id: task.id,
+            label: task.name || 'Untitled task',
+            subtitle: subtitleParts.join(' • ') || undefined,
+            avatarUrl: null,
+            type: 'task',
+            payload: task,
+          };
+        }),
+    [workspaceTasks, task?.id]
+  );
+
+  const allMentionOptions = useMemo<MentionOption[]>(
+    () => [
+      ...mentionUserOptions,
+      ...mentionWorkspaceOptions,
+      ...mentionTaskOptions,
+    ],
+    [mentionUserOptions, mentionWorkspaceOptions, mentionTaskOptions]
+  );
+
+  const filteredMentionOptions = useMemo(() => {
+    const rawQuery = mentionState.query.trim();
+    const normalizedQuery = normalizeForSearch(rawQuery.replace(/^[@#]/, ''));
+
+    if (!normalizedQuery) {
+      const limitedTasks = mentionTaskOptions.slice(0, 8);
+      return [
+        ...mentionUserOptions,
+        ...mentionWorkspaceOptions,
+        ...limitedTasks,
+      ];
+    }
+
+    return allMentionOptions.filter((option) => {
+      const searchTexts = [option.label, option.subtitle || ''];
+
+      // Try exact match first (case-insensitive with diacritics normalized)
+      const normalizedTexts = searchTexts.map(normalizeForSearch);
+      const combinedText = normalizedTexts.join(' ');
+
+      if (combinedText.includes(normalizedQuery)) {
+        return true;
+      }
+
+      // Try matching individual words (for partial matching)
+      const queryWords = normalizedQuery.split(/\s+/);
+      return queryWords.every((word) =>
+        normalizedTexts.some((text) => text.includes(word))
+      );
     });
+  }, [
+    allMentionOptions,
+    mentionState.query,
+    mentionTaskOptions,
+    mentionUserOptions,
+    mentionWorkspaceOptions,
+  ]);
 
-    return results.slice(0, 8);
-  }, [mentionState.open, mentionState.query, workspaceMembers]);
+  const mentionGroups = useMemo(() => {
+    return mentionGroupOrder
+      .map((group) => ({
+        ...group,
+        options: filteredMentionOptions.filter(
+          (option) => option.type === group.type
+        ),
+      }))
+      .filter((group) => group.options.length > 0);
+  }, [filteredMentionOptions]);
 
   useEffect(() => {
     if (!slashState.open) {
@@ -439,14 +629,39 @@ function TaskEditDialogComponent({
     }
   }, [slashState.open]);
 
+  // Only scroll into view when using keyboard navigation (arrow keys)
   useEffect(() => {
     if (!slashState.open) return;
-    const container = slashListRef.current;
-    if (!container) return;
-    const activeItem = container.querySelector<HTMLElement>(
-      `[data-slash-item="${slashHighlightIndex}"]`
-    );
-    activeItem?.scrollIntoView({ block: 'nearest' });
+
+    // Only scroll if the highlight actually changed (user pressed arrow key)
+    if (previousSlashHighlightRef.current === slashHighlightIndex) return;
+    previousSlashHighlightRef.current = slashHighlightIndex;
+
+    // Small delay to ensure DOM is ready
+    const timeoutId = setTimeout(() => {
+      const container = slashListRef.current;
+      if (!container) return;
+
+      const activeItem = container.querySelector<HTMLElement>(
+        `[data-slash-item="${slashHighlightIndex}"]`
+      );
+      if (!activeItem) return;
+
+      // Check if item is visible
+      const containerRect = container.getBoundingClientRect();
+      const itemRect = activeItem.getBoundingClientRect();
+
+      const isVisible =
+        itemRect.top >= containerRect.top &&
+        itemRect.bottom <= containerRect.bottom;
+
+      // Only scroll if not visible (user pressed arrow key)
+      if (!isVisible) {
+        activeItem.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+      }
+    }, 10);
+
+    return () => clearTimeout(timeoutId);
   }, [slashHighlightIndex, slashState.open]);
 
   useEffect(() => {
@@ -456,10 +671,10 @@ function TaskEditDialogComponent({
     }
 
     setMentionHighlightIndex((prev) => {
-      if (filteredMentionMembers.length === 0) return 0;
-      return Math.min(prev, filteredMentionMembers.length - 1);
+      if (filteredMentionOptions.length === 0) return 0;
+      return Math.min(prev, filteredMentionOptions.length - 1);
     });
-  }, [mentionState.open, filteredMentionMembers.length]);
+  }, [mentionState.open, filteredMentionOptions.length]);
 
   useEffect(() => {
     if (mentionState.open) {
@@ -467,14 +682,39 @@ function TaskEditDialogComponent({
     }
   }, [mentionState.open]);
 
+  // Only scroll into view when using keyboard navigation (arrow keys)
   useEffect(() => {
     if (!mentionState.open) return;
-    const container = mentionListRef.current;
-    if (!container) return;
-    const activeItem = container.querySelector<HTMLElement>(
-      `[data-mention-item="${mentionHighlightIndex}"]`
-    );
-    activeItem?.scrollIntoView({ block: 'nearest' });
+
+    // Only scroll if the highlight actually changed (user pressed arrow key)
+    if (previousMentionHighlightRef.current === mentionHighlightIndex) return;
+    previousMentionHighlightRef.current = mentionHighlightIndex;
+
+    // Small delay to ensure DOM is ready
+    const timeoutId = setTimeout(() => {
+      const container = mentionListRef.current;
+      if (!container) return;
+
+      const activeItem = container.querySelector<HTMLElement>(
+        `[data-mention-item="${mentionHighlightIndex}"]`
+      );
+      if (!activeItem) return;
+
+      // Check if item is visible
+      const containerRect = container.getBoundingClientRect();
+      const itemRect = activeItem.getBoundingClientRect();
+
+      const isVisible =
+        itemRect.top >= containerRect.top &&
+        itemRect.bottom <= containerRect.bottom;
+
+      // Only scroll if not visible (user pressed arrow key)
+      if (!isVisible) {
+        activeItem.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+      }
+    }, 10);
+
+    return () => clearTimeout(timeoutId);
   }, [mentionHighlightIndex, mentionState.open]);
 
   useEffect(() => {
@@ -749,26 +989,26 @@ function TaskEditDialogComponent({
     [selectedAssignees, mode, task?.id, boardId, queryClient, onUpdate, toast]
   );
 
-  const applyAssigneeMention = useCallback(
-    (member: any) => {
+  const insertMentionOption = useCallback(
+    (option: MentionOption) => {
       if (!editorInstance) return;
-
-      const displayName = (member?.display_name || 'Member')
-        .trim()
-        .replace(/\s+/g, ' ');
 
       const chain = editorInstance.chain().focus();
       if (mentionState.range) {
         chain.deleteRange(mentionState.range);
       }
+
       chain
         .insertContent([
           {
             type: 'mention',
             attrs: {
-              userId: member?.user_id ?? null,
-              displayName,
-              avatarUrl: member?.avatar_url ?? null,
+              userId: option.type === 'user' ? option.id : null,
+              entityId: option.id,
+              entityType: option.type,
+              displayName: option.label,
+              avatarUrl: option.avatarUrl ?? null,
+              subtitle: option.subtitle ?? null,
             },
           },
           { type: 'text', text: ' ' },
@@ -817,7 +1057,7 @@ function TaskEditDialogComponent({
                       className={cn(
                         'flex w-full items-center gap-3 px-3 py-2 text-left text-sm transition-colors',
                         isActive
-                          ? 'bg-dynamic-surface text-foreground'
+                          ? 'bg-dynamic-blue/20 text-foreground ring-1 ring-dynamic-blue/40'
                           : 'text-muted-foreground hover:bg-dynamic-surface/70 hover:text-foreground'
                       )}
                       onMouseDown={(event) => {
@@ -853,7 +1093,7 @@ function TaskEditDialogComponent({
       ? createPortal(
           <div
             role="dialog"
-            className="pointer-events-auto fixed z-[200] w-[304px] overflow-hidden rounded-lg border border-dynamic-border bg-popover/95 shadow-xl backdrop-blur"
+            className="pointer-events-auto fixed z-[200] w-[360px] overflow-hidden rounded-lg border border-dynamic-border bg-popover/95 shadow-xl backdrop-blur"
             style={{
               top: mentionState.position.top,
               left: mentionState.position.left,
@@ -862,72 +1102,121 @@ function TaskEditDialogComponent({
             onMouseDown={(event) => event.stopPropagation()}
           >
             <div className="border-dynamic-border/60 border-b px-3 py-2 font-medium text-muted-foreground text-xs uppercase tracking-wide">
-              Assign teammates
+              Mention people, workspaces, or tasks
             </div>
+            {(workspaceDetailsLoading ||
+              workspaceTasksLoading ||
+              allWorkspacesLoading) && (
+              <div className="flex items-center gap-2 px-3 py-2 text-muted-foreground text-xs">
+                <Loader2 className="h-3 w-3 animate-spin" />
+                Fetching latest context…
+              </div>
+            )}
             <div
               ref={mentionListRef}
-              className="scrollbar-thin max-h-72 overflow-y-auto overscroll-contain py-1"
-              style={{ maxHeight: 288 }}
+              className="scrollbar-thin max-h-80 overflow-y-auto overscroll-contain py-1"
+              style={{ maxHeight: 320 }}
             >
-              {filteredMentionMembers.length === 0 ? (
-                <div className="px-3 py-2 text-muted-foreground text-sm">
-                  {workspaceMembers.length === 0
-                    ? 'No members available'
-                    : 'No matches found'}
+              {filteredMentionOptions.length === 0 ? (
+                <div className="px-3 py-3 text-muted-foreground text-sm">
+                  {mentionState.query
+                    ? 'No matches found. Try a different keyword.'
+                    : 'Start typing to mention teammates, your workspace, or recent tasks.'}
                 </div>
               ) : (
-                filteredMentionMembers.map((member, index) => {
-                  const isActive = index === mentionHighlightIndex;
-                  const alreadyAssigned = selectedAssignees.some(
-                    (assignee) => assignee.user_id === member.user_id
-                  );
-                  const mentionHandle = member.display_name
-                    ? member.display_name.replace(/\s+/g, '').toLowerCase()
-                    : member.user_id;
-
-                  return (
-                    <button
-                      data-mention-item={index}
-                      key={member.user_id}
-                      type="button"
-                      className={cn(
-                        'flex w-full items-center gap-3 px-3 py-2 text-left text-sm transition-colors',
-                        isActive
-                          ? 'bg-dynamic-surface text-foreground'
-                          : 'text-muted-foreground hover:bg-dynamic-surface/70 hover:text-foreground'
-                      )}
-                      onMouseDown={(event) => {
-                        event.preventDefault();
-                        event.stopPropagation();
-                        applyAssigneeMention(member);
-                      }}
-                      onMouseEnter={() => setMentionHighlightIndex(index)}
-                    >
-                      <Avatar className="h-7 w-7">
-                        <AvatarImage
-                          src={member.avatar_url || undefined}
-                          alt={member.display_name || 'Member avatar'}
-                        />
-                        <AvatarFallback>
-                          {(member.display_name || '??')
-                            .slice(0, 2)
-                            .toUpperCase()}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="flex flex-1 flex-col">
-                        <span className="font-medium text-sm">
-                          {member.display_name || 'Member'}
-                        </span>
-                        <span className="text-muted-foreground/80 text-xs">
-                          @{mentionHandle}
-                        </span>
+                (() => {
+                  let optionCursor = -1;
+                  return mentionGroups.map((group) => (
+                    <div key={group.type} className="py-1">
+                      <div className="px-3 pb-1 font-semibold text-[11px] text-muted-foreground uppercase tracking-wide">
+                        {group.title}
                       </div>
-                      {alreadyAssigned && (
-                        <Check className="h-4 w-4 text-dynamic-green" />
-                      )}
-                    </button>
-                  );
-                })
+                      {group.options.map((option) => {
+                        optionCursor += 1;
+                        const isActive = optionCursor === mentionHighlightIndex;
+                        const typeMeta = mentionTypeStyles[option.type];
+                        const fallbackGlyph =
+                          option.type === 'user'
+                            ? (option.label || '')
+                                .split(/\s+/)
+                                .map((part) => part?.[0]?.toUpperCase() ?? '')
+                                .join('')
+                                .slice(0, 2) || typeMeta.avatarFallback
+                            : typeMeta.avatarFallback;
+                        const badgeLabel =
+                          option.type === 'user'
+                            ? 'Person'
+                            : option.type === 'workspace'
+                              ? 'Workspace'
+                              : 'Task';
+
+                        return (
+                          <button
+                            data-mention-item={optionCursor}
+                            key={`${option.type}-${option.id}`}
+                            type="button"
+                            className={cn(
+                              'flex w-full items-center gap-3 px-3 py-2 text-left text-sm transition-colors',
+                              isActive
+                                ? 'bg-dynamic-blue/20 text-foreground ring-1 ring-dynamic-blue/40'
+                                : 'text-muted-foreground hover:bg-dynamic-surface/70 hover:text-foreground'
+                            )}
+                            onMouseDown={(event) => {
+                              event.preventDefault();
+                              event.stopPropagation();
+                              insertMentionOption(option);
+                            }}
+                            onMouseEnter={() =>
+                              setMentionHighlightIndex(optionCursor)
+                            }
+                          >
+                            <div
+                              className={cn(
+                                'flex h-7 w-7 items-center justify-center overflow-hidden rounded-full border font-semibold text-xs uppercase',
+                                typeMeta.avatarClass,
+                                option.avatarUrl ? 'p-0' : 'px-1'
+                              )}
+                            >
+                              {option.avatarUrl ? (
+                                <Image
+                                  src={option.avatarUrl}
+                                  alt={option.label}
+                                  width={28}
+                                  height={28}
+                                  className="h-full w-full object-cover"
+                                  referrerPolicy="no-referrer"
+                                />
+                              ) : (
+                                <span className="truncate">
+                                  {fallbackGlyph}
+                                </span>
+                              )}
+                            </div>
+                            <div className="flex min-w-0 flex-1 flex-col">
+                              <span className="truncate font-medium text-foreground text-sm">
+                                {option.label}
+                              </span>
+                              {option.subtitle && (
+                                <span className="truncate text-muted-foreground text-xs">
+                                  {option.subtitle}
+                                </span>
+                              )}
+                            </div>
+                            <Badge
+                              variant="secondary"
+                              className={cn(
+                                'shrink-0 font-semibold text-[10px] uppercase tracking-wide',
+                                typeMeta.badgeClass
+                              )}
+                            >
+                              {badgeLabel}
+                            </Badge>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  ));
+                })()
               )}
             </div>
           </div>,
@@ -988,7 +1277,7 @@ function TaskEditDialogComponent({
       }
 
       if (mentionState.open) {
-        if (filteredMentionMembers.length === 0) return;
+        if (filteredMentionOptions.length === 0) return;
 
         if (
           event.key === 'ArrowDown' ||
@@ -997,7 +1286,7 @@ function TaskEditDialogComponent({
           event.preventDefault();
           event.stopPropagation();
           setMentionHighlightIndex(
-            (prev) => (prev + 1) % filteredMentionMembers.length
+            (prev) => (prev + 1) % filteredMentionOptions.length
           );
           return;
         }
@@ -1010,8 +1299,8 @@ function TaskEditDialogComponent({
           event.stopPropagation();
           setMentionHighlightIndex(
             (prev) =>
-              (prev - 1 + filteredMentionMembers.length) %
-              filteredMentionMembers.length
+              (prev - 1 + filteredMentionOptions.length) %
+              filteredMentionOptions.length
           );
           return;
         }
@@ -1019,8 +1308,8 @@ function TaskEditDialogComponent({
         if (event.key === 'Enter') {
           event.preventDefault();
           event.stopPropagation();
-          const member = filteredMentionMembers[mentionHighlightIndex];
-          if (member) applyAssigneeMention(member);
+          const option = filteredMentionOptions[mentionHighlightIndex];
+          if (option) insertMentionOption(option);
           return;
         }
       }
@@ -1036,11 +1325,11 @@ function TaskEditDialogComponent({
     slashState.open,
     mentionState.open,
     filteredSlashCommands,
-    filteredMentionMembers,
+    filteredMentionOptions,
     slashHighlightIndex,
     mentionHighlightIndex,
     executeSlashCommand,
-    applyAssigneeMention,
+    insertMentionOption,
     closeSlashMenu,
     closeMentionMenu,
   ]);
@@ -1211,13 +1500,119 @@ function TaskEditDialogComponent({
     }
   }, []);
 
+  const fetchAllWorkspaces = useCallback(async () => {
+    try {
+      setAllWorkspacesLoading(true);
+      const supabase = createClient();
+
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (!user) return;
+
+      const { data, error } = await supabase
+        .from('workspaces')
+        .select('id, name, handle, personal, workspace_members!inner(role)')
+        .eq('workspace_members.user_id', user.id);
+
+      if (error) throw error;
+
+      setAllWorkspaces(data || []);
+    } catch (error) {
+      console.error('Failed fetching all workspaces', error);
+    } finally {
+      setAllWorkspacesLoading(false);
+    }
+  }, []);
+
+  const fetchWorkspaceDetails = useCallback(async (wsId: string) => {
+    if (!wsId) return;
+    try {
+      setWorkspaceDetailsLoading(true);
+      const supabase = createClient();
+      const { data, error } = await supabase
+        .from('workspaces')
+        .select('id, name, handle')
+        .eq('id', wsId)
+        .single();
+
+      if (error) throw error;
+      setWorkspaceDetails(data || null);
+    } catch (error) {
+      console.error('Failed fetching workspace details', error);
+    } finally {
+      setWorkspaceDetailsLoading(false);
+    }
+  }, []);
+
+  const fetchWorkspaceTasks = useCallback(async (wsId: string) => {
+    if (!wsId) return;
+    try {
+      setWorkspaceTasksLoading(true);
+      const supabase = createClient();
+
+      // Tasks are related to workspaces through: tasks -> task_lists -> workspace_boards
+      // We need to join through the relationship chain
+      const { data: boards, error: boardsError } = await supabase
+        .from('workspace_boards')
+        .select('id')
+        .eq('ws_id', wsId);
+
+      if (boardsError) throw boardsError;
+
+      const boardIds = (boards || []).map((b) => b.id);
+      if (boardIds.length === 0) {
+        setWorkspaceTasks([]);
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from('tasks')
+        .select(`
+          id,
+          name,
+          priority,
+          created_at,
+          list:task_lists!inner(id, name, board_id)
+        `)
+        .in('task_lists.board_id', boardIds)
+        .eq('deleted', false)
+        .order('created_at', { ascending: false })
+        .limit(25);
+
+      if (error) throw error;
+      setWorkspaceTasks(data || []);
+    } catch (error) {
+      console.error('Failed fetching workspace tasks', error);
+    } finally {
+      setWorkspaceTasksLoading(false);
+    }
+  }, []);
+
   // Fetch workspace members and projects when workspace ID is available
   useEffect(() => {
     if (isOpen && workspaceId) {
       fetchWorkspaceMembers(workspaceId);
       fetchTaskProjects(workspaceId);
+      fetchWorkspaceDetails(workspaceId);
+      fetchWorkspaceTasks(workspaceId);
     }
-  }, [isOpen, workspaceId, fetchWorkspaceMembers, fetchTaskProjects]);
+  }, [
+    isOpen,
+    workspaceId,
+    fetchWorkspaceMembers,
+    fetchTaskProjects,
+    fetchWorkspaceDetails,
+    fetchWorkspaceTasks,
+  ]);
+
+  // Fetch all accessible workspaces when dialog opens for mention functionality
+  useEffect(() => {
+    if (isOpen) {
+      fetchAllWorkspaces();
+    }
+  }, [isOpen, fetchAllWorkspaces]);
 
   // ------- Draft persistence (create mode) -------------------------------------
   const draftStorageKey = useMemo(
