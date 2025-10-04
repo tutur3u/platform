@@ -13,7 +13,7 @@ export async function updateSession(request: NextRequest): Promise<{
       request,
     });
 
-    const { url, key } = checkEnvVariables({ useServiceKey: false });
+    const { url, key } = checkEnvVariables({ useSecretKey: false });
     const supabase = createServerClient<Database>(url, key, {
       cookies: {
         getAll() {
