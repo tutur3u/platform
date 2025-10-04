@@ -154,12 +154,6 @@ export default async function TaskProjectPage({ params }: Props) {
           .in('id', listIds.length > 0 ? listIds : [''])
           .eq('deleted', false);
 
-        // Fetch workspace labels for filters
-        const { data: workspaceLabels } = await supabase
-          .from('workspace_task_labels')
-          .select('*')
-          .eq('ws_id', wsId);
-
         // Transform tasks to match Task type
         const formattedTasks: Task[] = rawTasks.map((task) => {
           const normalizedLabels =
@@ -212,7 +206,6 @@ export default async function TaskProjectPage({ params }: Props) {
               status: list.status ?? 'active',
               color: (list.color as any) ?? 'gray',
             }))}
-            workspaceLabels={workspaceLabels ?? []}
             currentUserId={currentUser.id}
             wsId={wsId}
           />

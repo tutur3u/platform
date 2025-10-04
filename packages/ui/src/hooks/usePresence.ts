@@ -20,6 +20,7 @@ export function usePresence(channelName: string) {
 
   useEffect(() => {
     if (!channelName) return;
+    isCleanedUpRef.current = false;
 
     const supabase = createClient();
 

@@ -2022,7 +2022,7 @@ function TaskCardInner({
         onClose={handleDialogClose}
         onUpdate={onUpdate}
         availableLists={availableLists}
-        showUserPresence={true}
+        showUserPresence={!isPersonalWorkspace}
       />
       <Dialog open={newLabelDialogOpen} onOpenChange={setNewLabelDialogOpen}>
         <DialogContent className="sm:max-w-[425px]">
