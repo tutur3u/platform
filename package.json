@@ -5,6 +5,7 @@
     "build": "turbo run build",
     "buildx": "turbo test lint build",
     "dev": "turbo run dev --continue",
+    "dev:docs": "turbo run dev -F @ncthub/docs",
     "dev:web": "turbo run dev -F @ncthub/web",
     "dev:ocr": "turbo run dev -F @ncthub/ocr",
     "devx": "bun sb:stop && bun sb:start && bun dev",
@@ -33,7 +34,6 @@
     "sb:typegen": "cd apps/db && bun sb:typegen",
     "ui:add": "bun --filter ui ui:add",
     "ui:diff": "bun --filter ui ui:diff",
-    "docs:dev": "cd apps/docs && mintlify dev --port 3333",
     "docs:build": "cd apps/docs && mintlify build"
   },
   "dependencies": {
