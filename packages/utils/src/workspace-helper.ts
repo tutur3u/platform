@@ -10,13 +10,8 @@ import type {
 import type { WorkspaceSecret } from '@tuturuuu/types/primitives/WorkspaceSecret';
 import { notFound, redirect } from 'next/navigation';
 import { ROOT_WORKSPACE_ID, resolveWorkspaceId } from './constants';
+import { isValidTuturuuuEmail } from './email/client';
 import { permissions as rolePermissions } from './permissions';
-
-const isValidTuturuuuEmail = (email: string): boolean => {
-  if (!email) return false;
-  const emailRegex = /^[^\s@]+@tuturuuu\.com$/;
-  return emailRegex.test(email);
-};
 
 export { toWorkspaceSlug } from './constants';
 
