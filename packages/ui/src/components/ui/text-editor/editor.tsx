@@ -10,6 +10,7 @@ import Superscript from '@tiptap/extension-superscript';
 import TextAlign from '@tiptap/extension-text-align';
 import Youtube from '@tiptap/extension-youtube';
 import {
+  type Editor,
   EditorContent,
   type JSONContent,
   Node,
@@ -161,6 +162,187 @@ const Video = Node.create({
   },
 });
 
+const Mention = Node.create({
+  name: 'mention',
+
+  group: 'inline',
+  inline: true,
+  atom: true,
+  selectable: false,
+
+  addAttributes() {
+    return {
+      userId: {
+        default: null,
+      },
+      displayName: {
+        default: null,
+      },
+      avatarUrl: {
+        default: null,
+      },
+    };
+  },
+
+  parseHTML() {
+    return [
+      {
+        tag: 'span[data-mention="true"]',
+        getAttrs: (el) => {
+          const element = el as HTMLElement;
+          return {
+            userId: element.dataset.userId ?? null,
+            displayName: element.dataset.displayName ?? null,
+            avatarUrl: element.dataset.avatarUrl ?? null,
+          };
+        },
+      },
+    ];
+  },
+
+  renderHTML({ HTMLAttributes }) {
+    const attrs = { ...HTMLAttributes };
+    const userId = (attrs.userId as string | null) ?? null;
+    const displayNameRaw = (attrs.displayName as string | null) ?? null;
+    const avatarUrl = (attrs.avatarUrl as string | null) ?? null;
+
+    delete attrs.userId;
+    delete attrs.displayName;
+    delete attrs.avatarUrl;
+
+    const displayName = (displayNameRaw || 'Member').trim();
+    const initials = displayName
+      .split(/\s+/)
+      .map((part) => part?.[0]?.toUpperCase() ?? '')
+      .join('')
+      .slice(0, 2) || '??';
+
+    const baseAttributes = {
+      'data-mention': 'true',
+      'data-user-id': userId ?? '',
+      'data-display-name': displayName,
+      'data-avatar-url': avatarUrl ?? '',
+      class:
+        'inline-flex items-center gap-1 rounded-full border border-dynamic-border bg-dynamic-surface px-2 py-0.5 text-[12px] font-medium text-foreground',
+      ...attrs,
+    };
+
+    const avatarNode: any = avatarUrl
+      ? [
+          'span',
+          {
+            class:
+              'relative -ml-0.5 h-4 w-4 overflow-hidden rounded-full border border-dynamic-border/60 bg-dynamic-surface/80',
+          },
+          ['img', { src: avatarUrl, alt: displayName, class: 'h-full w-full object-cover' }],
+        ]
+      : [
+          'span',
+          {
+            class:
+              'relative -ml-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-dynamic-surface/80 text-[10px] font-semibold uppercase text-foreground',
+          },
+          initials,
+        ];
+
+    return [
+      'span',
+      baseAttributes,
+      avatarNode,
+      ['span', { class: 'text-dynamic-blue' }, `@${displayName}`],
+    ] as any;
+  },
+
+  addNodeView() {
+    return ({ node }) => {
+      let currentDisplayName =
+        (node.attrs.displayName as string | null)?.trim() || 'Member';
+      let currentAvatarUrl = node.attrs.avatarUrl as string | null;
+      const userId = (node.attrs.userId as string | null) ?? '';
+
+      const dom = document.createElement('span');
+      dom.setAttribute('data-mention', 'true');
+      dom.setAttribute('data-user-id', userId);
+      dom.setAttribute('data-display-name', currentDisplayName);
+      if (currentAvatarUrl) dom.setAttribute('data-avatar-url', currentAvatarUrl);
+      dom.className =
+        'inline-flex items-center gap-1 rounded-full border border-dynamic-border bg-dynamic-surface px-2 py-0.5 text-[12px] font-medium text-foreground';
+      dom.contentEditable = 'false';
+
+      const avatarWrapper = document.createElement('span');
+      avatarWrapper.className =
+        'relative -ml-0.5 flex h-4 w-4 items-center justify-center overflow-hidden rounded-full border border-dynamic-border/60 bg-dynamic-surface/80 text-[10px] font-semibold uppercase text-foreground';
+
+      if (currentAvatarUrl) {
+        const img = document.createElement('img');
+        img.src = currentAvatarUrl;
+        img.alt = currentDisplayName;
+        img.className = 'h-full w-full object-cover';
+        img.referrerPolicy = 'no-referrer';
+        avatarWrapper.textContent = '';
+        avatarWrapper.appendChild(img);
+      } else {
+        const initials = currentDisplayName
+          .split(/\s+/)
+          .map((part) => part?.[0]?.toUpperCase() ?? '')
+          .join('')
+          .slice(0, 2) || '??';
+        avatarWrapper.textContent = initials;
+      }
+
+      const label = document.createElement('span');
+      label.className = 'text-dynamic-blue';
+      label.textContent = `@${currentDisplayName}`;
+
+      dom.appendChild(avatarWrapper);
+      dom.appendChild(label);
+
+      return {
+        dom,
+        update(updatedNode) {
+          if (updatedNode.type.name !== 'mention') return false;
+          const nextDisplayName =
+            (updatedNode.attrs.displayName as string | null)?.trim() || 'Member';
+          const nextAvatarUrl = updatedNode.attrs.avatarUrl as string | null;
+
+          if (nextDisplayName !== currentDisplayName) {
+            label.textContent = `@${nextDisplayName}`;
+            dom.setAttribute('data-display-name', nextDisplayName);
+            currentDisplayName = nextDisplayName;
+          }
+
+          if (nextAvatarUrl !== currentAvatarUrl) {
+            if (nextAvatarUrl) {
+              const img = document.createElement('img');
+              img.src = nextAvatarUrl;
+              img.alt = nextDisplayName;
+              img.className = 'h-full w-full object-cover';
+              img.referrerPolicy = 'no-referrer';
+              avatarWrapper.textContent = '';
+              avatarWrapper.appendChild(img);
+              dom.setAttribute('data-avatar-url', nextAvatarUrl);
+            } else {
+              const nextInitials = nextDisplayName
+                .split(/\s+/)
+                .map((part) => part?.[0]?.toUpperCase() ?? '')
+                .join('')
+                .slice(0, 2) || '??';
+              dom.removeAttribute('data-avatar-url');
+              avatarWrapper.textContent = nextInitials;
+            }
+            currentAvatarUrl = nextAvatarUrl;
+          }
+
+          return true;
+        },
+        ignoreMutation() {
+          return true;
+        },
+      };
+    };
+  },
+});
+
 const hasContent = (node: JSONContent): boolean => {
   // Check for text content
   if (node.text && node.text.trim().length > 0) return true;
@@ -168,7 +350,7 @@ const hasContent = (node: JSONContent): boolean => {
   // Check for media content (images, videos, YouTube embeds, etc.)
   if (
     node.type &&
-    ['image', 'imageResize', 'youtube', 'video'].includes(node.type)
+    ['image', 'imageResize', 'youtube', 'video', 'mention'].includes(node.type)
   ) {
     return true;
   }
@@ -200,6 +382,7 @@ interface RichTextEditorProps {
   onArrowLeft?: () => void;
   editorRef?: React.MutableRefObject<any>;
   initialCursorOffset?: number | null;
+  onEditorReady?: (editor: Editor) => void;
 }
 
 export function RichTextEditor({
@@ -218,6 +401,7 @@ export function RichTextEditor({
   onArrowLeft,
   editorRef: externalEditorRef,
   initialCursorOffset,
+  onEditorReady,
 }: RichTextEditorProps) {
   const [hasChanges, setHasChanges] = useState(false);
   const [isUploadingPastedImage, setIsUploadingPastedImage] = useState(false);
@@ -278,6 +462,7 @@ export function RichTextEditor({
       if (externalEditorRef) {
         externalEditorRef.current = editor;
       }
+      onEditorReady?.(editor);
     },
     extensions: [
       StarterKit.configure({
@@ -331,6 +516,7 @@ export function RichTextEditor({
       Strike,
       Subscript,
       Superscript,
+      Mention,
       Image.configure({
         inline: true,
         allowBase64: false,
