@@ -807,6 +807,7 @@
     "databases": "Databases",
     "x": "X",
     "ai": "AI",
+    "chat": "Chat",
     "infrastructure": "Infrastructure",
     "migrations": "Migrations",
     "notifications": "Notifications",
@@ -877,7 +878,8 @@
     "estimates": "Estimates",
     "integrations": "Integrations",
     "more_tools": "More tools",
-    "realtime_chat": "Realtime Chat"
+    "realtime_chat": "Realtime Chat",
+    "track": "Track"
   },
   "usage": {
     "description": "Monitor workspace activity, feature usage, and system metrics across your organization",
@@ -2426,6 +2428,7 @@
     "create-document-error": "An error occurred while creating the document.",
     "document-name": "Document name",
     "document-name-placeholder": "Enter document name",
+    "start_writing": "Start writing your document...",
     "untitled-document": "Untitled document",
     "preview": "Preview",
     "edit": "Edit"
@@ -3065,7 +3068,8 @@
     "singular": "Document",
     "create": "Create document",
     "create_description": "Create a new document",
-    "description": "Documents are used to facilitate the sharing of information in your workspace."
+    "description": "Documents are used to facilitate the sharing of information in your workspace.",
+    "empty_state_description": "Get started by creating your first document to share information with your team."
   },
   "ws-post-emails": {
     "plural": "Posts",

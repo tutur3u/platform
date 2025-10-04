@@ -11,7 +11,7 @@ import {
 } from '@tuturuuu/ui/icons';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { useState } from 'react';
-import Chat from '../../chat/chat';
+import Chat from '../../ai-chat/chat';
 import type { ExtendedWorkspaceTask } from '../../time-tracker/types';
 import PriorityView from './priority-view';
 import TimeTracker from './time-tracker';

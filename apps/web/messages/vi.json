@@ -899,6 +899,7 @@
     "databases": "Cơ sở dữ liệu",
     "x": "X",
     "ai": "Trí tuệ nhân tạo",
+    "chat": "Trò chuyện",
     "infrastructure": "Cơ sở hạ tầng",
     "migrations": "Chuyển dữ liệu",
     "notifications": "Thông báo",
@@ -969,7 +970,8 @@
     "estimates": "Ước tính",
     "integrations": "Tích hợp",
     "more_tools": "Nhiều công cụ hơn",
-    "realtime_chat": "Trò chuyện thời gian thực"
+    "realtime_chat": "Trò chuyện thời gian thực",
+    "track": "Theo dõi"
   },
   "usage": {
     "description": "Theo dõi hoạt động workspace, sử dụng tính năng và các số liệu hệ thống trong tổ chức của bạn",
