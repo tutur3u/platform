@@ -13,7 +13,6 @@ import {
   type ListStatusFilter,
 } from '@tuturuuu/ui/tu-do/shared/board-header';
 import { ListView } from '@tuturuuu/ui/tu-do/shared/list-view';
-import type { WorkspaceLabel } from '@tuturuuu/utils/task-helper';
 import { useMemo, useState } from 'react';
 
 export type ViewType = 'kanban' | 'status-grouped' | 'list' | 'timeline';
@@ -33,7 +32,6 @@ interface TaskProjectDetailProps {
   };
   tasks: Task[];
   lists: TaskList[];
-  workspaceLabels: WorkspaceLabel[];
   currentUserId: string;
   wsId: string;
 }
@@ -43,7 +41,6 @@ export function TaskProjectDetail({
   project,
   tasks,
   lists,
-  workspaceLabels,
   currentUserId,
   wsId,
 }: TaskProjectDetailProps) {
@@ -231,8 +228,6 @@ export function TaskProjectDetail({
         <div className="-m-2 md:-mx-4 flex h-[calc(100vh-1rem)] flex-1 flex-col">
           <BoardHeader
             board={virtualBoard as any}
-            tasks={tasks}
-            lists={lists}
             currentView={currentView}
             currentUserId={currentUserId}
             onViewChange={setCurrentView}
@@ -240,6 +235,7 @@ export function TaskProjectDetail({
             onFiltersChange={setFilters}
             listStatusFilter={listStatusFilter}
             onListStatusFilterChange={setListStatusFilter}
+            isPersonalWorkspace={workspace.personal}
             backUrl={`/${wsId}/tasks/projects`}
             hideActions={true}
           />
