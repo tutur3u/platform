@@ -112,7 +112,7 @@ export const projects: Project[] = [
     name: 'Neo Agent Meeting',
     description:
       'A Next.js-based agent that listens to Microsoft Teams meetings, transcribes audio using OpenAI’s Whisper, and generates structured meeting minutes with Google Gemini. The system integrates Microsoft Graph API for meeting access and automates the entire workflow from audio capture to final summary.',
-    type: 'software',
+    type: 'web',
     techStack: ['Next.js', 'TypeScript', 'Tailwind CSS', 'Microsoft Graph API', 'OpenAI Whisper', 'Google Gemini'],
     status: 'ongoing',
     semester: 'B/2025',
@@ -200,7 +200,7 @@ export const projects: Project[] = [
     name: 'Neo What Weather',
     description:
       'A weather forecast website using React, TypeScript, Tailwind CSS, and a Weather API to display real-time weather updates.',
-    type: 'software',
+    type: 'web',
     techStack: ['React', 'TypeScript', 'Tailwind CSS', 'OpenWeather API'],
     status: 'completed',
     semester: 'B/2025',
