@@ -199,6 +199,21 @@ export async function WorkspaceNavigationLinks({
       ],
     },
     {
+      title: t('sidebar_tabs.documents'),
+      href: `/${personalOrWsId}/documents`,
+      icon: <FileText className="h-5 w-5" />,
+      disabled:
+        ENABLE_AI_ONLY ||
+        !(await verifySecret({
+          forceAdmin: true,
+          wsId: resolvedWorkspaceId,
+          name: 'ENABLE_DOCS',
+          value: 'true',
+        })) ||
+        withoutPermission('manage_documents'),
+      experimental: 'beta',
+    },
+    {
       title: t('sidebar_tabs.time_tracker'),
       href: `/${personalOrWsId}/time-tracker`,
       children: [
@@ -246,8 +261,8 @@ export async function WorkspaceNavigationLinks({
       experimental: 'beta',
     },
     {
-      title: t('sidebar_tabs.realtime_chat'),
-      href: `/${personalOrWsId}/realtime-chat`,
+      title: t('sidebar_tabs.chat'),
+      href: `/${personalOrWsId}/chat`,
       icon: <MessageCircleIcon className="h-5 w-5" />,
       experimental: 'beta',
       requireRootMember: true,
@@ -279,7 +294,7 @@ export async function WorkspaceNavigationLinks({
             },
             {
               title: t('sidebar_tabs.chat_with_ai'),
-              href: `/${personalOrWsId}/chat`,
+              href: `/${personalOrWsId}/ai-chat`,
               icon: <MessageCircleIcon className="h-5 w-5" />,
               disabled:
                 ENABLE_AI_ONLY ||
@@ -557,21 +572,6 @@ export async function WorkspaceNavigationLinks({
               href: `/${personalOrWsId}/drive`,
               icon: <HardDrive className="h-5 w-5" />,
               disabled: withoutPermission('manage_drive'),
-              experimental: 'beta',
-            },
-            {
-              title: t('sidebar_tabs.documents'),
-              href: `/${personalOrWsId}/documents`,
-              icon: <FileText className="h-5 w-5" />,
-              disabled:
-                ENABLE_AI_ONLY ||
-                !(await verifySecret({
-                  forceAdmin: true,
-                  wsId: resolvedWorkspaceId,
-                  name: 'ENABLE_DOCS',
-                  value: 'true',
-                })) ||
-                withoutPermission('manage_documents'),
               experimental: 'beta',
             },
             {

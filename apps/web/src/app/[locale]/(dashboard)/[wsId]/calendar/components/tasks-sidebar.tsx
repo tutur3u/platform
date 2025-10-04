@@ -3,7 +3,7 @@ import {
   getPermissions,
   verifyHasSecrets,
 } from '@tuturuuu/utils/workspace-helper';
-import { getChats } from '../../chat/helper';
+import { getChats } from '../../ai-chat/helper';
 import { getAssignedTasks } from './task-fetcher';
 import TasksSidebarContent from './tasks-sidebar-content';
 
