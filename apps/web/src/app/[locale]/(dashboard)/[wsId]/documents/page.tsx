@@ -1,3 +1,4 @@
+import WorkspaceWrapper from '@/components/workspace-wrapper';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { Button } from '@tuturuuu/ui/button';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
@@ -6,9 +7,8 @@ import { FilePlus } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
-import { redirect } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
-import WorkspaceWrapper from '@/components/workspace-wrapper';
+import { redirect } from 'next/navigation';
 import { DocumentCard } from './card';
 import MyDialogContent from './dialog-content';
 
@@ -49,8 +49,8 @@ export default async function DocumentsPage({ params }: Props) {
               action={
                 <Dialog>
                   <DialogTrigger asChild>
-                    <Button>
-                      <FilePlus className="mr-2 h-4 w-4" />
+                    <Button className="gap-2">
+                      <FilePlus className="h-4 w-4" />
                       {newDocumentLabel}
                     </Button>
                   </DialogTrigger>
@@ -60,22 +60,37 @@ export default async function DocumentsPage({ params }: Props) {
             />
             <Separator className="my-4" />
 
-            <div className="mt-2 grid gap-4 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
-              {documents && documents.length === 0 && (
-                <div className="col-span-full text-foreground/80">
+            {documents && documents.length === 0 ? (
+              <div className="flex flex-col items-center justify-center rounded-lg border border-dashed py-16 text-center">
+                <FilePlus className="mb-4 h-12 w-12 text-muted-foreground/50" />
+                <p className="mb-2 font-medium text-foreground text-lg">
                   {noDocumentsLabel}
-                </div>
-              )}
-
-              {workspace &&
-                documents?.map((doc) => (
-                  <DocumentCard
-                    key={`doc-${doc.id}`}
-                    wsId={workspace.id}
-                    document={doc}
-                  />
-                ))}
-            </div>
+                </p>
+                <p className="mb-6 max-w-sm text-muted-foreground text-sm">
+                  {t('ws-documents.empty_state_description')}
+                </p>
+                <Dialog>
+                  <DialogTrigger asChild>
+                    <Button className="gap-2">
+                      <FilePlus className="h-4 w-4" />
+                      {newDocumentLabel}
+                    </Button>
+                  </DialogTrigger>
+                  <MyDialogContent wsId={wsId} />
+                </Dialog>
+              </div>
+            ) : (
+              <div className="mt-2 grid gap-4 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+                {workspace &&
+                  documents?.map((doc) => (
+                    <DocumentCard
+                      key={`doc-${doc.id}`}
+                      wsId={workspace.id}
+                      document={doc}
+                    />
+                  ))}
+              </div>
+            )}
           </>
         );
       }}
