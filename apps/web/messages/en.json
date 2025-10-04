@@ -878,7 +878,8 @@
     "estimates": "Estimates",
     "integrations": "Integrations",
     "more_tools": "More tools",
-    "realtime_chat": "Realtime Chat"
+    "realtime_chat": "Realtime Chat",
+    "track": "Track"
   },
   "usage": {
     "description": "Monitor workspace activity, feature usage, and system metrics across your organization",

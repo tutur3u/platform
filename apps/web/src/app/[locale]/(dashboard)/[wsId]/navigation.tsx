@@ -199,6 +199,32 @@ export async function WorkspaceNavigationLinks({
       ],
     },
     {
+      title: t('sidebar_tabs.calendar'),
+      icon: <Calendar className="h-5 w-5" />,
+      href: `/${personalOrWsId}/calendar`,
+      disabled: ENABLE_AI_ONLY || withoutPermission('manage_calendar'),
+      experimental: 'alpha',
+      requireRootMember: true,
+      children: isTuturuuuUser
+        ? [
+            {
+              title: t('calendar-tabs.calendar'),
+              href: `/${personalOrWsId}/calendar`,
+              icon: <Calendar className="h-4 w-4" />,
+              requireRootMember: true,
+              matchExact: true,
+            },
+            {
+              title: t('calendar-tabs.sync-history'),
+              href: `/${personalOrWsId}/calendar/history/sync`,
+              icon: <Activity className="h-4 w-4" />,
+              requireRootWorkspace: true,
+              requireRootMember: true,
+            },
+          ]
+        : undefined,
+    },
+    {
       title: t('sidebar_tabs.documents'),
       href: `/${personalOrWsId}/documents`,
       icon: <FileText className="h-5 w-5" />,
@@ -214,7 +240,15 @@ export async function WorkspaceNavigationLinks({
       experimental: 'beta',
     },
     {
-      title: t('sidebar_tabs.time_tracker'),
+      title: t('sidebar_tabs.chat'),
+      href: `/${personalOrWsId}/chat`,
+      icon: <MessageCircleIcon className="h-5 w-5" />,
+      experimental: 'beta',
+      requireRootMember: true,
+      requireRootWorkspace: true,
+    },
+    {
+      title: t('sidebar_tabs.track'),
       href: `/${personalOrWsId}/time-tracker`,
       children: [
         {
@@ -259,14 +293,6 @@ export async function WorkspaceNavigationLinks({
       icon: <ClockFading className="h-5 w-5" />,
       disabled: ENABLE_AI_ONLY || withoutPermission('manage_projects'),
       experimental: 'beta',
-    },
-    {
-      title: t('sidebar_tabs.chat'),
-      href: `/${personalOrWsId}/chat`,
-      icon: <MessageCircleIcon className="h-5 w-5" />,
-      experimental: 'beta',
-      requireRootMember: true,
-      requireRootWorkspace: true,
     },
     null,
     {
@@ -470,32 +496,6 @@ export async function WorkspaceNavigationLinks({
                   requireRootMember: true,
                 },
               ],
-            },
-            {
-              title: t('sidebar_tabs.calendar'),
-              icon: <Calendar className="h-5 w-5" />,
-              href: `/${personalOrWsId}/calendar`,
-              disabled: ENABLE_AI_ONLY || withoutPermission('manage_calendar'),
-              experimental: 'alpha',
-              requireRootMember: true,
-              children: isTuturuuuUser
-                ? [
-                    {
-                      title: t('calendar-tabs.calendar'),
-                      href: `/${personalOrWsId}/calendar`,
-                      icon: <Calendar className="h-4 w-4" />,
-                      requireRootMember: true,
-                      matchExact: true,
-                    },
-                    {
-                      title: t('calendar-tabs.sync-history'),
-                      href: `/${personalOrWsId}/calendar/history/sync`,
-                      icon: <Activity className="h-4 w-4" />,
-                      requireRootWorkspace: true,
-                      requireRootMember: true,
-                    },
-                  ]
-                : undefined,
             },
             {
               title: t('sidebar_tabs.polls'),
