@@ -36,7 +36,6 @@ import {
   Target,
   TrendingUp,
   X,
-  Zap,
 } from '@tuturuuu/ui/icons';
 import { ScrollArea } from '@tuturuuu/ui/scroll-area';
 import {
@@ -167,15 +166,6 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
   const selectedBoardData = useMemo(() => {
     return selectedBoard ? safeData.find((b) => b.id === selectedBoard) : null;
   }, [safeData, selectedBoard]);
-
-  // Calculate aggregate metrics for the quick stats - now responsive to board selection
-  const {
-    totalTasks,
-    totalCompleted,
-    totalOverdue,
-    totalHighPriority,
-    avgProgress,
-  } = useMemo(() => getFilteredMetrics(safeData, null), [safeData]);
 
   // Analytics-specific metrics that respond to board selection
   const analyticsMetrics = useMemo(
@@ -324,17 +314,6 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
     setSelectedBoard(null);
   }, []);
 
-  const openTaskModal = useCallback(
-    (filterType: FilterType, boardId?: string) => {
-      setTaskModal({
-        isOpen: true,
-        filterType,
-        selectedBoard: boardId || null,
-      });
-    },
-    []
-  );
-
   const closeTaskModal = useCallback(() => {
     setTaskModal((prev) => ({ ...prev, isOpen: false }));
   }, []);
@@ -465,129 +444,6 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
 
   return (
     <>
-      {/* Enhanced Quick Stats - Now Clickable */}
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-5">
-        <button
-          type="button"
-          className="cursor-pointer rounded-xl border bg-gradient-to-br from-blue-50 to-blue-100/50 p-4 transition-all hover:scale-105 hover:shadow-md dark:from-blue-950/20 dark:to-blue-900/10"
-          onClick={() => openTaskModal('all')}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' || e.key === ' ') {
-              e.preventDefault();
-              openTaskModal('all');
-            }
-          }}
-        >
-          <div className="flex items-center justify-start gap-3 text-left">
-            <div className="rounded-lg bg-blue-500/10 p-2">
-              <Target className="h-5 w-5 text-dynamic-blue" />
-            </div>
-            <div>
-              <p className="font-medium text-dynamic-blue">Total Tasks</p>
-              <p className="font-bold text-2xl text-dynamic-blue">
-                {totalTasks}
-              </p>
-            </div>
-          </div>
-        </button>
-
-        <button
-          type="button"
-          className="cursor-pointer rounded-xl border bg-gradient-to-br from-green-50 to-green-100/50 p-4 transition-all hover:scale-105 hover:shadow-md dark:from-green-950/20 dark:to-green-900/10"
-          onClick={() => openTaskModal('completed')}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' || e.key === ' ') {
-              e.preventDefault();
-              openTaskModal('completed');
-            }
-          }}
-        >
-          <div className="flex items-center justify-start gap-3 text-left">
-            <div className="rounded-lg bg-green-500/10 p-2">
-              <CheckCircle2 className="h-5 w-5 text-green-600 dark:text-green-400" />
-            </div>
-            <div>
-              <p className="font-medium text-green-700 text-sm dark:text-green-300">
-                Completed
-              </p>
-              <p className="font-bold text-2xl text-green-900 dark:text-green-100">
-                {totalCompleted}
-              </p>
-            </div>
-          </div>
-        </button>
-
-        <div className="rounded-xl border bg-gradient-to-br from-purple-50 to-purple-100/50 p-4 transition-all hover:shadow-md dark:from-purple-950/20 dark:to-purple-900/10">
-          <div className="flex items-center justify-start gap-3 text-left">
-            <div className="rounded-lg bg-purple-500/10 p-2">
-              <TrendingUp className="h-5 w-5 text-purple-600 dark:text-purple-400" />
-            </div>
-            <div>
-              <p className="font-medium text-purple-700 text-sm dark:text-purple-300">
-                Analytics
-              </p>
-              <p className="font-bold text-2xl text-purple-900 dark:text-purple-100">
-                {avgProgress}%
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <button
-          type="button"
-          className="cursor-pointer rounded-xl border bg-gradient-to-br from-red-50 to-red-100/50 p-4 transition-all hover:scale-105 hover:shadow-md dark:from-red-950/20 dark:to-red-900/10"
-          onClick={() => openTaskModal('overdue')}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' || e.key === ' ') {
-              e.preventDefault();
-              openTaskModal('overdue');
-            }
-          }}
-          aria-label="View overdue tasks"
-        >
-          <div className="flex items-center justify-start gap-3 text-left">
-            <div className="rounded-lg bg-red-500/10 p-2">
-              <Clock className="h-5 w-5 text-red-600 dark:text-red-400" />
-            </div>
-            <div>
-              <p className="font-medium text-red-700 text-sm dark:text-red-300">
-                Overdue
-              </p>
-              <p className="font-bold text-2xl text-red-900 dark:text-red-100">
-                {totalOverdue}
-              </p>
-            </div>
-          </div>
-        </button>
-
-        <button
-          type="button"
-          className="cursor-pointer rounded-xl border bg-gradient-to-br from-orange-50 to-orange-100/50 p-4 transition-all hover:scale-105 hover:shadow-md dark:from-orange-950/20 dark:to-orange-900/10"
-          onClick={() => openTaskModal('urgent')}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' || e.key === ' ') {
-              e.preventDefault();
-              openTaskModal('urgent');
-            }
-          }}
-          aria-label="View urgent priority tasks"
-        >
-          <div className="flex items-center justify-start gap-3 text-left">
-            <div className="rounded-lg bg-orange-500/10 p-2">
-              <Zap className="h-5 w-5 text-orange-600 dark:text-orange-400" />
-            </div>
-            <div>
-              <p className="font-medium text-orange-700 text-sm dark:text-orange-300">
-                Urgent Priority
-              </p>
-              <p className="font-bold text-2xl text-orange-900 dark:text-orange-100">
-                {totalHighPriority}
-              </p>
-            </div>
-          </div>
-        </button>
-      </div>
-
       {/* Main Content with Tabs */}
       <div className="space-y-6">
         <Tabs defaultValue="table" className="w-full">

@@ -5,8 +5,8 @@ import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import { Button } from '@tuturuuu/ui/button';
 import { Plus } from '@tuturuuu/ui/icons';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
-import { redirect } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
+import { redirect } from 'next/navigation';
 import { EnhancedBoardsView } from './enhanced-boards-view';
 import { TaskBoardForm } from './form';
 
@@ -141,24 +141,6 @@ export default async function WorkspaceProjectsPage({
     lowPriorityTasks: number;
   })[];
 
-  // Calculate workspace-wide totals
-  const workspaceTotals = data.reduce(
-    (totals, board) => ({
-      totalBoards: totals.totalBoards + 1,
-      totalTasks: totals.totalTasks + (board.totalTasks || 0),
-      completedTasks: totals.completedTasks + (board.completedTasks || 0),
-      activeTasks: totals.activeTasks + (board.activeTasks || 0),
-      overdueTasks: totals.overdueTasks + (board.overdueTasks || 0),
-    }),
-    {
-      totalBoards: 0,
-      totalTasks: 0,
-      completedTasks: 0,
-      activeTasks: 0,
-      overdueTasks: 0,
-    }
-  );
-
   return (
     <div className="space-y-6">
       {/* Header Section */}
@@ -170,65 +152,6 @@ export default async function WorkspaceProjectsPage({
           <p className="text-muted-foreground">
             {t('ws-task-boards.description')}
           </p>
-
-          {/* Workspace Summary */}
-          {workspaceTotals.totalBoards > 0 && (
-            <div className="flex flex-wrap items-center justify-start gap-4 pt-2 text-left text-sm">
-              <div className="flex items-center gap-1">
-                <div className="h-2 w-2 rounded-full bg-dynamic-blue" />
-                <span className="text-muted-foreground">
-                  <strong className="text-foreground">
-                    {workspaceTotals.totalBoards}
-                  </strong>{' '}
-                  board
-                  {workspaceTotals.totalBoards !== 1 ? 's' : ''}
-                </span>
-              </div>
-              <div className="flex items-center gap-1">
-                <div className="h-2 w-2 rounded-full bg-dynamic-gray" />
-                <span className="text-muted-foreground">
-                  <strong className="text-foreground">
-                    {workspaceTotals.totalTasks}
-                  </strong>{' '}
-                  total task
-                  {workspaceTotals.totalTasks !== 1 ? 's' : ''}
-                </span>
-              </div>
-              {workspaceTotals.completedTasks > 0 && (
-                <div className="flex items-center gap-1">
-                  <div className="h-2 w-2 rounded-full bg-dynamic-green" />
-                  <span className="text-muted-foreground">
-                    <strong className="text-dynamic-green">
-                      {workspaceTotals.completedTasks}
-                    </strong>{' '}
-                    completed
-                  </span>
-                </div>
-              )}
-              {workspaceTotals.activeTasks > 0 && (
-                <div className="flex items-center gap-1">
-                  <div className="h-2 w-2 rounded-full bg-dynamic-orange" />
-                  <span className="text-muted-foreground">
-                    <strong className="text-dynamic-orange">
-                      {workspaceTotals.activeTasks}
-                    </strong>{' '}
-                    active
-                  </span>
-                </div>
-              )}
-              {workspaceTotals.overdueTasks > 0 && (
-                <div className="flex items-center gap-1">
-                  <div className="h-2 w-2 rounded-full bg-dynamic-red" />
-                  <span className="text-muted-foreground">
-                    <strong className="text-dynamic-red">
-                      {workspaceTotals.overdueTasks}
-                    </strong>{' '}
-                    overdue
-                  </span>
-                </div>
-              )}
-            </div>
-          )}
         </div>
         <TaskBoardForm wsId={wsId}>
           <Button className="flex items-center gap-2">
