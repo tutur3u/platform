@@ -778,7 +778,10 @@
     "notifications": "Notifications",
     "no-notifications": "You have no notifications yet.",
     "workspace-invite": "Workspace invite",
-    "invited-to": "You have been invited to"
+    "invited-to": "You have been invited to",
+    "unresolved-inquiries": "Unresolved Inquiries",
+    "inquiries-need-attention": "inquiries need attention",
+    "view-inquiries": "View Inquiries"
   },
   "search": {
     "search": "Search",
@@ -873,7 +876,8 @@
     "labels": "Labels",
     "estimates": "Estimates",
     "integrations": "Integrations",
-    "more_tools": "More tools"
+    "more_tools": "More tools",
+    "realtime_chat": "Realtime Chat"
   },
   "usage": {
     "description": "Monitor workspace activity, feature usage, and system metrics across your organization",

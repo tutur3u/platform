@@ -245,6 +245,14 @@ export async function WorkspaceNavigationLinks({
       disabled: ENABLE_AI_ONLY || withoutPermission('manage_projects'),
       experimental: 'beta',
     },
+    {
+      title: t('sidebar_tabs.realtime_chat'),
+      href: `/${personalOrWsId}/realtime-chat`,
+      icon: <MessageCircleIcon className="h-5 w-5" />,
+      experimental: 'beta',
+      requireRootMember: true,
+      requireRootWorkspace: true,
+    },
     null,
     {
       title: t('sidebar_tabs.more_tools'),

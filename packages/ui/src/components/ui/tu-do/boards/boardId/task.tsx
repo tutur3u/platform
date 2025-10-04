@@ -2386,7 +2386,7 @@ function LightweightTaskCardInner({
               className={cn(
                 'inline-flex items-center gap-1 rounded-md px-2 py-1 font-medium',
                 task.priority === 'critical'
-                  ? 'animate-pulse bg-dynamic-red text-white shadow-dynamic-red/50 shadow-sm'
+                  ? 'bg-dynamic-red text-white shadow-dynamic-red/50 shadow-sm'
                   : 'bg-dynamic-surface/70 text-foreground/80'
               )}
             >

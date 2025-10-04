@@ -46,10 +46,11 @@ export default async function TaskProjectsPage({ params }: Props) {
               avatar_url
             ),
             task_project_tasks(
-              task:tasks(
+              task:tasks!inner(
                 id,
                 name,
                 completed,
+                deleted,
                 task_lists(
                   name
                 )
@@ -57,6 +58,7 @@ export default async function TaskProjectsPage({ params }: Props) {
             )
           `)
           .eq('ws_id', wsId)
+          .eq('task_project_tasks.task.deleted', false)
           .order('created_at', { ascending: false });
 
         if (projectsError) {
@@ -64,16 +66,22 @@ export default async function TaskProjectsPage({ params }: Props) {
           notFound();
         }
 
-        const formattedProjects = (projects ?? []).map((project) => ({
-          id: project.id,
-          name: project.name,
-          description: project.description,
-          created_at: project.created_at ?? new Date().toISOString(),
-          creator_id: project.creator_id,
-          creator: project.creator,
-          tasksCount: project.task_project_tasks?.length ?? 0,
-          linkedTasks:
-            project.task_project_tasks?.flatMap((link) =>
+        const formattedProjects = (projects ?? []).map((project) => {
+          // Filter out soft-deleted tasks
+          const activeTasks =
+            project.task_project_tasks?.filter(
+              (link) => link.task && link.task.deleted === false
+            ) ?? [];
+
+          return {
+            id: project.id,
+            name: project.name,
+            description: project.description,
+            created_at: project.created_at ?? new Date().toISOString(),
+            creator_id: project.creator_id,
+            creator: project.creator,
+            tasksCount: activeTasks.length,
+            linkedTasks: activeTasks.flatMap((link) =>
               link.task
                 ? [
                     {
@@ -84,8 +92,9 @@ export default async function TaskProjectsPage({ params }: Props) {
                     },
                   ]
                 : []
-            ) ?? [],
-        }));
+            ),
+          };
+        });
 
         return (
           <div className="space-y-6">

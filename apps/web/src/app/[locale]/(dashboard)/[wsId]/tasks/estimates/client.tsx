@@ -43,35 +43,35 @@ const estimationTypes = [
     actualValue: null,
     label: 'No Estimation',
     description: 'No estimation method configured',
-    color: 'bg-gray-100 text-gray-700',
+    color: 'bg-muted/50 text-muted-foreground',
   },
   {
     value: 'fibonacci' as const,
     actualValue: 'fibonacci' as const,
     label: 'Fibonacci',
     description: 'Fibonacci sequence (configurable range)',
-    color: 'bg-blue-100 text-blue-700',
+    color: 'bg-dynamic-blue/10 text-dynamic-blue',
   },
   {
     value: 'linear' as const,
     actualValue: 'linear' as const,
     label: 'Linear',
     description: 'Linear scale (configurable range)',
-    color: 'bg-green-100 text-green-700',
+    color: 'bg-dynamic-green/10 text-dynamic-green',
   },
   {
     value: 'exponential' as const,
     actualValue: 'exponential' as const,
     label: 'Exponential',
     description: 'Powers of 2 (configurable range)',
-    color: 'bg-purple-100 text-purple-700',
+    color: 'bg-dynamic-purple/10 text-dynamic-purple',
   },
   {
     value: 't-shirt' as const,
     actualValue: 't-shirt' as const,
     label: 'T-Shirt Sizes',
     description: 'Size scale (configurable range)',
-    color: 'bg-orange-100 text-orange-700',
+    color: 'bg-dynamic-orange/10 text-dynamic-orange',
   },
 ];
 
@@ -296,119 +296,146 @@ export default function TaskEstimatesClient({ wsId, initialBoards }: Props) {
 
   return (
     <div className="space-y-6">
-      {/* Statistics Overview */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card className="p-4">
+      {/* Statistics Overview - Aligned with task card style */}
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <Card className="group overflow-hidden border-l-4 border-l-dynamic-blue/70 bg-dynamic-blue/5 p-4 transition-all hover:shadow-md hover:ring-1 hover:ring-primary/15">
           <div className="flex items-center gap-3">
-            <div className="rounded-lg bg-blue-100 p-2">
-              <Target className="h-4 w-4 text-blue-600" />
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-dynamic-blue/15">
+              <Target className="h-4 w-4 text-dynamic-blue" />
             </div>
-            <div>
-              <p className="text-muted-foreground text-sm">Total Boards</p>
-              <p className="font-bold text-2xl">{stats.totalBoards}</p>
+            <div className="min-w-0 flex-1">
+              <p className="font-medium text-muted-foreground text-xs">
+                Total Boards
+              </p>
+              <p className="font-bold text-2xl tabular-nums">
+                {stats.totalBoards}
+              </p>
             </div>
           </div>
         </Card>
 
-        <Card className="p-4">
+        <Card className="group overflow-hidden border-l-4 border-l-dynamic-green/70 bg-dynamic-green/5 p-4 transition-all hover:shadow-md hover:ring-1 hover:ring-primary/15">
           <div className="flex items-center gap-3">
-            <div className="rounded-lg bg-green-100 p-2">
-              <Calculator className="h-4 w-4 text-green-600" />
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-dynamic-green/15">
+              <Calculator className="h-4 w-4 text-dynamic-green" />
             </div>
-            <div>
-              <p className="text-muted-foreground text-sm">Configured</p>
-              <p className="font-bold text-2xl">{stats.configuredBoards}</p>
+            <div className="min-w-0 flex-1">
+              <p className="font-medium text-muted-foreground text-xs">
+                Configured
+              </p>
+              <p className="font-bold text-2xl tabular-nums">
+                {stats.configuredBoards}
+              </p>
             </div>
           </div>
         </Card>
 
-        <Card className="p-4">
+        <Card className="group overflow-hidden border-l-4 border-l-dynamic-purple/70 bg-dynamic-purple/5 p-4 transition-all hover:shadow-md hover:ring-1 hover:ring-primary/15">
           <div className="flex items-center gap-3">
-            <div className="rounded-lg bg-purple-100 p-2">
-              <CheckSquare className="h-4 w-4 text-purple-600" />
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-dynamic-purple/15">
+              <CheckSquare className="h-4 w-4 text-dynamic-purple" />
             </div>
-            <div>
-              <p className="text-muted-foreground text-sm">Total Tasks</p>
-              <p className="font-bold text-2xl">{stats.totalTasks}</p>
+            <div className="min-w-0 flex-1">
+              <p className="font-medium text-muted-foreground text-xs">
+                Total Tasks
+              </p>
+              <p className="font-bold text-2xl tabular-nums">
+                {stats.totalTasks}
+              </p>
             </div>
           </div>
         </Card>
 
-        <Card className="p-4">
+        <Card className="group overflow-hidden border-l-4 border-l-dynamic-orange/70 bg-dynamic-orange/5 p-4 transition-all hover:shadow-md hover:ring-1 hover:ring-primary/15">
           <div className="flex items-center gap-3">
-            <div className="rounded-lg bg-orange-100 p-2">
-              <TrendingUp className="h-4 w-4 text-orange-600" />
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-dynamic-orange/15">
+              <TrendingUp className="h-4 w-4 text-dynamic-orange" />
             </div>
-            <div>
-              <p className="text-muted-foreground text-sm">Extended Range</p>
-              <p className="font-bold text-2xl">{stats.extendedBoards}</p>
+            <div className="min-w-0 flex-1">
+              <p className="font-medium text-muted-foreground text-xs">
+                Extended Range
+              </p>
+              <p className="font-bold text-2xl tabular-nums">
+                {stats.extendedBoards}
+              </p>
             </div>
           </div>
         </Card>
       </div>
 
-      {/* Estimation Types Distribution */}
-      <Card className="p-6">
+      {/* Estimation Types Distribution - Aligned with task-edit-dialog sidebar style */}
+      <Card className="overflow-hidden border border-border/60 bg-gradient-to-br from-muted/30 to-muted/10 p-6 shadow-sm">
         <div className="space-y-4">
-          <div className="flex items-center gap-2">
-            <BarChart3 className="h-5 w-5" />
-            <h3 className="font-semibold text-lg">
+          <div className="flex items-center gap-2.5">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-dynamic-orange/15">
+              <BarChart3 className="h-4 w-4 text-dynamic-orange" />
+            </div>
+            <h3 className="font-semibold text-base text-foreground">
               Estimation Methods Distribution
             </h3>
           </div>
-          <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             {stats.estimationTypes.map((type) => (
               <div
                 key={type.value}
-                className="flex items-center justify-between rounded-lg border p-3"
+                className="group flex items-center justify-between rounded-lg border border-border/60 bg-background p-3.5 shadow-sm transition-all hover:border-primary/50 hover:shadow-md"
               >
-                <div>
-                  <p className="font-medium">{type.label}</p>
-                  <p className="text-muted-foreground text-sm">
-                    {type.count} boards
+                <div className="min-w-0 flex-1">
+                  <p className="font-medium text-sm">{type.label}</p>
+                  <p className="text-muted-foreground text-xs">
+                    {type.count} {type.count === 1 ? 'board' : 'boards'}
                     {type.extendedCount > 0 && (
-                      <span className="text-orange-600">
+                      <span className="text-dynamic-orange">
                         {' '}
-                        ({type.extendedCount} extended)
+                        ({type.extendedCount} ext)
                       </span>
                     )}
                   </p>
                 </div>
-                <Badge className={type.color}>{type.count}</Badge>
+                <Badge className={type.color} variant="secondary">
+                  {type.count}
+                </Badge>
               </div>
             ))}
           </div>
         </div>
       </Card>
 
-      {/* Boards List */}
-      <Card className="p-6">
+      {/* Boards List - Aligned with task card style */}
+      <Card className="overflow-hidden border border-border/60 bg-gradient-to-br from-muted/30 to-muted/10 p-6 shadow-sm">
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Target className="h-5 w-5" />
-              <h3 className="font-semibold text-lg">
+            <div className="flex items-center gap-2.5">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-dynamic-orange/15">
+                <Target className="h-4 w-4 text-dynamic-orange" />
+              </div>
+              <h3 className="font-semibold text-base text-foreground">
                 Board Estimation Configuration
               </h3>
             </div>
+            {boards.length > 0 && (
+              <Badge variant="secondary" className="text-xs">
+                {boards.length} {boards.length === 1 ? 'board' : 'boards'}
+              </Badge>
+            )}
           </div>
 
           {boards.length === 0 ? (
-            <div className="py-8 text-center">
-              <div className="flex flex-col items-center gap-4">
-                <div className="rounded-full bg-muted p-4">
+            <div className="rounded-lg bg-background py-12 text-center">
+              <div className="mx-auto flex max-w-md flex-col items-center gap-4">
+                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-muted/50">
                   <Calculator className="h-8 w-8 text-muted-foreground" />
                 </div>
-                <div className="space-y-2">
-                  <h3 className="font-semibold text-lg">No boards found</h3>
-                  <p className="text-muted-foreground">
+                <div className="space-y-1.5">
+                  <h3 className="font-semibold text-base">No boards found</h3>
+                  <p className="text-muted-foreground text-sm">
                     Create some task boards to configure estimation methods
                   </p>
                 </div>
               </div>
             </div>
           ) : (
-            <div className="space-y-3">
+            <div className="space-y-2.5">
               {boards.map((board) => {
                 const estimationInfo = getEstimationTypeInfo(
                   board?.estimation_type || null
@@ -416,32 +443,39 @@ export default function TaskEstimatesClient({ wsId, initialBoards }: Props) {
                 return (
                   <div
                     key={board.id}
-                    className="flex items-center justify-between rounded-lg border p-4 transition-colors hover:bg-muted/50"
+                    className="group flex flex-col gap-3 overflow-hidden rounded-lg border border-border/60 bg-background p-4 transition-all hover:border-primary/50 hover:shadow-md hover:ring-1 hover:ring-primary/15 sm:flex-row sm:items-center sm:justify-between"
                   >
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-3">
-                        <h4 className="font-medium">{board.name}</h4>
-                        <div className="flex items-center gap-2">
+                    <div className="min-w-0 flex-1 space-y-1.5">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <h4 className="font-semibold text-sm">{board.name}</h4>
+                        <div className="flex flex-wrap items-center gap-1.5">
                           <Badge
                             className={
                               estimationInfo?.color ||
-                              'bg-gray-100 text-gray-700'
+                              'bg-muted text-foreground'
                             }
+                            variant="secondary"
                           >
                             {estimationInfo?.label || 'Unknown'}
                           </Badge>
                           {board.estimation_type &&
                             board.extended_estimation && (
-                              <Badge variant="secondary" className="text-xs">
+                              <Badge
+                                variant="outline"
+                                className="border-dynamic-orange/50 text-[10px] text-dynamic-orange"
+                              >
                                 Extended
                               </Badge>
                             )}
                         </div>
                       </div>
-                      <div className="flex items-center gap-4 text-muted-foreground text-sm">
+                      <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-muted-foreground text-xs">
                         <div className="flex items-center gap-1">
                           <CheckSquare className="h-3 w-3" />
-                          <span>{board.task_count || 0} tasks</span>
+                          <span>
+                            {board.task_count || 0}{' '}
+                            {board.task_count === 1 ? 'task' : 'tasks'}
+                          </span>
                         </div>
                         {board.created_at && (
                           <div className="flex items-center gap-1">
@@ -452,10 +486,10 @@ export default function TaskEstimatesClient({ wsId, initialBoards }: Props) {
                           </div>
                         )}
                       </div>
-                      {estimationInfo?.value && (
-                        <p className="text-muted-foreground text-sm">
+                      {board.estimation_type && (
+                        <p className="text-muted-foreground text-xs leading-snug">
                           {getEstimationDescription(
-                            board?.estimation_type || null,
+                            board.estimation_type,
                             board?.extended_estimation || false
                           )}
                         </p>
@@ -465,8 +499,9 @@ export default function TaskEstimatesClient({ wsId, initialBoards }: Props) {
                       variant="outline"
                       size="sm"
                       onClick={() => openEditDialog(board)}
+                      className="h-7 shrink-0 text-xs transition-all group-hover:border-primary/50 sm:h-8"
                     >
-                      <Edit2 className="mr-2 h-4 w-4" />
+                      <Edit2 className="mr-1.5 h-3.5 w-3.5" />
                       Configure
                     </Button>
                   </div>
@@ -477,28 +512,37 @@ export default function TaskEstimatesClient({ wsId, initialBoards }: Props) {
         </div>
       </Card>
 
-      {/* Edit Estimation Type Dialog */}
+      {/* Edit Estimation Type Dialog - Aligned with task-edit-dialog style */}
       {editingBoard && (
         <Dialog open={!!editingBoard} onOpenChange={() => closeDialog()}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>
-                Configure Estimation for "{editingBoard.name}"
+          <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-[540px]">
+            <DialogHeader className="border-b pb-4">
+              <DialogTitle className="flex items-center gap-2.5 text-lg">
+                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-dynamic-orange/10 ring-1 ring-dynamic-orange/20">
+                  <Target className="h-4 w-4 text-dynamic-orange" />
+                </div>
+                <span>Configure Estimation for "{editingBoard.name}"</span>
               </DialogTitle>
             </DialogHeader>
-            <div className="space-y-6">
-              <div className="space-y-3">
+            <div className="space-y-5">
+              <div className="space-y-2.5 rounded-lg border border-border/60 bg-gradient-to-br from-muted/30 to-muted/10 p-3.5 shadow-sm">
                 <Label
                   htmlFor="estimation-method"
-                  className="font-medium text-base"
+                  className="flex items-center gap-2 font-semibold text-foreground text-sm"
                 >
+                  <div className="flex h-5 w-5 items-center justify-center rounded-md bg-dynamic-orange/15">
+                    <Calculator className="h-3.5 w-3.5 text-dynamic-orange" />
+                  </div>
                   Estimation Method
                 </Label>
                 <Select
                   value={selectedEstimationType}
                   onValueChange={setSelectedEstimationType}
                 >
-                  <SelectTrigger id="estimation-method" className="h-auto">
+                  <SelectTrigger
+                    id="estimation-method"
+                    className="flex h-full items-center justify-start text-left text-sm transition-all hover:border-dynamic-orange/50 hover:bg-dynamic-orange/5"
+                  >
                     <SelectValue placeholder="Select estimation method" />
                   </SelectTrigger>
                   <SelectContent>
@@ -523,8 +567,11 @@ export default function TaskEstimatesClient({ wsId, initialBoards }: Props) {
               </div>
 
               {selectedEstimationType && selectedEstimationType !== 'none' && (
-                <div className="space-y-3">
-                  <Label className="font-medium text-base">
+                <div className="space-y-2.5 rounded-lg border border-border/60 bg-gradient-to-br from-muted/30 to-muted/10 p-3.5 shadow-sm">
+                  <Label className="flex items-center gap-2 font-semibold text-foreground text-sm">
+                    <div className="flex h-5 w-5 items-center justify-center rounded-md bg-dynamic-orange/15">
+                      <BarChart3 className="h-3.5 w-3.5 text-dynamic-orange" />
+                    </div>
                     {getRangeInfo(selectedEstimationType)?.label ||
                       'Estimation Range'}
                   </Label>
@@ -598,32 +645,38 @@ export default function TaskEstimatesClient({ wsId, initialBoards }: Props) {
 
               {/* Estimation Configuration Options */}
               {selectedEstimationType && selectedEstimationType !== 'none' && (
-                <div className="space-y-4">
-                  <Label className="font-medium text-base">
+                <div className="space-y-2.5 rounded-lg border border-border/60 bg-gradient-to-br from-muted/30 to-muted/10 p-3.5 shadow-sm">
+                  <Label className="flex items-center gap-2 font-semibold text-foreground text-sm">
+                    <div className="flex h-5 w-5 items-center justify-center rounded-md bg-dynamic-orange/15">
+                      <CheckSquare className="h-3.5 w-3.5 text-dynamic-orange" />
+                    </div>
                     Estimation Options
                   </Label>
 
                   {/* Allow Zero Estimates Toggle */}
-                  <div className="flex items-center justify-between rounded-lg border p-4">
-                    <div className="space-y-1">
-                      <div className="font-medium">Allow zero estimates</div>
-                      <div className="text-muted-foreground text-sm">
+                  <div className="flex items-center justify-between gap-3 rounded-lg border border-border/60 bg-background p-3.5 transition-all hover:border-primary/30">
+                    <div className="min-w-0 flex-1 space-y-0.5">
+                      <div className="font-medium text-sm">
+                        Allow zero estimates
+                      </div>
+                      <div className="text-muted-foreground text-xs leading-snug">
                         When enabled, issues can be estimated with zero points
                       </div>
                     </div>
                     <Switch
                       checked={allowZeroEstimates}
                       onCheckedChange={setAllowZeroEstimates}
+                      className="shrink-0"
                     />
                   </div>
 
                   {/* Count Unestimated Issues Toggle */}
-                  <div className="flex items-center justify-between rounded-lg border p-4">
-                    <div className="space-y-1">
-                      <div className="font-medium">
+                  <div className="flex items-center justify-between gap-3 rounded-lg border border-border/60 bg-background p-3.5 transition-all hover:border-primary/30">
+                    <div className="min-w-0 flex-1 space-y-0.5">
+                      <div className="font-medium text-sm">
                         Count unestimated issues
                       </div>
-                      <div className="text-muted-foreground text-sm">
+                      <div className="text-muted-foreground text-xs leading-snug">
                         When enabled, unestimated issues count as 1 estimate
                         point. When disabled, they count as 0
                       </div>
@@ -631,22 +684,23 @@ export default function TaskEstimatesClient({ wsId, initialBoards }: Props) {
                     <Switch
                       checked={countUnestimatedIssues}
                       onCheckedChange={setCountUnestimatedIssues}
+                      className="shrink-0"
                     />
                   </div>
                 </div>
               )}
 
               {selectedEstimationType && selectedEstimationType !== 'none' && (
-                <div className="rounded-lg border bg-muted p-4">
-                  <div className="flex items-start gap-3">
-                    <div className="mt-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-blue-500">
+                <div className="rounded-lg border border-dynamic-orange/30 bg-dynamic-orange/5 p-3.5 ring-1 ring-dynamic-orange/10">
+                  <div className="flex items-start gap-2.5">
+                    <div className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-dynamic-orange">
                       <div className="h-2 w-2 rounded-full bg-white" />
                     </div>
-                    <div className="space-y-1">
-                      <p className="font-medium text-sm">
+                    <div className="min-w-0 flex-1 space-y-0.5">
+                      <p className="font-semibold text-dynamic-orange text-sm">
                         Selected Configuration
                       </p>
-                      <p className="text-muted-foreground text-sm">
+                      <p className="text-muted-foreground text-xs leading-snug">
                         {getEstimationDescription(
                           selectedEstimationType === 'none'
                             ? null
@@ -661,17 +715,30 @@ export default function TaskEstimatesClient({ wsId, initialBoards }: Props) {
                 </div>
               )}
 
-              <div className="flex gap-3 border-t pt-6">
+              <div className="flex flex-col-reverse gap-2 border-t pt-4 sm:flex-row sm:justify-end">
+                <Button
+                  variant="outline"
+                  onClick={closeDialog}
+                  disabled={isSubmitting}
+                  className="sm:w-auto"
+                >
+                  Cancel
+                </Button>
                 <Button
                   onClick={handleUpdateEstimationType}
                   disabled={isSubmitting}
-                  className="flex-1"
-                  size="lg"
                 >
-                  {isSubmitting ? 'Updating...' : 'Update Estimation'}
-                </Button>
-                <Button variant="outline" onClick={closeDialog} size="lg">
-                  Cancel
+                  {isSubmitting ? (
+                    <>
+                      <Calculator className="mr-2 h-4 w-4 animate-spin" />
+                      Updating...
+                    </>
+                  ) : (
+                    <>
+                      <CheckSquare className="mr-2 h-4 w-4" />
+                      Update Estimation
+                    </>
+                  )}
                 </Button>
               </div>
             </div>

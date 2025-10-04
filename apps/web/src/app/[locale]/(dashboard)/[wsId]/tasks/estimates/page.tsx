@@ -1,13 +1,15 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
 import type { TaskBoard } from '@tuturuuu/types/primitives/TaskBoard';
+import { Calculator } from '@tuturuuu/ui/icons';
 import { getPermissions, getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import TaskEstimatesClient from './client';
 
 export const metadata: Metadata = {
-  title: 'Estimates',
-  description: 'Manage Estimates in the Tasks area of your Tuturuuu workspace.',
+  title: 'Task Estimation',
+  description:
+    'Configure estimation methods for your task boards and view estimation analytics.',
 };
 
 interface Props {
@@ -32,14 +34,23 @@ export default async function TaskEstimatesPage({ params }: Props) {
   const { boards } = await getTaskBoards(wsId);
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="space-y-2">
-        <h1 className="font-bold text-2xl tracking-tight">Task Estimation</h1>
-        <p className="text-muted-foreground">
-          Configure estimation methods for your task boards and view estimation
-          analytics
-        </p>
+    <div className="space-y-6 pb-8">
+      {/* Header with gradient accent matching task-edit-dialog pattern */}
+      <div className="space-y-3 rounded-lg border border-border/50 bg-gradient-to-r from-dynamic-orange/5 via-background to-background p-6 shadow-sm">
+        <div className="flex items-center gap-3">
+          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-dynamic-orange/10 ring-1 ring-dynamic-orange/20">
+            <Calculator className="h-5 w-5 text-dynamic-orange" />
+          </div>
+          <div>
+            <h1 className="font-bold text-2xl tracking-tight">
+              Task Estimation
+            </h1>
+            <p className="text-muted-foreground text-sm">
+              Configure estimation methods for your task boards and view
+              analytics
+            </p>
+          </div>
+        </div>
       </div>
 
       {/* Estimation Management */}

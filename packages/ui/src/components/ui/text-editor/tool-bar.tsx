@@ -390,7 +390,12 @@ export function ToolBar({ editor, workspaceId, onImageUpload }: ToolBarProps) {
           <Toggle
             key={`${option.key}-${source}`}
             pressed={option.pressed as boolean}
-            onPressedChange={() => option.onClick()}
+            onPressedChange={() => {
+              option.onClick();
+            }}
+            onMouseDown={(e) => {
+              e.preventDefault();
+            }}
             className="h-8 w-8 rounded-md border border-transparent transition-colors data-[state=on]:border-foreground/10 data-[state=on]:bg-dynamic-surface/80 data-[state=on]:text-foreground"
           >
             {option.icon}
@@ -399,7 +404,12 @@ export function ToolBar({ editor, workspaceId, onImageUpload }: ToolBarProps) {
         <Toggle
           key={`link-${source}`}
           pressed={editor?.isActive('link') || linkEditorContext === source}
-          onPressedChange={() => openLinkEditor(source)}
+          onPressedChange={() => {
+            openLinkEditor(source);
+          }}
+          onMouseDown={(e) => {
+            e.preventDefault();
+          }}
           className="h-8 w-8 rounded-md border border-transparent transition-colors data-[state=on]:border-foreground/10 data-[state=on]:bg-dynamic-surface/80 data-[state=on]:text-foreground"
         >
           <Link className="size-4" />
@@ -409,7 +419,12 @@ export function ToolBar({ editor, workspaceId, onImageUpload }: ToolBarProps) {
             <Toggle
               key={`image-${source}`}
               pressed={false}
-              onPressedChange={triggerImageUpload}
+              onPressedChange={() => {
+                triggerImageUpload();
+              }}
+              onMouseDown={(e) => {
+                e.preventDefault();
+              }}
               disabled={isUploadingImage}
               className="h-8 w-8 rounded-md border border-transparent transition-colors data-[state=on]:border-foreground/10 data-[state=on]:bg-dynamic-surface/80 data-[state=on]:text-foreground"
             >
@@ -422,7 +437,12 @@ export function ToolBar({ editor, workspaceId, onImageUpload }: ToolBarProps) {
             <Toggle
               key={`video-${source}`}
               pressed={false}
-              onPressedChange={triggerVideoUpload}
+              onPressedChange={() => {
+                triggerVideoUpload();
+              }}
+              onMouseDown={(e) => {
+                e.preventDefault();
+              }}
               disabled={isUploadingVideo}
               className="h-8 w-8 rounded-md border border-transparent transition-colors data-[state=on]:border-foreground/10 data-[state=on]:bg-dynamic-surface/80 data-[state=on]:text-foreground"
             >
@@ -437,7 +457,12 @@ export function ToolBar({ editor, workspaceId, onImageUpload }: ToolBarProps) {
         <Toggle
           key={`youtube-${source}`}
           pressed={showYoutubeInput}
-          onPressedChange={() => setShowYoutubeInput(!showYoutubeInput)}
+          onPressedChange={() => {
+            setShowYoutubeInput(!showYoutubeInput);
+          }}
+          onMouseDown={(e) => {
+            e.preventDefault();
+          }}
           className="h-8 w-8 rounded-md border border-transparent transition-colors data-[state=on]:border-foreground/10 data-[state=on]:bg-dynamic-surface/80 data-[state=on]:text-foreground"
         >
           <YoutubeIcon className="size-4" />
@@ -581,7 +606,7 @@ export function ToolBar({ editor, workspaceId, onImageUpload }: ToolBarProps) {
           return true;
         }}
       >
-        <div className="pointer-events-auto flex flex-col gap-2 rounded-lg border border-dynamic-border bg-background p-2">
+        <div className="flex flex-col gap-2 rounded-lg border border-dynamic-border bg-background p-2">
           {renderFormattingOptions('bubble')}
           {linkEditorContext === 'bubble' ? renderLinkEditor('bubble') : null}
           {showYoutubeInput ? renderYoutubeInput() : null}

@@ -23,7 +23,12 @@ import {
   ArrowDownUp,
   ArrowUp,
   CheckCircle2,
+  horseHead,
+  Icon,
   MoreHorizontal,
+  Rabbit,
+  Turtle,
+  unicornHead,
   X,
 } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
@@ -544,9 +549,9 @@ export function ListView({
                           <Badge
                             variant="secondary"
                             className={cn(
-                              'h-5 border px-1.5 font-medium text-[10px] transition-all',
+                              'h-5 border p-1 font-medium text-[10px] transition-all',
                               task.priority === 'critical' &&
-                                'animate-pulse border-dynamic-red/50 bg-dynamic-red/20 text-dynamic-red shadow-dynamic-red/20 shadow-sm',
+                                'border-dynamic-red/50 bg-dynamic-red/20 text-dynamic-red shadow-dynamic-red/20 shadow-sm',
                               task.priority === 'high' &&
                                 'border-dynamic-orange/30 bg-dynamic-orange/10 text-dynamic-orange',
                               task.priority === 'normal' &&
@@ -555,10 +560,21 @@ export function ListView({
                                 'border-dynamic-blue/30 bg-dynamic-blue/10 text-dynamic-blue'
                             )}
                           >
-                            {task.priority === 'critical' && '🔥'}
-                            {task.priority === 'high' && '⬆️'}
-                            {task.priority === 'normal' && '➡️'}
-                            {task.priority === 'low' && '⬇️'}
+                            {task.priority === 'critical' && (
+                              <Icon
+                                iconNode={unicornHead}
+                                className="h-3 w-3"
+                              />
+                            )}
+                            {task.priority === 'high' && (
+                              <Icon iconNode={horseHead} className="h-3 w-3" />
+                            )}
+                            {task.priority === 'normal' && (
+                              <Rabbit className="h-3 w-3" />
+                            )}
+                            {task.priority === 'low' && (
+                              <Turtle className="h-3 w-3" />
+                            )}
                           </Badge>
                         )}
                       </TableCell>

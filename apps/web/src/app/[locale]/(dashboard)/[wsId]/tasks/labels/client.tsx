@@ -1,28 +1,49 @@
 'use client';
 
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@tuturuuu/ui/alert-dialog';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Card } from '@tuturuuu/ui/card';
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
 } from '@tuturuuu/ui/dialog';
 import {
-  Calendar,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@tuturuuu/ui/dropdown-menu';
+import {
+  Check,
   Edit2,
+  MoreVertical,
   Palette,
   Plus,
+  Search,
   Tag,
   Trash2,
 } from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
 import { toast } from '@tuturuuu/ui/sonner';
+import { cn } from '@tuturuuu/utils/format';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 
 interface TaskLabel {
   id: string;
@@ -55,11 +76,19 @@ export default function TaskLabelsClient({ wsId, initialLabels }: Props) {
   const [labels, setLabels] = useState<TaskLabel[]>(initialLabels);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [editingLabel, setEditingLabel] = useState<TaskLabel | null>(null);
+  const [deletingLabel, setDeletingLabel] = useState<TaskLabel | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
   const [formData, setFormData] = useState({
     name: '',
     color: colorPresets[0],
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const filteredLabels = useMemo(() => {
+    if (!searchQuery.trim()) return labels;
+    const query = searchQuery.toLowerCase();
+    return labels.filter((label) => label.name.toLowerCase().includes(query));
+  }, [labels, searchQuery]);
 
   const resetForm = () => {
     setFormData({
@@ -149,18 +178,12 @@ export default function TaskLabelsClient({ wsId, initialLabels }: Props) {
     }
   };
 
-  const handleDelete = async (labelId: string) => {
-    if (
-      !confirm(
-        'Are you sure you want to delete this label? This action cannot be undone.'
-      )
-    ) {
-      return;
-    }
+  const handleDelete = async () => {
+    if (!deletingLabel) return;
 
     try {
       const response = await fetch(
-        `/api/v1/workspaces/${wsId}/labels/${labelId}`,
+        `/api/v1/workspaces/${wsId}/labels/${deletingLabel.id}`,
         {
           method: 'DELETE',
         }
@@ -170,8 +193,11 @@ export default function TaskLabelsClient({ wsId, initialLabels }: Props) {
         throw new Error('Failed to delete label');
       }
 
-      setLabels((prev) => prev.filter((label) => label.id !== labelId));
+      setLabels((prev) =>
+        prev.filter((label) => label.id !== deletingLabel.id)
+      );
       toast.success('Label deleted successfully');
+      setDeletingLabel(null);
       router.refresh();
     } catch (error) {
       console.error('Error deleting label:', error);
@@ -195,12 +221,25 @@ export default function TaskLabelsClient({ wsId, initialLabels }: Props) {
   return (
     <div className="space-y-6">
       {/* Action Bar */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2 text-muted-foreground text-sm">
-          <Tag className="h-4 w-4" />
-          <span>
-            {labels.length} label{labels.length !== 1 ? 's' : ''}
-          </span>
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 text-muted-foreground text-sm">
+            <Tag className="h-4 w-4" />
+            <span>
+              {labels.length} label{labels.length !== 1 ? 's' : ''}
+            </span>
+          </div>
+          {labels.length > 0 && (
+            <div className="relative flex-1 sm:w-64">
+              <Search className="-translate-y-1/2 absolute top-1/2 left-3 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search labels..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-9"
+              />
+            </div>
+          )}
         </div>
 
         <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
@@ -210,67 +249,98 @@ export default function TaskLabelsClient({ wsId, initialLabels }: Props) {
               Create Label
             </Button>
           </DialogTrigger>
-          <DialogContent>
+          <DialogContent className="sm:max-w-[500px]">
             <DialogHeader>
               <DialogTitle>Create New Label</DialogTitle>
+              <DialogDescription>
+                Create a new label to organize and categorize your tasks
+              </DialogDescription>
             </DialogHeader>
-            <div className="space-y-4">
+            <div className="space-y-6">
               <div className="space-y-2">
-                <Label htmlFor="name">Name</Label>
+                <Label htmlFor="name">Label Name</Label>
                 <Input
                   id="name"
-                  placeholder="Enter label name"
+                  placeholder="e.g., Bug, Feature, Priority"
                   value={formData.name}
                   onChange={(e) =>
                     setFormData((prev) => ({ ...prev, name: e.target.value }))
                   }
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && formData.name.trim()) {
+                      handleCreate();
+                    }
+                  }}
+                  autoFocus
                 />
               </div>
-              <div className="space-y-2">
+              <div className="space-y-3">
                 <Label>Color</Label>
-                <div className="flex items-center gap-2">
-                  <Input
-                    type="color"
-                    value={formData.color}
-                    onChange={(e) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        color: e.target.value,
-                      }))
-                    }
-                    className="h-10 w-12 rounded border p-1"
-                  />
-                  <div className="flex gap-1">
-                    {colorPresets.map((color) => (
-                      <button
-                        key={color}
-                        type="button"
-                        className="h-6 w-6 rounded border-2 border-gray-300 hover:border-gray-400"
-                        style={{ backgroundColor: color }}
-                        onClick={() =>
-                          setFormData((prev) => ({ ...prev, color }))
-                        }
-                      />
-                    ))}
+                <div className="flex flex-wrap items-center gap-2">
+                  {colorPresets.map((color) => (
+                    <button
+                      key={color}
+                      type="button"
+                      className={cn(
+                        'h-8 w-8 rounded-md border-2 transition-all hover:scale-110',
+                        formData.color === color
+                          ? 'border-foreground ring-2 ring-foreground/20 ring-offset-2'
+                          : 'border-border hover:border-foreground/50'
+                      )}
+                      style={{ backgroundColor: color }}
+                      onClick={() =>
+                        setFormData((prev) => ({ ...prev, color }))
+                      }
+                      aria-label={`Select color ${color}`}
+                    >
+                      {formData.color === color && (
+                        <Check className="m-auto h-4 w-4 text-white" />
+                      )}
+                    </button>
+                  ))}
+                  <div className="relative">
+                    <Input
+                      type="color"
+                      value={formData.color}
+                      onChange={(e) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          color: e.target.value,
+                        }))
+                      }
+                      className="h-8 w-8 cursor-pointer rounded-md border-2 p-1"
+                      title="Custom color picker"
+                    />
                   </div>
                 </div>
-                <div className="mt-2 flex items-center gap-2">
+                <div className="rounded-lg border bg-muted/50 p-3">
+                  <p className="mb-2 text-muted-foreground text-xs">Preview</p>
                   <Badge
-                    style={{ backgroundColor: formData.color, color: '#fff' }}
+                    variant="outline"
+                    style={{
+                      backgroundColor: `color-mix(in srgb, ${formData.color} 15%, transparent)`,
+                      borderColor: `color-mix(in srgb, ${formData.color} 30%, transparent)`,
+                      color: formData.color,
+                    }}
+                    className="font-medium"
                   >
-                    {formData.name || 'Preview'}
+                    {formData.name || 'Label Preview'}
                   </Badge>
                 </div>
               </div>
-              <div className="flex gap-2 pt-4">
+              <div className="flex gap-2 pt-2">
                 <Button
                   onClick={handleCreate}
-                  disabled={isSubmitting}
+                  disabled={isSubmitting || !formData.name.trim()}
                   className="flex-1"
                 >
                   {isSubmitting ? 'Creating...' : 'Create Label'}
                 </Button>
-                <Button variant="outline" onClick={closeDialog}>
+                <Button
+                  variant="outline"
+                  onClick={closeDialog}
+                  disabled={isSubmitting}
+                >
                   Cancel
                 </Button>
               </div>
@@ -281,69 +351,117 @@ export default function TaskLabelsClient({ wsId, initialLabels }: Props) {
 
       {/* Labels Grid */}
       {labels.length === 0 ? (
-        <Card className="p-8 text-center">
+        <Card className="p-12 text-center">
           <div className="flex flex-col items-center gap-4">
-            <div className="rounded-full bg-muted p-4">
-              <Tag className="h-8 w-8 text-muted-foreground" />
+            <div className="rounded-full bg-muted p-6">
+              <Tag className="h-10 w-10 text-muted-foreground" />
             </div>
             <div className="space-y-2">
-              <h3 className="font-semibold text-lg">No labels yet</h3>
-              <p className="text-muted-foreground">
-                Create your first label to start organizing your tasks
+              <h3 className="font-semibold text-xl">No labels yet</h3>
+              <p className="max-w-sm text-muted-foreground">
+                Create your first label to start organizing and categorizing
+                your tasks efficiently
               </p>
             </div>
-            <Button onClick={() => setIsCreateDialogOpen(true)}>
+            <Button
+              onClick={() => setIsCreateDialogOpen(true)}
+              size="lg"
+              className="mt-2"
+            >
               <Plus className="mr-2 h-4 w-4" />
-              Create Label
+              Create Your First Label
+            </Button>
+          </div>
+        </Card>
+      ) : filteredLabels.length === 0 ? (
+        <Card className="p-12 text-center">
+          <div className="flex flex-col items-center gap-4">
+            <div className="rounded-full bg-muted p-6">
+              <Search className="h-10 w-10 text-muted-foreground" />
+            </div>
+            <div className="space-y-2">
+              <h3 className="font-semibold text-xl">No labels found</h3>
+              <p className="text-muted-foreground">
+                No labels match your search query &ldquo;{searchQuery}&rdquo;
+              </p>
+            </div>
+            <Button variant="outline" onClick={() => setSearchQuery('')}>
+              Clear Search
             </Button>
           </div>
         </Card>
       ) : (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {labels.map((label) => (
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+          {filteredLabels.map((label) => (
             <Card
               key={label.id}
-              className="p-4 transition-shadow hover:shadow-md"
+              className="group relative overflow-hidden transition-all hover:shadow-md hover:scale-[1.02] cursor-pointer"
+              onClick={() => openEditDialog(label)}
             >
-              <div className="space-y-3">
-                <div className="flex items-start justify-between">
+              <div className="p-3">
+                <div className="flex items-center justify-between gap-2 mb-3">
                   <Badge
-                    style={{ backgroundColor: label.color, color: '#fff' }}
-                    className="font-medium"
+                    variant="outline"
+                    style={{
+                      backgroundColor: `color-mix(in srgb, ${label.color} 15%, transparent)`,
+                      borderColor: `color-mix(in srgb, ${label.color} 30%, transparent)`,
+                      color: label.color,
+                    }}
+                    className="font-semibold text-sm"
                   >
                     {label.name}
                   </Badge>
-                  <div className="flex gap-1">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => openEditDialog(label)}
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 w-7 p-0 opacity-0 transition-opacity group-hover:opacity-100"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <MoreVertical className="h-3.5 w-3.5" />
+                        <span className="sr-only">Open menu</span>
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent
+                      align="end"
+                      onClick={(e) => e.stopPropagation()}
                     >
-                      <Edit2 className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleDelete(label.id)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
+                      <DropdownMenuItem
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          openEditDialog(label);
+                        }}
+                      >
+                        <Edit2 className="mr-2 h-4 w-4" />
+                        Edit
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setDeletingLabel(label);
+                        }}
+                        className="text-destructive focus:text-destructive"
+                      >
+                        <Trash2 className="mr-2 h-4 w-4" />
+                        Delete
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </div>
 
-                <div className="space-y-2 text-muted-foreground text-sm">
-                  <div className="flex items-center gap-2">
-                    <Palette className="h-3 w-3" />
-                    <span>{label.color}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Calendar className="h-3 w-3" />
-                    <span>
-                      {new Date(label.created_at).toLocaleDateString()}
-                    </span>
-                  </div>
+                <div className="flex items-center gap-2 text-muted-foreground text-xs">
+                  <Palette className="h-3 w-3 flex-shrink-0" />
+                  <span className="font-mono truncate">
+                    {label.color.toUpperCase()}
+                  </span>
                 </div>
               </div>
+              <div
+                className="absolute bottom-0 left-0 h-1 w-full transition-all group-hover:h-1.5"
+                style={{ backgroundColor: label.color }}
+              />
             </Card>
           ))}
         </div>
@@ -352,67 +470,98 @@ export default function TaskLabelsClient({ wsId, initialLabels }: Props) {
       {/* Edit Dialog */}
       {editingLabel && (
         <Dialog open={!!editingLabel} onOpenChange={() => resetForm()}>
-          <DialogContent>
+          <DialogContent className="sm:max-w-[500px]">
             <DialogHeader>
               <DialogTitle>Edit Label</DialogTitle>
+              <DialogDescription>
+                Update the label name and color
+              </DialogDescription>
             </DialogHeader>
-            <div className="space-y-4">
+            <div className="space-y-6">
               <div className="space-y-2">
-                <Label htmlFor="edit-name">Name</Label>
+                <Label htmlFor="edit-name">Label Name</Label>
                 <Input
                   id="edit-name"
-                  placeholder="Enter label name"
+                  placeholder="e.g., Bug, Feature, Priority"
                   value={formData.name}
                   onChange={(e) =>
                     setFormData((prev) => ({ ...prev, name: e.target.value }))
                   }
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && formData.name.trim()) {
+                      handleEdit();
+                    }
+                  }}
+                  autoFocus
                 />
               </div>
-              <div className="space-y-2">
+              <div className="space-y-3">
                 <Label>Color</Label>
-                <div className="flex items-center gap-2">
-                  <Input
-                    type="color"
-                    value={formData.color}
-                    onChange={(e) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        color: e.target.value,
-                      }))
-                    }
-                    className="h-10 w-12 rounded border p-1"
-                  />
-                  <div className="flex gap-1">
-                    {colorPresets.map((color) => (
-                      <button
-                        key={color}
-                        type="button"
-                        className="h-6 w-6 rounded border-2 border-gray-300 hover:border-gray-400"
-                        style={{ backgroundColor: color }}
-                        onClick={() =>
-                          setFormData((prev) => ({ ...prev, color }))
-                        }
-                      />
-                    ))}
+                <div className="flex flex-wrap items-center gap-2">
+                  {colorPresets.map((color) => (
+                    <button
+                      key={color}
+                      type="button"
+                      className={cn(
+                        'h-8 w-8 rounded-md border-2 transition-all hover:scale-110',
+                        formData.color === color
+                          ? 'border-foreground ring-2 ring-foreground/20 ring-offset-2'
+                          : 'border-border hover:border-foreground/50'
+                      )}
+                      style={{ backgroundColor: color }}
+                      onClick={() =>
+                        setFormData((prev) => ({ ...prev, color }))
+                      }
+                      aria-label={`Select color ${color}`}
+                    >
+                      {formData.color === color && (
+                        <Check className="m-auto h-4 w-4 text-white" />
+                      )}
+                    </button>
+                  ))}
+                  <div className="relative">
+                    <Input
+                      type="color"
+                      value={formData.color}
+                      onChange={(e) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          color: e.target.value,
+                        }))
+                      }
+                      className="h-8 w-8 cursor-pointer rounded-md border-2 p-1"
+                      title="Custom color picker"
+                    />
                   </div>
                 </div>
-                <div className="mt-2 flex items-center gap-2">
+                <div className="rounded-lg border bg-muted/50 p-3">
+                  <p className="mb-2 text-muted-foreground text-xs">Preview</p>
                   <Badge
-                    style={{ backgroundColor: formData.color, color: '#fff' }}
+                    variant="outline"
+                    style={{
+                      backgroundColor: `color-mix(in srgb, ${formData.color} 15%, transparent)`,
+                      borderColor: `color-mix(in srgb, ${formData.color} 30%, transparent)`,
+                      color: formData.color,
+                    }}
+                    className="font-medium"
                   >
-                    {formData.name || 'Preview'}
+                    {formData.name || 'Label Preview'}
                   </Badge>
                 </div>
               </div>
-              <div className="flex gap-2 pt-4">
+              <div className="flex gap-2 pt-2">
                 <Button
                   onClick={handleEdit}
-                  disabled={isSubmitting}
+                  disabled={isSubmitting || !formData.name.trim()}
                   className="flex-1"
                 >
                   {isSubmitting ? 'Updating...' : 'Update Label'}
                 </Button>
-                <Button variant="outline" onClick={resetForm}>
+                <Button
+                  variant="outline"
+                  onClick={resetForm}
+                  disabled={isSubmitting}
+                >
                   Cancel
                 </Button>
               </div>
@@ -420,6 +569,34 @@ export default function TaskLabelsClient({ wsId, initialLabels }: Props) {
           </DialogContent>
         </Dialog>
       )}
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog
+        open={!!deletingLabel}
+        onOpenChange={(open) => !open && setDeletingLabel(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Label</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete the label{' '}
+              <span className="font-semibold">
+                &ldquo;{deletingLabel?.name}&rdquo;
+              </span>
+              ? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDelete}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

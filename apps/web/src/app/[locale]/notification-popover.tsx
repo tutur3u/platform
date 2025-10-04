@@ -1,16 +1,13 @@
-import { Button } from '@tuturuuu/ui/button';
-import { Bell } from '@tuturuuu/ui/icons';
-import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
-import { ScrollArea } from '@tuturuuu/ui/scroll-area';
-import { Separator } from '@tuturuuu/ui/separator';
-import { getWorkspaceInvites } from '@tuturuuu/utils/workspace-helper';
+import {
+  getUnresolvedInquiriesCount,
+  getWorkspaceInvites,
+} from '@tuturuuu/utils/workspace-helper';
 import dayjs from 'dayjs';
-import NotificationActionList, {
-  type NotificationAction,
-} from './notification-action-list';
 import 'dayjs/locale/vi';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import { getLocale, getTranslations } from 'next-intl/server';
+import type { NotificationAction } from './notification-action-list';
+import NotificationPopoverClient from './notification-popover-client';
 
 export default async function NotificationPopover() {
   const locale = await getLocale();
@@ -23,97 +20,81 @@ export default async function NotificationPopover() {
   const noNotifications = t('no-notifications');
 
   const invites = await getWorkspaceInvites();
-  const notifications = invites.map((invite) => ({
-    id: `workspace-invite-${invite.id}`,
-    title: `${t('workspace-invite')}`,
-    description: (
-      <div>
-        <span className="font-semibold text-foreground/80">
-          {dayjs(invite.created_at).fromNow()}
-        </span>
-        {' • '}
-        {t('invited-to')}{' '}
-        <span className="font-semibold text-primary/80 underline">
-          {invite.name}
-        </span>
-        .
-      </div>
-    ),
-    actions: [
-      {
-        id: `decline-workspace-${invite.id}`,
-        label: t('decline'),
-        variant: 'outline',
-        type: 'WORKSPACE_INVITE_DECLINE',
-        payload: { wsId: invite.id },
-      },
-      {
-        id: `accept-workspace-${invite.id}`,
-        label: t('accept'),
-        type: 'WORKSPACE_INVITE_ACCEPT',
-        payload: { wsId: invite.id },
-      },
-    ] as NotificationAction[],
-  }));
+  const { count: unresolvedInquiriesCount, latestDate: latestInquiryDate } =
+    await getUnresolvedInquiriesCount();
+
+  const notifications = [
+    ...invites.map((invite) => ({
+      id: `workspace-invite-${invite.id}`,
+      title: `${t('workspace-invite')}`,
+      description: (
+        <div>
+          <span className="font-semibold text-foreground/80">
+            {dayjs(invite.created_at).fromNow()}
+          </span>
+          {' • '}
+          {t('invited-to')}{' '}
+          <span className="font-semibold text-primary/80 underline">
+            {invite.name}
+          </span>
+          .
+        </div>
+      ),
+      actions: [
+        {
+          id: `decline-workspace-${invite.id}`,
+          label: t('decline'),
+          variant: 'outline',
+          type: 'WORKSPACE_INVITE_DECLINE',
+          payload: { wsId: invite.id },
+        },
+        {
+          id: `accept-workspace-${invite.id}`,
+          label: t('accept'),
+          type: 'WORKSPACE_INVITE_ACCEPT',
+          payload: { wsId: invite.id },
+        },
+      ] as NotificationAction[],
+    })),
+    ...(unresolvedInquiriesCount > 0
+      ? [
+          {
+            id: 'unresolved-inquiries',
+            title: t('unresolved-inquiries'),
+            description: (
+              <div>
+                {latestInquiryDate && (
+                  <>
+                    <span className="font-semibold text-foreground/80">
+                      {dayjs(latestInquiryDate).fromNow()}
+                    </span>
+                    {' • '}
+                  </>
+                )}
+                <span className="font-semibold text-dynamic-orange">
+                  {unresolvedInquiriesCount}
+                </span>{' '}
+                {t('inquiries-need-attention')}
+              </div>
+            ),
+            actions: [
+              {
+                id: 'view-inquiries',
+                label: t('view-inquiries'),
+                type: 'LINK',
+                payload: { href: `/internal/inquiries` },
+              },
+            ] as NotificationAction[],
+          },
+        ]
+      : []),
+  ];
 
   return (
-    <Popover>
-      <PopoverTrigger asChild>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="group relative hidden flex-none transition-all md:flex"
-        >
-          <Bell className="h-6 w-6" />
-          {notifications.length > 0 && (
-            <div className="group-hover:-top-2 group-hover:-right-1 absolute top-1 right-2 flex h-1.5 w-1.5 flex-none items-center justify-center rounded-full bg-foreground p-1 text-center font-semibold text-foreground text-xs transition-all group-hover:h-4 group-hover:w-auto group-hover:text-background">
-              <div className="relative opacity-0 group-hover:opacity-100">
-                {notifications.length}
-              </div>
-            </div>
-          )}
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent className="w-72 p-0" align="start">
-        <div className="px-4 py-2 font-semibold">
-          {t('notifications')}
-          {notifications.length > 0 && ` (${notifications.length})`}
-        </div>
-        <Separator />
-        <ScrollArea
-          className={`p-2 ${
-            notifications.length === 0
-              ? 'h-20'
-              : notifications.length > 3
-                ? 'h-96'
-                : ''
-          }`}
-        >
-          {notifications.length > 0 ? (
-            notifications.map((notification) => (
-              <div
-                key={notification.id}
-                className="mb-2 rounded-lg border bg-foreground/5 p-2 pb-2 last:mb-0"
-              >
-                <div className="font-medium text-sm leading-none">
-                  {notification.title}
-                </div>
-                <div className="mt-1 mb-2 text-foreground/80 text-sm">
-                  {notification.description}
-                </div>
-
-                <NotificationActionList actions={notification.actions} />
-              </div>
-            ))
-          ) : (
-            <div className="flex min-h-16 flex-col items-center justify-center">
-              <div className="text-foreground/80 text-xs">
-                {noNotifications}
-              </div>
-            </div>
-          )}
-        </ScrollArea>
-      </PopoverContent>
-    </Popover>
+    <NotificationPopoverClient
+      notifications={notifications}
+      noNotificationsText={noNotifications}
+      notificationsText={t('notifications')}
+    />
   );
 }

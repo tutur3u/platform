@@ -10,13 +10,8 @@ import type {
 import type { WorkspaceSecret } from '@tuturuuu/types/primitives/WorkspaceSecret';
 import { notFound, redirect } from 'next/navigation';
 import { ROOT_WORKSPACE_ID, resolveWorkspaceId } from './constants';
+import { isValidTuturuuuEmail } from './email/client';
 import { permissions as rolePermissions } from './permissions';
-
-const isValidTuturuuuEmail = (email: string): boolean => {
-  if (!email) return false;
-  const emailRegex = /^[^\s@]+@tuturuuu\.com$/;
-  return emailRegex.test(email);
-};
 
 export { toWorkspaceSlug } from './constants';
 
@@ -183,6 +178,37 @@ export async function getWorkspaceInvites() {
 
   const data = [...invites.data, ...(emailInvites?.data || [])] as Workspace[];
   return data;
+}
+
+export async function getUnresolvedInquiriesCount() {
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user?.email || !isValidTuturuuuEmail(user.email))
+    return { count: 0, latestDate: null };
+
+  const sbAdmin = await createAdminClient();
+
+  const { count } = await sbAdmin
+    .from('support_inquiries')
+    .select('*', { count: 'exact', head: true })
+    .eq('is_resolved', false);
+
+  const { data: latestInquiry } = await sbAdmin
+    .from('support_inquiries')
+    .select('created_at')
+    .eq('is_resolved', false)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  return {
+    count: count || 0,
+    latestDate: latestInquiry?.created_at || null,
+  };
 }
 
 export function enforceRootWorkspace(

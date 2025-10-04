@@ -84,21 +84,21 @@ export default async function InquiriesPage({
           countQuery = countQuery.eq('product', product);
         }
 
-        // Default to showing unresolved inquiries if no status filter is set
-        if (status) {
-          if (status === 'unread') {
+        // Apply status filters (default to 'open' if not specified)
+        const statusFilter = status || 'open';
+
+        if (statusFilter !== 'all') {
+          if (statusFilter === 'unread') {
             countQuery = countQuery.eq('is_read', false);
-          } else if (status === 'read') {
+          } else if (statusFilter === 'read') {
             countQuery = countQuery.eq('is_read', true);
-          } else if (status === 'open') {
+          } else if (statusFilter === 'open') {
             countQuery = countQuery.eq('is_resolved', false);
-          } else if (status === 'resolved') {
+          } else if (statusFilter === 'resolved') {
             countQuery = countQuery.eq('is_resolved', true);
           }
-        } else {
-          // Default: show only unresolved inquiries
-          countQuery = countQuery.eq('is_resolved', false);
         }
+        // 'all' status shows everything, no filter applied
 
         const { count: totalCount } = await countQuery;
 
@@ -127,21 +127,19 @@ export default async function InquiriesPage({
           query = query.eq('product', product);
         }
 
-        // Default to showing unresolved inquiries if no status filter is set
-        if (status) {
-          if (status === 'unread') {
+        // Apply status filters (using the same statusFilter variable)
+        if (statusFilter !== 'all') {
+          if (statusFilter === 'unread') {
             query = query.eq('is_read', false);
-          } else if (status === 'read') {
+          } else if (statusFilter === 'read') {
             query = query.eq('is_read', true);
-          } else if (status === 'open') {
+          } else if (statusFilter === 'open') {
             query = query.eq('is_resolved', false);
-          } else if (status === 'resolved') {
+          } else if (statusFilter === 'resolved') {
             query = query.eq('is_resolved', true);
           }
-        } else {
-          // Default: show only unresolved inquiries
-          query = query.eq('is_resolved', false);
         }
+        // 'all' status shows everything, no filter applied
 
         const { data: inquiries, error } = await query;
 

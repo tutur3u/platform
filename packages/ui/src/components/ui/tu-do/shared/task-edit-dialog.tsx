@@ -1,7 +1,7 @@
 'use client';
 
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import type { JSONContent } from '@tiptap/react';
+import type { Editor, JSONContent } from '@tiptap/react';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { TaskPriority } from '@tuturuuu/types/primitives/Priority';
 import type { Task } from '@tuturuuu/types/primitives/Task';
@@ -53,7 +53,10 @@ import {
   useWorkspaceLabels,
 } from '@tuturuuu/utils/task-helper';
 import dayjs from 'dayjs';
+import type { LucideIcon } from 'lucide-react';
+import Image from 'next/image';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import {
   buildEstimationIndices,
   mapEstimationPoints,
@@ -75,6 +78,134 @@ interface WorkspaceTaskLabel {
   name: string;
   color: string;
   created_at: string;
+}
+
+interface SuggestionRange {
+  from: number;
+  to: number;
+}
+
+interface SuggestionState {
+  open: boolean;
+  query: string;
+  range: SuggestionRange | null;
+  position: { left: number; top: number } | null;
+}
+
+const createInitialSuggestionState = (): SuggestionState => ({
+  open: false,
+  query: '',
+  range: null,
+  position: null,
+});
+
+// Normalize text for search: remove diacritics and convert to lowercase
+const normalizeForSearch = (text: string): string => {
+  return text
+    .normalize('NFD') // Decompose combined characters
+    .replace(/[\u0300-\u036f]/g, '') // Remove diacritical marks
+    .toLowerCase()
+    .trim();
+};
+
+const isSameSuggestionState = (
+  a: SuggestionState,
+  b: SuggestionState
+): boolean => {
+  if (a.open !== b.open) return false;
+  if (a.query !== b.query) return false;
+
+  if (!!a.range !== !!b.range) return false;
+  if (
+    a.range &&
+    b.range &&
+    (a.range.from !== b.range.from || a.range.to !== b.range.to)
+  ) {
+    return false;
+  }
+
+  if (!!a.position !== !!b.position) return false;
+  if (
+    a.position &&
+    b.position &&
+    (a.position.left !== b.position.left || a.position.top !== b.position.top)
+  ) {
+    return false;
+  }
+
+  return true;
+};
+
+type MentionOptionType = 'user' | 'workspace' | 'task';
+
+interface MentionOption {
+  id: string;
+  label: string;
+  subtitle?: string;
+  avatarUrl?: string | null;
+  type: MentionOptionType;
+  payload?: Record<string, unknown>;
+}
+
+const mentionGroupOrder: Array<{ type: MentionOptionType; title: string }> = [
+  { type: 'user', title: 'People' },
+  { type: 'workspace', title: 'Workspaces' },
+  { type: 'task', title: 'Tasks' },
+];
+
+const mentionTypeStyles: Record<
+  MentionOptionType,
+  {
+    badgeClass: string;
+    avatarFallback: string;
+    avatarClass: string;
+    prefix: string;
+  }
+> = {
+  user: {
+    badgeClass:
+      'border border-dynamic-green/40 bg-dynamic-green/10 text-dynamic-green',
+    avatarFallback: '@',
+    avatarClass:
+      'bg-dynamic-green/20 text-dynamic-green border border-dynamic-green/30',
+    prefix: '@',
+  },
+  workspace: {
+    badgeClass:
+      'border border-dynamic-orange/40 bg-dynamic-orange/10 text-dynamic-orange',
+    avatarFallback: 'W',
+    avatarClass:
+      'bg-dynamic-orange/20 text-dynamic-orange border border-dynamic-orange/30',
+    prefix: '@',
+  },
+  task: {
+    badgeClass:
+      'border border-dynamic-blue/40 bg-dynamic-blue/10 text-dynamic-blue',
+    avatarFallback: '#',
+    avatarClass:
+      'bg-dynamic-blue/20 text-dynamic-blue border border-dynamic-blue/30',
+    prefix: '#',
+  },
+};
+
+interface SlashCommandDefinition {
+  id:
+    | 'assign'
+    | 'due-today'
+    | 'due-tomorrow'
+    | 'due-next-week'
+    | 'clear-due'
+    | 'priority-critical'
+    | 'priority-high'
+    | 'priority-normal'
+    | 'priority-low'
+    | 'priority-clear'
+    | 'toggle-advanced';
+  label: string;
+  description?: string;
+  icon: LucideIcon;
+  keywords: string[];
+  disabled?: boolean;
 }
 
 function TaskEditDialogComponent({
@@ -184,6 +315,26 @@ function TaskEditDialogComponent({
     task?.projects || []
   );
   const [projectSearchQuery, setProjectSearchQuery] = useState('');
+  const [, setWorkspaceDetails] = useState<any | null>(null);
+  const [workspaceDetailsLoading, setWorkspaceDetailsLoading] = useState(false);
+  const [allWorkspaces, setAllWorkspaces] = useState<any[]>([]);
+  const [allWorkspacesLoading, setAllWorkspacesLoading] = useState(false);
+  const [workspaceTasks, setWorkspaceTasks] = useState<any[]>([]);
+  const [workspaceTasksLoading, setWorkspaceTasksLoading] = useState(false);
+  const [editorInstance, setEditorInstance] = useState<Editor | null>(null);
+  const [slashState, setSlashState] = useState<SuggestionState>(
+    createInitialSuggestionState
+  );
+  const [mentionState, setMentionState] = useState<SuggestionState>(
+    createInitialSuggestionState
+  );
+  const [slashHighlightIndex, setSlashHighlightIndex] = useState(0);
+  const [mentionHighlightIndex, setMentionHighlightIndex] = useState(0);
+  const slashListRef = useRef<HTMLDivElement | null>(null);
+  const mentionListRef = useRef<HTMLDivElement | null>(null);
+  const suggestionMenuWidth = 360;
+  const previousMentionHighlightRef = useRef(0);
+  const previousSlashHighlightRef = useRef(0);
 
   const queryClient = useQueryClient();
   const previousTaskIdRef = useRef<string | null>(null);
@@ -204,6 +355,991 @@ function TaskEditDialogComponent({
 
   // Use the React Query mutation hook for updating tasks
   const updateTaskMutation = useUpdateTask(boardId);
+
+  const closeSlashMenu = useCallback(() => {
+    setSlashState((prev) =>
+      prev.open ? createInitialSuggestionState() : prev
+    );
+  }, []);
+
+  const closeMentionMenu = useCallback(() => {
+    setMentionState((prev) =>
+      prev.open ? createInitialSuggestionState() : prev
+    );
+  }, []);
+
+  const handleEditorReady = useCallback((editor: Editor) => {
+    setEditorInstance(editor);
+  }, []);
+
+  useEffect(() => {
+    if (!isOpen) {
+      setSlashState(createInitialSuggestionState());
+      setMentionState(createInitialSuggestionState());
+      setEditorInstance(null);
+      setSlashHighlightIndex(0);
+      setMentionHighlightIndex(0);
+      previousMentionHighlightRef.current = 0;
+      previousSlashHighlightRef.current = 0;
+    }
+  }, [isOpen]);
+
+  useEffect(() => {
+    if (!workspaceId) {
+      setWorkspaceDetails(null);
+      setWorkspaceTasks([]);
+      setAllWorkspaces([]);
+    }
+  }, [workspaceId]);
+
+  const slashCommands = useMemo<SlashCommandDefinition[]>(() => {
+    const commands: SlashCommandDefinition[] = [
+      {
+        id: 'assign',
+        label: 'Assign member',
+        description: 'Mention and assign someone quickly',
+        icon: Users,
+        keywords: ['assign', 'assignee', 'member', 'mention'],
+        disabled: workspaceMembers.length === 0,
+      },
+      {
+        id: 'due-today',
+        label: 'Due today',
+        description: 'Set due date to end of today',
+        icon: Calendar,
+        keywords: ['due', 'today', 'deadline', 'tod'],
+      },
+      {
+        id: 'due-tomorrow',
+        label: 'Due tomorrow',
+        description: 'Set due date to end of tomorrow',
+        icon: Calendar,
+        keywords: ['due', 'tomorrow', 'tom'],
+      },
+      {
+        id: 'due-next-week',
+        label: 'Due next week',
+        description: 'Set due date to a week from now',
+        icon: Calendar,
+        keywords: ['due', 'week', 'next'],
+      },
+      {
+        id: 'clear-due',
+        label: 'Clear due date',
+        description: 'Remove the current due date',
+        icon: Trash,
+        keywords: ['due', 'clear', 'remove'],
+        disabled: !endDate,
+      },
+      {
+        id: 'priority-critical',
+        label: 'Priority: Critical',
+        description: 'Mark as critical priority',
+        icon: Flag,
+        keywords: ['priority', 'critical', 'urgent'],
+      },
+      {
+        id: 'priority-high',
+        label: 'Priority: High',
+        description: 'Mark as high priority',
+        icon: Flag,
+        keywords: ['priority', 'high'],
+      },
+      {
+        id: 'priority-normal',
+        label: 'Priority: Normal',
+        description: 'Mark as normal priority',
+        icon: Flag,
+        keywords: ['priority', 'normal', 'medium'],
+      },
+      {
+        id: 'priority-low',
+        label: 'Priority: Low',
+        description: 'Mark as low priority',
+        icon: Flag,
+        keywords: ['priority', 'low'],
+      },
+      {
+        id: 'priority-clear',
+        label: 'Clear priority',
+        description: 'Remove current priority value',
+        icon: X,
+        keywords: ['priority', 'clear', 'remove'],
+        disabled: !priority,
+      },
+      {
+        id: 'toggle-advanced',
+        label: showAdvancedOptions
+          ? 'Hide advanced options'
+          : 'Show advanced options',
+        description: 'Toggle the advanced settings panel',
+        icon: Settings,
+        keywords: ['advanced', 'options', 'settings'],
+      },
+    ];
+
+    return commands;
+  }, [workspaceMembers.length, endDate, priority, showAdvancedOptions]);
+
+  const filteredSlashCommands = useMemo(() => {
+    if (!slashState.open) return [] as SlashCommandDefinition[];
+    const normalizedQuery = normalizeForSearch(slashState.query.trim());
+
+    return slashCommands.filter((command) => {
+      if (command.disabled) return false;
+      if (!normalizedQuery) return true;
+
+      const searchTexts = [
+        command.label,
+        command.description || '',
+        ...command.keywords,
+      ];
+
+      // Try exact match first (case-insensitive with diacritics normalized)
+      const normalizedTexts = searchTexts.map(normalizeForSearch);
+
+      // Check if any text contains the query
+      if (normalizedTexts.some((text) => text.includes(normalizedQuery))) {
+        return true;
+      }
+
+      // Try matching individual words (for partial matching)
+      const queryWords = normalizedQuery.split(/\s+/);
+      return queryWords.every((word) =>
+        normalizedTexts.some((text) => text.includes(word))
+      );
+    });
+  }, [slashCommands, slashState.open, slashState.query]);
+
+  const mentionUserOptions = useMemo<MentionOption[]>(
+    () =>
+      [...workspaceMembers]
+        .sort((a, b) =>
+          (a?.display_name || '').localeCompare(b?.display_name || '')
+        )
+        .map((member: any) => ({
+          id: member.user_id,
+          label: member.display_name || 'Unknown member',
+          subtitle: undefined,
+          avatarUrl: member.avatar_url,
+          type: 'user',
+          payload: member,
+        })),
+    [workspaceMembers]
+  );
+
+  const mentionWorkspaceOptions = useMemo<MentionOption[]>(() => {
+    return allWorkspaces
+      .filter((ws) => !ws.personal)
+      .map((ws) => ({
+        id: ws.id,
+        label: ws.name || 'Workspace',
+        subtitle: ws.handle ? `@${ws.handle}` : ws.id.slice(0, 8),
+        avatarUrl: null,
+        type: 'workspace' as const,
+        payload: ws,
+      }));
+  }, [allWorkspaces]);
+
+  const mentionTaskOptions = useMemo<MentionOption[]>(
+    () =>
+      [...workspaceTasks]
+        .filter((taskItem: any) => taskItem.id !== task?.id)
+        .map((task: any) => {
+          const subtitleParts: string[] = [];
+          if (task.list?.name) subtitleParts.push(task.list.name);
+          return {
+            id: task.id,
+            label: task.name || 'Untitled task',
+            subtitle: subtitleParts.join(' • ') || undefined,
+            avatarUrl: null,
+            type: 'task',
+            payload: task,
+          };
+        }),
+    [workspaceTasks, task?.id]
+  );
+
+  const allMentionOptions = useMemo<MentionOption[]>(
+    () => [
+      ...mentionUserOptions,
+      ...mentionWorkspaceOptions,
+      ...mentionTaskOptions,
+    ],
+    [mentionUserOptions, mentionWorkspaceOptions, mentionTaskOptions]
+  );
+
+  const filteredMentionOptions = useMemo(() => {
+    const rawQuery = mentionState.query.trim();
+    const normalizedQuery = normalizeForSearch(rawQuery.replace(/^[@#]/, ''));
+
+    if (!normalizedQuery) {
+      const limitedTasks = mentionTaskOptions.slice(0, 8);
+      return [
+        ...mentionUserOptions,
+        ...mentionWorkspaceOptions,
+        ...limitedTasks,
+      ];
+    }
+
+    return allMentionOptions.filter((option) => {
+      const searchTexts = [option.label, option.subtitle || ''];
+
+      // Try exact match first (case-insensitive with diacritics normalized)
+      const normalizedTexts = searchTexts.map(normalizeForSearch);
+      const combinedText = normalizedTexts.join(' ');
+
+      if (combinedText.includes(normalizedQuery)) {
+        return true;
+      }
+
+      // Try matching individual words (for partial matching)
+      const queryWords = normalizedQuery.split(/\s+/);
+      return queryWords.every((word) =>
+        normalizedTexts.some((text) => text.includes(word))
+      );
+    });
+  }, [
+    allMentionOptions,
+    mentionState.query,
+    mentionTaskOptions,
+    mentionUserOptions,
+    mentionWorkspaceOptions,
+  ]);
+
+  const mentionGroups = useMemo(() => {
+    return mentionGroupOrder
+      .map((group) => ({
+        ...group,
+        options: filteredMentionOptions.filter(
+          (option) => option.type === group.type
+        ),
+      }))
+      .filter((group) => group.options.length > 0);
+  }, [filteredMentionOptions]);
+
+  useEffect(() => {
+    if (!slashState.open) {
+      setSlashHighlightIndex(0);
+      return;
+    }
+
+    setSlashHighlightIndex((prev) => {
+      if (filteredSlashCommands.length === 0) return 0;
+      return Math.min(prev, filteredSlashCommands.length - 1);
+    });
+  }, [slashState.open, filteredSlashCommands.length]);
+
+  useEffect(() => {
+    if (slashState.open) {
+      setSlashHighlightIndex(0);
+    }
+  }, [slashState.open]);
+
+  // Only scroll into view when using keyboard navigation (arrow keys)
+  useEffect(() => {
+    if (!slashState.open) return;
+
+    // Only scroll if the highlight actually changed (user pressed arrow key)
+    if (previousSlashHighlightRef.current === slashHighlightIndex) return;
+    previousSlashHighlightRef.current = slashHighlightIndex;
+
+    // Small delay to ensure DOM is ready
+    const timeoutId = setTimeout(() => {
+      const container = slashListRef.current;
+      if (!container) return;
+
+      const activeItem = container.querySelector<HTMLElement>(
+        `[data-slash-item="${slashHighlightIndex}"]`
+      );
+      if (!activeItem) return;
+
+      // Check if item is visible
+      const containerRect = container.getBoundingClientRect();
+      const itemRect = activeItem.getBoundingClientRect();
+
+      const isVisible =
+        itemRect.top >= containerRect.top &&
+        itemRect.bottom <= containerRect.bottom;
+
+      // Only scroll if not visible (user pressed arrow key)
+      if (!isVisible) {
+        activeItem.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+      }
+    }, 10);
+
+    return () => clearTimeout(timeoutId);
+  }, [slashHighlightIndex, slashState.open]);
+
+  useEffect(() => {
+    if (!mentionState.open) {
+      setMentionHighlightIndex(0);
+      return;
+    }
+
+    setMentionHighlightIndex((prev) => {
+      if (filteredMentionOptions.length === 0) return 0;
+      return Math.min(prev, filteredMentionOptions.length - 1);
+    });
+  }, [mentionState.open, filteredMentionOptions.length]);
+
+  useEffect(() => {
+    if (mentionState.open) {
+      setMentionHighlightIndex(0);
+    }
+  }, [mentionState.open]);
+
+  // Only scroll into view when using keyboard navigation (arrow keys)
+  useEffect(() => {
+    if (!mentionState.open) return;
+
+    // Only scroll if the highlight actually changed (user pressed arrow key)
+    if (previousMentionHighlightRef.current === mentionHighlightIndex) return;
+    previousMentionHighlightRef.current = mentionHighlightIndex;
+
+    // Small delay to ensure DOM is ready
+    const timeoutId = setTimeout(() => {
+      const container = mentionListRef.current;
+      if (!container) return;
+
+      const activeItem = container.querySelector<HTMLElement>(
+        `[data-mention-item="${mentionHighlightIndex}"]`
+      );
+      if (!activeItem) return;
+
+      // Check if item is visible
+      const containerRect = container.getBoundingClientRect();
+      const itemRect = activeItem.getBoundingClientRect();
+
+      const isVisible =
+        itemRect.top >= containerRect.top &&
+        itemRect.bottom <= containerRect.bottom;
+
+      // Only scroll if not visible (user pressed arrow key)
+      if (!isVisible) {
+        activeItem.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+      }
+    }, 10);
+
+    return () => clearTimeout(timeoutId);
+  }, [mentionHighlightIndex, mentionState.open]);
+
+  useEffect(() => {
+    if (!editorInstance || !isOpen) {
+      closeSlashMenu();
+      closeMentionMenu();
+      return;
+    }
+
+    const computePosition = (fromPos: number) => {
+      try {
+        const coords = editorInstance.view.coordsAtPos(fromPos);
+        if (!coords) return null;
+        const viewportWidth =
+          typeof window !== 'undefined' ? window.innerWidth : undefined;
+        const horizontalPadding = 16;
+        let left = coords.left;
+        if (viewportWidth) {
+          left = Math.min(
+            left,
+            viewportWidth - suggestionMenuWidth - horizontalPadding
+          );
+          left = Math.max(left, horizontalPadding);
+        }
+        return { left, top: coords.bottom + 8 } as SuggestionState['position'];
+      } catch {
+        return null;
+      }
+    };
+
+    const updateSuggestions = () => {
+      const { state } = editorInstance;
+      const { selection } = state;
+
+      if (!selection.empty) {
+        closeSlashMenu();
+        closeMentionMenu();
+        return;
+      }
+
+      const { from } = selection;
+      const contextText = state.doc.textBetween(
+        Math.max(0, from - 200),
+        from,
+        '\n',
+        ' '
+      );
+
+      const slashMatch = contextText.match(/(?:^|\s)(\/([^\s]*))$/);
+      if (slashMatch) {
+        const matched = slashMatch[1] || '';
+        const query = slashMatch[2] || '';
+        const rangeFrom = from - matched.length;
+        const nextState: SuggestionState = {
+          open: true,
+          query,
+          range: { from: rangeFrom, to: from },
+          position: computePosition(rangeFrom),
+        };
+
+        setSlashState((prev) =>
+          isSameSuggestionState(prev, nextState) ? prev : nextState
+        );
+      } else {
+        closeSlashMenu();
+      }
+
+      const mentionMatch = contextText.match(/(?:^|\s)(@([^\s]*))$/);
+      if (mentionMatch) {
+        const matched = mentionMatch[1] || '';
+        const query = mentionMatch[2] || '';
+        const rangeFrom = from - matched.length;
+        const nextState: SuggestionState = {
+          open: true,
+          query,
+          range: { from: rangeFrom, to: from },
+          position: computePosition(rangeFrom),
+        };
+
+        setMentionState((prev) =>
+          isSameSuggestionState(prev, nextState) ? prev : nextState
+        );
+        closeSlashMenu();
+      } else {
+        closeMentionMenu();
+      }
+    };
+
+    const handleBlur = () => {
+      closeSlashMenu();
+      closeMentionMenu();
+    };
+
+    editorInstance.on('transaction', updateSuggestions);
+    editorInstance.on('selectionUpdate', updateSuggestions);
+    editorInstance.on('blur', handleBlur);
+
+    updateSuggestions();
+
+    return () => {
+      editorInstance.off('transaction', updateSuggestions);
+      editorInstance.off('selectionUpdate', updateSuggestions);
+      editorInstance.off('blur', handleBlur);
+    };
+  }, [editorInstance, isOpen, closeSlashMenu, closeMentionMenu]);
+
+  // Quick due date setter (today, tomorrow, etc.)
+  const handleQuickDueDate = useCallback(
+    (days: number | null) => {
+      let newDate: Date | undefined;
+      if (days !== null) {
+        newDate = dayjs().add(days, 'day').endOf('day').toDate();
+      }
+      setEndDate(newDate);
+      if (mode === 'create') {
+        // Defer persistence to save
+        return;
+      }
+      setIsLoading(true);
+      const taskUpdates: Partial<Task> = {
+        end_date: newDate ? newDate.toISOString() : null,
+      };
+
+      if (task?.id)
+        updateTaskMutation.mutate(
+          { taskId: task?.id, updates: taskUpdates },
+          {
+            onSuccess: async () => {
+              await invalidateTaskCaches(queryClient, boardId);
+
+              // Wait for the refetch to complete before closing
+              if (boardId) {
+                await queryClient.refetchQueries({
+                  queryKey: ['tasks', boardId],
+                  type: 'active',
+                });
+              }
+
+              toast({
+                title: 'Due date updated',
+                description: newDate
+                  ? `Due date set to ${newDate.toLocaleDateString()}`
+                  : 'Due date removed',
+              });
+              onUpdate();
+              onClose();
+            },
+            onError: (error: any) => {
+              console.error('Error updating due date:', error);
+              toast({
+                title: 'Error updating due date',
+                description: error.message || 'Please try again later',
+                variant: 'destructive',
+              });
+            },
+            onSettled: () => setIsLoading(false),
+          }
+        );
+    },
+    [
+      mode,
+      onClose,
+      onUpdate,
+      queryClient,
+      task,
+      updateTaskMutation,
+      boardId,
+      toast,
+    ]
+  );
+
+  const executeSlashCommand = useCallback(
+    (command: SlashCommandDefinition) => {
+      if (!editorInstance) return;
+
+      const range = slashState.range;
+      const baseChain = editorInstance.chain().focus();
+      if (range) {
+        baseChain.deleteRange(range);
+      }
+      baseChain.run();
+
+      closeSlashMenu();
+
+      switch (command.id) {
+        case 'assign':
+          editorInstance.chain().focus().insertContent('@').run();
+          return;
+        case 'due-today':
+          handleQuickDueDate(0);
+          return;
+        case 'due-tomorrow':
+          handleQuickDueDate(1);
+          return;
+        case 'due-next-week':
+          handleQuickDueDate(7);
+          return;
+        case 'clear-due':
+          handleQuickDueDate(null);
+          return;
+        case 'priority-critical':
+          setPriority('critical');
+          return;
+        case 'priority-high':
+          setPriority('high');
+          return;
+        case 'priority-normal':
+          setPriority('normal');
+          return;
+        case 'priority-low':
+          setPriority('low');
+          return;
+        case 'priority-clear':
+          setPriority(null);
+          return;
+        case 'toggle-advanced':
+          setShowAdvancedOptions((prev) => !prev);
+          return;
+        default:
+          return;
+      }
+    },
+    [editorInstance, slashState.range, closeSlashMenu, handleQuickDueDate]
+  );
+
+  const toggleAssignee = useCallback(
+    async (member: any) => {
+      const exists = selectedAssignees.some(
+        (a) => a.user_id === member.user_id
+      );
+      const supabase = createClient();
+      try {
+        if (mode === 'create') {
+          // Local toggle only; persist on create
+          setSelectedAssignees((prev) =>
+            exists
+              ? prev.filter((a) => a.user_id !== member.user_id)
+              : [...prev, member]
+          );
+          return;
+        }
+        if (exists) {
+          if (!task?.id) return;
+          // remove
+          const { error } = await supabase
+            .from('task_assignees')
+            .delete()
+            .eq('task_id', task.id)
+            .eq('user_id', member.user_id);
+          if (error) throw error;
+          setSelectedAssignees((prev) =>
+            prev.filter((a) => a.user_id !== member.user_id)
+          );
+        } else {
+          if (!task?.id) return;
+          const { error } = await supabase
+            .from('task_assignees')
+            .insert({ task_id: task.id, user_id: member.user_id });
+          if (error) throw error;
+          setSelectedAssignees((prev) => [...prev, member]);
+        }
+        await invalidateTaskCaches(queryClient, boardId);
+        onUpdate();
+      } catch (e: any) {
+        toast({
+          title: 'Assignee update failed',
+          description: e.message || 'Unable to update assignees',
+          variant: 'destructive',
+        });
+      }
+    },
+    [selectedAssignees, mode, task?.id, boardId, queryClient, onUpdate, toast]
+  );
+
+  const insertMentionOption = useCallback(
+    (option: MentionOption) => {
+      if (!editorInstance) return;
+
+      const chain = editorInstance.chain().focus();
+      if (mentionState.range) {
+        chain.deleteRange(mentionState.range);
+      }
+
+      chain
+        .insertContent([
+          {
+            type: 'mention',
+            attrs: {
+              userId: option.type === 'user' ? option.id : null,
+              entityId: option.id,
+              entityType: option.type,
+              displayName: option.label,
+              avatarUrl: option.avatarUrl ?? null,
+              subtitle: option.subtitle ?? null,
+            },
+          },
+          { type: 'text', text: ' ' },
+        ])
+        .run();
+
+      closeMentionMenu();
+    },
+    [editorInstance, mentionState.range, closeMentionMenu]
+  );
+
+  const slashCommandMenu =
+    slashState.open && slashState.position && typeof window !== 'undefined'
+      ? createPortal(
+          <div
+            role="dialog"
+            className="pointer-events-auto fixed z-[200] w-[304px] overflow-hidden rounded-lg border border-dynamic-border bg-popover/95 shadow-xl backdrop-blur"
+            style={{
+              top: slashState.position.top,
+              left: slashState.position.left,
+            }}
+            onPointerDownCapture={(event) => event.stopPropagation()}
+            onMouseDown={(event) => event.stopPropagation()}
+          >
+            <div className="border-dynamic-border/60 border-b px-3 py-2 font-medium text-muted-foreground text-xs uppercase tracking-wide">
+              Slash commands
+            </div>
+            <div
+              ref={slashListRef}
+              className="scrollbar-thin max-h-72 overflow-y-auto overscroll-contain py-1"
+              style={{ maxHeight: 288 }}
+            >
+              {filteredSlashCommands.length === 0 ? (
+                <div className="px-3 py-2 text-muted-foreground text-sm">
+                  No commands found
+                </div>
+              ) : (
+                filteredSlashCommands.map((command, index) => {
+                  const Icon = command.icon;
+                  const isActive = index === slashHighlightIndex;
+                  return (
+                    <button
+                      data-slash-item={index}
+                      key={command.id}
+                      type="button"
+                      className={cn(
+                        'flex w-full items-center gap-3 px-3 py-2 text-left text-sm transition-colors',
+                        isActive
+                          ? 'bg-dynamic-blue/20 text-foreground ring-1 ring-dynamic-blue/40'
+                          : 'text-muted-foreground hover:bg-dynamic-surface/70 hover:text-foreground'
+                      )}
+                      onMouseDown={(event) => {
+                        event.preventDefault();
+                        event.stopPropagation();
+                        executeSlashCommand(command);
+                      }}
+                      onMouseEnter={() => setSlashHighlightIndex(index)}
+                    >
+                      <Icon className="h-4 w-4 shrink-0 text-muted-foreground" />
+                      <div className="flex flex-col">
+                        <span className="font-medium text-sm">
+                          {command.label}
+                        </span>
+                        {command.description && (
+                          <span className="text-muted-foreground/80 text-xs">
+                            {command.description}
+                          </span>
+                        )}
+                      </div>
+                    </button>
+                  );
+                })
+              )}
+            </div>
+          </div>,
+          document.body
+        )
+      : null;
+
+  const mentionSuggestionMenu =
+    mentionState.open && mentionState.position && typeof window !== 'undefined'
+      ? createPortal(
+          <div
+            role="dialog"
+            className="pointer-events-auto fixed z-[200] w-[360px] overflow-hidden rounded-lg border border-dynamic-border bg-popover/95 shadow-xl backdrop-blur"
+            style={{
+              top: mentionState.position.top,
+              left: mentionState.position.left,
+            }}
+            onPointerDownCapture={(event) => event.stopPropagation()}
+            onMouseDown={(event) => event.stopPropagation()}
+          >
+            <div className="border-dynamic-border/60 border-b px-3 py-2 font-medium text-muted-foreground text-xs uppercase tracking-wide">
+              Mention people, workspaces, or tasks
+            </div>
+            {(workspaceDetailsLoading ||
+              workspaceTasksLoading ||
+              allWorkspacesLoading) && (
+              <div className="flex items-center gap-2 px-3 py-2 text-muted-foreground text-xs">
+                <Loader2 className="h-3 w-3 animate-spin" />
+                Fetching latest context…
+              </div>
+            )}
+            <div
+              ref={mentionListRef}
+              className="scrollbar-thin max-h-80 overflow-y-auto overscroll-contain py-1"
+              style={{ maxHeight: 320 }}
+            >
+              {filteredMentionOptions.length === 0 ? (
+                <div className="px-3 py-3 text-muted-foreground text-sm">
+                  {mentionState.query
+                    ? 'No matches found. Try a different keyword.'
+                    : 'Start typing to mention teammates, your workspace, or recent tasks.'}
+                </div>
+              ) : (
+                (() => {
+                  let optionCursor = -1;
+                  return mentionGroups.map((group) => (
+                    <div key={group.type} className="py-1">
+                      <div className="px-3 pb-1 font-semibold text-[11px] text-muted-foreground uppercase tracking-wide">
+                        {group.title}
+                      </div>
+                      {group.options.map((option) => {
+                        optionCursor += 1;
+                        const isActive = optionCursor === mentionHighlightIndex;
+                        const typeMeta = mentionTypeStyles[option.type];
+                        const fallbackGlyph =
+                          option.type === 'user'
+                            ? (option.label || '')
+                                .split(/\s+/)
+                                .map((part) => part?.[0]?.toUpperCase() ?? '')
+                                .join('')
+                                .slice(0, 2) || typeMeta.avatarFallback
+                            : typeMeta.avatarFallback;
+                        const badgeLabel =
+                          option.type === 'user'
+                            ? 'Person'
+                            : option.type === 'workspace'
+                              ? 'Workspace'
+                              : 'Task';
+
+                        return (
+                          <button
+                            data-mention-item={optionCursor}
+                            key={`${option.type}-${option.id}`}
+                            type="button"
+                            className={cn(
+                              'flex w-full items-center gap-3 px-3 py-2 text-left text-sm transition-colors',
+                              isActive
+                                ? 'bg-dynamic-blue/20 text-foreground ring-1 ring-dynamic-blue/40'
+                                : 'text-muted-foreground hover:bg-dynamic-surface/70 hover:text-foreground'
+                            )}
+                            onMouseDown={(event) => {
+                              event.preventDefault();
+                              event.stopPropagation();
+                              insertMentionOption(option);
+                            }}
+                            onMouseEnter={() =>
+                              setMentionHighlightIndex(optionCursor)
+                            }
+                          >
+                            <div
+                              className={cn(
+                                'flex h-7 w-7 items-center justify-center overflow-hidden rounded-full border font-semibold text-xs uppercase',
+                                typeMeta.avatarClass,
+                                option.avatarUrl ? 'p-0' : 'px-1'
+                              )}
+                            >
+                              {option.avatarUrl ? (
+                                <Image
+                                  src={option.avatarUrl}
+                                  alt={option.label}
+                                  width={28}
+                                  height={28}
+                                  className="h-full w-full object-cover"
+                                  referrerPolicy="no-referrer"
+                                />
+                              ) : (
+                                <span className="truncate">
+                                  {fallbackGlyph}
+                                </span>
+                              )}
+                            </div>
+                            <div className="flex min-w-0 flex-1 flex-col">
+                              <span className="truncate font-medium text-foreground text-sm">
+                                {option.label}
+                              </span>
+                              {option.subtitle && (
+                                <span className="truncate text-muted-foreground text-xs">
+                                  {option.subtitle}
+                                </span>
+                              )}
+                            </div>
+                            <Badge
+                              variant="secondary"
+                              className={cn(
+                                'shrink-0 font-semibold text-[10px] uppercase tracking-wide',
+                                typeMeta.badgeClass
+                              )}
+                            >
+                              {badgeLabel}
+                            </Badge>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  ));
+                })()
+              )}
+            </div>
+          </div>,
+          document.body
+        )
+      : null;
+  useEffect(() => {
+    if (!editorInstance || !isOpen) return;
+
+    const editorDom = editorInstance.view.dom as HTMLElement | null;
+    if (!editorDom) return;
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if ((slashState.open || mentionState.open) && event.key === 'Escape') {
+        event.preventDefault();
+        event.stopPropagation();
+        closeSlashMenu();
+        closeMentionMenu();
+        return;
+      }
+
+      if (slashState.open) {
+        if (filteredSlashCommands.length === 0) return;
+
+        if (
+          event.key === 'ArrowDown' ||
+          (event.key === 'Tab' && !event.shiftKey)
+        ) {
+          event.preventDefault();
+          event.stopPropagation();
+          setSlashHighlightIndex(
+            (prev) => (prev + 1) % filteredSlashCommands.length
+          );
+          return;
+        }
+
+        if (
+          event.key === 'ArrowUp' ||
+          (event.key === 'Tab' && event.shiftKey)
+        ) {
+          event.preventDefault();
+          event.stopPropagation();
+          setSlashHighlightIndex(
+            (prev) =>
+              (prev - 1 + filteredSlashCommands.length) %
+              filteredSlashCommands.length
+          );
+          return;
+        }
+
+        if (event.key === 'Enter') {
+          event.preventDefault();
+          event.stopPropagation();
+          const command = filteredSlashCommands[slashHighlightIndex];
+          if (command) executeSlashCommand(command);
+          return;
+        }
+      }
+
+      if (mentionState.open) {
+        if (filteredMentionOptions.length === 0) return;
+
+        if (
+          event.key === 'ArrowDown' ||
+          (event.key === 'Tab' && !event.shiftKey)
+        ) {
+          event.preventDefault();
+          event.stopPropagation();
+          setMentionHighlightIndex(
+            (prev) => (prev + 1) % filteredMentionOptions.length
+          );
+          return;
+        }
+
+        if (
+          event.key === 'ArrowUp' ||
+          (event.key === 'Tab' && event.shiftKey)
+        ) {
+          event.preventDefault();
+          event.stopPropagation();
+          setMentionHighlightIndex(
+            (prev) =>
+              (prev - 1 + filteredMentionOptions.length) %
+              filteredMentionOptions.length
+          );
+          return;
+        }
+
+        if (event.key === 'Enter') {
+          event.preventDefault();
+          event.stopPropagation();
+          const option = filteredMentionOptions[mentionHighlightIndex];
+          if (option) insertMentionOption(option);
+          return;
+        }
+      }
+    };
+
+    editorDom.addEventListener('keydown', handleKeyDown, true);
+    return () => {
+      editorDom.removeEventListener('keydown', handleKeyDown, true);
+    };
+  }, [
+    editorInstance,
+    isOpen,
+    slashState.open,
+    mentionState.open,
+    filteredSlashCommands,
+    filteredMentionOptions,
+    slashHighlightIndex,
+    mentionHighlightIndex,
+    executeSlashCommand,
+    insertMentionOption,
+    closeSlashMenu,
+    closeMentionMenu,
+  ]);
 
   // Fetch available task lists for the board (only if not provided as prop)
   const { data: availableLists = [] } = useQuery({
@@ -370,13 +1506,119 @@ function TaskEditDialogComponent({
     }
   }, []);
 
+  const fetchAllWorkspaces = useCallback(async () => {
+    try {
+      setAllWorkspacesLoading(true);
+      const supabase = createClient();
+
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (!user) return;
+
+      const { data, error } = await supabase
+        .from('workspaces')
+        .select('id, name, handle, personal, workspace_members!inner(role)')
+        .eq('workspace_members.user_id', user.id);
+
+      if (error) throw error;
+
+      setAllWorkspaces(data || []);
+    } catch (error) {
+      console.error('Failed fetching all workspaces', error);
+    } finally {
+      setAllWorkspacesLoading(false);
+    }
+  }, []);
+
+  const fetchWorkspaceDetails = useCallback(async (wsId: string) => {
+    if (!wsId) return;
+    try {
+      setWorkspaceDetailsLoading(true);
+      const supabase = createClient();
+      const { data, error } = await supabase
+        .from('workspaces')
+        .select('id, name, handle')
+        .eq('id', wsId)
+        .single();
+
+      if (error) throw error;
+      setWorkspaceDetails(data || null);
+    } catch (error) {
+      console.error('Failed fetching workspace details', error);
+    } finally {
+      setWorkspaceDetailsLoading(false);
+    }
+  }, []);
+
+  const fetchWorkspaceTasks = useCallback(async (wsId: string) => {
+    if (!wsId) return;
+    try {
+      setWorkspaceTasksLoading(true);
+      const supabase = createClient();
+
+      // Tasks are related to workspaces through: tasks -> task_lists -> workspace_boards
+      // We need to join through the relationship chain
+      const { data: boards, error: boardsError } = await supabase
+        .from('workspace_boards')
+        .select('id')
+        .eq('ws_id', wsId);
+
+      if (boardsError) throw boardsError;
+
+      const boardIds = (boards || []).map((b) => b.id);
+      if (boardIds.length === 0) {
+        setWorkspaceTasks([]);
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from('tasks')
+        .select(`
+          id,
+          name,
+          priority,
+          created_at,
+          list:task_lists!inner(id, name, board_id)
+        `)
+        .in('task_lists.board_id', boardIds)
+        .eq('deleted', false)
+        .order('created_at', { ascending: false })
+        .limit(25);
+
+      if (error) throw error;
+      setWorkspaceTasks(data || []);
+    } catch (error) {
+      console.error('Failed fetching workspace tasks', error);
+    } finally {
+      setWorkspaceTasksLoading(false);
+    }
+  }, []);
+
   // Fetch workspace members and projects when workspace ID is available
   useEffect(() => {
     if (isOpen && workspaceId) {
       fetchWorkspaceMembers(workspaceId);
       fetchTaskProjects(workspaceId);
+      fetchWorkspaceDetails(workspaceId);
+      fetchWorkspaceTasks(workspaceId);
     }
-  }, [isOpen, workspaceId, fetchWorkspaceMembers, fetchTaskProjects]);
+  }, [
+    isOpen,
+    workspaceId,
+    fetchWorkspaceMembers,
+    fetchTaskProjects,
+    fetchWorkspaceDetails,
+    fetchWorkspaceTasks,
+  ]);
+
+  // Fetch all accessible workspaces when dialog opens for mention functionality
+  useEffect(() => {
+    if (isOpen) {
+      fetchAllWorkspaces();
+    }
+  }, [isOpen, fetchAllWorkspaces]);
 
   // ------- Draft persistence (create mode) -------------------------------------
   const draftStorageKey = useMemo(
@@ -706,59 +1948,6 @@ function TaskEditDialogComponent({
     }
   };
 
-  // Quick due date setter (today, tomorrow, etc.)
-  const handleQuickDueDate = (days: number | null) => {
-    let newDate: Date | undefined;
-    if (days !== null) {
-      newDate = dayjs().add(days, 'day').endOf('day').toDate();
-    }
-    setEndDate(newDate);
-    if (isCreateMode) {
-      // Defer persistence to save
-      return;
-    }
-    setIsLoading(true);
-    const taskUpdates: Partial<Task> = {
-      end_date: newDate ? newDate.toISOString() : null,
-    };
-
-    if (task?.id)
-      updateTaskMutation.mutate(
-        { taskId: task?.id, updates: taskUpdates },
-        {
-          onSuccess: async () => {
-            await invalidateTaskCaches(queryClient, boardId);
-
-            // Wait for the refetch to complete before closing
-            if (boardId) {
-              await queryClient.refetchQueries({
-                queryKey: ['tasks', boardId],
-                type: 'active',
-              });
-            }
-
-            toast({
-              title: 'Due date updated',
-              description: newDate
-                ? `Due date set to ${newDate.toLocaleDateString()}`
-                : 'Due date removed',
-            });
-            onUpdate();
-            onClose();
-          },
-          onError: (error: any) => {
-            console.error('Error updating due date:', error);
-            toast({
-              title: 'Error updating due date',
-              description: error.message || 'Please try again later',
-              variant: 'destructive',
-            });
-          },
-          onSettled: () => setIsLoading(false),
-        }
-      );
-  };
-
   // Handle estimation save (optimistic local update + API call)
   const updateEstimation = async (points: number | null) => {
     if (points === estimationPoints) return;
@@ -873,50 +2062,6 @@ function TaskEditDialogComponent({
       toast({
         title: 'Label update failed',
         description: e.message || 'Unable to update labels',
-        variant: 'destructive',
-      });
-    }
-  };
-
-  const toggleAssignee = async (member: any) => {
-    const exists = selectedAssignees.some((a) => a.user_id === member.user_id);
-    const supabase = createClient();
-    try {
-      if (isCreateMode) {
-        // Local toggle only; persist on create
-        setSelectedAssignees((prev) =>
-          exists
-            ? prev.filter((a) => a.user_id !== member.user_id)
-            : [...prev, member]
-        );
-        return;
-      }
-      if (exists) {
-        if (!task?.id) return;
-        // remove
-        const { error } = await supabase
-          .from('task_assignees')
-          .delete()
-          .eq('task_id', task.id)
-          .eq('user_id', member.user_id);
-        if (error) throw error;
-        setSelectedAssignees((prev) =>
-          prev.filter((a) => a.user_id !== member.user_id)
-        );
-      } else {
-        if (!task?.id) return;
-        const { error } = await supabase
-          .from('task_assignees')
-          .insert({ task_id: task.id, user_id: member.user_id });
-        if (error) throw error;
-        setSelectedAssignees((prev) => [...prev, member]);
-      }
-      await invalidateTaskCaches(queryClient, boardId);
-      onUpdate();
-    } catch (e: any) {
-      toast({
-        title: 'Assignee update failed',
-        description: e.message || 'Unable to update assignees',
         variant: 'destructive',
       });
     }
@@ -1414,6 +2559,8 @@ function TaskEditDialogComponent({
 
   return (
     <>
+      {slashCommandMenu}
+      {mentionSuggestionMenu}
       <Dialog
         key="main-dialog"
         open={isOpen}
@@ -1615,6 +2762,7 @@ function TaskEditDialogComponent({
                     onImageUpload={handleImageUpload}
                     flushPendingRef={flushEditorPendingRef}
                     initialCursorOffset={targetEditorCursorRef.current}
+                    onEditorReady={handleEditorReady}
                     onArrowUp={(cursorOffset) => {
                       // Focus the title input when pressing arrow up at the start
                       if (titleInputRef.current) {
