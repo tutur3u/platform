@@ -2,7 +2,7 @@ import { createBrowserClient } from '@supabase/ssr';
 import type { Database } from '@tuturuuu/types/supabase';
 import { checkEnvVariables } from './common';
 
-const { url, key } = checkEnvVariables({ useServiceKey: false });
+const { url, key } = checkEnvVariables({ useSecretKey: false });
 
 export function createDynamicClient() {
   return createBrowserClient(url, key);

@@ -11,11 +11,10 @@ import {
 
 // Set required env vars for Supabase at the VERY TOP
 process.env.NEXT_PUBLIC_SUPABASE_URL = 'http://localhost:54321';
-process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = 'dummy-anon-key';
-process.env.SUPABASE_SERVICE_KEY = 'dummy-service-key';
-process.env.SUPABASE_SERVICE_ROLE_KEY = 'dummy-service-role-key';
-process.env.GOOGLE_CLIENT_ID = 'dummy-client-id';
-process.env.GOOGLE_CLIENT_SECRET = 'dummy-client-secret';
+process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY = 'test-publishable-key';
+process.env.SUPABASE_SECRET_KEY = 'test-secret-key';
+process.env.GOOGLE_CLIENT_ID = 'test-client-id';
+process.env.GOOGLE_CLIENT_SECRET = 'test-client-secret';
 process.env.GOOGLE_REDIRECT_URI = 'http://localhost:3000/auth/callback';
 
 // Mock Supabase client

@@ -532,7 +532,7 @@ export async function downloadFile(path: string) {
 2. **Don't expose service role key**
    ```typescript
    // ❌ Bad: Never do this
-   const client = createClient(process.env.SUPABASE_SERVICE_ROLE_KEY);
+   const client = createClient(process.env.SUPABASE_SECRET_KEY);
    ```
 
 3. **Don't ignore errors**
