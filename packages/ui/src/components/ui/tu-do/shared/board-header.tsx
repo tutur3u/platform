@@ -1,8 +1,6 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { createClient } from '@tuturuuu/supabase/next/client';
-import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskBoard } from '@tuturuuu/types/primitives/TaskBoard';
-import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -30,7 +28,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
-import { useBoardPresence } from '@tuturuuu/ui/hooks/useBoardPresence';
 import {
   ArrowLeft,
   CalendarDays,
@@ -49,34 +46,34 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { TaskFilter, type TaskFilters } from '../boards/boardId/task-filter';
 import type { ViewType } from './board-views';
-import { UserPresenceAvatars } from './user-presence-avatars';
+import { UserPresenceAvatarsComponent } from './user-presence-avatars';
 
 export type ListStatusFilter = 'all' | 'active' | 'not_started';
 
 interface Props {
   board: TaskBoard;
-  tasks: Task[];
-  lists: TaskList[];
-  currentView: ViewType;
   currentUserId?: string;
+  currentView: ViewType;
   onViewChange: (view: ViewType) => void;
   filters: TaskFilters;
   onFiltersChange: (filters: TaskFilters) => void;
   listStatusFilter: ListStatusFilter;
   onListStatusFilterChange: (filter: ListStatusFilter) => void;
+  isPersonalWorkspace: boolean;
   backUrl?: string;
   hideActions?: boolean;
 }
 
 export function BoardHeader({
   board,
-  currentView,
   currentUserId,
+  currentView,
   onViewChange,
   filters,
   onFiltersChange,
   listStatusFilter,
   onListStatusFilterChange,
+  isPersonalWorkspace,
   backUrl,
   hideActions = false,
 }: Props) {
@@ -86,11 +83,6 @@ export function BoardHeader({
   const [boardMenuOpen, setBoardMenuOpen] = useState(false);
   const queryClient = useQueryClient();
   const router = useRouter();
-
-  // Track online users on this board (only for real boards, not virtual/project boards)
-  const { presenceState } = useBoardPresence(
-    hideActions ? undefined : board.id
-  );
 
   async function handleEdit() {
     if (!editedName.trim() || editedName === board.name) {
@@ -173,11 +165,11 @@ export function BoardHeader({
         {/* Controls - Compact Row */}
         <div className="flex items-center gap-1.5 sm:gap-2">
           {/* Online Users */}
-          <UserPresenceAvatars
-            presenceState={presenceState}
-            currentUserId={currentUserId}
-            maxDisplay={3}
-          />
+          {!isPersonalWorkspace && (
+            <UserPresenceAvatarsComponent
+              channelName={`board_presence_${board.id}`}
+            />
+          )}
 
           {/* List Status Filter Tabs */}
           <div className="flex items-center gap-0.5 rounded-md border bg-background/80 p-0.5 backdrop-blur-sm">

@@ -2,16 +2,33 @@
 
 import type { RealtimePresenceState } from '@tuturuuu/supabase/next/realtime';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
-import type { BoardPresenceState } from '@tuturuuu/ui/hooks/useBoardPresence';
+import type { UserPresenceState } from '@tuturuuu/ui/hooks/usePresence';
+import { usePresence } from '@tuturuuu/ui/hooks/usePresence';
 import { User } from '@tuturuuu/ui/icons';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { cn } from '@tuturuuu/utils/format';
 import { getInitials } from '@tuturuuu/utils/name-helper';
 
 interface UserPresenceAvatarsProps {
-  presenceState: RealtimePresenceState<BoardPresenceState>;
+  presenceState: RealtimePresenceState<UserPresenceState>;
   currentUserId?: string;
   maxDisplay?: number;
+}
+
+export function UserPresenceAvatarsComponent({
+  channelName,
+}: {
+  channelName: string;
+}) {
+  const { presenceState, currentUserId } = usePresence(channelName);
+
+  return (
+    <UserPresenceAvatars
+      presenceState={presenceState}
+      currentUserId={currentUserId}
+      maxDisplay={5}
+    />
+  );
 }
 
 export function UserPresenceAvatars({

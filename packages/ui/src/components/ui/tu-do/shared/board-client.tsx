@@ -80,6 +80,7 @@ export function BoardClient({
   const listIds = useMemo(() => lists.map((list) => list.id), [lists]);
 
   useBoardRealtime(boardId, taskIds, listIds, {
+    enabled: !workspace.personal,
     onTaskChange: (task, eventType) => {
       console.log(`🔄 Task ${eventType}:`, task);
     },

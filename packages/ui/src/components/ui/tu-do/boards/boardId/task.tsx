@@ -59,9 +59,9 @@ import {
   Timer,
   Trash2,
   Turtle,
-  unicornHead,
   UserMinus,
   UserStar,
+  unicornHead,
   X,
 } from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
@@ -2022,6 +2022,7 @@ function TaskCardInner({
         onClose={handleDialogClose}
         onUpdate={onUpdate}
         availableLists={availableLists}
+        showUserPresence={!isPersonalWorkspace}
       />
       <Dialog open={newLabelDialogOpen} onOpenChange={setNewLabelDialogOpen}>
         <DialogContent className="sm:max-w-[425px]">

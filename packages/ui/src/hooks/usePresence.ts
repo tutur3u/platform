@@ -3,40 +3,47 @@ import type { RealtimePresenceState } from '@tuturuuu/supabase/next/realtime';
 import type { User } from '@tuturuuu/types/primitives/User';
 import { useEffect, useRef, useState } from 'react';
 
-export interface BoardPresenceState {
+export interface UserPresenceState {
   user: User;
   online_at: string;
 }
 
-export function useBoardPresence(boardId?: string) {
+export function usePresence(channelName: string) {
   const [presenceState, setPresenceState] = useState<
-    RealtimePresenceState<BoardPresenceState>
+    RealtimePresenceState<UserPresenceState>
   >({});
   const [currentUserId, setCurrentUserId] = useState<string>();
   const channelRef = useRef<any>(null);
   const retryCountRef = useRef(0);
+  const isCleanedUpRef = useRef(false);
   const MAX_RETRIES = 3;
 
   useEffect(() => {
-    if (!boardId) return;
+    if (!channelName) return;
+    isCleanedUpRef.current = false;
 
     const supabase = createClient();
-    let isCleanedUp = false;
 
     const setupPresence = async () => {
+      if (isCleanedUpRef.current) return;
+
       try {
         const {
           data: { user },
         } = await supabase.auth.getUser();
-        if (!user?.id || isCleanedUp) return;
 
-        const { data: userData } = await supabase
+        if (!user?.id) return;
+
+        const { data: userData, error: userDataError } = await supabase
           .from('users')
           .select('display_name, avatar_url')
           .eq('id', user.id)
           .single();
 
-        if (isCleanedUp) return;
+        if (userDataError) {
+          console.error('Error fetching user data:', userDataError);
+          return;
+        }
 
         setCurrentUserId(user.id);
 
@@ -46,7 +53,7 @@ export function useBoardPresence(boardId?: string) {
           channelRef.current = null;
         }
 
-        const channel = supabase.channel(`board_presence_${boardId}`, {
+        const channel = supabase.channel(channelName, {
           config: {
             presence: {
               key: user.id,
@@ -59,25 +66,17 @@ export function useBoardPresence(boardId?: string) {
 
         channel
           .on('presence', { event: 'sync' }, () => {
-            if (!isCleanedUp) {
-              const newState =
-                channel.presenceState() as RealtimePresenceState<BoardPresenceState>;
-              setPresenceState({ ...newState });
-            }
+            const newState =
+              channel.presenceState() as RealtimePresenceState<UserPresenceState>;
+            setPresenceState({ ...newState });
           })
           .on('presence', { event: 'join' }, ({ key, newPresences }) => {
-            if (!isCleanedUp) {
-              console.log('👋 User joined:', key, newPresences);
-            }
+            console.log('👋 User joined:', key, newPresences);
           })
           .on('presence', { event: 'leave' }, ({ key, leftPresences }) => {
-            if (!isCleanedUp) {
-              console.log('👋 User left:', key, leftPresences);
-            }
+            console.log('👋 User left:', key, leftPresences);
           })
           .subscribe(async (status) => {
-            if (isCleanedUp) return;
-
             console.log('📡 Channel status:', status);
 
             switch (status) {
@@ -94,11 +93,14 @@ export function useBoardPresence(boardId?: string) {
 
                 console.log('Presence track status:', presenceTrackStatus);
 
-                if (presenceTrackStatus === 'timed out' && !isCleanedUp) {
+                if (
+                  presenceTrackStatus === 'timed out' &&
+                  !isCleanedUpRef.current
+                ) {
                   console.warn('⚠️ Presence tracking timed out, retrying...');
                   // Retry once
                   setTimeout(async () => {
-                    if (!isCleanedUp) {
+                    if (!isCleanedUpRef.current) {
                       await channel.track({
                         user: {
                           id: user.id,
@@ -118,29 +120,31 @@ export function useBoardPresence(boardId?: string) {
               }
               case 'CHANNEL_ERROR':
                 console.error('❌ Channel error, connection lost');
-                if (retryCountRef.current < MAX_RETRIES && !isCleanedUp) {
+                if (
+                  retryCountRef.current < MAX_RETRIES &&
+                  !isCleanedUpRef.current
+                ) {
                   retryCountRef.current++;
                   console.log(
                     `Retrying presence setup (${retryCountRef.current}/${MAX_RETRIES})...`
                   );
                   setTimeout(() => {
-                    if (!isCleanedUp) {
-                      setupPresence();
-                    }
+                    setupPresence();
                   }, 2000 * retryCountRef.current); // Exponential backoff
                 }
                 break;
               case 'TIMED_OUT':
                 console.warn('⚠️ Channel subscription timed out');
-                if (retryCountRef.current < MAX_RETRIES && !isCleanedUp) {
+                if (
+                  retryCountRef.current < MAX_RETRIES &&
+                  !isCleanedUpRef.current
+                ) {
                   retryCountRef.current++;
                   console.log(
                     `Retrying presence setup (${retryCountRef.current}/${MAX_RETRIES})...`
                   );
                   setTimeout(() => {
-                    if (!isCleanedUp) {
-                      setupPresence();
-                    }
+                    setupPresence();
                   }, 2000 * retryCountRef.current); // Exponential backoff
                 }
                 break;
@@ -154,15 +158,13 @@ export function useBoardPresence(boardId?: string) {
           });
       } catch (error) {
         console.error('Error setting up board presence:', error);
-        if (retryCountRef.current < MAX_RETRIES && !isCleanedUp) {
+        if (retryCountRef.current < MAX_RETRIES && !isCleanedUpRef.current) {
           retryCountRef.current++;
           console.log(
             `Retrying presence setup (${retryCountRef.current}/${MAX_RETRIES})...`
           );
           setTimeout(() => {
-            if (!isCleanedUp) {
-              setupPresence();
-            }
+            setupPresence();
           }, 2000 * retryCountRef.current);
         }
       }
@@ -171,14 +173,14 @@ export function useBoardPresence(boardId?: string) {
     setupPresence();
 
     return () => {
-      isCleanedUp = true;
+      isCleanedUpRef.current = true;
       retryCountRef.current = 0;
       if (channelRef.current) {
         supabase.removeChannel(channelRef.current);
         channelRef.current = null;
       }
     };
-  }, [boardId]);
+  }, [channelName]);
 
   return {
     presenceState,
