@@ -153,9 +153,7 @@ export function MonthlyTotalChart({
               onClick={toggleConfidential}
               className="h-8 w-8 shrink-0"
               title={
-                isConfidential
-                  ? t('show_confidential')
-                  : t('hide_confidential')
+                isConfidential ? t('show_confidential') : t('hide_confidential')
               }
             >
               {isConfidential ? (
@@ -165,50 +163,54 @@ export function MonthlyTotalChart({
               )}
             </Button>
             <div className="flex items-center gap-1 rounded-lg bg-muted p-1">
-            <button
-              type="button"
-              onClick={() => setViewMode('all')}
-              className={cn(
-                'rounded-md px-3 py-1.5 text-xs font-medium transition-colors',
-                viewMode === 'all'
-                  ? 'bg-background text-foreground shadow-sm'
-                  : 'text-muted-foreground hover:text-foreground'
-              )}
-            >
-              {t('all')}
-            </button>
-            <button
-              type="button"
-              onClick={() => setViewMode('income')}
-              className={cn(
-                'rounded-md px-3 py-1.5 text-xs font-medium transition-colors',
-                viewMode === 'income'
-                  ? 'bg-background text-foreground shadow-sm'
-                  : 'text-muted-foreground hover:text-foreground'
-              )}
-            >
-              {t('income')}
-            </button>
-            <button
-              type="button"
-              onClick={() => setViewMode('expense')}
-              className={cn(
-                'rounded-md px-3 py-1.5 text-xs font-medium transition-colors',
-                viewMode === 'expense'
-                  ? 'bg-background text-foreground shadow-sm'
-                  : 'text-muted-foreground hover:text-foreground'
-              )}
-            >
-              {t('expense')}
-            </button>
-          </div>
+              <button
+                type="button"
+                onClick={() => setViewMode('all')}
+                className={cn(
+                  'rounded-md px-3 py-1.5 text-xs font-medium transition-colors',
+                  viewMode === 'all'
+                    ? 'bg-background text-foreground shadow-sm'
+                    : 'text-muted-foreground hover:text-foreground'
+                )}
+              >
+                {t('all')}
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewMode('income')}
+                className={cn(
+                  'rounded-md px-3 py-1.5 text-xs font-medium transition-colors',
+                  viewMode === 'income'
+                    ? 'bg-background text-foreground shadow-sm'
+                    : 'text-muted-foreground hover:text-foreground'
+                )}
+              >
+                {t('income')}
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewMode('expense')}
+                className={cn(
+                  'rounded-md px-3 py-1.5 text-xs font-medium transition-colors',
+                  viewMode === 'expense'
+                    ? 'bg-background text-foreground shadow-sm'
+                    : 'text-muted-foreground hover:text-foreground'
+                )}
+              >
+                {t('expense')}
+              </button>
+            </div>
           </div>
         </div>
       </CardHeader>
       <CardContent className="px-2 pb-4">
         <ChartContainer config={chartConfig} className="h-[320px] w-full">
           <BarChart data={chartData}>
-            <CartesianGrid vertical={false} strokeDasharray="3 3" opacity={0.3} />
+            <CartesianGrid
+              vertical={false}
+              strokeDasharray="3 3"
+              opacity={0.3}
+            />
             <XAxis
               dataKey="month"
               tickLine={false}

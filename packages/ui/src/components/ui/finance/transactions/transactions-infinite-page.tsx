@@ -66,7 +66,11 @@ export function TransactionsInfinitePage({
           {/* Import button */}
           <Dialog>
             <DialogTrigger asChild>
-              <Button variant="outline" size="sm" className="h-8 w-full md:w-fit">
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-8 w-full md:w-fit"
+              >
                 <Download className="h-4 w-4" />
                 {t('common.import')}
               </Button>
@@ -80,12 +84,18 @@ export function TransactionsInfinitePage({
           {canExport && exportContent && (
             <Dialog>
               <DialogTrigger asChild>
-                <Button variant="outline" size="sm" className="h-8 w-full md:w-fit">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-8 w-full md:w-fit"
+                >
                   <Upload className="h-4 w-4" />
                   {t('common.export')}
                 </Button>
               </DialogTrigger>
-              <DialogContent className="max-w-sm">{exportContent}</DialogContent>
+              <DialogContent className="max-w-sm">
+                {exportContent}
+              </DialogContent>
             </Dialog>
           )}
 

@@ -32,9 +32,7 @@ interface WalletFilterProps {
 }
 
 // Function to fetch workspace wallets
-async function fetchWorkspaceWallets(
-  wsId: string
-): Promise<WorkspaceWallet[]> {
+async function fetchWorkspaceWallets(wsId: string): Promise<WorkspaceWallet[]> {
   const supabase = createClient();
   const { data, error } = await supabase
     .from('workspace_wallets')
@@ -132,9 +130,7 @@ export function WalletFilter({
                       return (a.name || '').localeCompare(b.name || '');
                     })
                     .map((wallet) => {
-                      const isSelected = selectedWalletIds.includes(
-                        wallet.id
-                      );
+                      const isSelected = selectedWalletIds.includes(wallet.id);
 
                       return (
                         <CommandItem

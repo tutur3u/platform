@@ -82,10 +82,7 @@ export default async function FinancePage({ wsId, searchParams }: Props) {
 
         <Separator className="col-span-full my-4" />
 
-        <MonthlyTotalChart
-          data={monthlyData}
-          className="col-span-full mb-8"
-        />
+        <MonthlyTotalChart data={monthlyData} className="col-span-full mb-8" />
 
         <Separator className="col-span-full my-4" />
 
