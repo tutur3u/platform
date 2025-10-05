@@ -2,12 +2,6 @@
 
 import { Button } from '@tuturuuu/ui/button';
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@tuturuuu/ui/dialog';
-import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -24,7 +18,6 @@ import {
   Wallet,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
 
 interface QuickActionsProps {
   wsId: string;
@@ -32,7 +25,6 @@ interface QuickActionsProps {
 
 export function QuickActions({ wsId }: QuickActionsProps) {
   const router = useRouter();
-  const [isOpen, setIsOpen] = useState(false);
 
   return (
     <>
