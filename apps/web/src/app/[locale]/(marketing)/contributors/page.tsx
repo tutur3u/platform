@@ -129,38 +129,27 @@ async function fetchGithubContributors(
     }
 
     const parentOwner = data.parent.owner.login;
-    const parentRepo = data.parent.name;
+    const defaultBranch = data.default_branch;
+    const parentDefaultBranch = data.parent.default_branch;
 
-    const forkCommits = await octokit.paginate(octokit.repos.listCommits, {
-      owner,
-      repo,
-      per_page: 100,
-    });
-
-    const parentCommits = await octokit.paginate(octokit.repos.listCommits, {
-      owner: parentOwner,
-      repo: parentRepo,
-      per_page: 100,
-    });
-
-    const parentCommitShas = new Set(parentCommits.map((commit) => commit.sha));
-
-    const uniqueForkCommits = forkCommits.filter(
-      (commit) => !parentCommitShas.has(commit.sha)
+    // Use Compare API instead of fetching all commits
+    // This compares parent's default branch with fork's default branch
+    const comparison = await octokit.paginate(
+      octokit.repos.compareCommitsWithBasehead,
+      {
+        owner,
+        repo,
+        basehead: `${parentOwner}:${parentDefaultBranch}...${owner}:${defaultBranch}`,
+        per_page: 250, // Max allowed per page
+      }
     );
 
-    const contributorsMap = new Map<
-      string,
-      {
-        login: string;
-        id: number;
-        avatar_url: string;
-        html_url: string;
-        contributions: number;
-      }
-    >();
+    if (!Array.isArray(comparison)) return [];
+    const commits = comparison.flatMap((c) => c.commits);
+    const contributorsMap = new Map<string, GithubContributor>();
 
-    uniqueForkCommits.forEach((commit) => {
+    // Process commits from the comparison (only unique commits in fork)
+    commits.forEach((commit) => {
       if (commit.author) {
         const login = commit.author.login;
         const existing = contributorsMap.get(login);
@@ -237,6 +226,9 @@ async function getGithubData() {
     // Fetch repository data
     const repoData = await fetchGithubRepo(octokit, owner, repo);
 
+    // Fetch pull requests count
+    const pullRequestsCount = await fetchPullRequests(octokit, owner, repo);
+
     // Fetch contributors
     const contributors = await fetchGithubContributors(octokit, owner, repo);
 
@@ -256,9 +248,6 @@ async function getGithubData() {
         }
       })
     );
-
-    // Fetch pull requests count
-    const pullRequestsCount = await fetchPullRequests(octokit, owner, repo);
 
     // Create stats object
     const stats: RepoStats = {

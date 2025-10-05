@@ -21,9 +21,9 @@ import {
 } from '@ncthub/ui/icons';
 import { Separator } from '@ncthub/ui/separator';
 import { type Variants, motion } from 'framer-motion';
-import dynamic from 'next/dynamic';
 import Image from 'next/image';
 import { useEffect, useState } from 'react';
+import Confetti from 'react-confetti';
 import {
   Area,
   AreaChart,
@@ -49,11 +49,6 @@ interface ContributorsClientProps {
     error?: string;
   };
 }
-
-// Dynamically import Confetti to avoid hydration issues
-const Confetti = dynamic(() => import('react-confetti'), {
-  ssr: false,
-});
 
 // Animation variants
 const floatingVariants = {
@@ -321,6 +316,24 @@ export default function ContributorsClient({
                       <GitFork className="mr-1.5 h-4 w-4 text-blue-500" />
                       <span>
                         {githubData.repo.forks_count.toLocaleString()} Forks
+                      </span>
+                    </div>
+
+                    <div className="flex items-center text-sm text-foreground/80">
+                      <MessageSquare className="mr-1.5 h-4 w-4 text-red-500" />
+                      <span>
+                        {githubData.repo.open_issues_count.toLocaleString()}{' '}
+                        Issues
+                      </span>
+                    </div>
+
+                    <div className="flex items-center text-sm text-foreground/80">
+                      <GitCommit className="mr-1.5 h-4 w-4 text-orange-500" />
+                      <span>
+                        {githubData.contributors
+                          ?.reduce((acc, curr) => acc + curr.contributions, 0)
+                          .toLocaleString()}{' '}
+                        Commits
                       </span>
                     </div>
 
@@ -743,78 +756,6 @@ export default function ContributorsClient({
               </div>
             </Card>
           </motion.div>
-        </motion.section>
-      )}
-
-      {/* Stats Section */}
-      {githubData.stats && (
-        <motion.section
-          initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1 }}
-          viewport={{ once: true }}
-          className="relative"
-        >
-          <div className="grid gap-6 md:grid-cols-3">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: 0.1 }}
-            >
-              <Card className="group relative h-full overflow-hidden border-primary/10">
-                <div className="relative p-6">
-                  <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10">
-                    <Users className="h-6 w-6 text-primary" />
-                  </div>
-                  <h3 className="mb-2 text-2xl font-bold">
-                    {githubData.stats.contributors.toLocaleString()}+
-                  </h3>
-                  <p className="text-muted-foreground">Active Contributors</p>
-                </div>
-              </Card>
-            </motion.div>
-
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: 0.2 }}
-            >
-              <Card className="group relative h-full overflow-hidden border-primary/10">
-                <div className="relative p-6">
-                  <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10">
-                    <GitPullRequest className="h-6 w-6 text-primary" />
-                  </div>
-                  <h3 className="mb-2 text-2xl font-bold">
-                    {githubData.stats.pullRequests.toLocaleString()}+
-                  </h3>
-                  <p className="text-muted-foreground">Pull Requests</p>
-                </div>
-              </Card>
-            </motion.div>
-
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: 0.3 }}
-            >
-              <Card className="group relative h-full overflow-hidden border-primary/10">
-                <div className="relative p-6">
-                  <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10">
-                    <GitCommit className="h-6 w-6 text-primary" />
-                  </div>
-                  <h3 className="mb-2 text-2xl font-bold">
-                    {githubData.contributors
-                      ?.reduce((acc, curr) => acc + curr.contributions, 0)
-                      .toLocaleString()}
-                    +
-                  </h3>
-                  <p className="text-muted-foreground">Total Commits</p>
-                </div>
-              </Card>
-            </motion.div>
-          </div>
         </motion.section>
       )}
 
