@@ -281,7 +281,7 @@ export default async function TasksPage({
 'use client';
 
 import { useState, useEffect } from 'react';
-import { createClient } from '@tuturuuu/supabase/client';
+import { createClient } from '@tuturuuu/supabase/next/client';
 import type { Database } from '@tuturuuu/types';
 
 type Task = Database['public']['Tables']['workspace_tasks']['Row'];
@@ -475,7 +475,7 @@ utils.tasks.list.refetch({ wsId });
 'use client';
 
 import { useEffect, useState } from 'react';
-import { createClient } from '@tuturuuu/supabase/client';
+import { createClient } from '@tuturuuu/supabase/next/client';
 import type { Database } from '@tuturuuu/types';
 
 type Task = Database['public']['Tables']['workspace_tasks']['Row'];
