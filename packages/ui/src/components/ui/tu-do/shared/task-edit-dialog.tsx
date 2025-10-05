@@ -73,6 +73,25 @@ import {
   mapEstimationPoints,
 } from './estimation-mapping';
 import { UserPresenceAvatarsComponent } from './user-presence-avatars';
+import { useMentionSuggestions } from './mention-system/use-mention-suggestions';
+import { MentionMenu } from './mention-system/mention-menu';
+import {
+  createInitialSuggestionState,
+  isSameSuggestionState,
+  normalizeForSearch,
+  mentionGroupOrder,
+  mentionTypeStyles,
+  type SuggestionState,
+  type MentionOption,
+  type MentionOptionType,
+} from './mention-system/types';
+import {
+  getSlashCommands,
+  filterSlashCommands,
+  type SlashCommandDefinition,
+} from './slash-commands/definitions';
+import { SlashCommandMenu } from './slash-commands/slash-command-menu';
+import { CustomDatePickerDialog } from './custom-date-picker/custom-date-picker-dialog';
 
 interface TaskEditDialogProps {
   task?: Task;
@@ -94,160 +113,6 @@ interface WorkspaceTaskLabel {
 interface SuggestionRange {
   from: number;
   to: number;
-}
-
-interface SuggestionState {
-  open: boolean;
-  query: string;
-  range: SuggestionRange | null;
-  position: { left: number; top: number } | null;
-}
-
-const createInitialSuggestionState = (): SuggestionState => ({
-  open: false,
-  query: '',
-  range: null,
-  position: null,
-});
-
-// Normalize text for search: remove diacritics and convert to lowercase
-const normalizeForSearch = (text: string): string => {
-  return text
-    .normalize('NFD') // Decompose combined characters
-    .replace(/[\u0300-\u036f]/g, '') // Remove diacritical marks
-    .toLowerCase()
-    .trim();
-};
-
-const isSameSuggestionState = (
-  a: SuggestionState,
-  b: SuggestionState
-): boolean => {
-  if (a.open !== b.open) return false;
-  if (a.query !== b.query) return false;
-
-  if (!!a.range !== !!b.range) return false;
-  if (
-    a.range &&
-    b.range &&
-    (a.range.from !== b.range.from || a.range.to !== b.range.to)
-  ) {
-    return false;
-  }
-
-  if (!!a.position !== !!b.position) return false;
-  if (
-    a.position &&
-    b.position &&
-    (a.position.left !== b.position.left || a.position.top !== b.position.top)
-  ) {
-    return false;
-  }
-
-  return true;
-};
-
-type MentionOptionType =
-  | 'user'
-  | 'workspace'
-  | 'task'
-  | 'project'
-  | 'date'
-  | 'external-user';
-
-interface MentionOption {
-  id: string;
-  label: string;
-  subtitle?: string;
-  avatarUrl?: string | null;
-  type: MentionOptionType;
-  payload?: Record<string, unknown>;
-}
-
-const mentionGroupOrder: Array<{ type: MentionOptionType; title: string }> = [
-  { type: 'user', title: 'People' },
-  { type: 'external-user', title: 'External Users' },
-  { type: 'workspace', title: 'Workspaces' },
-  { type: 'project', title: 'Projects' },
-  { type: 'task', title: 'Tasks' },
-  { type: 'date', title: 'Dates' },
-];
-
-const mentionTypeStyles: Record<
-  MentionOptionType,
-  {
-    badgeClass: string;
-    avatarFallback: string;
-    avatarClass: string;
-    prefix: string;
-  }
-> = {
-  user: {
-    badgeClass:
-      'border border-dynamic-green/40 bg-dynamic-green/10 text-dynamic-green',
-    avatarFallback: '@',
-    avatarClass:
-      'bg-dynamic-green/20 text-dynamic-green border border-dynamic-green/30',
-    prefix: '@',
-  },
-  workspace: {
-    badgeClass:
-      'border border-dynamic-orange/40 bg-dynamic-orange/10 text-dynamic-orange',
-    avatarFallback: 'W',
-    avatarClass:
-      'bg-dynamic-orange/20 text-dynamic-orange border border-dynamic-orange/30',
-    prefix: '@',
-  },
-  project: {
-    badgeClass:
-      'border border-dynamic-cyan/40 bg-dynamic-cyan/10 text-dynamic-cyan',
-    avatarFallback: 'P',
-    avatarClass:
-      'bg-dynamic-cyan/20 text-dynamic-cyan border border-dynamic-cyan/30',
-    prefix: '@',
-  },
-  task: {
-    badgeClass:
-      'border border-dynamic-blue/40 bg-dynamic-blue/10 text-dynamic-blue',
-    avatarFallback: '#',
-    avatarClass:
-      'bg-dynamic-blue/20 text-dynamic-blue border border-dynamic-blue/30',
-    prefix: '#',
-  },
-  date: {
-    badgeClass:
-      'border border-dynamic-pink/40 bg-dynamic-pink/10 text-dynamic-pink',
-    avatarFallback: 'D',
-    avatarClass:
-      'bg-dynamic-pink/20 text-dynamic-pink border border-dynamic-pink/30',
-    prefix: '@',
-  },
-  'external-user': {
-    badgeClass: 'border border-border bg-muted text-muted-foreground',
-    avatarFallback: '@',
-    avatarClass: 'bg-muted text-muted-foreground border border-border',
-    prefix: '@',
-  },
-};
-
-interface SlashCommandDefinition {
-  id:
-    | 'assign'
-    | 'due-today'
-    | 'due-tomorrow'
-    | 'due-next-week'
-    | 'clear-due'
-    | 'priority-critical'
-    | 'priority-high'
-    | 'priority-normal'
-    | 'priority-low'
-    | 'priority-clear'
-    | 'toggle-advanced';
-  label: string;
-  description?: string;
-  icon: LucideIcon;
-  keywords: string[];
-  disabled?: boolean;
 }
 
 function TaskEditDialogComponent({
@@ -452,308 +317,33 @@ function TaskEditDialogComponent({
     }
   }, [workspaceId]);
 
+  // Use the extracted slash commands functions
   const slashCommands = useMemo<SlashCommandDefinition[]>(() => {
-    const commands: SlashCommandDefinition[] = [
-      {
-        id: 'assign',
-        label: 'Assign member',
-        description: 'Mention and assign someone quickly',
-        icon: Users,
-        keywords: ['assign', 'assignee', 'member', 'mention'],
-        disabled: workspaceMembers.length === 0,
-      },
-      {
-        id: 'due-today',
-        label: 'Due today',
-        description: 'Set due date to end of today',
-        icon: Calendar,
-        keywords: ['due', 'today', 'deadline', 'tod'],
-      },
-      {
-        id: 'due-tomorrow',
-        label: 'Due tomorrow',
-        description: 'Set due date to end of tomorrow',
-        icon: Calendar,
-        keywords: ['due', 'tomorrow', 'tom'],
-      },
-      {
-        id: 'due-next-week',
-        label: 'Due next week',
-        description: 'Set due date to a week from now',
-        icon: Calendar,
-        keywords: ['due', 'week', 'next'],
-      },
-      {
-        id: 'clear-due',
-        label: 'Clear due date',
-        description: 'Remove the current due date',
-        icon: Trash,
-        keywords: ['due', 'clear', 'remove'],
-        disabled: !endDate,
-      },
-      {
-        id: 'priority-critical',
-        label: 'Priority: Critical',
-        description: 'Mark as critical priority',
-        icon: Flag,
-        keywords: ['priority', 'critical', 'urgent'],
-      },
-      {
-        id: 'priority-high',
-        label: 'Priority: High',
-        description: 'Mark as high priority',
-        icon: Flag,
-        keywords: ['priority', 'high'],
-      },
-      {
-        id: 'priority-normal',
-        label: 'Priority: Normal',
-        description: 'Mark as normal priority',
-        icon: Flag,
-        keywords: ['priority', 'normal', 'medium'],
-      },
-      {
-        id: 'priority-low',
-        label: 'Priority: Low',
-        description: 'Mark as low priority',
-        icon: Flag,
-        keywords: ['priority', 'low'],
-      },
-      {
-        id: 'priority-clear',
-        label: 'Clear priority',
-        description: 'Remove current priority value',
-        icon: X,
-        keywords: ['priority', 'clear', 'remove'],
-        disabled: !priority,
-      },
-      {
-        id: 'toggle-advanced',
-        label: showAdvancedOptions
-          ? 'Hide advanced options'
-          : 'Show advanced options',
-        description: 'Toggle the advanced settings panel',
-        icon: Settings,
-        keywords: ['advanced', 'options', 'settings'],
-      },
-    ];
-
-    return commands;
+    return getSlashCommands({
+      hasMembers: workspaceMembers.length > 0,
+      hasEndDate: !!endDate,
+      hasPriority: !!priority,
+      showAdvanced: showAdvancedOptions,
+    });
   }, [workspaceMembers.length, endDate, priority, showAdvancedOptions]);
 
   const filteredSlashCommands = useMemo(() => {
     if (!slashState.open) return [] as SlashCommandDefinition[];
-    const normalizedQuery = normalizeForSearch(slashState.query.trim());
-
-    return slashCommands.filter((command) => {
-      if (command.disabled) return false;
-      if (!normalizedQuery) return true;
-
-      const searchTexts = [
-        command.label,
-        command.description || '',
-        ...command.keywords,
-      ];
-
-      // Try exact match first (case-insensitive with diacritics normalized)
-      const normalizedTexts = searchTexts.map(normalizeForSearch);
-
-      // Check if any text contains the query
-      if (normalizedTexts.some((text) => text.includes(normalizedQuery))) {
-        return true;
-      }
-
-      // Try matching individual words (for partial matching)
-      const queryWords = normalizedQuery.split(/\s+/);
-      return queryWords.every((word) =>
-        normalizedTexts.some((text) => text.includes(word))
-      );
-    });
+    return filterSlashCommands(slashCommands, slashState.query);
   }, [slashCommands, slashState.open, slashState.query]);
 
-  const mentionUserOptions = useMemo<MentionOption[]>(
-    () =>
-      [...workspaceMembers]
-        .sort((a, b) =>
-          (a?.display_name || '').localeCompare(b?.display_name || '')
-        )
-        .map((member: any) => ({
-          id: member.user_id,
-          label: member.display_name || 'Unknown member',
-          subtitle: undefined,
-          avatarUrl: member.avatar_url,
-          type: 'user',
-          payload: member,
-        })),
-    [workspaceMembers]
-  );
-
-  const mentionWorkspaceOptions = useMemo<MentionOption[]>(() => {
-    return allWorkspaces
-      .filter((ws) => !ws.personal)
-      .map((ws) => ({
-        id: ws.id,
-        label: ws.name || 'Workspace',
-        subtitle: ws.handle ? `@${ws.handle}` : ws.id.slice(0, 8),
-        avatarUrl: null,
-        type: 'workspace' as const,
-        payload: ws,
-      }));
-  }, [allWorkspaces]);
-
-  const mentionProjectOptions = useMemo<MentionOption[]>(
-    () =>
-      [...taskProjects].map((project: any) => ({
-        id: project.id,
-        label: project.name || 'Untitled project',
-        subtitle: project.status || undefined,
-        avatarUrl: null,
-        type: 'project' as const,
-        payload: project,
-      })),
-    [taskProjects]
-  );
-
-  const mentionTaskOptions = useMemo<MentionOption[]>(
-    () =>
-      [...workspaceTasks]
-        .filter((taskItem: any) => taskItem.id !== task?.id)
-        .map((task: any) => {
-          const subtitleParts: string[] = [];
-          if (task.list?.name) subtitleParts.push(task.list.name);
-          return {
-            id: task.id,
-            label: task.name || 'Untitled task',
-            subtitle: subtitleParts.join(' • ') || undefined,
-            avatarUrl: null,
-            type: 'task',
-            payload: task,
-          };
-        }),
-    [workspaceTasks, task?.id]
-  );
-
-  const mentionDateOptions = useMemo<MentionOption[]>(() => {
-    const today = dayjs();
-    const options: MentionOption[] = [
-      {
-        id: 'today',
-        label: 'Today',
-        subtitle: today.format('MMM D, YYYY'),
-        avatarUrl: null,
-        type: 'date' as const,
-        payload: { date: today.toISOString() },
-      },
-      {
-        id: 'tomorrow',
-        label: 'Tomorrow',
-        subtitle: today.add(1, 'day').format('MMM D, YYYY'),
-        avatarUrl: null,
-        type: 'date' as const,
-        payload: { date: today.add(1, 'day').toISOString() },
-      },
-      {
-        id: 'next-week',
-        label: 'Next week',
-        subtitle: today.add(1, 'week').format('MMM D, YYYY'),
-        avatarUrl: null,
-        type: 'date' as const,
-        payload: { date: today.add(1, 'week').toISOString() },
-      },
-      {
-        id: 'next-month',
-        label: 'Next month',
-        subtitle: today.add(1, 'month').format('MMM D, YYYY'),
-        avatarUrl: null,
-        type: 'date' as const,
-        payload: { date: today.add(1, 'month').toISOString() },
-      },
-      {
-        id: 'custom-date',
-        label: 'Custom date...',
-        subtitle: 'Pick a specific date',
-        avatarUrl: null,
-        type: 'date' as const,
-        payload: { isCustom: true },
-      },
-    ];
-    return options;
-  }, []);
-
-  const allMentionOptions = useMemo<MentionOption[]>(
-    () => [
-      ...mentionUserOptions,
-      ...mentionWorkspaceOptions,
-      ...mentionProjectOptions,
-      ...mentionTaskOptions,
-      ...mentionDateOptions,
-    ],
-    [
-      mentionUserOptions,
-      mentionWorkspaceOptions,
-      mentionProjectOptions,
-      mentionTaskOptions,
-      mentionDateOptions,
-    ]
-  );
-
-  const filteredMentionOptions = useMemo(() => {
-    const rawQuery = mentionState.query.trim();
-    const normalizedQuery = normalizeForSearch(rawQuery.replace(/^[@#]/, ''));
-
-    if (!normalizedQuery) {
-      const limitedTasks = mentionTaskOptions.slice(0, 8);
-      return [
-        ...mentionUserOptions,
-        ...mentionWorkspaceOptions,
-        ...mentionProjectOptions,
-        ...mentionDateOptions,
-        ...limitedTasks,
-      ];
-    }
-
-    const filtered = allMentionOptions.filter((option) => {
-      const searchTexts = [option.label, option.subtitle || ''];
-
-      // Try exact match first (case-insensitive with diacritics normalized)
-      const normalizedTexts = searchTexts.map(normalizeForSearch);
-      const combinedText = normalizedTexts.join(' ');
-
-      if (combinedText.includes(normalizedQuery)) {
-        return true;
-      }
-
-      // Try matching individual words (for partial matching)
-      const queryWords = normalizedQuery.split(/\s+/);
-      return queryWords.every((word) =>
-        normalizedTexts.some((text) => text.includes(word))
-      );
-    });
-
-    // If no matches found and query is not empty, add external user option
-    if (filtered.length === 0 && rawQuery) {
-      return [
-        {
-          id: `external-${rawQuery}`,
-          label: rawQuery,
-          subtitle: 'Not a workspace member',
-          avatarUrl: null,
-          type: 'external-user' as const,
-          payload: { displayName: rawQuery, isExternal: true },
-        },
-      ];
-    }
-
-    return filtered;
-  }, [
-    allMentionOptions,
-    mentionState.query,
-    mentionTaskOptions,
-    mentionUserOptions,
-    mentionWorkspaceOptions,
-    mentionProjectOptions,
-    mentionDateOptions,
-  ]);
+  // Use the extracted mention suggestions hook
+  const {
+    filteredMentionOptions,
+    mentionUserOptions, // Keep for use in assignee selection
+  } = useMentionSuggestions({
+    workspaceMembers,
+    allWorkspaces,
+    taskProjects,
+    workspaceTasks,
+    currentTaskId: task?.id,
+    query: mentionState.query,
+  });
 
   const mentionGroups = useMemo(() => {
     return mentionGroupOrder
@@ -1282,366 +872,72 @@ function TaskEditDialogComponent({
     ]
   );
 
-  const slashCommandMenu =
-    slashState.open && slashState.position && typeof window !== 'undefined'
-      ? createPortal(
-          <div
-            role="dialog"
-            className="pointer-events-auto fixed z-[200] w-[304px] overflow-hidden rounded-lg border border-dynamic-border bg-popover/95 shadow-xl backdrop-blur"
-            style={{
-              top: slashState.position.top,
-              left: slashState.position.left,
-            }}
-            onPointerDownCapture={(event) => event.stopPropagation()}
-            onMouseDown={(event) => event.stopPropagation()}
-          >
-            <div className="border-dynamic-border/60 border-b px-3 py-2 font-medium text-muted-foreground text-xs uppercase tracking-wide">
-              Slash commands
-            </div>
-            <div
-              ref={slashListRef}
-              className="scrollbar-thin max-h-72 overflow-y-auto overscroll-contain py-1"
-              style={{ maxHeight: 288 }}
-            >
-              {filteredSlashCommands.length === 0 ? (
-                <div className="px-3 py-2 text-muted-foreground text-sm">
-                  No commands found
-                </div>
-              ) : (
-                filteredSlashCommands.map((command, index) => {
-                  const Icon = command.icon;
-                  const isActive = index === slashHighlightIndex;
-                  return (
-                    <button
-                      data-slash-item={index}
-                      key={command.id}
-                      type="button"
-                      className={cn(
-                        'flex w-full items-center gap-3 px-3 py-2 text-left text-sm transition-colors',
-                        isActive
-                          ? 'bg-dynamic-blue/20 text-foreground ring-1 ring-dynamic-blue/40'
-                          : 'text-muted-foreground hover:bg-dynamic-surface/70 hover:text-foreground'
-                      )}
-                      onMouseDown={(event) => {
-                        event.preventDefault();
-                        event.stopPropagation();
-                        executeSlashCommand(command);
-                      }}
-                      onMouseEnter={() => setSlashHighlightIndex(index)}
-                    >
-                      <Icon className="h-4 w-4 shrink-0 text-muted-foreground" />
-                      <div className="flex flex-col">
-                        <span className="font-medium text-sm">
-                          {command.label}
-                        </span>
-                        {command.description && (
-                          <span className="text-muted-foreground/80 text-xs">
-                            {command.description}
-                          </span>
-                        )}
-                      </div>
-                    </button>
-                  );
-                })
-              )}
-            </div>
-          </div>,
-          document.body
-        )
-      : null;
+  // Use the extracted SlashCommandMenu component
+  const slashCommandMenu = (
+    <SlashCommandMenu
+      isOpen={slashState.open}
+      position={slashState.position}
+      commands={filteredSlashCommands}
+      highlightIndex={slashHighlightIndex}
+      onSelect={executeSlashCommand}
+      onHighlightChange={setSlashHighlightIndex}
+      listRef={slashListRef}
+    />
+  );
 
-  const mentionSuggestionMenu =
-    mentionState.open && mentionState.position && typeof window !== 'undefined'
-      ? createPortal(
-          <div
-            role="dialog"
-            className="pointer-events-auto fixed z-[200] w-[360px] overflow-hidden rounded-lg border border-dynamic-border bg-popover/95 shadow-xl backdrop-blur"
-            style={{
-              top: mentionState.position.top,
-              left: mentionState.position.left,
+  // Use the extracted MentionMenu component
+  const mentionSuggestionMenu = (
+    <>
+      <MentionMenu
+        isOpen={mentionState.open}
+        position={mentionState.position}
+        options={filteredMentionOptions}
+        highlightIndex={mentionHighlightIndex}
+        isLoading={workspaceDetailsLoading || workspaceTasksLoading || allWorkspacesLoading}
+        query={mentionState.query}
+        onSelect={insertMentionOption}
+        onHighlightChange={setMentionHighlightIndex}
+        listRef={mentionListRef}
+      />
+      {/* Custom date picker - conditionally render */}
+      {showCustomDatePicker && mentionState.position && (
+        <div
+          style={{
+            position: 'fixed',
+            top: mentionState.position.top,
+            left: mentionState.position.left,
+            zIndex: 200,
+          }}
+        >
+          <CustomDatePickerDialog
+            selectedDate={customDate}
+            includeTime={includeTime}
+            selectedHour={selectedHour}
+            selectedMinute={selectedMinute}
+            selectedPeriod={selectedPeriod}
+            onDateSelect={setCustomDate}
+            onIncludeTimeChange={setIncludeTime}
+            onHourChange={setSelectedHour}
+            onMinuteChange={setSelectedMinute}
+            onPeriodChange={setSelectedPeriod}
+            onCancel={() => {
+              setShowCustomDatePicker(false);
+              setCustomDate(undefined);
+              setIncludeTime(false);
+              setSelectedHour('12');
+              setSelectedMinute('00');
+              setSelectedPeriod('PM');
             }}
-            onPointerDownCapture={(event) => event.stopPropagation()}
-            onMouseDown={(event) => event.stopPropagation()}
-          >
-            <div className="border-dynamic-border/60 border-b px-3 py-2 font-medium text-muted-foreground text-xs uppercase tracking-wide">
-              Mention people, workspaces, projects, dates, or tasks
-            </div>
-            {(workspaceDetailsLoading ||
-              workspaceTasksLoading ||
-              allWorkspacesLoading) && (
-              <div className="flex items-center gap-2 px-3 py-2 text-muted-foreground text-xs">
-                <Loader2 className="h-3 w-3 animate-spin" />
-                Fetching latest context…
-              </div>
-            )}
-            <div
-              ref={mentionListRef}
-              className="scrollbar-thin max-h-80 overflow-y-auto overscroll-contain py-1"
-              style={{ maxHeight: 320 }}
-            >
-              {filteredMentionOptions.length === 0 ? (
-                <div className="px-3 py-3 text-muted-foreground text-sm">
-                  {mentionState.query
-                    ? 'No matches found. Try a different keyword.'
-                    : 'Start typing to mention teammates, workspaces, projects, dates, or tasks.'}
-                </div>
-              ) : (
-                (() => {
-                  let optionCursor = -1;
-                  return mentionGroups.map((group) => (
-                    <div key={group.type} className="py-1">
-                      <div className="px-3 pb-1 font-semibold text-[11px] text-muted-foreground uppercase tracking-wide">
-                        {group.title}
-                      </div>
-                      {group.options.map((option) => {
-                        optionCursor += 1;
-                        const isActive = optionCursor === mentionHighlightIndex;
-                        const typeMeta = mentionTypeStyles[option.type];
-                        const fallbackGlyph =
-                          option.type === 'user' ||
-                          option.type === 'external-user'
-                            ? (option.label || '')
-                                .split(/\s+/)
-                                .map((part) => part?.[0]?.toUpperCase() ?? '')
-                                .join('')
-                                .slice(0, 2) || typeMeta.avatarFallback
-                            : typeMeta.avatarFallback;
-                        const badgeLabel =
-                          option.type === 'user'
-                            ? 'Person'
-                            : option.type === 'workspace'
-                              ? 'Workspace'
-                              : option.type === 'project'
-                                ? 'Project'
-                                : option.type === 'date'
-                                  ? 'Date'
-                                  : option.type === 'external-user'
-                                    ? 'Guest'
-                                    : 'Task';
-
-                        return (
-                          <button
-                            data-mention-item={optionCursor}
-                            key={`${option.type}-${option.id}`}
-                            type="button"
-                            className={cn(
-                              'flex w-full items-center gap-3 px-3 py-2 text-left text-sm transition-colors',
-                              isActive
-                                ? 'bg-dynamic-blue/20 text-foreground ring-1 ring-dynamic-blue/40'
-                                : 'text-muted-foreground hover:bg-dynamic-surface/70 hover:text-foreground'
-                            )}
-                            onMouseDown={(event) => {
-                              event.preventDefault();
-                              event.stopPropagation();
-                              insertMentionOption(option);
-                            }}
-                            onMouseEnter={() =>
-                              setMentionHighlightIndex(optionCursor)
-                            }
-                          >
-                            <div
-                              className={cn(
-                                'flex h-7 w-7 items-center justify-center overflow-hidden rounded-full border font-semibold text-xs uppercase',
-                                typeMeta.avatarClass,
-                                option.avatarUrl ? 'p-0' : 'px-1'
-                              )}
-                            >
-                              {option.avatarUrl ? (
-                                <Image
-                                  src={option.avatarUrl}
-                                  alt={option.label}
-                                  width={28}
-                                  height={28}
-                                  className="h-full w-full object-cover"
-                                  referrerPolicy="no-referrer"
-                                />
-                              ) : option.type === 'workspace' ? (
-                                <BriefcaseBusiness className="h-3.5 w-3.5" />
-                              ) : option.type === 'project' ? (
-                                <Box className="h-3.5 w-3.5" />
-                              ) : option.type === 'task' ? (
-                                <CircleCheck className="h-3.5 w-3.5" />
-                              ) : option.type === 'date' ? (
-                                <Calendar className="h-3.5 w-3.5" />
-                              ) : option.type === 'external-user' ? (
-                                <User className="h-3.5 w-3.5" />
-                              ) : (
-                                <span className="truncate">
-                                  {fallbackGlyph}
-                                </span>
-                              )}
-                            </div>
-                            <div className="flex min-w-0 flex-1 flex-col">
-                              <span className="truncate font-medium text-foreground text-sm">
-                                {option.label}
-                              </span>
-                              {option.subtitle && (
-                                <span className="truncate text-muted-foreground text-xs">
-                                  {option.subtitle}
-                                </span>
-                              )}
-                            </div>
-                            <Badge
-                              variant="secondary"
-                              className={cn(
-                                'shrink-0 font-semibold text-[10px] uppercase tracking-wide',
-                                typeMeta.badgeClass
-                              )}
-                            >
-                              {badgeLabel}
-                            </Badge>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  ));
-                })()
-              )}
-            </div>
-            {showCustomDatePicker && (
-              <button
-                type="button"
-                className="border-dynamic-border/60 border-t p-3"
-                onMouseDown={(e) => {
-                  // Only stop propagation if not clicking on an input
-                  if (!(e.target as HTMLElement).matches('input')) {
-                    e.stopPropagation();
-                  }
-                }}
-                onClick={(e) => {
-                  // Only stop propagation if not clicking on an input
-                  if (!(e.target as HTMLElement).matches('input')) {
-                    e.stopPropagation();
-                  }
-                }}
-              >
-                <div className="mb-2 font-medium text-foreground text-sm">
-                  Select custom date
-                </div>
-                <CalendarComponent
-                  mode="single"
-                  selected={customDate}
-                  onSelect={(date) => {
-                    setCustomDate(date);
-                  }}
-                  className="rounded-md border p-0"
-                />
-                <div className="mt-3 flex items-center gap-2 rounded-md border p-2">
-                  <Switch
-                    checked={includeTime}
-                    onCheckedChange={setIncludeTime}
-                  />
-                  <Label
-                    htmlFor="include-time"
-                    className="cursor-pointer text-sm"
-                  >
-                    Include time
-                  </Label>
-                </div>
-                {includeTime && (
-                  <div className="mt-2 flex items-center gap-2">
-                    <Label className="text-sm">Time:</Label>
-                    <Select
-                      value={selectedHour}
-                      onValueChange={setSelectedHour}
-                    >
-                      <SelectTrigger className="w-20">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {Array.from({ length: 12 }, (_, i) => {
-                          const hour = i + 1;
-                          return (
-                            <SelectItem key={hour} value={hour.toString()}>
-                              {hour}
-                            </SelectItem>
-                          );
-                        })}
-                      </SelectContent>
-                    </Select>
-                    <span>:</span>
-                    <Select
-                      value={selectedMinute}
-                      onValueChange={setSelectedMinute}
-                    >
-                      <SelectTrigger className="w-20">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {['00', '15', '30', '45', '59'].map((min) => (
-                          <SelectItem key={min} value={min}>
-                            {min}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <div className="flex rounded-md border">
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant={selectedPeriod === 'AM' ? 'default' : 'ghost'}
-                        className="h-8 rounded-r-none px-3"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setSelectedPeriod('AM');
-                        }}
-                      >
-                        AM
-                      </Button>
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant={selectedPeriod === 'PM' ? 'default' : 'ghost'}
-                        className="h-8 rounded-l-none px-3"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setSelectedPeriod('PM');
-                        }}
-                      >
-                        PM
-                      </Button>
-                    </div>
-                  </div>
-                )}
-                <div className="mt-3 flex justify-end gap-2">
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      setShowCustomDatePicker(false);
-                      setCustomDate(undefined);
-                      setIncludeTime(false);
-                      setSelectedHour('12');
-                      setSelectedMinute('00');
-                      setSelectedPeriod('PM');
-                    }}
-                  >
-                    Cancel
-                  </Button>
-                  <Button
-                    type="button"
-                    size="sm"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      if (customDate) {
-                        handleCustomDateSelect(customDate);
-                      }
-                    }}
-                    disabled={!customDate}
-                  >
-                    Insert
-                  </Button>
-                </div>
-              </button>
-            )}
-          </div>,
-          document.body
-        )
-      : null;
+            onInsert={() => {
+              if (customDate) {
+                handleCustomDateSelect(customDate);
+              }
+            }}
+          />
+        </div>
+      )}
+    </>
+  );
   useEffect(() => {
     if (!editorInstance || !isOpen) return;
 

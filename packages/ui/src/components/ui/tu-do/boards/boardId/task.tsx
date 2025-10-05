@@ -97,6 +97,15 @@ import { TaskEditDialog } from '../../shared/task-edit-dialog';
 import { TaskEstimationDisplay } from '../../shared/task-estimation-display';
 import { TaskLabelsDisplay } from '../../shared/task-labels-display';
 import { TaskActions } from './task-actions';
+import { useTaskActions } from './hooks/use-task-actions';
+import {
+  TaskPriorityMenu,
+  TaskDueDateMenu,
+  TaskEstimationMenu,
+  TaskLabelsMenu,
+  TaskProjectsMenu,
+  TaskMoveMenu,
+} from './menus';
 
 const NEW_LABEL_COLOR = '#3b82f6';
 
@@ -308,372 +317,30 @@ function TaskCardInner({
     return formatDistanceToNow(date, { addSuffix: true });
   };
 
-  async function handleArchiveToggle() {
-    if (!onUpdate) return;
-    setIsLoading(true);
-
-    const newArchivedState = !task.archived;
-
-    // If marking as done (archived = true) and there's a done list available, move the task there
-    if (
-      newArchivedState &&
-      targetCompletionList &&
-      targetCompletionList.id !== task.list_id
-    ) {
-      const supabase = createClient();
-      try {
-        // First update the archived status
-        await updateTaskMutation.mutateAsync({
-          taskId: task.id,
-          updates: { archived: newArchivedState },
-        });
-
-        // Then move to the done list
-        await moveTask(supabase, task.id, targetCompletionList.id);
-
-        toast({
-          title: 'Task completed',
-          description: `Task marked as done and moved to ${targetCompletionList.name}`,
-        });
-
-        onUpdate();
-      } catch (error) {
-        console.error('Failed to complete task:', error);
-        toast({
-          title: 'Error',
-          description: 'Failed to complete task. Please try again.',
-          variant: 'destructive',
-        });
-      } finally {
-        setIsLoading(false);
-      }
-    } else {
-      // Normal archive toggle without moving
-      updateTaskMutation.mutate(
-        { taskId: task.id, updates: { archived: newArchivedState } },
-        {
-          onSettled: () => {
-            setIsLoading(false);
-          },
-        }
-      );
-    }
-  }
-
-  async function handleCustomDateChange(date: Date | undefined) {
-    let newDate: string | null = null;
-
-    if (date) {
-      const selectedDate = new Date(date);
-
-      // If the selected time is 00:00:00 (midnight), it likely means the user
-      // only selected a date without specifying a time, so default to 11:59 PM
-      if (
-        selectedDate.getHours() === 0 &&
-        selectedDate.getMinutes() === 0 &&
-        selectedDate.getSeconds() === 0 &&
-        selectedDate.getMilliseconds() === 0
-      ) {
-        selectedDate.setHours(23, 59, 59, 999);
-      }
-
-      newDate = selectedDate.toISOString();
-    }
-
-    setIsLoading(true);
-    setCustomDateDialogOpen(false); // Close immediately when date is selected
-
-    updateTaskMutation.mutate(
-      { taskId: task.id, updates: { end_date: newDate } },
-      {
-        onSuccess: () => {
-          toast({
-            title: 'Due date updated',
-            description: newDate
-              ? 'Custom due date set successfully'
-              : 'Due date removed',
-          });
-        },
-        onSettled: () => {
-          setIsLoading(false);
-        },
-      }
-    );
-  }
-
-  async function handleMoveToCompletion() {
-    if (!targetCompletionList || !onUpdate) return;
-
-    setIsLoading(true);
-
-    // Use the standard moveTask function to ensure consistent logic
-    const supabase = createClient();
-    try {
-      await moveTask(supabase, task.id, targetCompletionList.id);
-      // Manually invalidate queries since we're not using the mutation hook
-      onUpdate();
-    } catch (error) {
-      console.error('Failed to move task to completion:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to complete task. Please try again.',
-        variant: 'destructive',
-      });
-    } finally {
-      setIsLoading(false);
-      setMenuOpen(false);
-    }
-  }
-
-  async function handleMoveToClose() {
-    if (!targetClosedList || !onUpdate) return;
-
-    setIsLoading(true);
-
-    // Use the standard moveTask function to ensure consistent logic
-    const supabase = createClient();
-    try {
-      await moveTask(supabase, task.id, targetClosedList.id);
-      toast({
-        title: 'Success',
-        description: 'Task marked as closed',
-      });
-      // Manually invalidate queries since we're not using the mutation hook
-      onUpdate();
-    } catch (error) {
-      console.error('Failed to move task to closed:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to close task. Please try again.',
-        variant: 'destructive',
-      });
-    } finally {
-      setIsLoading(false);
-      setMenuOpen(false);
-    }
-  }
-
-  async function handleDelete() {
-    setIsLoading(true);
-    deleteTaskMutation.mutate(task.id, {
-      onSuccess: () => {
-        setDeleteDialogOpen(false);
-      },
-      onSettled: () => {
-        setIsLoading(false);
-      },
-    });
-  }
-
-  async function handleRemoveAllAssignees() {
-    if (!task.assignees || task.assignees.length === 0) return;
-
-    setIsLoading(true);
-    const supabase = createClient();
-
-    // Cancel any outgoing refetches
-    await queryClient.cancelQueries({ queryKey: ['tasks', boardId] });
-
-    // Snapshot the previous value
-    const previousTasks = queryClient.getQueryData(['tasks', boardId]);
-
-    // Optimistically update the cache
-    queryClient.setQueryData(['tasks', boardId], (old: any[] | undefined) => {
-      if (!old) return old;
-      return old.map((t) => {
-        if (t.id === task.id) {
-          return { ...t, assignees: [] };
-        }
-        return t;
-      });
-    });
-
-    try {
-      const { error } = await supabase
-        .from('task_assignees')
-        .delete()
-        .eq('task_id', task.id);
-
-      if (error) {
-        throw error;
-      }
-
-      toast({
-        title: 'Success',
-        description: 'All assignees removed from task',
-      });
-    } catch (error) {
-      // Rollback on error
-      queryClient.setQueryData(['tasks', boardId], previousTasks);
-      console.error('Failed to remove all assignees:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to remove assignees. Please try again.',
-        variant: 'destructive',
-      });
-    } finally {
-      setIsLoading(false);
-      setMenuOpen(false);
-    }
-  }
-
-  async function handleRemoveAssignee(assigneeId: string) {
-    setIsLoading(true);
-    const supabase = createClient();
-
-    // Cancel any outgoing refetches
-    await queryClient.cancelQueries({ queryKey: ['tasks', boardId] });
-
-    // Snapshot the previous value
-    const previousTasks = queryClient.getQueryData(['tasks', boardId]);
-
-    // Optimistically update the cache
-    queryClient.setQueryData(['tasks', boardId], (old: any[] | undefined) => {
-      if (!old) return old;
-      return old.map((t) => {
-        if (t.id === task.id) {
-          return {
-            ...t,
-            assignees:
-              t.assignees?.filter((a: any) => a.id !== assigneeId) || [],
-          };
-        }
-        return t;
-      });
-    });
-
-    try {
-      const { error } = await supabase
-        .from('task_assignees')
-        .delete()
-        .eq('task_id', task.id)
-        .eq('user_id', assigneeId);
-
-      if (error) {
-        throw error;
-      }
-
-      const assignee = task.assignees?.find((a) => a.id === assigneeId);
-      toast({
-        title: 'Success',
-        description: `${assignee?.display_name || assignee?.email || 'Assignee'} removed from task`,
-      });
-    } catch (error) {
-      // Rollback on error
-      queryClient.setQueryData(['tasks', boardId], previousTasks);
-      console.error('Failed to remove assignee:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to remove assignee. Please try again.',
-        variant: 'destructive',
-      });
-    } finally {
-      setIsLoading(false);
-      setMenuOpen(false);
-    }
-  }
-
-  async function handleMoveToList(targetListId: string) {
-    if (targetListId === task.list_id) {
-      setMenuOpen(false);
-      return; // Already in this list
-    }
-
-    setIsLoading(true);
-
-    const supabase = createClient();
-    try {
-      await moveTask(supabase, task.id, targetListId);
-
-      const targetList = availableLists.find(
-        (list) => list.id === targetListId
-      );
-      toast({
-        title: 'Success',
-        description: `Task moved to ${targetList?.name || 'selected list'}`,
-      });
-      onUpdate();
-    } catch (error) {
-      console.error('Failed to move task:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to move task. Please try again.',
-        variant: 'destructive',
-      });
-    } finally {
-      setIsLoading(false);
-      setMenuOpen(false);
-    }
-  }
-
-  // Reintroduced: handle quick relative due date changes (was removed during earlier patch)
-  async function handleDueDateChange(days: number | null) {
-    let newDate: string | null = null;
-    if (days !== null) {
-      const target = addDays(new Date(), days);
-      // Set to end of day for consistent due date semantics
-      target.setHours(23, 59, 59, 999);
-      newDate = target.toISOString();
-    }
-    setIsLoading(true);
-    updateTaskMutation.mutate(
-      { taskId: task.id, updates: { end_date: newDate } },
-      {
-        onSuccess: () => {
-          toast({
-            title: 'Due date updated',
-            description: newDate
-              ? 'Due date set successfully'
-              : 'Due date removed',
-          });
-        },
-        onSettled: () => {
-          setIsLoading(false);
-        },
-      }
-    );
-  }
-
-  // Reintroduced: priority change handler (lost in earlier patch)
-  function handlePriorityChange(newPriority: TaskPriority | null) {
-    if (newPriority === task.priority) return; // no-op
-    setIsLoading(true);
-    updateTaskMutation.mutate(
-      { taskId: task.id, updates: { priority: newPriority } },
-      {
-        onSuccess: () => {
-          toast({
-            title: 'Priority updated',
-            description: newPriority ? 'Priority changed' : 'Priority cleared',
-          });
-        },
-        onSettled: () => {
-          setIsLoading(false);
-        },
-      }
-    );
-  }
-
-  // Update estimation points (quick action menu) re-added
-  async function updateEstimationPoints(points: number | null) {
-    if (points === task.estimation_points) return;
-    setEstimationSaving(true);
-    try {
-      await updateTaskMutation.mutateAsync({
-        taskId: task.id,
-        updates: { estimation_points: points },
-      });
-    } catch (e: any) {
-      console.error('Failed to update estimation', e);
-      toast({
-        title: 'Failed to update estimation',
-        description: e.message || 'Please try again',
-        variant: 'destructive',
-      });
-    } finally {
-      setEstimationSaving(false);
-    }
-  }
+  // Use the extracted task actions hook
+  const {
+    handleArchiveToggle,
+    handleMoveToCompletion,
+    handleMoveToClose,
+    handleDelete,
+    handleRemoveAllAssignees,
+    handleRemoveAssignee,
+    handleMoveToList,
+    handleDueDateChange,
+    handlePriorityChange,
+    updateEstimationPoints,
+    handleCustomDateChange,
+  } = useTaskActions({
+    task,
+    boardId,
+    targetCompletionList,
+    targetClosedList,
+    onUpdate,
+    setIsLoading,
+    setMenuOpen,
+    setCustomDateDialogOpen,
+    setDeleteDialogOpen,
+  });
 
   // Toggle a label for the task (quick labels submenu)
   async function toggleTaskLabel(labelId: string) {
@@ -1196,536 +863,76 @@ function TaskCardInner({
                     <DropdownMenuSeparator />
                   )}
 
-                  {/* Priority Actions */}
-                  <DropdownMenuSub>
-                    <DropdownMenuSubTrigger>
-                      <div className="h-4 w-4">
-                        <Flag className="h-4 w-4 text-dynamic-orange" />
-                      </div>
-                      <div className="flex w-full items-center justify-between">
-                        <span>Priority</span>
-                        <span className="ml-auto text-muted-foreground text-xs">
-                          {task.priority === 'critical' && 'Urgent'}
-                          {task.priority === 'high' && 'High'}
-                          {task.priority === 'normal' && 'Medium'}
-                          {task.priority === 'low' && 'Low'}
-                          {!task.priority && 'None'}
-                        </span>
-                      </div>
-                    </DropdownMenuSubTrigger>
-                    <DropdownMenuSubContent>
-                      <DropdownMenuItem
-                        onSelect={(e) =>
-                          handleMenuItemSelect(e as unknown as Event, () => {
-                            handlePriorityChange(null);
-                            setMenuOpen(false);
-                          })
-                        }
-                        className={cn(
-                          'cursor-pointer text-muted-foreground',
-                          !task.priority && 'bg-muted/50'
-                        )}
-                      >
-                        <div className="flex w-full items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <X className="h-4 w-4" />
-                            None
-                          </div>
-                          {!task.priority && <Check className="h-4 w-4" />}
-                        </div>
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem
-                        onSelect={(e) =>
-                          handleMenuItemSelect(e as unknown as Event, () => {
-                            handlePriorityChange('critical');
-                            setMenuOpen(false);
-                          })
-                        }
-                        className={cn(
-                          'cursor-pointer',
-                          task.priority === 'critical' &&
-                            'bg-dynamic-red/10 text-dynamic-red'
-                        )}
-                      >
-                        <div className="flex w-full items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <Icon
-                              iconNode={unicornHead}
-                              className="h-4 w-4 text-dynamic-red"
-                            />
-                            Urgent
-                          </div>
-                          {task.priority === 'critical' && (
-                            <Check className="h-4 w-4 text-dynamic-red" />
-                          )}
-                        </div>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        onSelect={(e) =>
-                          handleMenuItemSelect(e as unknown as Event, () => {
-                            handlePriorityChange('high');
-                            setMenuOpen(false);
-                          })
-                        }
-                        className={cn(
-                          'cursor-pointer',
-                          task.priority === 'high' &&
-                            'bg-dynamic-orange/10 text-dynamic-orange'
-                        )}
-                      >
-                        <div className="flex w-full items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <Icon
-                              iconNode={horseHead}
-                              className="h-4 w-4 text-dynamic-orange"
-                            />
-                            High
-                          </div>
-                          {task.priority === 'high' && (
-                            <Check className="h-4 w-4 text-dynamic-orange" />
-                          )}
-                        </div>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        onSelect={(e) =>
-                          handleMenuItemSelect(e as unknown as Event, () => {
-                            handlePriorityChange('normal');
-                            setMenuOpen(false);
-                          })
-                        }
-                        className={cn(
-                          'cursor-pointer',
-                          task.priority === 'normal' &&
-                            'bg-dynamic-yellow/10 text-dynamic-yellow'
-                        )}
-                      >
-                        <div className="flex w-full items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <Rabbit className="h-4 w-4 text-dynamic-yellow" />
-                            Medium
-                          </div>
-                          {task.priority === 'normal' && (
-                            <Check className="h-4 w-4 text-dynamic-yellow" />
-                          )}
-                        </div>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        onSelect={(e) =>
-                          handleMenuItemSelect(e as unknown as Event, () => {
-                            handlePriorityChange('low');
-                            setMenuOpen(false);
-                          })
-                        }
-                        className={cn(
-                          'cursor-pointer',
-                          task.priority === 'low' &&
-                            'bg-dynamic-blue/10 text-dynamic-blue'
-                        )}
-                      >
-                        <div className="flex w-full items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <Turtle className="h-4 w-4 text-dynamic-blue" />
-                            Low
-                          </div>
-                          {task.priority === 'low' && (
-                            <Check className="h-4 w-4 text-dynamic-blue" />
-                          )}
-                        </div>
-                      </DropdownMenuItem>
-                    </DropdownMenuSubContent>
-                  </DropdownMenuSub>
+                  {/* Priority Menu */}
+                  <TaskPriorityMenu
+                    currentPriority={task.priority}
+                    isLoading={isLoading}
+                    onPriorityChange={handlePriorityChange}
+                    onMenuItemSelect={handleMenuItemSelect}
+                    onClose={() => setMenuOpen(false)}
+                  />
 
-                  {/* Due Date Actions */}
-                  <DropdownMenuSub>
-                    <DropdownMenuSubTrigger>
-                      <div className="h-4 w-4">
-                        <Calendar className="h-4 w-4 text-dynamic-purple" />
-                      </div>
-                      <div className="flex w-full items-center justify-between">
-                        <span>Due Date</span>
-                        <span className="ml-auto text-muted-foreground text-xs">
-                          {task.end_date
-                            ? formatSmartDate(new Date(task.end_date))
-                            : 'None'}
-                        </span>
-                      </div>
-                    </DropdownMenuSubTrigger>
-                    <DropdownMenuSubContent>
-                      <DropdownMenuItem
-                        onSelect={(e) =>
-                          handleMenuItemSelect(e as unknown as Event, () => {
-                            handleDueDateChange(0);
-                            setMenuOpen(false);
-                          })
-                        }
-                        className="cursor-pointer"
-                      >
-                        <Calendar className="h-4 w-4 text-dynamic-green" />
-                        Today
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        onSelect={(e) =>
-                          handleMenuItemSelect(e as unknown as Event, () => {
-                            handleDueDateChange(1);
-                            setMenuOpen(false);
-                          })
-                        }
-                        className="cursor-pointer"
-                      >
-                        <Calendar className="h-4 w-4 text-dynamic-blue" />
-                        Tomorrow
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        onSelect={(e) =>
-                          handleMenuItemSelect(e as unknown as Event, () => {
-                            handleDueDateChange(7);
-                            setMenuOpen(false);
-                          })
-                        }
-                        className="cursor-pointer"
-                      >
-                        <Calendar className="h-4 w-4 text-dynamic-purple" />
-                        Next Week
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        onSelect={(e) =>
-                          handleMenuItemSelect(e as unknown as Event, () => {
-                            handleDueDateChange(30);
-                            setMenuOpen(false);
-                          })
-                        }
-                        className="cursor-pointer"
-                      >
-                        <Calendar className="h-4 w-4 text-dynamic-orange" />
-                        Next Month
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem
-                        onSelect={(e) =>
-                          handleMenuItemSelect(e as unknown as Event, () => {
-                            setMenuOpen(false);
-                            // Use setTimeout to prevent interference with dropdown closing
-                            setTimeout(
-                              () => setCustomDateDialogOpen(true),
-                              100
-                            );
-                          })
-                        }
-                        className="cursor-pointer"
-                      >
-                        <div className="flex items-center gap-2">
-                          <Calendar className="h-4 w-4" />
-                          Custom Date
-                        </div>
-                      </DropdownMenuItem>
-                      {task.end_date && (
-                        <>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem
-                            onSelect={(e) =>
-                              handleMenuItemSelect(
-                                e as unknown as Event,
-                                () => {
-                                  handleDueDateChange(null);
-                                  setMenuOpen(false);
-                                }
-                              )
-                            }
-                            className="cursor-pointer text-muted-foreground"
-                          >
-                            <X className="h-4 w-4" />
-                            Remove Due Date
-                          </DropdownMenuItem>
-                        </>
-                      )}
-                    </DropdownMenuSubContent>
-                  </DropdownMenuSub>
+                  {/* Due Date Menu */}
+                  <TaskDueDateMenu
+                    endDate={task.end_date}
+                    isLoading={isLoading}
+                    onDueDateChange={handleDueDateChange}
+                    onCustomDateClick={() => {
+                      setMenuOpen(false);
+                      setTimeout(() => setCustomDateDialogOpen(true), 100);
+                    }}
+                    onMenuItemSelect={handleMenuItemSelect}
+                    onClose={() => setMenuOpen(false)}
+                  />
 
-                  {/* Estimation Submenu */}
+                  {/* Estimation Menu */}
                   {boardConfig?.estimation_type && (
-                    <DropdownMenuSub>
-                      <DropdownMenuSubTrigger>
-                        <Timer className="h-4 w-4 text-dynamic-pink" />
-                        Estimation
-                      </DropdownMenuSubTrigger>
-                      <DropdownMenuSubContent className="w-40">
-                        {buildEstimationIndices({
-                          extended: boardConfig?.extended_estimation,
-                          allowZero: boardConfig?.allow_zero_estimates,
-                        }).map((idx) => {
-                          const disabledByExtended =
-                            !boardConfig?.extended_estimation && idx > 5;
-                          const label = mapEstimationPoints(
-                            idx,
-                            boardConfig?.estimation_type
-                          );
-                          return (
-                            <DropdownMenuItem
-                              key={idx}
-                              onSelect={(e) =>
-                                handleMenuItemSelect(e, () =>
-                                  updateEstimationPoints(idx)
-                                )
-                              }
-                              className={cn(
-                                'flex cursor-pointer items-center justify-between',
-                                task.estimation_points === idx &&
-                                  'bg-dynamic-pink/10 text-dynamic-pink'
-                              )}
-                              disabled={estimationSaving || disabledByExtended}
-                            >
-                              <div className="flex items-center gap-2">
-                                <Timer className="h-4 w-4 text-dynamic-pink" />
-                                <span>
-                                  {label}
-                                  {disabledByExtended && (
-                                    <span className="ml-1 text-[10px] text-muted-foreground/60">
-                                      (upgrade)
-                                    </span>
-                                  )}
-                                </span>
-                              </div>
-                              {task.estimation_points === idx && (
-                                <Check className="h-4 w-4" />
-                              )}
-                            </DropdownMenuItem>
-                          );
-                        })}
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem
-                          onSelect={(e) =>
-                            handleMenuItemSelect(e, () =>
-                              updateEstimationPoints(null)
-                            )
-                          }
-                          className={cn(
-                            'cursor-pointer text-muted-foreground',
-                            task.estimation_points == null && 'bg-muted/50'
-                          )}
-                          disabled={estimationSaving}
-                        >
-                          <X className="h-4 w-4" /> None
-                        </DropdownMenuItem>
-                      </DropdownMenuSubContent>
-                    </DropdownMenuSub>
+                    <TaskEstimationMenu
+                      currentPoints={task.estimation_points}
+                      estimationType={boardConfig?.estimation_type}
+                      extendedEstimation={boardConfig?.extended_estimation}
+                      allowZeroEstimates={boardConfig?.allow_zero_estimates}
+                      isLoading={estimationSaving}
+                      onEstimationChange={updateEstimationPoints}
+                      onMenuItemSelect={handleMenuItemSelect}
+                    />
                   )}
 
-                  {/* Labels Submenu */}
-                  <DropdownMenuSub>
-                    <DropdownMenuSubTrigger>
-                      <Tag className="h-4 w-4 text-dynamic-cyan" />
-                      Labels
-                    </DropdownMenuSubTrigger>
-                    <DropdownMenuSubContent className="max-h-[400px] w-56 overflow-hidden p-0">
-                      {labelsLoading && (
-                        <div className="px-2 py-1 text-muted-foreground text-xs">
-                          Loading...
-                        </div>
-                      )}
-                      {!labelsLoading && workspaceLabels.length === 0 && (
-                        <div className="px-2 py-2 text-center text-muted-foreground text-xs">
-                          No labels yet. Create your first label below.
-                        </div>
-                      )}
-                      {!labelsLoading && workspaceLabels.length > 0 && (
-                        <ScrollArea className="h-[min(300px,calc(100vh-200px))]">
-                          <div className="p-1">
-                            {workspaceLabels.map((label) => {
-                              const active = task.labels?.some(
-                                (l) => l.id === label.id
-                              );
-                              return (
-                                <DropdownMenuItem
-                                  key={label.id}
-                                  onSelect={(e) =>
-                                    handleMenuItemSelect(e, () =>
-                                      toggleTaskLabel(label.id)
-                                    )
-                                  }
-                                  disabled={labelsSaving === label.id}
-                                  className={cn(
-                                    'flex cursor-pointer items-center justify-between',
-                                    active &&
-                                      'bg-dynamic-cyan/10 text-dynamic-cyan'
-                                  )}
-                                >
-                                  <div className="flex items-center gap-2">
-                                    <span
-                                      className="h-3 w-3 rounded-full"
-                                      style={{
-                                        backgroundColor: label.color,
-                                        opacity: 0.9,
-                                      }}
-                                    />
-                                    <span className="truncate">
-                                      {label.name}
-                                    </span>
-                                  </div>
-                                  {active && <Check className="h-4 w-4" />}
-                                </DropdownMenuItem>
-                              );
-                            })}
-                          </div>
-                        </ScrollArea>
-                      )}
-                      {!labelsLoading &&
-                        task.labels &&
-                        task.labels.length > 0 && (
-                          <div className="border-t bg-background">
-                            <div className="px-2 pt-1 pb-1 text-[10px] text-muted-foreground">
-                              {task.labels.length} applied
-                            </div>
-                          </div>
-                        )}
-                      {!labelsLoading && (
-                        <div className="border-t bg-background">
-                          <DropdownMenuItem
-                            onSelect={(e) =>
-                              handleMenuItemSelect(e, () => {
-                                setNewLabelDialogOpen(true);
-                                setMenuOpen(false);
-                              })
-                            }
-                            className="flex cursor-pointer items-center gap-2 text-muted-foreground hover:text-foreground"
-                          >
-                            <Plus className="h-4 w-4" />
-                            Add New Label
-                          </DropdownMenuItem>
-                        </div>
-                      )}
-                    </DropdownMenuSubContent>
-                  </DropdownMenuSub>
+                  {/* Labels Menu */}
+                  <TaskLabelsMenu
+                    taskLabels={task.labels || []}
+                    availableLabels={workspaceLabels}
+                    isLoading={labelsLoading}
+                    labelsSaving={labelsSaving}
+                    onToggleLabel={toggleTaskLabel}
+                    onCreateNewLabel={() => {
+                      setNewLabelDialogOpen(true);
+                      setMenuOpen(false);
+                    }}
+                    onMenuItemSelect={handleMenuItemSelect}
+                  />
 
-                  {/* Projects Submenu */}
-                  <DropdownMenuSub>
-                    <DropdownMenuSubTrigger>
-                      <Box className="h-4 w-4 text-dynamic-sky" />
-                      Projects
-                    </DropdownMenuSubTrigger>
-                    <DropdownMenuSubContent className="max-h-[400px] w-56 overflow-hidden p-0">
-                      {projectsLoading && (
-                        <div className="px-2 py-1 text-muted-foreground text-xs">
-                          Loading...
-                        </div>
-                      )}
-                      {!projectsLoading && workspaceProjects.length === 0 && (
-                        <div className="px-2 py-2 text-center text-muted-foreground text-xs">
-                          No projects available
-                        </div>
-                      )}
-                      {!projectsLoading && workspaceProjects.length > 0 && (
-                        <ScrollArea className="h-[min(300px,calc(100vh-200px))]">
-                          <div className="p-1">
-                            {workspaceProjects.map((project: any) => {
-                              const active = task.projects?.some(
-                                (p) => p.id === project.id
-                              );
-                              return (
-                                <DropdownMenuItem
-                                  key={project.id}
-                                  onSelect={(e) =>
-                                    handleMenuItemSelect(e, () =>
-                                      toggleTaskProject(project.id)
-                                    )
-                                  }
-                                  disabled={projectsSaving === project.id}
-                                  className={cn(
-                                    'flex cursor-pointer items-center justify-between',
-                                    active &&
-                                      'bg-dynamic-indigo/10 text-dynamic-sky'
-                                  )}
-                                >
-                                  <div className="flex items-center gap-2">
-                                    <Box className="h-4 w-4 text-dynamic-sky" />
-                                    <span className="truncate">
-                                      {project.name}
-                                    </span>
-                                  </div>
-                                  {active && <Check className="h-4 w-4" />}
-                                </DropdownMenuItem>
-                              );
-                            })}
-                          </div>
-                        </ScrollArea>
-                      )}
-                      {!projectsLoading &&
-                        task.projects &&
-                        task.projects.length > 0 && (
-                          <div className="border-t bg-background">
-                            <div className="px-2 pt-1 pb-1 text-[10px] text-muted-foreground">
-                              {task.projects.length} assigned
-                            </div>
-                          </div>
-                        )}
-                    </DropdownMenuSubContent>
-                  </DropdownMenuSub>
+                  {/* Projects Menu */}
+                  <TaskProjectsMenu
+                    taskProjects={task.projects || []}
+                    availableProjects={workspaceProjects}
+                    isLoading={projectsLoading}
+                    projectsSaving={projectsSaving}
+                    onToggleProject={toggleTaskProject}
+                    onMenuItemSelect={handleMenuItemSelect}
+                  />
 
                   <DropdownMenuSeparator />
 
-                  {/* Move to List Actions */}
+                  {/* Move Menu */}
                   {availableLists.length > 1 && (
-                    <DropdownMenuSub>
-                      <DropdownMenuSubTrigger>
-                        <div className="h-4 w-4">
-                          <Move className="h-4 w-4 text-dynamic-blue" />
-                        </div>
-                        <div className="flex w-full items-center justify-between">
-                          <span>Move</span>
-                        </div>
-                      </DropdownMenuSubTrigger>
-                      <DropdownMenuSubContent className="max-h-[400px] w-56 overflow-hidden p-0">
-                        {availableLists.filter(
-                          (list) => list.id !== task.list_id
-                        ).length > 0 ? (
-                          <ScrollArea className="h-[min(300px,calc(100vh-200px))]">
-                            <div className="p-1">
-                              {availableLists
-                                .filter((list) => list.id !== task.list_id)
-                                .map((list) => (
-                                  <DropdownMenuItem
-                                    key={list.id}
-                                    onSelect={(e) =>
-                                      handleMenuItemSelect(
-                                        e as unknown as Event,
-                                        () => handleMoveToList(list.id)
-                                      )
-                                    }
-                                    className="cursor-pointer"
-                                    disabled={isLoading}
-                                  >
-                                    <div className="flex w-full items-center justify-between">
-                                      <div className="flex items-center gap-3">
-                                        {list.status === 'done' && (
-                                          <CheckCircle2 className="h-4 w-4 text-dynamic-green" />
-                                        )}
-                                        {list.status === 'closed' && (
-                                          <CircleSlash className="h-4 w-4 text-dynamic-purple" />
-                                        )}
-                                        {list.status === 'not_started' && (
-                                          <CircleDashed className="h-4 w-4 opacity-70" />
-                                        )}
-                                        {list.status === 'active' && (
-                                          <CircleFadingArrowUpIcon className="h-4 w-4 text-dynamic-blue" />
-                                        )}
-                                        {list.name}
-                                      </div>
-                                    </div>
-                                  </DropdownMenuItem>
-                                ))}
-                            </div>
-                          </ScrollArea>
-                        ) : (
-                          <DropdownMenuItem
-                            disabled
-                            className="text-muted-foreground"
-                          >
-                            <List className="h-4 w-4" />
-                            No other lists available
-                          </DropdownMenuItem>
-                        )}
-                      </DropdownMenuSubContent>
-                    </DropdownMenuSub>
+                    <TaskMoveMenu
+                      currentListId={task.list_id}
+                      availableLists={availableLists}
+                      isLoading={isLoading}
+                      onMoveToList={(listId) => handleMoveToList(listId)}
+                      onMenuItemSelect={handleMenuItemSelect}
+                    />
                   )}
 
                   {/* Assignee Actions - Only show if not personal workspace and has assignees */}
