@@ -40,6 +40,7 @@ import {
   Tag,
   Timer,
   Trash,
+  User,
   Users,
   X,
 } from '@tuturuuu/ui/icons';
@@ -146,7 +147,13 @@ const isSameSuggestionState = (
   return true;
 };
 
-type MentionOptionType = 'user' | 'workspace' | 'task' | 'project' | 'date';
+type MentionOptionType =
+  | 'user'
+  | 'workspace'
+  | 'task'
+  | 'project'
+  | 'date'
+  | 'external-user';
 
 interface MentionOption {
   id: string;
@@ -159,6 +166,7 @@ interface MentionOption {
 
 const mentionGroupOrder: Array<{ type: MentionOptionType; title: string }> = [
   { type: 'user', title: 'People' },
+  { type: 'external-user', title: 'External Users' },
   { type: 'workspace', title: 'Workspaces' },
   { type: 'project', title: 'Projects' },
   { type: 'task', title: 'Tasks' },
@@ -212,6 +220,12 @@ const mentionTypeStyles: Record<
     avatarFallback: 'D',
     avatarClass:
       'bg-dynamic-pink/20 text-dynamic-pink border border-dynamic-pink/30',
+    prefix: '@',
+  },
+  'external-user': {
+    badgeClass: 'border border-border bg-muted text-muted-foreground',
+    avatarFallback: '@',
+    avatarClass: 'bg-muted text-muted-foreground border border-border',
     prefix: '@',
   },
 };
@@ -330,7 +344,7 @@ function TaskEditDialogComponent({
   const [hasDraft, setHasDraft] = useState(false);
   const [createMultiple, setCreateMultiple] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [showMobileSidebar, setShowMobileSidebar] = useState(false);
+  const [showMobileSidebar, setShowMobileSidebar] = useState(true);
   const [workspaceMembers, setWorkspaceMembers] = useState<any[]>([]);
   const [loadingMembers, setLoadingMembers] = useState(false);
   const [selectedAssignees, setSelectedAssignees] = useState<any[]>(
@@ -698,7 +712,7 @@ function TaskEditDialogComponent({
       ];
     }
 
-    return allMentionOptions.filter((option) => {
+    const filtered = allMentionOptions.filter((option) => {
       const searchTexts = [option.label, option.subtitle || ''];
 
       // Try exact match first (case-insensitive with diacritics normalized)
@@ -715,6 +729,22 @@ function TaskEditDialogComponent({
         normalizedTexts.some((text) => text.includes(word))
       );
     });
+
+    // If no matches found and query is not empty, add external user option
+    if (filtered.length === 0 && rawQuery) {
+      return [
+        {
+          id: `external-${rawQuery}`,
+          label: rawQuery,
+          subtitle: 'Not a workspace member',
+          avatarUrl: null,
+          type: 'external-user' as const,
+          payload: { displayName: rawQuery, isExternal: true },
+        },
+      ];
+    }
+
+    return filtered;
   }, [
     allMentionOptions,
     mentionState.query,
@@ -910,10 +940,17 @@ function TaskEditDialogComponent({
         closeSlashMenu();
       }
 
-      const mentionMatch = contextText.match(/(?:^|\s)(@([^\s]*))$/);
+      // Support both @username and @"Name With Spaces"
+      const mentionMatch = contextText.match(
+        /(?:^|\s)(@(?:"([^"]*)"|([^\s]*)))$/
+      );
       if (mentionMatch) {
         const matched = mentionMatch[1] || '';
-        const query = mentionMatch[2] || '';
+        // Extract query from either quoted (group 2) or unquoted (group 3) match
+        const query =
+          mentionMatch[2] !== undefined
+            ? mentionMatch[2]
+            : mentionMatch[3] || '';
         const rangeFrom = from - matched.length;
         const nextState: SuggestionState = {
           open: true,
@@ -1361,7 +1398,8 @@ function TaskEditDialogComponent({
                         const isActive = optionCursor === mentionHighlightIndex;
                         const typeMeta = mentionTypeStyles[option.type];
                         const fallbackGlyph =
-                          option.type === 'user'
+                          option.type === 'user' ||
+                          option.type === 'external-user'
                             ? (option.label || '')
                                 .split(/\s+/)
                                 .map((part) => part?.[0]?.toUpperCase() ?? '')
@@ -1377,7 +1415,9 @@ function TaskEditDialogComponent({
                                 ? 'Project'
                                 : option.type === 'date'
                                   ? 'Date'
-                                  : 'Task';
+                                  : option.type === 'external-user'
+                                    ? 'Guest'
+                                    : 'Task';
 
                         return (
                           <button
@@ -1423,6 +1463,8 @@ function TaskEditDialogComponent({
                                 <CircleCheck className="h-3.5 w-3.5" />
                               ) : option.type === 'date' ? (
                                 <Calendar className="h-3.5 w-3.5" />
+                              ) : option.type === 'external-user' ? (
+                                <User className="h-3.5 w-3.5" />
                               ) : (
                                 <span className="truncate">
                                   {fallbackGlyph}
@@ -2956,7 +2998,7 @@ function TaskEditDialogComponent({
           }}
         >
           {/* Main content area - Task title and description */}
-          <div className="flex min-w-0 flex-1 flex-col bg-background">
+          <div className="flex min-w-0 flex-1 flex-col bg-background transition-all duration-300">
             {/* Enhanced Header with gradient */}
             <div className="flex items-center justify-between border-b bg-gradient-to-r from-dynamic-orange/5 via-background to-background px-4 py-3 backdrop-blur-sm md:px-8 md:py-4">
               <div className="flex items-center gap-2 md:gap-3">
@@ -3001,6 +3043,20 @@ function TaskEditDialogComponent({
                     <Trash className="h-4 w-4" />
                   </Button>
                 )}
+                <Button
+                  variant={showMobileSidebar ? 'secondary' : 'ghost'}
+                  size="icon"
+                  className={cn(
+                    'h-7 w-7 transition-all',
+                    showMobileSidebar
+                      ? 'bg-dynamic-orange/10 text-dynamic-orange hover:bg-dynamic-orange/20'
+                      : 'text-muted-foreground hover:text-foreground'
+                  )}
+                  onClick={() => setShowMobileSidebar(!showMobileSidebar)}
+                  title={showMobileSidebar ? 'Hide sidebar' : 'Show sidebar'}
+                >
+                  <Settings className="h-4 w-4" />
+                </Button>
                 <Button
                   variant="ghost"
                   size="icon"
@@ -3179,48 +3235,43 @@ function TaskEditDialogComponent({
             </div>
           </div>
 
-          {/* Simplified Right sidebar - hidden on mobile by default */}
-          <div
-            className={cn(
-              'fixed inset-y-0 right-0 z-50 flex w-full flex-col border-l bg-background shadow-lg transition-transform duration-300 sm:w-[380px] md:relative md:z-auto md:translate-x-0 md:bg-gradient-to-b md:from-muted/20 md:to-muted/5 md:shadow-none',
-              showMobileSidebar
-                ? 'translate-x-0'
-                : 'translate-x-full md:translate-x-0'
-            )}
-          >
-            {/* Sidebar header with icon */}
-            <div className="border-border/50 border-b bg-gradient-to-b from-background/95 to-background/80 px-6 py-4 backdrop-blur-md">
-              <div className="flex items-center justify-between gap-2">
-                <div className="flex items-center gap-2.5">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-dynamic-orange/10">
-                    <Settings className="h-4 w-4 text-dynamic-orange" />
+          {/* Simplified Right sidebar - toggleable */}
+          {showMobileSidebar && (
+            <div className="fixed inset-y-0 right-0 z-50 flex w-full flex-col border-l bg-background shadow-lg transition-all duration-300 sm:w-[380px] md:relative md:z-auto md:w-[380px] md:bg-gradient-to-b md:from-muted/20 md:to-muted/5 md:shadow-none">
+              {/* Sidebar header with icon */}
+              <div className="border-border/50 border-b bg-gradient-to-b from-background/95 to-background/80 px-6 py-4 backdrop-blur-md">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2.5">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-dynamic-orange/10">
+                      <Settings className="h-4 w-4 text-dynamic-orange" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-foreground text-sm leading-none tracking-tight">
+                        Task Options
+                      </h3>
+                      <p className="mt-1 text-muted-foreground text-xs">
+                        Configure task settings
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <h3 className="font-semibold text-foreground text-sm leading-none tracking-tight">
-                      Task Options
-                    </h3>
-                    <p className="mt-1 text-muted-foreground text-xs">
-                      Configure task settings
-                    </p>
-                  </div>
+                  {/* Close sidebar button */}
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 shrink-0"
+                    onClick={() => setShowMobileSidebar(false)}
+                    title="Close sidebar"
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
                 </div>
-                {/* Close button for mobile */}
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-8 w-8 shrink-0 md:hidden"
-                  onClick={() => setShowMobileSidebar(false)}
-                >
-                  <X className="h-4 w-4" />
-                </Button>
               </div>
-            </div>
 
-            <div className="scrollbar-thin flex-1 overflow-y-auto">
-              <div className="space-y-4 p-4 md:space-y-5 md:p-6">
-                {/* Essential Options - Always Visible */}
-                {/* List Selection */}
-                <div className="space-y-2.5 rounded-lg border border-border/60 bg-gradient-to-br from-muted/30 to-muted/10 p-3.5 shadow-sm transition-shadow hover:shadow-md">
+              <div className="scrollbar-thin flex-1 overflow-y-auto">
+                <div className="space-y-4 p-4 md:space-y-5 md:p-6">
+                  {/* Essential Options - Always Visible */}
+                  {/* List Selection */}
+                  <div className="space-y-2.5 rounded-lg border border-border/60 bg-gradient-to-br from-muted/30 to-muted/10 p-3.5 shadow-sm transition-shadow hover:shadow-md">
                   <Label className="flex items-center gap-2 font-semibold text-foreground text-sm">
                     <div className="flex h-5 w-5 items-center justify-center rounded-md bg-dynamic-orange/15">
                       <ListTodo className="h-3.5 w-3.5 text-dynamic-orange" />
@@ -3982,13 +4033,13 @@ function TaskEditDialogComponent({
                     </div>
                   </div>
                 )}
+                </div>
               </div>
             </div>
-          </div>
+          )}
 
-          {/* Mobile floating action buttons */}
-          <div className="fixed right-4 bottom-4 z-40 flex flex-col gap-2 md:hidden">
-            {/* Save button */}
+          {/* Mobile floating save button */}
+          <div className="fixed right-4 bottom-4 z-40 md:hidden">
             <Button
               variant="default"
               size="lg"
@@ -4002,18 +4053,9 @@ function TaskEditDialogComponent({
                 <Check className="h-6 w-6" />
               )}
             </Button>
-            {/* Options button */}
-            <Button
-              variant="secondary"
-              size="lg"
-              onClick={() => setShowMobileSidebar(true)}
-              className="h-14 w-14 rounded-full shadow-lg"
-            >
-              <Settings className="h-6 w-6" />
-            </Button>
           </div>
 
-          {/* Mobile overlay */}
+          {/* Overlay when sidebar is open */}
           {showMobileSidebar && (
             <button
               type="button"
