@@ -3,13 +3,14 @@ import type { FinanceDashboardSearchParams } from '@tuturuuu/ui/finance/shared/m
 import StatisticCard from '@tuturuuu/ui/finance/statistics/card';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import dayjs, { type OpUnitType } from 'dayjs';
+import { TrendingDown } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
 
 const enabled = true;
 
 export default async function ExpenseStatistics({
   wsId,
-  searchParams: { showFinanceStats = true, view, startDate, endDate } = {},
+  searchParams: { view, startDate, endDate } = {},
 }: {
   wsId: string;
   searchParams?: FinanceDashboardSearchParams;
@@ -44,15 +45,10 @@ export default async function ExpenseStatistics({
   return (
     <StatisticCard
       title={t('finance-overview.total-expense')}
-      value={
-        showFinanceStats
-          ? Intl.NumberFormat('vi-VN', {
-              style: 'currency',
-              currency: 'VND',
-              signDisplay: 'exceptZero',
-            }).format(expense || 0)
-          : '***'
-      }
+      value={expense || 0}
+      icon={<TrendingDown className="h-5 w-5" />}
+      currency="VND"
+      locale="vi-VN"
     />
   );
 }

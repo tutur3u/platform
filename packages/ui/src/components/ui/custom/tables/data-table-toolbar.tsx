@@ -84,11 +84,11 @@ export function DataTableToolbar<TData>({
         <Dialog>
           <DialogTrigger asChild>
             <Button variant="outline" size="sm" className="h-8 w-full md:w-fit">
-              <Upload className="h-4 w-4" />
+              <Download className="h-4 w-4" />
               {t?.('common.import')}
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-sm">{importContent}</DialogContent>
+          <DialogContent className="max-w-4xl">{importContent}</DialogContent>
         </Dialog>
       )}
 
@@ -100,7 +100,7 @@ export function DataTableToolbar<TData>({
               size="sm"
               className="ml-auto h-8 w-full md:w-fit"
             >
-              <Download className="h-4 w-4" />
+              <Upload className="h-4 w-4" />
               {t?.('common.export')}
             </Button>
           </DialogTrigger>

@@ -64,7 +64,7 @@ export function Combobox({
     if (selected) return;
     if (useFirstValueAsDefault && options.length > 0)
       onChange?.(options?.[0]?.value ?? '');
-  }, [onChange, selected, options]);
+  }, [onChange, selected, options, useFirstValueAsDefault]);
 
   const selectedLabel =
     mode === 'single'
@@ -81,7 +81,7 @@ export function Combobox({
 
   return (
     <div className={cn('block', className)}>
-      <Popover open={open} onOpenChange={setOpen}>
+      <Popover open={open} onOpenChange={setOpen} modal={true}>
         <PopoverTrigger asChild>
           <Button
             type="button"
@@ -98,7 +98,11 @@ export function Combobox({
             <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+        <PopoverContent
+          className="z-[9999] w-[--radix-popover-trigger-width] p-0"
+          align="start"
+          sideOffset={4}
+        >
           <Command
             filter={(value, search) => {
               if (value.toLowerCase().includes(search.toLowerCase())) return 1;
@@ -140,7 +144,15 @@ export function Combobox({
                 </>
               )}
             </CommandEmpty>
-            <CommandList>
+            <CommandList
+              className="max-h-[200px] overflow-y-auto overscroll-contain"
+              style={
+                {
+                  touchAction: 'pan-y',
+                  WebkitOverflowScrolling: 'touch',
+                } as React.CSSProperties
+              }
+            >
               <CommandGroup>
                 {options.map((option) => (
                   <CommandItem

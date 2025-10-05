@@ -1,6 +1,10 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
 import type { Transaction } from '@tuturuuu/types/primitives/Transaction';
 import { CustomDataTable } from '@tuturuuu/ui/custom/tables/custom-data-table';
+import { BudgetAlerts } from '@tuturuuu/ui/finance/budgets/budget-alerts';
+import { DailyTotalChart } from '@tuturuuu/ui/finance/shared/charts/daily-total-chart';
+import { MonthlyTotalChart } from '@tuturuuu/ui/finance/shared/charts/monthly-total-chart';
+import { DashboardHeader } from '@tuturuuu/ui/finance/shared/dashboard-header';
 import { Filter } from '@tuturuuu/ui/finance/shared/filter';
 import LoadingStatisticCard from '@tuturuuu/ui/finance/shared/loaders/statistics';
 import type { FinanceDashboardSearchParams } from '@tuturuuu/ui/finance/shared/metrics';
@@ -13,6 +17,7 @@ import TransactionsStatistics from '@tuturuuu/ui/finance/statistics/transactions
 import WalletsStatistics from '@tuturuuu/ui/finance/statistics/wallets';
 import { transactionColumns } from '@tuturuuu/ui/finance/transactions/columns';
 import { Suspense } from 'react';
+import { Separator } from '@tuturuuu/ui/separator';
 
 interface Props {
   wsId: string;
@@ -22,8 +27,8 @@ interface Props {
 export default async function FinancePage({ wsId, searchParams }: Props) {
   const sp = searchParams;
 
-  // const { data: dailyData } = await getDailyData(wsId);
-  // const { data: monthlyData } = await getMonthlyData(wsId);
+  const { data: dailyData } = await getDailyData(wsId);
+  const { data: monthlyData } = await getMonthlyData(wsId);
 
   const { data: recentTransactions } = await getRecentTransactions(wsId);
 
@@ -36,8 +41,11 @@ export default async function FinancePage({ wsId, searchParams }: Props) {
 
   return (
     <>
+      <DashboardHeader />
+
       <Filter className="mb-4" />
-      {/* <FinanceMetrics wsId={wsId} searchParams={sp} /> */}
+
+      <BudgetAlerts wsId={wsId} className="mb-4" />
 
       <div className="grid items-end gap-4 md:grid-cols-2 xl:grid-cols-4">
         <Suspense fallback={<LoadingStatisticCard className="md:col-span-2" />}>
@@ -68,16 +76,18 @@ export default async function FinancePage({ wsId, searchParams }: Props) {
           <InvoicesStatistics wsId={wsId} searchParams={sp} />
         </Suspense>
 
-        {/* <Suspense fallback={<LoadingStatisticCard className="col-span-full" />}>
-          <Separator className="col-span-full mb-4" />
-          <DailyTotalChart data={dailyData} className="col-span-full" />
-          <Separator className="col-span-full my-4" />
-          <MonthlyTotalChart
-            data={monthlyData}
-            className="col-span-full mb-8"
-          />
-          <Separator className="col-span-full my-4" />
-        </Suspense> */}
+        <Separator className="col-span-full my-4" />
+
+        <DailyTotalChart data={dailyData} className="col-span-full" />
+
+        <Separator className="col-span-full my-4" />
+
+        <MonthlyTotalChart
+          data={monthlyData}
+          className="col-span-full mb-8"
+        />
+
+        <Separator className="col-span-full my-4" />
 
         <CustomDataTable
           data={transactionsData}
@@ -97,31 +107,31 @@ export default async function FinancePage({ wsId, searchParams }: Props) {
   );
 }
 
-// async function getDailyData(wsId: string) {
-//   const supabase = await createClient();
+async function getDailyData(wsId: string) {
+  const supabase = await createClient();
 
-//   const queryBuilder = supabase.rpc('get_daily_income_expense', {
-//     _ws_id: wsId,
-//   });
+  const queryBuilder = supabase.rpc('get_daily_income_expense', {
+    _ws_id: wsId,
+  });
 
-//   const { data, error, count } = await queryBuilder;
-//   if (error) throw error;
+  const { data, error, count } = await queryBuilder;
+  if (error) throw error;
 
-//   return { data, count };
-// }
+  return { data: data || [], count };
+}
 
-// async function getMonthlyData(wsId: string) {
-//   const supabase = await createClient();
+async function getMonthlyData(wsId: string) {
+  const supabase = await createClient();
 
-//   const queryBuilder = supabase.rpc('get_monthly_income_expense', {
-//     _ws_id: wsId,
-//   });
+  const queryBuilder = supabase.rpc('get_monthly_income_expense', {
+    _ws_id: wsId,
+  });
 
-//   const { data, error, count } = await queryBuilder;
-//   if (error) throw error;
+  const { data, error, count } = await queryBuilder;
+  if (error) throw error;
 
-//   return { data, count };
-// }
+  return { data: data || [], count };
+}
 
 async function getRecentTransactions(wsId: string) {
   const supabase = await createClient();

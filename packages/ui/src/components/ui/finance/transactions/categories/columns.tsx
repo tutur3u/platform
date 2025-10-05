@@ -4,12 +4,17 @@ import type { ColumnDef } from '@tanstack/react-table';
 import type { TransactionCategory } from '@tuturuuu/types/primitives/TransactionCategory';
 import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
 import { TransactionCategoryRowActions } from '@tuturuuu/ui/finance/transactions/categories/row-actions';
+import { ArrowDownCircle, ArrowUpCircle } from 'lucide-react';
+import { useLocale } from 'next-intl';
 import moment from 'moment';
 
 export const transactionCategoryColumns = (
   t: any,
   namespace: string | undefined
-): ColumnDef<TransactionCategory>[] => [
+): ColumnDef<TransactionCategory>[] => {
+  const locale = useLocale();
+
+  return [
   // {
   //   id: 'select',
   //   header: ({ table }) => (
@@ -51,7 +56,16 @@ export const transactionCategoryColumns = (
         title={t(`${namespace}.name`)}
       />
     ),
-    cell: ({ row }) => <div>{row.getValue('name') || '-'}</div>,
+    cell: ({ row }) => (
+      <div className="flex items-center gap-2">
+        {row.original.is_expense ? (
+          <ArrowDownCircle className="h-5 w-5 text-dynamic-red" />
+        ) : (
+          <ArrowUpCircle className="h-5 w-5 text-dynamic-green" />
+        )}
+        <span className="font-medium">{row.getValue('name') || '-'}</span>
+      </div>
+    ),
   },
   {
     accessorKey: 'amount',
@@ -59,12 +73,28 @@ export const transactionCategoryColumns = (
       <DataTableColumnHeader
         t={t}
         column={column}
-        title={t(`${namespace}.amount`)}
+        title={t(`${namespace}.total_amount`)}
       />
     ),
-    cell: ({ row }) => (
-      <div className="font-semibold">{row.getValue('amount')}</div>
-    ),
+    cell: ({ row }) => {
+      const amount = Number(row.getValue('amount')) || 0;
+      const isExpense = row.original.is_expense;
+
+      return (
+        <div
+          className={`font-semibold ${
+            isExpense ? 'text-dynamic-red' : 'text-dynamic-green'
+          }`}
+        >
+          {new Intl.NumberFormat(locale, {
+            style: 'currency',
+            currency: 'VND',
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 0,
+          }).format(Math.abs(amount))}
+        </div>
+      );
+    },
   },
   {
     accessorKey: 'is_expense',
@@ -111,3 +141,4 @@ export const transactionCategoryColumns = (
     cell: ({ row }) => <TransactionCategoryRowActions row={row} />,
   },
 ];
+};

@@ -3187,13 +3187,13 @@ function TaskEditDialogComponent({
                 </div>
 
                 {/* Task Description - Full editor experience with subtle border */}
-                <div ref={editorRef} className="h-full">
+                <div ref={editorRef} className="flex-1 pb-8">
                   <RichTextEditor
                     content={description}
                     onChange={setDescription}
                     writePlaceholder="Add a detailed description, attach files, or use markdown..."
                     titlePlaceholder=""
-                    className="h-full border-0 bg-transparent px-4 focus-visible:outline-0 focus-visible:ring-0 md:px-8"
+                    className="min-h-[400px] border-0 bg-transparent px-4 focus-visible:outline-0 focus-visible:ring-0 md:px-8"
                     workspaceId={workspaceId || undefined}
                     onImageUpload={handleImageUpload}
                     flushPendingRef={flushEditorPendingRef}

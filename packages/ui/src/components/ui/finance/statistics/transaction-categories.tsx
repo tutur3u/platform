@@ -2,13 +2,13 @@ import { createClient } from '@tuturuuu/supabase/next/server';
 import type { FinanceDashboardSearchParams } from '@tuturuuu/ui/finance/shared/metrics';
 import StatisticCard from '@tuturuuu/ui/finance/statistics/card';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
+import { FolderTree } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
 
 const enabled = true;
 
 export default async function TransactionCategoriesStatistics({
   wsId,
-  searchParams: { showFinanceStats = true } = {},
 }: {
   wsId: string;
   searchParams?: FinanceDashboardSearchParams;
@@ -35,8 +35,9 @@ export default async function TransactionCategoriesStatistics({
   return (
     <StatisticCard
       title={t('workspace-finance-tabs.categories')}
-      value={showFinanceStats ? categoriesCount : '***'}
+      value={categoriesCount}
       href={`/${wsId}/finance/transactions/categories`}
+      icon={<FolderTree className="h-5 w-5" />}
     />
   );
 }

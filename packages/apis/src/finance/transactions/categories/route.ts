@@ -12,8 +12,9 @@ export async function GET(_: Request, { params }: Params) {
   const { wsId } = await params;
 
   const { data, error } = await supabase
-    .rpc('get_transaction_categories_with_amount', {}, { count: 'exact' })
-    .eq('ws_id', wsId)
+    .rpc('get_transaction_categories_with_amount_by_workspace', {
+      p_ws_id: wsId,
+    })
     .order('name', { ascending: true });
 
   if (error) {

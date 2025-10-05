@@ -1,17 +1,11 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
-import { CalendarIcon, DollarSign, User, Wallet } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
 import { joinPath } from '@tuturuuu/utils/path-helper';
 import 'dayjs/locale/vi';
-import moment from 'moment';
-import Image from 'next/image';
-import Link from 'next/link';
-import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
-import { Card } from '../../../card';
-import { Bill } from './bill';
-import { DetailObjects } from './objects';
+import { notFound } from 'next/navigation';
+import { TransactionDetailsClientPage } from './transaction-details-client-page';
 
 interface Props {
   wsId: string;
@@ -22,10 +16,9 @@ interface Props {
 export default async function TransactionDetailsPage({
   wsId,
   transactionId,
-  locale,
 }: Props) {
   const t = await getTranslations();
-  const { objects, transaction } = await getData(wsId, transactionId);
+  const { objects, transaction, tags } = await getData(wsId, transactionId);
 
   if (!transaction) notFound();
 
@@ -41,125 +34,13 @@ export default async function TransactionDetailsPage({
         createDescription={t('ws-transactions.create_description')}
       />
       <Separator className="my-4" />
-      <div className="grid h-fit gap-4 md:grid-cols-2">
-        <Card className="space-y-4 overflow-auto">
-          <div className="grid h-fit gap-2 p-4">
-            <div className="font-semibold text-lg">
-              {t('invoices.basic-info')}
-            </div>
-            <Separator />
-            <DetailItem
-              icon={<Wallet className="h-5 w-5" />}
-              label={t('transaction-data-table.wallet')}
-              value={transaction?.wallet_name}
-              href={`/${wsId}/finance/wallets/${transaction?.wallet_id}`}
-            />
-            <DetailItem
-              icon={<DollarSign className="h-5 w-5" />}
-              label={t('transaction-data-table.amount')}
-              value={Intl.NumberFormat(locale, {
-                style: 'currency',
-                currency: 'VND',
-              }).format(transaction.amount || 0)}
-            />
-            <DetailItem
-              icon={<User className="h-5 w-5" />}
-              label={t('transaction-data-table.user')}
-              value={
-                transaction.workspace_users ? (
-                  <div className="inline-flex items-center gap-2 rounded-full border bg-muted/50 px-3 py-1.5">
-                    {transaction.workspace_users.avatar_url && (
-                      <Image
-                        src={
-                          transaction.workspace_users.avatar_url ||
-                          '/placeholder.svg'
-                        }
-                        alt={
-                          transaction.workspace_users.full_name || 'User avatar'
-                        }
-                        width={20}
-                        height={20}
-                        className="rounded-full object-cover ring-1 ring-border"
-                      />
-                    )}
-                    <div className="flex min-w-0 flex-col">
-                      {transaction.workspace_users.full_name && (
-                        <span className="truncate font-medium text-sm leading-tight">
-                          {transaction.workspace_users.full_name}
-                        </span>
-                      )}
-                      {transaction.workspace_users.email && (
-                        <span className="truncate text-muted-foreground text-xs leading-tight">
-                          {transaction.workspace_users.email}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                ) : (
-                  '-'
-                )
-              }
-            />
-            <DetailItem
-              icon={<CalendarIcon className="h-5 w-5" />}
-              label={t('transaction-data-table.taken_at')}
-              value={
-                transaction.created_at
-                  ? moment(transaction.created_at).format(
-                      'DD/MM/YYYY, HH:mm:ss'
-                    )
-                  : '-'
-              }
-            />
-          </div>
 
-          {objects.length > 0 && (
-            <DetailObjects
-              wsId={wsId}
-              transactionId={transactionId}
-              objects={objects}
-            />
-          )}
-        </Card>
-
-        <Card className="grid h-fit gap-4 p-4">
-          <div className="grid h-full content-start gap-2">
-            <div className="font-semibold text-lg">
-              {t('ai_chat.upload_files')}
-            </div>
-            <Separator className="mb-2" />
-            <Bill wsId={wsId} transactionId={transactionId} />
-          </div>
-        </Card>
-      </div>
-    </div>
-  );
-}
-
-function DetailItem({
-  icon,
-  label,
-  value,
-  href,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  value: React.ReactNode;
-  href?: string;
-}) {
-  if (!value) return undefined;
-  if (href)
-    return (
-      <Link href={href} className="flex items-center gap-1 hover:underline">
-        {icon}
-        <span className="font-semibold">{label}:</span> {value}
-      </Link>
-    );
-
-  return (
-    <div className="flex items-center gap-1">
-      {icon}
-      <span className="font-semibold">{label}:</span> {value}
+      <TransactionDetailsClientPage
+        wsId={wsId}
+        transaction={transaction}
+        tags={tags}
+        objects={objects}
+      />
     </div>
   );
 }
@@ -167,17 +48,32 @@ function DetailItem({
 async function getData(wsId: string, transactionId: string) {
   const supabase = await createClient();
 
-  const { data: transaction, error: transactionError } = await supabase
+  const { data: rawTransaction, error: transactionError } = await supabase
     .from('wallet_transactions')
     .select(
-      '*, ...transaction_categories(category:name), ...workspace_wallets(wallet_name:name), workspace_users!wallet_transactions_creator_id_fkey(id, full_name, avatar_url, email)'
+      '*, transaction_categories(category:name), workspace_wallets(wallet_name:name), workspace_users!wallet_transactions_creator_id_fkey(id, full_name, avatar_url, email)'
     )
     .eq('id', transactionId)
     .single();
 
-  console.log('TRANSACTION DETAILS: ', transaction);
-
   if (transactionError) throw transactionError;
+
+  // Flatten the nested data for easier access
+  const transaction = {
+    ...rawTransaction,
+    category: (rawTransaction as any).transaction_categories?.category,
+    wallet_name: (rawTransaction as any).workspace_wallets?.wallet_name,
+  };
+
+  // Fetch tags for this transaction
+  const { data: transactionTags } = await supabase
+    .from('wallet_transaction_tags')
+    .select('tag_id, transaction_tags(id, name, color)')
+    .eq('transaction_id', transactionId);
+
+  const tags =
+    transactionTags?.map((tt: any) => tt.transaction_tags).filter(Boolean) ||
+    [];
 
   const { data: objects, error: objectError } = await supabase.storage
     .from('workspaces')
@@ -216,5 +112,5 @@ async function getData(wsId: string, transactionId: string) {
     }))
   );
 
-  return { objects, transaction, previews };
+  return { objects, transaction, previews, tags };
 }

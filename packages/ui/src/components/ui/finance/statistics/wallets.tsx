@@ -2,13 +2,13 @@ import { createClient } from '@tuturuuu/supabase/next/server';
 import type { FinanceDashboardSearchParams } from '@tuturuuu/ui/finance/shared/metrics';
 import StatisticCard from '@tuturuuu/ui/finance/statistics/card';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
+import { Wallet2 } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
 
 const enabled = true;
 
 export default async function WalletsStatistics({
   wsId,
-  searchParams: { showFinanceStats = true } = {},
 }: {
   wsId: string;
   searchParams?: FinanceDashboardSearchParams;
@@ -35,8 +35,9 @@ export default async function WalletsStatistics({
   return (
     <StatisticCard
       title={t('workspace-finance-tabs.wallets')}
-      value={showFinanceStats ? walletsCount : '***'}
+      value={walletsCount}
       href={`/${wsId}/finance/wallets`}
+      icon={<Wallet2 className="h-5 w-5" />}
     />
   );
 }

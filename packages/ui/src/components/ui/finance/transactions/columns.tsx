@@ -155,14 +155,26 @@ export const transactionColumns = (
           title={t(`${namespace}.amount`)}
         />
       ),
-      cell: ({ row }) => (
-        <div className="min-w-32">
-          {Intl.NumberFormat('vi-VN', {
-            style: 'currency',
-            currency: 'VND',
-          }).format(row.getValue('amount'))}
-        </div>
-      ),
+      cell: ({ row }) => {
+        const amount = Number(row.getValue('amount')) || 0;
+        const isExpense = amount < 0;
+
+        return (
+          <div
+            className={`min-w-32 font-semibold ${
+              isExpense ? 'text-dynamic-red' : 'text-dynamic-green'
+            }`}
+          >
+            {Intl.NumberFormat(locale, {
+              style: 'currency',
+              currency: 'VND',
+              minimumFractionDigits: 0,
+              maximumFractionDigits: 0,
+              signDisplay: 'always',
+            }).format(amount)}
+          </div>
+        );
+      },
     },
     {
       accessorKey: 'report_opt_in',
