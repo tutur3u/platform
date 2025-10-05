@@ -3272,767 +3272,775 @@ function TaskEditDialogComponent({
                   {/* Essential Options - Always Visible */}
                   {/* List Selection */}
                   <div className="space-y-2.5 rounded-lg border border-border/60 bg-gradient-to-br from-muted/30 to-muted/10 p-3.5 shadow-sm transition-shadow hover:shadow-md">
-                  <Label className="flex items-center gap-2 font-semibold text-foreground text-sm">
-                    <div className="flex h-5 w-5 items-center justify-center rounded-md bg-dynamic-orange/15">
-                      <ListTodo className="h-3.5 w-3.5 text-dynamic-orange" />
-                    </div>
-                    List
-                  </Label>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button
-                        variant="outline"
-                        className="h-8 w-full justify-between text-xs transition-all hover:border-dynamic-orange/50 hover:bg-dynamic-orange/5 md:text-sm"
-                        title="Priority – Alt+1 Urgent, Alt+2 High, Alt+3 Medium, Alt+4 Low, Alt+0 Clear"
-                      >
-                        <span className="truncate">
-                          {availableLists.find(
-                            (list) => list.id === selectedListId
-                          )?.name || 'Select list'}
-                        </span>
-                        <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent className="w-[320px] md:w-[376px]">
-                      {availableLists.map((list) => (
-                        <DropdownMenuItem
-                          key={list.id}
-                          onClick={() => setSelectedListId(list.id)}
-                          className={cn(
-                            'cursor-pointer transition-colors',
-                            selectedListId === list.id &&
-                              'bg-dynamic-orange/10 font-medium text-dynamic-orange'
-                          )}
-                        >
-                          <Check
-                            className={cn(
-                              'h-4 w-4',
-                              selectedListId === list.id
-                                ? 'opacity-100'
-                                : 'opacity-0'
-                            )}
-                          />
-                          {list.name}
-                        </DropdownMenuItem>
-                      ))}
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
-
-                {/* Priority (Dropdown) */}
-                <div className="space-y-2.5 rounded-lg border border-border/60 bg-gradient-to-br from-muted/30 to-muted/10 p-3.5 shadow-sm transition-shadow hover:shadow-md">
-                  <Label className="flex items-center gap-2 font-semibold text-foreground text-sm">
-                    <div className="flex h-5 w-5 items-center justify-center rounded-md bg-dynamic-orange/15">
-                      <Flag className="h-3.5 w-3.5 text-dynamic-orange" />
-                    </div>
-                    Priority
-                  </Label>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button
-                        variant="outline"
-                        className={cn(
-                          'h-8 w-full justify-between text-xs transition-all hover:border-dynamic-orange/50 hover:bg-dynamic-orange/5 md:text-sm',
-                          priority === 'critical' &&
-                            'border-dynamic-red bg-dynamic-red/10 font-semibold text-dynamic-red hover:bg-dynamic-red/20'
-                        )}
-                      >
-                        <span className="truncate">
-                          {priority
-                            ? priority === 'critical'
-                              ? '🔥 Urgent'
-                              : priority === 'high'
-                                ? 'High'
-                                : priority === 'normal'
-                                  ? 'Medium'
-                                  : 'Low'
-                            : 'Set priority'}
-                        </span>
-                        <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent className="w-[220px]">
-                      {[
-                        {
-                          value: 'critical',
-                          label: '🔥 Urgent',
-                          dot: 'bg-dynamic-red',
-                          className: 'font-semibold text-dynamic-red',
-                        },
-                        {
-                          value: 'high',
-                          label: 'High',
-                          dot: 'bg-dynamic-orange',
-                          className: '',
-                        },
-                        {
-                          value: 'normal',
-                          label: 'Medium',
-                          dot: 'bg-dynamic-yellow',
-                          className: '',
-                        },
-                        {
-                          value: 'low',
-                          label: 'Low',
-                          dot: 'bg-dynamic-blue',
-                          className: '',
-                        },
-                      ].map((opt) => (
-                        <DropdownMenuItem
-                          key={opt.value}
-                          onClick={() => setPriority(opt.value as TaskPriority)}
-                          className={cn(
-                            'cursor-pointer',
-                            opt.className,
-                            priority === opt.value &&
-                              opt.value === 'critical' &&
-                              'bg-dynamic-red/10'
-                          )}
-                        >
-                          <span
-                            className={cn(
-                              'mr-2 inline-block h-2 w-2 rounded-full',
-                              opt.dot
-                            )}
-                          />
-                          <span className="flex-1">{opt.label}</span>
-                          {priority === (opt.value as any) && (
-                            <Check className="h-4 w-4" />
-                          )}
-                        </DropdownMenuItem>
-                      ))}
-                      <DropdownMenuItem
-                        onClick={() => setPriority(null)}
-                        className="cursor-pointer text-dynamic-red focus:text-dynamic-red"
-                      >
-                        <X className="mr-2 h-4 w-4" /> Clear priority
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
-
-                {/* Estimation (Dropdown) */}
-                {boardConfig?.estimation_type && (
-                  <div className="space-y-2.5 rounded-lg border border-border/60 bg-gradient-to-br from-muted/30 to-muted/10 p-3.5 shadow-sm transition-shadow hover:shadow-md">
                     <Label className="flex items-center gap-2 font-semibold text-foreground text-sm">
                       <div className="flex h-5 w-5 items-center justify-center rounded-md bg-dynamic-orange/15">
-                        <Timer className="h-3.5 w-3.5 text-dynamic-orange" />
+                        <ListTodo className="h-3.5 w-3.5 text-dynamic-orange" />
                       </div>
-                      Estimation
+                      List
                     </Label>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button
                           variant="outline"
                           className="h-8 w-full justify-between text-xs transition-all hover:border-dynamic-orange/50 hover:bg-dynamic-orange/5 md:text-sm"
-                          title="Estimation – Alt+Shift+0..7 set, Alt+Shift+X clear"
+                          title="Priority – Alt+1 Urgent, Alt+2 High, Alt+3 Medium, Alt+4 Low, Alt+0 Clear"
                         >
                           <span className="truncate">
-                            {typeof estimationPoints === 'number'
-                              ? mapEstimationPoints(
-                                  estimationPoints,
-                                  boardConfig.estimation_type
-                                )
-                              : 'Set estimation'}
+                            {availableLists.find(
+                              (list) => list.id === selectedListId
+                            )?.name || 'Select list'}
+                          </span>
+                          <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent className="w-[320px] md:w-[376px]">
+                        {availableLists.map((list) => (
+                          <DropdownMenuItem
+                            key={list.id}
+                            onClick={() => setSelectedListId(list.id)}
+                            className={cn(
+                              'cursor-pointer transition-colors',
+                              selectedListId === list.id &&
+                                'bg-dynamic-orange/10 font-medium text-dynamic-orange'
+                            )}
+                          >
+                            <Check
+                              className={cn(
+                                'h-4 w-4',
+                                selectedListId === list.id
+                                  ? 'opacity-100'
+                                  : 'opacity-0'
+                              )}
+                            />
+                            {list.name}
+                          </DropdownMenuItem>
+                        ))}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
+
+                  {/* Priority (Dropdown) */}
+                  <div className="space-y-2.5 rounded-lg border border-border/60 bg-gradient-to-br from-muted/30 to-muted/10 p-3.5 shadow-sm transition-shadow hover:shadow-md">
+                    <Label className="flex items-center gap-2 font-semibold text-foreground text-sm">
+                      <div className="flex h-5 w-5 items-center justify-center rounded-md bg-dynamic-orange/15">
+                        <Flag className="h-3.5 w-3.5 text-dynamic-orange" />
+                      </div>
+                      Priority
+                    </Label>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          variant="outline"
+                          className={cn(
+                            'h-8 w-full justify-between text-xs transition-all hover:border-dynamic-orange/50 hover:bg-dynamic-orange/5 md:text-sm',
+                            priority === 'critical' &&
+                              'border-dynamic-red bg-dynamic-red/10 font-semibold text-dynamic-red hover:bg-dynamic-red/20'
+                          )}
+                        >
+                          <span className="truncate">
+                            {priority
+                              ? priority === 'critical'
+                                ? '🔥 Urgent'
+                                : priority === 'high'
+                                  ? 'High'
+                                  : priority === 'normal'
+                                    ? 'Medium'
+                                    : 'Low'
+                              : 'Set priority'}
                           </span>
                           <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent className="w-[220px]">
-                        {estimationIndices.map((idx) => (
+                        {[
+                          {
+                            value: 'critical',
+                            label: '🔥 Urgent',
+                            dot: 'bg-dynamic-red',
+                            className: 'font-semibold text-dynamic-red',
+                          },
+                          {
+                            value: 'high',
+                            label: 'High',
+                            dot: 'bg-dynamic-orange',
+                            className: '',
+                          },
+                          {
+                            value: 'normal',
+                            label: 'Medium',
+                            dot: 'bg-dynamic-yellow',
+                            className: '',
+                          },
+                          {
+                            value: 'low',
+                            label: 'Low',
+                            dot: 'bg-dynamic-blue',
+                            className: '',
+                          },
+                        ].map((opt) => (
                           <DropdownMenuItem
-                            key={idx}
-                            onClick={() => updateEstimation(idx)}
-                            className="cursor-pointer"
+                            key={opt.value}
+                            onClick={() =>
+                              setPriority(opt.value as TaskPriority)
+                            }
+                            className={cn(
+                              'cursor-pointer',
+                              opt.className,
+                              priority === opt.value &&
+                                opt.value === 'critical' &&
+                                'bg-dynamic-red/10'
+                            )}
                           >
-                            <span className="flex-1">
-                              {mapEstimationPoints(
-                                idx,
-                                boardConfig.estimation_type
+                            <span
+                              className={cn(
+                                'mr-2 inline-block h-2 w-2 rounded-full',
+                                opt.dot
                               )}
-                            </span>
-                            {idx === estimationPoints && (
+                            />
+                            <span className="flex-1">{opt.label}</span>
+                            {priority === (opt.value as any) && (
                               <Check className="h-4 w-4" />
                             )}
                           </DropdownMenuItem>
                         ))}
                         <DropdownMenuItem
-                          onClick={() => updateEstimation(null)}
+                          onClick={() => setPriority(null)}
                           className="cursor-pointer text-dynamic-red focus:text-dynamic-red"
                         >
-                          <X className="mr-2 h-4 w-4" /> Clear estimation
+                          <X className="mr-2 h-4 w-4" /> Clear priority
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </div>
-                )}
 
-                {/* Quick Due Date */}
-                <div className="space-y-2.5 rounded-lg border border-border/60 bg-gradient-to-br from-muted/30 to-muted/10 p-3.5 shadow-sm transition-shadow hover:shadow-md">
-                  <Label className="flex items-center justify-between gap-2 font-semibold text-foreground text-sm">
-                    <span className="flex items-center gap-2">
-                      <div className="flex h-5 w-5 items-center justify-center rounded-md bg-dynamic-orange/15">
-                        <Calendar className="h-3.5 w-3.5 text-dynamic-orange" />
-                      </div>
-                      Due Date
-                    </span>
-                    <span className="flex items-center gap-3">
-                      {endDate && (
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleQuickDueDate(null)}
-                          disabled={isLoading}
-                          className="h-6 w-6 text-muted-foreground hover:text-dynamic-red"
-                          title="Clear due date"
-                        >
-                          <X className="h-3.5 w-3.5" />
-                        </Button>
-                      )}
-                    </span>
-                  </Label>
-                  <div className="grid grid-cols-2 gap-1.5 md:gap-2">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="xs"
-                      onClick={() => handleQuickDueDate(0)}
-                      disabled={isLoading}
-                      className="h-7 text-[11px] transition-all hover:border-dynamic-orange/50 hover:bg-dynamic-orange/5 md:text-xs"
-                      title="Today – Alt+T"
-                    >
-                      Today
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="xs"
-                      onClick={() => handleQuickDueDate(1)}
-                      disabled={isLoading}
-                      className="h-7 text-[11px] transition-all hover:border-dynamic-orange/50 hover:bg-dynamic-orange/5 md:text-xs"
-                      title="Tomorrow – Alt+M"
-                    >
-                      Tomorrow
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="xs"
-                      onClick={() => handleQuickDueDate(7)}
-                      disabled={isLoading}
-                      className="h-7 text-[11px] transition-all hover:border-dynamic-orange/50 hover:bg-dynamic-orange/5 md:text-xs"
-                      title="Next week – Alt+W"
-                    >
-                      Next week
-                    </Button>
-                  </div>
-                </div>
-
-                {/* Advanced Options Toggle */}
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="xs"
-                  onClick={() => setShowAdvancedOptions(!showAdvancedOptions)}
-                  className="h-8 w-full justify-between text-muted-foreground text-xs transition-all hover:bg-dynamic-orange/5 hover:text-dynamic-orange"
-                  title="Toggle advanced options – Alt+A"
-                >
-                  <span className="flex items-center gap-2">
-                    <Settings className="h-3 w-3" />
-                    {showAdvancedOptions ? 'Hide' : 'Show'} advanced options
-                  </span>
-                  <ChevronDown
-                    className={cn(
-                      'h-3 w-3 transition-transform',
-                      showAdvancedOptions && 'rotate-180'
-                    )}
-                  />
-                </Button>
-
-                {/* Advanced Options - Collapsible */}
-                {showAdvancedOptions && (
-                  <div className="slide-in-from-top-2 animate-in space-y-4 duration-200">
-                    {/* Custom Date Pickers */}
-                    <div className="space-y-2.5 rounded-lg border border-border/60 bg-gradient-to-br from-muted/30 to-muted/10 p-3.5 shadow-sm">
+                  {/* Estimation (Dropdown) */}
+                  {boardConfig?.estimation_type && (
+                    <div className="space-y-2.5 rounded-lg border border-border/60 bg-gradient-to-br from-muted/30 to-muted/10 p-3.5 shadow-sm transition-shadow hover:shadow-md">
                       <Label className="flex items-center gap-2 font-semibold text-foreground text-sm">
+                        <div className="flex h-5 w-5 items-center justify-center rounded-md bg-dynamic-orange/15">
+                          <Timer className="h-3.5 w-3.5 text-dynamic-orange" />
+                        </div>
+                        Estimation
+                      </Label>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button
+                            variant="outline"
+                            className="h-8 w-full justify-between text-xs transition-all hover:border-dynamic-orange/50 hover:bg-dynamic-orange/5 md:text-sm"
+                            title="Estimation – Alt+Shift+0..7 set, Alt+Shift+X clear"
+                          >
+                            <span className="truncate">
+                              {typeof estimationPoints === 'number'
+                                ? mapEstimationPoints(
+                                    estimationPoints,
+                                    boardConfig.estimation_type
+                                  )
+                                : 'Set estimation'}
+                            </span>
+                            <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent className="w-[220px]">
+                          {estimationIndices.map((idx) => (
+                            <DropdownMenuItem
+                              key={idx}
+                              onClick={() => updateEstimation(idx)}
+                              className="cursor-pointer"
+                            >
+                              <span className="flex-1">
+                                {mapEstimationPoints(
+                                  idx,
+                                  boardConfig.estimation_type
+                                )}
+                              </span>
+                              {idx === estimationPoints && (
+                                <Check className="h-4 w-4" />
+                              )}
+                            </DropdownMenuItem>
+                          ))}
+                          <DropdownMenuItem
+                            onClick={() => updateEstimation(null)}
+                            className="cursor-pointer text-dynamic-red focus:text-dynamic-red"
+                          >
+                            <X className="mr-2 h-4 w-4" /> Clear estimation
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+                  )}
+
+                  {/* Quick Due Date */}
+                  <div className="space-y-2.5 rounded-lg border border-border/60 bg-gradient-to-br from-muted/30 to-muted/10 p-3.5 shadow-sm transition-shadow hover:shadow-md">
+                    <Label className="flex items-center justify-between gap-2 font-semibold text-foreground text-sm">
+                      <span className="flex items-center gap-2">
                         <div className="flex h-5 w-5 items-center justify-center rounded-md bg-dynamic-orange/15">
                           <Calendar className="h-3.5 w-3.5 text-dynamic-orange" />
                         </div>
-                        Dates
-                      </Label>
-                      <div className="space-y-3">
-                        <div className="space-y-1">
-                          <Label className="font-normal text-muted-foreground text-xs">
-                            Start Date
-                          </Label>
-                          <DateTimePicker
-                            date={startDate}
-                            setDate={setStartDate}
-                            showTimeSelect={true}
-                            allowClear={true}
-                            showFooterControls={true}
-                          />
-                        </div>
-                        <div className="space-y-1">
-                          <Label className="font-normal text-muted-foreground text-xs">
-                            Due Date
-                          </Label>
-                          <DateTimePicker
-                            date={endDate}
-                            setDate={handleEndDateChange}
-                            showTimeSelect={true}
-                            allowClear={true}
-                            showFooterControls={true}
-                          />
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Estimation Section moved above as dropdown */}
-
-                    {/* Labels Section */}
-                    <div className="space-y-2.5 rounded-lg border border-border/60 bg-gradient-to-br from-muted/30 to-muted/10 p-3.5 shadow-sm">
-                      <Label className="flex items-center justify-between gap-2">
-                        <span className="flex items-center gap-2 font-semibold text-foreground text-sm">
-                          <div className="flex h-5 w-5 items-center justify-center rounded-md bg-dynamic-orange/15">
-                            <Tag className="h-3.5 w-3.5 text-dynamic-orange" />
-                          </div>
-                          Labels
-                        </span>
-                      </Label>
-                      {boardConfig && (
-                        <div className="space-y-2">
-                          <div className="flex items-center gap-2">
-                            <Input
-                              placeholder="New label name"
-                              value={newLabelName}
-                              onChange={(e) => setNewLabelName(e.target.value)}
-                              className="h-8 flex-1 text-xs transition-all focus:border-dynamic-orange/50"
-                            />
-                            <select
-                              className="h-8 rounded-md border bg-background px-2 text-xs transition-all hover:border-dynamic-orange/50 focus:border-dynamic-orange/50 focus:outline-none focus:ring-1 focus:ring-dynamic-orange/20"
-                              value={newLabelColor}
-                              onChange={(e) => setNewLabelColor(e.target.value)}
-                            >
-                              {[
-                                'red',
-                                'orange',
-                                'yellow',
-                                'green',
-                                'blue',
-                                'indigo',
-                                'purple',
-                                'pink',
-                                'gray',
-                              ].map((c) => (
-                                <option key={c} value={c}>
-                                  {c.charAt(0).toUpperCase() + c.slice(1)}
-                                </option>
-                              ))}
-                            </select>
-                            <Button
-                              type="button"
-                              size="xs"
-                              className="h-8 bg-dynamic-orange px-3 text-white text-xs shadow-sm hover:bg-dynamic-orange/90"
-                              onClick={handleCreateLabel}
-                              disabled={creatingLabel || !newLabelName.trim()}
-                            >
-                              {creatingLabel ? (
-                                <Loader2 className="h-3 w-3 animate-spin" />
-                              ) : (
-                                'Add'
-                              )}
-                            </Button>
-                          </div>
-                        </div>
-                      )}
-
-                      {labelsLoading ? (
-                        <div className="flex flex-col items-center justify-center gap-3 rounded-lg bg-muted/30 py-6">
-                          <Loader2 className="h-4 w-4 animate-spin text-dynamic-orange" />
-                          <p className="text-muted-foreground text-xs">
-                            Loading labels...
-                          </p>
-                        </div>
-                      ) : availableLabels.length === 0 ? (
-                        <div className="flex flex-col items-center justify-center gap-3 rounded-lg border-2 border-muted-foreground/20 border-dashed bg-muted/20 py-6">
-                          <Tag className="h-4 w-4 text-muted-foreground/40" />
-                          <div className="text-center">
-                            <p className="font-medium text-muted-foreground text-xs">
-                              No labels yet
-                            </p>
-                            <p className="mt-1 text-[10px] text-muted-foreground/60">
-                              Create your first label above
-                            </p>
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="flex flex-wrap gap-1.5 md:gap-2">
-                          {availableLabels.map((label) => {
-                            const active = selectedLabels.some(
-                              (l) => l.id === label.id
-                            );
-                            const styles = computeAccessibleLabelStyles(
-                              label.color
-                            );
-                            return (
-                              <Button
-                                key={label.id}
-                                type="button"
-                                variant={active ? 'default' : 'outline'}
-                                size="xs"
-                                onClick={() => toggleLabel(label)}
-                                className={cn(
-                                  'h-7 border px-3 text-xs transition-all',
-                                  !active &&
-                                    'bg-background hover:border-dynamic-orange/50',
-                                  active && 'shadow-sm'
-                                )}
-                                style={
-                                  active && styles
-                                    ? {
-                                        backgroundColor: styles.bg,
-                                        borderColor: styles.border,
-                                        color: styles.text,
-                                      }
-                                    : undefined
-                                }
-                              >
-                                {label.name || 'Unnamed'}
-                                {active && <X className="ml-1.5 h-3 w-3" />}
-                              </Button>
-                            );
-                          })}
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Projects Section */}
-                    <div className="space-y-2.5 rounded-lg border border-border/60 bg-gradient-to-br from-muted/30 to-muted/10 p-3.5 shadow-sm">
-                      <Label className="flex items-center justify-between gap-2">
-                        <span className="flex items-center gap-2 font-semibold text-foreground text-sm">
-                          <div className="flex h-5 w-5 items-center justify-center rounded-md bg-dynamic-orange/15">
-                            <Box className="h-3.5 w-3.5 text-dynamic-orange" />
-                          </div>
-                          Projects
-                        </span>
-                        {selectedProjects.length > 0 && (
-                          <Badge
-                            variant="secondary"
-                            className="h-5 rounded-full px-2 font-semibold text-[10px]"
+                        Due Date
+                      </span>
+                      <span className="flex items-center gap-3">
+                        {endDate && (
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleQuickDueDate(null)}
+                            disabled={isLoading}
+                            className="h-6 w-6 text-muted-foreground hover:text-dynamic-red"
+                            title="Clear due date"
                           >
-                            {selectedProjects.length}
-                          </Badge>
+                            <X className="h-3.5 w-3.5" />
+                          </Button>
                         )}
-                      </Label>
-
-                      {loadingProjects ? (
-                        <div className="flex flex-col items-center justify-center gap-3 rounded-lg bg-muted/30 py-8">
-                          <Loader2 className="h-5 w-5 animate-spin text-dynamic-orange" />
-                          <p className="text-muted-foreground text-xs">
-                            Loading projects...
-                          </p>
-                        </div>
-                      ) : taskProjects.length === 0 ? (
-                        <div className="flex flex-col items-center justify-center gap-3 rounded-lg border-2 border-muted-foreground/20 border-dashed bg-muted/20 py-8">
-                          <Box className="h-5 w-5 text-muted-foreground/40" />
-                          <p className="text-center text-muted-foreground text-xs">
-                            No projects available
-                          </p>
-                        </div>
-                      ) : (
-                        <div className="space-y-2.5">
-                          {/* Search input */}
-                          <div className="relative">
-                            <Search className="-translate-y-1/2 pointer-events-none absolute top-1/2 left-2.5 h-3.5 w-3.5 text-muted-foreground" />
-                            <Input
-                              type="text"
-                              placeholder="Search projects..."
-                              value={projectSearchQuery}
-                              onChange={(e) =>
-                                setProjectSearchQuery(e.target.value)
-                              }
-                              className="h-8 border-muted-foreground/20 bg-background/50 pl-8 text-xs placeholder:text-muted-foreground/50"
-                            />
-                            {projectSearchQuery && (
-                              <button
-                                type="button"
-                                onClick={() => setProjectSearchQuery('')}
-                                className="-translate-y-1/2 absolute top-1/2 right-2 rounded-full p-0.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-                              >
-                                <X className="h-3 w-3" />
-                              </button>
-                            )}
-                          </div>
-
-                          {/* Selected projects (if any) */}
-                          {selectedProjects.length > 0 && (
-                            <div className="space-y-1.5">
-                              <p className="font-medium text-[10px] text-muted-foreground uppercase tracking-wide">
-                                Selected ({selectedProjects.length})
-                              </p>
-                              <div className="flex flex-wrap gap-1.5">
-                                {selectedProjects.map((project) => (
-                                  <Button
-                                    key={`selected-project-${project.id}`}
-                                    type="button"
-                                    variant="default"
-                                    size="xs"
-                                    onClick={() => toggleProject(project)}
-                                    className="h-7 gap-1.5 rounded-full border border-dynamic-orange/30 bg-dynamic-orange/15 px-3 font-medium text-dynamic-orange text-xs shadow-sm transition-all hover:border-dynamic-orange/50 hover:bg-dynamic-orange/25"
-                                  >
-                                    {project.name}
-                                    <X className="h-3 w-3 opacity-70" />
-                                  </Button>
-                                ))}
-                              </div>
-                            </div>
-                          )}
-
-                          {/* Available projects */}
-                          <div className="space-y-1.5">
-                            {(() => {
-                              const filteredProjects = taskProjects.filter(
-                                (project) => {
-                                  const isSelected = selectedProjects.some(
-                                    (p) => p.id === project.id
-                                  );
-                                  const matchesSearch =
-                                    !projectSearchQuery ||
-                                    (project.name || '')
-                                      .toLowerCase()
-                                      .includes(
-                                        projectSearchQuery.toLowerCase()
-                                      );
-                                  return !isSelected && matchesSearch;
-                                }
-                              );
-
-                              if (filteredProjects.length === 0) {
-                                return projectSearchQuery ? (
-                                  <div className="flex flex-col items-center justify-center gap-2 rounded-lg bg-muted/30 py-6">
-                                    <Search className="h-4 w-4 text-muted-foreground/40" />
-                                    <p className="text-center text-muted-foreground text-xs">
-                                      No projects found
-                                    </p>
-                                  </div>
-                                ) : (
-                                  <div className="rounded-lg bg-muted/30 py-3 text-center">
-                                    <p className="text-muted-foreground text-xs">
-                                      All projects selected
-                                    </p>
-                                  </div>
-                                );
-                              }
-
-                              return (
-                                <>
-                                  <p className="font-medium text-[10px] text-muted-foreground uppercase tracking-wide">
-                                    Available ({filteredProjects.length})
-                                  </p>
-                                  <div className="flex max-h-48 flex-col gap-1 overflow-y-auto">
-                                    {filteredProjects.map((project) => (
-                                      <button
-                                        key={`available-project-${project.id}`}
-                                        type="button"
-                                        onClick={() => toggleProject(project)}
-                                        className="group flex items-center gap-2.5 rounded-md border border-transparent bg-background/50 px-3 py-2 text-left transition-all hover:border-dynamic-orange/30 hover:bg-dynamic-orange/5"
-                                      >
-                                        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-dynamic-orange/10">
-                                          <ListTodo className="h-4 w-4 text-dynamic-orange" />
-                                        </div>
-                                        <div className="flex-1 truncate">
-                                          <span className="block truncate text-sm">
-                                            {project.name}
-                                          </span>
-                                          {project.status && (
-                                            <span className="block text-muted-foreground text-xs">
-                                              {project.status}
-                                            </span>
-                                          )}
-                                        </div>
-                                        <Plus className="h-3.5 w-3.5 shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
-                                      </button>
-                                    ))}
-                                  </div>
-                                </>
-                              );
-                            })()}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Assignees Section */}
-                    <div className="space-y-2.5 rounded-lg border border-border/60 bg-gradient-to-br from-muted/30 to-muted/10 p-3.5 shadow-sm">
-                      <Label className="flex items-center justify-between gap-2">
-                        <span className="flex items-center gap-2 font-semibold text-foreground text-sm">
-                          <div className="flex h-5 w-5 items-center justify-center rounded-md bg-dynamic-orange/15">
-                            <Users className="h-3.5 w-3.5 text-dynamic-orange" />
-                          </div>
-                          Assignees
-                        </span>
-                        {selectedAssignees.length > 0 && (
-                          <Badge
-                            variant="secondary"
-                            className="h-5 rounded-full px-2 font-semibold text-[10px]"
-                          >
-                            {selectedAssignees.length}
-                          </Badge>
-                        )}
-                      </Label>
-
-                      {loadingMembers ? (
-                        <div className="flex flex-col items-center justify-center gap-3 rounded-lg bg-muted/30 py-8">
-                          <Loader2 className="h-5 w-5 animate-spin text-dynamic-orange" />
-                          <p className="text-muted-foreground text-xs">
-                            Loading members...
-                          </p>
-                        </div>
-                      ) : workspaceMembers.length === 0 ? (
-                        <div className="flex flex-col items-center justify-center gap-3 rounded-lg border-2 border-muted-foreground/20 border-dashed bg-muted/20 py-8">
-                          <Users className="h-5 w-5 text-muted-foreground/40" />
-                          <p className="text-center text-muted-foreground text-xs">
-                            No workspace members
-                          </p>
-                        </div>
-                      ) : (
-                        <div className="space-y-2.5">
-                          {/* Search input */}
-                          <div className="relative">
-                            <Search className="-translate-y-1/2 pointer-events-none absolute top-1/2 left-2.5 h-3.5 w-3.5 text-muted-foreground" />
-                            <Input
-                              type="text"
-                              placeholder="Search members..."
-                              value={assigneeSearchQuery}
-                              onChange={(e) =>
-                                setAssigneeSearchQuery(e.target.value)
-                              }
-                              className="h-8 border-muted-foreground/20 bg-background/50 pl-8 text-xs placeholder:text-muted-foreground/50"
-                            />
-                            {assigneeSearchQuery && (
-                              <button
-                                type="button"
-                                onClick={() => setAssigneeSearchQuery('')}
-                                className="-translate-y-1/2 absolute top-1/2 right-2 rounded-full p-0.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-                              >
-                                <X className="h-3 w-3" />
-                              </button>
-                            )}
-                          </div>
-
-                          {/* Selected assignees (if any) */}
-                          {selectedAssignees.length > 0 && (
-                            <div className="space-y-1.5">
-                              <p className="font-medium text-[10px] text-muted-foreground uppercase tracking-wide">
-                                Selected ({selectedAssignees.length})
-                              </p>
-                              <div className="flex flex-wrap gap-1.5">
-                                {selectedAssignees.map((assignee) => (
-                                  <Button
-                                    key={`selected-assignee-${assignee.user_id}`}
-                                    type="button"
-                                    variant="default"
-                                    size="xs"
-                                    onClick={() => toggleAssignee(assignee)}
-                                    className="h-7 gap-1.5 rounded-full border border-dynamic-orange/30 bg-dynamic-orange/15 px-3 font-medium text-dynamic-orange text-xs shadow-sm transition-all hover:border-dynamic-orange/50 hover:bg-dynamic-orange/25"
-                                  >
-                                    <Avatar className="h-4 w-4">
-                                      <AvatarImage
-                                        src={assignee.avatar_url}
-                                        alt={assignee.display_name || 'Unknown'}
-                                      />
-                                      <AvatarFallback className="bg-dynamic-orange/20 font-bold text-[9px]">
-                                        {(assignee.display_name ||
-                                          'Unknown')[0]?.toUpperCase()}
-                                      </AvatarFallback>
-                                    </Avatar>
-                                    {assignee.display_name || 'Unknown'}
-                                    <X className="h-3 w-3 opacity-70" />
-                                  </Button>
-                                ))}
-                              </div>
-                            </div>
-                          )}
-
-                          {/* Available members */}
-                          <div className="space-y-1.5">
-                            {(() => {
-                              const filteredMembers = workspaceMembers.filter(
-                                (member) => {
-                                  const isSelected = selectedAssignees.some(
-                                    (a) => a.user_id === member.user_id
-                                  );
-                                  const matchesSearch =
-                                    !assigneeSearchQuery ||
-                                    (member.display_name || '')
-                                      .toLowerCase()
-                                      .includes(
-                                        assigneeSearchQuery.toLowerCase()
-                                      );
-                                  return !isSelected && matchesSearch;
-                                }
-                              );
-
-                              if (filteredMembers.length === 0) {
-                                return assigneeSearchQuery ? (
-                                  <div className="flex flex-col items-center justify-center gap-2 rounded-lg bg-muted/30 py-6">
-                                    <Search className="h-4 w-4 text-muted-foreground/40" />
-                                    <p className="text-center text-muted-foreground text-xs">
-                                      No members found
-                                    </p>
-                                  </div>
-                                ) : (
-                                  <div className="rounded-lg bg-muted/30 py-3 text-center">
-                                    <p className="text-muted-foreground text-xs">
-                                      All members assigned
-                                    </p>
-                                  </div>
-                                );
-                              }
-
-                              return (
-                                <>
-                                  <p className="font-medium text-[10px] text-muted-foreground uppercase tracking-wide">
-                                    Available ({filteredMembers.length})
-                                  </p>
-                                  <div className="flex max-h-48 flex-col gap-1 overflow-y-auto">
-                                    {filteredMembers.map((member) => (
-                                      <button
-                                        key={`available-member-${member.user_id}`}
-                                        type="button"
-                                        onClick={() => toggleAssignee(member)}
-                                        className="group flex items-center gap-2.5 rounded-md border border-transparent bg-background/50 px-3 py-2 text-left transition-all hover:border-dynamic-orange/30 hover:bg-dynamic-orange/5"
-                                      >
-                                        <Avatar className="h-7 w-7 shrink-0">
-                                          <AvatarImage
-                                            src={member.avatar_url}
-                                            alt={
-                                              member.display_name || 'Unknown'
-                                            }
-                                          />
-                                          <AvatarFallback className="bg-muted font-semibold text-muted-foreground text-xs group-hover:bg-dynamic-orange/20 group-hover:text-dynamic-orange">
-                                            {(member.display_name ||
-                                              'Unknown')[0]?.toUpperCase()}
-                                          </AvatarFallback>
-                                        </Avatar>
-                                        <span className="flex-1 truncate text-sm">
-                                          {member.display_name || 'Unknown'}
-                                        </span>
-                                        <Plus className="h-3.5 w-3.5 shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
-                                      </button>
-                                    ))}
-                                  </div>
-                                </>
-                              );
-                            })()}
-                          </div>
-                        </div>
-                      )}
+                      </span>
+                    </Label>
+                    <div className="grid grid-cols-2 gap-1.5 md:gap-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="xs"
+                        onClick={() => handleQuickDueDate(0)}
+                        disabled={isLoading}
+                        className="h-7 text-[11px] transition-all hover:border-dynamic-orange/50 hover:bg-dynamic-orange/5 md:text-xs"
+                        title="Today – Alt+T"
+                      >
+                        Today
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="xs"
+                        onClick={() => handleQuickDueDate(1)}
+                        disabled={isLoading}
+                        className="h-7 text-[11px] transition-all hover:border-dynamic-orange/50 hover:bg-dynamic-orange/5 md:text-xs"
+                        title="Tomorrow – Alt+M"
+                      >
+                        Tomorrow
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="xs"
+                        onClick={() => handleQuickDueDate(7)}
+                        disabled={isLoading}
+                        className="h-7 text-[11px] transition-all hover:border-dynamic-orange/50 hover:bg-dynamic-orange/5 md:text-xs"
+                        title="Next week – Alt+W"
+                      >
+                        Next week
+                      </Button>
                     </div>
                   </div>
-                )}
+
+                  {/* Advanced Options Toggle */}
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="xs"
+                    onClick={() => setShowAdvancedOptions(!showAdvancedOptions)}
+                    className="h-8 w-full justify-between text-muted-foreground text-xs transition-all hover:bg-dynamic-orange/5 hover:text-dynamic-orange"
+                    title="Toggle advanced options – Alt+A"
+                  >
+                    <span className="flex items-center gap-2">
+                      <Settings className="h-3 w-3" />
+                      {showAdvancedOptions ? 'Hide' : 'Show'} advanced options
+                    </span>
+                    <ChevronDown
+                      className={cn(
+                        'h-3 w-3 transition-transform',
+                        showAdvancedOptions && 'rotate-180'
+                      )}
+                    />
+                  </Button>
+
+                  {/* Advanced Options - Collapsible */}
+                  {showAdvancedOptions && (
+                    <div className="slide-in-from-top-2 animate-in space-y-4 duration-200">
+                      {/* Custom Date Pickers */}
+                      <div className="space-y-2.5 rounded-lg border border-border/60 bg-gradient-to-br from-muted/30 to-muted/10 p-3.5 shadow-sm">
+                        <Label className="flex items-center gap-2 font-semibold text-foreground text-sm">
+                          <div className="flex h-5 w-5 items-center justify-center rounded-md bg-dynamic-orange/15">
+                            <Calendar className="h-3.5 w-3.5 text-dynamic-orange" />
+                          </div>
+                          Dates
+                        </Label>
+                        <div className="space-y-3">
+                          <div className="space-y-1">
+                            <Label className="font-normal text-muted-foreground text-xs">
+                              Start Date
+                            </Label>
+                            <DateTimePicker
+                              date={startDate}
+                              setDate={setStartDate}
+                              showTimeSelect={true}
+                              allowClear={true}
+                              showFooterControls={true}
+                            />
+                          </div>
+                          <div className="space-y-1">
+                            <Label className="font-normal text-muted-foreground text-xs">
+                              Due Date
+                            </Label>
+                            <DateTimePicker
+                              date={endDate}
+                              setDate={handleEndDateChange}
+                              showTimeSelect={true}
+                              allowClear={true}
+                              showFooterControls={true}
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Estimation Section moved above as dropdown */}
+
+                      {/* Labels Section */}
+                      <div className="space-y-2.5 rounded-lg border border-border/60 bg-gradient-to-br from-muted/30 to-muted/10 p-3.5 shadow-sm">
+                        <Label className="flex items-center justify-between gap-2">
+                          <span className="flex items-center gap-2 font-semibold text-foreground text-sm">
+                            <div className="flex h-5 w-5 items-center justify-center rounded-md bg-dynamic-orange/15">
+                              <Tag className="h-3.5 w-3.5 text-dynamic-orange" />
+                            </div>
+                            Labels
+                          </span>
+                        </Label>
+                        {boardConfig && (
+                          <div className="space-y-2">
+                            <div className="flex items-center gap-2">
+                              <Input
+                                placeholder="New label name"
+                                value={newLabelName}
+                                onChange={(e) =>
+                                  setNewLabelName(e.target.value)
+                                }
+                                className="h-8 flex-1 text-xs transition-all focus:border-dynamic-orange/50"
+                              />
+                              <select
+                                className="h-8 rounded-md border bg-background px-2 text-xs transition-all hover:border-dynamic-orange/50 focus:border-dynamic-orange/50 focus:outline-none focus:ring-1 focus:ring-dynamic-orange/20"
+                                value={newLabelColor}
+                                onChange={(e) =>
+                                  setNewLabelColor(e.target.value)
+                                }
+                              >
+                                {[
+                                  'red',
+                                  'orange',
+                                  'yellow',
+                                  'green',
+                                  'blue',
+                                  'indigo',
+                                  'purple',
+                                  'pink',
+                                  'gray',
+                                ].map((c) => (
+                                  <option key={c} value={c}>
+                                    {c.charAt(0).toUpperCase() + c.slice(1)}
+                                  </option>
+                                ))}
+                              </select>
+                              <Button
+                                type="button"
+                                size="xs"
+                                className="h-8 bg-dynamic-orange px-3 text-white text-xs shadow-sm hover:bg-dynamic-orange/90"
+                                onClick={handleCreateLabel}
+                                disabled={creatingLabel || !newLabelName.trim()}
+                              >
+                                {creatingLabel ? (
+                                  <Loader2 className="h-3 w-3 animate-spin" />
+                                ) : (
+                                  'Add'
+                                )}
+                              </Button>
+                            </div>
+                          </div>
+                        )}
+
+                        {labelsLoading ? (
+                          <div className="flex flex-col items-center justify-center gap-3 rounded-lg bg-muted/30 py-6">
+                            <Loader2 className="h-4 w-4 animate-spin text-dynamic-orange" />
+                            <p className="text-muted-foreground text-xs">
+                              Loading labels...
+                            </p>
+                          </div>
+                        ) : availableLabels.length === 0 ? (
+                          <div className="flex flex-col items-center justify-center gap-3 rounded-lg border-2 border-muted-foreground/20 border-dashed bg-muted/20 py-6">
+                            <Tag className="h-4 w-4 text-muted-foreground/40" />
+                            <div className="text-center">
+                              <p className="font-medium text-muted-foreground text-xs">
+                                No labels yet
+                              </p>
+                              <p className="mt-1 text-[10px] text-muted-foreground/60">
+                                Create your first label above
+                              </p>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="flex flex-wrap gap-1.5 md:gap-2">
+                            {availableLabels.map((label) => {
+                              const active = selectedLabels.some(
+                                (l) => l.id === label.id
+                              );
+                              const styles = computeAccessibleLabelStyles(
+                                label.color
+                              );
+                              return (
+                                <Button
+                                  key={label.id}
+                                  type="button"
+                                  variant={active ? 'default' : 'outline'}
+                                  size="xs"
+                                  onClick={() => toggleLabel(label)}
+                                  className={cn(
+                                    'h-7 border px-3 text-xs transition-all',
+                                    !active &&
+                                      'bg-background hover:border-dynamic-orange/50',
+                                    active && 'shadow-sm'
+                                  )}
+                                  style={
+                                    active && styles
+                                      ? {
+                                          backgroundColor: styles.bg,
+                                          borderColor: styles.border,
+                                          color: styles.text,
+                                        }
+                                      : undefined
+                                  }
+                                >
+                                  {label.name || 'Unnamed'}
+                                  {active && <X className="ml-1.5 h-3 w-3" />}
+                                </Button>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Projects Section */}
+                      <div className="space-y-2.5 rounded-lg border border-border/60 bg-gradient-to-br from-muted/30 to-muted/10 p-3.5 shadow-sm">
+                        <Label className="flex items-center justify-between gap-2">
+                          <span className="flex items-center gap-2 font-semibold text-foreground text-sm">
+                            <div className="flex h-5 w-5 items-center justify-center rounded-md bg-dynamic-orange/15">
+                              <Box className="h-3.5 w-3.5 text-dynamic-orange" />
+                            </div>
+                            Projects
+                          </span>
+                          {selectedProjects.length > 0 && (
+                            <Badge
+                              variant="secondary"
+                              className="h-5 rounded-full px-2 font-semibold text-[10px]"
+                            >
+                              {selectedProjects.length}
+                            </Badge>
+                          )}
+                        </Label>
+
+                        {loadingProjects ? (
+                          <div className="flex flex-col items-center justify-center gap-3 rounded-lg bg-muted/30 py-8">
+                            <Loader2 className="h-5 w-5 animate-spin text-dynamic-orange" />
+                            <p className="text-muted-foreground text-xs">
+                              Loading projects...
+                            </p>
+                          </div>
+                        ) : taskProjects.length === 0 ? (
+                          <div className="flex flex-col items-center justify-center gap-3 rounded-lg border-2 border-muted-foreground/20 border-dashed bg-muted/20 py-8">
+                            <Box className="h-5 w-5 text-muted-foreground/40" />
+                            <p className="text-center text-muted-foreground text-xs">
+                              No projects available
+                            </p>
+                          </div>
+                        ) : (
+                          <div className="space-y-2.5">
+                            {/* Search input */}
+                            <div className="relative">
+                              <Search className="-translate-y-1/2 pointer-events-none absolute top-1/2 left-2.5 h-3.5 w-3.5 text-muted-foreground" />
+                              <Input
+                                type="text"
+                                placeholder="Search projects..."
+                                value={projectSearchQuery}
+                                onChange={(e) =>
+                                  setProjectSearchQuery(e.target.value)
+                                }
+                                className="h-8 border-muted-foreground/20 bg-background/50 pl-8 text-xs placeholder:text-muted-foreground/50"
+                              />
+                              {projectSearchQuery && (
+                                <button
+                                  type="button"
+                                  onClick={() => setProjectSearchQuery('')}
+                                  className="-translate-y-1/2 absolute top-1/2 right-2 rounded-full p-0.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                                >
+                                  <X className="h-3 w-3" />
+                                </button>
+                              )}
+                            </div>
+
+                            {/* Selected projects (if any) */}
+                            {selectedProjects.length > 0 && (
+                              <div className="space-y-1.5">
+                                <p className="font-medium text-[10px] text-muted-foreground uppercase tracking-wide">
+                                  Selected ({selectedProjects.length})
+                                </p>
+                                <div className="flex flex-wrap gap-1.5">
+                                  {selectedProjects.map((project) => (
+                                    <Button
+                                      key={`selected-project-${project.id}`}
+                                      type="button"
+                                      variant="default"
+                                      size="xs"
+                                      onClick={() => toggleProject(project)}
+                                      className="h-7 gap-1.5 rounded-full border border-dynamic-orange/30 bg-dynamic-orange/15 px-3 font-medium text-dynamic-orange text-xs shadow-sm transition-all hover:border-dynamic-orange/50 hover:bg-dynamic-orange/25"
+                                    >
+                                      {project.name}
+                                      <X className="h-3 w-3 opacity-70" />
+                                    </Button>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Available projects */}
+                            <div className="space-y-1.5">
+                              {(() => {
+                                const filteredProjects = taskProjects.filter(
+                                  (project) => {
+                                    const isSelected = selectedProjects.some(
+                                      (p) => p.id === project.id
+                                    );
+                                    const matchesSearch =
+                                      !projectSearchQuery ||
+                                      (project.name || '')
+                                        .toLowerCase()
+                                        .includes(
+                                          projectSearchQuery.toLowerCase()
+                                        );
+                                    return !isSelected && matchesSearch;
+                                  }
+                                );
+
+                                if (filteredProjects.length === 0) {
+                                  return projectSearchQuery ? (
+                                    <div className="flex flex-col items-center justify-center gap-2 rounded-lg bg-muted/30 py-6">
+                                      <Search className="h-4 w-4 text-muted-foreground/40" />
+                                      <p className="text-center text-muted-foreground text-xs">
+                                        No projects found
+                                      </p>
+                                    </div>
+                                  ) : (
+                                    <div className="rounded-lg bg-muted/30 py-3 text-center">
+                                      <p className="text-muted-foreground text-xs">
+                                        All projects selected
+                                      </p>
+                                    </div>
+                                  );
+                                }
+
+                                return (
+                                  <>
+                                    <p className="font-medium text-[10px] text-muted-foreground uppercase tracking-wide">
+                                      Available ({filteredProjects.length})
+                                    </p>
+                                    <div className="flex max-h-48 flex-col gap-1 overflow-y-auto">
+                                      {filteredProjects.map((project) => (
+                                        <button
+                                          key={`available-project-${project.id}`}
+                                          type="button"
+                                          onClick={() => toggleProject(project)}
+                                          className="group flex items-center gap-2.5 rounded-md border border-transparent bg-background/50 px-3 py-2 text-left transition-all hover:border-dynamic-orange/30 hover:bg-dynamic-orange/5"
+                                        >
+                                          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-dynamic-orange/10">
+                                            <ListTodo className="h-4 w-4 text-dynamic-orange" />
+                                          </div>
+                                          <div className="flex-1 truncate">
+                                            <span className="block truncate text-sm">
+                                              {project.name}
+                                            </span>
+                                            {project.status && (
+                                              <span className="block text-muted-foreground text-xs">
+                                                {project.status}
+                                              </span>
+                                            )}
+                                          </div>
+                                          <Plus className="h-3.5 w-3.5 shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
+                                        </button>
+                                      ))}
+                                    </div>
+                                  </>
+                                );
+                              })()}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Assignees Section */}
+                      <div className="space-y-2.5 rounded-lg border border-border/60 bg-gradient-to-br from-muted/30 to-muted/10 p-3.5 shadow-sm">
+                        <Label className="flex items-center justify-between gap-2">
+                          <span className="flex items-center gap-2 font-semibold text-foreground text-sm">
+                            <div className="flex h-5 w-5 items-center justify-center rounded-md bg-dynamic-orange/15">
+                              <Users className="h-3.5 w-3.5 text-dynamic-orange" />
+                            </div>
+                            Assignees
+                          </span>
+                          {selectedAssignees.length > 0 && (
+                            <Badge
+                              variant="secondary"
+                              className="h-5 rounded-full px-2 font-semibold text-[10px]"
+                            >
+                              {selectedAssignees.length}
+                            </Badge>
+                          )}
+                        </Label>
+
+                        {loadingMembers ? (
+                          <div className="flex flex-col items-center justify-center gap-3 rounded-lg bg-muted/30 py-8">
+                            <Loader2 className="h-5 w-5 animate-spin text-dynamic-orange" />
+                            <p className="text-muted-foreground text-xs">
+                              Loading members...
+                            </p>
+                          </div>
+                        ) : workspaceMembers.length === 0 ? (
+                          <div className="flex flex-col items-center justify-center gap-3 rounded-lg border-2 border-muted-foreground/20 border-dashed bg-muted/20 py-8">
+                            <Users className="h-5 w-5 text-muted-foreground/40" />
+                            <p className="text-center text-muted-foreground text-xs">
+                              No workspace members
+                            </p>
+                          </div>
+                        ) : (
+                          <div className="space-y-2.5">
+                            {/* Search input */}
+                            <div className="relative">
+                              <Search className="-translate-y-1/2 pointer-events-none absolute top-1/2 left-2.5 h-3.5 w-3.5 text-muted-foreground" />
+                              <Input
+                                type="text"
+                                placeholder="Search members..."
+                                value={assigneeSearchQuery}
+                                onChange={(e) =>
+                                  setAssigneeSearchQuery(e.target.value)
+                                }
+                                className="h-8 border-muted-foreground/20 bg-background/50 pl-8 text-xs placeholder:text-muted-foreground/50"
+                              />
+                              {assigneeSearchQuery && (
+                                <button
+                                  type="button"
+                                  onClick={() => setAssigneeSearchQuery('')}
+                                  className="-translate-y-1/2 absolute top-1/2 right-2 rounded-full p-0.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                                >
+                                  <X className="h-3 w-3" />
+                                </button>
+                              )}
+                            </div>
+
+                            {/* Selected assignees (if any) */}
+                            {selectedAssignees.length > 0 && (
+                              <div className="space-y-1.5">
+                                <p className="font-medium text-[10px] text-muted-foreground uppercase tracking-wide">
+                                  Selected ({selectedAssignees.length})
+                                </p>
+                                <div className="flex flex-wrap gap-1.5">
+                                  {selectedAssignees.map((assignee) => (
+                                    <Button
+                                      key={`selected-assignee-${assignee.user_id}`}
+                                      type="button"
+                                      variant="default"
+                                      size="xs"
+                                      onClick={() => toggleAssignee(assignee)}
+                                      className="h-7 gap-1.5 rounded-full border border-dynamic-orange/30 bg-dynamic-orange/15 px-3 font-medium text-dynamic-orange text-xs shadow-sm transition-all hover:border-dynamic-orange/50 hover:bg-dynamic-orange/25"
+                                    >
+                                      <Avatar className="h-4 w-4">
+                                        <AvatarImage
+                                          src={assignee.avatar_url}
+                                          alt={
+                                            assignee.display_name || 'Unknown'
+                                          }
+                                        />
+                                        <AvatarFallback className="bg-dynamic-orange/20 font-bold text-[9px]">
+                                          {(assignee.display_name ||
+                                            'Unknown')[0]?.toUpperCase()}
+                                        </AvatarFallback>
+                                      </Avatar>
+                                      {assignee.display_name || 'Unknown'}
+                                      <X className="h-3 w-3 opacity-70" />
+                                    </Button>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Available members */}
+                            <div className="space-y-1.5">
+                              {(() => {
+                                const filteredMembers = workspaceMembers.filter(
+                                  (member) => {
+                                    const isSelected = selectedAssignees.some(
+                                      (a) => a.user_id === member.user_id
+                                    );
+                                    const matchesSearch =
+                                      !assigneeSearchQuery ||
+                                      (member.display_name || '')
+                                        .toLowerCase()
+                                        .includes(
+                                          assigneeSearchQuery.toLowerCase()
+                                        );
+                                    return !isSelected && matchesSearch;
+                                  }
+                                );
+
+                                if (filteredMembers.length === 0) {
+                                  return assigneeSearchQuery ? (
+                                    <div className="flex flex-col items-center justify-center gap-2 rounded-lg bg-muted/30 py-6">
+                                      <Search className="h-4 w-4 text-muted-foreground/40" />
+                                      <p className="text-center text-muted-foreground text-xs">
+                                        No members found
+                                      </p>
+                                    </div>
+                                  ) : (
+                                    <div className="rounded-lg bg-muted/30 py-3 text-center">
+                                      <p className="text-muted-foreground text-xs">
+                                        All members assigned
+                                      </p>
+                                    </div>
+                                  );
+                                }
+
+                                return (
+                                  <>
+                                    <p className="font-medium text-[10px] text-muted-foreground uppercase tracking-wide">
+                                      Available ({filteredMembers.length})
+                                    </p>
+                                    <div className="flex max-h-48 flex-col gap-1 overflow-y-auto">
+                                      {filteredMembers.map((member) => (
+                                        <button
+                                          key={`available-member-${member.user_id}`}
+                                          type="button"
+                                          onClick={() => toggleAssignee(member)}
+                                          className="group flex items-center gap-2.5 rounded-md border border-transparent bg-background/50 px-3 py-2 text-left transition-all hover:border-dynamic-orange/30 hover:bg-dynamic-orange/5"
+                                        >
+                                          <Avatar className="h-7 w-7 shrink-0">
+                                            <AvatarImage
+                                              src={member.avatar_url}
+                                              alt={
+                                                member.display_name || 'Unknown'
+                                              }
+                                            />
+                                            <AvatarFallback className="bg-muted font-semibold text-muted-foreground text-xs group-hover:bg-dynamic-orange/20 group-hover:text-dynamic-orange">
+                                              {(member.display_name ||
+                                                'Unknown')[0]?.toUpperCase()}
+                                            </AvatarFallback>
+                                          </Avatar>
+                                          <span className="flex-1 truncate text-sm">
+                                            {member.display_name || 'Unknown'}
+                                          </span>
+                                          <Plus className="h-3.5 w-3.5 shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
+                                        </button>
+                                      ))}
+                                    </div>
+                                  </>
+                                );
+                              })()}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
