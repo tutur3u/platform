@@ -188,6 +188,7 @@ bun trigger:deploy
 6. **Always** use Server Components by default; add `'use client'` only when necessary
 7. **Always** reference environment variables by name only (never echo values)
 8. **Always** add new documentation pages to `apps/docs/mint.json` navigation
+9. **Always** update main navigation (`apps/web/src/app/[locale]/(dashboard)/[wsId]/navigation.tsx`) when adding new routes - add to both `aliases` array and `children` navigation items with proper icons and permissions
 
 ### Escalate When
 

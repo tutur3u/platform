@@ -97,6 +97,7 @@ This section summarizes the key operating procedures for AI agents working in th
     3.  Ask the user to apply the migration (`bun sb:push`) and regenerate types (`bun sb:typegen`).
     4.  Incorporate the newly generated types from `packages/types` into your changes.
 -   **Adding API Routes:** Create new routes in `apps/<app>/src/app/api/...`. Use Supabase client wrappers for authentication and Zod for input validation.
+-   **Navigation Updates (CRITICAL):** When adding new pages or routes, **ALWAYS** update the main navigation file (`apps/web/src/app/[locale]/(dashboard)/[wsId]/navigation.tsx` for web app). Add routes to both the `aliases` array and `children` navigation items. Include proper icons, permission checks, and translation keys. Navigation updates are mandatory, not optional.
 -   **Documentation:** When adding a new feature or changing an existing one, update the corresponding documentation in `apps/docs`. **Crucially, add any new page to `apps/docs/mint.json` to make it visible.**
 -   **Styling:** Follow the **Tailwind Dynamic Color Policy**. Never use hard-coded color classes like `text-blue-500`. Instead, use the `dynamic-*` tokens, e.g., `text-dynamic-blue`.
 -   **UI Components:**
