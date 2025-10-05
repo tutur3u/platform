@@ -4,8 +4,7 @@ import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
   title: 'Budgets',
-  description:
-    'Manage Budgets in the Finance area of your Tuturuuu workspace.',
+  description: 'Manage Budgets in the Finance area of your Tuturuuu workspace.',
 };
 
 interface Props {

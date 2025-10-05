@@ -81,7 +81,9 @@ export function BudgetForm({
         period: data.period,
         start_date: data.start_date,
         end_date: data.end_date || null,
-        alert_threshold: data.alert_threshold ? parseFloat(data.alert_threshold) : 80,
+        alert_threshold: data.alert_threshold
+          ? parseFloat(data.alert_threshold)
+          : 80,
         category_id: data.category_id || null,
         wallet_id: data.wallet_id || null,
       };

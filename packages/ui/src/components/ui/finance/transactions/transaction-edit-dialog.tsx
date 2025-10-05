@@ -282,7 +282,25 @@ export function TransactionEditDialog({
     } finally {
       setIsLoading(false);
     }
-  }, [canSave, isExpense, numericAmount, transaction, wsId, description, walletId, categoryId, takenAt, reportOptIn, selectedTagIds, toast, t, queryClient, onUpdate, router, onClose]);
+  }, [
+    canSave,
+    isExpense,
+    numericAmount,
+    transaction,
+    wsId,
+    description,
+    walletId,
+    categoryId,
+    takenAt,
+    reportOptIn,
+    selectedTagIds,
+    toast,
+    t,
+    queryClient,
+    onUpdate,
+    router,
+    onClose,
+  ]);
 
   const handleDelete = async () => {
     if (!transaction?.id) return;

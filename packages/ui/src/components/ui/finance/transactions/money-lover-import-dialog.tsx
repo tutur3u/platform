@@ -222,12 +222,13 @@ export default function MoneyLoverImportDialog({
         total: transactions.length,
         status: 'processing',
         message: t('money-lover-import.step_uploading'),
-        details: batchCount > 1
-          ? t('money-lover-import.processing_batches', {
-              batches: batchCount,
-              size: BATCH_SIZE
-            })
-          : undefined,
+        details:
+          batchCount > 1
+            ? t('money-lover-import.processing_batches', {
+                batches: batchCount,
+                size: BATCH_SIZE,
+              })
+            : undefined,
       });
 
       const res = await fetch(
@@ -301,7 +302,10 @@ export default function MoneyLoverImportDialog({
             current: 0,
             total: transactions.length,
             status: 'error',
-            message: streamError instanceof Error ? streamError.message : t('money-lover-import.error'),
+            message:
+              streamError instanceof Error
+                ? streamError.message
+                : t('money-lover-import.error'),
           });
           toast.error(t('money-lover-import.error'));
           setLoading(false);
@@ -368,7 +372,9 @@ export default function MoneyLoverImportDialog({
         total: 0,
         status: 'error',
         message:
-          error instanceof Error ? error.message : t('money-lover-import.error'),
+          error instanceof Error
+            ? error.message
+            : t('money-lover-import.error'),
       });
       toast.error(t('money-lover-import.error'));
     } finally {
@@ -387,272 +393,277 @@ export default function MoneyLoverImportDialog({
         </DialogDescription>
       </DialogHeader>
 
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <FormField
-              control={form.control}
-              name="delimiter"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t('money-lover-import.delimiter')}</FormLabel>
-                  <Select
-                    value={field.value}
-                    onValueChange={handleDelimiterChange}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="tab">
-                        {t('money-lover-import.delimiter_tab')}
-                      </SelectItem>
-                      <SelectItem value="semicolon">
-                        {t('money-lover-import.delimiter_semicolon')}
-                      </SelectItem>
-                      <SelectItem value="comma">
-                        {t('money-lover-import.delimiter_comma')}
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormDescription>
-                    {t('money-lover-import.delimiter_description')}
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="file"
-              render={() => (
-                <FormItem>
-                  <FormLabel>{t('money-lover-import.csv_file')}</FormLabel>
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <FormField
+            control={form.control}
+            name="delimiter"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>{t('money-lover-import.delimiter')}</FormLabel>
+                <Select
+                  value={field.value}
+                  onValueChange={handleDelimiterChange}
+                >
                   <FormControl>
-                    <Input
-                      type="file"
-                      accept=".csv,.txt"
-                      onChange={handleFileChange}
-                    />
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
                   </FormControl>
-                  <FormDescription>
-                    {t('money-lover-import.file_description')}
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+                  <SelectContent>
+                    <SelectItem value="tab">
+                      {t('money-lover-import.delimiter_tab')}
+                    </SelectItem>
+                    <SelectItem value="semicolon">
+                      {t('money-lover-import.delimiter_semicolon')}
+                    </SelectItem>
+                    <SelectItem value="comma">
+                      {t('money-lover-import.delimiter_comma')}
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+                <FormDescription>
+                  {t('money-lover-import.delimiter_description')}
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
-            {previewData.length > 0 && (
-              <div className="space-y-4">
-                {/* Statistics */}
-                <div className="grid gap-3 rounded-lg border bg-gradient-to-br from-primary/5 to-primary/10 p-4 md:grid-cols-3">
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-background shadow-sm">
-                      <FileSpreadsheet className="h-5 w-5 text-primary" />
-                    </div>
-                    <div>
-                      <p className="text-muted-foreground text-xs font-medium">
-                        {t('money-lover-import.transactions')}
-                      </p>
-                      <p className="font-bold text-xl tabular-nums">
-                        {stats.totalTransactions.toLocaleString()}
-                      </p>
-                    </div>
+          <FormField
+            control={form.control}
+            name="file"
+            render={() => (
+              <FormItem>
+                <FormLabel>{t('money-lover-import.csv_file')}</FormLabel>
+                <FormControl>
+                  <Input
+                    type="file"
+                    accept=".csv,.txt"
+                    onChange={handleFileChange}
+                  />
+                </FormControl>
+                <FormDescription>
+                  {t('money-lover-import.file_description')}
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          {previewData.length > 0 && (
+            <div className="space-y-4">
+              {/* Statistics */}
+              <div className="grid gap-3 rounded-lg border bg-gradient-to-br from-primary/5 to-primary/10 p-4 md:grid-cols-3">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-background shadow-sm">
+                    <FileSpreadsheet className="h-5 w-5 text-primary" />
                   </div>
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-background shadow-sm">
-                      <FolderOpen className="h-5 w-5 text-primary" />
-                    </div>
-                    <div>
-                      <p className="text-muted-foreground text-xs font-medium">
-                        {t('money-lover-import.categories')}
-                      </p>
-                      <p className="font-bold text-xl tabular-nums">
-                        {stats.uniqueCategories.toLocaleString()}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-background shadow-sm">
-                      <Wallet className="h-5 w-5 text-primary" />
-                    </div>
-                    <div>
-                      <p className="text-muted-foreground text-xs font-medium">
-                        {t('money-lover-import.wallets')}
-                      </p>
-                      <p className="font-bold text-xl tabular-nums">
-                        {stats.uniqueWallets.toLocaleString()}
-                      </p>
-                    </div>
+                  <div>
+                    <p className="text-muted-foreground text-xs font-medium">
+                      {t('money-lover-import.transactions')}
+                    </p>
+                    <p className="font-bold text-xl tabular-nums">
+                      {stats.totalTransactions.toLocaleString()}
+                    </p>
                   </div>
                 </div>
-
-                {/* Preview Table */}
-                <div className="space-y-2.5">
-                  <h3 className="font-semibold text-sm">
-                    {t('money-lover-import.preview')}
-                  </h3>
-                  <div className="max-h-64 overflow-auto rounded-lg border shadow-sm">
-                    <table className="w-full text-sm">
-                      <thead className="sticky top-0 bg-muted/80 backdrop-blur-sm">
-                        <tr>
-                          <th className="p-2.5 text-left font-semibold text-xs uppercase tracking-wide">
-                            {t('money-lover-import.date')}
-                          </th>
-                          <th className="p-2.5 text-left font-semibold text-xs uppercase tracking-wide">
-                            {t('money-lover-import.category')}
-                          </th>
-                          <th className="p-2.5 text-right font-semibold text-xs uppercase tracking-wide">
-                            {t('money-lover-import.amount')}
-                          </th>
-                          <th className="p-2.5 text-left font-semibold text-xs uppercase tracking-wide">
-                            {t('money-lover-import.wallet')}
-                          </th>
-                          <th className="p-2.5 text-left font-semibold text-xs uppercase tracking-wide">
-                            {t('money-lover-import.note')}
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {previewData.map((row, idx) => {
-                          const amount = parseFloat(row.amount);
-                          const isExpense = amount < 0;
-
-                          return (
-                            <tr
-                              key={idx}
-                              className="border-t transition-colors hover:bg-muted/30"
-                            >
-                              <td className="p-2.5 text-muted-foreground text-xs">
-                                {row.date}
-                              </td>
-                              <td className="p-2.5">
-                                <Badge variant="outline" className="font-medium">
-                                  {row.category}
-                                </Badge>
-                              </td>
-                              <td
-                                className={`p-2.5 text-right font-bold tabular-nums ${
-                                  isExpense
-                                    ? 'text-dynamic-red'
-                                    : 'text-dynamic-green'
-                                }`}
-                              >
-                                {Intl.NumberFormat(locale, {
-                                  style: 'currency',
-                                  currency: 'VND',
-                                  minimumFractionDigits: 0,
-                                  maximumFractionDigits: 0,
-                                  signDisplay: 'always',
-                                }).format(amount)}
-                              </td>
-                              <td className="p-2.5">
-                                <Badge variant="secondary" className="font-medium">
-                                  {row.wallet}
-                                </Badge>
-                              </td>
-                              <td className="p-2.5 text-muted-foreground text-xs">
-                                {row.note || '-'}
-                              </td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
+                <div className="flex items-center gap-3">
+                  <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-background shadow-sm">
+                    <FolderOpen className="h-5 w-5 text-primary" />
                   </div>
-                  <p className="text-muted-foreground text-xs italic">
-                    {t('money-lover-import.preview_note')}
-                  </p>
+                  <div>
+                    <p className="text-muted-foreground text-xs font-medium">
+                      {t('money-lover-import.categories')}
+                    </p>
+                    <p className="font-bold text-xl tabular-nums">
+                      {stats.uniqueCategories.toLocaleString()}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-background shadow-sm">
+                    <Wallet className="h-5 w-5 text-primary" />
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground text-xs font-medium">
+                      {t('money-lover-import.wallets')}
+                    </p>
+                    <p className="font-bold text-xl tabular-nums">
+                      {stats.uniqueWallets.toLocaleString()}
+                    </p>
+                  </div>
                 </div>
               </div>
-            )}
 
-            {/* Progress Display */}
-            {progress && (
-              <div className="space-y-4 rounded-lg border bg-gradient-to-br from-muted/50 to-muted/30 p-5 shadow-sm">
-                <div className="flex items-start gap-4">
-                  <div className="mt-0.5">
-                    {progress.status === 'processing' && (
-                      <Loader2 className="h-6 w-6 animate-spin text-primary" />
-                    )}
-                    {progress.status === 'success' && (
-                      <CheckCircle2 className="h-6 w-6 text-dynamic-green" />
-                    )}
-                    {progress.status === 'error' && (
-                      <AlertCircle className="h-6 w-6 text-dynamic-red" />
-                    )}
-                  </div>
-                  <div className="flex-1 space-y-1.5">
-                    <p className="font-semibold text-sm leading-none">
-                      {progress.message}
-                    </p>
-                    {progress.details && (
-                      <p className="text-muted-foreground text-xs">
-                        {progress.details}
-                      </p>
-                    )}
-                    {progress.total > 0 && progress.step !== 'parsing' && (
-                      <div className="flex items-baseline gap-2 pt-1">
-                        <span className="font-mono font-semibold text-lg tabular-nums">
-                          {progress.current.toLocaleString()}
-                        </span>
-                        <span className="text-muted-foreground text-xs">
-                          / {progress.total.toLocaleString()}{' '}
-                          {t('money-lover-import.transactions').toLowerCase()}
-                        </span>
-                        <span className="text-muted-foreground ml-auto text-xs">
-                          {Math.round((progress.current / progress.total) * 100)}%
-                        </span>
-                      </div>
-                    )}
-                  </div>
+              {/* Preview Table */}
+              <div className="space-y-2.5">
+                <h3 className="font-semibold text-sm">
+                  {t('money-lover-import.preview')}
+                </h3>
+                <div className="max-h-64 overflow-auto rounded-lg border shadow-sm">
+                  <table className="w-full text-sm">
+                    <thead className="sticky top-0 bg-muted/80 backdrop-blur-sm">
+                      <tr>
+                        <th className="p-2.5 text-left font-semibold text-xs uppercase tracking-wide">
+                          {t('money-lover-import.date')}
+                        </th>
+                        <th className="p-2.5 text-left font-semibold text-xs uppercase tracking-wide">
+                          {t('money-lover-import.category')}
+                        </th>
+                        <th className="p-2.5 text-right font-semibold text-xs uppercase tracking-wide">
+                          {t('money-lover-import.amount')}
+                        </th>
+                        <th className="p-2.5 text-left font-semibold text-xs uppercase tracking-wide">
+                          {t('money-lover-import.wallet')}
+                        </th>
+                        <th className="p-2.5 text-left font-semibold text-xs uppercase tracking-wide">
+                          {t('money-lover-import.note')}
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {previewData.map((row, idx) => {
+                        const amount = parseFloat(row.amount);
+                        const isExpense = amount < 0;
+
+                        return (
+                          <tr
+                            key={idx}
+                            className="border-t transition-colors hover:bg-muted/30"
+                          >
+                            <td className="p-2.5 text-muted-foreground text-xs">
+                              {row.date}
+                            </td>
+                            <td className="p-2.5">
+                              <Badge variant="outline" className="font-medium">
+                                {row.category}
+                              </Badge>
+                            </td>
+                            <td
+                              className={`p-2.5 text-right font-bold tabular-nums ${
+                                isExpense
+                                  ? 'text-dynamic-red'
+                                  : 'text-dynamic-green'
+                              }`}
+                            >
+                              {Intl.NumberFormat(locale, {
+                                style: 'currency',
+                                currency: 'VND',
+                                minimumFractionDigits: 0,
+                                maximumFractionDigits: 0,
+                                signDisplay: 'always',
+                              }).format(amount)}
+                            </td>
+                            <td className="p-2.5">
+                              <Badge
+                                variant="secondary"
+                                className="font-medium"
+                              >
+                                {row.wallet}
+                              </Badge>
+                            </td>
+                            <td className="p-2.5 text-muted-foreground text-xs">
+                              {row.note || '-'}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
                 </div>
-                {progress.status === 'processing' && progress.total > 0 && progress.step !== 'parsing' && (
+                <p className="text-muted-foreground text-xs italic">
+                  {t('money-lover-import.preview_note')}
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* Progress Display */}
+          {progress && (
+            <div className="space-y-4 rounded-lg border bg-gradient-to-br from-muted/50 to-muted/30 p-5 shadow-sm">
+              <div className="flex items-start gap-4">
+                <div className="mt-0.5">
+                  {progress.status === 'processing' && (
+                    <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                  )}
+                  {progress.status === 'success' && (
+                    <CheckCircle2 className="h-6 w-6 text-dynamic-green" />
+                  )}
+                  {progress.status === 'error' && (
+                    <AlertCircle className="h-6 w-6 text-dynamic-red" />
+                  )}
+                </div>
+                <div className="flex-1 space-y-1.5">
+                  <p className="font-semibold text-sm leading-none">
+                    {progress.message}
+                  </p>
+                  {progress.details && (
+                    <p className="text-muted-foreground text-xs">
+                      {progress.details}
+                    </p>
+                  )}
+                  {progress.total > 0 && progress.step !== 'parsing' && (
+                    <div className="flex items-baseline gap-2 pt-1">
+                      <span className="font-mono font-semibold text-lg tabular-nums">
+                        {progress.current.toLocaleString()}
+                      </span>
+                      <span className="text-muted-foreground text-xs">
+                        / {progress.total.toLocaleString()}{' '}
+                        {t('money-lover-import.transactions').toLowerCase()}
+                      </span>
+                      <span className="text-muted-foreground ml-auto text-xs">
+                        {Math.round((progress.current / progress.total) * 100)}%
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </div>
+              {progress.status === 'processing' &&
+                progress.total > 0 &&
+                progress.step !== 'parsing' && (
                   <Progress
                     value={(progress.current / progress.total) * 100}
                     className="h-2.5"
                   />
                 )}
-                {progress.status === 'success' && (
-                  <div className="flex items-center gap-2 rounded-md border-dynamic-green/20 bg-dynamic-green/10 px-3 py-2">
-                    <CheckCircle2 className="h-4 w-4 text-dynamic-green" />
-                    <p className="text-dynamic-green text-xs font-medium">
-                      {t('money-lover-import.import_successful')}
-                    </p>
-                  </div>
-                )}
-              </div>
-            )}
+              {progress.status === 'success' && (
+                <div className="flex items-center gap-2 rounded-md border-dynamic-green/20 bg-dynamic-green/10 px-3 py-2">
+                  <CheckCircle2 className="h-4 w-4 text-dynamic-green" />
+                  <p className="text-dynamic-green text-xs font-medium">
+                    {t('money-lover-import.import_successful')}
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
 
-            <DialogFooter className="gap-2">
-              <DialogClose asChild>
-                <Button
-                  type="button"
-                  variant="secondary"
-                  disabled={loading && progress?.status === 'processing'}
-                >
-                  {t('common.cancel')}
-                </Button>
-              </DialogClose>
-              <Button type="submit" disabled={loading || !fileSelected}>
-                {loading ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    {t('common.processing')}
-                  </>
-                ) : (
-                  <>
-                    <Upload className="mr-2 h-4 w-4" />
-                    {t('money-lover-import.import')}
-                  </>
-                )}
+          <DialogFooter className="gap-2">
+            <DialogClose asChild>
+              <Button
+                type="button"
+                variant="secondary"
+                disabled={loading && progress?.status === 'processing'}
+              >
+                {t('common.cancel')}
               </Button>
-            </DialogFooter>
-          </form>
-        </Form>
+            </DialogClose>
+            <Button type="submit" disabled={loading || !fileSelected}>
+              {loading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  {t('common.processing')}
+                </>
+              ) : (
+                <>
+                  <Upload className="mr-2 h-4 w-4" />
+                  {t('money-lover-import.import')}
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </form>
+      </Form>
     </>
   );
 }
