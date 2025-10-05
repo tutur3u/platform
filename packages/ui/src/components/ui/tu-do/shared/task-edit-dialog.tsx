@@ -9,6 +9,7 @@ import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
+import { Calendar as CalendarComponent } from '@tuturuuu/ui/calendar';
 import { DateTimePicker } from '@tuturuuu/ui/date-time-picker';
 import {
   Dialog,
@@ -25,9 +26,11 @@ import {
 import { useToast } from '@tuturuuu/ui/hooks/use-toast';
 import {
   Box,
+  BriefcaseBusiness,
   Calendar,
   Check,
   ChevronDown,
+  CircleCheck,
   Flag,
   ListTodo,
   Loader2,
@@ -42,6 +45,13 @@ import {
 } from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@tuturuuu/ui/select';
 import { Switch } from '@tuturuuu/ui/switch';
 import { RichTextEditor } from '@tuturuuu/ui/text-editor/editor';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
@@ -136,7 +146,7 @@ const isSameSuggestionState = (
   return true;
 };
 
-type MentionOptionType = 'user' | 'workspace' | 'task';
+type MentionOptionType = 'user' | 'workspace' | 'task' | 'project' | 'date';
 
 interface MentionOption {
   id: string;
@@ -150,7 +160,9 @@ interface MentionOption {
 const mentionGroupOrder: Array<{ type: MentionOptionType; title: string }> = [
   { type: 'user', title: 'People' },
   { type: 'workspace', title: 'Workspaces' },
+  { type: 'project', title: 'Projects' },
   { type: 'task', title: 'Tasks' },
+  { type: 'date', title: 'Dates' },
 ];
 
 const mentionTypeStyles: Record<
@@ -178,6 +190,14 @@ const mentionTypeStyles: Record<
       'bg-dynamic-orange/20 text-dynamic-orange border border-dynamic-orange/30',
     prefix: '@',
   },
+  project: {
+    badgeClass:
+      'border border-dynamic-cyan/40 bg-dynamic-cyan/10 text-dynamic-cyan',
+    avatarFallback: 'P',
+    avatarClass:
+      'bg-dynamic-cyan/20 text-dynamic-cyan border border-dynamic-cyan/30',
+    prefix: '@',
+  },
   task: {
     badgeClass:
       'border border-dynamic-blue/40 bg-dynamic-blue/10 text-dynamic-blue',
@@ -185,6 +205,14 @@ const mentionTypeStyles: Record<
     avatarClass:
       'bg-dynamic-blue/20 text-dynamic-blue border border-dynamic-blue/30',
     prefix: '#',
+  },
+  date: {
+    badgeClass:
+      'border border-dynamic-pink/40 bg-dynamic-pink/10 text-dynamic-pink',
+    avatarFallback: 'D',
+    avatarClass:
+      'bg-dynamic-pink/20 text-dynamic-pink border border-dynamic-pink/30',
+    prefix: '@',
   },
 };
 
@@ -335,6 +363,12 @@ function TaskEditDialogComponent({
   const suggestionMenuWidth = 360;
   const previousMentionHighlightRef = useRef(0);
   const previousSlashHighlightRef = useRef(0);
+  const [showCustomDatePicker, setShowCustomDatePicker] = useState(false);
+  const [customDate, setCustomDate] = useState<Date | undefined>(undefined);
+  const [includeTime, setIncludeTime] = useState(false);
+  const [selectedHour, setSelectedHour] = useState<string>('11');
+  const [selectedMinute, setSelectedMinute] = useState<string>('59');
+  const [selectedPeriod, setSelectedPeriod] = useState<'AM' | 'PM'>('PM');
 
   const queryClient = useQueryClient();
   const previousTaskIdRef = useRef<string | null>(null);
@@ -366,6 +400,12 @@ function TaskEditDialogComponent({
     setMentionState((prev) =>
       prev.open ? createInitialSuggestionState() : prev
     );
+    setShowCustomDatePicker(false);
+    setCustomDate(undefined);
+    setIncludeTime(false);
+    setSelectedHour('11');
+    setSelectedMinute('59');
+    setSelectedPeriod('PM');
   }, []);
 
   const handleEditorReady = useCallback((editor: Editor) => {
@@ -381,6 +421,12 @@ function TaskEditDialogComponent({
       setMentionHighlightIndex(0);
       previousMentionHighlightRef.current = 0;
       previousSlashHighlightRef.current = 0;
+      setShowCustomDatePicker(false);
+      setCustomDate(undefined);
+      setIncludeTime(false);
+      setSelectedHour('11');
+      setSelectedMinute('59');
+      setSelectedPeriod('PM');
     }
   }, [isOpen]);
 
@@ -541,6 +587,19 @@ function TaskEditDialogComponent({
       }));
   }, [allWorkspaces]);
 
+  const mentionProjectOptions = useMemo<MentionOption[]>(
+    () =>
+      [...taskProjects].map((project: any) => ({
+        id: project.id,
+        label: project.name || 'Untitled project',
+        subtitle: project.status || undefined,
+        avatarUrl: null,
+        type: 'project' as const,
+        payload: project,
+      })),
+    [taskProjects]
+  );
+
   const mentionTaskOptions = useMemo<MentionOption[]>(
     () =>
       [...workspaceTasks]
@@ -560,13 +619,68 @@ function TaskEditDialogComponent({
     [workspaceTasks, task?.id]
   );
 
+  const mentionDateOptions = useMemo<MentionOption[]>(() => {
+    const today = dayjs();
+    const options: MentionOption[] = [
+      {
+        id: 'today',
+        label: 'Today',
+        subtitle: today.format('MMM D, YYYY'),
+        avatarUrl: null,
+        type: 'date' as const,
+        payload: { date: today.toISOString() },
+      },
+      {
+        id: 'tomorrow',
+        label: 'Tomorrow',
+        subtitle: today.add(1, 'day').format('MMM D, YYYY'),
+        avatarUrl: null,
+        type: 'date' as const,
+        payload: { date: today.add(1, 'day').toISOString() },
+      },
+      {
+        id: 'next-week',
+        label: 'Next week',
+        subtitle: today.add(1, 'week').format('MMM D, YYYY'),
+        avatarUrl: null,
+        type: 'date' as const,
+        payload: { date: today.add(1, 'week').toISOString() },
+      },
+      {
+        id: 'next-month',
+        label: 'Next month',
+        subtitle: today.add(1, 'month').format('MMM D, YYYY'),
+        avatarUrl: null,
+        type: 'date' as const,
+        payload: { date: today.add(1, 'month').toISOString() },
+      },
+      {
+        id: 'custom-date',
+        label: 'Custom date...',
+        subtitle: 'Pick a specific date',
+        avatarUrl: null,
+        type: 'date' as const,
+        payload: { isCustom: true },
+      },
+    ];
+    return options;
+  }, []);
+
   const allMentionOptions = useMemo<MentionOption[]>(
     () => [
       ...mentionUserOptions,
       ...mentionWorkspaceOptions,
+      ...mentionProjectOptions,
       ...mentionTaskOptions,
+      ...mentionDateOptions,
     ],
-    [mentionUserOptions, mentionWorkspaceOptions, mentionTaskOptions]
+    [
+      mentionUserOptions,
+      mentionWorkspaceOptions,
+      mentionProjectOptions,
+      mentionTaskOptions,
+      mentionDateOptions,
+    ]
   );
 
   const filteredMentionOptions = useMemo(() => {
@@ -578,6 +692,8 @@ function TaskEditDialogComponent({
       return [
         ...mentionUserOptions,
         ...mentionWorkspaceOptions,
+        ...mentionProjectOptions,
+        ...mentionDateOptions,
         ...limitedTasks,
       ];
     }
@@ -605,6 +721,8 @@ function TaskEditDialogComponent({
     mentionTaskOptions,
     mentionUserOptions,
     mentionWorkspaceOptions,
+    mentionProjectOptions,
+    mentionDateOptions,
   ]);
 
   const mentionGroups = useMemo(() => {
@@ -758,7 +876,10 @@ function TaskEditDialogComponent({
 
       if (!selection.empty) {
         closeSlashMenu();
-        closeMentionMenu();
+        // Don't close mention menu if custom date picker is open
+        if (!showCustomDatePicker) {
+          closeMentionMenu();
+        }
         return;
       }
 
@@ -806,11 +927,19 @@ function TaskEditDialogComponent({
         );
         closeSlashMenu();
       } else {
-        closeMentionMenu();
+        // Don't close mention menu if custom date picker is open
+        if (!showCustomDatePicker) {
+          closeMentionMenu();
+        }
       }
     };
 
     const handleBlur = () => {
+      // Don't close mention menu if custom date picker is open
+      if (showCustomDatePicker) {
+        closeSlashMenu();
+        return;
+      }
       closeSlashMenu();
       closeMentionMenu();
     };
@@ -826,7 +955,20 @@ function TaskEditDialogComponent({
       editorInstance.off('selectionUpdate', updateSuggestions);
       editorInstance.off('blur', handleBlur);
     };
-  }, [editorInstance, isOpen, closeSlashMenu, closeMentionMenu]);
+  }, [
+    editorInstance,
+    isOpen,
+    closeSlashMenu,
+    closeMentionMenu,
+    showCustomDatePicker,
+  ]);
+
+  // Blur editor when custom date picker opens to allow input focus
+  useEffect(() => {
+    if (showCustomDatePicker && editorInstance) {
+      editorInstance.commands.blur();
+    }
+  }, [showCustomDatePicker, editorInstance]);
 
   // Quick due date setter (today, tomorrow, etc.)
   const handleQuickDueDate = useCallback(
@@ -1000,6 +1142,12 @@ function TaskEditDialogComponent({
     (option: MentionOption) => {
       if (!editorInstance) return;
 
+      // Handle custom date picker
+      if (option.id === 'custom-date') {
+        setShowCustomDatePicker(true);
+        return;
+      }
+
       const chain = editorInstance.chain().focus();
       if (mentionState.range) {
         chain.deleteRange(mentionState.range);
@@ -1025,6 +1173,76 @@ function TaskEditDialogComponent({
       closeMentionMenu();
     },
     [editorInstance, mentionState.range, closeMentionMenu]
+  );
+
+  const handleCustomDateSelect = useCallback(
+    (date: Date | undefined) => {
+      if (!editorInstance || !date) return;
+
+      let finalDate = dayjs(date);
+      let formattedDate = finalDate.format('MMM D, YYYY');
+
+      if (includeTime) {
+        // Parse and validate hour and minute
+        const hourVal = parseInt(selectedHour || '12', 10);
+        const minuteVal = parseInt(selectedMinute || '0', 10);
+
+        let hour = hourVal;
+        // Convert to 24-hour format
+        if (selectedPeriod === 'PM' && hour !== 12) {
+          hour += 12;
+        } else if (selectedPeriod === 'AM' && hour === 12) {
+          hour = 0;
+        }
+
+        finalDate = finalDate
+          .hour(hour)
+          .minute(minuteVal)
+          .second(0)
+          .millisecond(0);
+        formattedDate = finalDate.format('MMM D, YYYY h:mm A');
+      }
+
+      const chain = editorInstance.chain().focus();
+
+      if (mentionState.range) {
+        chain.deleteRange(mentionState.range);
+      }
+
+      chain
+        .insertContent([
+          {
+            type: 'mention',
+            attrs: {
+              userId: null,
+              entityId: `custom-${finalDate.toISOString()}`,
+              entityType: 'date',
+              displayName: formattedDate,
+              avatarUrl: null,
+              subtitle: null,
+            },
+          },
+          { type: 'text', text: ' ' },
+        ])
+        .run();
+
+      setShowCustomDatePicker(false);
+      setCustomDate(undefined);
+      setIncludeTime(false);
+      setSelectedHour('12');
+      setSelectedMinute('00');
+      setSelectedPeriod('PM');
+      closeMentionMenu();
+    },
+    [
+      editorInstance,
+      mentionState.range,
+      closeMentionMenu,
+      includeTime,
+      selectedHour,
+      selectedMinute,
+      selectedPeriod,
+    ]
   );
 
   const slashCommandMenu =
@@ -1109,7 +1327,7 @@ function TaskEditDialogComponent({
             onMouseDown={(event) => event.stopPropagation()}
           >
             <div className="border-dynamic-border/60 border-b px-3 py-2 font-medium text-muted-foreground text-xs uppercase tracking-wide">
-              Mention people, workspaces, or tasks
+              Mention people, workspaces, projects, dates, or tasks
             </div>
             {(workspaceDetailsLoading ||
               workspaceTasksLoading ||
@@ -1128,7 +1346,7 @@ function TaskEditDialogComponent({
                 <div className="px-3 py-3 text-muted-foreground text-sm">
                   {mentionState.query
                     ? 'No matches found. Try a different keyword.'
-                    : 'Start typing to mention teammates, your workspace, or recent tasks.'}
+                    : 'Start typing to mention teammates, workspaces, projects, dates, or tasks.'}
                 </div>
               ) : (
                 (() => {
@@ -1155,7 +1373,11 @@ function TaskEditDialogComponent({
                             ? 'Person'
                             : option.type === 'workspace'
                               ? 'Workspace'
-                              : 'Task';
+                              : option.type === 'project'
+                                ? 'Project'
+                                : option.type === 'date'
+                                  ? 'Date'
+                                  : 'Task';
 
                         return (
                           <button
@@ -1193,6 +1415,14 @@ function TaskEditDialogComponent({
                                   className="h-full w-full object-cover"
                                   referrerPolicy="no-referrer"
                                 />
+                              ) : option.type === 'workspace' ? (
+                                <BriefcaseBusiness className="h-3.5 w-3.5" />
+                              ) : option.type === 'project' ? (
+                                <Box className="h-3.5 w-3.5" />
+                              ) : option.type === 'task' ? (
+                                <CircleCheck className="h-3.5 w-3.5" />
+                              ) : option.type === 'date' ? (
+                                <Calendar className="h-3.5 w-3.5" />
                               ) : (
                                 <span className="truncate">
                                   {fallbackGlyph}
@@ -1226,6 +1456,146 @@ function TaskEditDialogComponent({
                 })()
               )}
             </div>
+            {showCustomDatePicker && (
+              <button
+                type="button"
+                className="border-dynamic-border/60 border-t p-3"
+                onMouseDown={(e) => {
+                  // Only stop propagation if not clicking on an input
+                  if (!(e.target as HTMLElement).matches('input')) {
+                    e.stopPropagation();
+                  }
+                }}
+                onClick={(e) => {
+                  // Only stop propagation if not clicking on an input
+                  if (!(e.target as HTMLElement).matches('input')) {
+                    e.stopPropagation();
+                  }
+                }}
+              >
+                <div className="mb-2 font-medium text-foreground text-sm">
+                  Select custom date
+                </div>
+                <CalendarComponent
+                  mode="single"
+                  selected={customDate}
+                  onSelect={(date) => {
+                    setCustomDate(date);
+                  }}
+                  className="rounded-md border p-0"
+                />
+                <div className="mt-3 flex items-center gap-2 rounded-md border p-2">
+                  <Switch
+                    checked={includeTime}
+                    onCheckedChange={setIncludeTime}
+                  />
+                  <Label
+                    htmlFor="include-time"
+                    className="cursor-pointer text-sm"
+                  >
+                    Include time
+                  </Label>
+                </div>
+                {includeTime && (
+                  <div className="mt-2 flex items-center gap-2">
+                    <Label className="text-sm">Time:</Label>
+                    <Select
+                      value={selectedHour}
+                      onValueChange={setSelectedHour}
+                    >
+                      <SelectTrigger className="w-20">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {Array.from({ length: 12 }, (_, i) => {
+                          const hour = i + 1;
+                          return (
+                            <SelectItem key={hour} value={hour.toString()}>
+                              {hour}
+                            </SelectItem>
+                          );
+                        })}
+                      </SelectContent>
+                    </Select>
+                    <span>:</span>
+                    <Select
+                      value={selectedMinute}
+                      onValueChange={setSelectedMinute}
+                    >
+                      <SelectTrigger className="w-20">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {['00', '15', '30', '45', '59'].map((min) => (
+                          <SelectItem key={min} value={min}>
+                            {min}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <div className="flex rounded-md border">
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant={selectedPeriod === 'AM' ? 'default' : 'ghost'}
+                        className="h-8 rounded-r-none px-3"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedPeriod('AM');
+                        }}
+                      >
+                        AM
+                      </Button>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant={selectedPeriod === 'PM' ? 'default' : 'ghost'}
+                        className="h-8 rounded-l-none px-3"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedPeriod('PM');
+                        }}
+                      >
+                        PM
+                      </Button>
+                    </div>
+                  </div>
+                )}
+                <div className="mt-3 flex justify-end gap-2">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setShowCustomDatePicker(false);
+                      setCustomDate(undefined);
+                      setIncludeTime(false);
+                      setSelectedHour('12');
+                      setSelectedMinute('00');
+                      setSelectedPeriod('PM');
+                    }}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      if (customDate) {
+                        handleCustomDateSelect(customDate);
+                      }
+                    }}
+                    disabled={!customDate}
+                  >
+                    Insert
+                  </Button>
+                </div>
+              </button>
+            )}
           </div>,
           document.body
         )
@@ -1237,6 +1607,15 @@ function TaskEditDialogComponent({
     if (!editorDom) return;
 
     const handleKeyDown = (event: KeyboardEvent) => {
+      // If custom date picker is open, Escape closes it but keeps mention menu open
+      if (showCustomDatePicker && event.key === 'Escape') {
+        event.preventDefault();
+        event.stopPropagation();
+        setShowCustomDatePicker(false);
+        setCustomDate(undefined);
+        return;
+      }
+
       if ((slashState.open || mentionState.open) && event.key === 'Escape') {
         event.preventDefault();
         event.stopPropagation();
@@ -1283,7 +1662,7 @@ function TaskEditDialogComponent({
         }
       }
 
-      if (mentionState.open) {
+      if (mentionState.open && !showCustomDatePicker) {
         if (filteredMentionOptions.length === 0) return;
 
         if (
@@ -1339,6 +1718,7 @@ function TaskEditDialogComponent({
     insertMentionOption,
     closeSlashMenu,
     closeMentionMenu,
+    showCustomDatePicker,
   ]);
 
   // Fetch available task lists for the board (only if not provided as prop)

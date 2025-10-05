@@ -18,10 +18,17 @@ import {
   useEditor,
 } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
+import {
+  Box,
+  BriefcaseBusiness,
+  Calendar,
+  CircleCheck,
+} from '@tuturuuu/ui/icons';
 import { toast } from '@tuturuuu/ui/sonner';
 import { debounce } from 'lodash';
 import { Plugin, PluginKey, TextSelection } from 'prosemirror-state';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { renderToString } from 'react-dom/server';
 import ImageResize from 'tiptap-extension-resize-image';
 import { ToolBar } from './tool-bar';
 
@@ -167,6 +174,7 @@ interface MentionVisualMeta {
   pillClass: string;
   avatarClass: string;
   fallback: string;
+  icon?: string;
 }
 
 const getMentionVisualMeta = (entityType?: string): MentionVisualMeta => {
@@ -179,6 +187,17 @@ const getMentionVisualMeta = (entityType?: string): MentionVisualMeta => {
         avatarClass:
           'border-dynamic-orange/30 bg-dynamic-orange/20 text-dynamic-orange',
         fallback: 'W',
+        icon: renderToString(<BriefcaseBusiness className="h-3 w-3" />),
+      };
+    case 'project':
+      return {
+        prefix: '@',
+        pillClass:
+          'border-dynamic-cyan/40 bg-dynamic-cyan/10 text-dynamic-cyan',
+        avatarClass:
+          'border-dynamic-cyan/30 bg-dynamic-cyan/20 text-dynamic-cyan',
+        fallback: 'P',
+        icon: renderToString(<Box className="h-3 w-3" />),
       };
     case 'task':
       return {
@@ -188,6 +207,17 @@ const getMentionVisualMeta = (entityType?: string): MentionVisualMeta => {
         avatarClass:
           'border-dynamic-blue/30 bg-dynamic-blue/20 text-dynamic-blue',
         fallback: '#',
+        icon: renderToString(<CircleCheck className="h-3 w-3" />),
+      };
+    case 'date':
+      return {
+        prefix: '@',
+        pillClass:
+          'border-dynamic-pink/40 bg-dynamic-pink/10 text-dynamic-pink',
+        avatarClass:
+          'border-dynamic-pink/30 bg-dynamic-pink/20 text-dynamic-pink',
+        fallback: 'D',
+        icon: renderToString(<Calendar className="h-3 w-3" />),
       };
     case 'user':
     default:
@@ -312,13 +342,21 @@ const Mention = Node.create({
             },
           ],
         ]
-      : [
-          'span',
-          {
-            class: `relative -ml-0.5 flex h-4 w-4 items-center justify-center rounded-full border text-[10px] font-semibold uppercase ${visuals.avatarClass}`,
-          },
-          fallbackGlyph,
-        ];
+      : visuals.icon
+        ? [
+            'span',
+            {
+              class: `relative -ml-0.5 flex h-4 w-4 items-center justify-center rounded-full border ${visuals.avatarClass}`,
+              innerHTML: visuals.icon,
+            },
+          ]
+        : [
+            'span',
+            {
+              class: `relative -ml-0.5 flex h-4 w-4 items-center justify-center rounded-full border text-[10px] font-semibold uppercase ${visuals.avatarClass}`,
+            },
+            fallbackGlyph,
+          ];
 
     return [
       'span',
@@ -370,6 +408,8 @@ const Mention = Node.create({
         img.referrerPolicy = 'no-referrer';
         avatarWrapper.textContent = '';
         avatarWrapper.appendChild(img);
+      } else if (visuals.icon) {
+        avatarWrapper.innerHTML = visuals.icon;
       } else {
         avatarWrapper.textContent =
           currentEntityType === 'user'
@@ -405,8 +445,12 @@ const Mention = Node.create({
             label.textContent = `${visuals.prefix}${nextDisplayName}`;
             dom.setAttribute('data-display-name', nextDisplayName);
             currentDisplayName = nextDisplayName;
-            if (!currentAvatarUrl && currentEntityType === 'user') {
-              avatarWrapper.textContent = getInitials(currentDisplayName);
+            if (!currentAvatarUrl) {
+              if (currentEntityType === 'user') {
+                avatarWrapper.textContent = getInitials(currentDisplayName);
+              } else if (visuals.icon) {
+                avatarWrapper.innerHTML = visuals.icon;
+              }
             }
           }
 
@@ -421,12 +465,15 @@ const Mention = Node.create({
               avatarWrapper.appendChild(img);
               dom.setAttribute('data-avatar-url', nextAvatarUrl);
             } else {
-              const nextInitials =
-                nextEntityType === 'user'
-                  ? getInitials(nextDisplayName)
-                  : getMentionVisualMeta(nextEntityType).fallback;
+              const nextVisuals = getMentionVisualMeta(nextEntityType);
               dom.removeAttribute('data-avatar-url');
-              avatarWrapper.textContent = nextInitials;
+              if (nextEntityType === 'user') {
+                avatarWrapper.textContent = getInitials(nextDisplayName);
+              } else if (nextVisuals.icon) {
+                avatarWrapper.innerHTML = nextVisuals.icon;
+              } else {
+                avatarWrapper.textContent = nextVisuals.fallback;
+              }
             }
             currentAvatarUrl = nextAvatarUrl;
           }
@@ -439,10 +486,13 @@ const Mention = Node.create({
             avatarWrapper.className = `relative -ml-0.5 flex h-4 w-4 items-center justify-center overflow-hidden rounded-full border text-[10px] font-semibold uppercase ${visuals.avatarClass}`;
             label.textContent = `${visuals.prefix}${currentDisplayName}`;
             if (!currentAvatarUrl) {
-              avatarWrapper.textContent =
-                currentEntityType === 'user'
-                  ? getInitials(currentDisplayName)
-                  : visuals.fallback;
+              if (currentEntityType === 'user') {
+                avatarWrapper.textContent = getInitials(currentDisplayName);
+              } else if (visuals.icon) {
+                avatarWrapper.innerHTML = visuals.icon;
+              } else {
+                avatarWrapper.textContent = visuals.fallback;
+              }
             }
             dom.title = currentSubtitle
               ? `${visuals.prefix}${currentDisplayName} • ${currentSubtitle}`
