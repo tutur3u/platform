@@ -46,10 +46,7 @@ export async function POST(_: Request, { params }: Params) {
       .single();
 
     if (fetchError || !task) {
-      return NextResponse.json(
-        { message: 'Task not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ message: 'Task not found' }, { status: 404 });
     }
 
     // Create text content for embedding
