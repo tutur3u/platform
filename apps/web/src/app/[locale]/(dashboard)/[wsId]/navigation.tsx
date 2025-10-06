@@ -139,7 +139,8 @@ export async function WorkspaceNavigationLinks({
     null,
     {
       title: t('sidebar_tabs.tasks'),
-      href: `/${personalOrWsId}/tasks`,
+      href: `/${personalOrWsId}/tasks/my-tasks`,
+      aliases: [`/${personalOrWsId}/tasks`],
       icon: <CircleCheck className="h-5 w-5" />,
       disabled: ENABLE_AI_ONLY || withoutPermission('manage_projects'),
       experimental: 'beta',

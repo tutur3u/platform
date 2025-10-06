@@ -20,6 +20,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
 import { useToast } from '@tuturuuu/ui/hooks/use-toast';
@@ -28,9 +29,12 @@ import {
   Calendar,
   Check,
   ChevronDown,
+  Copy,
+  ExternalLink,
   Flag,
   ListTodo,
   Loader2,
+  MoreVertical,
   Plus,
   Search,
   Settings,
@@ -53,6 +57,7 @@ import {
   useWorkspaceLabels,
 } from '@tuturuuu/utils/task-helper';
 import dayjs from 'dayjs';
+import { usePathname } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { CustomDatePickerDialog } from './custom-date-picker/custom-date-picker-dialog';
 import {
@@ -106,6 +111,7 @@ function TaskEditDialogComponent({
   showUserPresence?: boolean;
 }) {
   const isCreateMode = mode === 'create';
+  const pathname = usePathname();
 
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
@@ -186,7 +192,7 @@ function TaskEditDialogComponent({
   const [hasDraft, setHasDraft] = useState(false);
   const [createMultiple, setCreateMultiple] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [showMobileSidebar, setShowMobileSidebar] = useState(false);
+  const [showOptionsSidebar, setShowOptionsSidebar] = useState(false);
   const [workspaceMembers, setWorkspaceMembers] = useState<any[]>([]);
   const [loadingMembers, setLoadingMembers] = useState(false);
   const [selectedAssignees, setSelectedAssignees] = useState<any[]>(
@@ -267,6 +273,21 @@ function TaskEditDialogComponent({
   const handleEditorReady = useCallback((editor: Editor) => {
     setEditorInstance(editor);
   }, []);
+
+  // Sync URL with task dialog state (edit mode only)
+  useEffect(() => {
+    if (!isOpen || isCreateMode || !task?.id || !workspaceId || !pathname)
+      return;
+
+    // Update URL to include task ID without navigation
+    const newUrl = `/${workspaceId}/tasks/${task.id}`;
+    window.history.replaceState(null, '', newUrl);
+
+    return () => {
+      // Restore URL when dialog closes
+      window.history.replaceState(null, '', `/tasks/boards/${boardId}`);
+    };
+  }, [isOpen, task?.id, pathname, boardId, isCreateMode, workspaceId]);
 
   useEffect(() => {
     if (!isOpen) {
@@ -2263,9 +2284,9 @@ function TaskEditDialogComponent({
           {/* Main content area - Task title and description */}
           <div className="flex min-w-0 flex-1 flex-col bg-background transition-all duration-300">
             {/* Enhanced Header with gradient */}
-            <div className="flex items-center justify-between border-b bg-gradient-to-r from-dynamic-orange/5 via-background to-background px-4 py-3 backdrop-blur-sm md:px-8 md:py-4">
-              <div className="flex items-center gap-2 md:gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-dynamic-orange/10 ring-1 ring-dynamic-orange/20">
+            <div className="flex items-center justify-between border-b px-4 py-2 md:px-8">
+              <div className="flex items-center gap-2">
+                <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-dynamic-orange/10 ring-1 ring-dynamic-orange/20">
                   <ListTodo className="h-4 w-4 text-dynamic-orange" />
                 </div>
                 <div className="flex min-w-0 flex-col gap-0.5">
@@ -2295,31 +2316,64 @@ function TaskEditDialogComponent({
                     Create multiple
                   </label>
                 )}
-                {!isCreateMode && (
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-7 w-7 text-muted-foreground hover:text-dynamic-red"
-                    onClick={() => setShowDeleteConfirm(true)}
-                    title="Delete task"
-                  >
-                    <Trash className="h-4 w-4" />
-                  </Button>
+                {!isCreateMode && task?.id && (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7 text-muted-foreground hover:text-foreground"
+                        title="More options"
+                      >
+                        <MoreVertical className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem
+                        onClick={() => {
+                          navigator.clipboard.writeText(task.id);
+                          toast({
+                            title: 'Task ID copied',
+                            description: 'Task ID has been copied to clipboard',
+                          });
+                        }}
+                      >
+                        <Copy className="mr-2 h-4 w-4" />
+                        Copy ID
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => {
+                          const url = `${window.location.origin}${pathname?.split('/tasks/')[0]}/tasks/${task.id}`;
+                          navigator.clipboard.writeText(url);
+                          toast({
+                            title: 'Link copied',
+                            description:
+                              'Task link has been copied to clipboard',
+                          });
+                        }}
+                      >
+                        <ExternalLink className="mr-2 h-4 w-4" />
+                        Copy Link
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem
+                        onClick={() =>
+                          setShowOptionsSidebar(!showOptionsSidebar)
+                        }
+                      >
+                        <Settings className="mr-2 h-4 w-4" />
+                        Options
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => setShowDeleteConfirm(true)}
+                        className="text-dynamic-red focus:text-dynamic-red"
+                      >
+                        <Trash className="mr-2 h-4 w-4" />
+                        Delete
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 )}
-                <Button
-                  variant={showMobileSidebar ? 'secondary' : 'ghost'}
-                  size="icon"
-                  className={cn(
-                    'h-7 w-7 transition-all',
-                    showMobileSidebar
-                      ? 'bg-dynamic-orange/10 text-dynamic-orange hover:bg-dynamic-orange/20'
-                      : 'text-muted-foreground hover:text-foreground'
-                  )}
-                  onClick={() => setShowMobileSidebar(!showMobileSidebar)}
-                  title={showMobileSidebar ? 'Hide sidebar' : 'Show sidebar'}
-                >
-                  <Settings className="h-4 w-4" />
-                </Button>
                 <Button
                   variant="ghost"
                   size="icon"
@@ -2499,7 +2553,7 @@ function TaskEditDialogComponent({
           </div>
 
           {/* Simplified Right sidebar - toggleable */}
-          {showMobileSidebar && (
+          {showOptionsSidebar && (
             <div className="fixed inset-y-0 right-0 z-50 flex w-full flex-col border-l bg-background shadow-lg transition-all duration-300 sm:w-[380px] md:relative md:z-auto md:w-[380px] md:bg-gradient-to-b md:from-muted/20 md:to-muted/5 md:shadow-none">
               {/* Sidebar header with icon */}
               <div className="border-border/50 border-b bg-gradient-to-b from-background/95 to-background/80 px-6 py-4 backdrop-blur-md">
@@ -2522,7 +2576,7 @@ function TaskEditDialogComponent({
                     variant="ghost"
                     size="icon"
                     className="h-8 w-8 shrink-0"
-                    onClick={() => setShowMobileSidebar(false)}
+                    onClick={() => setShowOptionsSidebar(false)}
                     title="Close sidebar"
                   >
                     <X className="h-4 w-4" />
@@ -3327,11 +3381,11 @@ function TaskEditDialogComponent({
           </div>
 
           {/* Overlay when sidebar is open */}
-          {showMobileSidebar && (
+          {showOptionsSidebar && (
             <button
               type="button"
               className="fixed inset-0 z-40 bg-black/70 backdrop-blur-sm md:hidden"
-              onClick={() => setShowMobileSidebar(false)}
+              onClick={() => setShowOptionsSidebar(false)}
               aria-label="Close sidebar"
             />
           )}
