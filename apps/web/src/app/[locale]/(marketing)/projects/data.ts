@@ -16,7 +16,7 @@ export type Project = {
 const NCT_REPO_URL = 'https://github.com/rmit-nct/hub';
 
 export const projects: Project[] = [
-   {
+  {
     name: 'Neo Drone',
     description:
       'A drone project powered by the ESP32 microcontroller and programmed with ESP-IDF 5.0. The drone is controlled remotely using the ESP-Drone mobile app (Android), leveraging Wi-Fi communication for real-time flight control and navigation.',
@@ -113,7 +113,14 @@ export const projects: Project[] = [
     description:
       'A Next.js-based agent that listens to Microsoft Teams meetings, transcribes audio using OpenAI’s Whisper, and generates structured meeting minutes with Google Gemini. The system integrates Microsoft Graph API for meeting access and automates the entire workflow from audio capture to final summary.',
     type: 'web',
-    techStack: ['Next.js', 'TypeScript', 'Tailwind CSS', 'Microsoft Graph API', 'OpenAI Whisper', 'Google Gemini'],
+    techStack: [
+      'Next.js',
+      'TypeScript',
+      'Tailwind CSS',
+      'Microsoft Graph API',
+      'OpenAI Whisper',
+      'Google Gemini',
+    ],
     status: 'ongoing',
     semester: 'B/2025',
     manager: 'Nguyen Gia Khang',
