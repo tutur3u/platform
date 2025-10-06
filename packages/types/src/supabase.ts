@@ -1118,6 +1118,27 @@ export type Database = {
         };
         Returns: boolean;
       };
+      match_tasks: {
+        Args: {
+          filter_deleted?: boolean;
+          filter_ws_id?: string;
+          match_count?: number;
+          match_threshold?: number;
+          query_embedding: string;
+          query_text: string;
+        };
+        Returns: {
+          archived: boolean;
+          completed: boolean;
+          description: string;
+          end_date: string;
+          id: string;
+          list_id: string;
+          name: string;
+          similarity: number;
+          start_date: string;
+        }[];
+      };
       nova_get_all_challenges_with_user_stats: {
         Args: {
           user_id: string;
@@ -7197,8 +7218,10 @@ export type Database = {
           creator_id?: null | string;
           deleted?: boolean | null;
           description?: null | string;
+          embedding?: null | string;
           end_date?: null | string;
           estimation_points?: null | number;
+          fts?: null | unknown;
           id?: string;
           is_splittable?: boolean | null;
           list_id?: null | string;
@@ -7254,8 +7277,10 @@ export type Database = {
           creator_id: null | string;
           deleted: boolean | null;
           description: null | string;
+          embedding: null | string;
           end_date: null | string;
           estimation_points: null | number;
+          fts: null | unknown;
           id: string;
           is_splittable: boolean | null;
           list_id: null | string;
@@ -7274,8 +7299,10 @@ export type Database = {
           creator_id?: null | string;
           deleted?: boolean | null;
           description?: null | string;
+          embedding?: null | string;
           end_date?: null | string;
           estimation_points?: null | number;
+          fts?: null | unknown;
           id?: string;
           is_splittable?: boolean | null;
           list_id?: null | string;

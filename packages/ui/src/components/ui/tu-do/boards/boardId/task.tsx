@@ -54,9 +54,9 @@ import {
   Timer,
   Trash2,
   Turtle,
+  unicornHead,
   UserMinus,
   UserStar,
-  unicornHead,
   X,
 } from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
@@ -640,8 +640,7 @@ function TaskCardInner({
         variant="secondary"
         className={cn(
           'p-1 text-xs',
-          colors[task.priority as keyof typeof colors],
-          task.priority === 'critical' && 'animate-pulse font-semibold'
+          colors[task.priority as keyof typeof colors]
         )}
       >
         {labels[task.priority as keyof typeof labels]}
