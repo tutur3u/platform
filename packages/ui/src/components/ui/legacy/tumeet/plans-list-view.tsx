@@ -23,7 +23,6 @@ export function PlansListView({
 }: {
   plans: MeetTogetherPlanWithParticipants[];
   locale: string;
-  // biome-ignore lint/suspicious/noExplicitAny: <translations are not typed>
   t: any;
   user?: { id: string } | null;
 }) {
