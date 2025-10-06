@@ -5,7 +5,7 @@ import { useTimeBlocking } from '@tuturuuu/ui/hooks/time-blocking-provider';
 import { useIsMobile } from '@tuturuuu/ui/hooks/use-mobile';
 import { ChevronLeft, ChevronRight } from '@tuturuuu/ui/icons';
 import { Tabs, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
-import { timetzToHour } from '@tuturuuu/ui/utils/date-helper';
+import { timetzToHour } from '@tuturuuu/utils/date-helper';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import { memo, useEffect, useMemo, useState } from 'react';

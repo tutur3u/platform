@@ -6,7 +6,7 @@ import type {
   UserVoteWithUserInfo,
 } from '@tuturuuu/types/primitives/Poll';
 import { TimeBlockingProvider } from '@tuturuuu/ui/hooks/time-blocking-provider';
-import { getPlan } from '@tuturuuu/ui/utils/plan-helpers';
+import { getPlan } from '@tuturuuu/utils/plan-helpers';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
 import PlanDetailsClient from './plan-details-client';
 import 'dayjs/locale/vi';

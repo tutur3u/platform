@@ -30,6 +30,7 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
+import { useTaskActions } from '@tuturuuu/ui/hooks/use-task-actions';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import {
   AlertCircle,
@@ -53,23 +54,23 @@ import {
   Timer,
   Trash2,
   Turtle,
-  unicornHead,
   UserMinus,
   UserStar,
+  unicornHead,
   X,
 } from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
 import { ScrollArea } from '@tuturuuu/ui/scroll-area';
-import {
-  getDescriptionMetadata,
-  getDescriptionText,
-} from '@tuturuuu/ui/utils/text-helper';
 import { cn } from '@tuturuuu/utils/format';
 import {
   useBoardConfig,
   useWorkspaceLabels,
 } from '@tuturuuu/utils/task-helper';
+import {
+  getDescriptionMetadata,
+  getDescriptionText,
+} from '@tuturuuu/utils/text-helper';
 import {
   format,
   formatDistanceToNow,
@@ -82,7 +83,6 @@ import { AssigneeSelect } from '../../shared/assignee-select';
 import { TaskEditDialog } from '../../shared/task-edit-dialog';
 import { TaskEstimationDisplay } from '../../shared/task-estimation-display';
 import { TaskLabelsDisplay } from '../../shared/task-labels-display';
-import { useTaskActions } from './hooks/use-task-actions';
 import {
   TaskDueDateMenu,
   TaskEstimationMenu,

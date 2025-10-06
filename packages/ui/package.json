@@ -142,11 +142,6 @@
       "types": "./src/components/ui/custom/education/certificates/types.ts",
       "import": "./src/components/ui/custom/education/certificates/types.ts"
     },
-    "./utils/text-helper": "./src/utils/text-helper.ts",
-    "./utils/plan-helpers": "./src/utils/plan-helpers.ts",
-    "./utils/date-helper": "./src/utils/date-helper.ts",
-    "./finance": "./src/components/ui/finance/index.ts",
-    "./sticky-bottom-bar": "./src/components/ui/sticky-bottom-bar.tsx",
     "./*": "./src/components/ui/*.tsx"
   },
   "packageManager": "bun@1.2.23"

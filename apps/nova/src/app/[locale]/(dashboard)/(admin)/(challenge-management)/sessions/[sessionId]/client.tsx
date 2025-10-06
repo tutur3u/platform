@@ -29,9 +29,9 @@ import {
   TableRow,
 } from '@tuturuuu/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
+import { calculateDuration } from '@tuturuuu/utils/date-helper';
 import { useRouter } from 'next/navigation';
 import type { SessionData } from './types';
-import { calculateDuration } from './utils/date-helper';
 
 interface SessionClientProps {
   session: SessionData;
