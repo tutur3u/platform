@@ -92,7 +92,7 @@ begin
     tasks.end_date,
     tasks.completed,
     tasks.archived,
-    cr.semantic_similarity::float as similarity
+    cr.combined_score::float as similarity
   from combined_results cr
   inner join tasks on tasks.id = cr.id
   inner join task_lists on tasks.list_id = task_lists.id
