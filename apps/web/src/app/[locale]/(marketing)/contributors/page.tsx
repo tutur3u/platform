@@ -201,13 +201,15 @@ async function fetchPullRequests(
   repo: string = GITHUB_REPO
 ): Promise<number> {
   try {
-    // First get total count from the search API
-    const { data: searchData } = await octokit.search.issuesAndPullRequests({
-      q: `repo:${owner}/${repo} is:pr`,
-      per_page: 1,
+    // Get all pull requests to count them
+    const pulls = await octokit.paginate(octokit.rest.pulls.list, {
+      owner,
+      repo,
+      state: 'all',
+      per_page: 100,
     });
 
-    return searchData.total_count;
+    return pulls.length;
   } catch (error) {
     console.error('Error fetching GitHub pull requests:', error);
     return 0;
