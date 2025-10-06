@@ -31,9 +31,9 @@ import {
   SelectValue,
 } from '@tuturuuu/ui/select';
 import { toast } from '@tuturuuu/ui/sonner';
-import { getDescriptionText } from '@tuturuuu/ui/utils/text-helper';
 import { cn } from '@tuturuuu/utils/format';
 import { priorityCompare } from '@tuturuuu/utils/task-helper';
+import { getDescriptionText } from '@tuturuuu/utils/text-helper';
 import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone';
 import utc from 'dayjs/plugin/utc';

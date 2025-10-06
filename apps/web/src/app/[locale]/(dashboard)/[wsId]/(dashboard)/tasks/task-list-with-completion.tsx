@@ -19,8 +19,8 @@ import { toast } from '@tuturuuu/ui/sonner';
 import { TaskEditDialog } from '@tuturuuu/ui/tu-do/shared/task-edit-dialog';
 import { TaskEstimationDisplay } from '@tuturuuu/ui/tu-do/shared/task-estimation-display';
 import { TaskLabelsDisplay } from '@tuturuuu/ui/tu-do/shared/task-labels-display';
-import { getDescriptionText } from '@tuturuuu/ui/utils/text-helper';
 import { cn } from '@tuturuuu/utils/format';
+import { getDescriptionText } from '@tuturuuu/utils/text-helper';
 import {
   formatDistanceToNow,
   isToday,

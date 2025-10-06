@@ -4,7 +4,7 @@ import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import type { ReactNode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { useTaskActions } from '../use-task-actions';
+import { useTaskActions } from './use-task-actions';
 
 // Mock dependencies
 vi.mock('@tuturuuu/supabase/next/client', () => ({

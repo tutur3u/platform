@@ -3,7 +3,7 @@ import {
   compareTimetz,
   maxTimetz,
   minTimetz,
-} from '@tuturuuu/ui/utils/date-helper';
+} from '@tuturuuu/utils/date-helper';
 import {
   addTimeblocks,
   datesToDateMatrix,

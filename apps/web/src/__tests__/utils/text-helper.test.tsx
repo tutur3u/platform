@@ -1,4 +1,4 @@
-import { removeAccents } from '@tuturuuu/ui/utils/text-helper';
+import { removeAccents } from '@tuturuuu/utils/text-helper';
 import { expect, it } from 'vitest';
 
 it('should remove accents from a string', () => {
