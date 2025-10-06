@@ -6,7 +6,9 @@
     "access": "public"
   },
   "scripts": {
-    "ui": "bunx shadcn-ui@latest"
+    "ui": "bunx shadcn-ui@latest",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
@@ -98,6 +100,8 @@
   "devDependencies": {
     "@tailwindcss/postcss": "^4.1.14",
     "@tailwindcss/typography": "^0.5.19",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.0",
     "@tuturuuu/types": "workspace:*",
     "@tuturuuu/typescript-config": "workspace:*",
     "@types/lodash": "^4.17.20",
@@ -105,11 +109,14 @@
     "@types/react": "^19.2.0",
     "@types/react-resizable": "^3.0.8",
     "@types/react-syntax-highlighter": "^15.5.13",
+    "@vitejs/plugin-react": "^5.0.4",
     "autoprefixer": "^10.4.21",
+    "jsdom": "^27.0.0",
     "postcss": "^8.5.6",
     "postcss-load-config": "^6.0.1",
     "tailwindcss": "^4.1.14",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "vitest": "^3.2.4"
   },
   "exports": {
     "./globals.css": "./src/globals.css",

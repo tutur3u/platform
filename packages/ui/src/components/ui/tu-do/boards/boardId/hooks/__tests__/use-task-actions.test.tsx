@@ -1,10 +1,10 @@
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { renderHook, waitFor } from '@testing-library/react';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { useTaskActions } from '../use-task-actions';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { ReactNode } from 'react';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { useTaskActions } from '../use-task-actions';
 
 // Mock dependencies
 vi.mock('@tuturuuu/supabase/next/client', () => ({
@@ -56,6 +56,7 @@ describe('useTaskActions', () => {
     assignees: [],
     labels: [],
     projects: [],
+    created_at: new Date().toISOString(),
   } as Task;
 
   const mockCompletionList: TaskList = {
