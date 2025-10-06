@@ -121,26 +121,12 @@
   "exports": {
     "./globals.css": "./src/globals.css",
     "./postcss.config": "./postcss.config.mjs",
-    "./tailwind.config": "./tailwind.config.ts",
-    "./lib/*": "./src/lib/*.ts",
-    "./hooks/*": "./src/hooks/*.ts",
-    "./hooks/time-blocking-provider": "./src/hooks/time-blocking-provider.tsx",
-    "./hooks/use-calendar": "./src/hooks/use-calendar.tsx",
-    "./hooks/use-calendar-sync": "./src/hooks/use-calendar-sync.tsx",
-    "./hooks/useSearchParams": "./src/hooks/useSearchParams.tsx",
-    "./hooks/use-task-analytics": "./src/hooks/use-task-analytics.ts",
-    "./hooks/useHorizontalScroll": "./src/hooks/useHorizontalScroll.ts",
-    "./calendar-settings": "./src/components/ui/legacy/calendar/settings/index.ts",
-    "./hooks/use-popover-manager": "./src/hooks/use-popover-manager.tsx",
+    "./hooks/*": ["./src/hooks/*.ts", "./src/hooks/*.tsx"],
     "./resolvers": "./src/resolvers.ts",
     "./gsap": "./src/gsap.ts",
     "./tiptap": {
       "types": "./src/components/ui/text-editor/types.ts",
       "import": "./src/components/ui/text-editor/types.ts"
-    },
-    "./custom/education/certificates/types": {
-      "types": "./src/components/ui/custom/education/certificates/types.ts",
-      "import": "./src/components/ui/custom/education/certificates/types.ts"
     },
     "./*": "./src/components/ui/*.tsx"
   },
