@@ -4,6 +4,7 @@ export const APP_PUBLIC_PATHS = [
   '/login',
   '/about',
   '/achievements',
+  '/contributors',
   '/projects',
   '/meet-together',
   '/neo-crush',
