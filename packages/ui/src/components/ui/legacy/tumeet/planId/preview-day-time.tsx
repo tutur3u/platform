@@ -8,7 +8,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@tuturuuu/ui/tooltip';
-import { timetzToTime } from '@tuturuuu/ui/utils/date-helper';
+import { timetzToTime } from '@tuturuuu/utils/date-helper';
 import dayjs from 'dayjs';
 import { memo, useEffect, useMemo } from 'react';
 

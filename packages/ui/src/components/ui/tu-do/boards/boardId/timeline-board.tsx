@@ -21,9 +21,9 @@ import {
   TooltipTrigger,
 } from '@tuturuuu/ui/tooltip';
 import { cn } from '@tuturuuu/utils/format';
+import { getDescriptionText } from '@tuturuuu/utils/text-helper';
 import dayjs from 'dayjs';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { getDescriptionText } from '../../../../../utils/text-helper';
 
 export interface TimelineProps {
   tasks: Task[];

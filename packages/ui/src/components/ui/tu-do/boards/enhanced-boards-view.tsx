@@ -49,11 +49,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { getFilteredMetrics } from '@tuturuuu/utils/task-helpers';
 import { useRouter } from 'next/navigation';
 import { useCallback, useMemo, useState } from 'react';
-import { GanttChart } from '../shared/GanttChart';
-import { StatusDistribution } from '../shared/StatusDistribution';
-import { TaskCreationAnalytics } from '../shared/TaskCreationAnalytics';
-import { TaskGroup } from '../shared/TaskGroup';
-import { TaskWorkflowAnalytics } from '../shared/TaskWorkflowAnalytics';
+import { GanttChart } from './analytics/GanttChart';
+import { StatusDistribution } from './analytics/StatusDistribution';
+import { TaskCreationAnalytics } from './analytics/TaskCreationAnalytics';
+import { TaskGroup } from './analytics/TaskGroup';
+import { TaskWorkflowAnalytics } from './analytics/TaskWorkflowAnalytics';
 import { projectColumns } from './columns';
 import { CopyBoardDialog } from './copy-board-dialog';
 

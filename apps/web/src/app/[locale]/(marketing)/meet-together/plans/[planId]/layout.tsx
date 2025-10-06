@@ -1,4 +1,4 @@
-import { getPlan } from '@tuturuuu/ui/utils/plan-helpers';
+import { getPlan } from '@tuturuuu/utils/plan-helpers';
 import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
 import { siteConfig } from '@/constants/configs';
