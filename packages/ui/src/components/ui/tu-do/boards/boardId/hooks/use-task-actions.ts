@@ -84,13 +84,7 @@ export function useTaskActions({
         }
       );
     }
-  }, [
-    task,
-    targetCompletionList,
-    onUpdate,
-    setIsLoading,
-    updateTaskMutation,
-  ]);
+  }, [task, targetCompletionList, onUpdate, setIsLoading, updateTaskMutation]);
 
   const handleMoveToCompletion = useCallback(async () => {
     if (!targetCompletionList || !onUpdate) return;
@@ -110,13 +104,7 @@ export function useTaskActions({
       setIsLoading(false);
       setMenuOpen(false);
     }
-  }, [
-    targetCompletionList,
-    onUpdate,
-    task.id,
-    setIsLoading,
-    setMenuOpen,
-  ]);
+  }, [targetCompletionList, onUpdate, task.id, setIsLoading, setMenuOpen]);
 
   const handleMoveToClose = useCallback(async () => {
     if (!targetClosedList || !onUpdate) return;
