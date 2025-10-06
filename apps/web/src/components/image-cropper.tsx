@@ -213,12 +213,12 @@ export function ImageCropper({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[90vh] overflow-hidden p-4 sm:max-w-4xl">
-        <DialogHeader>
+      <DialogContent className="flex max-h-[90vh] flex-col p-4 sm:max-w-4xl">
+        <DialogHeader className="shrink-0">
           <DialogTitle className="text-dynamic-foreground">{title}</DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-4">
+        <div className="min-h-0 space-y-4 overflow-y-auto">
           {/* Cropper Container */}
           <div className="relative h-[500px] w-full overflow-hidden rounded-lg border bg-dynamic-muted/20">
             <Cropper
@@ -279,7 +279,7 @@ export function ImageCropper({
           </div>
         </div>
 
-        <DialogFooter className="flex-wrap gap-2 max-sm:gap-2">
+        <DialogFooter className="shrink-0 flex-wrap gap-2 max-sm:gap-2">
           <Button
             variant="outline"
             onClick={handleCancel}

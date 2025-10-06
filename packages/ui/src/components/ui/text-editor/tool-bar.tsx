@@ -6,6 +6,8 @@ import {
   AlignLeft,
   AlignRight,
   Bold,
+  Columns2,
+  Combine,
   FileVideo,
   Heading1,
   Heading2,
@@ -17,9 +19,13 @@ import {
   List,
   ListOrdered,
   Loader2,
+  Rows2,
   Strikethrough,
   Subscript,
   Superscript,
+  Table,
+  Trash2,
+  Workflow,
   YoutubeIcon,
 } from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
@@ -195,6 +201,17 @@ export function ToolBar({ editor, workspaceId, onImageUpload }: ToolBarProps) {
       icon: <ListOrdered className="size-4" />,
       onClick: () => editor?.chain().focus().toggleOrderedList().run(),
       pressed: editor?.isActive('orderedList'),
+    },
+    {
+      key: 'table',
+      icon: <Table className="size-4" />,
+      onClick: () =>
+        editor
+          ?.chain()
+          .focus()
+          .insertTable({ rows: 3, cols: 3, withHeaderRow: true })
+          .run(),
+      pressed: editor?.isActive('table'),
     },
     {
       key: 'highlight',
@@ -530,6 +547,152 @@ export function ToolBar({ editor, workspaceId, onImageUpload }: ToolBarProps) {
     [youtubeUrl, handleAddYoutube]
   );
 
+  const renderTableControls = useCallback(
+    () => (
+      <div className="min-w-[320px] space-y-3 rounded-md border border-dynamic-border bg-dynamic-surface/80 p-3">
+        <div className="flex items-center justify-between border-dynamic-border/50 border-b pb-2">
+          <div className="flex items-center gap-2">
+            <Table className="size-4 text-dynamic-blue" />
+            <span className="font-semibold text-foreground text-sm">
+              Table Options
+            </span>
+          </div>
+        </div>
+
+        {/* Column Controls */}
+        <div className="space-y-1.5">
+          <label className="font-medium text-muted-foreground text-xs uppercase tracking-wide">
+            Columns
+          </label>
+          <div className="flex gap-1.5">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => editor?.chain().focus().addColumnBefore().run()}
+              onMouseDown={(e) => e.preventDefault()}
+              className="h-8 flex-1 text-xs"
+            >
+              <Columns2 className="mr-1.5 size-3.5" />
+              Insert Left
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => editor?.chain().focus().addColumnAfter().run()}
+              onMouseDown={(e) => e.preventDefault()}
+              className="h-8 flex-1 text-xs"
+            >
+              <Columns2 className="mr-1.5 size-3.5" />
+              Insert Right
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => editor?.chain().focus().deleteColumn().run()}
+              onMouseDown={(e) => e.preventDefault()}
+              className="h-8 px-2 text-dynamic-red hover:bg-dynamic-red/10 hover:text-dynamic-red"
+            >
+              <Trash2 className="size-3.5" />
+            </Button>
+          </div>
+        </div>
+
+        {/* Row Controls */}
+        <div className="space-y-1.5">
+          <label className="font-medium text-muted-foreground text-xs uppercase tracking-wide">
+            Rows
+          </label>
+          <div className="flex gap-1.5">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => editor?.chain().focus().addRowBefore().run()}
+              onMouseDown={(e) => e.preventDefault()}
+              className="h-8 flex-1 text-xs"
+            >
+              <Rows2 className="mr-1.5 size-3.5" />
+              Insert Above
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => editor?.chain().focus().addRowAfter().run()}
+              onMouseDown={(e) => e.preventDefault()}
+              className="h-8 flex-1 text-xs"
+            >
+              <Rows2 className="mr-1.5 size-3.5" />
+              Insert Below
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => editor?.chain().focus().deleteRow().run()}
+              onMouseDown={(e) => e.preventDefault()}
+              className="h-8 px-2 text-dynamic-red hover:bg-dynamic-red/10 hover:text-dynamic-red"
+            >
+              <Trash2 className="size-3.5" />
+            </Button>
+          </div>
+        </div>
+
+        {/* Cell Controls */}
+        <div className="space-y-1.5">
+          <label className="font-medium text-muted-foreground text-xs uppercase tracking-wide">
+            Cells
+          </label>
+          <div className="flex gap-1.5">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => editor?.chain().focus().mergeCells().run()}
+              onMouseDown={(e) => e.preventDefault()}
+              className="h-8 flex-1 text-xs"
+            >
+              <Combine className="mr-1.5 size-3.5" />
+              Merge
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => editor?.chain().focus().splitCell().run()}
+              onMouseDown={(e) => e.preventDefault()}
+              className="h-8 flex-1 text-xs"
+            >
+              <Workflow className="mr-1.5 size-3.5" />
+              Split
+            </Button>
+          </div>
+        </div>
+
+        {/* Delete Table */}
+        <div className="border-dynamic-border/50 border-t pt-2">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              editor?.chain().focus().deleteTable().run();
+            }}
+            onMouseDown={(e) => e.preventDefault()}
+            className="h-8 w-full text-dynamic-red text-xs hover:bg-dynamic-red/10 hover:text-dynamic-red"
+          >
+            <Trash2 className="mr-1.5 size-3.5" />
+            Delete Table
+          </Button>
+        </div>
+      </div>
+    ),
+    [editor]
+  );
+
   const renderLinkEditor = useCallback(
     (source: 'bubble' | 'popover') => (
       <div className="space-y-2 rounded-md border border-dynamic-border bg-dynamic-surface/80 p-3">
@@ -610,6 +773,7 @@ export function ToolBar({ editor, workspaceId, onImageUpload }: ToolBarProps) {
           {renderFormattingOptions('bubble')}
           {linkEditorContext === 'bubble' ? renderLinkEditor('bubble') : null}
           {showYoutubeInput ? renderYoutubeInput() : null}
+          {editor?.isActive('table') ? renderTableControls() : null}
         </div>
       </BubbleMenu>
     </>
