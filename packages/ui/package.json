@@ -122,6 +122,7 @@
     "./globals.css": "./src/globals.css",
     "./postcss.config": "./postcss.config.mjs",
     "./hooks/*": "./src/hooks/*.ts",
+    "./hooks/time-blocking-provider": "./src/hooks/time-blocking-provider.tsx",
     "./hooks/use-at-bottom": "./src/hooks/use-at-bottom.tsx",
     "./hooks/use-calendar-sync": "./src/hooks/use-calendar-sync.tsx",
     "./hooks/use-calendar": "./src/hooks/use-calendar.tsx",
