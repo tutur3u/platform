@@ -3,7 +3,7 @@ import { createClient } from '@tuturuuu/supabase/next/client';
 import type { TaskPriority } from '@tuturuuu/types/primitives/Priority';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
-import { useToast } from '@tuturuuu/ui/hooks/use-toast';
+import { toast } from '@tuturuuu/ui/sonner';
 import {
   moveTask,
   useDeleteTask,
@@ -37,7 +37,6 @@ export function useTaskActions({
   setCustomDateDialogOpen,
   setDeleteDialogOpen,
 }: UseTaskActionsProps) {
-  const { toast } = useToast();
   const queryClient = useQueryClient();
   const updateTaskMutation = useUpdateTask(boardId);
   const deleteTaskMutation = useDeleteTask(boardId);
@@ -62,18 +61,15 @@ export function useTaskActions({
 
         await moveTask(supabase, task.id, targetCompletionList.id);
 
-        toast({
-          title: 'Task completed',
+        toast.success('Task completed', {
           description: `Task marked as done and moved to ${targetCompletionList.name}`,
         });
 
         onUpdate();
       } catch (error) {
         console.error('Failed to complete task:', error);
-        toast({
-          title: 'Error',
+        toast.error('Error', {
           description: 'Failed to complete task. Please try again.',
-          variant: 'destructive',
         });
       } finally {
         setIsLoading(false);
@@ -94,7 +90,6 @@ export function useTaskActions({
     onUpdate,
     setIsLoading,
     updateTaskMutation,
-    toast,
   ]);
 
   const handleMoveToCompletion = useCallback(async () => {
@@ -108,10 +103,8 @@ export function useTaskActions({
       onUpdate();
     } catch (error) {
       console.error('Failed to move task to completion:', error);
-      toast({
-        title: 'Error',
+      toast.error('Error', {
         description: 'Failed to complete task. Please try again.',
-        variant: 'destructive',
       });
     } finally {
       setIsLoading(false);
@@ -123,7 +116,6 @@ export function useTaskActions({
     task.id,
     setIsLoading,
     setMenuOpen,
-    toast,
   ]);
 
   const handleMoveToClose = useCallback(async () => {
@@ -134,23 +126,20 @@ export function useTaskActions({
     const supabase = createClient();
     try {
       await moveTask(supabase, task.id, targetClosedList.id);
-      toast({
-        title: 'Success',
+      toast.success('Success', {
         description: 'Task marked as closed',
       });
       onUpdate();
     } catch (error) {
       console.error('Failed to move task to closed:', error);
-      toast({
-        title: 'Error',
+      toast.error('Error', {
         description: 'Failed to close task. Please try again.',
-        variant: 'destructive',
       });
     } finally {
       setIsLoading(false);
       setMenuOpen(false);
     }
-  }, [targetClosedList, onUpdate, task.id, setIsLoading, setMenuOpen, toast]);
+  }, [targetClosedList, onUpdate, task.id, setIsLoading, setMenuOpen]);
 
   const handleDelete = useCallback(() => {
     setIsLoading(true);
@@ -191,23 +180,20 @@ export function useTaskActions({
 
       if (error) throw error;
 
-      toast({
-        title: 'Success',
+      toast.success('Success', {
         description: 'All assignees removed from task',
       });
     } catch (error) {
       queryClient.setQueryData(['tasks', boardId], previousTasks);
       console.error('Failed to remove all assignees:', error);
-      toast({
-        title: 'Error',
+      toast.error('Error', {
         description: 'Failed to remove assignees. Please try again.',
-        variant: 'destructive',
       });
     } finally {
       setIsLoading(false);
       setMenuOpen(false);
     }
-  }, [task, boardId, queryClient, setIsLoading, setMenuOpen, toast]);
+  }, [task, boardId, queryClient, setIsLoading, setMenuOpen]);
 
   const handleRemoveAssignee = useCallback(
     async (assigneeId: string) => {
@@ -241,24 +227,21 @@ export function useTaskActions({
         if (error) throw error;
 
         const assignee = task.assignees?.find((a) => a.id === assigneeId);
-        toast({
-          title: 'Success',
+        toast.success('Success', {
           description: `${assignee?.display_name || assignee?.email || 'Assignee'} removed from task`,
         });
       } catch (error) {
         queryClient.setQueryData(['tasks', boardId], previousTasks);
         console.error('Failed to remove assignee:', error);
-        toast({
-          title: 'Error',
+        toast.error('Error', {
           description: 'Failed to remove assignee. Please try again.',
-          variant: 'destructive',
         });
       } finally {
         setIsLoading(false);
         setMenuOpen(false);
       }
     },
-    [task, boardId, queryClient, setIsLoading, setMenuOpen, toast]
+    [task, boardId, queryClient, setIsLoading, setMenuOpen]
   );
 
   const handleMoveToList = useCallback(
@@ -277,24 +260,21 @@ export function useTaskActions({
         const targetList = availableLists.find(
           (list) => list.id === targetListId
         );
-        toast({
-          title: 'Success',
+        toast.success('Success', {
           description: `Task moved to ${targetList?.name || 'selected list'}`,
         });
         onUpdate();
       } catch (error) {
         console.error('Failed to move task:', error);
-        toast({
-          title: 'Error',
+        toast.error('Error', {
           description: 'Failed to move task. Please try again.',
-          variant: 'destructive',
         });
       } finally {
         setIsLoading(false);
         setMenuOpen(false);
       }
     },
-    [task.id, task.list_id, availableLists, onUpdate, setIsLoading, setMenuOpen, toast]
+    [task.id, task.list_id, availableLists, onUpdate, setIsLoading, setMenuOpen]
   );
 
   const handleDueDateChange = useCallback(
@@ -310,8 +290,7 @@ export function useTaskActions({
         { taskId: task.id, updates: { end_date: newDate } },
         {
           onSuccess: () => {
-            toast({
-              title: 'Due date updated',
+            toast.success('Due date updated', {
               description: newDate
                 ? 'Due date set successfully'
                 : 'Due date removed',
@@ -323,7 +302,7 @@ export function useTaskActions({
         }
       );
     },
-    [task.id, updateTaskMutation, setIsLoading, toast]
+    [task.id, updateTaskMutation, setIsLoading]
   );
 
   const handlePriorityChange = useCallback(
@@ -334,8 +313,7 @@ export function useTaskActions({
         { taskId: task.id, updates: { priority: newPriority } },
         {
           onSuccess: () => {
-            toast({
-              title: 'Priority updated',
+            toast.success('Priority updated', {
               description: newPriority
                 ? 'Priority changed'
                 : 'Priority cleared',
@@ -347,7 +325,7 @@ export function useTaskActions({
         }
       );
     },
-    [task.id, task.priority, updateTaskMutation, setIsLoading, toast]
+    [task.id, task.priority, updateTaskMutation, setIsLoading]
   );
 
   const updateEstimationPoints = useCallback(
@@ -360,14 +338,12 @@ export function useTaskActions({
         });
       } catch (e: any) {
         console.error('Failed to update estimation', e);
-        toast({
-          title: 'Failed to update estimation',
+        toast.error('Failed to update estimation', {
           description: e.message || 'Please try again',
-          variant: 'destructive',
         });
       }
     },
-    [task.id, task.estimation_points, updateTaskMutation, toast]
+    [task.id, task.estimation_points, updateTaskMutation]
   );
 
   const handleCustomDateChange = useCallback(
@@ -396,8 +372,7 @@ export function useTaskActions({
         { taskId: task.id, updates: { end_date: newDate } },
         {
           onSuccess: () => {
-            toast({
-              title: 'Due date updated',
+            toast.success('Due date updated', {
               description: newDate
                 ? 'Custom due date set successfully'
                 : 'Due date removed',
@@ -409,7 +384,7 @@ export function useTaskActions({
         }
       );
     },
-    [task.id, updateTaskMutation, setIsLoading, setCustomDateDialogOpen, toast]
+    [task.id, updateTaskMutation, setIsLoading, setCustomDateDialogOpen]
   );
 
   return {

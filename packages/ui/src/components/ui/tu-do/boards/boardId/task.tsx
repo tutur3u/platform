@@ -160,7 +160,7 @@ function TaskCardInner({
     useWorkspaceLabels(boardConfig?.ws_id);
 
   // Local state for UI interactions
-  const [estimationSaving, setEstimationSaving] = useState(false);
+  const [estimationSaving, _setEstimationSaving] = useState(false);
   const [labelsSaving, setLabelsSaving] = useState<string | null>(null);
   const [projectsSaving, setProjectsSaving] = useState<string | null>(null);
 

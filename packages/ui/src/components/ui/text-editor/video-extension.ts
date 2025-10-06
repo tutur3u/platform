@@ -11,7 +11,7 @@ declare module '@tiptap/core' {
       /**
        * Toggle a video
        */
-      toggleVideo: (src: string) => ReturnType;
+      toggleVideo: (src?: string) => ReturnType;
     };
   }
 }
@@ -57,14 +57,15 @@ export const Video = Node.create({
       setVideo:
         (src: string) =>
         ({ commands }) =>
-          commands.insertContent(
-            `<video controls="true" style="width: 100%" src="${src}" />`
-          ),
+          commands.insertContent({
+            type: this.name,
+            attrs: { src },
+          }),
 
       toggleVideo:
-        () =>
+        (src?: string) =>
         ({ commands }) =>
-          commands.toggleNode(this.name, 'paragraph'),
+          commands.toggleNode(this.name, 'paragraph', src ? { src } : {}),
     };
   },
 

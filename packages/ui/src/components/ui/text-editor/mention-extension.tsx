@@ -22,66 +22,91 @@ const getMentionVisualMeta = (entityType?: string): MentionVisualMeta => {
       return {
         prefix: '@',
         pillClass:
-          'leading-relaxed border-dynamic-orange/40 bg-dynamic-orange/10 text-dynamic-orange',
+          'border-dynamic-orange/40 bg-dynamic-orange/10 text-dynamic-orange',
         avatarClass:
           'border-dynamic-orange/30 bg-dynamic-orange/20 text-dynamic-orange',
         fallback: 'W',
-        icon: renderToString(<BriefcaseBusiness className="h-3 w-3" />),
+        icon: renderToString(
+          <span className="flex h-full w-full items-center justify-center">
+            <BriefcaseBusiness className="h-3 w-3" />
+          </span>
+        ),
       };
     case 'project':
       return {
         prefix: '@',
         pillClass:
-          'leading-relaxed border-dynamic-cyan/40 bg-dynamic-cyan/10 text-dynamic-cyan',
+          'border-dynamic-cyan/40 bg-dynamic-cyan/10 text-dynamic-cyan',
         avatarClass:
           'border-dynamic-cyan/30 bg-dynamic-cyan/20 text-dynamic-cyan',
         fallback: 'P',
-        icon: renderToString(<Box className="h-3 w-3" />),
+        icon: renderToString(
+          <span className="flex h-full w-full items-center justify-center">
+            <Box className="h-3 w-3" />
+          </span>
+        ),
       };
     case 'task':
       return {
         prefix: '#',
         pillClass:
-          'leading-relaxed border-dynamic-blue/40 bg-dynamic-blue/10 text-dynamic-blue',
+          'border-dynamic-blue/40 bg-dynamic-blue/10 text-dynamic-blue',
         avatarClass:
           'border-dynamic-blue/30 bg-dynamic-blue/20 text-dynamic-blue',
         fallback: '#',
-        icon: renderToString(<CircleCheck className="h-3 w-3" />),
+        icon: renderToString(
+          <span className="flex h-full w-full items-center justify-center">
+            <CircleCheck className="h-3 w-3" />
+          </span>
+        ),
       };
     case 'date':
       return {
         prefix: '@',
         pillClass:
-          'leading-relaxed border-dynamic-pink/40 bg-dynamic-pink/10 text-dynamic-pink',
+          'border-dynamic-pink/40 bg-dynamic-pink/10 text-dynamic-pink',
         avatarClass:
           'border-dynamic-pink/30 bg-dynamic-pink/20 text-dynamic-pink',
         fallback: 'D',
-        icon: renderToString(<Calendar className="h-3 w-3" />),
+        icon: renderToString(
+          <span className="flex h-full w-full items-center justify-center">
+            <Calendar className="h-3 w-3" />
+          </span>
+        ),
       };
     case 'external-user':
       return {
         prefix: '@',
         pillClass:
-          'leading-relaxed border-dynamic-gray/40 bg-dynamic-gray/10 text-dynamic-gray',
+          'border-dynamic-gray/40 bg-dynamic-gray/10 text-dynamic-gray',
         avatarClass:
           'border-dynamic-gray/30 bg-dynamic-gray/20 text-dynamic-gray',
         fallback: '@',
-        icon: renderToString(<User className="h-3 w-3" />),
+        icon: renderToString(
+          <span className="flex h-full w-full items-center justify-center">
+            <User className="h-3 w-3" />
+          </span>
+        ),
       };
     case 'user':
       return {
         prefix: '@',
         pillClass:
-          'leading-relaxed border-dynamic-green/40 bg-dynamic-green/10 text-dynamic-green',
+          'border-dynamic-green/40 bg-dynamic-green/10 text-dynamic-green',
         avatarClass:
           'border-dynamic-green/30 bg-dynamic-green/20 text-dynamic-green',
         fallback: '@',
+        icon: renderToString(
+          <span className="flex h-full w-full items-center justify-center">
+            <User className="h-3 w-3" />
+          </span>
+        ),
       };
     default:
       return {
         prefix: '@',
         pillClass:
-          'leading-relaxed border-border bg-muted text-muted-foreground',
+          'border-border bg-muted text-muted-foreground',
         avatarClass: 'border-border bg-muted text-muted-foreground',
         fallback: '@',
       };
@@ -182,7 +207,7 @@ export const Mention = Node.create({
       'data-display-name': displayName,
       'data-avatar-url': avatarUrl ?? '',
       'data-subtitle': subtitle ?? '',
-      class: `inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[12px] font-medium transition-colors ${visuals.pillClass}`,
+      class: `inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[12px] font-medium leading-none transition-colors ${visuals.pillClass}`,
       ...attrs,
     };
 
@@ -190,14 +215,14 @@ export const Mention = Node.create({
       ? [
           'span',
           {
-            class: `relative -ml-0.5 h-4 w-4 overflow-hidden rounded-full border ${visuals.avatarClass}`,
+            class: `relative -ml-0.5 flex h-4 w-4 shrink-0 items-center justify-center self-center overflow-hidden rounded-full border ${visuals.avatarClass}`,
           },
           [
             'img',
             {
               src: avatarUrl,
               alt: displayName,
-              class: 'h-full w-full object-cover',
+              class: 'absolute inset-0 h-full w-full object-cover',
             },
           ],
         ]
@@ -205,14 +230,14 @@ export const Mention = Node.create({
         ? [
             'span',
             {
-              class: `relative -ml-0.5 flex h-4 w-4 items-center justify-center rounded-full border ${visuals.avatarClass}`,
+              class: `relative -ml-0.5 flex h-4 w-4 shrink-0 items-center justify-center self-center rounded-full border ${visuals.avatarClass}`,
               innerHTML: visuals.icon,
             },
           ]
         : [
             'span',
             {
-              class: `relative -ml-0.5 flex h-4 w-4 items-center justify-center rounded-full border text-[10px] font-semibold uppercase ${visuals.avatarClass}`,
+              class: `relative -ml-0.5 flex h-4 w-4 shrink-0 items-center justify-center self-center rounded-full border text-[10px] font-semibold uppercase ${visuals.avatarClass}`,
             },
             fallbackGlyph,
           ];
@@ -250,20 +275,20 @@ export const Mention = Node.create({
       if (currentAvatarUrl)
         dom.setAttribute('data-avatar-url', currentAvatarUrl);
       if (currentSubtitle) dom.setAttribute('data-subtitle', currentSubtitle);
-      dom.className = `inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[12px] font-medium transition-colors ${visuals.pillClass}`;
+      dom.className = `inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[12px] font-medium leading-none transition-colors ${visuals.pillClass}`;
       dom.contentEditable = 'false';
       dom.title = currentSubtitle
         ? `${visuals.prefix}${currentDisplayName} • ${currentSubtitle}`
         : `${visuals.prefix}${currentDisplayName}`;
 
       const avatarWrapper = document.createElement('span');
-      avatarWrapper.className = `relative -ml-0.5 flex h-4 w-4 items-center justify-center overflow-hidden rounded-full border text-[10px] font-semibold uppercase ${visuals.avatarClass}`;
+      avatarWrapper.className = `relative -ml-0.5 flex h-4 w-4 shrink-0 items-center justify-center self-center overflow-hidden rounded-full border text-[10px] font-semibold uppercase ${visuals.avatarClass}`;
 
       if (currentAvatarUrl) {
         const img = document.createElement('img');
         img.src = currentAvatarUrl;
         img.alt = currentDisplayName;
-        img.className = 'h-full w-full object-cover';
+        img.className = 'absolute inset-0 h-full w-full object-cover';
         img.referrerPolicy = 'no-referrer';
         avatarWrapper.textContent = '';
         avatarWrapper.appendChild(img);
@@ -321,7 +346,7 @@ export const Mention = Node.create({
               const img = document.createElement('img');
               img.src = nextAvatarUrl;
               img.alt = nextDisplayName;
-              img.className = 'h-full w-full object-cover';
+              img.className = 'absolute inset-0 h-full w-full object-cover';
               img.referrerPolicy = 'no-referrer';
               avatarWrapper.textContent = '';
               avatarWrapper.appendChild(img);
@@ -347,8 +372,8 @@ export const Mention = Node.create({
             currentEntityType = nextEntityType;
             visuals = getMentionVisualMeta(currentEntityType);
             dom.setAttribute('data-entity-type', currentEntityType);
-            dom.className = `inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[12px] font-medium transition-colors ${visuals.pillClass}`;
-            avatarWrapper.className = `relative -ml-0.5 flex h-4 w-4 items-center justify-center overflow-hidden rounded-full border text-[10px] font-semibold uppercase ${visuals.avatarClass}`;
+            dom.className = `inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[12px] font-medium leading-none transition-colors ${visuals.pillClass}`;
+            avatarWrapper.className = `relative -ml-0.5 flex h-4 w-4 shrink-0 items-center justify-center self-center overflow-hidden rounded-full border text-[10px] font-semibold uppercase ${visuals.avatarClass}`;
             label.textContent = `${visuals.prefix}${currentDisplayName}`;
             if (!currentAvatarUrl) {
               if (
