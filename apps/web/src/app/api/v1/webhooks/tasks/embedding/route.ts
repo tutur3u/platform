@@ -1,6 +1,6 @@
 import { google } from '@ai-sdk/google';
-import { embed } from 'ai';
 import { createClient } from '@tuturuuu/supabase/next/server';
+import { embed } from 'ai';
 import { NextResponse } from 'next/server';
 
 /**
@@ -20,7 +20,7 @@ export async function POST(req: Request) {
     }
 
     const body = await req.json();
-    const { type, table, record } = body;
+    const { type, table, record, old_record } = body;
 
     // Only process tasks table
     if (table !== 'tasks') {
@@ -55,6 +55,36 @@ export async function POST(req: Request) {
 
     const textForEmbedding = `${taskName}\n${descriptionText}`.trim();
 
+    // For UPDATE events, check if the text content has changed
+    if (type === 'UPDATE' && old_record) {
+      const oldTaskName = old_record.name || '';
+      const oldTaskDescription = old_record.description;
+
+      let oldDescriptionText = '';
+      if (oldTaskDescription) {
+        try {
+          const oldDescJson =
+            typeof oldTaskDescription === 'string'
+              ? JSON.parse(oldTaskDescription)
+              : oldTaskDescription;
+          oldDescriptionText = extractTextFromTipTap(oldDescJson);
+        } catch {
+          oldDescriptionText = String(oldTaskDescription);
+        }
+      }
+
+      const oldTextForEmbedding =
+        `${oldTaskName}\n${oldDescriptionText}`.trim();
+
+      // If text hasn't changed, skip embedding generation to avoid loop
+      if (textForEmbedding === oldTextForEmbedding) {
+        return NextResponse.json({
+          message: 'Text unchanged, skipping embedding',
+          taskId,
+        });
+      }
+    }
+
     // Skip if no meaningful content
     if (!textForEmbedding) {
       return NextResponse.json({
@@ -75,7 +105,16 @@ export async function POST(req: Request) {
       },
     });
 
-    // Update task with embedding using admin client
+    // Validate embedding shape before writing
+    if (!Array.isArray(embedding) || embedding.length !== 768) {
+      console.error('Invalid embedding shape:', embedding?.length);
+      return NextResponse.json(
+        { message: 'Invalid embedding shape', taskId },
+        { status: 500 }
+      );
+    }
+
+    // Update task with embedding (pgvector expects number[] not JSON string)
     const { error: updateError } = await supabase
       .from('tasks')
       .update({ embedding: JSON.stringify(embedding) })

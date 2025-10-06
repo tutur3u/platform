@@ -201,7 +201,13 @@ export async function generateTaskEmbedding({
       },
     });
 
-    // Update task with embedding
+    // Validate embedding shape before writing
+    if (!Array.isArray(embedding) || embedding.length !== 768) {
+      console.error('Invalid embedding shape:', embedding?.length);
+      return;
+    }
+
+    // Update task with embedding (pgvector expects number[] not JSON string)
     await supabase
       .from('tasks')
       .update({ embedding: JSON.stringify(embedding) })

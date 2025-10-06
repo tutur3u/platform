@@ -1,6 +1,6 @@
 import { google } from '@ai-sdk/google';
-import { embed } from 'ai';
 import { createClient } from '@tuturuuu/supabase/next/server';
+import { embed } from 'ai';
 import { NextResponse } from 'next/server';
 
 interface Params {
@@ -25,6 +25,18 @@ export async function POST(_: Request, { params }: Params) {
 
     if (!user) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+    }
+
+    // Check workspace membership
+    const { data: membership, error: membershipError } = await supabase
+      .from('workspace_members')
+      .select('id')
+      .eq('ws_id', wsId)
+      .eq('user_id', user.id)
+      .single();
+
+    if (membershipError || !membership) {
+      return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
     }
 
     // Fetch tasks without embeddings for this workspace
@@ -115,7 +127,17 @@ export async function POST(_: Request, { params }: Params) {
           },
         });
 
-        // Update task with embedding
+        // Validate embedding shape before writing
+        if (!Array.isArray(embedding) || embedding.length !== 768) {
+          results.failed++;
+          results.errors.push({
+            taskId: task.id,
+            error: 'Invalid embedding shape',
+          });
+          continue;
+        }
+
+        // Update task with embedding (pgvector expects number[] not JSON string)
         const { error: updateError } = await supabase
           .from('tasks')
           .update({ embedding: JSON.stringify(embedding) })

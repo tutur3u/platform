@@ -124,9 +124,18 @@ export async function GET(req: NextRequest) {
       // Update tasks with embeddings in parallel
       const updatePromises = taskData.map(async (task, idx) => {
         try {
+          const embedding = embeddings[idx];
+
+          // Validate embedding shape before writing
+          if (!Array.isArray(embedding) || embedding.length !== 768) {
+            results.failed++;
+            results.errors.push(`Task ${task.id}: Invalid embedding shape`);
+            return;
+          }
+
           const { error: updateError } = await supabase
             .from('tasks')
-            .update({ embedding: JSON.stringify(embeddings[idx]) })
+            .update({ embedding: JSON.stringify(embedding) })
             .eq('id', task.id);
 
           if (updateError) {

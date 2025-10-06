@@ -91,6 +91,7 @@ export function BoardNavigation({ wsId, setOpen }: BoardNavigationProps) {
     boards: Board[];
   }>({
     queryKey: ['boards', wsId],
+    enabled: Boolean(wsId) && wsId !== 'undefined',
     queryFn: async () => {
       const response = await fetch(
         `/api/v1/workspaces/${wsId}/boards-with-lists`
