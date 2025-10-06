@@ -52,6 +52,7 @@ const FormSchema = z.object({
   category_id: z.string().min(1),
   taken_at: z.date(),
   report_opt_in: z.boolean(),
+  tag_ids: z.array(z.string()).optional(),
 });
 
 export function TransactionForm({ wsId, data, onFinish }: Props) {
@@ -76,6 +77,21 @@ export function TransactionForm({ wsId, data, onFinish }: Props) {
     queryFn: () => fetcher(`/api/workspaces/${wsId}/wallets`),
   });
 
+  const { data: tags, isLoading: tagsLoading } = useQuery<
+    Array<{ id: string; name: string; color: string }>
+  >({
+    queryKey: [`/api/workspaces/${wsId}/tags`],
+    queryFn: () => fetcher(`/api/workspaces/${wsId}/tags`),
+  });
+
+  // Fetch existing tags for this transaction if editing
+  const { data: existingTags } = useQuery<Array<{ tag_id: string }>>({
+    queryKey: [`/api/workspaces/${wsId}/transactions/${data?.id}/tags`],
+    queryFn: () =>
+      fetcher(`/api/workspaces/${wsId}/transactions/${data?.id}/tags`),
+    enabled: !!data?.id,
+  });
+
   const form = useForm({
     resolver: zodResolver(FormSchema),
     defaultValues: {
@@ -86,6 +102,7 @@ export function TransactionForm({ wsId, data, onFinish }: Props) {
       category_id: data?.category_id || '',
       taken_at: data?.taken_at ? new Date(data.taken_at) : new Date(),
       report_opt_in: data?.report_opt_in || true,
+      tag_ids: existingTags?.map((t) => t.tag_id) || [],
     },
   });
 
@@ -301,6 +318,38 @@ export function TransactionForm({ wsId, data, onFinish }: Props) {
                     {...field}
                   />
                 </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="tag_ids"
+            render={({ field }) => (
+              <FormItem className="flex flex-col">
+                <FormLabel>{t('transaction-data-table.tags')}</FormLabel>
+                <Combobox
+                  t={t}
+                  {...field}
+                  mode="multiple"
+                  options={
+                    tags
+                      ? tags.map((tag) => ({
+                          value: tag.id || '',
+                          label: tag.name || '',
+                        }))
+                      : []
+                  }
+                  label={tagsLoading ? 'Loading...' : undefined}
+                  placeholder={t('transaction-data-table.select_tags')}
+                  selected={field.value || []}
+                  onChange={field.onChange}
+                  disabled={loading || tagsLoading}
+                />
+                <FormDescription>
+                  {t('transaction-data-table.tags_description')}
+                </FormDescription>
                 <FormMessage />
               </FormItem>
             )}

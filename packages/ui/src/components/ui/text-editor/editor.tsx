@@ -3,6 +3,7 @@
 import Highlight from '@tiptap/extension-highlight';
 import Image from '@tiptap/extension-image';
 import Link from '@tiptap/extension-link';
+import { TaskItem, TaskList } from '@tiptap/extension-list';
 import Placeholder from '@tiptap/extension-placeholder';
 import Strike from '@tiptap/extension-strike';
 import Subscript from '@tiptap/extension-subscript';
@@ -18,10 +19,18 @@ import {
   useEditor,
 } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
+import {
+  Box,
+  BriefcaseBusiness,
+  Calendar,
+  CircleCheck,
+  User,
+} from '@tuturuuu/ui/icons';
 import { toast } from '@tuturuuu/ui/sonner';
 import { debounce } from 'lodash';
 import { Plugin, PluginKey, TextSelection } from 'prosemirror-state';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { renderToString } from 'react-dom/server';
 import ImageResize from 'tiptap-extension-resize-image';
 import { ToolBar } from './tool-bar';
 
@@ -167,6 +176,7 @@ interface MentionVisualMeta {
   pillClass: string;
   avatarClass: string;
   fallback: string;
+  icon?: string;
 }
 
 const getMentionVisualMeta = (entityType?: string): MentionVisualMeta => {
@@ -175,28 +185,67 @@ const getMentionVisualMeta = (entityType?: string): MentionVisualMeta => {
       return {
         prefix: '@',
         pillClass:
-          'border-dynamic-orange/40 bg-dynamic-orange/10 text-dynamic-orange',
+          'leading-relaxed border-dynamic-orange/40 bg-dynamic-orange/10 text-dynamic-orange',
         avatarClass:
           'border-dynamic-orange/30 bg-dynamic-orange/20 text-dynamic-orange',
         fallback: 'W',
+        icon: renderToString(<BriefcaseBusiness className="h-3 w-3" />),
+      };
+    case 'project':
+      return {
+        prefix: '@',
+        pillClass:
+          'leading-relaxed border-dynamic-cyan/40 bg-dynamic-cyan/10 text-dynamic-cyan',
+        avatarClass:
+          'border-dynamic-cyan/30 bg-dynamic-cyan/20 text-dynamic-cyan',
+        fallback: 'P',
+        icon: renderToString(<Box className="h-3 w-3" />),
       };
     case 'task':
       return {
         prefix: '#',
         pillClass:
-          'border-dynamic-blue/40 bg-dynamic-blue/10 text-dynamic-blue',
+          'leading-relaxed border-dynamic-blue/40 bg-dynamic-blue/10 text-dynamic-blue',
         avatarClass:
           'border-dynamic-blue/30 bg-dynamic-blue/20 text-dynamic-blue',
         fallback: '#',
+        icon: renderToString(<CircleCheck className="h-3 w-3" />),
+      };
+    case 'date':
+      return {
+        prefix: '@',
+        pillClass:
+          'leading-relaxed border-dynamic-pink/40 bg-dynamic-pink/10 text-dynamic-pink',
+        avatarClass:
+          'border-dynamic-pink/30 bg-dynamic-pink/20 text-dynamic-pink',
+        fallback: 'D',
+        icon: renderToString(<Calendar className="h-3 w-3" />),
+      };
+    case 'external-user':
+      return {
+        prefix: '@',
+        pillClass:
+          'leading-relaxed border-dynamic-gray/40 bg-dynamic-gray/10 text-dynamic-gray',
+        avatarClass:
+          'border-dynamic-gray/30 bg-dynamic-gray/20 text-dynamic-gray',
+        fallback: '@',
+        icon: renderToString(<User className="h-3 w-3" />),
       };
     case 'user':
+      return {
+        prefix: '@',
+        pillClass:
+          'leading-relaxed border-dynamic-green/40 bg-dynamic-green/10 text-dynamic-green',
+        avatarClass:
+          'border-dynamic-green/30 bg-dynamic-green/20 text-dynamic-green',
+        fallback: '@',
+      };
     default:
       return {
         prefix: '@',
         pillClass:
-          'border-dynamic-green/40 bg-dynamic-green/10 text-dynamic-green',
-        avatarClass:
-          'border-dynamic-green/30 bg-dynamic-green/20 text-dynamic-green',
+          'leading-relaxed border-border bg-muted text-muted-foreground',
+        avatarClass: 'border-border bg-muted text-muted-foreground',
         fallback: '@',
       };
   }
@@ -283,7 +332,10 @@ const Mention = Node.create({
     const displayName = (displayNameRaw || 'Member').trim();
     const visuals = getMentionVisualMeta(entityType);
     const initials = getInitials(displayName);
-    const fallbackGlyph = entityType === 'user' ? initials : visuals.fallback;
+    const fallbackGlyph =
+      entityType === 'user' || entityType === 'external-user'
+        ? initials
+        : visuals.fallback;
 
     const baseAttributes = {
       'data-mention': 'true',
@@ -312,13 +364,21 @@ const Mention = Node.create({
             },
           ],
         ]
-      : [
-          'span',
-          {
-            class: `relative -ml-0.5 flex h-4 w-4 items-center justify-center rounded-full border text-[10px] font-semibold uppercase ${visuals.avatarClass}`,
-          },
-          fallbackGlyph,
-        ];
+      : visuals.icon
+        ? [
+            'span',
+            {
+              class: `relative -ml-0.5 flex h-4 w-4 items-center justify-center rounded-full border ${visuals.avatarClass}`,
+              innerHTML: visuals.icon,
+            },
+          ]
+        : [
+            'span',
+            {
+              class: `relative -ml-0.5 flex h-4 w-4 items-center justify-center rounded-full border text-[10px] font-semibold uppercase ${visuals.avatarClass}`,
+            },
+            fallbackGlyph,
+          ];
 
     return [
       'span',
@@ -370,9 +430,11 @@ const Mention = Node.create({
         img.referrerPolicy = 'no-referrer';
         avatarWrapper.textContent = '';
         avatarWrapper.appendChild(img);
+      } else if (visuals.icon) {
+        avatarWrapper.innerHTML = visuals.icon;
       } else {
         avatarWrapper.textContent =
-          currentEntityType === 'user'
+          currentEntityType === 'user' || currentEntityType === 'external-user'
             ? getInitials(currentDisplayName)
             : visuals.fallback;
       }
@@ -405,8 +467,15 @@ const Mention = Node.create({
             label.textContent = `${visuals.prefix}${nextDisplayName}`;
             dom.setAttribute('data-display-name', nextDisplayName);
             currentDisplayName = nextDisplayName;
-            if (!currentAvatarUrl && currentEntityType === 'user') {
-              avatarWrapper.textContent = getInitials(currentDisplayName);
+            if (!currentAvatarUrl) {
+              if (
+                currentEntityType === 'user' ||
+                currentEntityType === 'external-user'
+              ) {
+                avatarWrapper.textContent = getInitials(currentDisplayName);
+              } else if (visuals.icon) {
+                avatarWrapper.innerHTML = visuals.icon;
+              }
             }
           }
 
@@ -421,12 +490,18 @@ const Mention = Node.create({
               avatarWrapper.appendChild(img);
               dom.setAttribute('data-avatar-url', nextAvatarUrl);
             } else {
-              const nextInitials =
-                nextEntityType === 'user'
-                  ? getInitials(nextDisplayName)
-                  : getMentionVisualMeta(nextEntityType).fallback;
+              const nextVisuals = getMentionVisualMeta(nextEntityType);
               dom.removeAttribute('data-avatar-url');
-              avatarWrapper.textContent = nextInitials;
+              if (
+                nextEntityType === 'user' ||
+                nextEntityType === 'external-user'
+              ) {
+                avatarWrapper.textContent = getInitials(nextDisplayName);
+              } else if (nextVisuals.icon) {
+                avatarWrapper.innerHTML = nextVisuals.icon;
+              } else {
+                avatarWrapper.textContent = nextVisuals.fallback;
+              }
             }
             currentAvatarUrl = nextAvatarUrl;
           }
@@ -439,10 +514,16 @@ const Mention = Node.create({
             avatarWrapper.className = `relative -ml-0.5 flex h-4 w-4 items-center justify-center overflow-hidden rounded-full border text-[10px] font-semibold uppercase ${visuals.avatarClass}`;
             label.textContent = `${visuals.prefix}${currentDisplayName}`;
             if (!currentAvatarUrl) {
-              avatarWrapper.textContent =
-                currentEntityType === 'user'
-                  ? getInitials(currentDisplayName)
-                  : visuals.fallback;
+              if (
+                currentEntityType === 'user' ||
+                currentEntityType === 'external-user'
+              ) {
+                avatarWrapper.textContent = getInitials(currentDisplayName);
+              } else if (visuals.icon) {
+                avatarWrapper.innerHTML = visuals.icon;
+              } else {
+                avatarWrapper.textContent = visuals.fallback;
+              }
             }
             dom.title = currentSubtitle
               ? `${visuals.prefix}${currentDisplayName} • ${currentSubtitle}`
@@ -582,13 +663,78 @@ export function RichTextEditor({
   const getEditorClasses = useMemo(() => {
     const baseClasses = [
       'border border-dynamic-border rounded-md bg-transparent',
-      'prose dark:prose-invert max-w-none overflow-y-auto',
+      'max-w-none overflow-y-auto',
+      // Typography base
+      'text-foreground leading-relaxed',
+      // First child margin reset
+      '[&_:first-child]:mt-0',
+      // Headings
+      '[&_h1]:text-4xl [&_h1]:font-bold [&_h1]:text-foreground [&_h1]:mt-6 [&_h1]:mb-4',
+      '[&_h2]:text-3xl [&_h2]:font-semibold [&_h2]:text-foreground [&_h2]:mt-5 [&_h2]:mb-3',
+      '[&_h3]:text-2xl [&_h3]:font-semibold [&_h3]:text-foreground [&_h3]:mt-4 [&_h3]:mb-2',
+      '[&_h4]:text-xl [&_h4]:font-semibold [&_h4]:text-foreground [&_h4]:mt-3 [&_h4]:mb-2',
+      '[&_h5]:text-lg [&_h5]:font-semibold [&_h5]:text-foreground [&_h5]:mt-3 [&_h5]:mb-2',
+      '[&_h6]:text-base [&_h6]:font-semibold [&_h6]:text-foreground [&_h6]:mt-3 [&_h6]:mb-2',
+      // Paragraphs
+      '[&_p]:my-3 [&_p]:leading-7',
+      // Lists - general styling
+      '[&_ul]:my-3 [&_ul]:ml-6 [&_ul]:px-4 [&_ul]:mr-[0.4rem]',
+      '[&_ol]:my-3 [&_ol]:ml-6 [&_ol]:px-4 [&_ol]:mr-[0.4rem]',
+      '[&_li]:my-1 [&_li]:leading-7',
+      '[&_ul_li_p]:my-1',
+      '[&_ol_li_p]:my-1',
+      '[&_li_h1]:text-4xl [&_li_h2]:text-3xl [&_li_h3]:text-2xl',
+      // Task list specific styles
+      '[&_ul[data-type="taskList"]]:list-none [&_ul[data-type="taskList"]]:ml-6 [&_ul[data-type="taskList"]]:pl-0 [&_ul[data-type="taskList"]]:pr-4 [&_ul[data-type="taskList"]]:mr-[0.4rem] [&_ul[data-type="taskList"]]:my-3',
+      '[&_ul[data-type="taskList"]_li]:flex [&_ul[data-type="taskList"]_li]:items-start [&_ul[data-type="taskList"]_li]:my-1',
+      '[&_ul[data-type="taskList"]_li>label]:flex-[0_0_auto] [&_ul[data-type="taskList"]_li>label]:mr-2 [&_ul[data-type="taskList"]_li>label]:select-none [&_ul[data-type="taskList"]_li>label]:pt-[0.453rem]',
+      '[&_ul[data-type="taskList"]_li>div]:flex-1 [&_ul[data-type="taskList"]_li>div]:min-w-0',
+      '[&_ul[data-type="taskList"]_li_p]:my-1',
+      // Checkbox styling
+      '[&_ul[data-type="taskList"]_input[type="checkbox"]]:appearance-none [&_ul[data-type="taskList"]_input[type="checkbox"]]:h-[18px] [&_ul[data-type="taskList"]_input[type="checkbox"]]:w-[18px]',
+      '[&_ul[data-type="taskList"]_input[type="checkbox"]]:cursor-pointer [&_ul[data-type="taskList"]_input[type="checkbox"]]:rounded-[4px] [&_ul[data-type="taskList"]_input[type="checkbox"]]:border-2 [&_ul[data-type="taskList"]_input[type="checkbox"]]:border-dynamic-border',
+      '[&_ul[data-type="taskList"]_input[type="checkbox"]]:bg-background [&_ul[data-type="taskList"]_input[type="checkbox"]]:transition-all [&_ul[data-type="taskList"]_input[type="checkbox"]]:duration-150',
+      '[&_ul[data-type="taskList"]_input[type="checkbox"]]:shrink-0',
+      '[&_ul[data-type="taskList"]_input[type="checkbox"]:hover]:border-dynamic-gray [&_ul[data-type="taskList"]_input[type="checkbox"]:hover]:bg-dynamic-gray/10 [&_ul[data-type="taskList"]_input[type="checkbox"]:hover]:scale-105',
+      '[&_ul[data-type="taskList"]_input[type="checkbox"]:focus]:outline-none [&_ul[data-type="taskList"]_input[type="checkbox"]:focus]:ring-2 [&_ul[data-type="taskList"]_input[type="checkbox"]:focus]:ring-dynamic-gray/30 [&_ul[data-type="taskList"]_input[type="checkbox"]:focus]:ring-offset-2 [&_ul[data-type="taskList"]_input[type="checkbox"]:focus]:border-dynamic-gray',
+      '[&_ul[data-type="taskList"]_input[type="checkbox"]:checked]:bg-dynamic-gray/30 [&_ul[data-type="taskList"]_input[type="checkbox"]:checked]:border-dynamic-gray',
+      '[&_ul[data-type="taskList"]_input[type="checkbox"]:checked:hover]:bg-dynamic-gray/50 [&_ul[data-type="taskList"]_input[type="checkbox"]:checked:hover]:border-dynamic-gray/90',
+      `[&_ul[data-type="taskList"]_input[type="checkbox"]:checked]:bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2016%2016%22%3E%3Cpath%20fill%3D%22none%22%20stroke%3D%22white%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20stroke-width%3D%222%22%20d%3D%22M4%208l2.5%202.5L12%205%22%2F%3E%3C%2Fsvg%3E')]`,
+      '[&_ul[data-type="taskList"]_input[type="checkbox"]:checked]:bg-center [&_ul[data-type="taskList"]_input[type="checkbox"]:checked]:bg-no-repeat [&_ul[data-type="taskList"]_input[type="checkbox"]:checked]:bg-[length:14px_14px]',
+      // Nested task lists
+      '[&_ul[data-type="taskList"]_ul[data-type="taskList"]]:my-0 [&_ul[data-type="taskList"]_ul[data-type="taskList"]]:ml-0',
+      // Blockquotes
+      '[&_blockquote]:border-l-4 [&_blockquote]:border-dynamic-border [&_blockquote]:pl-4 [&_blockquote]:my-4',
+      '[&_blockquote]:text-muted-foreground [&_blockquote]:italic',
+      // Code
+      '[&_code]:text-dynamic-pink [&_code]:bg-dynamic-pink/10 [&_code]:px-1.5 [&_code]:py-0.5',
+      '[&_code]:rounded [&_code]:text-sm [&_code]:font-mono',
+      '[&_pre]:bg-dynamic-border/50 [&_pre]:p-4 [&_pre]:rounded-md [&_pre]:my-4 [&_pre]:overflow-x-auto',
+      '[&_pre_code]:bg-transparent [&_pre_code]:p-0 [&_pre_code]:text-foreground',
+      // Strong/Bold
+      '[&_strong]:font-bold [&_strong]:text-foreground',
+      '[&_b]:font-bold [&_b]:text-foreground',
+      // Emphasis/Italic
+      '[&_em]:italic [&_em]:text-foreground',
+      '[&_i]:italic [&_i]:text-foreground',
+      // Links (ensure they maintain cyan color even when bold)
+      '[&_a]:text-dynamic-cyan [&_a]:underline [&_a]:cursor-pointer',
+      '[&_a:hover]:text-dynamic-cyan/80',
+      '[&_a_strong]:text-dynamic-cyan [&_a_b]:text-dynamic-cyan',
+      '[&_strong_a]:text-dynamic-cyan [&_b_a]:text-dynamic-cyan',
+      // Horizontal rule
+      '[&_hr]:border-dynamic-border [&_hr]:my-8',
+      // Tables
+      '[&_table]:w-full [&_table]:my-4 [&_table]:border-collapse',
+      '[&_th]:border [&_th]:border-dynamic-border [&_th]:px-4 [&_th]:py-2 [&_th]:font-semibold',
+      '[&_th]:bg-dynamic-border/20 [&_th]:text-foreground',
+      '[&_td]:border [&_td]:border-dynamic-border [&_td]:px-4 [&_td]:py-2',
+      // Placeholder styles
       '[&_*:is(p,h1,h2,h3).is-empty::before]:content-[attr(data-placeholder)]',
       '[&_*:is(p,h1,h2,h3).is-empty::before]:text-muted-foreground',
       '[&_*:is(p,h1,h2,h3).is-empty::before]:float-left',
       '[&_*:is(p,h1,h2,h3).is-empty::before]:h-0',
       '[&_*:is(p,h1,h2,h3).is-empty::before]:pointer-events-none',
-      '[&_li]:my-1 [&_li_h1]:text-4xl [&_li_h2]:text-3xl [&_li_h3]:text-2xl',
       className,
     ].filter(Boolean);
     return baseClasses.join(' ');
@@ -636,7 +782,7 @@ export function RichTextEditor({
         defaultProtocol: 'https',
         HTMLAttributes: {
           class:
-            'text-dynamic-blue hover:text-dynamic-blue/80 underline cursor-pointer transition-colors',
+            'text-dynamic-cyan hover:text-dynamic-cyan/80 underline cursor-pointer transition-colors',
           rel: 'noopener noreferrer',
           target: '_blank',
         },
@@ -654,6 +800,10 @@ export function RichTextEditor({
       Subscript,
       Superscript,
       Mention,
+      TaskItem.configure({
+        nested: true,
+      }),
+      TaskList,
       Image.configure({
         inline: true,
         allowBase64: false,

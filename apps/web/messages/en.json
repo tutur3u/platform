@@ -411,6 +411,12 @@
     "last-year": "Last year",
     "next-year": "Next year"
   },
+  "date_groups": {
+    "today": "Today",
+    "yesterday": "Yesterday",
+    "transaction": "transaction",
+    "transactions": "transactions"
+  },
   "home": {
     "headline": "Your intelligent shortcut",
     "subheadline": "Take control of workflows, supercharged by AI",
@@ -1127,7 +1133,11 @@
     "overview": "Overview",
     "wallets": "Wallets",
     "transactions": "Transactions",
+    "recurring": "Recurring",
+    "budgets": "Budgets",
+    "analytics": "Analytics",
     "categories": "Categories",
+    "tags": "Tags",
     "invoices": "Invoices",
     "import": "Import",
     "settings": "Settings"
@@ -1249,7 +1259,10 @@
     "common": {
       "empty": "Empty",
       "error": "Something went wrong",
-      "unknown": "Unknown"
+      "unknown": "Unknown",
+      "load_more": "Load more",
+      "end_of_list": "You've reached the end",
+      "no_results": "No results found"
     },
     "referral_success": "Sucessfully referred a new user",
     "user_already_referred": "This user has already been referred.",
@@ -1383,15 +1396,23 @@
     "select_category": "Select category",
     "amount": "Amount",
     "description": "Description",
+    "tags": "Tags",
+    "select_tags": "Select tags",
+    "tags_description": "Add tags to organize and categorize this transaction",
     "report_opt_in": "Show in reports",
     "report_opt_in_description": "If unchecked, this transaction will not be included in any financial reports.",
     "taken_at": "Taken at",
     "created_at": "Created at",
+    "all": "All",
     "income": "Income",
     "expense": "Expense",
     "daily_total_from_14_recent_days": "Daily total from 14 most recent days",
     "monthly_total_from_12_recent_months": "Monthly total from 12 most recent months",
-    "user": "Creator"
+    "user": "Creator",
+    "hide_confidential": "Hide numbers",
+    "show_confidential": "Show numbers",
+    "financial_overview": "Financial Overview",
+    "financial_overview_description": "Track your income, expenses, and overall financial health"
   },
   "transaction-category-data-table": {
     "id": "ID",
@@ -1401,11 +1422,46 @@
     "select_type": "Select type",
     "name": "Name",
     "amount": "Transactions",
+    "total_amount": "Total Amount",
     "type": "Type",
     "income": "Income",
     "expense": "Expense",
     "is_expense": "Is expense",
     "created_at": "Created at"
+  },
+  "money-lover-import": {
+    "import_from_money_lover": "Import from Money Lover",
+    "description": "Import transactions from Money Lover CSV export. Select the delimiter and upload your file.",
+    "delimiter": "Delimiter",
+    "delimiter_tab": "Tab",
+    "delimiter_semicolon": "Semicolon (;)",
+    "delimiter_comma": "Comma (,)",
+    "delimiter_description": "Select the delimiter used in your CSV file",
+    "csv_file": "CSV File",
+    "file_description": "Upload your Money Lover CSV export file",
+    "preview": "Preview (First 5 rows)",
+    "preview_note": "Showing first 5 rows. All rows will be imported.",
+    "date": "Date",
+    "category": "Category",
+    "amount": "Amount",
+    "wallet": "Wallet",
+    "note": "Note",
+    "transactions": "Transactions",
+    "categories": "Categories",
+    "wallets": "Wallets",
+    "import": "Import",
+    "no_file_selected": "Please select a file to import",
+    "step_parsing": "Parsing CSV file...",
+    "step_validating": "Validating {count} transactions...",
+    "step_uploading": "Uploading to server...",
+    "step_complete": "Successfully imported {count} transactions",
+    "error_no_data": "No data found in file",
+    "processing_batches": "Processing in {batches} batches of {size} transactions each",
+    "batch_progress": "Batch {batch} of {totalBatches} • {current} / {total} imported",
+    "import_successful": "Import completed successfully!",
+    "import_with_errors": "{errors} transactions failed to import",
+    "success": "Successfully imported {count} transactions",
+    "error": "Failed to import transactions. Please check your file format."
   },
   "invoice-data-table": {
     "id": "ID",
@@ -2045,7 +2101,8 @@
     "edit": "Edit transaction",
     "create_description": "Create a new transaction",
     "edit_description": "Edit an existing transaction",
-    "category": "Transaction type"
+    "category": "Transaction type",
+    "no_description": "No description provided"
   },
   "ws-transaction-categories": {
     "singular": "Transaction Category",

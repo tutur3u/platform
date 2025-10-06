@@ -38,6 +38,7 @@ export async function POST(req: Request) {
     // : Transaction & {
     //   origin_wallet_id?: string;
     //   destination_wallet_id?: string;
+    //   tag_ids?: string[];
     // }
     await req.json();
 
@@ -48,11 +49,15 @@ export async function POST(req: Request) {
 
   delete newData.origin_wallet_id;
   delete newData.destination_wallet_id;
+  const tagIds = newData.tag_ids;
+  delete newData.tag_ids;
 
-  const { error } = await supabase
+  const { data: transaction, error } = await supabase
     .from('wallet_transactions')
     .upsert(newData)
-    .eq('id', data.id);
+    .eq('id', data.id)
+    .select('id')
+    .single();
 
   if (error) {
     console.log(error);
@@ -60,6 +65,23 @@ export async function POST(req: Request) {
       { message: 'Error creating transaction' },
       { status: 500 }
     );
+  }
+
+  // Handle tags if provided
+  if (tagIds && tagIds.length > 0 && transaction?.id) {
+    const tagInserts = tagIds.map((tagId: string) => ({
+      transaction_id: transaction.id,
+      tag_id: tagId,
+    }));
+
+    const { error: tagError } = await supabase
+      .from('wallet_transaction_tags')
+      .insert(tagInserts);
+
+    if (tagError) {
+      console.log(tagError);
+      // Don't fail the entire transaction if tags fail
+    }
   }
 
   return NextResponse.json({ message: 'success' });

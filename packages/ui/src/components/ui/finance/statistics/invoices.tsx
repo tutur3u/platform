@@ -3,13 +3,14 @@ import type { FinanceDashboardSearchParams } from '@tuturuuu/ui/finance/shared/m
 import StatisticCard from '@tuturuuu/ui/finance/statistics/card';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import dayjs, { type OpUnitType } from 'dayjs';
+import { FileText } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
 
 const enabled = true;
 
 export default async function InvoicesStatistics({
   wsId,
-  searchParams: { showFinanceStats = true, view, startDate, endDate } = {},
+  searchParams: { view, startDate, endDate } = {},
 }: {
   wsId: string;
   searchParams?: FinanceDashboardSearchParams;
@@ -56,8 +57,9 @@ export default async function InvoicesStatistics({
   return (
     <StatisticCard
       title={t('workspace-finance-tabs.invoices')}
-      value={showFinanceStats ? invoicesCount : '***'}
+      value={invoicesCount}
       href={`/${wsId}/finance/invoices`}
+      icon={<FileText className="h-5 w-5" />}
     />
   );
 }

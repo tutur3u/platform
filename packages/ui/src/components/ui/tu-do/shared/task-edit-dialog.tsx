@@ -9,6 +9,7 @@ import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
+import { Calendar as CalendarComponent } from '@tuturuuu/ui/calendar';
 import { DateTimePicker } from '@tuturuuu/ui/date-time-picker';
 import {
   Dialog,
@@ -25,9 +26,11 @@ import {
 import { useToast } from '@tuturuuu/ui/hooks/use-toast';
 import {
   Box,
+  BriefcaseBusiness,
   Calendar,
   Check,
   ChevronDown,
+  CircleCheck,
   Flag,
   ListTodo,
   Loader2,
@@ -37,11 +40,19 @@ import {
   Tag,
   Timer,
   Trash,
+  User,
   Users,
   X,
 } from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@tuturuuu/ui/select';
 import { Switch } from '@tuturuuu/ui/switch';
 import { RichTextEditor } from '@tuturuuu/ui/text-editor/editor';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
@@ -136,7 +147,13 @@ const isSameSuggestionState = (
   return true;
 };
 
-type MentionOptionType = 'user' | 'workspace' | 'task';
+type MentionOptionType =
+  | 'user'
+  | 'workspace'
+  | 'task'
+  | 'project'
+  | 'date'
+  | 'external-user';
 
 interface MentionOption {
   id: string;
@@ -149,8 +166,11 @@ interface MentionOption {
 
 const mentionGroupOrder: Array<{ type: MentionOptionType; title: string }> = [
   { type: 'user', title: 'People' },
+  { type: 'external-user', title: 'External Users' },
   { type: 'workspace', title: 'Workspaces' },
+  { type: 'project', title: 'Projects' },
   { type: 'task', title: 'Tasks' },
+  { type: 'date', title: 'Dates' },
 ];
 
 const mentionTypeStyles: Record<
@@ -178,6 +198,14 @@ const mentionTypeStyles: Record<
       'bg-dynamic-orange/20 text-dynamic-orange border border-dynamic-orange/30',
     prefix: '@',
   },
+  project: {
+    badgeClass:
+      'border border-dynamic-cyan/40 bg-dynamic-cyan/10 text-dynamic-cyan',
+    avatarFallback: 'P',
+    avatarClass:
+      'bg-dynamic-cyan/20 text-dynamic-cyan border border-dynamic-cyan/30',
+    prefix: '@',
+  },
   task: {
     badgeClass:
       'border border-dynamic-blue/40 bg-dynamic-blue/10 text-dynamic-blue',
@@ -185,6 +213,20 @@ const mentionTypeStyles: Record<
     avatarClass:
       'bg-dynamic-blue/20 text-dynamic-blue border border-dynamic-blue/30',
     prefix: '#',
+  },
+  date: {
+    badgeClass:
+      'border border-dynamic-pink/40 bg-dynamic-pink/10 text-dynamic-pink',
+    avatarFallback: 'D',
+    avatarClass:
+      'bg-dynamic-pink/20 text-dynamic-pink border border-dynamic-pink/30',
+    prefix: '@',
+  },
+  'external-user': {
+    badgeClass: 'border border-border bg-muted text-muted-foreground',
+    avatarFallback: '@',
+    avatarClass: 'bg-muted text-muted-foreground border border-border',
+    prefix: '@',
   },
 };
 
@@ -302,7 +344,7 @@ function TaskEditDialogComponent({
   const [hasDraft, setHasDraft] = useState(false);
   const [createMultiple, setCreateMultiple] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [showMobileSidebar, setShowMobileSidebar] = useState(false);
+  const [showMobileSidebar, setShowMobileSidebar] = useState(true);
   const [workspaceMembers, setWorkspaceMembers] = useState<any[]>([]);
   const [loadingMembers, setLoadingMembers] = useState(false);
   const [selectedAssignees, setSelectedAssignees] = useState<any[]>(
@@ -335,6 +377,12 @@ function TaskEditDialogComponent({
   const suggestionMenuWidth = 360;
   const previousMentionHighlightRef = useRef(0);
   const previousSlashHighlightRef = useRef(0);
+  const [showCustomDatePicker, setShowCustomDatePicker] = useState(false);
+  const [customDate, setCustomDate] = useState<Date | undefined>(undefined);
+  const [includeTime, setIncludeTime] = useState(false);
+  const [selectedHour, setSelectedHour] = useState<string>('11');
+  const [selectedMinute, setSelectedMinute] = useState<string>('59');
+  const [selectedPeriod, setSelectedPeriod] = useState<'AM' | 'PM'>('PM');
 
   const queryClient = useQueryClient();
   const previousTaskIdRef = useRef<string | null>(null);
@@ -366,6 +414,12 @@ function TaskEditDialogComponent({
     setMentionState((prev) =>
       prev.open ? createInitialSuggestionState() : prev
     );
+    setShowCustomDatePicker(false);
+    setCustomDate(undefined);
+    setIncludeTime(false);
+    setSelectedHour('11');
+    setSelectedMinute('59');
+    setSelectedPeriod('PM');
   }, []);
 
   const handleEditorReady = useCallback((editor: Editor) => {
@@ -381,6 +435,12 @@ function TaskEditDialogComponent({
       setMentionHighlightIndex(0);
       previousMentionHighlightRef.current = 0;
       previousSlashHighlightRef.current = 0;
+      setShowCustomDatePicker(false);
+      setCustomDate(undefined);
+      setIncludeTime(false);
+      setSelectedHour('11');
+      setSelectedMinute('59');
+      setSelectedPeriod('PM');
     }
   }, [isOpen]);
 
@@ -541,6 +601,19 @@ function TaskEditDialogComponent({
       }));
   }, [allWorkspaces]);
 
+  const mentionProjectOptions = useMemo<MentionOption[]>(
+    () =>
+      [...taskProjects].map((project: any) => ({
+        id: project.id,
+        label: project.name || 'Untitled project',
+        subtitle: project.status || undefined,
+        avatarUrl: null,
+        type: 'project' as const,
+        payload: project,
+      })),
+    [taskProjects]
+  );
+
   const mentionTaskOptions = useMemo<MentionOption[]>(
     () =>
       [...workspaceTasks]
@@ -560,13 +633,68 @@ function TaskEditDialogComponent({
     [workspaceTasks, task?.id]
   );
 
+  const mentionDateOptions = useMemo<MentionOption[]>(() => {
+    const today = dayjs();
+    const options: MentionOption[] = [
+      {
+        id: 'today',
+        label: 'Today',
+        subtitle: today.format('MMM D, YYYY'),
+        avatarUrl: null,
+        type: 'date' as const,
+        payload: { date: today.toISOString() },
+      },
+      {
+        id: 'tomorrow',
+        label: 'Tomorrow',
+        subtitle: today.add(1, 'day').format('MMM D, YYYY'),
+        avatarUrl: null,
+        type: 'date' as const,
+        payload: { date: today.add(1, 'day').toISOString() },
+      },
+      {
+        id: 'next-week',
+        label: 'Next week',
+        subtitle: today.add(1, 'week').format('MMM D, YYYY'),
+        avatarUrl: null,
+        type: 'date' as const,
+        payload: { date: today.add(1, 'week').toISOString() },
+      },
+      {
+        id: 'next-month',
+        label: 'Next month',
+        subtitle: today.add(1, 'month').format('MMM D, YYYY'),
+        avatarUrl: null,
+        type: 'date' as const,
+        payload: { date: today.add(1, 'month').toISOString() },
+      },
+      {
+        id: 'custom-date',
+        label: 'Custom date...',
+        subtitle: 'Pick a specific date',
+        avatarUrl: null,
+        type: 'date' as const,
+        payload: { isCustom: true },
+      },
+    ];
+    return options;
+  }, []);
+
   const allMentionOptions = useMemo<MentionOption[]>(
     () => [
       ...mentionUserOptions,
       ...mentionWorkspaceOptions,
+      ...mentionProjectOptions,
       ...mentionTaskOptions,
+      ...mentionDateOptions,
     ],
-    [mentionUserOptions, mentionWorkspaceOptions, mentionTaskOptions]
+    [
+      mentionUserOptions,
+      mentionWorkspaceOptions,
+      mentionProjectOptions,
+      mentionTaskOptions,
+      mentionDateOptions,
+    ]
   );
 
   const filteredMentionOptions = useMemo(() => {
@@ -578,11 +706,13 @@ function TaskEditDialogComponent({
       return [
         ...mentionUserOptions,
         ...mentionWorkspaceOptions,
+        ...mentionProjectOptions,
+        ...mentionDateOptions,
         ...limitedTasks,
       ];
     }
 
-    return allMentionOptions.filter((option) => {
+    const filtered = allMentionOptions.filter((option) => {
       const searchTexts = [option.label, option.subtitle || ''];
 
       // Try exact match first (case-insensitive with diacritics normalized)
@@ -599,12 +729,30 @@ function TaskEditDialogComponent({
         normalizedTexts.some((text) => text.includes(word))
       );
     });
+
+    // If no matches found and query is not empty, add external user option
+    if (filtered.length === 0 && rawQuery) {
+      return [
+        {
+          id: `external-${rawQuery}`,
+          label: rawQuery,
+          subtitle: 'Not a workspace member',
+          avatarUrl: null,
+          type: 'external-user' as const,
+          payload: { displayName: rawQuery, isExternal: true },
+        },
+      ];
+    }
+
+    return filtered;
   }, [
     allMentionOptions,
     mentionState.query,
     mentionTaskOptions,
     mentionUserOptions,
     mentionWorkspaceOptions,
+    mentionProjectOptions,
+    mentionDateOptions,
   ]);
 
   const mentionGroups = useMemo(() => {
@@ -758,7 +906,10 @@ function TaskEditDialogComponent({
 
       if (!selection.empty) {
         closeSlashMenu();
-        closeMentionMenu();
+        // Don't close mention menu if custom date picker is open
+        if (!showCustomDatePicker) {
+          closeMentionMenu();
+        }
         return;
       }
 
@@ -789,10 +940,17 @@ function TaskEditDialogComponent({
         closeSlashMenu();
       }
 
-      const mentionMatch = contextText.match(/(?:^|\s)(@([^\s]*))$/);
+      // Support both @username and @"Name With Spaces"
+      const mentionMatch = contextText.match(
+        /(?:^|\s)(@(?:"([^"]*)"|([^\s]*)))$/
+      );
       if (mentionMatch) {
         const matched = mentionMatch[1] || '';
-        const query = mentionMatch[2] || '';
+        // Extract query from either quoted (group 2) or unquoted (group 3) match
+        const query =
+          mentionMatch[2] !== undefined
+            ? mentionMatch[2]
+            : mentionMatch[3] || '';
         const rangeFrom = from - matched.length;
         const nextState: SuggestionState = {
           open: true,
@@ -806,11 +964,19 @@ function TaskEditDialogComponent({
         );
         closeSlashMenu();
       } else {
-        closeMentionMenu();
+        // Don't close mention menu if custom date picker is open
+        if (!showCustomDatePicker) {
+          closeMentionMenu();
+        }
       }
     };
 
     const handleBlur = () => {
+      // Don't close mention menu if custom date picker is open
+      if (showCustomDatePicker) {
+        closeSlashMenu();
+        return;
+      }
       closeSlashMenu();
       closeMentionMenu();
     };
@@ -826,7 +992,20 @@ function TaskEditDialogComponent({
       editorInstance.off('selectionUpdate', updateSuggestions);
       editorInstance.off('blur', handleBlur);
     };
-  }, [editorInstance, isOpen, closeSlashMenu, closeMentionMenu]);
+  }, [
+    editorInstance,
+    isOpen,
+    closeSlashMenu,
+    closeMentionMenu,
+    showCustomDatePicker,
+  ]);
+
+  // Blur editor when custom date picker opens to allow input focus
+  useEffect(() => {
+    if (showCustomDatePicker && editorInstance) {
+      editorInstance.commands.blur();
+    }
+  }, [showCustomDatePicker, editorInstance]);
 
   // Quick due date setter (today, tomorrow, etc.)
   const handleQuickDueDate = useCallback(
@@ -1000,6 +1179,12 @@ function TaskEditDialogComponent({
     (option: MentionOption) => {
       if (!editorInstance) return;
 
+      // Handle custom date picker
+      if (option.id === 'custom-date') {
+        setShowCustomDatePicker(true);
+        return;
+      }
+
       const chain = editorInstance.chain().focus();
       if (mentionState.range) {
         chain.deleteRange(mentionState.range);
@@ -1025,6 +1210,76 @@ function TaskEditDialogComponent({
       closeMentionMenu();
     },
     [editorInstance, mentionState.range, closeMentionMenu]
+  );
+
+  const handleCustomDateSelect = useCallback(
+    (date: Date | undefined) => {
+      if (!editorInstance || !date) return;
+
+      let finalDate = dayjs(date);
+      let formattedDate = finalDate.format('MMM D, YYYY');
+
+      if (includeTime) {
+        // Parse and validate hour and minute
+        const hourVal = parseInt(selectedHour || '12', 10);
+        const minuteVal = parseInt(selectedMinute || '0', 10);
+
+        let hour = hourVal;
+        // Convert to 24-hour format
+        if (selectedPeriod === 'PM' && hour !== 12) {
+          hour += 12;
+        } else if (selectedPeriod === 'AM' && hour === 12) {
+          hour = 0;
+        }
+
+        finalDate = finalDate
+          .hour(hour)
+          .minute(minuteVal)
+          .second(0)
+          .millisecond(0);
+        formattedDate = finalDate.format('MMM D, YYYY h:mm A');
+      }
+
+      const chain = editorInstance.chain().focus();
+
+      if (mentionState.range) {
+        chain.deleteRange(mentionState.range);
+      }
+
+      chain
+        .insertContent([
+          {
+            type: 'mention',
+            attrs: {
+              userId: null,
+              entityId: `custom-${finalDate.toISOString()}`,
+              entityType: 'date',
+              displayName: formattedDate,
+              avatarUrl: null,
+              subtitle: null,
+            },
+          },
+          { type: 'text', text: ' ' },
+        ])
+        .run();
+
+      setShowCustomDatePicker(false);
+      setCustomDate(undefined);
+      setIncludeTime(false);
+      setSelectedHour('12');
+      setSelectedMinute('00');
+      setSelectedPeriod('PM');
+      closeMentionMenu();
+    },
+    [
+      editorInstance,
+      mentionState.range,
+      closeMentionMenu,
+      includeTime,
+      selectedHour,
+      selectedMinute,
+      selectedPeriod,
+    ]
   );
 
   const slashCommandMenu =
@@ -1109,7 +1364,7 @@ function TaskEditDialogComponent({
             onMouseDown={(event) => event.stopPropagation()}
           >
             <div className="border-dynamic-border/60 border-b px-3 py-2 font-medium text-muted-foreground text-xs uppercase tracking-wide">
-              Mention people, workspaces, or tasks
+              Mention people, workspaces, projects, dates, or tasks
             </div>
             {(workspaceDetailsLoading ||
               workspaceTasksLoading ||
@@ -1128,7 +1383,7 @@ function TaskEditDialogComponent({
                 <div className="px-3 py-3 text-muted-foreground text-sm">
                   {mentionState.query
                     ? 'No matches found. Try a different keyword.'
-                    : 'Start typing to mention teammates, your workspace, or recent tasks.'}
+                    : 'Start typing to mention teammates, workspaces, projects, dates, or tasks.'}
                 </div>
               ) : (
                 (() => {
@@ -1143,7 +1398,8 @@ function TaskEditDialogComponent({
                         const isActive = optionCursor === mentionHighlightIndex;
                         const typeMeta = mentionTypeStyles[option.type];
                         const fallbackGlyph =
-                          option.type === 'user'
+                          option.type === 'user' ||
+                          option.type === 'external-user'
                             ? (option.label || '')
                                 .split(/\s+/)
                                 .map((part) => part?.[0]?.toUpperCase() ?? '')
@@ -1155,7 +1411,13 @@ function TaskEditDialogComponent({
                             ? 'Person'
                             : option.type === 'workspace'
                               ? 'Workspace'
-                              : 'Task';
+                              : option.type === 'project'
+                                ? 'Project'
+                                : option.type === 'date'
+                                  ? 'Date'
+                                  : option.type === 'external-user'
+                                    ? 'Guest'
+                                    : 'Task';
 
                         return (
                           <button
@@ -1193,6 +1455,16 @@ function TaskEditDialogComponent({
                                   className="h-full w-full object-cover"
                                   referrerPolicy="no-referrer"
                                 />
+                              ) : option.type === 'workspace' ? (
+                                <BriefcaseBusiness className="h-3.5 w-3.5" />
+                              ) : option.type === 'project' ? (
+                                <Box className="h-3.5 w-3.5" />
+                              ) : option.type === 'task' ? (
+                                <CircleCheck className="h-3.5 w-3.5" />
+                              ) : option.type === 'date' ? (
+                                <Calendar className="h-3.5 w-3.5" />
+                              ) : option.type === 'external-user' ? (
+                                <User className="h-3.5 w-3.5" />
                               ) : (
                                 <span className="truncate">
                                   {fallbackGlyph}
@@ -1226,6 +1498,146 @@ function TaskEditDialogComponent({
                 })()
               )}
             </div>
+            {showCustomDatePicker && (
+              <button
+                type="button"
+                className="border-dynamic-border/60 border-t p-3"
+                onMouseDown={(e) => {
+                  // Only stop propagation if not clicking on an input
+                  if (!(e.target as HTMLElement).matches('input')) {
+                    e.stopPropagation();
+                  }
+                }}
+                onClick={(e) => {
+                  // Only stop propagation if not clicking on an input
+                  if (!(e.target as HTMLElement).matches('input')) {
+                    e.stopPropagation();
+                  }
+                }}
+              >
+                <div className="mb-2 font-medium text-foreground text-sm">
+                  Select custom date
+                </div>
+                <CalendarComponent
+                  mode="single"
+                  selected={customDate}
+                  onSelect={(date) => {
+                    setCustomDate(date);
+                  }}
+                  className="rounded-md border p-0"
+                />
+                <div className="mt-3 flex items-center gap-2 rounded-md border p-2">
+                  <Switch
+                    checked={includeTime}
+                    onCheckedChange={setIncludeTime}
+                  />
+                  <Label
+                    htmlFor="include-time"
+                    className="cursor-pointer text-sm"
+                  >
+                    Include time
+                  </Label>
+                </div>
+                {includeTime && (
+                  <div className="mt-2 flex items-center gap-2">
+                    <Label className="text-sm">Time:</Label>
+                    <Select
+                      value={selectedHour}
+                      onValueChange={setSelectedHour}
+                    >
+                      <SelectTrigger className="w-20">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {Array.from({ length: 12 }, (_, i) => {
+                          const hour = i + 1;
+                          return (
+                            <SelectItem key={hour} value={hour.toString()}>
+                              {hour}
+                            </SelectItem>
+                          );
+                        })}
+                      </SelectContent>
+                    </Select>
+                    <span>:</span>
+                    <Select
+                      value={selectedMinute}
+                      onValueChange={setSelectedMinute}
+                    >
+                      <SelectTrigger className="w-20">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {['00', '15', '30', '45', '59'].map((min) => (
+                          <SelectItem key={min} value={min}>
+                            {min}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <div className="flex rounded-md border">
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant={selectedPeriod === 'AM' ? 'default' : 'ghost'}
+                        className="h-8 rounded-r-none px-3"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedPeriod('AM');
+                        }}
+                      >
+                        AM
+                      </Button>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant={selectedPeriod === 'PM' ? 'default' : 'ghost'}
+                        className="h-8 rounded-l-none px-3"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedPeriod('PM');
+                        }}
+                      >
+                        PM
+                      </Button>
+                    </div>
+                  </div>
+                )}
+                <div className="mt-3 flex justify-end gap-2">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setShowCustomDatePicker(false);
+                      setCustomDate(undefined);
+                      setIncludeTime(false);
+                      setSelectedHour('12');
+                      setSelectedMinute('00');
+                      setSelectedPeriod('PM');
+                    }}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      if (customDate) {
+                        handleCustomDateSelect(customDate);
+                      }
+                    }}
+                    disabled={!customDate}
+                  >
+                    Insert
+                  </Button>
+                </div>
+              </button>
+            )}
           </div>,
           document.body
         )
@@ -1237,6 +1649,15 @@ function TaskEditDialogComponent({
     if (!editorDom) return;
 
     const handleKeyDown = (event: KeyboardEvent) => {
+      // If custom date picker is open, Escape closes it but keeps mention menu open
+      if (showCustomDatePicker && event.key === 'Escape') {
+        event.preventDefault();
+        event.stopPropagation();
+        setShowCustomDatePicker(false);
+        setCustomDate(undefined);
+        return;
+      }
+
       if ((slashState.open || mentionState.open) && event.key === 'Escape') {
         event.preventDefault();
         event.stopPropagation();
@@ -1283,7 +1704,7 @@ function TaskEditDialogComponent({
         }
       }
 
-      if (mentionState.open) {
+      if (mentionState.open && !showCustomDatePicker) {
         if (filteredMentionOptions.length === 0) return;
 
         if (
@@ -1339,6 +1760,7 @@ function TaskEditDialogComponent({
     insertMentionOption,
     closeSlashMenu,
     closeMentionMenu,
+    showCustomDatePicker,
   ]);
 
   // Fetch available task lists for the board (only if not provided as prop)
@@ -2576,7 +2998,7 @@ function TaskEditDialogComponent({
           }}
         >
           {/* Main content area - Task title and description */}
-          <div className="flex min-w-0 flex-1 flex-col bg-background">
+          <div className="flex min-w-0 flex-1 flex-col bg-background transition-all duration-300">
             {/* Enhanced Header with gradient */}
             <div className="flex items-center justify-between border-b bg-gradient-to-r from-dynamic-orange/5 via-background to-background px-4 py-3 backdrop-blur-sm md:px-8 md:py-4">
               <div className="flex items-center gap-2 md:gap-3">
@@ -2621,6 +3043,20 @@ function TaskEditDialogComponent({
                     <Trash className="h-4 w-4" />
                   </Button>
                 )}
+                <Button
+                  variant={showMobileSidebar ? 'secondary' : 'ghost'}
+                  size="icon"
+                  className={cn(
+                    'h-7 w-7 transition-all',
+                    showMobileSidebar
+                      ? 'bg-dynamic-orange/10 text-dynamic-orange hover:bg-dynamic-orange/20'
+                      : 'text-muted-foreground hover:text-foreground'
+                  )}
+                  onClick={() => setShowMobileSidebar(!showMobileSidebar)}
+                  title={showMobileSidebar ? 'Hide sidebar' : 'Show sidebar'}
+                >
+                  <Settings className="h-4 w-4" />
+                </Button>
                 <Button
                   variant="ghost"
                   size="icon"
@@ -2751,13 +3187,13 @@ function TaskEditDialogComponent({
                 </div>
 
                 {/* Task Description - Full editor experience with subtle border */}
-                <div ref={editorRef} className="h-full">
+                <div ref={editorRef} className="flex-1 pb-8">
                   <RichTextEditor
                     content={description}
                     onChange={setDescription}
                     writePlaceholder="Add a detailed description, attach files, or use markdown..."
                     titlePlaceholder=""
-                    className="h-full border-0 bg-transparent px-4 focus-visible:outline-0 focus-visible:ring-0 md:px-8"
+                    className="min-h-[400px] border-0 bg-transparent px-4 focus-visible:outline-0 focus-visible:ring-0 md:px-8"
                     workspaceId={workspaceId || undefined}
                     onImageUpload={handleImageUpload}
                     flushPendingRef={flushEditorPendingRef}
@@ -2799,816 +3235,819 @@ function TaskEditDialogComponent({
             </div>
           </div>
 
-          {/* Simplified Right sidebar - hidden on mobile by default */}
-          <div
-            className={cn(
-              'fixed inset-y-0 right-0 z-50 flex w-full flex-col border-l bg-background shadow-lg transition-transform duration-300 sm:w-[380px] md:relative md:z-auto md:translate-x-0 md:bg-gradient-to-b md:from-muted/20 md:to-muted/5 md:shadow-none',
-              showMobileSidebar
-                ? 'translate-x-0'
-                : 'translate-x-full md:translate-x-0'
-            )}
-          >
-            {/* Sidebar header with icon */}
-            <div className="border-border/50 border-b bg-gradient-to-b from-background/95 to-background/80 px-6 py-4 backdrop-blur-md">
-              <div className="flex items-center justify-between gap-2">
-                <div className="flex items-center gap-2.5">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-dynamic-orange/10">
-                    <Settings className="h-4 w-4 text-dynamic-orange" />
+          {/* Simplified Right sidebar - toggleable */}
+          {showMobileSidebar && (
+            <div className="fixed inset-y-0 right-0 z-50 flex w-full flex-col border-l bg-background shadow-lg transition-all duration-300 sm:w-[380px] md:relative md:z-auto md:w-[380px] md:bg-gradient-to-b md:from-muted/20 md:to-muted/5 md:shadow-none">
+              {/* Sidebar header with icon */}
+              <div className="border-border/50 border-b bg-gradient-to-b from-background/95 to-background/80 px-6 py-4 backdrop-blur-md">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2.5">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-dynamic-orange/10">
+                      <Settings className="h-4 w-4 text-dynamic-orange" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-foreground text-sm leading-none tracking-tight">
+                        Task Options
+                      </h3>
+                      <p className="mt-1 text-muted-foreground text-xs">
+                        Configure task settings
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <h3 className="font-semibold text-foreground text-sm leading-none tracking-tight">
-                      Task Options
-                    </h3>
-                    <p className="mt-1 text-muted-foreground text-xs">
-                      Configure task settings
-                    </p>
-                  </div>
+                  {/* Close sidebar button */}
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 shrink-0"
+                    onClick={() => setShowMobileSidebar(false)}
+                    title="Close sidebar"
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
                 </div>
-                {/* Close button for mobile */}
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-8 w-8 shrink-0 md:hidden"
-                  onClick={() => setShowMobileSidebar(false)}
-                >
-                  <X className="h-4 w-4" />
-                </Button>
               </div>
-            </div>
 
-            <div className="scrollbar-thin flex-1 overflow-y-auto">
-              <div className="space-y-4 p-4 md:space-y-5 md:p-6">
-                {/* Essential Options - Always Visible */}
-                {/* List Selection */}
-                <div className="space-y-2.5 rounded-lg border border-border/60 bg-gradient-to-br from-muted/30 to-muted/10 p-3.5 shadow-sm transition-shadow hover:shadow-md">
-                  <Label className="flex items-center gap-2 font-semibold text-foreground text-sm">
-                    <div className="flex h-5 w-5 items-center justify-center rounded-md bg-dynamic-orange/15">
-                      <ListTodo className="h-3.5 w-3.5 text-dynamic-orange" />
-                    </div>
-                    List
-                  </Label>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button
-                        variant="outline"
-                        className="h-8 w-full justify-between text-xs transition-all hover:border-dynamic-orange/50 hover:bg-dynamic-orange/5 md:text-sm"
-                        title="Priority – Alt+1 Urgent, Alt+2 High, Alt+3 Medium, Alt+4 Low, Alt+0 Clear"
-                      >
-                        <span className="truncate">
-                          {availableLists.find(
-                            (list) => list.id === selectedListId
-                          )?.name || 'Select list'}
-                        </span>
-                        <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent className="w-[320px] md:w-[376px]">
-                      {availableLists.map((list) => (
-                        <DropdownMenuItem
-                          key={list.id}
-                          onClick={() => setSelectedListId(list.id)}
-                          className={cn(
-                            'cursor-pointer transition-colors',
-                            selectedListId === list.id &&
-                              'bg-dynamic-orange/10 font-medium text-dynamic-orange'
-                          )}
-                        >
-                          <Check
-                            className={cn(
-                              'h-4 w-4',
-                              selectedListId === list.id
-                                ? 'opacity-100'
-                                : 'opacity-0'
-                            )}
-                          />
-                          {list.name}
-                        </DropdownMenuItem>
-                      ))}
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
-
-                {/* Priority (Dropdown) */}
-                <div className="space-y-2.5 rounded-lg border border-border/60 bg-gradient-to-br from-muted/30 to-muted/10 p-3.5 shadow-sm transition-shadow hover:shadow-md">
-                  <Label className="flex items-center gap-2 font-semibold text-foreground text-sm">
-                    <div className="flex h-5 w-5 items-center justify-center rounded-md bg-dynamic-orange/15">
-                      <Flag className="h-3.5 w-3.5 text-dynamic-orange" />
-                    </div>
-                    Priority
-                  </Label>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button
-                        variant="outline"
-                        className={cn(
-                          'h-8 w-full justify-between text-xs transition-all hover:border-dynamic-orange/50 hover:bg-dynamic-orange/5 md:text-sm',
-                          priority === 'critical' &&
-                            'border-dynamic-red bg-dynamic-red/10 font-semibold text-dynamic-red hover:bg-dynamic-red/20'
-                        )}
-                      >
-                        <span className="truncate">
-                          {priority
-                            ? priority === 'critical'
-                              ? '🔥 Urgent'
-                              : priority === 'high'
-                                ? 'High'
-                                : priority === 'normal'
-                                  ? 'Medium'
-                                  : 'Low'
-                            : 'Set priority'}
-                        </span>
-                        <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent className="w-[220px]">
-                      {[
-                        {
-                          value: 'critical',
-                          label: '🔥 Urgent',
-                          dot: 'bg-dynamic-red',
-                          className: 'font-semibold text-dynamic-red',
-                        },
-                        {
-                          value: 'high',
-                          label: 'High',
-                          dot: 'bg-dynamic-orange',
-                          className: '',
-                        },
-                        {
-                          value: 'normal',
-                          label: 'Medium',
-                          dot: 'bg-dynamic-yellow',
-                          className: '',
-                        },
-                        {
-                          value: 'low',
-                          label: 'Low',
-                          dot: 'bg-dynamic-blue',
-                          className: '',
-                        },
-                      ].map((opt) => (
-                        <DropdownMenuItem
-                          key={opt.value}
-                          onClick={() => setPriority(opt.value as TaskPriority)}
-                          className={cn(
-                            'cursor-pointer',
-                            opt.className,
-                            priority === opt.value &&
-                              opt.value === 'critical' &&
-                              'bg-dynamic-red/10'
-                          )}
-                        >
-                          <span
-                            className={cn(
-                              'mr-2 inline-block h-2 w-2 rounded-full',
-                              opt.dot
-                            )}
-                          />
-                          <span className="flex-1">{opt.label}</span>
-                          {priority === (opt.value as any) && (
-                            <Check className="h-4 w-4" />
-                          )}
-                        </DropdownMenuItem>
-                      ))}
-                      <DropdownMenuItem
-                        onClick={() => setPriority(null)}
-                        className="cursor-pointer text-dynamic-red focus:text-dynamic-red"
-                      >
-                        <X className="mr-2 h-4 w-4" /> Clear priority
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
-
-                {/* Estimation (Dropdown) */}
-                {boardConfig?.estimation_type && (
+              <div className="scrollbar-thin flex-1 overflow-y-auto">
+                <div className="space-y-4 p-4 md:space-y-5 md:p-6">
+                  {/* Essential Options - Always Visible */}
+                  {/* List Selection */}
                   <div className="space-y-2.5 rounded-lg border border-border/60 bg-gradient-to-br from-muted/30 to-muted/10 p-3.5 shadow-sm transition-shadow hover:shadow-md">
                     <Label className="flex items-center gap-2 font-semibold text-foreground text-sm">
                       <div className="flex h-5 w-5 items-center justify-center rounded-md bg-dynamic-orange/15">
-                        <Timer className="h-3.5 w-3.5 text-dynamic-orange" />
+                        <ListTodo className="h-3.5 w-3.5 text-dynamic-orange" />
                       </div>
-                      Estimation
+                      List
                     </Label>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button
                           variant="outline"
                           className="h-8 w-full justify-between text-xs transition-all hover:border-dynamic-orange/50 hover:bg-dynamic-orange/5 md:text-sm"
-                          title="Estimation – Alt+Shift+0..7 set, Alt+Shift+X clear"
+                          title="Priority – Alt+1 Urgent, Alt+2 High, Alt+3 Medium, Alt+4 Low, Alt+0 Clear"
                         >
                           <span className="truncate">
-                            {typeof estimationPoints === 'number'
-                              ? mapEstimationPoints(
-                                  estimationPoints,
-                                  boardConfig.estimation_type
-                                )
-                              : 'Set estimation'}
+                            {availableLists.find(
+                              (list) => list.id === selectedListId
+                            )?.name || 'Select list'}
+                          </span>
+                          <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent className="w-[320px] md:w-[376px]">
+                        {availableLists.map((list) => (
+                          <DropdownMenuItem
+                            key={list.id}
+                            onClick={() => setSelectedListId(list.id)}
+                            className={cn(
+                              'cursor-pointer transition-colors',
+                              selectedListId === list.id &&
+                                'bg-dynamic-orange/10 font-medium text-dynamic-orange'
+                            )}
+                          >
+                            <Check
+                              className={cn(
+                                'h-4 w-4',
+                                selectedListId === list.id
+                                  ? 'opacity-100'
+                                  : 'opacity-0'
+                              )}
+                            />
+                            {list.name}
+                          </DropdownMenuItem>
+                        ))}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
+
+                  {/* Priority (Dropdown) */}
+                  <div className="space-y-2.5 rounded-lg border border-border/60 bg-gradient-to-br from-muted/30 to-muted/10 p-3.5 shadow-sm transition-shadow hover:shadow-md">
+                    <Label className="flex items-center gap-2 font-semibold text-foreground text-sm">
+                      <div className="flex h-5 w-5 items-center justify-center rounded-md bg-dynamic-orange/15">
+                        <Flag className="h-3.5 w-3.5 text-dynamic-orange" />
+                      </div>
+                      Priority
+                    </Label>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          variant="outline"
+                          className={cn(
+                            'h-8 w-full justify-between text-xs transition-all hover:border-dynamic-orange/50 hover:bg-dynamic-orange/5 md:text-sm',
+                            priority === 'critical' &&
+                              'border-dynamic-red bg-dynamic-red/10 font-semibold text-dynamic-red hover:bg-dynamic-red/20'
+                          )}
+                        >
+                          <span className="truncate">
+                            {priority
+                              ? priority === 'critical'
+                                ? '🔥 Urgent'
+                                : priority === 'high'
+                                  ? 'High'
+                                  : priority === 'normal'
+                                    ? 'Medium'
+                                    : 'Low'
+                              : 'Set priority'}
                           </span>
                           <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent className="w-[220px]">
-                        {estimationIndices.map((idx) => (
+                        {[
+                          {
+                            value: 'critical',
+                            label: '🔥 Urgent',
+                            dot: 'bg-dynamic-red',
+                            className: 'font-semibold text-dynamic-red',
+                          },
+                          {
+                            value: 'high',
+                            label: 'High',
+                            dot: 'bg-dynamic-orange',
+                            className: '',
+                          },
+                          {
+                            value: 'normal',
+                            label: 'Medium',
+                            dot: 'bg-dynamic-yellow',
+                            className: '',
+                          },
+                          {
+                            value: 'low',
+                            label: 'Low',
+                            dot: 'bg-dynamic-blue',
+                            className: '',
+                          },
+                        ].map((opt) => (
                           <DropdownMenuItem
-                            key={idx}
-                            onClick={() => updateEstimation(idx)}
-                            className="cursor-pointer"
+                            key={opt.value}
+                            onClick={() =>
+                              setPriority(opt.value as TaskPriority)
+                            }
+                            className={cn(
+                              'cursor-pointer',
+                              opt.className,
+                              priority === opt.value &&
+                                opt.value === 'critical' &&
+                                'bg-dynamic-red/10'
+                            )}
                           >
-                            <span className="flex-1">
-                              {mapEstimationPoints(
-                                idx,
-                                boardConfig.estimation_type
+                            <span
+                              className={cn(
+                                'mr-2 inline-block h-2 w-2 rounded-full',
+                                opt.dot
                               )}
-                            </span>
-                            {idx === estimationPoints && (
+                            />
+                            <span className="flex-1">{opt.label}</span>
+                            {priority === (opt.value as any) && (
                               <Check className="h-4 w-4" />
                             )}
                           </DropdownMenuItem>
                         ))}
                         <DropdownMenuItem
-                          onClick={() => updateEstimation(null)}
+                          onClick={() => setPriority(null)}
                           className="cursor-pointer text-dynamic-red focus:text-dynamic-red"
                         >
-                          <X className="mr-2 h-4 w-4" /> Clear estimation
+                          <X className="mr-2 h-4 w-4" /> Clear priority
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </div>
-                )}
 
-                {/* Quick Due Date */}
-                <div className="space-y-2.5 rounded-lg border border-border/60 bg-gradient-to-br from-muted/30 to-muted/10 p-3.5 shadow-sm transition-shadow hover:shadow-md">
-                  <Label className="flex items-center justify-between gap-2 font-semibold text-foreground text-sm">
-                    <span className="flex items-center gap-2">
-                      <div className="flex h-5 w-5 items-center justify-center rounded-md bg-dynamic-orange/15">
-                        <Calendar className="h-3.5 w-3.5 text-dynamic-orange" />
-                      </div>
-                      Due Date
-                    </span>
-                    <span className="flex items-center gap-3">
-                      {endDate && (
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleQuickDueDate(null)}
-                          disabled={isLoading}
-                          className="h-6 w-6 text-muted-foreground hover:text-dynamic-red"
-                          title="Clear due date"
-                        >
-                          <X className="h-3.5 w-3.5" />
-                        </Button>
-                      )}
-                    </span>
-                  </Label>
-                  <div className="grid grid-cols-2 gap-1.5 md:gap-2">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="xs"
-                      onClick={() => handleQuickDueDate(0)}
-                      disabled={isLoading}
-                      className="h-7 text-[11px] transition-all hover:border-dynamic-orange/50 hover:bg-dynamic-orange/5 md:text-xs"
-                      title="Today – Alt+T"
-                    >
-                      Today
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="xs"
-                      onClick={() => handleQuickDueDate(1)}
-                      disabled={isLoading}
-                      className="h-7 text-[11px] transition-all hover:border-dynamic-orange/50 hover:bg-dynamic-orange/5 md:text-xs"
-                      title="Tomorrow – Alt+M"
-                    >
-                      Tomorrow
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="xs"
-                      onClick={() => handleQuickDueDate(7)}
-                      disabled={isLoading}
-                      className="h-7 text-[11px] transition-all hover:border-dynamic-orange/50 hover:bg-dynamic-orange/5 md:text-xs"
-                      title="Next week – Alt+W"
-                    >
-                      Next week
-                    </Button>
-                  </div>
-                </div>
-
-                {/* Advanced Options Toggle */}
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="xs"
-                  onClick={() => setShowAdvancedOptions(!showAdvancedOptions)}
-                  className="h-8 w-full justify-between text-muted-foreground text-xs transition-all hover:bg-dynamic-orange/5 hover:text-dynamic-orange"
-                  title="Toggle advanced options – Alt+A"
-                >
-                  <span className="flex items-center gap-2">
-                    <Settings className="h-3 w-3" />
-                    {showAdvancedOptions ? 'Hide' : 'Show'} advanced options
-                  </span>
-                  <ChevronDown
-                    className={cn(
-                      'h-3 w-3 transition-transform',
-                      showAdvancedOptions && 'rotate-180'
-                    )}
-                  />
-                </Button>
-
-                {/* Advanced Options - Collapsible */}
-                {showAdvancedOptions && (
-                  <div className="slide-in-from-top-2 animate-in space-y-4 duration-200">
-                    {/* Custom Date Pickers */}
-                    <div className="space-y-2.5 rounded-lg border border-border/60 bg-gradient-to-br from-muted/30 to-muted/10 p-3.5 shadow-sm">
+                  {/* Estimation (Dropdown) */}
+                  {boardConfig?.estimation_type && (
+                    <div className="space-y-2.5 rounded-lg border border-border/60 bg-gradient-to-br from-muted/30 to-muted/10 p-3.5 shadow-sm transition-shadow hover:shadow-md">
                       <Label className="flex items-center gap-2 font-semibold text-foreground text-sm">
+                        <div className="flex h-5 w-5 items-center justify-center rounded-md bg-dynamic-orange/15">
+                          <Timer className="h-3.5 w-3.5 text-dynamic-orange" />
+                        </div>
+                        Estimation
+                      </Label>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button
+                            variant="outline"
+                            className="h-8 w-full justify-between text-xs transition-all hover:border-dynamic-orange/50 hover:bg-dynamic-orange/5 md:text-sm"
+                            title="Estimation – Alt+Shift+0..7 set, Alt+Shift+X clear"
+                          >
+                            <span className="truncate">
+                              {typeof estimationPoints === 'number'
+                                ? mapEstimationPoints(
+                                    estimationPoints,
+                                    boardConfig.estimation_type
+                                  )
+                                : 'Set estimation'}
+                            </span>
+                            <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent className="w-[220px]">
+                          {estimationIndices.map((idx) => (
+                            <DropdownMenuItem
+                              key={idx}
+                              onClick={() => updateEstimation(idx)}
+                              className="cursor-pointer"
+                            >
+                              <span className="flex-1">
+                                {mapEstimationPoints(
+                                  idx,
+                                  boardConfig.estimation_type
+                                )}
+                              </span>
+                              {idx === estimationPoints && (
+                                <Check className="h-4 w-4" />
+                              )}
+                            </DropdownMenuItem>
+                          ))}
+                          <DropdownMenuItem
+                            onClick={() => updateEstimation(null)}
+                            className="cursor-pointer text-dynamic-red focus:text-dynamic-red"
+                          >
+                            <X className="mr-2 h-4 w-4" /> Clear estimation
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+                  )}
+
+                  {/* Quick Due Date */}
+                  <div className="space-y-2.5 rounded-lg border border-border/60 bg-gradient-to-br from-muted/30 to-muted/10 p-3.5 shadow-sm transition-shadow hover:shadow-md">
+                    <Label className="flex items-center justify-between gap-2 font-semibold text-foreground text-sm">
+                      <span className="flex items-center gap-2">
                         <div className="flex h-5 w-5 items-center justify-center rounded-md bg-dynamic-orange/15">
                           <Calendar className="h-3.5 w-3.5 text-dynamic-orange" />
                         </div>
-                        Dates
-                      </Label>
-                      <div className="space-y-3">
-                        <div className="space-y-1">
-                          <Label className="font-normal text-muted-foreground text-xs">
-                            Start Date
-                          </Label>
-                          <DateTimePicker
-                            date={startDate}
-                            setDate={setStartDate}
-                            showTimeSelect={true}
-                            allowClear={true}
-                            showFooterControls={true}
-                          />
-                        </div>
-                        <div className="space-y-1">
-                          <Label className="font-normal text-muted-foreground text-xs">
-                            Due Date
-                          </Label>
-                          <DateTimePicker
-                            date={endDate}
-                            setDate={handleEndDateChange}
-                            showTimeSelect={true}
-                            allowClear={true}
-                            showFooterControls={true}
-                          />
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Estimation Section moved above as dropdown */}
-
-                    {/* Labels Section */}
-                    <div className="space-y-2.5 rounded-lg border border-border/60 bg-gradient-to-br from-muted/30 to-muted/10 p-3.5 shadow-sm">
-                      <Label className="flex items-center justify-between gap-2">
-                        <span className="flex items-center gap-2 font-semibold text-foreground text-sm">
-                          <div className="flex h-5 w-5 items-center justify-center rounded-md bg-dynamic-orange/15">
-                            <Tag className="h-3.5 w-3.5 text-dynamic-orange" />
-                          </div>
-                          Labels
-                        </span>
-                      </Label>
-                      {boardConfig && (
-                        <div className="space-y-2">
-                          <div className="flex items-center gap-2">
-                            <Input
-                              placeholder="New label name"
-                              value={newLabelName}
-                              onChange={(e) => setNewLabelName(e.target.value)}
-                              className="h-8 flex-1 text-xs transition-all focus:border-dynamic-orange/50"
-                            />
-                            <select
-                              className="h-8 rounded-md border bg-background px-2 text-xs transition-all hover:border-dynamic-orange/50 focus:border-dynamic-orange/50 focus:outline-none focus:ring-1 focus:ring-dynamic-orange/20"
-                              value={newLabelColor}
-                              onChange={(e) => setNewLabelColor(e.target.value)}
-                            >
-                              {[
-                                'red',
-                                'orange',
-                                'yellow',
-                                'green',
-                                'blue',
-                                'indigo',
-                                'purple',
-                                'pink',
-                                'gray',
-                              ].map((c) => (
-                                <option key={c} value={c}>
-                                  {c.charAt(0).toUpperCase() + c.slice(1)}
-                                </option>
-                              ))}
-                            </select>
-                            <Button
-                              type="button"
-                              size="xs"
-                              className="h-8 bg-dynamic-orange px-3 text-white text-xs shadow-sm hover:bg-dynamic-orange/90"
-                              onClick={handleCreateLabel}
-                              disabled={creatingLabel || !newLabelName.trim()}
-                            >
-                              {creatingLabel ? (
-                                <Loader2 className="h-3 w-3 animate-spin" />
-                              ) : (
-                                'Add'
-                              )}
-                            </Button>
-                          </div>
-                        </div>
-                      )}
-
-                      {labelsLoading ? (
-                        <div className="flex flex-col items-center justify-center gap-3 rounded-lg bg-muted/30 py-6">
-                          <Loader2 className="h-4 w-4 animate-spin text-dynamic-orange" />
-                          <p className="text-muted-foreground text-xs">
-                            Loading labels...
-                          </p>
-                        </div>
-                      ) : availableLabels.length === 0 ? (
-                        <div className="flex flex-col items-center justify-center gap-3 rounded-lg border-2 border-muted-foreground/20 border-dashed bg-muted/20 py-6">
-                          <Tag className="h-4 w-4 text-muted-foreground/40" />
-                          <div className="text-center">
-                            <p className="font-medium text-muted-foreground text-xs">
-                              No labels yet
-                            </p>
-                            <p className="mt-1 text-[10px] text-muted-foreground/60">
-                              Create your first label above
-                            </p>
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="flex flex-wrap gap-1.5 md:gap-2">
-                          {availableLabels.map((label) => {
-                            const active = selectedLabels.some(
-                              (l) => l.id === label.id
-                            );
-                            const styles = computeAccessibleLabelStyles(
-                              label.color
-                            );
-                            return (
-                              <Button
-                                key={label.id}
-                                type="button"
-                                variant={active ? 'default' : 'outline'}
-                                size="xs"
-                                onClick={() => toggleLabel(label)}
-                                className={cn(
-                                  'h-7 border px-3 text-xs transition-all',
-                                  !active &&
-                                    'bg-background hover:border-dynamic-orange/50',
-                                  active && 'shadow-sm'
-                                )}
-                                style={
-                                  active && styles
-                                    ? {
-                                        backgroundColor: styles.bg,
-                                        borderColor: styles.border,
-                                        color: styles.text,
-                                      }
-                                    : undefined
-                                }
-                              >
-                                {label.name || 'Unnamed'}
-                                {active && <X className="ml-1.5 h-3 w-3" />}
-                              </Button>
-                            );
-                          })}
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Projects Section */}
-                    <div className="space-y-2.5 rounded-lg border border-border/60 bg-gradient-to-br from-muted/30 to-muted/10 p-3.5 shadow-sm">
-                      <Label className="flex items-center justify-between gap-2">
-                        <span className="flex items-center gap-2 font-semibold text-foreground text-sm">
-                          <div className="flex h-5 w-5 items-center justify-center rounded-md bg-dynamic-orange/15">
-                            <Box className="h-3.5 w-3.5 text-dynamic-orange" />
-                          </div>
-                          Projects
-                        </span>
-                        {selectedProjects.length > 0 && (
-                          <Badge
-                            variant="secondary"
-                            className="h-5 rounded-full px-2 font-semibold text-[10px]"
+                        Due Date
+                      </span>
+                      <span className="flex items-center gap-3">
+                        {endDate && (
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleQuickDueDate(null)}
+                            disabled={isLoading}
+                            className="h-6 w-6 text-muted-foreground hover:text-dynamic-red"
+                            title="Clear due date"
                           >
-                            {selectedProjects.length}
-                          </Badge>
+                            <X className="h-3.5 w-3.5" />
+                          </Button>
                         )}
-                      </Label>
-
-                      {loadingProjects ? (
-                        <div className="flex flex-col items-center justify-center gap-3 rounded-lg bg-muted/30 py-8">
-                          <Loader2 className="h-5 w-5 animate-spin text-dynamic-orange" />
-                          <p className="text-muted-foreground text-xs">
-                            Loading projects...
-                          </p>
-                        </div>
-                      ) : taskProjects.length === 0 ? (
-                        <div className="flex flex-col items-center justify-center gap-3 rounded-lg border-2 border-muted-foreground/20 border-dashed bg-muted/20 py-8">
-                          <Box className="h-5 w-5 text-muted-foreground/40" />
-                          <p className="text-center text-muted-foreground text-xs">
-                            No projects available
-                          </p>
-                        </div>
-                      ) : (
-                        <div className="space-y-2.5">
-                          {/* Search input */}
-                          <div className="relative">
-                            <Search className="-translate-y-1/2 pointer-events-none absolute top-1/2 left-2.5 h-3.5 w-3.5 text-muted-foreground" />
-                            <Input
-                              type="text"
-                              placeholder="Search projects..."
-                              value={projectSearchQuery}
-                              onChange={(e) =>
-                                setProjectSearchQuery(e.target.value)
-                              }
-                              className="h-8 border-muted-foreground/20 bg-background/50 pl-8 text-xs placeholder:text-muted-foreground/50"
-                            />
-                            {projectSearchQuery && (
-                              <button
-                                type="button"
-                                onClick={() => setProjectSearchQuery('')}
-                                className="-translate-y-1/2 absolute top-1/2 right-2 rounded-full p-0.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-                              >
-                                <X className="h-3 w-3" />
-                              </button>
-                            )}
-                          </div>
-
-                          {/* Selected projects (if any) */}
-                          {selectedProjects.length > 0 && (
-                            <div className="space-y-1.5">
-                              <p className="font-medium text-[10px] text-muted-foreground uppercase tracking-wide">
-                                Selected ({selectedProjects.length})
-                              </p>
-                              <div className="flex flex-wrap gap-1.5">
-                                {selectedProjects.map((project) => (
-                                  <Button
-                                    key={`selected-project-${project.id}`}
-                                    type="button"
-                                    variant="default"
-                                    size="xs"
-                                    onClick={() => toggleProject(project)}
-                                    className="h-7 gap-1.5 rounded-full border border-dynamic-orange/30 bg-dynamic-orange/15 px-3 font-medium text-dynamic-orange text-xs shadow-sm transition-all hover:border-dynamic-orange/50 hover:bg-dynamic-orange/25"
-                                  >
-                                    {project.name}
-                                    <X className="h-3 w-3 opacity-70" />
-                                  </Button>
-                                ))}
-                              </div>
-                            </div>
-                          )}
-
-                          {/* Available projects */}
-                          <div className="space-y-1.5">
-                            {(() => {
-                              const filteredProjects = taskProjects.filter(
-                                (project) => {
-                                  const isSelected = selectedProjects.some(
-                                    (p) => p.id === project.id
-                                  );
-                                  const matchesSearch =
-                                    !projectSearchQuery ||
-                                    (project.name || '')
-                                      .toLowerCase()
-                                      .includes(
-                                        projectSearchQuery.toLowerCase()
-                                      );
-                                  return !isSelected && matchesSearch;
-                                }
-                              );
-
-                              if (filteredProjects.length === 0) {
-                                return projectSearchQuery ? (
-                                  <div className="flex flex-col items-center justify-center gap-2 rounded-lg bg-muted/30 py-6">
-                                    <Search className="h-4 w-4 text-muted-foreground/40" />
-                                    <p className="text-center text-muted-foreground text-xs">
-                                      No projects found
-                                    </p>
-                                  </div>
-                                ) : (
-                                  <div className="rounded-lg bg-muted/30 py-3 text-center">
-                                    <p className="text-muted-foreground text-xs">
-                                      All projects selected
-                                    </p>
-                                  </div>
-                                );
-                              }
-
-                              return (
-                                <>
-                                  <p className="font-medium text-[10px] text-muted-foreground uppercase tracking-wide">
-                                    Available ({filteredProjects.length})
-                                  </p>
-                                  <div className="flex max-h-48 flex-col gap-1 overflow-y-auto">
-                                    {filteredProjects.map((project) => (
-                                      <button
-                                        key={`available-project-${project.id}`}
-                                        type="button"
-                                        onClick={() => toggleProject(project)}
-                                        className="group flex items-center gap-2.5 rounded-md border border-transparent bg-background/50 px-3 py-2 text-left transition-all hover:border-dynamic-orange/30 hover:bg-dynamic-orange/5"
-                                      >
-                                        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-dynamic-orange/10">
-                                          <ListTodo className="h-4 w-4 text-dynamic-orange" />
-                                        </div>
-                                        <div className="flex-1 truncate">
-                                          <span className="block truncate text-sm">
-                                            {project.name}
-                                          </span>
-                                          {project.status && (
-                                            <span className="block text-muted-foreground text-xs">
-                                              {project.status}
-                                            </span>
-                                          )}
-                                        </div>
-                                        <Plus className="h-3.5 w-3.5 shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
-                                      </button>
-                                    ))}
-                                  </div>
-                                </>
-                              );
-                            })()}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Assignees Section */}
-                    <div className="space-y-2.5 rounded-lg border border-border/60 bg-gradient-to-br from-muted/30 to-muted/10 p-3.5 shadow-sm">
-                      <Label className="flex items-center justify-between gap-2">
-                        <span className="flex items-center gap-2 font-semibold text-foreground text-sm">
-                          <div className="flex h-5 w-5 items-center justify-center rounded-md bg-dynamic-orange/15">
-                            <Users className="h-3.5 w-3.5 text-dynamic-orange" />
-                          </div>
-                          Assignees
-                        </span>
-                        {selectedAssignees.length > 0 && (
-                          <Badge
-                            variant="secondary"
-                            className="h-5 rounded-full px-2 font-semibold text-[10px]"
-                          >
-                            {selectedAssignees.length}
-                          </Badge>
-                        )}
-                      </Label>
-
-                      {loadingMembers ? (
-                        <div className="flex flex-col items-center justify-center gap-3 rounded-lg bg-muted/30 py-8">
-                          <Loader2 className="h-5 w-5 animate-spin text-dynamic-orange" />
-                          <p className="text-muted-foreground text-xs">
-                            Loading members...
-                          </p>
-                        </div>
-                      ) : workspaceMembers.length === 0 ? (
-                        <div className="flex flex-col items-center justify-center gap-3 rounded-lg border-2 border-muted-foreground/20 border-dashed bg-muted/20 py-8">
-                          <Users className="h-5 w-5 text-muted-foreground/40" />
-                          <p className="text-center text-muted-foreground text-xs">
-                            No workspace members
-                          </p>
-                        </div>
-                      ) : (
-                        <div className="space-y-2.5">
-                          {/* Search input */}
-                          <div className="relative">
-                            <Search className="-translate-y-1/2 pointer-events-none absolute top-1/2 left-2.5 h-3.5 w-3.5 text-muted-foreground" />
-                            <Input
-                              type="text"
-                              placeholder="Search members..."
-                              value={assigneeSearchQuery}
-                              onChange={(e) =>
-                                setAssigneeSearchQuery(e.target.value)
-                              }
-                              className="h-8 border-muted-foreground/20 bg-background/50 pl-8 text-xs placeholder:text-muted-foreground/50"
-                            />
-                            {assigneeSearchQuery && (
-                              <button
-                                type="button"
-                                onClick={() => setAssigneeSearchQuery('')}
-                                className="-translate-y-1/2 absolute top-1/2 right-2 rounded-full p-0.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-                              >
-                                <X className="h-3 w-3" />
-                              </button>
-                            )}
-                          </div>
-
-                          {/* Selected assignees (if any) */}
-                          {selectedAssignees.length > 0 && (
-                            <div className="space-y-1.5">
-                              <p className="font-medium text-[10px] text-muted-foreground uppercase tracking-wide">
-                                Selected ({selectedAssignees.length})
-                              </p>
-                              <div className="flex flex-wrap gap-1.5">
-                                {selectedAssignees.map((assignee) => (
-                                  <Button
-                                    key={`selected-assignee-${assignee.user_id}`}
-                                    type="button"
-                                    variant="default"
-                                    size="xs"
-                                    onClick={() => toggleAssignee(assignee)}
-                                    className="h-7 gap-1.5 rounded-full border border-dynamic-orange/30 bg-dynamic-orange/15 px-3 font-medium text-dynamic-orange text-xs shadow-sm transition-all hover:border-dynamic-orange/50 hover:bg-dynamic-orange/25"
-                                  >
-                                    <Avatar className="h-4 w-4">
-                                      <AvatarImage
-                                        src={assignee.avatar_url}
-                                        alt={assignee.display_name || 'Unknown'}
-                                      />
-                                      <AvatarFallback className="bg-dynamic-orange/20 font-bold text-[9px]">
-                                        {(assignee.display_name ||
-                                          'Unknown')[0]?.toUpperCase()}
-                                      </AvatarFallback>
-                                    </Avatar>
-                                    {assignee.display_name || 'Unknown'}
-                                    <X className="h-3 w-3 opacity-70" />
-                                  </Button>
-                                ))}
-                              </div>
-                            </div>
-                          )}
-
-                          {/* Available members */}
-                          <div className="space-y-1.5">
-                            {(() => {
-                              const filteredMembers = workspaceMembers.filter(
-                                (member) => {
-                                  const isSelected = selectedAssignees.some(
-                                    (a) => a.user_id === member.user_id
-                                  );
-                                  const matchesSearch =
-                                    !assigneeSearchQuery ||
-                                    (member.display_name || '')
-                                      .toLowerCase()
-                                      .includes(
-                                        assigneeSearchQuery.toLowerCase()
-                                      );
-                                  return !isSelected && matchesSearch;
-                                }
-                              );
-
-                              if (filteredMembers.length === 0) {
-                                return assigneeSearchQuery ? (
-                                  <div className="flex flex-col items-center justify-center gap-2 rounded-lg bg-muted/30 py-6">
-                                    <Search className="h-4 w-4 text-muted-foreground/40" />
-                                    <p className="text-center text-muted-foreground text-xs">
-                                      No members found
-                                    </p>
-                                  </div>
-                                ) : (
-                                  <div className="rounded-lg bg-muted/30 py-3 text-center">
-                                    <p className="text-muted-foreground text-xs">
-                                      All members assigned
-                                    </p>
-                                  </div>
-                                );
-                              }
-
-                              return (
-                                <>
-                                  <p className="font-medium text-[10px] text-muted-foreground uppercase tracking-wide">
-                                    Available ({filteredMembers.length})
-                                  </p>
-                                  <div className="flex max-h-48 flex-col gap-1 overflow-y-auto">
-                                    {filteredMembers.map((member) => (
-                                      <button
-                                        key={`available-member-${member.user_id}`}
-                                        type="button"
-                                        onClick={() => toggleAssignee(member)}
-                                        className="group flex items-center gap-2.5 rounded-md border border-transparent bg-background/50 px-3 py-2 text-left transition-all hover:border-dynamic-orange/30 hover:bg-dynamic-orange/5"
-                                      >
-                                        <Avatar className="h-7 w-7 shrink-0">
-                                          <AvatarImage
-                                            src={member.avatar_url}
-                                            alt={
-                                              member.display_name || 'Unknown'
-                                            }
-                                          />
-                                          <AvatarFallback className="bg-muted font-semibold text-muted-foreground text-xs group-hover:bg-dynamic-orange/20 group-hover:text-dynamic-orange">
-                                            {(member.display_name ||
-                                              'Unknown')[0]?.toUpperCase()}
-                                          </AvatarFallback>
-                                        </Avatar>
-                                        <span className="flex-1 truncate text-sm">
-                                          {member.display_name || 'Unknown'}
-                                        </span>
-                                        <Plus className="h-3.5 w-3.5 shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
-                                      </button>
-                                    ))}
-                                  </div>
-                                </>
-                              );
-                            })()}
-                          </div>
-                        </div>
-                      )}
+                      </span>
+                    </Label>
+                    <div className="grid grid-cols-2 gap-1.5 md:gap-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="xs"
+                        onClick={() => handleQuickDueDate(0)}
+                        disabled={isLoading}
+                        className="h-7 text-[11px] transition-all hover:border-dynamic-orange/50 hover:bg-dynamic-orange/5 md:text-xs"
+                        title="Today – Alt+T"
+                      >
+                        Today
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="xs"
+                        onClick={() => handleQuickDueDate(1)}
+                        disabled={isLoading}
+                        className="h-7 text-[11px] transition-all hover:border-dynamic-orange/50 hover:bg-dynamic-orange/5 md:text-xs"
+                        title="Tomorrow – Alt+M"
+                      >
+                        Tomorrow
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="xs"
+                        onClick={() => handleQuickDueDate(7)}
+                        disabled={isLoading}
+                        className="h-7 text-[11px] transition-all hover:border-dynamic-orange/50 hover:bg-dynamic-orange/5 md:text-xs"
+                        title="Next week – Alt+W"
+                      >
+                        Next week
+                      </Button>
                     </div>
                   </div>
-                )}
+
+                  {/* Advanced Options Toggle */}
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="xs"
+                    onClick={() => setShowAdvancedOptions(!showAdvancedOptions)}
+                    className="h-8 w-full justify-between text-muted-foreground text-xs transition-all hover:bg-dynamic-orange/5 hover:text-dynamic-orange"
+                    title="Toggle advanced options – Alt+A"
+                  >
+                    <span className="flex items-center gap-2">
+                      <Settings className="h-3 w-3" />
+                      {showAdvancedOptions ? 'Hide' : 'Show'} advanced options
+                    </span>
+                    <ChevronDown
+                      className={cn(
+                        'h-3 w-3 transition-transform',
+                        showAdvancedOptions && 'rotate-180'
+                      )}
+                    />
+                  </Button>
+
+                  {/* Advanced Options - Collapsible */}
+                  {showAdvancedOptions && (
+                    <div className="slide-in-from-top-2 animate-in space-y-4 duration-200">
+                      {/* Custom Date Pickers */}
+                      <div className="space-y-2.5 rounded-lg border border-border/60 bg-gradient-to-br from-muted/30 to-muted/10 p-3.5 shadow-sm">
+                        <Label className="flex items-center gap-2 font-semibold text-foreground text-sm">
+                          <div className="flex h-5 w-5 items-center justify-center rounded-md bg-dynamic-orange/15">
+                            <Calendar className="h-3.5 w-3.5 text-dynamic-orange" />
+                          </div>
+                          Dates
+                        </Label>
+                        <div className="space-y-3">
+                          <div className="space-y-1">
+                            <Label className="font-normal text-muted-foreground text-xs">
+                              Start Date
+                            </Label>
+                            <DateTimePicker
+                              date={startDate}
+                              setDate={setStartDate}
+                              showTimeSelect={true}
+                              allowClear={true}
+                              showFooterControls={true}
+                            />
+                          </div>
+                          <div className="space-y-1">
+                            <Label className="font-normal text-muted-foreground text-xs">
+                              Due Date
+                            </Label>
+                            <DateTimePicker
+                              date={endDate}
+                              setDate={handleEndDateChange}
+                              showTimeSelect={true}
+                              allowClear={true}
+                              showFooterControls={true}
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Estimation Section moved above as dropdown */}
+
+                      {/* Labels Section */}
+                      <div className="space-y-2.5 rounded-lg border border-border/60 bg-gradient-to-br from-muted/30 to-muted/10 p-3.5 shadow-sm">
+                        <Label className="flex items-center justify-between gap-2">
+                          <span className="flex items-center gap-2 font-semibold text-foreground text-sm">
+                            <div className="flex h-5 w-5 items-center justify-center rounded-md bg-dynamic-orange/15">
+                              <Tag className="h-3.5 w-3.5 text-dynamic-orange" />
+                            </div>
+                            Labels
+                          </span>
+                        </Label>
+                        {boardConfig && (
+                          <div className="space-y-2">
+                            <div className="flex items-center gap-2">
+                              <Input
+                                placeholder="New label name"
+                                value={newLabelName}
+                                onChange={(e) =>
+                                  setNewLabelName(e.target.value)
+                                }
+                                className="h-8 flex-1 text-xs transition-all focus:border-dynamic-orange/50"
+                              />
+                              <select
+                                className="h-8 rounded-md border bg-background px-2 text-xs transition-all hover:border-dynamic-orange/50 focus:border-dynamic-orange/50 focus:outline-none focus:ring-1 focus:ring-dynamic-orange/20"
+                                value={newLabelColor}
+                                onChange={(e) =>
+                                  setNewLabelColor(e.target.value)
+                                }
+                              >
+                                {[
+                                  'red',
+                                  'orange',
+                                  'yellow',
+                                  'green',
+                                  'blue',
+                                  'indigo',
+                                  'purple',
+                                  'pink',
+                                  'gray',
+                                ].map((c) => (
+                                  <option key={c} value={c}>
+                                    {c.charAt(0).toUpperCase() + c.slice(1)}
+                                  </option>
+                                ))}
+                              </select>
+                              <Button
+                                type="button"
+                                size="xs"
+                                className="h-8 bg-dynamic-orange px-3 text-white text-xs shadow-sm hover:bg-dynamic-orange/90"
+                                onClick={handleCreateLabel}
+                                disabled={creatingLabel || !newLabelName.trim()}
+                              >
+                                {creatingLabel ? (
+                                  <Loader2 className="h-3 w-3 animate-spin" />
+                                ) : (
+                                  'Add'
+                                )}
+                              </Button>
+                            </div>
+                          </div>
+                        )}
+
+                        {labelsLoading ? (
+                          <div className="flex flex-col items-center justify-center gap-3 rounded-lg bg-muted/30 py-6">
+                            <Loader2 className="h-4 w-4 animate-spin text-dynamic-orange" />
+                            <p className="text-muted-foreground text-xs">
+                              Loading labels...
+                            </p>
+                          </div>
+                        ) : availableLabels.length === 0 ? (
+                          <div className="flex flex-col items-center justify-center gap-3 rounded-lg border-2 border-muted-foreground/20 border-dashed bg-muted/20 py-6">
+                            <Tag className="h-4 w-4 text-muted-foreground/40" />
+                            <div className="text-center">
+                              <p className="font-medium text-muted-foreground text-xs">
+                                No labels yet
+                              </p>
+                              <p className="mt-1 text-[10px] text-muted-foreground/60">
+                                Create your first label above
+                              </p>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="flex flex-wrap gap-1.5 md:gap-2">
+                            {availableLabels.map((label) => {
+                              const active = selectedLabels.some(
+                                (l) => l.id === label.id
+                              );
+                              const styles = computeAccessibleLabelStyles(
+                                label.color
+                              );
+                              return (
+                                <Button
+                                  key={label.id}
+                                  type="button"
+                                  variant={active ? 'default' : 'outline'}
+                                  size="xs"
+                                  onClick={() => toggleLabel(label)}
+                                  className={cn(
+                                    'h-7 border px-3 text-xs transition-all',
+                                    !active &&
+                                      'bg-background hover:border-dynamic-orange/50',
+                                    active && 'shadow-sm'
+                                  )}
+                                  style={
+                                    active && styles
+                                      ? {
+                                          backgroundColor: styles.bg,
+                                          borderColor: styles.border,
+                                          color: styles.text,
+                                        }
+                                      : undefined
+                                  }
+                                >
+                                  {label.name || 'Unnamed'}
+                                  {active && <X className="ml-1.5 h-3 w-3" />}
+                                </Button>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Projects Section */}
+                      <div className="space-y-2.5 rounded-lg border border-border/60 bg-gradient-to-br from-muted/30 to-muted/10 p-3.5 shadow-sm">
+                        <Label className="flex items-center justify-between gap-2">
+                          <span className="flex items-center gap-2 font-semibold text-foreground text-sm">
+                            <div className="flex h-5 w-5 items-center justify-center rounded-md bg-dynamic-orange/15">
+                              <Box className="h-3.5 w-3.5 text-dynamic-orange" />
+                            </div>
+                            Projects
+                          </span>
+                          {selectedProjects.length > 0 && (
+                            <Badge
+                              variant="secondary"
+                              className="h-5 rounded-full px-2 font-semibold text-[10px]"
+                            >
+                              {selectedProjects.length}
+                            </Badge>
+                          )}
+                        </Label>
+
+                        {loadingProjects ? (
+                          <div className="flex flex-col items-center justify-center gap-3 rounded-lg bg-muted/30 py-8">
+                            <Loader2 className="h-5 w-5 animate-spin text-dynamic-orange" />
+                            <p className="text-muted-foreground text-xs">
+                              Loading projects...
+                            </p>
+                          </div>
+                        ) : taskProjects.length === 0 ? (
+                          <div className="flex flex-col items-center justify-center gap-3 rounded-lg border-2 border-muted-foreground/20 border-dashed bg-muted/20 py-8">
+                            <Box className="h-5 w-5 text-muted-foreground/40" />
+                            <p className="text-center text-muted-foreground text-xs">
+                              No projects available
+                            </p>
+                          </div>
+                        ) : (
+                          <div className="space-y-2.5">
+                            {/* Search input */}
+                            <div className="relative">
+                              <Search className="-translate-y-1/2 pointer-events-none absolute top-1/2 left-2.5 h-3.5 w-3.5 text-muted-foreground" />
+                              <Input
+                                type="text"
+                                placeholder="Search projects..."
+                                value={projectSearchQuery}
+                                onChange={(e) =>
+                                  setProjectSearchQuery(e.target.value)
+                                }
+                                className="h-8 border-muted-foreground/20 bg-background/50 pl-8 text-xs placeholder:text-muted-foreground/50"
+                              />
+                              {projectSearchQuery && (
+                                <button
+                                  type="button"
+                                  onClick={() => setProjectSearchQuery('')}
+                                  className="-translate-y-1/2 absolute top-1/2 right-2 rounded-full p-0.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                                >
+                                  <X className="h-3 w-3" />
+                                </button>
+                              )}
+                            </div>
+
+                            {/* Selected projects (if any) */}
+                            {selectedProjects.length > 0 && (
+                              <div className="space-y-1.5">
+                                <p className="font-medium text-[10px] text-muted-foreground uppercase tracking-wide">
+                                  Selected ({selectedProjects.length})
+                                </p>
+                                <div className="flex flex-wrap gap-1.5">
+                                  {selectedProjects.map((project) => (
+                                    <Button
+                                      key={`selected-project-${project.id}`}
+                                      type="button"
+                                      variant="default"
+                                      size="xs"
+                                      onClick={() => toggleProject(project)}
+                                      className="h-7 gap-1.5 rounded-full border border-dynamic-orange/30 bg-dynamic-orange/15 px-3 font-medium text-dynamic-orange text-xs shadow-sm transition-all hover:border-dynamic-orange/50 hover:bg-dynamic-orange/25"
+                                    >
+                                      {project.name}
+                                      <X className="h-3 w-3 opacity-70" />
+                                    </Button>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Available projects */}
+                            <div className="space-y-1.5">
+                              {(() => {
+                                const filteredProjects = taskProjects.filter(
+                                  (project) => {
+                                    const isSelected = selectedProjects.some(
+                                      (p) => p.id === project.id
+                                    );
+                                    const matchesSearch =
+                                      !projectSearchQuery ||
+                                      (project.name || '')
+                                        .toLowerCase()
+                                        .includes(
+                                          projectSearchQuery.toLowerCase()
+                                        );
+                                    return !isSelected && matchesSearch;
+                                  }
+                                );
+
+                                if (filteredProjects.length === 0) {
+                                  return projectSearchQuery ? (
+                                    <div className="flex flex-col items-center justify-center gap-2 rounded-lg bg-muted/30 py-6">
+                                      <Search className="h-4 w-4 text-muted-foreground/40" />
+                                      <p className="text-center text-muted-foreground text-xs">
+                                        No projects found
+                                      </p>
+                                    </div>
+                                  ) : (
+                                    <div className="rounded-lg bg-muted/30 py-3 text-center">
+                                      <p className="text-muted-foreground text-xs">
+                                        All projects selected
+                                      </p>
+                                    </div>
+                                  );
+                                }
+
+                                return (
+                                  <>
+                                    <p className="font-medium text-[10px] text-muted-foreground uppercase tracking-wide">
+                                      Available ({filteredProjects.length})
+                                    </p>
+                                    <div className="flex max-h-48 flex-col gap-1 overflow-y-auto">
+                                      {filteredProjects.map((project) => (
+                                        <button
+                                          key={`available-project-${project.id}`}
+                                          type="button"
+                                          onClick={() => toggleProject(project)}
+                                          className="group flex items-center gap-2.5 rounded-md border border-transparent bg-background/50 px-3 py-2 text-left transition-all hover:border-dynamic-orange/30 hover:bg-dynamic-orange/5"
+                                        >
+                                          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-dynamic-orange/10">
+                                            <ListTodo className="h-4 w-4 text-dynamic-orange" />
+                                          </div>
+                                          <div className="flex-1 truncate">
+                                            <span className="block truncate text-sm">
+                                              {project.name}
+                                            </span>
+                                            {project.status && (
+                                              <span className="block text-muted-foreground text-xs">
+                                                {project.status}
+                                              </span>
+                                            )}
+                                          </div>
+                                          <Plus className="h-3.5 w-3.5 shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
+                                        </button>
+                                      ))}
+                                    </div>
+                                  </>
+                                );
+                              })()}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Assignees Section */}
+                      <div className="space-y-2.5 rounded-lg border border-border/60 bg-gradient-to-br from-muted/30 to-muted/10 p-3.5 shadow-sm">
+                        <Label className="flex items-center justify-between gap-2">
+                          <span className="flex items-center gap-2 font-semibold text-foreground text-sm">
+                            <div className="flex h-5 w-5 items-center justify-center rounded-md bg-dynamic-orange/15">
+                              <Users className="h-3.5 w-3.5 text-dynamic-orange" />
+                            </div>
+                            Assignees
+                          </span>
+                          {selectedAssignees.length > 0 && (
+                            <Badge
+                              variant="secondary"
+                              className="h-5 rounded-full px-2 font-semibold text-[10px]"
+                            >
+                              {selectedAssignees.length}
+                            </Badge>
+                          )}
+                        </Label>
+
+                        {loadingMembers ? (
+                          <div className="flex flex-col items-center justify-center gap-3 rounded-lg bg-muted/30 py-8">
+                            <Loader2 className="h-5 w-5 animate-spin text-dynamic-orange" />
+                            <p className="text-muted-foreground text-xs">
+                              Loading members...
+                            </p>
+                          </div>
+                        ) : workspaceMembers.length === 0 ? (
+                          <div className="flex flex-col items-center justify-center gap-3 rounded-lg border-2 border-muted-foreground/20 border-dashed bg-muted/20 py-8">
+                            <Users className="h-5 w-5 text-muted-foreground/40" />
+                            <p className="text-center text-muted-foreground text-xs">
+                              No workspace members
+                            </p>
+                          </div>
+                        ) : (
+                          <div className="space-y-2.5">
+                            {/* Search input */}
+                            <div className="relative">
+                              <Search className="-translate-y-1/2 pointer-events-none absolute top-1/2 left-2.5 h-3.5 w-3.5 text-muted-foreground" />
+                              <Input
+                                type="text"
+                                placeholder="Search members..."
+                                value={assigneeSearchQuery}
+                                onChange={(e) =>
+                                  setAssigneeSearchQuery(e.target.value)
+                                }
+                                className="h-8 border-muted-foreground/20 bg-background/50 pl-8 text-xs placeholder:text-muted-foreground/50"
+                              />
+                              {assigneeSearchQuery && (
+                                <button
+                                  type="button"
+                                  onClick={() => setAssigneeSearchQuery('')}
+                                  className="-translate-y-1/2 absolute top-1/2 right-2 rounded-full p-0.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                                >
+                                  <X className="h-3 w-3" />
+                                </button>
+                              )}
+                            </div>
+
+                            {/* Selected assignees (if any) */}
+                            {selectedAssignees.length > 0 && (
+                              <div className="space-y-1.5">
+                                <p className="font-medium text-[10px] text-muted-foreground uppercase tracking-wide">
+                                  Selected ({selectedAssignees.length})
+                                </p>
+                                <div className="flex flex-wrap gap-1.5">
+                                  {selectedAssignees.map((assignee) => (
+                                    <Button
+                                      key={`selected-assignee-${assignee.user_id}`}
+                                      type="button"
+                                      variant="default"
+                                      size="xs"
+                                      onClick={() => toggleAssignee(assignee)}
+                                      className="h-7 gap-1.5 rounded-full border border-dynamic-orange/30 bg-dynamic-orange/15 px-3 font-medium text-dynamic-orange text-xs shadow-sm transition-all hover:border-dynamic-orange/50 hover:bg-dynamic-orange/25"
+                                    >
+                                      <Avatar className="h-4 w-4">
+                                        <AvatarImage
+                                          src={assignee.avatar_url}
+                                          alt={
+                                            assignee.display_name || 'Unknown'
+                                          }
+                                        />
+                                        <AvatarFallback className="bg-dynamic-orange/20 font-bold text-[9px]">
+                                          {(assignee.display_name ||
+                                            'Unknown')[0]?.toUpperCase()}
+                                        </AvatarFallback>
+                                      </Avatar>
+                                      {assignee.display_name || 'Unknown'}
+                                      <X className="h-3 w-3 opacity-70" />
+                                    </Button>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Available members */}
+                            <div className="space-y-1.5">
+                              {(() => {
+                                const filteredMembers = workspaceMembers.filter(
+                                  (member) => {
+                                    const isSelected = selectedAssignees.some(
+                                      (a) => a.user_id === member.user_id
+                                    );
+                                    const matchesSearch =
+                                      !assigneeSearchQuery ||
+                                      (member.display_name || '')
+                                        .toLowerCase()
+                                        .includes(
+                                          assigneeSearchQuery.toLowerCase()
+                                        );
+                                    return !isSelected && matchesSearch;
+                                  }
+                                );
+
+                                if (filteredMembers.length === 0) {
+                                  return assigneeSearchQuery ? (
+                                    <div className="flex flex-col items-center justify-center gap-2 rounded-lg bg-muted/30 py-6">
+                                      <Search className="h-4 w-4 text-muted-foreground/40" />
+                                      <p className="text-center text-muted-foreground text-xs">
+                                        No members found
+                                      </p>
+                                    </div>
+                                  ) : (
+                                    <div className="rounded-lg bg-muted/30 py-3 text-center">
+                                      <p className="text-muted-foreground text-xs">
+                                        All members assigned
+                                      </p>
+                                    </div>
+                                  );
+                                }
+
+                                return (
+                                  <>
+                                    <p className="font-medium text-[10px] text-muted-foreground uppercase tracking-wide">
+                                      Available ({filteredMembers.length})
+                                    </p>
+                                    <div className="flex max-h-48 flex-col gap-1 overflow-y-auto">
+                                      {filteredMembers.map((member) => (
+                                        <button
+                                          key={`available-member-${member.user_id}`}
+                                          type="button"
+                                          onClick={() => toggleAssignee(member)}
+                                          className="group flex items-center gap-2.5 rounded-md border border-transparent bg-background/50 px-3 py-2 text-left transition-all hover:border-dynamic-orange/30 hover:bg-dynamic-orange/5"
+                                        >
+                                          <Avatar className="h-7 w-7 shrink-0">
+                                            <AvatarImage
+                                              src={member.avatar_url}
+                                              alt={
+                                                member.display_name || 'Unknown'
+                                              }
+                                            />
+                                            <AvatarFallback className="bg-muted font-semibold text-muted-foreground text-xs group-hover:bg-dynamic-orange/20 group-hover:text-dynamic-orange">
+                                              {(member.display_name ||
+                                                'Unknown')[0]?.toUpperCase()}
+                                            </AvatarFallback>
+                                          </Avatar>
+                                          <span className="flex-1 truncate text-sm">
+                                            {member.display_name || 'Unknown'}
+                                          </span>
+                                          <Plus className="h-3.5 w-3.5 shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
+                                        </button>
+                                      ))}
+                                    </div>
+                                  </>
+                                );
+                              })()}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
-          </div>
+          )}
 
-          {/* Mobile floating action buttons */}
-          <div className="fixed right-4 bottom-4 z-40 flex flex-col gap-2 md:hidden">
-            {/* Save button */}
+          {/* Mobile floating save button */}
+          <div className="fixed right-4 bottom-4 z-40 md:hidden">
             <Button
               variant="default"
               size="lg"
@@ -3622,18 +4061,9 @@ function TaskEditDialogComponent({
                 <Check className="h-6 w-6" />
               )}
             </Button>
-            {/* Options button */}
-            <Button
-              variant="secondary"
-              size="lg"
-              onClick={() => setShowMobileSidebar(true)}
-              className="h-14 w-14 rounded-full shadow-lg"
-            >
-              <Settings className="h-6 w-6" />
-            </Button>
           </div>
 
-          {/* Mobile overlay */}
+          {/* Overlay when sidebar is open */}
           {showMobileSidebar && (
             <button
               type="button"

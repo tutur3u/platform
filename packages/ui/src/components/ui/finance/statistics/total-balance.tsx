@@ -3,13 +3,14 @@ import type { FinanceDashboardSearchParams } from '@tuturuuu/ui/finance/shared/m
 import StatisticCard from '@tuturuuu/ui/finance/statistics/card';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import dayjs, { type OpUnitType } from 'dayjs';
+import { Wallet } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
 
 const enabled = true;
 
 export default async function TotalBalanceStatistics({
   wsId,
-  searchParams: { showFinanceStats = true, view, startDate, endDate } = {},
+  searchParams: { view, startDate, endDate } = {},
 }: {
   wsId: string;
   searchParams?: FinanceDashboardSearchParams;
@@ -64,15 +65,11 @@ export default async function TotalBalanceStatistics({
   return (
     <StatisticCard
       title={t('finance-overview.total-balance')}
-      value={
-        showFinanceStats
-          ? Intl.NumberFormat('vi-VN', {
-              style: 'currency',
-              currency: 'VND',
-            }).format(sum || 0)
-          : '***'
-      }
+      value={sum || 0}
+      icon={<Wallet className="h-5 w-5" />}
       className="md:col-span-2"
+      currency="VND"
+      locale="vi-VN"
     />
   );
 }

@@ -203,6 +203,54 @@ Use Biome (user-run only; agent must not execute commands directly).
 6. Add code examples with proper syntax highlighting.
 7. Update any existing documentation that references changed functionality.
 
+#### 4.13 Update Main Navigation
+When adding new pages or routes to any application (especially within workspace-scoped features), **ALWAYS** update the main navigation file to ensure discoverability.
+
+**CRITICAL Priority Rule**: Navigation updates MUST be treated as a mandatory part of any feature addition, not an afterthought.
+
+Workflow:
+1. Identify the navigation file for the affected app:
+   - Web app: `apps/web/src/app/[locale]/(dashboard)/[wsId]/navigation.tsx`
+   - Other apps may have similar navigation components
+2. **Before completing the feature**, add new routes to both:
+   - The `aliases` array (for route matching)
+   - The `children` navigation items (for UI display)
+3. Include proper icons from `lucide-react` that match the feature's purpose
+4. Add appropriate permission checks (e.g., `withoutPermission('manage_finance')`)
+5. Use translation keys from the appropriate namespace (e.g., `t('workspace-finance-tabs.recurring')`)
+6. Ensure the navigation structure is logical and grouped with related features
+
+Example for adding finance-related routes:
+```tsx
+// In aliases array
+aliases: [
+  `/${personalOrWsId}/finance`,
+  `/${personalOrWsId}/finance/transactions`,
+  `/${personalOrWsId}/finance/recurring`,    // NEW
+  `/${personalOrWsId}/finance/wallets`,
+  `/${personalOrWsId}/finance/budgets`,      // NEW
+  // ... other routes
+],
+
+// In children navigation
+{
+  title: t('workspace-finance-tabs.recurring'),
+  href: `/${personalOrWsId}/finance/recurring`,
+  icon: <RotateCcw className="h-5 w-5" />,
+  disabled: withoutPermission('manage_finance'),
+},
+```
+
+**Why This Matters**:
+- Users cannot discover features that aren't in navigation
+- Inconsistent navigation creates poor UX
+- Navigation is often the last thing updated, leading to incomplete features
+- Route aliases are required for proper active state highlighting
+
+**Quality Gate**:
+- PRs adding new routes without navigation updates should be considered incomplete
+- Review checklist must include: "Navigation updated for all new routes?"
+
 ### 5. Coding Standards & Conventions
 
 #### 5.1 Git Hygiene
@@ -605,9 +653,10 @@ Tick ALL before requesting review:
 5. For DB changes: migration added; user confirmed `bun sb:push` produced no diff ✅
 6. Types regenerated (`packages/types`) if schema changed ✅
 7. Docs updated for public API / env var / schema deltas ✅
-8. No secrets, tokens, or API keys committed ✅
-9. Added edge runtime export where required ✅
-10. All new external inputs validated (Zod / guard logic) ✅
+8. **Navigation updated for all new routes** (main navigation file) ✅
+9. No secrets, tokens, or API keys committed ✅
+10. Added edge runtime export where required ✅
+11. All new external inputs validated (Zod / guard logic) ✅
 
 #### 8.2 Quality Gates
 | Gate | Pass Criteria |
@@ -735,13 +784,14 @@ Agent Responsibilities:
 | (DO NOT run biome commands) | User-only | Agent suggests fixes; user executes |
 | (DO NOT run modal commands) | User-only | Agent prepares Modal code; user runs `modal run/deploy` |
 
-Top 5 Failure Causes → Fix Fast:
+Top Failure Causes → Fix Fast:
 1. Missing regenerated Supabase types → run `bun sb:typegen`.
 2. Unformatted code → run `bun format:fix`.
 3. Lint errors → run `bun lint:fix` then address residuals.
 4. Migration ordering error → rename with later timestamp.
 5. Documentation not visible → add page to `mint.json` navigation.
-6. Release workflow skipped → ensure PR title `chore(@tuturuuu/<pkg>): ...`.
+6. **New routes not in navigation** → update `navigation.tsx` with aliases and children.
+7. Release workflow skipped → ensure PR title `chore(@tuturuuu/<pkg>): ...`.
 
 Escalate if: multi-app breaking refactor, destructive schema change, data backfill >30 LOC, new external service, auth/token contract change.
 

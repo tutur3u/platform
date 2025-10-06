@@ -1,4 +1,5 @@
 import { Navigation, type NavLink } from '@tuturuuu/ui/custom/navigation';
+import { QuickActions } from '@tuturuuu/ui/finance/shared/quick-actions';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { redirect } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
@@ -35,13 +36,33 @@ export default async function FinanceLayout({
       disabled: withoutPermission('manage_finance'),
     },
     {
+      title: t('recurring'),
+      href: `/${wsId}/finance/recurring`,
+      disabled: withoutPermission('manage_finance'),
+    },
+    {
       title: t('wallets'),
       href: `/${wsId}/finance/wallets`,
       disabled: withoutPermission('manage_finance'),
     },
     {
+      title: t('budgets'),
+      href: `/${wsId}/finance/budgets`,
+      disabled: withoutPermission('manage_finance'),
+    },
+    {
+      title: t('analytics'),
+      href: `/${wsId}/finance/analytics`,
+      disabled: withoutPermission('manage_finance'),
+    },
+    {
       title: t('categories'),
       href: `/${wsId}/finance/transactions/categories`,
+      disabled: withoutPermission('manage_finance'),
+    },
+    {
+      title: t('tags'),
+      href: `/${wsId}/finance/tags`,
       disabled: withoutPermission('manage_finance'),
     },
     {
@@ -60,6 +81,7 @@ export default async function FinanceLayout({
     <>
       <Navigation navLinks={navLinks} />
       {children}
+      <QuickActions wsId={wsId} />
     </>
   );
 }

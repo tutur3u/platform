@@ -54,6 +54,7 @@ export type Database = {
         | 'pending_transcription'
         | 'recording'
         | 'transcribing';
+      recurring_frequency: 'daily' | 'monthly' | 'weekly' | 'yearly';
       subscription_status: 'active' | 'canceled' | 'past_due' | 'trialing';
       support_type: 'bug' | 'feature-request' | 'job-application' | 'support';
       task_board_status: 'active' | 'closed' | 'done' | 'not_started';
@@ -104,6 +105,13 @@ export type Database = {
           success: boolean;
           sync_token: string;
         }[];
+      };
+      calculate_next_occurrence: {
+        Args: {
+          frequency: Database['public']['Enums']['recurring_frequency'];
+          from_date: string;
+        };
+        Returns: string;
       };
       calculate_productivity_score: {
         Args: {
@@ -314,6 +322,21 @@ export type Database = {
         Returns: {
           browser: string;
           count: number;
+        }[];
+      };
+      get_budget_status: {
+        Args: {
+          _ws_id: string;
+        };
+        Returns: {
+          amount: number;
+          budget_id: string;
+          budget_name: string;
+          is_near_threshold: boolean;
+          is_over_budget: boolean;
+          percentage_used: number;
+          remaining: number;
+          spent: number;
         }[];
       };
       get_challenge_stats: {
@@ -705,15 +728,44 @@ export type Database = {
           domain: string;
         }[];
       };
-      get_transaction_categories_with_amount: {
-        Args: Record<PropertyKey, never>;
+      get_transaction_categories_with_amount_by_workspace: {
+        Args: {
+          p_ws_id: string;
+        };
         Returns: {
           amount: number;
           created_at: string;
           id: string;
           is_expense: boolean;
           name: string;
+          transaction_count: number;
           ws_id: string;
+        }[];
+      };
+      get_transaction_count_by_tag: {
+        Args: {
+          _ws_id: string;
+        };
+        Returns: {
+          tag_color: string;
+          tag_id: string;
+          tag_name: string;
+          transaction_count: number;
+        }[];
+      };
+      get_upcoming_recurring_transactions: {
+        Args: {
+          _ws_id: string;
+          days_ahead?: number;
+        };
+        Returns: {
+          amount: number;
+          category_name: string;
+          frequency: Database['public']['Enums']['recurring_frequency'];
+          id: string;
+          name: string;
+          next_occurrence: string;
+          wallet_name: string;
         }[];
       };
       get_user_accessible_tasks: {
@@ -1101,6 +1153,14 @@ export type Database = {
           browser: string;
           device_type: string;
           os: string;
+        }[];
+      };
+      process_recurring_transactions: {
+        Args: Record<PropertyKey, never>;
+        Returns: {
+          processed_count: number;
+          recurring_id: string;
+          transaction_id: string;
         }[];
       };
       revoke_all_cross_app_tokens: {
@@ -3031,6 +3091,89 @@ export type Database = {
         Update: {
           enabled?: boolean;
           id?: string;
+        };
+      };
+      finance_budgets: {
+        Insert: {
+          alert_threshold?: null | number;
+          amount?: number;
+          category_id?: null | string;
+          created_at?: null | string;
+          description?: null | string;
+          end_date?: null | string;
+          id?: string;
+          is_active?: boolean;
+          name: string;
+          period?: string;
+          spent?: number;
+          start_date: string;
+          updated_at?: null | string;
+          wallet_id?: null | string;
+          ws_id: string;
+        };
+        Relationships: [
+          {
+            columns: ['category_id'];
+            foreignKeyName: 'finance_budgets_category_id_fkey';
+            isOneToOne: false;
+            referencedColumns: ['id'];
+            referencedRelation: 'transaction_categories';
+          },
+          {
+            columns: ['wallet_id'];
+            foreignKeyName: 'finance_budgets_wallet_id_fkey';
+            isOneToOne: false;
+            referencedColumns: ['id'];
+            referencedRelation: 'workspace_wallets';
+          },
+          {
+            columns: ['ws_id'];
+            foreignKeyName: 'finance_budgets_ws_id_fkey';
+            isOneToOne: false;
+            referencedColumns: ['id'];
+            referencedRelation: 'workspace_link_counts';
+          },
+          {
+            columns: ['ws_id'];
+            foreignKeyName: 'finance_budgets_ws_id_fkey';
+            isOneToOne: false;
+            referencedColumns: ['id'];
+            referencedRelation: 'workspaces';
+          },
+        ];
+        Row: {
+          alert_threshold: null | number;
+          amount: number;
+          category_id: null | string;
+          created_at: null | string;
+          description: null | string;
+          end_date: null | string;
+          id: string;
+          is_active: boolean;
+          name: string;
+          period: string;
+          spent: number;
+          start_date: string;
+          updated_at: null | string;
+          wallet_id: null | string;
+          ws_id: string;
+        };
+        Update: {
+          alert_threshold?: null | number;
+          amount?: number;
+          category_id?: null | string;
+          created_at?: null | string;
+          description?: null | string;
+          end_date?: null | string;
+          id?: string;
+          is_active?: boolean;
+          name?: string;
+          period?: string;
+          spent?: number;
+          start_date?: string;
+          updated_at?: null | string;
+          wallet_id?: null | string;
+          ws_id?: string;
         };
       };
       finance_invoice_products: {
@@ -6155,6 +6298,89 @@ export type Database = {
           text?: string;
         };
       };
+      recurring_transactions: {
+        Insert: {
+          amount: number;
+          category_id?: null | string;
+          created_at?: null | string;
+          description?: null | string;
+          end_date?: null | string;
+          frequency?: Database['public']['Enums']['recurring_frequency'];
+          id?: string;
+          is_active?: boolean;
+          last_occurrence?: null | string;
+          name: string;
+          next_occurrence: string;
+          start_date: string;
+          updated_at?: null | string;
+          wallet_id: string;
+          ws_id: string;
+        };
+        Relationships: [
+          {
+            columns: ['category_id'];
+            foreignKeyName: 'recurring_transactions_category_id_fkey';
+            isOneToOne: false;
+            referencedColumns: ['id'];
+            referencedRelation: 'transaction_categories';
+          },
+          {
+            columns: ['wallet_id'];
+            foreignKeyName: 'recurring_transactions_wallet_id_fkey';
+            isOneToOne: false;
+            referencedColumns: ['id'];
+            referencedRelation: 'workspace_wallets';
+          },
+          {
+            columns: ['ws_id'];
+            foreignKeyName: 'recurring_transactions_ws_id_fkey';
+            isOneToOne: false;
+            referencedColumns: ['id'];
+            referencedRelation: 'workspace_link_counts';
+          },
+          {
+            columns: ['ws_id'];
+            foreignKeyName: 'recurring_transactions_ws_id_fkey';
+            isOneToOne: false;
+            referencedColumns: ['id'];
+            referencedRelation: 'workspaces';
+          },
+        ];
+        Row: {
+          amount: number;
+          category_id: null | string;
+          created_at: null | string;
+          description: null | string;
+          end_date: null | string;
+          frequency: Database['public']['Enums']['recurring_frequency'];
+          id: string;
+          is_active: boolean;
+          last_occurrence: null | string;
+          name: string;
+          next_occurrence: string;
+          start_date: string;
+          updated_at: null | string;
+          wallet_id: string;
+          ws_id: string;
+        };
+        Update: {
+          amount?: number;
+          category_id?: null | string;
+          created_at?: null | string;
+          description?: null | string;
+          end_date?: null | string;
+          frequency?: Database['public']['Enums']['recurring_frequency'];
+          id?: string;
+          is_active?: boolean;
+          last_occurrence?: null | string;
+          name?: string;
+          next_occurrence?: string;
+          start_date?: string;
+          updated_at?: null | string;
+          wallet_id?: string;
+          ws_id?: string;
+        };
+      };
       sent_emails: {
         Insert: {
           content: string;
@@ -7439,6 +7665,51 @@ export type Database = {
           ws_id?: string;
         };
       };
+      transaction_tags: {
+        Insert: {
+          color?: string;
+          created_at?: null | string;
+          description?: null | string;
+          id?: string;
+          name: string;
+          updated_at?: null | string;
+          ws_id: string;
+        };
+        Relationships: [
+          {
+            columns: ['ws_id'];
+            foreignKeyName: 'transaction_tags_ws_id_fkey';
+            isOneToOne: false;
+            referencedColumns: ['id'];
+            referencedRelation: 'workspace_link_counts';
+          },
+          {
+            columns: ['ws_id'];
+            foreignKeyName: 'transaction_tags_ws_id_fkey';
+            isOneToOne: false;
+            referencedColumns: ['id'];
+            referencedRelation: 'workspaces';
+          },
+        ];
+        Row: {
+          color: string;
+          created_at: null | string;
+          description: null | string;
+          id: string;
+          name: string;
+          updated_at: null | string;
+          ws_id: string;
+        };
+        Update: {
+          color?: string;
+          created_at?: null | string;
+          description?: null | string;
+          id?: string;
+          name?: string;
+          updated_at?: null | string;
+          ws_id?: string;
+        };
+      };
       user_feedbacks: {
         Insert: {
           content: string;
@@ -8185,6 +8456,39 @@ export type Database = {
           created_at?: null | string;
           group_id?: string;
           vital_id?: string;
+        };
+      };
+      wallet_transaction_tags: {
+        Insert: {
+          created_at?: null | string;
+          tag_id: string;
+          transaction_id: string;
+        };
+        Relationships: [
+          {
+            columns: ['tag_id'];
+            foreignKeyName: 'wallet_transaction_tags_tag_id_fkey';
+            isOneToOne: false;
+            referencedColumns: ['id'];
+            referencedRelation: 'transaction_tags';
+          },
+          {
+            columns: ['transaction_id'];
+            foreignKeyName: 'wallet_transaction_tags_transaction_id_fkey';
+            isOneToOne: false;
+            referencedColumns: ['id'];
+            referencedRelation: 'wallet_transactions';
+          },
+        ];
+        Row: {
+          created_at: null | string;
+          tag_id: string;
+          transaction_id: string;
+        };
+        Update: {
+          created_at?: null | string;
+          tag_id?: string;
+          transaction_id?: string;
         };
       };
       wallet_transactions: {
@@ -12903,6 +13207,7 @@ export const Constants = {
         'recording',
         'transcribing',
       ],
+      recurring_frequency: ['daily', 'monthly', 'weekly', 'yearly'],
       subscription_status: ['active', 'canceled', 'past_due', 'trialing'],
       support_type: ['bug', 'feature-request', 'job-application', 'support'],
       task_board_status: ['active', 'closed', 'done', 'not_started'],

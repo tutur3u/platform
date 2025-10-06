@@ -409,6 +409,12 @@
     "last-year": "Năm trước",
     "next-year": "Năm sau"
   },
+  "date_groups": {
+    "today": "Hôm nay",
+    "yesterday": "Hôm qua",
+    "transaction": "giao dịch",
+    "transactions": "giao dịch"
+  },
   "home": {
     "headline": "Lối tắt thông minh của bạn",
     "subheadline": "Quản lý công việc, siêu tốc độ cùng AI",
@@ -1219,7 +1225,11 @@
     "overview": "Tổng quan",
     "wallets": "Ví",
     "transactions": "Giao dịch",
+    "recurring": "Định kỳ",
+    "budgets": "Ngân sách",
+    "analytics": "Phân tích",
     "categories": "Danh mục giao dịch",
+    "tags": "Nhãn",
     "invoices": "Hóa đơn",
     "import": "Nhập dữ liệu",
     "settings": "Cài đặt"
@@ -1341,7 +1351,10 @@
     "common": {
       "empty": "Trống",
       "error": "Đã có lỗi xảy ra",
-      "unknown": "Không rõ"
+      "unknown": "Không rõ",
+      "load_more": "Tải thêm",
+      "end_of_list": "Bạn đã xem hết",
+      "no_results": "Không tìm thấy kết quả"
     },
     "referral_success": "Đã giới thiệu một người dùng mới",
     "user_already_referred": "Người dùng này đã được giới thiệu.",
@@ -1475,15 +1488,23 @@
     "select_category": "Chọn danh mục",
     "amount": "Số tiền",
     "description": "Mô tả",
+    "tags": "Thẻ",
+    "select_tags": "Chọn thẻ",
+    "tags_description": "Thêm thẻ để sắp xếp và phân loại giao dịch này",
     "report_opt_in": "Hiển thị trong báo cáo",
     "report_opt_in_description": "Nếu không được chọn, giao dịch này sẽ không được bao gồm trong bất kỳ báo cáo tài chính nào.",
     "taken_at": "Thực hiện lúc",
     "created_at": "Tạo lúc",
+    "all": "Tất cả",
     "income": "Thu nhập",
     "expense": "Chi tiêu",
     "daily_total_from_14_recent_days": "Tổng số tiền hàng ngày từ 14 ngày gần nhất",
     "monthly_total_from_12_recent_months": "Tổng số tiền hàng tháng từ 12 tháng gần nhất",
-    "user": "Người tạo"
+    "user": "Người tạo",
+    "hide_confidential": "Ẩn số liệu",
+    "show_confidential": "Hiển thị số liệu",
+    "financial_overview": "Tổng quan tài chính",
+    "financial_overview_description": "Theo dõi thu nhập, chi tiêu và tình hình tài chính tổng thể"
   },
   "transaction-category-data-table": {
     "id": "Mã số",
@@ -1493,11 +1514,46 @@
     "select_type": "Chọn loại",
     "name": "Tên",
     "amount": "Giao dịch",
+    "total_amount": "Tổng số tiền",
     "type": "Loại",
     "income": "Thu nhập",
     "expense": "Chi phí",
     "is_expense": "Chi phí",
     "created_at": "Tạo lúc"
+  },
+  "money-lover-import": {
+    "import_from_money_lover": "Nhập từ Money Lover",
+    "description": "Nhập giao dịch từ file CSV xuất từ Money Lover. Chọn ký tự phân cách và tải lên file của bạn.",
+    "delimiter": "Ký tự phân cách",
+    "delimiter_tab": "Tab",
+    "delimiter_semicolon": "Dấu chấm phẩy (;)",
+    "delimiter_comma": "Dấu phẩy (,)",
+    "delimiter_description": "Chọn ký tự phân cách được sử dụng trong file CSV của bạn",
+    "csv_file": "File CSV",
+    "file_description": "Tải lên file CSV xuất từ Money Lover",
+    "preview": "Xem trước (5 dòng đầu tiên)",
+    "preview_note": "Hiển thị 5 dòng đầu tiên. Tất cả các dòng sẽ được nhập.",
+    "date": "Ngày",
+    "category": "Danh mục",
+    "amount": "Số tiền",
+    "wallet": "Ví",
+    "note": "Ghi chú",
+    "transactions": "Giao dịch",
+    "categories": "Danh mục",
+    "wallets": "Ví",
+    "import": "Nhập",
+    "no_file_selected": "Vui lòng chọn file để nhập",
+    "step_parsing": "Đang phân tích file CSV...",
+    "step_validating": "Đang xác thực {count} giao dịch...",
+    "step_uploading": "Đang tải lên máy chủ...",
+    "step_complete": "Đã nhập thành công {count} giao dịch",
+    "error_no_data": "Không tìm thấy dữ liệu trong file",
+    "processing_batches": "Đang xử lý {batches} lô, mỗi lô {size} giao dịch",
+    "batch_progress": "Lô {batch} / {totalBatches} • Đã nhập {current} / {total}",
+    "import_successful": "Nhập dữ liệu thành công!",
+    "import_with_errors": "{errors} giao dịch không thể nhập",
+    "success": "Đã nhập thành công {count} giao dịch",
+    "error": "Không thể nhập giao dịch. Vui lòng kiểm tra định dạng file."
   },
   "invoice-data-table": {
     "id": "Mã số",
@@ -2134,7 +2190,8 @@
     "edit": "Sửa giao dịch",
     "create_description": "Tạo một giao dịch mới",
     "edit_description": "Sửa giao dịch hiện có",
-    "category": "Loại giao dịch"
+    "category": "Loại giao dịch",
+    "no_description": "Không có mô tả"
   },
   "ws-transaction-categories": {
     "singular": "Danh mục giao dịch",
