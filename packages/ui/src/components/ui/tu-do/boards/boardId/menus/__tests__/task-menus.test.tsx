@@ -10,11 +10,21 @@ import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 
 // Mock dropdown components to avoid Radix UI context issues in tests
 vi.mock('@tuturuuu/ui/dropdown-menu', () => ({
-  DropdownMenuSub: ({ children }: any) => <div data-testid="dropdown-sub">{children}</div>,
-  DropdownMenuSubTrigger: ({ children }: any) => <button data-testid="dropdown-trigger">{children}</button>,
-  DropdownMenuSubContent: ({ children }: any) => <div data-testid="dropdown-content">{children}</div>,
+  DropdownMenuSub: ({ children }: any) => (
+    <div data-testid="dropdown-sub">{children}</div>
+  ),
+  DropdownMenuSubTrigger: ({ children }: any) => (
+    <button data-testid="dropdown-trigger">{children}</button>
+  ),
+  DropdownMenuSubContent: ({ children }: any) => (
+    <div data-testid="dropdown-content">{children}</div>
+  ),
   DropdownMenuItem: ({ children, disabled, onSelect }: any) => (
-    <div data-testid="dropdown-item" data-disabled={disabled} onClick={onSelect}>
+    <div
+      data-testid="dropdown-item"
+      data-disabled={disabled}
+      onClick={onSelect}
+    >
       {children}
     </div>
   ),
@@ -22,7 +32,9 @@ vi.mock('@tuturuuu/ui/dropdown-menu', () => ({
 }));
 
 vi.mock('@tuturuuu/ui/scroll-area', () => ({
-  ScrollArea: ({ children }: any) => <div data-testid="scroll-area">{children}</div>,
+  ScrollArea: ({ children }: any) => (
+    <div data-testid="scroll-area">{children}</div>
+  ),
 }));
 
 describe('TaskPriorityMenu', () => {

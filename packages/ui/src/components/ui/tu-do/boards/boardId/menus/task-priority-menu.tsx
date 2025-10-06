@@ -1,5 +1,14 @@
 import type { TaskPriority } from '@tuturuuu/types/primitives/Priority';
-import { Check, Flag, horseHead, Icon, Rabbit, Turtle, unicornHead, X } from '@tuturuuu/ui/icons';
+import {
+  Check,
+  Flag,
+  horseHead,
+  Icon,
+  Rabbit,
+  Turtle,
+  unicornHead,
+  X,
+} from '@tuturuuu/ui/icons';
 import {
   DropdownMenuItem,
   DropdownMenuSeparator,
@@ -123,10 +132,7 @@ export function TaskPriorityMenu({
                   onClose();
                 })
               }
-              className={cn(
-                'cursor-pointer',
-                isActive && option.className
-              )}
+              className={cn('cursor-pointer', isActive && option.className)}
               disabled={isLoading}
             >
               <div className="flex w-full items-center justify-between">

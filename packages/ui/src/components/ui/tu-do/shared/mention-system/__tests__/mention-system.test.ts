@@ -127,9 +127,9 @@ describe('useMentionSuggestions', () => {
 
     const filtered = result.current.filteredMentionOptions;
     expect(filtered.length).toBeGreaterThan(0);
-    expect(filtered.some((opt) => opt.label.toLowerCase().includes('john'))).toBe(
-      true
-    );
+    expect(
+      filtered.some((opt) => opt.label.toLowerCase().includes('john'))
+    ).toBe(true);
   });
 
   it('should limit tasks when no query', () => {

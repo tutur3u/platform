@@ -334,7 +334,9 @@ export function useTaskActions({
           onSuccess: () => {
             toast({
               title: 'Priority updated',
-              description: newPriority ? 'Priority changed' : 'Priority cleared',
+              description: newPriority
+                ? 'Priority changed'
+                : 'Priority cleared',
             });
           },
           onSettled: () => {
