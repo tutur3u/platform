@@ -1,6 +1,7 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
 import type { TaskPriority } from '@tuturuuu/types/primitives/Priority';
 import { type NextRequest, NextResponse } from 'next/server';
+import { generateTaskEmbedding } from '@/lib/embeddings/generate-task-embedding';
 
 // Type interfaces for better type safety
 interface ProcessedAssignee {
@@ -319,6 +320,16 @@ export async function POST(
       .single();
 
     if (error) throw error;
+
+    // Generate embedding (non-blocking)
+    generateTaskEmbedding({
+      taskId: data.id,
+      taskName: data.name,
+      taskDescription: data.description,
+      supabase,
+    }).catch((err) => {
+      console.error('Failed to generate embedding in background:', err);
+    });
 
     // Transform the data to match the expected format
     const task = {

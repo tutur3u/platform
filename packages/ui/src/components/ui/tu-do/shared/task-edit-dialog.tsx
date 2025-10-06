@@ -285,7 +285,11 @@ function TaskEditDialogComponent({
 
     return () => {
       // Restore URL when dialog closes
-      window.history.replaceState(null, '', `/tasks/boards/${boardId}`);
+      window.history.replaceState(
+        null,
+        '',
+        `/${workspaceId}/tasks/boards/${boardId}`
+      );
     };
   }, [isOpen, task?.id, pathname, boardId, isCreateMode, workspaceId]);
 

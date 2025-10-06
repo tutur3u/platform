@@ -11,6 +11,10 @@
     {
       "path": "/api/cron/discord/daily-report",
       "schedule": "0 16 * * *"
+    },
+    {
+      "path": "/api/cron/tasks/generate-embeddings",
+      "schedule": "0 2 * * *"
     }
   ],
   "functions": {

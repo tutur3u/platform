@@ -6,7 +6,8 @@ import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskBoard } from '@tuturuuu/types/primitives/TaskBoard';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import type { WorkspaceLabel } from '@tuturuuu/utils/task-helper';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useSemanticTaskSearch } from '../../../../hooks/use-semantic-task-search';
 import { KanbanBoard } from '../boards/boardId/kanban';
 import { StatusGroupedBoard } from '../boards/boardId/status-grouped-board';
 import type { TaskFilters } from '../boards/boardId/task-filter';
@@ -52,6 +53,19 @@ export function BoardViews({
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const queryClient = useQueryClient();
 
+  // Semantic search hook
+  const {
+    data: semanticSearchResults = [],
+    isLoading: isSearchLoading,
+    isFetching: isSearchFetching,
+  } = useSemanticTaskSearch({
+    wsId: workspace.id,
+    query: filters.searchQuery || '',
+    matchThreshold: 0.3,
+    matchCount: 50,
+    enabled: !!filters.searchQuery && filters.searchQuery.trim().length > 0,
+  });
+
   // Filter lists based on selected status filter
   const filteredLists = useMemo(() => {
     if (listStatusFilter === 'all') {
@@ -60,11 +74,10 @@ export function BoardViews({
     return lists.filter((list) => list.status === listStatusFilter);
   }, [lists, listStatusFilter]);
 
-  // Filter tasks based on filters AND filtered lists
-  const filteredTasks = useMemo(() => {
-    // First, filter by list status
-    const listIds = new Set(filteredLists.map((list) => list.id));
-    let result = tasks.filter((task) => listIds.has(task.list_id));
+  // Helper function to apply non-search filters
+  const applyNonSearchFilters = useCallback(
+    (tasksToFilter: Task[]) => {
+      let result = tasksToFilter;
 
     // Filter by labels
     if (filters.labels.length > 0) {
@@ -118,8 +131,38 @@ export function BoardViews({
       });
     }
 
-    return result;
-  }, [tasks, filters, filteredLists, currentUserId]);
+      return result;
+    },
+    [filters, currentUserId]
+  );
+
+  // Filter tasks based on filters AND filtered lists
+  const filteredTasks = useMemo(() => {
+    // First, filter by list status
+    const listIds = new Set(filteredLists.map((list) => list.id));
+    let result = tasks.filter((task) => listIds.has(task.list_id));
+
+    // If there's a search query, use semantic search results
+    if (filters.searchQuery && filters.searchQuery.trim().length > 0) {
+      // Create a map of task IDs to their search ranking
+      const searchRankMap = new Map(
+        semanticSearchResults.map((result, index) => [result.id, index])
+      );
+
+      // Filter to only include semantic search results
+      result = result.filter((task) => searchRankMap.has(task.id));
+
+      // Sort by search relevance (lower index = higher relevance)
+      result.sort((a, b) => {
+        const rankA = searchRankMap.get(a.id) ?? Number.MAX_SAFE_INTEGER;
+        const rankB = searchRankMap.get(b.id) ?? Number.MAX_SAFE_INTEGER;
+        return rankA - rankB;
+      });
+    }
+
+    // Apply other filters (labels, assignees, projects, priorities, due date)
+    return applyNonSearchFilters(result);
+  }, [tasks, filters, filteredLists, semanticSearchResults, applyNonSearchFilters]);
 
   // Apply optimistic overrides so views receive up-to-date edits (durations, name, dates) even before refetch.
   const effectiveTasks = useMemo(() => {
@@ -240,6 +283,7 @@ export function BoardViews({
         listStatusFilter={listStatusFilter}
         onListStatusFilterChange={setListStatusFilter}
         isPersonalWorkspace={workspace.personal}
+        isSearching={isSearchLoading || isSearchFetching}
       />
       <div className="h-full overflow-hidden">{renderView()}</div>
 
