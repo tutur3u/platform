@@ -4,8 +4,8 @@ on:
   pull_request:
     types: [closed]
     paths:
-      - 'packages/ai/package.json'
-      - 'packages/ai/jsr.json'
+      - "packages/ai/package.json"
+      - "packages/ai/jsr.json"
   workflow_dispatch:
 
 jobs:
@@ -30,8 +30,8 @@ jobs:
 
       # Configure production Supabase client
       NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
-      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
-      SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.PRODUCTION_SUPABASE_PUBLISHABLE_KEY }}
+      SUPABASE_SECRET_KEY: ${{ secrets.PRODUCTION_SUPABASE_SECRET_KEY }}
 
       # Configure infrastructure
       PROXY_API_KEY: ${{ secrets.PROXY_API_KEY }}
@@ -123,7 +123,7 @@ jobs:
       - uses: actions/setup-node@v5
         with:
           node-version: 24
-          registry-url: 'https://registry.npmjs.org'
+          registry-url: "https://registry.npmjs.org"
 
       - name: Install dependencies
         run: bun install

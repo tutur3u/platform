@@ -17,9 +17,9 @@ vi.mock('next/headers', () => ({
 }));
 
 vi.mock('../common', () => ({
-  checkEnvVariables: ({ useServiceKey }: { useServiceKey: boolean }) => ({
+  checkEnvVariables: ({ useSecretKey }: { useSecretKey: boolean }) => ({
     url: 'https://test.supabase.co',
-    key: useServiceKey ? 'admin-key' : 'anon-key',
+    key: useSecretKey ? 'test-secret-key' : 'test-publishable-key',
   }),
 }));
 
@@ -42,7 +42,7 @@ describe('Supabase Server Client', () => {
 
       expect(createServerClient).toHaveBeenCalledWith(
         'https://test.supabase.co',
-        'anon-key',
+        'test-publishable-key',
         expect.objectContaining({
           cookies: expect.any(Object),
         })
@@ -63,7 +63,7 @@ describe('Supabase Server Client', () => {
 
       expect(createServerClient).toHaveBeenCalledWith(
         'https://test.supabase.co',
-        'admin-key',
+        'test-secret-key',
         expect.objectContaining({
           cookies: expect.objectContaining({
             getAll: expect.any(Function),
@@ -85,7 +85,7 @@ describe('Supabase Server Client', () => {
 
       expect(createServerClient).toHaveBeenCalledWith(
         'https://test.supabase.co',
-        'anon-key',
+        'test-publishable-key',
         expect.objectContaining({
           cookies: expect.any(Object),
         })

@@ -44,7 +44,7 @@ def get_base_url() -> str:
 def get_supabase_client() -> Client:
     """Get Supabase client for database operations."""
     supabase_url = os.getenv("SUPABASE_URL")
-    supabase_key = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
+    supabase_key = os.getenv("SUPABASE_SECRET_KEY")
 
     if not supabase_url or not supabase_key:
         raise Exception("Supabase credentials not found in environment variables")
