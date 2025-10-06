@@ -121,7 +121,12 @@
   "exports": {
     "./globals.css": "./src/globals.css",
     "./postcss.config": "./postcss.config.mjs",
-    "./hooks/*": ["./src/hooks/*.ts", "./src/hooks/*.tsx"],
+    "./hooks/*": "./src/hooks/*.ts",
+    "./hooks/use-at-bottom": "./src/hooks/use-at-bottom.tsx",
+    "./hooks/use-calendar-sync": "./src/hooks/use-calendar-sync.tsx",
+    "./hooks/use-calendar": "./src/hooks/use-calendar.tsx",
+    "./hooks/use-enter-to-submit": "./src/hooks/use-enter-to-submit.tsx",
+    "./hooks/useSearchParams": "./src/hooks/use-search-params.tsx",
     "./resolvers": "./src/resolvers.ts",
     "./gsap": "./src/gsap.ts",
     "./tiptap": {
