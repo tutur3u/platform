@@ -120,18 +120,20 @@ export const Video = Node.create({
                 let currentPos = initialPos;
                 for (const video of videos) {
                   try {
-                    const dataUrl = await new Promise<string>((resolve, reject) => {
-                      const reader = new FileReader();
-                      reader.onload = (e) => {
-                        if (typeof e.target?.result === 'string') {
-                          resolve(e.target.result);
-                        } else {
-                          reject(new Error('Failed to read file'));
-                        }
-                      };
-                      reader.onerror = reject;
-                      reader.readAsDataURL(video);
-                    });
+                    const dataUrl = await new Promise<string>(
+                      (resolve, reject) => {
+                        const reader = new FileReader();
+                        reader.onload = (e) => {
+                          if (typeof e.target?.result === 'string') {
+                            resolve(e.target.result);
+                          } else {
+                            reject(new Error('Failed to read file'));
+                          }
+                        };
+                        reader.onerror = reject;
+                        reader.readAsDataURL(video);
+                      }
+                    );
 
                     const node = schema.nodes.video?.create({ src: dataUrl });
                     if (!node) continue;

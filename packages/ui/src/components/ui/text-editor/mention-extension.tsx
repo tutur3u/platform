@@ -105,8 +105,7 @@ const getMentionVisualMeta = (entityType?: string): MentionVisualMeta => {
     default:
       return {
         prefix: '@',
-        pillClass:
-          'border-border bg-muted text-muted-foreground',
+        pillClass: 'border-border bg-muted text-muted-foreground',
         avatarClass: 'border-border bg-muted text-muted-foreground',
         fallback: '@',
       };
