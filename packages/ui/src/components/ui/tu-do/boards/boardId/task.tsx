@@ -2,7 +2,6 @@ import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { createClient } from '@tuturuuu/supabase/next/client';
-import type { TaskPriority } from '@tuturuuu/types/primitives/Priority';
 import type { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
@@ -38,8 +37,6 @@ import {
   Calendar,
   Check,
   CheckCircle2,
-  CircleDashed,
-  CircleFadingArrowUpIcon,
   CircleSlash,
   Clock,
   FileText,
@@ -48,14 +45,11 @@ import {
   Icon,
   Image as ImageIcon,
   Link2,
-  List,
   Loader2,
   MoreHorizontal,
   Move,
   Play,
-  Plus,
   Rabbit,
-  Tag,
   Timer,
   Trash2,
   Turtle,
@@ -73,14 +67,10 @@ import {
 } from '@tuturuuu/ui/utils/text-helper';
 import { cn } from '@tuturuuu/utils/format';
 import {
-  moveTask,
   useBoardConfig,
-  useDeleteTask,
-  useUpdateTask,
   useWorkspaceLabels,
 } from '@tuturuuu/utils/task-helper';
 import {
-  addDays,
   format,
   formatDistanceToNow,
   isToday,
@@ -89,10 +79,6 @@ import {
 } from 'date-fns';
 import React, { memo, useCallback, useEffect, useRef, useState } from 'react';
 import { AssigneeSelect } from '../../shared/assignee-select';
-import {
-  buildEstimationIndices,
-  mapEstimationPoints,
-} from '../../shared/estimation-mapping';
 import { TaskEditDialog } from '../../shared/task-edit-dialog';
 import { TaskEstimationDisplay } from '../../shared/task-estimation-display';
 import { TaskLabelsDisplay } from '../../shared/task-labels-display';
@@ -174,7 +160,7 @@ function TaskCardInner({
     useWorkspaceLabels(boardConfig?.ws_id);
 
   // Local state for UI interactions
-  const [estimationSaving, setEstimationSaving] = useState(false);
+  const [estimationSaving] = useState(false);
   const [labelsSaving, setLabelsSaving] = useState<string | null>(null);
   const [projectsSaving, setProjectsSaving] = useState<string | null>(null);
 
@@ -205,9 +191,6 @@ function TaskCardInner({
     }
   );
 
-  // Track initial mount to avoid duplicate fetch storms
-  const updateTaskMutation = useUpdateTask(boardId);
-  const deleteTaskMutation = useDeleteTask(boardId);
   const queryClient = useQueryClient();
 
   // Fetch available task lists using React Query (same key as other components)
@@ -865,7 +848,7 @@ function TaskCardInner({
 
                   {/* Priority Menu */}
                   <TaskPriorityMenu
-                    currentPriority={task.priority}
+                    currentPriority={task.priority ?? null}
                     isLoading={isLoading}
                     onPriorityChange={handlePriorityChange}
                     onMenuItemSelect={handleMenuItemSelect}
@@ -930,7 +913,7 @@ function TaskCardInner({
                       currentListId={task.list_id}
                       availableLists={availableLists}
                       isLoading={isLoading}
-                      onMoveToList={(listId) => handleMoveToList(listId)}
+                      onMoveToList={(listId) => handleMoveToList(listId, availableLists)}
                       onMenuItemSelect={handleMenuItemSelect}
                     />
                   )}

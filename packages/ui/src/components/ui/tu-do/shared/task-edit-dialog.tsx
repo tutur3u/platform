@@ -9,7 +9,6 @@ import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
-import { Calendar as CalendarComponent } from '@tuturuuu/ui/calendar';
 import { DateTimePicker } from '@tuturuuu/ui/date-time-picker';
 import {
   Dialog,
@@ -26,11 +25,9 @@ import {
 import { useToast } from '@tuturuuu/ui/hooks/use-toast';
 import {
   Box,
-  BriefcaseBusiness,
   Calendar,
   Check,
   ChevronDown,
-  CircleCheck,
   Flag,
   ListTodo,
   Loader2,
@@ -40,19 +37,11 @@ import {
   Tag,
   Timer,
   Trash,
-  User,
   Users,
   X,
 } from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@tuturuuu/ui/select';
 import { Switch } from '@tuturuuu/ui/switch';
 import { RichTextEditor } from '@tuturuuu/ui/text-editor/editor';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
@@ -64,10 +53,7 @@ import {
   useWorkspaceLabels,
 } from '@tuturuuu/utils/task-helper';
 import dayjs from 'dayjs';
-import type { LucideIcon } from 'lucide-react';
-import Image from 'next/image';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { createPortal } from 'react-dom';
 import {
   buildEstimationIndices,
   mapEstimationPoints,
@@ -78,12 +64,8 @@ import { MentionMenu } from './mention-system/mention-menu';
 import {
   createInitialSuggestionState,
   isSameSuggestionState,
-  normalizeForSearch,
-  mentionGroupOrder,
-  mentionTypeStyles,
   type SuggestionState,
   type MentionOption,
-  type MentionOptionType,
 } from './mention-system/types';
 import {
   getSlashCommands,
@@ -108,11 +90,6 @@ interface WorkspaceTaskLabel {
   name: string;
   color: string;
   created_at: string;
-}
-
-interface SuggestionRange {
-  from: number;
-  to: number;
 }
 
 function TaskEditDialogComponent({
@@ -237,8 +214,8 @@ function TaskEditDialogComponent({
   );
   const [slashHighlightIndex, setSlashHighlightIndex] = useState(0);
   const [mentionHighlightIndex, setMentionHighlightIndex] = useState(0);
-  const slashListRef = useRef<HTMLDivElement | null>(null);
-  const mentionListRef = useRef<HTMLDivElement | null>(null);
+  const slashListRef = useRef<HTMLDivElement>(null);
+  const mentionListRef = useRef<HTMLDivElement>(null);
   const suggestionMenuWidth = 360;
   const previousMentionHighlightRef = useRef(0);
   const previousSlashHighlightRef = useRef(0);
@@ -335,7 +312,6 @@ function TaskEditDialogComponent({
   // Use the extracted mention suggestions hook
   const {
     filteredMentionOptions,
-    mentionUserOptions, // Keep for use in assignee selection
   } = useMentionSuggestions({
     workspaceMembers,
     allWorkspaces,
@@ -344,17 +320,6 @@ function TaskEditDialogComponent({
     currentTaskId: task?.id,
     query: mentionState.query,
   });
-
-  const mentionGroups = useMemo(() => {
-    return mentionGroupOrder
-      .map((group) => ({
-        ...group,
-        options: filteredMentionOptions.filter(
-          (option) => option.type === group.type
-        ),
-      }))
-      .filter((group) => group.options.length > 0);
-  }, [filteredMentionOptions]);
 
   useEffect(() => {
     if (!slashState.open) {
@@ -881,7 +846,6 @@ function TaskEditDialogComponent({
       highlightIndex={slashHighlightIndex}
       onSelect={executeSlashCommand}
       onHighlightChange={setSlashHighlightIndex}
-      listRef={slashListRef}
     />
   );
 

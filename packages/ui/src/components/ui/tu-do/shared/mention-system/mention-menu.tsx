@@ -22,6 +22,7 @@ interface MentionMenuProps {
   query?: string;
   onSelect: (option: MentionOption) => void;
   onHighlightChange: (index: number) => void;
+  listRef?: React.RefObject<HTMLDivElement | null>;
 }
 
 export function MentionMenu({
@@ -33,6 +34,7 @@ export function MentionMenu({
   query = '',
   onSelect,
   onHighlightChange,
+  listRef,
 }: MentionMenuProps) {
   if (!isOpen || !position || typeof window === 'undefined') {
     return null;
@@ -48,7 +50,7 @@ export function MentionMenu({
   return createPortal(
     <div
       role="dialog"
-      className="pointer-events-auto fixed z-[200] w-[360px] overflow-hidden rounded-lg border border-dynamic-border bg-popover/95 shadow-xl backdrop-blur"
+      className="pointer-events-auto fixed z-[200] flex w-[360px] flex-col overflow-hidden rounded-lg border border-dynamic-border bg-popover/95 shadow-xl backdrop-blur"
       style={{
         top: position.top,
         left: position.left,
@@ -56,17 +58,18 @@ export function MentionMenu({
       onPointerDownCapture={(event) => event.stopPropagation()}
       onMouseDown={(event) => event.stopPropagation()}
     >
-      <div className="border-dynamic-border/60 border-b px-3 py-2 font-medium text-muted-foreground text-xs uppercase tracking-wide">
+      <div className="flex-shrink-0 border-dynamic-border/60 border-b px-3 py-2 font-medium text-muted-foreground text-xs uppercase tracking-wide">
         Mention people, workspaces, projects, dates, or tasks
       </div>
       {isLoading && (
-        <div className="flex items-center gap-2 px-3 py-2 text-muted-foreground text-xs">
+        <div className="flex flex-shrink-0 items-center gap-2 px-3 py-2 text-muted-foreground text-xs">
           <Loader2 className="h-3 w-3 animate-spin" />
           Fetching latest context…
         </div>
       )}
       <div
-        className="scrollbar-thin max-h-80 overflow-y-auto overscroll-contain py-1"
+        ref={listRef}
+        className="scrollbar-thin max-h-80 flex-1 overflow-y-auto overscroll-contain py-1"
         style={{ maxHeight: 320 }}
       >
         {options.length === 0 ? (
