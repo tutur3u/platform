@@ -50,7 +50,9 @@ describe('Slash Commands', () => {
         showAdvanced: false,
       });
 
-      const clearPriorityCommand = commands.find((c) => c.id === 'priority-clear');
+      const clearPriorityCommand = commands.find(
+        (c) => c.id === 'priority-clear'
+      );
       expect(clearPriorityCommand?.disabled).toBe(true);
     });
 
@@ -69,7 +71,9 @@ describe('Slash Commands', () => {
         showAdvanced: true,
       });
 
-      const toggleHidden = commandsHidden.find((c) => c.id === 'toggle-advanced');
+      const toggleHidden = commandsHidden.find(
+        (c) => c.id === 'toggle-advanced'
+      );
       const toggleShown = commandsShown.find((c) => c.id === 'toggle-advanced');
 
       expect(toggleHidden?.label).toBe('Show advanced options');

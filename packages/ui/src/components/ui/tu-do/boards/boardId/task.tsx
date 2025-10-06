@@ -913,7 +913,9 @@ function TaskCardInner({
                       currentListId={task.list_id}
                       availableLists={availableLists}
                       isLoading={isLoading}
-                      onMoveToList={(listId) => handleMoveToList(listId, availableLists)}
+                      onMoveToList={(listId) =>
+                        handleMoveToList(listId, availableLists)
+                      }
                       onMenuItemSelect={handleMenuItemSelect}
                     />
                   )}

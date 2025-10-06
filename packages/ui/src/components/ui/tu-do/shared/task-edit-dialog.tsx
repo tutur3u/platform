@@ -310,9 +310,7 @@ function TaskEditDialogComponent({
   }, [slashCommands, slashState.open, slashState.query]);
 
   // Use the extracted mention suggestions hook
-  const {
-    filteredMentionOptions,
-  } = useMentionSuggestions({
+  const { filteredMentionOptions } = useMentionSuggestions({
     workspaceMembers,
     allWorkspaces,
     taskProjects,
@@ -857,7 +855,11 @@ function TaskEditDialogComponent({
         position={mentionState.position}
         options={filteredMentionOptions}
         highlightIndex={mentionHighlightIndex}
-        isLoading={workspaceDetailsLoading || workspaceTasksLoading || allWorkspacesLoading}
+        isLoading={
+          workspaceDetailsLoading ||
+          workspaceTasksLoading ||
+          allWorkspacesLoading
+        }
         query={mentionState.query}
         onSelect={insertMentionOption}
         onHighlightChange={setMentionHighlightIndex}

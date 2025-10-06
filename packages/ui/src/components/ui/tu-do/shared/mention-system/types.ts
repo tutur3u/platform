@@ -27,7 +27,10 @@ export interface SuggestionState {
   position: { left: number; top: number } | null;
 }
 
-export const mentionGroupOrder: Array<{ type: MentionOptionType; title: string }> = [
+export const mentionGroupOrder: Array<{
+  type: MentionOptionType;
+  title: string;
+}> = [
   { type: 'user', title: 'People' },
   { type: 'external-user', title: 'External Users' },
   { type: 'workspace', title: 'Workspaces' },

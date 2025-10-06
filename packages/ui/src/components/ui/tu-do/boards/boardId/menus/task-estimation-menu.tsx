@@ -82,7 +82,9 @@ export function TaskEstimationMenu({
         <DropdownMenuSeparator />
         <DropdownMenuItem
           onSelect={(e) =>
-            onMenuItemSelect(e as unknown as Event, () => onEstimationChange(null))
+            onMenuItemSelect(e as unknown as Event, () =>
+              onEstimationChange(null)
+            )
           }
           className={cn(
             'cursor-pointer text-muted-foreground',
