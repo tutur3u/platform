@@ -1,9 +1,9 @@
+import { OtherAchievements, TopThreeAchievements } from './client';
 import { achievements } from './data';
 import { Badge } from '@ncthub/ui/badge';
 import { Award } from '@ncthub/ui/icons';
 import { Separator } from '@ncthub/ui/separator';
 import type { Metadata } from 'next';
-import { OtherAchievements, TopThreeAchievements } from './client';
 
 export const metadata: Metadata = {
   title: 'Hall of Fame | Achievements',
