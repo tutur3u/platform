@@ -23,6 +23,7 @@ interface UseTaskActionsProps {
   setMenuOpen: (open: boolean) => void;
   setCustomDateDialogOpen?: (open: boolean) => void;
   setDeleteDialogOpen?: (open: boolean) => void;
+  setEstimationSaving?: (saving: boolean) => void;
 }
 
 export function useTaskActions({
@@ -36,6 +37,7 @@ export function useTaskActions({
   setMenuOpen,
   setCustomDateDialogOpen,
   setDeleteDialogOpen,
+  setEstimationSaving,
 }: UseTaskActionsProps) {
   const queryClient = useQueryClient();
   const updateTaskMutation = useUpdateTask(boardId);
@@ -54,11 +56,7 @@ export function useTaskActions({
     ) {
       const supabase = createClient();
       try {
-        await updateTaskMutation.mutateAsync({
-          taskId: task.id,
-          updates: { archived: newArchivedState },
-        });
-
+        // moveTask handles setting archived status based on target list
         await moveTask(supabase, task.id, targetCompletionList.id);
 
         toast.success('Task completed', {
@@ -148,17 +146,20 @@ export function useTaskActions({
     const supabase = createClient();
 
     await queryClient.cancelQueries({ queryKey: ['tasks', boardId] });
-    const previousTasks = queryClient.getQueryData(['tasks', boardId]);
+    const previousTasks = queryClient.getQueryData<Task[]>(['tasks', boardId]);
 
-    queryClient.setQueryData(['tasks', boardId], (old: any[] | undefined) => {
-      if (!old) return old;
-      return old.map((t) => {
-        if (t.id === task.id) {
-          return { ...t, assignees: [] };
-        }
-        return t;
-      });
-    });
+    queryClient.setQueryData<Task[] | undefined>(
+      ['tasks', boardId],
+      (old: Task[] | undefined) => {
+        if (!old) return old;
+        return old.map((t) => {
+          if (t.id === task.id) {
+            return { ...t, assignees: [] };
+          }
+          return t;
+        });
+      }
+    );
 
     try {
       const { error } = await supabase
@@ -189,21 +190,27 @@ export function useTaskActions({
       const supabase = createClient();
 
       await queryClient.cancelQueries({ queryKey: ['tasks', boardId] });
-      const previousTasks = queryClient.getQueryData(['tasks', boardId]);
+      const previousTasks = queryClient.getQueryData<Task[]>([
+        'tasks',
+        boardId,
+      ]);
 
-      queryClient.setQueryData(['tasks', boardId], (old: any[] | undefined) => {
-        if (!old) return old;
-        return old.map((t) => {
-          if (t.id === task.id) {
-            return {
-              ...t,
-              assignees:
-                t.assignees?.filter((a: any) => a.user_id !== assigneeId) || [],
-            };
-          }
-          return t;
-        });
-      });
+      queryClient.setQueryData<Task[] | undefined>(
+        ['tasks', boardId],
+        (old: Task[] | undefined) => {
+          if (!old) return old;
+          return old.map((t) => {
+            if (t.id === task.id) {
+              return {
+                ...t,
+                assignees:
+                  t.assignees?.filter((a) => a.id !== assigneeId) || [],
+              };
+            }
+            return t;
+          });
+        }
+      );
 
       try {
         const { error } = await supabase
@@ -319,6 +326,7 @@ export function useTaskActions({
   const updateEstimationPoints = useCallback(
     async (points: number | null) => {
       if (points === task.estimation_points) return;
+      setEstimationSaving?.(true);
       try {
         await updateTaskMutation.mutateAsync({
           taskId: task.id,
@@ -329,9 +337,11 @@ export function useTaskActions({
         toast.error('Failed to update estimation', {
           description: e.message || 'Please try again',
         });
+      } finally {
+        setEstimationSaving?.(false);
       }
     },
-    [task.id, task.estimation_points, updateTaskMutation]
+    [task.id, task.estimation_points, updateTaskMutation, setEstimationSaving]
   );
 
   const handleCustomDateChange = useCallback(

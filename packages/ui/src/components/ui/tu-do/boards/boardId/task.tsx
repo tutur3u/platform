@@ -53,9 +53,9 @@ import {
   Timer,
   Trash2,
   Turtle,
+  unicornHead,
   UserMinus,
   UserStar,
-  unicornHead,
   X,
 } from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
@@ -82,16 +82,16 @@ import { AssigneeSelect } from '../../shared/assignee-select';
 import { TaskEditDialog } from '../../shared/task-edit-dialog';
 import { TaskEstimationDisplay } from '../../shared/task-estimation-display';
 import { TaskLabelsDisplay } from '../../shared/task-labels-display';
-import { TaskActions } from './task-actions';
 import { useTaskActions } from './hooks/use-task-actions';
 import {
-  TaskPriorityMenu,
   TaskDueDateMenu,
   TaskEstimationMenu,
   TaskLabelsMenu,
-  TaskProjectsMenu,
   TaskMoveMenu,
+  TaskPriorityMenu,
+  TaskProjectsMenu,
 } from './menus';
+import { TaskActions } from './task-actions';
 
 const NEW_LABEL_COLOR = '#3b82f6';
 
@@ -160,7 +160,7 @@ function TaskCardInner({
     useWorkspaceLabels(boardConfig?.ws_id);
 
   // Local state for UI interactions
-  const [estimationSaving, _setEstimationSaving] = useState(false);
+  const [estimationSaving, setEstimationSaving] = useState(false);
   const [labelsSaving, setLabelsSaving] = useState<string | null>(null);
   const [projectsSaving, setProjectsSaving] = useState<string | null>(null);
 
@@ -324,6 +324,7 @@ function TaskCardInner({
     setMenuOpen,
     setCustomDateDialogOpen,
     setDeleteDialogOpen,
+    setEstimationSaving,
   });
 
   // Toggle a label for the task (quick labels submenu)

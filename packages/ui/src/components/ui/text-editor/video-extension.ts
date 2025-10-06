@@ -142,8 +142,8 @@ export const Video = Node.create({
                     const tr = view.state.tr.insert(currentPos, node);
                     view.dispatch(tr);
 
-                    // Update position for next insertion
-                    currentPos += node.nodeSize;
+                    // Update position for next insertion, mapping through the transaction
+                    currentPos = tr.mapping.map(currentPos) + node.nodeSize;
                   } catch (error) {
                     console.error('Failed to process video:', error);
                   }

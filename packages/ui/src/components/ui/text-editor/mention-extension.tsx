@@ -6,6 +6,7 @@ import {
   CircleCheck,
   User,
 } from '@tuturuuu/ui/icons';
+import { getInitials } from '@tuturuuu/utils/name-helper';
 import { renderToString } from 'react-dom/server';
 
 interface MentionVisualMeta {
@@ -112,16 +113,32 @@ const getMentionVisualMeta = (entityType?: string): MentionVisualMeta => {
   }
 };
 
-const getInitials = (value: string): string => {
-  const trimmed = value.trim();
-  if (!trimmed) return '??';
-  return (
-    trimmed
-      .split(/\s+/)
-      .map((part) => part?.[0]?.toUpperCase() ?? '')
-      .join('')
-      .slice(0, 2) || '??'
-  );
+/**
+ * Helper function to update avatar wrapper with appropriate content
+ */
+const updateAvatarContent = (
+  avatarWrapper: HTMLSpanElement,
+  entityType: string,
+  displayName: string,
+  avatarUrl: string | null,
+  visuals: MentionVisualMeta
+) => {
+  if (avatarUrl) {
+    const img = document.createElement('img');
+    img.src = avatarUrl;
+    img.alt = displayName;
+    img.className = 'absolute inset-0 h-full w-full object-cover';
+    img.referrerPolicy = 'no-referrer';
+    avatarWrapper.textContent = '';
+    avatarWrapper.appendChild(img);
+  } else if (visuals.icon) {
+    avatarWrapper.innerHTML = visuals.icon;
+  } else {
+    avatarWrapper.textContent =
+      entityType === 'user' || entityType === 'external-user'
+        ? getInitials(displayName) || '??'
+        : visuals.fallback;
+  }
 };
 
 export const Mention = Node.create({
@@ -283,22 +300,13 @@ export const Mention = Node.create({
       const avatarWrapper = document.createElement('span');
       avatarWrapper.className = `relative -ml-0.5 flex h-4 w-4 shrink-0 items-center justify-center self-center overflow-hidden rounded-full border text-[10px] font-semibold uppercase ${visuals.avatarClass}`;
 
-      if (currentAvatarUrl) {
-        const img = document.createElement('img');
-        img.src = currentAvatarUrl;
-        img.alt = currentDisplayName;
-        img.className = 'absolute inset-0 h-full w-full object-cover';
-        img.referrerPolicy = 'no-referrer';
-        avatarWrapper.textContent = '';
-        avatarWrapper.appendChild(img);
-      } else if (visuals.icon) {
-        avatarWrapper.innerHTML = visuals.icon;
-      } else {
-        avatarWrapper.textContent =
-          currentEntityType === 'user' || currentEntityType === 'external-user'
-            ? getInitials(currentDisplayName)
-            : visuals.fallback;
-      }
+      updateAvatarContent(
+        avatarWrapper,
+        currentEntityType,
+        currentDisplayName,
+        currentAvatarUrl,
+        visuals
+      );
 
       const label = document.createElement('span');
       label.className = 'text-current font-semibold';
@@ -329,41 +337,30 @@ export const Mention = Node.create({
             dom.setAttribute('data-display-name', nextDisplayName);
             currentDisplayName = nextDisplayName;
             if (!currentAvatarUrl) {
-              if (
-                currentEntityType === 'user' ||
-                currentEntityType === 'external-user'
-              ) {
-                avatarWrapper.textContent = getInitials(currentDisplayName);
-              } else if (visuals.icon) {
-                avatarWrapper.innerHTML = visuals.icon;
-              }
+              updateAvatarContent(
+                avatarWrapper,
+                currentEntityType,
+                currentDisplayName,
+                null,
+                visuals
+              );
             }
           }
 
           if (nextAvatarUrl !== currentAvatarUrl) {
             if (nextAvatarUrl) {
-              const img = document.createElement('img');
-              img.src = nextAvatarUrl;
-              img.alt = nextDisplayName;
-              img.className = 'absolute inset-0 h-full w-full object-cover';
-              img.referrerPolicy = 'no-referrer';
-              avatarWrapper.textContent = '';
-              avatarWrapper.appendChild(img);
               dom.setAttribute('data-avatar-url', nextAvatarUrl);
             } else {
-              const nextVisuals = getMentionVisualMeta(nextEntityType);
               dom.removeAttribute('data-avatar-url');
-              if (
-                nextEntityType === 'user' ||
-                nextEntityType === 'external-user'
-              ) {
-                avatarWrapper.textContent = getInitials(nextDisplayName);
-              } else if (nextVisuals.icon) {
-                avatarWrapper.innerHTML = nextVisuals.icon;
-              } else {
-                avatarWrapper.textContent = nextVisuals.fallback;
-              }
             }
+            const nextVisuals = getMentionVisualMeta(nextEntityType);
+            updateAvatarContent(
+              avatarWrapper,
+              nextEntityType,
+              nextDisplayName,
+              nextAvatarUrl,
+              nextVisuals
+            );
             currentAvatarUrl = nextAvatarUrl;
           }
 
@@ -375,16 +372,13 @@ export const Mention = Node.create({
             avatarWrapper.className = `relative -ml-0.5 flex h-4 w-4 shrink-0 items-center justify-center self-center overflow-hidden rounded-full border text-[10px] font-semibold uppercase ${visuals.avatarClass}`;
             label.textContent = `${visuals.prefix}${currentDisplayName}`;
             if (!currentAvatarUrl) {
-              if (
-                currentEntityType === 'user' ||
-                currentEntityType === 'external-user'
-              ) {
-                avatarWrapper.textContent = getInitials(currentDisplayName);
-              } else if (visuals.icon) {
-                avatarWrapper.innerHTML = visuals.icon;
-              } else {
-                avatarWrapper.textContent = visuals.fallback;
-              }
+              updateAvatarContent(
+                avatarWrapper,
+                currentEntityType,
+                currentDisplayName,
+                null,
+                visuals
+              );
             }
             dom.title = currentSubtitle
               ? `${visuals.prefix}${currentDisplayName} • ${currentSubtitle}`
@@ -407,10 +401,6 @@ export const Mention = Node.create({
               ? `${visuals.prefix}${currentDisplayName} • ${currentSubtitle}`
               : `${visuals.prefix}${currentDisplayName}`;
           }
-
-          dom.title = currentSubtitle
-            ? `${visuals.prefix}${currentDisplayName} • ${currentSubtitle}`
-            : `${visuals.prefix}${currentDisplayName}`;
 
           return true;
         },
