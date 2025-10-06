@@ -128,6 +128,18 @@ export function MentionMenu({
                         event.stopPropagation();
                         onSelect(option);
                       }}
+                      onClick={(event) => {
+                        event.preventDefault();
+                        event.stopPropagation();
+                        onSelect(option);
+                      }}
+                      onKeyDown={(event) => {
+                        if (event.key === 'Enter' || event.key === ' ') {
+                          event.preventDefault();
+                          event.stopPropagation();
+                          onSelect(option);
+                        }
+                      }}
                       onMouseEnter={() => onHighlightChange(currentIndex)}
                     >
                       <div

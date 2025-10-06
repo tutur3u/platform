@@ -160,7 +160,7 @@ function TaskCardInner({
     useWorkspaceLabels(boardConfig?.ws_id);
 
   // Local state for UI interactions
-  const [estimationSaving] = useState(false);
+  const [estimationSaving, setEstimationSaving] = useState(false);
   const [labelsSaving, setLabelsSaving] = useState<string | null>(null);
   const [projectsSaving, setProjectsSaving] = useState<string | null>(null);
 
@@ -318,6 +318,7 @@ function TaskCardInner({
     boardId,
     targetCompletionList,
     targetClosedList,
+    availableLists,
     onUpdate,
     setIsLoading,
     setMenuOpen,
@@ -913,9 +914,7 @@ function TaskCardInner({
                       currentListId={task.list_id}
                       availableLists={availableLists}
                       isLoading={isLoading}
-                      onMoveToList={(listId) =>
-                        handleMoveToList(listId, availableLists)
-                      }
+                      onMoveToList={handleMoveToList}
                       onMenuItemSelect={handleMenuItemSelect}
                     />
                   )}

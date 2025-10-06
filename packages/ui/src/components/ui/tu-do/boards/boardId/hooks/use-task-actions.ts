@@ -1,22 +1,23 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { createClient } from '@tuturuuu/supabase/next/client';
+import type { TaskPriority } from '@tuturuuu/types/primitives/Priority';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
-import type { TaskPriority } from '@tuturuuu/types/primitives/Priority';
 import { useToast } from '@tuturuuu/ui/hooks/use-toast';
-import { addDays } from 'date-fns';
-import { useCallback } from 'react';
 import {
   moveTask,
   useDeleteTask,
   useUpdateTask,
 } from '@tuturuuu/utils/task-helper';
+import { addDays } from 'date-fns';
+import { useCallback } from 'react';
 
 interface UseTaskActionsProps {
   task: Task;
   boardId: string;
   targetCompletionList?: TaskList | null;
   targetClosedList?: TaskList | null;
+  availableLists: TaskList[];
   onUpdate: () => void;
   setIsLoading: (loading: boolean) => void;
   setMenuOpen: (open: boolean) => void;
@@ -29,6 +30,7 @@ export function useTaskActions({
   boardId,
   targetCompletionList,
   targetClosedList,
+  availableLists,
   onUpdate,
   setIsLoading,
   setMenuOpen,
@@ -222,7 +224,7 @@ export function useTaskActions({
             return {
               ...t,
               assignees:
-                t.assignees?.filter((a: any) => a.id !== assigneeId) || [],
+                t.assignees?.filter((a: any) => a.user_id !== assigneeId) || [],
             };
           }
           return t;
@@ -260,7 +262,7 @@ export function useTaskActions({
   );
 
   const handleMoveToList = useCallback(
-    async (targetListId: string, availableLists: TaskList[]) => {
+    async (targetListId: string) => {
       if (targetListId === task.list_id) {
         setMenuOpen(false);
         return;
@@ -292,7 +294,7 @@ export function useTaskActions({
         setMenuOpen(false);
       }
     },
-    [task.id, task.list_id, onUpdate, setIsLoading, setMenuOpen, toast]
+    [task.id, task.list_id, availableLists, onUpdate, setIsLoading, setMenuOpen, toast]
   );
 
   const handleDueDateChange = useCallback(

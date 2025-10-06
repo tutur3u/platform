@@ -90,10 +90,7 @@ export const Video = Node.create({
         props: {
           handleDOMEvents: {
             drop(view, event) {
-              const {
-                state: { schema, tr },
-                dispatch,
-              } = view;
+              const { schema } = view.state;
               const hasFiles = event.dataTransfer?.files?.length;
 
               if (!hasFiles) return false;
@@ -111,23 +108,44 @@ export const Video = Node.create({
                 top: event.clientY,
               });
 
-              videos.forEach((video) => {
-                const reader = new FileReader();
+              if (!coordinates || typeof coordinates.pos !== 'number') {
+                return true;
+              }
 
-                reader.onload = (readerEvent) => {
-                  const node = schema.nodes.video?.create({
-                    src: readerEvent.target?.result,
-                  });
+              const initialPos = coordinates.pos;
 
-                  if (!node) return;
-                  if (coordinates && typeof coordinates.pos === 'number') {
-                    const transaction = tr.insert(coordinates?.pos, node);
-                    dispatch(transaction);
+              // Process files sequentially to avoid transaction conflicts
+              (async () => {
+                let currentPos = initialPos;
+                for (const video of videos) {
+                  try {
+                    const dataUrl = await new Promise<string>((resolve, reject) => {
+                      const reader = new FileReader();
+                      reader.onload = (e) => {
+                        if (typeof e.target?.result === 'string') {
+                          resolve(e.target.result);
+                        } else {
+                          reject(new Error('Failed to read file'));
+                        }
+                      };
+                      reader.onerror = reject;
+                      reader.readAsDataURL(video);
+                    });
+
+                    const node = schema.nodes.video?.create({ src: dataUrl });
+                    if (!node) continue;
+
+                    // Create fresh transaction from current view state
+                    const tr = view.state.tr.insert(currentPos, node);
+                    view.dispatch(tr);
+
+                    // Update position for next insertion
+                    currentPos += node.nodeSize;
+                  } catch (error) {
+                    console.error('Failed to process video:', error);
                   }
-                };
-
-                reader.readAsDataURL(video);
-              });
+                }
+              })();
 
               return true;
             },

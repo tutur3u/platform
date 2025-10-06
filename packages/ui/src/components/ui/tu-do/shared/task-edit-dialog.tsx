@@ -844,6 +844,7 @@ function TaskEditDialogComponent({
       highlightIndex={slashHighlightIndex}
       onSelect={executeSlashCommand}
       onHighlightChange={setSlashHighlightIndex}
+      listRef={slashListRef}
     />
   );
 

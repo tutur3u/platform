@@ -12,6 +12,16 @@ interface UseMentionSuggestionsProps {
   query: string;
 }
 
+export interface UseMentionSuggestionsResult {
+  mentionUserOptions: MentionOption[];
+  mentionWorkspaceOptions: MentionOption[];
+  mentionProjectOptions: MentionOption[];
+  mentionTaskOptions: MentionOption[];
+  mentionDateOptions: MentionOption[];
+  allMentionOptions: MentionOption[];
+  filteredMentionOptions: MentionOption[];
+}
+
 export function useMentionSuggestions({
   workspaceMembers,
   allWorkspaces,
@@ -19,7 +29,7 @@ export function useMentionSuggestions({
   workspaceTasks,
   currentTaskId,
   query,
-}: UseMentionSuggestionsProps) {
+}: UseMentionSuggestionsProps): UseMentionSuggestionsResult {
   const mentionUserOptions = useMemo<MentionOption[]>(
     () =>
       [...workspaceMembers]

@@ -9,6 +9,7 @@ interface SlashCommandMenuProps {
   highlightIndex: number;
   onSelect: (command: SlashCommandDefinition) => void;
   onHighlightChange: (index: number) => void;
+  listRef?: React.RefObject<HTMLDivElement | null>;
 }
 
 export function SlashCommandMenu({
@@ -18,6 +19,7 @@ export function SlashCommandMenu({
   highlightIndex,
   onSelect,
   onHighlightChange,
+  listRef,
 }: SlashCommandMenuProps) {
   if (!isOpen || !position || typeof window === 'undefined') {
     return null;
@@ -38,6 +40,7 @@ export function SlashCommandMenu({
         Slash commands
       </div>
       <div
+        ref={listRef}
         className="scrollbar-thin max-h-72 overflow-y-auto overscroll-contain py-1"
         style={{ maxHeight: 288 }}
       >
@@ -64,6 +67,18 @@ export function SlashCommandMenu({
                   event.preventDefault();
                   event.stopPropagation();
                   onSelect(command);
+                }}
+                onClick={(event) => {
+                  event.preventDefault();
+                  event.stopPropagation();
+                  onSelect(command);
+                }}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    onSelect(command);
+                  }
                 }}
                 onMouseEnter={() => onHighlightChange(index)}
               >
