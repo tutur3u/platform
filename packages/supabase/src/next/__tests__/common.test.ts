@@ -47,11 +47,20 @@ describe('common', () => {
       );
     });
 
-    it('should throw an error if key is missing', () => {
+    it('should throw an error if publishable key is missing', () => {
       process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://test.supabase.co';
       process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY = '';
 
       expect(() => checkEnvVariables({ useSecretKey: false })).toThrow(
+        'Missing Supabase key'
+      );
+    });
+
+    it('should throw an error if secret key is missing', () => {
+      process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://test.supabase.co';
+      process.env.SUPABASE_SECRET_KEY = '';
+
+      expect(() => checkEnvVariables({ useSecretKey: true })).toThrow(
         'Missing Supabase key'
       );
     });
