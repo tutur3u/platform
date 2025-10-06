@@ -1,6 +1,6 @@
 import { google } from '@ai-sdk/google';
-import { embed } from 'ai';
 import { createClient } from '@tuturuuu/supabase/next/server';
+import { embedMany } from 'ai';
 import { type NextRequest, NextResponse } from 'next/server';
 
 /**
@@ -37,7 +37,11 @@ export async function GET(req: NextRequest) {
     if (fetchError) {
       console.error('Error fetching tasks:', fetchError);
       return NextResponse.json(
-        { ok: false, error: 'Failed to fetch tasks', details: fetchError.message },
+        {
+          ok: false,
+          error: 'Failed to fetch tasks',
+          details: fetchError.message,
+        },
         { status: 500 }
       );
     }
@@ -50,69 +54,112 @@ export async function GET(req: NextRequest) {
       });
     }
 
+    // Prepare task data for batch embedding
+    const taskData: Array<{
+      id: string;
+      text: string;
+      index: number;
+    }> = [];
+
+    for (let i = 0; i < tasks.length; i++) {
+      const task = tasks[i];
+      if (!task?.id) continue;
+
+      // Extract text from description
+      let descriptionText = '';
+      if (task?.description) {
+        try {
+          const descJson =
+            typeof task.description === 'string'
+              ? JSON.parse(task.description)
+              : task.description;
+          descriptionText = extractTextFromTipTap(descJson);
+        } catch {
+          descriptionText = String(task.description);
+        }
+      }
+
+      const textForEmbedding = `${task?.name}\n${descriptionText}`.trim();
+
+      // Only include tasks with meaningful content
+      if (textForEmbedding) {
+        taskData.push({
+          id: task.id,
+          text: textForEmbedding,
+          index: i,
+        });
+      }
+    }
+
     const results = {
       success: 0,
       failed: 0,
       errors: [] as string[],
     };
 
-    // Process tasks in batches
-    for (const task of tasks) {
-      try {
-        // Extract text from description
-        let descriptionText = '';
-        if (task.description) {
-          try {
-            const descJson =
-              typeof task.description === 'string'
-                ? JSON.parse(task.description)
-                : task.description;
-            descriptionText = extractTextFromTipTap(descJson);
-          } catch {
-            descriptionText = String(task.description);
-          }
-        }
+    // Skip if no tasks to process
+    if (taskData.length === 0) {
+      return NextResponse.json({
+        ok: true,
+        message: 'No tasks with content to embed',
+        processed: 0,
+        failed: tasks.length,
+      });
+    }
 
-        const textForEmbedding = `${task.name}\n${descriptionText}`.trim();
-
-        // Skip if no meaningful content
-        if (!textForEmbedding) {
-          results.failed++;
-          results.errors.push(`Task ${task.id}: No content to embed`);
-          continue;
-        }
-
-        // Generate embedding
-        const { embedding } = await embed({
-          model: google.textEmbeddingModel('gemini-embedding-001'),
-          value: textForEmbedding,
-          providerOptions: {
-            google: {
-              outputDimensionality: 768,
-              taskType: 'SEMANTIC_SIMILARITY',
-            },
+    try {
+      // Generate embeddings for all tasks in parallel
+      const { embeddings } = await embedMany({
+        model: google.textEmbeddingModel('gemini-embedding-001'),
+        values: taskData.map((t) => t.text),
+        maxParallelCalls: 10,
+        providerOptions: {
+          google: {
+            outputDimensionality: 768,
+            taskType: 'SEMANTIC_SIMILARITY',
           },
-        });
+        },
+      });
 
-        // Update task with embedding
-        const { error: updateError } = await supabase
-          .from('tasks')
-          .update({ embedding: JSON.stringify(embedding) })
-          .eq('id', task.id);
+      // Update tasks with embeddings in parallel
+      const updatePromises = taskData.map(async (task, idx) => {
+        try {
+          const { error: updateError } = await supabase
+            .from('tasks')
+            .update({ embedding: JSON.stringify(embeddings[idx]) })
+            .eq('id', task.id);
 
-        if (updateError) {
+          if (updateError) {
+            results.failed++;
+            results.errors.push(`Task ${task.id}: ${updateError.message}`);
+          } else {
+            results.success++;
+          }
+        } catch (error) {
           results.failed++;
-          results.errors.push(
-            `Task ${task.id}: ${updateError.message}`
-          );
-        } else {
-          results.success++;
+          const errorMessage =
+            error instanceof Error ? error.message : 'Unknown error';
+          results.errors.push(`Task ${task.id}: ${errorMessage}`);
         }
-      } catch (error) {
-        results.failed++;
-        const errorMessage =
-          error instanceof Error ? error.message : 'Unknown error';
-        results.errors.push(`Task ${task.id}: ${errorMessage}`);
+      });
+
+      await Promise.all(updatePromises);
+    } catch (error) {
+      // If batch embedding fails, mark all as failed
+      results.failed = taskData.length;
+      const errorMessage =
+        error instanceof Error ? error.message : 'Unknown error';
+      results.errors.push(`Batch embedding failed: ${errorMessage}`);
+    }
+
+    // Add skipped tasks (no content) to failed count
+    results.failed += tasks.length - taskData.length;
+    for (let i = 0; i < tasks.length; i++) {
+      const task = tasks[i];
+      if (!taskData.some((t) => t.id === task?.id)) {
+        results.errors.push(
+          `Task ${task?.id || 'unknown'}: No content to embed`
+        );
       }
     }
 
