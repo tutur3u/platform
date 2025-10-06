@@ -2,7 +2,7 @@
 create extension if not exists vector with schema extensions;
 
 -- Add embedding column to tasks table (768 dimensions for Gemini)
-alter table tasks add column if not exists embedding vector(768);
+alter table tasks add column if not exists embedding extensions.vector(768);
 
 -- Add full-text search column for hybrid search
 alter table tasks add column if not exists fts tsvector
@@ -13,14 +13,14 @@ alter table tasks add column if not exists fts tsvector
 
 -- Create index for vector similarity search (using HNSW for better performance)
 create index if not exists tasks_embedding_idx on tasks
-using hnsw (embedding vector_cosine_ops);
+using hnsw (embedding extensions.vector_cosine_ops);
 
 -- Create GIN index for full-text search
 create index if not exists tasks_fts_idx on tasks using gin(fts);
 
 -- Create hybrid search function using weighted combination
 create or replace function match_tasks (
-  query_embedding vector(768),
+  query_embedding extensions.vector(768),
   query_text text,
   match_threshold float default 0.3,
   match_count int default 50,
