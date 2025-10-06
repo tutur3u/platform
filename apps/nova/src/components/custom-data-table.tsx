@@ -4,10 +4,10 @@ import {
   DataTable,
   type DataTableProps,
 } from '@tuturuuu/ui/custom/tables/data-table';
+import useSearchParams from '@tuturuuu/ui/hooks/useSearchParams';
 import { usePathname, useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { Suspense } from 'react';
-import useSearchParams from '@/hooks/useSearchParams';
 
 export function CustomDataTable<TData, TValue>({
   namespace,
