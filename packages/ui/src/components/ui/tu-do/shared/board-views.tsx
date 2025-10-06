@@ -44,7 +44,7 @@ export function BoardViews({
     includeMyTasks: false,
   });
   const [listStatusFilter, setListStatusFilter] =
-    useState<ListStatusFilter>('active');
+    useState<ListStatusFilter>('all');
   // Local per-session optimistic overrides (e.g., timeline resize) so switching views preserves changes
   const [taskOverrides, setTaskOverrides] = useState<
     Record<string, Partial<Task>>

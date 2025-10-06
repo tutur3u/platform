@@ -56,7 +56,7 @@ export function TaskProjectDetail({
     includeMyTasks: false,
   });
   const [listStatusFilter, setListStatusFilter] =
-    useState<ListStatusFilter>('active');
+    useState<ListStatusFilter>('all');
   const [taskOverrides, setTaskOverrides] = useState<
     Record<string, Partial<Task>>
   >({});

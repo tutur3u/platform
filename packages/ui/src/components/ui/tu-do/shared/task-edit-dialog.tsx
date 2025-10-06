@@ -54,26 +54,26 @@ import {
 } from '@tuturuuu/utils/task-helper';
 import dayjs from 'dayjs';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { CustomDatePickerDialog } from './custom-date-picker/custom-date-picker-dialog';
 import {
   buildEstimationIndices,
   mapEstimationPoints,
 } from './estimation-mapping';
-import { UserPresenceAvatarsComponent } from './user-presence-avatars';
-import { useMentionSuggestions } from './mention-system/use-mention-suggestions';
 import { MentionMenu } from './mention-system/mention-menu';
 import {
   createInitialSuggestionState,
   isSameSuggestionState,
-  type SuggestionState,
   type MentionOption,
+  type SuggestionState,
 } from './mention-system/types';
+import { useMentionSuggestions } from './mention-system/use-mention-suggestions';
 import {
-  getSlashCommands,
   filterSlashCommands,
+  getSlashCommands,
   type SlashCommandDefinition,
 } from './slash-commands/definitions';
 import { SlashCommandMenu } from './slash-commands/slash-command-menu';
-import { CustomDatePickerDialog } from './custom-date-picker/custom-date-picker-dialog';
+import { UserPresenceAvatarsComponent } from './user-presence-avatars';
 
 interface TaskEditDialogProps {
   task?: Task;
@@ -186,7 +186,7 @@ function TaskEditDialogComponent({
   const [hasDraft, setHasDraft] = useState(false);
   const [createMultiple, setCreateMultiple] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [showMobileSidebar, setShowMobileSidebar] = useState(true);
+  const [showMobileSidebar, setShowMobileSidebar] = useState(false);
   const [workspaceMembers, setWorkspaceMembers] = useState<any[]>([]);
   const [loadingMembers, setLoadingMembers] = useState(false);
   const [selectedAssignees, setSelectedAssignees] = useState<any[]>(
