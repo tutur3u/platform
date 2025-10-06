@@ -7,6 +7,7 @@ import type {
   WorkspaceUserAttendance,
 } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { Button } from '@tuturuuu/ui/button';
+import useSearchParams from '@tuturuuu/ui/hooks/useSearchParams';
 import { ChevronLeft, ChevronRight } from '@tuturuuu/ui/icons';
 import {
   Tooltip,
@@ -20,7 +21,6 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useLocale } from 'next-intl';
 import { Fragment, useEffect, useMemo, useState } from 'react';
-import useSearchParams from '@/hooks/useSearchParams';
 import { AttendanceDialog } from './attendance-dialogue';
 
 export default function UserMonthAttendance({
