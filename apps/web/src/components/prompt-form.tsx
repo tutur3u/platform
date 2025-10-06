@@ -28,7 +28,7 @@ import type React from 'react';
 import { useEffect, useState } from 'react';
 import Textarea from 'react-textarea-autosize';
 import { DEV_MODE } from '@/constants/common';
-import { useEnterSubmit } from '@/lib/hooks/use-enter-submit';
+import { useEnterSubmit } from '@/hooks/use-enter-submit';
 
 export interface PromptProps {
   id?: string;
