@@ -24,10 +24,7 @@ export async function POST(req: Request) {
 
     // Only process tasks table
     if (table !== 'tasks') {
-      return NextResponse.json(
-        { message: 'Invalid table' },
-        { status: 400 }
-      );
+      return NextResponse.json({ message: 'Invalid table' }, { status: 400 });
     }
 
     // Only process INSERT and UPDATE events

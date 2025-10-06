@@ -79,57 +79,57 @@ export function BoardViews({
     (tasksToFilter: Task[]) => {
       let result = tasksToFilter;
 
-    // Filter by labels
-    if (filters.labels.length > 0) {
-      result = result.filter((task) => {
-        if (!task.labels || task.labels.length === 0) return false;
-        return filters.labels.some((selectedLabel) =>
-          task.labels?.some((taskLabel) => taskLabel.id === selectedLabel.id)
+      // Filter by labels
+      if (filters.labels.length > 0) {
+        result = result.filter((task) => {
+          if (!task.labels || task.labels.length === 0) return false;
+          return filters.labels.some((selectedLabel) =>
+            task.labels?.some((taskLabel) => taskLabel.id === selectedLabel.id)
+          );
+        });
+      }
+
+      // Filter by assignees or "my tasks"
+      if (filters.includeMyTasks && currentUserId) {
+        result = result.filter((task) =>
+          task.assignees?.some((a) => a.id === currentUserId)
         );
-      });
-    }
-
-    // Filter by assignees or "my tasks"
-    if (filters.includeMyTasks && currentUserId) {
-      result = result.filter((task) =>
-        task.assignees?.some((a) => a.id === currentUserId)
-      );
-    } else if (filters.assignees.length > 0) {
-      result = result.filter((task) =>
-        task.assignees?.some((a) =>
-          filters.assignees.some((fa) => fa.id === a.id)
-        )
-      );
-    }
-
-    // Filter by projects
-    if (filters.projects.length > 0) {
-      result = result.filter((task) => {
-        // Check if task has projects relationship
-        if (!task.projects || task.projects.length === 0) return false;
-        return task.projects.some((pt: any) =>
-          filters.projects.some((p) => p.id === pt.id)
+      } else if (filters.assignees.length > 0) {
+        result = result.filter((task) =>
+          task.assignees?.some((a) =>
+            filters.assignees.some((fa) => fa.id === a.id)
+          )
         );
-      });
-    }
+      }
 
-    // Filter by priorities
-    if (filters.priorities.length > 0) {
-      result = result.filter((task) =>
-        task.priority ? filters.priorities.includes(task.priority) : false
-      );
-    }
+      // Filter by projects
+      if (filters.projects.length > 0) {
+        result = result.filter((task) => {
+          // Check if task has projects relationship
+          if (!task.projects || task.projects.length === 0) return false;
+          return task.projects.some((pt: any) =>
+            filters.projects.some((p) => p.id === pt.id)
+          );
+        });
+      }
 
-    // Filter by due date range
-    if (filters.dueDateRange?.from) {
-      result = result.filter((task) => {
-        if (!task.end_date) return false;
-        const taskDate = new Date(task.end_date);
-        const fromDate = filters.dueDateRange!.from!;
-        const toDate = filters.dueDateRange!.to;
-        return taskDate >= fromDate && (!toDate || taskDate <= toDate);
-      });
-    }
+      // Filter by priorities
+      if (filters.priorities.length > 0) {
+        result = result.filter((task) =>
+          task.priority ? filters.priorities.includes(task.priority) : false
+        );
+      }
+
+      // Filter by due date range
+      if (filters.dueDateRange?.from) {
+        result = result.filter((task) => {
+          if (!task.end_date) return false;
+          const taskDate = new Date(task.end_date);
+          const fromDate = filters.dueDateRange!.from!;
+          const toDate = filters.dueDateRange!.to;
+          return taskDate >= fromDate && (!toDate || taskDate <= toDate);
+        });
+      }
 
       return result;
     },
@@ -162,7 +162,13 @@ export function BoardViews({
 
     // Apply other filters (labels, assignees, projects, priorities, due date)
     return applyNonSearchFilters(result);
-  }, [tasks, filters, filteredLists, semanticSearchResults, applyNonSearchFilters]);
+  }, [
+    tasks,
+    filters,
+    filteredLists,
+    semanticSearchResults,
+    applyNonSearchFilters,
+  ]);
 
   // Apply optimistic overrides so views receive up-to-date edits (durations, name, dates) even before refetch.
   const effectiveTasks = useMemo(() => {
