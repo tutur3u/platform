@@ -39,7 +39,7 @@ const item = {
   show: { opacity: 1, y: 0 },
 };
 
-export function TopThreeAchivements({
+export function TopThreeAchievements({
   achievements,
 }: {
   achievements: Achievement[];
@@ -110,7 +110,7 @@ export function TopThreeAchivements({
   );
 }
 
-export function OtherAchivements({
+export function OtherAchievements({
   achievements,
 }: {
   achievements: Achievement[];
@@ -158,14 +158,14 @@ function SpecialAchievementCard({ achievement }: { achievement: Achievement }) {
             <TrophyIcon className="h-24 w-24 text-muted-foreground" />
           </div>
         )}
-        {/* Dark overlay for better text readability */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-black/20" />
+        {/* Dark overlay for better text readability - reduces opacity on hover */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-black/20 transition-opacity duration-300 group-hover:from-black/50 group-hover:via-black/20 group-hover:to-black/10" />
       </div>
 
       {/* Content Overlay */}
       <div className="relative z-10 flex h-full flex-col p-6 text-white">
         {/* Top section with badges */}
-        <div className="flex justify-end">
+        <div className="flex justify-end transition-all duration-300 group-hover:scale-90 group-hover:opacity-80">
           <span className="flex items-center gap-2 text-sm font-medium text-white/90">
             <CalendarIcon className="h-4 w-4" />
             {achievement.year}
@@ -173,19 +173,19 @@ function SpecialAchievementCard({ achievement }: { achievement: Achievement }) {
         </div>
 
         {/* Center section with main headers */}
-        <div className="flex flex-1 items-center justify-center">
+        <div className="flex flex-1 items-center justify-center transition-all duration-300 group-hover:scale-75 group-hover:opacity-70">
           <div className="space-y-4 text-center">
-            <h2 className="text-5xl leading-tight font-extrabold text-white">
+            <h2 className="text-5xl leading-tight font-extrabold text-white transition-all duration-300">
               {achievement.competitionName}
             </h2>
-            <h3 className="text-4xl font-semibold text-white/95">
+            <h3 className="text-4xl font-semibold text-white/95 transition-all duration-300">
               {achievement.achievement}
             </h3>
           </div>
         </div>
 
         {/* Bottom section with team information */}
-        <div className="flex items-center justify-center gap-2 text-white/80">
+        <div className="flex items-center justify-center gap-2 text-white/80 transition-all duration-300 group-hover:scale-90 group-hover:opacity-80">
           <UsersIcon className="h-5 w-5" />
           <span className="font-medium">{achievement.teamName}</span>
           <span>•</span>

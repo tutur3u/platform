@@ -24,7 +24,7 @@ export const achievements: Achievement[] = [
     competitionName: 'International Coding Championship 2024',
     achievement: '🥇 First Place',
     teamName: 'Code Crusaders',
-    image: '/android-chrome-512x512.png',
+    image: '/hall-of-fames/coderace.jpg',
     teamMembers: [
       {
         id: '1',

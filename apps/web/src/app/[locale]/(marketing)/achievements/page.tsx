@@ -1,9 +1,9 @@
-import { OtherAchivements, TopThreeAchivements } from './client';
 import { achievements } from './data';
 import { Badge } from '@ncthub/ui/badge';
 import { Award } from '@ncthub/ui/icons';
 import { Separator } from '@ncthub/ui/separator';
 import type { Metadata } from 'next';
+import { OtherAchievements, TopThreeAchievements } from './client';
 
 export const metadata: Metadata = {
   title: 'Hall of Fame | Achievements',
@@ -33,14 +33,14 @@ export default function AchievementsPage() {
               Fame
             </span>
           </h1>
-          <p className="mx-auto max-w-2xl text-lg text-foreground/80 md:text-xl">
+          <p className="mx-auto max-w-5xl text-lg text-foreground/80 md:text-xl">
             Celebrating our teams&apos; outstanding achievements in
             competitions, hackathons, and innovation challenges. Discover the
             brilliant minds behind groundbreaking solutions and innovative
             technologies.
           </p>
         </div>
-        <TopThreeAchivements achievements={achievements.slice(0, 3)} />
+        <TopThreeAchievements achievements={achievements.slice(0, 3)} />
       </section>
 
       <Separator className="my-6" />
@@ -51,7 +51,7 @@ export default function AchievementsPage() {
             Other Achievements
           </h1>
         </div>
-        <OtherAchivements achievements={achievements.slice(3)} />
+        <OtherAchievements achievements={achievements.slice(3)} />
       </section>
     </div>
   );
