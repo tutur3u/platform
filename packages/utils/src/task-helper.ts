@@ -237,6 +237,24 @@ export async function createTask(
     throw enhancedError;
   }
 
+  // Generate embedding in development mode (client-side)
+  // Note: We always call the endpoint - it will check DEV_MODE and API key availability server-side
+  if (typeof window !== 'undefined' && data) {
+    // Get workspace ID from URL (format: /[locale]/[wsId]/...)
+    const pathParts = window.location.pathname.split('/');
+    const wsId = pathParts[2]; // Assuming format /[locale]/[wsId]/...
+
+    if (wsId) {
+      // Call the embedding generation endpoint asynchronously (non-blocking)
+      // The endpoint will only generate embeddings if in dev mode with API key
+      fetch(`/api/v1/workspaces/${wsId}/tasks/${data.id}/embedding`, {
+        method: 'POST',
+      }).catch((err) => {
+        console.error('Failed to generate embedding:', err);
+      });
+    }
+  }
+
   return data as Task;
 }
 
@@ -254,6 +272,28 @@ export async function updateTask(
 
   if (error) {
     throw error;
+  }
+
+  // If name or description was updated, regenerate embedding
+  // Note: We always call the endpoint - it will check DEV_MODE and API key availability server-side
+  if (
+    (task.name !== undefined || task.description !== undefined) &&
+    typeof window !== 'undefined' &&
+    data
+  ) {
+    // Get workspace ID from URL (format: /[locale]/[wsId]/...)
+    const pathParts = window.location.pathname.split('/');
+    const wsId = pathParts[2]; // Assuming format /[locale]/[wsId]/...
+
+    if (wsId) {
+      // Call the embedding generation endpoint asynchronously (non-blocking)
+      // The endpoint will only generate embeddings if in dev mode with API key
+      fetch(`/api/v1/workspaces/${wsId}/tasks/${taskId}/embedding`, {
+        method: 'POST',
+      }).catch((err) => {
+        console.error('Failed to regenerate embedding:', err);
+      });
+    }
   }
 
   return data as Task;

@@ -62,6 +62,7 @@ export interface TaskFilters {
   dueDateRange: { from?: Date; to?: Date } | null;
   estimationRange: { min?: number; max?: number } | null;
   includeMyTasks: boolean;
+  searchQuery?: string;
 }
 
 interface Props {

@@ -35,9 +35,12 @@ import {
   Layers,
   LayoutGrid,
   List,
+  Loader2,
   MoreHorizontal,
   Pencil,
+  Search,
   Trash2,
+  X,
 } from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
 import { cn } from '@tuturuuu/utils/format';
@@ -62,6 +65,7 @@ interface Props {
   isPersonalWorkspace: boolean;
   backUrl?: string;
   hideActions?: boolean;
+  isSearching?: boolean;
 }
 
 export function BoardHeader({
@@ -76,6 +80,7 @@ export function BoardHeader({
   isPersonalWorkspace,
   backUrl,
   hideActions = false,
+  isSearching = false,
 }: Props) {
   const [isLoading, setIsLoading] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -160,6 +165,35 @@ export function BoardHeader({
           <h1 className="truncate font-bold text-base text-foreground sm:text-xl md:text-2xl">
             {board.name}
           </h1>
+        </div>
+
+        {/* Search Bar */}
+        <div className="relative flex-1 max-w-md">
+          {isSearching ? (
+            <Loader2 className="pointer-events-none absolute top-1/2 left-2 h-4 w-4 -translate-y-1/2 animate-spin text-muted-foreground" />
+          ) : (
+            <Search className="pointer-events-none absolute top-1/2 left-2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          )}
+          <Input
+            type="text"
+            placeholder="Search tasks..."
+            value={filters.searchQuery || ''}
+            onChange={(e) =>
+              onFiltersChange({ ...filters, searchQuery: e.target.value })
+            }
+            className="h-7 pl-8 pr-8 text-xs sm:h-8 sm:text-sm"
+          />
+          {filters.searchQuery && !isSearching && (
+            <button
+              type="button"
+              onClick={() =>
+                onFiltersChange({ ...filters, searchQuery: undefined })
+              }
+              className="absolute top-1/2 right-2 -translate-y-1/2 text-muted-foreground transition-colors hover:text-foreground"
+            >
+              <X className="h-3.5 w-3.5" />
+            </button>
+          )}
         </div>
 
         {/* Controls - Compact Row */}

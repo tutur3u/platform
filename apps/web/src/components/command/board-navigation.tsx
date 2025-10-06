@@ -82,50 +82,6 @@ export function BoardNavigation({ wsId, setOpen }: BoardNavigationProps) {
   const scrollAreaRef = React.useRef<HTMLDivElement>(null);
   const router = useRouter();
 
-  // Early return if no workspace ID
-  if (!wsId || wsId === 'undefined') {
-    return (
-      <div className="border-border/50 border-b pb-2">
-        <div className="flex items-center justify-between px-3 py-2">
-          <div className="flex items-center gap-2">
-            <span className="font-medium text-foreground text-sm">
-              📋 Board Navigation
-            </span>
-            <div className="rounded-md bg-dynamic-orange/10 px-2 py-0.5 font-medium text-dynamic-orange text-xs">
-              No workspace
-            </div>
-          </div>
-        </div>
-        <div className="flex flex-col items-center gap-3 p-6 text-center">
-          <div className="rounded-full bg-dynamic-blue/10 p-3">
-            <LayoutDashboard className="h-5 w-5 text-dynamic-blue" />
-          </div>
-          <div className="space-y-1">
-            <p className="font-semibold text-foreground">
-              No workspace selected
-            </p>
-            <p className="text-muted-foreground text-xs">
-              Navigate to a workspace to view and manage boards
-            </p>
-          </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => {
-              setOpen(false);
-              // Try to navigate to dashboard or workspaces
-              router.push('/');
-            }}
-            className="gap-2"
-          >
-            <LayoutDashboard className="h-3 w-3" />
-            Go to Dashboard
-          </Button>
-        </div>
-      </div>
-    );
-  }
-
   const {
     data: boardsData,
     isLoading: boardsLoading,
@@ -135,6 +91,7 @@ export function BoardNavigation({ wsId, setOpen }: BoardNavigationProps) {
     boards: Board[];
   }>({
     queryKey: ['boards', wsId],
+    enabled: Boolean(wsId) && wsId !== 'undefined',
     queryFn: async () => {
       const response = await fetch(
         `/api/v1/workspaces/${wsId}/boards-with-lists`
@@ -213,6 +170,50 @@ export function BoardNavigation({ wsId, setOpen }: BoardNavigationProps) {
     router.push(`/${wsId}/tasks/boards/${boardId}`);
     setOpen(false);
   };
+
+  // Early return if no workspace ID
+  if (!wsId || wsId === 'undefined') {
+    return (
+      <div className="border-border/50 border-b pb-2">
+        <div className="flex items-center justify-between px-3 py-2">
+          <div className="flex items-center gap-2">
+            <span className="font-medium text-foreground text-sm">
+              📋 Board Navigation
+            </span>
+            <div className="rounded-md bg-dynamic-orange/10 px-2 py-0.5 font-medium text-dynamic-orange text-xs">
+              No workspace
+            </div>
+          </div>
+        </div>
+        <div className="flex flex-col items-center gap-3 p-6 text-center">
+          <div className="rounded-full bg-dynamic-blue/10 p-3">
+            <LayoutDashboard className="h-5 w-5 text-dynamic-blue" />
+          </div>
+          <div className="space-y-1">
+            <p className="font-semibold text-foreground">
+              No workspace selected
+            </p>
+            <p className="text-muted-foreground text-xs">
+              Navigate to a workspace to view and manage boards
+            </p>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              setOpen(false);
+              // Try to navigate to dashboard or workspaces
+              router.push('/');
+            }}
+            className="gap-2"
+          >
+            <LayoutDashboard className="h-3 w-3" />
+            Go to Dashboard
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   // Loading state
   if (boardsLoading) {
