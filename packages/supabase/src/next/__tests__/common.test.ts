@@ -14,7 +14,7 @@ describe('common', () => {
   });
 
   describe('checkEnvVariables', () => {
-    it('should return the URL and anon key when useSecretKey is false', () => {
+    it('should return the URL and publishable key when useSecretKey is false', () => {
       process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://test.supabase.co';
       process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY = 'test-publishable-key';
 
@@ -26,7 +26,7 @@ describe('common', () => {
       });
     });
 
-    it('should return the URL and service key when useSecretKey is true', () => {
+    it('should return the URL and secret key when useSecretKey is true', () => {
       process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://test.supabase.co';
       process.env.SUPABASE_SECRET_KEY = 'test-secret-key';
 

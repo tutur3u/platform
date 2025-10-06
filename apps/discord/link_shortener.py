@@ -24,7 +24,7 @@ class LinkShortener:
     def _initialize_supabase(self):
         """Initialize Supabase client."""
         supabase_url = os.getenv("SUPABASE_URL")
-        supabase_key = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
+        supabase_key = os.getenv("SUPABASE_SECRET_KEY")
 
         if not supabase_url or not supabase_key:
             raise ValueError("Supabase configuration missing")

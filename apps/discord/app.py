@@ -38,7 +38,7 @@ supabase_secret = modal.Secret.from_name(
     "supabase-secret",
     required_keys=[
         "SUPABASE_URL",
-        "SUPABASE_SERVICE_ROLE_KEY",
+        "SUPABASE_SECRET_KEY",
     ],
 )
 

@@ -56,7 +56,7 @@ Create two Modal secrets:
 #### Supabase Secret (`supabase-secret`)
 
 - `SUPABASE_URL`: Your Supabase project URL
-- `SUPABASE_SERVICE_ROLE_KEY`: Your Supabase service role key (found in Project Settings > API)
+- `SUPABASE_SECRET_KEY`: Your Supabase service role key (found in Project Settings > API)
 
 ### 4. Configure WOL Reminder Cron
 
@@ -172,7 +172,7 @@ If you get a 401 error when creating slash commands:
 
 ### Link Shortener Issues
 
-1. **Supabase configuration**: Ensure both `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` are set correctly
+1. **Supabase configuration**: Ensure both `SUPABASE_URL` and `SUPABASE_SECRET_KEY` are set correctly
 2. **Database permissions**: Make sure the service role key has access to the `shortened_links` table
 3. **URL validation**: Ensure the URL includes the protocol (http:// or https://)
 
