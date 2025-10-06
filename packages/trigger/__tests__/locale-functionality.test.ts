@@ -14,9 +14,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Set required env vars for Supabase at the VERY TOP
 process.env.NEXT_PUBLIC_SUPABASE_URL = 'http://localhost:54321';
-process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = 'dummy-anon-key';
-process.env.SUPABASE_SERVICE_KEY = 'dummy-service-key';
-process.env.SUPABASE_SERVICE_ROLE_KEY = 'dummy-service-role-key';
+process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY = 'test-publishable-key';
+process.env.SUPABASE_SECRET_KEY = 'test-secret-key';
 
 vi.mock('../google-calendar-sync', async () => {
   const actual = await vi.importActual('../google-calendar-sync');

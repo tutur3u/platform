@@ -24,7 +24,7 @@ function createCookieHandler(cookieStore: ReadonlyRequestCookies) {
 }
 
 async function createGenericClient(isAdmin: boolean) {
-  const { url, key } = checkEnvVariables({ useServiceKey: isAdmin });
+  const { url, key } = checkEnvVariables({ useSecretKey: isAdmin });
   const cookieStore = await cookies();
   return createServerClient<Database>(url, key, {
     cookies: isAdmin
@@ -45,7 +45,7 @@ export function createAdminClient({
   noCookie?: boolean;
 } = {}) {
   if (noCookie) {
-    const { url, key } = checkEnvVariables({ useServiceKey: true });
+    const { url, key } = checkEnvVariables({ useSecretKey: true });
     return createBrowserClient<Database>(url, key);
   }
 
@@ -57,7 +57,7 @@ export function createClient() {
 }
 
 export async function createDynamicClient() {
-  const { url, key } = checkEnvVariables({ useServiceKey: false });
+  const { url, key } = checkEnvVariables({ useSecretKey: false });
   const cookieStore = await cookies();
   return createServerClient(url, key, {
     cookies: createCookieHandler(cookieStore),

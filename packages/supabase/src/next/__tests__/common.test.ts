@@ -14,56 +14,53 @@ describe('common', () => {
   });
 
   describe('checkEnvVariables', () => {
-    it('should return the URL and anon key when useServiceKey is false', () => {
+    it('should return the URL and publishable key when useSecretKey is false', () => {
       process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://test.supabase.co';
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = 'test-anon-key';
+      process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY = 'test-publishable-key';
 
-      const result = checkEnvVariables({ useServiceKey: false });
+      const result = checkEnvVariables({ useSecretKey: false });
 
       expect(result).toEqual({
         url: 'https://test.supabase.co',
-        key: 'test-anon-key',
+        key: 'test-publishable-key',
       });
     });
 
-    it('should return the URL and service key when useServiceKey is true', () => {
+    it('should return the URL and secret key when useSecretKey is true', () => {
       process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://test.supabase.co';
-      process.env.SUPABASE_SERVICE_KEY = 'test-service-key';
+      process.env.SUPABASE_SECRET_KEY = 'test-secret-key';
 
-      const result = checkEnvVariables({ useServiceKey: true });
+      const result = checkEnvVariables({ useSecretKey: true });
 
       expect(result).toEqual({
         url: 'https://test.supabase.co',
-        key: 'test-service-key',
-      });
-    });
-
-    it('should use SUPABASE_SERVICE_ROLE_KEY if SUPABASE_SERVICE_KEY is not available', () => {
-      process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://test.supabase.co';
-      process.env.SUPABASE_SERVICE_ROLE_KEY = 'test-service-role-key';
-
-      const result = checkEnvVariables({ useServiceKey: true });
-
-      expect(result).toEqual({
-        url: 'https://test.supabase.co',
-        key: 'test-service-role-key',
+        key: 'test-secret-key',
       });
     });
 
     it('should throw an error if URL is missing', () => {
       process.env.NEXT_PUBLIC_SUPABASE_URL = '';
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = 'test-anon-key';
+      process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY = 'test-publishable-key';
 
-      expect(() => checkEnvVariables({ useServiceKey: false })).toThrow(
+      expect(() => checkEnvVariables({ useSecretKey: false })).toThrow(
         'Missing Supabase URL'
       );
     });
 
-    it('should throw an error if key is missing', () => {
+    it('should throw an error if publishable key is missing', () => {
       process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://test.supabase.co';
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = '';
+      process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY = '';
 
-      expect(() => checkEnvVariables({ useServiceKey: false })).toThrow(
+      expect(() => checkEnvVariables({ useSecretKey: false })).toThrow(
+        'Missing Supabase key'
+      );
+    });
+
+    it('should throw an error if secret key is missing', () => {
+      process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://test.supabase.co';
+      process.env.SUPABASE_SECRET_KEY = '';
+
+      expect(() => checkEnvVariables({ useSecretKey: true })).toThrow(
         'Missing Supabase key'
       );
     });

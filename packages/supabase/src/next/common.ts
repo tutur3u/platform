@@ -7,17 +7,17 @@ export type SupabaseCookie = {
 };
 
 export function checkEnvVariables({
-  useServiceKey = false,
+  useSecretKey = false,
 }: {
-  useServiceKey?: boolean;
+  useSecretKey?: boolean;
 }): {
   url: string;
   key: string;
 } {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const key = useServiceKey
-    ? process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY
-    : process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  const key = useSecretKey
+    ? process.env.SUPABASE_SECRET_KEY
+    : process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
 
   if (!url) throw Error('Missing Supabase URL');
   if (!key) throw Error(`Missing Supabase key`);
