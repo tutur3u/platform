@@ -128,7 +128,7 @@
     "./hooks/use-calendar": "./src/hooks/use-calendar.tsx",
     "./hooks/use-enter-submit": "./src/hooks/use-enter-submit.tsx",
     "./hooks/use-popover-manager": "./src/hooks/use-popover-manager.tsx",
-    "./hooks/useSearchParams": "./src/hooks/use-search-params.tsx",
+    "./hooks/useSearchParams": "./src/hooks/useSearchParams.tsx",
     "./resolvers": "./src/resolvers.ts",
     "./gsap": "./src/gsap.ts",
     "./tiptap": {
