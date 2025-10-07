@@ -128,8 +128,6 @@ export default async function Footer() {
             >
               {t('common.meet-together')}
             </Link>
-
-            
           </div>
           <div className="flex flex-col items-start gap-1">
             <div className="text-lg font-semibold uppercase md:text-xl">
