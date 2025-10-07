@@ -101,7 +101,7 @@
     "use-debounce": "^10.0.6",
     "uuid": "^13.0.0",
     "xlsx": "file:vendor/xlsx-0.20.3.tgz",
-    "zod": "^4.1.11"
+    "zod": "^4.1.12"
   },
   "devDependencies": {
     "@next/bundle-analyzer": "^15.5.4",
@@ -112,9 +112,9 @@
     "@types/js-cookie": "^3.0.6",
     "@types/lodash": "^4.17.20",
     "@types/negotiator": "^0.6.4",
-    "@types/node": "^24.6.2",
+    "@types/node": "^24.7.0",
     "@types/papaparse": "^5.3.16",
-    "@types/react": "^19.2.0",
+    "@types/react": "^19.2.1",
     "@types/react-dom": "^19.2.0",
     "@types/sanitize-html": "^2.16.0",
     "@types/uuid": "^11.0.0",
