@@ -1369,7 +1369,10 @@
     "sent_at": "Đã gửi",
     "close": "Đóng",
     "loading_more": "Đang tải thêm",
-    "load_more": "Tải thêm"
+    "load_more": "Tải thêm",
+    "error_loading_emails": "Không thể tải email",
+    "error_loading_emails_description": "Đã xảy ra lỗi khi tải email đã gửi. Vui lòng thử lại.",
+    "retry": "Thử lại"
   },
   "email-data-table": {
     "id": "Mã số",

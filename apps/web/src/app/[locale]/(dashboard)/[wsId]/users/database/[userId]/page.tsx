@@ -37,6 +37,8 @@ interface Props {
   }>;
 }
 
+const EMAIL_PAGE_SIZE = 10;
+
 export default async function WorkspaceUserDetailsPage({
   params,
   searchParams,
@@ -74,6 +76,7 @@ export default async function WorkspaceUserDetailsPage({
   const { data: sentEmails, count: sentEmailCount } = await getUserSentEmails({
     wsId,
     userId,
+    pageSize: EMAIL_PAGE_SIZE,
   });
 
   const invoiceData = rawInvoiceData.map((d) => ({
@@ -167,6 +170,7 @@ export default async function WorkspaceUserDetailsPage({
             userId={userId}
             initialEmails={sentEmails}
             initialCount={sentEmailCount || 0}
+            pageSize={EMAIL_PAGE_SIZE}
           />
 
           <UserMonthAttendance
@@ -529,9 +533,11 @@ async function getReferredUsers({
 async function getUserSentEmails({
   wsId,
   userId,
+  pageSize,
 }: {
   wsId: string;
   userId: string;
+  pageSize: number;
 }) {
   const supabase = await createClient();
 
@@ -541,7 +547,7 @@ async function getUserSentEmails({
     .eq('ws_id', wsId)
     .eq('receiver_id', userId)
     .order('created_at', { ascending: false })
-    .limit(10);
+    .limit(pageSize);
   if (error) throw error;
   return { data: data || [], count: count || 0 };
 }

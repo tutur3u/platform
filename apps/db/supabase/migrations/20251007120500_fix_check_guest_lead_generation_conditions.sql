@@ -13,7 +13,7 @@ BEGIN
   -- Check 1: Verify the user is a guest
   SELECT public.is_user_guest(NEW.user_id) INTO is_guest_user;
 
-  IF NOT is_guest_user THEN
+  IF COALESCE(is_guest_user, FALSE) = FALSE THEN
     RAISE EXCEPTION 'Cannot create lead generation record: User is not a guest.';
   END IF;
 

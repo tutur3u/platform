@@ -1277,7 +1277,10 @@
     "sent_at": "Sent",
     "close": "Close",
     "loading_more": "Loading More",
-    "load_more": "Load More"
+    "load_more": "Load More",
+    "error_loading_emails": "Failed to load emails",
+    "error_loading_emails_description": "There was an error loading the sent emails. Please try again.",
+    "retry": "Retry"
   },
   "email-data-table": {
     "id": "ID",

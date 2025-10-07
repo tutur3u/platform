@@ -308,6 +308,10 @@ export default function FollowUpClient({
     [groupManagersQuery.data]
   );
 
+  const finalScore = useMemo(() => {
+    return typeof mockReport?.score === 'number' ? Math.round(mockReport.score * 100) / 100 : undefined;
+  }, [mockReport?.score]);
+
   const extractReportHtml = async (): Promise<string> => {
     if (!mockReport || !configsQuery.data) {
       throw new Error('Report data not available');
@@ -337,8 +341,7 @@ export default function FollowUpClient({
       leadName: userName,
       className: selectedGroup?.name ?? undefined,
       teacherName: effectiveManagerName,
-      avgScore:
-        typeof mockReport.score === 'number' ? Math.round(mockReport.score * 100) / 100 : undefined,
+      avgScore: finalScore,
       comments: parseDynamicText(form.watch('content')) as string,
       currentDate: new Date().toLocaleDateString(),
       minimumAttendance: minimumAttendance,
@@ -697,10 +700,7 @@ export default function FollowUpClient({
                   leadName: userName,
                   className: selectedGroup?.name ?? undefined,
                   teacherName: effectiveManagerName,
-                  avgScore:
-                    typeof mockReport.score === 'number'
-                      ? Math.round(mockReport.score * 100) / 100
-                      : undefined,
+                  avgScore: finalScore,
                   comments: parseDynamicText(form.watch('content')) as string,
                   currentDate: new Date().toLocaleDateString(),
                   minimumAttendance: minimumAttendance,

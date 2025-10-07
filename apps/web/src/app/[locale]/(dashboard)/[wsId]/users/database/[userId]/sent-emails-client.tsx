@@ -15,7 +15,8 @@ import { Separator } from '@tuturuuu/ui/separator';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { useTranslations } from 'next-intl';
 import { useState, useMemo } from 'react';
-import moment from 'moment';
+import {format} from 'date-fns';
+import DOMPurify from 'dompurify';
 
 type SentEmail = Database['public']['Tables']['sent_emails']['Row'];
 
@@ -24,15 +25,15 @@ interface SentEmailsClientProps {
   userId: string;
   initialEmails: SentEmail[];
   initialCount: number;
+  pageSize: number;
 }
-
-const PAGE_SIZE = 10;
 
 export default function SentEmailsClient({
   wsId,
   userId,
   initialEmails,
   initialCount,
+  pageSize,
 }: SentEmailsClientProps) {
   const t = useTranslations('user-data-table');
   const [selectedEmail, setSelectedEmail] = useState<SentEmail | null>(null);
@@ -43,8 +44,8 @@ export default function SentEmailsClient({
   const sentEmailsQuery = useInfiniteQuery({
     queryKey: ['sent-emails', wsId, userId],
     queryFn: async ({ pageParam = 0 }) => {
-      const start = pageParam * PAGE_SIZE;
-      const end = start + PAGE_SIZE - 1;
+      const start = pageParam * pageSize;
+      const end = start + pageSize - 1;
 
       const { data, error, count } = await supabase
         .from('sent_emails')
@@ -59,10 +60,20 @@ export default function SentEmailsClient({
       return {
         data: (data || []) as SentEmail[],
         count: count || 0,
-        nextCursor: data && data.length === PAGE_SIZE ? pageParam + 1 : null,
+        nextCursor: data && data.length === pageSize ? pageParam + 1 : null,
       };
     },
     initialPageParam: 0,
+    initialData: {
+      pages: [
+        {
+          data: initialEmails,
+          count: initialCount,
+          nextCursor: initialEmails.length >= pageSize ? 1 : null,
+        },
+      ],
+      pageParams: [0],
+    },
     getNextPageParam: (lastPage) => lastPage.nextCursor,
     staleTime: 5 * 60 * 1000,
   });
@@ -85,6 +96,10 @@ export default function SentEmailsClient({
     }
   };
 
+  const sanitizedContent = useMemo(() => {
+    return DOMPurify.sanitize(selectedEmail?.content || '');
+  }, [selectedEmail]);
+
   return (
     <>
       <div className="flex flex-col rounded-lg border border-border bg-foreground/5 p-4">
@@ -103,6 +118,30 @@ export default function SentEmailsClient({
             <div className="text-muted-foreground">
               {t('loading') || 'Loading...'}
             </div>
+          </div>
+        ) : sentEmailsQuery.isError ? (
+          <div className="flex flex-col items-center justify-center py-8 text-center">
+            <div className="mb-4 font-medium text-destructive">
+              {t('error_loading_emails') || 'Failed to load emails'}
+            </div>
+            <div className="mb-4 text-sm text-muted-foreground">
+              {t('error_loading_emails_description') ||
+                'There was an error loading the sent emails. Please try again.'}
+            </div>
+            <Button
+              variant="outline"
+              onClick={() => sentEmailsQuery.refetch()}
+              disabled={sentEmailsQuery.isRefetching}
+            >
+              {sentEmailsQuery.isRefetching ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  {t('loading') || 'Loading...'}
+                </>
+              ) : (
+                t('retry') || 'Retry'
+              )}
+            </Button>
           </div>
         ) : allEmails.length > 0 ? (
           <div className="space-y-2">
@@ -138,7 +177,7 @@ export default function SentEmailsClient({
                       {email.email}
                     </div>
                     <div className="mt-2 text-xs text-muted-foreground opacity-60">
-                      {moment(email.created_at).format('DD/MM/YYYY, HH:mm:ss')}
+                      {format(email.created_at, 'dd/MM/yyyy, HH:mm:ss')}
                     </div>
                   </div>
                 </div>
@@ -215,9 +254,7 @@ export default function SentEmailsClient({
                       </span>
                       <span>
                         {selectedEmail?.created_at
-                          ? moment(selectedEmail.created_at).format(
-                              'DD/MM/YYYY, HH:mm:ss'
-                            )
+                          ? format(selectedEmail.created_at, 'dd/MM/yyyy, HH:mm:ss')
                           : '-'}
                       </span>
                     </div>
@@ -231,7 +268,7 @@ export default function SentEmailsClient({
               <div
                 className="prose prose-sm max-w-none"
                 dangerouslySetInnerHTML={{
-                  __html: selectedEmail?.content || '',
+                  __html: sanitizedContent,
                 }}
               />
             </div>
