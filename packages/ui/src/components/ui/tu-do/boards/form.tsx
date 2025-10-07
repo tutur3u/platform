@@ -51,10 +51,7 @@ interface Props {
 
 const FormSchema = z.object({
   id: z.string().optional(),
-  name: z
-    .string()
-    .min(1, 'Board name is required')
-    .refine((val) => val.trim().length > 0, 'Board name cannot be empty'),
+  name: z.string(),
   template_id: z.string().optional(),
 });
 
@@ -114,10 +111,24 @@ export function TaskBoardForm({ wsId, data, children, onFinish }: Props) {
   const isSubmitting =
     form.formState.isSubmitting || createBoardMutation.isPending;
 
-  const disabled = !isDirty || !isValid || isSubmitting;
+  const disabled = !isValid || isSubmitting;
+
+  // Reset form when dialog closes
+  React.useEffect(() => {
+    if (!open) {
+      form.reset({
+        id: data?.id,
+        name: data?.name || '',
+        template_id: '',
+      });
+    }
+  }, [open, data, form]);
 
   const onSubmit = async (formData: z.infer<typeof FormSchema>) => {
     try {
+      // Use "Untitled Board" as default if name is empty or only whitespace
+      const boardName = formData.name.trim() || 'Untitled Board';
+
       if (formData.id) {
         // Update existing board (legacy API call)
         const res = await fetch(
@@ -128,7 +139,7 @@ export function TaskBoardForm({ wsId, data, children, onFinish }: Props) {
               'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-              name: formData.name.trim(),
+              name: boardName,
             }),
           }
         );
@@ -154,7 +165,7 @@ export function TaskBoardForm({ wsId, data, children, onFinish }: Props) {
       } else {
         // Create new board with template
         await createBoardMutation.mutateAsync({
-          name: formData.name.trim(),
+          name: boardName,
           templateId: formData.template_id || undefined,
         });
 
@@ -226,7 +237,7 @@ export function TaskBoardForm({ wsId, data, children, onFinish }: Props) {
                           </FormLabel>
                           <FormControl>
                             <Input
-                              placeholder="Enter board name..."
+                              placeholder="Enter board name... (Default: Untitled Board)"
                               autoComplete="off"
                               className="h-11 border-2 text-base transition-all focus-visible:ring-2 sm:h-12 sm:text-lg"
                               autoFocus
