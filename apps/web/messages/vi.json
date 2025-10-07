@@ -1360,7 +1360,16 @@
     },
     "referral_success": "Đã giới thiệu một người dùng mới",
     "user_already_referred": "Người dùng này đã được giới thiệu.",
-    "missing_creator_id": "Thiếu ID của người tạo. \nBạn không được ủy quyền"
+    "missing_creator_id": "Thiếu ID của người tạo. \nBạn không được ủy quyền",
+    "sent_emails_title": "Email đã gửi",
+    "no_sent_emails": "Không có email nào",
+    "no_sent_emails_description": "Người dùng này chưa nhận được email nào.",
+    "from": "Từ",
+    "to": "Đến",
+    "sent_at": "Đã gửi",
+    "close": "Đóng",
+    "loading_more": "Đang tải thêm",
+    "load_more": "Tải thêm"
   },
   "email-data-table": {
     "id": "Mã số",

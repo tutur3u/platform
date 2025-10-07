@@ -1268,7 +1268,16 @@
     },
     "referral_success": "Sucessfully referred a new user",
     "user_already_referred": "This user has already been referred.",
-    "missing_creator_id": "Missing a creator ID. You are not authorized"
+    "missing_creator_id": "Missing a creator ID. You are not authorized",
+    "sent_emails_title": "Sent Emails",
+    "no_sent_emails": "No sent emails",
+    "no_sent_emails_description": "This user has not received any emails yet.",
+    "from": "From",
+    "to": "To",
+    "sent_at": "Sent",
+    "close": "Close",
+    "loading_more": "Loading More",
+    "load_more": "Load More"
   },
   "email-data-table": {
     "id": "ID",
