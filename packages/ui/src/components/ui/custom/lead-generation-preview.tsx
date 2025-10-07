@@ -216,10 +216,10 @@ export default function LeadGenerationPreview({
             <thead>
               <tr>
                 <th className="border border-black bg-gray-50 p-3 text-center font-bold text-sm uppercase">
-                  {tableHeaderComments || 'NHẬN XÉT'}
+                  {tableHeaderComments || null}
                 </th>
                 <th className="border border-black bg-gray-50 p-3 text-center font-bold text-sm">
-                  {tableHeaderScore || 'Điểm trung bình'}
+                  {tableHeaderScore || null}
                   {tableScoreScale && (
                     <div className="mt-1 font-normal text-xs normal-case">
                       {parseDynamicText(tableScoreScale)}

@@ -338,7 +338,7 @@ export default function FollowUpClient({
       className: selectedGroup?.name ?? undefined,
       teacherName: effectiveManagerName,
       avgScore:
-        typeof mockReport.score === 'number' ? mockReport.score : undefined,
+        typeof mockReport.score === 'number' ? Math.round(mockReport.score * 100) / 100 : undefined,
       comments: parseDynamicText(form.watch('content')) as string,
       currentDate: new Date().toLocaleDateString(),
       minimumAttendance: minimumAttendance,
@@ -599,13 +599,21 @@ export default function FollowUpClient({
               <div className="flex justify-end">
                 <Button
                   type="button"
-                  disabled={mutation.isPending || !effectiveManagerName}
+                  disabled={
+                    mutation.isPending ||
+                    !effectiveManagerName ||
+                    !emailCredentials?.source_name ||
+                    !emailCredentials?.source_email
+                  }
                   onClick={() => mutation.mutate(form.getValues())}
                   className="w-full sm:w-auto"
                   title={
                     !effectiveManagerName
                       ? t('users.follow_up.select_manager_warning')
-                      : undefined
+                      : (!emailCredentials?.source_name ||
+                        !emailCredentials?.source_email)
+                        ? t('users.follow_up.email_credentials_missing')
+                        : undefined
                   }
                 >
                   {mutation.isPending
@@ -691,7 +699,7 @@ export default function FollowUpClient({
                   teacherName: effectiveManagerName,
                   avgScore:
                     typeof mockReport.score === 'number'
-                      ? mockReport.score
+                      ? Math.round(mockReport.score * 100) / 100
                       : undefined,
                   comments: parseDynamicText(form.watch('content')) as string,
                   currentDate: new Date().toLocaleDateString(),

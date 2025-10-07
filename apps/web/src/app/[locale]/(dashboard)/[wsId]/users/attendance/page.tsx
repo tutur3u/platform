@@ -11,6 +11,7 @@ import GeneralSearchBar from '@/components/general-search-bar';
 import { Filter } from '../filters';
 import UserAttendances from './user-attendances';
 import UserAttendancesSkeleton from './user-attendances-skeleton';
+import WorkspaceWrapper from '@/components/workspace-wrapper';
 
 export const metadata: Metadata = {
   title: 'Attendance',
@@ -39,9 +40,12 @@ export default async function WorkspaceUserAttendancePage({
   params,
   searchParams,
 }: Props) {
-  const locale = await getLocale();
+
+  return (
+    <WorkspaceWrapper params={params}>
+      {async ({ wsId }) => {
+const locale = await getLocale();
   const t = await getTranslations();
-  const { wsId } = await params;
 
   const { data: userGroups } = await getUserGroups(wsId);
   const { data: excludedUserGroups } = await getExcludedUserGroups(
@@ -94,8 +98,11 @@ export default async function WorkspaceUserAttendancePage({
         fallback={<UserAttendancesSkeleton searchParams={await searchParams} />}
       >
         <UserAttendances wsId={wsId} searchParams={await searchParams} />
-      </Suspense>
-    </>
+        </Suspense>
+      </>
+    );
+  }}
+    </WorkspaceWrapper>
   );
 }
 
