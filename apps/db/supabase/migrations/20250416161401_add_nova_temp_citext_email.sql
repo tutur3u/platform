@@ -2,11 +2,11 @@ create extension if not exists "citext" with schema "extensions";
 
 -- Create a temporary citext column
 ALTER TABLE public.nova_roles 
-ADD COLUMN email_citext citext;
+ADD COLUMN email_citext extensions.citext;
 
 -- Copy data from text column to citext column
 UPDATE public.nova_roles
-SET email_citext = email::citext;
+SET email_citext = email::extensions.citext;
 
 -- Add unique constraint to new column
 ALTER TABLE public.nova_roles
