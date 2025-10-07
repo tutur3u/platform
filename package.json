@@ -50,7 +50,7 @@
     "sb:start": "cd apps/db && bun sb:start",
     "sb:stop": "cd apps/db && bun sb:stop",
     "sbr:link": "cd apps/db && bun sbr:link",
-    "sbr:reset": "cd apps/db && bun sbr:reset && bun sb:typegen",
+    "sbr:reset": "cd apps/db && bun sbr:reset && bun sbr:typegen",
     "sb:reset": "cd apps/db && bun sb:reset && bun sb:typegen",
     "sb:diff": "cd apps/db && bun sb:up && bun sb:diff && bun sb:typegen",
     "sb:new": "cd apps/db && bun sb:new",
