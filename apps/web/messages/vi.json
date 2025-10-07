@@ -1201,7 +1201,9 @@
       "default_content": "Nội dung mặc định",
       "unknown_user": "Người dùng không xác định",
       "unknown_group": "Nhóm không xác định",
-      "na": "N/A"
+      "na": "N/A",
+      "email_credentials_missing": "Thiếu thông tin email",
+      "email_credentials_not_configured_description": "Vui lòng cấu hình thông tin email để bật tính năng này"
     },
     "guest_lead_threshold": {
       "description": "Sửa đổi số lượng ngày tối thiểu mà người dùng phải tham dự"
@@ -1358,7 +1360,19 @@
     },
     "referral_success": "Đã giới thiệu một người dùng mới",
     "user_already_referred": "Người dùng này đã được giới thiệu.",
-    "missing_creator_id": "Thiếu ID của người tạo. \nBạn không được ủy quyền"
+    "missing_creator_id": "Thiếu ID của người tạo. \nBạn không được ủy quyền",
+    "sent_emails_title": "Email đã gửi",
+    "no_sent_emails": "Không có email nào",
+    "no_sent_emails_description": "Người dùng này chưa nhận được email nào.",
+    "from": "Từ",
+    "to": "Đến",
+    "sent_at": "Đã gửi",
+    "close": "Đóng",
+    "loading_more": "Đang tải thêm",
+    "load_more": "Tải thêm",
+    "error_loading_emails": "Không thể tải email",
+    "error_loading_emails_description": "Đã xảy ra lỗi khi tải email đã gửi. Vui lòng thử lại.",
+    "retry": "Thử lại"
   },
   "email-data-table": {
     "id": "Mã số",
@@ -2048,7 +2062,15 @@
     "fetch_new_scores": "Lấy điểm mới",
     "scores_updated": "Đã cập nhật điểm thành công",
     "failed_update_scores": "Cập nhật điểm thất bại",
-    "group_manager": "Quản lý nhóm"
+    "group_manager": "Quản lý nhóm",
+    "lead_email_title": "Tiêu đề email",
+    "lead_email_greeting": "Lời mở đầu email",
+    "lead_email_table_header_comments": "Nhận xét",
+    "lead_email_table_header_score": "Điểm số",
+    "lead_email_table_score_scale": "Thang điểm",
+    "lead_email_footer": "Lời kết thúc email",
+    "lead_email_signature_title": "Tiêu đề chữ ký",
+    "lead_email_signature_name": "Tên chữ ký"
   },
   "ws-users": {
     "singular": "Người dùng",
