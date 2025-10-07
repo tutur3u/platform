@@ -91,7 +91,9 @@ export default async function GuestLeadFollowUpPage({ params }: Props) {
                       {t('users.follow_up.email_credentials_missing')}
                     </h3>
                     <p className="mt-1 text-muted-foreground text-sm">
-                      {t('users.follow_up.email_credentials_not_configured_description')}
+                      {t(
+                        'users.follow_up.email_credentials_not_configured_description'
+                      )}
                     </p>
                   </div>
                 </div>

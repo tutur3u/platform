@@ -272,8 +272,6 @@ export default async function WorkspaceUserDetailsPage({
             initialAvailableUsersCount={availableUsersCount || 0}
             initialReferredUsers={referredUsers}
           />
-
-
         </div>
       </div>
 
