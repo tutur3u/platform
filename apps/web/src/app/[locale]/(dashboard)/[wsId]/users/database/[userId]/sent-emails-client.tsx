@@ -42,7 +42,7 @@ export default function SentEmailsClient({
   const supabase = createClient();
 
   const sentEmailsQuery = useInfiniteQuery({
-    queryKey: ['sent-emails', wsId, userId],
+    queryKey: ['sent-emails', wsId, userId, pageSize],
     queryFn: async ({ pageParam = 0 }) => {
       const start = pageParam * pageSize;
       const end = start + pageSize - 1;
@@ -146,8 +146,9 @@ export default function SentEmailsClient({
         ) : allEmails.length > 0 ? (
           <div className="space-y-2">
             {allEmails.map((email) => (
-              <div
+              <button
                 key={email.id}
+                type="button"
                 className="group flex cursor-pointer items-start justify-between rounded-xl border border-border/50 bg-card/50 backdrop-blur-sm p-4 transition-all duration-200 hover:shadow-lg hover:shadow-black/5 hover:border-border hover:bg-card/80"
                 onClick={() => handleViewEmail(email)}
               >
@@ -181,7 +182,7 @@ export default function SentEmailsClient({
                     </div>
                   </div>
                 </div>
-              </div>
+              </button>
             ))}
 
             {sentEmailsQuery.hasNextPage && (
