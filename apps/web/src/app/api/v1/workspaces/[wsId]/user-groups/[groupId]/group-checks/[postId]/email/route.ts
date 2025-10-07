@@ -194,6 +194,9 @@ const sendEmail = async ({
     ) {
       console.log('Sending email:', params);
       const command = new SendEmailCommand(params);
+      if (DEV_MODE){
+        
+      }else
       const sesResponse = await client.send(command);
       console.log('Email sent:', params);
 

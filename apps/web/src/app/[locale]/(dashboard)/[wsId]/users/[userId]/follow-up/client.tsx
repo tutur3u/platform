@@ -390,8 +390,8 @@ export default function FollowUpClient({
       // Extract the report HTML
       const reportHtml = await extractReportHtml();
 
-      // Map to RPC payload
-      const payload = {
+      // Payload for RPC call (existing structure)
+      const rpcPayload = {
         p_ws_id: wsId,
         p_sender_id: authUser.id,
         p_receiver_id: userId,
@@ -403,9 +403,30 @@ export default function FollowUpClient({
         p_post_id: undefined,
       };
 
+      // Payload for API endpoint (with access keys from environment variables)
+      const apiPayload = {
+        mail: {
+          to: [values.to_email || userEmail || ''],
+          subject: values.subject,
+          content: reportHtml,
+        },
+        config: {
+          accessKeyId: process.env.NEXT_PUBLIC_ACCESS_KEY_ID || '',
+          accessKeySecret: process.env.NEXT_PUBLIC_EMAIL_ACCESS_KEY_SECRET || '',
+        },
+      };
+
       const { data, error } = await supabase.rpc(
         'create_guest_lead_email',
-        payload
+        rpcPayload
+      )
+
+      const res = await fetch(
+        `${PROD_API_URL}/v1/workspaces/${wsId}/mail/send`,
+        {
+          method: 'POST',
+          body: JSON.stringify(apiPayload),
+        }
       );
       if (error) throw error;
       return data as { status: string; mail_id?: string };
