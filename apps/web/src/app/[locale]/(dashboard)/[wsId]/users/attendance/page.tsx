@@ -40,68 +40,69 @@ export default async function WorkspaceUserAttendancePage({
   params,
   searchParams,
 }: Props) {
-
   return (
     <WorkspaceWrapper params={params}>
       {async ({ wsId }) => {
-const locale = await getLocale();
-  const t = await getTranslations();
+        const locale = await getLocale();
+        const t = await getTranslations();
 
-  const { data: userGroups } = await getUserGroups(wsId);
-  const { data: excludedUserGroups } = await getExcludedUserGroups(
-    wsId,
-    await searchParams
-  );
+        const { data: userGroups } = await getUserGroups(wsId);
+        const { data: excludedUserGroups } = await getExcludedUserGroups(
+          wsId,
+          await searchParams
+        );
 
-  return (
-    <>
-      <FeatureSummary
-        pluralTitle={t('ws-user-attendance.plural')}
-        singularTitle={t('ws-user-attendance.singular')}
-        description={t('ws-user-attendance.description')}
-        createTitle={t('ws-user-attendance.create')}
-        createDescription={t('ws-user-attendance.create_description')}
-        // form={<UserGroupForm wsId={wsId} />}
-      />
-      <Separator className="my-4" />
-      <div className="mb-4 grid flex-wrap items-start gap-2 md:flex">
-        <GeneralSearchBar className="w-full md:max-w-xs" />
-        <CustomMonthPicker
-          lang={locale}
-          className="col-span-full md:col-span-1"
-        />
-        <Filter
-          key="included-user-groups-filter"
-          tag="includedGroups"
-          title={t('user-data-table.included_groups')}
-          icon={<PlusCircle className="mr-2 h-4 w-4" />}
-          options={userGroups.map((group) => ({
-            label: group.name || 'No name',
-            value: group.id,
-            count: group.amount,
-          }))}
-        />
-        <Filter
-          key="excluded-user-groups-filter"
-          tag="excludedGroups"
-          title={t('user-data-table.excluded_groups')}
-          icon={<MinusCircle className="mr-2 h-4 w-4" />}
-          options={excludedUserGroups.map((group) => ({
-            label: group.name || 'No name',
-            value: group.id,
-            count: group.amount,
-          }))}
-        />
-      </div>
+        return (
+          <>
+            <FeatureSummary
+              pluralTitle={t('ws-user-attendance.plural')}
+              singularTitle={t('ws-user-attendance.singular')}
+              description={t('ws-user-attendance.description')}
+              createTitle={t('ws-user-attendance.create')}
+              createDescription={t('ws-user-attendance.create_description')}
+              // form={<UserGroupForm wsId={wsId} />}
+            />
+            <Separator className="my-4" />
+            <div className="mb-4 grid flex-wrap items-start gap-2 md:flex">
+              <GeneralSearchBar className="w-full md:max-w-xs" />
+              <CustomMonthPicker
+                lang={locale}
+                className="col-span-full md:col-span-1"
+              />
+              <Filter
+                key="included-user-groups-filter"
+                tag="includedGroups"
+                title={t('user-data-table.included_groups')}
+                icon={<PlusCircle className="mr-2 h-4 w-4" />}
+                options={userGroups.map((group) => ({
+                  label: group.name || 'No name',
+                  value: group.id,
+                  count: group.amount,
+                }))}
+              />
+              <Filter
+                key="excluded-user-groups-filter"
+                tag="excludedGroups"
+                title={t('user-data-table.excluded_groups')}
+                icon={<MinusCircle className="mr-2 h-4 w-4" />}
+                options={excludedUserGroups.map((group) => ({
+                  label: group.name || 'No name',
+                  value: group.id,
+                  count: group.amount,
+                }))}
+              />
+            </div>
 
-      <Suspense
-        fallback={<UserAttendancesSkeleton searchParams={await searchParams} />}
-      >
-        <UserAttendances wsId={wsId} searchParams={await searchParams} />
-        </Suspense>
-      </>
-    );
-  }}
+            <Suspense
+              fallback={
+                <UserAttendancesSkeleton searchParams={await searchParams} />
+              }
+            >
+              <UserAttendances wsId={wsId} searchParams={await searchParams} />
+            </Suspense>
+          </>
+        );
+      }}
     </WorkspaceWrapper>
   );
 }

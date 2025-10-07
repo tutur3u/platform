@@ -15,7 +15,7 @@ import { Separator } from '@tuturuuu/ui/separator';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { useTranslations } from 'next-intl';
 import { useState, useMemo } from 'react';
-import {format, parseISO} from 'date-fns';
+import { format, parseISO } from 'date-fns';
 import DOMPurify from 'dompurify';
 
 type SentEmail = Database['public']['Tables']['sent_emails']['Row'];
@@ -163,9 +163,7 @@ export default function SentEmailsClient({
                       </div>
                     </div>
                     <div className="mb-1 text-sm text-muted-foreground">
-                      <span className="opacity-60">
-                        {t('from') || 'From'}:
-                      </span>{' '}
+                      <span className="opacity-60">{t('from') || 'From'}:</span>{' '}
                       {email.source_name}{' '}
                       <span className="opacity-60">
                         {'<'}
@@ -178,7 +176,10 @@ export default function SentEmailsClient({
                       {email.email}
                     </div>
                     <div className="mt-2 text-xs text-muted-foreground opacity-60">
-                      {format(parseISO(email.created_at), 'dd/MM/yyyy, HH:mm:ss')}
+                      {format(
+                        parseISO(email.created_at),
+                        'dd/MM/yyyy, HH:mm:ss'
+                      )}
                     </div>
                   </div>
                 </div>
@@ -255,7 +256,10 @@ export default function SentEmailsClient({
                       </span>
                       <span>
                         {selectedEmail?.created_at
-                          ? format(parseISO(selectedEmail.created_at), 'dd/MM/yyyy, HH:mm:ss')
+                          ? format(
+                              parseISO(selectedEmail.created_at),
+                              'dd/MM/yyyy, HH:mm:ss'
+                            )
                           : '-'}
                       </span>
                     </div>
@@ -279,4 +283,3 @@ export default function SentEmailsClient({
     </>
   );
 }
-

@@ -309,7 +309,9 @@ export default function FollowUpClient({
   );
 
   const finalScore = useMemo(() => {
-    return typeof mockReport?.score === 'number' ? Math.round(mockReport.score * 100) / 100 : undefined;
+    return typeof mockReport?.score === 'number'
+      ? Math.round(mockReport.score * 100) / 100
+      : undefined;
   }, [mockReport?.score]);
 
   const extractReportHtml = async (): Promise<string> => {
@@ -613,8 +615,8 @@ export default function FollowUpClient({
                   title={
                     !effectiveManagerName
                       ? t('users.follow_up.select_manager_warning')
-                      : (!emailCredentials?.source_name ||
-                        !emailCredentials?.source_email)
+                      : !emailCredentials?.source_name ||
+                          !emailCredentials?.source_email
                         ? t('users.follow_up.email_credentials_missing')
                         : undefined
                   }
