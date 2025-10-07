@@ -90,7 +90,7 @@ export function UserPresenceAvatars({
                 )}
               </div>
             </TooltipTrigger>
-            <TooltipContent side="bottom" className="max-w-[200px]">
+            <TooltipContent side="bottom" className="max-w-none">
               <div className="space-y-0.5">
                 <p className="font-medium text-sm">
                   {user.display_name || 'Unknown User'}
