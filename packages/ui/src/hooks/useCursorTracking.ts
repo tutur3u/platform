@@ -87,6 +87,9 @@ export function useCursorTracking(
     isCleanedUpRef.current = false;
 
     const supabase = createClient();
+    let container: HTMLElement | null = null;
+    let handleMouseMove: ((event: MouseEvent) => void) | null = null;
+    let handleMouseLeave: (() => void) | null = null;
 
     const setupCursorTracking = async () => {
       if (isCleanedUpRef.current) return;
@@ -157,10 +160,10 @@ export function useCursorTracking(
 
         // Set up mouse move handler if containerRef is provided
         if (containerRef?.current) {
-          const container = containerRef.current;
+          container = containerRef.current;
 
-          const handleMouseMove = (event: MouseEvent) => {
-            const rect = container.getBoundingClientRect();
+          handleMouseMove = (event: MouseEvent) => {
+            const rect = container!.getBoundingClientRect();
             const x = event.clientX - rect.left;
             const y = event.clientY - rect.top;
 
@@ -170,7 +173,7 @@ export function useCursorTracking(
             });
           };
 
-          const handleMouseLeave = () => {
+          handleMouseLeave = () => {
             // Broadcast cursor position outside the container to hide it
             broadcastCursor(-1000, -1000, {
               id: user.id,
@@ -180,10 +183,6 @@ export function useCursorTracking(
 
           container.addEventListener('mousemove', handleMouseMove);
           container.addEventListener('mouseleave', handleMouseLeave);
-
-          return () => {
-            container.removeEventListener('mousemove', handleMouseMove);
-          };
         }
       } catch (error) {
         console.error('Error setting up cursor tracking:', error);
@@ -200,6 +199,12 @@ export function useCursorTracking(
       if (channelRef.current) {
         supabase.removeChannel(channelRef.current);
         channelRef.current = null;
+      }
+
+      // Clean up event listeners
+      if (container && handleMouseMove && handleMouseLeave) {
+        container.removeEventListener('mousemove', handleMouseMove);
+        container.removeEventListener('mouseleave', handleMouseLeave);
       }
     };
   }, [channelName, containerRef, broadcastCursor]);
