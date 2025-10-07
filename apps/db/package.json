@@ -3,6 +3,8 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
+    "sbr:link": "bun supabase link",
+    "sbr:reset": "bun supabase db reset --linked",
     "sb:status": "bun supabase status",
     "sb:start": "bun supabase start",
     "sb:stop": "bun supabase stop",
@@ -14,7 +16,6 @@
     "sb:sync": "bun supabase db push && bun supabase db pull",
     "sb:pull": "bun supabase db pull",
     "sb:push": "bun supabase db push",
-    "sb:link": "bun supabase link",
     "sb:linkpush": "bun supabase link && bun supabase db push"
   },
   "devDependencies": {
