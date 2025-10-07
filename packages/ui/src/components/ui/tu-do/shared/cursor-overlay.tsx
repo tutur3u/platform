@@ -1,6 +1,6 @@
 'use client';
 
-import type { CursorPosition } from 'src/hooks/useCursorTracking';
+import type { CursorPosition } from '@tuturuuu/ui/hooks/useCursorTracking';
 import CollaboratorCursor from './collaborator-cursor';
 
 interface CursorOverlayProps {

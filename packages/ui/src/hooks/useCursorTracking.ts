@@ -1,5 +1,5 @@
-import type { RealtimeChannel } from '@supabase/supabase-js';
 import { createClient } from '@tuturuuu/supabase/next/client';
+import type { RealtimeChannel } from '@tuturuuu/supabase/next/realtime';
 import type { User } from '@tuturuuu/types/primitives/User';
 import type { RefObject } from 'react';
 import { useCallback, useEffect, useRef, useState } from 'react';
