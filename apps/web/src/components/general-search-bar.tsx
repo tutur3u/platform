@@ -1,9 +1,9 @@
 'use client';
 
 import SearchBar from '@tuturuuu/ui/custom/search-bar';
+import useSearchParams from '@tuturuuu/ui/hooks/useSearchParams';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
-import useSearchParams from '@/hooks/useSearchParams';
 
 interface Props {
   resetPage?: boolean;

@@ -2,9 +2,9 @@
 
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { DataTablePagination } from '@tuturuuu/ui/custom/tables/data-table-pagination';
+import useSearchParams from '@tuturuuu/ui/hooks/useSearchParams';
 import { useTranslations } from 'next-intl';
 import type { FC } from 'react';
-import useSearchParams from '@/hooks/useSearchParams';
 import UserMonthAttendance from './user-month-attendance';
 
 interface SearchParams {

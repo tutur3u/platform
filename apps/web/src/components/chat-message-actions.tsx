@@ -2,10 +2,10 @@
 
 import type { UIMessage } from '@tuturuuu/ai/types';
 import { Button } from '@tuturuuu/ui/button';
+import { useCopyToClipboard } from '@tuturuuu/ui/hooks/use-copy-to-clipboard';
 import { CheckIcon, CopyIcon } from '@tuturuuu/ui/icons';
 import { cn } from '@tuturuuu/utils/format';
 import type React from 'react';
-import { useCopyToClipboard } from '@/lib/hooks/use-copy-to-clipboard';
 
 interface ChatMessageActionsProps extends React.ComponentProps<'div'> {
   message: UIMessage;

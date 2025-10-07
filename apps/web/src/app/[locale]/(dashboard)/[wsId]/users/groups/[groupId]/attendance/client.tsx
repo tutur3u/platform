@@ -7,30 +7,29 @@ import {
   useQueryClient,
 } from '@tanstack/react-query';
 import { createClient } from '@tuturuuu/supabase/next/client';
-import {
-  Check,
-  Clock,
-  ChevronLeft,
-  ChevronRight,
-  UserX,
-  CalendarIcon,
-  CalendarX2,
-  RotateCcw,
-} from '@tuturuuu/ui/icons';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
+import useSearchParams from '@tuturuuu/ui/hooks/useSearchParams';
+import {
+  CalendarIcon,
+  CalendarX2,
+  Check,
+  ChevronLeft,
+  ChevronRight,
+  Clock,
+  RotateCcw,
+  UserX,
+} from '@tuturuuu/ui/icons';
+import { Label } from '@tuturuuu/ui/label';
+import { toast } from '@tuturuuu/ui/sonner';
 import { StickyBottomBar } from '@tuturuuu/ui/sticky-bottom-bar';
 import { Textarea } from '@tuturuuu/ui/textarea';
-import { toast } from '@tuturuuu/ui/sonner';
 import { cn } from '@tuturuuu/utils/format';
 import { format, parse } from 'date-fns';
-import { useLocale } from 'next-intl';
-import { useEffect, useMemo, useState } from 'react';
-import { useTranslations } from 'next-intl';
-import useSearchParams from '@/hooks/useSearchParams';
 import Link from 'next/link';
-import { Label } from '@tuturuuu/ui/label';
+import { useLocale, useTranslations } from 'next-intl';
+import { useEffect, useMemo, useState } from 'react';
 
 type Member = {
   id: string;
@@ -435,7 +434,7 @@ export default function GroupAttendanceClient({
               onClick={handleSave}
               disabled={saveAttendanceMutation.isPending}
               className={cn(
-                'bg-dynamic-blue/10 border border-dynamic-blue/20 text-dynamic-blue hover:bg-dynamic-blue/20'
+                'border border-dynamic-blue/20 bg-dynamic-blue/10 text-dynamic-blue hover:bg-dynamic-blue/20'
               )}
             >
               <Check className="h-4 w-4" />
@@ -486,7 +485,7 @@ export default function GroupAttendanceClient({
           </div>
         </CardHeader>
         <CardContent className="pb-0">
-          <div className="mb-2 text-foreground/60 font-semibold">
+          <div className="mb-2 font-semibold text-foreground/60">
             {calendarMonth.getFullYear()} /{' '}
             {calendarMonth.toLocaleString(locale, { month: '2-digit' })}
           </div>
@@ -532,7 +531,7 @@ export default function GroupAttendanceClient({
                       key={`day-${idx}`}
                       className={cn(
                         base,
-                        'cursor-default text-foreground/20 border border-transparent'
+                        'cursor-default border border-transparent text-foreground/20'
                       )}
                     >
                       {day.getDate()}
@@ -569,7 +568,7 @@ export default function GroupAttendanceClient({
       <div className="space-y-4">
         {!isDateAvailable(sessions, currentDate) ? (
           <Card>
-            <CardContent className="py-6 flex flex-col items-center justify-center gap-4">
+            <CardContent className="flex flex-col items-center justify-center gap-4 py-6">
               <div className="flex flex-col items-center justify-center gap-4">
                 <CalendarX2 className="h-10 w-10 text-foreground/60" />
                 <div className="text-center text-foreground/60">
@@ -618,13 +617,13 @@ export default function GroupAttendanceClient({
                 </div>
               </CardContent>
             </Card>
-            <div className="space-y-3 grid grid-cols-1 md:grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 gap-3 space-y-3 md:grid-cols-3">
               {members.map((m) => {
                 const entry = getEffectiveEntry(m.id);
                 return (
                   <div
                     key={m.id}
-                    className="rounded border border-foreground/10 bg-foreground/5 p-3 flex flex-col justify-between gap-5"
+                    className="flex flex-col justify-between gap-5 rounded border border-foreground/10 bg-foreground/5 p-3"
                   >
                     <div className="flex items-center justify-between gap-3">
                       <div className="flex items-center gap-3">
@@ -655,7 +654,7 @@ export default function GroupAttendanceClient({
                           className={cn(
                             'transition-colors',
                             entry.status === 'PRESENT' &&
-                              'bg-dynamic-green/20 text-dynamic-green border-dynamic-green/30'
+                              'border-dynamic-green/30 bg-dynamic-green/20 text-dynamic-green'
                           )}
                           onClick={() => toggleStatus(m.id, 'PRESENT')}
                         >
@@ -671,7 +670,7 @@ export default function GroupAttendanceClient({
                           className={cn(
                             'transition-colors',
                             entry.status === 'ABSENT' &&
-                              'bg-dynamic-red/20 text-dynamic-red border-dynamic-red/30'
+                              'border-dynamic-red/30 bg-dynamic-red/20 text-dynamic-red'
                           )}
                           onClick={() => toggleStatus(m.id, 'ABSENT')}
                         >
@@ -687,7 +686,7 @@ export default function GroupAttendanceClient({
                           className={cn(
                             'transition-colors',
                             entry.status === 'LATE' &&
-                              'bg-dynamic-orange/20 text-dynamic-orange border-dynamic-orange/30'
+                              'border-dynamic-orange/30 bg-dynamic-orange/20 text-dynamic-orange'
                           )}
                           onClick={() => toggleStatus(m.id, 'LATE')}
                         >
@@ -705,7 +704,7 @@ export default function GroupAttendanceClient({
                         onChange={(e) =>
                           setLocalAttendance(m.id, { note: e.target.value })
                         }
-                        className="bg-card resize-none"
+                        className="resize-none bg-card"
                         rows={1}
                       />
                     </div>
