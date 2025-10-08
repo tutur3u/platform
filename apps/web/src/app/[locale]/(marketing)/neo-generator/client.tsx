@@ -5,7 +5,7 @@ import { Button } from '@ncthub/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@ncthub/ui/card';
 import { CheckIcon, CopyIcon, WandIcon } from '@ncthub/ui/icons';
 import { Textarea } from '@ncthub/ui/textarea';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 // Unicode character mappings for different text styles
 const textStyles = {
@@ -194,6 +194,35 @@ const textStyles = {
 export function TextGeneratorClient() {
   const [inputText, setInputText] = useState('');
   const [copiedStyle, setCopiedStyle] = useState<string | null>(null);
+  const [isDemo, setIsDemo] = useState(true);
+  const [demoText, setDemoText] = useState('');
+  const demoMessage = 'Hi, we are from RMIT Neo Culture Tech!';
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // Typewriter effect for demo
+  useEffect(() => {
+    if (!isDemo) return;
+
+    let currentIndex = 0;
+    const typingInterval = setInterval(() => {
+      if (currentIndex <= demoMessage.length) {
+        setDemoText(demoMessage.slice(0, currentIndex));
+        currentIndex++;
+      } else {
+        clearInterval(typingInterval);
+      }
+    }, 200); // Type one character every 200ms
+
+    return () => clearInterval(typingInterval);
+  }, [isDemo]);
+
+  const handleFocus = () => {
+    if (isDemo) {
+      setIsDemo(false);
+      setDemoText('');
+      setInputText('');
+    }
+  };
 
   const handleCopy = async (text: string, styleName: string) => {
     try {
@@ -211,11 +240,12 @@ export function TextGeneratorClient() {
   };
 
   const generateAllStyles = (): Record<string, string> => {
-    if (!inputText.trim()) return {};
+    const textToTransform = isDemo ? demoText : inputText;
+    if (!textToTransform.trim()) return {};
 
     const generated: Record<string, string> = {};
     Object.entries(textStyles).forEach(([key, style]) => {
-      generated[key] = style.transform(inputText);
+      generated[key] = style.transform(textToTransform);
     });
     return generated;
   };
@@ -234,25 +264,28 @@ export function TextGeneratorClient() {
         </CardHeader>
         <CardContent>
           <Textarea
+            ref={textareaRef}
             placeholder="Enter your text here to transform into different styles..."
-            value={inputText}
+            value={isDemo ? demoText : inputText}
             onChange={(e) => setInputText(e.target.value)}
+            onFocus={handleFocus}
             className="min-h-[100px] text-base"
             maxLength={500}
+            readOnly={isDemo}
           />
           <div className="mt-2 flex items-center justify-between">
             <p className="text-sm text-muted-foreground">
               Enter text to see it transformed into various Unicode styles
             </p>
             <Badge variant="secondary" className="text-xs">
-              {inputText.length}/500
+              {(isDemo ? demoText : inputText).length}/500
             </Badge>
           </div>
         </CardContent>
       </Card>
 
       {/* Generated Styles */}
-      {inputText.trim() && (
+      {((isDemo && demoText.trim()) || (!isDemo && inputText.trim())) && (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {Object.entries(textStyles).map(([key, style]) => {
             const generatedText = generatedTexts[key];
@@ -270,6 +303,7 @@ export function TextGeneratorClient() {
                         handleCopy(generatedText || '', style.name)
                       }
                       className="h-8 w-8 p-0"
+                      disabled={isDemo}
                     >
                       {isCopied ? (
                         <CheckIcon className="h-4 w-4 text-green-500" />
@@ -299,7 +333,7 @@ export function TextGeneratorClient() {
       )}
 
       {/* Empty State */}
-      {!inputText.trim() && (
+      {!isDemo && !inputText.trim() && (
         <Card className="border-dashed">
           <CardContent className="pt-6">
             <div className="py-12 text-center">

@@ -11,11 +11,12 @@ export const metadata: Metadata = {
 
 export default function NeoGeneratorPage() {
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="container mx-auto px-4 py-14">
       <div className="mx-auto max-w-4xl">
         <div className="mb-8 text-center">
-          <h1 className="mb-4 text-4xl font-bold">
-            <span className="bg-gradient-to-r from-[#5FC6E5] to-[#FBC721] bg-clip-text text-transparent">
+          <h1 className="mb-6 text-4xl font-bold text-balance text-foreground md:text-5xl lg:text-6xl">
+            <span>Welcome to</span>{' '}
+            <span className="border-b-4 border-[#FBC721] whitespace-nowrap text-[#5FC6E5]">
               Neo Generator
             </span>
           </h1>
