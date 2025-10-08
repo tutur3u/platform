@@ -59,6 +59,7 @@ import {
 import dayjs from 'dayjs';
 import { usePathname } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { CursorOverlayWrapper } from './cursor-overlay';
 import { CustomDatePickerDialog } from './custom-date-picker/custom-date-picker-dialog';
 import {
   buildEstimationIndices,
@@ -2269,6 +2270,8 @@ function TaskEditDialogComponent({
     if (!open) handleClose();
   };
 
+  const editorContainerRef = useRef<HTMLDivElement>(null);
+
   return (
     <>
       {slashCommandMenu}
@@ -2444,8 +2447,8 @@ function TaskEditDialogComponent({
             </div>
 
             {/* Main editing area with improved spacing */}
-            <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
-              <div className="mx-auto flex h-full min-h-full w-full flex-col">
+            <div className="relative flex min-h-0 flex-1 flex-col overflow-y-auto">
+              <div ref={editorContainerRef} className="flex flex-col">
                 {/* Task Name - Large and prominent with underline effect */}
                 <div className="group">
                   <Input
@@ -2555,6 +2558,12 @@ function TaskEditDialogComponent({
                   />
                 </div>
               </div>
+              {isOpen && !isCreateMode && (
+                <CursorOverlayWrapper
+                  channelName={`editor-cursor-${task?.id}`}
+                  containerRef={editorContainerRef}
+                />
+              )}
             </div>
           </div>
 
