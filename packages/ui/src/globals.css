@@ -2,6 +2,7 @@
 @source "components";
 
 @plugin '@tailwindcss/typography';
+@plugin 'tailwind-scrollbar-hide';
 @plugin 'tailwindcss-animate';
 @plugin 'tailwind-scrollbar';
 

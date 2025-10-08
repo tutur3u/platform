@@ -247,7 +247,7 @@ export function AssigneeSelect({ taskId, assignees = [] }: Props) {
           disabled={isFetchingMembers}
           size="xs"
           className={cn(
-            'transition-opacity duration-200',
+            'items-start justify-start transition-opacity duration-200',
             assigneeMutation.isPending && 'opacity-50'
           )}
           onClick={(e) => {
