@@ -193,7 +193,7 @@ function TaskEditDialogComponent({
   const [hasDraft, setHasDraft] = useState(false);
   const [createMultiple, setCreateMultiple] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [showOptionsSidebar, setShowOptionsSidebar] = useState(false);
+  const [showOptionsSidebar, setShowOptionsSidebar] = useState(isCreateMode);
   const [workspaceMembers, setWorkspaceMembers] = useState<any[]>([]);
   const [loadingMembers, setLoadingMembers] = useState(false);
   const [selectedAssignees, setSelectedAssignees] = useState<any[]>(
@@ -311,8 +311,13 @@ function TaskEditDialogComponent({
       setSelectedHour('11');
       setSelectedMinute('59');
       setSelectedPeriod('PM');
+    } else {
+      // When opening in create mode, show options sidebar by default
+      if (isCreateMode) {
+        setShowOptionsSidebar(true);
+      }
     }
-  }, [isOpen]);
+  }, [isOpen, isCreateMode]);
 
   useEffect(() => {
     if (!workspaceId) {
@@ -2340,63 +2345,75 @@ function TaskEditDialogComponent({
                     Create multiple
                   </label>
                 )}
-                {!isCreateMode && task?.id && (
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-7 w-7 text-muted-foreground hover:text-foreground"
-                        title="More options"
-                      >
-                        <MoreVertical className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem
-                        onClick={() => {
-                          navigator.clipboard.writeText(task.id);
-                          toast({
-                            title: 'Task ID copied',
-                            description: 'Task ID has been copied to clipboard',
-                          });
-                        }}
-                      >
-                        <Copy className="mr-2 h-4 w-4" />
-                        Copy ID
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        onClick={() => {
-                          const url = `${window.location.origin}${pathname?.split('/tasks/')[0]}/tasks/${task.id}`;
-                          navigator.clipboard.writeText(url);
-                          toast({
-                            title: 'Link copied',
-                            description:
-                              'Task link has been copied to clipboard',
-                          });
-                        }}
-                      >
-                        <ExternalLink className="mr-2 h-4 w-4" />
-                        Copy Link
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem
-                        onClick={() =>
-                          setShowOptionsSidebar(!showOptionsSidebar)
-                        }
-                      >
-                        <Settings className="mr-2 h-4 w-4" />
-                        Options
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        onClick={() => setShowDeleteConfirm(true)}
-                        className="text-dynamic-red focus:text-dynamic-red"
-                      >
-                        <Trash className="mr-2 h-4 w-4" />
-                        Delete
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+                {isCreateMode ? (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7 text-muted-foreground hover:text-foreground"
+                    onClick={() => setShowOptionsSidebar(!showOptionsSidebar)}
+                    title="Toggle options"
+                  >
+                    <Settings className="h-4 w-4" />
+                  </Button>
+                ) : (
+                  task?.id && (
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7 text-muted-foreground hover:text-foreground"
+                          title="More options"
+                        >
+                          <MoreVertical className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem
+                          onClick={() => {
+                            navigator.clipboard.writeText(task.id);
+                            toast({
+                              title: 'Task ID copied',
+                              description: 'Task ID has been copied to clipboard',
+                            });
+                          }}
+                        >
+                          <Copy className="mr-2 h-4 w-4" />
+                          Copy ID
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() => {
+                            const url = `${window.location.origin}${pathname?.split('/tasks/')[0]}/tasks/${task.id}`;
+                            navigator.clipboard.writeText(url);
+                            toast({
+                              title: 'Link copied',
+                              description:
+                                'Task link has been copied to clipboard',
+                            });
+                          }}
+                        >
+                          <ExternalLink className="mr-2 h-4 w-4" />
+                          Copy Link
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem
+                          onClick={() =>
+                            setShowOptionsSidebar(!showOptionsSidebar)
+                          }
+                        >
+                          <Settings className="mr-2 h-4 w-4" />
+                          Options
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() => setShowDeleteConfirm(true)}
+                          className="text-dynamic-red focus:text-dynamic-red"
+                        >
+                          <Trash className="mr-2 h-4 w-4" />
+                          Delete
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  )
                 )}
                 <Button
                   variant="ghost"
