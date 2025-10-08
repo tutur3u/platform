@@ -1046,7 +1046,7 @@ function TaskCardInner({
         {/* Hide bottom row entirely when in done/closed list */}
         {taskList?.status !== 'done' && taskList?.status !== 'closed' && (
           <div className="flex items-center gap-2">
-            <div className="scrollbar-hide flex min-w-0 items-center gap-1 overflow-auto whitespace-nowrap rounded-lg">
+            <div className="scrollbar-hide flex w-full min-w-0 items-center gap-1 overflow-auto whitespace-nowrap rounded-lg">
               {/* Priority */}
               {!task.archived && task.priority && (
                 <div className="flex-none overflow-hidden">
