@@ -81,7 +81,7 @@ export function TopThreeAchievements({
         initial="hidden"
         whileInView="show"
         viewport={{ once: true, amount: 0.2 }}
-        className="mx-auto grid max-w-[80%] grid-cols-1 gap-6 md:grid-cols-2"
+        className="mx-auto grid w-full grid-cols-1 gap-6 md:max-w-4xl md:grid-cols-2"
       >
         {achievements.map((achievement, index) => (
           <AchievementDialog
@@ -142,7 +142,7 @@ function SpecialAchievementCard({ achievement }: { achievement: Achievement }) {
   const [imageError, setImageError] = useState(false);
 
   return (
-    <Card className="group relative aspect-video cursor-pointer overflow-hidden transition-all duration-200 hover:scale-[1.02] hover:shadow-lg">
+    <Card className="group relative aspect-square cursor-pointer overflow-hidden transition-all duration-200 hover:shadow-lg md:aspect-video">
       {/* Background Image */}
       <div className="absolute inset-0">
         {!imageError ? (
@@ -159,13 +159,13 @@ function SpecialAchievementCard({ achievement }: { achievement: Achievement }) {
           </div>
         )}
         {/* Dark overlay for better text readability - reduces opacity on hover */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-black/20 transition-opacity duration-300 group-hover:from-black/50 group-hover:via-black/20 group-hover:to-black/10" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-black/20 transition-opacity duration-200 group-hover:from-black/50 group-hover:via-black/20 group-hover:to-black/10" />
       </div>
 
       {/* Content Overlay */}
-      <div className="relative z-10 flex h-full flex-col p-6 text-white">
+      <div className="relative z-10 flex h-full flex-col p-6 transition-all duration-200 group-hover:scale-90 group-hover:opacity-80">
         {/* Top section with badges */}
-        <div className="flex justify-end transition-all duration-300 group-hover:scale-90 group-hover:opacity-80">
+        <div className="flex justify-end">
           <span className="flex items-center gap-2 text-sm font-medium text-white/90">
             <CalendarIcon className="h-4 w-4" />
             {achievement.year}
@@ -173,19 +173,19 @@ function SpecialAchievementCard({ achievement }: { achievement: Achievement }) {
         </div>
 
         {/* Center section with main headers */}
-        <div className="flex flex-1 items-center justify-center transition-all duration-300 group-hover:scale-75 group-hover:opacity-70">
-          <div className="space-y-4 text-center">
-            <h2 className="text-5xl leading-tight font-extrabold text-white transition-all duration-300">
+        <div className="flex flex-1 items-center justify-center">
+          <div className="space-y-2 text-center sm:space-y-4">
+            <h2 className="text-2xl leading-tight font-extrabold text-white sm:text-3xl md:text-4xl lg:text-5xl">
               {achievement.competitionName}
             </h2>
-            <h3 className="text-4xl font-semibold text-white/95 transition-all duration-300">
+            <h3 className="text-xl font-semibold text-white/95 sm:text-2xl md:text-3xl lg:text-4xl">
               {achievement.achievement}
             </h3>
           </div>
         </div>
 
         {/* Bottom section with team information */}
-        <div className="flex items-center justify-center gap-2 text-white/80 transition-all duration-300 group-hover:scale-90 group-hover:opacity-80">
+        <div className="flex items-center justify-center gap-2 text-white/80">
           <UsersIcon className="h-5 w-5" />
           <span className="font-medium">{achievement.teamName}</span>
           <span>•</span>
