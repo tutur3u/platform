@@ -150,7 +150,7 @@ export default function SentEmailsClient({
                 <button
                   key={email.id}
                   type="button"
-                  className="group flex w-full cursor-pointer items-start rounded-xl border border-border/50 bg-card/50 backdrop-blur-sm p-4 transition-all duration-200 hover:shadow-lg hover:shadow-black/5 hover:border-border hover:bg-card/80"
+                  className="group flex w-full cursor-pointer items-start rounded-xl border border-border/50 bg-card/50 backdrop-blur-sm p-4 transition-all duration-200 hover:shadow-lg hover:border-border hover:bg-card/80"
                   onClick={() => handleViewEmail(email)}
                 >
                   <div className="flex w-full items-start space-x-4">
