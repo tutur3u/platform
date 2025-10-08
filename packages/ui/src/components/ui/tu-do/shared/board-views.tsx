@@ -105,8 +105,8 @@ export function BoardViews({
 
       // Filter by unassigned
       if (filters.includeUnassigned) {
-        result = result.filter((task) =>
-          !task.assignees || task.assignees.length === 0
+        result = result.filter(
+          (task) => !task.assignees || task.assignees.length === 0
         );
       }
 
