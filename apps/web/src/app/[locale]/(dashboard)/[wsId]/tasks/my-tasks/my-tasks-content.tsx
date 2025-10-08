@@ -1,9 +1,10 @@
 'use client';
 
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
+import { Combobox } from '@tuturuuu/ui/custom/combobox';
 import {
   Dialog,
   DialogContent,
@@ -32,6 +33,7 @@ import {
   SelectValue,
 } from '@tuturuuu/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
+import { TaskBoardForm } from '@tuturuuu/ui/tu-do/boards/form';
 import { TaskEditDialog } from '@tuturuuu/ui/tu-do/shared/task-edit-dialog';
 import { useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
@@ -103,12 +105,15 @@ export default function MyTasksContent({
   totalActiveTasks,
 }: MyTasksContentProps) {
   const t = useTranslations();
+  const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState('tasks');
   const [boardSelectorOpen, setBoardSelectorOpen] = useState(false);
   const [taskCreatorOpen, setTaskCreatorOpen] = useState(false);
   const [selectedWorkspaceId, setSelectedWorkspaceId] = useState<string>(wsId);
   const [selectedBoardId, setSelectedBoardId] = useState<string>('');
   const [selectedListId, setSelectedListId] = useState<string>('');
+  const [newBoardDialogOpen, setNewBoardDialogOpen] = useState(false);
+  const [newBoardName, setNewBoardName] = useState<string>('');
 
   // Fetch user's workspaces (only if in personal workspace)
   const { data: workspacesData } = useQuery({
@@ -170,9 +175,7 @@ export default function MyTasksContent({
     const board = boardsData.find((b: any) => b.id === selectedBoardId);
     if (!board?.task_lists) return [];
     return (board.task_lists as any[])
-      .filter(
-        (l: any) => l.status !== 'done' && l.status !== 'closed' && !l.deleted
-      )
+      .filter((l: any) => !l.deleted)
       .sort((a: any, b: any) => (a.position || 0) - (b.position || 0));
   }, [selectedBoardId, boardsData]);
 
@@ -202,9 +205,7 @@ export default function MyTasksContent({
 
       const lists = (firstBoard.task_lists as any[]) || [];
       const firstList = lists
-        .filter(
-          (l: any) => l.status !== 'done' && l.status !== 'closed' && !l.deleted
-        )
+        .filter((l: any) => !l.deleted)
         .sort((a: any, b: any) => (a.position || 0) - (b.position || 0))[0];
 
       if (firstList) {
@@ -401,7 +402,7 @@ export default function MyTasksContent({
                   value={selectedWorkspaceId}
                   onValueChange={setSelectedWorkspaceId}
                 >
-                  <SelectTrigger id="workspace-select">
+                  <SelectTrigger id="workspace-select" className="w-full">
                     <SelectValue placeholder="Select a workspace" />
                   </SelectTrigger>
                   <SelectContent>
@@ -422,27 +423,28 @@ export default function MyTasksContent({
                 <LayoutDashboard className="h-4 w-4 text-muted-foreground" />
                 Board
               </Label>
-              <Select
-                value={selectedBoardId}
-                onValueChange={setSelectedBoardId}
+              <Combobox
+                t={t}
+                mode="single"
+                options={
+                  Array.isArray(boardsData)
+                    ? boardsData.map((board: any) => ({
+                        value: board.id,
+                        label: board.name || 'Unnamed Board',
+                      }))
+                    : []
+                }
+                label={boardsLoading ? 'Loading...' : undefined}
+                placeholder="Select a board"
+                selected={selectedBoardId}
+                onChange={(value) => setSelectedBoardId(value as string)}
+                onCreate={(name) => {
+                  setNewBoardName(name);
+                  setNewBoardDialogOpen(true);
+                }}
                 disabled={boardsLoading}
-              >
-                <SelectTrigger id="board-select">
-                  <SelectValue
-                    placeholder={
-                      boardsLoading ? 'Loading boards...' : 'Select a board'
-                    }
-                  />
-                </SelectTrigger>
-                <SelectContent>
-                  {Array.isArray(boardsData) &&
-                    boardsData.map((board: any) => (
-                      <SelectItem key={board.id} value={board.id}>
-                        {board.name || 'Unnamed Board'}
-                      </SelectItem>
-                    ))}
-                </SelectContent>
-              </Select>
+                className="w-full"
+              />
             </div>
 
             {/* List Selection */}
@@ -495,6 +497,38 @@ export default function MyTasksContent({
               Continue
             </Button>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Board Creation Dialog */}
+      <Dialog open={newBoardDialogOpen} onOpenChange={setNewBoardDialogOpen}>
+        <DialogContent
+          className="p-0"
+          style={{
+            maxWidth: '1200px',
+            width: '85vw',
+          }}
+          onOpenAutoFocus={(e) => e.preventDefault()}
+        >
+          <TaskBoardForm
+            wsId={selectedWorkspaceId}
+            data={{ name: newBoardName } as any}
+            onFinish={(formData) => {
+              setNewBoardDialogOpen(false);
+              setNewBoardName('');
+              // Auto-select the newly created board
+              if (formData?.id) {
+                setSelectedBoardId(formData.id);
+              }
+              queryClient.invalidateQueries({
+                queryKey: [
+                  'workspace',
+                  selectedWorkspaceId,
+                  'boards-with-lists',
+                ],
+              });
+            }}
+          />
         </DialogContent>
       </Dialog>
 
