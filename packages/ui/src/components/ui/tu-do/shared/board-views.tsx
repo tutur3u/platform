@@ -43,6 +43,7 @@ export function BoardViews({
     dueDateRange: null,
     estimationRange: null,
     includeMyTasks: false,
+    includeUnassigned: false,
   });
   const [listStatusFilter, setListStatusFilter] =
     useState<ListStatusFilter>('all');
@@ -99,6 +100,13 @@ export function BoardViews({
           task.assignees?.some((a) =>
             filters.assignees.some((fa) => fa.id === a.id)
           )
+        );
+      }
+
+      // Filter by unassigned
+      if (filters.includeUnassigned) {
+        result = result.filter((task) =>
+          !task.assignees || task.assignees.length === 0
         );
       }
 
