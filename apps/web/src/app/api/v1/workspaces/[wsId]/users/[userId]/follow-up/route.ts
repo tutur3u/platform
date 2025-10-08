@@ -1,5 +1,8 @@
 import { DEV_MODE, PROD_API_URL } from '@/constants/common';
-import { createAdminClient, createClient } from '@tuturuuu/supabase/next/server';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { isValidTuturuuuEmail } from '@tuturuuu/utils/email/client';
 import DOMPurify from 'isomorphic-dompurify';
@@ -40,17 +43,16 @@ export async function POST(
     return NextResponse.json(
       {
         message: 'Invalid request body',
-        errors: parseResult.error.issues.map(issue => ({
+        errors: parseResult.error.issues.map((issue) => ({
           field: issue.path.join('.'),
-          message: issue.message
-        }))
+          message: issue.message,
+        })),
       },
       { status: 400 }
     );
   }
 
   const data = parseResult.data;
-
 
   const supabase = await createClient();
 
@@ -101,14 +103,14 @@ export async function POST(
     );
   }
 
-//   // Check if email is blacklisted
-//   if (domainBlacklist.some((domain) => toEmail.includes(domain))) {
-//     console.log('Email domain is blacklisted:', toEmail);
-//     return NextResponse.json(
-//       { message: 'Email domain is blacklisted' },
-//       { status: 400 }
-//     );
-//   }
+  //   // Check if email is blacklisted
+  //   if (domainBlacklist.some((domain) => toEmail.includes(domain))) {
+  //     console.log('Email domain is blacklisted:', toEmail);
+  //     return NextResponse.json(
+  //       { message: 'Email domain is blacklisted' },
+  //       { status: 400 }
+  //     );
+  //   }
 
   try {
     // Create RPC call payload
@@ -211,7 +213,7 @@ export async function POST(
           { status: 500 }
         );
       }
-      
+
       const sesClient = new SESClient({
         region: credentials.region,
         credentials: {
@@ -234,11 +236,11 @@ export async function POST(
     }
 
     return NextResponse.json(
-      { 
+      {
         message,
         emailSent,
         mail_id: (rpcData as any)?.mail_id,
-        status: emailSent ? 'sent' : 'logged'
+        status: emailSent ? 'sent' : 'logged',
       },
       { status: 200 }
     );
