@@ -36,6 +36,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { TaskBoardForm } from '@tuturuuu/ui/tu-do/boards/form';
 import { TaskEditDialog } from '@tuturuuu/ui/tu-do/shared/task-edit-dialog';
 import { useTranslations } from 'next-intl';
+import { useRouter } from 'next/navigation';
 import { useMemo, useState } from 'react';
 import BucketDump from '../../(dashboard)/bucket-dump';
 import QuickJournal from '../../(dashboard)/quick-journal';
@@ -105,6 +106,7 @@ export default function MyTasksContent({
   totalActiveTasks,
 }: MyTasksContentProps) {
   const t = useTranslations();
+  const router = useRouter();
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState('tasks');
   const [boardSelectorOpen, setBoardSelectorOpen] = useState(false);
@@ -227,8 +229,8 @@ export default function MyTasksContent({
   }, [selectedBoardId, availableLists, selectedListId]);
 
   const handleUpdate = () => {
-    // Trigger refresh of task lists
-    window.location.reload();
+    // Trigger refresh of SSR data using Next.js router
+    router.refresh();
   };
 
   const handleOpenBoardSelector = () => {
@@ -309,6 +311,7 @@ export default function MyTasksContent({
                 tasks={overdueTasks as any}
                 isPersonal={isPersonal}
                 initialLimit={5}
+                onTaskUpdate={handleUpdate}
               />
             </CardContent>
           </Card>
@@ -328,6 +331,7 @@ export default function MyTasksContent({
                 tasks={todayTasks as any}
                 isPersonal={isPersonal}
                 initialLimit={5}
+                onTaskUpdate={handleUpdate}
               />
             </CardContent>
           </Card>
@@ -347,6 +351,7 @@ export default function MyTasksContent({
                 tasks={upcomingTasks as any}
                 isPersonal={isPersonal}
                 initialLimit={5}
+                onTaskUpdate={handleUpdate}
               />
             </CardContent>
           </Card>
