@@ -5,6 +5,7 @@ import {
   Banknote,
   Boxes,
   Calendar,
+  ChartBar,
   CalendarCog,
   CircleCheck,
   CircuitBoard,
@@ -29,6 +30,7 @@ import {
   UserCheck,
   UserCog,
   Users,
+  UserX,
 } from '@tuturuuu/ui/icons';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import type { ReactNode } from 'react';
@@ -279,6 +281,22 @@ export const permissionGroups = ({
             disableOnProduction: false,
             disabled: false,
           },
+          {
+            id: 'view_users_public_info',
+            icon: <Eye />,
+            title: t('ws-roles.view_users_public_info'),
+            description: t('ws-roles.view_users_public_info_description'),
+            disableOnProduction: false,
+            disabled: false,
+          },
+          {
+            id: 'view_users_private_info',
+            icon: <UserX />,
+            title: t('ws-roles.view_users_private_info'),
+            description: t('ws-roles.view_users_private_info_description'),
+            disableOnProduction: false,
+            disabled: false,
+          },
         ],
       },
       {
@@ -314,6 +332,14 @@ export const permissionGroups = ({
             icon: <Download />,
             title: t('ws-roles.export_finance_data'),
             description: t('ws-roles.export_finance_data_description'),
+            disableOnProduction: false,
+            disabled: false,
+          },
+          {
+            id: 'view_finance_stats',
+            icon: <ChartBar />,
+            title: t('ws-roles.view_finance_stats'),
+            description: t('ws-roles.view_finance_stats_description'),
             disableOnProduction: false,
             disabled: false,
           },

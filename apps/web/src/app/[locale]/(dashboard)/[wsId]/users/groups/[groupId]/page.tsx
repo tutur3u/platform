@@ -19,7 +19,7 @@ import GroupMembers from './group-members';
 import LinkedProductsClient from './linked-products-client';
 import PostsClient from './posts-client';
 import GroupSchedule from './schedule';
-import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
+import { getPermissions, getWorkspace } from '@tuturuuu/utils/workspace-helper';
 
 export const metadata: Metadata = {
   title: 'Group Details',
@@ -64,8 +64,11 @@ export default async function UserGroupDetailsPage({
   const { data: posts, count: postsCount } = await getGroupPosts(groupId);
   const { data: linkedProducts, count: lpCount } =
     await getLinkedProducts(groupId);
+  
+  const { containsPermission } = await getPermissions({ wsId });
 
-  const canViewPersonalInfo: boolean = false;
+  const canViewPersonalInfo: boolean = containsPermission('view_users_private_info');
+  const canViewPublicInfo: boolean = containsPermission('view_users_public_info');
 
   return (
     <>
@@ -155,6 +158,7 @@ export default async function UserGroupDetailsPage({
           initialData={groupMembersData}
           pageSize={MEMBERS_PAGE_SIZE}
           canViewPersonalInfo={canViewPersonalInfo}
+          canViewPublicInfo={canViewPublicInfo}
         />
 
         <div className="flex flex-col rounded-lg border border-border bg-foreground/5 p-4">
@@ -190,43 +194,6 @@ export default async function UserGroupDetailsPage({
         />
       </div>
       <Separator className="my-4" />
-      {/* <CustomDataTable
-        data={users}
-        namespace="user-data-table"
-        columnGenerator={getUserColumns}
-        extraColumns={extraFields}
-        extraData={{ locale, wsId, groupId }}
-        count={usersCount}
-        filters={[
-          <Filter
-            key="excluded-user-groups-filter"
-            tag="excludedGroups"
-            title={t('user-data-table.excluded_groups')}
-            icon={<MinusCircle className="mr-2 h-4 w-4" />}
-            options={excludedUserGroups.map((group) => ({
-              label: group.name || 'No name',
-              value: group.id,
-              count: group.amount,
-            }))}
-          />,
-        ]}
-        defaultVisibility={{
-          id: false,
-          gender: false,
-          display_name: false,
-          ethnicity: false,
-          guardian: false,
-          address: false,
-          national_id: false,
-          note: false,
-          linked_users: false,
-          group_count: false,
-          created_at: false,
-          updated_at: false,
-          attendance_count: isGuest,
-          ...Object.fromEntries(extraFields.map((field) => [field.id, false])),
-        }}
-      /> */}
     </>
   );
 }
@@ -245,93 +212,6 @@ async function getData(wsId: string, groupId: string) {
   return data as UserGroup;
 }
 
-// async function getUserData(
-//   wsId: string,
-//   groupId: string,
-//   {
-//     q,
-//     page = '1',
-//     pageSize = '10',
-//     excludedGroups = [],
-//     retry = true,
-//   }: SearchParams & { retry?: boolean } = {},
-//   isGuest?: boolean // ✅ Optional parameter last
-// ) {
-//   const supabase = await createClient();
-//   let queryBuilder;
-
-//   if (isGuest) {
-//     queryBuilder = supabase
-//       .from('group_with_attendance')
-//       .select('*', { count: 'exact' })
-//       .eq('group_id', groupId);
-//     if (q) queryBuilder.ilike('full_name', `%${q}%`);
-//   } else {
-//     queryBuilder = supabase
-//       .from('workspace_user_groups_users')
-//       .select('...workspace_users!inner(*)', { count: 'exact' })
-//       .eq('group_id', groupId);
-//     if (q) queryBuilder.ilike('workspace_users.display_name', `%${q}%`);
-//   }
-
-//   if (page && pageSize) {
-//     const parsedPage = parseInt(page);
-//     const parsedSize = parseInt(pageSize);
-//     const start = (parsedPage - 1) * parsedSize;
-//     const end = parsedPage * parsedSize;
-//     queryBuilder.range(start, end).limit(parsedSize);
-//   }
-
-//   const { data, error, count } = await queryBuilder;
-
-//   if (error) {
-//     if (!retry) throw error;
-//     return getUserData(
-//       wsId,
-//       groupId,
-//       { q, pageSize, excludedGroups, retry: false },
-//       isGuest
-//     );
-//   }
-
-//   let mappedData;
-//   if (isGuest) {
-//     mappedData =
-//       data
-//         ?.map((item) =>
-//           'user_id' in item
-//             ? {
-//                 id: item.user_id,
-//                 full_name: item.full_name,
-//                 email: item.email,
-//                 gender: item.gender,
-//                 phone: item.phone,
-//                 attendance_count: item.attendance_count,
-//               }
-//             : null
-//         )
-//         .filter((item) => item !== null) || [];
-//   } else {
-//     mappedData = data || [];
-//   }
-
-//   return { data: mappedData, count } as {
-//     data: WorkspaceUser[];
-//     count: number;
-//   };
-// }
-
-// async function getUserFields(wsId: string) {
-//   const supabase = await createClient();
-//   const { data, error, count } = await supabase
-//     .from('workspace_user_fields')
-//     .select('*', { count: 'exact' })
-//     .eq('ws_id', wsId)
-//     .order('created_at', { ascending: false });
-
-//   if (error) throw error;
-//   return { data, count } as { data: WorkspaceUserField[]; count: number };
-// }
 
 async function getGroupPosts(groupId: string) {
   const supabase = await createClient();

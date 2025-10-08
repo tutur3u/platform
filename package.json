@@ -57,6 +57,7 @@
     "sb:new": "cd apps/db && bun sb:new",
     "sb:up": "cd apps/db && bun sb:up && bun sb:typegen",
     "sb:typegen": "cd apps/db && bun sb:typegen",
+    "sbr:typegen": "cd apps/db && bun sbr:typegen",
     "sb:sync": "cd apps/db && bun sb:sync",
     "sb:pull": "cd apps/db && bun sb:pull && bun sb:typegen",
     "sb:push": "cd apps/db && bun sb:push && bun sb:typegen",

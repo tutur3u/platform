@@ -6,7 +6,7 @@ import { Button } from '@tuturuuu/ui/button';
 import { invoiceColumns } from '@tuturuuu/ui/finance/invoices/columns';
 import { Users } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
-import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
+import { getPermissions, getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import moment from 'moment';
 import type { Metadata } from 'next';
 import Image from 'next/image';
@@ -48,7 +48,19 @@ export default async function WorkspaceUserDetailsPage({
   const workspace = await getWorkspace(id);
   const wsId = workspace.id;
 
-  const data = await getData({ wsId, userId });
+  const { containsPermission } = await getPermissions({
+    wsId,
+  });
+
+  const hasPrivateInfo = containsPermission('view_users_private_info');
+  const hasPublicInfo = containsPermission('view_users_public_info');
+
+  // User must have at least one permission to view user details
+  if (!hasPrivateInfo && !hasPublicInfo) {
+    notFound();
+  }
+
+  const data = await getData({ wsId, userId, hasPrivateInfo, hasPublicInfo });
 
   const isGuest = await isUserGuest(userId);
 
@@ -97,7 +109,7 @@ export default async function WorkspaceUserDetailsPage({
 
   return (
     <div className="flex min-h-full w-full flex-col">
-      {data.avatar_url && (
+      {hasPublicInfo && data.avatar_url && (
         <div className="mb-2 flex flex-col items-center justify-center gap-2 font-semibold text-lg">
           <Image
             width={128}
@@ -131,39 +143,39 @@ export default async function WorkspaceUserDetailsPage({
               {t('basic_information')}
             </div>
             <Separator />
-            {data.display_name && (
+            {hasPublicInfo && data.display_name && (
               <div>
                 <span className="opacity-60">{t('display_name')}:</span>{' '}
                 {data.display_name}
               </div>
             )}
-            {data.birthday && (
+            {hasPrivateInfo && data.birthday && (
               <div>
                 <span className="opacity-60">{t('birthday')}:</span>{' '}
                 {data.birthday}
               </div>
             )}
-            {data.email && (
+            {hasPrivateInfo && data.email && (
               <div>
                 <span className="opacity-60">{t('email')}:</span> {data.email}
               </div>
             )}
-            {data.phone && (
+            {hasPrivateInfo && data.phone && (
               <div>
                 <span className="opacity-60">{t('phone')}:</span> {data.phone}
               </div>
             )}
-            {data.gender && (
+            {hasPrivateInfo && data.gender && (
               <div>
                 <span className="opacity-60">{t('gender')}:</span> {data.gender}
               </div>
             )}
-            <div className="flex gap-1">
-              <span className="opacity-60">{t('created_at')}:</span>{' '}
-              {data.created_at
-                ? moment(data.created_at).format('DD/MM/YYYY, HH:mm:ss')
-                : '-'}
-            </div>
+            {hasPublicInfo && data.created_at && (
+              <div className="flex gap-1">
+                <span className="opacity-60">{t('created_at')}:</span>{' '}
+                {moment(data.created_at).format('DD/MM/YYYY, HH:mm:ss')}
+              </div>
+            )}
           </div>
           <SentEmailsClient
             wsId={wsId}
@@ -184,114 +196,126 @@ export default async function WorkspaceUserDetailsPage({
         </div>
 
         <div className="grid gap-4">
-          <div className="h-full rounded-lg border p-4">
-            <div
-              className={`h-full gap-2 ${groups?.length ? 'grid content-start' : 'flex flex-col items-center justify-center'}`}
-            >
-              <div className="font-semibold text-lg">
-                {t('joined_groups')} ({groupCount})
-              </div>
-              <Separator />
-              {groups?.length ? (
-                <div className="grid h-full gap-2 2xl:grid-cols-2">
-                  {groups.map((group) => (
-                    <Link
-                      key={group.id}
-                      href={`/${wsId}/users/groups/${group.id}`}
-                    >
-                      <Button
-                        className="flex w-full items-center gap-2"
-                        variant="secondary"
+          {hasPublicInfo && (
+            <div className="h-full rounded-lg border p-4">
+              <div
+                className={`h-full gap-2 ${groups?.length ? 'grid content-start' : 'flex flex-col items-center justify-center'}`}
+              >
+                <div className="font-semibold text-lg">
+                  {t('joined_groups')} ({groupCount})
+                </div>
+                <Separator />
+                {groups?.length ? (
+                  <div className="grid h-full gap-2 2xl:grid-cols-2">
+                    {groups.map((group) => (
+                      <Link
+                        key={group.id}
+                        href={`/${wsId}/users/groups/${group.id}`}
                       >
-                        <Users className="inline-block h-6 w-6" />
-                        {group.name}
-                      </Button>
-                    </Link>
-                  ))}
-                </div>
-              ) : (
-                <div className="flex w-full flex-1 items-center justify-center text-center opacity-60">
-                  {t('no_groups')}.
-                </div>
-              )}
-            </div>
-          </div>
-
-          <div className="h-full rounded-lg border p-4">
-            <div
-              className={`h-full gap-2 ${reports?.length ? 'grid content-start' : 'flex flex-col items-center justify-center'}`}
-            >
-              <div className="font-semibold text-lg">
-                {t('reports')} ({reportCount})
+                        <Button
+                          className="flex w-full items-center gap-2"
+                          variant="secondary"
+                        >
+                          <Users className="inline-block h-6 w-6" />
+                          {group.name}
+                        </Button>
+                      </Link>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="flex w-full flex-1 items-center justify-center text-center opacity-60">
+                    {t('no_groups')}.
+                  </div>
+                )}
               </div>
-              <Separator />
-              {reports?.length ? (
-                <div className="grid h-full gap-2 2xl:grid-cols-2">
-                  {reports.map((group) => (
-                    <Link
-                      key={group.id}
-                      href={`/${wsId}/users/reports/${group.id}`}
-                    >
-                      <Button
-                        className="flex w-full items-center gap-2"
-                        variant="secondary"
-                      >
-                        <Users className="inline-block h-6 w-6" />
-                        {group.title}
-                      </Button>
-                    </Link>
-                  ))}
-                </div>
-              ) : (
-                <div className="flex w-full flex-1 items-center justify-center text-center opacity-60">
-                  {t('no_reports')}.
-                </div>
-              )}
             </div>
-          </div>
+          )}
 
-          <LinkedPromotionsClient
-            wsId={wsId}
-            userId={userId}
-            initialPromotions={coupons.map((c) => ({
-              id: c.id,
-              name: c.name ?? null,
-              description: c.description ?? null,
-              code: c.code ?? null,
-              value: c.value ?? null,
-              use_ratio: c.use_ratio ?? null,
-            }))}
-            initialCount={couponCount || 0}
-          />
+          {hasPublicInfo && (
+            <div className="h-full rounded-lg border p-4">
+              <div
+                className={`h-full gap-2 ${reports?.length ? 'grid content-start' : 'flex flex-col items-center justify-center'}`}
+              >
+                <div className="font-semibold text-lg">
+                  {t('reports')} ({reportCount})
+                </div>
+                <Separator />
+                {reports?.length ? (
+                  <div className="grid h-full gap-2 2xl:grid-cols-2">
+                    {reports.map((group) => (
+                      <Link
+                        key={group.id}
+                        href={`/${wsId}/users/reports/${group.id}`}
+                      >
+                        <Button
+                          className="flex w-full items-center gap-2"
+                          variant="secondary"
+                        >
+                          <Users className="inline-block h-6 w-6" />
+                          {group.title}
+                        </Button>
+                      </Link>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="flex w-full flex-1 items-center justify-center text-center opacity-60">
+                    {t('no_reports')}.
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
 
-          <ReferralSectionClient
-            wsId={wsId}
-            userId={userId}
-            workspaceSettings={workspaceSettings}
-            initialAvailableUsers={availableUsers}
-            initialAvailableUsersCount={availableUsersCount || 0}
-            initialReferredUsers={referredUsers}
-          />
+          {hasPublicInfo && (
+            <LinkedPromotionsClient
+              wsId={wsId}
+              userId={userId}
+              initialPromotions={coupons.map((c) => ({
+                id: c.id,
+                name: c.name ?? null,
+                description: c.description ?? null,
+                code: c.code ?? null,
+                value: c.value ?? null,
+                use_ratio: c.use_ratio ?? null,
+              }))}
+              initialCount={couponCount || 0}
+            />
+          )}
+
+          {hasPublicInfo && (
+            <ReferralSectionClient
+              wsId={wsId}
+              userId={userId}
+              workspaceSettings={workspaceSettings}
+              initialAvailableUsers={availableUsers}
+              initialAvailableUsersCount={availableUsersCount || 0}
+              initialReferredUsers={referredUsers}
+            />
+          )}
         </div>
       </div>
 
-      <div className="mt-4 mb-2 font-semibold text-lg">
-        {t('invoices')} ({invoiceCount})
-      </div>
-      <CustomDataTable
-        data={invoiceData}
-        columnGenerator={invoiceColumns}
-        namespace="invoice-data-table"
-        count={invoiceCount}
-        defaultVisibility={{
-          id: false,
-          customer: false,
-          customer_id: false,
-          price: false,
-          total_diff: false,
-          note: false,
-        }}
-      />
+      {hasPublicInfo && (
+        <>
+          <div className="mt-4 mb-2 font-semibold text-lg">
+            {t('invoices')} ({invoiceCount})
+          </div>
+          <CustomDataTable
+            data={invoiceData}
+            columnGenerator={invoiceColumns}
+            namespace="invoice-data-table"
+            count={invoiceCount}
+            defaultVisibility={{
+              id: false,
+              customer: false,
+              customer_id: false,
+              price: false,
+              total_diff: false,
+              note: false,
+            }}
+          />
+        </>
+      )}
     </div>
   );
 }
@@ -308,7 +332,17 @@ async function isUserGuest(user_id: string) {
   return data as boolean;
 }
 
-async function getData({ wsId, userId }: { wsId: string; userId: string }) {
+async function getData({
+  wsId,
+  userId,
+  hasPrivateInfo,
+  hasPublicInfo
+}: {
+  wsId: string;
+  userId: string;
+  hasPrivateInfo: boolean;
+  hasPublicInfo: boolean;
+}) {
   const supabase = await createClient();
 
   // Use raw SQL query via RPC to avoid complex PostgREST syntax
@@ -349,7 +383,34 @@ async function getData({ wsId, userId }: { wsId: string; userId: string }) {
       : undefined,
   };
 
-  return data;
+  // Sanitize data based on permissions
+  const sanitized: any = { ...data };
+
+  // Remove private fields if user doesn't have permission
+  if (!hasPrivateInfo) {
+    delete sanitized.email;
+    delete sanitized.phone;
+    delete sanitized.birthday;
+    delete sanitized.gender;
+    delete sanitized.ethnicity;
+    delete sanitized.guardian;
+    delete sanitized.national_id;
+    delete sanitized.address;
+    delete sanitized.note;
+  }
+
+  // Remove public fields if user doesn't have permission
+  if (!hasPublicInfo) {
+    delete sanitized.avatar_url;
+    delete sanitized.full_name;
+    delete sanitized.display_name;
+    delete sanitized.group_count;
+    delete sanitized.linked_users;
+    delete sanitized.created_at;
+    delete sanitized.updated_at;
+  }
+
+  return sanitized;
 }
 
 async function getGroupData({

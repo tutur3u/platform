@@ -23,7 +23,41 @@ export const getUserColumns = (
   namespace: string | undefined,
   extraFields?: WorkspaceUserField[],
   extraData?: any
-): ColumnDef<WorkspaceUser>[] => [
+): ColumnDef<WorkspaceUser>[] => {
+  const hasPrivateInfo = extraData?.hasPrivateInfo ?? false;
+  const hasPublicInfo = extraData?.hasPublicInfo ?? false;
+
+  // Define which columns are private vs public
+  const privateColumns = [
+    'email',
+    'phone',
+    'birthday',
+    'gender',
+    'ethnicity',
+    'guardian',
+    'national_id',
+    'address',
+    'note',
+  ];
+
+  const publicColumns = [
+    'id',
+    'avatar_url',
+    'full_name',
+    'display_name',
+    'group_count',
+    'linked_users',
+    'created_at',
+    'updated_at',
+  ];
+
+  const shouldIncludeColumn = (columnId: string) => {
+    if (privateColumns.includes(columnId)) return hasPrivateInfo;
+    if (publicColumns.includes(columnId)) return hasPublicInfo;
+    return true; // For actions and other columns
+  };
+
+  const allColumns: ColumnDef<WorkspaceUser>[] = [
   // {
   //   id: 'select',
   //   header: ({ table }) => (
@@ -486,4 +520,12 @@ export const getUserColumns = (
       />
     ),
   },
-];
+  ];
+
+  // Filter columns based on permissions
+  return allColumns.filter((column) => {
+    if (!column.id && !column.accessorKey) return true;
+    const columnId = (column.id || column.accessorKey) as string;
+    return shouldIncludeColumn(columnId);
+  });
+};

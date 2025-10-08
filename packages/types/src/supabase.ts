@@ -94,7 +94,10 @@ export type Database = {
         | 'manage_workspace_security'
         | 'manage_workspace_settings'
         | 'send_user_group_post_emails'
-        | 'view_infrastructure';
+        | 'view_finance_stats'
+        | 'view_infrastructure'
+        | 'view_users_private_info'
+        | 'view_users_public_info';
     };
     Functions: {
       atomic_sync_token_operation: {
@@ -13246,7 +13249,10 @@ export const Constants = {
         'manage_workspace_security',
         'manage_workspace_settings',
         'send_user_group_post_emails',
+        'view_finance_stats',
         'view_infrastructure',
+        'view_users_private_info',
+        'view_users_public_info',
       ],
     },
   },

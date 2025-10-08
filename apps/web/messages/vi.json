@@ -2386,7 +2386,13 @@
     "export_users_data": "Cho phép xuất dữ liệu người dùng",
     "export_users_data_description": "Cho phép thành viên xuất dữ liệu người dùng ảo được tạo trong không gian làm việc của bạn.",
     "export_finance_data": "Cho phép xuất dữ liệu tài chính",
-    "export_finance_data_description": "Cho phép thành viên xuất dữ liệu giao dịch tài chính được tạo trong không gian làm việc của bạn."
+    "export_finance_data_description": "Cho phép thành viên xuất dữ liệu giao dịch tài chính được tạo trong không gian làm việc của bạn.",
+    "view_finance_stats": "Xem dữ liệu tài chính",
+    "view_users_public_info": "Xem thông tin công khai của người dùng",
+    "view_users_public_info_description": "Cho phép thành viên xem thông tin công khai của người dùng trong không gian làm việc.",
+    "view_users_private_info": "Xem thông tin riêng tư của người dùng",
+    "view_users_private_info_description": "Cho phép thành viên xem thông tin riêng tư của người dùng trong không gian làm việc.",
+    "view_finance_stats_description": "Cho phép thành viên xem số liệu thống kê tài chính của không gian làm việc"
   },
   "platform-roles": {
     "plural": "Vai trò nền tảng",

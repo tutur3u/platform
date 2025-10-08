@@ -59,6 +59,7 @@ interface GroupMembersProps {
   initialData?: GroupMember[];
   pageSize: number;
   canViewPersonalInfo: boolean;
+  canViewPublicInfo: boolean;
 }
 
 export default function GroupMembers({
@@ -67,6 +68,7 @@ export default function GroupMembers({
   initialData,
   pageSize,
   canViewPersonalInfo,
+  canViewPublicInfo,
 }: GroupMembersProps) {
   const t = useTranslations();
 
@@ -438,6 +440,8 @@ export default function GroupMembers({
                         </div>
                       </>
                     )}
+                    {canViewPublicInfo && (
+                      <>
                     <div className="text-sm flex items-center gap-2">
                       <VenusAndMars className="h-4 w-4" />
                       <span className="sr-only">{t('common.gender')}</span>
@@ -452,6 +456,8 @@ export default function GroupMembers({
                           : t('common.unknown')}
                       </span>
                     </div>
+                    </>
+                    )}
                   </div>
                 </HoverCardContent>
               </HoverCard>

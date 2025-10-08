@@ -6,6 +6,7 @@ import { Separator } from '@tuturuuu/ui/separator';
 import { getPermissions, getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
+import { notFound } from 'next/navigation';
 import { CustomDataTable } from '@/components/custom-data-table';
 import { getUserColumns } from './columns';
 import ExportDialogContent from './export-dialog-content';
@@ -44,13 +45,25 @@ export default async function WorkspaceUsersPage({
   const workspace = await getWorkspace(id);
   const wsId = workspace.id;
 
-  const { data, count } = await getData(wsId, await searchParams);
-  const { data: extraFields } = await getUserFields(wsId);
-
   const { containsPermission } = await getPermissions({
     wsId,
   });
 
+  const hasPrivateInfo = containsPermission('view_users_private_info');
+  const hasPublicInfo = containsPermission('view_users_public_info');
+
+  // User must have at least one permission to view users
+  if (!hasPrivateInfo && !hasPublicInfo) {
+    notFound();
+  }
+
+  const { data, count } = await getData(wsId, await searchParams, {
+    hasPrivateInfo,
+    hasPublicInfo,
+  });
+  const { data: extraFields } = await getUserFields(wsId);
+
+  // Add href for navigation
   const users = data.map((u) => ({
     ...u,
     href: `/${wsId}/users/database/${u.id}`,
@@ -72,7 +85,12 @@ export default async function WorkspaceUsersPage({
         namespace="user-data-table"
         columnGenerator={getUserColumns}
         extraColumns={extraFields}
-        extraData={{ locale, wsId }}
+        extraData={{ 
+          locale, 
+          wsId,
+          hasPrivateInfo,
+          hasPublicInfo 
+        }}
         count={count}
         filters={<Filters wsId={wsId} searchParams={await searchParams} />}
         toolbarImportContent={
@@ -121,7 +139,11 @@ async function getData(
     includedGroups = [],
     excludedGroups = [],
     retry = true,
-  }: SearchParams & { retry?: boolean } = {}
+  }: SearchParams & { retry?: boolean } = {},
+  permissions?: {
+    hasPrivateInfo: boolean;
+    hasPublicInfo: boolean;
+  }
 ) {
   const supabase = await createClient();
 
@@ -157,7 +179,7 @@ async function getData(
 
   if (error) {
     if (!retry) throw error;
-    return getData(wsId, { q, pageSize, retry: false });
+    return getData(wsId, { q, pageSize, retry: false }, permissions);
   }
 
   // Enrich each user with guest status via RPC (page size is small, acceptable)
@@ -166,9 +188,35 @@ async function getData(
       const { data: isGuest } = await supabase.rpc('is_user_guest', {
         user_uuid: u.id,
       });
-      return { ...u, is_guest: Boolean(isGuest) } as WorkspaceUser & {
-        is_guest?: boolean;
-      };
+      
+      // Sanitize data based on permissions
+      const sanitized: any = { ...u, is_guest: Boolean(isGuest) };
+
+      // Remove private fields if user doesn't have permission
+      if (!permissions?.hasPrivateInfo) {
+        delete sanitized.email;
+        delete sanitized.phone;
+        delete sanitized.birthday;
+        delete sanitized.gender;
+        delete sanitized.ethnicity;
+        delete sanitized.guardian;
+        delete sanitized.national_id;
+        delete sanitized.address;
+        delete sanitized.note;
+      }
+
+      // Remove public fields if user doesn't have permission
+      if (!permissions?.hasPublicInfo) {
+        delete sanitized.avatar_url;
+        delete sanitized.full_name;
+        delete sanitized.display_name;
+        delete sanitized.group_count;
+        delete sanitized.linked_users;
+        delete sanitized.created_at;
+        delete sanitized.updated_at;
+      }
+
+      return sanitized as WorkspaceUser & { is_guest?: boolean };
     })
   );
 
