@@ -85,11 +85,11 @@ export default async function WorkspaceUsersPage({
         namespace="user-data-table"
         columnGenerator={getUserColumns}
         extraColumns={extraFields}
-        extraData={{ 
-          locale, 
+        extraData={{
+          locale,
           wsId,
           hasPrivateInfo,
-          hasPublicInfo 
+          hasPublicInfo,
         }}
         count={count}
         filters={<Filters wsId={wsId} searchParams={await searchParams} />}
@@ -188,7 +188,7 @@ async function getData(
       const { data: isGuest } = await supabase.rpc('is_user_guest', {
         user_uuid: u.id,
       });
-      
+
       // Sanitize data based on permissions
       const sanitized: any = { ...u, is_guest: Boolean(isGuest) };
 

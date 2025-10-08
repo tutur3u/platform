@@ -336,7 +336,7 @@ async function getData({
   wsId,
   userId,
   hasPrivateInfo,
-  hasPublicInfo
+  hasPublicInfo,
 }: {
   wsId: string;
   userId: string;

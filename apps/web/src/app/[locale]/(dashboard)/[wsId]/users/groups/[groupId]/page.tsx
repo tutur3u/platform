@@ -64,11 +64,15 @@ export default async function UserGroupDetailsPage({
   const { data: posts, count: postsCount } = await getGroupPosts(groupId);
   const { data: linkedProducts, count: lpCount } =
     await getLinkedProducts(groupId);
-  
+
   const { containsPermission } = await getPermissions({ wsId });
 
-  const canViewPersonalInfo: boolean = containsPermission('view_users_private_info');
-  const canViewPublicInfo: boolean = containsPermission('view_users_public_info');
+  const canViewPersonalInfo: boolean = containsPermission(
+    'view_users_private_info'
+  );
+  const canViewPublicInfo: boolean = containsPermission(
+    'view_users_public_info'
+  );
 
   return (
     <>
@@ -211,7 +215,6 @@ async function getData(wsId: string, groupId: string) {
   if (!data) notFound();
   return data as UserGroup;
 }
-
 
 async function getGroupPosts(groupId: string) {
   const supabase = await createClient();
