@@ -6,12 +6,6 @@
     "outDir": "dist",
     "rootDir": "src"
   },
-  "include": [
-    "."
-  ],
-  "exclude": [
-    "node_modules",
-    "dist",
-    ".turbo"
-  ]
+  "include": ["."],
+  "exclude": ["node_modules", "dist", ".turbo"]
 }
