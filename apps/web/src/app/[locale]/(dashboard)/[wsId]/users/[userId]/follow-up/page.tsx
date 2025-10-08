@@ -6,6 +6,8 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import WorkspaceWrapper from '@/components/workspace-wrapper';
 import FollowUpClient from './client';
+import { getTranslations } from 'next-intl/server';
+import { AlertTriangleIcon } from '@tuturuuu/ui/icons';
 
 export const metadata: Metadata = {
   title: 'Guest Lead Follow-up',
@@ -26,7 +28,7 @@ export default async function GuestLeadFollowUpPage({ params }: Props) {
     <WorkspaceWrapper params={params}>
       {async ({ wsId }) => {
         const { userId } = await params;
-
+        const t = await getTranslations();
         const supabase = await createClient();
         const sbAdmin = await createAdminClient();
 
@@ -78,6 +80,25 @@ export default async function GuestLeadFollowUpPage({ params }: Props) {
 
         return (
           <div className="flex w-full flex-col gap-4">
+            {!emailCreds && (
+              <div className="border border-destructive rounded-md p-4 bg-destructive/5">
+                <div className="flex items-start gap-3">
+                  <div className="text-destructive">
+                    <AlertTriangleIcon className="h-5 w-5" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="font-semibold text-destructive text-sm">
+                      {t('users.follow_up.email_credentials_missing')}
+                    </h3>
+                    <p className="mt-1 text-muted-foreground text-sm">
+                      {t(
+                        'users.follow_up.email_credentials_not_configured_description'
+                      )}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
             <FollowUpClient
               wsId={wsId}
               userId={userId}

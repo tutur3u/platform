@@ -18,7 +18,7 @@ import {
   horizontalListSortingStrategy,
   SortableContext,
 } from '@dnd-kit/sortable';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { Workspace } from '@tuturuuu/types/db';
 import type { Task } from '@tuturuuu/types/primitives/Task';
@@ -45,6 +45,7 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
+import { useCursorTracking } from '@tuturuuu/ui/hooks/useCursorTracking';
 import { ScrollArea } from '@tuturuuu/ui/scroll-area';
 import { toast } from '@tuturuuu/ui/sonner';
 import { coordinateGetter } from '@tuturuuu/utils/keyboard-preset';
@@ -65,6 +66,7 @@ import {
   Timer,
 } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import CursorOverlay from '../../shared/cursor-overlay';
 import {
   buildEstimationIndices,
   mapEstimationPoints,
@@ -74,7 +76,6 @@ import { BoardSelector } from '../board-selector';
 import { LightweightTaskCard } from './task';
 import { BoardColumn } from './task-list';
 import { TaskListForm } from './task-list-form';
-import { useMutation } from '@tanstack/react-query';
 
 interface Props {
   workspace: Workspace;
@@ -146,6 +147,35 @@ export function KanbanBoard({
   const boardRef = useRef<HTMLDivElement>(null);
   const dragStartCardLeft = useRef<number | null>(null);
   const overlayWidth = 350; // Column width
+
+  const [boardWidth, setBoardWidth] = useState<number>(0);
+
+  useEffect(() => {
+    if (!boardRef.current) return;
+
+    const updateDimensions = () => {
+      const rect = boardRef.current?.getBoundingClientRect();
+      if (rect) {
+        setBoardWidth(rect.width);
+      }
+    };
+
+    // Initial update
+    updateDimensions();
+
+    // Update on resize
+    const resizeObserver = new ResizeObserver(updateDimensions);
+    resizeObserver.observe(boardRef.current);
+
+    return () => {
+      resizeObserver.disconnect();
+    };
+  }, []);
+
+  const { cursors, currentUserId } = useCursorTracking(
+    `board-cursor-${boardId}`,
+    boardRef
+  );
 
   const handleUpdate = useCallback(() => {
     // Invalidate the tasks query to trigger a refetch
@@ -1641,6 +1671,15 @@ export function KanbanBoard({
                 <TaskListForm boardId={boardId} onListCreated={handleUpdate} />
               </div>
             </SortableContext>
+
+            {/* Overlay for collaborator cursors */}
+            {!workspace.personal && (
+              <CursorOverlay
+                cursors={cursors}
+                currentUserId={currentUserId}
+                width={boardWidth}
+              />
+            )}
           </div>
           <DragOverlay
             wrapperElement="div"

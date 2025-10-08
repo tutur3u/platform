@@ -1109,7 +1109,9 @@
       "default_content": "Default Content",
       "unknown_user": "Unknown User",
       "unknown_group": "Unknown Group",
-      "na": "N/A"
+      "na": "N/A",
+      "email_credentials_missing": "Missing Email Credentials",
+      "email_credentials_not_configured_description": "Please configure email credentials for this feature to work"
     },
     "guest_lead_threshold": {
       "description": "Modify the minimum amount of date a user has to attend to be elligible for a follow up email"
@@ -1266,7 +1268,19 @@
     },
     "referral_success": "Sucessfully referred a new user",
     "user_already_referred": "This user has already been referred.",
-    "missing_creator_id": "Missing a creator ID. You are not authorized"
+    "missing_creator_id": "Missing a creator ID. You are not authorized",
+    "sent_emails_title": "Sent Emails",
+    "no_sent_emails": "No sent emails",
+    "no_sent_emails_description": "This user has not received any emails yet.",
+    "from": "From",
+    "to": "To",
+    "sent_at": "Sent",
+    "close": "Close",
+    "loading_more": "Loading More",
+    "load_more": "Load More",
+    "error_loading_emails": "Failed to load emails",
+    "error_loading_emails_description": "There was an error loading the sent emails. Please try again.",
+    "retry": "Retry"
   },
   "email-data-table": {
     "id": "ID",
@@ -1963,7 +1977,15 @@
     "fetch_new_scores": "Fetch New Scores",
     "scores_updated": "Scores updated successfully",
     "failed_update_scores": "Failed to update scores",
-    "group_manager": "Group Manager"
+    "group_manager": "Group Manager",
+    "lead_email_title": "Email Title",
+    "lead_email_greeting": "Email Greeting",
+    "lead_email_table_header_comments": "Comments",
+    "lead_email_table_header_score": "Score",
+    "lead_email_table_score_scale": "Score Scale",
+    "lead_email_footer": "Email Footer",
+    "lead_email_signature_title": "Signature Title",
+    "lead_email_signature_name": "Signature Name"
   },
   "ws-users": {
     "singular": "User",

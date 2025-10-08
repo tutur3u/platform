@@ -99,7 +99,7 @@ export function Combobox({
           </Button>
         </PopoverTrigger>
         <PopoverContent
-          className="z-[9999] w-[--radix-popover-trigger-width] p-0"
+          className="z-[9999] w-[var(--radix-popover-trigger-width)] p-0"
           align="start"
           sideOffset={4}
         >

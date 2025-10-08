@@ -17,6 +17,7 @@ import { CustomDataTable } from '@/components/custom-data-table';
 import UserMonthAttendance from '../../attendance/user-month-attendance';
 import LinkedPromotionsClient from './linked-promotions-client';
 import ReferralSectionClient from './referral-section-client';
+import SentEmailsClient from './sent-emails-client';
 
 export const metadata: Metadata = {
   title: 'Userid Details',
@@ -35,6 +36,8 @@ interface Props {
     pageSize: string;
   }>;
 }
+
+const EMAIL_PAGE_SIZE = 10;
 
 export default async function WorkspaceUserDetailsPage({
   params,
@@ -69,6 +72,12 @@ export default async function WorkspaceUserDetailsPage({
     userId,
     await searchParams
   );
+
+  const { data: sentEmails, count: sentEmailCount } = await getUserSentEmails({
+    wsId,
+    userId,
+    pageSize: EMAIL_PAGE_SIZE,
+  });
 
   const invoiceData = rawInvoiceData.map((d) => ({
     ...d,
@@ -156,6 +165,13 @@ export default async function WorkspaceUserDetailsPage({
                 : '-'}
             </div>
           </div>
+          <SentEmailsClient
+            wsId={wsId}
+            userId={userId}
+            initialEmails={sentEmails}
+            initialCount={sentEmailCount || 0}
+            pageSize={EMAIL_PAGE_SIZE}
+          />
 
           <UserMonthAttendance
             wsId={wsId}
@@ -510,4 +526,26 @@ async function getReferredUsers({
     .order('created_at', { ascending: false });
   if (error) throw error;
   return (data || []) as unknown as WorkspaceUser[];
+}
+
+async function getUserSentEmails({
+  wsId,
+  userId,
+  pageSize,
+}: {
+  wsId: string;
+  userId: string;
+  pageSize: number;
+}) {
+  const supabase = await createClient();
+
+  const { data, error, count } = await supabase
+    .from('sent_emails')
+    .select('*', { count: 'exact' })
+    .eq('ws_id', wsId)
+    .eq('receiver_id', userId)
+    .order('created_at', { ascending: false })
+    .limit(pageSize);
+  if (error) throw error;
+  return { data: data || [], count: count || 0 };
 }
