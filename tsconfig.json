@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "files": [],
+  "references": [
+    { "path": "./packages/ai" },
+    { "path": "./packages/apis" },
+    { "path": "./packages/auth" },
+    { "path": "./packages/games" },
+    { "path": "./packages/google" },
+    { "path": "./packages/payment" },
+    { "path": "./packages/supabase" },
+    { "path": "./packages/transactional" },
+    { "path": "./packages/trigger" },
+    { "path": "./packages/types" },
+    { "path": "./packages/ui" },
+    { "path": "./packages/utils" },
+    { "path": "./packages/vercel" },
+    { "path": "./apps/calendar" },
+    { "path": "./apps/finance" },
+    { "path": "./apps/nova" },
+    { "path": "./apps/rewise" },
+    { "path": "./apps/shortener" },
+    { "path": "./apps/tudo" },
+    { "path": "./apps/tumeet" },
+    { "path": "./apps/web" }
+  ]
+}

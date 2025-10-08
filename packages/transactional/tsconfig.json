@@ -2,8 +2,16 @@
   "extends": "@tuturuuu/typescript-config/react-library.json",
   "compilerOptions": {
     "strict": true,
-    "jsx": "react-jsx"
+    "jsx": "react-jsx",
+    "outDir": "dist",
+    "rootDir": "src"
   },
-  "include": ["."],
-  "exclude": ["node_modules", "dist", ".turbo"]
+  "include": [
+    "."
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    ".turbo"
+  ]
 }

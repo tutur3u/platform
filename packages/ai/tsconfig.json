@@ -1,8 +1,16 @@
 {
   "extends": "@tuturuuu/typescript-config/react-library.json",
   "compilerOptions": {
-    "baseUrl": "."
+    "baseUrl": ".",
+    "outDir": "dist",
+    "rootDir": "src"
   },
-  "include": ["src"],
-  "exclude": ["node_modules", "dist", ".turbo"]
+  "include": [
+    "src"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    ".turbo"
+  ]
 }
