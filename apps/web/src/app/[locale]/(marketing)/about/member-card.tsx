@@ -9,6 +9,7 @@ interface MemberCardProps {
   image: string;
   bio: string;
   quote: string;
+  generation?: number;
   socials: {
     facebook?: string;
     linkedin?: string;
