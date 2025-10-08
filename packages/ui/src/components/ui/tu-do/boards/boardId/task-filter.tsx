@@ -62,6 +62,7 @@ export interface TaskFilters {
   dueDateRange: { from?: Date; to?: Date } | null;
   estimationRange: { min?: number; max?: number } | null;
   includeMyTasks: boolean;
+  includeUnassigned: boolean;
   searchQuery?: string;
 }
 
@@ -244,11 +245,20 @@ export function TaskFilter({
 
   const toggleAssignee = (assignee: TaskAssignee) => {
     const isSelected = filters.assignees.some((a) => a.id === assignee.id);
+    const isCurrentUser = currentUserId === assignee.id;
+
+    const newAssignees = isSelected
+      ? filters.assignees.filter((a) => a.id !== assignee.id)
+      : [...filters.assignees, assignee];
+
     onFiltersChange({
       ...filters,
-      assignees: isSelected
-        ? filters.assignees.filter((a) => a.id !== assignee.id)
-        : [...filters.assignees, assignee],
+      assignees: newAssignees,
+      // Sync "Assigned to me" with current user selection in assignees list
+      includeMyTasks: isCurrentUser ? !isSelected : filters.includeMyTasks,
+      // Auto-deselect "Unassigned" when selecting any assignee
+      includeUnassigned:
+        newAssignees.length > 0 ? false : filters.includeUnassigned,
     });
   };
 
@@ -281,6 +291,7 @@ export function TaskFilter({
       dueDateRange: null,
       estimationRange: null,
       includeMyTasks: false,
+      includeUnassigned: false,
     });
   };
 
@@ -291,7 +302,8 @@ export function TaskFilter({
     filters.priorities.length > 0 ||
     filters.dueDateRange !== null ||
     filters.estimationRange !== null ||
-    filters.includeMyTasks;
+    filters.includeMyTasks ||
+    filters.includeUnassigned;
 
   const filterCount =
     filters.labels.length +
@@ -300,7 +312,8 @@ export function TaskFilter({
     filters.priorities.length +
     (filters.dueDateRange ? 1 : 0) +
     (filters.estimationRange ? 1 : 0) +
-    (filters.includeMyTasks ? 1 : 0);
+    (filters.includeMyTasks ? 1 : 0) +
+    (filters.includeUnassigned ? 1 : 0);
 
   return (
     <div className="flex flex-wrap items-center gap-1 sm:gap-1.5">
@@ -334,18 +347,55 @@ export function TaskFilter({
                   <User className="h-3.5 w-3.5" />
                   Quick Filters
                 </DropdownMenuLabel>
-                <div className="px-2 pb-2">
+                <div className="px-2 pb-2 space-y-1">
                   <label className="flex w-full cursor-pointer items-center gap-2 rounded-md px-2 py-2 text-sm hover:bg-accent">
                     <Checkbox
                       checked={filters.includeMyTasks}
-                      onCheckedChange={(checked) =>
+                      onCheckedChange={(checked) => {
+                        const currentUser = availableAssignees.find(
+                          (a) => a.id === currentUserId
+                        );
+
                         onFiltersChange({
                           ...filters,
                           includeMyTasks: !!checked,
+                          // Sync with current user in assignees list
+                          assignees:
+                            checked && currentUser
+                              ? [
+                                  ...filters.assignees.filter(
+                                    (a) => a.id !== currentUserId
+                                  ),
+                                  currentUser,
+                                ]
+                              : filters.assignees.filter(
+                                  (a) => a.id !== currentUserId
+                                ),
+                          // Auto-deselect "Unassigned" when selecting "Assigned to me"
+                          includeUnassigned: checked
+                            ? false
+                            : filters.includeUnassigned,
+                        });
+                      }}
+                    />
+                    <span>Assigned to me</span>
+                  </label>
+                  <label className="flex w-full cursor-pointer items-center gap-2 rounded-md px-2 py-2 text-sm hover:bg-accent">
+                    <Checkbox
+                      checked={filters.includeUnassigned}
+                      onCheckedChange={(checked) =>
+                        onFiltersChange({
+                          ...filters,
+                          includeUnassigned: !!checked,
+                          // Auto-deselect all assignees when selecting "Unassigned"
+                          includeMyTasks: checked
+                            ? false
+                            : filters.includeMyTasks,
+                          assignees: checked ? [] : filters.assignees,
                         })
                       }
                     />
-                    <span>Assigned to me</span>
+                    <span>Unassigned</span>
                   </label>
                 </div>
                 <DropdownMenuSeparator />
