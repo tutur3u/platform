@@ -55,10 +55,10 @@
     "@ncthub/eslint-config": "workspace:*",
     "@ncthub/types": "workspace:*",
     "@ncthub/typescript-config": "workspace:*",
-    "@types/node": "^22.17.2",
+    "@types/node": "^22.17.1",
     "@types/react": "^19.1.10",
-    "@typescript-eslint/eslint-plugin": "^8.40.0",
-    "@typescript-eslint/parser": "^8.40.0",
+    "@typescript-eslint/eslint-plugin": "^8.39.1",
+    "@typescript-eslint/parser": "^8.39.1",
     "typescript": "^5.9.2",
     "vitest": "^3.2.4"
   },
