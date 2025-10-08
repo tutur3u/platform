@@ -175,9 +175,7 @@ export default function MyTasksContent({
     const board = boardsData.find((b: any) => b.id === selectedBoardId);
     if (!board?.task_lists) return [];
     return (board.task_lists as any[])
-      .filter(
-        (l: any) => !l.deleted
-      )
+      .filter((l: any) => !l.deleted)
       .sort((a: any, b: any) => (a.position || 0) - (b.position || 0));
   }, [selectedBoardId, boardsData]);
 
@@ -406,7 +404,7 @@ export default function MyTasksContent({
                   value={selectedWorkspaceId}
                   onValueChange={setSelectedWorkspaceId}
                 >
-                  <SelectTrigger id="workspace-select" className = "w-full">
+                  <SelectTrigger id="workspace-select" className="w-full">
                     <SelectValue placeholder="Select a workspace" />
                   </SelectTrigger>
                   <SelectContent>
@@ -447,7 +445,7 @@ export default function MyTasksContent({
                   setNewBoardDialogOpen(true);
                 }}
                 disabled={boardsLoading}
-                className = "w-full"
+                className="w-full"
               />
             </div>
 
