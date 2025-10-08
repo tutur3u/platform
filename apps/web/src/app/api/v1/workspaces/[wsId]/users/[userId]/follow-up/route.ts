@@ -1,23 +1,20 @@
 import { DEV_MODE, PROD_API_URL } from '@/constants/common';
+import { SESClient } from '@aws-sdk/client-ses';
 import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
-import { isValidTuturuuuEmail } from '@tuturuuu/utils/email/client';
 import DOMPurify from 'isomorphic-dompurify';
 import juice from 'juice';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
-import { SESClient } from '@aws-sdk/client-ses';
 import { z } from 'zod';
 
-// const domainBlacklist = ['@easy.com'];
+const domainBlacklist = ['@easy.com'];
 
 // Define Zod schema for request body validation
 const followUpEmailSchema = z.object({
-  source_name: z.string().min(1, 'Source name is required'),
-  source_email: z.email('Invalid source email format'),
   subject: z.string().min(1, 'Subject is required'),
   content: z.string().min(1, 'Content is required'),
   to_email: z.email('Invalid recipient email format').optional(),
@@ -110,59 +107,28 @@ export async function POST(
     );
   }
 
-  // Validate source email
-  if (!isValidTuturuuuEmail(data.source_email)) {
-    console.error('Source email is not a valid Tuturuuu email');
+  // Check if email is blacklisted
+  if (domainBlacklist.some((domain) => toEmail.includes(domain))) {
+    console.log('Email domain is blacklisted:', toEmail);
     return NextResponse.json(
-      { message: 'Only Tuturuuu emails are allowed as source' },
-      { status: 401 }
+      { message: 'Email domain is blacklisted' },
+      { status: 400 }
     );
   }
 
-  //   // Check if email is blacklisted
-  //   if (domainBlacklist.some((domain) => toEmail.includes(domain))) {
-  //     console.log('Email domain is blacklisted:', toEmail);
-  //     return NextResponse.json(
-  //       { message: 'Email domain is blacklisted' },
-  //       { status: 400 }
-  //     );
-  //   }
-
   try {
-    // Create RPC call payload
-    const rpcPayload = {
-      p_ws_id: wsId,
-      p_sender_id: authUser.id, // Using authenticated user's ID as sender
-      p_receiver_id: userId,
-      p_source_name: data.source_name,
-      p_source_email: data.source_email,
-      p_subject: data.subject,
-      p_content: data.content,
-      p_email: toEmail,
-      p_post_id: data.post_id || undefined,
-    };
-
-    // Call the RPC function to create the guest lead email
-    const { data: rpcData, error: rpcError } = await sbAdmin.rpc(
-      'create_guest_lead_email',
-      rpcPayload
-    );
-
-    if (rpcError) {
-      console.error('Error calling RPC:', rpcError);
-      return NextResponse.json(
-        { message: 'Failed to create guest lead email' },
-        { status: 500 }
-      );
-    }
-
     // Prepare email sending logic based on DEV_MODE
     let emailSent = false;
     let message = '';
 
+    let sourceName: string | undefined;
+    let sourceEmail: string | undefined;
+
     if (DEV_MODE) {
       // Validate required environment variables for DEV_MODE
-      const sourceEmail = process.env.SOURCE_EMAIL;
+      sourceName = process.env.SOURCE_NAME || 'Tuturuuu';
+      sourceEmail = process.env.SOURCE_EMAIL;
+
       const emailAccessKeyId = process.env.EMAIL_ACCESS_KEY_ID;
       const emailAccessKeySecret = process.env.EMAIL_ACCESS_KEY_SECRET;
 
@@ -222,13 +188,24 @@ export async function POST(
       const { data: credentials, error: credentialsError } = await sbAdmin
         .from('workspace_email_credentials')
         .select('*')
-        .eq('ws_id', ROOT_WORKSPACE_ID)
-        .maybeSingle();
+        .eq('ws_id', wsId)
+        .single();
 
       if (credentialsError || !credentials) {
         console.error('Error fetching credentials:', credentialsError);
         return NextResponse.json(
           { message: 'Error fetching email credentials' },
+          { status: 500 }
+        );
+      }
+
+      sourceEmail = credentials.source_email;
+      sourceName = credentials.source_name;
+
+      if (!sourceEmail || !sourceName) {
+        console.error('Source email or name is not configured properly');
+        return NextResponse.json(
+          { message: 'Source email or name is not configured properly' },
           { status: 500 }
         );
       }
@@ -243,7 +220,7 @@ export async function POST(
 
       emailSent = await sendEmail({
         client: sesClient,
-        sourceEmail: `${data.source_name} <${data.source_email}>`,
+        sourceEmail: `${credentials.source_name} <${credentials.source_email}>`,
         toAddresses: [toEmail],
         ccAddresses: [],
         bccAddresses: [],
@@ -252,6 +229,33 @@ export async function POST(
       });
 
       message = emailSent ? 'Email sent successfully' : 'Failed to send email';
+    }
+
+    // Create RPC call payload
+    const rpcPayload = {
+      p_ws_id: wsId,
+      p_sender_id: authUser.id, // Using authenticated user's ID as sender
+      p_receiver_id: userId,
+      p_source_name: sourceName,
+      p_source_email: sourceEmail,
+      p_subject: data.subject,
+      p_content: data.content,
+      p_email: toEmail,
+      p_post_id: data.post_id || undefined,
+    };
+
+    // Call the RPC function to create the guest lead email
+    const { data: rpcData, error: rpcError } = await sbAdmin.rpc(
+      'create_guest_lead_email',
+      rpcPayload
+    );
+
+    if (rpcError) {
+      console.error('Error calling RPC:', rpcError);
+      return NextResponse.json(
+        { message: 'Failed to create guest lead email' },
+        { status: 500 }
+      );
     }
 
     return NextResponse.json(

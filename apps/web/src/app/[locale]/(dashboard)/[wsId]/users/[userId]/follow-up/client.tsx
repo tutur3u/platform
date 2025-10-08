@@ -1,27 +1,26 @@
 'use client';
 
-import { createClient } from '@tuturuuu/supabase/next/client';
+import { API_URL } from '@/constants/common';
+import { availableConfigs } from '@/constants/configs/reports';
 import { useMutation, useQuery } from '@tanstack/react-query';
-import { useForm } from '@tuturuuu/ui/hooks/use-form';
-import { zodResolver } from '@tuturuuu/ui/resolvers';
-import * as z from 'zod';
-import { toast } from '@tuturuuu/ui/sonner';
-import { Button } from '@tuturuuu/ui/button';
-import { Input } from '@tuturuuu/ui/input';
-import { Textarea } from '@tuturuuu/ui/textarea';
-import { Card, CardContent } from '@tuturuuu/ui/card';
+import { createClient } from '@tuturuuu/supabase/next/client';
 import type { WorkspaceUserReport } from '@tuturuuu/types/db';
 import type { WorkspaceConfig } from '@tuturuuu/types/primitives/WorkspaceConfig';
+import { Button } from '@tuturuuu/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
+import { Combobox, type ComboboxOptions } from '@tuturuuu/ui/custom/combobox';
 import LeadGenerationPreview from '@tuturuuu/ui/custom/lead-generation-preview';
-import UserMonthAttendance from '../../attendance/user-month-attendance';
-import ScoreDisplay from '../../reports/[reportId]/score-display';
+import { useForm } from '@tuturuuu/ui/hooks/use-form';
+import { Input } from '@tuturuuu/ui/input';
+import { zodResolver } from '@tuturuuu/ui/resolvers';
+import { toast } from '@tuturuuu/ui/sonner';
+import { Textarea } from '@tuturuuu/ui/textarea';
 import { useTranslations } from 'next-intl';
 import type { ReactNode } from 'react';
-import { CardHeader, CardTitle } from '@tuturuuu/ui/card';
-import { availableConfigs } from '@/constants/configs/reports';
-import { API_URL } from '@/constants/common';
 import { useEffect, useMemo, useState } from 'react';
-import { Combobox, type ComboboxOptions } from '@tuturuuu/ui/custom/combobox';
+import * as z from 'zod';
+import UserMonthAttendance from '../../attendance/user-month-attendance';
+import ScoreDisplay from '../../reports/[reportId]/score-display';
 
 const FollowUpSchema = z.object({
   source_name: z.string().min(1),
@@ -116,7 +115,7 @@ export default function FollowUpClient({
     }
     if (selectedManagerName === undefined) setSelectedManagerName(names[0]);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [groupManagersQuery.data, groupId]);
+  }, [groupManagersQuery.data, selectedManagerName]);
 
   const effectiveManagerName = selectedManagerName;
 
@@ -284,9 +283,8 @@ export default function FollowUpClient({
     selectedGroup?.name,
     userName,
     healthcareVitalsQuery.data,
-    form.watch('subject'),
-    form.watch('content'),
     effectiveManagerName,
+    form.watch,
   ]);
 
   const groupOptions: ComboboxOptions[] = useMemo(
@@ -395,8 +393,6 @@ export default function FollowUpClient({
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            source_name: values.source_name,
-            source_email: values.source_email,
             subject: values.subject,
             content: reportHtml,
             to_email: values.to_email || userEmail || '',
@@ -428,15 +424,15 @@ export default function FollowUpClient({
   });
 
   return (
-    <div className="flex w-full h-screen overflow-hidden">
-      <div className="grid grid-cols-2 gap-6 w-full h-full">
+    <div className="flex h-screen w-full overflow-hidden">
+      <div className="grid h-full w-full grid-cols-2 gap-6">
         {/* Left Column - Form and Attendance */}
         <div className="flex flex-col space-y-4 overflow-y-auto p-6">
           <div>
-            <h2 className="text-lg font-semibold">
+            <h2 className="font-semibold text-lg">
               {t('users.follow_up.compose_email')}
             </h2>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-muted-foreground text-sm">
               {t('users.follow_up.compose_email_description')}
             </p>
           </div>
@@ -481,7 +477,7 @@ export default function FollowUpClient({
           <Card>
             <CardContent className="grid gap-4 pt-6">
               <div className="grid gap-2">
-                <label className="text-sm font-medium">
+                <label className="font-medium text-sm">
                   {t('users.follow_up.group')}
                 </label>
                 <Combobox
@@ -505,7 +501,7 @@ export default function FollowUpClient({
               </div>
 
               <div className="grid gap-2">
-                <label className="text-sm font-medium">
+                <label className="font-medium text-sm">
                   {t('users.follow_up.group_manager')}
                 </label>
                 <Combobox
@@ -534,7 +530,7 @@ export default function FollowUpClient({
           <Card>
             <CardContent className="grid gap-4 pt-6">
               <div className="grid gap-2">
-                <label className="text-sm font-medium" htmlFor="to_email">
+                <label className="font-medium text-sm" htmlFor="to_email">
                   {t('users.follow_up.to')}
                 </label>
                 <Input
@@ -549,7 +545,7 @@ export default function FollowUpClient({
               </div>
 
               <div className="grid gap-2">
-                <label className="text-sm font-medium" htmlFor="source_name">
+                <label className="font-medium text-sm" htmlFor="source_name">
                   {t('users.follow_up.sender_name')}
                 </label>
                 <Input
@@ -565,7 +561,7 @@ export default function FollowUpClient({
               </div>
 
               <div className="grid gap-2">
-                <label className="text-sm font-medium" htmlFor="source_email">
+                <label className="font-medium text-sm" htmlFor="source_email">
                   {t('users.follow_up.sender_email')}
                 </label>
                 <Input
@@ -584,7 +580,7 @@ export default function FollowUpClient({
               </div>
 
               <div className="grid gap-2">
-                <label className="text-sm font-medium" htmlFor="subject">
+                <label className="font-medium text-sm" htmlFor="subject">
                   {t('users.follow_up.subject')}
                 </label>
                 <Input
@@ -597,7 +593,7 @@ export default function FollowUpClient({
               </div>
 
               <div className="grid gap-2">
-                <label className="text-sm font-medium" htmlFor="content">
+                <label className="font-medium text-sm" htmlFor="content">
                   {t('users.follow_up.report_content')}
                 </label>
                 <Textarea
@@ -635,7 +631,7 @@ export default function FollowUpClient({
                 </Button>
               </div>
               {!effectiveManagerName && (
-                <p className="text-sm text-destructive text-right">
+                <p className="text-right text-destructive text-sm">
                   {t('users.follow_up.select_manager_warning')}
                 </p>
               )}
@@ -688,17 +684,17 @@ export default function FollowUpClient({
         </div>
 
         {/* Right Column - Full Height Report Preview */}
-        <div className="flex flex-col h-full overflow-hidden">
+        <div className="flex h-full flex-col overflow-hidden">
           <div className="p-6 pb-4">
-            <h2 className="text-lg font-semibold">
+            <h2 className="font-semibold text-lg">
               {t('users.follow_up.live_preview')}
             </h2>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-muted-foreground text-sm">
               {t('users.follow_up.live_preview_description')}
             </p>
           </div>
 
-          <div className="flex-1 px-6 pb-6 overflow-y-auto">
+          <div className="flex-1 overflow-y-auto px-6 pb-6">
             {mockReport && configsQuery.data ? (
               <LeadGenerationPreview
                 t={t}
@@ -719,13 +715,13 @@ export default function FollowUpClient({
                 showMissingConfigWarning={true}
               />
             ) : (
-              <div className="flex items-center justify-center h-full">
+              <div className="flex h-full items-center justify-center">
                 <div className="text-center">
                   <p className="text-muted-foreground">
                     {t('users.follow_up.no_report_data')}
                   </p>
                   {!groupId && (
-                    <p className="text-sm text-muted-foreground mt-2">
+                    <p className="mt-2 text-muted-foreground text-sm">
                       {t('users.follow_up.no_group_assigned')}
                     </p>
                   )}
