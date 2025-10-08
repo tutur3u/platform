@@ -245,11 +245,21 @@ export function TaskFilter({
 
   const toggleAssignee = (assignee: TaskAssignee) => {
     const isSelected = filters.assignees.some((a) => a.id === assignee.id);
+    const isCurrentUser = currentUserId === assignee.id;
+    
+    const newAssignees = isSelected
+      ? filters.assignees.filter((a) => a.id !== assignee.id)
+      : [...filters.assignees, assignee];
+    
     onFiltersChange({
       ...filters,
-      assignees: isSelected
-        ? filters.assignees.filter((a) => a.id !== assignee.id)
-        : [...filters.assignees, assignee],
+      assignees: newAssignees,
+      // Sync "Assigned to me" with current user selection in assignees list
+      includeMyTasks: isCurrentUser
+        ? !isSelected
+        : filters.includeMyTasks,
+      // Auto-deselect "Unassigned" when selecting any assignee
+      includeUnassigned: newAssignees.length > 0 ? false : filters.includeUnassigned,
     });
   };
 
@@ -342,12 +352,22 @@ export function TaskFilter({
                   <label className="flex w-full cursor-pointer items-center gap-2 rounded-md px-2 py-2 text-sm hover:bg-accent">
                     <Checkbox
                       checked={filters.includeMyTasks}
-                      onCheckedChange={(checked) =>
+                      onCheckedChange={(checked) => {
+                        const currentUser = availableAssignees.find(
+                          (a) => a.id === currentUserId
+                        );
+                        
                         onFiltersChange({
                           ...filters,
                           includeMyTasks: !!checked,
-                        })
-                      }
+                          // Sync with current user in assignees list
+                          assignees: checked && currentUser
+                            ? [...filters.assignees.filter((a) => a.id !== currentUserId), currentUser]
+                            : filters.assignees.filter((a) => a.id !== currentUserId),
+                          // Auto-deselect "Unassigned" when selecting "Assigned to me"
+                          includeUnassigned: checked ? false : filters.includeUnassigned,
+                        });
+                      }}
                     />
                     <span>Assigned to me</span>
                   </label>
@@ -358,6 +378,9 @@ export function TaskFilter({
                         onFiltersChange({
                           ...filters,
                           includeUnassigned: !!checked,
+                          // Auto-deselect all assignees when selecting "Unassigned"
+                          includeMyTasks: checked ? false : filters.includeMyTasks,
+                          assignees: checked ? [] : filters.assignees,
                         })
                       }
                     />
