@@ -5,6 +5,7 @@
   "scripts": {
     "sbr:link": "bun supabase link",
     "sbr:reset": "bun supabase db reset --linked",
+    "sbr:diff": "bun supabase db diff -f new_migration --linked",
     "sbr:typegen": "bun supabase gen types typescript --linked --schema public > ../../packages/types/src/supabase.ts && node ./scripts/sort-types.js && biome format --write ../../packages/types/src/supabase.ts",
     "sb:status": "bun supabase status",
     "sb:start": "bun supabase start",
