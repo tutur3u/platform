@@ -40,8 +40,18 @@ export function UserPresenceAvatars({
     .map(([, presences]) => presences[0]?.user)
     .filter(Boolean);
 
-  const displayUsers = uniqueUsers.slice(0, maxDisplay);
-  const remainingCount = Math.max(0, uniqueUsers.length - maxDisplay);
+  // Sort users to place current user first
+  const sortedUsers = [...uniqueUsers].sort((a, b) => {
+    const aIsCurrentUser = a?.id === currentUserId;
+    const bIsCurrentUser = b?.id === currentUserId;
+
+    if (aIsCurrentUser && !bIsCurrentUser) return -1;
+    if (!aIsCurrentUser && bIsCurrentUser) return 1;
+    return 0;
+  });
+
+  const displayUsers = sortedUsers.slice(0, maxDisplay);
+  const remainingCount = Math.max(0, sortedUsers.length - maxDisplay);
 
   // Don't render anything if no users online
   if (uniqueUsers.length === 0) return null;
