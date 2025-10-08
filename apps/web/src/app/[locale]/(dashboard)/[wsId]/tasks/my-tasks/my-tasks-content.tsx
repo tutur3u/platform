@@ -513,9 +513,13 @@ export default function MyTasksContent({
           <TaskBoardForm
             wsId={selectedWorkspaceId}
             data={{ name: newBoardName } as any}
-            onFinish={() => {
+            onFinish={(formData) => {
               setNewBoardDialogOpen(false);
               setNewBoardName('');
+              // Auto-select the newly created board
+              if (formData?.id) {
+                setSelectedBoardId(formData.id);
+              }
               queryClient.invalidateQueries({
                 queryKey: [
                   'workspace',

@@ -159,7 +159,7 @@ export function TaskBoardForm({ wsId, data, children, onFinish }: Props) {
         }
       } else {
         // Create new board with template
-        await createBoardMutation.mutateAsync({
+        const newBoard = await createBoardMutation.mutateAsync({
           name: formData.name.trim(),
           templateId: formData.template_id || undefined,
         });
@@ -169,7 +169,8 @@ export function TaskBoardForm({ wsId, data, children, onFinish }: Props) {
           description: 'Task board created successfully',
         });
 
-        onFinish?.(formData);
+        // Pass the created board data (with id) to onFinish
+        onFinish?.({ ...formData, id: newBoard.id });
         setOpen(false);
         router.refresh();
         form.reset();
