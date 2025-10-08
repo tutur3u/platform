@@ -316,45 +316,6 @@ export function TextGeneratorClient() {
           </CardContent>
         </Card>
       )}
-
-      {/* Usage Instructions */}
-      <Card className="border-[#5FC6E5]/20 bg-[#5FC6E5]/5">
-        <CardHeader>
-          <CardTitle className="text-[#5FC6E5]">How to Use</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <div className="grid gap-4 md:grid-cols-2">
-            <div>
-              <h4 className="mb-2 font-semibold">✨ Generate Text</h4>
-              <p className="text-sm text-muted-foreground">
-                Type your text in the input field above and watch it transform
-                into various Unicode styles instantly.
-              </p>
-            </div>
-            <div>
-              <h4 className="mb-2 font-semibold">📋 Copy & Paste</h4>
-              <p className="text-sm text-muted-foreground">
-                Click the copy button next to any style to copy it to your
-                clipboard, then paste it anywhere!
-              </p>
-            </div>
-            <div>
-              <h4 className="mb-2 font-semibold">📱 Social Media</h4>
-              <p className="text-sm text-muted-foreground">
-                Perfect for Facebook, Twitter, Instagram, and other platforms
-                that don't support text formatting.
-              </p>
-            </div>
-            <div>
-              <h4 className="mb-2 font-semibold">🎨 Creative Posts</h4>
-              <p className="text-sm text-muted-foreground">
-                Make your posts stand out with bold, italic, script, and other
-                unique text styles.
-              </p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
     </div>
   );
 }
