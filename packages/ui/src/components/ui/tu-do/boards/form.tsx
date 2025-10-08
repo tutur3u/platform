@@ -107,7 +107,6 @@ export function TaskBoardForm({ wsId, data, children, onFinish }: Props) {
   });
 
   const isDirty = form.formState.isDirty;
-  const isValid = form.formState.isValid;
   const isSubmitting =
     form.formState.isSubmitting || createBoardMutation.isPending;
 
@@ -116,8 +115,8 @@ export function TaskBoardForm({ wsId, data, children, onFinish }: Props) {
   // For new boards, only check if valid and not submitting
   // For editing, require the form to be dirty (changed)
   const disabled = isEditMode
-    ? !isDirty || !isValid || isSubmitting
-    : !isValid || isSubmitting;
+    ? !isDirty || isSubmitting
+    : isSubmitting;
 
   const onSubmit = async (formData: z.infer<typeof FormSchema>) => {
     try {
@@ -160,7 +159,7 @@ export function TaskBoardForm({ wsId, data, children, onFinish }: Props) {
       } else {
         // Create new board with template
         const newBoard = await createBoardMutation.mutateAsync({
-          name: formData.name.trim(),
+          name: boardName,
           templateId: formData.template_id || undefined,
         });
 
