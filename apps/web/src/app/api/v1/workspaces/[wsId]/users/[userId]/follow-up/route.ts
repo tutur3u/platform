@@ -178,12 +178,15 @@ export async function POST(
         );
       }
 
+      const htmlContent = DOMPurify.sanitize(data.content);
+      const inlinedHtmlContent = juice(htmlContent);
+
       // In DEV_MODE, send to the dev endpoint
       const devApiPayload = {
         mail: {
           to: [sourceEmail], // Override with SOURCE_EMAIL in dev
           subject: data.subject,
-          content: data.content,
+          content: inlinedHtmlContent,
         },
         config: {
           accessKeyId: emailAccessKeyId,
@@ -295,8 +298,12 @@ const sendEmail = async ({
       Source: sourceEmail,
       Destination: {
         ToAddresses: toAddresses,
-        CcAddresses: ccAddresses,
-        BccAddresses: bccAddresses,
+        ...(ccAddresses && ccAddresses.length > 0
+          ? { CcAddresses: ccAddresses }
+          : {}),
+        ...(bccAddresses && bccAddresses.length > 0
+          ? { BccAddresses: bccAddresses }
+          : {}),
       },
       Message: {
         Subject: { Data: subject },
