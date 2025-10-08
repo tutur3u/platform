@@ -12,7 +12,7 @@
   },
   "packageManager": "bun@1.2.23",
   "dependencies": {
-    "@supabase/ssr": "^0.6.1",
+    "@supabase/ssr": "^0.7.0",
     "@supabase/supabase-js": "^2.74.0",
     "@ncthub/types": "workspace:*",
     "eslint": "^9.37.0",
