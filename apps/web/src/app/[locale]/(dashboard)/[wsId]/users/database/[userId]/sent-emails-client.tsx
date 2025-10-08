@@ -144,50 +144,54 @@ export default function SentEmailsClient({
             </Button>
           </div>
         ) : allEmails.length > 0 ? (
-          <div className="space-y-2">
-            {allEmails.map((email) => (
-              <button
-                key={email.id}
-                type="button"
-                className="group flex cursor-pointer items-start justify-between rounded-xl border border-border/50 bg-card/50 backdrop-blur-sm p-4 transition-all duration-200 hover:shadow-lg hover:shadow-black/5 hover:border-border hover:bg-card/80"
-                onClick={() => handleViewEmail(email)}
-              >
-                <div className="flex min-w-0 flex-1 items-start space-x-4">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-dynamic-blue/10">
-                    <Mail className="h-5 w-5 text-dynamic-blue" />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="mb-1 flex items-center gap-2">
-                      <div className="font-semibold text-foreground truncate">
-                        {email.subject}
+          <>
+            <div className="max-h-96 overflow-y-auto space-y-2 pr-2">
+              {allEmails.map((email) => (
+                <button
+                  key={email.id}
+                  type="button"
+                  className="group flex w-full cursor-pointer items-start rounded-xl border border-border/50 bg-card/50 backdrop-blur-sm p-4 transition-all duration-200 hover:shadow-lg hover:border-border hover:bg-card/80"
+                  onClick={() => handleViewEmail(email)}
+                >
+                  <div className="flex w-full items-start space-x-4">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-dynamic-blue/10">
+                      <Mail className="h-5 w-5 text-dynamic-blue" />
+                    </div>
+                    <div className="flex-1 text-left">
+                      <div className="mb-1">
+                        <div className="font-semibold text-foreground">
+                          {email.subject}
+                        </div>
+                      </div>
+                      <div className="mb-1 text-sm text-muted-foreground">
+                        <span className="opacity-60">
+                          {t('from') || 'From'}:
+                        </span>{' '}
+                        {email.source_name}{' '}
+                        <span className="opacity-60">
+                          {'<'}
+                          {email.source_email}
+                          {'>'}
+                        </span>
+                      </div>
+                      <div className="text-sm text-muted-foreground">
+                        <span className="opacity-60">{t('to') || 'To'}:</span>{' '}
+                        {email.email}
+                      </div>
+                      <div className="mt-2 text-xs text-muted-foreground opacity-60">
+                        {format(
+                          parseISO(email.created_at),
+                          'dd/MM/yyyy, HH:mm:ss'
+                        )}
                       </div>
                     </div>
-                    <div className="mb-1 text-sm text-muted-foreground">
-                      <span className="opacity-60">{t('from') || 'From'}:</span>{' '}
-                      {email.source_name}{' '}
-                      <span className="opacity-60">
-                        {'<'}
-                        {email.source_email}
-                        {'>'}
-                      </span>
-                    </div>
-                    <div className="text-sm text-muted-foreground">
-                      <span className="opacity-60">{t('to') || 'To'}:</span>{' '}
-                      {email.email}
-                    </div>
-                    <div className="mt-2 text-xs text-muted-foreground opacity-60">
-                      {format(
-                        parseISO(email.created_at),
-                        'dd/MM/yyyy, HH:mm:ss'
-                      )}
-                    </div>
                   </div>
-                </div>
-              </button>
-            ))}
+                </button>
+              ))}
+            </div>
 
             {sentEmailsQuery.hasNextPage && (
-              <div className="flex justify-center pt-4">
+              <div className="flex justify-center pt-4 border-t">
                 <Button
                   variant="outline"
                   onClick={handleLoadMore}
@@ -204,7 +208,7 @@ export default function SentEmailsClient({
                 </Button>
               </div>
             )}
-          </div>
+          </>
         ) : (
           <div className="flex flex-col items-center justify-center py-8 text-center">
             <Mail className="mb-4 h-12 w-12 text-muted-foreground" />

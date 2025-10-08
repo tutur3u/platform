@@ -54,6 +54,7 @@ export function TaskProjectDetail({
     dueDateRange: null,
     estimationRange: null,
     includeMyTasks: false,
+    includeUnassigned: false,
   });
   const [listStatusFilter, setListStatusFilter] =
     useState<ListStatusFilter>('all');
