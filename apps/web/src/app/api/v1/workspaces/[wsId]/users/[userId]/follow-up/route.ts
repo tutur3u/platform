@@ -7,9 +7,20 @@ import juice from 'juice';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { SESClient } from '@aws-sdk/client-ses';
+import { z } from 'zod';
 
 // const domainBlacklist = ['@easy.com'];
 // const ENABLE_MAIL_ON_DEV = false; // Not used in this implementation
+
+// Define Zod schema for request body validation
+const followUpEmailSchema = z.object({
+  source_name: z.string().min(1, 'Source name is required'),
+  source_email: z.email('Invalid source email format'),
+  subject: z.string().min(1, 'Subject is required'),
+  content: z.string().min(1, 'Content is required'),
+  to_email: z.email('Invalid recipient email format').optional(),
+  post_id: z.string().optional(),
+});
 
 export async function POST(
   req: NextRequest,
@@ -21,22 +32,24 @@ export async function POST(
 ) {
   const { wsId, userId } = await params;
 
-  const data: {
-    source_name?: string;
-    source_email?: string;
-    subject?: string;
-    content?: string;
-    to_email?: string;
-    post_id?: string;
-  } = await req.json();
+  // Parse and validate request body with Zod
+  const parseResult = followUpEmailSchema.safeParse(await req.json());
 
-  if (!data?.source_name || !data?.source_email || !data?.subject || !data?.content) {
-    console.log('Invalid request body');
+  if (!parseResult.success) {
+    console.log('Invalid request body:', parseResult.error.issues);
     return NextResponse.json(
-      { message: 'Invalid request body' },
+      {
+        message: 'Invalid request body',
+        errors: parseResult.error.issues.map(issue => ({
+          field: issue.path.join('.'),
+          message: issue.message
+        }))
+      },
       { status: 400 }
     );
   }
+
+  const data = parseResult.data;
 
 
   const supabase = await createClient();

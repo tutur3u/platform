@@ -11,7 +11,7 @@ import {
   Text, 
   Hr
 } from '@tuturuuu/transactional/react/email';
-import { ResponsiveRow, ResponsiveColumn } from '@responsive-email/react-email';
+
 
 interface Props {
   // Dynamic replacements
@@ -81,13 +81,11 @@ const LeadGenerationEmailTemplate = ({
             border: '1px solid #e5e7eb',
             overflow: 'hidden'
           }}
-          className='max-w-[600px]'>
-            {/* Header Section - Responsive Layout */}
-            <Section style={{ padding: '24px' }}>
-              <ResponsiveRow>
-                {/* Logo Column - Left side on desktop, full width on mobile */}
-                <ResponsiveColumn
-                span={1}
+          className='max-w-[800px]'>
+            {/* Header Section - Standard Layout */}
+            <Section className='px-6 py-4'>
+              <Row>
+                <Column
                 style={{
                   padding: '0 12px',
                   verticalAlign: 'middle'
@@ -106,11 +104,8 @@ const LeadGenerationEmailTemplate = ({
                       }}
                     />
                   )}
-                </ResponsiveColumn>
-
-                {/* Brand Info Column - Right side on desktop, full width on mobile */}
-                <ResponsiveColumn 
-                span={1}
+                </Column>
+                <Column 
                 style={{
                   padding: '0 12px',
                   verticalAlign: 'middle'
@@ -134,9 +129,10 @@ const LeadGenerationEmailTemplate = ({
                       color: '#374151',
                       margin: '0 0 8px 0',
                       textAlign: 'center',
-                      lineHeight: '1.4'
+                      lineHeight: '1.4',
+                      whiteSpace: 'pre-line'
                     }}>
-                      {brandLocation.replace(/\n/g, '\n')}
+                      {brandLocation}
                     </Text>
                   )}
 
@@ -152,8 +148,8 @@ const LeadGenerationEmailTemplate = ({
                       {brandPhone}
                     </Text>
                   )}
-                </ResponsiveColumn>
-              </ResponsiveRow>
+                </Column>
+              </Row>
             </Section>
 
             {/* Divider */}
