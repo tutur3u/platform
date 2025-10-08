@@ -82,7 +82,6 @@ export async function POST(req: Request) {
             `
             )
             .is('embedding', null)
-            .eq('deleted', false)
             .limit(batchSize);
 
           if (fetchError) {

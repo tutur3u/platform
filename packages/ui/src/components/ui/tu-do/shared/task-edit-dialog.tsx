@@ -617,7 +617,7 @@ function TaskEditDialogComponent({
             onSuccess: async () => {
               await invalidateTaskCaches(queryClient, boardId);
 
-              // Wait for the refetch to complete before closing
+              // Wait for the refetch to complete
               if (boardId) {
                 await queryClient.refetchQueries({
                   queryKey: ['tasks', boardId],
@@ -632,7 +632,6 @@ function TaskEditDialogComponent({
                   : 'Due date removed',
               });
               onUpdate();
-              onClose();
             },
             onError: (error: any) => {
               console.error('Error updating due date:', error);
@@ -646,16 +645,7 @@ function TaskEditDialogComponent({
           }
         );
     },
-    [
-      mode,
-      onClose,
-      onUpdate,
-      queryClient,
-      task,
-      updateTaskMutation,
-      boardId,
-      toast,
-    ]
+    [mode, onUpdate, queryClient, task, updateTaskMutation, boardId, toast]
   );
 
   const executeSlashCommand = useCallback(
@@ -2374,7 +2364,8 @@ function TaskEditDialogComponent({
                             navigator.clipboard.writeText(task.id);
                             toast({
                               title: 'Task ID copied',
-                              description: 'Task ID has been copied to clipboard',
+                              description:
+                                'Task ID has been copied to clipboard',
                             });
                           }}
                         >
@@ -2858,6 +2849,21 @@ function TaskEditDialogComponent({
                         )}
                       </span>
                     </Label>
+                    {endDate && (
+                      <div className="rounded-md border border-dynamic-orange/30 bg-dynamic-orange/10 px-3 py-2">
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="flex items-center gap-2">
+                            <Calendar className="h-3.5 w-3.5 text-dynamic-orange" />
+                            <span className="font-medium text-foreground text-xs">
+                              {dayjs(endDate).format('MMM D, YYYY')}
+                            </span>
+                          </div>
+                          <span className="text-muted-foreground text-xs">
+                            {dayjs(endDate).format('h:mm A')}
+                          </span>
+                        </div>
+                      </div>
+                    )}
                     <div className="grid grid-cols-2 gap-1.5 md:gap-2">
                       <Button
                         type="button"
@@ -2880,6 +2886,20 @@ function TaskEditDialogComponent({
                         title="Tomorrow – Alt+M"
                       >
                         Tomorrow
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="xs"
+                        onClick={() => {
+                          const daysUntilEndOfWeek = 6 - dayjs().day();
+                          handleQuickDueDate(daysUntilEndOfWeek);
+                        }}
+                        disabled={isLoading}
+                        className="h-7 text-[11px] transition-all hover:border-dynamic-orange/50 hover:bg-dynamic-orange/5 md:text-xs"
+                        title="End of this week (Saturday)"
+                      >
+                        This week
                       </Button>
                       <Button
                         type="button"
