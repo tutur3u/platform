@@ -115,12 +115,12 @@ export function TaskBoardForm({ wsId, data, children, onFinish }: Props) {
     form.formState.isSubmitting || createBoardMutation.isPending;
 
   const isEditMode = !!data?.id;
-  
+
   // For new boards, only check if valid and not submitting
   // For editing, require the form to be dirty (changed)
-  const disabled = isEditMode 
-    ? (!isDirty || !isValid || isSubmitting)
-    : (!isValid || isSubmitting);
+  const disabled = isEditMode
+    ? !isDirty || !isValid || isSubmitting
+    : !isValid || isSubmitting;
 
   const onSubmit = async (formData: z.infer<typeof FormSchema>) => {
     try {
