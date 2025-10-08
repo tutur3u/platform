@@ -1094,9 +1094,13 @@ function TaskEditDialogComponent({
 
   // Reset form when task changes or dialog opens
   useEffect(() => {
-    // In edit mode, when dialog opens, always reload task data to ensure we have the latest
+    // Only reset when switching to a different task (task ID changes) or dialog first opens
+    // This prevents resetting while user is actively typing
+    const taskIdChanged = previousTaskIdRef.current !== task?.id;
+
+    // In edit mode, when dialog opens or task ID changes, reload task data to ensure we have the latest
     // This handles the case where task was edited previously and we're reopening the dialog
-    if (isOpen && !isCreateMode) {
+    if (isOpen && !isCreateMode && taskIdChanged) {
       setName(task?.name || '');
       setDescription(parseDescription(task?.description));
       setPriority(task?.priority || null);
@@ -1110,11 +1114,7 @@ function TaskEditDialogComponent({
       if (task?.id) previousTaskIdRef.current = task.id;
     }
     // For create mode, only load when task ID changes or dialog opens with 'new' ID
-    else if (
-      isOpen &&
-      (isCreateMode || task?.id === 'new') &&
-      (previousTaskIdRef.current !== task?.id || task?.id === 'new')
-    ) {
+    else if (isOpen && (isCreateMode || task?.id === 'new') && taskIdChanged) {
       setName(task?.name || '');
       setDescription(parseDescription(task?.description) || null);
       setPriority(task?.priority || null);
@@ -1127,7 +1127,22 @@ function TaskEditDialogComponent({
       setSelectedProjects(task?.projects || []);
       if (task?.id) previousTaskIdRef.current = task.id;
     }
-  }, [task, parseDescription, isOpen, isCreateMode]);
+  }, [
+    task?.id,
+    parseDescription,
+    isOpen,
+    isCreateMode,
+    task?.assignees,
+    task?.description,
+    task?.end_date,
+    task?.estimation_points,
+    task?.labels,
+    task?.list_id,
+    task?.name,
+    task?.priority,
+    task?.projects,
+    task?.start_date,
+  ]);
 
   // Reset transient edits when closing without saving in edit mode
   useEffect(() => {
