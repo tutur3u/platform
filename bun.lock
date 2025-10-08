@@ -27,7 +27,7 @@
       "name": "@ncthub/db",
       "version": "1.0.0",
       "devDependencies": {
-        "supabase": "^2.30.4",
+        "supabase": "^2.48.3",
       },
     },
     "apps/ocr": {
@@ -226,7 +226,7 @@
       "dependencies": {
         "@ncthub/types": "workspace:*",
         "@supabase/ssr": "^0.6.1",
-        "@supabase/supabase-js": "^2.51.0",
+        "@supabase/supabase-js": "^2.74.0",
         "eslint": "^9.37.0",
         "next": "15.3.3",
         "react": "^19.2.0",
