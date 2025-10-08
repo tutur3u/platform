@@ -19,7 +19,7 @@ export default function NeoMeetHeader() {
         <Sparkles className="h-5 w-5 text-[#FBC721]" />
       </div>
 
-      <h1 className="mb-6 text-4xl font-bold text-balance text-foreground md:text-5xl lg:text-6xl">
+      <h1 className="mb-6 text-3xl font-bold text-balance text-foreground md:text-5xl lg:text-6xl">
         <span>Welcome to</span>{' '}
         <span className="border-b-4 border-[#FBC721] whitespace-nowrap text-[#5FC6E5]">
           Neo Meet{' '}
