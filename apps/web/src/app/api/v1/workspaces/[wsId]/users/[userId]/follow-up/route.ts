@@ -211,9 +211,6 @@ export async function POST(
           { status: 500 }
         );
       }
-
-      // Import SES client dynamically to avoid issues in dev mode
-      const { SESClient } = await import('@aws-sdk/client-ses');
       
       const sesClient = new SESClient({
         region: credentials.region,
