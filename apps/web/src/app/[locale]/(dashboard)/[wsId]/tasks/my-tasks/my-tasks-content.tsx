@@ -208,7 +208,7 @@ export default function MyTasksContent({
       const lists = (firstBoard.task_lists as any[]) || [];
       const firstList = lists
         .filter(
-          (l: any) => l.status !== 'done' && l.status !== 'closed' && !l.deleted
+          (l: any) => !l.deleted
         )
         .sort((a: any, b: any) => (a.position || 0) - (b.position || 0))[0];
 
