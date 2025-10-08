@@ -45,7 +45,6 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
-import { useCursorTracking } from '@tuturuuu/ui/hooks/useCursorTracking';
 import { ScrollArea } from '@tuturuuu/ui/scroll-area';
 import { toast } from '@tuturuuu/ui/sonner';
 import { coordinateGetter } from '@tuturuuu/utils/keyboard-preset';
@@ -66,7 +65,7 @@ import {
   Timer,
 } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import CursorOverlay from '../../shared/cursor-overlay';
+import { CursorOverlayWrapper } from '../../shared/cursor-overlay';
 import {
   buildEstimationIndices,
   mapEstimationPoints,
@@ -147,35 +146,6 @@ export function KanbanBoard({
   const boardRef = useRef<HTMLDivElement>(null);
   const dragStartCardLeft = useRef<number | null>(null);
   const overlayWidth = 350; // Column width
-
-  const [boardWidth, setBoardWidth] = useState<number>(0);
-
-  useEffect(() => {
-    if (!boardRef.current) return;
-
-    const updateDimensions = () => {
-      const rect = boardRef.current?.getBoundingClientRect();
-      if (rect) {
-        setBoardWidth(rect.width);
-      }
-    };
-
-    // Initial update
-    updateDimensions();
-
-    // Update on resize
-    const resizeObserver = new ResizeObserver(updateDimensions);
-    resizeObserver.observe(boardRef.current);
-
-    return () => {
-      resizeObserver.disconnect();
-    };
-  }, []);
-
-  const { cursors, currentUserId } = useCursorTracking(
-    `board-cursor-${boardId}`,
-    boardRef
-  );
 
   const handleUpdate = useCallback(() => {
     // Invalidate the tasks query to trigger a refetch
@@ -1674,10 +1644,9 @@ export function KanbanBoard({
 
             {/* Overlay for collaborator cursors */}
             {!workspace.personal && (
-              <CursorOverlay
-                cursors={cursors}
-                currentUserId={currentUserId}
-                width={boardWidth}
+              <CursorOverlayWrapper
+                channelName={`board-cursor-${boardId}`}
+                containerRef={boardRef}
               />
             )}
           </div>
