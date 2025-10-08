@@ -261,6 +261,7 @@ export function BoardViews({
             tasks={effectiveTasks}
             lists={filteredLists}
             isPersonalWorkspace={workspace.personal}
+            searchQuery={filters.searchQuery}
           />
         );
       case 'timeline':
