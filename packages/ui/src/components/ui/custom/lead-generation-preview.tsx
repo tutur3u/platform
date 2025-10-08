@@ -161,7 +161,7 @@ export default function LeadGenerationPreview({
       className={`h-full rounded-lg border p-4 ${theme === 'dark' ? 'text-foreground' : 'text-black'} md:p-12 print:border-0 print:rounded-none print:h-auto print:p-8 print:text-black print:bg-white`}
     >
       {/* Header with Logo and Brand Info */}
-      <div className="flex items-center justify-between gap-8">
+      <div className="flex items-center flex-col gap-8">
         {brandLogoUrl && (
           <img
             src={brandLogoUrl}

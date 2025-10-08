@@ -1,4 +1,17 @@
-import { Head, Html, Img, Tailwind } from '@tuturuuu/transactional/react/email';
+import { 
+  Head, 
+  Html, 
+  Img, 
+  Tailwind, 
+  Body, 
+  Container, 
+  Section, 
+  Row, 
+  Column, 
+  Text, 
+  Hr
+} from '@tuturuuu/transactional/react/email';
+import { ResponsiveRow, ResponsiveColumn } from '@responsive-email/react-email';
 
 interface Props {
   // Dynamic replacements
@@ -57,382 +70,272 @@ const LeadGenerationEmailTemplate = ({
   emptyScorePlaceholder = '...',
 }: Props) => {
   return (
-     <Tailwind>
-       <Html>
-         <Head />
-         <div
-           style={{
-             margin: '16px',
-             borderRadius: '8px',
-             border: '1px solid #e5e7eb',
-             backgroundColor: '#ffffff',
-             padding: '16px',
-             fontFamily: 'Arial, sans-serif',
-             color: '#000000',
-           }}
-           className="md:p-12"
-         >
-           {/* Email-Safe Responsive CSS */}
-           <style>{`
-             @media only screen and (min-width: 600px) {
-               .mobile-header { display: none !important; }
-               .desktop-header { display: block !important; }
-             }
-             @media only screen and (max-width: 599px) {
-               .mobile-header { display: block !important; }
-               .desktop-header { display: none !important; }
-             }
-           `}</style>
-           {/* Header with Logo and Brand Info - Email-Safe Responsive */}
-           <div style={{ marginBottom: '20px' }}>
-             {/* Mobile Layout - Stacked (default for email clients) */}
-             <div
-               className="mobile-header"
-               style={{
-                 display: 'block',
-                 textAlign: 'center',
-                 width: '100%',
-                 maxWidth: '100%',
-               }}
-             >
-               {brandLogoUrl && (
-                 <div style={{ marginBottom: '16px' }}>
-                   <Img src={brandLogoUrl} alt={`${brandName} Logo`} />
-                 </div>
-               )}
-
-               {brandName && (
-                 <div
-                   style={{
-                     fontSize: '20px',
-                     fontWeight: 'bold',
-                     color: '#000000',
-                     textAlign: 'center',
-                     marginBottom: '8px',
-                   }}
-                 >
-                   {brandName}
-                 </div>
-               )}
-
-               {brandLocation && (
-                 <div
-                   style={{
-                     fontSize: '14px',
-                     fontWeight: '600',
-                     color: '#374151',
-                     textAlign: 'center',
-                     whiteSpace: 'pre-wrap',
-                     wordWrap: 'break-word',
-                     marginBottom: '8px',
-                     lineHeight: '1.4',
-                   }}
-                   dangerouslySetInnerHTML={{
-                     __html: brandLocation.replace(/\n/g, '<br />'),
-                   }}
-                 />
-               )}
-
-               {brandPhone && (
-                 <div
-                   style={{
-                     fontSize: '14px',
-                     fontWeight: '600',
-                     color: '#374151',
-                     textAlign: 'center',
-                     wordBreak: 'break-word',
-                     lineHeight: '1.4',
-                   }}
-                 >
-                   {brandPhone}
-                 </div>
-               )}
-             </div>
-
-             {/* Desktop Layout - Side by Side (hidden by default, shown via CSS) */}
-             <div
-               className="desktop-header"
-               style={{
-                 display: 'none',
-                 width: '100%',
-               }}
-             >
-               <table
-                 style={{
-                   width: '100%',
-                   borderCollapse: 'collapse',
-                 }}
-               >
-                 <tr>
-                   <td
-                     style={{
-                       width: '40%',
-                       verticalAlign: 'top',
-                       paddingRight: '20px',
-                     }}
-                   >
-                     {brandLogoUrl && (
-                       <Img src={brandLogoUrl} alt={`${brandName} Logo`} />
-                     )}
-                   </td>
-                   <td
-                     style={{
-                       width: '60%',
-                       verticalAlign: 'top',
-                       textAlign: 'center',
-                     }}
-                   >
-                     {brandName && (
-                       <div
-                         style={{
-                           fontSize: '20px',
-                           fontWeight: 'bold',
-                           color: '#000000',
-                           textAlign: 'center',
-                           marginBottom: '8px',
-                         }}
-                       >
-                         {brandName}
-                       </div>
-                     )}
-
-                     {brandLocation && (
-                       <div
-                         style={{
-                           fontSize: '14px',
-                           fontWeight: '600',
-                           color: '#374151',
-                           textAlign: 'center',
-                           whiteSpace: 'pre-wrap',
-                           wordWrap: 'break-word',
-                           marginBottom: '8px',
-                         }}
-                         dangerouslySetInnerHTML={{
-                           __html: brandLocation.replace(/\n/g, '<br />'),
-                         }}
-                       />
-                     )}
-
-                     {brandPhone && (
-                       <div
-                         style={{
-                           fontSize: '14px',
-                           fontWeight: '600',
-                           color: '#374151',
-                           textAlign: 'center',
-                           wordBreak: 'break-word',
-                         }}
-                       >
-                         {brandPhone}
-                       </div>
-                     )}
-                   </td>
-                 </tr>
-               </table>
-             </div>
-           </div>
-
-          {(brandName || brandLocation || brandPhone) && (
-            <div
-              style={{
-                margin: '20px 0',
-                height: '1px',
-                width: '100%',
-                backgroundColor: '#e5e7eb',
-              }}
-            />
-          )}
-
-          {/* Main Content */}
-          <div style={{ padding: '20px 12px' }}>
-            {/* Title */}
-            {emailTitle && (
-              <div
+    <Html>
+      <Head />
+      <Tailwind>
+        <Body style={{ fontFamily: 'Arial, sans-serif', backgroundColor: '#f9fafb' }}>
+          <Container style={{ 
+            margin: '16px auto',
+            backgroundColor: '#ffffff',
+            borderRadius: '8px',
+            border: '1px solid #e5e7eb',
+            overflow: 'hidden'
+          }}
+          className='max-w-[600px]'>
+            {/* Header Section - Responsive Layout */}
+            <Section style={{ padding: '24px' }}>
+              <ResponsiveRow>
+                {/* Logo Column - Left side on desktop, full width on mobile */}
+                <ResponsiveColumn
+                span={1}
                 style={{
+                  padding: '0 12px',
+                  verticalAlign: 'middle'
+                }}
+                >
+                  {brandLogoUrl && (
+                    <Img
+                      src={brandLogoUrl}
+                      alt={`${brandName} Logo`}
+                      style={{
+                        display: 'block',
+                        marginLeft: 'auto',
+                        marginRight: 'auto',
+                        maxWidth: '100%',
+                        height: 'auto'
+                      }}
+                    />
+                  )}
+                </ResponsiveColumn>
+
+                {/* Brand Info Column - Right side on desktop, full width on mobile */}
+                <ResponsiveColumn 
+                span={1}
+                style={{
+                  padding: '0 12px',
+                  verticalAlign: 'middle'
+                }}
+                >
+                  {brandName && (
+                    <Text style={{
+                      fontSize: '20px',
+                      fontWeight: 'bold',
+                      color: '#000000',
+                      textAlign: 'center'
+                    }}>
+                      {brandName}
+                    </Text>
+                  )}
+
+                  {brandLocation && (
+                    <Text style={{
+                      fontSize: '14px',
+                      fontWeight: '600',
+                      color: '#374151',
+                      margin: '0 0 8px 0',
+                      textAlign: 'center',
+                      lineHeight: '1.4'
+                    }}>
+                      {brandLocation.replace(/\n/g, '\n')}
+                    </Text>
+                  )}
+
+                  {brandPhone && (
+                    <Text style={{
+                      fontSize: '14px',
+                      fontWeight: '600',
+                      color: '#374151',
+                      margin: '0 0 16px 0',
+                      textAlign: 'center',
+                      lineHeight: '1.4'
+                    }}>
+                      {brandPhone}
+                    </Text>
+                  )}
+                </ResponsiveColumn>
+              </ResponsiveRow>
+            </Section>
+
+            {/* Divider */}
+            {(brandName || brandLocation || brandPhone) && (
+              <Hr style={{ 
+                borderColor: '#e5e7eb', 
+              }} />
+            )}
+
+            {/* Main Content */}
+            <Section style={{ padding: '24px' }}>
+              {/* Title */}
+              {emailTitle && (
+                <Text style={{
                   fontSize: '24px',
                   fontWeight: 'bold',
                   textAlign: 'center',
                   textTransform: 'uppercase',
                   letterSpacing: '0.05em',
                   color: '#1d4ed8',
-                  marginBottom: '24px',
-                  lineHeight: '1.2',
-                }}
-              >
-                {emailTitle}
-              </div>
-            )}
+                  margin: '0 0 24px 0',
+                  lineHeight: '1.2'
+                }}>
+                  {emailTitle}
+                </Text>
+              )}
 
-            {/* Greeting */}
-            {emailGreeting && (
-              <div
-                style={{
-                  marginBottom: '24px',
-                  whiteSpace: 'pre-wrap',
-                  textAlign: 'left',
+              {/* Greeting */}
+              {emailGreeting && (
+                <Text style={{
                   fontSize: '14px',
                   color: '#000000',
                   lineHeight: '1.6',
-                }}
-              >
-                {emailGreeting}
-              </div>
-            )}
+                  margin: '0 0 24px 0',
+                  whiteSpace: 'pre-wrap'
+                }}>
+                  {emailGreeting}
+                </Text>
+              )}
 
-            {/* Table */}
-            <div style={{ marginTop: '32px' }}>
-              <table
-                style={{
-                  width: '100%',
-                  borderCollapse: 'collapse',
+              {/* Data Table - Using ReactEmail Row/Column approach */}
+              <Section style={{ margin: '32px 0' }}>
+                {/* Table Header */}
+                <Row style={{ 
                   border: '2px solid #000000',
-                }}
-              >
-                <thead>
-                  <tr>
-                    <th
-                      style={{
-                        border: '1px solid #000000',
-                        backgroundColor: '#f3f4f6',
-                        padding: '16px',
-                        textAlign: 'center',
-                        fontWeight: 'bold',
-                        fontSize: '14px',
-                        textTransform: 'uppercase',
-                        color: '#000000',
-                      }}
-                    >
+                  borderBottom: '1px solid #000000'
+                }}>
+                  <Column style={{
+                    border: '1px solid #000000',
+                    borderRight: '1px solid #000000',
+                    backgroundColor: '#f3f4f6',
+                    padding: '16px',
+                    textAlign: 'center',
+                    width: '70%'
+                  }}>
+                    <Text style={{
+                      fontWeight: 'bold',
+                      fontSize: '14px',
+                      textTransform: 'uppercase',
+                      color: '#000000',
+                      margin: '0'
+                    }}>
                       {tableHeaderComments}
-                    </th>
-                    <th
-                      style={{
-                        border: '1px solid #000000',
-                        backgroundColor: '#f3f4f6',
-                        padding: '16px',
-                        textAlign: 'center',
-                        fontWeight: 'bold',
-                        fontSize: '14px',
-                        color: '#000000',
-                      }}
-                    >
+                    </Text>
+                  </Column>
+                  <Column style={{
+                    border: '1px solid #000000',
+                    backgroundColor: '#f3f4f6',
+                    padding: '16px',
+                    textAlign: 'center',
+                    width: '30%'
+                  }}>
+                    <Text style={{
+                      fontWeight: 'bold',
+                      fontSize: '14px',
+                      color: '#000000',
+                      margin: '0'
+                    }}>
                       {tableHeaderScore}
-                      {tableScoreScale && (
-                        <div
-                          style={{
-                            marginTop: '6px',
-                            fontWeight: 'normal',
-                            fontSize: '12px',
-                            textTransform: 'none',
-                            color: '#6b7280',
-                          }}
-                        >
-                          {tableScoreScale}
-                        </div>
-                      )}
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr>
-                    <td
-                      style={{
-                        border: '1px solid #000000',
-                        padding: '20px',
-                        verticalAlign: 'top',
-                        width: '70%',
-                      }}
-                    >
-                      <div
-                        style={{
-                          minHeight: '200px',
-                          textAlign: 'justify',
-                          fontSize: '14px',
-                          lineHeight: '1.6',
-                          color: '#000000',
-                        }}
-                      >
-                        {comments || emptyCommentsPlaceholder}
-                      </div>
-                    </td>
-                    <td
-                      style={{
-                        border: '1px solid #000000',
-                        padding: '20px',
-                        textAlign: 'center',
-                        verticalAlign: 'top',
-                        width: '30%',
-                      }}
-                    >
-                      <div
-                        style={{
-                          minHeight: '200px',
-                          fontSize: '18px',
-                          color: '#000000',
-                          fontWeight: 'bold',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                        }}
-                      >
-                        {avgScore !== undefined
-                          ? avgScore
-                          : emptyScorePlaceholder}
-                      </div>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
+                    </Text>
+                    {tableScoreScale && (
+                      <Text style={{
+                        margin: '6px 0 0 0',
+                        fontWeight: 'normal',
+                        fontSize: '12px',
+                        textTransform: 'none',
+                        color: '#6b7280'
+                      }}>
+                        {tableScoreScale}
+                      </Text>
+                    )}
+                  </Column>
+                </Row>
 
-            {/* Footer */}
-            {emailFooter && (
-              <div
-                style={{
-                  marginTop: '32px',
-                  whiteSpace: 'pre-wrap',
-                  textAlign: 'left',
+                {/* Table Body */}
+                <Row style={{ 
+                  border: '2px solid #000000',
+                  borderTop: 'none'
+                }}>
+                  <Column style={{
+                    border: '1px solid #000000',
+                    borderRight: '1px solid #000000',
+                    padding: '20px',
+                    width: '70%'
+                  }}>
+                    <Text style={{
+                      minHeight: '200px',
+                      textAlign: 'justify',
+                      fontSize: '14px',
+                      lineHeight: '1.6',
+                      color: '#000000',
+                      margin: '0'
+                    }}>
+                      {comments || emptyCommentsPlaceholder}
+                    </Text>
+                  </Column>
+                  <Column style={{
+                    border: '1px solid #000000',
+                    padding: '20px',
+                    textAlign: 'center',
+                    width: '30%'
+                  }}>
+                    <Text style={{
+                      minHeight: '200px',
+                      fontSize: '18px',
+                      color: '#000000',
+                      fontWeight: 'bold',
+                      margin: '0',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center'
+                    }}>
+                      {avgScore !== undefined ? avgScore : emptyScorePlaceholder}
+                    </Text>
+                  </Column>
+                </Row>
+              </Section>
+
+              {/* Footer */}
+              {emailFooter && (
+                <Text style={{
                   fontSize: '14px',
                   color: '#000000',
                   lineHeight: '1.6',
-                }}
-              >
-                {emailFooter}
-              </div>
-            )}
+                  margin: '32px 0 0 0',
+                  whiteSpace: 'pre-wrap'
+                }}>
+                  {emailFooter}
+                </Text>
+              )}
 
-            {/* Signature */}
-            {(signatureTitle || signatureName) && (
-              <div style={{ marginTop: '40px', textAlign: 'center' }}>
-                {signatureTitle && (
-                  <div
-                    style={{
+              {/* Signature */}
+              {(signatureTitle || signatureName) && (
+                <Section style={{ textAlign: 'center', marginTop: '40px' }}>
+                  {signatureTitle && (
+                    <Text style={{
                       fontSize: '14px',
                       fontWeight: '600',
                       fontStyle: 'italic',
                       color: '#000000',
-                      marginBottom: '4px',
-                    }}
-                  >
-                    {signatureTitle}
-                  </div>
-                )}
-                {signatureName && (
-                  <div
-                    style={{
+                      margin: '0 0 4px 0'
+                    }}>
+                      {signatureTitle}
+                    </Text>
+                  )}
+                  {signatureName && (
+                    <Text style={{
                       fontSize: '14px',
                       fontWeight: 'bold',
                       color: '#000000',
-                    }}
-                  >
-                    {signatureName}
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-        </div>
-      </Html>
-    </Tailwind>
+                      margin: '0'
+                    }}>
+                      {signatureName}
+                    </Text>
+                  )}
+                </Section>
+              )}
+            </Section>
+          </Container>
+        </Body>
+      </Tailwind>
+    </Html>
   );
 };
 

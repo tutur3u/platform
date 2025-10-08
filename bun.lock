@@ -352,6 +352,7 @@
         "@mantine/hooks": "^8.3.3",
         "@octokit/auth-app": "^8.1.1",
         "@octokit/rest": "^22.0.0",
+        "@responsive-email/react-email": "^0.0.4",
         "@tanstack/react-query": "^5.90.2",
         "@tanstack/react-table": "^8.21.3",
         "@testing-library/jest-dom": "^6.9.1",
@@ -1596,6 +1597,8 @@
     "@reduxjs/toolkit": ["@reduxjs/toolkit@2.9.0", "", { "dependencies": { "@standard-schema/spec": "^1.0.0", "@standard-schema/utils": "^0.3.0", "immer": "^10.0.3", "redux": "^5.0.1", "redux-thunk": "^3.1.0", "reselect": "^5.1.0" }, "peerDependencies": { "react": "^16.9.0 || ^17.0.0 || ^18 || ^19", "react-redux": "^7.2.1 || ^8.1.3 || ^9.0.0" }, "optionalPeers": ["react", "react-redux"] }, "sha512-fSfQlSRu9Z5yBkvsNhYF2rPS8cGXn/TZVrlwN1948QyZ8xMZ0JvP50S2acZNaf+o63u6aEeMjipFyksjIcWrog=="],
 
     "@remirror/core-constants": ["@remirror/core-constants@3.0.0", "", {}, "sha512-42aWfPrimMfDKDi4YegyS7x+/0tlzaqwPQCULLanv3DMIlu96KTJR0fM5isWX2UViOqlGnX6YFgqWepcX+XMNg=="],
+
+    "@responsive-email/react-email": ["@responsive-email/react-email@0.0.4", "", { "dependencies": { "@react-email/section": "0.0.14" }, "peerDependencies": { "react": "18.x || 19.x" } }, "sha512-oRpI+tmiHR4Ff86+cuX2fdlIN/5PdwLQL8wa+2ztypLdX/3J7MQQq9IKLt3X5tuwshtGXkotcydXDpXs8yfPQA=="],
 
     "@rolldown/pluginutils": ["@rolldown/pluginutils@1.0.0-beta.38", "", {}, "sha512-N/ICGKleNhA5nc9XXQG/kkKHJ7S55u0x0XUJbbkmdCnFuoRkM1Il12q9q0eX19+M7KKUEPw/daUPIRnxhcxAIw=="],
 
@@ -4028,6 +4031,8 @@
     "@react-email/preview-server/use-debounce": ["use-debounce@10.0.4", "", { "peerDependencies": { "react": "*" } }, "sha512-6Cf7Yr7Wk7Kdv77nnJMf6de4HuDE4dTxKij+RqE9rufDsI6zsbjyAxcH5y2ueJCQAnfgKbzXbZHYlkFwmBlWkw=="],
 
     "@react-email/preview-server/zod": ["zod@3.24.3", "", {}, "sha512-HhY1oqzWCQWuUqvBFnsyrtZRhyPeR7SUGv+C4+MsisMuVfSPx8HpwWqH8tRahSlt6M3PiFAcoeFhZAqIXTxoSg=="],
+
+    "@responsive-email/react-email/@react-email/section": ["@react-email/section@0.0.14", "", { "peerDependencies": { "react": "^18.0 || ^19.0 || ^19.0.0-rc" } }, "sha512-+fYWLb4tPU1A/+GE5J1+SEMA7/wR3V30lQ+OR9t2kAJqNrARDbMx0bLnYnR1QL5TiFRz0pCF05SQUobk6gHEDQ=="],
 
     "@rollup/pluginutils/estree-walker": ["estree-walker@2.0.2", "", {}, "sha512-Rfkk/Mp/DL7JVje3u18FxFujQlTNR2q6QfMSMB7AvCBx91NGj/ba3kCfza0f6dVDbw7YlRf/nDrn7pQrCCyQ/w=="],
 
