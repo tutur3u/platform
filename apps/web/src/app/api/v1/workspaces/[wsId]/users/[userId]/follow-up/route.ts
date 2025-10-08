@@ -10,7 +10,6 @@ import { SESClient } from '@aws-sdk/client-ses';
 import { z } from 'zod';
 
 // const domainBlacklist = ['@easy.com'];
-// const ENABLE_MAIL_ON_DEV = false; // Not used in this implementation
 
 // Define Zod schema for request body validation
 const followUpEmailSchema = z.object({
@@ -67,6 +66,23 @@ export async function POST(
       { status: 401 }
     );
   }
+
+  // Verify that the user is a workspace user
+  const { data: isOrgMember, error: isOrgMemberError } = await supabase.rpc(
+    'is_org_member',
+    {
+      _org_id: wsId,
+      _user_id: authUser.id,
+    }
+  );
+
+  if (isOrgMemberError || !isOrgMember) {
+    return NextResponse.json(
+      { message: 'User is not a member of the workspace' },
+      { status: 404 }
+    );
+  }
+
   const sbAdmin = await createAdminClient();
   // Get user information for the receiver
   const { data: receiver, error: receiverError } = await sbAdmin
