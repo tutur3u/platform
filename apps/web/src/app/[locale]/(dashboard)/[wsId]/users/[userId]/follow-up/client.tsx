@@ -19,6 +19,7 @@ import { useTranslations } from 'next-intl';
 import type { ReactNode } from 'react';
 import { CardHeader, CardTitle } from '@tuturuuu/ui/card';
 import { availableConfigs } from '@/constants/configs/reports';
+import { API_URL } from '@/constants/common';
 import { useEffect, useMemo, useState } from 'react';
 import { Combobox, type ComboboxOptions } from '@tuturuuu/ui/custom/combobox';
 
@@ -382,54 +383,35 @@ export default function FollowUpClient({
 
   const mutation = useMutation({
     mutationFn: async (values: z.infer<typeof FollowUpSchema>) => {
-      const {
-        data: { user: authUser },
-      } = await supabase.auth.getUser();
-      if (!authUser) throw new Error('User not authenticated');
-
       // Extract the report HTML
       const reportHtml = await extractReportHtml();
 
-      // Payload for RPC call (existing structure)
-      const rpcPayload = {
-        p_ws_id: wsId,
-        p_sender_id: authUser.id,
-        p_receiver_id: userId,
-        p_source_name: values.source_name,
-        p_source_email: values.source_email,
-        p_subject: values.subject,
-        p_content: reportHtml, // Send the HTML report as content
-        p_email: values.to_email || userEmail || '',
-        p_post_id: undefined,
-      };
-
-      // Payload for API endpoint (with access keys from environment variables)
-      const apiPayload = {
-        mail: {
-          to: [values.to_email || userEmail || ''],
-          subject: values.subject,
-          content: reportHtml,
-        },
-        config: {
-          accessKeyId: process.env.NEXT_PUBLIC_ACCESS_KEY_ID || '',
-          accessKeySecret: process.env.NEXT_PUBLIC_EMAIL_ACCESS_KEY_SECRET || '',
-        },
-      };
-
-      const { data, error } = await supabase.rpc(
-        'create_guest_lead_email',
-        rpcPayload
-      )
-
+      // Call the new follow-up API endpoint
       const res = await fetch(
-        `${PROD_API_URL}/v1/workspaces/${wsId}/mail/send`,
+        `${API_URL}/v1/workspaces/${wsId}/users/${userId}/follow-up`,
         {
           method: 'POST',
-          body: JSON.stringify(apiPayload),
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            source_name: values.source_name,
+            source_email: values.source_email,
+            subject: values.subject,
+            content: reportHtml,
+            to_email: values.to_email || userEmail || '',
+            post_id: undefined,
+          }),
         }
       );
-      if (error) throw error;
-      return data as { status: string; mail_id?: string };
+
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.message || 'Failed to send follow-up email');
+      }
+
+      const data = await res.json();
+      return data as { status: string; mail_id?: string; emailSent: boolean; message: string };
     },
     onSuccess: () => {
       toast.success('Follow-up sent');

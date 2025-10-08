@@ -149,16 +149,16 @@ export default function SentEmailsClient({
               <button
                 key={email.id}
                 type="button"
-                className="group flex cursor-pointer items-start justify-between rounded-xl border border-border/50 bg-card/50 backdrop-blur-sm p-4 transition-all duration-200 hover:shadow-lg hover:shadow-black/5 hover:border-border hover:bg-card/80"
+                className="group flex w-full cursor-pointer items-start rounded-xl border border-border/50 bg-card/50 backdrop-blur-sm p-4 transition-all duration-200 hover:shadow-lg hover:shadow-black/5 hover:border-border hover:bg-card/80"
                 onClick={() => handleViewEmail(email)}
               >
-                <div className="flex min-w-0 flex-1 items-start space-x-4">
+                <div className="flex w-full items-start space-x-4">
                   <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-dynamic-blue/10">
                     <Mail className="h-5 w-5 text-dynamic-blue" />
                   </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="mb-1 flex items-center gap-2">
-                      <div className="font-semibold text-foreground truncate">
+                  <div className="flex-1 text-left">
+                    <div className="mb-1">
+                      <div className="font-semibold text-foreground">
                         {email.subject}
                       </div>
                     </div>
