@@ -1,17 +1,16 @@
-import { 
-  Head, 
-  Html, 
-  Img, 
-  Tailwind, 
-  Body, 
-  Container, 
-  Section, 
-  Row, 
-  Column, 
-  Text, 
-  Hr
+import {
+  Head,
+  Html,
+  Img,
+  Tailwind,
+  Body,
+  Container,
+  Section,
+  Row,
+  Column,
+  Text,
+  Hr,
 } from '@tuturuuu/transactional/react/email';
-
 
 interface Props {
   // Dynamic replacements
@@ -73,23 +72,30 @@ const LeadGenerationEmailTemplate = ({
     <Html>
       <Head />
       <Tailwind>
-        <Body style={{ fontFamily: 'Arial, sans-serif', backgroundColor: '#f9fafb' }}>
-          <Container style={{ 
-            margin: '16px auto',
-            backgroundColor: '#ffffff',
-            borderRadius: '8px',
-            border: '1px solid #e5e7eb',
-            overflow: 'hidden'
+        <Body
+          style={{
+            fontFamily: 'Arial, sans-serif',
+            backgroundColor: '#f9fafb',
           }}
-          className='max-w-[800px]'>
+        >
+          <Container
+            style={{
+              margin: '16px auto',
+              backgroundColor: '#ffffff',
+              borderRadius: '8px',
+              border: '1px solid #e5e7eb',
+              overflow: 'hidden',
+            }}
+            className="max-w-[800px]"
+          >
             {/* Header Section - Standard Layout */}
-            <Section className='px-6 py-4'>
+            <Section className="px-6 py-4">
               <Row>
                 <Column
-                style={{
-                  padding: '0 12px',
-                  verticalAlign: 'middle'
-                }}
+                  style={{
+                    padding: '0 12px',
+                    verticalAlign: 'middle',
+                  }}
                 >
                   {brandLogoUrl && (
                     <Img
@@ -100,51 +106,57 @@ const LeadGenerationEmailTemplate = ({
                         marginLeft: 'auto',
                         marginRight: 'auto',
                         maxWidth: '100%',
-                        height: 'auto'
+                        height: 'auto',
                       }}
                     />
                   )}
                 </Column>
-                <Column 
-                style={{
-                  padding: '0 12px',
-                  verticalAlign: 'middle'
-                }}
+                <Column
+                  style={{
+                    padding: '0 12px',
+                    verticalAlign: 'middle',
+                  }}
                 >
                   {brandName && (
-                    <Text style={{
-                      fontSize: '20px',
-                      fontWeight: 'bold',
-                      color: '#000000',
-                      textAlign: 'center'
-                    }}>
+                    <Text
+                      style={{
+                        fontSize: '20px',
+                        fontWeight: 'bold',
+                        color: '#000000',
+                        textAlign: 'center',
+                      }}
+                    >
                       {brandName}
                     </Text>
                   )}
 
                   {brandLocation && (
-                    <Text style={{
-                      fontSize: '14px',
-                      fontWeight: '600',
-                      color: '#374151',
-                      margin: '0 0 8px 0',
-                      textAlign: 'center',
-                      lineHeight: '1.4',
-                      whiteSpace: 'pre-line'
-                    }}>
+                    <Text
+                      style={{
+                        fontSize: '14px',
+                        fontWeight: '600',
+                        color: '#374151',
+                        margin: '0 0 8px 0',
+                        textAlign: 'center',
+                        lineHeight: '1.4',
+                        whiteSpace: 'pre-line',
+                      }}
+                    >
                       {brandLocation}
                     </Text>
                   )}
 
                   {brandPhone && (
-                    <Text style={{
-                      fontSize: '14px',
-                      fontWeight: '600',
-                      color: '#374151',
-                      margin: '0 0 16px 0',
-                      textAlign: 'center',
-                      lineHeight: '1.4'
-                    }}>
+                    <Text
+                      style={{
+                        fontSize: '14px',
+                        fontWeight: '600',
+                        color: '#374151',
+                        margin: '0 0 16px 0',
+                        textAlign: 'center',
+                        lineHeight: '1.4',
+                      }}
+                    >
                       {brandPhone}
                     </Text>
                   )}
@@ -154,38 +166,44 @@ const LeadGenerationEmailTemplate = ({
 
             {/* Divider */}
             {(brandName || brandLocation || brandPhone) && (
-              <Hr style={{ 
-                borderColor: '#e5e7eb', 
-              }} />
+              <Hr
+                style={{
+                  borderColor: '#e5e7eb',
+                }}
+              />
             )}
 
             {/* Main Content */}
             <Section style={{ padding: '24px' }}>
               {/* Title */}
               {emailTitle && (
-                <Text style={{
-                  fontSize: '24px',
-                  fontWeight: 'bold',
-                  textAlign: 'center',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.05em',
-                  color: '#1d4ed8',
-                  margin: '0 0 24px 0',
-                  lineHeight: '1.2'
-                }}>
+                <Text
+                  style={{
+                    fontSize: '24px',
+                    fontWeight: 'bold',
+                    textAlign: 'center',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.05em',
+                    color: '#1d4ed8',
+                    margin: '0 0 24px 0',
+                    lineHeight: '1.2',
+                  }}
+                >
                   {emailTitle}
                 </Text>
               )}
 
               {/* Greeting */}
               {emailGreeting && (
-                <Text style={{
-                  fontSize: '14px',
-                  color: '#000000',
-                  lineHeight: '1.6',
-                  margin: '0 0 24px 0',
-                  whiteSpace: 'pre-wrap'
-                }}>
+                <Text
+                  style={{
+                    fontSize: '14px',
+                    color: '#000000',
+                    lineHeight: '1.6',
+                    margin: '0 0 24px 0',
+                    whiteSpace: 'pre-wrap',
+                  }}
+                >
                   {emailGreeting}
                 </Text>
               )}
@@ -193,51 +211,63 @@ const LeadGenerationEmailTemplate = ({
               {/* Data Table - Using ReactEmail Row/Column approach */}
               <Section style={{ margin: '32px 0' }}>
                 {/* Table Header */}
-                <Row style={{ 
-                  border: '2px solid #000000',
-                  borderBottom: '1px solid #000000'
-                }}>
-                  <Column style={{
-                    border: '1px solid #000000',
-                    borderRight: '1px solid #000000',
-                    backgroundColor: '#f3f4f6',
-                    padding: '16px',
-                    textAlign: 'center',
-                    width: '70%'
-                  }}>
-                    <Text style={{
-                      fontWeight: 'bold',
-                      fontSize: '14px',
-                      textTransform: 'uppercase',
-                      color: '#000000',
-                      margin: '0'
-                    }}>
+                <Row
+                  style={{
+                    border: '2px solid #000000',
+                    borderBottom: '1px solid #000000',
+                  }}
+                >
+                  <Column
+                    style={{
+                      border: '1px solid #000000',
+                      borderRight: '1px solid #000000',
+                      backgroundColor: '#f3f4f6',
+                      padding: '16px',
+                      textAlign: 'center',
+                      width: '70%',
+                    }}
+                  >
+                    <Text
+                      style={{
+                        fontWeight: 'bold',
+                        fontSize: '14px',
+                        textTransform: 'uppercase',
+                        color: '#000000',
+                        margin: '0',
+                      }}
+                    >
                       {tableHeaderComments}
                     </Text>
                   </Column>
-                  <Column style={{
-                    border: '1px solid #000000',
-                    backgroundColor: '#f3f4f6',
-                    padding: '16px',
-                    textAlign: 'center',
-                    width: '30%'
-                  }}>
-                    <Text style={{
-                      fontWeight: 'bold',
-                      fontSize: '14px',
-                      color: '#000000',
-                      margin: '0'
-                    }}>
+                  <Column
+                    style={{
+                      border: '1px solid #000000',
+                      backgroundColor: '#f3f4f6',
+                      padding: '16px',
+                      textAlign: 'center',
+                      width: '30%',
+                    }}
+                  >
+                    <Text
+                      style={{
+                        fontWeight: 'bold',
+                        fontSize: '14px',
+                        color: '#000000',
+                        margin: '0',
+                      }}
+                    >
                       {tableHeaderScore}
                     </Text>
                     {tableScoreScale && (
-                      <Text style={{
-                        margin: '6px 0 0 0',
-                        fontWeight: 'normal',
-                        fontSize: '12px',
-                        textTransform: 'none',
-                        color: '#6b7280'
-                      }}>
+                      <Text
+                        style={{
+                          margin: '6px 0 0 0',
+                          fontWeight: 'normal',
+                          fontSize: '12px',
+                          textTransform: 'none',
+                          color: '#6b7280',
+                        }}
+                      >
                         {tableScoreScale}
                       </Text>
                     )}
@@ -245,44 +275,56 @@ const LeadGenerationEmailTemplate = ({
                 </Row>
 
                 {/* Table Body */}
-                <Row style={{ 
-                  border: '2px solid #000000',
-                  borderTop: 'none'
-                }}>
-                  <Column style={{
-                    border: '1px solid #000000',
-                    borderRight: '1px solid #000000',
-                    padding: '20px',
-                    width: '70%'
-                  }}>
-                    <Text style={{
-                      minHeight: '200px',
-                      textAlign: 'justify',
-                      fontSize: '14px',
-                      lineHeight: '1.6',
-                      color: '#000000',
-                      margin: '0'
-                    }}>
+                <Row
+                  style={{
+                    border: '2px solid #000000',
+                    borderTop: 'none',
+                  }}
+                >
+                  <Column
+                    style={{
+                      border: '1px solid #000000',
+                      borderRight: '1px solid #000000',
+                      padding: '20px',
+                      width: '70%',
+                    }}
+                  >
+                    <Text
+                      style={{
+                        minHeight: '200px',
+                        textAlign: 'justify',
+                        fontSize: '14px',
+                        lineHeight: '1.6',
+                        color: '#000000',
+                        margin: '0',
+                      }}
+                    >
                       {comments || emptyCommentsPlaceholder}
                     </Text>
                   </Column>
-                  <Column style={{
-                    border: '1px solid #000000',
-                    padding: '20px',
-                    textAlign: 'center',
-                    width: '30%'
-                  }}>
-                    <Text style={{
-                      minHeight: '200px',
-                      fontSize: '18px',
-                      color: '#000000',
-                      fontWeight: 'bold',
-                      margin: '0',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center'
-                    }}>
-                      {avgScore !== undefined ? avgScore : emptyScorePlaceholder}
+                  <Column
+                    style={{
+                      border: '1px solid #000000',
+                      padding: '20px',
+                      textAlign: 'center',
+                      width: '30%',
+                    }}
+                  >
+                    <Text
+                      style={{
+                        minHeight: '200px',
+                        fontSize: '18px',
+                        color: '#000000',
+                        fontWeight: 'bold',
+                        margin: '0',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                      }}
+                    >
+                      {avgScore !== undefined
+                        ? avgScore
+                        : emptyScorePlaceholder}
                     </Text>
                   </Column>
                 </Row>
@@ -290,13 +332,15 @@ const LeadGenerationEmailTemplate = ({
 
               {/* Footer */}
               {emailFooter && (
-                <Text style={{
-                  fontSize: '14px',
-                  color: '#000000',
-                  lineHeight: '1.6',
-                  margin: '32px 0 0 0',
-                  whiteSpace: 'pre-wrap'
-                }}>
+                <Text
+                  style={{
+                    fontSize: '14px',
+                    color: '#000000',
+                    lineHeight: '1.6',
+                    margin: '32px 0 0 0',
+                    whiteSpace: 'pre-wrap',
+                  }}
+                >
                   {emailFooter}
                 </Text>
               )}
@@ -305,23 +349,27 @@ const LeadGenerationEmailTemplate = ({
               {(signatureTitle || signatureName) && (
                 <Section style={{ textAlign: 'center', marginTop: '40px' }}>
                   {signatureTitle && (
-                    <Text style={{
-                      fontSize: '14px',
-                      fontWeight: '600',
-                      fontStyle: 'italic',
-                      color: '#000000',
-                      margin: '0 0 4px 0'
-                    }}>
+                    <Text
+                      style={{
+                        fontSize: '14px',
+                        fontWeight: '600',
+                        fontStyle: 'italic',
+                        color: '#000000',
+                        margin: '0 0 4px 0',
+                      }}
+                    >
                       {signatureTitle}
                     </Text>
                   )}
                   {signatureName && (
-                    <Text style={{
-                      fontSize: '14px',
-                      fontWeight: 'bold',
-                      color: '#000000',
-                      margin: '0'
-                    }}>
+                    <Text
+                      style={{
+                        fontSize: '14px',
+                        fontWeight: 'bold',
+                        color: '#000000',
+                        margin: '0',
+                      }}
+                    >
                       {signatureName}
                     </Text>
                   )}
