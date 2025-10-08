@@ -246,20 +246,19 @@ export function TaskFilter({
   const toggleAssignee = (assignee: TaskAssignee) => {
     const isSelected = filters.assignees.some((a) => a.id === assignee.id);
     const isCurrentUser = currentUserId === assignee.id;
-    
+
     const newAssignees = isSelected
       ? filters.assignees.filter((a) => a.id !== assignee.id)
       : [...filters.assignees, assignee];
-    
+
     onFiltersChange({
       ...filters,
       assignees: newAssignees,
       // Sync "Assigned to me" with current user selection in assignees list
-      includeMyTasks: isCurrentUser
-        ? !isSelected
-        : filters.includeMyTasks,
+      includeMyTasks: isCurrentUser ? !isSelected : filters.includeMyTasks,
       // Auto-deselect "Unassigned" when selecting any assignee
-      includeUnassigned: newAssignees.length > 0 ? false : filters.includeUnassigned,
+      includeUnassigned:
+        newAssignees.length > 0 ? false : filters.includeUnassigned,
     });
   };
 
@@ -356,16 +355,26 @@ export function TaskFilter({
                         const currentUser = availableAssignees.find(
                           (a) => a.id === currentUserId
                         );
-                        
+
                         onFiltersChange({
                           ...filters,
                           includeMyTasks: !!checked,
                           // Sync with current user in assignees list
-                          assignees: checked && currentUser
-                            ? [...filters.assignees.filter((a) => a.id !== currentUserId), currentUser]
-                            : filters.assignees.filter((a) => a.id !== currentUserId),
+                          assignees:
+                            checked && currentUser
+                              ? [
+                                  ...filters.assignees.filter(
+                                    (a) => a.id !== currentUserId
+                                  ),
+                                  currentUser,
+                                ]
+                              : filters.assignees.filter(
+                                  (a) => a.id !== currentUserId
+                                ),
                           // Auto-deselect "Unassigned" when selecting "Assigned to me"
-                          includeUnassigned: checked ? false : filters.includeUnassigned,
+                          includeUnassigned: checked
+                            ? false
+                            : filters.includeUnassigned,
                         });
                       }}
                     />
@@ -379,7 +388,9 @@ export function TaskFilter({
                           ...filters,
                           includeUnassigned: !!checked,
                           // Auto-deselect all assignees when selecting "Unassigned"
-                          includeMyTasks: checked ? false : filters.includeMyTasks,
+                          includeMyTasks: checked
+                            ? false
+                            : filters.includeMyTasks,
                           assignees: checked ? [] : filters.assignees,
                         })
                       }
