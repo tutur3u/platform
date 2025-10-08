@@ -33,25 +33,24 @@
     "sb:up": "cd apps/db && bun sb:up && bun sb:typegen",
     "sb:typegen": "cd apps/db && bun sb:typegen",
     "ui:add": "bun --filter ui ui:add",
-    "ui:diff": "bun --filter ui ui:diff",
-    "update-all": "bun ./scripts/package-update.js"
+    "ui:diff": "bun --filter ui ui:diff"
   },
   "dependencies": {
     "react-scan": "^0.3.6"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.1",
-    "@eslint/js": "^9.33.0",
+    "@eslint/js": "^9.31.0",
     "@trivago/prettier-plugin-sort-imports": "^5.2.2",
     "@ncthub/eslint-config": "workspace:*",
     "@ncthub/typescript-config": "workspace:*",
     "@vitest/coverage-v8": "^3.2.4",
-    "eslint": "^9.33.0",
+    "eslint": "^9.31.0",
     "prettier": "^3.6.2",
     "prettier-eslint": "^16.4.2",
     "prettier-plugin-tailwindcss": "^0.6.14",
-    "turbo": "^2.5.5",
-    "typescript": "^5.9.2",
+    "turbo": "^2.5.4",
+    "typescript": "^5.8.3",
     "vite": "^6.3.5",
     "vitest": "^3.2.4"
   },
