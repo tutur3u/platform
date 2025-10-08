@@ -411,7 +411,12 @@ export default function FollowUpClient({
       }
 
       const data = await res.json();
-      return data as { status: string; mail_id?: string; emailSent: boolean; message: string };
+      return data as {
+        status: string;
+        mail_id?: string;
+        emailSent: boolean;
+        message: string;
+      };
     },
     onSuccess: () => {
       toast.success('Follow-up sent');

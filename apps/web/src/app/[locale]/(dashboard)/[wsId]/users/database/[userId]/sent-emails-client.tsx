@@ -164,7 +164,9 @@ export default function SentEmailsClient({
                         </div>
                       </div>
                       <div className="mb-1 text-sm text-muted-foreground">
-                        <span className="opacity-60">{t('from') || 'From'}:</span>{' '}
+                        <span className="opacity-60">
+                          {t('from') || 'From'}:
+                        </span>{' '}
                         {email.source_name}{' '}
                         <span className="opacity-60">
                           {'<'}
