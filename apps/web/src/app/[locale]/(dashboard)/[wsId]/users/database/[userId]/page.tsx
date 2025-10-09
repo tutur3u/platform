@@ -196,7 +196,7 @@ export default async function WorkspaceUserDetailsPage({
         </div>
 
         <div className="grid gap-4">
-          {hasPublicInfo && (
+          {hasPrivateInfo && (
             <div className="h-full rounded-lg border p-4">
               <div
                 className={`h-full gap-2 ${groups?.length ? 'grid content-start' : 'flex flex-col items-center justify-center'}`}
@@ -231,7 +231,7 @@ export default async function WorkspaceUserDetailsPage({
             </div>
           )}
 
-          {hasPublicInfo && (
+          {hasPrivateInfo && (
             <div className="h-full rounded-lg border p-4">
               <div
                 className={`h-full gap-2 ${reports?.length ? 'grid content-start' : 'flex flex-col items-center justify-center'}`}
@@ -266,7 +266,7 @@ export default async function WorkspaceUserDetailsPage({
             </div>
           )}
 
-          {hasPublicInfo && (
+          {hasPrivateInfo && (
             <LinkedPromotionsClient
               wsId={wsId}
               userId={userId}
@@ -282,7 +282,7 @@ export default async function WorkspaceUserDetailsPage({
             />
           )}
 
-          {hasPublicInfo && (
+          {hasPrivateInfo && (
             <ReferralSectionClient
               wsId={wsId}
               userId={userId}
@@ -295,7 +295,7 @@ export default async function WorkspaceUserDetailsPage({
         </div>
       </div>
 
-      {hasPublicInfo && (
+      {hasPrivateInfo && (
         <>
           <div className="mt-4 mb-2 font-semibold text-lg">
             {t('invoices')} ({invoiceCount})

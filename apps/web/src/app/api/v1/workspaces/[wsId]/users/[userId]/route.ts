@@ -5,6 +5,23 @@ import {
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { headers } from 'next/headers';
 import { NextResponse } from 'next/server';
+import { z } from 'zod';
+
+const userUpdateSchema = z.object({
+  id: z.string().optional(),
+  full_name: z.string().nullable().optional(),
+  display_name: z.string().nullable().optional(),
+  email: z.string().nullable().optional(),
+  phone: z.string().nullable().optional(),
+  gender: z.string().nullable().optional(),
+  birthday: z.string().nullable().optional(),
+  ethnicity: z.string().nullable().optional(),
+  guardian: z.string().nullable().optional(),
+  national_id: z.string().nullable().optional(),
+  address: z.string().nullable().optional(),
+  avatar_url: z.string().nullable().optional(),
+  note: z.string().nullable().optional(),
+});
 
 interface Params {
   params: Promise<{
@@ -45,7 +62,26 @@ export async function PUT(req: Request, { params }: Params) {
   }
 
   const data = await req.json();
-  const { is_guest, ...userPayload } = data ?? {};
+
+  // Extract is_guest separately before validation
+  const { is_guest, ...payloadToValidate } = data ?? {};
+
+  // Validate the user payload against the schema (excluding is_guest)
+  const schemaResult = userUpdateSchema.safeParse(payloadToValidate);
+  if (!schemaResult.success) {
+    return NextResponse.json(
+      {
+        message: 'Invalid request body',
+        errors: schemaResult.error.issues.map(issue => ({
+          field: issue.path.join('.'),
+          message: issue.message,
+        })),
+      },
+      { status: 400 }
+    );
+  }
+
+  const userPayload = schemaResult.data;
 
   const supabase = await createClient();
 

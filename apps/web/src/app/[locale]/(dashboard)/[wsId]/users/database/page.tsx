@@ -195,7 +195,18 @@ async function getData(
 
   if (error) {
     if (!retry) throw error;
-    return getData(wsId, { q, pageSize, retry: false }, permissions);
+    return getData(
+      wsId,
+      {
+        q,
+        page,
+        pageSize,
+        includedGroups,
+        excludedGroups,
+        retry: false,
+      },
+      permissions
+    );
   }
 
   // Enrich each user with guest status via RPC (page size is small, acceptable)

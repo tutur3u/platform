@@ -38,7 +38,7 @@ export const getUserColumns = (
     'national_id',
     'address',
     'note',
-  ];
+  ] as const;
 
   const publicColumns = [
     'id',
@@ -49,12 +49,39 @@ export const getUserColumns = (
     'linked_users',
     'created_at',
     'updated_at',
-  ];
+  ] as const;
 
-  const shouldIncludeColumn = (columnId: string) => {
-    if (privateColumns.includes(columnId)) return hasPrivateInfo;
-    if (publicColumns.includes(columnId)) return hasPublicInfo;
-    return true; // For actions and other columns
+
+  /**
+   * Security function to determine if a column should be included based on permissions.
+   * Only allows columns that are explicitly categorized as private or public.
+   * Actions column is shown if user has update or delete permissions.
+   * Uncategorised data columns are rejected to prevent accidental exposure of sensitive data.
+   */
+  const shouldIncludeColumn = (columnId: string): boolean => {
+    // Show actions column if user has update or delete permissions
+    if (columnId === 'actions') {
+      return extraData?.canUpdateUsers || extraData?.canDeleteUsers || false;
+    }
+
+    if (privateColumns.includes(columnId as typeof privateColumns[number])) {
+      return hasPrivateInfo;
+    }
+
+    if (publicColumns.includes(columnId as typeof publicColumns[number])) {
+      return hasPublicInfo;
+    }
+
+    // Reject uncategorised columns to prevent accidental data exposure
+    if (process.env.NODE_ENV === 'development') {
+      console.warn(
+        `Column "${columnId}" is not categorised as private or public. ` +
+        'Add it to privateColumns or publicColumns array to make it visible, ' +
+        'or it will be hidden in production. This prevents accidental exposure of sensitive data.'
+      );
+    }
+
+    return false; // Reject uncategorised columns
   };
 
   const allColumns: ColumnDef<WorkspaceUser>[] = [
@@ -523,9 +550,13 @@ export const getUserColumns = (
   ];
 
   // Filter columns based on permissions
+  // SECURITY: Only columns with explicit categorization (private/public) are allowed.
+  // Uncategorised columns are rejected to prevent accidental exposure of sensitive data.
   return allColumns.filter((column) => {
-    if (!column.id && !column.accessorKey) return true;
-    const columnId = (column.id || column.accessorKey) as string;
+    const columnId = (column as { id?: string; accessorKey?: string }).id ||
+                     (column as { id?: string; accessorKey?: string }).accessorKey;
+
+    if (!columnId) return true; // Keep columns without explicit identifiers (like actions)
     return shouldIncludeColumn(columnId);
   });
 };
