@@ -8,6 +8,7 @@ import WorkspaceWrapper from '@/components/workspace-wrapper';
 import FollowUpClient from './client';
 import { getTranslations } from 'next-intl/server';
 import { AlertTriangleIcon } from '@tuturuuu/ui/icons';
+import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 
 export const metadata: Metadata = {
   title: 'Guest Lead Follow-up',
@@ -31,6 +32,10 @@ export default async function GuestLeadFollowUpPage({ params }: Props) {
         const t = await getTranslations();
         const supabase = await createClient();
         const sbAdmin = await createAdminClient();
+        const {containsPermission} = await getPermissions({
+          wsId,
+        });
+        const canCheckUserAttendance = containsPermission('check_user_attendance');
 
         // Check if user is eligible for lead generation email
         const { data: eligibility, error: eligibilityError } =
@@ -114,6 +119,7 @@ export default async function GuestLeadFollowUpPage({ params }: Props) {
               minimumAttendance={
                 minimumAttendance?.guest_user_checkup_threshold ?? undefined
               }
+              canCheckUserAttendance={canCheckUserAttendance}
             />
           </div>
         );

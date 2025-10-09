@@ -33,6 +33,7 @@ import {
   UserPlus,
   Users,
   UserX,
+  CalendarCheck,
 } from '@tuturuuu/ui/icons';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import type { ReactNode } from 'react';
@@ -320,6 +321,14 @@ export const permissionGroups = ({
             icon: <UserMinus />,
             title: t('ws-roles.delete_users'),
             description: t('ws-roles.delete_users_description'),
+            disableOnProduction: false,
+            disabled: false,
+          },
+          {
+            id: 'check_user_attendance',
+            icon: <CalendarCheck />,
+            title: t('ws-roles.check_user_attendance'),
+            description: t('ws-roles.check_user_attendance_description'),
             disableOnProduction: false,
             disabled: false,
           },

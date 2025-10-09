@@ -782,7 +782,7 @@ export async function WorkspaceNavigationLinks({
                   title: t('workspace-users-tabs.attendance'),
                   href: `/${personalOrWsId}/users/attendance`,
                   icon: <UserCheck className="h-5 w-5" />,
-                  disabled: withoutPermission('manage_users'),
+                  disabled: withoutPermission('manage_users') || withoutPermission('check_user_attendance'),
                 },
                 {
                   title: t('workspace-users-tabs.database'),

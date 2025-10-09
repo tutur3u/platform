@@ -2399,7 +2399,9 @@
     "update_users_description": "Cho phép thành viên chỉnh sửa hồ sơ người dùng ảo hiện có trong không gian làm việc.",
     "delete_users": "Xóa người dùng",
     "delete_users_description": "Cho phép thành viên xóa hồ sơ người dùng ảo khỏi không gian làm việc.",
-    "view_finance_stats_description": "Cho phép thành viên xem số liệu thống kê tài chính của không gian làm việc"
+    "view_finance_stats_description": "Cho phép thành viên xem số liệu thống kê tài chính của không gian làm việc",
+    "check_user_attendance": "Kiểm tra điểm danh người dùng",
+    "check_user_attendance_description": "Cho phép thành viên kiểm tra điểm danh của người dùng khác"
   },
   "platform-roles": {
     "plural": "Vai trò nền tảng",

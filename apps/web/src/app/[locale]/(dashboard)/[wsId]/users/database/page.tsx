@@ -54,6 +54,7 @@ export default async function WorkspaceUsersPage({
   const canCreateUsers = containsPermission('create_users');
   const canUpdateUsers = containsPermission('update_users');
   const canDeleteUsers = containsPermission('delete_users');
+  const canCheckUserAttendance = containsPermission('check_user_attendance');   
 
   // User must have at least one permission to view users
   if (!hasPrivateInfo && !hasPublicInfo) {
@@ -63,6 +64,7 @@ export default async function WorkspaceUsersPage({
   const { data, count } = await getData(wsId, await searchParams, {
     hasPrivateInfo,
     hasPublicInfo,
+    canCheckUserAttendance,
   });
   const { data: extraFields } = await getUserFields(wsId);
 
@@ -105,7 +107,8 @@ export default async function WorkspaceUsersPage({
           hasPublicInfo,
           canCreateUsers,
           canUpdateUsers,
-          canDeleteUsers
+          canDeleteUsers,
+          canCheckUserAttendance
         }}
         count={count}
         filters={<Filters wsId={wsId} searchParams={await searchParams} />}
@@ -159,6 +162,7 @@ async function getData(
   permissions?: {
     hasPrivateInfo: boolean;
     hasPublicInfo: boolean;
+    canCheckUserAttendance: boolean;
   }
 ) {
   const supabase = await createClient();
@@ -241,6 +245,9 @@ async function getData(
         delete sanitized.linked_users;
         delete sanitized.created_at;
         delete sanitized.updated_at;
+      }
+      if (!permissions?.canCheckUserAttendance) {
+        delete sanitized.attendance_count;
       }
 
       return sanitized as WorkspaceUser & { is_guest?: boolean };

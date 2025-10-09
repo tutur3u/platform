@@ -15,3 +15,5 @@ ALTER TYPE "workspace_role_permission" ADD VALUE IF NOT EXISTS 'update_users';
 
 ALTER TYPE "workspace_role_permission" ADD VALUE IF NOT EXISTS 'delete_users';
 
+ALTER TYPE "workspace_role_permission" ADD VALUE IF NOT EXISTS 'check_user_attendance';
+

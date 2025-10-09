@@ -26,6 +26,7 @@ export const getUserColumns = (
 ): ColumnDef<WorkspaceUser>[] => {
   const hasPrivateInfo = extraData?.hasPrivateInfo ?? false;
   const hasPublicInfo = extraData?.hasPublicInfo ?? false;
+  const canCheckUserAttendance = extraData?.canCheckUserAttendance ?? false;
 
   // Define which columns are private vs public
   const privateColumns = [
@@ -70,6 +71,10 @@ export const getUserColumns = (
 
     if (publicColumns.includes(columnId as typeof publicColumns[number])) {
       return hasPublicInfo;
+    }
+
+    if (columnId === 'attendance_count') {
+      return canCheckUserAttendance;
     }
 
     if ((extraFields || []).some((f) => f.id === columnId)) {

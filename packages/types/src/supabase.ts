@@ -74,6 +74,7 @@ export type Database = {
       workspace_role_permission:
         | 'ai_chat'
         | 'ai_lab'
+        | 'check_user_attendance'
         | 'create_users'
         | 'delete_users'
         | 'export_finance_data'
@@ -13232,6 +13233,7 @@ export const Constants = {
       workspace_role_permission: [
         'ai_chat',
         'ai_lab',
+        'check_user_attendance',
         'create_users',
         'delete_users',
         'export_finance_data',

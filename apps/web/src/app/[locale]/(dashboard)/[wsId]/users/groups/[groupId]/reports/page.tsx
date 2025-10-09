@@ -10,7 +10,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import GroupReportsClient from './client';
-import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
+import { getPermissions, getWorkspace } from '@tuturuuu/utils/workspace-helper';
 
 export const metadata: Metadata = {
   title: 'Reports',
@@ -43,6 +43,10 @@ export default async function UserGroupDetailsPage({
   const wsId = workspace.id;
   const { reportId, userId } = await searchParams;
   const group = await getData(wsId, groupId);
+  const {containsPermission} = await getPermissions({
+    wsId,
+  });
+  const canCheckUserAttendance = containsPermission('check_user_attendance');
 
   return (
     <>
@@ -135,6 +139,7 @@ export default async function UserGroupDetailsPage({
         initialUserId={userId}
         initialReportId={reportId}
         groupNameFallback={group.name || t('ws-user-groups.singular')}
+        canCheckUserAttendance={canCheckUserAttendance}
       />
     </>
   );

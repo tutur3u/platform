@@ -54,6 +54,7 @@ export default async function WorkspaceUserDetailsPage({
 
   const hasPrivateInfo = containsPermission('view_users_private_info');
   const hasPublicInfo = containsPermission('view_users_public_info');
+  const canCheckUserAttendance = containsPermission('check_user_attendance');
 
   // User must have at least one permission to view user details
   if (!hasPrivateInfo && !hasPublicInfo) {
@@ -185,14 +186,16 @@ export default async function WorkspaceUserDetailsPage({
             pageSize={EMAIL_PAGE_SIZE}
           />
 
+          {canCheckUserAttendance && (
           <UserMonthAttendance
             wsId={wsId}
             user={{
               id: data.id,
               full_name: data.display_name || data.full_name,
-              href: `/${wsId}/users/database/${data.id}`,
-            }}
-          />
+                href: `/${wsId}/users/database/${data.id}`,
+              }}
+            />
+          )}
         </div>
 
         <div className="grid gap-4">

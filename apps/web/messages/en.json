@@ -2310,7 +2310,9 @@
     "update_users_description": "Allows members to edit existing virtual user profiles in the workspace.",
     "delete_users": "Delete Users",
     "delete_users_description": "Allows members to delete virtual user profiles from the workspace.",
-    "view_finance_stats_description": "Allows members to view financial stats of the workspace"
+    "view_finance_stats_description": "Allows members to view financial stats of the workspace",
+    "check_user_attendance": "Check User Attendance",
+    "check_user_attendance_description": "Allows members to check for other users attendance"
   },
   "platform-roles": {
     "plural": "Platform Roles",
