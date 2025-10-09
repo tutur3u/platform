@@ -9,6 +9,11 @@ export default async function PromotionsStatistics({ wsId }: { wsId: string }) {
 
   const enabled = true;
 
+  const { permissions } = await getPermissions({
+    wsId,
+  });
+
+  if (!enabled || !permissions.includes('view_inventory')) return null;
   const { count: promotions } = enabled
     ? await supabase
         .from('workspace_promotions')
@@ -19,11 +24,7 @@ export default async function PromotionsStatistics({ wsId }: { wsId: string }) {
         .eq('ws_id', wsId)
     : { count: 0 };
 
-  const { permissions } = await getPermissions({
-    wsId,
-  });
 
-  if (!enabled || !permissions.includes('manage_inventory')) return null;
 
   return (
     <StatisticCard

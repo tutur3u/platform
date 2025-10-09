@@ -1,6 +1,7 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
 import type { Product2 } from '@tuturuuu/types/primitives/Product';
 import type { ProductInventory } from '@tuturuuu/types/primitives/ProductInventory';
+import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 
 interface Params {
@@ -10,11 +11,21 @@ interface Params {
 }
 
 export async function POST(req: Request, { params }: Params) {
+  const { wsId } = await params;
+
+  // Check permissions
+  const { containsPermission } = await getPermissions({ wsId });
+  if (!containsPermission('create_inventory')) {
+    return NextResponse.json(
+      { message: 'Insufficient permissions to create products' },
+      { status: 403 }
+    );
+  }
+
   const supabase = await createClient();
   const { inventory, ...data } = (await req.json()) as Product2 & {
     inventory: ProductInventory[];
   };
-  const { wsId } = await params;
 
   const product = await supabase
     .from('workspace_products')

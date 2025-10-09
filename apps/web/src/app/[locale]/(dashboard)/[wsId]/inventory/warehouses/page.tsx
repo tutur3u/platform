@@ -41,20 +41,24 @@ export default async function WorkspaceWarehousesPage({
           wsId,
         });
 
-        if (!permissions.includes('view_inventory')) {
-          return (
-            <div className="flex h-full items-center justify-center">
-              <div className="text-center">
-                <h2 className="text-lg font-semibold">{t('ws-roles.inventory_access_denied')}</h2>
-                <p className="text-muted-foreground">
-                  {t('ws-roles.inventory_warehouses_access_denied_description')}
-                </p>
-              </div>
-            </div>
-          );
-        }
+  if (!permissions.includes('view_inventory')) {
+    return (
+      <div className="flex h-full items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-lg font-semibold">{t('ws-roles.inventory_access_denied')}</h2>
+          <p className="text-muted-foreground">
+            {t('ws-roles.inventory_warehouses_access_denied_description')}
+          </p>
+        </div>
+      </div>
+    );
+  }
 
-        const { data, count } = await getData(wsId, await searchParams);
+  const canCreateInventory = permissions.includes('create_inventory');
+  const canUpdateInventory = permissions.includes('update_inventory');
+  const canDeleteInventory = permissions.includes('delete_inventory');
+
+  const { data, count } = await getData(wsId, await searchParams);
 
         return (
           <>
@@ -64,7 +68,15 @@ export default async function WorkspaceWarehousesPage({
               description={t('ws-inventory-warehouses.description')}
               createTitle={t('ws-inventory-warehouses.create')}
               createDescription={t('ws-inventory-warehouses.create_description')}
-              form={<ProductWarehouseForm wsId={wsId} />}
+              form={
+                canCreateInventory ? (
+                  <ProductWarehouseForm
+                    wsId={wsId}
+                    canCreateInventory={canCreateInventory}
+                    canUpdateInventory={canUpdateInventory}
+                  />
+                ) : undefined
+              }
             />
             <Separator className="my-4" />
             <CustomDataTable

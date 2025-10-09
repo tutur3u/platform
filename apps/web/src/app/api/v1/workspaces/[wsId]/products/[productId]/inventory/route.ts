@@ -1,5 +1,6 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
 import type { ProductInventory } from '@tuturuuu/types/primitives/ProductInventory';
+import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 
 interface Params {
@@ -14,9 +15,19 @@ interface RequestBody {
 }
 
 export async function POST(req: Request, { params }: Params) {
+  const { wsId, productId } = await params;
+
+  // Check permissions
+  const { containsPermission } = await getPermissions({ wsId });
+  if (!containsPermission('create_inventory')) {
+    return NextResponse.json(
+      { message: 'Insufficient permissions to create inventory' },
+      { status: 403 }
+    );
+  }
+
   const supabase = await createClient();
   const { inventory } = (await req.json()) as RequestBody;
-  const { productId } = await params;
 
   // Validate that product exists
   const { data: product, error: productError } = await supabase
@@ -25,7 +36,12 @@ export async function POST(req: Request, { params }: Params) {
     .eq('id', productId)
     .single();
 
-  if (productError || !product) {
+  if (productError) {
+    console.log(productError);
+    return NextResponse.json({ message: 'Error validating product' }, { status: 500 });
+  }
+
+  if (!product) {
     return NextResponse.json({ message: 'Product not found' }, { status: 404 });
   }
 
@@ -49,6 +65,17 @@ export async function POST(req: Request, { params }: Params) {
 }
 
 export async function PATCH(req: Request, { params }: Params) {
+  const { wsId, productId } = await params;
+
+  // Check permissions
+  const { containsPermission } = await getPermissions({ wsId });
+  if (!containsPermission('update_inventory')) {
+    return NextResponse.json(
+      { message: 'Insufficient permissions to update inventory' },
+      { status: 403 }
+    );
+  }
+
   const supabase = await createClient();
   const {
     data: { user },
@@ -57,7 +84,6 @@ export async function PATCH(req: Request, { params }: Params) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }
   const { inventory } = (await req.json()) as RequestBody;
-  const { productId } = await params;
 
   // Validate that product exists
   const { data: product, error: productError } = await supabase
@@ -313,8 +339,18 @@ export async function GET(_: Request, { params }: Params) {
 }
 
 export async function DELETE(_: Request, { params }: Params) {
+  const { wsId, productId } = await params;
+
+  // Check permissions
+  const { containsPermission } = await getPermissions({ wsId });
+  if (!containsPermission('delete_inventory')) {
+    return NextResponse.json(
+      { message: 'Insufficient permissions to delete inventory' },
+      { status: 403 }
+    );
+  }
+
   const supabase = await createClient();
-  const { productId } = await params;
 
   // Delete all inventory for this product
   const { error } = await supabase

@@ -16,7 +16,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
-import { toast } from '@tuturuuu/ui/hooks/use-toast';
+import { toast } from '@tuturuuu/ui/sonner';
 import { Ellipsis } from '@tuturuuu/ui/icons';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
@@ -48,9 +48,8 @@ export function PromotionRowActions({ row }: PromotionRowActionsProps) {
     } else {
       const data = await res.json();
       toast({
-        // TODO: i18n
-        title: 'Failed to delete workspace promotion',
-        description: data.message,
+        title: t('common.error'),
+        description: data.message || t('ws-inventory-promotions.failed_delete_promotion'),
       });
     }
   };

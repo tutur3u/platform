@@ -71,6 +71,8 @@ interface Props {
   warehouses: ProductWarehouse[];
   units: ProductUnit[];
   onFinish?: (data: z.infer<typeof FormSchema>) => void;
+  canCreateInventory?: boolean;
+  canUpdateInventory?: boolean;
 }
 
 export function ProductForm({
@@ -80,6 +82,8 @@ export function ProductForm({
   warehouses,
   units,
   onFinish,
+  canCreateInventory = true,
+  canUpdateInventory = true,
 }: Props) {
   const t = useTranslations();
   console.log('Form data:', data);
@@ -154,6 +158,27 @@ export function ProductForm({
 
   async function onSubmit(formData: z.infer<typeof FormSchema>) {
     setLoading(true);
+
+    // Check permissions before proceeding
+    if (!data?.id && !canCreateInventory) {
+      toast({
+        title: 'Permission Denied',
+        description: 'You do not have permission to create inventory',
+        variant: 'destructive',
+      });
+      setLoading(false);
+      return;
+    }
+
+    if (data?.id && !canUpdateInventory) {
+      toast({
+        title: 'Permission Denied',
+        description: 'You do not have permission to update inventory',
+        variant: 'destructive',
+      });
+      setLoading(false);
+      return;
+    }
 
     try {
       // For new products, send all data
@@ -231,7 +256,10 @@ export function ProductForm({
         if (!hasProductChanges && !hasInventoryChanges) {
           console.log('No changes detected, skipping API calls');
           setLoading(false);
-          toast('No changes detected');
+          toast({
+            title: t('common.info'),
+            description: t('ws-inventory-products.no_changes_detected'),
+          });
           return;
         }
 
@@ -309,15 +337,18 @@ export function ProductForm({
       // Success - redirect to products list
       onFinish?.(formData);
       setLoading(false);
-      toast('Product saved successfully');
+      toast({
+        title: t('common.success'),
+        description: t('ws-inventory-products.product_saved_successfully'),
+      });
       // router.push('../products');
     } catch (error) {
       setLoading(false);
       console.error('Error saving product:', error);
-      toast(
-        'Error saving product: ' +
-          (error instanceof Error ? error.message : 'Unknown error')
-      );
+      toast({
+        title: t('common.error'),
+        description: error instanceof Error ? error.message : t('ws-inventory-products.failed_save_product'),
+      });
     }
   }
 

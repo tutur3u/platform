@@ -11,7 +11,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
-import { toast } from '@tuturuuu/ui/hooks/use-toast';
+import { toast } from '@tuturuuu/ui/sonner';
 import { Ellipsis } from '@tuturuuu/ui/icons';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
@@ -41,8 +41,8 @@ export function ProductWarehouseRowActions(props: Props) {
     } else {
       const data = await res.json();
       toast({
-        title: 'Failed to delete workspace category',
-        description: data.message,
+        title: t('common.error'),
+        description: data.message || t('ws-inventory-warehouses.failed_delete_warehouse'),
       });
     }
   };

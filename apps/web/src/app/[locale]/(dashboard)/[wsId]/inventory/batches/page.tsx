@@ -53,6 +53,10 @@ export default async function WorkspaceBatchesPage({
           );
         }
 
+        // const canCreateInventory = permissions.includes('create_inventory');
+        // const canUpdateInventory = permissions.includes('update_inventory');
+        // const canDeleteInventory = permissions.includes('delete_inventory');
+
         const { data, count } = await getData(wsId, await searchParams);
 
         return (

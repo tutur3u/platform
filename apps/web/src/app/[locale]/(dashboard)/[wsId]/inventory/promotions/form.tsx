@@ -11,7 +11,7 @@ import {
   FormMessage,
 } from '@tuturuuu/ui/form';
 import { useForm } from '@tuturuuu/ui/hooks/use-form';
-import { toast } from '@tuturuuu/ui/hooks/use-toast';
+import { toast } from '@tuturuuu/ui/sonner';
 import { Input } from '@tuturuuu/ui/input';
 import { zodResolver } from '@tuturuuu/ui/resolvers';
 import {
@@ -33,6 +33,8 @@ interface Props {
   wsUserId?: string;
   data?: ProductPromotion;
   onFinish?: (data: z.infer<typeof FormSchema>) => void;
+  canCreateInventory?: boolean;
+  canUpdateInventory?: boolean;
 }
 
 const FormSchema = z
@@ -54,7 +56,14 @@ const FormSchema = z
     }
   );
 
-export function PromotionForm({ wsId, wsUserId, data, onFinish }: Props) {
+export function PromotionForm({
+  wsId,
+  wsUserId,
+  data,
+  onFinish,
+  canCreateInventory = true,
+  canUpdateInventory = true
+}: Props) {
   const t = useTranslations();
 
   const [loading, setLoading] = useState(false);
@@ -74,6 +83,27 @@ export function PromotionForm({ wsId, wsUserId, data, onFinish }: Props) {
 
   async function onSubmit(data: z.infer<typeof FormSchema>) {
     setLoading(true);
+
+    // Check permissions before proceeding
+    if (!data?.id && !canCreateInventory) {
+      toast({
+        title: t('common.error'),
+        description: t('ws-roles.inventory_promotions_access_denied_description'),
+        variant: 'destructive',
+      });
+      setLoading(false);
+      return;
+    }
+
+    if (data?.id && !canUpdateInventory) {
+      toast({
+        title: t('common.error'),
+        description: t('ws-roles.inventory_promotions_access_denied_description'),
+        variant: 'destructive',
+      });
+      setLoading(false);
+      return;
+    }
 
     const res = await fetch(
       data?.id
@@ -97,8 +127,8 @@ export function PromotionForm({ wsId, wsUserId, data, onFinish }: Props) {
     } else {
       setLoading(false);
       toast({
-        title: 'Error creating promotion',
-        description: 'An error occurred while creating the promotion',
+        title: t('common.error'),
+        description: t('ws-inventory-promotions.failed_create_promotion'),
       });
     }
   }

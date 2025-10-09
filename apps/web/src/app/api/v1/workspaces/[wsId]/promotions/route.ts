@@ -1,4 +1,5 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
+import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 
 interface Params {
@@ -8,9 +9,19 @@ interface Params {
 }
 
 export async function POST(req: Request, { params }: Params) {
+  const { wsId } = await params;
+
+  // Check permissions
+  const { containsPermission } = await getPermissions({ wsId });
+  if (!containsPermission('create_inventory')) {
+    return NextResponse.json(
+      { message: 'Insufficient permissions to create promotions' },
+      { status: 403 }
+    );
+  }
+
   const supabase = await createClient();
   const data = await req.json();
-  const { wsId } = await params;
 
   const { error } = await supabase.from('workspace_promotions').insert({
     ...data,

@@ -10,7 +10,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
-import { toast } from '@tuturuuu/ui/hooks/use-toast';
+import { toast } from '@tuturuuu/ui/sonner';
 import { Ellipsis, Eye } from '@tuturuuu/ui/icons';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -19,9 +19,16 @@ import { useTranslations } from 'next-intl';
 interface ProductRowActionsProps {
   row: Row<Product>;
   href?: string;
+  canUpdateInventory?: boolean;
+  canDeleteInventory?: boolean;
 }
 
-export function ProductRowActions({ row, href }: ProductRowActionsProps) {
+export function ProductRowActions({
+  row,
+  href,
+  canUpdateInventory = true,
+  canDeleteInventory = true
+}: ProductRowActionsProps) {
   const t = useTranslations();
   const router = useRouter();
 
@@ -30,6 +37,15 @@ export function ProductRowActions({ row, href }: ProductRowActionsProps) {
   if (!data.id || !data.ws_id) return null;
 
   async function deleteProduct() {
+    if (!canDeleteInventory) {
+      toast({
+        title: t('common.error'),
+        description: t('ws-roles.inventory_products_access_denied_description'),
+        variant: 'destructive',
+      });
+      return;
+    }
+
     const res = await fetch(
       `/api/v1/workspaces/${data.ws_id}/products/${data.id}`,
       {
@@ -42,9 +58,8 @@ export function ProductRowActions({ row, href }: ProductRowActionsProps) {
     } else {
       const data = await res.json();
       toast({
-        // TODO: i18n
-        title: 'Failed to delete workspace product',
-        description: data.message,
+        title: t('common.error'),
+        description: data.message || t('ws-inventory-products.failed_delete_product'),
       });
     }
   }
@@ -72,14 +87,18 @@ export function ProductRowActions({ row, href }: ProductRowActionsProps) {
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-[160px]">
-          <DropdownMenuItem asChild>
-            <Link href={`./products/${data.id}`}>{t('common.edit')}</Link>
-          </DropdownMenuItem>
+          {canUpdateInventory && (
+            <DropdownMenuItem asChild>
+              <Link href={`./products/${data.id}`}>{t('common.edit')}</Link>
+            </DropdownMenuItem>
+          )}
 
-          <DropdownMenuSeparator />
-          <DropdownMenuItem onClick={deleteProduct}>
-            {t('common.delete')}
-          </DropdownMenuItem>
+          {canUpdateInventory && canDeleteInventory && <DropdownMenuSeparator />}
+          {canDeleteInventory && (
+            <DropdownMenuItem onClick={deleteProduct}>
+              {t('common.delete')}
+            </DropdownMenuItem>
+          )}
         </DropdownMenuContent>
       </DropdownMenu>
     </div>

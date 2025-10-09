@@ -60,6 +60,10 @@ export default async function WorkspaceProductsPage({
           );
         }
 
+        const canCreateInventory = permissions.includes('create_inventory');
+        const canUpdateInventory = permissions.includes('update_inventory');
+        const canDeleteInventory = permissions.includes('delete_inventory');
+
         const { data, count } = await getData(wsId, await searchParams);
         const categories = await getCategories(wsId);
         const warehouses = await getWarehouses(wsId);
@@ -74,12 +78,14 @@ export default async function WorkspaceProductsPage({
               createTitle={t('ws-inventory-products.create')}
               createDescription={t('ws-inventory-products.create_description')}
               action={
-                <Link href="./products/new">
-                  <Button className="cursor-pointer">
-                    <Plus className="mr-2 h-4 w-4" />
-                    <span>{t('ws-inventory-products.create')}</span>
-                  </Button>
-                </Link>
+                canCreateInventory ? (
+                  <Link href="./products/new">
+                    <Button className="cursor-pointer">
+                      <Plus className="mr-2 h-4 w-4" />
+                      <span>{t('ws-inventory-products.create')}</span>
+                    </Button>
+                  </Link>
+                ) : undefined
               }
             />
             <Separator className="my-4" />
@@ -90,6 +96,9 @@ export default async function WorkspaceProductsPage({
               warehouses={warehouses}
               units={units}
               wsId={wsId}
+              canCreateInventory={canCreateInventory}
+              canUpdateInventory={canUpdateInventory}
+              canDeleteInventory={canDeleteInventory}
             />
           </>
         );

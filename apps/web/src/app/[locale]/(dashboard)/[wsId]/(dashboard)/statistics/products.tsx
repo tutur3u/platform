@@ -8,6 +8,11 @@ export default async function ProductsStatistics({ wsId }: { wsId: string }) {
   const t = await getTranslations();
 
   const enabled = true;
+  const { permissions } = await getPermissions({
+    wsId,
+  });
+
+  if (!enabled || !permissions.includes('view_inventory')) return null;
 
   const { data: workspaceProducts } = enabled
     ? await supabase.rpc('get_workspace_products_count', {
@@ -15,11 +20,7 @@ export default async function ProductsStatistics({ wsId }: { wsId: string }) {
       })
     : { data: 0 };
 
-  const { permissions } = await getPermissions({
-    wsId,
-  });
 
-  if (!enabled || !permissions.includes('manage_inventory')) return null;
 
   return (
     <StatisticCard

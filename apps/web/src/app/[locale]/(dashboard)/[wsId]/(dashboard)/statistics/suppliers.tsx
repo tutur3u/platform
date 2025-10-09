@@ -8,6 +8,10 @@ export default async function SuppliersStatistics({ wsId }: { wsId: string }) {
   const t = await getTranslations();
 
   const enabled = true;
+  const { permissions } = await getPermissions({
+    wsId,
+  });
+  if (!enabled || !permissions.includes('view_inventory')) return null;
 
   const { count: suppliers } = enabled
     ? await supabase
@@ -19,11 +23,9 @@ export default async function SuppliersStatistics({ wsId }: { wsId: string }) {
         .eq('ws_id', wsId)
     : { count: 0 };
 
-  const { permissions } = await getPermissions({
-    wsId,
-  });
 
-  if (!enabled || !permissions.includes('manage_inventory')) return null;
+
+
 
   return (
     <StatisticCard

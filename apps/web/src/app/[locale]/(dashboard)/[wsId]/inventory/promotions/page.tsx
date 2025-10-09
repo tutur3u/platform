@@ -58,6 +58,10 @@ export default async function WorkspacePromotionsPage({
           );
         }
 
+        const canCreateInventory = permissions.includes('create_inventory');
+        const canUpdateInventory = permissions.includes('update_inventory');
+        const canDeleteInventory = permissions.includes('delete_inventory');
+
         const { data, count } = await getData(wsId, await searchParams);
 
         const user = await getCurrentUser(true);
@@ -98,7 +102,14 @@ export default async function WorkspacePromotionsPage({
                 'ws-inventory-promotions.create_description'
               )}
               form={
-                <PromotionForm wsId={wsId} wsUserId={wsUser.virtual_user_id} />
+                canCreateInventory ? (
+                  <PromotionForm
+                    wsId={wsId}
+                    wsUserId={wsUser.virtual_user_id}
+                    canCreateInventory={canCreateInventory}
+                    canUpdateInventory={canUpdateInventory}
+                  />
+                ) : undefined
               }
               settingsData={settingsRow ? settingsRow : undefined}
               settingsForm={

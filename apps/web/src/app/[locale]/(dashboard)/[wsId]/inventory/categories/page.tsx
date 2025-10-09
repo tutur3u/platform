@@ -53,6 +53,10 @@ export default async function WorkspaceProductCategoriesPage({
     );
   }
 
+  const canCreateInventory = permissions.includes('create_inventory');
+  const canUpdateInventory = permissions.includes('update_inventory');
+  const canDeleteInventory = permissions.includes('delete_inventory');
+
   const { data, count } = await getData(wsId, await searchParams);
 
   return (
@@ -63,7 +67,15 @@ export default async function WorkspaceProductCategoriesPage({
         description={t('ws-inventory-categories.description')}
         createTitle={t('ws-inventory-categories.create')}
         createDescription={t('ws-inventory-categories.create_description')}
-        form={<ProductCategoryForm wsId={wsId} />}
+        form={
+          canCreateInventory ? (
+            <ProductCategoryForm
+              wsId={wsId}
+              canCreateInventory={canCreateInventory}
+              canUpdateInventory={canUpdateInventory}
+            />
+          ) : undefined
+        }
       />
       <Separator className="my-4" />
       <CustomDataTable
@@ -71,6 +83,10 @@ export default async function WorkspaceProductCategoriesPage({
         columnGenerator={productCategoryColumns}
         namespace="transaction-category-data-table"
         count={count}
+        extraData={{
+          canUpdateInventory,
+          canDeleteInventory,
+        }}
         defaultVisibility={{
           id: false,
           created_at: false,

@@ -32,7 +32,7 @@ import {
   FormMessage,
 } from '@tuturuuu/ui/form';
 import { useFieldArray, useForm } from '@tuturuuu/ui/hooks/use-form';
-import { toast } from '@tuturuuu/ui/hooks/use-toast';
+import { toast } from '@tuturuuu/ui/sonner';
 import {
   Edit,
   Eye,
@@ -89,6 +89,9 @@ interface Props {
   categories: ProductCategory[];
   warehouses: ProductWarehouse[];
   units: ProductUnit[];
+  canCreateInventory: boolean;
+  canUpdateInventory: boolean;
+  canDeleteInventory: boolean;
 }
 
 export function ProductQuickDialog({
@@ -99,6 +102,9 @@ export function ProductQuickDialog({
   categories,
   warehouses,
   units,
+  canCreateInventory,
+  canUpdateInventory,
+  canDeleteInventory,
 }: Props) {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -211,6 +217,11 @@ export function ProductQuickDialog({
   const handleEditSave = async (data: z.infer<typeof EditProductSchema>) => {
     if (!product?.id) return;
 
+    if (!canUpdateInventory) {
+      toast.error('You do not have permission to update inventory');
+      return;
+    }
+
     setIsSaving(true);
 
     try {
@@ -278,10 +289,7 @@ export function ProductQuickDialog({
       if (!hasProductChanges && !hasInventoryChanges) {
         console.log('No changes detected, skipping API calls');
         setIsSaving(false);
-        toast({
-          title: t('common.error'),
-          description: 'No changes to save',
-        });
+        toast.error('No changes to save');
         return;
       }
 
@@ -324,20 +332,14 @@ export function ProductQuickDialog({
 
       // Success
       setIsSaving(false);
-      toast({
-        title: t('common.success'),
-        description: 'Product updated successfully',
-      });
+      toast.success('Product updated successfully');
       router.refresh();
     } catch (error) {
       setIsSaving(false);
       console.error('Error updating product:', error);
-      toast({
-        title: t('common.error'),
-        description:
-          error instanceof Error ? error.message : 'Failed to update product',
-        variant: 'destructive',
-      });
+      toast.error(
+        error instanceof Error ? error.message : 'Failed to update product'
+      );
     }
   };
 
@@ -347,6 +349,12 @@ export function ProductQuickDialog({
 
   const handleDelete = async () => {
     if (!product?.id) return;
+
+    if (!canDeleteInventory) {
+      toast.error('You do not have permission to delete inventory');
+      setShowDeleteDialog(false);
+      return;
+    }
 
     setIsDeleting(true);
     try {
@@ -358,27 +366,16 @@ export function ProductQuickDialog({
       );
 
       if (res.ok) {
-        toast({
-          title: t('common.success'),
-          description: 'Product deleted successfully',
-        });
+        toast.success('Product deleted successfully');
         setShowDeleteDialog(false);
         onOpenChange(false);
         router.refresh();
       } else {
         const data = await res.json();
-        toast({
-          title: t('common.error'),
-          description: data.message || 'Failed to delete product',
-          variant: 'destructive',
-        });
+        toast.error(data.message || 'Failed to delete product');
       }
     } catch {
-      toast({
-        title: t('common.error'),
-        description: 'Failed to delete product',
-        variant: 'destructive',
-      });
+      toast.error('Failed to delete product');
     }
     setIsDeleting(false);
   };
@@ -423,10 +420,12 @@ export function ProductQuickDialog({
                 <History className="h-4 w-4" />
                 History
               </TabsTrigger>
-              <TabsTrigger value="edit" className="flex items-center gap-2">
-                <Edit className="h-4 w-4" />
-                Edit
-              </TabsTrigger>
+              {canUpdateInventory && (
+                <TabsTrigger value="edit" className="flex items-center gap-2">
+                  <Edit className="h-4 w-4" />
+                  Edit
+                </TabsTrigger>
+              )}
             </TabsList>
 
             {/* Product Details Tab */}
@@ -670,32 +669,34 @@ export function ProductQuickDialog({
                           </div>
                         ))}
 
-                        <div className="flex gap-2">
-                          <Button
-                            type="button"
-                            variant="outline"
-                            onClick={addStock}
-                            className="w-full"
-                          >
-                            <Plus className="mr-2 h-4 w-4" />
-                            Add Stock Entry
-                          </Button>
-                          <Button
-                            type="button"
-                            onClick={editForm.handleSubmit(handleEditSave)}
-                            disabled={isSaving}
-                            className="w-full"
-                          >
-                            {isSaving ? (
-                              <Loader2 className="h-4 w-4 animate-spin" />
-                            ) : (
-                              <>
-                                <Save className="h-4 w-4" />
-                                Save Inventory Changes
-                              </>
-                            )}
-                          </Button>
-                        </div>
+                        {canUpdateInventory && (
+                          <div className="flex gap-2">
+                            <Button
+                              type="button"
+                              variant="outline"
+                              onClick={addStock}
+                              className="w-full"
+                            >
+                              <Plus className="mr-2 h-4 w-4" />
+                              Add Stock Entry
+                            </Button>
+                            <Button
+                              type="button"
+                              onClick={editForm.handleSubmit(handleEditSave)}
+                              disabled={isSaving}
+                              className="w-full"
+                            >
+                              {isSaving ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : (
+                                <>
+                                  <Save className="h-4 w-4" />
+                                  Save Inventory Changes
+                                </>
+                              )}
+                            </Button>
+                          </div>
+                        )}
                       </div>
                     </Form>
                   </CardContent>
@@ -915,15 +916,17 @@ export function ProductQuickDialog({
                       </div>
 
                       <div className="flex items-center justify-between pt-4">
-                        <Button
-                          type="button"
-                          variant="destructive"
-                          onClick={handleDeleteClick}
-                          className="flex items-center gap-2"
-                        >
-                          <Trash className="h-4 w-4" />
-                          Delete Product
-                        </Button>
+                        {canDeleteInventory && (
+                          <Button
+                            type="button"
+                            variant="destructive"
+                            onClick={handleDeleteClick}
+                            className="flex items-center gap-2"
+                          >
+                            <Trash className="h-4 w-4" />
+                            Delete Product
+                          </Button>
+                        )}
 
                         <div className="flex gap-2">
                           <Button
@@ -933,20 +936,22 @@ export function ProductQuickDialog({
                           >
                             Cancel
                           </Button>
-                          <Button
-                            type="submit"
-                            disabled={isSaving || !editForm.formState.isDirty}
-                            className="flex items-center gap-2"
-                          >
-                            {isSaving ? (
-                              <Loader2 className="h-4 w-4 animate-spin" />
-                            ) : (
-                              <>
-                                <Save className="h-4 w-4" />
-                                Save Changes
-                              </>
-                            )}
-                          </Button>
+                          {canUpdateInventory && (
+                            <Button
+                              type="submit"
+                              disabled={isSaving || !editForm.formState.isDirty}
+                              className="flex items-center gap-2"
+                            >
+                              {isSaving ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : (
+                                <>
+                                  <Save className="h-4 w-4" />
+                                  Save Changes
+                                </>
+                              )}
+                            </Button>
+                          )}
                         </div>
                       </div>
                     </form>

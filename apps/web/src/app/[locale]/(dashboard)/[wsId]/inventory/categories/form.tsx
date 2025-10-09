@@ -11,7 +11,7 @@ import {
   FormMessage,
 } from '@tuturuuu/ui/form';
 import { useForm } from '@tuturuuu/ui/hooks/use-form';
-import { toast } from '@tuturuuu/ui/hooks/use-toast';
+import { toast } from '@tuturuuu/ui/sonner';
 import { Input } from '@tuturuuu/ui/input';
 import { zodResolver } from '@tuturuuu/ui/resolvers';
 import { useRouter } from 'next/navigation';
@@ -23,6 +23,8 @@ interface Props {
   wsId: string;
   data?: ProductCategory;
   onFinish?: (data: z.infer<typeof FormSchema>) => void;
+  canCreateInventory?: boolean;
+  canUpdateInventory?: boolean;
 }
 
 const FormSchema = z.object({
@@ -30,7 +32,13 @@ const FormSchema = z.object({
   name: z.string().min(1).max(255),
 });
 
-export function ProductCategoryForm({ wsId, data, onFinish }: Props) {
+export function ProductCategoryForm({
+  wsId,
+  data,
+  onFinish,
+  canCreateInventory = true,
+  canUpdateInventory = true
+}: Props) {
   const t = useTranslations();
 
   const [loading, setLoading] = useState(false);
@@ -46,6 +54,19 @@ export function ProductCategoryForm({ wsId, data, onFinish }: Props) {
 
   async function onSubmit(data: z.infer<typeof FormSchema>) {
     setLoading(true);
+
+    // Check permissions before proceeding
+    if (!data?.id && !canCreateInventory) {
+      toast.error(t('ws-roles.inventory_categories_access_denied_description'));
+      setLoading(false);
+      return;
+    }
+
+    if (data?.id && !canUpdateInventory) {
+      toast.error(t('ws-roles.inventory_categories_access_denied_description'));
+      setLoading(false);
+      return;
+    }
 
     const res = await fetch(
       data?.id
@@ -67,10 +88,7 @@ export function ProductCategoryForm({ wsId, data, onFinish }: Props) {
       router.refresh();
     } else {
       setLoading(false);
-      toast({
-        title: 'Error creating category',
-        description: 'An error occurred while creating the category',
-      });
+      toast.error(t('common.error'));
     }
   }
 
