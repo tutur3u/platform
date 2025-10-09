@@ -156,7 +156,8 @@ const getVietnameseDiacritics = (char: string): string => {
 export const textStyles = {
   bold: {
     name: '𝐁𝐨𝐥𝐝',
-    description: 'Bold text using Mathematical Alphanumeric Symbols',
+    description:
+      'Makes your text stand out. Perfect for headlines and emphasis.',
     transform: (text: string) => {
       return text.replace(
         /[A-Za-z0-9àáảãạăằắẳẵặâầấẩẫậèéẻẽẹêềếểễệìíỉĩịòóỏõọôồốổỗộơờớởỡợùúủũụưừứửữựỳýỷỹỵ]/g,
@@ -192,7 +193,7 @@ export const textStyles = {
   },
   italic: {
     name: '𝘐𝘵𝘢𝘭𝘪𝘤',
-    description: 'Italic text using Mathematical Alphanumeric Symbols',
+    description: 'Adds a touch of elegance or emphasis with a slanted style.',
     transform: (text: string) => {
       return text.replace(
         /[A-Za-z0-9àáảãạăằắẳẵặâầấẩẫậèéẻẽẹêềếểễệìíỉĩịòóỏõọôồốổỗộơờớởỡợùúủũụưừứửữựỳýỷỹỵ]/g,
@@ -234,7 +235,8 @@ export const textStyles = {
   },
   boldItalic: {
     name: '𝑩𝒐𝒍𝒅 𝑰𝒕𝒂𝒍𝒊𝒄',
-    description: 'Bold italic text using Mathematical Alphanumeric Symbols',
+    description:
+      'For maximum impact. Combines the strength of bold with the flair of italic.',
     transform: (text: string) => {
       return text.replace(
         /[A-Za-z0-9àáảãạăằắẳẵặâầấẩẫậèéẻẽẹêềếểễệìíỉĩịòóỏõọôồốổỗộơờớởỡợùúủũụưừứửữựỳýỷỹỵ]/g,
@@ -268,7 +270,8 @@ export const textStyles = {
 
   sansSerif: {
     name: '𝖲𝖺𝗇𝗌 𝖲𝖾𝗋𝗂𝖿',
-    description: 'Sans-serif text using Mathematical Alphanumeric Symbols',
+    description:
+      'A clean, modern, and highly readable style for a minimalist look.',
     transform: (text: string) => {
       return text.replace(
         /[A-Za-z0-9àáảãạăằắẳẵặâầấẩẫậèéẻẽẹêềếểễệìíỉĩịòóỏõọôồốổỗộơờớởỡợùúủũụưừứửữựỳýỷỹỵ]/g,
@@ -302,9 +305,10 @@ export const textStyles = {
       );
     },
   },
+
   sansSerifBold: {
     name: '𝗕𝗼𝗹𝗱 𝗦𝗮𝗻𝘀',
-    description: 'Bold sans-serif text using Mathematical Alphanumeric Symbols',
+    description: 'Strong and modern. Great for clear, impactful statements.',
     transform: (text: string) => {
       return text.replace(
         /[A-Za-z0-9àáảãạăằắẳẵặâầấẩẫậèéẻẽẹêềếểễệìíỉĩịòóỏõọôồốổỗộơờớởỡợùúủũụưừứửữựỳýỷỹỵ]/g,
@@ -340,8 +344,7 @@ export const textStyles = {
   },
   sansSerifItalic: {
     name: '𝘐𝘵𝘢𝘭𝘪𝘤 𝘚𝘢𝘯𝘴',
-    description:
-      'Italic sans-serif text using Mathematical Alphanumeric Symbols',
+    description: 'A sleek and stylish slant on the modern sans-serif font.',
     transform: (text: string) => {
       return text.replace(
         /[A-Za-z0-9àáảãạăằắẳẵặâầấẩẫậèéẻẽẹêềếểễệìíỉĩịòóỏõọôồốổỗộơờớởỡợùúủũụưừứửữựỳýỷỹỵ]/g,
@@ -375,7 +378,7 @@ export const textStyles = {
 
   monospace: {
     name: '𝙼𝚘𝚗𝚘𝚜𝚙𝚊𝚌𝚎',
-    description: 'Monospace text using Mathematical Alphanumeric Symbols',
+    description: 'Gives a classic typewriter or computer code feel to your text.',
     transform: (text: string) => {
       return text.replace(
         /[A-Za-z0-9àáảãạăằắẳẵặâầấẩẫậèéẻẽẹêềếểễệìíỉĩịòóỏõọôồốổỗộơờớởỡợùúủũụưừứửữựỳýỷỹỵ]/g,
@@ -412,7 +415,7 @@ export const textStyles = {
 
   scriptBold: {
     name: '𝓑𝓸𝓵𝓭 𝓢𝓬𝓻𝓲𝓹𝓽',
-    description: 'Bold script text using Mathematical Alphanumeric Symbols',
+    description: 'An elegant, handwritten cursive style for a formal or personal touch.',
     transform: (text: string) => {
       return text.replace(
         /[A-Za-z0-9àáảãạăằắẳẵặâầấẩẫậèéẻẽẹêềếểễệìíỉĩịòóỏõọôồốổỗộơờớởỡợùúủũụưừứửữựỳýỷỹỵ]/g,
