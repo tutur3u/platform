@@ -213,9 +213,11 @@ export function BoardHeader({
               className={cn(
                 'h-6 px-1.5 text-[10px] transition-all sm:h-7 sm:px-2 sm:text-xs',
                 listStatusFilter === 'all' &&
-                  'bg-primary/10 text-primary shadow-sm'
+                  'bg-primary/10 text-primary shadow-sm',
+                currentView === 'status-grouped' && 'opacity-50'
               )}
               onClick={() => onListStatusFilterChange('all')}
+              disabled={currentView === 'status-grouped'}
             >
               All
             </Button>
@@ -225,9 +227,11 @@ export function BoardHeader({
               className={cn(
                 'h-6 px-1.5 text-[10px] transition-all sm:h-7 sm:px-2 sm:text-xs',
                 listStatusFilter === 'active' &&
-                  'bg-primary/10 text-primary shadow-sm'
+                  'bg-primary/10 text-primary shadow-sm',
+                currentView === 'status-grouped' && 'opacity-50'
               )}
               onClick={() => onListStatusFilterChange('active')}
+              disabled={currentView === 'status-grouped'}
             >
               Active
             </Button>
@@ -237,9 +241,11 @@ export function BoardHeader({
               className={cn(
                 'h-6 px-1.5 text-[10px] transition-all sm:h-7 sm:px-2 sm:text-xs',
                 listStatusFilter === 'not_started' &&
-                  'bg-primary/10 text-primary shadow-sm'
+                  'bg-primary/10 text-primary shadow-sm',
+                currentView === 'status-grouped' && 'opacity-50'
               )}
               onClick={() => onListStatusFilterChange('not_started')}
+              disabled={currentView === 'status-grouped'}
             >
               Backlog
             </Button>

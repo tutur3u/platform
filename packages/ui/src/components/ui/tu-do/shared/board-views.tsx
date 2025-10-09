@@ -202,6 +202,13 @@ export function BoardViews({
     ]);
   };
 
+  // Auto-set list status filter to 'all' when in status-grouped view
+  useEffect(() => {
+    if (currentView === 'status-grouped' && listStatusFilter !== 'all') {
+      setListStatusFilter('all');
+    }
+  }, [currentView, listStatusFilter]);
+
   // Global keyboard shortcuts for all views
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
