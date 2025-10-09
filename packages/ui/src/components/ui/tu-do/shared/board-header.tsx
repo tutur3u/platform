@@ -26,12 +26,23 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
 import {
+  ArrowDown,
+  ArrowDownAZ,
   ArrowLeft,
+  ArrowUp,
+  ArrowUpAZ,
   CalendarDays,
+  Check,
   ChevronDown,
+  Clock,
+  Flag,
+  Gauge,
   Layers,
   LayoutGrid,
   List,
@@ -168,20 +179,29 @@ export function BoardHeader({
         </div>
 
         {/* Search Bar */}
-        <div className="relative flex-1 max-w-md">
+        <div className="relative max-w-md flex-1">
           {isSearching ? (
-            <Loader2 className="pointer-events-none absolute top-1/2 left-2 h-4 w-4 -translate-y-1/2 animate-spin text-muted-foreground" />
+            <Loader2 className="-translate-y-1/2 pointer-events-none absolute top-1/2 left-2 h-4 w-4 animate-spin text-muted-foreground" />
           ) : (
-            <Search className="pointer-events-none absolute top-1/2 left-2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Search className="-translate-y-1/2 pointer-events-none absolute top-1/2 left-2 h-4 w-4 text-muted-foreground" />
           )}
           <Input
             type="text"
             placeholder="Search tasks..."
             value={filters.searchQuery || ''}
-            onChange={(e) =>
-              onFiltersChange({ ...filters, searchQuery: e.target.value })
-            }
-            className="h-7 pl-8 pr-8 text-xs sm:h-8 sm:text-sm"
+            onChange={(e) => {
+              const newSearchQuery = e.target.value;
+              onFiltersChange({ ...filters, searchQuery: newSearchQuery });
+
+              // Auto-switch to List view when searching in Status or Timeline view
+              if (
+                newSearchQuery &&
+                (currentView === 'status-grouped' || currentView === 'timeline')
+              ) {
+                onViewChange('list');
+              }
+            }}
+            className="placeholder:-translate-0.5 h-6 bg-background pr-8 pl-8 text-xs placeholder:text-xs sm:h-8 sm:text-sm"
           />
           {filters.searchQuery && !isSearching && (
             <button
@@ -189,7 +209,7 @@ export function BoardHeader({
               onClick={() =>
                 onFiltersChange({ ...filters, searchQuery: undefined })
               }
-              className="absolute top-1/2 right-2 -translate-y-1/2 text-muted-foreground transition-colors hover:text-foreground"
+              className="-translate-y-1/2 absolute top-1/2 right-2 text-muted-foreground transition-colors hover:text-foreground"
             >
               <X className="h-3.5 w-3.5" />
             </button>
@@ -206,12 +226,12 @@ export function BoardHeader({
           )}
 
           {/* List Status Filter Tabs */}
-          <div className="flex items-center gap-0.5 rounded-md border bg-background/80 p-0.5 backdrop-blur-sm">
+          <div className="flex items-center gap-[0.1875rem] rounded-md border bg-background/80 p-[0.1875rem] backdrop-blur-sm">
             <Button
               variant="ghost"
-              size="sm"
+              size="xs"
               className={cn(
-                'h-6 px-1.5 text-[10px] transition-all sm:h-7 sm:px-2 sm:text-xs',
+                'h-6 px-1.5 text-[10px] transition-all sm:text-xs',
                 listStatusFilter === 'all' &&
                   'bg-primary/10 text-primary shadow-sm',
                 currentView === 'status-grouped' && 'opacity-50'
@@ -223,9 +243,9 @@ export function BoardHeader({
             </Button>
             <Button
               variant="ghost"
-              size="sm"
+              size="xs"
               className={cn(
-                'h-6 px-1.5 text-[10px] transition-all sm:h-7 sm:px-2 sm:text-xs',
+                'h-6 px-1.5 text-[10px] transition-all sm:text-xs',
                 listStatusFilter === 'active' &&
                   'bg-primary/10 text-primary shadow-sm',
                 currentView === 'status-grouped' && 'opacity-50'
@@ -237,9 +257,9 @@ export function BoardHeader({
             </Button>
             <Button
               variant="ghost"
-              size="sm"
+              size="xs"
               className={cn(
-                'h-6 px-1.5 text-[10px] transition-all sm:h-7 sm:px-2 sm:text-xs',
+                'h-6 px-1.5 text-[10px] transition-all sm:text-xs',
                 listStatusFilter === 'not_started' &&
                   'bg-primary/10 text-primary shadow-sm',
                 currentView === 'status-grouped' && 'opacity-50'
@@ -254,11 +274,7 @@ export function BoardHeader({
           {/* View Switcher Dropdown */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button
-                variant="outline"
-                size="sm"
-                className="h-6 gap-1 px-1.5 transition-all sm:h-7 sm:gap-1.5 sm:px-2"
-              >
+              <Button size="xs" variant="outline">
                 {(() => {
                   const Icon = viewConfig[currentView].icon;
                   return (
@@ -302,6 +318,293 @@ export function BoardHeader({
             filters={filters}
             onFiltersChange={onFiltersChange}
           />
+
+          {/* Sort Dropdown */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                size="xs"
+                variant="outline"
+                className={cn(
+                  'text-[10px] sm:text-xs',
+                  filters.sortBy && 'border-primary/50 bg-primary/5'
+                )}
+              >
+                {filters.sortBy ? (
+                  <ArrowDownAZ className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+                ) : (
+                  <ArrowUpAZ className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+                )}
+                <span className="hidden sm:inline">Sort</span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-[200px]">
+              {/* Name */}
+              <DropdownMenuSub>
+                <DropdownMenuSubTrigger className="gap-2">
+                  <ArrowUpAZ className="h-4 w-4 text-muted-foreground" />
+                  <span className="flex-1">Name</span>
+                  {(filters.sortBy === 'name-asc' ||
+                    filters.sortBy === 'name-desc') && (
+                    <Check className="h-3.5 w-3.5 text-primary" />
+                  )}
+                </DropdownMenuSubTrigger>
+                <DropdownMenuSubContent>
+                  <DropdownMenuItem
+                    onClick={() =>
+                      onFiltersChange({
+                        ...filters,
+                        sortBy:
+                          filters.sortBy === 'name-asc'
+                            ? undefined
+                            : 'name-asc',
+                      })
+                    }
+                    className="gap-2"
+                  >
+                    <ArrowUp className="h-3.5 w-3.5 text-dynamic-blue" />
+                    <span className="flex-1">A → Z</span>
+                    {filters.sortBy === 'name-asc' && (
+                      <Check className="h-4 w-4 text-primary" />
+                    )}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() =>
+                      onFiltersChange({
+                        ...filters,
+                        sortBy:
+                          filters.sortBy === 'name-desc'
+                            ? undefined
+                            : 'name-desc',
+                      })
+                    }
+                    className="gap-2"
+                  >
+                    <ArrowDown className="h-3.5 w-3.5 text-dynamic-purple" />
+                    <span className="flex-1">Z → A</span>
+                    {filters.sortBy === 'name-desc' && (
+                      <Check className="h-4 w-4 text-primary" />
+                    )}
+                  </DropdownMenuItem>
+                </DropdownMenuSubContent>
+              </DropdownMenuSub>
+
+              {/* Priority */}
+              <DropdownMenuSub>
+                <DropdownMenuSubTrigger className="gap-2">
+                  <Flag className="h-4 w-4 text-dynamic-red" />
+                  <span className="flex-1">Priority</span>
+                  {(filters.sortBy === 'priority-high' ||
+                    filters.sortBy === 'priority-low') && (
+                    <Check className="h-3.5 w-3.5 text-primary" />
+                  )}
+                </DropdownMenuSubTrigger>
+                <DropdownMenuSubContent>
+                  <DropdownMenuItem
+                    onClick={() =>
+                      onFiltersChange({
+                        ...filters,
+                        sortBy:
+                          filters.sortBy === 'priority-high'
+                            ? undefined
+                            : 'priority-high',
+                      })
+                    }
+                    className="gap-2"
+                  >
+                    <ArrowUp className="h-3.5 w-3.5 text-dynamic-red" />
+                    <span className="flex-1">High → Low</span>
+                    {filters.sortBy === 'priority-high' && (
+                      <Check className="h-4 w-4 text-primary" />
+                    )}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() =>
+                      onFiltersChange({
+                        ...filters,
+                        sortBy:
+                          filters.sortBy === 'priority-low'
+                            ? undefined
+                            : 'priority-low',
+                      })
+                    }
+                    className="gap-2"
+                  >
+                    <ArrowDown className="h-3.5 w-3.5 text-dynamic-gray" />
+                    <span className="flex-1">Low → High</span>
+                    {filters.sortBy === 'priority-low' && (
+                      <Check className="h-4 w-4 text-primary" />
+                    )}
+                  </DropdownMenuItem>
+                </DropdownMenuSubContent>
+              </DropdownMenuSub>
+
+              {/* Due Date */}
+              <DropdownMenuSub>
+                <DropdownMenuSubTrigger className="gap-2">
+                  <CalendarDays className="h-4 w-4 text-dynamic-orange" />
+                  <span className="flex-1">Due Date</span>
+                  {(filters.sortBy === 'due-date-asc' ||
+                    filters.sortBy === 'due-date-desc') && (
+                    <Check className="h-3.5 w-3.5 text-primary" />
+                  )}
+                </DropdownMenuSubTrigger>
+                <DropdownMenuSubContent>
+                  <DropdownMenuItem
+                    onClick={() =>
+                      onFiltersChange({
+                        ...filters,
+                        sortBy:
+                          filters.sortBy === 'due-date-asc'
+                            ? undefined
+                            : 'due-date-asc',
+                      })
+                    }
+                    className="gap-2"
+                  >
+                    <ArrowUp className="h-3.5 w-3.5 text-dynamic-orange" />
+                    <span className="flex-1">Soonest First</span>
+                    {filters.sortBy === 'due-date-asc' && (
+                      <Check className="h-4 w-4 text-primary" />
+                    )}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() =>
+                      onFiltersChange({
+                        ...filters,
+                        sortBy:
+                          filters.sortBy === 'due-date-desc'
+                            ? undefined
+                            : 'due-date-desc',
+                      })
+                    }
+                    className="gap-2"
+                  >
+                    <ArrowDown className="h-3.5 w-3.5 text-dynamic-blue" />
+                    <span className="flex-1">Latest First</span>
+                    {filters.sortBy === 'due-date-desc' && (
+                      <Check className="h-4 w-4 text-primary" />
+                    )}
+                  </DropdownMenuItem>
+                </DropdownMenuSubContent>
+              </DropdownMenuSub>
+
+              {/* Created Date */}
+              <DropdownMenuSub>
+                <DropdownMenuSubTrigger className="gap-2">
+                  <Clock className="h-4 w-4 text-dynamic-green" />
+                  <span className="flex-1">Created</span>
+                  {(filters.sortBy === 'created-date-desc' ||
+                    filters.sortBy === 'created-date-asc') && (
+                    <Check className="h-3.5 w-3.5 text-primary" />
+                  )}
+                </DropdownMenuSubTrigger>
+                <DropdownMenuSubContent>
+                  <DropdownMenuItem
+                    onClick={() =>
+                      onFiltersChange({
+                        ...filters,
+                        sortBy:
+                          filters.sortBy === 'created-date-desc'
+                            ? undefined
+                            : 'created-date-desc',
+                      })
+                    }
+                    className="gap-2"
+                  >
+                    <ArrowDown className="h-3.5 w-3.5 text-dynamic-green" />
+                    <span className="flex-1">Newest First</span>
+                    {filters.sortBy === 'created-date-desc' && (
+                      <Check className="h-4 w-4 text-primary" />
+                    )}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() =>
+                      onFiltersChange({
+                        ...filters,
+                        sortBy:
+                          filters.sortBy === 'created-date-asc'
+                            ? undefined
+                            : 'created-date-asc',
+                      })
+                    }
+                    className="gap-2"
+                  >
+                    <ArrowUp className="h-3.5 w-3.5 text-muted-foreground" />
+                    <span className="flex-1">Oldest First</span>
+                    {filters.sortBy === 'created-date-asc' && (
+                      <Check className="h-4 w-4 text-primary" />
+                    )}
+                  </DropdownMenuItem>
+                </DropdownMenuSubContent>
+              </DropdownMenuSub>
+
+              {/* Estimation Points */}
+              <DropdownMenuSub>
+                <DropdownMenuSubTrigger className="gap-2">
+                  <Gauge className="h-4 w-4 text-dynamic-purple" />
+                  <span className="flex-1">Estimate</span>
+                  {(filters.sortBy === 'estimation-high' ||
+                    filters.sortBy === 'estimation-low') && (
+                    <Check className="h-3.5 w-3.5 text-primary" />
+                  )}
+                </DropdownMenuSubTrigger>
+                <DropdownMenuSubContent>
+                  <DropdownMenuItem
+                    onClick={() =>
+                      onFiltersChange({
+                        ...filters,
+                        sortBy:
+                          filters.sortBy === 'estimation-high'
+                            ? undefined
+                            : 'estimation-high',
+                      })
+                    }
+                    className="gap-2"
+                  >
+                    <ArrowUp className="h-3.5 w-3.5 text-dynamic-purple" />
+                    <span className="flex-1">Highest First</span>
+                    {filters.sortBy === 'estimation-high' && (
+                      <Check className="h-4 w-4 text-primary" />
+                    )}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() =>
+                      onFiltersChange({
+                        ...filters,
+                        sortBy:
+                          filters.sortBy === 'estimation-low'
+                            ? undefined
+                            : 'estimation-low',
+                      })
+                    }
+                    className="gap-2"
+                  >
+                    <ArrowDown className="h-3.5 w-3.5 text-dynamic-cyan" />
+                    <span className="flex-1">Lowest First</span>
+                    {filters.sortBy === 'estimation-low' && (
+                      <Check className="h-4 w-4 text-primary" />
+                    )}
+                  </DropdownMenuItem>
+                </DropdownMenuSubContent>
+              </DropdownMenuSub>
+
+              {filters.sortBy && (
+                <>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    onClick={() =>
+                      onFiltersChange({ ...filters, sortBy: undefined })
+                    }
+                    className="gap-2 text-dynamic-red/80 focus:text-dynamic-red"
+                  >
+                    <X className="h-4 w-4" />
+                    <span>Clear sorting</span>
+                  </DropdownMenuItem>
+                </>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
 
           {/* Board Actions Menu */}
           {!hideActions && (
