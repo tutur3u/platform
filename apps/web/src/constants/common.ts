@@ -18,6 +18,10 @@ export const API_URL =
   process.env.API_URL ||
   (PROD_MODE ? 'https://tuturuuu.com/api' : `http://localhost:${PORT}/api`);
 
+export const PROD_API_URL = 'https://tuturuuu.com/api';
+
+export const PROD_BASE_URL = 'https://tuturuuu.com';
+
 export const LOCALE_COOKIE_NAME = 'NEXT_LOCALE';
 export const THEME_COOKIE_NAME = 'NEXT_THEME';
 export const SIDEBAR_COLLAPSED_COOKIE_NAME = 'sidebar-collapsed';

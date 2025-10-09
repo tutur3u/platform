@@ -4,7 +4,9 @@
     "baseUrl": ".",
     "paths": {
       "@tuturuuu/apis/*": ["./src/*"]
-    }
+    },
+    "outDir": "dist",
+    "rootDir": "src"
   },
   "include": ["src"],
   "exclude": ["node_modules", "dist", ".turbo"]

@@ -4,6 +4,9 @@
   "compilerOptions": {
     "esModuleInterop": true,
     "incremental": true,
+    "composite": true,
+    "declaration": true,
+    "declarationMap": true,
     "isolatedModules": true,
     "forceConsistentCasingInFileNames": true,
     "inlineSources": false,
@@ -20,6 +23,7 @@
     "resolveJsonModule": true,
     "skipLibCheck": true,
     "strict": true,
-    "target": "esnext"
+    "target": "esnext",
+    "tsBuildInfoFile": ".turbo/tsconfig.tsbuildinfo"
   }
 }

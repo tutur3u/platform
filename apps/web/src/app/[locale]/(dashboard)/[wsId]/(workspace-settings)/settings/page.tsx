@@ -10,8 +10,9 @@ import {
   verifyHasSecrets,
 } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
-import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
+import Link from 'next/link';
+import AdminTaskEmbeddings from './admin-task-embeddings';
 import WorkspaceAvatarSettings from './avatar';
 import BasicInfo from './basic-info';
 import WorkspaceLogoSettings from './logo';
@@ -114,6 +115,7 @@ export default async function WorkspaceSettingsPage({ params }: Props) {
 
         {id !== 'personal' && enableSecurity && <Security workspace={ws} />}
         {id !== 'personal' && <RemoveYourself workspace={ws} />}
+        {isRootWorkspace && <AdminTaskEmbeddings />}
       </div>
     </>
   );

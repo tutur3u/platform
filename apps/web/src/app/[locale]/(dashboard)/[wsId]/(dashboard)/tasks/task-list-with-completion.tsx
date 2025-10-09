@@ -123,6 +123,9 @@ export default function TaskListWithCompletion({
     const supabase = createClient();
     setCompletingTasks((prev) => new Set(prev).add(task.id));
 
+    // Store original task for rollback
+    const originalTask = task;
+
     try {
       // Find the board's done list
       const { data: lists } = await supabase
@@ -136,11 +139,34 @@ export default function TaskListWithCompletion({
 
       if (!doneList || !notStartedList) {
         toast.error('Could not find appropriate lists for task completion');
+        setCompletingTasks((prev) => {
+          const newSet = new Set(prev);
+          newSet.delete(task.id);
+          return newSet;
+        });
         return;
       }
 
       const isCompleted = task.list?.status === 'done';
       const targetListId = isCompleted ? notStartedList.id : doneList.id;
+      const targetList = isCompleted ? notStartedList : doneList;
+
+      // Optimistically update local state
+      setLocalTasks((prevTasks) =>
+        prevTasks.map((t) =>
+          t.id === task.id
+            ? {
+                ...t,
+                list_id: targetListId,
+                list: {
+                  ...t.list!,
+                  id: targetListId,
+                  status: targetList.status,
+                },
+              }
+            : t
+        )
+      );
 
       // Move task to appropriate list
       const { error } = await supabase
@@ -154,13 +180,18 @@ export default function TaskListWithCompletion({
         isCompleted ? 'Task marked as incomplete' : 'Task completed!'
       );
 
-      // Trigger parent refresh
+      // Trigger parent refresh for server data
       if (onTaskUpdate) {
         onTaskUpdate();
       }
     } catch (error) {
       console.error('Error updating task:', error);
       toast.error('Failed to update task');
+
+      // Rollback optimistic update on error
+      setLocalTasks((prevTasks) =>
+        prevTasks.map((t) => (t.id === task.id ? originalTask : t))
+      );
     } finally {
       setCompletingTasks((prev) => {
         const newSet = new Set(prev);

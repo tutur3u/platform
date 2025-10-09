@@ -629,17 +629,17 @@ function TaskCardInner({
     };
 
     const labels = {
-      critical: <Icon iconNode={unicornHead} className="h-3 w-3" />,
-      high: <Icon iconNode={horseHead} className="h-3 w-3" />,
-      normal: <Rabbit className="h-3 w-3" />,
-      low: <Turtle className="h-3 w-3" />,
+      critical: <Icon iconNode={unicornHead} className="size-3" />,
+      high: <Icon iconNode={horseHead} className="size-3" />,
+      normal: <Rabbit className="size-3" />,
+      low: <Turtle className="size-3" />,
     };
 
     return (
       <Badge
         variant="secondary"
         className={cn(
-          'p-1 text-xs',
+          'p-[0.1875rem] text-xs',
           colors[task.priority as keyof typeof colors]
         )}
       >
@@ -755,7 +755,7 @@ function TaskCardInner({
           )}
         </div>
       )}
-      <div className="p-4">
+      <div className="p-3">
         {/* Header */}
         <div className="flex items-start gap-1">
           <div className="min-w-0 flex-1">
@@ -992,7 +992,7 @@ function TaskCardInner({
           </div>
           {/* Assignee: left, not cut off */}
           {!isPersonalWorkspace && (
-            <div className="min-w-0 max-w-[120px] flex-shrink-0 overflow-hidden truncate">
+            <div className="flex flex-none items-start justify-start">
               <AssigneeSelect
                 taskId={task.id}
                 assignees={task.assignees}
@@ -1045,127 +1045,127 @@ function TaskCardInner({
         {/* Bottom Row: Three-column layout for assignee, priority, and checkbox, with only one tag visible and +N tooltip for extras */}
         {/* Hide bottom row entirely when in done/closed list */}
         {taskList?.status !== 'done' && taskList?.status !== 'closed' && (
-          <div className="flex h-8 min-w-0 items-center gap-x-1 overflow-hidden whitespace-nowrap">
-            {/* Priority */}
-            {!task.archived && task.priority && (
-              <div className="min-w-0 max-w-[80px] overflow-hidden">
-                {getPriorityIndicator()}
-              </div>
-            )}
-            {/* Project indicator */}
-            {!task.archived && task.projects && task.projects.length > 0 && (
-              <div className="min-w-0 flex-shrink-0">
-                <Badge
-                  variant="secondary"
-                  className={cn(
-                    'h-5 border px-2 text-[10px]',
-                    'border-dynamic-sky/30 bg-dynamic-sky/10 text-dynamic-sky'
-                  )}
-                >
-                  <Box className="h-2.5 w-2.5" />
-                  {task.projects.length === 1
-                    ? task.projects[0]?.name
-                    : `${task.projects.length} projects`}
-                </Badge>
-              </div>
-            )}
-            {/* Estimation Points */}
-            {!task.archived && task.estimation_points && (
-              <div className="min-w-0 flex-shrink-0">
-                <TaskEstimationDisplay
-                  points={task.estimation_points}
-                  size="sm"
-                  estimationType={boardConfig?.estimation_type}
-                  showIcon
-                />
-              </div>
-            )}
-            {/* Labels */}
-            {!task.archived && task.labels && task.labels.length > 0 && (
-              <div className="flex min-w-0 flex-shrink-0 flex-wrap gap-1">
-                {/* Sort labels for deterministic display order */}
-                <TaskLabelsDisplay
-                  labels={[...task.labels].sort((a, b) =>
-                    a.name.toLowerCase().localeCompare(b.name.toLowerCase())
-                  )}
-                  size="sm"
-                />
-              </div>
-            )}
-            {/* Description indicators */}
-            {!task.archived &&
-              (descriptionMeta.hasText ||
-                descriptionMeta.hasImages ||
-                descriptionMeta.hasVideos ||
-                descriptionMeta.hasLinks) && (
-                <div className="flex min-w-0 flex-shrink-0 items-center gap-0.5">
-                  {descriptionMeta.hasText && (
-                    <div
-                      className="flex items-center gap-0.5 rounded bg-dynamic-surface/50 py-0.5"
-                      title="Has description"
-                    >
-                      <FileText className="h-3.5 w-3.5 text-muted-foreground" />
-                    </div>
-                  )}
-                  {descriptionMeta.hasImages && (
-                    <div
-                      className="flex items-center gap-0.5 rounded bg-dynamic-surface/50 py-0.5"
-                      title={`${descriptionMeta.imageCount} image${descriptionMeta.imageCount > 1 ? 's' : ''}`}
-                    >
-                      <ImageIcon className="h-3.5 w-3.5 text-muted-foreground" />
-                      {descriptionMeta.imageCount > 1 && (
-                        <span className="text-[9px] text-muted-foreground">
-                          {descriptionMeta.imageCount}
-                        </span>
-                      )}
-                    </div>
-                  )}
-                  {descriptionMeta.hasVideos && (
-                    <div
-                      className="flex items-center gap-0.5 rounded bg-dynamic-surface/50 py-0.5"
-                      title={`${descriptionMeta.videoCount} video${descriptionMeta.videoCount > 1 ? 's' : ''}`}
-                    >
-                      <Play className="h-3.5 w-3.5 text-muted-foreground" />
-                      {descriptionMeta.videoCount > 1 && (
-                        <span className="text-[9px] text-muted-foreground">
-                          {descriptionMeta.videoCount}
-                        </span>
-                      )}
-                    </div>
-                  )}
-                  {descriptionMeta.hasLinks && (
-                    <div
-                      className="flex items-center gap-0.5 rounded bg-dynamic-surface/50 px-1 py-0.5"
-                      title={`${descriptionMeta.linkCount} link${descriptionMeta.linkCount > 1 ? 's' : ''}`}
-                    >
-                      <Link2 className="h-2.5 w-2.5 text-muted-foreground" />
-                      {descriptionMeta.linkCount > 1 && (
-                        <span className="text-[9px] text-muted-foreground">
-                          {descriptionMeta.linkCount}
-                        </span>
-                      )}
-                    </div>
-                  )}
+          <div className="flex items-center gap-2">
+            <div className="scrollbar-hide flex w-full min-w-0 items-center gap-1 overflow-auto whitespace-nowrap rounded-lg">
+              {/* Priority */}
+              {!task.archived && task.priority && (
+                <div className="flex-none overflow-hidden">
+                  {getPriorityIndicator()}
                 </div>
               )}
-            {/* Checkbox: always at far right */}
-            <div className="ml-auto flex-shrink-0">
-              <Checkbox
-                checked={task.archived}
-                className={cn(
-                  'h-4 w-4 transition-all duration-200',
-                  'data-[state=checked]:border-dynamic-green/70 data-[state=checked]:bg-dynamic-green/70',
-                  'hover:scale-110 hover:border-primary/50',
-                  getListColorClasses(taskList?.color as SupportedColor),
-                  isOverdue &&
-                    !task.archived &&
-                    'border-dynamic-red/70 bg-dynamic-red/10 ring-1 ring-dynamic-red/20'
+              {/* Project indicator */}
+              {!task.archived && task.projects && task.projects.length > 0 && (
+                <div className="min-w-0 flex-shrink-0">
+                  <Badge
+                    variant="secondary"
+                    className={cn(
+                      'h-5 border px-2 text-[10px]',
+                      'border-dynamic-sky/30 bg-dynamic-sky/10 text-dynamic-sky'
+                    )}
+                  >
+                    <Box className="h-2.5 w-2.5" />
+                    {task.projects.length === 1
+                      ? task.projects[0]?.name
+                      : `${task.projects.length} projects`}
+                  </Badge>
+                </div>
+              )}
+              {/* Estimation Points */}
+              {!task.archived && task.estimation_points && (
+                <div className="min-w-0 flex-shrink-0">
+                  <TaskEstimationDisplay
+                    points={task.estimation_points}
+                    size="sm"
+                    estimationType={boardConfig?.estimation_type}
+                    showIcon
+                  />
+                </div>
+              )}
+              {/* Labels */}
+              {!task.archived && task.labels && task.labels.length > 0 && (
+                <div className="flex min-w-0 flex-shrink-0 flex-wrap gap-1">
+                  {/* Sort labels for deterministic display order */}
+                  <TaskLabelsDisplay
+                    labels={[...task.labels].sort((a, b) =>
+                      a.name.toLowerCase().localeCompare(b.name.toLowerCase())
+                    )}
+                    size="sm"
+                  />
+                </div>
+              )}
+              {/* Description indicators */}
+              {!task.archived &&
+                (descriptionMeta.hasText ||
+                  descriptionMeta.hasImages ||
+                  descriptionMeta.hasVideos ||
+                  descriptionMeta.hasLinks) && (
+                  <div className="flex min-w-0 flex-shrink-0 items-center gap-0.5">
+                    {descriptionMeta.hasText && (
+                      <div
+                        className="flex items-center gap-0.5 rounded bg-dynamic-surface/50 py-0.5"
+                        title="Has description"
+                      >
+                        <FileText className="h-3.5 w-3.5 text-muted-foreground" />
+                      </div>
+                    )}
+                    {descriptionMeta.hasImages && (
+                      <div
+                        className="flex items-center gap-0.5 rounded bg-dynamic-surface/50 py-0.5"
+                        title={`${descriptionMeta.imageCount} image${descriptionMeta.imageCount > 1 ? 's' : ''}`}
+                      >
+                        <ImageIcon className="h-3.5 w-3.5 text-muted-foreground" />
+                        {descriptionMeta.imageCount > 1 && (
+                          <span className="text-[9px] text-muted-foreground">
+                            {descriptionMeta.imageCount}
+                          </span>
+                        )}
+                      </div>
+                    )}
+                    {descriptionMeta.hasVideos && (
+                      <div
+                        className="flex items-center gap-0.5 rounded bg-dynamic-surface/50 py-0.5"
+                        title={`${descriptionMeta.videoCount} video${descriptionMeta.videoCount > 1 ? 's' : ''}`}
+                      >
+                        <Play className="h-3.5 w-3.5 text-muted-foreground" />
+                        {descriptionMeta.videoCount > 1 && (
+                          <span className="text-[9px] text-muted-foreground">
+                            {descriptionMeta.videoCount}
+                          </span>
+                        )}
+                      </div>
+                    )}
+                    {descriptionMeta.hasLinks && (
+                      <div
+                        className="flex items-center gap-0.5 rounded bg-dynamic-surface/50 px-1 py-0.5"
+                        title={`${descriptionMeta.linkCount} link${descriptionMeta.linkCount > 1 ? 's' : ''}`}
+                      >
+                        <Link2 className="h-2.5 w-2.5 text-muted-foreground" />
+                        {descriptionMeta.linkCount > 1 && (
+                          <span className="text-[9px] text-muted-foreground">
+                            {descriptionMeta.linkCount}
+                          </span>
+                        )}
+                      </div>
+                    )}
+                  </div>
                 )}
-                disabled={isLoading}
-                onCheckedChange={handleArchiveToggle}
-                onClick={(e) => e.stopPropagation()}
-              />
             </div>
+            {/* Checkbox: always at far right */}
+            <Checkbox
+              checked={task.archived}
+              className={cn(
+                'h-4 w-4 flex-none transition-all duration-200',
+                'data-[state=checked]:border-dynamic-green/70 data-[state=checked]:bg-dynamic-green/70',
+                'hover:scale-110 hover:border-primary/50',
+                getListColorClasses(taskList?.color as SupportedColor),
+                isOverdue &&
+                  !task.archived &&
+                  'border-dynamic-red/70 bg-dynamic-red/10 ring-1 ring-dynamic-red/20'
+              )}
+              disabled={isLoading}
+              onCheckedChange={handleArchiveToggle}
+              onClick={(e) => e.stopPropagation()}
+            />
           </div>
         )}
       </div>

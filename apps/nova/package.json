@@ -40,7 +40,7 @@
     "@tuturuuu/ui": "workspace:*",
     "@tuturuuu/utils": "workspace:*",
     "@tuturuuu/vercel": "workspace:*",
-    "@upstash/qstash": "^2.8.3",
+    "@upstash/qstash": "^2.8.4",
     "canvas-confetti": "^1.9.3",
     "date-fns": "^4.1.0",
     "dayjs": "^1.11.18",

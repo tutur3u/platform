@@ -54,6 +54,7 @@ interface Props {
   tasks: Task[];
   lists: TaskList[];
   isPersonalWorkspace?: boolean;
+  searchQuery?: string;
 }
 
 type SortField =
@@ -83,6 +84,7 @@ export function ListView({
   tasks,
   lists,
   isPersonalWorkspace = false,
+  searchQuery,
 }: Props) {
   const queryClient = useQueryClient();
   const [localTasks, setLocalTasks] = useState<Task[]>(tasks);
@@ -155,6 +157,12 @@ export function ListView({
   const sortedTasks = useMemo(() => {
     const sorted = [...localTasks];
 
+    // If there's an active search query, preserve the search ranking from parent
+    // and skip local sorting
+    if (searchQuery && searchQuery.trim().length > 0) {
+      return sorted;
+    }
+
     // Sort tasks
     sorted.sort((a, b) => {
       // Primary sort: Always prioritize uncompleted tasks (non-archived) first
@@ -223,7 +231,7 @@ export function ListView({
     });
 
     return sorted;
-  }, [localTasks, sortField, sortOrder]);
+  }, [localTasks, sortField, sortOrder, searchQuery]);
 
   // Display tasks with infinite scroll
   const displayedTasks = useMemo(() => {

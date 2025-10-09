@@ -59,6 +59,7 @@ import {
 import dayjs from 'dayjs';
 import { usePathname } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { CursorOverlayWrapper } from './cursor-overlay';
 import { CustomDatePickerDialog } from './custom-date-picker/custom-date-picker-dialog';
 import {
   buildEstimationIndices,
@@ -192,7 +193,7 @@ function TaskEditDialogComponent({
   const [hasDraft, setHasDraft] = useState(false);
   const [createMultiple, setCreateMultiple] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [showOptionsSidebar, setShowOptionsSidebar] = useState(false);
+  const [showOptionsSidebar, setShowOptionsSidebar] = useState(isCreateMode);
   const [workspaceMembers, setWorkspaceMembers] = useState<any[]>([]);
   const [loadingMembers, setLoadingMembers] = useState(false);
   const [selectedAssignees, setSelectedAssignees] = useState<any[]>(
@@ -310,8 +311,13 @@ function TaskEditDialogComponent({
       setSelectedHour('11');
       setSelectedMinute('59');
       setSelectedPeriod('PM');
+    } else {
+      // When opening in create mode, show options sidebar by default
+      if (isCreateMode) {
+        setShowOptionsSidebar(true);
+      }
     }
-  }, [isOpen]);
+  }, [isOpen, isCreateMode]);
 
   useEffect(() => {
     if (!workspaceId) {
@@ -611,7 +617,7 @@ function TaskEditDialogComponent({
             onSuccess: async () => {
               await invalidateTaskCaches(queryClient, boardId);
 
-              // Wait for the refetch to complete before closing
+              // Wait for the refetch to complete
               if (boardId) {
                 await queryClient.refetchQueries({
                   queryKey: ['tasks', boardId],
@@ -626,7 +632,6 @@ function TaskEditDialogComponent({
                   : 'Due date removed',
               });
               onUpdate();
-              onClose();
             },
             onError: (error: any) => {
               console.error('Error updating due date:', error);
@@ -640,16 +645,7 @@ function TaskEditDialogComponent({
           }
         );
     },
-    [
-      mode,
-      onClose,
-      onUpdate,
-      queryClient,
-      task,
-      updateTaskMutation,
-      boardId,
-      toast,
-    ]
+    [mode, onUpdate, queryClient, task, updateTaskMutation, boardId, toast]
   );
 
   const executeSlashCommand = useCallback(
@@ -1093,9 +1089,13 @@ function TaskEditDialogComponent({
 
   // Reset form when task changes or dialog opens
   useEffect(() => {
-    // In edit mode, when dialog opens, always reload task data to ensure we have the latest
+    // Only reset when switching to a different task (task ID changes) or dialog first opens
+    // This prevents resetting while user is actively typing
+    const taskIdChanged = previousTaskIdRef.current !== task?.id;
+
+    // In edit mode, when dialog opens or task ID changes, reload task data to ensure we have the latest
     // This handles the case where task was edited previously and we're reopening the dialog
-    if (isOpen && !isCreateMode) {
+    if (isOpen && !isCreateMode && taskIdChanged) {
       setName(task?.name || '');
       setDescription(parseDescription(task?.description));
       setPriority(task?.priority || null);
@@ -1109,11 +1109,7 @@ function TaskEditDialogComponent({
       if (task?.id) previousTaskIdRef.current = task.id;
     }
     // For create mode, only load when task ID changes or dialog opens with 'new' ID
-    else if (
-      isOpen &&
-      (isCreateMode || task?.id === 'new') &&
-      (previousTaskIdRef.current !== task?.id || task?.id === 'new')
-    ) {
+    else if (isOpen && (isCreateMode || task?.id === 'new') && taskIdChanged) {
       setName(task?.name || '');
       setDescription(parseDescription(task?.description) || null);
       setPriority(task?.priority || null);
@@ -1126,7 +1122,22 @@ function TaskEditDialogComponent({
       setSelectedProjects(task?.projects || []);
       if (task?.id) previousTaskIdRef.current = task.id;
     }
-  }, [task, parseDescription, isOpen, isCreateMode]);
+  }, [
+    task?.id,
+    parseDescription,
+    isOpen,
+    isCreateMode,
+    task?.assignees,
+    task?.description,
+    task?.end_date,
+    task?.estimation_points,
+    task?.labels,
+    task?.list_id,
+    task?.name,
+    task?.priority,
+    task?.projects,
+    task?.start_date,
+  ]);
 
   // Reset transient edits when closing without saving in edit mode
   useEffect(() => {
@@ -2269,6 +2280,8 @@ function TaskEditDialogComponent({
     if (!open) handleClose();
   };
 
+  const editorContainerRef = useRef<HTMLDivElement>(null);
+
   return (
     <>
       {slashCommandMenu}
@@ -2322,63 +2335,76 @@ function TaskEditDialogComponent({
                     Create multiple
                   </label>
                 )}
-                {!isCreateMode && task?.id && (
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-7 w-7 text-muted-foreground hover:text-foreground"
-                        title="More options"
-                      >
-                        <MoreVertical className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem
-                        onClick={() => {
-                          navigator.clipboard.writeText(task.id);
-                          toast({
-                            title: 'Task ID copied',
-                            description: 'Task ID has been copied to clipboard',
-                          });
-                        }}
-                      >
-                        <Copy className="mr-2 h-4 w-4" />
-                        Copy ID
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        onClick={() => {
-                          const url = `${window.location.origin}${pathname?.split('/tasks/')[0]}/tasks/${task.id}`;
-                          navigator.clipboard.writeText(url);
-                          toast({
-                            title: 'Link copied',
-                            description:
-                              'Task link has been copied to clipboard',
-                          });
-                        }}
-                      >
-                        <ExternalLink className="mr-2 h-4 w-4" />
-                        Copy Link
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem
-                        onClick={() =>
-                          setShowOptionsSidebar(!showOptionsSidebar)
-                        }
-                      >
-                        <Settings className="mr-2 h-4 w-4" />
-                        Options
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        onClick={() => setShowDeleteConfirm(true)}
-                        className="text-dynamic-red focus:text-dynamic-red"
-                      >
-                        <Trash className="mr-2 h-4 w-4" />
-                        Delete
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+                {isCreateMode ? (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7 text-muted-foreground hover:text-foreground"
+                    onClick={() => setShowOptionsSidebar(!showOptionsSidebar)}
+                    title="Toggle options"
+                  >
+                    <Settings className="h-4 w-4" />
+                  </Button>
+                ) : (
+                  task?.id && (
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7 text-muted-foreground hover:text-foreground"
+                          title="More options"
+                        >
+                          <MoreVertical className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem
+                          onClick={() => {
+                            navigator.clipboard.writeText(task.id);
+                            toast({
+                              title: 'Task ID copied',
+                              description:
+                                'Task ID has been copied to clipboard',
+                            });
+                          }}
+                        >
+                          <Copy className="mr-2 h-4 w-4" />
+                          Copy ID
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() => {
+                            const url = `${window.location.origin}${pathname?.split('/tasks/')[0]}/tasks/${task.id}`;
+                            navigator.clipboard.writeText(url);
+                            toast({
+                              title: 'Link copied',
+                              description:
+                                'Task link has been copied to clipboard',
+                            });
+                          }}
+                        >
+                          <ExternalLink className="mr-2 h-4 w-4" />
+                          Copy Link
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem
+                          onClick={() =>
+                            setShowOptionsSidebar(!showOptionsSidebar)
+                          }
+                        >
+                          <Settings className="mr-2 h-4 w-4" />
+                          Options
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() => setShowDeleteConfirm(true)}
+                          className="text-dynamic-red focus:text-dynamic-red"
+                        >
+                          <Trash className="mr-2 h-4 w-4" />
+                          Delete
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  )
                 )}
                 <Button
                   variant="ghost"
@@ -2444,8 +2470,8 @@ function TaskEditDialogComponent({
             </div>
 
             {/* Main editing area with improved spacing */}
-            <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
-              <div className="mx-auto flex h-full min-h-full w-full flex-col">
+            <div className="relative flex min-h-0 flex-1 flex-col overflow-y-auto">
+              <div ref={editorContainerRef} className="flex flex-col">
                 {/* Task Name - Large and prominent with underline effect */}
                 <div className="group">
                   <Input
@@ -2555,6 +2581,12 @@ function TaskEditDialogComponent({
                   />
                 </div>
               </div>
+              {isOpen && !isCreateMode && (
+                <CursorOverlayWrapper
+                  channelName={`editor-cursor-${task?.id}`}
+                  containerRef={editorContainerRef}
+                />
+              )}
             </div>
           </div>
 
@@ -2817,6 +2849,21 @@ function TaskEditDialogComponent({
                         )}
                       </span>
                     </Label>
+                    {endDate && (
+                      <div className="rounded-md border border-dynamic-orange/30 bg-dynamic-orange/10 px-3 py-2">
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="flex items-center gap-2">
+                            <Calendar className="h-3.5 w-3.5 text-dynamic-orange" />
+                            <span className="font-medium text-foreground text-xs">
+                              {dayjs(endDate).format('MMM D, YYYY')}
+                            </span>
+                          </div>
+                          <span className="text-muted-foreground text-xs">
+                            {dayjs(endDate).format('h:mm A')}
+                          </span>
+                        </div>
+                      </div>
+                    )}
                     <div className="grid grid-cols-2 gap-1.5 md:gap-2">
                       <Button
                         type="button"
@@ -2839,6 +2886,20 @@ function TaskEditDialogComponent({
                         title="Tomorrow – Alt+M"
                       >
                         Tomorrow
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="xs"
+                        onClick={() => {
+                          const daysUntilEndOfWeek = 6 - dayjs().day();
+                          handleQuickDueDate(daysUntilEndOfWeek);
+                        }}
+                        disabled={isLoading}
+                        className="h-7 text-[11px] transition-all hover:border-dynamic-orange/50 hover:bg-dynamic-orange/5 md:text-xs"
+                        title="End of this week (Saturday)"
+                      >
+                        This week
                       </Button>
                       <Button
                         type="button"
