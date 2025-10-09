@@ -17,7 +17,7 @@ import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import type { InitialAttendanceProps } from './client';
 import GroupAttendanceClient from './client';
-import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
+import { getPermissions, getWorkspace } from '@tuturuuu/utils/workspace-helper';
 
 export const metadata: Metadata = {
   title: 'Attendance',
@@ -42,7 +42,15 @@ export default async function UserGroupAttendancePage({
   const { wsId: id, groupId } = await params;
   const workspace = await getWorkspace(id);
   const wsId = workspace.id;
+  const {containsPermission} = await getPermissions({
+    wsId,
+  });
+  const canCheckUserAttendance = containsPermission('check_user_attendance');
+  if (!canCheckUserAttendance) {
+    notFound();
+  }
   const sp = await searchParams;
+
 
   const requestedDateParam = sp?.date;
   const requestedDate = Array.isArray(requestedDateParam)

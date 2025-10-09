@@ -17,7 +17,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import GroupIndicatorsManager from './group-indicators-manager';
-import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
+import { getPermissions, getWorkspace } from '@tuturuuu/utils/workspace-helper';
 
 export const metadata: Metadata = {
   title: 'Indicators',
@@ -38,6 +38,11 @@ export default async function UserGroupIndicatorsPage({ params }: Props) {
   const { wsId: id, groupId } = await params;
   const workspace = await getWorkspace(id);
   const wsId = workspace.id;
+
+  const {containsPermission} = await getPermissions({
+    wsId,
+  });
+  const canCheckUserAttendance = containsPermission('check_user_attendance');
 
   const group = await getData(wsId, groupId);
   const indicators = await getIndicators(groupId);
@@ -84,7 +89,8 @@ export default async function UserGroupIndicatorsPage({ params }: Props) {
                   {t('ws-user-group-details.schedule')}
                 </Button>
               </Link>
-              <Link href={`/${wsId}/users/groups/${groupId}/attendance`}>
+              {canCheckUserAttendance && (
+                <Link href={`/${wsId}/users/groups/${groupId}/attendance`}>
                 <Button
                   type="button"
                   variant="secondary"
@@ -97,6 +103,7 @@ export default async function UserGroupIndicatorsPage({ params }: Props) {
                   {t('ws-user-group-details.attendance')}
                 </Button>
               </Link>
+              )}
               <Link href={`/${wsId}/users/groups/${groupId}/reports`}>
                 <Button
                   type="button"

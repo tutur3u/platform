@@ -69,6 +69,7 @@ export default async function UserGroupDetailsPage({
 
   const canViewPersonalInfo: boolean = containsPermission('view_users_private_info');
   const canViewPublicInfo: boolean = containsPermission('view_users_public_info');
+  const canCheckUserAttendance: boolean = containsPermission('check_user_attendance');
 
   return (
     <>
@@ -108,7 +109,8 @@ export default async function UserGroupDetailsPage({
                 {t('ws-user-group-details.schedule')}
               </Button>
             </Link>
-            <Link href={`/${wsId}/users/groups/${groupId}/attendance`}>
+            {canCheckUserAttendance && (
+              <Link href={`/${wsId}/users/groups/${groupId}/attendance`}>
               <Button
                 type="button"
                 variant="secondary"
@@ -118,9 +120,10 @@ export default async function UserGroupDetailsPage({
                 )}
               >
                 <UserCheck className="h-5 w-5" />
-                {t('ws-user-group-details.attendance')}
-              </Button>
-            </Link>
+                  {t('ws-user-group-details.attendance')}
+                </Button>
+              </Link>
+            )}
             <Link href={`/${wsId}/users/groups/${groupId}/reports`}>
               <Button
                 type="button"

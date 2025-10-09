@@ -88,6 +88,7 @@ export default async function UserGroupDetailsPage({
                   {t('ws-user-group-details.schedule')}
                 </Button>
               </Link>
+              {canCheckUserAttendance && (
               <Link href={`/${wsId}/users/groups/${groupId}/attendance`}>
                 <Button
                   type="button"
@@ -101,6 +102,7 @@ export default async function UserGroupDetailsPage({
                   {t('ws-user-group-details.attendance')}
                 </Button>
               </Link>
+              )}
               <Button
                 type="button"
                 variant="secondary"
