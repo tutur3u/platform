@@ -72,6 +72,10 @@ export const getUserColumns = (
       return hasPublicInfo;
     }
 
+    if ((extraFields || []).some((f) => f.id === columnId)) {
+      return hasPrivateInfo;
+    }
+
     // Reject uncategorised columns to prevent accidental data exposure
     if (process.env.NODE_ENV === 'development') {
       console.warn(
