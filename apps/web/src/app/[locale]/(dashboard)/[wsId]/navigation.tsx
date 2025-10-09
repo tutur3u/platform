@@ -788,7 +788,7 @@ export async function WorkspaceNavigationLinks({
                   title: t('workspace-users-tabs.database'),
                   href: `/${personalOrWsId}/users/database`,
                   icon: <BookUser className="h-5 w-5" />,
-                  disabled: withoutPermission('manage_users'),
+                  disabled: withoutPermission('manage_users') || (withoutPermission('view_users_private_info') && withoutPermission('view_users_public_info')),
                 },
                 {
                   title: t('workspace-users-tabs.groups'),

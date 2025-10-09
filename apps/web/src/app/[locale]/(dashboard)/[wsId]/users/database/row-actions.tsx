@@ -141,6 +141,8 @@ export function UserRowActions({ row, href, extraData }: UserRowActionsProps) {
         </DialogContent>
       </Dialog>
 
+
+{(!extraData?.canUpdateUsers && !extraData?.canDeleteUsers) ? null : (
       <DropdownMenu modal={false}>
         <DropdownMenuTrigger asChild>
           <Button
@@ -181,8 +183,9 @@ export function UserRowActions({ row, href, extraData }: UserRowActionsProps) {
               {t('user-data-table.remove-from-group')}
             </DropdownMenuItem>
           )}
-        </DropdownMenuContent>
-      </DropdownMenu>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      )}
     </div>
   );
 }
