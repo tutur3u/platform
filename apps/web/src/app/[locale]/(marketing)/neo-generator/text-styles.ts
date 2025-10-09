@@ -378,7 +378,8 @@ export const textStyles = {
 
   monospace: {
     name: '𝙼𝚘𝚗𝚘𝚜𝚙𝚊𝚌𝚎',
-    description: 'Gives a classic typewriter or computer code feel to your text.',
+    description:
+      'Gives a classic typewriter or computer code feel to your text.',
     transform: (text: string) => {
       return text.replace(
         /[A-Za-z0-9àáảãạăằắẳẵặâầấẩẫậèéẻẽẹêềếểễệìíỉĩịòóỏõọôồốổỗộơờớởỡợùúủũụưừứửữựỳýỷỹỵ]/g,
@@ -415,7 +416,8 @@ export const textStyles = {
 
   scriptBold: {
     name: '𝓑𝓸𝓵𝓭 𝓢𝓬𝓻𝓲𝓹𝓽',
-    description: 'An elegant, handwritten cursive style for a formal or personal touch.',
+    description:
+      'An elegant, handwritten cursive style for a formal or personal touch.',
     transform: (text: string) => {
       return text.replace(
         /[A-Za-z0-9àáảãạăằắẳẵặâầấẩẫậèéẻẽẹêềếểễệìíỉĩịòóỏõọôồốổỗộơờớởỡợùúủũụưừứửữựỳýỷỹỵ]/g,
