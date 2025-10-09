@@ -138,6 +138,10 @@ export default async function WorkspacePromotionsPage({
               columnGenerator={getPromotionColumns}
               namespace="promotion-data-table"
               count={count}
+              extraData={{
+                canDeleteInventory,
+                canUpdateInventory,
+              }}
               defaultVisibility={{
                 id: false,
                 created_at: false,

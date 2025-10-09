@@ -8,7 +8,12 @@ import { PromotionRowActions } from './row-actions';
 
 export const getPromotionColumns = (
   t: any,
-  namespace: string | undefined
+  namespace: string | undefined,
+  extraColumns?: any[],
+  extraData?: {
+    canDeleteInventory?: boolean;
+    canUpdateInventory?: boolean;
+  }
 ): ColumnDef<ProductPromotion>[] => [
   // {
   //   id: 'select',
@@ -105,6 +110,6 @@ export const getPromotionColumns = (
   },
   {
     id: 'actions',
-    cell: ({ row }) => <PromotionRowActions row={row} />,
+    cell: ({ row }) => <PromotionRowActions row={row} canDeleteInventory={extraData?.canDeleteInventory} canUpdateInventory={extraData?.canUpdateInventory} />,
   },
 ];

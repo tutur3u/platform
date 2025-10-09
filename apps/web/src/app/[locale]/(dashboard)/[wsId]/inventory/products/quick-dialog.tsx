@@ -89,7 +89,6 @@ interface Props {
   categories: ProductCategory[];
   warehouses: ProductWarehouse[];
   units: ProductUnit[];
-  canCreateInventory: boolean;
   canUpdateInventory: boolean;
   canDeleteInventory: boolean;
 }
@@ -102,7 +101,6 @@ export function ProductQuickDialog({
   categories,
   warehouses,
   units,
-  canCreateInventory,
   canUpdateInventory,
   canDeleteInventory,
 }: Props) {
@@ -218,7 +216,7 @@ export function ProductQuickDialog({
     if (!product?.id) return;
 
     if (!canUpdateInventory) {
-      toast.error('You do not have permission to update inventory');
+      toast.error(t('ws-roles.inventory_products_access_denied_description'));
       return;
     }
 

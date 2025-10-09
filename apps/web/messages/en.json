@@ -2303,7 +2303,7 @@
     "inventory_categories_access_denied_description": "You don't have permission to view inventory categories.",
     "inventory_units_access_denied_description": "You don't have permission to view inventory units.",
     "inventory_suppliers_access_denied_description": "You don't have permission to view inventory suppliers.",
-    "inventory_warehouses_access_denied_description": "You don't have permission to view inventory warehouses.",
+    "inventory_warehouses_access_denied_description": "Access Denied",
     "inventory_batches_access_denied_description": "You don't have permission to view inventory batches.",
     "inventory_promotions_access_denied_description": "You don't have permission to view inventory promotions.",
     "manage_finance": "Manage Finance",
@@ -3108,7 +3108,11 @@
       "amount": "Amount",
       "min_amount": "Min amount",
       "category": "Category"
-    }
+    },
+    "no_changes_detected": "No changes detected",
+    "product_saved_successfully": "Product saved successfully",
+    "failed_save_product": "Failed when saving product",
+    "failed_delete_product": "Failed to delete product"
   },
   "ws-inventory-categories": {
     "plural": "Categories",
@@ -3125,14 +3129,17 @@
     "create": "Create unit",
     "create_description": "Create a new unit",
     "placeholder": "Choose a unit",
-    "unnamed_unit": "Unnamed Unit"
+    "unnamed_unit": "Unnamed Unit",
+    "failed_create_unit": "Failed to create unit",
+    "failed_delete_unit": "Failed to delete unit"
   },
   "ws-inventory-suppliers": {
     "plural": "Suppliers",
     "singular": "Supplier",
     "description": "Suppliers are used to link inventory products with their suppliers.",
     "create": "Create supplier",
-    "create_description": "Create a new supplier"
+    "create_description": "Create a new supplier",
+    "failed_delete_supplier": "Failed to delete supplier"
   },
   "ws-inventory-warehouses": {
     "plural": "Warehouses",
@@ -3141,7 +3148,9 @@
     "create": "Create warehouse",
     "create_description": "Create a new warehouse",
     "placeholder": "Choose a warehouse",
-    "unnamed_warehouse": "Unnamed Warehouse"
+    "unnamed_warehouse": "Unnamed Warehouse",
+    "failed_create_warehouse": "Failed to create warehouse",
+    "failed_delete_warehouse": "Failed to delete warehouse"
   },
   "ws-inventory-batches": {
     "plural": "Batches",
@@ -3169,7 +3178,9 @@
         "currency": "Currency",
         "percentage": "Percentage"
       }
-    }
+    },
+    "failed_delete_promotion": "Failed to delete promotion",
+    "failed_create_promotion": "Failed to create promotion"
   },
   "ws_post_details": {
     "check_all": "Check all"

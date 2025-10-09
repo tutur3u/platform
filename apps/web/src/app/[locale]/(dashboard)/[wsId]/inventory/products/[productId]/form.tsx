@@ -82,11 +82,10 @@ export function ProductForm({
   warehouses,
   units,
   onFinish,
-  canCreateInventory = true,
-  canUpdateInventory = true,
+  canCreateInventory = false,
+  canUpdateInventory = false,
 }: Props) {
   const t = useTranslations();
-  console.log('Form data:', data);
 
   const [loading, setLoading] = useState(false);
   const [showCategoryDialog, setCategoryDialog] = useState(false);
@@ -161,21 +160,13 @@ export function ProductForm({
 
     // Check permissions before proceeding
     if (!data?.id && !canCreateInventory) {
-      toast({
-        title: 'Permission Denied',
-        description: 'You do not have permission to create inventory',
-        variant: 'destructive',
-      });
+      toast.error(t('ws-roles.inventory_products_access_denied_description'));
       setLoading(false);
       return;
     }
 
     if (data?.id && !canUpdateInventory) {
-      toast({
-        title: 'Permission Denied',
-        description: 'You do not have permission to update inventory',
-        variant: 'destructive',
-      });
+      toast.error(t('ws-roles.inventory_products_access_denied_description'));
       setLoading(false);
       return;
     }
@@ -256,10 +247,7 @@ export function ProductForm({
         if (!hasProductChanges && !hasInventoryChanges) {
           console.log('No changes detected, skipping API calls');
           setLoading(false);
-          toast({
-            title: t('common.info'),
-            description: t('ws-inventory-products.no_changes_detected'),
-          });
+          toast.info(t('ws-inventory-products.no_changes_detected'));
           return;
         }
 
@@ -337,18 +325,12 @@ export function ProductForm({
       // Success - redirect to products list
       onFinish?.(formData);
       setLoading(false);
-      toast({
-        title: t('common.success'),
-        description: t('ws-inventory-products.product_saved_successfully'),
-      });
+      toast.success(t('ws-inventory-products.product_saved_successfully'));
       // router.push('../products');
     } catch (error) {
       setLoading(false);
       console.error('Error saving product:', error);
-      toast({
-        title: t('common.error'),
-        description: error instanceof Error ? error.message : t('ws-inventory-products.failed_save_product'),
-      });
+      toast.error(t('ws-inventory-products.failed_save_product'));
     }
   }
 
@@ -821,7 +803,7 @@ export function ProductForm({
         title={t('ws-product-categories.create')}
         editDescription={t('ws-product-categories.create_description')}
         setOpen={setCategoryDialog}
-        form={<ProductCategoryForm wsId={wsId} />}
+        form={<ProductCategoryForm wsId={wsId} canCreateInventory={canCreateInventory} canUpdateInventory={canUpdateInventory} />}
       />
 
       <ModifiableDialogTrigger
@@ -830,7 +812,7 @@ export function ProductForm({
         title={t('ws-product-warehouses.create')}
         editDescription={t('ws-product-warehouses.create_description')}
         setOpen={setWarehouseDialog}
-        form={<ProductWarehouseForm wsId={wsId} />}
+        form={<ProductWarehouseForm wsId={wsId} canCreateInventory={canCreateInventory} canUpdateInventory={canUpdateInventory} />}
       />
     </>
   );

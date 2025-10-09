@@ -86,21 +86,13 @@ export function PromotionForm({
 
     // Check permissions before proceeding
     if (!data?.id && !canCreateInventory) {
-      toast({
-        title: t('common.error'),
-        description: t('ws-roles.inventory_promotions_access_denied_description'),
-        variant: 'destructive',
-      });
+      toast.error(t('ws-roles.inventory_promotions_access_denied_description'));
       setLoading(false);
       return;
     }
 
     if (data?.id && !canUpdateInventory) {
-      toast({
-        title: t('common.error'),
-        description: t('ws-roles.inventory_promotions_access_denied_description'),
-        variant: 'destructive',
-      });
+      toast.error(t('ws-roles.inventory_promotions_access_denied_description'));
       setLoading(false);
       return;
     }
@@ -126,10 +118,7 @@ export function PromotionForm({
       router.refresh();
     } else {
       setLoading(false);
-      toast({
-        title: t('common.error'),
-        description: t('ws-inventory-promotions.failed_create_promotion'),
-      });
+      toast.error(t('ws-inventory-promotions.failed_create_promotion'));
     }
   }
 

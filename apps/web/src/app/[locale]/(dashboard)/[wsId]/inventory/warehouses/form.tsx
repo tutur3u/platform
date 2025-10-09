@@ -36,8 +36,8 @@ export function ProductWarehouseForm({
   wsId,
   data,
   onFinish,
-  canCreateInventory = true,
-  canUpdateInventory = true
+  canCreateInventory = false,
+  canUpdateInventory = false
 }: Props) {
   const t = useTranslations();
 
@@ -57,21 +57,13 @@ export function ProductWarehouseForm({
 
     // Check permissions before proceeding
     if (!data?.id && !canCreateInventory) {
-      toast({
-        title: t('common.error'),
-        description: t('ws-roles.inventory_warehouses_access_denied_description'),
-        variant: 'destructive',
-      });
+      toast.error(t('ws-roles.inventory_warehouses_access_denied_description'));
       setLoading(false);
       return;
     }
 
     if (data?.id && !canUpdateInventory) {
-      toast({
-        title: t('common.error'),
-        description: t('ws-roles.inventory_warehouses_access_denied_description'),
-        variant: 'destructive',
-      });
+      toast.error(t('ws-roles.inventory_warehouses_access_denied_description'));
       setLoading(false);
       return;
     }
@@ -96,10 +88,7 @@ export function ProductWarehouseForm({
       router.refresh();
     } else {
       setLoading(false);
-      toast({
-        title: t('common.error'),
-        description: t('ws-inventory-warehouses.failed_create_warehouse'),
-      });
+      toast.error(t('ws-inventory-warehouses.failed_create_warehouse'));
     }
   }
 

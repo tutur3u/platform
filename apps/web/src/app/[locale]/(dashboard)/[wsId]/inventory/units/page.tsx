@@ -83,6 +83,10 @@ export default async function WorkspaceUnitsPage({
               columnGenerator={productUnitColumns}
               namespace="basic-data-table"
               count={count}
+              extraData={{
+                canDeleteInventory,
+                canUpdateInventory,
+              }}
               defaultVisibility={{
                 id: false,
                 created_at: false,

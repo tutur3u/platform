@@ -76,7 +76,6 @@ export function ProductsPageClient({
         categories={categories}
         warehouses={warehouses}
         units={units}
-        canCreateInventory={canCreateInventory}
         canUpdateInventory={canUpdateInventory}
         canDeleteInventory={canDeleteInventory}
       />

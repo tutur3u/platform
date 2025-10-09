@@ -36,8 +36,8 @@ export function ProductSupplierForm({
   wsId,
   data,
   onFinish,
-  canCreateInventory = true,
-  canUpdateInventory = true
+  canCreateInventory = false,
+  canUpdateInventory = false
 }: Props) {
   const t = useTranslations();
 

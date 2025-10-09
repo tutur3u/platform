@@ -26,8 +26,8 @@ interface ProductRowActionsProps {
 export function ProductRowActions({
   row,
   href,
-  canUpdateInventory = true,
-  canDeleteInventory = true
+  canUpdateInventory = false,
+  canDeleteInventory = false
 }: ProductRowActionsProps) {
   const t = useTranslations();
   const router = useRouter();
@@ -38,11 +38,7 @@ export function ProductRowActions({
 
   async function deleteProduct() {
     if (!canDeleteInventory) {
-      toast({
-        title: t('common.error'),
-        description: t('ws-roles.inventory_products_access_denied_description'),
-        variant: 'destructive',
-      });
+      toast.error(t('ws-roles.inventory_products_access_denied_description'));
       return;
     }
 
@@ -57,10 +53,7 @@ export function ProductRowActions({
       router.refresh();
     } else {
       const data = await res.json();
-      toast({
-        title: t('common.error'),
-        description: data.message || t('ws-inventory-products.failed_delete_product'),
-      });
+      toast.error(data.message || t('ws-inventory-products.failed_delete_product'));
     }
   }
 

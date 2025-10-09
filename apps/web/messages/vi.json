@@ -2392,7 +2392,7 @@
     "inventory_categories_access_denied_description": "Bạn không có quyền xem danh mục kho.",
     "inventory_units_access_denied_description": "Bạn không có quyền xem đơn vị kho.",
     "inventory_suppliers_access_denied_description": "Bạn không có quyền xem nhà cung cấp kho.",
-    "inventory_warehouses_access_denied_description": "Bạn không có quyền xem kho hàng.",
+    "inventory_warehouses_access_denied_description": "Bạn không có quyền thực hiện hành động này",
     "inventory_batches_access_denied_description": "Bạn không có quyền xem lô hàng.",
     "inventory_promotions_access_denied_description": "Bạn không có quyền xem khuyến mãi kho.",
     "manage_finance": "Quản lý tài chính",
@@ -3238,7 +3238,11 @@
       "amount": "Số lượng",
       "min_amount": "Số lượng ít nhất",
       "category": "Danh mục"
-    }
+    },
+    "no_changes_detected": "Không có thay đổi gì",
+    "product_saved_successfully": "Sản phẩm được lưu thành công",
+    "failed_save_product": "Đã có lỗi xảy ra khi lưu sản phẩm",
+    "failed_delete_product": "Đã có lỗi xảy ra khi xóa sản phẩm"
   },
   "ws-inventory-categories": {
     "plural": "Danh mục sản phẩm",
@@ -3255,14 +3259,17 @@
     "create": "Tạo đơn vị tính",
     "create_description": "Tạo một đơn vị tính mới",
     "placeholder": "Chọn đơn vị tính",
-    "unnamed_unit": "Đơn vị tính chưa đặt tên"
+    "unnamed_unit": "Đơn vị tính chưa đặt tên",
+    "failed_create_unit": "Đã có lỗi xảy ra khi tạo đơn vị",
+    "failed_delete_unit": "Đã có lỗi xảy ra khi xóa đơn vị"
   },
   "ws-inventory-suppliers": {
     "plural": "Nhà cung cấp",
     "singular": "Nhà cung cấp",
     "description": "Nhà cung cấp được sử dụng để liên kết các sản phẩm tồn kho với nhà cung cấp.",
     "create": "Tạo nhà cung cấp",
-    "create_description": "Tạo một nhà cung cấp mới"
+    "create_description": "Tạo một nhà cung cấp mới",
+    "failed_delete_supplier": "Đã có lỗi xảy ra khi xóa nhà cung cấp"
   },
   "ws-inventory-warehouses": {
     "plural": "Kho hàng",
@@ -3271,7 +3278,9 @@
     "create": "Tạo kho hàng",
     "create_description": "Tạo một kho hàng mới",
     "placeholder": "Chọn kho hàng",
-    "unnamed_warehouse": "Kho hàng chưa đặt tên"
+    "unnamed_warehouse": "Kho hàng chưa đặt tên",
+    "failed_create_warehouse": "Đã có lỗi xảy ra khi tạo kho hàng",
+    "failed_delete_warehouse": "Đã có lỗi xảy ra khi xóa kho hàng"
   },
   "ws-inventory-batches": {
     "plural": "Lô hàng",
@@ -3299,7 +3308,9 @@
         "currency": "Tiền tệ",
         "percentage": "Phần trăm"
       }
-    }
+    },
+    "failed_delete_promotion": "Đã có lỗi xảy ra khi xóa mã giảm giá",
+    "failed_create_promotion": "Đã có lỗi xảy ra khi tạo mã giảm giá"
   },
   "ws_post_details": {
     "check_all": "Đã kiểm tra tất cả"

@@ -36,8 +36,8 @@ export function ProductUnitForm({
   wsId,
   data,
   onFinish,
-  canCreateInventory = true,
-  canUpdateInventory = true
+  canCreateInventory = false,
+  canUpdateInventory = false
 }: Props) {
   const t = useTranslations();
 
@@ -88,7 +88,7 @@ export function ProductUnitForm({
       router.refresh();
     } else {
       setLoading(false);
-      toast.error(t('common.error'));
+      toast.error(t('ws-inventory-units.failed_create_unit'));
     }
   }
 

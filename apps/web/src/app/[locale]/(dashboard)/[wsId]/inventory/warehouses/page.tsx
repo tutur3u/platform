@@ -84,6 +84,10 @@ export default async function WorkspaceWarehousesPage({
               columnGenerator={productWarehouseColumns}
               namespace="basic-data-table"
               count={count}
+              extraData={{
+                canDeleteInventory,
+                canUpdateInventory,
+              }}
               defaultVisibility={{
                 id: false,
                 created_at: false,
