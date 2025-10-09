@@ -77,6 +77,12 @@ export const productWarehouseColumns = (
   },
   {
     id: 'actions',
-    cell: ({ row }) => <ProductWarehouseRowActions row={row} canDeleteInventory={extraData?.canDeleteInventory} canUpdateInventory={extraData?.canUpdateInventory} />,
+    cell: ({ row }) => (
+      <ProductWarehouseRowActions
+        row={row}
+        canDeleteInventory={extraData?.canDeleteInventory}
+        canUpdateInventory={extraData?.canUpdateInventory}
+      />
+    ),
   },
 ];

@@ -129,7 +129,6 @@ export async function WorkspaceNavigationLinks({
       platformUserRole?.allow_discord_integrations ?? false;
   }
 
-
   const navLinks: (NavLink | null)[] = [
     {
       title: t('common.dashboard'),
@@ -783,13 +782,18 @@ export async function WorkspaceNavigationLinks({
                   title: t('workspace-users-tabs.attendance'),
                   href: `/${personalOrWsId}/users/attendance`,
                   icon: <UserCheck className="h-5 w-5" />,
-                  disabled: withoutPermission('manage_users') || withoutPermission('check_user_attendance'),
+                  disabled:
+                    withoutPermission('manage_users') ||
+                    withoutPermission('check_user_attendance'),
                 },
                 {
                   title: t('workspace-users-tabs.database'),
                   href: `/${personalOrWsId}/users/database`,
                   icon: <BookUser className="h-5 w-5" />,
-                  disabled: withoutPermission('manage_users') || (withoutPermission('view_users_private_info') && withoutPermission('view_users_public_info')),
+                  disabled:
+                    withoutPermission('manage_users') ||
+                    (withoutPermission('view_users_private_info') &&
+                      withoutPermission('view_users_public_info')),
                 },
                 {
                   title: t('workspace-users-tabs.groups'),

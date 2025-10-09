@@ -24,7 +24,11 @@ interface Props {
   canUpdateInventory?: boolean;
 }
 
-export function ProductSupplierRowActions({ row, canDeleteInventory, canUpdateInventory }: Props) {
+export function ProductSupplierRowActions({
+  row,
+  canDeleteInventory,
+  canUpdateInventory,
+}: Props) {
   const t = useTranslations();
 
   const router = useRouter();
@@ -47,7 +51,9 @@ export function ProductSupplierRowActions({ row, canDeleteInventory, canUpdateIn
       router.refresh();
     } else {
       const data = await res.json();
-      toast.error(data.message || t('ws-inventory-suppliers.failed_delete_supplier'));
+      toast.error(
+        data.message || t('ws-inventory-suppliers.failed_delete_supplier')
+      );
     }
   };
 
@@ -70,12 +76,14 @@ export function ProductSupplierRowActions({ row, canDeleteInventory, canUpdateIn
         <DropdownMenuContent align="end" className="w-[160px]">
           {canUpdateInventory && (
             <DropdownMenuItem onClick={() => setShowEditDialog(true)}>
-            {t('common.edit')}
-          </DropdownMenuItem>
+              {t('common.edit')}
+            </DropdownMenuItem>
           )}
-          {canUpdateInventory && canDeleteInventory && <DropdownMenuSeparator />}
+          {canUpdateInventory && canDeleteInventory && (
+            <DropdownMenuSeparator />
+          )}
           {canDeleteInventory && (
-          <DropdownMenuItem onClick={deleteData}>
+            <DropdownMenuItem onClick={deleteData}>
               {t('common.delete')}
             </DropdownMenuItem>
           )}
@@ -88,7 +96,13 @@ export function ProductSupplierRowActions({ row, canDeleteInventory, canUpdateIn
         title={t('ws-product-suppliers.edit')}
         editDescription={t('ws-product-suppliers.edit_description')}
         setOpen={setShowEditDialog}
-        form={<ProductSupplierForm wsId={data.ws_id} data={data} canUpdateInventory={canUpdateInventory} />}
+        form={
+          <ProductSupplierForm
+            wsId={data.ws_id}
+            data={data}
+            canUpdateInventory={canUpdateInventory}
+          />
+        }
       />
     </div>
   );

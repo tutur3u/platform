@@ -14,7 +14,7 @@ import {
   FormMessage,
 } from '@tuturuuu/ui/form';
 import { useForm } from '@tuturuuu/ui/hooks/use-form';
-import {toast} from '@tuturuuu/ui/sonner'
+import { toast } from '@tuturuuu/ui/sonner';
 import { Info, Loader2, UserIcon } from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
 import { zodResolver } from '@tuturuuu/ui/resolvers';
@@ -253,7 +253,9 @@ export default function UserForm({
     // Check file size
     if (file.size > MAX_FILE_SIZE) {
       const maxSizeMB = (MAX_FILE_SIZE / (1024 * 1024)).toFixed(0);
-      throw new Error(t('qr.image_upload.file_too_large', { size: `${maxSizeMB}MB` }));
+      throw new Error(
+        t('qr.image_upload.file_too_large', { size: `${maxSizeMB}MB` })
+      );
     }
 
     const filePath = `${wsId}/users/${generateRandomUUID()}`;
@@ -343,9 +345,12 @@ export default function UserForm({
           t(formData.id ? 'ws-users.failed_edit' : 'ws-users.failed_create');
         onError?.(errorMessage);
         if (!onError) {
-          toast.error(t(formData.id ? 'ws-users.failed_edit' : 'ws-users.failed_create'), {
-            description: errorMessage,
-          });
+          toast.error(
+            t(formData.id ? 'ws-users.failed_edit' : 'ws-users.failed_create'),
+            {
+              description: errorMessage,
+            }
+          );
         }
       }
     } catch (error) {
@@ -353,9 +358,12 @@ export default function UserForm({
         error instanceof Error ? error.message : String(error);
       onError?.(errorMessage);
       if (!onError) {
-        toast.error(t(formData.id ? 'ws-users.failed_edit' : 'ws-users.failed_create'), {
-          description: errorMessage,
-        });
+        toast.error(
+          t(formData.id ? 'ws-users.failed_edit' : 'ws-users.failed_create'),
+          {
+            description: errorMessage,
+          }
+        );
       }
     } finally {
       setSaving(false);
@@ -704,12 +712,12 @@ export default function UserForm({
                 name="is_guest"
                 render={({ field }) => (
                   <FormItem>
-                      <FormLabel>
-                        <LabelWithTooltip
-                          label={t('ws-users.guest_user')}
-                          tooltip={t('ws-users.guest_user_tooltip')}
-                        />
-                      </FormLabel>
+                    <FormLabel>
+                      <LabelWithTooltip
+                        label={t('ws-users.guest_user')}
+                        tooltip={t('ws-users.guest_user_tooltip')}
+                      />
+                    </FormLabel>
                     <FormControl>
                       <div className="flex items-center gap-2">
                         <Switch
@@ -732,7 +740,9 @@ export default function UserForm({
             <Button
               type="submit"
               className="w-full"
-              disabled={saving || (data?.id ? !canUpdateUsers : !canCreateUsers)}
+              disabled={
+                saving || (data?.id ? !canUpdateUsers : !canCreateUsers)
+              }
             >
               {saving ? (
                 <Loader2 className="h-5 w-5 animate-spin" />
