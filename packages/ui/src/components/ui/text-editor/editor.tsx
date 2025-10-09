@@ -9,7 +9,9 @@ import {
 import { toast } from '@tuturuuu/ui/sonner';
 import { debounce } from 'lodash';
 import { TextSelection } from 'prosemirror-state';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import type * as Y from 'yjs';
+import type { SupabaseRealtimeProvider } from './collaboration/supabase-realtime-provider';
 import { getEditorExtensions } from './extensions';
 import { ToolBar } from './tool-bar';
 
@@ -55,6 +57,8 @@ interface RichTextEditorProps {
   editorRef?: React.MutableRefObject<any>;
   initialCursorOffset?: number | null;
   onEditorReady?: (editor: Editor) => void;
+  yjsDoc?: Y.Doc | null;
+  yjsProvider?: SupabaseRealtimeProvider | null;
 }
 
 export function RichTextEditor({
@@ -74,8 +78,9 @@ export function RichTextEditor({
   editorRef: externalEditorRef,
   initialCursorOffset,
   onEditorReady,
+  yjsDoc = null,
+  yjsProvider = null,
 }: RichTextEditorProps) {
-  const [hasChanges, setHasChanges] = useState(false);
   const [isUploadingPastedImage, setIsUploadingPastedImage] = useState(false);
 
   // Use refs to ensure we have stable references for handlers
@@ -98,7 +103,6 @@ export function RichTextEditor({
     () =>
       debounce((newContent: JSONContent) => {
         onChangeRef.current?.(hasContent(newContent) ? newContent : null);
-        setHasChanges(false);
       }, 500),
     []
   );
@@ -218,12 +222,22 @@ export function RichTextEditor({
         externalEditorRef.current = editor;
       }
       onEditorReady?.(editor);
+
+      // If using Yjs collaboration, set initial content if doc is empty
+      if (yjsDoc && content) {
+        const fragment = yjsDoc.getXmlFragment('prosemirror');
+        if (fragment.length === 0) {
+          editor.commands.setContent(content);
+        }
+      }
     },
     extensions: getEditorExtensions({
       titlePlaceholder,
       writePlaceholder,
+      doc: yjsDoc,
+      provider: yjsProvider,
     }),
-    content,
+    content: yjsDoc ? undefined : content,
     editable: !readOnly,
     immediatelyRender: false,
     editorProps: {
@@ -455,7 +469,6 @@ export function RichTextEditor({
     },
     onUpdate: ({ editor }) => {
       if (!readOnly) {
-        setHasChanges(true);
         debouncedOnChange(editor.getJSON());
       }
     },
@@ -502,13 +515,6 @@ export function RichTextEditor({
     }
   }, [editor, initialCursorOffset]);
 
-  const handleSave = useCallback(() => {
-    if (editor && !readOnly) {
-      setHasChanges(true);
-      debouncedOnChange(editor.getJSON());
-    }
-  }, [editor, readOnly, debouncedOnChange]);
-
   // Expose flush method via ref - returns current content
   useEffect(() => {
     if (!flushPendingRef || !editor) return;
@@ -535,8 +541,6 @@ export function RichTextEditor({
       {!readOnly && (
         <ToolBar
           editor={editor}
-          hasChanges={hasChanges}
-          onSave={handleSave}
           saveButtonLabel={saveButtonLabel}
           savedButtonLabel={savedButtonLabel}
           workspaceId={workspaceId}

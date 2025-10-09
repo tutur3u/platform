@@ -1,3 +1,5 @@
+import Collaboration from '@tiptap/extension-collaboration';
+import CollaborationCaret from '@tiptap/extension-collaboration-caret';
 import Highlight from '@tiptap/extension-highlight';
 import Image from '@tiptap/extension-image';
 import Link from '@tiptap/extension-link';
@@ -15,22 +17,44 @@ import Youtube from '@tiptap/extension-youtube';
 import type { Extensions } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import ImageResize from 'tiptap-extension-resize-image';
+import type * as Y from 'yjs';
+import type { SupabaseRealtimeProvider } from './collaboration/supabase-realtime-provider';
 import { Mention } from './mention-extension';
 import { Video } from './video-extension';
 
 interface EditorExtensionsOptions {
   titlePlaceholder?: string;
   writePlaceholder?: string;
+  doc?: Y.Doc | null;
+  provider?: SupabaseRealtimeProvider | null;
 }
 
 export function getEditorExtensions({
   titlePlaceholder = 'What is the title?',
   writePlaceholder = 'Write something...',
+  doc = null,
+  provider = null,
 }: EditorExtensionsOptions = {}): Extensions {
   return [
+    ...(doc
+      ? [
+          Collaboration.configure({
+            document: doc,
+            field: 'prosemirror',
+          }),
+        ]
+      : []),
+    ...(provider
+      ? [
+          CollaborationCaret.configure({
+            provider: provider,
+          }),
+        ]
+      : []),
     StarterKit.configure({
       link: false,
       strike: false,
+      undoRedo: doc ? false : undefined,
       bulletList: {
         HTMLAttributes: {
           class: 'list-disc ml-3',
