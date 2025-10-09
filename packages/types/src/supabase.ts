@@ -74,6 +74,8 @@ export type Database = {
       workspace_role_permission:
         | 'ai_chat'
         | 'ai_lab'
+        | 'create_users'
+        | 'delete_users'
         | 'export_finance_data'
         | 'export_users_data'
         | 'manage_calendar'
@@ -94,6 +96,7 @@ export type Database = {
         | 'manage_workspace_security'
         | 'manage_workspace_settings'
         | 'send_user_group_post_emails'
+        | 'update_users'
         | 'view_finance_stats'
         | 'view_infrastructure'
         | 'view_users_private_info'
@@ -13229,6 +13232,8 @@ export const Constants = {
       workspace_role_permission: [
         'ai_chat',
         'ai_lab',
+        'create_users',
+        'delete_users',
         'export_finance_data',
         'export_users_data',
         'manage_calendar',
@@ -13249,6 +13254,7 @@ export const Constants = {
         'manage_workspace_security',
         'manage_workspace_settings',
         'send_user_group_post_emails',
+        'update_users',
         'view_finance_stats',
         'view_infrastructure',
         'view_users_private_info',

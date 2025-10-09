@@ -14,7 +14,7 @@ import {
   FormMessage,
 } from '@tuturuuu/ui/form';
 import { useForm } from '@tuturuuu/ui/hooks/use-form';
-import { toast } from '@tuturuuu/ui/hooks/use-toast';
+import {toast} from '@tuturuuu/ui/sonner'
 import { Info, Loader2, UserIcon } from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
 import { zodResolver } from '@tuturuuu/ui/resolvers';
@@ -40,6 +40,8 @@ interface Props {
   // eslint-disable-next-line no-unused-vars
   onError?: (error: string) => void;
   showUserID?: boolean;
+  canCreateUsers?: boolean;
+  canUpdateUsers?: boolean;
 }
 
 const FormSchema = z.object({
@@ -92,6 +94,8 @@ export default function UserForm({
   onSuccess,
   onError,
   showUserID = true,
+  canCreateUsers = true,
+  canUpdateUsers = true,
 }: Props) {
   const t = useTranslations();
   const router = useRouter();
@@ -178,13 +182,11 @@ export default function UserForm({
       setCropperOpen(true);
     } catch (error) {
       console.error('Error processing file:', error);
-      toast({
-        title: t('settings-account.crop_failed'),
+      toast.error(t('settings-account.crop_failed'), {
         description:
           error instanceof Error
             ? error.message
             : t('settings-account.crop_failed_description'),
-        variant: 'destructive',
       });
     } finally {
       setIsConverting(false);
@@ -216,10 +218,8 @@ export default function UserForm({
       setSelectedFile(null);
     } catch (error) {
       console.error('Error processing cropped image:', error);
-      toast({
-        title: t('settings-account.crop_failed'),
+      toast.error(t('settings-account.crop_failed'), {
         description: t('settings-account.crop_failed_description'),
-        variant: 'destructive',
       });
     }
   };
@@ -252,7 +252,8 @@ export default function UserForm({
 
     // Check file size
     if (file.size > MAX_FILE_SIZE) {
-      throw new Error('File is too large (max 2MB)');
+      const maxSizeMB = (MAX_FILE_SIZE / (1024 * 1024)).toFixed(0);
+      throw new Error(t('qr.image_upload.file_too_large', { size: `${maxSizeMB}MB` }));
     }
 
     const filePath = `${wsId}/users/${generateRandomUUID()}`;
@@ -263,7 +264,7 @@ export default function UserForm({
 
     if (error) {
       console.error('Error uploading file:', error.message);
-      throw new Error('Failed to upload image');
+      throw new Error(t('qr.image_upload.upload_failed'));
     }
 
     const { data, error: signedURLError } = await supabase.storage
@@ -272,13 +273,22 @@ export default function UserForm({
 
     if (signedURLError) {
       console.error('Error generating signed URL:', signedURLError.message);
-      throw new Error('Failed to generate signed URL');
+      throw new Error(t('qr.image_upload.signed_url_failed'));
     }
 
     return data.signedUrl;
   }
 
   const onSubmit = async (formData: z.infer<typeof FormSchema>) => {
+    // Check permissions before submitting
+    const isCreating = !data?.id;
+    const hasPermission = isCreating ? canCreateUsers : canUpdateUsers;
+
+    if (!hasPermission) {
+      toast.error(t('common.insufficient_permissions'));
+      return;
+    }
+
     setSaving(true);
     try {
       let avatarUrl = previewSrc;
@@ -318,10 +328,7 @@ export default function UserForm({
         try {
           const body = await res.json();
           if (body?.warning) {
-            toast({
-              title: 'Warning',
-              description: String(body.warning),
-            });
+            toast.warning(body.warning);
           }
         } catch {}
         onFinish?.(formData);
@@ -333,13 +340,11 @@ export default function UserForm({
         const resData = await res.json();
         const errorMessage =
           resData.message ||
-          `Failed to ${formData.id ? 'edit' : 'create'} user`;
+          t(formData.id ? 'ws-users.failed_edit' : 'ws-users.failed_create');
         onError?.(errorMessage);
         if (!onError) {
-          toast({
-            title: `Failed to ${formData.id ? 'edit' : 'create'} user`,
+          toast.error(t(formData.id ? 'ws-users.failed_edit' : 'ws-users.failed_create'), {
             description: errorMessage,
-            variant: 'destructive',
           });
         }
       }
@@ -348,10 +353,8 @@ export default function UserForm({
         error instanceof Error ? error.message : String(error);
       onError?.(errorMessage);
       if (!onError) {
-        toast({
-          title: `Failed to ${formData.id ? 'edit' : 'create'} user`,
+        toast.error(t(formData.id ? 'ws-users.failed_edit' : 'ws-users.failed_create'), {
           description: errorMessage,
-          variant: 'destructive',
         });
       }
     } finally {
@@ -701,12 +704,12 @@ export default function UserForm({
                 name="is_guest"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>
-                      <LabelWithTooltip
-                        label="Guest user"
-                        tooltip="If enabled, the user will be linked to the workspace's guest group."
-                      />
-                    </FormLabel>
+                      <FormLabel>
+                        <LabelWithTooltip
+                          label={t('ws-users.guest_user')}
+                          tooltip={t('ws-users.guest_user_tooltip')}
+                        />
+                      </FormLabel>
                     <FormControl>
                       <div className="flex items-center gap-2">
                         <Switch
@@ -726,7 +729,11 @@ export default function UserForm({
           </div>
 
           <div className="flex justify-center gap-2">
-            <Button type="submit" className="w-full" disabled={saving}>
+            <Button
+              type="submit"
+              className="w-full"
+              disabled={saving || (data?.id ? !canUpdateUsers : !canCreateUsers)}
+            >
               {saving ? (
                 <Loader2 className="h-5 w-5 animate-spin" />
               ) : data?.id ? (

@@ -2,6 +2,7 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
+import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { headers } from 'next/headers';
 import { NextResponse } from 'next/server';
 
@@ -31,11 +32,22 @@ export async function GET(_: Request, { params }: Params) {
 }
 
 export async function PUT(req: Request, { params }: Params) {
-  const supabase = await createClient();
+
   const { wsId, userId } = await params;
+
+  // Check permissions
+  const { containsPermission } = await getPermissions({ wsId });
+  if (!containsPermission('update_users')) {
+    return NextResponse.json(
+      { message: 'Insufficient permissions to update users' },
+      { status: 403 }
+    );
+  }
 
   const data = await req.json();
   const { is_guest, ...userPayload } = data ?? {};
+
+  const supabase = await createClient();
 
   const { error } = await supabase
     .from('workspace_users')
@@ -96,9 +108,17 @@ export async function PUT(req: Request, { params }: Params) {
 }
 
 export async function DELETE(_: Request, { params }: Params) {
-  const supabase = await createClient();
   const { wsId, userId } = await params;
 
+  // Check permissions
+  const { containsPermission } = await getPermissions({ wsId });
+  if (!containsPermission('delete_users')) {
+    return NextResponse.json(
+      { message: 'Insufficient permissions to delete users' },
+      { status: 403 }
+    );
+  }
+  const supabase = await createClient();
   const { error } = await supabase
     .from('workspace_users')
     .delete()

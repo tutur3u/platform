@@ -51,6 +51,9 @@ export default async function WorkspaceUsersPage({
 
   const hasPrivateInfo = containsPermission('view_users_private_info');
   const hasPublicInfo = containsPermission('view_users_public_info');
+  const canCreateUsers = containsPermission('create_users');
+  const canUpdateUsers = containsPermission('update_users');
+  const canDeleteUsers = containsPermission('delete_users');
 
   // User must have at least one permission to view users
   if (!hasPrivateInfo && !hasPublicInfo) {
@@ -69,6 +72,8 @@ export default async function WorkspaceUsersPage({
     href: `/${wsId}/users/database/${u.id}`,
   }));
 
+
+
   return (
     <>
       <FeatureSummary
@@ -77,7 +82,15 @@ export default async function WorkspaceUsersPage({
         description={t('ws-users.description')}
         createTitle={t('ws-users.create')}
         createDescription={t('ws-users.create_description')}
-        form={<UserForm wsId={wsId} />}
+        form={
+          canCreateUsers ? (
+            <UserForm
+              wsId={wsId}
+              canCreateUsers={canCreateUsers}
+              canUpdateUsers={canUpdateUsers}
+            />
+          ) : undefined
+        }
       />
       <Separator className="my-4" />
       <CustomDataTable
@@ -85,11 +98,14 @@ export default async function WorkspaceUsersPage({
         namespace="user-data-table"
         columnGenerator={getUserColumns}
         extraColumns={extraFields}
-        extraData={{ 
-          locale, 
+        extraData={{
+          locale,
           wsId,
           hasPrivateInfo,
-          hasPublicInfo 
+          hasPublicInfo,
+          canCreateUsers,
+          canUpdateUsers,
+          canDeleteUsers
         }}
         count={count}
         filters={<Filters wsId={wsId} searchParams={await searchParams} />}

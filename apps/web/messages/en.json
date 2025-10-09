@@ -385,7 +385,8 @@
     "characters": "characters",
     "no_changes_to_save": "No changes to save",
     "confirm_delete": "Delete Report?",
-    "filter": "Filter"
+    "filter": "Filter",
+    "insufficient_permissions": "Insufficient Permissions"
   },
   "date_helper": {
     "time-unit": "Time unit",
@@ -2294,7 +2295,7 @@
     "manage_user_report_templates_description": "Allows members to edit user report templates.",
     "send_user_group_post_emails": "Send post content via emails",
     "send_user_group_post_emails_description": "Allows members to send emails to virtual users created in your workspace about specific user group post content.",
-    "export_users_data": "Allow exporting users data",
+    "export_users_data": "Export User Data",
     "export_users_data_description": "Allows members to export users data in the workspace.",
     "export_finance_data": "Allow exporting finance data",
     "export_finance_data_description": "Allows members to export finance data in the workspace.",
@@ -2303,6 +2304,12 @@
     "view_users_public_info_description": "Allows members to view public information of users in the workspace.",
     "view_users_private_info": "View Users Private Info",
     "view_users_private_info_description": "Allows members to view private information of users in the workspace.",
+    "create_users": "Create Users",
+    "create_users_description": "Allows members to create new virtual user profiles in the workspace.",
+    "update_users": "Update Users",
+    "update_users_description": "Allows members to edit existing virtual user profiles in the workspace.",
+    "delete_users": "Delete Users",
+    "delete_users_description": "Allows members to delete virtual user profiles from the workspace.",
     "view_finance_stats_description": "Allows members to view financial stats of the workspace"
   },
   "platform-roles": {
@@ -4523,11 +4530,12 @@
       "processing": "Processing",
       "rounded_logo": "Rounded logo",
       "invalid_type": "Invalid file type. Please upload JPG, PNG, WebP, or SVG files.",
-      "file_too_large": "File is too large. Maximum size is 5MB.",
+      "file_too_large": "File is too large. Maximum size is {size}.",
       "dimensions_too_small": "Image dimensions are too small. Minimum size is 32x32px.",
       "dimensions_too_large": "Image dimensions are too large. Maximum size is 512x512px.",
       "invalid_image": "Invalid image file.",
-      "upload_failed": "Upload failed. Please try again."
+      "upload_failed": "Upload failed. Please try again.",
+      "signed_url_failed": "Failed to generate signed URL."
     }
   },
   "personal-workspace": {

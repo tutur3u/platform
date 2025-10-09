@@ -2,6 +2,7 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
+import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { headers } from 'next/headers';
 import { type NextRequest, NextResponse } from 'next/server';
 
@@ -117,10 +118,18 @@ async function getDataFromSession(
 }
 
 export async function POST(req: Request, { params }: Params) {
-  const supabase = await createClient();
-  const data = await req.json();
   const { wsId } = await params;
+  // Check permissions
+  const { containsPermission } = await getPermissions({ wsId });
+  if (!containsPermission('create_users')) {
+    return NextResponse.json(
+      { message: 'Insufficient permissions to create users' },
+      { status: 403 }
+    );
+  }
+  const data = await req.json();
 
+  const supabase = await createClient();
   // Separate control flag from user payload
   const { is_guest, ...userPayload } = data ?? {};
 

@@ -383,7 +383,8 @@
     "characters": "kí tự",
     "no_changes_to_save": "Không có thay đổi để lưu",
     "confirm_delete": "Xóa bản báo cáo?",
-    "filter": "Lọc"
+    "filter": "Lọc",
+    "insufficient_permissions": "Bạn không có đủ quyền để thực hiện hành động này"
   },
   "date_helper": {
     "time-unit": "Đơn vị thời gian",
@@ -2383,7 +2384,7 @@
     "manage_user_report_templates_description": "Cho phép các thành viên chỉnh sửa mẫu báo cáo người dùng.",
     "send_user_group_post_emails": "Gửi nội dung bài viết qua email",
     "send_user_group_post_emails_description": "Cho phép thành viên gửi email đến người dùng ảo được tạo trong không gian làm việc của bạn về nội dung bài viết của nhóm người dùng cụ thể.",
-    "export_users_data": "Cho phép xuất dữ liệu người dùng",
+    "export_users_data": "Xuất dữ liệu người dùng",
     "export_users_data_description": "Cho phép thành viên xuất dữ liệu người dùng ảo được tạo trong không gian làm việc của bạn.",
     "export_finance_data": "Cho phép xuất dữ liệu tài chính",
     "export_finance_data_description": "Cho phép thành viên xuất dữ liệu giao dịch tài chính được tạo trong không gian làm việc của bạn.",
@@ -2392,6 +2393,12 @@
     "view_users_public_info_description": "Cho phép thành viên xem thông tin công khai của người dùng trong không gian làm việc.",
     "view_users_private_info": "Xem thông tin riêng tư của người dùng",
     "view_users_private_info_description": "Cho phép thành viên xem thông tin riêng tư của người dùng trong không gian làm việc.",
+    "create_users": "Tạo người dùng",
+    "create_users_description": "Cho phép thành viên tạo hồ sơ người dùng ảo mới trong không gian làm việc.",
+    "update_users": "Cập nhật người dùng",
+    "update_users_description": "Cho phép thành viên chỉnh sửa hồ sơ người dùng ảo hiện có trong không gian làm việc.",
+    "delete_users": "Xóa người dùng",
+    "delete_users_description": "Cho phép thành viên xóa hồ sơ người dùng ảo khỏi không gian làm việc.",
     "view_finance_stats_description": "Cho phép thành viên xem số liệu thống kê tài chính của không gian làm việc"
   },
   "platform-roles": {
@@ -4497,11 +4504,12 @@
       "processing": "Đang xử lý",
       "rounded_logo": "Logo tròn",
       "invalid_type": "Loại tệp không hợp lệ. Vui lòng tải lên tệp JPG, PNG, WebP hoặc SVG.",
-      "file_too_large": "Tệp quá lớn. Kích thước tối đa là 5MB.",
+      "file_too_large": "Tệp quá lớn. Kích thước tối đa là {size}.",
       "dimensions_too_small": "Kích thước hình ảnh quá nhỏ. Kích thước tối thiểu là 32x32px.",
       "dimensions_too_large": "Kích thước hình ảnh quá lớn. Kích thước tối đa là 512x512px.",
       "invalid_image": "Tệp hình ảnh không hợp lệ.",
-      "upload_failed": "Tải lên thất bại. Vui lòng thử lại."
+      "upload_failed": "Tải lên thất bại. Vui lòng thử lại.",
+      "signed_url_failed": "Không thể tạo URL đã ký."
     }
   },
   "personal-workspace": {

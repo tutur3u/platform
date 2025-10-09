@@ -110,7 +110,7 @@ export function UserRowActions({ row, href, extraData }: UserRowActionsProps) {
 
   return (
     <div className="flex items-center justify-end gap-2">
-      {href && (
+      {href && (extraData?.hasPublicInfo || extraData?.hasPrivateInfo) && (
         <Link href={href}>
           <Button>
             <Eye className="mr-1 h-5 w-5" />
@@ -152,12 +152,14 @@ export function UserRowActions({ row, href, extraData }: UserRowActionsProps) {
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-[160px]">
-          <DropdownMenuItem onClick={() => setOpen(true)}>
-            {t('common.edit')}
-          </DropdownMenuItem>
+          {extraData?.canUpdateUsers && (
+            <DropdownMenuItem onClick={() => setOpen(true)}>
+              {t('common.edit')}
+            </DropdownMenuItem>
+          )}
 
           <DropdownMenuSeparator />
-          {pathname.includes('/users/database') && (
+          {pathname.includes('/users/database') && extraData?.canDeleteUsers && (
             <DropdownMenuItem
               onClick={deleteUser}
               disabled={!user.id || !user.ws_id}
