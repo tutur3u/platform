@@ -10,6 +10,7 @@ import { Separator } from '@tuturuuu/ui/separator';
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 import { ProductForm } from './form';
+import WorkspaceWrapper from '@/components/workspace-wrapper';
 
 export const metadata: Metadata = {
   title: 'Product Details',
@@ -25,51 +26,60 @@ interface Props {
 }
 
 export default async function WorkspaceProductsPage({ params }: Props) {
-  const t = await getTranslations();
-  const { wsId, productId } = await params;
 
-  const { permissions } = await getPermissions({
-    wsId,
-  });
-
-  if (!permissions.includes('view_inventory')) {
-    return (
-      <div className="flex h-full items-center justify-center">
-        <div className="text-center">
-          <h2 className="text-lg font-semibold">{t('ws-roles.inventory_access_denied')}</h2>
-          <p className="text-muted-foreground">
-            {t('ws-roles.inventory_products_access_denied_description')}
-          </p>
-        </div>
-      </div>
-    );
-  }
-
-  const data = productId === 'new' ? undefined : await getData(wsId, productId);
-  const categories = await getCategories(wsId);
-  const warehouses = await getWarehouses(wsId);
-  const units = await getUnits(wsId);
 
   return (
-    <>
-      <FeatureSummary
-        pluralTitle={t('ws-inventory-products.plural')}
-        singularTitle={t('ws-inventory-products.singular')}
-        description={t('ws-inventory-products.description')}
-        createTitle={t('ws-inventory-products.create')}
-        createDescription={t('ws-inventory-products.create_description')}
-      />
-      <Separator className="my-4" />
-      <ProductForm
-        wsId={wsId}
-        data={data}
-        categories={categories}
-        warehouses={warehouses}
-        units={units}
-      />
-    </>
+    <WorkspaceWrapper params={params}>
+      {async ({ wsId }) => {
+const t = await getTranslations();
+const { productId } = await params;
+
+const { permissions } = await getPermissions({
+  wsId,
+});
+
+if (!permissions.includes('view_inventory')) {
+  return (
+    <div className="flex h-full items-center justify-center">
+      <div className="text-center">
+        <h2 className="text-lg font-semibold">{t('ws-roles.inventory_access_denied')}</h2>
+        <p className="text-muted-foreground">
+          {t('ws-roles.inventory_products_access_denied_description')}
+        </p>
+      </div>
+    </div>
   );
 }
+
+const data = productId === 'new' ? undefined : await getData(wsId, productId);
+const categories = await getCategories(wsId);
+const warehouses = await getWarehouses(wsId);
+const units = await getUnits(wsId);
+
+return (
+  <>
+    <FeatureSummary
+      pluralTitle={t('ws-inventory-products.plural')}
+      singularTitle={t('ws-inventory-products.singular')}
+      description={t('ws-inventory-products.description')}
+      createTitle={t('ws-inventory-products.create')}
+      createDescription={t('ws-inventory-products.create_description')}
+    />
+    <Separator className="my-4" />
+    <ProductForm
+      wsId={wsId}
+      data={data}
+      categories={categories}
+      warehouses={warehouses}
+      units={units}
+    />
+  </>
+);
+      }}
+    </WorkspaceWrapper>
+  );
+}
+
 
 async function getData(wsId: string, productId: string) {
   const supabase = await createClient();
