@@ -8,6 +8,7 @@ import { getTranslations } from 'next-intl/server';
 import { CustomDataTable } from '@/components/custom-data-table';
 import { productSupplierColumns } from './columns';
 import { ProductSupplierForm } from './form';
+import WorkspaceWrapper from '@/components/workspace-wrapper';
 
 export const metadata: Metadata = {
   title: 'Suppliers',
@@ -30,50 +31,56 @@ export default async function WorkspaceSuppliersPage({
   params,
   searchParams,
 }: Props) {
-  const t = await getTranslations();
-  const { wsId } = await params;
-
-  const { permissions } = await getPermissions({
-    wsId,
-  });
-
-  if (!permissions.includes('view_inventory')) {
-    return (
-      <div className="flex h-full items-center justify-center">
-        <div className="text-center">
-          <h2 className="text-lg font-semibold">{t('ws-roles.inventory_access_denied')}</h2>
-          <p className="text-muted-foreground">
-            {t('ws-roles.inventory_suppliers_access_denied_description')}
-          </p>
-        </div>
-      </div>
-    );
-  }
-
-  const { data, count } = await getData(wsId, await searchParams);
 
   return (
-    <>
-      <FeatureSummary
-        pluralTitle={t('ws-inventory-suppliers.plural')}
-        singularTitle={t('ws-inventory-suppliers.singular')}
-        description={t('ws-inventory-suppliers.description')}
-        createTitle={t('ws-inventory-suppliers.create')}
-        createDescription={t('ws-inventory-suppliers.create_description')}
-        form={<ProductSupplierForm wsId={wsId} />}
-      />
-      <Separator className="my-4" />
-      <CustomDataTable
-        data={data}
-        columnGenerator={productSupplierColumns}
-        namespace="basic-data-table"
-        count={count}
-        defaultVisibility={{
-          id: false,
-          created_at: false,
-        }}
-      />
-    </>
+    <WorkspaceWrapper params={params}>
+      {async ({ wsId }) => {
+        const t = await getTranslations();
+
+        const { permissions } = await getPermissions({
+          wsId,
+        });
+
+        if (!permissions.includes('view_inventory')) {
+          return (
+            <div className="flex h-full items-center justify-center">
+              <div className="text-center">
+                <h2 className="text-lg font-semibold">{t('ws-roles.inventory_access_denied')}</h2>
+                <p className="text-muted-foreground">
+                  {t('ws-roles.inventory_suppliers_access_denied_description')}
+                </p>
+              </div>
+            </div>
+          );
+        }
+
+        const { data, count } = await getData(wsId, await searchParams);
+
+        return (
+          <>
+            <FeatureSummary
+              pluralTitle={t('ws-inventory-suppliers.plural')}
+              singularTitle={t('ws-inventory-suppliers.singular')}
+              description={t('ws-inventory-suppliers.description')}
+              createTitle={t('ws-inventory-suppliers.create')}
+              createDescription={t('ws-inventory-suppliers.create_description')}
+              form={<ProductSupplierForm wsId={wsId} />}
+            />
+            <Separator className="my-4" />
+            <CustomDataTable
+              data={data}
+              columnGenerator={productSupplierColumns}
+              namespace="basic-data-table"
+              count={count}
+              defaultVisibility={{
+                id: false,
+                created_at: false,
+              }}
+            />
+          </>
+        );
+      }}
+    </WorkspaceWrapper>
   );
 }
 

@@ -8,7 +8,7 @@ import { getTranslations } from 'next-intl/server';
 import { CustomDataTable } from '@/components/custom-data-table';
 import { productCategoryColumns } from './columns';
 import { ProductCategoryForm } from './form';
-
+import WorkspaceWrapper from '@/components/workspace-wrapper';
 export const metadata: Metadata = {
   title: 'Categories',
   description:
@@ -30,8 +30,11 @@ export default async function WorkspaceProductCategoriesPage({
   params,
   searchParams,
 }: Props) {
+
+  return (
+    <WorkspaceWrapper params={params}>
+      {async ({ wsId }) => {
   const t = await getTranslations();
-  const { wsId } = await params;
 
   const { permissions } = await getPermissions({
     wsId,
@@ -75,7 +78,11 @@ export default async function WorkspaceProductCategoriesPage({
       />
     </>
   );
+      }}
+    </WorkspaceWrapper>
+  );
 }
+
 
 async function getData(
   wsId: string,

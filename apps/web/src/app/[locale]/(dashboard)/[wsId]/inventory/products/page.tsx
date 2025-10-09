@@ -12,6 +12,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
 import { ProductsPageClient } from './products-page-client';
+import WorkspaceWrapper from '@/components/workspace-wrapper';
 
 export const metadata: Metadata = {
   title: 'Products',
@@ -36,58 +37,64 @@ export default async function WorkspaceProductsPage({
   params,
   searchParams,
 }: Props) {
-  const t = await getTranslations();
-  const { wsId } = await params;
-
-  const { permissions } = await getPermissions({
-    wsId,
-  });
-
-  if (!permissions.includes('view_inventory')) {
-    return (
-      <div className="flex h-full items-center justify-center">
-        <div className="text-center">
-          <h2 className="text-lg font-semibold">{t('ws-roles.inventory_access_denied')}</h2>
-          <p className="text-muted-foreground">
-            {t('ws-roles.inventory_products_access_denied_description')}
-          </p>
-        </div>
-      </div>
-    );
-  }
-
-  const { data, count } = await getData(wsId, await searchParams);
-  const categories = await getCategories(wsId);
-  const warehouses = await getWarehouses(wsId);
-  const units = await getUnits(wsId);
 
   return (
-    <>
-      <FeatureSummary
-        pluralTitle={t('ws-inventory-products.plural')}
-        singularTitle={t('ws-inventory-products.singular')}
-        description={t('ws-inventory-products.description')}
-        createTitle={t('ws-inventory-products.create')}
-        createDescription={t('ws-inventory-products.create_description')}
-        action={
-          <Link href="./products/new">
-            <Button className="cursor-pointer">
-              <Plus className="mr-2 h-4 w-4" />
-              <span>{t('ws-inventory-products.create')}</span>
-            </Button>
-          </Link>
+    <WorkspaceWrapper params={params}>
+      {async ({ wsId }) => {
+        const t = await getTranslations();
+
+        const { permissions } = await getPermissions({
+          wsId,
+        });
+
+        if (!permissions.includes('view_inventory')) {
+          return (
+            <div className="flex h-full items-center justify-center">
+              <div className="text-center">
+                <h2 className="text-lg font-semibold">{t('ws-roles.inventory_access_denied')}</h2>
+                <p className="text-muted-foreground">
+                  {t('ws-roles.inventory_products_access_denied_description')}
+                </p>
+              </div>
+            </div>
+          );
         }
-      />
-      <Separator className="my-4" />
-      <ProductsPageClient
-        data={data}
-        count={count}
-        categories={categories}
-        warehouses={warehouses}
-        units={units}
-        wsId={wsId}
-      />
-    </>
+
+        const { data, count } = await getData(wsId, await searchParams);
+        const categories = await getCategories(wsId);
+        const warehouses = await getWarehouses(wsId);
+        const units = await getUnits(wsId);
+
+        return (
+          <>
+            <FeatureSummary
+              pluralTitle={t('ws-inventory-products.plural')}
+              singularTitle={t('ws-inventory-products.singular')}
+              description={t('ws-inventory-products.description')}
+              createTitle={t('ws-inventory-products.create')}
+              createDescription={t('ws-inventory-products.create_description')}
+              action={
+                <Link href="./products/new">
+                  <Button className="cursor-pointer">
+                    <Plus className="mr-2 h-4 w-4" />
+                    <span>{t('ws-inventory-products.create')}</span>
+                  </Button>
+                </Link>
+              }
+            />
+            <Separator className="my-4" />
+            <ProductsPageClient
+              data={data}
+              count={count}
+              categories={categories}
+              warehouses={warehouses}
+              units={units}
+              wsId={wsId}
+            />
+          </>
+        );
+      }}
+    </WorkspaceWrapper>
   );
 }
 
