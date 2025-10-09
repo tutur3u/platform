@@ -68,6 +68,7 @@ export function TextGeneratorClient() {
     if (!textToTransform.trim()) return {};
 
     const generated: Record<string, string> = {};
+
     Object.entries(textStyles).forEach(([key, style]) => {
       generated[key] = style.transform(textToTransform);
     });
@@ -126,7 +127,7 @@ export function TextGeneratorClient() {
                 key={key}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.3, delay: 0.05 * index }}
+                transition={{ duration: 0.3, delay: 0.02 * index }}
                 whileHover={{ y: -4 }}
               >
                 <Card className="h-full transition-shadow hover:shadow-md">
