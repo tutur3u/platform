@@ -75,7 +75,9 @@ export type Database = {
         | 'ai_chat'
         | 'ai_lab'
         | 'check_user_attendance'
+        | 'create_inventory'
         | 'create_users'
+        | 'delete_inventory'
         | 'delete_users'
         | 'export_finance_data'
         | 'export_users_data'
@@ -97,9 +99,11 @@ export type Database = {
         | 'manage_workspace_security'
         | 'manage_workspace_settings'
         | 'send_user_group_post_emails'
+        | 'update_inventory'
         | 'update_users'
         | 'view_finance_stats'
         | 'view_infrastructure'
+        | 'view_inventory'
         | 'view_users_private_info'
         | 'view_users_public_info';
     };
@@ -13234,7 +13238,9 @@ export const Constants = {
         'ai_chat',
         'ai_lab',
         'check_user_attendance',
+        'create_inventory',
         'create_users',
+        'delete_inventory',
         'delete_users',
         'export_finance_data',
         'export_users_data',
@@ -13256,9 +13262,11 @@ export const Constants = {
         'manage_workspace_security',
         'manage_workspace_settings',
         'send_user_group_post_emails',
+        'update_inventory',
         'update_users',
         'view_finance_stats',
         'view_infrastructure',
+        'view_inventory',
         'view_users_private_info',
         'view_users_public_info',
       ],

@@ -1,5 +1,6 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
 import type { ProductSupplier } from '@tuturuuu/types/primitives/ProductSupplier';
+import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Separator } from '@tuturuuu/ui/separator';
 import type { Metadata } from 'next';
@@ -31,6 +32,24 @@ export default async function WorkspaceSuppliersPage({
 }: Props) {
   const t = await getTranslations();
   const { wsId } = await params;
+
+  const { permissions } = await getPermissions({
+    wsId,
+  });
+
+  if (!permissions.includes('view_inventory')) {
+    return (
+      <div className="flex h-full items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-lg font-semibold">{t('ws-roles.inventory_access_denied')}</h2>
+          <p className="text-muted-foreground">
+            {t('ws-roles.inventory_suppliers_access_denied_description')}
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   const { data, count } = await getData(wsId, await searchParams);
 
   return (

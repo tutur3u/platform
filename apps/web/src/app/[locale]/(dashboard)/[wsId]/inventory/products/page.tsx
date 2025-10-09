@@ -3,6 +3,7 @@ import type { Product } from '@tuturuuu/types/primitives/Product';
 import type { ProductCategory } from '@tuturuuu/types/primitives/ProductCategory';
 import type { ProductUnit } from '@tuturuuu/types/primitives/ProductUnit';
 import type { ProductWarehouse } from '@tuturuuu/types/primitives/ProductWarehouse';
+import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { Button } from '@tuturuuu/ui/button';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Plus } from '@tuturuuu/ui/icons';
@@ -37,6 +38,24 @@ export default async function WorkspaceProductsPage({
 }: Props) {
   const t = await getTranslations();
   const { wsId } = await params;
+
+  const { permissions } = await getPermissions({
+    wsId,
+  });
+
+  if (!permissions.includes('view_inventory')) {
+    return (
+      <div className="flex h-full items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-lg font-semibold">{t('ws-roles.inventory_access_denied')}</h2>
+          <p className="text-muted-foreground">
+            {t('ws-roles.inventory_products_access_denied_description')}
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   const { data, count } = await getData(wsId, await searchParams);
   const categories = await getCategories(wsId);
   const warehouses = await getWarehouses(wsId);

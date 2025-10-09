@@ -17,3 +17,11 @@ ALTER TYPE "workspace_role_permission" ADD VALUE IF NOT EXISTS 'delete_users';
 
 ALTER TYPE "workspace_role_permission" ADD VALUE IF NOT EXISTS 'check_user_attendance';
 
+-- Batch 3 of new permissions
+ALTER TYPE "workspace_role_permission" ADD VALUE IF NOT EXISTS 'create_inventory';
+
+ALTER TYPE "workspace_role_permission" ADD VALUE IF NOT EXISTS 'update_inventory';
+
+ALTER TYPE "workspace_role_permission" ADD VALUE IF NOT EXISTS 'delete_inventory';
+
+ALTER TYPE "workspace_role_permission" ADD VALUE IF NOT EXISTS 'view_inventory';

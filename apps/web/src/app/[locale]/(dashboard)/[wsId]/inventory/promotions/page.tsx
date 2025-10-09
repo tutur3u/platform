@@ -1,11 +1,11 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
 import type { ProductPromotion } from '@tuturuuu/types/primitives/ProductPromotion';
+import { getPermissions, getWorkspaceUser } from '@tuturuuu/utils/workspace-helper';
 import { Button } from '@tuturuuu/ui/button';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Settings } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
-import { getWorkspaceUser } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 import { CustomDataTable } from '@/components/custom-data-table';
@@ -35,11 +35,29 @@ export default async function WorkspacePromotionsPage({
   params,
   searchParams,
 }: Props) {
-  const t = await getTranslations();
+
 
   return (
     <WorkspaceWrapper params={params}>
       {async ({ wsId }) => {
+          const t = await getTranslations();
+        const { permissions } = await getPermissions({
+          wsId,
+        });
+
+        if (!permissions.includes('view_inventory')) {
+          return (
+            <div className="flex h-full items-center justify-center">
+              <div className="text-center">
+                <h2 className="text-lg font-semibold">{t('ws-roles.inventory_access_denied')}</h2>
+                <p className="text-muted-foreground">
+                  {t('ws-roles.inventory_promotions_access_denied_description')}
+                </p>
+              </div>
+            </div>
+          );
+        }
+
         const { data, count } = await getData(wsId, await searchParams);
 
         const user = await getCurrentUser(true);
