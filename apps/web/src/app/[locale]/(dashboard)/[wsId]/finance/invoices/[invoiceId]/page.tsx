@@ -21,9 +21,13 @@ export default async function WorkspaceInvoiceDetailsPage({ params }: Props) {
     <WorkspaceWrapper params={params}>
       {async ({ wsId, invoiceId, locale }) => {
         return (
-          <InvoiceDetailsPage wsId={wsId} invoiceId={invoiceId} locale={locale} />
-        )
+          <InvoiceDetailsPage
+            wsId={wsId}
+            invoiceId={invoiceId}
+            locale={locale}
+          />
+        );
       }}
     </WorkspaceWrapper>
-  )
+  );
 }

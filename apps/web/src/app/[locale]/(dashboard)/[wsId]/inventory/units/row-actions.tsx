@@ -24,7 +24,11 @@ interface Props {
   canUpdateInventory?: boolean;
 }
 
-export function ProductUnitRowActions({ row, canDeleteInventory, canUpdateInventory }: Props) {
+export function ProductUnitRowActions({
+  row,
+  canDeleteInventory,
+  canUpdateInventory,
+}: Props) {
   const t = useTranslations();
 
   const router = useRouter();
@@ -70,14 +74,16 @@ export function ProductUnitRowActions({ row, canDeleteInventory, canUpdateInvent
         <DropdownMenuContent align="end" className="w-[160px]">
           {canUpdateInventory && (
             <DropdownMenuItem onClick={() => setShowEditDialog(true)}>
-            {t('common.edit')}
-          </DropdownMenuItem>
+              {t('common.edit')}
+            </DropdownMenuItem>
           )}
-          {canUpdateInventory && canDeleteInventory && <DropdownMenuSeparator />}
+          {canUpdateInventory && canDeleteInventory && (
+            <DropdownMenuSeparator />
+          )}
           {canDeleteInventory && (
-          <DropdownMenuItem onClick={deleteData}>
-            {t('common.delete')}
-          </DropdownMenuItem>
+            <DropdownMenuItem onClick={deleteData}>
+              {t('common.delete')}
+            </DropdownMenuItem>
           )}
         </DropdownMenuContent>
       </DropdownMenu>
@@ -88,7 +94,13 @@ export function ProductUnitRowActions({ row, canDeleteInventory, canUpdateInvent
         title={t('ws-product-units.edit')}
         editDescription={t('ws-product-units.edit_description')}
         setOpen={setShowEditDialog}
-        form={<ProductUnitForm wsId={data.ws_id} data={data} canUpdateInventory={canUpdateInventory} />}
+        form={
+          <ProductUnitForm
+            wsId={data.ws_id}
+            data={data}
+            canUpdateInventory={canUpdateInventory}
+          />
+        }
       />
     </div>
   );

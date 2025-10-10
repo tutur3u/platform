@@ -23,7 +23,6 @@ interface Props {
 export default async function InvoicesPage({ wsId, searchParams }: Props) {
   const t = await getTranslations();
 
-
   const { data: rawData, count } = await getData(wsId, searchParams);
 
   const data = rawData.map((d) => ({

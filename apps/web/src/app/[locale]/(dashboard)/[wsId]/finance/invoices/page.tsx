@@ -23,7 +23,6 @@ export default async function WorkspaceInvoicesPage({
   params,
   searchParams,
 }: Props) {
-
   return (
     <WorkspaceWrapper params={params}>
       {async ({ wsId }) => {

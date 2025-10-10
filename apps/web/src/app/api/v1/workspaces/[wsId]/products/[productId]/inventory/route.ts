@@ -38,7 +38,10 @@ export async function POST(req: Request, { params }: Params) {
 
   if (productError) {
     console.log(productError);
-    return NextResponse.json({ message: 'Error validating product' }, { status: 500 });
+    return NextResponse.json(
+      { message: 'Error validating product' },
+      { status: 500 }
+    );
   }
 
   if (!product) {

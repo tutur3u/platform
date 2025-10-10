@@ -243,7 +243,8 @@ export function SubscriptionInvoice({
   );
 
   // Data queries
-  const { data: users = [], isLoading: usersLoading } = useUsersWithSelectableGroups(wsId);
+  const { data: users = [], isLoading: usersLoading } =
+    useUsersWithSelectableGroups(wsId);
   const { data: products = [], isLoading: productsLoading } = useProducts(wsId);
   const { data: availablePromotions = [], isLoading: promotionsLoading } =
     useAvailablePromotions(wsId, selectedUserId);
@@ -633,7 +634,7 @@ export function SubscriptionInvoice({
     setSelectedWalletId('');
     setSelectedPromotionId('none');
     setSelectedCategoryId('');
-    
+
     // Replace entire search params with only user_id, this will clear group_id and month
     // The month will be auto-set when a new group is selected
     if (selectedUserId) {
@@ -1010,7 +1011,9 @@ export function SubscriptionInvoice({
                   })
                 )}
                 selected={selectedUserId}
-                onChange={(value) => updateSearchParam('user_id', value as string)}
+                onChange={(value) =>
+                  updateSearchParam('user_id', value as string)
+                }
                 placeholder={t('ws-invoices.search_customers')}
               />
             </div>

@@ -54,7 +54,7 @@ export default async function WorkspaceUsersPage({
   const canCreateUsers = containsPermission('create_users');
   const canUpdateUsers = containsPermission('update_users');
   const canDeleteUsers = containsPermission('delete_users');
-  const canCheckUserAttendance = containsPermission('check_user_attendance');   
+  const canCheckUserAttendance = containsPermission('check_user_attendance');
 
   // User must have at least one permission to view users
   if (!hasPrivateInfo && !hasPublicInfo) {
@@ -73,8 +73,6 @@ export default async function WorkspaceUsersPage({
     ...u,
     href: `/${wsId}/users/database/${u.id}`,
   }));
-
-
 
   return (
     <>
@@ -108,7 +106,7 @@ export default async function WorkspaceUsersPage({
           canCreateUsers,
           canUpdateUsers,
           canDeleteUsers,
-          canCheckUserAttendance
+          canCheckUserAttendance,
         }}
         count={count}
         filters={<Filters wsId={wsId} searchParams={await searchParams} />}
@@ -219,7 +217,7 @@ async function getData(
       const { data: isGuest } = await supabase.rpc('is_user_guest', {
         user_uuid: u.id,
       });
-      
+
       // Sanitize data based on permissions
       const sanitized: any = { ...u, is_guest: Boolean(isGuest) };
 

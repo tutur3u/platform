@@ -20,8 +20,6 @@ export default async function ProductsStatistics({ wsId }: { wsId: string }) {
       })
     : { data: 0 };
 
-
-
   return (
     <StatisticCard
       title={t('workspace-inventory-tabs.products')}

@@ -24,7 +24,11 @@ interface Props {
   canUpdateInventory?: boolean;
 }
 
-export function ProductWarehouseRowActions({ row, canDeleteInventory, canUpdateInventory }: Props) {
+export function ProductWarehouseRowActions({
+  row,
+  canDeleteInventory,
+  canUpdateInventory,
+}: Props) {
   const t = useTranslations();
 
   const router = useRouter();
@@ -47,7 +51,9 @@ export function ProductWarehouseRowActions({ row, canDeleteInventory, canUpdateI
       router.refresh();
     } else {
       const data = await res.json();
-      toast.error(data.message || t('ws-inventory-warehouses.failed_delete_warehouse'));
+      toast.error(
+        data.message || t('ws-inventory-warehouses.failed_delete_warehouse')
+      );
     }
   };
 
@@ -70,14 +76,16 @@ export function ProductWarehouseRowActions({ row, canDeleteInventory, canUpdateI
         <DropdownMenuContent align="end" className="w-[160px]">
           {canUpdateInventory && (
             <DropdownMenuItem onClick={() => setShowEditDialog(true)}>
-            {t('common.edit')}
-          </DropdownMenuItem>
+              {t('common.edit')}
+            </DropdownMenuItem>
           )}
-          {canUpdateInventory && canDeleteInventory && <DropdownMenuSeparator />}
+          {canUpdateInventory && canDeleteInventory && (
+            <DropdownMenuSeparator />
+          )}
           {canDeleteInventory && (
-          <DropdownMenuItem onClick={deleteData}>
-            {t('common.delete')}
-          </DropdownMenuItem>
+            <DropdownMenuItem onClick={deleteData}>
+              {t('common.delete')}
+            </DropdownMenuItem>
           )}
         </DropdownMenuContent>
       </DropdownMenu>
@@ -88,7 +96,13 @@ export function ProductWarehouseRowActions({ row, canDeleteInventory, canUpdateI
         title={t('ws-product-warehouses.edit')}
         editDescription={t('ws-product-warehouses.edit_description')}
         setOpen={setShowEditDialog}
-        form={<ProductWarehouseForm wsId={data.ws_id} data={data} canUpdateInventory={canUpdateInventory} />}
+        form={
+          <ProductWarehouseForm
+            wsId={data.ws_id}
+            data={data}
+            canUpdateInventory={canUpdateInventory}
+          />
+        }
       />
     </div>
   );

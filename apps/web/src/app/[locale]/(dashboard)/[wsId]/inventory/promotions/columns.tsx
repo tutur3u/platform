@@ -110,6 +110,12 @@ export const getPromotionColumns = (
   },
   {
     id: 'actions',
-    cell: ({ row }) => <PromotionRowActions row={row} canDeleteInventory={extraData?.canDeleteInventory} canUpdateInventory={extraData?.canUpdateInventory} />,
+    cell: ({ row }) => (
+      <PromotionRowActions
+        row={row}
+        canDeleteInventory={extraData?.canDeleteInventory}
+        canUpdateInventory={extraData?.canUpdateInventory}
+      />
+    ),
   },
 ];

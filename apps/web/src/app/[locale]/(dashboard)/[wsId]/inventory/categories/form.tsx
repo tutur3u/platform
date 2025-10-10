@@ -37,7 +37,7 @@ export function ProductCategoryForm({
   data,
   onFinish,
   canCreateInventory = true,
-  canUpdateInventory = true
+  canUpdateInventory = true,
 }: Props) {
   const t = useTranslations();
 

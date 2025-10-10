@@ -448,7 +448,9 @@ export function StandardInvoice({
                   })
                 )}
                 selected={selectedUserId}
-                onChange={(value) => updateSearchParam('user_id', value as string)}
+                onChange={(value) =>
+                  updateSearchParam('user_id', value as string)
+                }
                 placeholder={t('ws-invoices.search_customers')}
               />
             </div>
