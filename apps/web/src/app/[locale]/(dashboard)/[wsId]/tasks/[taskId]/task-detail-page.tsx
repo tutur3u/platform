@@ -1,9 +1,8 @@
 'use client';
 
 import type { Task } from '@tuturuuu/types/primitives/Task';
-import { TaskEditDialog } from '@tuturuuu/ui/tu-do/shared/task-edit-dialog';
-import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useTaskDialog } from '@tuturuuu/ui/tu-do/hooks/useTaskDialog';
+import { useEffect } from 'react';
 
 interface TaskDetailPageProps {
   task: Task;
@@ -13,40 +12,15 @@ interface TaskDetailPageProps {
   wsId: string;
 }
 
-export default function TaskDetailPage({
-  task,
-  boardId,
-  wsId,
-}: TaskDetailPageProps) {
-  const router = useRouter();
-  const [isOpen, setIsOpen] = useState(true);
+export default function TaskDetailPage({ task, boardId }: TaskDetailPageProps) {
+  const { openTask } = useTaskDialog();
 
-  // Navigate back when dialog closes
+  // Open task dialog on mount
   useEffect(() => {
-    if (!isOpen) {
-      router.push(`/${wsId}/tasks/boards/${boardId}`);
-    }
-  }, [isOpen, router, wsId, boardId]);
+    openTask(task, boardId);
+  }, [task, boardId, openTask]);
 
-  const handleClose = () => {
-    setIsOpen(false);
-  };
-
-  const handleUpdate = () => {
-    // Task was updated, we can stay on this page
-    // The page will show the updated data on next navigation
-  };
-
-  return (
-    <div className="flex h-full w-full items-center justify-center">
-      <TaskEditDialog
-        task={task}
-        boardId={boardId}
-        isOpen={isOpen}
-        onClose={handleClose}
-        onUpdate={handleUpdate}
-        mode="edit"
-      />
-    </div>
-  );
+  // Navigate back to board (user will close dialog manually)
+  // The centralized dialog will handle the display
+  return null;
 }

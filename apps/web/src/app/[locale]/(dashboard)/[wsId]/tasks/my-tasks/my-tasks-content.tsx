@@ -34,7 +34,7 @@ import {
 } from '@tuturuuu/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { TaskBoardForm } from '@tuturuuu/ui/tu-do/boards/form';
-import { TaskEditDialog } from '@tuturuuu/ui/tu-do/shared/task-edit-dialog';
+import { useTaskDialog } from '@tuturuuu/ui/tu-do/hooks/useTaskDialog';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useMemo, useState } from 'react';
@@ -108,9 +108,9 @@ export default function MyTasksContent({
   const t = useTranslations();
   const router = useRouter();
   const queryClient = useQueryClient();
+  const { createTask } = useTaskDialog();
   const [activeTab, setActiveTab] = useState('tasks');
   const [boardSelectorOpen, setBoardSelectorOpen] = useState(false);
-  const [taskCreatorOpen, setTaskCreatorOpen] = useState(false);
   const [selectedWorkspaceId, setSelectedWorkspaceId] = useState<string>(wsId);
   const [selectedBoardId, setSelectedBoardId] = useState<string>('');
   const [selectedListId, setSelectedListId] = useState<string>('');
@@ -167,7 +167,7 @@ export default function MyTasksContent({
       if (error) throw error;
       return boards || [];
     },
-    enabled: (boardSelectorOpen || taskCreatorOpen) && !!selectedWorkspaceId,
+    enabled: boardSelectorOpen && !!selectedWorkspaceId,
   });
 
   // Get available lists for selected board
@@ -239,13 +239,12 @@ export default function MyTasksContent({
 
   const handleProceedToTaskCreation = () => {
     if (!selectedBoardId || !selectedListId) return;
-    setBoardSelectorOpen(false);
-    setTaskCreatorOpen(true);
-  };
 
-  const handleCloseTaskCreator = () => {
-    setTaskCreatorOpen(false);
-    // Reset selections for next time
+    // Create task using centralized dialog
+    createTask(selectedBoardId, selectedListId, availableLists);
+
+    // Close board selector and reset selections
+    setBoardSelectorOpen(false);
     setSelectedWorkspaceId(wsId);
     setSelectedBoardId('');
     setSelectedListId('');
@@ -536,33 +535,6 @@ export default function MyTasksContent({
           />
         </DialogContent>
       </Dialog>
-
-      {/* Task Creation Dialog */}
-      {selectedBoardId && selectedListId && (
-        <TaskEditDialog
-          task={
-            {
-              id: 'new',
-              name: '',
-              description: '',
-              priority: null,
-              start_date: null,
-              end_date: null,
-              estimation_points: null,
-              list_id: selectedListId,
-              labels: [],
-              archived: false,
-              assignees: [],
-              projects: [],
-            } as any
-          }
-          boardId={selectedBoardId}
-          isOpen={taskCreatorOpen}
-          onClose={handleCloseTaskCreator}
-          onUpdate={handleUpdate}
-          mode="create"
-        />
-      )}
     </Tabs>
   );
 }

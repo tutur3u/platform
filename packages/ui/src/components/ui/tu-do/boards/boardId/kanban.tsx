@@ -67,12 +67,12 @@ import {
   Timer,
 } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useTaskDialog } from '../../hooks/useTaskDialog';
 import { CursorOverlayWrapper } from '../../shared/cursor-overlay';
 import {
   buildEstimationIndices,
   mapEstimationPoints,
 } from '../../shared/estimation-mapping';
-import { TaskEditDialog } from '../../shared/task-edit-dialog';
 import { BoardSelector } from '../board-selector';
 import { TaskCard } from './task';
 import { BoardColumn } from './task-list';
@@ -114,16 +114,13 @@ export function KanbanBoard({
   const [isMultiSelectMode, setIsMultiSelectMode] = useState(false);
   const [boardSelectorOpen, setBoardSelectorOpen] = useState(false);
   const [bulkWorking, setBulkWorking] = useState(false);
-  const [createDialog, setCreateDialog] = useState<{
-    open: boolean;
-    list: TaskList | null;
-  }>({ open: false, list: null });
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
   const pickedUpTaskColumn = useRef<string | null>(null);
   const queryClient = useQueryClient();
   const supabase = createClient();
   const moveTaskToBoardMutation = useMoveTaskToBoard(boardId);
   const reorderTaskMutation = useReorderTask(boardId);
+  const { createTask } = useTaskDialog();
 
   // Use React Query hook for board config (shared cache)
   const { data: boardConfig } = useBoardConfig(boardId);
@@ -294,7 +291,7 @@ export function KanbanBoard({
         // Open create dialog with the first list
         const firstList = columns[0];
         if (firstList) {
-          setCreateDialog({ open: true, list: firstList });
+          createTask(boardId, firstList.id, columns);
         }
       }
 
@@ -312,7 +309,14 @@ export function KanbanBoard({
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [clearSelection, handleCrossBoardMove, selectedTasks, columns]);
+  }, [
+    clearSelection,
+    handleCrossBoardMove,
+    selectedTasks,
+    columns,
+    boardId,
+    createTask,
+  ]);
 
   const processDragOver = useCallback(
     (event: DragOverEvent) => {
@@ -2055,7 +2059,7 @@ export function KanbanBoard({
                         tasks={listTasks}
                         isPersonalWorkspace={workspace.personal}
                         onUpdate={handleUpdate}
-                        onAddTask={() => setCreateDialog({ open: true, list })}
+                        onAddTask={() => createTask(boardId, list.id, columns)}
                         selectedTasks={selectedTasks}
                         isMultiSelectMode={isMultiSelectMode}
                         onTaskSelect={handleTaskSelect}
@@ -2096,31 +2100,6 @@ export function KanbanBoard({
         taskCount={selectedTasks.size}
         onMove={handleBoardMove}
         isMoving={moveTaskToBoardMutation.isPending}
-      />
-
-      {/* Central Create Task Dialog to avoid clipping/stacking issues */}
-      <TaskEditDialog
-        task={
-          {
-            id: 'new',
-            name: '',
-            description: '',
-            priority: null,
-            start_date: null,
-            end_date: null,
-            estimation_points: null,
-            list_id: createDialog.list?.id || (columns[0]?.id as any),
-            labels: [],
-            archived: false,
-            assignees: [],
-          } as any
-        }
-        boardId={boardId}
-        isOpen={createDialog.open}
-        onClose={() => setCreateDialog({ open: false, list: null })}
-        onUpdate={handleUpdate}
-        availableLists={columns}
-        mode="create"
       />
 
       {/* Bulk delete confirmation */}

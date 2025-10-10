@@ -35,8 +35,7 @@ import { Input } from '@tuturuuu/ui/input';
 import { cn } from '@tuturuuu/utils/format';
 import { useState } from 'react';
 import { toast } from 'sonner';
-// import { TaskForm } from './task-form';
-import { TaskEditDialog } from '../../shared/task-edit-dialog';
+import { useTaskDialog } from '../../hooks/useTaskDialog';
 import { TaskCard } from './task';
 
 interface Props {
@@ -96,10 +95,10 @@ export function EnhancedTaskList({
 }: Props) {
   const [isEditing, setIsEditing] = useState(false);
   const [editName, setEditName] = useState(list.name);
-  const [showTaskForm, setShowTaskForm] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const queryClient = useQueryClient();
   const supabase = createClient();
+  const { createTask } = useTaskDialog();
 
   // Draggable for the list itself
   const {
@@ -441,40 +440,13 @@ export function EnhancedTaskList({
             variant="ghost"
             size="sm"
             onClick={() =>
-              onAddTask ? onAddTask(list) : setShowTaskForm(true)
+              onAddTask ? onAddTask(list) : createTask(boardId, list.id, [list])
             }
             className="w-full justify-start rounded-lg border border-dynamic-gray/40 border-dashed text-muted-foreground text-xs transition-all hover:border-dynamic-gray/60 hover:bg-muted/40 hover:text-foreground"
           >
             + Add task
           </Button>
         </div>
-      )}
-
-      {/* Local fallback dialog when parent handler not provided */}
-      {!onAddTask && (
-        <TaskEditDialog
-          task={
-            {
-              id: 'new',
-              name: '',
-              description: '',
-              priority: null,
-              start_date: null,
-              end_date: null,
-              estimation_points: null,
-              list_id: list.id,
-              labels: [],
-              archived: false,
-              assignees: [],
-            } as any
-          }
-          boardId={boardId}
-          isOpen={showTaskForm}
-          onClose={() => setShowTaskForm(false)}
-          onUpdate={onUpdate}
-          availableLists={[list]}
-          mode="create"
-        />
       )}
 
       {/* Delete Confirmation Dialog */}

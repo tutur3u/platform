@@ -14,7 +14,7 @@ import type { TaskFilters } from '../boards/boardId/task-filter';
 import { TimelineBoard } from '../boards/boardId/timeline-board';
 import { BoardHeader, type ListStatusFilter } from '../shared/board-header';
 import { ListView } from '../shared/list-view';
-import { TaskEditDialog } from '../shared/task-edit-dialog';
+import { useTaskDialog } from '../hooks/useTaskDialog';
 
 export type ViewType = 'kanban' | 'status-grouped' | 'list' | 'timeline';
 
@@ -51,8 +51,8 @@ export function BoardViews({
   const [taskOverrides, setTaskOverrides] = useState<
     Record<string, Partial<Task>>
   >({});
-  const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const queryClient = useQueryClient();
+  const { createTask } = useTaskDialog();
 
   // Semantic search hook
   const {
@@ -324,13 +324,16 @@ export function BoardViews({
       ) {
         event.preventDefault();
         event.stopPropagation();
-        setCreateDialogOpen(true);
+        const firstList = filteredLists[0];
+        if (firstList) {
+          createTask(board.id, firstList.id, filteredLists);
+        }
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, []);
+  }, [board.id, createTask, filteredLists]);
 
   const renderView = () => {
     switch (currentView) {
@@ -403,16 +406,6 @@ export function BoardViews({
         isSearching={isSearchLoading || isSearchFetching}
       />
       <div className="h-full overflow-hidden">{renderView()}</div>
-
-      {/* Global task creation dialog */}
-      <TaskEditDialog
-        boardId={board.id}
-        isOpen={createDialogOpen}
-        onClose={() => setCreateDialogOpen(false)}
-        onUpdate={handleUpdate}
-        availableLists={filteredLists}
-        mode="create"
-      />
     </div>
   );
 }

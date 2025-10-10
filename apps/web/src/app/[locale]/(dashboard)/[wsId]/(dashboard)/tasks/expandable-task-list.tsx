@@ -1,6 +1,5 @@
 'use client';
 
-import { createClient } from '@tuturuuu/supabase/next/client';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
@@ -12,7 +11,7 @@ import {
   Clock,
   UserRound,
 } from '@tuturuuu/ui/icons';
-import { TaskEditDialog } from '@tuturuuu/ui/tu-do/shared/task-edit-dialog';
+import { useTaskDialog } from '@tuturuuu/ui/tu-do/hooks/useTaskDialog';
 import { TaskEstimationDisplay } from '@tuturuuu/ui/tu-do/shared/task-estimation-display';
 import { TaskLabelsDisplay } from '@tuturuuu/ui/tu-do/shared/task-labels-display';
 import { cn } from '@tuturuuu/utils/format';
@@ -80,9 +79,8 @@ export default function ExpandableTaskList({
   isPersonal = false,
   initialLimit = 5,
 }: ExpandableTaskListProps) {
+  const { openTask } = useTaskDialog();
   const [showAll, setShowAll] = useState(false);
-  const [editingTask, setEditingTask] = useState<Task | null>(null);
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [localTasks, setLocalTasks] = useState<Task[]>(tasks);
 
   // Update local tasks when props change
@@ -99,7 +97,7 @@ export default function ExpandableTaskList({
     e.preventDefault();
     e.stopPropagation();
 
-    // Transform task data to match TaskEditDialog expected format
+    // Transform task data to match expected format
     // Convert labels from [{ label: {...} }] to [{...}]
     // Convert assignees from [{ user: {...} }] to [{...}]
     const transformedTask = {
@@ -117,79 +115,9 @@ export default function ExpandableTaskList({
         })),
     };
 
-    setEditingTask(transformedTask as any);
-    setIsEditDialogOpen(true);
+    const boardId = task.list?.board?.id || '';
+    openTask(transformedTask as any, boardId);
   };
-
-  const handleCloseEditDialog = () => {
-    setIsEditDialogOpen(false);
-    setEditingTask(null);
-  };
-
-  const handleUpdateTask = () => {
-    // Task updates are handled by the polling mechanism
-    // Just close the dialog when save is complete
-  };
-
-  // Poll for updates while dialog is open
-  useEffect(() => {
-    if (!isEditDialogOpen || !editingTask) return;
-
-    const pollForUpdates = async () => {
-      const supabase = createClient();
-      const { data: updatedTask } = await supabase
-        .from('tasks')
-        .select(
-          `
-          *,
-          list:task_lists!inner(
-            id,
-            name,
-            status,
-            board:workspace_boards!inner(
-              id,
-              name,
-              ws_id,
-              estimation_type,
-              extended_estimation,
-              allow_zero_estimates,
-              workspaces(id, name, personal)
-            )
-          ),
-          assignees:task_assignees(
-            user:users(
-              id,
-              display_name,
-              avatar_url
-            )
-          ),
-          labels:task_labels(
-            label:workspace_task_labels(
-              id,
-              name,
-              color,
-              created_at
-            )
-          )
-        `
-        )
-        .eq('id', editingTask.id)
-        .single();
-
-      if (updatedTask) {
-        // Update local tasks with the fresh data
-        setLocalTasks((prevTasks) =>
-          prevTasks.map((task) =>
-            task.id === updatedTask.id ? updatedTask : task
-          )
-        );
-      }
-    };
-
-    const intervalId = setInterval(pollForUpdates, 1000); // Poll every second
-
-    return () => clearInterval(intervalId);
-  }, [isEditDialogOpen, editingTask]);
 
   const getPriorityColor = (priority: string | null) => {
     switch (priority) {
@@ -476,17 +404,6 @@ export default function ExpandableTaskList({
             )}
           </Button>
         </div>
-      )}
-
-      {/* Task Edit Dialog */}
-      {editingTask && (
-        <TaskEditDialog
-          task={editingTask as any}
-          boardId={editingTask.list?.board?.id || ''}
-          isOpen={isEditDialogOpen}
-          onClose={handleCloseEditDialog}
-          onUpdate={handleUpdateTask}
-        />
       )}
     </div>
   );

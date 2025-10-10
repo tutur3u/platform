@@ -54,11 +54,11 @@ import {
 } from '@tuturuuu/utils/text-helper';
 import { format, formatDistanceToNow } from 'date-fns';
 import React, { memo, useCallback, useEffect, useRef, useState } from 'react';
+import { useTaskDialog } from '../../hooks/useTaskDialog';
 import { useTaskDialogState } from '../../hooks/useTaskDialogState';
 import { useTaskLabelManagement } from '../../hooks/useTaskLabelManagement';
 import { useTaskProjectManagement } from '../../hooks/useTaskProjectManagement';
 import { AssigneeSelect } from '../../shared/assignee-select';
-import { TaskEditDialog } from '../../shared/task-edit-dialog';
 import { TaskEstimationDisplay } from '../../shared/task-estimation-display';
 import { TaskLabelsDisplay } from '../../shared/task-labels-display';
 import {
@@ -115,6 +115,9 @@ function TaskCardInner({
 
   // Use extracted dialog state management hook
   const { state: dialogState, actions: dialogActions } = useTaskDialogState();
+
+  // Use centralized task dialog
+  const { openTask } = useTaskDialog();
 
   // Guarded select handler for Radix DropdownMenuItem to avoid immediate action on context open
   const handleMenuItemSelect = useCallback(
@@ -324,7 +327,7 @@ function TaskCardInner({
         // Handle multi-select functionality
         onSelect?.(task.id, e);
 
-        // Only open edit dialog if not in multi-select mode, not dragging, dialog is not already open, and not in the process of closing
+        // Only open edit dialog if not in multi-select mode, not dragging, and no other dialogs are open
         if (
           !e.shiftKey &&
           !isDragging &&
@@ -335,7 +338,7 @@ function TaskCardInner({
           !dialogState.customDateDialogOpen &&
           !dialogState.newLabelDialogOpen
         ) {
-          dialogActions.openEditDialog();
+          openTask(task, boardId, availableLists);
         }
       }}
       onContextMenu={(e) => {
@@ -824,16 +827,6 @@ function TaskCardInner({
             : dialogActions.closeDeleteDialog()
         }
         onConfirm={handleDelete}
-      />
-      <TaskEditDialog
-        key={task.id} // Force re-mount when task ID changes
-        task={task}
-        boardId={boardId}
-        isOpen={dialogState.editDialogOpen}
-        onClose={dialogActions.handleDialogClose}
-        onUpdate={onUpdate}
-        availableLists={availableLists}
-        showUserPresence={!isPersonalWorkspace}
       />
       <TaskNewLabelDialog
         open={dialogState.newLabelDialogOpen}

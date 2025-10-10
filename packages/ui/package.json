@@ -136,6 +136,22 @@
       "types": "./src/components/ui/text-editor/types.ts",
       "import": "./src/components/ui/text-editor/types.ts"
     },
+    "./tu-do/hooks/useTaskDialog": {
+      "types": "./src/components/ui/tu-do/hooks/useTaskDialog.ts",
+      "import": "./src/components/ui/tu-do/hooks/useTaskDialog.ts"
+    },
+    "./tu-do/providers/task-dialog-provider": {
+      "types": "./src/components/ui/tu-do/providers/task-dialog-provider.tsx",
+      "import": "./src/components/ui/tu-do/providers/task-dialog-provider.tsx"
+    },
+    "./tu-do/shared/task-dialog-manager": {
+      "types": "./src/components/ui/tu-do/shared/task-dialog-manager.tsx",
+      "import": "./src/components/ui/tu-do/shared/task-dialog-manager.tsx"
+    },
+    "./tu-do/hooks/*": "./src/components/ui/tu-do/hooks/*",
+    "./tu-do/providers/*": "./src/components/ui/tu-do/providers/*.tsx",
+    "./tu-do/shared/*": "./src/components/ui/tu-do/shared/*.tsx",
+    "./tu-do/boards/*": "./src/components/ui/tu-do/boards/*.tsx",
     "./*": "./src/components/ui/*.tsx"
   },
   "packageManager": "bun@1.2.23"

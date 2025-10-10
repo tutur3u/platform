@@ -47,7 +47,7 @@ import { getTasks, priorityCompare } from '@tuturuuu/utils/task-helper';
 import { format, isPast, isToday, isTomorrow } from 'date-fns';
 import Image from 'next/image';
 import { useEffect, useMemo, useState } from 'react';
-import { TaskEditDialog } from './task-edit-dialog';
+import { useTaskDialog } from '../hooks/useTaskDialog';
 
 interface Props {
   boardId: string;
@@ -91,8 +91,8 @@ export function ListView({
   const [isLoading, setIsLoading] = useState(false);
   const [sortField, setSortField] = useState<SortField>('created_at');
   const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
-  const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [selectedTasks, setSelectedTasks] = useState<Set<string>>(new Set());
+  const { openTask } = useTaskDialog();
 
   // Infinite scroll
   const [displayCount, setDisplayCount] = useState(50);
@@ -362,11 +362,6 @@ export function ListView({
     );
   }
 
-  // Find the selected task for editing
-  const selectedTask = selectedTaskId
-    ? tasks.find((task) => task.id === selectedTaskId)
-    : null;
-
   return (
     <div className="flex h-full flex-col">
       {sortedTasks.length === 0 ? (
@@ -495,7 +490,7 @@ export function ListView({
                       ) {
                         return;
                       }
-                      setSelectedTaskId(task.id);
+                      openTask(task, boardId, lists);
                     }}
                   >
                     <TableCell className="px-2.5 py-0">
@@ -662,7 +657,7 @@ export function ListView({
                           variant="ghost"
                           size="icon"
                           className="h-6 w-6 opacity-0 group-hover:opacity-100"
-                          onClick={() => setSelectedTaskId(task.id)}
+                          onClick={() => openTask(task, boardId, lists)}
                         >
                           <MoreHorizontal className="h-3 w-3" />
                         </Button>
@@ -722,22 +717,6 @@ export function ListView({
             </Button>
           </div>
         </div>
-      )}
-
-      {/* Task Edit Dialog */}
-      {selectedTask && (
-        <TaskEditDialog
-          task={selectedTask}
-          boardId={boardId}
-          isOpen={!!selectedTaskId}
-          onClose={() => setSelectedTaskId(null)}
-          onUpdate={() => {
-            setSelectedTaskId(null);
-            const supabase = createClient();
-            getTasks(supabase, boardId).then(setLocalTasks);
-          }}
-          showUserPresence={!isPersonalWorkspace}
-        />
       )}
 
       {/* Bulk Delete Confirmation Dialog */}

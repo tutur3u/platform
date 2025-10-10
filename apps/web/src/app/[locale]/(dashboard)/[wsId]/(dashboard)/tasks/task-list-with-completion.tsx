@@ -16,7 +16,7 @@ import {
   UserRound,
 } from '@tuturuuu/ui/icons';
 import { toast } from '@tuturuuu/ui/sonner';
-import { TaskEditDialog } from '@tuturuuu/ui/tu-do/shared/task-edit-dialog';
+import { useTaskDialog } from '@tuturuuu/ui/tu-do/hooks/useTaskDialog';
 import { TaskEstimationDisplay } from '@tuturuuu/ui/tu-do/shared/task-estimation-display';
 import { TaskLabelsDisplay } from '@tuturuuu/ui/tu-do/shared/task-labels-display';
 import { cn } from '@tuturuuu/utils/format';
@@ -88,9 +88,8 @@ export default function TaskListWithCompletion({
   initialLimit = 5,
   onTaskUpdate,
 }: TaskListWithCompletionProps) {
+  const { openTask } = useTaskDialog();
   const [showAll, setShowAll] = useState(false);
-  const [editingTask, setEditingTask] = useState<Task | null>(null);
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [localTasks, setLocalTasks] = useState<Task[]>(tasks);
   const [completingTasks, setCompletingTasks] = useState<Set<string>>(
     new Set()
@@ -220,78 +219,9 @@ export default function TaskListWithCompletion({
         })),
     };
 
-    setEditingTask(transformedTask as any);
-    setIsEditDialogOpen(true);
+    const boardId = task.list?.board?.id || '';
+    openTask(transformedTask as any, boardId);
   };
-
-  const handleCloseEditDialog = () => {
-    setIsEditDialogOpen(false);
-    setEditingTask(null);
-  };
-
-  const handleUpdateTask = () => {
-    if (onTaskUpdate) {
-      onTaskUpdate();
-    }
-  };
-
-  // Poll for updates while dialog is open
-  useEffect(() => {
-    if (!isEditDialogOpen || !editingTask) return;
-
-    const pollForUpdates = async () => {
-      const supabase = createClient();
-      const { data: updatedTask } = await supabase
-        .from('tasks')
-        .select(
-          `
-          *,
-          list:task_lists!inner(
-            id,
-            name,
-            status,
-            board:workspace_boards!inner(
-              id,
-              name,
-              ws_id,
-              estimation_type,
-              extended_estimation,
-              allow_zero_estimates,
-              workspaces(id, name, personal)
-            )
-          ),
-          assignees:task_assignees(
-            user:users(
-              id,
-              display_name,
-              avatar_url
-            )
-          ),
-          labels:task_labels(
-            label:workspace_task_labels(
-              id,
-              name,
-              color,
-              created_at
-            )
-          )
-        `
-        )
-        .eq('id', editingTask.id)
-        .single();
-
-      if (updatedTask) {
-        setLocalTasks((prevTasks) =>
-          prevTasks.map((task) =>
-            task.id === updatedTask.id ? updatedTask : task
-          )
-        );
-      }
-    };
-
-    const intervalId = setInterval(pollForUpdates, 1000);
-    return () => clearInterval(intervalId);
-  }, [isEditDialogOpen, editingTask]);
 
   const getPriorityColor = (priority: string | null) => {
     switch (priority) {
@@ -613,17 +543,6 @@ export default function TaskListWithCompletion({
             )}
           </Button>
         </div>
-      )}
-
-      {/* Task Edit Dialog */}
-      {editingTask && (
-        <TaskEditDialog
-          task={editingTask as any}
-          boardId={editingTask.list?.board?.id || ''}
-          isOpen={isEditDialogOpen}
-          onClose={handleCloseEditDialog}
-          onUpdate={handleUpdateTask}
-        />
       )}
     </div>
   );
