@@ -2004,14 +2004,18 @@ export function calculateSortKey(
  * Reset the sequence counter
  * Useful for testing or when starting a fresh session
  */
-export function resetSortKeySequence() {
+export function resetSortKeySequence(): void {
   sortKeySequence = 0;
 }
 
 /**
  * Get the current sort key configuration constants
  */
-export function getSortKeyConfig() {
+export function getSortKeyConfig(): {
+  BASE_UNIT: number;
+  DEFAULT: number;
+  MIN_GAP: number;
+} {
   return {
     BASE_UNIT: SORT_KEY_BASE_UNIT,
     DEFAULT: SORT_KEY_DEFAULT,
@@ -2140,7 +2144,7 @@ export async function reorderTask(
   taskId: string,
   newListId: string,
   newSortKey: number
-) {
+): Promise<Task> {
   console.log('🗄️ reorderTask function called');
   console.log('📋 Task ID:', taskId);
   console.log('🎯 New List ID:', newListId);
