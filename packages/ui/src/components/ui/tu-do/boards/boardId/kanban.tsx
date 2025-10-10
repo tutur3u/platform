@@ -100,6 +100,16 @@ export function KanbanBoard({
   const [hoverTargetListId, setHoverTargetListId] = useState<string | null>(
     null
   );
+  const [dragPreviewPosition, setDragPreviewPosition] = useState<{
+    listId: string;
+    overTaskId: string | null;
+    position: 'before' | 'after' | 'empty';
+    task: Task;
+    height: number;
+  } | null>(null);
+  const [optimisticUpdateInProgress, setOptimisticUpdateInProgress] = useState<
+    Set<string>
+  >(new Set());
   const [selectedTasks, setSelectedTasks] = useState<Set<string>>(new Set());
   const [isMultiSelectMode, setIsMultiSelectMode] = useState(false);
   const [boardSelectorOpen, setBoardSelectorOpen] = useState(false);
@@ -311,6 +321,7 @@ export function KanbanBoard({
         if ((processDragOver as any).lastTargetListId) {
           (processDragOver as any).lastTargetListId = null;
           setHoverTargetListId(null);
+          setDragPreviewPosition(null);
         }
         return;
       }
@@ -323,14 +334,43 @@ export function KanbanBoard({
         if (!activeTask) return;
 
         let targetListId: string;
-        if (over.data?.current?.type === 'Column') {
+        const overType = over.data?.current?.type;
+
+        // Get cached height for the dragged task, fallback to 96px
+        const cachedHeight = taskHeightsRef.current.get(activeTask.id) || 96;
+
+        if (overType === 'Column') {
           targetListId = String(over.id);
-        } else if (over.data?.current?.type === 'Task') {
-          targetListId = String(over.data.current.task.list_id);
-        } else if (over.data?.current?.type === 'ColumnSurface') {
-          const columnId = over.data.current.columnId || over.id;
+          // Dropping on column header - preview at beginning
+          setDragPreviewPosition({
+            listId: targetListId,
+            overTaskId: null,
+            position: 'before',
+            task: activeTask,
+            height: cachedHeight,
+          });
+        } else if (overType === 'Task') {
+          targetListId = String(over.data?.current?.task.list_id);
+          // Dropping on a task - preview before that task
+          setDragPreviewPosition({
+            listId: targetListId,
+            overTaskId: String(over.id),
+            position: 'before',
+            task: activeTask,
+            height: cachedHeight,
+          });
+        } else if (overType === 'ColumnSurface') {
+          const columnId = over.data?.current?.columnId || over.id;
           if (!columnId) return;
           targetListId = String(columnId);
+          // Dropping on empty column surface - preview at end
+          setDragPreviewPosition({
+            listId: targetListId,
+            overTaskId: null,
+            position: 'empty',
+            task: activeTask,
+            height: cachedHeight,
+          });
         } else {
           return;
         }
@@ -359,6 +399,13 @@ export function KanbanBoard({
         setHoverTargetListId(targetListId);
 
         console.log('🔄 onDragOver - hovering list:', targetListId);
+
+        // For cross-list movements, update cache optimistically to show preview
+        if (originalListId !== targetListId) {
+          console.log('👁️ Creating visual preview for cross-list movement');
+          // The actual visual preview is handled by @dnd-kit's DragOverlay
+          // and the drop indicator in task cards
+        }
       }
     },
     [columns.some, hoverTargetListId]
@@ -370,6 +417,7 @@ export function KanbanBoard({
       setActiveColumn(null);
       setActiveTask(null);
       setHoverTargetListId(null);
+      setDragPreviewPosition(null);
       pickedUpTaskColumn.current = null;
       (processDragOver as any).lastTargetListId = null;
     }
@@ -788,6 +836,9 @@ export function KanbanBoard({
     })
   );
 
+  // Ref to store task heights - shared with task-list virtualization
+  const taskHeightsRef = useRef<Map<string, number>>(new Map());
+
   // Capture drag start card left position
   function onDragStart(event: DragStartEvent) {
     if (!hasDraggableData(event.active)) return;
@@ -849,17 +900,51 @@ export function KanbanBoard({
       (col) => String(col.id) === String(activeTask.list_id)
     );
 
+    const isMultiCardDrag =
+      isMultiSelectMode &&
+      selectedTasks.size > 1 &&
+      selectedTasks.has(activeTask.id);
+
     return (
-      <TaskCard
-        task={activeTask}
-        taskList={taskList}
-        boardId={boardId}
-        isOverlay
-        onUpdate={handleUpdate}
-        isPersonalWorkspace={workspace.personal}
-      />
+      <div className="relative">
+        <TaskCard
+          task={activeTask}
+          taskList={taskList}
+          boardId={boardId}
+          isOverlay
+          onUpdate={handleUpdate}
+          isPersonalWorkspace={workspace.personal}
+        />
+        {isMultiCardDrag && (
+          <>
+            {/* Stacked card effect - show up to 2 additional card shadows */}
+            <div
+              className="-z-10 pointer-events-none absolute top-1 left-1 h-full w-full rounded-lg border border-dynamic-blue/30 bg-dynamic-blue/5 shadow-lg"
+              style={{ transform: 'translateZ(-10px)' }}
+            />
+            {selectedTasks.size > 2 && (
+              <div
+                className="-z-20 pointer-events-none absolute top-2 left-2 h-full w-full rounded-lg border border-dynamic-blue/20 bg-dynamic-blue/3 shadow-md"
+                style={{ transform: 'translateZ(-20px)' }}
+              />
+            )}
+            {/* Badge showing count */}
+            <div className="-right-2 -top-2 absolute flex h-7 w-7 items-center justify-center rounded-full bg-dynamic-blue text-white shadow-lg ring-2 ring-background">
+              <span className="font-bold text-xs">{selectedTasks.size}</span>
+            </div>
+          </>
+        )}
+      </div>
     );
-  }, [activeTask, columns, boardId, handleUpdate, workspace.personal]);
+  }, [
+    activeTask,
+    columns,
+    boardId,
+    handleUpdate,
+    workspace.personal,
+    isMultiSelectMode,
+    selectedTasks,
+  ]);
 
   const MemoizedColumnOverlay = useMemo(
     () =>
@@ -1121,21 +1206,47 @@ export function KanbanBoard({
         console.log('📍 Over task index in target list:', overIndex);
 
         let reorderedTasks: Task[];
+        const isSameList = originalListId === targetListId;
 
-        if (activeIndex !== -1) {
+        if (isSameList && activeIndex !== -1) {
           // Same list reorder - use arrayMove
           reorderedTasks = arrayMove(targetListTasks, activeIndex, overIndex);
           console.log('📍 Same-list reorder using arrayMove');
         } else {
-          // Cross-list move - insert the task at the over position
-          // Create a temporary task list with the dragged task inserted
-          const tasksWithoutActive = targetListTasks;
-          reorderedTasks = [
-            ...tasksWithoutActive.slice(0, overIndex),
-            activeTask,
-            ...tasksWithoutActive.slice(overIndex),
-          ];
-          console.log('📍 Cross-list move, inserting at position:', overIndex);
+          // Cross-list move - simulate arrayMove behavior for visual consistency
+          // @dnd-kit shows the task at the overIndex position when dragging
+          // We need to match this exactly
+
+          // Step 1: Create a simulated array WITH the active task inserted at the OVER position
+          // This matches what @dnd-kit shows visually
+          const tasksWithoutActive = targetListTasks.filter(
+            (t) => t.id !== activeTask.id
+          );
+
+          // Find where the over task is in the target list
+          const overTaskIndex = tasksWithoutActive.findIndex(
+            (t) => t.id === over.id
+          );
+
+          if (overTaskIndex === -1) {
+            // Over task not found (shouldn't happen), append to end
+            reorderedTasks = [...tasksWithoutActive, activeTask];
+            console.log(
+              '📍 Cross-list move, over task not found, appending to end'
+            );
+          } else {
+            // Insert BEFORE the over task to match @dnd-kit's visual preview
+            // When you drag over a task, @dnd-kit places your task BEFORE it
+            reorderedTasks = [
+              ...tasksWithoutActive.slice(0, overTaskIndex),
+              activeTask,
+              ...tasksWithoutActive.slice(overTaskIndex),
+            ];
+            console.log(
+              '📍 Cross-list move, inserting BEFORE task at index:',
+              overTaskIndex
+            );
+          }
         }
 
         // Find the new position of the active task in the reordered array
@@ -1150,7 +1261,6 @@ export function KanbanBoard({
         );
 
         // Calculate sort_key based on neighbors in the reordered array
-        // Use the reordered array directly to find prev/next tasks
         if (reorderedTasks.length === 1) {
           // Only task in the list
           newSortKey = 1000;
@@ -1158,37 +1268,23 @@ export function KanbanBoard({
         } else if (newIndex === 0) {
           // At beginning - next task is at index 1
           const nextTask = reorderedTasks[1];
-          // Skip if nextTask is the active task (shouldn't happen but safety check)
-          const actualNextTask =
-            nextTask?.id === activeTask.id ? reorderedTasks[2] : nextTask;
-          newSortKey = calculateSortKey(null, actualNextTask?.sort_key);
+          newSortKey = calculateSortKey(null, nextTask?.sort_key);
           console.log(
             '📍 Inserting at beginning, next task sort_key:',
-            actualNextTask?.sort_key
+            nextTask?.sort_key
           );
         } else if (newIndex === reorderedTasks.length - 1) {
           // At end - prev task is at index length-2
           const prevTask = reorderedTasks[reorderedTasks.length - 2];
-          // Skip if prevTask is the active task (shouldn't happen but safety check)
-          const actualPrevTask =
-            prevTask?.id === activeTask.id
-              ? reorderedTasks[reorderedTasks.length - 3]
-              : prevTask;
-          newSortKey = calculateSortKey(actualPrevTask?.sort_key, null);
+          newSortKey = calculateSortKey(prevTask?.sort_key, null);
           console.log(
             '📍 Inserting at end, prev task sort_key:',
-            actualPrevTask?.sort_key
+            prevTask?.sort_key
           );
         } else {
-          // In middle - find the actual prev and next tasks, skipping the active task if needed
-          let prevTask = reorderedTasks[newIndex - 1];
-          let nextTask = reorderedTasks[newIndex + 1];
-
-          // Adjust if we encounter the active task (shouldn't happen in reordered array but be safe)
-          if (prevTask?.id === activeTask.id)
-            prevTask = reorderedTasks[newIndex - 2];
-          if (nextTask?.id === activeTask.id)
-            nextTask = reorderedTasks[newIndex + 2];
+          // In middle - use the actual prev and next tasks
+          const prevTask = reorderedTasks[newIndex - 1];
+          const nextTask = reorderedTasks[newIndex + 1];
 
           newSortKey = calculateSortKey(prevTask?.sort_key, nextTask?.sort_key);
           console.log(
@@ -1204,15 +1300,27 @@ export function KanbanBoard({
           );
         }
       } else {
-        // Dropped on column or column surface - add to end
+        // Dropped on column or column surface
+        // When dropping on Column (the column header), insert at the BEGINNING
+        // When dropping on ColumnSurface (empty space in column), insert at the END
+
         if (targetListTasks.length === 0) {
           newSortKey = 1000;
           console.log('📍 Empty list, using default sort_key: 1000');
+        } else if (overType === 'Column') {
+          // Dropping on column header - insert at the BEGINNING
+          const firstTask = targetListTasks[0];
+          newSortKey = calculateSortKey(null, firstTask?.sort_key);
+          console.log(
+            '📍 Dropping on column header, inserting at beginning before first task with sort_key:',
+            firstTask?.sort_key
+          );
         } else {
+          // Dropping on ColumnSurface - add to the END
           const lastTask = targetListTasks[targetListTasks.length - 1];
           newSortKey = calculateSortKey(lastTask?.sort_key, null);
           console.log(
-            '📍 Adding to end after last task with sort_key:',
+            '📍 Dropping on column surface, adding to end after last task with sort_key:',
             lastTask?.sort_key
           );
         }
@@ -1256,11 +1364,186 @@ export function KanbanBoard({
             );
           });
 
-          // Spread tasks around the target position with increased offset to reduce clustering
-          sortedTasksToMove.forEach((task, index) => {
-            // Calculate individual sort_key for each task in batch
-            const offset = (index - sortedTasksToMove.length / 2) * 100;
-            const batchSortKey = newSortKey + offset;
+          // Calculate sort keys for batch move by inserting as contiguous block
+          // Get tasks in target list excluding the tasks being moved
+          const targetListTasksExcludingMoved = targetListTasks.filter(
+            (t) => !selectedTasks.has(t.id)
+          );
+
+          // Find the insertion point index based on where the dragged task was dropped
+          let insertionIndex: number;
+          if (overType === 'Task') {
+            // When dropping on a task, find its position in the filtered list
+            const overTaskInFiltered = targetListTasksExcludingMoved.findIndex(
+              (t) => t.id === over.id
+            );
+
+            if (overTaskInFiltered === -1) {
+              // The over task is one of the selected tasks being moved
+              // This means we're dropping on a task that's part of the selection
+              // In this case, insert at the end since the drop position is ambiguous
+              insertionIndex = targetListTasksExcludingMoved.length;
+              console.log(
+                '📍 Batch move: dropping on selected task, inserting at end'
+              );
+            } else {
+              // Insert before the over task in the filtered list
+              insertionIndex = overTaskInFiltered;
+              console.log(
+                '📍 Batch move: inserting before task at position',
+                overTaskInFiltered
+              );
+            }
+          } else {
+            // Dropped on column/surface - add to end
+            insertionIndex = targetListTasksExcludingMoved.length;
+            console.log(
+              '📍 Batch move: dropping on column surface, inserting at end'
+            );
+          }
+
+          console.log('📍 Batch insertion index:', insertionIndex);
+          console.log(
+            '📍 Tasks in target (excluding moved):',
+            targetListTasksExcludingMoved.length
+          );
+
+          // Calculate sort keys for each task in the batch
+          // Build a simulated target list with tasks inserted to calculate proper sort keys
+          const simulatedTargetList: Task[] = [
+            ...targetListTasksExcludingMoved.slice(0, insertionIndex),
+            ...sortedTasksToMove,
+            ...targetListTasksExcludingMoved.slice(insertionIndex),
+          ];
+
+          console.log(
+            '📍 Simulated target list:',
+            simulatedTargetList.map((t, i) => `${i}: ${t.name}`)
+          );
+
+          sortedTasksToMove.forEach((task, batchIndex) => {
+            let batchSortKey: number;
+
+            // Find the task's position in the simulated list
+            const positionInSimulated = simulatedTargetList.findIndex(
+              (t) => t.id === task.id
+            );
+
+            if (simulatedTargetList.length === 1) {
+              // Only task in list
+              batchSortKey = 1000;
+            } else if (positionInSimulated === 0) {
+              // At beginning
+              const nextTask = simulatedTargetList[1];
+              // If next task is also being moved, use a default increment
+              if (nextTask && selectedTasks.has(nextTask.id)) {
+                batchSortKey = 500;
+              } else {
+                batchSortKey = calculateSortKey(null, nextTask?.sort_key);
+              }
+            } else if (positionInSimulated === simulatedTargetList.length - 1) {
+              // At end
+              const prevTask = simulatedTargetList[positionInSimulated - 1];
+              // If prev task is also being moved, use the previous batch sort key + increment
+              if (prevTask && selectedTasks.has(prevTask.id)) {
+                // This task is after another moved task, calculate based on position
+                batchSortKey = 1000 + batchIndex * 1000;
+              } else {
+                batchSortKey = calculateSortKey(prevTask?.sort_key, null);
+              }
+            } else {
+              // In middle
+              const prevTask = simulatedTargetList[positionInSimulated - 1];
+              const nextTask = simulatedTargetList[positionInSimulated + 1];
+
+              // Calculate based on neighbors
+              const prevIsMoving = prevTask
+                ? selectedTasks.has(prevTask.id)
+                : false;
+              const nextIsMoving = nextTask
+                ? selectedTasks.has(nextTask.id)
+                : false;
+
+              if (!prevIsMoving && !nextIsMoving) {
+                // Both neighbors are stationary - use their sort keys
+                batchSortKey = calculateSortKey(
+                  prevTask?.sort_key,
+                  nextTask?.sort_key
+                );
+              } else if (prevIsMoving && !nextIsMoving) {
+                // Prev is moving, next is stationary
+                // Find the first non-moving task before this position
+                let stationaryPrev: Task | undefined;
+                for (let i = positionInSimulated - 1; i >= 0; i--) {
+                  const currentTask = simulatedTargetList[i];
+                  if (currentTask && !selectedTasks.has(currentTask.id)) {
+                    stationaryPrev = currentTask;
+                    break;
+                  }
+                }
+                batchSortKey = calculateSortKey(
+                  stationaryPrev?.sort_key,
+                  nextTask?.sort_key
+                );
+              } else if (!prevIsMoving && nextIsMoving) {
+                // Prev is stationary, next is moving
+                // Find the first non-moving task after this position
+                let stationaryNext: Task | undefined;
+                for (
+                  let i = positionInSimulated + 1;
+                  i < simulatedTargetList.length;
+                  i++
+                ) {
+                  const currentTask = simulatedTargetList[i];
+                  if (currentTask && !selectedTasks.has(currentTask.id)) {
+                    stationaryNext = currentTask;
+                    break;
+                  }
+                }
+                batchSortKey = calculateSortKey(
+                  prevTask?.sort_key,
+                  stationaryNext?.sort_key
+                );
+              } else {
+                // Both neighbors are moving - distribute evenly in batch
+                // Find boundary tasks (first and last non-moving tasks around the batch)
+                let boundaryPrev: Task | undefined;
+                let boundaryNext: Task | undefined;
+
+                for (let i = positionInSimulated - 1; i >= 0; i--) {
+                  const currentTask = simulatedTargetList[i];
+                  if (currentTask && !selectedTasks.has(currentTask.id)) {
+                    boundaryPrev = currentTask;
+                    break;
+                  }
+                }
+
+                for (
+                  let i = positionInSimulated + 1;
+                  i < simulatedTargetList.length;
+                  i++
+                ) {
+                  const currentTask = simulatedTargetList[i];
+                  if (currentTask && !selectedTasks.has(currentTask.id)) {
+                    boundaryNext = currentTask;
+                    break;
+                  }
+                }
+
+                // Calculate even distribution
+                const prevSortKey = boundaryPrev?.sort_key ?? 0;
+                const nextSortKey =
+                  boundaryNext?.sort_key ??
+                  prevSortKey + sortedTasksToMove.length * 1000 + 1000;
+                const gap = nextSortKey - prevSortKey;
+                const step = gap / (sortedTasksToMove.length + 1);
+                batchSortKey = prevSortKey + step * (batchIndex + 1);
+              }
+            }
+
+            console.log(
+              `📍 Task ${batchIndex} (${task.name}): sort_key = ${batchSortKey}`
+            );
 
             reorderTaskMutation.mutate({
               taskId: task.id,
@@ -1279,6 +1562,11 @@ export function KanbanBoard({
             newSortKey
           );
 
+          // Add task to optimistic update tracking BEFORE mutation
+          setOptimisticUpdateInProgress((prev) =>
+            new Set(prev).add(activeTask.id)
+          );
+
           reorderTaskMutation.mutate({
             taskId: activeTask.id,
             newListId: targetListId,
@@ -1292,8 +1580,18 @@ export function KanbanBoard({
           setActiveColumn(null);
           setActiveTask(null);
           setHoverTargetListId(null);
+          setDragPreviewPosition(null);
           pickedUpTaskColumn.current = null;
           (processDragOver as any).lastTargetListId = null;
+
+          // Clear optimistic update tracking after a short delay to allow React Query to settle
+          setTimeout(() => {
+            setOptimisticUpdateInProgress((prev) => {
+              const next = new Set(prev);
+              if (activeTask) next.delete(activeTask.id);
+              return next;
+            });
+          }, 100);
         });
       } else {
         console.log('ℹ️ Task position unchanged, no update needed');
@@ -1301,6 +1599,7 @@ export function KanbanBoard({
         setActiveColumn(null);
         setActiveTask(null);
         setHoverTargetListId(null);
+        setDragPreviewPosition(null);
         pickedUpTaskColumn.current = null;
         (processDragOver as any).lastTargetListId = null;
       }
@@ -1311,6 +1610,7 @@ export function KanbanBoard({
       setActiveColumn(null);
       setActiveTask(null);
       setHoverTargetListId(null);
+      setDragPreviewPosition(null);
       pickedUpTaskColumn.current = null;
       (processDragOver as any).lastTargetListId = null;
     }
@@ -1763,6 +2063,13 @@ export function KanbanBoard({
                         selectedTasks={selectedTasks}
                         isMultiSelectMode={isMultiSelectMode}
                         onTaskSelect={handleTaskSelect}
+                        dragPreviewPosition={
+                          dragPreviewPosition?.listId === String(list.id)
+                            ? dragPreviewPosition
+                            : null
+                        }
+                        taskHeightsRef={taskHeightsRef}
+                        optimisticUpdateInProgress={optimisticUpdateInProgress}
                       />
                     );
                   })}
@@ -1778,7 +2085,7 @@ export function KanbanBoard({
               />
             )}
           </div>
-          <DragOverlay>
+          <DragOverlay dropAnimation={null}>
             {MemoizedTaskOverlay || MemoizedColumnOverlay}
           </DragOverlay>
         </DndContext>

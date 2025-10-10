@@ -106,6 +106,7 @@ interface TaskCardProps {
   isMultiSelectMode?: boolean;
   isPersonalWorkspace?: boolean;
   onSelect?: (taskId: string, event: React.MouseEvent) => void;
+  optimisticUpdateInProgress?: Set<string>;
 }
 
 // Memoized full TaskCard
@@ -120,6 +121,7 @@ function TaskCardInner({
   isMultiSelectMode = false,
   isPersonalWorkspace = false,
   onSelect,
+  optimisticUpdateInProgress,
 }: TaskCardProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -269,7 +271,9 @@ function TaskCardInner({
     });
 
   const style: React.CSSProperties = {
-    transform: CSS.Transform.toString(transform),
+    transform: isDragging
+      ? 'translate3d(0, 0, 0)'
+      : CSS.Transform.toString(transform),
     transition: 'none', // Always disable transitions - rely on optimistic updates
     height: 'var(--task-height)',
   };
@@ -656,6 +660,7 @@ function TaskCardInner({
   return (
     <Card
       data-id={task.id}
+      data-task-id={task.id}
       ref={setNodeRef}
       style={style}
       onClick={(e) => {
@@ -694,8 +699,8 @@ function TaskCardInner({
           : 'cursor-grab touch-none select-none active:cursor-grabbing',
         // Task list or priority-based styling
         getCardColorClasses(),
-        // Dragging state - completely hide to show gap clearly
-        isDragging && 'invisible',
+        // When dragging OR undergoing optimistic update, make invisible but keep in layout
+        (isDragging || optimisticUpdateInProgress?.has(task.id)) && 'opacity-0',
         isOverlay &&
           'scale-105 shadow-2xl ring-2 ring-primary/50 backdrop-blur-sm',
         // Archive state (completed tasks)
@@ -1396,6 +1401,7 @@ interface MeasuredTaskCardProps {
   isPersonalWorkspace?: boolean;
   onSelect?: (taskId: string, event: React.MouseEvent) => void;
   onHeight: (height: number) => void;
+  optimisticUpdateInProgress?: Set<string>;
 }
 
 export function MeasuredTaskCard({
@@ -1408,23 +1414,29 @@ export function MeasuredTaskCard({
   isPersonalWorkspace,
   onSelect,
   onHeight,
+  optimisticUpdateInProgress,
 }: MeasuredTaskCardProps) {
   const ref = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     if (!ref.current) return;
     const node = ref.current;
-    // Initial measure
-    onHeight(node.getBoundingClientRect().height + 8 /* approximate gap */);
+    // Get the actual card element (first child)
+    const card = node.firstElementChild as HTMLElement;
+    if (!card) return;
+
+    // Initial measure - use the card's actual height without gaps
+    onHeight(card.getBoundingClientRect().height);
+
     // Resize observer for dynamic height changes (e.g., label changes)
     const ro = new ResizeObserver((entries) => {
       for (const entry of entries) {
-        if (entry.target === node) {
-          onHeight(entry.contentRect.height + 8);
+        if (entry.target === card) {
+          onHeight(entry.contentRect.height);
         }
       }
     });
-    ro.observe(node);
+    ro.observe(card);
     return () => ro.disconnect();
   }, [onHeight]);
 
@@ -1439,6 +1451,7 @@ export function MeasuredTaskCard({
         isMultiSelectMode={isMultiSelectMode}
         isPersonalWorkspace={isPersonalWorkspace}
         onSelect={onSelect}
+        optimisticUpdateInProgress={optimisticUpdateInProgress}
       />
     </div>
   );
