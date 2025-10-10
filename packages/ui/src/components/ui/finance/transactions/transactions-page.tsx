@@ -4,6 +4,7 @@ import { TransactionForm } from '@tuturuuu/ui/finance/transactions/form';
 import { TransactionsInfinitePage } from '@tuturuuu/ui/finance/transactions/transactions-infinite-page';
 import { Separator } from '@tuturuuu/ui/separator';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
+import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 
 interface Props {
@@ -20,9 +21,17 @@ interface Props {
 export default async function TransactionsPage({ wsId, searchParams }: Props) {
   const t = await getTranslations();
 
-  const { containsPermission } = await getPermissions({
+  const { containsPermission} = await getPermissions({
     wsId,
   });
+
+  const canViewTransactions = containsPermission('view_transactions');
+  const canExportFinanceData = containsPermission('export_finance_data');
+  const canCreateTransactions = containsPermission('create_transactions');
+  const canUpdateTransactions = containsPermission('update_transactions');
+  const canDeleteTransactions = containsPermission('delete_transactions');
+
+  if (!canViewTransactions) return notFound();
 
   return (
     <>
@@ -32,12 +41,12 @@ export default async function TransactionsPage({ wsId, searchParams }: Props) {
         description={t('ws-transactions.description')}
         createTitle={t('ws-transactions.create')}
         createDescription={t('ws-transactions.create_description')}
-        form={<TransactionForm wsId={wsId} />}
+        form={canCreateTransactions ? <TransactionForm wsId={wsId} canCreateTransactions={canCreateTransactions} /> : undefined}
       />
       <Separator className="my-4" />
       <TransactionsInfinitePage
         wsId={wsId}
-        canExport={containsPermission('export_finance_data')}
+        canExport={canExportFinanceData}
         exportContent={
           <ExportDialogContent
             wsId={wsId}
@@ -45,6 +54,8 @@ export default async function TransactionsPage({ wsId, searchParams }: Props) {
             searchParams={searchParams}
           />
         }
+        canUpdateTransactions={canUpdateTransactions}
+        canDeleteTransactions={canDeleteTransactions}
       />
     </>
   );

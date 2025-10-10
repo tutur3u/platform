@@ -1520,7 +1520,8 @@
     "hide_confidential": "Ẩn số liệu",
     "show_confidential": "Hiển thị số liệu",
     "financial_overview": "Tổng quan tài chính",
-    "financial_overview_description": "Theo dõi thu nhập, chi tiêu và tình hình tài chính tổng thể"
+    "financial_overview_description": "Theo dõi thu nhập, chi tiêu và tình hình tài chính tổng thể",
+    "error_creating_transaction": "Đã xảy ra lỗi khi tạo giao dịch"
   },
   "transaction-category-data-table": {
     "id": "Mã số",
@@ -2212,10 +2213,19 @@
     "description": "Giao dịch giúp bạn theo dõi tất cả các giao dịch tài chính trong không gian làm việc của bạn.",
     "create": "Tạo giao dịch",
     "edit": "Sửa giao dịch",
+    "view": "Xem giao dịch",
     "create_description": "Tạo một giao dịch mới",
     "edit_description": "Sửa giao dịch hiện có",
+    "view_description": "Xem chi tiết giao dịch",
     "category": "Loại giao dịch",
-    "no_description": "Không có mô tả"
+    "no_description": "Không có mô tả",
+    "saving": "Đang lưu...",
+    "save_changes": "Lưu thay đổi",
+    "create_transaction": "Tạo giao dịch",
+    "delete": "Xóa",
+    "delete_description": "Bạn có chắc chắn muốn xóa giao dịch này? Hành động này không thể hoàn tác.",
+    "error_saving_transaction": "Đã xảy ra lỗi khi lưu giao dịch",
+    "error_deleting_transaction": "Đã xảy ra lỗi khi xóa giao dịch"
   },
   "ws-transaction-categories": {
     "singular": "Danh mục giao dịch",
@@ -2418,6 +2428,14 @@
     "delete_users": "Xóa người dùng",
     "delete_users_description": "Cho phép thành viên xóa hồ sơ người dùng ảo khỏi không gian làm việc.",
     "view_finance_stats_description": "Cho phép thành viên xem số liệu thống kê tài chính của không gian làm việc",
+    "create_transactions": "Tạo giao dịch",
+    "create_transactions_description": "Cho phép thành viên tạo giao dịch tài chính mới trong không gian làm việc.",
+    "update_transactions": "Cập nhật giao dịch",
+    "update_transactions_description": "Cho phép thành viên chỉnh sửa giao dịch tài chính hiện có trong không gian làm việc.",
+    "delete_transactions": "Xóa giao dịch",
+    "delete_transactions_description": "Cho phép thành viên xóa giao dịch tài chính khỏi không gian làm việc.",
+    "view_transactions": "Xem giao dịch",
+    "view_transactions_description": "Cho phép thành viên xem chi tiết giao dịch tài chính trong không gian làm việc.",
     "check_user_attendance": "Kiểm tra điểm danh người dùng",
     "check_user_attendance_description": "Cho phép thành viên kiểm tra điểm danh của người dùng khác"
   },

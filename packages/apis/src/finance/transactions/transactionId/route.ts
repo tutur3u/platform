@@ -2,15 +2,29 @@ import { createClient } from '@tuturuuu/supabase/next/server';
 import type { Transaction } from '@tuturuuu/types/primitives/Transaction';
 import { NextResponse } from 'next/server';
 
+import { getPermissions } from '@tuturuuu/utils/workspace-helper';
+
 interface Params {
   params: Promise<{
     transactionId: string;
+    wsId: string;
   }>;
 }
 
 export async function GET(_: Request, { params }: Params) {
   const supabase = await createClient();
-  const { transactionId } = await params;
+  const { transactionId, wsId } = await params;
+
+  const { withoutPermission } = await getPermissions({
+    wsId,
+  });
+
+  if (withoutPermission('view_transactions')) {
+    return NextResponse.json(
+      { message: 'Insufficient permissions' },
+      { status: 403 }
+    );
+  }
 
   const { data, error } = await supabase
     .from('wallet_transactions')
@@ -31,7 +45,18 @@ export async function GET(_: Request, { params }: Params) {
 
 export async function PUT(req: Request, { params }: Params) {
   const supabase = await createClient();
-  const { transactionId } = await params;
+  const { transactionId, wsId } = await params;
+
+  const { withoutPermission } = await getPermissions({
+    wsId,
+  });
+
+  if (withoutPermission('update_transactions')) {
+    return NextResponse.json(
+      { message: 'Insufficient permissions' },
+      { status: 403 }
+    );
+  }
 
   const data: Transaction & {
     origin_wallet_id?: string;
@@ -93,7 +118,18 @@ export async function PUT(req: Request, { params }: Params) {
 
 export async function DELETE(_: Request, { params }: Params) {
   const supabase = await createClient();
-  const { transactionId } = await params;
+  const { transactionId, wsId } = await params;
+
+  const { withoutPermission } = await getPermissions({
+    wsId,
+  });
+
+  if (withoutPermission('delete_transactions')) {
+    return NextResponse.json(
+      { message: 'Insufficient permissions' },
+      { status: 403 }
+    );
+  }
 
   const { error } = await supabase
     .from('wallet_transactions')

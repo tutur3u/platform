@@ -25,3 +25,13 @@ ALTER TYPE "workspace_role_permission" ADD VALUE IF NOT EXISTS 'update_inventory
 ALTER TYPE "workspace_role_permission" ADD VALUE IF NOT EXISTS 'delete_inventory';
 
 ALTER TYPE "workspace_role_permission" ADD VALUE IF NOT EXISTS 'view_inventory';
+
+
+-- Batch 4 of new permissions
+ALTER TYPE "workspace_role_permission" ADD VALUE IF NOT EXISTS 'view_transactions';
+
+ALTER TYPE "workspace_role_permission" ADD VALUE IF NOT EXISTS 'create_transactions';
+
+ALTER TYPE "workspace_role_permission" ADD VALUE IF NOT EXISTS 'update_transactions';
+
+ALTER TYPE "workspace_role_permission" ADD VALUE IF NOT EXISTS 'delete_transactions';

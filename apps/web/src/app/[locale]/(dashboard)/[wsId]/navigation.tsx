@@ -257,7 +257,7 @@ export async function WorkspaceNavigationLinks({
         `/${personalOrWsId}/finance/settings`,
       ],
       icon: <Banknote className="h-5 w-5" />,
-      href: `/${personalOrWsId}/finance`,
+      href: withoutPermission('manage_finance') ? undefined : `/${personalOrWsId}/finance`,  
       children: [
         {
           title: t('workspace-finance-tabs.overview'),
@@ -271,7 +271,7 @@ export async function WorkspaceNavigationLinks({
           href: `/${personalOrWsId}/finance/transactions`,
           matchExact: true,
           icon: <Banknote className="h-5 w-5" />,
-          disabled: withoutPermission('manage_finance'),
+          disabled: withoutPermission('view_transactions'),
         },
         {
           title: t('workspace-finance-tabs.recurring'),

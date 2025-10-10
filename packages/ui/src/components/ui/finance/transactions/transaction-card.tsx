@@ -49,7 +49,7 @@ export function TransactionCard({ transaction }: TransactionCardProps) {
         {/* Transaction details */}
         <div className="flex-1 space-y-1">
           <div className="flex items-start justify-between gap-2">
-            <div className="space-y-1">
+            <div className="flex flex-col items-start justify-start gap-2">
               {transaction.category && (
                 <Badge variant="outline" className="font-medium text-xs">
                   {transaction.category}

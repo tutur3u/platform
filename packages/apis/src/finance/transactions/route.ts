@@ -1,7 +1,28 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
 
-export async function GET(req: Request) {
+import { getPermissions } from '@tuturuuu/utils/workspace-helper';
+
+interface Params {
+  params: Promise<{
+    wsId: string;
+  }>;
+}
+
+export async function GET(req: Request, { params }: Params) {
+  const { wsId } = await params;
+
+  const { withoutPermission } = await getPermissions({
+    wsId,
+  });
+
+  if (withoutPermission('view_transactions')) {
+    return NextResponse.json(
+      { message: 'Insufficient permissions' },
+      { status: 403 }
+    );
+  }
+
   // Parse the request URL
   const url = new URL(req.url);
 
@@ -13,7 +34,8 @@ export async function GET(req: Request) {
 
   const { data, error } = await supabase
     .from('wallet_transactions')
-    .select('*')
+    .select('*, workspace_wallets!inner(ws_id)')
+    .eq('workspace_wallets.ws_id', wsId)
     .range(
       (Number(activePage) - 1) * Number(itemsPerPage),
       Number(itemsPerPage)
@@ -31,7 +53,20 @@ export async function GET(req: Request) {
   return NextResponse.json(data);
 }
 
-export async function POST(req: Request) {
+export async function POST(req: Request, { params }: Params) {
+  const { wsId } = await params;
+
+  const { withoutPermission } = await getPermissions({
+    wsId,
+  });
+
+  if (withoutPermission('create_transactions')) {
+    return NextResponse.json(
+      { message: 'Insufficient permissions' },
+      { status: 403 }
+    );
+  }
+
   const supabase = await createClient();
 
   const data =

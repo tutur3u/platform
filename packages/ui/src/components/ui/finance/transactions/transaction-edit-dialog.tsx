@@ -24,7 +24,7 @@ import {
   DialogDescription,
   DialogTitle,
 } from '@tuturuuu/ui/dialog';
-import { useToast } from '@tuturuuu/ui/hooks/use-toast';
+import { toast } from '@tuturuuu/ui/sonner';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
 import { Switch } from '@tuturuuu/ui/switch';
@@ -50,7 +50,7 @@ import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
 
 interface TransactionEditDialogProps {
-  transaction?: Transaction & {
+  transaction: Transaction & {
     workspace_users?: {
       full_name: string;
       email: string;
@@ -61,6 +61,8 @@ interface TransactionEditDialogProps {
   isOpen: boolean;
   onClose: () => void;
   onUpdate?: () => void;
+  canUpdateTransactions?: boolean;
+  canDeleteTransactions?: boolean;
 }
 
 export function TransactionEditDialog({
@@ -69,11 +71,12 @@ export function TransactionEditDialog({
   isOpen,
   onClose,
   onUpdate,
+  canUpdateTransactions,
+  canDeleteTransactions,
 }: TransactionEditDialogProps) {
   const t = useTranslations();
   const locale = useLocale();
   const router = useRouter();
-  const { toast } = useToast();
   const queryClient = useQueryClient();
 
   // Form state
@@ -192,7 +195,7 @@ export function TransactionEditDialog({
   const isExpense = selectedCategory?.is_expense !== false;
   const numericAmount = parseFloat(amount) || 0;
 
-  const canSave = numericAmount > 0 && walletId && categoryId && takenAt;
+  const canSave = numericAmount > 0 && walletId && categoryId && takenAt && canUpdateTransactions;
 
   // Update display amount when amount changes
   useEffect(() => {
@@ -214,6 +217,12 @@ export function TransactionEditDialog({
 
   const handleSave = useCallback(async () => {
     if (!canSave) return;
+
+    // Check permissions before making API call
+    if (!canUpdateTransactions) {
+      toast.error(t('common.insufficient_permissions'));
+      return;
+    }
 
     setIsLoading(true);
 
@@ -245,13 +254,13 @@ export function TransactionEditDialog({
       );
 
       if (res.ok) {
-        toast({
-          title: transaction?.id
+        toast.success(transaction?.id
             ? t('ws-transactions.edit')
             : t('ws-transactions.create'),
-          description: transaction?.id
-            ? 'Transaction updated successfully'
-            : 'Transaction created successfully',
+          {
+            description: transaction?.id
+              ? 'Transaction updated successfully'
+              : 'Transaction created successfully',
         });
 
         // Invalidate all transaction queries (including infinite scroll)
@@ -267,18 +276,10 @@ export function TransactionEditDialog({
         onClose();
       } else {
         const error = await res.json();
-        toast({
-          title: 'Error',
-          description: error.message || 'Failed to save transaction',
-          variant: 'destructive',
-        });
+        toast.error( error instanceof Error ? error.message : t('ws-transactions.error_saving_transaction'));
       }
     } catch {
-      toast({
-        title: 'Error',
-        description: 'An unexpected error occurred',
-        variant: 'destructive',
-      });
+      toast.error(t('ws-transactions.error_saving_transaction'));
     } finally {
       setIsLoading(false);
     }
@@ -303,7 +304,14 @@ export function TransactionEditDialog({
   ]);
 
   const handleDelete = async () => {
-    if (!transaction?.id) return;
+    if (!transaction.id) return;
+
+    // Check permissions before making API call
+    if (!canDeleteTransactions) {
+      toast.error(t('common.insufficient_permissions'));
+      setShowDeleteConfirm(false);
+      return;
+    }
 
     setIsLoading(true);
 
@@ -316,10 +324,7 @@ export function TransactionEditDialog({
       );
 
       if (res.ok) {
-        toast({
-          title: 'Transaction deleted',
-          description: 'The transaction has been deleted successfully',
-        });
+        toast.success(t('ws-transactions.delete'));
 
         // Invalidate all transaction queries (including infinite scroll)
         await queryClient.invalidateQueries({
@@ -334,18 +339,10 @@ export function TransactionEditDialog({
         onClose();
       } else {
         const error = await res.json();
-        toast({
-          title: 'Error',
-          description: error.message || 'Failed to delete transaction',
-          variant: 'destructive',
-        });
+        toast.error(error instanceof Error ? error.message : t('ws-transactions.error_deleting_transaction'));
       }
     } catch {
-      toast({
-        title: 'Error',
-        description: 'An unexpected error occurred',
-        variant: 'destructive',
-      });
+      toast.error(t('ws-transactions.error_deleting_transaction'));
     } finally {
       setIsLoading(false);
       setShowDeleteConfirm(false);
@@ -416,20 +413,24 @@ export function TransactionEditDialog({
                 </div>
                 <div className="flex min-w-0 flex-col gap-0.5">
                   <DialogTitle className="truncate font-semibold text-base text-foreground md:text-lg">
-                    {transaction?.id
-                      ? t('ws-transactions.edit')
-                      : t('ws-transactions.create')}
+                    {canUpdateTransactions
+                      ? transaction?.id
+                        ? t('ws-transactions.edit')
+                        : t('ws-transactions.create')
+                      : t('ws-transactions.view')}
                   </DialogTitle>
                   <DialogDescription className="text-xs">
-                    {transaction?.id
-                      ? t('ws-transactions.edit_description')
-                      : t('ws-transactions.create_description')}
+                    {canUpdateTransactions
+                      ? transaction?.id
+                        ? t('ws-transactions.edit_description')
+                        : t('ws-transactions.create_description')
+                      : t('ws-transactions.view_description')}
                   </DialogDescription>
                 </div>
               </div>
 
               <div className="flex items-center gap-1 md:gap-2">
-                {transaction?.id && (
+                {transaction?.id && canDeleteTransactions && (
                   <Button
                     variant="ghost"
                     size="icon"
@@ -449,25 +450,27 @@ export function TransactionEditDialog({
                 >
                   <X className="h-4 w-4" />
                 </Button>
-                <Button
-                  variant="secondary"
-                  onClick={handleSave}
-                  disabled={!canSave || isLoading}
-                  size="xs"
-                  className="hidden md:inline-flex"
-                >
-                  {isLoading ? (
-                    <>
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      Saving...
-                    </>
-                  ) : (
-                    <>
-                      <Check className="h-4 w-4" />
-                      {transaction?.id ? 'Save Changes' : 'Create Transaction'}
-                    </>
-                  )}
-                </Button>
+                {canUpdateTransactions && (
+                  <Button
+                    variant="secondary"
+                    onClick={handleSave}
+                    disabled={!canSave || isLoading}
+                    size="xs"
+                    className="hidden md:inline-flex"
+                  >
+                    {isLoading ? (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        {t('ws-transactions.saving')}
+                      </>
+                    ) : (
+                      <>
+                        <Check className="h-4 w-4" />
+                        {transaction?.id ? t('ws-transactions.save_changes') : t('ws-transactions.create_transaction')}
+                      </>
+                    )}
+                  </Button>
+                )}
               </div>
             </div>
 
@@ -498,9 +501,11 @@ export function TransactionEditDialog({
                     value={displayAmount}
                     onChange={(e) => handleAmountChange(e.target.value)}
                     placeholder="0"
+                    disabled={!canUpdateTransactions}
                     className={cn(
                       'pr-16 font-bold text-2xl tabular-nums',
-                      isExpense ? 'text-dynamic-red' : 'text-dynamic-green'
+                      isExpense ? 'text-dynamic-red' : 'text-dynamic-green',
+                      !canUpdateTransactions && 'opacity-60 cursor-not-allowed'
                     )}
                   />
                   <div className="-translate-y-1/2 pointer-events-none absolute top-1/2 right-3 flex items-center gap-1.5 text-muted-foreground text-sm">
@@ -537,7 +542,11 @@ export function TransactionEditDialog({
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   placeholder="Add details about this transaction..."
-                  className="min-h-[80px] resize-none"
+                  disabled={!canUpdateTransactions}
+                  className={cn(
+                    'min-h-[80px] resize-none',
+                    !canUpdateTransactions && 'opacity-60 cursor-not-allowed'
+                  )}
                 />
               </div>
 
@@ -560,6 +569,7 @@ export function TransactionEditDialog({
                       label: w.name!,
                     }))}
                   placeholder={t('transaction-data-table.select_wallet')}
+                  disabled={!canUpdateTransactions}
                 />
               </div>
 
@@ -582,6 +592,7 @@ export function TransactionEditDialog({
                       label: c.name!,
                     }))}
                   placeholder={t('transaction-data-table.select_category')}
+                  disabled={!canUpdateTransactions}
                 />
               </div>
 
@@ -599,6 +610,7 @@ export function TransactionEditDialog({
                   showTimeSelect={true}
                   allowClear={false}
                   showFooterControls={true}
+                  disabled={!canUpdateTransactions}
                 />
               </div>
 
@@ -619,8 +631,10 @@ export function TransactionEditDialog({
                           key={tag.id}
                           variant="outline"
                           className={cn(
-                            'cursor-pointer transition-all',
-                            isSelected && 'ring-2'
+                            'transition-all',
+                            isSelected && 'ring-2',
+                            canUpdateTransactions && 'cursor-pointer',
+                            !canUpdateTransactions && 'opacity-60 cursor-not-allowed'
                           )}
                           style={{
                             borderColor: tag.color,
@@ -633,7 +647,7 @@ export function TransactionEditDialog({
                                 '--tw-ring-color': tag.color,
                               } as React.CSSProperties)),
                           }}
-                          onClick={() => toggleTag(tag.id)}
+                          onClick={canUpdateTransactions ? () => toggleTag(tag.id) : undefined}
                         >
                           {tag.name}
                         </Badge>
@@ -660,31 +674,34 @@ export function TransactionEditDialog({
                   <Switch
                     checked={reportOptIn}
                     onCheckedChange={setReportOptIn}
+                    disabled={!canUpdateTransactions}
                   />
                 </div>
               </div>
 
               {/* Mobile Save Button */}
-              <div className="md:hidden">
-                <Button
-                  onClick={handleSave}
-                  disabled={!canSave || isLoading}
-                  size="default"
-                  className="w-full"
-                >
-                  {isLoading ? (
-                    <>
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      Saving...
-                    </>
-                  ) : (
-                    <>
-                      <Check className="h-4 w-4" />
-                      {transaction?.id ? 'Save Changes' : 'Create Transaction'}
-                    </>
-                  )}
-                </Button>
-              </div>
+              {canUpdateTransactions && (
+                <div className="md:hidden">
+                  <Button
+                    onClick={handleSave}
+                    disabled={!canSave || isLoading}
+                    size="default"
+                    className="w-full"
+                  >
+                    {isLoading ? (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        {t('ws-transactions.saving')}
+                      </>
+                    ) : (
+                      <>
+                        <Check className="h-4 w-4" />
+                        {transaction?.id ? t('ws-transactions.save_changes') : t('ws-transactions.create_transaction')}
+                      </>
+                    )}
+                  </Button>
+                </div>
+              )}
             </div>
           </div>
         </DialogContent>
@@ -694,19 +711,18 @@ export function TransactionEditDialog({
       <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Transaction</AlertDialogTitle>
+            <AlertDialogTitle>{t('ws-transactions.delete')}</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete this transaction? This action
-              cannot be undone.
+              {t('ws-transactions.delete_description')}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDelete}
               className="bg-dynamic-red hover:bg-dynamic-red/90"
             >
-              Delete
+              {t('ws-transactions.delete')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

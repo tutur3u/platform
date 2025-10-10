@@ -1,20 +1,34 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
+import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 
 interface Params {
   params: Promise<{
     categoryId: string;
+    wsId: string;
   }>;
 }
 
 export async function GET(_: Request, { params }: Params) {
   const supabase = await createClient();
-  const { categoryId } = await params;
+  const { categoryId, wsId } = await params;
+
+  const { withoutPermission } = await getPermissions({
+    wsId,
+  });
+
+  if (withoutPermission('view_transactions')) {
+    return NextResponse.json(
+      { message: 'Insufficient permissions' },
+      { status: 403 }
+    );
+  }
 
   const { data, error } = await supabase
     .from('transaction_categories')
     .select('*')
     .eq('id', categoryId)
+    .eq('ws_id', wsId)  
     .single();
 
   if (error) {
@@ -31,7 +45,18 @@ export async function GET(_: Request, { params }: Params) {
 export async function PUT(req: Request, { params }: Params) {
   const supabase = await createClient();
   const data = await req.json();
-  const { categoryId } = await params;
+  const { categoryId, wsId } = await params;
+
+  const { withoutPermission } = await getPermissions({
+    wsId,
+  });
+
+  if (withoutPermission('update_transactions')) {
+    return NextResponse.json(
+      { message: 'Insufficient permissions' },
+      { status: 403 }
+    );
+  }
 
   const { error } = await supabase
     .from('transaction_categories')
@@ -51,7 +76,18 @@ export async function PUT(req: Request, { params }: Params) {
 
 export async function DELETE(_: Request, { params }: Params) {
   const supabase = await createClient();
-  const { categoryId } = await params;
+  const { categoryId, wsId } = await params;
+
+  const { withoutPermission } = await getPermissions({
+    wsId,
+  });
+
+  if (withoutPermission('delete_transactions')) {
+    return NextResponse.json(
+      { message: 'Insufficient permissions' },
+      { status: 403 }
+    );
+  }
 
   const { error } = await supabase
     .from('transaction_categories')

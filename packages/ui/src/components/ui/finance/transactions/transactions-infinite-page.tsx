@@ -2,14 +2,13 @@
 
 import { CategoryFilterWrapper } from '@tuturuuu/ui/finance/transactions/category-filter-wrapper';
 import { InfiniteTransactionsList } from '@tuturuuu/ui/finance/transactions/infinite-transactions-list';
-import { TransactionForm } from '@tuturuuu/ui/finance/transactions/form';
 import { UserFilterWrapper } from '@tuturuuu/ui/finance/transactions/user-filter-wrapper';
 import { WalletFilterWrapper } from '@tuturuuu/ui/finance/transactions/wallet-filter-wrapper';
 import MoneyLoverImportDialog from '@tuturuuu/ui/finance/transactions/money-lover-import-dialog';
 import { Button } from '@tuturuuu/ui/button';
 import { Dialog, DialogContent, DialogTrigger } from '@tuturuuu/ui/dialog';
 import SearchBar from '@tuturuuu/ui/custom/search-bar';
-import { Download, Plus, Upload } from 'lucide-react';
+import { Download, Upload } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense } from 'react';
@@ -19,12 +18,16 @@ interface TransactionsInfinitePageProps {
   wsId: string;
   canExport?: boolean;
   exportContent?: React.ReactNode;
+  canUpdateTransactions?: boolean;
+  canDeleteTransactions?: boolean;
 }
 
 export function TransactionsInfinitePage({
   wsId,
   canExport,
   exportContent,
+  canUpdateTransactions,
+  canDeleteTransactions,
 }: TransactionsInfinitePageProps) {
   const t = useTranslations();
   const router = useRouter();
@@ -100,17 +103,6 @@ export function TransactionsInfinitePage({
           )}
 
           {/* Create button */}
-          <Dialog>
-            <DialogTrigger asChild>
-              <Button size="sm" className="h-8 w-full md:w-fit">
-                <Plus className="h-4 w-4" />
-                {t('ws-transactions.create')}
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-2xl">
-              <TransactionForm wsId={wsId} />
-            </DialogContent>
-          </Dialog>
         </div>
       </div>
 
@@ -124,7 +116,11 @@ export function TransactionsInfinitePage({
           </div>
         }
       >
-        <InfiniteTransactionsList wsId={wsId} />
+        <InfiniteTransactionsList
+          wsId={wsId}
+          canUpdateTransactions={canUpdateTransactions}
+          canDeleteTransactions={canDeleteTransactions}
+        />
       </Suspense>
     </div>
   );

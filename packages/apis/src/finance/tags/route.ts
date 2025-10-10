@@ -1,12 +1,26 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
+import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 
-export async function GET() {
+export async function GET({ params }: { params: Promise<{ wsId: string }> }) {
   const supabase = await createClient();
+  const { wsId } = await params;
+  const { withoutPermission } = await getPermissions({
+    wsId,
+  });
+  
+  // TODO: Migrate to another permission
+  if (withoutPermission('manage_finance')) {
+    return NextResponse.json(
+      { message: 'Insufficient permissions' },
+      { status: 403 }
+    );
+  }
 
   const { data, error } = await supabase
     .from('transaction_tags')
     .select('*')
+    .eq('ws_id', wsId)
     .order('name');
 
   if (error) {
