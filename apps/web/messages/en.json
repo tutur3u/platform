@@ -4645,7 +4645,8 @@
       "restricted_description": "Only Tuturuuu team members can turn notes into tasks automatically.",
       "labels_suggestions_heading": "Suggested new labels",
       "labels_suggestions_hint": "These keywords appear in your tasks but are not labels yet.",
-      "ai_settings": "AI Settings"
+      "ai_settings": "AI Settings",
+      "open_board_selector": "Board selection"
     },
     "bucket_dump": {
       "title": "Bucket Dump",
@@ -5310,12 +5311,12 @@
         },
         "task": {
           "label": "Task",
-          "description": "Create quick task with a title",
+          "description": "Create a quick task",
           "placeholder": "Enter task title..."
         },
         "ai": {
           "label": "Generate with AI",
-          "description": "Break down a big tasks into smaller chunks",
+          "description": "Break down a big task into smaller chunks",
           "placeholder": "What goal do you want to accomplish?"
         }
       },

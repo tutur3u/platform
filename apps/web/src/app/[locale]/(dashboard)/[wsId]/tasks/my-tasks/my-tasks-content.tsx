@@ -303,7 +303,7 @@ export default function MyTasksContent({
     queryKey: ['workspace', selectedWorkspaceId, 'boards-with-lists'],
     queryFn: async () => {
       const supabase = createClient();
-      const { data: boards, error } = await supabase
+      const { data, error } = await supabase
         .from('workspace_boards')
         .select(
           `
@@ -317,13 +317,16 @@ export default function MyTasksContent({
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      return boards || [];
+      return data || [];
     },
     enabled: (boardSelectorOpen || taskCreatorOpen) && !!selectedWorkspaceId,
   });
 
   // Ensure boardsData is always an array
-  const boardsData = boardsDataRaw ?? [];
+  // Handle case where response might be wrapped in { boards: [...] }
+  const boardsData = Array.isArray(boardsDataRaw) 
+    ? boardsDataRaw 
+    : (boardsDataRaw as any)?.boards ?? [];
 
   // Fetch workspace labels
   const { data: workspaceLabels = [], isLoading: labelsLoading } = useQuery({
@@ -953,8 +956,6 @@ export default function MyTasksContent({
     previewEntry,
     pendingTaskTitle,
     sortedLabels,
-    taskLabelSelections.length,
-    expandedLabelCards,
   ]);
 
   // Initialize task due dates when preview opens
@@ -977,7 +978,7 @@ export default function MyTasksContent({
       previewTasks.map((task) => parseDueDateToState(task.dueDate ?? null))
     );
     lastInitializedDueDatesKey.current = previewKey;
-  }, [lastResult, previewEntry, pendingTaskTitle, taskDueDates.length]);
+  }, [lastResult, previewEntry, pendingTaskTitle]);
 
   // Reset labels when aiGenerateLabels is disabled
   useEffect(() => {
@@ -997,11 +998,7 @@ export default function MyTasksContent({
       lastInitializedLabelsKey.current = null;
     }
   }, [
-    aiGenerateLabels,
-    selectedLabelIds.length,
-    taskLabelSelections.length,
-    workspaceLabelsExpanded,
-    expandedLabelCards,
+    aiGenerateLabels
   ]);
 
   const previewTasks = lastResult?.tasks ?? [];
@@ -1118,7 +1115,7 @@ export default function MyTasksContent({
             wsId={wsId}
             onSwitchToJournal={() => {
               // Focus on the command bar textarea for AI generation
-              const textarea = document.querySelector('textarea[placeholder*="thought"]') as HTMLTextAreaElement;
+              const textarea = document.querySelector('#my-tasks-command-bar-textarea') as HTMLTextAreaElement;
               if (textarea) {
                 textarea.focus();
                 // Scroll to top to show the command bar

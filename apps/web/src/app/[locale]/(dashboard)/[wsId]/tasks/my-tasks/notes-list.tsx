@@ -45,7 +45,7 @@ import {
 import { toast } from "@tuturuuu/ui/sonner";
 import { Textarea } from "@tuturuuu/ui/textarea";
 import { useTranslations } from "next-intl";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 
 interface NotesListProps {
     wsId: string;
@@ -353,7 +353,7 @@ function NotesListContent({ wsId }: { wsId: string }) {
         }
     };
 
-    const listOptions =
+    const listOptions = useMemo(() => 
         boardsData?.boards?.flatMap((board) => {
             const orderedLists = [...(board.task_lists ?? [])].sort((a, b) => {
                 const aPosition = a.position ?? Number.MAX_SAFE_INTEGER;
@@ -374,7 +374,7 @@ function NotesListContent({ wsId }: { wsId: string }) {
                     status: list.status,
                     position: list.position ?? undefined,
                 }));
-        }) ?? [];
+        }) ?? [], [boardsData]);
 
     const displayedNotes = notes;
     const isLoading = notesLoading;
@@ -732,7 +732,7 @@ function NotesListContent({ wsId }: { wsId: string }) {
                                     {t("conversion_dialog.converting")}
                                 </>
                             ) : (
-                                t("edit_dialog.save")
+                                t("conversion_dialog.confirm")
                             )}
                         </Button>
                     </DialogFooter>

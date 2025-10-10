@@ -16,9 +16,10 @@ import {
 import { Label } from '@tuturuuu/ui/label';
 import { Switch } from '@tuturuuu/ui/switch';
 import {useTranslations} from 'next-intl';
-import { ChevronDown, MapPin, Settings, X } from '@tuturuuu/ui/icons';
+import { ArrowUp, ChevronDown, MapPin, Settings, X } from '@tuturuuu/ui/icons';
 import { Textarea } from '@tuturuuu/ui/textarea';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
+import type { KeyboardEvent } from 'react';
 
 export type CommandMode = 'note' | 'task' | 'ai';
 
@@ -60,7 +61,7 @@ export function CommandBar({
   const [inputText, setInputText] = useState('');
   const t = useTranslations();
 
-  const modeConfig = {
+  const modeConfig = useMemo(() => ({
     note: {
       label: t('workspace-tasks-tabs.command_bar.mode.note.label'),
       description: t('workspace-tasks-tabs.command_bar.mode.note.description'),
@@ -79,7 +80,7 @@ export function CommandBar({
       placeholder: t('workspace-tasks-tabs.command_bar.mode.ai.placeholder'),
       action: t('workspace-tasks-tabs.command_bar.action.generate'),
     },
-  };
+  }), [t]);
 
   const currentConfig = modeConfig[mode];
   const needsDestination = mode !== 'note';
@@ -115,9 +116,9 @@ export function CommandBar({
     }
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
-      e.preventDefault();
+  const handleKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
+    if (event.key === 'Enter' && (event.metaKey || event.ctrlKey)) {
+      event.preventDefault();
       handleAction();
     }
   };
@@ -125,6 +126,7 @@ export function CommandBar({
   return (
     <div className="relative rounded-lg border bg-background shadow-sm">
       <Textarea
+        id="my-tasks-command-bar-textarea"
         value={inputText}
         onChange={(e) => setInputText(e.target.value)}
         onKeyDown={handleKeyDown}
@@ -144,6 +146,7 @@ export function CommandBar({
               onClick={onOpenBoardSelector}
               disabled={isLoading}
               className="h-8 w-8 p-0"
+              aria-label={t('dashboard.quick_journal.open_board_selector')}
             >
               <MapPin className="h-4 w-4" />
     
@@ -152,11 +155,18 @@ export function CommandBar({
             {mode === 'ai' && (
               <Popover>
                 <PopoverTrigger asChild>
-                  <Button variant="ghost" size="sm" disabled={isLoading} className="h-8 w-8 p-0" title="AI Generation Settings">
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    disabled={isLoading} 
+                    className="h-8 w-8 p-0" 
+                    aria-label={t('dashboard.quick_journal.ai_settings')}
+                    title="AI Generation Settings"
+                  >
                     <Settings className="h-4 w-4" />
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent align="start" className="w-70">
+                <PopoverContent align="start" className="w-72">
                   <div className="space-y-4">
                     <div>
                       <h4 className="mb-3 font-semibold text-sm">
@@ -266,8 +276,9 @@ export function CommandBar({
           onClick={handleAction}
           disabled={!canExecute || isLoading}
           size="sm"
+          className="h-8 w-8 p-0"
         >
-          {isLoading ?  t('common.processing') : currentConfig.action}
+          <ArrowUp className="h-4 w-4" />
         </Button>
       </div>
     </div>

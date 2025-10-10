@@ -4618,7 +4618,8 @@
       "restricted_title": "Tính năng Quick journal bị giới hạn",
       "restricted_description": "Chỉ thành viên Tuturuuu mới có thể tự động chuyển ghi chú thành tác vụ.",
       "labels_suggestions_heading": "Gợi ý nhãn mới",
-      "labels_suggestions_hint": "Những từ khóa này xuất hiện trong tác vụ nhưng chưa có nhãn tương ứng."
+      "labels_suggestions_hint": "Những từ khóa này xuất hiện trong tác vụ nhưng chưa có nhãn tương ứng.",
+      "open_board_selector": "Lựa chọn bảng"
     }
   },
   "ws-groups": {
@@ -5080,7 +5081,19 @@
     "command_bar": {
       "mode": {
         "note": {
-          "label": "Ghi chú"
+          "label": "Ghi chú",
+          "description": "Tạo ghi chú nhanh",
+          "placeholder": "Ghi chú nhanh..."
+        },
+        "ai": {
+          "description": "Chia một nhiệm vụ lớn thành những phần nhỏ hơn",
+          "label": "Tạo nhiệm vụ với AI",
+          "placeholder": "Bạn muốn đạt được mục tiêu gì?"
+        },
+        "task": {
+          "label": "Nhiệm vụ",
+          "description": "Tạo nhanh một nhiệm vụ",
+          "placeholder": "Nhập tên nhiệm vụ..."
         }
       }
     }
