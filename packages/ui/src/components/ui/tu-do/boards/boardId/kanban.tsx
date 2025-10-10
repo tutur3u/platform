@@ -74,6 +74,7 @@ import {
 } from '../../shared/estimation-mapping';
 import { TaskEditDialog } from '../../shared/task-edit-dialog';
 import { BoardSelector } from '../board-selector';
+import { TaskCard } from './task';
 import { BoardColumn } from './task-list';
 import { TaskListForm } from './task-list-form';
 
@@ -844,8 +845,6 @@ export function KanbanBoard({
   const MemoizedTaskOverlay = useMemo(() => {
     if (!activeTask) return null;
 
-    // Import TaskCard dynamically to avoid circular dependencies
-    const { TaskCard } = require('./task');
     const taskList = columns.find(
       (col) => String(col.id) === String(activeTask.list_id)
     );
