@@ -53,7 +53,7 @@
     "sbr:reset": "cd apps/db && bun sbr:reset && bun sbr:typegen",
     "sbr:diff": "cd apps/db && bun sbr:diff && bun sbr:typegen",
     "sbr:up": "cd apps/db && bun sbr:up && bun sbr:typegen",
-    "sbr:sync": "cd apps/db && bun sbr:sync",
+    "sbr:sync": "cd apps/db && bun sbr:sync && bun sbr:typegen",
     "sbr:pull": "cd apps/db && bun sbr:pull && bun sbr:typegen",
     "sbr:push": "cd apps/db && bun sbr:push && bun sbr:typegen",
     "sb:reset": "cd apps/db && bun sb:reset && bun sb:typegen",
