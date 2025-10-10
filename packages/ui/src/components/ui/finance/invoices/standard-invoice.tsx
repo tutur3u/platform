@@ -37,10 +37,10 @@ import {
 } from '@tuturuuu/ui/select';
 import { Combobox, type ComboboxOptions } from '@tuturuuu/ui/custom/combobox';
 import { useTranslations } from 'next-intl';
-import { useState, useEffect, useMemo } from 'react';
+import { useCallback, useState, useEffect, useMemo } from 'react';
 import { ProductSelection } from './product-selection';
 import { toast } from '@tuturuuu/ui/sonner';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import type { SelectedProductItem } from './types';
 import type { AvailablePromotion } from './hooks';
 import {
@@ -57,21 +57,35 @@ import {
 
 interface Props {
   wsId: string;
-  selectedUserId: string;
-  onSelectedUserIdChange: (value: string) => void;
   createMultipleInvoices: boolean;
   printAfterCreate?: boolean;
 }
 
 export function StandardInvoice({
   wsId,
-  selectedUserId,
-  onSelectedUserIdChange,
   createMultipleInvoices,
   printAfterCreate = false,
 }: Props) {
   const t = useTranslations();
   const router = useRouter();
+  const searchParams = useSearchParams();
+
+  // Read from URL params
+  const selectedUserId = searchParams.get('user_id') || '';
+
+  // Helper to update URL params
+  const updateSearchParam = useCallback(
+    (key: string, value: string) => {
+      const params = new URLSearchParams(searchParams);
+      if (value) {
+        params.set(key, value);
+      } else {
+        params.delete(key);
+      }
+      router.replace(`?${params.toString()}`, { scroll: false });
+    },
+    [router, searchParams]
+  );
 
   // Data queries
   const { data: users = [], isLoading: usersLoading } = useUsers(wsId);
@@ -367,7 +381,7 @@ export function StandardInvoice({
       setInvoiceContent('');
       setInvoiceNotes('');
       setRoundedTotal(0);
-      onSelectedUserIdChange('');
+      updateSearchParam('user_id', '');
       setSelectedWalletId('');
       setSelectedCategoryId('');
 
@@ -434,7 +448,7 @@ export function StandardInvoice({
                   })
                 )}
                 selected={selectedUserId}
-                onChange={(value) => onSelectedUserIdChange(value as string)}
+                onChange={(value) => updateSearchParam('user_id', value as string)}
                 placeholder={t('ws-invoices.search_customers')}
               />
             </div>
