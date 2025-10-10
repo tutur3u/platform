@@ -5075,5 +5075,14 @@
       "contribute": "Đóng Góp Trên GitHub",
       "getInTouch": "Liên Hệ"
     }
+  },
+  "workspace-tasks-tabs": {
+    "command_bar": {
+      "mode": {
+        "note": {
+          "label": "Ghi chú"
+        }
+      }
+    }
   }
 }

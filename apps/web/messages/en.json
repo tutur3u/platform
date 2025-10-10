@@ -4644,7 +4644,8 @@
       "restricted_title": "Quick journal is limited",
       "restricted_description": "Only Tuturuuu team members can turn notes into tasks automatically.",
       "labels_suggestions_heading": "Suggested new labels",
-      "labels_suggestions_hint": "These keywords appear in your tasks but are not labels yet."
+      "labels_suggestions_hint": "These keywords appear in your tasks but are not labels yet.",
+      "ai_settings": "AI Settings"
     },
     "bucket_dump": {
       "title": "Bucket Dump",
@@ -4874,7 +4875,12 @@
     "no_due_date": "No Due Date",
     "last_30_days": "Last 30 Days",
     "no_tasks": "No Tasks Found",
-    "no_tasks_assigned": "You don't have any tasks assigned to you yet"
+    "no_tasks_assigned": "You don't have any tasks assigned to you yet",
+    "errors": {
+      "no_list_selected": "No list selected",
+      "no_tasks_to_create": "No tasks to create",
+      "missing_task_description": "Missing task description"
+    }
   },
   "about": {
     "hero": {
@@ -5291,6 +5297,30 @@
         "rule2": "Use appropriate font weights",
         "rule3": "Ensure readability at all sizes",
         "rule4": "Follow spacing guidelines"
+      }
+    }
+  },
+  "workspace-tasks-tabs": {
+    "command_bar": {
+      "mode": {
+        "note": {
+          "label": "Note",
+          "description": "Create a quick note",
+          "placeholder": "Quick note..."
+        },
+        "task": {
+          "label": "Task",
+          "description": "Create quick task with a title",
+          "placeholder": "Enter task title..."
+        },
+        "ai": {
+          "label": "Generate with AI",
+          "description": "Break down a big tasks into smaller chunks",
+          "placeholder": "What goal do you want to accomplish?"
+        }
+      },
+      "action": {
+        "generate": "Generate"
       }
     }
   }
