@@ -1864,19 +1864,29 @@ export function calculateSortKey(
     }
 
     // Place before the next task with good spacing
-    // Always ensure we're BEFORE the next task
     const halfNext = Math.floor(nextSortKey / 2);
 
-    // Ensure the result is significantly less than nextSortKey
-    // Use max to ensure we have a minimum spacing
-    const baseKey = Math.max(halfNext, SORT_KEY_BASE_UNIT);
+    // Determine the base key to use
+    let baseKey: number;
 
-    // Ensure we don't exceed nextSortKey
-    const result =
-      Math.min(baseKey, nextSortKey - SORT_KEY_MIN_GAP) + sortKeySequence;
+    if (nextSortKey <= SORT_KEY_MIN_GAP) {
+      // nextSortKey is too small to maintain minimum gap
+      // Use half of nextSortKey as the base (guaranteed positive and < nextSortKey)
+      baseKey = Math.max(1, halfNext);
+    } else {
+      // Try to maintain ideal spacing
+      // Use SORT_KEY_BASE_UNIT if possible, but ensure we don't go below minimum gap from nextSortKey
+      baseKey = Math.max(
+        halfNext,
+        Math.min(SORT_KEY_BASE_UNIT, nextSortKey - SORT_KEY_MIN_GAP)
+      );
+    }
 
-    // Final safety check: ensure result is less than nextSortKey
-    return Math.min(result, nextSortKey - 1);
+    // Add sequence offset, ensuring we don't exceed nextSortKey
+    const result = baseKey + sortKeySequence;
+
+    // Final safety: ensure result is positive and less than nextSortKey
+    return Math.max(1, Math.min(result, nextSortKey - 1));
   }
 
   // Case 2: No next task - inserting at the end

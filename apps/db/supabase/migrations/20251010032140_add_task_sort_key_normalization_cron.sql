@@ -47,11 +47,11 @@ BEGIN
 END;
 $$;
 
--- Schedule the normalization job to run every Sunday at 0:00 AM UTC
+-- Schedule the normalization job to run every hour at minute 0
 -- This prevents sort_key fragmentation over time while minimizing disruption
 SELECT cron.schedule(
   'normalize-task-sort-keys',
-  '0 0 * * 0',
+  '0 * * * *',
   'SELECT normalize_task_sort_keys();'
 );
 

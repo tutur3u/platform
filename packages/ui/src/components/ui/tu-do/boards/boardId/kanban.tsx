@@ -977,8 +977,11 @@ export function KanbanBoard({
       setActiveColumn(null);
       setActiveTask(null);
       setHoverTargetListId(null);
+      setDragPreviewPosition(null);
       pickedUpTaskColumn.current = null;
       (processDragOver as any).lastTargetListId = null;
+      // Clear optimistic update tracking
+      setOptimisticUpdateInProgress(new Set());
       return;
     }
 
@@ -987,6 +990,13 @@ export function KanbanBoard({
 
     if (!activeType) {
       console.log('❌ No activeType, state reset.');
+      setActiveColumn(null);
+      setActiveTask(null);
+      setHoverTargetListId(null);
+      setDragPreviewPosition(null);
+      pickedUpTaskColumn.current = null;
+      (processDragOver as any).lastTargetListId = null;
+      setOptimisticUpdateInProgress(new Set());
       return;
     }
 
@@ -1089,6 +1099,13 @@ export function KanbanBoard({
 
       if (!activeTask) {
         console.log('❌ No activeTask, state reset.');
+        setActiveColumn(null);
+        setActiveTask(null);
+        setHoverTargetListId(null);
+        setDragPreviewPosition(null);
+        pickedUpTaskColumn.current = null;
+        (processDragOver as any).lastTargetListId = null;
+        setOptimisticUpdateInProgress(new Set());
         return;
       }
 
@@ -1104,6 +1121,13 @@ export function KanbanBoard({
         const targetTask = over.data?.current?.task;
         if (!targetTask) {
           console.log('❌ No target task data, state reset.');
+          setActiveColumn(null);
+          setActiveTask(null);
+          setHoverTargetListId(null);
+          setDragPreviewPosition(null);
+          pickedUpTaskColumn.current = null;
+          (processDragOver as any).lastTargetListId = null;
+          setOptimisticUpdateInProgress(new Set());
           return;
         }
         targetListId = String(targetTask.list_id);
@@ -1113,6 +1137,13 @@ export function KanbanBoard({
         const columnId = over.data?.current?.columnId || over.id;
         if (!columnId) {
           console.log('❌ No column surface id, state reset.');
+          setActiveColumn(null);
+          setActiveTask(null);
+          setHoverTargetListId(null);
+          setDragPreviewPosition(null);
+          pickedUpTaskColumn.current = null;
+          (processDragOver as any).lastTargetListId = null;
+          setOptimisticUpdateInProgress(new Set());
           return;
         }
         targetListId = String(columnId);
@@ -1122,6 +1153,13 @@ export function KanbanBoard({
         );
       } else {
         console.log('❌ Invalid drop type:', overType, 'state reset.');
+        setActiveColumn(null);
+        setActiveTask(null);
+        setHoverTargetListId(null);
+        setDragPreviewPosition(null);
+        pickedUpTaskColumn.current = null;
+        (processDragOver as any).lastTargetListId = null;
+        setOptimisticUpdateInProgress(new Set());
         return;
       }
 
@@ -1135,6 +1173,13 @@ export function KanbanBoard({
 
       if (!originalListId) {
         console.log('❌ No originalListId, state reset.');
+        setActiveColumn(null);
+        setActiveTask(null);
+        setHoverTargetListId(null);
+        setDragPreviewPosition(null);
+        pickedUpTaskColumn.current = null;
+        (processDragOver as any).lastTargetListId = null;
+        setOptimisticUpdateInProgress(new Set());
         return;
       }
 
@@ -1166,6 +1211,13 @@ export function KanbanBoard({
 
       if (!sourceListExists || !targetListExists) {
         console.log('❌ Source or target list missing, state reset.');
+        setActiveColumn(null);
+        setActiveTask(null);
+        setHoverTargetListId(null);
+        setDragPreviewPosition(null);
+        pickedUpTaskColumn.current = null;
+        (processDragOver as any).lastTargetListId = null;
+        setOptimisticUpdateInProgress(new Set());
         return;
       }
 
@@ -1556,6 +1608,7 @@ export function KanbanBoard({
       setDragPreviewPosition(null);
       pickedUpTaskColumn.current = null;
       (processDragOver as any).lastTargetListId = null;
+      setOptimisticUpdateInProgress(new Set());
     }
   }
 
