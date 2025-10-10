@@ -1,5 +1,9 @@
 import { useDndMonitor, useDroppable } from '@dnd-kit/core';
-import { useSortable } from '@dnd-kit/sortable';
+import {
+  SortableContext,
+  useSortable,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import type { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
 import type { Task } from '@tuturuuu/types/primitives/Task';
@@ -426,64 +430,95 @@ function VirtualizedTaskListInner({
     <div
       ref={attachScrollableRef}
       className={cn(
-        'h-full flex-1 space-y-2 overflow-y-auto p-3 transition-colors',
+        'relative h-full flex-1 space-y-2 overflow-y-auto p-3 transition-all duration-200',
         isColumnDragOver &&
-          'rounded-lg bg-dynamic-blue/5 ring-1 ring-dynamic-blue/30'
+          'fade-in-0 animate-in rounded-lg bg-gradient-to-br from-primary/10 via-primary/5 to-transparent shadow-inner ring-2 ring-primary/40 duration-300'
       )}
       // When not virtualizing we still want consistent styling
       data-virtualized={shouldVirtualize ? 'true' : 'false'}
     >
+      {/* Drop indicator when hovering over empty column */}
+      {tasks.length === 0 && isColumnDragOver && (
+        <div className="fade-in-0 zoom-in-95 absolute inset-4 flex animate-in flex-col items-center justify-center gap-3 rounded-lg border-2 border-primary/50 border-dashed bg-primary/5 duration-300">
+          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/20 ring-4 ring-primary/10">
+            <svg
+              className="h-6 w-6 animate-bounce text-primary"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M19 14l-7 7m0 0l-7-7m7 7V3"
+              />
+            </svg>
+          </div>
+          <p className="font-semibold text-primary text-sm">Drop here to add</p>
+        </div>
+      )}
       {tasks.length === 0 ? (
         <div className="flex h-32 items-center justify-center text-muted-foreground">
           <p className="text-center text-sm">No tasks yet</p>
         </div>
       ) : shouldVirtualize ? (
-        <div style={{ height: totalHeight, position: 'relative' }}>
-          <div
-            className="grid gap-2"
-            style={{
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              right: 0,
-              transform: `translateY(${offsetY}px)`,
-            }}
-          >
-            {visibleTasks.map((task) => (
-              <MeasuredTaskCard
-                key={task.id}
-                task={task}
-                taskList={column}
-                boardId={boardId}
-                onUpdate={onUpdate}
-                isSelected={Boolean(
-                  isMultiSelectMode && selectedTasks?.has(task.id)
-                )}
-                isMultiSelectMode={isMultiSelectMode}
-                isPersonalWorkspace={isPersonalWorkspace}
-                onSelect={onTaskSelect}
-                onHeight={(h) => updateSize(task.id, h)}
-              />
-            ))}
+        <SortableContext
+          items={tasks.map((t) => t.id)}
+          strategy={verticalListSortingStrategy}
+        >
+          <div style={{ height: totalHeight, position: 'relative' }}>
+            <div
+              className="grid gap-2"
+              style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                right: 0,
+                transform: `translateY(${offsetY}px)`,
+              }}
+            >
+              {visibleTasks.map((task) => (
+                <MeasuredTaskCard
+                  key={task.id}
+                  task={task}
+                  taskList={column}
+                  boardId={boardId}
+                  onUpdate={onUpdate}
+                  isSelected={Boolean(
+                    isMultiSelectMode && selectedTasks?.has(task.id)
+                  )}
+                  isMultiSelectMode={isMultiSelectMode}
+                  isPersonalWorkspace={isPersonalWorkspace}
+                  onSelect={onTaskSelect}
+                  onHeight={(h) => updateSize(task.id, h)}
+                />
+              ))}
+            </div>
           </div>
-        </div>
+        </SortableContext>
       ) : (
-        tasks.map((task) => (
-          <MeasuredTaskCard
-            key={task.id}
-            task={task}
-            taskList={column}
-            boardId={boardId}
-            onUpdate={onUpdate}
-            isSelected={Boolean(
-              isMultiSelectMode && selectedTasks?.has(task.id)
-            )}
-            isMultiSelectMode={isMultiSelectMode}
-            isPersonalWorkspace={isPersonalWorkspace}
-            onSelect={onTaskSelect}
-            onHeight={(h) => updateSize(task.id, h)}
-          />
-        ))
+        <SortableContext
+          items={tasks.map((t) => t.id)}
+          strategy={verticalListSortingStrategy}
+        >
+          {tasks.map((task) => (
+            <MeasuredTaskCard
+              key={task.id}
+              task={task}
+              taskList={column}
+              boardId={boardId}
+              onUpdate={onUpdate}
+              isSelected={Boolean(
+                isMultiSelectMode && selectedTasks?.has(task.id)
+              )}
+              isMultiSelectMode={isMultiSelectMode}
+              isPersonalWorkspace={isPersonalWorkspace}
+              onSelect={onTaskSelect}
+              onHeight={(h) => updateSize(task.id, h)}
+            />
+          ))}
+        </SortableContext>
       )}
     </div>
   );

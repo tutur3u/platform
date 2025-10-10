@@ -1144,6 +1144,10 @@ export type Database = {
           start_date: string;
         }[];
       };
+      normalize_task_sort_keys: {
+        Args: Record<PropertyKey, never>;
+        Returns: undefined;
+      };
       nova_get_all_challenges_with_user_stats: {
         Args: {
           user_id: string;
@@ -7234,6 +7238,7 @@ export type Database = {
           min_split_duration_minutes?: null | number;
           name: string;
           priority?: Database['public']['Enums']['task_priority'] | null;
+          sort_key?: null | number;
           start_date?: null | string;
           total_duration?: null | number;
         };
@@ -7293,6 +7298,7 @@ export type Database = {
           min_split_duration_minutes: null | number;
           name: string;
           priority: Database['public']['Enums']['task_priority'] | null;
+          sort_key: null | number;
           start_date: null | string;
           total_duration: null | number;
         };
@@ -7315,6 +7321,7 @@ export type Database = {
           min_split_duration_minutes?: null | number;
           name?: string;
           priority?: Database['public']['Enums']['task_priority'] | null;
+          sort_key?: null | number;
           start_date?: null | string;
           total_duration?: null | number;
         };

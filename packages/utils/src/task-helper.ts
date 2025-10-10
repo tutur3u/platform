@@ -86,7 +86,8 @@ export async function getTasks(supabase: SupabaseClient, boardId: string) {
         lists.map((list) => list.id)
       )
       .eq('deleted', false)
-      .order('created_at');
+      .order('sort_key', { ascending: true, nullsFirst: false })
+      .order('created_at', { ascending: true });
 
     if (error) {
       console.error('Error fetching tasks:', error);
@@ -1826,5 +1827,188 @@ export function useBoardConfig(boardId: string | null | undefined) {
     enabled: Boolean(boardId),
     staleTime: 10 * 60 * 1000, // 10 minutes - board config rarely changes
     refetchOnWindowFocus: false,
+  });
+}
+
+// Function to calculate new sort_key between two tasks
+export function calculateSortKey(
+  prevSortKey: number | null | undefined,
+  nextSortKey: number | null | undefined
+): number {
+  // If no previous task, place before the next task
+  if (prevSortKey === null || prevSortKey === undefined) {
+    const next = nextSortKey ?? 1000000;
+    return next / 2;
+  }
+
+  // If no next task, place after the previous task
+  if (nextSortKey === null || nextSortKey === undefined) {
+    return prevSortKey + 1000;
+  }
+
+  // Place between the two tasks
+  return (prevSortKey + nextSortKey) / 2;
+}
+
+// Reorder task within the same list or move to a different list with specific position
+export async function reorderTask(
+  supabase: SupabaseClient,
+  taskId: string,
+  newListId: string,
+  newSortKey: number
+) {
+  console.log('🗄️ reorderTask function called');
+  console.log('📋 Task ID:', taskId);
+  console.log('🎯 New List ID:', newListId);
+  console.log('🔢 New Sort Key:', newSortKey);
+
+  // Get the target list to check its status
+  const { data: targetList, error: listError } = await supabase
+    .from('task_lists')
+    .select('status, name')
+    .eq('id', newListId)
+    .single();
+
+  if (listError) {
+    console.log('❌ Error fetching target list:', listError);
+    throw listError;
+  }
+
+  console.log('📊 Target list details:', targetList);
+
+  // Determine archived status based on list status
+  const shouldArchive =
+    targetList.status === 'done' || targetList.status === 'closed';
+
+  console.log('📦 Will archive:', shouldArchive);
+  console.log('🔄 Updating task in database...');
+
+  const { data, error } = await supabase
+    .from('tasks')
+    .update({
+      list_id: newListId,
+      sort_key: newSortKey,
+      archived: shouldArchive,
+    })
+    .eq('id', taskId)
+    .select(
+      `
+        *,
+        assignees:task_assignees(
+          user:users(
+            id,
+            display_name,
+            avatar_url
+          )
+        ),
+        labels:task_labels(
+          label:workspace_task_labels(
+            id,
+            name,
+            color,
+            created_at
+          )
+        ),
+        projects:task_project_tasks(
+          project:task_projects(
+            id,
+            name,
+            status
+          )
+        )
+      `
+    )
+    .single();
+
+  if (error) {
+    console.log('❌ Error updating task:', error);
+    throw error;
+  }
+
+  console.log('✅ Task reordered successfully');
+  return transformTaskRecord(data) as Task;
+}
+
+// React Query hook for reordering tasks
+export function useReorderTask(boardId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      taskId,
+      newListId,
+      newSortKey,
+    }: {
+      taskId: string;
+      newListId: string;
+      newSortKey: number;
+    }) => {
+      console.log('🚀 Starting reorderTask mutation');
+      const supabase = createClient();
+      return await reorderTask(supabase, taskId, newListId, newSortKey);
+    },
+    onMutate: async ({ taskId, newListId, newSortKey }) => {
+      console.log('🎭 onMutate triggered - optimistic update for reorder');
+
+      // Cancel any outgoing refetches
+      await queryClient.cancelQueries({ queryKey: ['tasks', boardId] });
+
+      // Snapshot the previous value
+      const previousTasks = queryClient.getQueryData(['tasks', boardId]);
+
+      // Optimistically update the task
+      queryClient.setQueryData(
+        ['tasks', boardId],
+        (old: Task[] | undefined) => {
+          if (!old) return old;
+          return old.map((task) => {
+            if (task.id === taskId) {
+              const targetList = queryClient.getQueryData([
+                'task_lists',
+                boardId,
+              ]) as TaskList[] | undefined;
+              const list = targetList?.find((l) => l.id === newListId);
+              const shouldArchive =
+                list?.status === 'done' || list?.status === 'closed';
+
+              return {
+                ...task,
+                list_id: newListId,
+                sort_key: newSortKey,
+                archived: shouldArchive || false,
+              };
+            }
+            return task;
+          });
+        }
+      );
+
+      return { previousTasks };
+    },
+    onError: (err, _, context) => {
+      console.log('❌ onError triggered - rollback optimistic update');
+      if (context?.previousTasks) {
+        queryClient.setQueryData(['tasks', boardId], context.previousTasks);
+      }
+
+      console.error('Failed to reorder task:', err);
+      toast.error('Failed to reorder task', {
+        description: 'Please try again.',
+      });
+    },
+    onSuccess: (updatedTask) => {
+      console.log('✅ onSuccess triggered - updating cache with server response');
+
+      // Update the cache with the server response
+      queryClient.setQueryData(
+        ['tasks', boardId],
+        (old: Task[] | undefined) => {
+          if (!old) return old;
+          return old.map((task) =>
+            task.id === updatedTask.id ? updatedTask : task
+          );
+        }
+      );
+    },
   });
 }

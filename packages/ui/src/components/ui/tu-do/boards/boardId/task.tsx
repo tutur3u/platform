@@ -254,37 +254,24 @@ function TaskCardInner({
     newLabelDialogOpen ||
     menuOpen;
 
-  const {
-    setNodeRef,
-    attributes,
-    listeners,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({
-    id: task.id,
-    data: {
-      type: 'Task',
-      task: {
-        ...task,
-        list_id: String(task.list_id),
+  const { setNodeRef, attributes, listeners, transform, isDragging } =
+    useSortable({
+      id: task.id,
+      data: {
+        type: 'Task',
+        task: {
+          ...task,
+          list_id: String(task.list_id),
+        },
       },
-    },
-    disabled: dragDisabled,
-    // Reduce expensive layout animations for smoother dragging
-    animateLayoutChanges: (args) => {
-      const { isSorting, wasDragging } = args;
-      // Only animate if not actively dragging to keep drag performance snappy
-      return isSorting && !wasDragging;
-    },
-  });
+      disabled: dragDisabled,
+      transition: null, // Disable @dnd-kit's built-in transitions
+    });
 
   const style: React.CSSProperties = {
-    transform: isDragging ? CSS.Transform.toString(transform) : undefined,
-    // Disable transition while actively dragging for perf
-    transition: isDragging ? undefined : transition,
+    transform: CSS.Transform.toString(transform),
+    transition: 'none', // Always disable transitions - rely on optimistic updates
     height: 'var(--task-height)',
-    willChange: isDragging ? 'transform' : undefined,
   };
 
   const now = new Date();
@@ -701,15 +688,14 @@ function TaskCardInner({
       {...attributes}
       {...(!dragDisabled && listeners)}
       className={cn(
-        'group relative overflow-hidden rounded-lg border-l-4 transition-all duration-200',
+        'group relative overflow-hidden rounded-lg border-l-4',
         dragDisabled
           ? 'cursor-default'
           : 'cursor-grab touch-none select-none active:cursor-grabbing',
-        'hover:shadow-md',
         // Task list or priority-based styling
         getCardColorClasses(),
-        // Dragging state
-        isDragging && 'z-50 scale-[1.02] shadow-xl ring-2 ring-primary/40',
+        // Dragging state - completely hide to show gap clearly
+        isDragging && 'invisible',
         isOverlay &&
           'scale-105 shadow-2xl ring-2 ring-primary/50 backdrop-blur-sm',
         // Archive state (completed tasks)
@@ -718,18 +704,13 @@ function TaskCardInner({
         isOverdue &&
           !task.archived &&
           'border-dynamic-red/70 bg-dynamic-red/10 ring-1 ring-dynamic-red/20',
-        // Hover state
+        // Hover state (no transitions)
         !isDragging && !isSelected && 'hover:ring-1 hover:ring-primary/15',
         // Selection state - enhanced visual feedback
         isSelected &&
           'scale-[1.01] border-l-primary bg-gradient-to-r from-primary/10 via-primary/5 to-transparent shadow-lg ring-2 ring-primary/60',
         // Multi-select mode cursor
-        isMultiSelectMode && 'cursor-pointer',
-        // Visual feedback for invalid drop (dev only)
-        process.env.NODE_ENV === 'development' &&
-          isDragging &&
-          !isOverlay &&
-          'ring-2 ring-dynamic-red'
+        isMultiSelectMode && 'cursor-pointer'
       )}
     >
       {/* Overdue indicator */}
@@ -1530,32 +1511,32 @@ function LightweightTaskCardInner({
     : null;
 
   return (
-    <Card className="pointer-events-none w-full max-w-[340px] select-none overflow-hidden border border-dynamic-gray/40 bg-background/95 shadow-xl ring-1 ring-dynamic-blue/20 backdrop-blur">
+    <Card className="pointer-events-none w-full max-w-[340px] select-none overflow-hidden border-2 border-primary/40 bg-background/95 shadow-2xl ring-2 ring-primary/30 backdrop-blur-md">
       <div className="flex flex-col gap-3 p-4">
         {destination && (
-          <div className="flex items-center justify-between text-[11px] text-muted-foreground">
+          <div className="slide-in-from-top-2 flex animate-in items-center justify-between gap-2 rounded-lg bg-gradient-to-r from-primary/10 via-primary/5 to-transparent p-2 text-[11px] duration-300">
             <span
               className={cn(
-                'inline-flex items-center gap-1 rounded-md px-2 py-1 font-medium ring-1 ring-inset',
+                'inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 font-semibold shadow-sm ring-1 ring-inset',
                 destinationColorClass
               )}
             >
-              <Move className="h-3 w-3" />
-              {destination.name}
+              <Move className="h-3.5 w-3.5 animate-pulse" />
+              <span className="text-xs">{destination.name}</span>
             </span>
             {destination.status && (
-              <span className="text-[10px] text-muted-foreground/80 uppercase tracking-wide">
+              <span className="rounded-full bg-background/80 px-2 py-1 font-medium text-[10px] text-muted-foreground uppercase tracking-wider shadow-sm">
                 {destination.status.replace(/_/g, ' ')}
               </span>
             )}
           </div>
         )}
-        <div className="space-y-1">
-          <div className="truncate font-semibold text-base leading-snug">
+        <div className="space-y-1.5">
+          <div className="truncate font-bold text-base text-foreground leading-snug">
             {task.name}
           </div>
           {descriptionText && (
-            <div className="line-clamp-2 whitespace-pre-line text-muted-foreground text-xs">
+            <div className="line-clamp-2 whitespace-pre-line text-muted-foreground text-xs leading-relaxed">
               {descriptionText.replace(/\n/g, ' • ')}
             </div>
           )}
