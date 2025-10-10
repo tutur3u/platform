@@ -1262,41 +1262,23 @@ export function KanbanBoard({
 
         // Calculate sort_key based on neighbors in the reordered array
         if (reorderedTasks.length === 1) {
-          // Only task in the list
-          newSortKey = 1000;
-          console.log('📍 Only task in list, using default sort_key: 1000');
+          // Only task in the list - use default from calculateSortKey
+          newSortKey = calculateSortKey(null, null);
         } else if (newIndex === 0) {
           // At beginning - next task is at index 1
           const nextTask = reorderedTasks[1];
-          newSortKey = calculateSortKey(null, nextTask?.sort_key);
-          console.log(
-            '📍 Inserting at beginning, next task sort_key:',
-            nextTask?.sort_key
-          );
+          newSortKey = calculateSortKey(null, nextTask?.sort_key ?? null);
         } else if (newIndex === reorderedTasks.length - 1) {
           // At end - prev task is at index length-2
           const prevTask = reorderedTasks[reorderedTasks.length - 2];
-          newSortKey = calculateSortKey(prevTask?.sort_key, null);
-          console.log(
-            '📍 Inserting at end, prev task sort_key:',
-            prevTask?.sort_key
-          );
+          newSortKey = calculateSortKey(prevTask?.sort_key ?? null, null);
         } else {
           // In middle - use the actual prev and next tasks
           const prevTask = reorderedTasks[newIndex - 1];
           const nextTask = reorderedTasks[newIndex + 1];
-
-          newSortKey = calculateSortKey(prevTask?.sort_key, nextTask?.sort_key);
-          console.log(
-            '📍 Inserting between:',
-            prevTask?.name,
-            '(',
-            prevTask?.sort_key,
-            ') and',
-            nextTask?.name,
-            '(',
-            nextTask?.sort_key,
-            ')'
+          newSortKey = calculateSortKey(
+            prevTask?.sort_key ?? null,
+            nextTask?.sort_key ?? null
           );
         }
       } else {
@@ -1305,24 +1287,15 @@ export function KanbanBoard({
         // When dropping on ColumnSurface (empty space in column), insert at the END
 
         if (targetListTasks.length === 0) {
-          newSortKey = 1000;
-          console.log('📍 Empty list, using default sort_key: 1000');
+          newSortKey = calculateSortKey(null, null);
         } else if (overType === 'Column') {
           // Dropping on column header - insert at the BEGINNING
           const firstTask = targetListTasks[0];
-          newSortKey = calculateSortKey(null, firstTask?.sort_key);
-          console.log(
-            '📍 Dropping on column header, inserting at beginning before first task with sort_key:',
-            firstTask?.sort_key
-          );
+          newSortKey = calculateSortKey(null, firstTask?.sort_key ?? null);
         } else {
           // Dropping on ColumnSurface - add to the END
           const lastTask = targetListTasks[targetListTasks.length - 1];
-          newSortKey = calculateSortKey(lastTask?.sort_key, null);
-          console.log(
-            '📍 Dropping on column surface, adding to end after last task with sort_key:',
-            lastTask?.sort_key
-          );
+          newSortKey = calculateSortKey(lastTask?.sort_key ?? null, null);
         }
       }
 
@@ -1331,7 +1304,7 @@ export function KanbanBoard({
       // Check if we need to move/reorder
       const needsUpdate =
         targetListId !== originalListId || // Moving to different list
-        Math.abs((activeTask.sort_key ?? 0) - newSortKey) > 0.0001; // Position changed
+        (activeTask.sort_key ?? 0) !== newSortKey; // Position changed (strict integer comparison)
 
       if (needsUpdate) {
         console.log('✅ Task needs reordering');
@@ -1421,7 +1394,7 @@ export function KanbanBoard({
             simulatedTargetList.map((t, i) => `${i}: ${t.name}`)
           );
 
-          sortedTasksToMove.forEach((task, batchIndex) => {
+          sortedTasksToMove.forEach((task) => {
             let batchSortKey: number;
 
             // Find the task's position in the simulated list
@@ -1430,29 +1403,18 @@ export function KanbanBoard({
             );
 
             if (simulatedTargetList.length === 1) {
-              // Only task in list
-              batchSortKey = 1000;
+              // Only task in list - use default from calculateSortKey
+              batchSortKey = calculateSortKey(null, null);
             } else if (positionInSimulated === 0) {
-              // At beginning
+              // At beginning - calculate based on next task
               const nextTask = simulatedTargetList[1];
-              // If next task is also being moved, use a default increment
-              if (nextTask && selectedTasks.has(nextTask.id)) {
-                batchSortKey = 500;
-              } else {
-                batchSortKey = calculateSortKey(null, nextTask?.sort_key);
-              }
+              batchSortKey = calculateSortKey(null, nextTask?.sort_key ?? null);
             } else if (positionInSimulated === simulatedTargetList.length - 1) {
-              // At end
+              // At end - calculate based on prev task
               const prevTask = simulatedTargetList[positionInSimulated - 1];
-              // If prev task is also being moved, use the previous batch sort key + increment
-              if (prevTask && selectedTasks.has(prevTask.id)) {
-                // This task is after another moved task, calculate based on position
-                batchSortKey = 1000 + batchIndex * 1000;
-              } else {
-                batchSortKey = calculateSortKey(prevTask?.sort_key, null);
-              }
+              batchSortKey = calculateSortKey(prevTask?.sort_key ?? null, null);
             } else {
-              // In middle
+              // In middle - use actual neighbors
               const prevTask = simulatedTargetList[positionInSimulated - 1];
               const nextTask = simulatedTargetList[positionInSimulated + 1];
 
@@ -1467,8 +1429,8 @@ export function KanbanBoard({
               if (!prevIsMoving && !nextIsMoving) {
                 // Both neighbors are stationary - use their sort keys
                 batchSortKey = calculateSortKey(
-                  prevTask?.sort_key,
-                  nextTask?.sort_key
+                  prevTask?.sort_key ?? null,
+                  nextTask?.sort_key ?? null
                 );
               } else if (prevIsMoving && !nextIsMoving) {
                 // Prev is moving, next is stationary
@@ -1482,8 +1444,8 @@ export function KanbanBoard({
                   }
                 }
                 batchSortKey = calculateSortKey(
-                  stationaryPrev?.sort_key,
-                  nextTask?.sort_key
+                  stationaryPrev?.sort_key ?? null,
+                  nextTask?.sort_key ?? null
                 );
               } else if (!prevIsMoving && nextIsMoving) {
                 // Prev is stationary, next is moving
@@ -1501,12 +1463,11 @@ export function KanbanBoard({
                   }
                 }
                 batchSortKey = calculateSortKey(
-                  prevTask?.sort_key,
-                  stationaryNext?.sort_key
+                  prevTask?.sort_key ?? null,
+                  stationaryNext?.sort_key ?? null
                 );
               } else {
-                // Both neighbors are moving - distribute evenly in batch
-                // Find boundary tasks (first and last non-moving tasks around the batch)
+                // Both neighbors are moving - find boundary tasks
                 let boundaryPrev: Task | undefined;
                 let boundaryNext: Task | undefined;
 
@@ -1530,20 +1491,13 @@ export function KanbanBoard({
                   }
                 }
 
-                // Calculate even distribution
-                const prevSortKey = boundaryPrev?.sort_key ?? 0;
-                const nextSortKey =
-                  boundaryNext?.sort_key ??
-                  prevSortKey + sortedTasksToMove.length * 1000 + 1000;
-                const gap = nextSortKey - prevSortKey;
-                const step = gap / (sortedTasksToMove.length + 1);
-                batchSortKey = prevSortKey + step * (batchIndex + 1);
+                // Use calculateSortKey with boundaries
+                batchSortKey = calculateSortKey(
+                  boundaryPrev?.sort_key ?? null,
+                  boundaryNext?.sort_key ?? null
+                );
               }
             }
-
-            console.log(
-              `📍 Task ${batchIndex} (${task.name}): sort_key = ${batchSortKey}`
-            );
 
             reorderTaskMutation.mutate({
               taskId: task.id,
@@ -1562,11 +1516,6 @@ export function KanbanBoard({
             newSortKey
           );
 
-          // Add task to optimistic update tracking BEFORE mutation
-          setOptimisticUpdateInProgress((prev) =>
-            new Set(prev).add(activeTask.id)
-          );
-
           reorderTaskMutation.mutate({
             taskId: activeTask.id,
             newListId: targetListId,
@@ -1575,7 +1524,6 @@ export function KanbanBoard({
         }
 
         // Reset drag state AFTER mutation is called (so optimistic update happens first)
-        // Use requestAnimationFrame to ensure React Query's optimistic update completes
         requestAnimationFrame(() => {
           setActiveColumn(null);
           setActiveTask(null);
@@ -1583,15 +1531,8 @@ export function KanbanBoard({
           setDragPreviewPosition(null);
           pickedUpTaskColumn.current = null;
           (processDragOver as any).lastTargetListId = null;
-
-          // Clear optimistic update tracking after a short delay to allow React Query to settle
-          setTimeout(() => {
-            setOptimisticUpdateInProgress((prev) => {
-              const next = new Set(prev);
-              if (activeTask) next.delete(activeTask.id);
-              return next;
-            });
-          }, 100);
+          // Clear optimistic update tracking immediately on drag end
+          setOptimisticUpdateInProgress(new Set());
         });
       } else {
         console.log('ℹ️ Task position unchanged, no update needed');
@@ -1602,6 +1543,8 @@ export function KanbanBoard({
         setDragPreviewPosition(null);
         pickedUpTaskColumn.current = null;
         (processDragOver as any).lastTargetListId = null;
+        // Clear optimistic update tracking
+        setOptimisticUpdateInProgress(new Set());
       }
     }
 
