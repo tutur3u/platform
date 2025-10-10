@@ -25,7 +25,6 @@ export default async function WorkspaceInvoicesPage({
   params,
   searchParams,
 }: Props) {
-
   return (
     <WorkspaceWrapper params={params}>
       {async ({ wsId }) => {
@@ -38,7 +37,14 @@ export default async function WorkspaceInvoicesPage({
         const canCreateInvoices = containsPermission('create_invoices');
         const canDeleteInvoices = containsPermission('delete_invoices');
 
-        return <InvoicesPage wsId={wsId} searchParams={sp} canCreateInvoices={canCreateInvoices} canDeleteInvoices={canDeleteInvoices} />;
+        return (
+          <InvoicesPage
+            wsId={wsId}
+            searchParams={sp}
+            canCreateInvoices={canCreateInvoices}
+            canDeleteInvoices={canDeleteInvoices}
+          />
+        );
       }}
     </WorkspaceWrapper>
   );

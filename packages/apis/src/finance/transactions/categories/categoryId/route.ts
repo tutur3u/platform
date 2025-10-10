@@ -28,7 +28,7 @@ export async function GET(_: Request, { params }: Params) {
     .from('transaction_categories')
     .select('*')
     .eq('id', categoryId)
-    .eq('ws_id', wsId)  
+    .eq('ws_id', wsId)
     .single();
 
   if (error) {

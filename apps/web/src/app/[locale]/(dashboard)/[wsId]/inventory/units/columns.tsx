@@ -77,6 +77,12 @@ export const productUnitColumns = (
   },
   {
     id: 'actions',
-    cell: ({ row }) => <ProductUnitRowActions row={row} canDeleteInventory={extraData?.canDeleteInventory} canUpdateInventory={extraData?.canUpdateInventory} />,
+    cell: ({ row }) => (
+      <ProductUnitRowActions
+        row={row}
+        canDeleteInventory={extraData?.canDeleteInventory}
+        canUpdateInventory={extraData?.canUpdateInventory}
+      />
+    ),
   },
 ];

@@ -157,7 +157,7 @@ export async function POST(req: Request, { params }: Params) {
   const supabase = await createClient();
   const { wsId } = await params;
 
-  const { withoutPermission} = await getPermissions({
+  const { withoutPermission } = await getPermissions({
     wsId,
   });
   if (withoutPermission('create_invoices')) {

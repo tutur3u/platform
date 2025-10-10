@@ -49,7 +49,6 @@ export async function GET(_: Request, { params }: Params) {
 }
 
 export async function PUT(req: Request, { params }: Params) {
-
   const { wsId, userId } = await params;
 
   // Check permissions
@@ -72,7 +71,7 @@ export async function PUT(req: Request, { params }: Params) {
     return NextResponse.json(
       {
         message: 'Invalid request body',
-        errors: schemaResult.error.issues.map(issue => ({
+        errors: schemaResult.error.issues.map((issue) => ({
           field: issue.path.join('.'),
           message: issue.message,
         })),

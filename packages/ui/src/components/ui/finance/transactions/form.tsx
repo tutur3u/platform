@@ -57,11 +57,16 @@ const FormSchema = z.object({
   tag_ids: z.array(z.string()).optional(),
 });
 
-export function TransactionForm({ wsId, data, onFinish, canCreateTransactions, canUpdateTransactions }: Props) {
+export function TransactionForm({
+  wsId,
+  data,
+  onFinish,
+  canCreateTransactions,
+  canUpdateTransactions,
+}: Props) {
   const t = useTranslations();
   const locale = useLocale();
   const queryClient = useQueryClient();
-
 
   const [loading, setLoading] = useState(false);
   const router = useRouter();
@@ -266,7 +271,9 @@ export function TransactionForm({ wsId, data, onFinish, canCreateTransactions, c
                         name,
                       });
                     }}
-                    disabled={loading || categoriesLoading || !hasFormPermission}
+                    disabled={
+                      loading || categoriesLoading || !hasFormPermission
+                    }
                   />
                   <FormMessage />
                 </FormItem>
@@ -443,7 +450,11 @@ export function TransactionForm({ wsId, data, onFinish, canCreateTransactions, c
           <div className="h-0" />
           <Separator />
 
-          <Button type="submit" className="w-full" disabled={loading || !hasFormPermission}>
+          <Button
+            type="submit"
+            className="w-full"
+            disabled={loading || !hasFormPermission}
+          >
             {loading
               ? t('common.processing')
               : data?.id

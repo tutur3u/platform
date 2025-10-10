@@ -21,7 +21,7 @@ interface Props {
 export default async function TransactionsPage({ wsId, searchParams }: Props) {
   const t = await getTranslations();
 
-  const { containsPermission} = await getPermissions({
+  const { containsPermission } = await getPermissions({
     wsId,
   });
 
@@ -41,7 +41,14 @@ export default async function TransactionsPage({ wsId, searchParams }: Props) {
         description={t('ws-transactions.description')}
         createTitle={t('ws-transactions.create')}
         createDescription={t('ws-transactions.create_description')}
-        form={canCreateTransactions ? <TransactionForm wsId={wsId} canCreateTransactions={canCreateTransactions} /> : undefined}
+        form={
+          canCreateTransactions ? (
+            <TransactionForm
+              wsId={wsId}
+              canCreateTransactions={canCreateTransactions}
+            />
+          ) : undefined
+        }
       />
       <Separator className="my-4" />
       <TransactionsInfinitePage

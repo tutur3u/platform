@@ -152,10 +152,10 @@ export async function POST(req: Request, { params }: Params) {
     return NextResponse.json(
       {
         message: 'Invalid request body',
-        errors: validationResult.error.issues.map(issue => ({
+        errors: validationResult.error.issues.map((issue) => ({
           field: issue.path.join('.'),
           message: issue.message,
-        }))
+        })),
       },
       { status: 400 }
     );

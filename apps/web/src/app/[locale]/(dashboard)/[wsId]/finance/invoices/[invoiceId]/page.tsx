@@ -29,9 +29,14 @@ export default async function WorkspaceInvoiceDetailsPage({ params }: Props) {
 
         const canUpdateInvoices = containsPermission('update_invoices');
         return (
-          <InvoiceDetailsPage wsId={wsId} invoiceId={invoiceId} locale={locale} canUpdateInvoices={canUpdateInvoices} />
-        )
+          <InvoiceDetailsPage
+            wsId={wsId}
+            invoiceId={invoiceId}
+            locale={locale}
+            canUpdateInvoices={canUpdateInvoices}
+          />
+        );
       }}
     </WorkspaceWrapper>
-  )
+  );
 }

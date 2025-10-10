@@ -195,7 +195,12 @@ export function TransactionEditDialog({
   const isExpense = selectedCategory?.is_expense !== false;
   const numericAmount = parseFloat(amount) || 0;
 
-  const canSave = numericAmount > 0 && walletId && categoryId && takenAt && canUpdateTransactions;
+  const canSave =
+    numericAmount > 0 &&
+    walletId &&
+    categoryId &&
+    takenAt &&
+    canUpdateTransactions;
 
   // Update display amount when amount changes
   useEffect(() => {
@@ -254,14 +259,16 @@ export function TransactionEditDialog({
       );
 
       if (res.ok) {
-        toast.success(transaction?.id
+        toast.success(
+          transaction?.id
             ? t('ws-transactions.edit')
             : t('ws-transactions.create'),
           {
             description: transaction?.id
               ? 'Transaction updated successfully'
               : 'Transaction created successfully',
-        });
+          }
+        );
 
         // Invalidate all transaction queries (including infinite scroll)
         await queryClient.invalidateQueries({
@@ -276,7 +283,11 @@ export function TransactionEditDialog({
         onClose();
       } else {
         const error = await res.json();
-        toast.error( error instanceof Error ? error.message : t('ws-transactions.error_saving_transaction'));
+        toast.error(
+          error instanceof Error
+            ? error.message
+            : t('ws-transactions.error_saving_transaction')
+        );
       }
     } catch {
       toast.error(t('ws-transactions.error_saving_transaction'));
@@ -339,7 +350,11 @@ export function TransactionEditDialog({
         onClose();
       } else {
         const error = await res.json();
-        toast.error(error instanceof Error ? error.message : t('ws-transactions.error_deleting_transaction'));
+        toast.error(
+          error instanceof Error
+            ? error.message
+            : t('ws-transactions.error_deleting_transaction')
+        );
       }
     } catch {
       toast.error(t('ws-transactions.error_deleting_transaction'));
@@ -466,7 +481,9 @@ export function TransactionEditDialog({
                     ) : (
                       <>
                         <Check className="h-4 w-4" />
-                        {transaction?.id ? t('ws-transactions.save_changes') : t('ws-transactions.create_transaction')}
+                        {transaction?.id
+                          ? t('ws-transactions.save_changes')
+                          : t('ws-transactions.create_transaction')}
                       </>
                     )}
                   </Button>
@@ -634,7 +651,8 @@ export function TransactionEditDialog({
                             'transition-all',
                             isSelected && 'ring-2',
                             canUpdateTransactions && 'cursor-pointer',
-                            !canUpdateTransactions && 'opacity-60 cursor-not-allowed'
+                            !canUpdateTransactions &&
+                              'opacity-60 cursor-not-allowed'
                           )}
                           style={{
                             borderColor: tag.color,
@@ -647,7 +665,11 @@ export function TransactionEditDialog({
                                 '--tw-ring-color': tag.color,
                               } as React.CSSProperties)),
                           }}
-                          onClick={canUpdateTransactions ? () => toggleTag(tag.id) : undefined}
+                          onClick={
+                            canUpdateTransactions
+                              ? () => toggleTag(tag.id)
+                              : undefined
+                          }
                         >
                           {tag.name}
                         </Badge>
@@ -696,7 +718,9 @@ export function TransactionEditDialog({
                     ) : (
                       <>
                         <Check className="h-4 w-4" />
-                        {transaction?.id ? t('ws-transactions.save_changes') : t('ws-transactions.create_transaction')}
+                        {transaction?.id
+                          ? t('ws-transactions.save_changes')
+                          : t('ws-transactions.create_transaction')}
                       </>
                     )}
                   </Button>

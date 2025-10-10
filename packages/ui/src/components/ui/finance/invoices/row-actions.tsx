@@ -22,7 +22,11 @@ interface InvoiceRowActionsProps {
   canDeleteInvoices?: boolean;
 }
 
-export function InvoiceRowActions({ row, href, canDeleteInvoices = false }: InvoiceRowActionsProps) {
+export function InvoiceRowActions({
+  row,
+  href,
+  canDeleteInvoices = false,
+}: InvoiceRowActionsProps) {
   const t = useTranslations();
 
   const router = useRouter();
@@ -48,7 +52,6 @@ export function InvoiceRowActions({ row, href, canDeleteInvoices = false }: Invo
       toast.error(data.message || t('ws-invoices.failed_delete_invoice'));
     }
   };
-  
 
   if (!data.id || !data.ws_id) return null;
 
@@ -75,12 +78,14 @@ export function InvoiceRowActions({ row, href, canDeleteInvoices = false }: Invo
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-[160px]">
           <DropdownMenuSeparator />
-          <DropdownMenuItem onClick={deleteInvoice} disabled={!canDeleteInvoices}>
+          <DropdownMenuItem
+            onClick={deleteInvoice}
+            disabled={!canDeleteInvoices}
+          >
             {t('common.delete')}
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
-
-    </div>  
+    </div>
   );
 }

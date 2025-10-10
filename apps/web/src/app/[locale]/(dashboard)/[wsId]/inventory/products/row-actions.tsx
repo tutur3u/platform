@@ -27,7 +27,7 @@ export function ProductRowActions({
   row,
   href,
   canUpdateInventory = false,
-  canDeleteInventory = false
+  canDeleteInventory = false,
 }: ProductRowActionsProps) {
   const t = useTranslations();
   const router = useRouter();
@@ -53,7 +53,9 @@ export function ProductRowActions({
       router.refresh();
     } else {
       const data = await res.json();
-      toast.error(data.message || t('ws-inventory-products.failed_delete_product'));
+      toast.error(
+        data.message || t('ws-inventory-products.failed_delete_product')
+      );
     }
   }
 
@@ -86,7 +88,9 @@ export function ProductRowActions({
             </DropdownMenuItem>
           )}
 
-          {canUpdateInventory && canDeleteInventory && <DropdownMenuSeparator />}
+          {canUpdateInventory && canDeleteInventory && (
+            <DropdownMenuSeparator />
+          )}
           {canDeleteInventory && (
             <DropdownMenuItem onClick={deleteProduct}>
               {t('common.delete')}

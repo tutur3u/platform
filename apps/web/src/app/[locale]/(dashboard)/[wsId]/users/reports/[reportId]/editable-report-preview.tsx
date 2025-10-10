@@ -102,7 +102,6 @@ export default function EditableReportPreview({
   const searchParams = useSearchParams();
   const queryClient = useQueryClient();
 
-
   const form = useForm({
     resolver: zodResolver(UserReportFormSchema),
     defaultValues: {

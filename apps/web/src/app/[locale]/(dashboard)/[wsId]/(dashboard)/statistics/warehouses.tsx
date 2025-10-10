@@ -24,8 +24,6 @@ export default async function WarehousesStatistics({ wsId }: { wsId: string }) {
         .eq('ws_id', wsId)
     : { count: 0 };
 
-
-
   return (
     <StatisticCard
       title={t('workspace-inventory-tabs.warehouses')}

@@ -77,6 +77,12 @@ export const productSupplierColumns = (
   },
   {
     id: 'actions',
-    cell: ({ row }) => <ProductSupplierRowActions row={row} canDeleteInventory={extraData?.canDeleteInventory} canUpdateInventory={extraData?.canUpdateInventory} />,
+    cell: ({ row }) => (
+      <ProductSupplierRowActions
+        row={row}
+        canDeleteInventory={extraData?.canDeleteInventory}
+        canUpdateInventory={extraData?.canUpdateInventory}
+      />
+    ),
   },
 ];

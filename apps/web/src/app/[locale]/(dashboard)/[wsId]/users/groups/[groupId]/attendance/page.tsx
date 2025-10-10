@@ -42,7 +42,7 @@ export default async function UserGroupAttendancePage({
   const { wsId: id, groupId } = await params;
   const workspace = await getWorkspace(id);
   const wsId = workspace.id;
-  const {containsPermission} = await getPermissions({
+  const { containsPermission } = await getPermissions({
     wsId,
   });
   const canCheckUserAttendance = containsPermission('check_user_attendance');
@@ -50,7 +50,6 @@ export default async function UserGroupAttendancePage({
     notFound();
   }
   const sp = await searchParams;
-
 
   const requestedDateParam = sp?.date;
   const requestedDate = Array.isArray(requestedDateParam)
