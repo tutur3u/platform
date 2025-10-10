@@ -31,7 +31,6 @@ export default async function WorkspaceSuppliersPage({
   params,
   searchParams,
 }: Props) {
-
   return (
     <WorkspaceWrapper params={params}>
       {async ({ wsId }) => {
@@ -41,24 +40,26 @@ export default async function WorkspaceSuppliersPage({
           wsId,
         });
 
-  if (!permissions.includes('view_inventory')) {
-    return (
-      <div className="flex h-full items-center justify-center">
-        <div className="text-center">
-          <h2 className="text-lg font-semibold">{t('ws-roles.inventory_access_denied')}</h2>
-          <p className="text-muted-foreground">
-            {t('ws-roles.inventory_suppliers_access_denied_description')}
-          </p>
-        </div>
-      </div>
-    );
-  }
+        if (!permissions.includes('view_inventory')) {
+          return (
+            <div className="flex h-full items-center justify-center">
+              <div className="text-center">
+                <h2 className="text-lg font-semibold">
+                  {t('ws-roles.inventory_access_denied')}
+                </h2>
+                <p className="text-muted-foreground">
+                  {t('ws-roles.inventory_suppliers_access_denied_description')}
+                </p>
+              </div>
+            </div>
+          );
+        }
 
-  const canCreateInventory = permissions.includes('create_inventory');
-  const canUpdateInventory = permissions.includes('update_inventory');
-  const canDeleteInventory = permissions.includes('delete_inventory');
+        const canCreateInventory = permissions.includes('create_inventory');
+        const canUpdateInventory = permissions.includes('update_inventory');
+        const canDeleteInventory = permissions.includes('delete_inventory');
 
-  const { data, count } = await getData(wsId, await searchParams);
+        const { data, count } = await getData(wsId, await searchParams);
 
         return (
           <>

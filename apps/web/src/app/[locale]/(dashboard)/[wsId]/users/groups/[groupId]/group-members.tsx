@@ -442,21 +442,23 @@ export default function GroupMembers({
                     )}
                     {canViewPublicInfo && (
                       <>
-                    <div className="text-sm flex items-center gap-2">
-                      <VenusAndMars className="h-4 w-4" />
-                      <span className="sr-only">{t('common.gender')}</span>
-                      <span>{person.gender || t('common.unknown')}</span>
-                    </div>
-                    <div className="text-sm flex items-center gap-2">
-                      <Cake className="h-4 w-4" />
-                      <span className="sr-only">{t('common.birthday')}</span>
-                      <span>
-                        {person.birthday
-                          ? new Date(person.birthday).toLocaleDateString()
-                          : t('common.unknown')}
-                      </span>
-                    </div>
-                    </>
+                        <div className="text-sm flex items-center gap-2">
+                          <VenusAndMars className="h-4 w-4" />
+                          <span className="sr-only">{t('common.gender')}</span>
+                          <span>{person.gender || t('common.unknown')}</span>
+                        </div>
+                        <div className="text-sm flex items-center gap-2">
+                          <Cake className="h-4 w-4" />
+                          <span className="sr-only">
+                            {t('common.birthday')}
+                          </span>
+                          <span>
+                            {person.birthday
+                              ? new Date(person.birthday).toLocaleDateString()
+                              : t('common.unknown')}
+                          </span>
+                        </div>
+                      </>
                     )}
                   </div>
                 </HoverCardContent>

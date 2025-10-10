@@ -8,7 +8,7 @@ export async function GET({ params }: { params: Promise<{ wsId: string }> }) {
   const { withoutPermission } = await getPermissions({
     wsId,
   });
-  
+
   // TODO: Migrate to another permission
   if (withoutPermission('manage_finance')) {
     return NextResponse.json(

@@ -30,7 +30,6 @@ export default async function WorkspaceBatchesPage({
   params,
   searchParams,
 }: Props) {
-
   return (
     <WorkspaceWrapper params={params}>
       {async ({ wsId }) => {
@@ -44,7 +43,9 @@ export default async function WorkspaceBatchesPage({
           return (
             <div className="flex h-full items-center justify-center">
               <div className="text-center">
-                <h2 className="text-lg font-semibold">{t('ws-roles.inventory_access_denied')}</h2>
+                <h2 className="text-lg font-semibold">
+                  {t('ws-roles.inventory_access_denied')}
+                </h2>
                 <p className="text-muted-foreground">
                   {t('ws-roles.inventory_batches_access_denied_description')}
                 </p>

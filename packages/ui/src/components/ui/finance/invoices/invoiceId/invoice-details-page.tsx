@@ -164,11 +164,11 @@ export default async function InvoiceDetailsPage({
           </div>
           {canUpdateInvoices && (
             <InvoiceEditForm
-            wsId={wsId}
-            invoiceId={invoice.id}
-            initialNotice={invoice.notice}
-            initialNote={invoice.note}
-            initialWalletId={invoice.wallet_id}
+              wsId={wsId}
+              invoiceId={invoice.id}
+              initialNotice={invoice.notice}
+              initialNote={invoice.note}
+              initialWalletId={invoice.wallet_id}
             />
           )}
         </div>

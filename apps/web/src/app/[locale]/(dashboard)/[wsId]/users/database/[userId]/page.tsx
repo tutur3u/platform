@@ -187,11 +187,11 @@ export default async function WorkspaceUserDetailsPage({
           />
 
           {canCheckUserAttendance && (
-          <UserMonthAttendance
-            wsId={wsId}
-            user={{
-              id: data.id,
-              full_name: data.display_name || data.full_name,
+            <UserMonthAttendance
+              wsId={wsId}
+              user={{
+                id: data.id,
+                full_name: data.display_name || data.full_name,
                 href: `/${wsId}/users/database/${data.id}`,
               }}
             />
@@ -339,7 +339,7 @@ async function getData({
   wsId,
   userId,
   hasPrivateInfo,
-  hasPublicInfo
+  hasPublicInfo,
 }: {
   wsId: string;
   userId: string;

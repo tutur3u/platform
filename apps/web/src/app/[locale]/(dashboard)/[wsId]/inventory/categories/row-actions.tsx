@@ -27,7 +27,7 @@ interface Props {
 export function ProductCategoryRowActions({
   row,
   canUpdateInventory = true,
-  canDeleteInventory = true
+  canDeleteInventory = true,
 }: Props) {
   const t = useTranslations();
 
@@ -77,7 +77,9 @@ export function ProductCategoryRowActions({
               {t('common.edit')}
             </DropdownMenuItem>
           )}
-          {canUpdateInventory && canDeleteInventory && <DropdownMenuSeparator />}
+          {canUpdateInventory && canDeleteInventory && (
+            <DropdownMenuSeparator />
+          )}
           {canDeleteInventory && (
             <DropdownMenuItem onClick={deleteData}>
               {t('common.delete')}

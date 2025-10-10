@@ -37,7 +37,7 @@ export function ProductWarehouseForm({
   data,
   onFinish,
   canCreateInventory = false,
-  canUpdateInventory = false
+  canUpdateInventory = false,
 }: Props) {
   const t = useTranslations();
 

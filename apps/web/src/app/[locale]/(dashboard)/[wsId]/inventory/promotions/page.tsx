@@ -1,6 +1,9 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
 import type { ProductPromotion } from '@tuturuuu/types/primitives/ProductPromotion';
-import { getPermissions, getWorkspaceUser } from '@tuturuuu/utils/workspace-helper';
+import {
+  getPermissions,
+  getWorkspaceUser,
+} from '@tuturuuu/utils/workspace-helper';
 import { Button } from '@tuturuuu/ui/button';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Settings } from '@tuturuuu/ui/icons';
@@ -35,12 +38,10 @@ export default async function WorkspacePromotionsPage({
   params,
   searchParams,
 }: Props) {
-
-
   return (
     <WorkspaceWrapper params={params}>
       {async ({ wsId }) => {
-          const t = await getTranslations();
+        const t = await getTranslations();
         const { permissions } = await getPermissions({
           wsId,
         });
@@ -49,7 +50,9 @@ export default async function WorkspacePromotionsPage({
           return (
             <div className="flex h-full items-center justify-center">
               <div className="text-center">
-                <h2 className="text-lg font-semibold">{t('ws-roles.inventory_access_denied')}</h2>
+                <h2 className="text-lg font-semibold">
+                  {t('ws-roles.inventory_access_denied')}
+                </h2>
                 <p className="text-muted-foreground">
                   {t('ws-roles.inventory_promotions_access_denied_description')}
                 </p>

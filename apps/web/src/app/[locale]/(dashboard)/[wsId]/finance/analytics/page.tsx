@@ -16,11 +16,9 @@ interface Props {
 }
 
 export default async function WorkspaceAnalyticsPage({ params }: Props) {
-
   return (
     <WorkspaceWrapper params={params}>
       {async ({ wsId }) => {
-
         const { withoutPermission } = await getPermissions({
           wsId,
         });
@@ -29,6 +27,5 @@ export default async function WorkspaceAnalyticsPage({ params }: Props) {
         return <AnalyticsPage wsId={wsId} />;
       }}
     </WorkspaceWrapper>
-  )
-
+  );
 }

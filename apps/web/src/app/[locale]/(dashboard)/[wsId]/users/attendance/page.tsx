@@ -48,11 +48,13 @@ export default async function WorkspaceUserAttendancePage({
         const locale = await getLocale();
         const t = await getTranslations();
 
-        const {containsPermission} = await getPermissions({
+        const { containsPermission } = await getPermissions({
           wsId,
         });
 
-        const canCheckUserAttendance = containsPermission('check_user_attendance');
+        const canCheckUserAttendance = containsPermission(
+          'check_user_attendance'
+        );
 
         if (!canCheckUserAttendance) {
           notFound();
@@ -63,8 +65,6 @@ export default async function WorkspaceUserAttendancePage({
           wsId,
           await searchParams
         );
-
-
 
         return (
           <>

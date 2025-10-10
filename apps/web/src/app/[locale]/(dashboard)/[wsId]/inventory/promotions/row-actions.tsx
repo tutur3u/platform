@@ -29,7 +29,11 @@ interface PromotionRowActionsProps {
   canUpdateInventory?: boolean;
 }
 
-export function PromotionRowActions({ row, canDeleteInventory, canUpdateInventory }: PromotionRowActionsProps) {
+export function PromotionRowActions({
+  row,
+  canDeleteInventory,
+  canUpdateInventory,
+}: PromotionRowActionsProps) {
   const t = useTranslations();
   const router = useRouter();
 
@@ -54,7 +58,9 @@ export function PromotionRowActions({ row, canDeleteInventory, canUpdateInventor
       router.refresh();
     } else {
       const data = await res.json();
-      toast.error(data.message || t('ws-inventory-promotions.failed_delete_promotion'));
+      toast.error(
+        data.message || t('ws-inventory-promotions.failed_delete_promotion')
+      );
     }
   };
 

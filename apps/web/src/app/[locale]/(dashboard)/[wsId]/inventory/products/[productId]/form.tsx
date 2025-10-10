@@ -774,7 +774,13 @@ export function ProductForm({
         title={t('ws-product-categories.create')}
         editDescription={t('ws-product-categories.create_description')}
         setOpen={setCategoryDialog}
-        form={<ProductCategoryForm wsId={wsId} canCreateInventory={canCreateInventory} canUpdateInventory={canUpdateInventory} />}
+        form={
+          <ProductCategoryForm
+            wsId={wsId}
+            canCreateInventory={canCreateInventory}
+            canUpdateInventory={canUpdateInventory}
+          />
+        }
       />
 
       <ModifiableDialogTrigger
@@ -783,7 +789,13 @@ export function ProductForm({
         title={t('ws-product-warehouses.create')}
         editDescription={t('ws-product-warehouses.create_description')}
         setOpen={setWarehouseDialog}
-        form={<ProductWarehouseForm wsId={wsId} canCreateInventory={canCreateInventory} canUpdateInventory={canUpdateInventory} />}
+        form={
+          <ProductWarehouseForm
+            wsId={wsId}
+            canCreateInventory={canCreateInventory}
+            canUpdateInventory={canUpdateInventory}
+          />
+        }
       />
     </>
   );

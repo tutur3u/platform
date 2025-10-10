@@ -22,9 +22,13 @@ interface Props {
   canDeleteInvoices?: boolean;
 }
 
-export default async function InvoicesPage({ wsId, searchParams, canCreateInvoices = false, canDeleteInvoices = false }: Props) {
+export default async function InvoicesPage({
+  wsId,
+  searchParams,
+  canCreateInvoices = false,
+  canDeleteInvoices = false,
+}: Props) {
   const t = await getTranslations();
-
 
   const { data: rawData, count } = await getData(wsId, searchParams);
 
@@ -44,12 +48,12 @@ export default async function InvoicesPage({ wsId, searchParams, canCreateInvoic
         createDescription={t('ws-invoices.create_description')}
         action={
           canCreateInvoices ? (
-          <Link href={`/${wsId}/finance/invoices/new`}>
-            <Button>
-              <Plus />
-              {t('ws-invoices.create')}
-            </Button>
-          </Link>
+            <Link href={`/${wsId}/finance/invoices/new`}>
+              <Button>
+                <Plus />
+                {t('ws-invoices.create')}
+              </Button>
+            </Link>
           ) : null
         }
       />

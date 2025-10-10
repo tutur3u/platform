@@ -39,7 +39,7 @@ export default async function UserGroupIndicatorsPage({ params }: Props) {
   const workspace = await getWorkspace(id);
   const wsId = workspace.id;
 
-  const {containsPermission} = await getPermissions({
+  const { containsPermission } = await getPermissions({
     wsId,
   });
   const canCheckUserAttendance = containsPermission('check_user_attendance');
@@ -91,18 +91,18 @@ export default async function UserGroupIndicatorsPage({ params }: Props) {
               </Link>
               {canCheckUserAttendance && (
                 <Link href={`/${wsId}/users/groups/${groupId}/attendance`}>
-                <Button
-                  type="button"
-                  variant="secondary"
-                  className={cn(
-                    'border font-semibold max-sm:w-full',
-                    'border-dynamic-purple/20 bg-dynamic-purple/10 text-dynamic-purple hover:bg-dynamic-purple/20'
-                  )}
-                >
-                  <UserCheck className="h-5 w-5" />
-                  {t('ws-user-group-details.attendance')}
-                </Button>
-              </Link>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    className={cn(
+                      'border font-semibold max-sm:w-full',
+                      'border-dynamic-purple/20 bg-dynamic-purple/10 text-dynamic-purple hover:bg-dynamic-purple/20'
+                    )}
+                  >
+                    <UserCheck className="h-5 w-5" />
+                    {t('ws-user-group-details.attendance')}
+                  </Button>
+                </Link>
               )}
               <Link href={`/${wsId}/users/groups/${groupId}/reports`}>
                 <Button

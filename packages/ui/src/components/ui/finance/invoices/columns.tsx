@@ -216,6 +216,12 @@ export const invoiceColumns = (
   },
   {
     id: 'actions',
-    cell: ({ row }) => <InvoiceRowActions row={row} href={row.original.href} canDeleteInvoices={extraData?.canDeleteInvoices} />,
+    cell: ({ row }) => (
+      <InvoiceRowActions
+        row={row}
+        href={row.original.href}
+        canDeleteInvoices={extraData?.canDeleteInvoices}
+      />
+    ),
   },
 ];
