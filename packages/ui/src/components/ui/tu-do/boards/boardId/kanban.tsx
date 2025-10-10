@@ -1356,7 +1356,7 @@ export function KanbanBoard({
       // Check if we need to move/reorder
       const needsUpdate =
         targetListId !== originalListId || // Moving to different list
-        (activeTask.sort_key ?? 0) !== newSortKey; // Position changed (strict integer comparison)
+        (activeTask.sort_key ?? Number.MAX_SAFE_INTEGER) !== newSortKey; // Position changed (strict integer comparison)
 
       if (needsUpdate) {
         console.log('✅ Task needs reordering');
