@@ -6,7 +6,7 @@
     "light": "https://rmitnct.club/media/logos/transparent.png",
     "href": "https://rmitnct.club/"
   },
-  "favicon": "/favicon.svg",
+  "favicon": "/favicon.ico",
   "colors": {
     "primary": "#000000",
     "light": "#ffffff",
@@ -19,12 +19,12 @@
   "topbarLinks": [
     {
       "name": "Support",
-      "url": "mailto:contact@tuturuuu.com"
+      "url": "mailto:contact@rmitnct.club"
     }
   ],
   "topbarCtaButton": {
     "name": "Get Started",
-    "url": "https://tuturuuu.com/login"
+    "url": "https://rmitnct.club/login"
   },
   "tabs": [],
   "anchors": [
@@ -48,12 +48,44 @@
       ]
     },
     {
-      "group": "Personalization",
-      "pages": ["personalization/themes", "personalization/language"]
-    },
-    {
-      "group": "Features",
-      "pages": ["features/neo-chess", "features/neo-crush"]
+      "group": "Hub",
+      "pages": [
+        "platform/index",
+        "platform/workspace-routing",
+        {
+          "group": "Features",
+          "pages": [
+            "platform/features/command-center-dashboard",
+            "platform/features/meet-together",
+            "platform/features/user-management"
+          ]
+        },
+        {
+          "group": "Architecture",
+          "pages": [
+            "platform/architecture/api-routes",
+            "platform/architecture/authentication",
+            "platform/architecture/authorization",
+            "platform/architecture/data-fetching",
+            "platform/architecture/routing",
+            "platform/architecture/trpc"
+          ]
+        },
+        {
+          "group": "Personalization",
+          "pages": [
+            "platform/personalization/themes",
+            "platform/personalization/language"
+          ]
+        },
+        {
+          "group": "Applications",
+          "pages": [
+            "platform/applications/neo-chess",
+            "platform/applications/neo-crush"
+          ]
+        }
+      ]
     }
   ],
   "footerSocials": {
