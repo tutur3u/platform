@@ -14,8 +14,12 @@ vi.mock('@tuturuuu/supabase/next/client', () => ({
   createClient: vi.fn(),
 }));
 
-vi.mock('@tuturuuu/ui/hooks/use-toast', () => ({
-  toast: vi.fn(),
+vi.mock('@tuturuuu/ui/sonner', () => ({
+  toast: {
+    error: vi.fn(),
+    success: vi.fn(),
+    info: vi.fn(),
+  },
 }));
 
 // Mock fetch globally
@@ -70,7 +74,7 @@ describe('useTaskLabelManagement', () => {
 
     // Import mocked modules
     const { createClient } = await import('@tuturuuu/supabase/next/client');
-    const { toast } = await import('@tuturuuu/ui/hooks/use-toast');
+    const { toast } = await import('@tuturuuu/ui/sonner');
 
     // Create mock functions
     mockDelete = vi.fn();
@@ -251,12 +255,7 @@ describe('useTaskLabelManagement', () => {
       expect(cachedTasks).toEqual(originalTasks);
 
       // Verify error toast was shown
-      expect(mockToast).toHaveBeenCalledWith(
-        expect.objectContaining({
-          title: 'Label update failed',
-          variant: 'destructive',
-        })
-      );
+      expect(mockToast.error).toHaveBeenCalledWith('Database error');
     });
   });
 
@@ -392,12 +391,7 @@ describe('useTaskLabelManagement', () => {
         }
       });
 
-      expect(mockToast).toHaveBeenCalledWith(
-        expect.objectContaining({
-          title: 'Failed to create label',
-          variant: 'destructive',
-        })
-      );
+      expect(mockToast.error).toHaveBeenCalledWith('Failed to create label');
 
       expect(result.current.creatingLabel).toBe(false);
     });
@@ -436,13 +430,13 @@ describe('useTaskLabelManagement', () => {
         await result.current.createNewLabel();
       });
 
-      // Should show partial success message
-      expect(mockToast).toHaveBeenCalledWith(
-        expect.objectContaining({
-          title: 'Label created (not applied)',
-          variant: 'destructive',
-        })
+      // Should show error toast (not success)
+      expect(mockToast.error).toHaveBeenCalledWith(
+        'The label was created but could not be attached to the task. Refresh and try manually.'
       );
+
+      // Should NOT show success toast
+      expect(mockToast.success).not.toHaveBeenCalled();
     });
 
     it('should set creatingLabel state during operation', async () => {
