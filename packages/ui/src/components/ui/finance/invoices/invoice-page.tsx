@@ -6,7 +6,6 @@ import { CustomDataTable } from '@tuturuuu/ui/custom/tables/custom-data-table';
 import { Plus } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
-import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
 import { invoiceColumns } from './columns';
@@ -21,11 +20,9 @@ interface Props {
   };
 }
 
-export default async function InvoicesPage({ wsId: id, searchParams }: Props) {
+export default async function InvoicesPage({ wsId, searchParams }: Props) {
   const t = await getTranslations();
 
-  const workspace = await getWorkspace(id);
-  const wsId = workspace.id;
 
   const { data: rawData, count } = await getData(wsId, searchParams);
 

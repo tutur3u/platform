@@ -1,5 +1,6 @@
 import InvoiceDetailsPage from '@tuturuuu/ui/finance/invoices/invoiceId/invoice-details-page';
 import type { Metadata } from 'next';
+import WorkspaceWrapper from '@/components/workspace-wrapper';
 
 export const metadata: Metadata = {
   title: 'Invoice Details',
@@ -16,9 +17,13 @@ interface Props {
 }
 
 export default async function WorkspaceInvoiceDetailsPage({ params }: Props) {
-  const { wsId, invoiceId, locale } = await params;
-
   return (
-    <InvoiceDetailsPage wsId={wsId} invoiceId={invoiceId} locale={locale} />
-  );
+    <WorkspaceWrapper params={params}>
+      {async ({ wsId, invoiceId, locale }) => {
+        return (
+          <InvoiceDetailsPage wsId={wsId} invoiceId={invoiceId} locale={locale} />
+        )
+      }}
+    </WorkspaceWrapper>
+  )
 }

@@ -16,7 +16,7 @@ interface Props {
 export default async function WorkspaceInvoicesPage({ params }: Props) {
   return (
     <WorkspaceWrapper params={params}>
-      {({ wsId }) => <NewInvoicePage wsId={wsId} />}
+      {async ({ wsId }) => <NewInvoicePage wsId={wsId} />}
     </WorkspaceWrapper>
   );
 }
