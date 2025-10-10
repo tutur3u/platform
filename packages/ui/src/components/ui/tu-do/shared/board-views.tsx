@@ -180,12 +180,106 @@ export function BoardViews({
 
   // Apply optimistic overrides so views receive up-to-date edits (durations, name, dates) even before refetch.
   const effectiveTasks = useMemo(() => {
-    if (!Object.keys(taskOverrides).length) return filteredTasks;
-    return filteredTasks.map((t) => {
-      const o = taskOverrides[t.id];
-      return o ? ({ ...t, ...o } as Task) : t;
-    });
-  }, [filteredTasks, taskOverrides]);
+    let tasks = filteredTasks;
+
+    // Apply overrides
+    if (Object.keys(taskOverrides).length) {
+      tasks = tasks.map((t) => {
+        const o = taskOverrides[t.id];
+        return o ? ({ ...t, ...o } as Task) : t;
+      });
+    }
+
+    // Apply sorting
+    if (filters.sortBy) {
+      const sorted = [...tasks];
+      switch (filters.sortBy) {
+        case 'name-asc':
+          sorted.sort((a, b) => a.name.localeCompare(b.name));
+          break;
+        case 'name-desc':
+          sorted.sort((a, b) => b.name.localeCompare(a.name));
+          break;
+        case 'priority-high': {
+          const priorityOrder = { critical: 0, high: 1, normal: 2, low: 3 };
+          sorted.sort((a, b) => {
+            const priorityA = a.priority
+              ? priorityOrder[a.priority]
+              : Number.MAX_SAFE_INTEGER;
+            const priorityB = b.priority
+              ? priorityOrder[b.priority]
+              : Number.MAX_SAFE_INTEGER;
+            return priorityA - priorityB;
+          });
+          break;
+        }
+        case 'priority-low': {
+          const priorityOrder = { critical: 0, high: 1, normal: 2, low: 3 };
+          sorted.sort((a, b) => {
+            const priorityA = a.priority
+              ? priorityOrder[a.priority]
+              : Number.MAX_SAFE_INTEGER;
+            const priorityB = b.priority
+              ? priorityOrder[b.priority]
+              : Number.MAX_SAFE_INTEGER;
+            return priorityB - priorityA;
+          });
+          break;
+        }
+        case 'due-date-asc':
+          sorted.sort((a, b) => {
+            if (!a.end_date && !b.end_date) return 0;
+            if (!a.end_date) return 1;
+            if (!b.end_date) return -1;
+            return (
+              new Date(a.end_date).getTime() - new Date(b.end_date).getTime()
+            );
+          });
+          break;
+        case 'due-date-desc':
+          sorted.sort((a, b) => {
+            if (!a.end_date && !b.end_date) return 0;
+            if (!a.end_date) return -1;
+            if (!b.end_date) return 1;
+            return (
+              new Date(b.end_date).getTime() - new Date(a.end_date).getTime()
+            );
+          });
+          break;
+        case 'created-date-desc':
+          sorted.sort(
+            (a, b) =>
+              new Date(b.created_at).getTime() -
+              new Date(a.created_at).getTime()
+          );
+          break;
+        case 'created-date-asc':
+          sorted.sort(
+            (a, b) =>
+              new Date(a.created_at).getTime() -
+              new Date(b.created_at).getTime()
+          );
+          break;
+        case 'estimation-high':
+          sorted.sort((a, b) => {
+            const estA = a.estimation_points ?? Number.MIN_SAFE_INTEGER;
+            const estB = b.estimation_points ?? Number.MIN_SAFE_INTEGER;
+            return estB - estA;
+          });
+          break;
+        case 'estimation-low':
+          sorted.sort((a, b) => {
+            const estA = a.estimation_points ?? Number.MAX_SAFE_INTEGER;
+            const estB = b.estimation_points ?? Number.MAX_SAFE_INTEGER;
+            return estA - estB;
+          });
+          break;
+      }
+      return sorted;
+    }
+
+    return tasks;
+  }, [filteredTasks, taskOverrides, filters.sortBy]);
 
   const handleTaskPartialUpdate = (taskId: string, partial: Partial<Task>) => {
     setTaskOverrides((prev) => ({
@@ -201,6 +295,13 @@ export function BoardViews({
       queryClient.invalidateQueries({ queryKey: ['task_lists', board.id] }),
     ]);
   };
+
+  // Auto-set list status filter to 'all' when in status-grouped view
+  useEffect(() => {
+    if (currentView === 'status-grouped' && listStatusFilter !== 'all') {
+      setListStatusFilter('all');
+    }
+  }, [currentView, listStatusFilter]);
 
   // Global keyboard shortcuts for all views
   useEffect(() => {

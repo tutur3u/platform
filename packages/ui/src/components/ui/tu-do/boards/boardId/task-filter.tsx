@@ -54,6 +54,18 @@ interface TaskProject {
   name: string;
 }
 
+export type SortOption =
+  | 'name-asc'
+  | 'name-desc'
+  | 'priority-high'
+  | 'priority-low'
+  | 'due-date-asc'
+  | 'due-date-desc'
+  | 'created-date-desc'
+  | 'created-date-asc'
+  | 'estimation-high'
+  | 'estimation-low';
+
 export interface TaskFilters {
   labels: TaskLabel[];
   assignees: TaskAssignee[];
@@ -64,6 +76,7 @@ export interface TaskFilters {
   includeMyTasks: boolean;
   includeUnassigned: boolean;
   searchQuery?: string;
+  sortBy?: SortOption;
 }
 
 interface Props {
@@ -292,6 +305,7 @@ export function TaskFilter({
       estimationRange: null,
       includeMyTasks: false,
       includeUnassigned: false,
+      sortBy: undefined,
     });
   };
 
@@ -305,9 +319,18 @@ export function TaskFilter({
     filters.includeMyTasks ||
     filters.includeUnassigned;
 
+  // Calculate filter count, avoiding double-counting when "Assigned to me" is checked
+  // and the current user is also in the assignees list
+  const isCurrentUserInAssignees =
+    currentUserId && filters.assignees.some((a) => a.id === currentUserId);
+  const assigneeCount =
+    filters.includeMyTasks && isCurrentUserInAssignees
+      ? filters.assignees.length - 1
+      : filters.assignees.length;
+
   const filterCount =
     filters.labels.length +
-    filters.assignees.length +
+    assigneeCount +
     filters.projects.length +
     filters.priorities.length +
     (filters.dueDateRange ? 1 : 0) +
@@ -320,9 +343,10 @@ export function TaskFilter({
       <DropdownMenu open={open} onOpenChange={setOpen}>
         <DropdownMenuTrigger asChild>
           <Button
+            size="xs"
             variant="outline"
             className={cn(
-              'h-6 gap-1 px-1.5 text-[10px] sm:h-7 sm:gap-1.5 sm:px-2 sm:text-xs',
+              'text-[10px] sm:text-xs',
               hasFilters && 'border-primary/50 bg-primary/5'
             )}
           >
@@ -347,7 +371,7 @@ export function TaskFilter({
                   <User className="h-3.5 w-3.5" />
                   Quick Filters
                 </DropdownMenuLabel>
-                <div className="px-2 pb-2 space-y-1">
+                <div className="space-y-1 px-2 pb-2">
                   <label className="flex w-full cursor-pointer items-center gap-2 rounded-md px-2 py-2 text-sm hover:bg-accent">
                     <Checkbox
                       checked={filters.includeMyTasks}

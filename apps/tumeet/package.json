@@ -34,7 +34,7 @@
     "dayjs": "^1.11.18",
     "nanoid": "^5.1.6",
     "next": "^15.5.4",
-    "next-intl": "^4.3.11",
+    "next-intl": "^4.3.12",
     "qrcode.react": "^4.2.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
@@ -42,7 +42,7 @@
   },
   "devDependencies": {
     "@tuturuuu/typescript-config": "workspace:*",
-    "@types/node": "^24.7.0",
+    "@types/node": "^24.7.1",
     "@types/react": "^19.2.2",
     "@types/react-dom": "^19.2.1",
     "postcss": "^8.5.6",
