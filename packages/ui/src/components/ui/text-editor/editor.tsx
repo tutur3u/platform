@@ -11,7 +11,7 @@ import { debounce } from 'lodash';
 import { TextSelection } from 'prosemirror-state';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type * as Y from 'yjs';
-import type { SupabaseRealtimeProvider } from './collaboration/supabase-realtime-provider';
+import type SupabaseProvider from './collaboration/supabase-provider';
 import { getEditorExtensions } from './extensions';
 import { ToolBar } from './tool-bar';
 
@@ -58,7 +58,7 @@ interface RichTextEditorProps {
   initialCursorOffset?: number | null;
   onEditorReady?: (editor: Editor) => void;
   yjsDoc?: Y.Doc | null;
-  yjsProvider?: SupabaseRealtimeProvider | null;
+  yjsProvider?: SupabaseProvider | null;
 }
 
 export function RichTextEditor({

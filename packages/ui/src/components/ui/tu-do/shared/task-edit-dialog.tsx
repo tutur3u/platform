@@ -313,7 +313,10 @@ function TaskEditDialogComponent({
 
   // Set up Yjs collaboration (only in edit mode, not create mode)
   const { doc, provider } = useYjsCollaboration({
-    channelName: `task-editor-${task?.id || 'new'}`,
+    channel: `task-editor-${task?.id || 'new'}`,
+    tableName: 'tasks',
+    columnName: 'description_yjs_state',
+    id: task?.id || '',
     user: user
       ? {
           id: user.id || '',
@@ -321,7 +324,6 @@ function TaskEditDialogComponent({
           color: userColor || '',
         }
       : null,
-    initialContent: description,
     enabled: isOpen && !isCreateMode && showUserPresence && !!task?.id,
   });
 

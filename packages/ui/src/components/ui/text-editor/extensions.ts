@@ -18,7 +18,7 @@ import type { Extensions } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import ImageResize from 'tiptap-extension-resize-image';
 import type * as Y from 'yjs';
-import type { SupabaseRealtimeProvider } from './collaboration/supabase-realtime-provider';
+import type SupabaseProvider from './collaboration/supabase-provider';
 import { Mention } from './mention-extension';
 import { Video } from './video-extension';
 
@@ -26,7 +26,7 @@ interface EditorExtensionsOptions {
   titlePlaceholder?: string;
   writePlaceholder?: string;
   doc?: Y.Doc | null;
-  provider?: SupabaseRealtimeProvider | null;
+  provider?: SupabaseProvider | null;
 }
 
 export function getEditorExtensions({

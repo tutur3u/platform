@@ -1,10 +1,8 @@
-import type { RealtimeChannel } from '@supabase/supabase-js';
-import type { JSONContent } from '@tiptap/react';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Awareness } from 'y-protocols/awareness';
 import * as Y from 'yjs';
-import { SupabaseRealtimeProvider } from './supabase-realtime-provider';
+import SupabaseProvider from './supabase-provider';
 
 export interface CollaborationUser {
   id: string;
@@ -13,41 +11,47 @@ export interface CollaborationUser {
 }
 
 export interface YjsCollaborationConfig {
-  channelName: string;
+  channel: string;
+  tableName: string;
+  columnName: string;
+  id: string;
   user: CollaborationUser | null;
-  initialContent?: JSONContent | null;
   enabled?: boolean;
   onSync?: (synced: boolean) => void;
   onError?: (error: Error) => void;
+  onSave?: (version: number) => void;
 }
 
 export interface YjsCollaborationResult {
   doc: Y.Doc | null;
   awareness: Awareness | null;
-  provider: SupabaseRealtimeProvider | null;
-  channel: RealtimeChannel | null;
+  provider: SupabaseProvider | null;
   synced: boolean;
+  connected: boolean;
 }
 
 /**
  * Hook for managing Yjs collaboration with Supabase Realtime
+ * Uses y-supabase provider for automatic document syncing
  */
 export function useYjsCollaboration(
   config: YjsCollaborationConfig
 ): YjsCollaborationResult {
   const {
-    channelName,
+    channel,
+    tableName,
+    columnName,
+    id,
     user,
-    initialContent,
     enabled = true,
     onSync,
     onError,
+    onSave,
   } = config;
-  const [initialContentState, setInitialContentState] =
-    useState(initialContent);
+
   const [synced, setSynced] = useState(false);
-  const channelRef = useRef<RealtimeChannel | null>(null);
-  const providerRef = useRef<SupabaseRealtimeProvider | null>(null);
+  const [connected, setConnected] = useState(false);
+  const providerRef = useRef<SupabaseProvider | null>(null);
 
   // Create Yjs document and awareness (stable references)
   const doc = useMemo(() => (enabled ? new Y.Doc() : null), [enabled]);
@@ -56,12 +60,6 @@ export function useYjsCollaboration(
     () => (enabled && doc ? new Awareness(doc) : null),
     [enabled, doc]
   );
-
-  useEffect(() => {
-    if (!initialContent) return;
-
-    setInitialContentState(initialContent);
-  }, [initialContent]);
 
   useEffect(() => {
     if (!enabled || !doc || !awareness || !user) return;
@@ -76,115 +74,93 @@ export function useYjsCollaboration(
       color: user.color,
     });
 
-    // Create Supabase realtime channel with presence tracking
-    const channel = supabase.channel(channelName, {
-      config: {
-        broadcast: { self: false, ack: false },
-        presence: { key: user.id },
-      },
+    console.log('🔄 Initializing SupabaseProvider for document:', id);
+
+    // Create SupabaseProvider - it handles everything internally
+    const provider = new SupabaseProvider(doc, supabase, {
+      id: id,
+      channel: channel,
+      tableName: tableName,
+      columnName: columnName,
+      awareness,
+      resyncInterval: 5000, // Resync every 5 seconds
     });
 
-    channelRef.current = channel;
+    providerRef.current = provider;
 
-    // Subscribe to channel
-    channel
-      .on('presence', { event: 'sync' }, () => {
-        if (!mounted) return;
+    // Listen to provider events
+    provider.on('status', ([{ status }]) => {
+      if (!mounted) return;
+      console.log('📡 Provider status:', status);
+      setConnected(status === 'connected');
+    });
 
-        // Check for other users AFTER presence is synced
-        const presenceState = channel.presenceState();
-        const userIds = Object.keys(presenceState);
-        const hasOtherUsers =
-          userIds.length > 1 ||
-          (userIds.length === 1 && userIds[0] !== user.id);
+    provider.on('synced', ([syncState]) => {
+      if (!mounted) return;
+      console.log('🔄 Provider synced:', syncState);
+      setSynced(syncState);
+      onSync?.(syncState);
+    });
 
-        // Only initialize if provider exists and hasn't been initialized yet
-        if (providerRef.current) {
-          if (!hasOtherUsers) {
-            // First user - initialize with content from database
-            console.log('👤 First user - initializing content from database');
-            providerRef.current.initializeContent(initialContentState);
-          } else {
-            // Other users exist - request their current document state
-            console.log('👥 Other users present - requesting document state');
-            providerRef.current.requestState();
-          }
-        }
-      })
-      .on('presence', { event: 'join' }, ({ key, newPresences }) => {
-        if (!mounted) return;
-        console.log('👋 User joined:', key, newPresences);
-      })
-      .on('presence', { event: 'leave' }, ({ key, leftPresences }) => {
-        if (!mounted) return;
-        console.log('👋 User left:', key, leftPresences);
-      })
-      .subscribe(async (status) => {
-        if (!mounted) return;
+    provider.on('sync', ([syncState]) => {
+      if (!mounted) return;
+      console.log('🔄 Provider sync event:', syncState);
+    });
 
-        console.log('📡 Yjs collaboration channel status:', status);
+    provider.on('save', (version) => {
+      if (!mounted) return;
+      console.log('💾 Document saved to database, version:', version);
+      onSave?.(version);
+    });
 
-        if (status === 'SUBSCRIBED') {
-          // Track our presence
-          await channel.track({
-            user_id: user.id,
-            user_name: user.name,
-            online_at: new Date().toISOString(),
-          });
+    provider.on('error', (providerInstance) => {
+      if (!mounted) return;
+      console.error('❌ Provider error:', providerInstance);
+      onError?.(new Error('Provider error occurred'));
+    });
 
-          // Initialize provider after channel is ready
-          const provider = new SupabaseRealtimeProvider({
-            channel,
-            doc,
-            awareness,
-            onSync: (syncStatus) => {
-              if (!mounted) return;
-              setSynced(syncStatus);
-              onSync?.(syncStatus);
-            },
-            onError: (error) => {
-              if (!mounted) return;
-              console.error('Collaboration error:', error);
-              onError?.(error);
-            },
-          });
+    provider.on('connect', () => {
+      if (!mounted) return;
+      console.log('✅ Provider connected');
+    });
 
-          providerRef.current = provider;
-        }
-      });
+    provider.on('disconnect', () => {
+      if (!mounted) return;
+      console.log('🔌 Provider disconnected');
+      setConnected(false);
+      setSynced(false);
+    });
 
     // Cleanup
     return () => {
       mounted = false;
+      console.log('🧹 Cleaning up SupabaseProvider');
 
-      // Destroy provider
+      // Destroy provider - it handles all cleanup internally
       if (providerRef.current) {
         providerRef.current.destroy();
         providerRef.current = null;
       }
-
-      // Unsubscribe from channel
-      if (channelRef.current) {
-        supabase.removeChannel(channelRef.current);
-        channelRef.current = null;
-      }
     };
   }, [
-    enabled,
-    channelName,
+    id,
+    channel,
+    tableName,
+    columnName,
     user,
     doc,
     awareness,
-    initialContentState,
+    enabled,
     onSync,
     onError,
+    onSave,
   ]);
 
   return {
     doc,
     awareness,
     provider: providerRef.current,
-    channel: channelRef.current,
     synced,
+    connected,
   };
 }
