@@ -3,10 +3,7 @@
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
-import {
-    Card,
-    CardContent,
-} from "@tuturuuu/ui/card";
+import { Card, CardContent } from '@tuturuuu/ui/card';
 import {
   Dialog,
   DialogContent,
@@ -42,7 +39,7 @@ import {
 import { toast } from '@tuturuuu/ui/sonner';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { useTranslations } from 'next-intl';
-import { useState, useMemo } from 'react';
+import { useMemo, useState } from 'react';
 
 interface NotesListProps {
   wsId: string;
