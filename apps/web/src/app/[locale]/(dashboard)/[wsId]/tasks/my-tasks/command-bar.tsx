@@ -8,14 +8,10 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@tuturuuu/ui/popover';
+import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
 import { Label } from '@tuturuuu/ui/label';
 import { Switch } from '@tuturuuu/ui/switch';
-import {useTranslations} from 'next-intl';
+import { useTranslations } from 'next-intl';
 import { ArrowUp, ChevronDown, MapPin, Settings, X } from '@tuturuuu/ui/icons';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { useState, useMemo } from 'react';
@@ -61,26 +57,37 @@ export function CommandBar({
   const [inputText, setInputText] = useState('');
   const t = useTranslations();
 
-  const modeConfig = useMemo(() => ({
-    note: {
-      label: t('workspace-tasks-tabs.command_bar.mode.note.label'),
-      description: t('workspace-tasks-tabs.command_bar.mode.note.description'),
-      placeholder: t('workspace-tasks-tabs.command_bar.mode.note.placeholder'),
-      action: t('workspace-tasks-tabs.command_bar.action.generate'),
-    },
-    task: {
-      label: t('workspace-tasks-tabs.command_bar.mode.task.label'),
-      description: t('workspace-tasks-tabs.command_bar.mode.task.description'),
-      placeholder: t('workspace-tasks-tabs.command_bar.mode.task.placeholder'),
-      action: t('workspace-tasks-tabs.command_bar.action.generate'),
-    },
-    ai: {
-      label: t('workspace-tasks-tabs.command_bar.mode.ai.label'),
-      description: t('workspace-tasks-tabs.command_bar.mode.ai.description'),
-      placeholder: t('workspace-tasks-tabs.command_bar.mode.ai.placeholder'),
-      action: t('workspace-tasks-tabs.command_bar.action.generate'),
-    },
-  }), [t]);
+  const modeConfig = useMemo(
+    () => ({
+      note: {
+        label: t('workspace-tasks-tabs.command_bar.mode.note.label'),
+        description: t(
+          'workspace-tasks-tabs.command_bar.mode.note.description'
+        ),
+        placeholder: t(
+          'workspace-tasks-tabs.command_bar.mode.note.placeholder'
+        ),
+        action: t('workspace-tasks-tabs.command_bar.action.generate'),
+      },
+      task: {
+        label: t('workspace-tasks-tabs.command_bar.mode.task.label'),
+        description: t(
+          'workspace-tasks-tabs.command_bar.mode.task.description'
+        ),
+        placeholder: t(
+          'workspace-tasks-tabs.command_bar.mode.task.placeholder'
+        ),
+        action: t('workspace-tasks-tabs.command_bar.action.generate'),
+      },
+      ai: {
+        label: t('workspace-tasks-tabs.command_bar.mode.ai.label'),
+        description: t('workspace-tasks-tabs.command_bar.mode.ai.description'),
+        placeholder: t('workspace-tasks-tabs.command_bar.mode.ai.placeholder'),
+        action: t('workspace-tasks-tabs.command_bar.action.generate'),
+      },
+    }),
+    [t]
+  );
 
   const currentConfig = modeConfig[mode];
   const needsDestination = mode !== 'note';
@@ -149,17 +156,16 @@ export function CommandBar({
               aria-label={t('dashboard.quick_journal.open_board_selector')}
             >
               <MapPin className="h-4 w-4" />
-    
             </Button>
 
             {mode === 'ai' && (
               <Popover>
                 <PopoverTrigger asChild>
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    disabled={isLoading} 
-                    className="h-8 w-8 p-0" 
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    disabled={isLoading}
+                    className="h-8 w-8 p-0"
                     aria-label={t('dashboard.quick_journal.ai_settings')}
                     title="AI Generation Settings"
                   >
@@ -178,7 +184,9 @@ export function CommandBar({
                             htmlFor="ai-descriptions"
                             className="text-sm font-normal"
                           >
-                            {t('dashboard.quick_journal.toggle_descriptions_label')}
+                            {t(
+                              'dashboard.quick_journal.toggle_descriptions_label'
+                            )}
                           </Label>
                           <Switch
                             id="ai-descriptions"
@@ -223,12 +231,10 @@ export function CommandBar({
             )}
 
             {hasDestination && selectedDestination && (
-              <Badge
-                variant="secondary"
-                className="gap-1 pl-2 pr-1 text-xs"
-              >
+              <Badge variant="secondary" className="gap-1 pl-2 pr-1 text-xs">
                 <span>
-                  {selectedDestination.boardName} / {selectedDestination.listName}
+                  {selectedDestination.boardName} /{' '}
+                  {selectedDestination.listName}
                 </span>
                 <Button
                   variant="ghost"
@@ -255,20 +261,23 @@ export function CommandBar({
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-64">
-            {(Object.entries(modeConfig) as [CommandMode, typeof modeConfig[CommandMode]][]).map(
-              ([key, config]) => (
-                <DropdownMenuItem
-                  key={key}
-                  onClick={() => setMode(key)}
-                  className="flex-col items-start gap-1 py-3"
-                >
-                  <div className="font-semibold">{config.label}</div>
-                  <div className="text-muted-foreground text-xs">
-                    {config.description}
-                  </div>
-                </DropdownMenuItem>
-              )
-            )}
+            {(
+              Object.entries(modeConfig) as [
+                CommandMode,
+                (typeof modeConfig)[CommandMode],
+              ][]
+            ).map(([key, config]) => (
+              <DropdownMenuItem
+                key={key}
+                onClick={() => setMode(key)}
+                className="flex-col items-start gap-1 py-3"
+              >
+                <div className="font-semibold">{config.label}</div>
+                <div className="text-muted-foreground text-xs">
+                  {config.description}
+                </div>
+              </DropdownMenuItem>
+            ))}
           </DropdownMenuContent>
         </DropdownMenu>
 
