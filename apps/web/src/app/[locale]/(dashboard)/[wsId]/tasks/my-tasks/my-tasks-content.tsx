@@ -236,11 +236,13 @@ export default function MyTasksContent({
   const [newBoardDialogOpen, setNewBoardDialogOpen] = useState(false);
   const [newBoardName, setNewBoardName] = useState<string>('');
   const [commandBarLoading, setCommandBarLoading] = useState(false);
-  
+
   // Task creation state
   const [pendingTaskTitle, setPendingTaskTitle] = useState<string>('');
-  const [taskCreatorMode, setTaskCreatorMode] = useState<'simple' | 'ai' | null>(null);
-  
+  const [taskCreatorMode, setTaskCreatorMode] = useState<
+    'simple' | 'ai' | null
+  >(null);
+
   // AI Generation settings
   const [aiGenerateDescriptions, setAiGenerateDescriptions] = useState(true);
   const [aiGeneratePriority, setAiGeneratePriority] = useState(true);
@@ -249,15 +251,21 @@ export default function MyTasksContent({
   // Preview state
   const [isPreviewOpen, setPreviewOpen] = useState(false);
   const [previewEntry, setPreviewEntry] = useState<string | null>(null);
-  const [lastResult, setLastResult] = useState<JournalTaskResponse | null>(null);
+  const [lastResult, setLastResult] = useState<JournalTaskResponse | null>(
+    null
+  );
   const [selectedLabelIds, setSelectedLabelIds] = useState<string[]>([]);
-  const [taskLabelSelections, setTaskLabelSelections] = useState<TaskLabelSelection[]>([]);
+  const [taskLabelSelections, setTaskLabelSelections] = useState<
+    TaskLabelSelection[]
+  >([]);
   const [taskDueDates, setTaskDueDates] = useState<(Date | undefined)[]>([]);
-  const [expandedLabelCards, setExpandedLabelCards] = useState<Record<number, boolean>>({});
+  const [expandedLabelCards, setExpandedLabelCards] = useState<
+    Record<number, boolean>
+  >({});
   const [workspaceLabelsExpanded, setWorkspaceLabelsExpanded] = useState(false);
   const lastInitializedLabelsKey = useRef<string | null>(null);
   const lastInitializedDueDatesKey = useRef<string | null>(null);
-  
+
   const clientTimezone = useMemo(() => {
     try {
       return Intl.DateTimeFormat().resolvedOptions().timeZone ?? 'UTC';
@@ -321,9 +329,9 @@ export default function MyTasksContent({
 
   // Ensure boardsData is always an array
   // Handle case where response might be wrapped in { boards: [...] }
-  const boardsData = Array.isArray(boardsDataRaw) 
-    ? boardsDataRaw 
-    : (boardsDataRaw as any)?.boards ?? [];
+  const boardsData = Array.isArray(boardsDataRaw)
+    ? boardsDataRaw
+    : ((boardsDataRaw as any)?.boards ?? []);
 
   // Fetch workspace labels
   const { data: workspaceLabels = [], isLoading: labelsLoading } = useQuery({
@@ -540,7 +548,9 @@ export default function MyTasksContent({
         (b.task_lists as any[])?.some((l: any) => l.id === variables.listId)
       );
       const targetList = targetBoard?.task_lists
-        ? (targetBoard.task_lists as any[]).find((l: any) => l.id === variables.listId)
+        ? (targetBoard.task_lists as any[]).find(
+            (l: any) => l.id === variables.listId
+          )
         : null;
       const listName = targetList?.name || 'Unknown List';
       const createdCount =
@@ -601,7 +611,10 @@ export default function MyTasksContent({
     );
   };
 
-  const toggleTaskLabelSuggestion = (taskIndex: number, optionIndex: number) => {
+  const toggleTaskLabelSuggestion = (
+    taskIndex: number,
+    optionIndex: number
+  ) => {
     if (!aiGenerateLabels || createTaskMutation.isPending) return;
 
     setTaskLabelSelections((prev) => {
@@ -711,7 +724,7 @@ export default function MyTasksContent({
       setBoardSelectorOpen(true);
       return;
     }
-    
+
     // Store the title and open task creator
     setPendingTaskTitle(title);
     setTaskCreatorMode('simple');
@@ -809,7 +822,7 @@ export default function MyTasksContent({
 
   const handleBoardSelectorConfirm = () => {
     setBoardSelectorOpen(false);
-    
+
     if (pendingTaskTitle && taskCreatorMode === 'ai') {
       // Generate AI preview
       handleGenerateAI(pendingTaskTitle);
@@ -994,14 +1007,13 @@ export default function MyTasksContent({
       }
       lastInitializedLabelsKey.current = null;
     }
-  }, [
-    aiGenerateLabels
-  ]);
+  }, [aiGenerateLabels]);
 
   const previewTasks = lastResult?.tasks ?? [];
   const generatedWithAI = Boolean(lastResult?.metadata?.generatedWithAI);
   const isCreating = createTaskMutation.isPending;
-  const disableConfirm = isCreating || !selectedListId || previewTasks.length === 0;
+  const disableConfirm =
+    isCreating || !selectedListId || previewTasks.length === 0;
 
   return (
     <div className="space-y-6">
@@ -1043,91 +1055,93 @@ export default function MyTasksContent({
           </TabsTrigger>
         </TabsList>
 
-      {/* My Tasks Tab */}
-      <TabsContent value="tasks" className="mt-6 space-y-6">
-        {/* Overdue Tasks */}
-        {overdueTasks && overdueTasks.length > 0 && (
-          <Card className="border-dynamic-red/20">
-            <CardHeader className="border-dynamic-red/10 border-b bg-dynamic-red/5">
-              <CardTitle className="flex items-center gap-2 text-dynamic-red">
-                <Clock className="h-5 w-5" />
-                {t('ws-tasks.overdue')} ({overdueTasks.length})
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-6">
-              <TaskListWithCompletion
-                tasks={overdueTasks as any}
-                isPersonal={isPersonal}
-                initialLimit={5}
-                onTaskUpdate={handleUpdate}
-              />
-            </CardContent>
-          </Card>
-        )}
+        {/* My Tasks Tab */}
+        <TabsContent value="tasks" className="mt-6 space-y-6">
+          {/* Overdue Tasks */}
+          {overdueTasks && overdueTasks.length > 0 && (
+            <Card className="border-dynamic-red/20">
+              <CardHeader className="border-dynamic-red/10 border-b bg-dynamic-red/5">
+                <CardTitle className="flex items-center gap-2 text-dynamic-red">
+                  <Clock className="h-5 w-5" />
+                  {t('ws-tasks.overdue')} ({overdueTasks.length})
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-6">
+                <TaskListWithCompletion
+                  tasks={overdueTasks as any}
+                  isPersonal={isPersonal}
+                  initialLimit={5}
+                  onTaskUpdate={handleUpdate}
+                />
+              </CardContent>
+            </Card>
+          )}
 
-        {/* Due Today */}
-        {todayTasks && todayTasks.length > 0 && (
-          <Card className="border-dynamic-orange/20">
-            <CardHeader className="border-dynamic-orange/10 border-b bg-dynamic-orange/5">
-              <CardTitle className="flex items-center gap-2 text-dynamic-orange">
-                <Calendar className="h-5 w-5" />
-                {t('ws-tasks.due_today')} ({todayTasks.length})
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-6">
-              <TaskListWithCompletion
-                tasks={todayTasks as any}
-                isPersonal={isPersonal}
-                initialLimit={5}
-                onTaskUpdate={handleUpdate}
-              />
-            </CardContent>
-          </Card>
-        )}
+          {/* Due Today */}
+          {todayTasks && todayTasks.length > 0 && (
+            <Card className="border-dynamic-orange/20">
+              <CardHeader className="border-dynamic-orange/10 border-b bg-dynamic-orange/5">
+                <CardTitle className="flex items-center gap-2 text-dynamic-orange">
+                  <Calendar className="h-5 w-5" />
+                  {t('ws-tasks.due_today')} ({todayTasks.length})
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-6">
+                <TaskListWithCompletion
+                  tasks={todayTasks as any}
+                  isPersonal={isPersonal}
+                  initialLimit={5}
+                  onTaskUpdate={handleUpdate}
+                />
+              </CardContent>
+            </Card>
+          )}
 
-        {/* Upcoming Tasks */}
-        {upcomingTasks && upcomingTasks.length > 0 && (
-          <Card className="border-dynamic-blue/20">
-            <CardHeader className="border-dynamic-blue/10 border-b bg-dynamic-blue/5">
-              <CardTitle className="flex items-center gap-2 text-dynamic-blue">
-                <Flag className="h-5 w-5" />
-                {t('ws-tasks.upcoming')} ({upcomingTasks.length})
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-6">
-              <TaskListWithCompletion
-                tasks={upcomingTasks as any}
-                isPersonal={isPersonal}
-                initialLimit={5}
-                onTaskUpdate={handleUpdate}
-              />
-            </CardContent>
-          </Card>
-        )}
+          {/* Upcoming Tasks */}
+          {upcomingTasks && upcomingTasks.length > 0 && (
+            <Card className="border-dynamic-blue/20">
+              <CardHeader className="border-dynamic-blue/10 border-b bg-dynamic-blue/5">
+                <CardTitle className="flex items-center gap-2 text-dynamic-blue">
+                  <Flag className="h-5 w-5" />
+                  {t('ws-tasks.upcoming')} ({upcomingTasks.length})
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-6">
+                <TaskListWithCompletion
+                  tasks={upcomingTasks as any}
+                  isPersonal={isPersonal}
+                  initialLimit={5}
+                  onTaskUpdate={handleUpdate}
+                />
+              </CardContent>
+            </Card>
+          )}
 
-        {/* Empty State */}
-        {totalActiveTasks === 0 && (
-          <EmptyState
-            wsId={wsId}
-            onSwitchToJournal={() => {
-              // Focus on the command bar textarea for AI generation
-              const textarea = document.querySelector('#my-tasks-command-bar-textarea') as HTMLTextAreaElement;
-              if (textarea) {
-                textarea.focus();
-                // Scroll to top to show the command bar
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-              }
-            }}
-            onCreateTask={() => setBoardSelectorOpen(true)}
-          />
-        )}
-      </TabsContent>
+          {/* Empty State */}
+          {totalActiveTasks === 0 && (
+            <EmptyState
+              wsId={wsId}
+              onSwitchToJournal={() => {
+                // Focus on the command bar textarea for AI generation
+                const textarea = document.querySelector(
+                  '#my-tasks-command-bar-textarea'
+                ) as HTMLTextAreaElement;
+                if (textarea) {
+                  textarea.focus();
+                  // Scroll to top to show the command bar
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }
+              }}
+              onCreateTask={() => setBoardSelectorOpen(true)}
+            />
+          )}
+        </TabsContent>
 
-      {/* Notes Tab */}
-      <TabsContent value="notes" className="mt-6">
-        <NotesList wsId={wsId} enabled={activeTab === 'notes'} />
-      </TabsContent>
-    </Tabs>
+        {/* Notes Tab */}
+        <TabsContent value="notes" className="mt-6">
+          <NotesList wsId={wsId} enabled={activeTab === 'notes'} />
+        </TabsContent>
+      </Tabs>
 
       {/* Board & List Selection Dialog */}
       <Dialog open={boardSelectorOpen} onOpenChange={setBoardSelectorOpen}>
@@ -1286,31 +1300,34 @@ export default function MyTasksContent({
       </Dialog>
 
       {/* Task Creation - Simple Mode */}
-      {selectedBoardId && selectedListId && taskCreatorOpen && taskCreatorMode === 'simple' && (
-        <TaskEditDialog
-          task={
-            {
-              id: 'new',
-              name: pendingTaskTitle || '',
-              description: '',
-              priority: null,
-              start_date: null,
-              end_date: null,
-              estimation_points: null,
-              list_id: selectedListId,
-              labels: [],
-              archived: false,
-              assignees: [],
-              projects: [],
-            } as any
-          }
-          boardId={selectedBoardId}
-          isOpen={taskCreatorOpen}
-          onClose={handleCloseTaskCreator}
-          onUpdate={handleUpdate}
-          mode="create"
-        />
-      )}
+      {selectedBoardId &&
+        selectedListId &&
+        taskCreatorOpen &&
+        taskCreatorMode === 'simple' && (
+          <TaskEditDialog
+            task={
+              {
+                id: 'new',
+                name: pendingTaskTitle || '',
+                description: '',
+                priority: null,
+                start_date: null,
+                end_date: null,
+                estimation_points: null,
+                list_id: selectedListId,
+                labels: [],
+                archived: false,
+                assignees: [],
+                projects: [],
+              } as any
+            }
+            boardId={selectedBoardId}
+            isOpen={taskCreatorOpen}
+            onClose={handleCloseTaskCreator}
+            onUpdate={handleUpdate}
+            mode="create"
+          />
+        )}
 
       {/* AI Preview Dialog */}
       <Dialog
@@ -1324,16 +1341,21 @@ export default function MyTasksContent({
         <DialogContent className="max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
-              Review Generated {previewTasks.length} Task{previewTasks.length !== 1 ? 's' : ''}
+              Review Generated {previewTasks.length} Task
+              {previewTasks.length !== 1 ? 's' : ''}
             </DialogTitle>
             <DialogDescription>
               {selectedListId
                 ? (() => {
                     const board = boardsData.find((b: any) =>
-                      (b.task_lists as any[])?.some((l: any) => l.id === selectedListId)
+                      (b.task_lists as any[])?.some(
+                        (l: any) => l.id === selectedListId
+                      )
                     );
                     const lists = (board?.task_lists as any[]) || [];
-                    const list = lists.find((l: any) => l.id === selectedListId);
+                    const list = lists.find(
+                      (l: any) => l.id === selectedListId
+                    );
                     const listName = list?.name || 'Unknown List';
                     return `Tasks will be created in "${listName}"`;
                   })()
@@ -1345,9 +1367,7 @@ export default function MyTasksContent({
             {/* Workspace Labels */}
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <Label className="font-medium text-sm">
-                  Workspace Labels
-                </Label>
+                <Label className="font-medium text-sm">Workspace Labels</Label>
                 <span className="text-muted-foreground text-xs">
                   Apply to all tasks
                 </span>
@@ -1417,7 +1437,8 @@ export default function MyTasksContent({
                   variant="outline"
                   className="border-dynamic-blue/40 bg-transparent text-foreground text-xs"
                 >
-                  {previewTasks.length} task{previewTasks.length !== 1 ? 's' : ''}
+                  {previewTasks.length} task
+                  {previewTasks.length !== 1 ? 's' : ''}
                 </Badge>
               </div>
 
@@ -1588,7 +1609,5 @@ export default function MyTasksContent({
         </DialogContent>
       </Dialog>
     </div>
-
-    
   );
 }
