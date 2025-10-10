@@ -321,6 +321,7 @@ function TaskEditDialogComponent({
           color: userColor || '',
         }
       : null,
+    initialContent: description,
     enabled: isOpen && !isCreateMode && showUserPresence && !!task?.id,
   });
 

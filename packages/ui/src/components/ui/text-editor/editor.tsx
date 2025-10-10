@@ -222,14 +222,6 @@ export function RichTextEditor({
         externalEditorRef.current = editor;
       }
       onEditorReady?.(editor);
-
-      // If using Yjs collaboration, set initial content if doc is empty
-      if (yjsDoc && content) {
-        const fragment = yjsDoc.getXmlFragment('prosemirror');
-        if (fragment.length === 0) {
-          editor.commands.setContent(content);
-        }
-      }
     },
     extensions: getEditorExtensions({
       titlePlaceholder,
