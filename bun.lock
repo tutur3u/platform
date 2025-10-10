@@ -695,6 +695,8 @@
         "@tanstack/react-query": "^5.90.2",
         "@tanstack/react-table": "^8.21.3",
         "@tiptap/core": "^3.6.6",
+        "@tiptap/extension-collaboration": "^3.6.6",
+        "@tiptap/extension-collaboration-caret": "^3.6.6",
         "@tiptap/extension-highlight": "^3.6.6",
         "@tiptap/extension-image": "^3.6.6",
         "@tiptap/extension-link": "^3.6.6",
@@ -712,7 +714,6 @@
         "@tiptap/pm": "^3.6.6",
         "@tiptap/react": "^3.6.6",
         "@tiptap/starter-kit": "^3.6.6",
-        "@tiptap/y-tiptap": "^3.0.0",
         "@tuturuuu/ai": "workspace:*",
         "@tuturuuu/supabase": "workspace:*",
         "@tuturuuu/utils": "workspace:*",
@@ -1844,6 +1845,10 @@
     "@tiptap/extension-code": ["@tiptap/extension-code@3.6.6", "", { "peerDependencies": { "@tiptap/core": "^3.6.6" } }, "sha512-ihnhlxO3sz/E1nep57JsRRgfZW4mlp0ghHNrV8PEKw99Q7S2MSXRV3o8zkw/ZHgvTbzPrT6854GwvOLGSiHOyQ=="],
 
     "@tiptap/extension-code-block": ["@tiptap/extension-code-block@3.6.6", "", { "peerDependencies": { "@tiptap/core": "^3.6.6", "@tiptap/pm": "^3.6.6" } }, "sha512-brZGE4n+ZzBv0ozMWeX8Og03QDs8Fn9nmz6IeSYfd3mGIfda7M1+irPVjV4E5Jq4S53jVLePhptukpsc8XT55w=="],
+
+    "@tiptap/extension-collaboration": ["@tiptap/extension-collaboration@3.6.6", "", { "peerDependencies": { "@tiptap/core": "^3.6.6", "@tiptap/pm": "^3.6.6", "@tiptap/y-tiptap": "^3.0.0-beta.3", "yjs": "^13" } }, "sha512-yUyUs4DBgDRrsWTOK3wxkqSZDLLsG2tWZk6BRqSN55rkIxHPkuvuYHJt8vC+926vSYoVYOZOWFnS9Nl1YUyKvw=="],
+
+    "@tiptap/extension-collaboration-caret": ["@tiptap/extension-collaboration-caret@3.6.6", "", { "peerDependencies": { "@tiptap/core": "^3.6.6", "@tiptap/pm": "^3.6.6", "@tiptap/y-tiptap": "^3.0.0-beta.3" } }, "sha512-tjgIYTq5efMplaAK2bzv315268Tl4g3oLi64ydEy6OhF4JMC4rI8uhpKTccJH6YMMFCRWneXWR7uAq3TwBQUHw=="],
 
     "@tiptap/extension-document": ["@tiptap/extension-document@3.6.6", "", { "peerDependencies": { "@tiptap/core": "^3.6.6" } }, "sha512-MnPvlEsoNKYwvuNOFC4mKbsie1G5LFz9DeOte/waON1zZ3vwChWuP6p0sGVoS3/s1TIlUtH8/XpxP9tZH7VFrA=="],
 
