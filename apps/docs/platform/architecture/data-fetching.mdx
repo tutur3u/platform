@@ -4,8 +4,6 @@ description: 'When and how to fetch data using RSC, Server Actions, React Query,
 updated: '2025-01-10'
 ---
 
-# Data Fetching Strategies
-
 The NCT Hub platform uses a layered approach to data fetching, choosing the right strategy based on use case, caching requirements, and user experience needs. This ensures optimal performance for club management operations, real-time features, and member interactions.
 
 ## Strategy Preference Order
@@ -143,6 +141,10 @@ import { createClient } from '@tuturuuu/supabase/server';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { z } from 'zod';
+
+// app/[locale]/(dashboard)/[wsId]/tasks/actions.ts
+
+// app/[locale]/(dashboard)/[wsId]/tasks/actions.ts
 
 // app/[locale]/(dashboard)/[wsId]/tasks/actions.ts
 
@@ -293,6 +295,10 @@ export default async function TasksPage({
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { Database } from '@tuturuuu/types';
 import { useEffect, useState } from 'react';
+
+// app/[locale]/(dashboard)/[wsId]/tasks/TaskListClient.tsx
+
+// app/[locale]/(dashboard)/[wsId]/tasks/TaskListClient.tsx
 
 // app/[locale]/(dashboard)/[wsId]/tasks/TaskListClient.tsx
 

@@ -9,11 +9,11 @@
   "favicon": "/favicon.ico",
   "css": "custom-styles.css",
   "defaultTheme": "dark",
-  "toggleTheme": false,
+  "toggleTheme": true,
   "colors": {
     "primary": "#FBC721",
     "light": "#ffffff",
-    "dark": "hsl(240 23% 12%)",
+    "dark": "#1a1f3a",
     "anchors": {
       "from": "#5FC6E5",
       "to": "#FBC721"
@@ -89,11 +89,15 @@
           ]
         }
       ]
+    },
+    {
+      "group": "Learn",
+      "pages": ["learn/index", "learn/examples/index"]
     }
   ],
   "footerSocials": {
     "facebook": "https://www.facebook.com/rmit.nct",
-    "x": "https://x.com/rmit-nct",
+    "instagram": "https://instagram.com/rmit.nct",
     "github": "https://github.com/rmit-nct",
     "linkedin": "https://www.linkedin.com/company/rmit-nct"
   },

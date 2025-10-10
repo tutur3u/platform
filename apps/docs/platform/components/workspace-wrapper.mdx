@@ -1,7 +1,7 @@
 ---
-title: "WorkspaceWrapper Component"
-description: "A standardized component for handling workspace ID resolution and validation across the application"
-updatedAt: "2025-09-27"
+title: 'WorkspaceWrapper Component'
+description: 'A standardized component for handling workspace ID resolution and validation across the application'
+updatedAt: '2025-09-27'
 ---
 
 The `WorkspaceWrapper` component provides a centralized way to handle workspace ID resolution and validation across the application. It automatically converts legacy workspace identifiers to validated UUIDs and provides the full workspace object to child components.
@@ -21,11 +21,13 @@ The `WorkspaceWrapper` centralizes this logic and ensures that child components 
 The `WorkspaceWrapper` is designed for use in Next.js App Router pages with dynamic segments:
 
 ### Basic Pattern
+
 - **File structure**: `apps/web/src/app/[locale]/(dashboard)/[wsId]/page.tsx`
 - **User-facing URL**: `/[wsId]/...` (locale handled transparently by middleware)
 - **Route params**: `{ wsId: string }`
 
 ### Advanced Pattern with Additional Params
+
 - **File structure**: `apps/web/src/app/[locale]/(dashboard)/[wsId]/[datasetId]/page.tsx`
 - **User-facing URL**: `/[wsId]/[datasetId]/...`
 - **Route params**: `{ wsId: string, datasetId: string }`
@@ -45,10 +47,10 @@ import WorkspaceWrapper from '@/components/workspace-wrapper';
 ### Function Children Pattern
 
 ```tsx
-export default async function MyPage({ 
-  params 
-}: { 
-  params: Promise<{ wsId: string }> 
+export default async function MyPage({
+  params,
+}: {
+  params: Promise<{ wsId: string }>;
 }) {
   return (
     <WorkspaceWrapper params={params}>
@@ -70,16 +72,13 @@ export default async function MyPage({
 ```tsx
 import LoadingSpinner from '@/components/loading-spinner';
 
-export default async function MyPage({ 
-  params 
-}: { 
-  params: Promise<{ wsId: string }> 
+export default async function MyPage({
+  params,
+}: {
+  params: Promise<{ wsId: string }>;
 }) {
   return (
-    <WorkspaceWrapper 
-      params={params}
-      fallback={<LoadingSpinner />}
-    >
+    <WorkspaceWrapper params={params} fallback={<LoadingSpinner />}>
       {({ workspace, wsId, isPersonal, isRoot }) => (
         <MyWorkspaceContent workspace={workspace} wsId={wsId} />
       )}
@@ -98,15 +97,17 @@ For pages with additional dynamic segments beyond `wsId`:
 // File: apps/web/src/app/[locale]/(dashboard)/[wsId]/[datasetId]/page.tsx
 // URL: /personal/datasets/123, /550e8400-e29b-41d4-a716-446655440000/datasets/456
 export default async function DatasetPage({
-  params
+  params,
 }: {
-  params: Promise<{ wsId: string; datasetId: string }>
+  params: Promise<{ wsId: string; datasetId: string }>;
 }) {
   return (
     <WorkspaceWrapper params={params}>
       {({ workspace, wsId, isPersonal, isRoot, datasetId }) => (
         <div>
-          <h1>{workspace.name} - Dataset {datasetId}</h1>
+          <h1>
+            {workspace.name} - Dataset {datasetId}
+          </h1>
           <p>Workspace UUID: {wsId}</p>
           <p>Dataset ID: {datasetId}</p>
           <p>Is Personal: {isPersonal ? 'Yes' : 'No'}</p>
@@ -124,13 +125,13 @@ The `WorkspaceWrapper` automatically passes through `datasetId` (and any other a
 For client components that need workspace context, use the `withWorkspace` helper:
 
 ```tsx
-import { withWorkspace } from '@/components/workspace-wrapper';
 import MyClientComponent from './my-client-component';
+import { withWorkspace } from '@/components/workspace-wrapper';
 
 export default async function MyPage({
-  params
+  params,
 }: {
-  params: Promise<{ wsId: string }>
+  params: Promise<{ wsId: string }>;
 }) {
   const { wsId } = await params;
 
@@ -139,7 +140,7 @@ export default async function MyPage({
     MyClientComponent,
     {
       someProp: 'value',
-      anotherProp: 42
+      anotherProp: 42,
     },
     <div>Loading workspace...</div>
   );
@@ -160,13 +161,13 @@ interface MyClientComponentProps {
   anotherProp: number;
 }
 
-export function MyClientComponent({ 
-  workspace, 
-  wsId, 
+export function MyClientComponent({
+  workspace,
+  wsId,
   isPersonal,
   isRoot,
-  someProp, 
-  anotherProp 
+  someProp,
+  anotherProp,
 }: MyClientComponentProps) {
   // Use workspace and wsId safely - they're guaranteed to be valid
   return (
@@ -185,32 +186,32 @@ export function MyClientComponent({
 
 ### WorkspaceWrapper Props
 
-| Prop | Type | Required | Description |
-|------|------|----------|-------------|
-| `params` | `Promise<TParams>` where `TParams extends BaseParams` | Yes | The route params containing `wsId` and any additional params |
-| `children` | `Function` | Yes | Function that receives `{ workspace, wsId, isPersonal, isRoot, ...additionalParams }` |
-| `fallback` | `ReactNode` | No | Loading fallback component |
+| Prop       | Type                                                  | Required | Description                                                                           |
+| ---------- | ----------------------------------------------------- | -------- | ------------------------------------------------------------------------------------- |
+| `params`   | `Promise<TParams>` where `TParams extends BaseParams` | Yes      | The route params containing `wsId` and any additional params                          |
+| `children` | `Function`                                            | Yes      | Function that receives `{ workspace, wsId, isPersonal, isRoot, ...additionalParams }` |
+| `fallback` | `ReactNode`                                           | No       | Loading fallback component                                                            |
 
 **Note**: The `params` type is generic and supports additional route parameters beyond the base `locale` and `wsId`.
 
 ### withWorkspace Parameters
 
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `wsId` | `string` | Yes | The workspace identifier (legacy or UUID) |
-| `Component` | `React.ComponentType` | Yes | Client component to render |
-| `props` | `T` | Yes | Props to pass to the component |
-| `fallback` | `ReactNode` | No | Loading fallback component |
+| Parameter   | Type                  | Required | Description                               |
+| ----------- | --------------------- | -------- | ----------------------------------------- |
+| `wsId`      | `string`              | Yes      | The workspace identifier (legacy or UUID) |
+| `Component` | `React.ComponentType` | Yes      | Client component to render                |
+| `props`     | `T`                   | Yes      | Props to pass to the component            |
+| `fallback`  | `ReactNode`           | No       | Loading fallback component                |
 
 ### Children Function Parameters
 
-| Parameter | Type | Description |
-|-----------|------|-------------|
-| `workspace` | `Workspace & { role: WorkspaceUserRole; joined: boolean }` | Full workspace object with user role and joined status |
-| `wsId` | `string` | Validated UUID from `workspace.id` |
-| `isPersonal` | `boolean` | Whether the workspace is a personal workspace |
-| `isRoot` | `boolean` | Whether the workspace is the root/internal workspace |
-| `...additionalParams` | `TParams extends BaseParams` | Any additional route parameters beyond `wsId` (e.g., `datasetId`, `taskId`) |
+| Parameter             | Type                                                       | Description                                                                 |
+| --------------------- | ---------------------------------------------------------- | --------------------------------------------------------------------------- |
+| `workspace`           | `Workspace & { role: WorkspaceUserRole; joined: boolean }` | Full workspace object with user role and joined status                      |
+| `wsId`                | `string`                                                   | Validated UUID from `workspace.id`                                          |
+| `isPersonal`          | `boolean`                                                  | Whether the workspace is a personal workspace                               |
+| `isRoot`              | `boolean`                                                  | Whether the workspace is the root/internal workspace                        |
+| `...additionalParams` | `TParams extends BaseParams`                               | Any additional route parameters beyond `wsId` (e.g., `datasetId`, `taskId`) |
 
 **Note**: Additional parameters are automatically passed through from the route params object.
 
@@ -220,7 +221,7 @@ export function MyClientComponent({
 
 ```tsx
 export default async function MyPage({
-  params
+  params,
 }: {
   params: Promise<{ wsId: string }>;
 }) {
@@ -239,9 +240,9 @@ export default async function MyPage({
 
 ```tsx
 export default async function MyPage({
-  params
+  params,
 }: {
-  params: Promise<{ wsId: string }>
+  params: Promise<{ wsId: string }>;
 }) {
   return (
     <WorkspaceWrapper params={params}>
@@ -264,19 +265,19 @@ Here's how the dashboard page uses the WorkspaceWrapper:
 // File: apps/web/src/app/[locale]/(dashboard)/[wsId]/dashboard/page.tsx
 // URL: /personal/dashboard, /550e8400-e29b-41d4-a716-446655440000/dashboard
 export default async function DashboardPage({
-  params
+  params,
 }: {
-  params: Promise<{ wsId: string }>
+  params: Promise<{ wsId: string }>;
 }) {
   return (
     <WorkspaceWrapper params={params}>
       {({ workspace, wsId, isPersonal, isRoot }) => (
         <div className="p-6">
-          <h1 className="text-2xl font-bold mb-4">
+          <h1 className="mb-4 text-2xl font-bold">
             {workspace.name || 'Unnamed Workspace'}
           </h1>
           <div className="grid gap-4">
-            <div className="p-4 bg-gray-100 rounded">
+            <div className="rounded bg-gray-100 p-4">
               <h2 className="font-semibold">Workspace Details</h2>
               <p>ID: {wsId}</p>
               <p>Type: {isPersonal ? 'Personal' : 'Team'}</p>
@@ -297,9 +298,9 @@ export default async function DashboardPage({
 // File: apps/web/src/app/[locale]/(workspace-settings)/[wsId]/settings/page.tsx
 // URL: /personal/settings, /550e8400-e29b-41d4-a716-446655440000/settings
 export default async function SettingsPage({
-  params
+  params,
 }: {
-  params: Promise<{ wsId: string }>
+  params: Promise<{ wsId: string }>;
 }) {
   return (
     <WorkspaceWrapper
@@ -312,7 +313,7 @@ export default async function SettingsPage({
 
         return (
           <div className="p-6">
-            <h1 className="text-2xl font-bold mb-4">Workspace Settings</h1>
+            <h1 className="mb-4 text-2xl font-bold">Workspace Settings</h1>
 
             {withoutPermission('manage_workspace') ? (
               <div className="text-red-600">
@@ -321,25 +322,25 @@ export default async function SettingsPage({
             ) : (
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium mb-2">
+                  <label className="mb-2 block text-sm font-medium">
                     Workspace Name
                   </label>
                   <input
                     type="text"
                     defaultValue={workspace.name || ''}
-                    className="w-full p-2 border rounded"
+                    className="w-full rounded border p-2"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium mb-2">
+                  <label className="mb-2 block text-sm font-medium">
                     Workspace ID (Read-only)
                   </label>
                   <input
                     type="text"
                     value={wsId}
                     readOnly
-                    className="w-full p-2 border rounded bg-gray-100"
+                    className="w-full rounded border bg-gray-100 p-2"
                   />
                 </div>
               </div>
