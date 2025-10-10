@@ -2,7 +2,9 @@
 -- This ensures tasks are properly spaced (minimum 1000 units apart)
 CREATE OR REPLACE FUNCTION normalize_task_sort_keys()
 RETURNS void
-LANGUAGE plpgsql
+LANGUAGE plpgsql  
+SECURITY DEFINER  
+SET search_path = public
 AS $$
 DECLARE
   list_record RECORD;

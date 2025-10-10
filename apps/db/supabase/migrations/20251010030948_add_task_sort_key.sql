@@ -1,6 +1,6 @@
 -- Add sort_key column to tasks table for manual sorting within lists
 ALTER TABLE public.tasks
-ADD COLUMN sort_key DOUBLE PRECISION;
+ADD COLUMN IF NOT EXISTS sort_key DOUBLE PRECISION;  
 
 -- Create index for efficient sorting queries
 CREATE INDEX idx_tasks_list_sort ON public.tasks(list_id, sort_key) WHERE deleted = false;
