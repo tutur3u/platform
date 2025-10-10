@@ -6,9 +6,6 @@ import { Button } from "@tuturuuu/ui/button";
 import {
     Card,
     CardContent,
-    CardDescription,
-    CardHeader,
-    CardTitle,
 } from "@tuturuuu/ui/card";
 import {
     Dialog,

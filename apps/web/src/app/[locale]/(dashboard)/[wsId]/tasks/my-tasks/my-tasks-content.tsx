@@ -1,10 +1,8 @@
 'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import type { JSONContent } from '@tiptap/react';
 import type { TaskPriority } from '@tuturuuu/types/primitives/Priority';
 import { createClient } from '@tuturuuu/supabase/next/client';
-import { Alert, AlertDescription } from '@tuturuuu/ui/alert';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
@@ -54,7 +52,6 @@ import TaskListWithCompletion from '../../(dashboard)/tasks/task-list-with-compl
 import { CommandBar } from './command-bar';
 import EmptyState from './empty-state';
 import NotesList from './notes-list';
-import QuickJournal from '../../(dashboard)/quick-journal';
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -1003,7 +1000,6 @@ export default function MyTasksContent({
 
   const previewTasks = lastResult?.tasks ?? [];
   const generatedWithAI = Boolean(lastResult?.metadata?.generatedWithAI);
-  const isPreviewing = previewMutation.isPending;
   const isCreating = createTaskMutation.isPending;
   const disableConfirm = isCreating || !selectedListId || previewTasks.length === 0;
 
