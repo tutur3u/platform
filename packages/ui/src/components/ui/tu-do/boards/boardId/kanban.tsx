@@ -1089,8 +1089,9 @@ export function KanbanBoard({
       const targetListTasks = tasks
         .filter((t) => t.list_id === targetListId)
         .sort((a, b) => {
-          const sortA = a.sort_key ?? 0;
-          const sortB = b.sort_key ?? 0;
+          // Use MAX_SAFE_INTEGER for null sort_key to match rendering behavior
+          const sortA = a.sort_key ?? Number.MAX_SAFE_INTEGER;
+          const sortB = b.sort_key ?? Number.MAX_SAFE_INTEGER;
           if (sortA !== sortB) return sortA - sortB;
           return (
             new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
@@ -1146,36 +1147,46 @@ export function KanbanBoard({
         );
 
         // Calculate sort_key based on neighbors in the reordered array
-        // We need to exclude the active task itself when looking for neighbors
-        const tasksExcludingActive = reorderedTasks.filter(
-          (t) => t.id !== activeTask.id
-        );
-
-        if (tasksExcludingActive.length === 0) {
+        // Use the reordered array directly to find prev/next tasks
+        if (reorderedTasks.length === 1) {
           // Only task in the list
           newSortKey = 1000;
           console.log('📍 Only task in list, using default sort_key: 1000');
         } else if (newIndex === 0) {
-          // At beginning
-          const nextTask = tasksExcludingActive[0];
-          newSortKey = calculateSortKey(null, nextTask?.sort_key);
+          // At beginning - next task is at index 1
+          const nextTask = reorderedTasks[1];
+          // Skip if nextTask is the active task (shouldn't happen but safety check)
+          const actualNextTask =
+            nextTask?.id === activeTask.id ? reorderedTasks[2] : nextTask;
+          newSortKey = calculateSortKey(null, actualNextTask?.sort_key);
           console.log(
             '📍 Inserting at beginning, next task sort_key:',
-            nextTask?.sort_key
+            actualNextTask?.sort_key
           );
-        } else if (newIndex >= tasksExcludingActive.length) {
-          // At end
-          const prevTask =
-            tasksExcludingActive[tasksExcludingActive.length - 1];
-          newSortKey = calculateSortKey(prevTask?.sort_key, null);
+        } else if (newIndex === reorderedTasks.length - 1) {
+          // At end - prev task is at index length-2
+          const prevTask = reorderedTasks[reorderedTasks.length - 2];
+          // Skip if prevTask is the active task (shouldn't happen but safety check)
+          const actualPrevTask =
+            prevTask?.id === activeTask.id
+              ? reorderedTasks[reorderedTasks.length - 3]
+              : prevTask;
+          newSortKey = calculateSortKey(actualPrevTask?.sort_key, null);
           console.log(
             '📍 Inserting at end, prev task sort_key:',
-            prevTask?.sort_key
+            actualPrevTask?.sort_key
           );
         } else {
-          // In middle - find the actual prev and next tasks
-          const prevTask = reorderedTasks[newIndex - 1];
-          const nextTask = reorderedTasks[newIndex + 1];
+          // In middle - find the actual prev and next tasks, skipping the active task if needed
+          let prevTask = reorderedTasks[newIndex - 1];
+          let nextTask = reorderedTasks[newIndex + 1];
+
+          // Adjust if we encounter the active task (shouldn't happen in reordered array but be safe)
+          if (prevTask?.id === activeTask.id)
+            prevTask = reorderedTasks[newIndex - 2];
+          if (nextTask?.id === activeTask.id)
+            nextTask = reorderedTasks[newIndex + 2];
+
           newSortKey = calculateSortKey(prevTask?.sort_key, nextTask?.sort_key);
           console.log(
             '📍 Inserting between:',
