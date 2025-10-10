@@ -1165,7 +1165,8 @@
     "monitoring": "Monitoring",
     "backups": "Backups",
     "integrations": "Integrations",
-    "ai_whitelisted_emails": "AI Whitelisted Emails"
+    "ai_whitelisted_emails": "AI Whitelisted Emails",
+    "translations": "Translations"
   },
   "basic-data-table": {
     "id": "ID",

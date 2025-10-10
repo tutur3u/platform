@@ -1257,7 +1257,8 @@
     "monitoring": "Giám sát",
     "backups": "Sao lưu",
     "integrations": "Dịch vụ tích hợp",
-    "ai_whitelisted_emails": "Email nằm trong danh sách trắng của AI"
+    "ai_whitelisted_emails": "Email nằm trong danh sách trắng của AI",
+    "translations": "Bản dịch"
   },
   "basic-data-table": {
     "id": "Mã số",
