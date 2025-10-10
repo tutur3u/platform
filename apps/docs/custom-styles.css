@@ -1,5 +1,8 @@
 /* NCT Hub Custom Branding Styles - Matching About Page Colors */
 
+/* Import Google Fonts - matching web app */
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans:ital,wght@0,100..900;1,100..900&display=swap');
+
 :root {
   /* Brand Colors - Exact from about page */
   --nct-yellow: #FBC721;
@@ -69,10 +72,10 @@ main, .main-content, .documentation-content {
   background-color: var(--nct-dark-blue) !important;
 }
 
-/* Bold headline font styling with Tailwind utilities */
+/* Bold headline font styling with Tailwind utilities - matching web app */
 h1, h2, h3, h4, h5, h6 {
   @apply font-black tracking-tight leading-tight;
-  font-family: 'Inter', 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+  font-family: 'Noto Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
   font-weight: 800 !important;
 }
 
@@ -128,7 +131,7 @@ button[type="submit"],
 .button-primary {
   @apply text-black font-bold px-6 py-3 rounded-lg transition-all duration-200 hover:-translate-y-1 hover:shadow-lg;
   background: var(--nct-gradient);
-  font-family: 'Inter', sans-serif;
+  font-family: 'Noto Sans', sans-serif;
 }
 
 .btn-primary:hover,
@@ -238,7 +241,7 @@ table {
 th {
   @apply bg-blue-500/20 font-bold;
   color: var(--nct-blue) !important;
-  font-family: 'Inter', sans-serif;
+  font-family: 'Noto Sans', sans-serif;
 }
 
 td {
@@ -254,7 +257,7 @@ tr:nth-child(even) td {
 .badge {
   @apply text-black font-bold rounded-md px-3 py-1;
   background: var(--nct-gradient);
-  font-family: 'Inter', sans-serif;
+  font-family: 'Noto Sans', sans-serif;
 }
 
 /* Ensure all wrapper elements have the dark background */
@@ -336,11 +339,121 @@ tr:nth-child(even) td {
 .topbar-link {
   color: #000 !important;
   font-weight: 700;
-  font-family: 'Inter', sans-serif;
+  font-family: 'Noto Sans', sans-serif;
 }
 
 .topbar-link:hover {
   color: rgba(0, 0, 0, 0.7) !important;
+}
+
+/* Search bar styling - prevent scroll-based color changes */
+.search-input,
+[data-testid="search-input"],
+input[type="search"],
+input[placeholder*="Search"],
+.search-bar,
+.mintlify-search,
+.mintlify-search-input,
+header input,
+.topbar input,
+nav input {
+  background-color: var(--nct-darker-blue) !important;
+  border: 2px solid var(--nct-blue) !important;
+  color: #ffffff !important;
+  transition: border-color 0.2s ease !important;
+}
+
+.search-input:focus,
+[data-testid="search-input"]:focus,
+input[type="search"]:focus,
+input[placeholder*="Search"]:focus,
+.search-bar:focus,
+.mintlify-search:focus,
+.mintlify-search-input:focus,
+header input:focus,
+.topbar input:focus,
+nav input:focus {
+  border-color: var(--nct-yellow) !important;
+  box-shadow: 0 0 0 3px rgba(251, 199, 33, 0.1) !important;
+  background-color: var(--nct-darker-blue) !important;
+  color: #ffffff !important;
+}
+
+.search-input::placeholder,
+[data-testid="search-input"]::placeholder,
+input[type="search"]::placeholder,
+input[placeholder*="Search"]::placeholder,
+.search-bar::placeholder,
+.mintlify-search::placeholder,
+.mintlify-search-input::placeholder,
+header input::placeholder,
+.topbar input::placeholder,
+nav input::placeholder {
+  color: rgba(255, 255, 255, 0.6) !important;
+}
+
+/* Force search bar to maintain dark styling on scroll */
+.sticky .search-input,
+.scrolled .search-input,
+[data-scrolled="true"] .search-input,
+.topbar.sticky input,
+.topbar.scrolled input,
+header.sticky input,
+header.scrolled input,
+nav.sticky input,
+nav.scrolled input {
+  background-color: var(--nct-darker-blue) !important;
+  border: 2px solid var(--nct-blue) !important;
+  color: #ffffff !important;
+}
+
+/* Override any Mintlify scroll-based styles */
+.mintlify-topbar,
+.mintlify-header,
+.mintlify-nav,
+.mintlify-sticky,
+.mintlify-scrolled {
+  background: var(--nct-gradient) !important;
+}
+
+.mintlify-topbar input,
+.mintlify-header input,
+.mintlify-nav input,
+.mintlify-sticky input,
+.mintlify-scrolled input {
+  background-color: var(--nct-darker-blue) !important;
+  border: 2px solid var(--nct-blue) !important;
+  color: #ffffff !important;
+}
+
+/* Additional scroll-based overrides */
+[class*="sticky"] input,
+[class*="scrolled"] input,
+[class*="fixed"] input,
+[class*="top"] input,
+[data-sticky] input,
+[data-scrolled] input,
+[data-fixed] input {
+  background-color: var(--nct-darker-blue) !important;
+  border: 2px solid var(--nct-blue) !important;
+  color: #ffffff !important;
+}
+
+/* Force all input elements in header/topbar areas to maintain dark styling */
+header [class*="search"],
+.topbar [class*="search"],
+nav [class*="search"],
+[class*="header"] [class*="search"],
+[class*="topbar"] [class*="search"] {
+  background-color: var(--nct-darker-blue) !important;
+  border: 2px solid var(--nct-blue) !important;
+  color: #ffffff !important;
+}
+
+/* Override any background changes on scroll */
+*[style*="background"] input,
+*[style*="backgroundColor"] input {
+  background-color: var(--nct-darker-blue) !important;
 }
 
 /* Footer enhancements */
@@ -394,13 +507,13 @@ strong, b {
 .bold-headline {
   @apply text-3xl md:text-4xl font-black tracking-tight leading-tight;
   color: var(--nct-blue) !important;
-  font-family: 'Inter', 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+  font-family: 'Noto Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
 }
 
 .bold-headline-yellow {
   @apply text-3xl md:text-4xl font-black tracking-tight leading-tight;
   color: var(--nct-yellow) !important;
-  font-family: 'Inter', 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+  font-family: 'Noto Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
 }
 
 /* Additional utility classes for easy use in MDX */
