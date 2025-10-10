@@ -7,13 +7,16 @@
     "href": "https://rmitnct.club/"
   },
   "favicon": "/favicon.ico",
+  "css": "custom-styles.css",
+  "defaultTheme": "dark",
+  "toggleTheme": false,
   "colors": {
-    "primary": "#000000",
+    "primary": "#FBC721",
     "light": "#ffffff",
-    "dark": "#000000",
+    "dark": "hsl(240 23% 12%)",
     "anchors": {
-      "from": "#000000",
-      "to": "#ffffff"
+      "from": "#5FC6E5",
+      "to": "#FBC721"
     }
   },
   "topbarLinks": [
