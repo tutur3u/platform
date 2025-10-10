@@ -51,6 +51,9 @@ if (!permissions.includes('view_inventory')) {
   );
 }
 
+const canCreateInventory = permissions.includes('create_inventory');
+const canUpdateInventory = permissions.includes('update_inventory');
+
 const data = productId === 'new' ? undefined : await getData(wsId, productId);
 const categories = await getCategories(wsId);
 const warehouses = await getWarehouses(wsId);
@@ -72,6 +75,8 @@ return (
       categories={categories}
       warehouses={warehouses}
       units={units}
+      canCreateInventory={canCreateInventory}
+      canUpdateInventory={canUpdateInventory}
     />
   </>
 );

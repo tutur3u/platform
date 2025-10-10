@@ -160,13 +160,13 @@ export function ProductForm({
 
     // Check permissions before proceeding
     if (!data?.id && !canCreateInventory) {
-      toast.error(t('ws-roles.inventory_products_access_denied_description'));
+      toast.error(t('common.insufficient_permissions'));
       setLoading(false);
       return;
     }
 
     if (data?.id && !canUpdateInventory) {
-      toast.error(t('ws-roles.inventory_products_access_denied_description'));
+      toast.error(t('common.insufficient_permissions'));
       setLoading(false);
       return;
     }
@@ -251,8 +251,13 @@ export function ProductForm({
           return;
         }
 
-        // Update product details if there are changes
-        if (hasProductChanges) {
+        // Update product and inventory in one request if there are any changes
+        if (hasProductChanges || hasInventoryChanges) {
+          const updatePayload = {
+            ...productPayload,
+            ...(hasInventoryChanges && { inventory: inventoryPayload }),
+          };
+
           const productRes = await fetch(
             `/api/v1/workspaces/${wsId}/products/${data.id}`,
             {
@@ -260,65 +265,31 @@ export function ProductForm({
               headers: {
                 'Content-Type': 'application/json',
               },
-              body: JSON.stringify(productPayload),
+              body: JSON.stringify(updatePayload),
             }
           );
 
           if (!productRes.ok) {
-            throw new Error('Failed to update product details');
-          }
-        }
-
-        // Update inventory if there are changes
-        if (hasInventoryChanges) {
-          const inventoryRes = await fetch(
-            `/api/v1/workspaces/${wsId}/products/${data.id}/inventory`,
-            {
-              method: 'PATCH',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({ inventory: inventoryPayload }),
-            }
-          );
-
-          if (!inventoryRes.ok) {
-            throw new Error('Failed to update product inventory');
+            throw new Error('Failed to update product');
           }
         }
       } else {
-        // For new products, create product first, then add inventory
+        // For new products, create product and inventory in one request
+        const createPayload = {
+          ...productPayload,
+          ...(inventoryPayload.length > 0 && { inventory: inventoryPayload }),
+        };
+
         const productRes = await fetch(`/api/v1/workspaces/${wsId}/products`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify(productPayload),
+          body: JSON.stringify(createPayload),
         });
 
         if (!productRes.ok) {
           throw new Error('Failed to create product');
-        }
-
-        const newProduct = await productRes.json();
-        const productId = newProduct.id || newProduct.data?.id;
-
-        // Add inventory if not unlimited stock
-        if (inventoryPayload.length > 0) {
-          const inventoryRes = await fetch(
-            `/api/v1/workspaces/${wsId}/products/${productId}/inventory`,
-            {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({ inventory: inventoryPayload }),
-            }
-          );
-
-          if (!inventoryRes.ok) {
-            throw new Error('Failed to create product inventory');
-          }
         }
       }
 

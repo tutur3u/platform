@@ -24,7 +24,7 @@ export async function POST(req: Request, { params }: Params) {
 
   const supabase = await createClient();
   const { inventory, ...data } = (await req.json()) as Product2 & {
-    inventory: ProductInventory[];
+    inventory?: ProductInventory[];
   };
 
   const product = await supabase
@@ -45,19 +45,22 @@ export async function POST(req: Request, { params }: Params) {
     );
   }
 
-  const { error } = await supabase.from('inventory_products').insert(
-    inventory.map((inventory) => ({
-      ...inventory,
-      product_id: product.data.id,
-    }))
-  );
-
-  if (error) {
-    console.log(error);
-    return NextResponse.json(
-      { message: 'Error creating inventory' },
-      { status: 500 }
+  // Only insert inventory if it exists and is an array
+  if (inventory && Array.isArray(inventory) && inventory.length > 0) {
+    const { error } = await supabase.from('inventory_products').insert(
+      inventory.map((item) => ({
+        ...item,
+        product_id: product.data.id,
+      }))
     );
+
+    if (error) {
+      console.log(error);
+      return NextResponse.json(
+        { message: 'Error creating inventory' },
+        { status: 500 }
+      );
+    }
   }
 
   return NextResponse.json({ message: 'success' });
