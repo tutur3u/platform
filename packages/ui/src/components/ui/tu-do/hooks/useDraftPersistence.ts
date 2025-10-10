@@ -77,7 +77,8 @@ export function useDraftPersistence({
         draft.startDate ||
         draft.endDate ||
         draft.estimationPoints != null ||
-        (Array.isArray(draft.selectedLabels) && draft.selectedLabels.length > 0);
+        (Array.isArray(draft.selectedLabels) &&
+          draft.selectedLabels.length > 0);
 
       if (hasContent) {
         setHasDraft(true);
