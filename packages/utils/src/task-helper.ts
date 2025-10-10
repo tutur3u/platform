@@ -1997,7 +1997,9 @@ export function useReorderTask(boardId: string) {
       });
     },
     onSuccess: (updatedTask) => {
-      console.log('✅ onSuccess triggered - updating cache with server response');
+      console.log(
+        '✅ onSuccess triggered - updating cache with server response'
+      );
 
       // Update the cache with the server response
       queryClient.setQueryData(
