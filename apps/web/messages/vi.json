@@ -2436,8 +2436,18 @@
     "delete_transactions_description": "Cho phép thành viên xóa giao dịch tài chính khỏi không gian làm việc.",
     "view_transactions": "Xem giao dịch",
     "view_transactions_description": "Cho phép thành viên xem chi tiết giao dịch tài chính trong không gian làm việc.",
+    "invoices": "Hóa đơn",
+    "create_invoices": "Tạo hóa đơn",
+    "create_invoices_description": "Cho phép thành viên tạo hóa đơn mới trong không gian làm việc.",
+    "view_invoices": "Xem hóa đơn",
+    "view_invoices_description": "Cho phép thành viên xem chi tiết hóa đơn trong không gian làm việc.",
+    "update_invoices": "Cập nhật hóa đơn",
+    "update_invoices_description": "Cho phép thành viên chỉnh sửa hóa đơn hiện có trong không gian làm việc.",
+    "delete_invoices": "Xóa hóa đơn",
+    "delete_invoices_description": "Cho phép thành viên xóa hóa đơn khỏi không gian làm việc.",
     "check_user_attendance": "Kiểm tra điểm danh người dùng",
-    "check_user_attendance_description": "Cho phép thành viên kiểm tra điểm danh của người dùng khác"
+    "check_user_attendance_description": "Cho phép thành viên kiểm tra điểm danh của người dùng khác",
+    "transactions": "Giao dịch tài chính"
   },
   "platform-roles": {
     "plural": "Vai trò nền tảng",
@@ -3236,7 +3246,8 @@
     "print_after_create": "In hóa đơn",
     "print_after_create_tooltip": "In hóa đơn sau khi tạo thành công",
     "created_invoices": "Hóa đơn đã tạo",
-    "pending_invoices": "Hóa đơn chưa được thanh toán"
+    "pending_invoices": "Hóa đơn chưa được thanh toán",
+    "failed_delete_invoice": "Không xóa được hóa đơn"
   },
   "ws-inventory-products": {
     "plural": "Sản phẩm",

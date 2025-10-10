@@ -2347,8 +2347,18 @@
     "delete_transactions_description": "Allows members to delete financial transactions from the workspace.",
     "view_transactions": "View Transactions",
     "view_transactions_description": "Allows members to view financial transaction details in the workspace.",
+    "invoices": "Invoices",
+    "create_invoices": "Create Invoices",
+    "create_invoices_description": "Allows members to create new invoices in the workspace.",
+    "view_invoices": "View Invoices",
+    "view_invoices_description": "Allows members to view invoice details in the workspace.",
+    "update_invoices": "Update Invoices",
+    "update_invoices_description": "Allows members to edit existing invoices in the workspace.",
+    "delete_invoices": "Delete Invoices",
+    "delete_invoices_description": "Allows members to delete invoices from the workspace.",
     "check_user_attendance": "Check User Attendance",
-    "check_user_attendance_description": "Allows members to check for other users attendance"
+    "check_user_attendance_description": "Allows members to check for other users attendance",
+    "transactions": "Transactions"
   },
   "platform-roles": {
     "plural": "Platform Roles",
@@ -3106,7 +3116,8 @@
     "print_after_create": "Print after Creation",
     "print_after_create_tooltip": "Prints invoice after creation",
     "created_invoices": "Created Invoices",
-    "pending_invoices": "Pending Invoices"
+    "pending_invoices": "Pending Invoices",
+    "failed_delete_invoice": "Failed to delete invoice"
   },
   "ws-inventory-products": {
     "plural": "Products",

@@ -24,12 +24,14 @@ interface Props {
   wsId: string;
   invoiceId: string;
   locale: string;
+  canUpdateInvoices?: boolean;
 }
 
 export default async function InvoiceDetailsPage({
   wsId,
   invoiceId,
   locale,
+  canUpdateInvoices = false,
 }: Props) {
   const t = await getTranslations();
 
@@ -160,13 +162,15 @@ export default async function InvoiceDetailsPage({
               )}
             </div>
           </div>
-          <InvoiceEditForm
+          {canUpdateInvoices && (
+            <InvoiceEditForm
             wsId={wsId}
             invoiceId={invoice.id}
             initialNotice={invoice.notice}
             initialNote={invoice.note}
             initialWalletId={invoice.wallet_id}
-          />
+            />
+          )}
         </div>
       </div>
     </>

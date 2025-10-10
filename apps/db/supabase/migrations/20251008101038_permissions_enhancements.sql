@@ -35,3 +35,13 @@ ALTER TYPE "workspace_role_permission" ADD VALUE IF NOT EXISTS 'create_transacti
 ALTER TYPE "workspace_role_permission" ADD VALUE IF NOT EXISTS 'update_transactions';
 
 ALTER TYPE "workspace_role_permission" ADD VALUE IF NOT EXISTS 'delete_transactions';
+
+-- Batch 5 of new permissions
+
+ALTER TYPE "workspace_role_permission" ADD VALUE IF NOT EXISTS 'view_invoices';
+
+ALTER TYPE "workspace_role_permission" ADD VALUE IF NOT EXISTS 'create_invoices';
+
+ALTER TYPE "workspace_role_permission" ADD VALUE IF NOT EXISTS 'update_invoices';
+
+ALTER TYPE "workspace_role_permission" ADD VALUE IF NOT EXISTS 'delete_invoices';

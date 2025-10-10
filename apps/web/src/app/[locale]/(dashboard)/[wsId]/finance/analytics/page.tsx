@@ -1,6 +1,8 @@
 import AnalyticsPage from '@tuturuuu/ui/finance/analytics/analytics-page';
-import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
+import WorkspaceWrapper from '@/components/workspace-wrapper';
 import type { Metadata } from 'next';
+import { getPermissions } from '@tuturuuu/utils/workspace-helper';
+import { notFound } from 'next/navigation';
 
 export const metadata: Metadata = {
   title: 'Analytics',
@@ -14,10 +16,19 @@ interface Props {
 }
 
 export default async function WorkspaceAnalyticsPage({ params }: Props) {
-  const { wsId: id } = await params;
 
-  const workspace = await getWorkspace(id);
-  const wsId = workspace.id;
+  return (
+    <WorkspaceWrapper params={params}>
+      {async ({ wsId }) => {
 
-  return <AnalyticsPage wsId={wsId} />;
+        const { withoutPermission } = await getPermissions({
+          wsId,
+        });
+        if (withoutPermission('view_finance_stats')) notFound();
+
+        return <AnalyticsPage wsId={wsId} />;
+      }}
+    </WorkspaceWrapper>
+  )
+
 }

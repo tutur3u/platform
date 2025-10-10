@@ -14,7 +14,11 @@ import moment from 'moment';
 
 export const invoiceColumns = (
   t: any,
-  namespace: string | undefined
+  namespace: string | undefined,
+  extraColumns?: any[],
+  extraData?: {
+    canDeleteInvoices?: boolean;
+  }
 ): ColumnDef<Invoice>[] => [
   // {
   //   id: 'select',
@@ -212,6 +216,6 @@ export const invoiceColumns = (
   },
   {
     id: 'actions',
-    cell: ({ row }) => <InvoiceRowActions row={row} href={row.original.href} />,
+    cell: ({ row }) => <InvoiceRowActions row={row} href={row.original.href} canDeleteInvoices={extraData?.canDeleteInvoices} />,
   },
 ];

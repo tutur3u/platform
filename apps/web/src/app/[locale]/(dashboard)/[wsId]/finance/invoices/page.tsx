@@ -1,6 +1,8 @@
 import InvoicesPage from '@tuturuuu/ui/finance/invoices/invoice-page';
 import type { Metadata } from 'next';
 import WorkspaceWrapper from '@/components/workspace-wrapper';
+import { getPermissions } from '@tuturuuu/utils/workspace-helper';
+import { notFound } from 'next/navigation';
 
 export const metadata: Metadata = {
   title: 'Invoices',
@@ -28,7 +30,15 @@ export default async function WorkspaceInvoicesPage({
     <WorkspaceWrapper params={params}>
       {async ({ wsId }) => {
         const sp = await searchParams;
-        return <InvoicesPage wsId={wsId} searchParams={sp} />;
+        const { withoutPermission, containsPermission } = await getPermissions({
+          wsId,
+        });
+        if (withoutPermission('view_invoices')) notFound();
+
+        const canCreateInvoices = containsPermission('create_invoices');
+        const canDeleteInvoices = containsPermission('delete_invoices');
+
+        return <InvoicesPage wsId={wsId} searchParams={sp} canCreateInvoices={canCreateInvoices} canDeleteInvoices={canDeleteInvoices} />;
       }}
     </WorkspaceWrapper>
   );

@@ -18,9 +18,11 @@ interface Props {
     page: string;
     pageSize: string;
   };
+  canCreateInvoices?: boolean;
+  canDeleteInvoices?: boolean;
 }
 
-export default async function InvoicesPage({ wsId, searchParams }: Props) {
+export default async function InvoicesPage({ wsId, searchParams, canCreateInvoices = false, canDeleteInvoices = false }: Props) {
   const t = await getTranslations();
 
 
@@ -41,12 +43,14 @@ export default async function InvoicesPage({ wsId, searchParams }: Props) {
         createTitle={t('ws-invoices.create')}
         createDescription={t('ws-invoices.create_description')}
         action={
+          canCreateInvoices ? (
           <Link href={`/${wsId}/finance/invoices/new`}>
             <Button>
               <Plus />
               {t('ws-invoices.create')}
             </Button>
           </Link>
+          ) : null
         }
       />
       <Separator className="my-4" />
@@ -65,6 +69,9 @@ export default async function InvoicesPage({ wsId, searchParams }: Props) {
             columnGenerator={invoiceColumns}
             namespace="invoice-data-table"
             count={count}
+            extraData={{
+              canDeleteInvoices,
+            }}
             defaultVisibility={{
               id: false,
               customer_id: false,
