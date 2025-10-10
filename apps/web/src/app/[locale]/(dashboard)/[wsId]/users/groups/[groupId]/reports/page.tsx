@@ -43,7 +43,7 @@ export default async function UserGroupDetailsPage({
   const wsId = workspace.id;
   const { reportId, userId } = await searchParams;
   const group = await getData(wsId, groupId);
-  const {containsPermission} = await getPermissions({
+  const { containsPermission } = await getPermissions({
     wsId,
   });
   const canCheckUserAttendance = containsPermission('check_user_attendance');
@@ -89,19 +89,19 @@ export default async function UserGroupDetailsPage({
                 </Button>
               </Link>
               {canCheckUserAttendance && (
-              <Link href={`/${wsId}/users/groups/${groupId}/attendance`}>
-                <Button
-                  type="button"
-                  variant="secondary"
-                  className={cn(
-                    'border font-semibold max-sm:w-full',
-                    'border-dynamic-purple/20 bg-dynamic-purple/10 text-dynamic-purple hover:bg-dynamic-purple/20'
-                  )}
-                >
-                  <UserCheck className="h-5 w-5" />
-                  {t('ws-user-group-details.attendance')}
-                </Button>
-              </Link>
+                <Link href={`/${wsId}/users/groups/${groupId}/attendance`}>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    className={cn(
+                      'border font-semibold max-sm:w-full',
+                      'border-dynamic-purple/20 bg-dynamic-purple/10 text-dynamic-purple hover:bg-dynamic-purple/20'
+                    )}
+                  >
+                    <UserCheck className="h-5 w-5" />
+                    {t('ws-user-group-details.attendance')}
+                  </Button>
+                </Link>
               )}
               <Button
                 type="button"

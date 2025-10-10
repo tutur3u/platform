@@ -64,12 +64,18 @@ export default async function UserGroupDetailsPage({
   const { data: posts, count: postsCount } = await getGroupPosts(groupId);
   const { data: linkedProducts, count: lpCount } =
     await getLinkedProducts(groupId);
-  
+
   const { containsPermission } = await getPermissions({ wsId });
 
-  const canViewPersonalInfo: boolean = containsPermission('view_users_private_info');
-  const canViewPublicInfo: boolean = containsPermission('view_users_public_info');
-  const canCheckUserAttendance: boolean = containsPermission('check_user_attendance');
+  const canViewPersonalInfo: boolean = containsPermission(
+    'view_users_private_info'
+  );
+  const canViewPublicInfo: boolean = containsPermission(
+    'view_users_public_info'
+  );
+  const canCheckUserAttendance: boolean = containsPermission(
+    'check_user_attendance'
+  );
 
   return (
     <>
@@ -111,15 +117,15 @@ export default async function UserGroupDetailsPage({
             </Link>
             {canCheckUserAttendance && (
               <Link href={`/${wsId}/users/groups/${groupId}/attendance`}>
-              <Button
-                type="button"
-                variant="secondary"
-                className={cn(
-                  'border font-semibold max-sm:w-full',
-                  'border-dynamic-purple/20 bg-dynamic-purple/10 text-dynamic-purple hover:bg-dynamic-purple/20'
-                )}
-              >
-                <UserCheck className="h-5 w-5" />
+                <Button
+                  type="button"
+                  variant="secondary"
+                  className={cn(
+                    'border font-semibold max-sm:w-full',
+                    'border-dynamic-purple/20 bg-dynamic-purple/10 text-dynamic-purple hover:bg-dynamic-purple/20'
+                  )}
+                >
+                  <UserCheck className="h-5 w-5" />
                   {t('ws-user-group-details.attendance')}
                 </Button>
               </Link>
@@ -214,7 +220,6 @@ async function getData(wsId: string, groupId: string) {
   if (!data) notFound();
   return data as UserGroup;
 }
-
 
 async function getGroupPosts(groupId: string) {
   const supabase = await createClient();

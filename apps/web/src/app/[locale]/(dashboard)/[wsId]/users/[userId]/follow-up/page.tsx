@@ -32,10 +32,12 @@ export default async function GuestLeadFollowUpPage({ params }: Props) {
         const t = await getTranslations();
         const supabase = await createClient();
         const sbAdmin = await createAdminClient();
-        const {containsPermission} = await getPermissions({
+        const { containsPermission } = await getPermissions({
           wsId,
         });
-        const canCheckUserAttendance = containsPermission('check_user_attendance');
+        const canCheckUserAttendance = containsPermission(
+          'check_user_attendance'
+        );
 
         // Check if user is eligible for lead generation email
         const { data: eligibility, error: eligibilityError } =

@@ -27,7 +27,6 @@ interface Props {
 }
 
 export default async function InventoryPage({ params }: Props) {
-
   return (
     <WorkspaceWrapper params={params}>
       {async ({ wsId }) => {
@@ -40,7 +39,9 @@ export default async function InventoryPage({ params }: Props) {
           return (
             <div className="flex h-full items-center justify-center">
               <div className="text-center">
-                <h2 className="text-lg font-semibold">{t('ws-roles.inventory_access_denied')}</h2>
+                <h2 className="text-lg font-semibold">
+                  {t('ws-roles.inventory_access_denied')}
+                </h2>
                 <p className="text-muted-foreground">
                   {t('ws-roles.inventory_access_denied_description')}
                 </p>
