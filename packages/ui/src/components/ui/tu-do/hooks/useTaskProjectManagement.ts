@@ -1,7 +1,7 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { Task } from '@tuturuuu/types/primitives/Task';
-import { toast } from '@tuturuuu/ui/hooks/use-toast';
+import { toast } from '@tuturuuu/ui/sonner';
 import { useState } from 'react';
 
 interface TaskProject {
@@ -84,10 +84,7 @@ export function useTaskProjectManagement({
           // Error code 23505 is duplicate key violation in PostgreSQL
           if (error.code === '23505') {
             // Project is already linked - just update cache to reflect reality
-            toast({
-              title: 'Already linked',
-              description: 'This project is already linked to the task',
-            });
+            toast.info('This project is already linked to the task');
             // Fetch current state to sync cache
             await queryClient.invalidateQueries({
               queryKey: ['tasks', boardId],
@@ -104,11 +101,7 @@ export function useTaskProjectManagement({
     } catch (e: any) {
       // Rollback on error
       queryClient.setQueryData(['tasks', boardId], previousTasks);
-      toast({
-        title: 'Project update failed',
-        description: e.message || 'Unable to toggle project',
-        variant: 'destructive',
-      });
+      toast.error(e.message || 'Unable to toggle project');
     } finally {
       setProjectsSaving(null);
     }

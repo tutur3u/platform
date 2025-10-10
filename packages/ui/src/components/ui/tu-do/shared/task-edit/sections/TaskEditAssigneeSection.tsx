@@ -5,6 +5,7 @@ import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
 import { ScrollArea } from '@tuturuuu/ui/scroll-area';
 import { cn } from '@tuturuuu/utils/format';
+import { getInitials } from '@tuturuuu/utils/name-helper';
 import { memo, useMemo, useState } from 'react';
 
 interface WorkspaceMember {
@@ -28,6 +29,11 @@ export const TaskEditAssigneeSection = memo(function TaskEditAssigneeSection({
 }: TaskEditAssigneeSectionProps) {
   const [searchQuery, setSearchQuery] = useState('');
 
+  // Precompute Set of selected assignee IDs for O(1) membership tests
+  const selectedIdSet = useMemo(() => {
+    return new Set(selectedAssignees.map((a) => a.user_id));
+  }, [selectedAssignees]);
+
   const filteredMembers = useMemo(() => {
     if (!searchQuery.trim()) return workspaceMembers;
     const query = searchQuery.toLowerCase();
@@ -35,17 +41,6 @@ export const TaskEditAssigneeSection = memo(function TaskEditAssigneeSection({
       m.display_name.toLowerCase().includes(query)
     );
   }, [workspaceMembers, searchQuery]);
-
-  const getInitials = (name: string) => {
-    const parts = name.trim().split(/\s+/).filter(Boolean);
-    if (parts.length === 1) return parts[0]?.slice(0, 2).toUpperCase();
-    if (parts.length > 1) {
-      return (
-        (parts[0]?.[0] || '') + (parts[parts.length - 1]?.[0] || '')
-      ).toUpperCase();
-    }
-    return '??';
-  };
 
   return (
     <div className="space-y-3">
@@ -116,9 +111,7 @@ export const TaskEditAssigneeSection = memo(function TaskEditAssigneeSection({
                 </div>
               ) : (
                 filteredMembers.map((member) => {
-                  const isSelected = selectedAssignees.some(
-                    (a) => a.user_id === member.user_id
-                  );
+                  const isSelected = selectedIdSet.has(member.user_id);
 
                   return (
                     <button

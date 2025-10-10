@@ -1,7 +1,7 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { Task } from '@tuturuuu/types/primitives/Task';
-import { toast } from '@tuturuuu/ui/hooks/use-toast';
+import { toast } from '@tuturuuu/ui/sonner';
 import { useState } from 'react';
 import { NEW_LABEL_COLOR } from '../utils/taskConstants';
 
@@ -93,11 +93,7 @@ export function useTaskLabelManagement({
     } catch (e: any) {
       // Rollback on error
       queryClient.setQueryData(['tasks', boardId], previousTasks);
-      toast({
-        title: 'Label update failed',
-        description: e.message || 'Unable to toggle label',
-        variant: 'destructive',
-      });
+      toast.error(e.message || 'Unable to toggle label');
     } finally {
       setLabelsSaving(null);
     }
@@ -127,6 +123,7 @@ export function useTaskLabelManagement({
       const newLabel = await response.json();
 
       // Auto-apply the newly created label to this task
+      let linkSucceeded = false;
       try {
         const supabase = createClient();
 
@@ -159,25 +156,26 @@ export function useTaskLabelManagement({
         if (linkErr) {
           // Rollback on error
           queryClient.setQueryData(['tasks', boardId], previousTasks);
-          toast({
-            title: 'Label created (not applied)',
-            description:
-              'The label was created but could not be attached to the task. Refresh and try manually.',
-            variant: 'destructive',
-          });
+          toast.error(
+            'The label was created but could not be attached to the task. Refresh and try manually.'
+          );
+        } else {
+          linkSucceeded = true;
         }
       } catch (applyErr: any) {
         console.error('Failed to auto-apply new label', applyErr);
       }
 
-      // Reset form and close dialog
-      setNewLabelName('');
-      setNewLabelColor(NEW_LABEL_COLOR);
+      // Only show success toast and reset form if link succeeded
+      if (linkSucceeded) {
+        // Reset form and close dialog
+        setNewLabelName('');
+        setNewLabelColor(NEW_LABEL_COLOR);
 
-      toast({
-        title: 'Label created & applied',
-        description: `"${newLabel.name}" label created and applied to this task`,
-      });
+        toast.success(
+          `"${newLabel.name}" label created and applied to this task`
+        );
+      }
 
       // Invalidate workspace labels cache so all task cards get the new label
       queryClient.invalidateQueries({
@@ -186,11 +184,7 @@ export function useTaskLabelManagement({
 
       return newLabel;
     } catch (e: any) {
-      toast({
-        title: 'Failed to create label',
-        description: e.message || 'Unable to create new label',
-        variant: 'destructive',
-      });
+      toast.error(e.message || 'Unable to create new label');
       throw e;
     } finally {
       setCreatingLabel(false);

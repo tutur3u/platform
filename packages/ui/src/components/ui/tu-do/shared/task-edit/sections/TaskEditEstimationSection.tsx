@@ -3,6 +3,10 @@ import { Timer, X } from '@tuturuuu/ui/icons';
 import { Label } from '@tuturuuu/ui/label';
 import { cn } from '@tuturuuu/utils/format';
 import { memo, useMemo } from 'react';
+import {
+  buildEstimationIndices,
+  mapEstimationPoints,
+} from '../../estimation-mapping';
 
 interface TaskEditEstimationSectionProps {
   estimationPoints: number | null | undefined;
@@ -21,54 +25,14 @@ export const TaskEditEstimationSection = memo(
     onEstimationChange,
   }: TaskEditEstimationSectionProps) {
     const estimationOptions = useMemo(() => {
-      const fibonacciBase = [1, 2, 3, 5, 8, 13];
-      const fibonacciExtended = [...fibonacciBase, 21, 34, 55, 89];
-      const linearBase = [1, 2, 3, 4, 5, 6];
-      const linearExtended = [...linearBase, 7, 8, 9, 10];
-      const tshirtBase = [1, 2, 3, 5, 8]; // XS, S, M, L, XL
-      const tshirtExtended = [...tshirtBase, 13, 21]; // XXL, XXXL
-
-      let options: number[] = [];
-
-      switch (estimationType) {
-        case 'fibonacci':
-          options = extendedEstimation ? fibonacciExtended : fibonacciBase;
-          break;
-        case 'linear':
-          options = extendedEstimation ? linearExtended : linearBase;
-          break;
-        case 'tshirt':
-          options = extendedEstimation ? tshirtExtended : tshirtBase;
-          break;
-        default:
-          options = fibonacciBase;
-      }
-
-      if (allowZeroEstimates) {
-        options = [0, ...options];
-      }
-
-      return options;
-    }, [estimationType, extendedEstimation, allowZeroEstimates]);
-
-    const getTshirtLabel = (points: number) => {
-      const labels: Record<number, string> = {
-        1: 'XS',
-        2: 'S',
-        3: 'M',
-        5: 'L',
-        8: 'XL',
-        13: 'XXL',
-        21: 'XXXL',
-      };
-      return labels[points] || points.toString();
-    };
+      return buildEstimationIndices({
+        extended: extendedEstimation,
+        allowZero: allowZeroEstimates,
+      });
+    }, [extendedEstimation, allowZeroEstimates]);
 
     const getLabel = (points: number) => {
-      if (estimationType === 'tshirt') {
-        return getTshirtLabel(points);
-      }
-      return points.toString();
+      return mapEstimationPoints(points, estimationType);
     };
 
     return (
@@ -118,9 +82,7 @@ export const TaskEditEstimationSection = memo(
               Current Estimate
             </div>
             <div className="mt-1 font-bold text-2xl">
-              {estimationType === 'tshirt'
-                ? getTshirtLabel(estimationPoints)
-                : estimationPoints}
+              {getLabel(estimationPoints)}
             </div>
           </div>
         )}
