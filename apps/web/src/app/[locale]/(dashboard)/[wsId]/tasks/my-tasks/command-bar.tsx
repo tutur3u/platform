@@ -8,14 +8,10 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@tuturuuu/ui/popover';
+import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
 import { Label } from '@tuturuuu/ui/label';
 import { Switch } from '@tuturuuu/ui/switch';
-import {useTranslations} from 'next-intl';
+import { useTranslations } from 'next-intl';
 import { ChevronDown, MapPin, Settings, X } from '@tuturuuu/ui/icons';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { useState } from 'react';
@@ -146,13 +142,18 @@ export function CommandBar({
               className="h-8 w-8 p-0"
             >
               <MapPin className="h-4 w-4" />
-    
             </Button>
 
             {mode === 'ai' && (
               <Popover>
                 <PopoverTrigger asChild>
-                  <Button variant="ghost" size="sm" disabled={isLoading} className="h-8 w-8 p-0" title="AI Generation Settings">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    disabled={isLoading}
+                    className="h-8 w-8 p-0"
+                    title="AI Generation Settings"
+                  >
                     <Settings className="h-4 w-4" />
                   </Button>
                 </PopoverTrigger>
@@ -168,7 +169,9 @@ export function CommandBar({
                             htmlFor="ai-descriptions"
                             className="text-sm font-normal"
                           >
-                            {t('dashboard.quick_journal.toggle_descriptions_label')}
+                            {t(
+                              'dashboard.quick_journal.toggle_descriptions_label'
+                            )}
                           </Label>
                           <Switch
                             id="ai-descriptions"
@@ -213,12 +216,10 @@ export function CommandBar({
             )}
 
             {hasDestination && selectedDestination && (
-              <Badge
-                variant="secondary"
-                className="gap-1 pl-2 pr-1 text-xs"
-              >
+              <Badge variant="secondary" className="gap-1 pl-2 pr-1 text-xs">
                 <span>
-                  {selectedDestination.boardName} / {selectedDestination.listName}
+                  {selectedDestination.boardName} /{' '}
+                  {selectedDestination.listName}
                 </span>
                 <Button
                   variant="ghost"
@@ -245,20 +246,23 @@ export function CommandBar({
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-64">
-            {(Object.entries(modeConfig) as [CommandMode, typeof modeConfig[CommandMode]][]).map(
-              ([key, config]) => (
-                <DropdownMenuItem
-                  key={key}
-                  onClick={() => setMode(key)}
-                  className="flex-col items-start gap-1 py-3"
-                >
-                  <div className="font-semibold">{config.label}</div>
-                  <div className="text-muted-foreground text-xs">
-                    {config.description}
-                  </div>
-                </DropdownMenuItem>
-              )
-            )}
+            {(
+              Object.entries(modeConfig) as [
+                CommandMode,
+                (typeof modeConfig)[CommandMode],
+              ][]
+            ).map(([key, config]) => (
+              <DropdownMenuItem
+                key={key}
+                onClick={() => setMode(key)}
+                className="flex-col items-start gap-1 py-3"
+              >
+                <div className="font-semibold">{config.label}</div>
+                <div className="text-muted-foreground text-xs">
+                  {config.description}
+                </div>
+              </DropdownMenuItem>
+            ))}
           </DropdownMenuContent>
         </DropdownMenu>
 
@@ -267,7 +271,7 @@ export function CommandBar({
           disabled={!canExecute || isLoading}
           size="sm"
         >
-          {isLoading ?  t('common.processing') : currentConfig.action}
+          {isLoading ? t('common.processing') : currentConfig.action}
         </Button>
       </div>
     </div>
