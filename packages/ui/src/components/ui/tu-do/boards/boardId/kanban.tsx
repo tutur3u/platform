@@ -1086,9 +1086,11 @@ export function KanbanBoard({
 
       // Calculate target position based on drop location
       // Get all tasks in the target list (INCLUDE the dragged task if it's in the same list)
-      const targetListTasks = tasks
-        .filter((t) => t.list_id === targetListId)
-        .sort((a, b) => {
+      let targetListTasks = tasks.filter((t) => t.list_id === targetListId);
+
+      // Only sort by sort_key if parent hasn't already sorted (match rendering behavior)
+      if (!disableSort) {
+        targetListTasks = targetListTasks.sort((a, b) => {
           // Use MAX_SAFE_INTEGER for null sort_key to match rendering behavior
           const sortA = a.sort_key ?? Number.MAX_SAFE_INTEGER;
           const sortB = b.sort_key ?? Number.MAX_SAFE_INTEGER;
@@ -1097,6 +1099,7 @@ export function KanbanBoard({
             new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
           );
         });
+      }
 
       console.log('📋 Sorted tasks in target list:', targetListTasks.length);
       console.log(
@@ -1234,15 +1237,33 @@ export function KanbanBoard({
             targetListId
           );
 
-          // For batch moves, spread tasks around the target position
-          const tasksToMove = Array.from(selectedTasks);
-          tasksToMove.forEach((taskId, index) => {
+          // For batch moves, preserve visual order by sorting selected tasks by their current sort_key
+          const selectedTaskIds = Array.from(selectedTasks);
+
+          // Map task IDs to their current task objects
+          const selectedTaskObjects = selectedTaskIds
+            .map((taskId) => tasks.find((t) => t.id === taskId))
+            .filter((t): t is Task => t !== undefined);
+
+          // Sort by current sort_key (ascending) to preserve visual order
+          const sortedTasksToMove = selectedTaskObjects.sort((a, b) => {
+            const sortA = a.sort_key ?? Number.MAX_SAFE_INTEGER;
+            const sortB = b.sort_key ?? Number.MAX_SAFE_INTEGER;
+            if (sortA !== sortB) return sortA - sortB;
+            return (
+              new Date(a.created_at).getTime() -
+              new Date(b.created_at).getTime()
+            );
+          });
+
+          // Spread tasks around the target position with increased offset to reduce clustering
+          sortedTasksToMove.forEach((task, index) => {
             // Calculate individual sort_key for each task in batch
-            const offset = (index - tasksToMove.length / 2) * 10;
+            const offset = (index - sortedTasksToMove.length / 2) * 100;
             const batchSortKey = newSortKey + offset;
 
             reorderTaskMutation.mutate({
-              taskId,
+              taskId: task.id,
               newListId: targetListId,
               newSortKey: batchSortKey,
             });
