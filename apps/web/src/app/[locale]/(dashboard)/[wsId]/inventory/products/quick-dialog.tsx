@@ -286,7 +286,7 @@ export function ProductQuickDialog({
       // If no fields have changed, don't make any API calls
       if (!hasProductChanges && !hasInventoryChanges) {
         setIsSaving(false);
-        toast.error(t('ws-inventory-products.messages.no_changes_to_save'));
+        toast.info(t('ws-inventory-products.messages.no_changes_to_save'));
         return;
       }
 

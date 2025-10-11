@@ -5,13 +5,11 @@ import { z } from 'zod';
 
 const PromotionSchema = z
   .object({
-    id: z.string().optional(),
     name: z.string().min(1).max(255),
     description: z.string().optional(),
     code: z.string().min(1).max(255),
     value: z.coerce.number().min(0),
     unit: z.enum(['percentage', 'currency']).optional(),
-    creator_id: z.uuid(),
   })
   .refine(
     ({ unit, value }) =>
@@ -53,16 +51,42 @@ export async function POST(req: Request, { params }: Params) {
   }
 
   const supabase = await createClient();
-  const data = parsed.data;
 
-  console.log(data);
+  // Get authenticated user
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return NextResponse.json(
+      { message: 'Unauthorized' },
+      { status: 401 }
+    );
+  }
+
+  // Get the virtual_user_id for this workspace
+  const { data: wsUser } = await supabase
+    .from('workspace_user_linked_users')
+    .select('virtual_user_id')
+    .eq('platform_user_id', user.id)
+    .eq('ws_id', wsId)
+    .single();
+
+  if (!wsUser?.virtual_user_id) {
+    return NextResponse.json(
+      { message: 'User not found in workspace' },
+      { status: 403 }
+    );
+  }
+
+  const data = parsed.data;
 
   const { error } = await supabase.from('workspace_promotions').insert({
     name: data.name,
     description: data.description,
     code: data.code,
     value: data.value,
-    creator_id: data.creator_id,
+    creator_id: wsUser.virtual_user_id,
     ws_id: wsId,
     use_ratio: data.unit === 'percentage',
   });

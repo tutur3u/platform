@@ -105,21 +105,37 @@ export async function PUT(req: Request, { params }: Params) {
       return NextResponse.json({ message: 'Invalid wallet' }, { status: 400 });
     }
   }
+
+  // Build update payload conditionally - only include fields that are provided
+  const updatePayload: any = {};
+
+  if (newData.amount !== undefined) {
+    updatePayload.amount = newData.amount;
+  }
+  if (newData.description !== undefined) {
+    updatePayload.description = newData.description;
+  }
+  if (newData.wallet_id !== undefined) {
+    updatePayload.wallet_id = newData.wallet_id;
+  }
+  if (newData.category_id !== undefined) {
+    updatePayload.category_id = newData.category_id;
+  }
+  if (newData.taken_at !== undefined) {
+    updatePayload.taken_at =
+      typeof newData.taken_at === 'string'
+        ? new Date(newData.taken_at).toISOString()
+        : (newData.taken_at instanceof Date
+            ? newData.taken_at.toISOString()
+            : newData.taken_at);
+  }
+  if (newData.report_opt_in !== undefined) {
+    updatePayload.report_opt_in = newData.report_opt_in;
+  }
+
   const { error } = await supabase
     .from('wallet_transactions')
-    .update({
-      amount: newData.amount,
-      description: newData.description,
-      wallet_id: newData.origin_wallet_id,
-      category_id: newData.category_id || null,
-      taken_at:
-        typeof newData.taken_at === 'string'
-          ? new Date(newData.taken_at).toISOString()
-          : (newData.taken_at instanceof Date
-              ? newData.taken_at.toISOString()
-              : newData.taken_at),
-      report_opt_in: newData.report_opt_in || false
-    })
+    .update(updatePayload)
     .eq('id', normalizedId);
 
 

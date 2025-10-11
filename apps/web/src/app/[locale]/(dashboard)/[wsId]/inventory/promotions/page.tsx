@@ -106,10 +106,9 @@ export default async function WorkspacePromotionsPage({
               )}
               form={
                 canCreateInventory ? (
-                  <PromotionForm
-                    wsId={wsId}
-                    wsUserId={wsUser.virtual_user_id}
-                    canCreateInventory={canCreateInventory}
+                <PromotionForm
+                  wsId={wsId}
+                  canCreateInventory={canCreateInventory}
                     canUpdateInventory={canUpdateInventory}
                   />
                 ) : undefined

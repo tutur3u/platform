@@ -451,7 +451,7 @@ export default function GroupMembers({
                       <span className="sr-only">{t('common.birthday')}</span>
                       <span>
                         {person.birthday
-                          ? new Date(person.birthday).toLocaleDateString()
+                          ? dateTime(new Date(person.birthday))
                           : t('common.unknown')}
                       </span>
                     </div>

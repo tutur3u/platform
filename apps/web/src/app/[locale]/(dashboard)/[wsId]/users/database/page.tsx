@@ -22,20 +22,20 @@ export const metadata: Metadata = {
 
 interface SearchParams {
   q?: string;
-  page?: string;
-  pageSize?: string;
+  page?: number;
+  pageSize?: number;
   includedGroups?: string | string[];
   excludedGroups?: string | string[];
 }
 
 const SearchParamsSchema = z.object({
   q: z.string().default(''),
-  page: z.string().default('1'),
-  pageSize: z.string().default('10'),
-  includedGroups: z.union([z.string(), z.array(z.string())]).transform((val) => 
+  page: z.coerce.number().int().min(1).default(1),
+  pageSize: z.coerce.number().int().min(1).max(100).default(10),
+  includedGroups: z.union([z.string(), z.array(z.string())]).transform((val) =>
     Array.isArray(val) ? val : val ? [val] : []
   ).default([]),
-  excludedGroups: z.union([z.string(), z.array(z.string())]).transform((val) => 
+  excludedGroups: z.union([z.string(), z.array(z.string())]).transform((val) =>
     Array.isArray(val) ? val : val ? [val] : []
   ).default([]),
 });
@@ -165,8 +165,8 @@ async function getData(
   wsId: string,
   {
     q,
-    page = '1',
-    pageSize = '10',
+    page = 1,
+    pageSize = 10,
     includedGroups = [],
     excludedGroups = [],
     retry = true,
@@ -200,11 +200,9 @@ async function getData(
     .order('full_name', { ascending: true, nullsFirst: false });
 
   if (page && pageSize) {
-    const parsedPage = parseInt(page, 10);
-    const parsedSize = parseInt(pageSize, 10);
-    const start = (parsedPage - 1) * parsedSize;
-    const end = parsedPage * parsedSize;
-    queryBuilder.range(start, end).limit(parsedSize);
+    const start = (page - 1) * pageSize;
+    const end = page * pageSize;
+    queryBuilder.range(start, end).limit(pageSize);
   }
 
   const { data, error, count } = await queryBuilder;

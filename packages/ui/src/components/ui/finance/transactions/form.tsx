@@ -36,7 +36,6 @@ import { useLocale, useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import * as z from 'zod';
-import { createClient } from '@tuturuuu/supabase/next/client';
 
 interface Props {
   wsId: string;
@@ -127,26 +126,6 @@ export function TransactionForm({
 
     setLoading(true);
 
-    const supabase = await createClient();
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    setLoading(false);
-    toast.error(t('common.insufficient_permissions'));
-    return;
-  }
-
-
-    const {data: wsUser} = await supabase
-      .from('workspace_user_linked_users')
-      .select('virtual_user_id')
-      .eq('platform_user_id', user.id)
-      .eq('ws_id', wsId)
-      .single();
-
     const res = await fetch(
       data?.id
         ? `/api/workspaces/${wsId}/transactions/${data.id}`
@@ -163,7 +142,6 @@ export function TransactionForm({
             false
               ? Math.abs(data.amount)
               : -Math.abs(data.amount),
-          creator_id: wsUser?.virtual_user_id,
         }),
       }
     );

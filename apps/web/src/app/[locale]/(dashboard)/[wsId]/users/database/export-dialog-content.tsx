@@ -27,8 +27,8 @@ import { jsonToCSV } from 'react-papaparse';
 
 interface SearchParams {
   q?: string;
-  page?: string;
-  pageSize?: string;
+  page?: number;
+  pageSize?: number;
   includedGroups?: string | string[];
   excludedGroups?: string | string[];
 }
@@ -102,8 +102,8 @@ export default function ExportDialogContent({
 
     while (true) {
       const { data } = await getData(wsId, {
-        page: currentPage.toString(),
-        pageSize: pageSize.toString(),
+        page: currentPage,
+        pageSize: pageSize,
         q: searchParams.q,
         includedGroups,
         excludedGroups,
@@ -219,8 +219,8 @@ async function getData(
   wsId: string,
   {
     q,
-    page = '1',
-    pageSize = '10',
+    page = 1,
+    pageSize = 10,
     includedGroups = [],
     excludedGroups = [],
     retry = true,
@@ -249,8 +249,8 @@ async function getData(
     .order('full_name', { ascending: true, nullsFirst: false });
 
   if (page && pageSize) {
-    const parsedPage = parseInt(page);
-    const parsedSize = parseInt(pageSize);
+    const parsedPage = page;
+    const parsedSize = pageSize;
     const start = (parsedPage - 1) * parsedSize;
     const end = parsedPage * parsedSize - 1;
     queryBuilder.range(start, end);

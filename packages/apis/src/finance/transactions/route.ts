@@ -17,7 +17,6 @@ interface Params {
     taken_at: z.string().or(z.date()),
     report_opt_in: z.boolean().optional(),
     tag_ids: z.array(z.string().uuid()).optional(),
-    creator_id: z.string().uuid().optional(),
   });
 export async function GET(req: Request, { params }: Params) {
   const { wsId } = await params;
@@ -79,6 +78,33 @@ export async function POST(req: Request, { params }: Params) {
 
   const supabase = await createClient();
 
+  // Get authenticated user
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return NextResponse.json(
+      { message: 'Unauthorized' },
+      { status: 401 }
+    );
+  }
+
+  // Get the virtual_user_id for this workspace
+  const { data: wsUser } = await supabase
+    .from('workspace_user_linked_users')
+    .select('virtual_user_id')
+    .eq('platform_user_id', user.id)
+    .eq('ws_id', wsId)
+    .single();
+
+  if (!wsUser?.virtual_user_id) {
+    return NextResponse.json(
+      { message: 'User not found in workspace' },
+      { status: 403 }
+    );
+  }
+
   const parsed = TransactionSchema.safeParse(await req.json());
 
   if (!parsed.success) {
@@ -117,7 +143,7 @@ export async function POST(req: Request, { params }: Params) {
               ? data.taken_at.toISOString()
               : data.taken_at),
       report_opt_in: data.report_opt_in || false,
-      creator_id: data.creator_id || null,
+      creator_id: wsUser.virtual_user_id,
     })
     .select('id')
     .single();

@@ -15,7 +15,6 @@ import {
 import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
-import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import { useState } from 'react';
 import { ProductWarehouseForm } from './form';
 

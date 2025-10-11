@@ -245,7 +245,6 @@ export function ProductForm({
 
         // If no fields have changed, don't make any API calls
         if (!hasProductChanges && !hasInventoryChanges) {
-          console.log('No changes detected, skipping API calls');
           setLoading(false);
           toast.info(t('ws-inventory-products.no_changes_detected'));
           return;

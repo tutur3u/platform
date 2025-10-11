@@ -283,8 +283,8 @@ async function getGroupMembersData(
   const supabase = await createClient();
 
   // Build dynamic select query based on permissions
-  const baseFields = 'id';
-  const publicFields = permissions.canViewPublicInfo ? ', birthday, gender, display_name, avatar_url, full_name' : '';
+  const baseFields = 'id, display_name, full_name, avatar_url';
+  const publicFields = permissions.canViewPublicInfo ? ', birthday, gender' : '';
   const personalFields = permissions.canViewPersonalInfo ? ', email, phone' : '';
 
   // Build the complete select query string
