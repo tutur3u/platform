@@ -4,10 +4,7 @@ import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { z } from 'zod';
 
 // Helper function to verify transaction belongs to workspace
-async function verifyTransactionWorkspace(
-  transactionId: string,
-  wsId: string
-) {
+async function verifyTransactionWorkspace(transactionId: string, wsId: string) {
   const supabase = await createClient();
 
   const { data, error } = await supabase
@@ -72,7 +69,10 @@ export async function GET(_: Request, { params }: Params) {
   const transaction = await verifyTransactionWorkspace(transactionId, wsId);
 
   if (!transaction) {
-    return NextResponse.json({ message: 'Transaction not found' }, { status: 404 });
+    return NextResponse.json(
+      { message: 'Transaction not found' },
+      { status: 404 }
+    );
   }
 
   // Fetch complete transaction data
@@ -83,8 +83,14 @@ export async function GET(_: Request, { params }: Params) {
     .single();
 
   if (error || !data) {
-    console.error('Error fetching transaction:', { transactionId, error: error?.message });
-    return NextResponse.json({ message: 'Transaction not found' }, { status: 404 });
+    console.error('Error fetching transaction:', {
+      transactionId,
+      error: error?.message,
+    });
+    return NextResponse.json(
+      { message: 'Transaction not found' },
+      { status: 404 }
+    );
   }
 
   return NextResponse.json(data);
@@ -102,8 +108,6 @@ export async function PUT(req: Request, { params }: Params) {
   }
 
   const parsed = TransactionUpdateSchema.safeParse(await req.json());
- 
-
 
   if (!parsed.success) {
     return NextResponse.json(
@@ -131,7 +135,10 @@ export async function PUT(req: Request, { params }: Params) {
   const transaction = await verifyTransactionWorkspace(transactionId, wsId);
 
   if (!transaction) {
-    return NextResponse.json({ message: 'Transaction not found' }, { status: 404 });
+    return NextResponse.json(
+      { message: 'Transaction not found' },
+      { status: 404 }
+    );
   }
 
   const newData = {
@@ -176,9 +183,9 @@ export async function PUT(req: Request, { params }: Params) {
     updatePayload.taken_at =
       typeof newData.taken_at === 'string'
         ? new Date(newData.taken_at).toISOString()
-        : (newData.taken_at instanceof Date
-            ? newData.taken_at.toISOString()
-            : newData.taken_at);
+        : newData.taken_at instanceof Date
+          ? newData.taken_at.toISOString()
+          : newData.taken_at;
   }
   if (newData.report_opt_in !== undefined) {
     updatePayload.report_opt_in = newData.report_opt_in;
@@ -193,7 +200,7 @@ export async function PUT(req: Request, { params }: Params) {
     console.error('Error updating transaction:', {
       transactionId: transactionId,
       error: error.message,
-      updatePayload
+      updatePayload,
     });
     return NextResponse.json(
       { message: 'Error updating transaction' },
@@ -257,7 +264,10 @@ export async function DELETE(_: Request, { params }: Params) {
   const transaction = await verifyTransactionWorkspace(transactionId, wsId);
 
   if (!transaction) {
-    return NextResponse.json({ message: 'Transaction not found' }, { status: 404 });
+    return NextResponse.json(
+      { message: 'Transaction not found' },
+      { status: 404 }
+    );
   }
 
   const { error } = await supabase
@@ -268,7 +278,7 @@ export async function DELETE(_: Request, { params }: Params) {
   if (error) {
     console.error('Error deleting transaction:', {
       transactionId,
-      error: error.message
+      error: error.message,
     });
     return NextResponse.json(
       { message: 'Error deleting transaction' },

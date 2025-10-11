@@ -21,7 +21,6 @@ const PromotionSchema = z
     }
   );
 
-
 interface Params {
   params: Promise<{
     wsId: string;
@@ -58,10 +57,7 @@ export async function POST(req: Request, { params }: Params) {
   } = await supabase.auth.getUser();
 
   if (!user) {
-    return NextResponse.json(
-      { message: 'Unauthorized' },
-      { status: 401 }
-    );
+    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }
 
   // Get the virtual_user_id for this workspace

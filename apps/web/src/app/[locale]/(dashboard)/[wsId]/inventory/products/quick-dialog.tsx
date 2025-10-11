@@ -304,7 +304,9 @@ export function ProductQuickDialog({
         );
 
         if (!productRes.ok) {
-          throw new Error(t('ws-inventory-products.messages.failed_update_details'));
+          throw new Error(
+            t('ws-inventory-products.messages.failed_update_details')
+          );
         }
       }
 
@@ -329,13 +331,17 @@ export function ProductQuickDialog({
 
       // Success
       setIsSaving(false);
-      toast.success(t('ws-inventory-products.messages.product_updated_successfully'));
+      toast.success(
+        t('ws-inventory-products.messages.product_updated_successfully')
+      );
       router.refresh();
     } catch (error) {
       setIsSaving(false);
       console.error('Error updating product:', error);
       toast.error(
-        error instanceof Error ? error.message : t('ws-inventory-products.messages.failed_update_product')
+        error instanceof Error
+          ? error.message
+          : t('ws-inventory-products.messages.failed_update_product')
       );
     }
   };
@@ -363,13 +369,18 @@ export function ProductQuickDialog({
       );
 
       if (res.ok) {
-        toast.success(t('ws-inventory-products.messages.product_deleted_successfully'));
+        toast.success(
+          t('ws-inventory-products.messages.product_deleted_successfully')
+        );
         setShowDeleteDialog(false);
         onOpenChange(false);
         router.refresh();
       } else {
         const data = await res.json();
-        toast.error(data.message || t('ws-inventory-products.messages.failed_delete_product'));
+        toast.error(
+          data.message ||
+            t('ws-inventory-products.messages.failed_delete_product')
+        );
       }
     } catch {
       toast.error(t('ws-inventory-products.messages.failed_delete_product'));
@@ -429,7 +440,9 @@ export function ProductQuickDialog({
             <TabsContent value="details" className="space-y-4">
               <Card>
                 <CardHeader>
-                  <CardTitle>{t('ws-inventory-products.sections.product_information')}</CardTitle>
+                  <CardTitle>
+                    {t('ws-inventory-products.sections.product_information')}
+                  </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -460,7 +473,9 @@ export function ProductQuickDialog({
                         <Label className="font-medium text-muted-foreground text-sm">
                           Stock
                         </Label>
-                        <p className="mt-1 text-sm">{t('ws-inventory-products.labels.unlimited_stock')}</p>
+                        <p className="mt-1 text-sm">
+                          {t('ws-inventory-products.labels.unlimited_stock')}
+                        </p>
                       </div>
                     )}
                     {product.description && (
@@ -497,7 +512,9 @@ export function ProductQuickDialog({
             {!hasUnlimitedStock && (
               <TabsContent value="inventory" className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <h3 className="font-semibold text-lg">{t('ws-inventory-products.sections.current_stock')}</h3>
+                  <h3 className="font-semibold text-lg">
+                    {t('ws-inventory-products.sections.current_stock')}
+                  </h3>
                 </div>
 
                 {/* Inventory Management (for tracked stock) */}
@@ -523,14 +540,22 @@ export function ProductQuickDialog({
                                 name={`inventory.${i}.warehouse_id`}
                                 render={({ field }) => (
                                   <FormItem>
-                                    <FormLabel>{t('ws-inventory-products.labels.warehouse')}</FormLabel>
+                                    <FormLabel>
+                                      {t(
+                                        'ws-inventory-products.labels.warehouse'
+                                      )}
+                                    </FormLabel>
                                     <Select
                                       onValueChange={field.onChange}
                                       value={field.value}
                                     >
                                       <FormControl>
                                         <SelectTrigger>
-                                          <SelectValue placeholder={t('ws-inventory-products.placeholders.select_warehouse')} />
+                                          <SelectValue
+                                            placeholder={t(
+                                              'ws-inventory-products.placeholders.select_warehouse'
+                                            )}
+                                          />
                                         </SelectTrigger>
                                       </FormControl>
                                       <SelectContent>
@@ -554,12 +579,18 @@ export function ProductQuickDialog({
                                 name={`inventory.${i}.price`}
                                 render={({ field }) => (
                                   <FormItem>
-                                    <FormLabel>{t('ws-inventory-products.labels.price_per_unit')}</FormLabel>
+                                    <FormLabel>
+                                      {t(
+                                        'ws-inventory-products.labels.price_per_unit'
+                                      )}
+                                    </FormLabel>
                                     <FormControl>
                                       <Input
                                         type="number"
                                         step="0.01"
-                                        placeholder={t('ws-inventory-products.placeholders.enter_price')}
+                                        placeholder={t(
+                                          'ws-inventory-products.placeholders.enter_price'
+                                        )}
                                         {...field}
                                         value={String(field.value || '')}
                                         onChange={(e) =>
@@ -579,7 +610,11 @@ export function ProductQuickDialog({
                                 name={`inventory.${i}.min_amount`}
                                 render={({ field }) => (
                                   <FormItem>
-                                    <FormLabel>{t('ws-inventory-products.labels.min_amount')}</FormLabel>
+                                    <FormLabel>
+                                      {t(
+                                        'ws-inventory-products.labels.min_amount'
+                                      )}
+                                    </FormLabel>
                                     <FormControl>
                                       <Input
                                         type="number"
@@ -601,7 +636,11 @@ export function ProductQuickDialog({
                                 name={`inventory.${i}.amount`}
                                 render={({ field }) => (
                                   <FormItem>
-                                    <FormLabel>{t('ws-inventory-products.labels.current_amount')}</FormLabel>
+                                    <FormLabel>
+                                      {t(
+                                        'ws-inventory-products.labels.current_amount'
+                                      )}
+                                    </FormLabel>
                                     <FormControl>
                                       <Input
                                         type="number"
@@ -623,14 +662,20 @@ export function ProductQuickDialog({
                                 name={`inventory.${i}.unit_id`}
                                 render={({ field }) => (
                                   <FormItem>
-                                    <FormLabel>{t('ws-inventory-products.labels.unit')}</FormLabel>
+                                    <FormLabel>
+                                      {t('ws-inventory-products.labels.unit')}
+                                    </FormLabel>
                                     <Select
                                       onValueChange={field.onChange}
                                       value={field.value}
                                     >
                                       <FormControl>
                                         <SelectTrigger>
-                                          <SelectValue placeholder={t('ws-inventory-products.placeholders.select_unit')} />
+                                          <SelectValue
+                                            placeholder={t(
+                                              'ws-inventory-products.placeholders.select_unit'
+                                            )}
+                                          />
                                         </SelectTrigger>
                                       </FormControl>
                                       <SelectContent>
@@ -675,7 +720,9 @@ export function ProductQuickDialog({
                               className="w-full"
                             >
                               <Plus className="mr-2 h-4 w-4" />
-                              {t('ws-inventory-products.buttons.add_stock_entry')}
+                              {t(
+                                'ws-inventory-products.buttons.add_stock_entry'
+                              )}
                             </Button>
                             <Button
                               type="button"
@@ -688,7 +735,9 @@ export function ProductQuickDialog({
                               ) : (
                                 <>
                                   <Save className="h-4 w-4" />
-                                  {t('ws-inventory-products.buttons.save_inventory_changes')}
+                                  {t(
+                                    'ws-inventory-products.buttons.save_inventory_changes'
+                                  )}
                                 </>
                               )}
                             </Button>
@@ -703,7 +752,9 @@ export function ProductQuickDialog({
 
             {/* History Tab */}
             <TabsContent value="history" className="space-y-4">
-              <h3 className="font-semibold text-lg">{t('ws-inventory-products.sections.stock_history')}</h3>
+              <h3 className="font-semibold text-lg">
+                {t('ws-inventory-products.sections.stock_history')}
+              </h3>
 
               {product.stock_changes && product.stock_changes.length > 0 ? (
                 <div className="space-y-4">
@@ -763,7 +814,9 @@ export function ProductQuickDialog({
 
             <TabsContent value="edit" className="space-y-4">
               <div className="flex items-center justify-between">
-                <h3 className="font-semibold text-lg">{t('ws-inventory-products.sections.edit_product')}</h3>
+                <h3 className="font-semibold text-lg">
+                  {t('ws-inventory-products.sections.edit_product')}
+                </h3>
                 <div className="flex gap-2">
                   <Link href={`./products/${product.id}`}>
                     <Button variant="outline" size="sm">
@@ -787,10 +840,14 @@ export function ProductQuickDialog({
                           name="name"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel>{t('ws-inventory-products.form.name')} *</FormLabel>
+                              <FormLabel>
+                                {t('ws-inventory-products.form.name')} *
+                              </FormLabel>
                               <FormControl>
                                 <Input
-                                  placeholder={t('ws-inventory-products.placeholders.enter_product_name')}
+                                  placeholder={t(
+                                    'ws-inventory-products.placeholders.enter_product_name'
+                                  )}
                                   {...field}
                                 />
                               </FormControl>
@@ -803,10 +860,14 @@ export function ProductQuickDialog({
                           name="manufacturer"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel>{t('ws-inventory-products.form.manufacturer')}</FormLabel>
+                              <FormLabel>
+                                {t('ws-inventory-products.form.manufacturer')}
+                              </FormLabel>
                               <FormControl>
                                 <Input
-                                  placeholder={t('ws-inventory-products.placeholders.enter_manufacturer')}
+                                  placeholder={t(
+                                    'ws-inventory-products.placeholders.enter_manufacturer'
+                                  )}
                                   {...field}
                                 />
                               </FormControl>
@@ -826,7 +887,11 @@ export function ProductQuickDialog({
                               >
                                 <FormControl>
                                   <SelectTrigger>
-                                    <SelectValue placeholder={t('ws-inventory-products.placeholders.select_category')} />
+                                    <SelectValue
+                                      placeholder={t(
+                                        'ws-inventory-products.placeholders.select_category'
+                                      )}
+                                    />
                                   </SelectTrigger>
                                 </FormControl>
                                 <SelectContent>
@@ -849,10 +914,14 @@ export function ProductQuickDialog({
                           name="description"
                           render={({ field }) => (
                             <FormItem className="md:col-span-2">
-                              <FormLabel>{t('ws-inventory-products.form.description')}</FormLabel>
+                              <FormLabel>
+                                {t('ws-inventory-products.form.description')}
+                              </FormLabel>
                               <FormControl>
                                 <Textarea
-                                  placeholder={t('ws-inventory-products.placeholders.enter_product_description')}
+                                  placeholder={t(
+                                    'ws-inventory-products.placeholders.enter_product_description'
+                                  )}
                                   className="min-h-[80px]"
                                   {...field}
                                 />
@@ -866,10 +935,16 @@ export function ProductQuickDialog({
                           name="usage"
                           render={({ field }) => (
                             <FormItem className="md:col-span-2">
-                              <FormLabel>{t('ws-inventory-products.labels.usage_instructions')}</FormLabel>
+                              <FormLabel>
+                                {t(
+                                  'ws-inventory-products.labels.usage_instructions'
+                                )}
+                              </FormLabel>
                               <FormControl>
                                 <Textarea
-                                  placeholder={t('ws-inventory-products.placeholders.enter_usage_instructions')}
+                                  placeholder={t(
+                                    'ws-inventory-products.placeholders.enter_usage_instructions'
+                                  )}
                                   className="min-h-[80px]"
                                   {...field}
                                 />
@@ -884,7 +959,9 @@ export function ProductQuickDialog({
                       <div className="space-y-4">
                         <div className="flex items-center justify-between">
                           <h4 className="font-medium text-lg">
-                            {t('ws-inventory-products.sections.stock_management')}
+                            {t(
+                              'ws-inventory-products.sections.stock_management'
+                            )}
                           </h4>
                           <div className="flex items-center space-x-2">
                             <Switch
@@ -896,18 +973,24 @@ export function ProductQuickDialog({
                               htmlFor="unlimited-stock"
                               className="font-medium text-sm"
                             >
-                              {t('ws-inventory-products.labels.unlimited_stock_label')}
+                              {t(
+                                'ws-inventory-products.labels.unlimited_stock_label'
+                              )}
                             </label>
                           </div>
                         </div>
 
                         {hasUnlimitedStock ? (
                           <div className="text-muted-foreground text-sm">
-                            {t('ws-inventory-products.messages.unlimited_stock_available')}
+                            {t(
+                              'ws-inventory-products.messages.unlimited_stock_available'
+                            )}
                           </div>
                         ) : (
                           <div className="text-muted-foreground text-sm">
-                            {t('ws-inventory-products.messages.manage_tracked_stock')}
+                            {t(
+                              'ws-inventory-products.messages.manage_tracked_stock'
+                            )}
                           </div>
                         )}
                       </div>
@@ -944,7 +1027,9 @@ export function ProductQuickDialog({
                               ) : (
                                 <>
                                   <Save className="h-4 w-4" />
-                                  {t('ws-inventory-products.buttons.save_changes')}
+                                  {t(
+                                    'ws-inventory-products.buttons.save_changes'
+                                  )}
                                 </>
                               )}
                             </Button>
@@ -962,9 +1047,13 @@ export function ProductQuickDialog({
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>{t('ws-inventory-products.buttons.delete_product')}</AlertDialogTitle>
+            <AlertDialogTitle>
+              {t('ws-inventory-products.buttons.delete_product')}
+            </AlertDialogTitle>
             <AlertDialogDescription>
-              {t('ws-inventory-products.messages.delete_confirmation', { name: product.name ?? '' })}
+              {t('ws-inventory-products.messages.delete_confirmation', {
+                name: product.name ?? '',
+              })}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -974,7 +1063,9 @@ export function ProductQuickDialog({
               disabled={isDeleting}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              {isDeleting ? t('ws-inventory-products.messages.deleting') : t('common.delete')}
+              {isDeleting
+                ? t('ws-inventory-products.messages.deleting')
+                : t('common.delete')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

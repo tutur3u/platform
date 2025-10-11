@@ -35,121 +35,123 @@ interface Props {
 }
 
 export default async function UserGroupIndicatorsPage({ params }: Props) {
-
-
   return (
     <WorkspaceWrapper params={params}>
       {async ({ wsId, groupId }) => {
         const t = await getTranslations();
 
-  const { containsPermission } = await getPermissions({
-    wsId,
-  });
-  const canCheckUserAttendance = containsPermission('check_user_attendance');
+        const { containsPermission } = await getPermissions({
+          wsId,
+        });
+        const canCheckUserAttendance = containsPermission(
+          'check_user_attendance'
+        );
 
-  const group = await getData(wsId, groupId);
-  const indicators = await getIndicators(groupId);
-  const groupIndicators = await getGroupIndicators(groupId);
-  const { data: users } = await getUserData(wsId, groupId);
+        const group = await getData(wsId, groupId);
+        const indicators = await getIndicators(groupId);
+        const groupIndicators = await getGroupIndicators(groupId);
+        const { data: users } = await getUserData(wsId, groupId);
 
-  return (
-    <>
-      <FeatureSummary
-        title={
+        return (
           <>
-            <h1 className="w-full font-bold text-2xl">
-              {group.name || t('ws-user-groups.singular')}
-            </h1>
-            <Separator className="my-2" />
-          </>
-        }
-        description={
-          <>
-            <div className="grid flex-wrap gap-2 md:flex">
-              <Link href={`/${wsId}/users/groups/${groupId}`}>
-                <Button
-                  type="button"
-                  variant="secondary"
-                  className={cn(
-                    'border font-semibold max-sm:w-full',
-                    'border-foreground/20 bg-foreground/10 text-foreground hover:bg-foreground/20'
-                  )}
-                >
-                  <CalendarIcon className="h-5 w-5" />
-                  {t('infrastructure-tabs.overview')}
-                </Button>
-              </Link>
-              <Link href={`/${wsId}/users/groups/${groupId}/schedule`}>
-                <Button
-                  type="button"
-                  variant="secondary"
-                  className={cn(
-                    'border font-semibold max-sm:w-full',
-                    'border-dynamic-blue/20 bg-dynamic-blue/10 text-dynamic-blue hover:bg-dynamic-blue/20'
-                  )}
-                >
-                  <CalendarIcon className="h-5 w-5" />
-                  {t('ws-user-group-details.schedule')}
-                </Button>
-              </Link>
-              {canCheckUserAttendance && (
-                <Link href={`/${wsId}/users/groups/${groupId}/attendance`}>
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    className={cn(
-                      'border font-semibold max-sm:w-full',
-                      'border-dynamic-purple/20 bg-dynamic-purple/10 text-dynamic-purple hover:bg-dynamic-purple/20'
+            <FeatureSummary
+              title={
+                <>
+                  <h1 className="w-full font-bold text-2xl">
+                    {group.name || t('ws-user-groups.singular')}
+                  </h1>
+                  <Separator className="my-2" />
+                </>
+              }
+              description={
+                <>
+                  <div className="grid flex-wrap gap-2 md:flex">
+                    <Link href={`/${wsId}/users/groups/${groupId}`}>
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        className={cn(
+                          'border font-semibold max-sm:w-full',
+                          'border-foreground/20 bg-foreground/10 text-foreground hover:bg-foreground/20'
+                        )}
+                      >
+                        <CalendarIcon className="h-5 w-5" />
+                        {t('infrastructure-tabs.overview')}
+                      </Button>
+                    </Link>
+                    <Link href={`/${wsId}/users/groups/${groupId}/schedule`}>
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        className={cn(
+                          'border font-semibold max-sm:w-full',
+                          'border-dynamic-blue/20 bg-dynamic-blue/10 text-dynamic-blue hover:bg-dynamic-blue/20'
+                        )}
+                      >
+                        <CalendarIcon className="h-5 w-5" />
+                        {t('ws-user-group-details.schedule')}
+                      </Button>
+                    </Link>
+                    {canCheckUserAttendance && (
+                      <Link
+                        href={`/${wsId}/users/groups/${groupId}/attendance`}
+                      >
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          className={cn(
+                            'border font-semibold max-sm:w-full',
+                            'border-dynamic-purple/20 bg-dynamic-purple/10 text-dynamic-purple hover:bg-dynamic-purple/20'
+                          )}
+                        >
+                          <UserCheck className="h-5 w-5" />
+                          {t('ws-user-group-details.attendance')}
+                        </Button>
+                      </Link>
                     )}
-                  >
-                    <UserCheck className="h-5 w-5" />
-                    {t('ws-user-group-details.attendance')}
-                  </Button>
-                </Link>
-              )}
-              <Link href={`/${wsId}/users/groups/${groupId}/reports`}>
-                <Button
-                  type="button"
-                  variant="secondary"
-                  className={cn(
-                    'border font-semibold max-sm:w-full',
-                    'border-dynamic-green/20 bg-dynamic-green/10 text-dynamic-green hover:bg-dynamic-green/20'
-                  )}
-                >
-                  <FileUser className="h-5 w-5" />
-                  {t('ws-user-group-details.reports')}
-                </Button>
-              </Link>
-              <Button
-                type="button"
-                variant="secondary"
-                className={cn(
-                  'border font-semibold max-sm:w-full',
-                  'border-dynamic-red/20 bg-dynamic-red/10 text-dynamic-red hover:bg-dynamic-red/20'
-                )}
-                disabled
-              >
-                <ChartColumn className="h-5 w-5" />
-                {t('ws-user-group-details.metrics')}
-              </Button>
-            </div>
+                    <Link href={`/${wsId}/users/groups/${groupId}/reports`}>
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        className={cn(
+                          'border font-semibold max-sm:w-full',
+                          'border-dynamic-green/20 bg-dynamic-green/10 text-dynamic-green hover:bg-dynamic-green/20'
+                        )}
+                      >
+                        <FileUser className="h-5 w-5" />
+                        {t('ws-user-group-details.reports')}
+                      </Button>
+                    </Link>
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      className={cn(
+                        'border font-semibold max-sm:w-full',
+                        'border-dynamic-red/20 bg-dynamic-red/10 text-dynamic-red hover:bg-dynamic-red/20'
+                      )}
+                      disabled
+                    >
+                      <ChartColumn className="h-5 w-5" />
+                      {t('ws-user-group-details.metrics')}
+                    </Button>
+                  </div>
+                </>
+              }
+              createTitle={t('ws-user-groups.add_user')}
+              createDescription={t('ws-user-groups.add_user_description')}
+            />
+            <Separator className="my-4" />
+            <GroupIndicatorsManager
+              wsId={wsId}
+              groupId={groupId}
+              groupName={group.name}
+              users={users}
+              initialGroupIndicators={groupIndicators}
+              initialUserIndicators={indicators}
+            />
           </>
-        }
-        createTitle={t('ws-user-groups.add_user')}
-        createDescription={t('ws-user-groups.add_user_description')}
-      />
-      <Separator className="my-4" />
-      <GroupIndicatorsManager
-        wsId={wsId}
-        groupId={groupId}
-        groupName={group.name}
-        users={users}
-        initialGroupIndicators={groupIndicators}
-        initialUserIndicators={indicators}
-      />
-        </>
-      )}
-      }
+        );
+      }}
     </WorkspaceWrapper>
   );
 }

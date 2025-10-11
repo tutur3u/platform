@@ -3,9 +3,7 @@ import WorkspaceWrapper from '@/components/workspace-wrapper';
 import { Settings } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import type { ProductPromotion } from '@tuturuuu/types/primitives/ProductPromotion';
-import {
-  getPermissions
-} from '@tuturuuu/utils/workspace-helper';
+import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { Button } from '@tuturuuu/ui/button';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Separator } from '@tuturuuu/ui/separator';
@@ -65,7 +63,6 @@ export default async function WorkspacePromotionsPage({
 
         const { data, count } = await getData(wsId, await searchParams);
 
-
         const promotions = data.map(({ value, use_ratio, ...rest }) => ({
           ...rest,
           value: use_ratio
@@ -102,9 +99,9 @@ export default async function WorkspacePromotionsPage({
               )}
               form={
                 canCreateInventory ? (
-                <PromotionForm
-                  wsId={wsId}
-                  canCreateInventory={canCreateInventory}
+                  <PromotionForm
+                    wsId={wsId}
+                    canCreateInventory={canCreateInventory}
                     canUpdateInventory={canUpdateInventory}
                   />
                 ) : undefined
