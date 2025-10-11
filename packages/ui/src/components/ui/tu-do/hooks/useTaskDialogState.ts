@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 export interface TaskDialogState {
   editDialogOpen: boolean;
@@ -28,13 +28,31 @@ export function useTaskDialogState() {
   const [newLabelDialogOpen, setNewLabelDialogOpen] = useState(false);
   const [isClosingDialog, setIsClosingDialog] = useState(false);
 
+  // Track timeout for cleanup
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    };
+  }, []);
+
   // Memoized handler to prevent unnecessary re-renders
   const handleDialogClose = useCallback(() => {
+    // Clear any existing timeout
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+    }
+
     setIsClosingDialog(true);
     setEditDialogOpen(false);
     // Reset the closing flag after a short delay to allow the dialog to fully close
-    setTimeout(() => {
+    timeoutRef.current = setTimeout(() => {
       setIsClosingDialog(false);
+      timeoutRef.current = null;
     }, 100);
   }, []);
 
