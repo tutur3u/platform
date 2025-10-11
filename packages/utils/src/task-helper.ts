@@ -1760,12 +1760,31 @@ const SORT_KEY_MIN_GAP = 1000; // Minimum gap to consider safe
 let sortKeySequence = 0;
 
 /**
+ * Error thrown when sort keys cannot be calculated without creating duplicates
+ * Upstream callers should catch this, run normalizeListSortKeys, and retry
+ */
+export class SortKeyGapExhaustedError extends Error {
+  constructor(
+    public readonly prevSortKey: number | null | undefined,
+    public readonly nextSortKey: number | null | undefined,
+    message: string
+  ) {
+    super(message);
+    this.name = 'SortKeyGapExhaustedError';
+  }
+}
+
+/**
  * Calculate a new BIGINT sort_key between two tasks
  * Handles all scenarios: beginning, end, middle, and cross-list movements
  *
  * @param prevSortKey - Sort key of the task before the insertion point (null if at beginning)
  * @param nextSortKey - Sort key of the task after the insertion point (null if at end)
  * @returns A new BIGINT sort_key that positions the task correctly
+ * @throws {SortKeyGapExhaustedError} When there's no room to insert without creating duplicates
+ *
+ * **Important**: Callers should catch SortKeyGapExhaustedError, run normalizeListSortKeys(),
+ * and retry the operation. This ensures sort keys are respaced and the operation can succeed.
  */
 export function calculateSortKey(
   prevSortKey: number | null | undefined,
@@ -1781,28 +1800,25 @@ export function calculateSortKey(
       return SORT_KEY_DEFAULT + sortKeySequence;
     }
 
-    // Check if nextSortKey is too small to insert before while maintaining uniqueness
-    if (nextSortKey <= sortKeySequence) {
-      // Cannot insert a unique positive value before nextSortKey
-      // Use negative/zero value to avoid duplicates (normalization will fix ordering)
-      const adjusted = nextSortKey - sortKeySequence;
-      console.warn(
-        '⚠️ Next sort key too small to insert before, using adjusted value to avoid duplicate',
-        { nextSortKey, sortKeySequence, adjusted }
+    // Cannot insert before sort key 1 without creating a duplicate (can't go to 0 or negative)
+    if (nextSortKey <= 1) {
+      throw new SortKeyGapExhaustedError(
+        null,
+        nextSortKey,
+        `Cannot insert before sort key ${nextSortKey}. No positive integer exists strictly less than it. Normalization required.`
       );
-      return adjusted;
     }
 
-    // Place before the next task with good spacing
+    // Place before the next task
+    // For small gaps, use midpoint between 0 and nextSortKey (effectively nextSortKey / 2)
     const halfNext = Math.floor(nextSortKey / 2);
 
     if (nextSortKey <= SORT_KEY_MIN_GAP) {
-      // nextSortKey is small but we can still fit before it
-      const result = halfNext;
-      // Ensure result is less than nextSortKey
-      return Math.min(result, nextSortKey - sortKeySequence);
+      // nextSortKey is small - use half of it, ensuring result is in range [1, nextSortKey - 1]
+      const result = Math.max(1, Math.min(halfNext, nextSortKey - 1));
+      return result;
     } else {
-      // Try to maintain ideal spacing
+      // Good spacing available - try to maintain ideal positioning
       const baseKey = Math.max(
         halfNext,
         Math.min(SORT_KEY_BASE_UNIT, nextSortKey - SORT_KEY_MIN_GAP)
@@ -1823,54 +1839,101 @@ export function calculateSortKey(
   // Case 3: Inserting between two tasks
   const gap = nextSortKey - prevSortKey;
 
-  // Check if gap is too small to fit a unique value with sequence offset
-  if (gap <= sortKeySequence) {
-    // Cannot fit a unique value between them
-    // Place before prevSortKey to avoid duplicates (normalization will fix ordering)
-    const adjusted = prevSortKey - sortKeySequence;
-    console.warn(
-      '⚠️ Gap too small to insert between, placing before range to avoid duplicate',
-      { prevSortKey, nextSortKey, gap, sortKeySequence, adjusted }
+  // Gap exhausted - cannot fit another integer between them
+  if (gap <= 1) {
+    throw new SortKeyGapExhaustedError(
+      prevSortKey,
+      nextSortKey,
+      `Cannot insert between sort keys ${prevSortKey} and ${nextSortKey}. Gap (${gap}) is too small. Normalization required.`
     );
-    return adjusted;
   }
 
-  // Check if we have enough space for ideal insertion
+  // Calculate midpoint, ensuring it's strictly between prevSortKey and nextSortKey
+  const midpoint = Math.floor((prevSortKey + nextSortKey) / 2);
+
+  // Verify midpoint is valid (strictly between neighbors)
+  // This check handles edge cases where floor() might produce prevSortKey
+  if (midpoint <= prevSortKey || midpoint >= nextSortKey) {
+    throw new SortKeyGapExhaustedError(
+      prevSortKey,
+      nextSortKey,
+      `Calculated midpoint ${midpoint} is not strictly between ${prevSortKey} and ${nextSortKey}. Gap exhausted. Normalization required.`
+    );
+  }
+
+  // For very small gaps, just use the midpoint without offset
+  if (gap <= sortKeySequence) {
+    console.warn(
+      '⚠️ Gap too small for sequence offset, using midpoint - normalization recommended',
+      { prevSortKey, nextSortKey, gap, sortKeySequence, midpoint }
+    );
+    return midpoint;
+  }
+
+  // For gaps smaller than MIN_GAP but larger than sequence, warn but continue
   if (gap <= SORT_KEY_MIN_GAP) {
     console.warn(
       '⚠️ Sort key gap small, task ordering may need renormalization',
       { prevSortKey, nextSortKey, gap, threshold: SORT_KEY_MIN_GAP }
     );
 
-    // Use midpoint with limited sequence offset to stay in bounds
-    const midpoint = Math.floor((prevSortKey + nextSortKey) / 2);
-    const maxOffset = Math.floor(gap / 2) - 1;
-    const safeOffset = Math.min(sortKeySequence, Math.max(0, maxOffset));
-    return midpoint + safeOffset;
+    // Calculate max safe offset to ensure we stay strictly within bounds
+    // We can offset in range [prevSortKey + 1, nextSortKey - 1]
+    // From midpoint, we can go up to (nextSortKey - 1 - midpoint) or down to (midpoint - prevSortKey - 1)
+    const maxOffsetUp = nextSortKey - 1 - midpoint;
+    const maxOffsetDown = midpoint - prevSortKey - 1;
+    const maxSafeOffset = Math.min(maxOffsetUp, maxOffsetDown);
+    const safeOffset = Math.min(sortKeySequence, Math.max(0, maxSafeOffset));
+
+    const result = midpoint + safeOffset;
+
+    // Final safety check
+    if (result <= prevSortKey || result >= nextSortKey) {
+      throw new SortKeyGapExhaustedError(
+        prevSortKey,
+        nextSortKey,
+        `Calculated result ${result} with offset is not strictly between ${prevSortKey} and ${nextSortKey}. Normalization required.`
+      );
+    }
+
+    return result;
   }
 
   // Good gap - calculate midpoint with sequence offset
-  const midpoint = Math.floor((prevSortKey + nextSortKey) / 2);
-
   // Add sequence offset, ensuring we stay within bounds
   const halfGap = Math.floor(gap / 2);
   const offset = Math.min(sortKeySequence, halfGap - 1);
 
-  return midpoint + offset;
+  const result = midpoint + offset;
+
+  // Final safety check (should never fail for good gaps, but defensive programming)
+  if (result <= prevSortKey || result >= nextSortKey) {
+    throw new SortKeyGapExhaustedError(
+      prevSortKey,
+      nextSortKey,
+      `Calculated result ${result} with offset is not strictly between ${prevSortKey} and ${nextSortKey}. Normalization required.`
+    );
+  }
+
+  return result;
 }
 
 /**
  * Reset the sequence counter
  * Useful for testing or when starting a fresh session
  */
-export function resetSortKeySequence() {
+export function resetSortKeySequence(): void {
   sortKeySequence = 0;
 }
 
 /**
  * Get the current sort key configuration constants
  */
-export function getSortKeyConfig() {
+export function getSortKeyConfig(): {
+  BASE_UNIT: number;
+  DEFAULT: number;
+  MIN_GAP: number;
+} {
   return {
     BASE_UNIT: SORT_KEY_BASE_UNIT,
     DEFAULT: SORT_KEY_DEFAULT,
@@ -1999,7 +2062,7 @@ export async function reorderTask(
   taskId: string,
   newListId: string,
   newSortKey: number
-) {
+): Promise<Task> {
   console.log('🗄️ reorderTask function called');
   console.log('📋 Task ID:', taskId);
   console.log('🎯 New List ID:', newListId);
