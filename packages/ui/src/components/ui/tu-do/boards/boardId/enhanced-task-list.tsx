@@ -35,7 +35,6 @@ import { Input } from '@tuturuuu/ui/input';
 import { toast } from '@tuturuuu/ui/sonner';
 import { cn } from '@tuturuuu/utils/format';
 import { useState } from 'react';
-import { toast } from 'sonner';
 import { useTaskDialog } from '../../hooks/useTaskDialog';
 import { TaskCard } from './task';
 
