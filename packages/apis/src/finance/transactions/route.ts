@@ -47,7 +47,7 @@ export async function GET(req: Request, { params }: Params) {
     .eq('workspace_wallets.ws_id', wsId)
     .range(
       (Number(activePage) - 1) * Number(itemsPerPage),
-      Number(itemsPerPage)
+      Number(activePage) * Number(itemsPerPage) - 1
     )
     .order('taken_at', { ascending: false });
 

@@ -4,13 +4,11 @@ import { Settings } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import type { ProductPromotion } from '@tuturuuu/types/primitives/ProductPromotion';
 import {
-  getPermissions,
-  getWorkspaceUser,
+  getPermissions
 } from '@tuturuuu/utils/workspace-helper';
 import { Button } from '@tuturuuu/ui/button';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Separator } from '@tuturuuu/ui/separator';
-import { getCurrentUser } from '@tuturuuu/utils/user-helper';
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 import { getPromotionColumns } from './columns';
@@ -67,7 +65,6 @@ export default async function WorkspacePromotionsPage({
 
         const { data, count } = await getData(wsId, await searchParams);
 
-        const user = await getCurrentUser(true);
 
         const promotions = data.map(({ value, use_ratio, ...rest }) => ({
           ...rest,
