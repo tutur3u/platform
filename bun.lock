@@ -690,7 +690,6 @@
         "@tuturuuu/google": "workspace:*",
         "@tuturuuu/supabase": "workspace:*",
         "@tuturuuu/types": "workspace:*",
-        "@tuturuuu/ui": "workspace:*",
         "dayjs": "^1.11.18",
       },
       "devDependencies": {
