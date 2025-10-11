@@ -8,6 +8,7 @@ import type {
   WorkspaceCalendarGoogleToken,
 } from '@tuturuuu/types/db';
 import type { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
+import { isAllDayEvent } from '@tuturuuu/utils/calendar-utils';
 import dayjs from 'dayjs';
 import {
   createContext,
@@ -18,7 +19,6 @@ import {
   useRef,
   useState,
 } from 'react';
-import { isAllDayEvent } from './calendar-utils';
 
 const CalendarSyncContext = createContext<{
   data: WorkspaceCalendarEvent[] | null;

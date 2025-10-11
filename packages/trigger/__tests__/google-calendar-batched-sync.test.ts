@@ -1,6 +1,5 @@
 // Mocks must come next, before any imports that use them!
 import {
-  afterEach,
   beforeAll,
   beforeEach,
   describe,
@@ -17,18 +16,17 @@ process.env.GOOGLE_CLIENT_ID = 'test-client-id';
 process.env.GOOGLE_CLIENT_SECRET = 'test-client-secret';
 process.env.GOOGLE_REDIRECT_URI = 'http://localhost:3000/auth/callback';
 
-// Mock Supabase client
-const mockSupabaseClient = {
-  from: vi.fn(() => ({
-    upsert: vi.fn(() => Promise.resolve({ error: null as any })),
-    delete: vi.fn(() => ({
-      or: vi.fn(() => Promise.resolve({ error: null as any })),
-    })),
-  })),
-};
+// Declare mock variables that will be reassigned in beforeEach
+let upsertMock: any;
+let orMock: any;
+let deleteMock: any;
+let mockSupabaseClient: any;
+
+// Create a mock for createAdminClient that we can control
+const createAdminClientMock = vi.fn();
 
 vi.mock('@tuturuuu/supabase/next/server', () => ({
-  createAdminClient: vi.fn(() => mockSupabaseClient),
+  createAdminClient: createAdminClientMock,
 }));
 
 // Mock the calendar sync coordination utility
@@ -77,21 +75,31 @@ describe('Google Calendar Batched Sync', () => {
   beforeEach(() => {
     // Reset environment
     delete process.env.LOCALE;
-    // Clear all mocks
-    vi.clearAllMocks();
 
-    // Reset Supabase client mocks
-    mockSupabaseClient.from.mockReturnValue({
-      upsert: vi.fn(() => Promise.resolve({ error: null as any })),
-      delete: vi.fn(() => ({
-        or: vi.fn(() => Promise.resolve({ error: null as any })),
-      })),
-    });
-  });
+    // Create completely fresh mock instances for each test
+    upsertMock = vi.fn(() => Promise.resolve({ error: null as any }));
+    orMock = vi.fn(() => Promise.resolve({ error: null as any }));
+    deleteMock = vi.fn(() => ({ or: orMock }));
+    mockSupabaseClient = {
+      from: vi.fn((table: string) => {
+        // Only return our tracked mocks for the events table
+        if (table === 'workspace_calendar_events') {
+          return {
+            upsert: upsertMock,
+            delete: deleteMock,
+          };
+        }
+        // For other tables (like sync_coordination), return separate mocks
+        return {
+          upsert: vi.fn(() => Promise.resolve({ error: null as any })),
+          delete: vi.fn(() => ({ or: vi.fn(() => Promise.resolve({ error: null as any })) })),
+        };
+      }),
+    };
 
-  afterEach(() => {
-    // Clean up
-    vi.clearAllMocks();
+    // Clear and update createAdminClient to return the fresh mockSupabaseClient
+    createAdminClientMock.mockClear();
+    createAdminClientMock.mockImplementation(() => Promise.resolve(mockSupabaseClient));
   });
 
   describe('syncGoogleCalendarEventsForWorkspaceBatched', () => {
@@ -131,7 +139,6 @@ describe('Google Calendar Batched Sync', () => {
       });
 
       // Verify upsert was called
-      const upsertMock = mockSupabaseClient.from().upsert;
       expect(upsertMock).toHaveBeenCalledWith(
         expect.arrayContaining([
           expect.objectContaining({
@@ -214,7 +221,6 @@ describe('Google Calendar Batched Sync', () => {
       });
 
       // Verify delete was called
-      const deleteMock = mockSupabaseClient.from().delete;
       expect(deleteMock).toHaveBeenCalled();
     });
 
@@ -286,14 +292,9 @@ describe('Google Calendar Batched Sync', () => {
       ];
 
       // Mock upsert error
-      mockSupabaseClient.from.mockReturnValue({
-        upsert: vi.fn(() =>
-          Promise.resolve({ error: new Error('Upsert failed') })
-        ),
-        delete: vi.fn(() => ({
-          or: vi.fn(() => Promise.resolve({ error: null as any })),
-        })),
-      });
+      upsertMock.mockImplementationOnce(() =>
+        Promise.resolve({ error: new Error('Upsert failed') })
+      );
 
       const result = await syncGoogleCalendarEventsForWorkspaceBatched(
         ws_id,
@@ -319,15 +320,10 @@ describe('Google Calendar Batched Sync', () => {
         ),
       ];
 
-      // Mock delete error
-      mockSupabaseClient.from.mockReturnValue({
-        upsert: vi.fn(() => Promise.resolve({ error: null as any })),
-        delete: vi.fn(() => ({
-          or: vi.fn(() =>
-            Promise.resolve({ error: new Error('Delete failed') })
-          ),
-        })),
-      });
+      // Mock delete error by making orMock return an error
+      orMock.mockImplementationOnce(() =>
+        Promise.resolve({ error: new Error('Delete failed') })
+      );
 
       const result = await syncGoogleCalendarEventsForWorkspaceBatched(
         ws_id,
@@ -370,7 +366,6 @@ describe('Google Calendar Batched Sync', () => {
       });
 
       // Verify upsert was called multiple times for batching
-      const upsertMock = mockSupabaseClient.from().upsert;
       expect(upsertMock).toHaveBeenCalledTimes(2); // 150 events / 100 batch size = 2 calls
     });
 
@@ -404,7 +399,6 @@ describe('Google Calendar Batched Sync', () => {
       });
 
       // Verify delete was called multiple times for batching
-      const deleteMock = mockSupabaseClient.from().delete;
       expect(deleteMock).toHaveBeenCalledTimes(2); // 75 events / 50 batch size = 2 calls
     });
   });
@@ -469,14 +463,9 @@ describe('Google Calendar Batched Sync', () => {
       };
 
       // Mock error in the underlying function
-      mockSupabaseClient.from.mockReturnValue({
-        upsert: vi.fn(() =>
-          Promise.resolve({ error: new Error('Database error') })
-        ),
-        delete: vi.fn(() => ({
-          or: vi.fn(() => Promise.resolve({ error: null as any })),
-        })),
-      });
+      upsertMock.mockImplementationOnce(() =>
+        Promise.resolve({ error: new Error('Database error') })
+      );
 
       const result = await syncWorkspaceBatched(payload);
 
@@ -530,12 +519,10 @@ describe('Google Calendar Batched Sync', () => {
         eventsDeleted: 60,
       });
 
-      // Verify upsert was called one (60 events / 100 batch size = 1 call)
-      const upsertMock = mockSupabaseClient.from().upsert;
+      // Verify upsert was called once (60 events / 100 batch size = 1 call)
       expect(upsertMock).toHaveBeenCalledTimes(1);
 
       // Verify delete was called twice (60 events / 50 batch size = 2 calls)
-      const deleteMock = mockSupabaseClient.from().delete;
       expect(deleteMock).toHaveBeenCalledTimes(2);
     });
   });

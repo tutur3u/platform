@@ -1,6 +1,6 @@
 import { type calendar_v3, OAuth2Client } from '@tuturuuu/google';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
-import { convertGoogleAllDayEvent } from '@tuturuuu/ui/hooks/calendar-utils';
+import { convertGoogleAllDayEvent } from '@tuturuuu/utils/calendar-utils';
 import { updateLastUpsert } from './calendar-sync-coordination';
 
 // Batch processing configuration

@@ -1,4 +1,4 @@
-import { convertGoogleAllDayEvent } from '@tuturuuu/ui/hooks/calendar-utils';
+import { convertGoogleAllDayEvent } from '@tuturuuu/utils/calendar-utils';
 import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone';
 import utc from 'dayjs/plugin/utc';
