@@ -1,4 +1,4 @@
-import { EventEmitter } from 'node:events';
+import { EventEmitter } from 'eventemitter3';
 import type { SupabaseClient } from '@tuturuuu/supabase/next/client';
 import type { RealtimeChannel } from '@tuturuuu/supabase/next/realtime';
 import debug from 'debug';
@@ -21,7 +21,7 @@ export default class SupabaseProvider extends EventEmitter {
   private channel: RealtimeChannel | null = null;
 
   private _synced: boolean = false;
-  private resyncInterval: NodeJS.Timeout | undefined;
+  private resyncInterval: ReturnType<typeof setInterval> | undefined;
   protected logger: debug.Debugger;
   public readonly id: number;
 
@@ -40,7 +40,12 @@ export default class SupabaseProvider extends EventEmitter {
         this.isOnline()
       );
       this.emit('message', update);
-      this.save();
+
+      try {
+        this.save();
+      } catch (error) {
+        this.emit('error', error);
+      }
     }
   }
 
@@ -108,6 +113,7 @@ export default class SupabaseProvider extends EventEmitter {
       );
       this.emit('awareness', awarenessUpdate);
     }
+    this.synced = true;
   }
 
   private applyUpdate(update: Uint8Array, origin?: any) {
@@ -160,6 +166,10 @@ export default class SupabaseProvider extends EventEmitter {
   ) {
     super();
 
+    this.onDocumentUpdate = this.onDocumentUpdate.bind(this);
+    this.onAwarenessUpdate = this.onAwarenessUpdate.bind(this);
+    this.removeSelfFromAwarenessOnUnload = this.removeSelfFromAwarenessOnUnload.bind(this);
+
     this.awareness =
       this.config.awareness || new awarenessProtocol.Awareness(doc);
 
@@ -190,12 +200,6 @@ export default class SupabaseProvider extends EventEmitter {
       this.resyncInterval = setInterval(() => {
         this.logger('resyncing (resync interval elapsed)');
         this.emit('message', Y.encodeStateAsUpdate(this.doc));
-        if (this.channel)
-          this.channel.send({
-            type: 'broadcast',
-            event: 'message',
-            payload: Array.from(Y.encodeStateAsUpdate(this.doc)),
-          });
       }, this.config.resyncInterval || 5000);
     }
 
@@ -205,7 +209,7 @@ export default class SupabaseProvider extends EventEmitter {
         this.removeSelfFromAwarenessOnUnload
       );
     } else if (typeof process !== 'undefined') {
-      process.on('exit', () => this.removeSelfFromAwarenessOnUnload);
+      process.on('exit', this.removeSelfFromAwarenessOnUnload);
     }
     this.on('awareness', (update) => {
       if (this.channel)
@@ -225,8 +229,8 @@ export default class SupabaseProvider extends EventEmitter {
     });
 
     this.connect();
-    this.doc.on('update', this.onDocumentUpdate.bind(this));
-    this.awareness.on('update', this.onAwarenessUpdate.bind(this));
+    this.doc.on('update', this.onDocumentUpdate);
+    this.awareness.on('update', this.onAwarenessUpdate);
   }
 
   get synced() {
@@ -255,16 +259,9 @@ export default class SupabaseProvider extends EventEmitter {
     this.synced = false;
     this.isOnline(false);
     this.logger('set connected flag to false');
-    if (this.isOnline()) {
-      this.emit('status', [{ status: 'disconnected' }]);
-    }
+    this.emit('status', [{ status: 'disconnected' }]);
 
-    // update awareness (keep all users except local)
-    // FIXME? compare to broadcast channel behavior
-    const states = Array.from(this.awareness.getStates().keys()).filter(
-      (client) => client !== this.doc.clientID
-    );
-    awarenessProtocol.removeAwarenessStates(this.awareness, states, this);
+    awarenessProtocol.removeAwarenessStates(this.awareness, [this.doc.clientID], this);
   }
 
   public onMessage(message: Uint8Array, _origin: any) {
@@ -302,7 +299,7 @@ export default class SupabaseProvider extends EventEmitter {
         this.removeSelfFromAwarenessOnUnload
       );
     } else if (typeof process !== 'undefined') {
-      process.off('exit', () => this.removeSelfFromAwarenessOnUnload);
+      process.off('exit', this.removeSelfFromAwarenessOnUnload);
     }
 
     this.awareness.off('update', this.onAwarenessUpdate);

@@ -204,20 +204,20 @@ function TaskEditDialogComponent({
     };
 
     const colors = [
-      '#3b82f6', // blue
-      '#8b5cf6', // purple
-      '#ec4899', // pink
-      '#f97316', // orange
-      '#10b981', // green
-      '#06b6d4', // cyan
-      '#f59e0b', // amber
-      '#6366f1', // indigo
+      'var(--color-dynamic-blue)', // blue
+      'var(--color-dynamic-purple)', // purple
+      'var(--color-dynamic-pink)', // pink
+      'var(--color-dynamic-orange)', // orange
+      'var(--color-dynamic-green)', // green
+      'var(--color-dynamic-cyan)', // cyan
+      'var(--color-dynamic-amber)', // amber
+      'var(--color-dynamic-indigo)', // indigo
     ];
 
     // Use user ID if available, otherwise use a default
     const userId = user?.id || 'anonymous';
     const index = Math.abs(hashCode(userId)) % colors.length;
-    return colors[index] || colors[0];
+    return colors[index];
   }, [user?.id]);
 
   // Use React Query hooks for shared data (cached across all components)
