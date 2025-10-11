@@ -1,6 +1,7 @@
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { RealtimeChannel } from '@tuturuuu/supabase/next/realtime';
 import type { User } from '@tuturuuu/types/primitives/User';
+import { DEV_MODE } from '@tuturuuu/utils/constants';
 import type { RefObject } from 'react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
@@ -108,7 +109,9 @@ export function useCursorTracking(
           .single();
 
         if (userDataError) {
-          console.error('Error fetching user data:', userDataError);
+          if (DEV_MODE) {
+            console.error('Error fetching user data:', userDataError);
+          }
           return;
         }
 
@@ -149,12 +152,14 @@ export function useCursorTracking(
             }
           })
           .subscribe((status) => {
-            console.log('📡 Cursor tracking channel status:', status);
+            if (DEV_MODE) {
+              console.log('📡 Cursor tracking channel status:', status);
 
-            if (status === 'SUBSCRIBED') {
-              console.log('✅ Cursor tracking active');
-            } else if (status === 'CHANNEL_ERROR') {
-              console.error('❌ Cursor tracking channel error');
+              if (status === 'SUBSCRIBED') {
+                console.log('✅ Cursor tracking active');
+              } else if (status === 'CHANNEL_ERROR') {
+                console.error('❌ Cursor tracking channel error');
+              }
             }
           });
 
@@ -185,7 +190,9 @@ export function useCursorTracking(
           container.addEventListener('mouseleave', handleMouseLeave);
         }
       } catch (error) {
-        console.error('Error setting up cursor tracking:', error);
+        if (DEV_MODE) {
+          console.error('Error setting up cursor tracking:', error);
+        }
       }
     };
 
