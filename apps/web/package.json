@@ -98,6 +98,7 @@
     "sanitize-html": "^2.17.0",
     "server-only": "^0.0.1",
     "sharp": "^0.34.4",
+    "superjson": "^2.2.2",
     "tldraw": "^4.0.3",
     "use-debounce": "^10.0.6",
     "uuid": "^13.0.0",

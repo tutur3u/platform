@@ -7,9 +7,9 @@ import {
   Search,
   Timer,
 } from '@tuturuuu/ui/icons';
+import { toast } from '@tuturuuu/ui/sonner';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
-import { toast } from 'sonner';
 import { useDebouncedCallback } from 'use-debounce';
 import type { ExtendedWorkspaceTask } from '../../time-tracker/types';
 import ActionsDropdown from './actions-dropdown';

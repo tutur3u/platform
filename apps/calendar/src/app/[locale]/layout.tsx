@@ -120,8 +120,8 @@ export default async function RootLayout({ children, params }: Props) {
         <VercelAnalytics />
         <VercelInsights />
         <Providers>
-          {/* @ts-expect-error - Bun types issue with children prop */}
-          <NextIntlClientProvider>{children}</NextIntlClientProvider>
+          {/* TODO: Fix Bun types issue with children prop */}
+          <NextIntlClientProvider>{children as any}</NextIntlClientProvider>
         </Providers>
         <Toaster />
       </body>

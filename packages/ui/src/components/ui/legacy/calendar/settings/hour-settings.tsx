@@ -3,14 +3,14 @@
 import { createClient } from '@tuturuuu/supabase/next/client';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
+import { toast } from '@tuturuuu/ui/sonner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { Briefcase, Calendar, Clock, User } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { toast } from 'sonner';
 import {
-  defaultWeekTimeRanges,
-  TimeRangePicker,
-  type WeekTimeRanges,
+    defaultWeekTimeRanges,
+    TimeRangePicker,
+    type WeekTimeRanges,
 } from './time-range-picker';
 
 export type HoursSettingsData = {
