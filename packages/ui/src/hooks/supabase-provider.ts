@@ -1,16 +1,14 @@
 import { EventEmitter } from 'node:events';
-import {
-  REALTIME_LISTEN_TYPES,
-  type RealtimeChannel,
-  type SupabaseClient,
-} from '@supabase/supabase-js';
+import type { SupabaseClient } from '@tuturuuu/supabase/next/client';
+import type { RealtimeChannel } from '@tuturuuu/supabase/next/realtime';
+import type { Database } from '@tuturuuu/types/supabase';
 import debug from 'debug';
 import * as awarenessProtocol from 'y-protocols/awareness';
 import * as Y from 'yjs';
 
 export interface SupabaseProviderConfig {
   channel: string;
-  tableName: string;
+  tableName: keyof Database['public']['Tables'];
   columnName: string;
   idName?: string;
   id: string | number;
@@ -129,20 +127,12 @@ export default class SupabaseProvider extends EventEmitter {
     this.channel = this.supabase.channel(this.config.channel);
     if (this.channel) {
       this.channel
-        .on(
-          REALTIME_LISTEN_TYPES.BROADCAST,
-          { event: 'message' },
-          ({ payload }) => {
-            this.onMessage(Uint8Array.from(payload), this);
-          }
-        )
-        .on(
-          REALTIME_LISTEN_TYPES.BROADCAST,
-          { event: 'awareness' },
-          ({ payload }) => {
-            this.onAwareness(Uint8Array.from(payload));
-          }
-        )
+        .on('broadcast', { event: 'message' }, ({ payload }) => {
+          this.onMessage(Uint8Array.from(payload), this);
+        })
+        .on('broadcast', { event: 'awareness' }, ({ payload }) => {
+          this.onAwareness(Uint8Array.from(payload));
+        })
         .subscribe((status, err) => {
           if (status === 'SUBSCRIBED') {
             this.emit('connect', this);
