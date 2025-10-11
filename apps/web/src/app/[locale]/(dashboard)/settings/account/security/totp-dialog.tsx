@@ -29,9 +29,9 @@ import { Input } from '@tuturuuu/ui/input';
 import { InputOTP, InputOTPGroup, InputOTPSlot } from '@tuturuuu/ui/input-otp';
 import { Label } from '@tuturuuu/ui/label';
 import { Skeleton } from '@tuturuuu/ui/skeleton';
+import { toast } from '@tuturuuu/ui/sonner';
 import Image from 'next/image';
 import { useEffect, useState } from 'react';
-import { toast } from 'sonner';
 
 interface TOTPFactor {
   id: string;

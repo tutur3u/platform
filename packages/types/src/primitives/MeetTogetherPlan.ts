@@ -1,4 +1,4 @@
-import type { JSONContent } from '@tuturuuu/ui/tiptap';
+import type { JSONContent } from '../tiptap';
 
 export interface MeetTogetherPlan {
   id?: string;

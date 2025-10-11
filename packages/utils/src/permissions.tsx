@@ -1,5 +1,3 @@
-import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
-import type { PermissionId } from '@tuturuuu/types/db';
 import {
   Archive,
   Banknote,
@@ -29,7 +27,9 @@ import {
   UserCheck,
   UserCog,
   Users,
-} from '@tuturuuu/ui/icons';
+} from '@tuturuuu/icons';
+import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
+import type { PermissionId } from '@tuturuuu/types/db';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import type { ReactNode } from 'react';
 

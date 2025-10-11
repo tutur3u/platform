@@ -1,4 +1,4 @@
-import * as XLSX from 'xlsx';
+import { XLSX } from '@tuturuuu/ui/xlsx';
 import { BaseCrawler } from './base-crawler';
 
 interface ExcelCrawlerProps {

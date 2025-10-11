@@ -2,8 +2,8 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
-import { performIncrementalActiveSync } from '@tuturuuu/utils/calendar-sync/incremental-active-sync';
-import { updateLastUpsert } from '@tuturuuu/utils/calendar-sync-coordination';
+import { updateLastUpsert } from '@tuturuuu/trigger/calendar-sync-coordination';
+import { performIncrementalActiveSync } from '@/lib/calendar/incremental-active-sync';
 import { DEV_MODE } from '@tuturuuu/utils/constants';
 import { NextResponse } from 'next/server';
 

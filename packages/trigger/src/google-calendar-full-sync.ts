@@ -1,13 +1,13 @@
 import { task } from '@trigger.dev/sdk/v3';
 import { google } from '@tuturuuu/google';
+import dayjs from 'dayjs';
 import {
   getGoogleAuthClient,
   getWorkspacesForSync,
-  type SyncOrchestratorResult,
   storeSyncToken,
   syncWorkspaceBatched,
-} from '@tuturuuu/trigger/google-calendar-sync';
-import dayjs from 'dayjs';
+  type SyncOrchestratorResult,
+} from './google-calendar-sync';
 
 export async function performFullSyncForWorkspace(
   calendarId = 'primary',

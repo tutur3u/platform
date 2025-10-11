@@ -1,13 +1,14 @@
 'use client';
 
 import { createClient } from '@tuturuuu/supabase/next/client';
+import { canProceedWithSync } from '@tuturuuu/trigger/calendar-sync-coordination';
 import type {
   Workspace,
   WorkspaceCalendarEvent,
   WorkspaceCalendarGoogleToken,
 } from '@tuturuuu/types/db';
 import type { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
-import { canProceedWithSync } from '@tuturuuu/utils/calendar-sync-coordination';
+import { isAllDayEvent } from '@tuturuuu/utils/calendar-utils';
 import dayjs from 'dayjs';
 import {
   createContext,
@@ -18,7 +19,6 @@ import {
   useRef,
   useState,
 } from 'react';
-import { isAllDayEvent } from './calendar-utils';
 
 const CalendarSyncContext = createContext<{
   data: WorkspaceCalendarEvent[] | null;

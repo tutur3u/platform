@@ -7,6 +7,7 @@ import {
   User,
 } from '@tuturuuu/ui/icons';
 import { getInitials } from '@tuturuuu/utils/name-helper';
+// @ts-expect-error - Bun types issue with react-dom/server subpath
 import { renderToString } from 'react-dom/server';
 
 interface MentionVisualMeta {

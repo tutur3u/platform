@@ -1,8 +1,8 @@
 'use client';
 
 import { GITHUB_OWNER } from '@/constants/common';
-import type { User } from '@supabase/supabase-js';
 import { createClient } from '@tuturuuu/supabase/next/client';
+import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Card } from '@tuturuuu/ui/card';
@@ -77,7 +77,7 @@ export default function ContactPage() {
   const t = useTranslations('contact');
   const supabase = createClient();
   const [isLoading, setIsLoading] = useState(false);
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<SupabaseUser | null>(null);
 
   const form = useForm({
     resolver: zodResolver(formSchema),
