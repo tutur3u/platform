@@ -12,7 +12,6 @@
     "zod": "^4.1.12"
   },
   "devDependencies": {
-    "@biomejs/biome": "^2.2.5",
     "@tuturuuu/typescript-config": "workspace:*",
     "@types/node": "^24.7.1",
     "@types/react": "^19.2.2",

@@ -36,7 +36,6 @@
     "react-dom": "^19.2.0"
   },
   "devDependencies": {
-    "@biomejs/biome": "^2.2.5",
     "@tailwindcss/postcss": "^4.1.14",
     "@tuturuuu/typescript-config": "workspace:*",
     "@types/node": "^24.7.1",

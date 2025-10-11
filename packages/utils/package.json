@@ -14,6 +14,8 @@
     "@tanstack/react-query": "^5.90.2",
     "@tiptap/core": "^3.6.6",
     "@tuturuuu/supabase": "workspace:*",
+    "@tuturuuu/google": "workspace:*",
+    "@tuturuuu/trigger": "workspace:*",
     "@tuturuuu/icons": "workspace:*",
     "clsx": "^2.1.1",
     "dayjs": "^1.11.18",
@@ -26,7 +28,6 @@
     "zod": "^4.1.12"
   },
   "devDependencies": {
-    "@biomejs/biome": "^2.2.5",
     "@tuturuuu/types": "workspace:*",
     "@tuturuuu/typescript-config": "workspace:*",
     "@types/node": "^24.7.1",

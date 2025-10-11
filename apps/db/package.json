@@ -25,7 +25,6 @@
     "sb:linkpush": "bun supabase link && bun supabase db push"
   },
   "devDependencies": {
-    "@biomejs/biome": "^2.2.5",
     "supabase": "^2.48.3",
     "typescript": "^5.9.3"
   },
