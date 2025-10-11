@@ -60,7 +60,13 @@ import {
 } from '@tuturuuu/utils/task-helper';
 import dayjs from 'dayjs';
 import { usePathname } from 'next/navigation';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { CursorOverlayWrapper } from './cursor-overlay';
 import { CustomDatePickerDialog } from './custom-date-picker/custom-date-picker-dialog';
 import {
@@ -3607,11 +3613,4 @@ function TaskEditDialogComponent({
   );
 }
 
-export function TaskEditDialog(
-  props: TaskEditDialogProps & {
-    mode?: 'edit' | 'create';
-    showUserPresence?: boolean;
-  }
-) {
-  return <TaskEditDialogComponent {...props} />;
-}
+export const TaskEditDialog = React.memo(TaskEditDialogComponent);
