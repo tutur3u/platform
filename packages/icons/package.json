@@ -6,9 +6,7 @@
     "access": "public"
   },
   "scripts": {
-    "ui": "bunx shadcn-ui@latest",
-    "test": "vitest run",
-    "test:watch": "vitest"
+    "ui": "bunx shadcn-ui@latest"
   },
   "dependencies": {
     "@lucide/lab": "^0.1.2",
