@@ -72,7 +72,7 @@
     "date-fns-tz": "^3.2.0",
     "dayjs": "^1.11.18",
     "embla-carousel-react": "^8.6.0",
-    "framer-motion": "^12.23.22",
+    "framer-motion": "^12.23.24",
     "gsap": "^3.13.0",
     "html2canvas-pro": "^1.5.12",
     "input-otp": "^1.4.2",
