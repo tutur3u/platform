@@ -1,28 +1,28 @@
 'use client';
 
 import {
-    BarChart3,
-    ChefHat,
-    Clock,
-    CreditCard,
-    FileText,
-    Gift,
-    HeartHandshake,
-    LayoutDashboard,
-    Receipt,
-    ShoppingBag,
-    Smartphone,
-    Star,
-    Store,
-    Truck,
-    Utensils,
-    Wallet,
+  BarChart3,
+  ChefHat,
+  Clock,
+  CreditCard,
+  FileText,
+  Gift,
+  HeartHandshake,
+  LayoutDashboard,
+  Receipt,
+  ShoppingBag,
+  Smartphone,
+  Star,
+  Store,
+  Truck,
+  Utensils,
+  Wallet,
 } from '@tuturuuu/icons';
 import {
-    Accordion,
-    AccordionContent,
-    AccordionItem,
-    AccordionTrigger,
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
 } from '@tuturuuu/ui/accordion';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';

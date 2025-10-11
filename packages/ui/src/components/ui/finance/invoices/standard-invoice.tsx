@@ -1,38 +1,38 @@
 'use client';
 
 import {
-    ArrowDown,
-    ArrowUp,
-    Calculator,
-    CreditCard,
-    FileText,
-    Loader2,
+  ArrowDown,
+  ArrowUp,
+  Calculator,
+  CreditCard,
+  FileText,
+  Loader2,
 } from '@tuturuuu/icons';
 import type { Invoice } from '@tuturuuu/types/primitives/Invoice';
 import type { Transaction } from '@tuturuuu/types/primitives/Transaction';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import {
-    Accordion,
-    AccordionContent,
-    AccordionItem,
-    AccordionTrigger,
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
 } from '@tuturuuu/ui/accordion';
 import { Button } from '@tuturuuu/ui/button';
 import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardHeader,
-    CardTitle,
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
 } from '@tuturuuu/ui/card';
 import { Combobox, type ComboboxOptions } from '@tuturuuu/ui/custom/combobox';
 import { Label } from '@tuturuuu/ui/label';
 import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from '@tuturuuu/ui/select';
 import { Separator } from '@tuturuuu/ui/separator';
 import { toast } from '@tuturuuu/ui/sonner';
@@ -42,15 +42,15 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 import type { AvailablePromotion } from './hooks';
 import {
-    useAvailablePromotions,
-    useCategories,
-    useProducts,
-    useUserInvoices,
-    useUserLinkedPromotions,
-    useUserReferralDiscounts,
-    useUsers,
-    useUserTransactions,
-    useWallets,
+  useAvailablePromotions,
+  useCategories,
+  useProducts,
+  useUserInvoices,
+  useUserLinkedPromotions,
+  useUserReferralDiscounts,
+  useUsers,
+  useUserTransactions,
+  useWallets,
 } from './hooks';
 import { ProductSelection } from './product-selection';
 import type { SelectedProductItem } from './types';

@@ -1,19 +1,19 @@
 import { BASE_URL } from '@/constants/common';
 import {
-    Check,
-    CheckCheck,
-    ExternalLink,
-    Globe,
-    LinkIcon,
-    Lock,
+  Check,
+  CheckCheck,
+  ExternalLink,
+  Globe,
+  LinkIcon,
+  Lock,
 } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogHeader,
-    DialogTitle,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
 } from '@tuturuuu/ui/dialog';
 import { Separator } from '@tuturuuu/ui/separator';
 import { QRCodeCanvas } from 'qrcode.react';

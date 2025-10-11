@@ -42,7 +42,7 @@ export default function ReferralSectionClient({
       <div className="h-full rounded-lg border p-4">
         <Alert className="border-dynamic-red/30 bg-dynamic-red/10 text-dynamic-red">
           <div className="flex items-start gap-3">
-            <Settings className='mt-0.5 h-5 w-5' />
+            <Settings className="mt-0.5 h-5 w-5" />
             <div className="flex-1">
               <AlertTitle>{t('referral_settings_title')}</AlertTitle>
               <AlertDescription>{t('referral_settings_desc')}</AlertDescription>
@@ -318,7 +318,7 @@ export default function ReferralSectionClient({
 
   return (
     <div className="h-full rounded-lg border p-4">
-      <div className='grid h-full content-start gap-2'>
+      <div className="grid h-full content-start gap-2">
         <div className="font-semibold text-lg">
           {t('refer_people_with_progress', {
             current: currentReferralCount,
@@ -340,13 +340,13 @@ export default function ReferralSectionClient({
             <div className="space-y-2">
               <div className="font-medium">{t('referred_users_label')}</div>
               {referredUsersQuery.isLoading ? (
-                <div className='text-sm opacity-60'>{t('loading')}</div>
+                <div className="text-sm opacity-60">{t('loading')}</div>
               ) : (referredUsersQuery.data || []).length === 0 ? (
-                <div className='text-sm opacity-60'>
+                <div className="text-sm opacity-60">
                   {t('no_referred_users')}
                 </div>
               ) : (
-                <div className='grid grid-cols-1 gap-2 md:grid-cols-2'>
+                <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
                   {(referredUsersQuery.data || []).map((u) => {
                     const hasAvatar = Boolean(u.avatar_url);
                     return (
@@ -389,7 +389,7 @@ export default function ReferralSectionClient({
           {canReferMore ? (
             <>
               <div className="space-y-2">
-                <label htmlFor="user-select" className='font-medium text-sm'>
+                <label htmlFor="user-select" className="font-medium text-sm">
                   {t('select_person_to_refer_with_remaining', {
                     remaining: remainingReferrals,
                   })}
@@ -409,12 +409,12 @@ export default function ReferralSectionClient({
                 disabled={!isSelectedValid || referUserMutation.isPending}
                 className="w-full"
               >
-                <UserPlus className='mr-2 h-4 w-4' />
+                <UserPlus className="mr-2 h-4 w-4" />
                 {t('refer_selected_person')}
               </Button>
             </>
           ) : (
-            <div className='flex w-full flex-1 items-center justify-center py-8 text-center opacity-60'>
+            <div className="flex w-full flex-1 items-center justify-center py-8 text-center opacity-60">
               {t('reached_max_referrals', {
                 cap: workspaceSettings.referral_count_cap,
               })}

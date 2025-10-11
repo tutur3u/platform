@@ -9,9 +9,9 @@ import timezone from 'dayjs/plugin/timezone';
 import utc from 'dayjs/plugin/utc';
 import { useCallback, useEffect, useState } from 'react';
 import type {
-    ExtendedWorkspaceTask,
-    SessionWithRelations,
-    TimeTrackerData,
+  ExtendedWorkspaceTask,
+  SessionWithRelations,
+  TimeTrackerData,
 } from '../types';
 import { SimpleTimerControls } from './simple-timer-controls';
 

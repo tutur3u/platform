@@ -1,28 +1,28 @@
 'use client';
 
 import {
-    BarChart3,
-    Bell,
-    Book,
-    BookOpen,
-    Brain,
-    Calendar,
-    Clock,
-    FileText,
-    GraduationCap,
-    LineChart,
-    MessageSquare,
-    Monitor,
-    Settings,
-    Star,
-    Users,
-    Video,
+  BarChart3,
+  Bell,
+  Book,
+  BookOpen,
+  Brain,
+  Calendar,
+  Clock,
+  FileText,
+  GraduationCap,
+  LineChart,
+  MessageSquare,
+  Monitor,
+  Settings,
+  Star,
+  Users,
+  Video,
 } from '@tuturuuu/icons';
 import {
-    Accordion,
-    AccordionContent,
-    AccordionItem,
-    AccordionTrigger,
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
 } from '@tuturuuu/ui/accordion';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';

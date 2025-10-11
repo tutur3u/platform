@@ -2,10 +2,10 @@
 
 import { MoreHorizontal } from '@tuturuuu/icons';
 import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuTrigger,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
 
 interface ActionsDropdownProps {

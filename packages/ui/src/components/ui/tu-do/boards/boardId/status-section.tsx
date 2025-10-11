@@ -2,11 +2,11 @@
 
 import { useDroppable } from '@dnd-kit/core';
 import {
-    Circle,
-    CircleCheck,
-    CircleDashed,
-    CircleSlash,
-    Plus,
+  Circle,
+  CircleCheck,
+  CircleDashed,
+  CircleSlash,
+  Plus,
 } from '@tuturuuu/icons';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskBoardStatus } from '@tuturuuu/types/primitives/TaskBoard';

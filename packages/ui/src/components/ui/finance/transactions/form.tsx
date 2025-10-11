@@ -13,13 +13,13 @@ import { Dialog, DialogContent } from '@tuturuuu/ui/dialog';
 import { TransactionCategoryForm } from '@tuturuuu/ui/finance/transactions/categories/form';
 import { WalletForm } from '@tuturuuu/ui/finance/wallets/form';
 import {
-    Form,
-    FormControl,
-    FormDescription,
-    FormField,
-    FormItem,
-    FormLabel,
-    FormMessage,
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
 } from '@tuturuuu/ui/form';
 import { useForm } from '@tuturuuu/ui/hooks/use-form';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';

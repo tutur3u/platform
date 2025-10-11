@@ -3,24 +3,24 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type { Editor, JSONContent } from '@tiptap/react';
 import {
-    Box,
-    Calendar,
-    Check,
-    ChevronDown,
-    Copy,
-    ExternalLink,
-    Flag,
-    ListTodo,
-    Loader2,
-    MoreVertical,
-    Plus,
-    Search,
-    Settings,
-    Tag,
-    Timer,
-    Trash,
-    Users,
-    X,
+  Box,
+  Calendar,
+  Check,
+  ChevronDown,
+  Copy,
+  ExternalLink,
+  Flag,
+  ListTodo,
+  Loader2,
+  MoreVertical,
+  Plus,
+  Search,
+  Settings,
+  Tag,
+  Timer,
+  Trash,
+  Users,
+  X,
 } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { TaskPriority } from '@tuturuuu/types/primitives/Priority';
@@ -31,17 +31,17 @@ import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { DateTimePicker } from '@tuturuuu/ui/date-time-picker';
 import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogTitle,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogTitle,
 } from '@tuturuuu/ui/dialog';
 import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuSeparator,
-    DropdownMenuTrigger,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
 import { useToast } from '@tuturuuu/ui/hooks/use-toast';
 import { Input } from '@tuturuuu/ui/input';
@@ -51,10 +51,10 @@ import { RichTextEditor } from '@tuturuuu/ui/text-editor/editor';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { cn } from '@tuturuuu/utils/format';
 import {
-    invalidateTaskCaches,
-    useBoardConfig,
-    useUpdateTask,
-    useWorkspaceLabels,
+  invalidateTaskCaches,
+  useBoardConfig,
+  useUpdateTask,
+  useWorkspaceLabels,
 } from '@tuturuuu/utils/task-helper';
 import dayjs from 'dayjs';
 import { usePathname } from 'next/navigation';
@@ -62,21 +62,21 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { CursorOverlayWrapper } from './cursor-overlay';
 import { CustomDatePickerDialog } from './custom-date-picker/custom-date-picker-dialog';
 import {
-    buildEstimationIndices,
-    mapEstimationPoints,
+  buildEstimationIndices,
+  mapEstimationPoints,
 } from './estimation-mapping';
 import { MentionMenu } from './mention-system/mention-menu';
 import {
-    createInitialSuggestionState,
-    isSameSuggestionState,
-    type MentionOption,
-    type SuggestionState,
+  createInitialSuggestionState,
+  isSameSuggestionState,
+  type MentionOption,
+  type SuggestionState,
 } from './mention-system/types';
 import { useMentionSuggestions } from './mention-system/use-mention-suggestions';
 import {
-    filterSlashCommands,
-    getSlashCommands,
-    type SlashCommandDefinition,
+  filterSlashCommands,
+  getSlashCommands,
+  type SlashCommandDefinition,
 } from './slash-commands/definitions';
 import { SlashCommandMenu } from './slash-commands/slash-command-menu';
 import { UserPresenceAvatarsComponent } from './user-presence-avatars';

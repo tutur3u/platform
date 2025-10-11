@@ -5,10 +5,10 @@ import { Ellipsis } from '@tuturuuu/icons';
 import type { AIWhitelistEmail } from '@tuturuuu/types/db';
 import { Button } from '@tuturuuu/ui/button';
 import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuTrigger,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';

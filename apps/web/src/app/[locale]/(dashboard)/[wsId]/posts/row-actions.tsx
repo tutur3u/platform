@@ -7,13 +7,13 @@ import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import type { PostEmail } from './types';
 import {
-    isOptimisticallyLoading,
-    isOptimisticallySent,
-    markAsOptimisticallyLoading,
-    markAsOptimisticallySent,
-    removeFromOptimisticLoading,
-    useOptimisticLoadingEmails,
-    useOptimisticSentEmails,
+  isOptimisticallyLoading,
+  isOptimisticallySent,
+  markAsOptimisticallyLoading,
+  markAsOptimisticallySent,
+  removeFromOptimisticLoading,
+  useOptimisticLoadingEmails,
+  useOptimisticSentEmails,
 } from './use-posts';
 
 export default function PostsRowActions({

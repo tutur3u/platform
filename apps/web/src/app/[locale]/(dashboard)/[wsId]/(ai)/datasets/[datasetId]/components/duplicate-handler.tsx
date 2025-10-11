@@ -1,22 +1,22 @@
 'use client';
 
 import {
-    AlertCircle,
-    CheckCircle,
-    Loader2,
-    RefreshCw,
-    Trash2,
-    XCircle,
+  AlertCircle,
+  CheckCircle,
+  Loader2,
+  RefreshCw,
+  Trash2,
+  XCircle,
 } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
-    DialogTrigger,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
 } from '@tuturuuu/ui/dialog';
 import { useToast } from '@tuturuuu/ui/hooks/use-toast';
 import { Progress } from '@tuturuuu/ui/progress';

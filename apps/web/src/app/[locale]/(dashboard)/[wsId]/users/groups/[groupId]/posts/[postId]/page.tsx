@@ -1,11 +1,11 @@
 import {
-    Check,
-    CheckCheck,
-    CircleHelp,
-    Clock,
-    Send,
-    UserCheck,
-    X,
+  Check,
+  CheckCheck,
+  CircleHelp,
+  Clock,
+  Send,
+  UserCheck,
+  X,
 } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';

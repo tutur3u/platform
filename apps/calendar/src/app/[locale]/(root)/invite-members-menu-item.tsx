@@ -2,9 +2,9 @@
 
 import { UserPlus } from '@tuturuuu/icons';
 import {
-    DropdownMenuGroup,
-    DropdownMenuItem,
-    DropdownMenuSeparator,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
 } from '@tuturuuu/ui/dropdown-menu';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';

@@ -2,14 +2,14 @@
 
 import useEmail from '@/hooks/useEmail';
 import {
-    Check,
-    CircleSlash,
-    Mail,
-    MailCheck,
-    MoveRight,
-    Save,
-    Send,
-    X,
+  Check,
+  CircleSlash,
+  Mail,
+  MailCheck,
+  MoveRight,
+  Save,
+  Send,
+  X,
 } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { GroupPostCheck } from '@tuturuuu/types/db';

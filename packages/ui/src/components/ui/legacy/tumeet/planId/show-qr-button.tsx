@@ -3,13 +3,13 @@
 import { QrCode } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
-    DialogTrigger,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
 } from '@tuturuuu/ui/dialog';
 import { useTranslations } from 'next-intl';
 import { QRCodeCanvas } from 'qrcode.react';

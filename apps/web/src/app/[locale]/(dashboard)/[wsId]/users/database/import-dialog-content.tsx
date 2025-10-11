@@ -1,19 +1,19 @@
 'use client';
 
 import {
-    ArrowLeftToLine,
-    ArrowRightToLine,
-    CheckCheck,
-    ChevronLeft,
-    ChevronRight,
+  ArrowLeftToLine,
+  ArrowRightToLine,
+  CheckCheck,
+  ChevronLeft,
+  ChevronRight,
 } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import { Button } from '@tuturuuu/ui/button';
 import {
-    DialogClose,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
+  DialogClose,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
 } from '@tuturuuu/ui/dialog';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';

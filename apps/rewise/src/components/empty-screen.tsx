@@ -1,10 +1,10 @@
 import {
-    ArrowDownToDot,
-    GraduationCap,
-    Mail,
-    Microscope,
-    NotebookPen,
-    Sigma,
+  ArrowDownToDot,
+  GraduationCap,
+  Mail,
+  Microscope,
+  NotebookPen,
+  Sigma,
 } from '@tuturuuu/icons';
 import type { AIChat } from '@tuturuuu/types/db';
 import { Button } from '@tuturuuu/ui/button';

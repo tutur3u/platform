@@ -3,40 +3,40 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import type { ColumnDef } from '@tanstack/react-table';
 import {
-    AlertTriangle,
-    Building,
-    Clock,
-    Crown,
-    EyeOff,
-    Globe,
-    Loader2,
-    MoreHorizontal,
-    Shield,
-    Users,
+  AlertTriangle,
+  Building,
+  Clock,
+  Crown,
+  EyeOff,
+  Globe,
+  Loader2,
+  MoreHorizontal,
+  Shield,
+  Users,
 } from '@tuturuuu/icons';
 import type {
-    PlatformUser,
-    User,
-    UserPrivateDetails,
+  PlatformUser,
+  User,
+  UserPrivateDetails,
 } from '@tuturuuu/types/db';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
 import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuLabel,
-    DropdownMenuSeparator,
-    DropdownMenuTrigger,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
 import { Switch } from '@tuturuuu/ui/switch';
 import {
-    Tooltip,
-    TooltipContent,
-    TooltipProvider,
-    TooltipTrigger,
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
 } from '@tuturuuu/ui/tooltip';
 import { generateFunName, getInitials } from '@tuturuuu/utils/name-helper';
 import moment from 'moment';

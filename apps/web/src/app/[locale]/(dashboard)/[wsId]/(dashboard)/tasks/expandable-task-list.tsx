@@ -1,12 +1,12 @@
 'use client';
 
 import {
-    AlertCircle,
-    Calendar,
-    ChevronDown,
-    ChevronUp,
-    Clock,
-    UserRound,
+  AlertCircle,
+  Calendar,
+  ChevronDown,
+  ChevronUp,
+  Clock,
+  UserRound,
 } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
@@ -18,10 +18,10 @@ import { TaskLabelsDisplay } from '@tuturuuu/ui/tu-do/shared/task-labels-display
 import { cn } from '@tuturuuu/utils/format';
 import { getDescriptionText } from '@tuturuuu/utils/text-helper';
 import {
-    formatDistanceToNow,
-    isToday,
-    isTomorrow,
-    isYesterday,
+  formatDistanceToNow,
+  isToday,
+  isTomorrow,
+  isYesterday,
 } from 'date-fns';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';

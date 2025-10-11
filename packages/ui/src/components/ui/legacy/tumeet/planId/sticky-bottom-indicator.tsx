@@ -17,7 +17,7 @@ export default function StickyBottomIndicator() {
           size="lg"
           onClick={handleSave}
           disabled={!isDirty || isSaving}
-          className='border border-dynamic-blue/20 bg-dynamic-blue/10 text-dynamic-blue hover:bg-dynamic-blue/20'
+          className="border border-dynamic-blue/20 bg-dynamic-blue/10 text-dynamic-blue hover:bg-dynamic-blue/20"
         >
           <Save size={16} />
           {isSaving ? t('common.saving') : t('common.save')}

@@ -3,28 +3,28 @@
 import { joinPath } from '@/utils/path-helper';
 import type { Row } from '@tanstack/react-table';
 import {
-    Copy,
-    Download,
-    Edit3,
-    Ellipsis,
-    ExternalLink,
-    Eye,
-    Share,
-    Trash,
+  Copy,
+  Download,
+  Edit3,
+  Ellipsis,
+  ExternalLink,
+  Eye,
+  Share,
+  Trash,
 } from '@tuturuuu/icons';
 import { createDynamicClient } from '@tuturuuu/supabase/next/client';
 import type { StorageObject } from '@tuturuuu/types/primitives/StorageObject';
 import { Button } from '@tuturuuu/ui/button';
 import {
-    ContextMenuItem,
-    ContextMenuSeparator,
+  ContextMenuItem,
+  ContextMenuSeparator,
 } from '@tuturuuu/ui/context-menu';
 import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuSeparator,
-    DropdownMenuTrigger,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import { useTranslations } from 'next-intl';

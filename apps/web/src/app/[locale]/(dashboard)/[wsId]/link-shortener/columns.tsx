@@ -2,11 +2,11 @@
 
 import type { ColumnDef } from '@tanstack/react-table';
 import {
-    BarChart3,
-    Copy,
-    ExternalLink,
-    MousePointerClick,
-    User,
+  BarChart3,
+  Copy,
+  ExternalLink,
+  MousePointerClick,
+  User,
 } from '@tuturuuu/icons';
 import type { Tables } from '@tuturuuu/types/supabase';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
@@ -15,10 +15,10 @@ import { Button } from '@tuturuuu/ui/button';
 import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import {
-    Tooltip,
-    TooltipContent,
-    TooltipProvider,
-    TooltipTrigger,
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
 } from '@tuturuuu/ui/tooltip';
 import { formatDistanceToNow } from 'date-fns';
 import Link from 'next/link';

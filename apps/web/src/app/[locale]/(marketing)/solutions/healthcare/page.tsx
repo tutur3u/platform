@@ -1,28 +1,28 @@
 'use client';
 
 import {
-    Activity,
-    BarChart3,
-    Bell,
-    Bot,
-    Brain,
-    Calendar,
-    ClipboardList,
-    Clock,
-    FileText,
-    HeartPulse,
-    MessageSquare,
-    Pill,
-    Shield,
-    Star,
-    Stethoscope,
-    Users,
+  Activity,
+  BarChart3,
+  Bell,
+  Bot,
+  Brain,
+  Calendar,
+  ClipboardList,
+  Clock,
+  FileText,
+  HeartPulse,
+  MessageSquare,
+  Pill,
+  Shield,
+  Star,
+  Stethoscope,
+  Users,
 } from '@tuturuuu/icons';
 import {
-    Accordion,
-    AccordionContent,
-    AccordionItem,
-    AccordionTrigger,
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
 } from '@tuturuuu/ui/accordion';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';

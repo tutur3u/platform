@@ -3,11 +3,11 @@
 import { Key } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from '@tuturuuu/ui/select';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';

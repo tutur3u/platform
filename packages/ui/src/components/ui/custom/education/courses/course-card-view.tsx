@@ -1,21 +1,21 @@
 'use client';
 
 import {
-    Beaker,
-    BookOpen,
-    Brain,
-    Calculator,
-    Camera,
-    Clock,
-    Code,
-    Globe,
-    GraduationCap,
-    Layers,
-    Microscope,
-    Music,
-    Palette,
-    PenTool,
-    Star,
+  Beaker,
+  BookOpen,
+  Brain,
+  Calculator,
+  Camera,
+  Clock,
+  Code,
+  Globe,
+  GraduationCap,
+  Layers,
+  Microscope,
+  Music,
+  Palette,
+  PenTool,
+  Star,
 } from '@tuturuuu/icons';
 import type { WorkspaceCourse } from '@tuturuuu/types/db';
 import { Card, CardContent } from '@tuturuuu/ui/card';

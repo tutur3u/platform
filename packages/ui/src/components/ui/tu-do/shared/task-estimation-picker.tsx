@@ -5,12 +5,12 @@ import { Calculator, Check, ChevronDown } from '@tuturuuu/icons';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import {
-    Command,
-    CommandEmpty,
-    CommandGroup,
-    CommandInput,
-    CommandItem,
-    CommandList,
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
 } from '@tuturuuu/ui/command';
 import { useToast } from '@tuturuuu/ui/hooks/use-toast';
 import { Label } from '@tuturuuu/ui/label';
@@ -18,8 +18,8 @@ import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
 import { cn } from '@tuturuuu/utils/format';
 import { useMemo, useState } from 'react';
 import {
-    buildEstimationIndices,
-    mapEstimationPoints,
+  buildEstimationIndices,
+  mapEstimationPoints,
 } from './estimation-mapping';
 
 type EstimationType = 'fibonacci' | 'linear' | 'exponential' | 't-shirt';

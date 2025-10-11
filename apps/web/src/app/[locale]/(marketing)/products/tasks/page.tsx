@@ -1,18 +1,18 @@
 'use client';
 
 import {
-    Bell,
-    Bot,
-    Calendar,
-    CircleCheck,
-    Clock,
-    FolderKanban,
-    LayoutDashboard,
-    LineChart,
-    ListTodo,
-    ShieldCheck,
-    Tag,
-    Users,
+  Bell,
+  Bot,
+  Calendar,
+  CircleCheck,
+  Clock,
+  FolderKanban,
+  LayoutDashboard,
+  LineChart,
+  ListTodo,
+  ShieldCheck,
+  Tag,
+  Users,
 } from '@tuturuuu/icons';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';

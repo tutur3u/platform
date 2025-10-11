@@ -2,18 +2,18 @@
 
 import { GITHUB_OWNER, GITHUB_REPO } from '@/constants/common';
 import {
-    Calendar,
-    Code,
-    FileText,
-    GitCommit,
-    GitFork,
-    GithubIcon,
-    GitPullRequest,
-    Heart,
-    Mail,
-    MessageSquare,
-    Star,
-    Users,
+  Calendar,
+  Code,
+  FileText,
+  GitCommit,
+  GitFork,
+  GithubIcon,
+  GitPullRequest,
+  Heart,
+  Mail,
+  MessageSquare,
+  Star,
+  Users,
 } from '@tuturuuu/icons';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
@@ -24,19 +24,19 @@ import dynamic from 'next/dynamic';
 import Image from 'next/image';
 import { useEffect, useState } from 'react';
 import {
-    Area,
-    AreaChart,
-    Bar,
-    BarChart,
-    CartesianGrid,
-    Cell,
-    Legend,
-    Pie,
-    PieChart,
-    ResponsiveContainer,
-    Tooltip,
-    XAxis,
-    YAxis,
+  Area,
+  AreaChart,
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Cell,
+  Legend,
+  Pie,
+  PieChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
 } from 'recharts';
 
 // Types imported from server component

@@ -1,10 +1,10 @@
 import {
-    Box,
-    BriefcaseBusiness,
-    Calendar,
-    CircleCheck,
-    Loader2,
-    User,
+  Box,
+  BriefcaseBusiness,
+  Calendar,
+  CircleCheck,
+  Loader2,
+  User,
 } from '@tuturuuu/icons';
 import { Badge } from '@tuturuuu/ui/badge';
 import { cn } from '@tuturuuu/utils/format';

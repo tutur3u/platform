@@ -1,17 +1,17 @@
 'use client';
 
 import {
-    Bot,
-    Braces,
-    GitBranch,
-    History,
-    Layers,
-    PlayCircle,
-    Settings,
-    ShieldCheck,
-    TimerReset,
-    Workflow,
-    Zap,
+  Bot,
+  Braces,
+  GitBranch,
+  History,
+  Layers,
+  PlayCircle,
+  Settings,
+  ShieldCheck,
+  TimerReset,
+  Workflow,
+  Zap,
 } from '@tuturuuu/icons';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';

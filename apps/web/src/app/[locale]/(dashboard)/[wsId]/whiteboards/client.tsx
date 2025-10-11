@@ -1,37 +1,37 @@
 'use client';
 
 import {
-    ArrowUpDown,
-    Calendar,
-    Grid3X3,
-    ImageIcon,
-    LetterText,
-    List,
-    MoreHorizontal,
-    Pen,
-    Pencil,
-    Search,
-    Trash,
-    UserIcon,
+  ArrowUpDown,
+  Calendar,
+  Grid3X3,
+  ImageIcon,
+  LetterText,
+  List,
+  MoreHorizontal,
+  Pen,
+  Pencil,
+  Search,
+  Trash,
+  UserIcon,
 } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import {
-    AlertDialog,
-    AlertDialogAction,
-    AlertDialogCancel,
-    AlertDialogContent,
-    AlertDialogDescription,
-    AlertDialogFooter,
-    AlertDialogHeader,
-    AlertDialogTitle,
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
 } from '@tuturuuu/ui/alert-dialog';
 import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
 import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuTrigger,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
 import { Input } from '@tuturuuu/ui/input';
 import { toast } from '@tuturuuu/ui/sonner';

@@ -1,12 +1,7 @@
 'use client';
 
 import { DEV_MODE } from '@/constants/common';
-import {
-    Calendar,
-    Sparkles,
-    UsersRound,
-    WandSparkles,
-} from '@tuturuuu/icons';
+import { Calendar, Sparkles, UsersRound, WandSparkles } from '@tuturuuu/icons';
 import type { ReactNode } from 'react';
 
 export interface NavItem {

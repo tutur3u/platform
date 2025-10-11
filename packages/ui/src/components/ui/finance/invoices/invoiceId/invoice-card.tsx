@@ -2,17 +2,17 @@
 
 import { Download, ImageIcon, Palette, Printer } from '@tuturuuu/icons';
 import type {
-    Invoice,
-    InvoiceProduct,
-    InvoicePromotion,
+  Invoice,
+  InvoiceProduct,
+  InvoicePromotion,
 } from '@tuturuuu/types/db';
 import type { WorkspaceConfig } from '@tuturuuu/types/primitives/WorkspaceConfig';
 import { Button } from '@tuturuuu/ui/button';
 import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuTrigger,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
 import { Separator } from '@tuturuuu/ui/separator';
 import dayjs from 'dayjs';

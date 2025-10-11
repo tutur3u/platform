@@ -1,17 +1,17 @@
 import {
-    BookText,
-    Box,
-    Eye,
-    Goal,
-    ListTodo,
-    Paperclip,
-    SquareCheck,
-    SwatchBook,
-    Youtube,
+  BookText,
+  Box,
+  Eye,
+  Goal,
+  ListTodo,
+  Paperclip,
+  SquareCheck,
+  SwatchBook,
+  Youtube,
 } from '@tuturuuu/icons';
 import {
-    createClient,
-    createDynamicClient,
+  createClient,
+  createDynamicClient,
 } from '@tuturuuu/supabase/next/server';
 import type { WorkspaceCourseModule } from '@tuturuuu/types/db';
 import LinkButton from '@tuturuuu/ui/custom/education/modules/link-button';

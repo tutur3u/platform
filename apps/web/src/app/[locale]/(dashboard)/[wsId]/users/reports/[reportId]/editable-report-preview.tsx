@@ -2,42 +2,42 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
-    Download,
-    FileText,
-    History,
-    ImageIcon,
-    Moon,
-    Palette,
-    PencilIcon,
-    Plus,
-    Printer,
-    Sun,
-    Undo,
+  Download,
+  FileText,
+  History,
+  ImageIcon,
+  Moon,
+  Palette,
+  PencilIcon,
+  Plus,
+  Printer,
+  Sun,
+  Undo,
 } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { WorkspaceUserReport } from '@tuturuuu/types/db';
 import type { WorkspaceConfig } from '@tuturuuu/types/primitives/WorkspaceConfig';
 import {
-    Accordion,
-    AccordionContent,
-    AccordionItem,
-    AccordionTrigger,
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
 } from '@tuturuuu/ui/accordion';
 import { Button } from '@tuturuuu/ui/button';
 import ReportPreview from '@tuturuuu/ui/custom/report-preview';
 import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
 } from '@tuturuuu/ui/dialog';
 import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuTrigger,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
 import { useForm } from '@tuturuuu/ui/hooks/use-form';
 import { zodResolver } from '@tuturuuu/ui/resolvers';
@@ -914,9 +914,9 @@ export default function EditableReportPreview({
           <Accordion type="single" collapsible className="rounded-lg border">
             <AccordionItem value="history" className="border-none">
               <AccordionTrigger className="px-4 py-3 hover:no-underline">
-                <div className='mr-2 flex w-full items-center justify-between'>
-                  <div className='flex flex-row items-center gap-2 font-semibold text-lg'>
-                    <History className='h-4 w-4' />
+                <div className="mr-2 flex w-full items-center justify-between">
+                  <div className="flex flex-row items-center gap-2 font-semibold text-lg">
+                    <History className="h-4 w-4" />
                     {t('ws-reports.history')}
                   </div>
                   {logsQuery.data && (
@@ -1018,14 +1018,14 @@ export default function EditableReportPreview({
                                 <div className="font-semibold text-sm">
                                   {label}
                                 </div>
-                                <div className='text-muted-foreground text-sm'>
+                                <div className="text-muted-foreground text-sm">
                                   {log.creator_name || t('common.unknown')}{' '}
                                   {actionLabel}.
                                 </div>
                               </div>
 
                               {/* Metadata */}
-                              <div className='flex items-center gap-2 text-muted-foreground text-xs'>
+                              <div className="flex items-center gap-2 text-muted-foreground text-xs">
                                 <span>{exact}</span>
                                 {relative && (
                                   <>
@@ -1050,7 +1050,7 @@ export default function EditableReportPreview({
           </Accordion>
         )}
         {selectedLog && (
-          <div className='-mt-2 rounded-lg border bg-card p-3 text-sm print:hidden'>
+          <div className="-mt-2 rounded-lg border bg-card p-3 text-sm print:hidden">
             <div className="flex items-center justify-between">
               <div>{t('ws-reports.viewing_history_snapshot')}</div>
               <Button
@@ -1058,18 +1058,18 @@ export default function EditableReportPreview({
                 className="bg-dynamic-blue/10 text-dynamic-blue hover:bg-dynamic-blue/20"
                 onClick={() => setSelectedLog(null)}
               >
-                <Undo className='h-4 w-4' />
+                <Undo className="h-4 w-4" />
                 {t('ws-reports.reset_to_current')}
               </Button>
             </div>
           </div>
         )}
-        <div className='-mb-2 flex items-center justify-end gap-2'>
+        <div className="-mb-2 flex items-center justify-end gap-2">
           <div className="flex items-center gap-2">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button size="sm" variant="outline" className="gap-2">
-                  <Download className='h-4 w-4' />
+                  <Download className="h-4 w-4" />
                   {t('common.export')}
                 </Button>
               </DropdownMenuTrigger>
@@ -1081,7 +1081,7 @@ export default function EditableReportPreview({
                   }}
                   className="gap-2"
                 >
-                  <Printer className='h-4 w-4' />
+                  <Printer className="h-4 w-4" />
                   {t('ws-reports.print')}
                 </DropdownMenuItem>
                 <DropdownMenuItem
@@ -1092,7 +1092,7 @@ export default function EditableReportPreview({
                   }}
                   className="gap-2"
                 >
-                  <ImageIcon className='h-4 w-4' />
+                  <ImageIcon className="h-4 w-4" />
                   {isExporting
                     ? t('ws-reports.exporting_png')
                     : t('ws-reports.png')}
@@ -1102,17 +1102,17 @@ export default function EditableReportPreview({
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button size="sm" variant="outline" className="gap-2">
-                  <Palette className='h-4 w-4' />
+                  <Palette className="h-4 w-4" />
                   {t('common.theme')}
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="start">
                 <DropdownMenuItem onClick={() => setIsDarkPreview(false)}>
-                  <Sun className='h-4 w-4' />
+                  <Sun className="h-4 w-4" />
                   {t('common.light')}
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setIsDarkPreview(true)}>
-                  <Moon className='h-4 w-4' />
+                  <Moon className="h-4 w-4" />
                   {t('common.dark')}
                 </DropdownMenuItem>
               </DropdownMenuContent>

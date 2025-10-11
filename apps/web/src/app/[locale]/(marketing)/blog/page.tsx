@@ -2,17 +2,17 @@
 
 import { GITHUB_OWNER, GITHUB_REPO } from '@/constants/common';
 import {
-    ArrowRight,
-    BookText,
-    Brain,
-    Code2,
-    Globe,
-    Laptop,
-    Lightbulb,
-    Rocket,
-    Sparkles,
-    Timer,
-    Zap,
+  ArrowRight,
+  BookText,
+  Brain,
+  Code2,
+  Globe,
+  Laptop,
+  Lightbulb,
+  Rocket,
+  Sparkles,
+  Timer,
+  Zap,
 } from '@tuturuuu/icons';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Card } from '@tuturuuu/ui/card';

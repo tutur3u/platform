@@ -1,14 +1,14 @@
 'use client';
 
 import {
-    Brain,
-    FileSearch,
-    Fingerprint,
-    Languages,
-    LineChart,
-    MessageSquareCode,
-    Sparkles,
-    Zap,
+  Brain,
+  FileSearch,
+  Fingerprint,
+  Languages,
+  LineChart,
+  MessageSquareCode,
+  Sparkles,
+  Zap,
 } from '@tuturuuu/icons';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';

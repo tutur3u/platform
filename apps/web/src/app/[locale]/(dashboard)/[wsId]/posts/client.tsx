@@ -13,12 +13,12 @@ import PostsFilters from './filters';
 import { PostDisplay } from './post-display';
 import type { PostEmail } from './types';
 import {
-    createPostEmailKey,
-    isOptimisticallyLoading,
-    isOptimisticallySent,
-    useOptimisticLoadingEmails,
-    useOptimisticSentEmails,
-    usePosts,
+  createPostEmailKey,
+  isOptimisticallyLoading,
+  isOptimisticallySent,
+  useOptimisticLoadingEmails,
+  useOptimisticSentEmails,
+  usePosts,
 } from './use-posts';
 
 interface SearchParams {

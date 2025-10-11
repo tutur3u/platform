@@ -5,25 +5,25 @@ import { Plus, RotateCcw, Save, Trash2 } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import {
-    AlertDialog,
-    AlertDialogAction,
-    AlertDialogCancel,
-    AlertDialogContent,
-    AlertDialogDescription,
-    AlertDialogFooter,
-    AlertDialogHeader,
-    AlertDialogTitle,
-    AlertDialogTrigger,
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
 } from '@tuturuuu/ui/alert-dialog';
 import { Button } from '@tuturuuu/ui/button';
 import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
-    DialogTrigger,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
 } from '@tuturuuu/ui/dialog';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
@@ -491,7 +491,7 @@ export default function GroupIndicatorsManager({
           <Dialog open={addDialogOpen} onOpenChange={setAddDialogOpen}>
             <DialogTrigger asChild>
               <Button>
-                <Plus className='mr-2 h-4 w-4' />
+                <Plus className="mr-2 h-4 w-4" />
                 {tIndicators('add_indicator')}
               </Button>
             </DialogTrigger>
@@ -553,7 +553,7 @@ export default function GroupIndicatorsManager({
                       }
                       placeholder={tIndicators('factor_placeholder')}
                     />
-                    <p className='text-muted-foreground text-sm'>
+                    <p className="text-muted-foreground text-sm">
                       {tIndicators('factor_description')}
                     </p>
                   </div>
@@ -651,7 +651,7 @@ export default function GroupIndicatorsManager({
               >
                 <AlertDialogTrigger asChild>
                   <Button variant="destructive" disabled={isAnyMutationPending}>
-                    <Trash2 className='mr-2 h-4 w-4' />
+                    <Trash2 className="mr-2 h-4 w-4" />
                     {t('common.delete')}
                   </Button>
                 </AlertDialogTrigger>
@@ -713,28 +713,28 @@ export default function GroupIndicatorsManager({
             <table className="w-full border-collapse">
               <thead>
                 <tr className="border-b bg-background">
-                  <th className='sticky left-0 z-20 border-r bg-background px-4 py-2 text-center font-semibold'>
+                  <th className="sticky left-0 z-20 border-r bg-background px-4 py-2 text-center font-semibold">
                     #
                   </th>
-                  <th className='sticky left-12 z-20 min-w-[200px] border-r bg-background px-4 py-2 font-semibold'>
+                  <th className="sticky left-12 z-20 min-w-[200px] border-r bg-background px-4 py-2 font-semibold">
                     {t('ws-users.full_name')}
                   </th>
                   {groupIndicators.map((indicator) => (
                     <th
                       key={indicator.id}
-                      className='min-w-[120px] border-r px-4 py-2 font-semibold'
+                      className="min-w-[120px] border-r px-4 py-2 font-semibold"
                     >
                       <button
-                        className='w-full rounded px-2 py-1 text-center hover:bg-dynamic-purple/10 hover:text-dynamic-purple'
+                        className="w-full rounded px-2 py-1 text-center hover:bg-dynamic-purple/10 hover:text-dynamic-purple"
                         onClick={() => openEditDialog(indicator)}
                       >
-                        <span className='line-clamp-2 text-balance break-all'>
+                        <span className="line-clamp-2 text-balance break-all">
                           {indicator.name}
                         </span>
                       </button>
                     </th>
                   ))}
-                  <th className='sticky right-0 z-20 min-w-[100px] border-l bg-background px-4 py-2 font-semibold'>
+                  <th className="sticky right-0 z-20 min-w-[100px] border-l bg-background px-4 py-2 font-semibold">
                     {t('common.average')}
                   </th>
                 </tr>
@@ -742,13 +742,13 @@ export default function GroupIndicatorsManager({
               <tbody>
                 {users.map((user, index) => (
                   <tr key={user.id} className="border-b hover:bg-muted/50">
-                    <td className='sticky left-0 z-10 border-r bg-background px-4 py-2 text-center'>
+                    <td className="sticky left-0 z-10 border-r bg-background px-4 py-2 text-center">
                       {index + 1}
                     </td>
-                    <td className='sticky left-12 z-10 border-r bg-background px-4 py-2'>
+                    <td className="sticky left-12 z-10 border-r bg-background px-4 py-2">
                       <button
                         onClick={() => openFeedbackDialog(user)}
-                        className='w-full rounded px-2 py-1 text-left transition-colors hover:bg-dynamic-blue/10 hover:text-dynamic-blue'
+                        className="w-full rounded px-2 py-1 text-left transition-colors hover:bg-dynamic-blue/10 hover:text-dynamic-blue"
                       >
                         <span className="line-clamp-1 break-all">
                           {user.full_name}
@@ -780,7 +780,7 @@ export default function GroupIndicatorsManager({
                         />
                       </td>
                     ))}
-                    <td className='sticky right-0 z-10 border-l bg-background px-4 py-2 text-center'>
+                    <td className="sticky right-0 z-10 border-l bg-background px-4 py-2 text-center">
                       <span className="font-medium">
                         {calculateAverage(user.id)}
                       </span>
@@ -793,7 +793,7 @@ export default function GroupIndicatorsManager({
         </div>
 
         {groupIndicators.length === 0 && (
-          <div className='py-8 text-center text-muted-foreground'>
+          <div className="py-8 text-center text-muted-foreground">
             <p>{tIndicators('no_indicators')}</p>
             <p className="text-sm">
               {tIndicators('no_indicators_description')}

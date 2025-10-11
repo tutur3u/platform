@@ -93,7 +93,7 @@ export default async function WorkspacePromotionsPage({
                 !settingsRow ? (
                   <Button
                     size="xs"
-                    className='w-full border border-dynamic-red/30 bg-dynamic-red/10 text-dynamic-red hover:bg-dynamic-red/15 md:w-fit'
+                    className="w-full border border-dynamic-red/30 bg-dynamic-red/10 text-dynamic-red hover:bg-dynamic-red/15 md:w-fit"
                     title={t('ws-inventory-promotions.create_settings_tooltip')}
                   >
                     <Settings className="h-4 w-4" />

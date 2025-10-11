@@ -3,8 +3,8 @@
 import { MousePointer2 } from '@tuturuuu/icons';
 import { Badge } from '@tuturuuu/ui/badge';
 import {
-    type CursorPosition,
-    useCursorTracking,
+  type CursorPosition,
+  useCursorTracking,
 } from '@tuturuuu/ui/hooks/useCursorTracking';
 import { useEffect, useState } from 'react';
 

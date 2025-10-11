@@ -4,28 +4,28 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { ChevronDown, Loader2, Search, UserPlus, X } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import {
-    Accordion,
-    AccordionContent,
-    AccordionItem,
-    AccordionTrigger,
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
 } from '@tuturuuu/ui/accordion';
 import { Avatar, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Checkbox } from '@tuturuuu/ui/checkbox';
 import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
 } from '@tuturuuu/ui/dialog';
 import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuTrigger,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
 import { Input } from '@tuturuuu/ui/input';
 import { ScrollArea } from '@tuturuuu/ui/scroll-area';
@@ -254,7 +254,7 @@ export default function GroupMemberActions({
               </AccordionTrigger>
               <AccordionContent>
                 {selectedUsers.length === 0 ? (
-                  <div className='text-muted-foreground text-sm'>
+                  <div className="text-muted-foreground text-sm">
                     {t('ws-user-group-details.no_users_selected')}
                   </div>
                 ) : (
@@ -309,16 +309,16 @@ export default function GroupMemberActions({
             />
           </div>
 
-          <div className='rounded-md border'>
+          <div className="rounded-md border">
             {isLoading ? (
               <div className="flex items-center justify-center py-6 text-muted-foreground">
-                <Loader2 className='mr-2 h-4 w-4 animate-spin' /> Loading...
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Loading...
               </div>
             ) : (
               <ScrollArea className="h-72">
-                <div className='space-y-2 p-2'>
+                <div className="space-y-2 p-2">
                   {candidateUsers.length === 0 ? (
-                    <div className='py-6 text-center text-muted-foreground'>
+                    <div className="py-6 text-center text-muted-foreground">
                       {t('common.no-results')}
                     </div>
                   ) : (
@@ -330,7 +330,7 @@ export default function GroupMemberActions({
                       return (
                         <div
                           key={u.id}
-                          className='flex items-center justify-between rounded-md px-2 py-2 hover:cursor-pointer hover:bg-foreground/5'
+                          className="flex items-center justify-between rounded-md px-2 py-2 hover:cursor-pointer hover:bg-foreground/5"
                           role="button"
                           tabIndex={0}
                           onClick={() => toggleSelection(u.id)}
@@ -352,14 +352,14 @@ export default function GroupMemberActions({
                             <div className="flex items-center gap-2">
                               <div className="font-medium text-sm">{name}</div>
                               {inManagers && (
-                                <Badge className='border-dynamic-green/20 bg-dynamic-green/10 text-dynamic-green'>
+                                <Badge className="border-dynamic-green/20 bg-dynamic-green/10 text-dynamic-green">
                                   {t('ws-user-group-details.manager')}
                                 </Badge>
                               )}
                               {inMembers && !inManagers && (
                                 <Badge
                                   variant="secondary"
-                                  className='border-dynamic-blue/20 bg-dynamic-blue/10 text-dynamic-blue'
+                                  className="border-dynamic-blue/20 bg-dynamic-blue/10 text-dynamic-blue"
                                 >
                                   {t('ws-user-group-details.member')}
                                 </Badge>

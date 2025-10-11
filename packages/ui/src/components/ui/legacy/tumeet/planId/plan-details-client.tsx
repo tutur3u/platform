@@ -2,8 +2,8 @@
 
 import { CircleQuestionMark } from '@tuturuuu/icons';
 import type {
-    MeetTogetherPlan,
-    PlanUser,
+  MeetTogetherPlan,
+  PlanUser,
 } from '@tuturuuu/types/primitives/MeetTogetherPlan';
 import type { GetPollsForPlanResult } from '@tuturuuu/types/primitives/Poll';
 import type { Timeblock } from '@tuturuuu/types/primitives/Timeblock';

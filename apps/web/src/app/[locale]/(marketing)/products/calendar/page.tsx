@@ -1,18 +1,18 @@
 'use client';
 
 import {
-    Calendar,
-    Clock,
-    Globe,
-    Link,
-    Mail,
-    MessageSquare,
-    Share2,
-    ShieldCheck,
-    Smartphone,
-    Users,
-    Video,
-    Zap,
+  Calendar,
+  Clock,
+  Globe,
+  Link,
+  Mail,
+  MessageSquare,
+  Share2,
+  ShieldCheck,
+  Smartphone,
+  Users,
+  Video,
+  Zap,
 } from '@tuturuuu/icons';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';

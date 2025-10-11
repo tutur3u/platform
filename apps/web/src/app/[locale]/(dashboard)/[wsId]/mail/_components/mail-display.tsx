@@ -2,21 +2,21 @@
 
 import { useQuery } from '@tanstack/react-query';
 import {
-    Archive,
-    ChevronDown,
-    ChevronUp,
-    Forward,
-    Loader2,
-    MoreVertical,
-    Reply,
-    ReplyAll,
-    Trash2,
-    UserIcon,
+  Archive,
+  ChevronDown,
+  ChevronUp,
+  Forward,
+  Loader2,
+  MoreVertical,
+  Reply,
+  ReplyAll,
+  Trash2,
+  UserIcon,
 } from '@tuturuuu/icons';
 import type {
-    InternalEmail,
-    User,
-    UserPrivateDetails,
+  InternalEmail,
+  User,
+  UserPrivateDetails,
 } from '@tuturuuu/types/db';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';

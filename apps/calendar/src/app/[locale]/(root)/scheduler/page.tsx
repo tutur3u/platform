@@ -2,34 +2,34 @@
 
 import { scheduleTasks } from '@tuturuuu/ai/scheduling/algorithm';
 import {
-    defaultActiveHours,
-    defaultTasks,
+  defaultActiveHours,
+  defaultTasks,
 } from '@tuturuuu/ai/scheduling/default';
 import type {
-    ActiveHours,
-    DateRange,
-    Event,
-    Log,
-    Task,
-    TemplateScenario,
+  ActiveHours,
+  DateRange,
+  Event,
+  Log,
+  Task,
+  TemplateScenario,
 } from '@tuturuuu/ai/scheduling/types';
 import {
-    BrainIcon,
-    CalendarIcon,
-    ClockIcon,
-    LockIcon,
-    PlusIcon,
-    SettingsIcon,
-    SparklesIcon,
-    Trash2Icon,
+  BrainIcon,
+  CalendarIcon,
+  ClockIcon,
+  LockIcon,
+  PlusIcon,
+  SettingsIcon,
+  SparklesIcon,
+  Trash2Icon,
 } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardHeader,
-    CardTitle,
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
 } from '@tuturuuu/ui/card';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';

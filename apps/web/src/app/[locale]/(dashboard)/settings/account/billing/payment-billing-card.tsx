@@ -1,11 +1,11 @@
 import { CreditCard } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardHeader,
-    CardTitle,
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
 } from '@tuturuuu/ui/card';
 import { getTranslations } from 'next-intl/server';
 

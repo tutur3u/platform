@@ -3,11 +3,11 @@ import { AlertCircle } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { Alert, AlertTitle } from '@tuturuuu/ui/alert';
 import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardHeader,
-    CardTitle,
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
 } from '@tuturuuu/ui/card';
 import { Separator } from '@tuturuuu/ui/separator';
 import type { Metadata } from 'next';

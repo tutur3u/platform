@@ -1,21 +1,21 @@
 'use client';
 
 import {
-    AlertCircle,
-    Baby,
-    Check,
-    ChevronRight,
-    Clock,
-    Cookie,
-    FileText,
-    Globe,
-    Lock,
-    Mail,
-    RefreshCcw,
-    Share2,
-    Shield,
-    UserCog,
-    Users,
+  AlertCircle,
+  Baby,
+  Check,
+  ChevronRight,
+  Clock,
+  Cookie,
+  FileText,
+  Globe,
+  Lock,
+  Mail,
+  RefreshCcw,
+  Share2,
+  Shield,
+  UserCog,
+  Users,
 } from '@tuturuuu/icons';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Card } from '@tuturuuu/ui/card';
@@ -23,12 +23,12 @@ import { MemoizedReactMarkdown } from '@tuturuuu/ui/markdown';
 import { ScrollArea } from '@tuturuuu/ui/scroll-area';
 import { Separator } from '@tuturuuu/ui/separator';
 import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
 } from '@tuturuuu/ui/table';
 import { cn } from '@tuturuuu/utils/format';
 import { motion } from 'framer-motion';

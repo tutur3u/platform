@@ -1,31 +1,31 @@
 'use client';
 
 import {
-    AlertCircle,
-    AlertTriangle,
-    CheckCircle,
-    MessageSquareWarning,
-    Upload,
-    X,
+  AlertCircle,
+  AlertTriangle,
+  CheckCircle,
+  MessageSquareWarning,
+  Upload,
+  X,
 } from '@tuturuuu/icons';
 import type { Product, SupportType } from '@tuturuuu/types/db';
 import { Button } from '@tuturuuu/ui/button';
 import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogHeader,
-    DialogTitle,
-    DialogTrigger,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
 } from '@tuturuuu/ui/dialog';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
 import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from '@tuturuuu/ui/select';
 import { toast } from '@tuturuuu/ui/sonner';
 import { Textarea } from '@tuturuuu/ui/textarea';

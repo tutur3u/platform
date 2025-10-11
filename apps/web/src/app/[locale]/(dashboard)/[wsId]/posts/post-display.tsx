@@ -1,16 +1,16 @@
 'use client';
 
 import {
-    Calendar,
-    Check,
-    Clock,
-    ExternalLink,
-    Mail,
-    MailCheck,
-    Send,
-    User,
-    Users,
-    X,
+  Calendar,
+  Check,
+  Clock,
+  ExternalLink,
+  Mail,
+  MailCheck,
+  Send,
+  User,
+  Users,
+  X,
 } from '@tuturuuu/icons';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Badge } from '@tuturuuu/ui/badge';
@@ -25,10 +25,10 @@ import { useEffect } from 'react';
 import PostsRowActions from './row-actions';
 import type { PostEmail } from './types';
 import {
-    isOptimisticallyLoading,
-    isOptimisticallySent,
-    useOptimisticLoadingEmails,
-    useOptimisticSentEmails,
+  isOptimisticallyLoading,
+  isOptimisticallySent,
+  useOptimisticLoadingEmails,
+  useOptimisticSentEmails,
 } from './use-posts';
 
 interface PostDisplayProps {
