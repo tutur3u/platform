@@ -4793,7 +4793,7 @@ export type Database = {
       notes: {
         Insert: {
           archived?: boolean | null;
-          content: string;
+          content: Json;
           created_at?: null | string;
           creator_id?: string;
           deleted?: boolean | null;
@@ -4847,7 +4847,7 @@ export type Database = {
         ];
         Row: {
           archived: boolean | null;
-          content: string;
+          content: Json;
           created_at: null | string;
           creator_id: string;
           deleted: boolean | null;
@@ -4857,7 +4857,7 @@ export type Database = {
         };
         Update: {
           archived?: boolean | null;
-          content?: string;
+          content?: Json;
           created_at?: null | string;
           creator_id?: string;
           deleted?: boolean | null;
