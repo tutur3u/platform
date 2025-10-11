@@ -12,23 +12,23 @@
  */
 import { ChevronDown, ChevronRight, Trash2, Users } from '@tuturuuu/icons';
 import type {
-    GuestVoteWithGuestInfo,
-    PollOptionWithVotes,
-    UserVoteWithUserInfo,
+  GuestVoteWithGuestInfo,
+  PollOptionWithVotes,
+  UserVoteWithUserInfo,
 } from '@tuturuuu/types/primitives/Poll';
 import { Button } from '@tuturuuu/ui/button';
 import { Checkbox } from '@tuturuuu/ui/checkbox';
 import {
-    Collapsible,
-    CollapsibleContent,
-    CollapsibleTrigger,
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
 } from '@tuturuuu/ui/collapsible';
 import {
-    Dialog,
-    DialogContent,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
 } from '@tuturuuu/ui/dialog';
 import { useTimeBlocking } from '@tuturuuu/ui/hooks/time-blocking-provider';
 import { Input } from '@tuturuuu/ui/input';

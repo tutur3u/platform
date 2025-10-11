@@ -1,32 +1,32 @@
 'use client';
 
 import {
-    ChevronDown,
-    ChevronRight,
-    Clock,
-    DollarSign,
-    FileText,
-    Hash,
-    MessageSquare,
-    Settings,
-    TrendingUp,
-    Zap,
+  ChevronDown,
+  ChevronRight,
+  Clock,
+  DollarSign,
+  FileText,
+  Hash,
+  MessageSquare,
+  Settings,
+  TrendingUp,
+  Zap,
 } from '@tuturuuu/icons';
 import type { WorkspaceAIExecution } from '@tuturuuu/types/db';
 import { Badge } from '@tuturuuu/ui/badge';
 import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardHeader,
-    CardTitle,
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
 } from '@tuturuuu/ui/card';
 import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogHeader,
-    DialogTitle,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
 } from '@tuturuuu/ui/dialog';
 import { MemoizedReactMarkdown } from '@tuturuuu/ui/markdown';
 import { Separator } from '@tuturuuu/ui/separator';

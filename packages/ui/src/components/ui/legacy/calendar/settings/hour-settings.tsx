@@ -8,9 +8,9 @@ import { toast } from '@tuturuuu/ui/sonner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { useEffect, useState } from 'react';
 import {
-    defaultWeekTimeRanges,
-    TimeRangePicker,
-    type WeekTimeRanges,
+  defaultWeekTimeRanges,
+  TimeRangePicker,
+  type WeekTimeRanges,
 } from './time-range-picker';
 
 export type HoursSettingsData = {

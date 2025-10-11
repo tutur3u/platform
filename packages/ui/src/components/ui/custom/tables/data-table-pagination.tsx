@@ -2,19 +2,19 @@
 
 import type { Table } from '@tanstack/react-table';
 import {
-    ArrowLeftToLine,
-    ArrowRightToLine,
-    ChevronLeft,
-    ChevronRight,
+  ArrowLeftToLine,
+  ArrowRightToLine,
+  ChevronLeft,
+  ChevronRight,
 } from '@tuturuuu/icons';
 import { cn } from '@tuturuuu/utils/format';
 import { Button } from '../../button';
 import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from '../../select';
 import { Separator } from '../../separator';
 

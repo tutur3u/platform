@@ -4,52 +4,52 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { calendarEventsSchema } from '@tuturuuu/ai/calendar/events';
 import { useObject } from '@tuturuuu/ai/object/core';
 import {
-    AlertCircle,
-    Brain,
-    Calendar as CalendarIcon,
-    Check,
-    ChevronLeft,
-    ChevronRight,
-    Clock,
-    FileText,
-    Image as ImageIcon,
-    Info,
-    Loader2,
-    Lock,
-    MapPin,
-    Mic,
-    Settings,
-    Sparkles,
-    StopCircle,
-    Trash2,
-    Unlock,
-    X,
+  AlertCircle,
+  Brain,
+  Calendar as CalendarIcon,
+  Check,
+  ChevronLeft,
+  ChevronRight,
+  Clock,
+  FileText,
+  Image as ImageIcon,
+  Info,
+  Loader2,
+  Lock,
+  MapPin,
+  Mic,
+  Settings,
+  Sparkles,
+  StopCircle,
+  Trash2,
+  Unlock,
+  X,
 } from '@tuturuuu/icons';
 import type { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
 import type { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
 import {
-    Accordion,
-    AccordionContent,
-    AccordionItem,
-    AccordionTrigger,
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
 } from '@tuturuuu/ui/accordion';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogHeader,
-    DialogTitle,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
 } from '@tuturuuu/ui/dialog';
 import {
-    Form,
-    FormControl,
-    FormDescription,
-    FormField,
-    FormItem,
-    FormLabel,
-    FormMessage,
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
 } from '@tuturuuu/ui/form';
 import { useCalendar } from '@tuturuuu/ui/hooks/use-calendar';
 import { useForm } from '@tuturuuu/ui/hooks/use-form';
@@ -58,8 +58,8 @@ import { ScrollArea } from '@tuturuuu/ui/scroll-area';
 import { Separator } from '@tuturuuu/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import {
-    createAllDayEvent,
-    isAllDayEvent,
+  createAllDayEvent,
+  isAllDayEvent,
 } from '@tuturuuu/utils/calendar-utils';
 import { getEventStyles } from '@tuturuuu/utils/color-helper';
 import { format } from 'date-fns';
@@ -72,15 +72,15 @@ import { z } from 'zod';
 import { Alert, AlertDescription, AlertTitle } from '../../alert';
 import { AutosizeTextarea } from '../../custom/autosize-textarea';
 import {
-    COLOR_OPTIONS,
-    DateError,
-    EventColorPicker,
-    EventDateTimePicker,
-    EventDescriptionInput,
-    EventLocationInput,
-    EventTitleInput,
-    EventToggleSwitch,
-    OverlapWarning,
+  COLOR_OPTIONS,
+  DateError,
+  EventColorPicker,
+  EventDateTimePicker,
+  EventDescriptionInput,
+  EventLocationInput,
+  EventTitleInput,
+  EventToggleSwitch,
+  OverlapWarning,
 } from './event-form-components';
 import { useCalendarSettings } from './settings/settings-context';
 

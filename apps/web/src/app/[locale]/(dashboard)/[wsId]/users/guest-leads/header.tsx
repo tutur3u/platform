@@ -3,12 +3,12 @@
 import { Settings } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogHeader,
-    DialogTitle,
-    DialogTrigger,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
 } from '@tuturuuu/ui/dialog';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';

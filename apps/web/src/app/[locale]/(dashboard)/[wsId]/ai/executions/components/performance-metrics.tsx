@@ -1,44 +1,44 @@
 'use client';
 
 import {
-    Activity,
-    BarChart3,
-    Clock,
-    DollarSign,
-    TrendingUp,
-    Zap,
+  Activity,
+  BarChart3,
+  Clock,
+  DollarSign,
+  TrendingUp,
+  Zap,
 } from '@tuturuuu/icons';
 import type { WorkspaceAIExecution } from '@tuturuuu/types/db';
 import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardHeader,
-    CardTitle,
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
 } from '@tuturuuu/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { useTranslations } from 'next-intl';
 import { useTheme } from 'next-themes';
 import {
-    Area,
-    Bar,
-    BarChart,
-    CartesianGrid,
-    Cell,
-    ComposedChart,
-    Legend,
-    Line,
-    Pie,
-    PieChart,
-    ResponsiveContainer,
-    Tooltip,
-    XAxis,
-    YAxis,
+  Area,
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Cell,
+  ComposedChart,
+  Legend,
+  Line,
+  Pie,
+  PieChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
 } from 'recharts';
 import type {
-    AIExecutionDailyStats,
-    AIExecutionModelStats,
-    AIExecutionSummary,
+  AIExecutionDailyStats,
+  AIExecutionModelStats,
+  AIExecutionSummary,
 } from '../services/analytics-service';
 import { calculateCost, formatCost } from '../utils/cost-calculator';
 

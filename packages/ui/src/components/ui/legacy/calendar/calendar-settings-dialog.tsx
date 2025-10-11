@@ -1,46 +1,46 @@
 'use client';
 
 import {
-    CalendarClock,
-    CalendarDays,
-    Clock,
-    ListTodo,
-    Paintbrush,
-    Palette,
-    Sparkles,
+  CalendarClock,
+  CalendarDays,
+  Clock,
+  ListTodo,
+  Paintbrush,
+  Palette,
+  Sparkles,
 } from '@tuturuuu/icons';
 import type { WorkspaceCalendarGoogleToken } from '@tuturuuu/types/db';
 import {
-    Breadcrumb,
-    BreadcrumbItem,
-    BreadcrumbLink,
-    BreadcrumbList,
-    BreadcrumbPage,
-    BreadcrumbSeparator,
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
 } from '@tuturuuu/ui/breadcrumb';
 import { Button } from '@tuturuuu/ui/button';
 import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogTitle,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogTitle,
 } from '@tuturuuu/ui/dialog';
 import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from '@tuturuuu/ui/select';
 import {
-    Sidebar,
-    SidebarContent,
-    SidebarGroup,
-    SidebarGroupContent,
-    SidebarMenu,
-    SidebarMenuButton,
-    SidebarMenuItem,
-    SidebarProvider,
+  Sidebar,
+  SidebarContent,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarProvider,
 } from '@tuturuuu/ui/sidebar';
 import { cn } from '@tuturuuu/utils/format';
 import * as React from 'react';
@@ -50,8 +50,8 @@ import { GoogleCalendarSettings } from './settings/google-calendar-settings';
 import { HoursSettings } from './settings/hour-settings';
 import { NotificationSettings } from './settings/notification-settings';
 import {
-    type CalendarSettings,
-    useCalendarSettings,
+  type CalendarSettings,
+  useCalendarSettings,
 } from './settings/settings-context';
 import { SmartSchedulingSettings } from './settings/smart-scheduling-settings';
 import { TaskSettings } from './settings/task-settings';

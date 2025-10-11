@@ -233,20 +233,19 @@ function ContextMenuShortcut({
 }
 
 export {
-    ContextMenu,
-    ContextMenuCheckboxItem,
-    ContextMenuContent,
-    ContextMenuGroup,
-    ContextMenuItem,
-    ContextMenuLabel,
-    ContextMenuPortal,
-    ContextMenuRadioGroup,
-    ContextMenuRadioItem,
-    ContextMenuSeparator,
-    ContextMenuShortcut,
-    ContextMenuSub,
-    ContextMenuSubContent,
-    ContextMenuSubTrigger,
-    ContextMenuTrigger
+  ContextMenu,
+  ContextMenuCheckboxItem,
+  ContextMenuContent,
+  ContextMenuGroup,
+  ContextMenuItem,
+  ContextMenuLabel,
+  ContextMenuPortal,
+  ContextMenuRadioGroup,
+  ContextMenuRadioItem,
+  ContextMenuSeparator,
+  ContextMenuShortcut,
+  ContextMenuSub,
+  ContextMenuSubContent,
+  ContextMenuSubTrigger,
+  ContextMenuTrigger,
 };
-

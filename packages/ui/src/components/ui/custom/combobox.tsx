@@ -5,12 +5,12 @@ import { cn } from '@tuturuuu/utils/format';
 import * as React from 'react';
 import { Button } from '../button';
 import {
-    Command,
-    CommandEmpty,
-    CommandGroup,
-    CommandInput,
-    CommandItem,
-    CommandList,
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
 } from '../command';
 import { Popover, PopoverContent, PopoverTrigger } from '../popover';
 import { Separator } from '../separator';

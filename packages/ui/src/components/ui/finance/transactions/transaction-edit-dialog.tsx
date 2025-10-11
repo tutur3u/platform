@@ -2,41 +2,41 @@
 
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
-    Calendar,
-    Check,
-    DollarSign,
-    FileText,
-    FolderOpen,
-    Loader2,
-    Tag,
-    Trash,
-    TrendingDown,
-    TrendingUp,
-    Wallet as WalletIcon,
-    X,
+  Calendar,
+  Check,
+  DollarSign,
+  FileText,
+  FolderOpen,
+  Loader2,
+  Tag,
+  Trash,
+  TrendingDown,
+  TrendingUp,
+  Wallet as WalletIcon,
+  X,
 } from '@tuturuuu/icons';
 import type { Transaction } from '@tuturuuu/types/primitives/Transaction';
 import type { TransactionCategory } from '@tuturuuu/types/primitives/TransactionCategory';
 import type { Wallet } from '@tuturuuu/types/primitives/Wallet';
 import {
-    AlertDialog,
-    AlertDialogAction,
-    AlertDialogCancel,
-    AlertDialogContent,
-    AlertDialogDescription,
-    AlertDialogFooter,
-    AlertDialogHeader,
-    AlertDialogTitle,
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
 } from '@tuturuuu/ui/alert-dialog';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Combobox } from '@tuturuuu/ui/custom/combobox';
 import { DateTimePicker } from '@tuturuuu/ui/date-time-picker';
 import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogTitle,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogTitle,
 } from '@tuturuuu/ui/dialog';
 import { useToast } from '@tuturuuu/ui/hooks/use-toast';
 import { Input } from '@tuturuuu/ui/input';

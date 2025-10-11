@@ -8,11 +8,11 @@ import * as React from 'react';
 import { DayPicker } from 'react-day-picker';
 import { buttonVariants } from './button';
 import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from './select';
 
 export type CalendarProps = React.ComponentProps<typeof DayPicker> & {

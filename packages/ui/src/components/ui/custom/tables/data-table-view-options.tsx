@@ -6,11 +6,11 @@ import { Settings2, UserCog } from '@tuturuuu/icons';
 import { Fragment } from 'react';
 import { Button } from '../../button';
 import {
-    DropdownMenu,
-    DropdownMenuCheckboxItem,
-    DropdownMenuContent,
-    DropdownMenuLabel,
-    DropdownMenuSeparator,
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
 } from '../../dropdown-menu';
 import { ScrollArea } from '../../scroll-area';
 

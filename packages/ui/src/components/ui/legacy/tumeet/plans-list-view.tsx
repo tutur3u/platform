@@ -1,11 +1,11 @@
 'use client';
 
 import {
-    Calendar,
-    CalendarDays,
-    CalendarRange,
-    Clock,
-    Users,
+  Calendar,
+  CalendarDays,
+  CalendarRange,
+  Clock,
+  Users,
 } from '@tuturuuu/icons';
 import { formatTimezoneOffset } from '@tuturuuu/utils/date-helper';
 import dayjs from 'dayjs';

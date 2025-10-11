@@ -6,11 +6,11 @@ import type { WorkspaceCalendarGoogleToken } from '@tuturuuu/types/db';
 import { Alert, AlertDescription } from '@tuturuuu/ui/alert';
 import { Button } from '@tuturuuu/ui/button';
 import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardHeader,
-    CardTitle,
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
 } from '@tuturuuu/ui/card';
 import { useCalendar } from '@tuturuuu/ui/hooks/use-calendar';
 import { useCalendarSync } from '@tuturuuu/ui/hooks/use-calendar-sync';

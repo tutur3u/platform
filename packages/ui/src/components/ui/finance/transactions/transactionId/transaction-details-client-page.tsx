@@ -1,10 +1,17 @@
 'use client';
 
 import {
-    ArrowDownCircle,
-    ArrowUpCircle, CalendarIcon, DollarSign, Edit,
-    FolderOpen, Tag, TrendingDown,
-    TrendingUp, User, Wallet
+  ArrowDownCircle,
+  ArrowUpCircle,
+  CalendarIcon,
+  DollarSign,
+  Edit,
+  FolderOpen,
+  Tag,
+  TrendingDown,
+  TrendingUp,
+  User,
+  Wallet,
 } from '@tuturuuu/icons';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
