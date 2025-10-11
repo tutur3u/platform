@@ -1,37 +1,37 @@
 'use client';
 
+import { CustomDataTable } from '@/components/custom-data-table';
+import { joinPath, popPath } from '@/utils/path-helper';
 import type { Row } from '@tanstack/react-table';
+import {
+    ArrowLeft,
+    FileText,
+    Folder,
+    LayoutGrid,
+    LayoutList,
+} from '@tuturuuu/icons';
 import { createDynamicClient } from '@tuturuuu/supabase/next/client';
 import type { StorageObject } from '@tuturuuu/types/primitives/StorageObject';
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
 } from '@tuturuuu/ui/alert-dialog';
 import { Button } from '@tuturuuu/ui/button';
 import {
-  ContextMenu,
-  ContextMenuContent,
-  ContextMenuTrigger,
+    ContextMenu,
+    ContextMenuContent,
+    ContextMenuTrigger,
 } from '@tuturuuu/ui/context-menu';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
-import {
-  ArrowLeft,
-  FileText,
-  Folder,
-  LayoutGrid,
-  LayoutList,
-} from '@tuturuuu/ui/icons';
-import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useState } from 'react';
-import { CustomDataTable } from '@/components/custom-data-table';
-import { joinPath, popPath } from '@/utils/path-helper';
 import { storageObjectsColumns } from './columns';
 import { FilePreviewDialog } from './file-preview-dialog';
 import { StorageObjectRowActions } from './row-actions';

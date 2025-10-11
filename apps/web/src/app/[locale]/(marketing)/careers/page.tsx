@@ -1,32 +1,32 @@
 'use client';
 
+import { GITHUB_OWNER, GITHUB_REPO } from '@/constants/common';
+import {
+    Building2,
+    Clock,
+    Code2,
+    Compass,
+    Github,
+    Globe2,
+    GraduationCap,
+    Heart,
+    Laptop,
+    LayoutGrid,
+    Mail,
+    MapPin,
+    MessageCircle,
+    Rocket,
+    Shield,
+    Sparkles,
+    Star,
+    Sun,
+    Timer,
+    Users2,
+} from '@tuturuuu/icons';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Card } from '@tuturuuu/ui/card';
-import {
-  Building2,
-  Clock,
-  Code2,
-  Compass,
-  Github,
-  Globe2,
-  GraduationCap,
-  Heart,
-  Laptop,
-  LayoutGrid,
-  Mail,
-  MapPin,
-  MessageCircle,
-  Rocket,
-  Shield,
-  Sparkles,
-  Star,
-  Sun,
-  Timer,
-  Users2,
-} from '@tuturuuu/ui/icons';
 import { motion, useScroll, useTransform } from 'framer-motion';
 import { type ReactNode, useRef } from 'react';
-import { GITHUB_OWNER, GITHUB_REPO } from '@/constants/common';
 
 interface ValueProps {
   icon: ReactNode;

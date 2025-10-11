@@ -1,8 +1,5 @@
 'use client';
 
-import { Badge } from '@tuturuuu/ui/badge';
-import { Button } from '@tuturuuu/ui/button';
-import { LoadingIndicator } from '@tuturuuu/ui/custom/loading-indicator';
 import {
   AlertCircle,
   Clock,
@@ -10,7 +7,10 @@ import {
   Plus,
   Target,
   Zap,
-} from '@tuturuuu/ui/icons';
+} from '@tuturuuu/icons';
+import { Badge } from '@tuturuuu/ui/badge';
+import { Button } from '@tuturuuu/ui/button';
+import { LoadingIndicator } from '@tuturuuu/ui/custom/loading-indicator';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { cn } from '@tuturuuu/utils/format';
 import type React from 'react';

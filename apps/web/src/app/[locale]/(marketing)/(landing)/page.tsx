@@ -1,38 +1,38 @@
 'use client';
 
+import {
+    ArrowRight,
+    BarChart3,
+    Bot,
+    Brain,
+    Calendar,
+    Check,
+    CheckCircle2,
+    Clock,
+    Code2,
+    Cpu,
+    Database,
+    FileText,
+    GitBranch,
+    Globe,
+    GraduationCap,
+    Heart,
+    Layers,
+    Lock,
+    MessageSquare,
+    Rocket,
+    Shield,
+    Sparkles,
+    Star,
+    Target,
+    TrendingUp,
+    Users,
+    Wallet,
+    Zap,
+} from '@tuturuuu/icons';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Card } from '@tuturuuu/ui/card';
-import {
-  ArrowRight,
-  BarChart3,
-  Bot,
-  Brain,
-  Calendar,
-  Check,
-  CheckCircle2,
-  Clock,
-  Code2,
-  Cpu,
-  Database,
-  FileText,
-  GitBranch,
-  Globe,
-  GraduationCap,
-  Heart,
-  Layers,
-  Lock,
-  MessageSquare,
-  Rocket,
-  Shield,
-  Sparkles,
-  Star,
-  Target,
-  TrendingUp,
-  Users,
-  Wallet,
-  Zap,
-} from '@tuturuuu/ui/icons';
 import { cn } from '@tuturuuu/utils/format';
 import { motion } from 'framer-motion';
 import { useTranslations } from 'next-intl';

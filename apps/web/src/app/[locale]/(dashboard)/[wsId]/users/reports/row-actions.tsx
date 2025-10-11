@@ -1,17 +1,17 @@
 'use client';
 
 import type { Row } from '@tanstack/react-table';
+import { Ellipsis, Eye } from '@tuturuuu/icons';
 import type { WorkspaceUserReport } from '@tuturuuu/types/db';
 import { Button } from '@tuturuuu/ui/button';
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
-import { Ellipsis, Eye } from '@tuturuuu/ui/icons';
-import Link from 'next/link';
 import { useTranslations } from 'next-intl';
+import Link from 'next/link';
 
 interface UserReportRowActionsProps {
   row: Row<WorkspaceUserReport>;

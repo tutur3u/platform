@@ -11,35 +11,35 @@ import Underline from '@tiptap/extension-underline';
 import { generateHTML } from '@tiptap/html';
 import type { JSONContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
+import { ChevronDown, ChevronUp, Send, X } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
+    Collapsible,
+    CollapsibleContent,
+    CollapsibleTrigger,
 } from '@tuturuuu/ui/collapsible';
 import { LoadingIndicator } from '@tuturuuu/ui/custom/loading-indicator';
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
 } from '@tuturuuu/ui/dialog';
 import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
+    Form,
+    FormControl,
+    FormField,
+    FormItem,
+    FormLabel,
+    FormMessage,
 } from '@tuturuuu/ui/form';
-import { ChevronDown, ChevronUp, Send, X } from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
 import { toast } from '@tuturuuu/ui/sonner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { RichTextEditor } from '@tuturuuu/ui/text-editor/editor';
 import DOMPurify from 'dompurify';
-import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
+import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';

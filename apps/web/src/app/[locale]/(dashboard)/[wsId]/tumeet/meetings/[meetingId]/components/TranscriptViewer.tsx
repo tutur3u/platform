@@ -1,15 +1,15 @@
 'use client';
 
+import { Clock, FileText, Search, X } from '@tuturuuu/icons';
 import type { RecordingTranscript } from '@tuturuuu/types/db';
 import { Button } from '@tuturuuu/ui/button';
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
 } from '@tuturuuu/ui/dialog';
-import { Clock, FileText, Search, X } from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useState } from 'react';

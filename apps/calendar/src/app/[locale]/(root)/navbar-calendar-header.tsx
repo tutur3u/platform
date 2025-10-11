@@ -1,7 +1,7 @@
 'use client';
 
+import { ChevronLeft, ChevronRight } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
-import { ChevronLeft, ChevronRight } from '@tuturuuu/ui/icons';
 import { useTranslations } from 'next-intl';
 
 export default function NavbarCalendarHeader() {

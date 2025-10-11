@@ -1,5 +1,18 @@
 'use client';
 
+import {
+    AlertCircle,
+    Bot,
+    CheckCircle,
+    Copy,
+    ExternalLink,
+    Loader2,
+    Plus,
+    Search,
+    Trash2,
+    UserMinus,
+    Users,
+} from '@tuturuuu/icons';
 import type { User, UserPrivateDetails } from '@tuturuuu/types/db';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import type { Database } from '@tuturuuu/types/supabase';
@@ -8,35 +21,22 @@ import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
+    Card,
+    CardContent,
+    CardDescription,
+    CardHeader,
+    CardTitle,
 } from '@tuturuuu/ui/card';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
 } from '@tuturuuu/ui/dialog';
-import {
-  AlertCircle,
-  Bot,
-  CheckCircle,
-  Copy,
-  ExternalLink,
-  Loader2,
-  Plus,
-  Search,
-  Trash2,
-  UserMinus,
-  Users,
-} from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
 import { Separator } from '@tuturuuu/ui/separator';

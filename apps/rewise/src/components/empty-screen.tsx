@@ -1,13 +1,13 @@
+import {
+    ArrowDownToDot,
+    GraduationCap,
+    Mail,
+    Microscope,
+    NotebookPen,
+    Sigma,
+} from '@tuturuuu/icons';
 import type { AIChat } from '@tuturuuu/types/db';
 import { Button } from '@tuturuuu/ui/button';
-import {
-  ArrowDownToDot,
-  GraduationCap,
-  Mail,
-  Microscope,
-  NotebookPen,
-  Sigma,
-} from '@tuturuuu/ui/icons';
 import { cn } from '@tuturuuu/utils/format';
 import dayjs from 'dayjs';
 import 'dayjs/locale/vi';

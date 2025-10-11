@@ -64,6 +64,7 @@
     "@tiptap/react": "^3.6.6",
     "@tiptap/starter-kit": "^3.6.6",
     "@tuturuuu/ai": "workspace:*",
+    "@tuturuuu/icons": "workspace:*",
     "@tuturuuu/supabase": "workspace:*",
     "@tuturuuu/utils": "workspace:*",
     "class-variance-authority": "^0.7.1",

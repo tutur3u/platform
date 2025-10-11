@@ -1,45 +1,45 @@
 'use client';
 
 import { useQueryClient } from '@tanstack/react-query';
+import {
+    CheckCircle,
+    Clock,
+    ClockFading,
+    Copy,
+    ExternalLink,
+    fruit,
+    Icon,
+    MapPin,
+    Pause,
+    Play,
+    RefreshCw,
+    Settings,
+    Settings2,
+    Sparkles,
+    Square,
+    TableOfContents,
+    Tag,
+    Timer,
+} from '@tuturuuu/icons';
 import type { TimeTrackingCategory, WorkspaceTask } from '@tuturuuu/types/db';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
 } from '@tuturuuu/ui/dialog';
-import {
-  CheckCircle,
-  Clock,
-  ClockFading,
-  Copy,
-  ExternalLink,
-  fruit,
-  Icon,
-  MapPin,
-  Pause,
-  Play,
-  RefreshCw,
-  Settings,
-  Settings2,
-  Sparkles,
-  Square,
-  TableOfContents,
-  Tag,
-  Timer,
-} from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
 } from '@tuturuuu/ui/select';
 import { toast } from '@tuturuuu/ui/sonner';
 import { Switch } from '@tuturuuu/ui/switch';
@@ -50,14 +50,14 @@ import Link from 'next/link';
 import type { ComponentProps, ElementType } from 'react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type {
-  ExtendedWorkspaceTask,
-  SessionWithRelations,
-  TaskFilters,
+    ExtendedWorkspaceTask,
+    SessionWithRelations,
+    TaskFilters,
 } from '../types';
 import {
-  generateAssigneeInitials,
-  getFilteredAndSortedTasks,
-  useTaskCounts,
+    generateAssigneeInitials,
+    getFilteredAndSortedTasks,
+    useTaskCounts,
 } from '../utils';
 
 interface SessionTemplate {

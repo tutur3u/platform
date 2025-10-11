@@ -1,43 +1,43 @@
 'use client';
 
+import { GITHUB_OWNER, GITHUB_REPO } from '@/constants/common';
+import {
+    Calendar,
+    Code,
+    FileText,
+    GitCommit,
+    GitFork,
+    GithubIcon,
+    GitPullRequest,
+    Heart,
+    Mail,
+    MessageSquare,
+    Star,
+    Users,
+} from '@tuturuuu/icons';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Card } from '@tuturuuu/ui/card';
-import {
-  Calendar,
-  Code,
-  FileText,
-  GitCommit,
-  GitFork,
-  GithubIcon,
-  GitPullRequest,
-  Heart,
-  Mail,
-  MessageSquare,
-  Star,
-  Users,
-} from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
 import { motion, type Variants } from 'framer-motion';
 import dynamic from 'next/dynamic';
 import Image from 'next/image';
 import { useEffect, useState } from 'react';
 import {
-  Area,
-  AreaChart,
-  Bar,
-  BarChart,
-  CartesianGrid,
-  Cell,
-  Legend,
-  Pie,
-  PieChart,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
+    Area,
+    AreaChart,
+    Bar,
+    BarChart,
+    CartesianGrid,
+    Cell,
+    Legend,
+    Pie,
+    PieChart,
+    ResponsiveContainer,
+    Tooltip,
+    XAxis,
+    YAxis,
 } from 'recharts';
-import { GITHUB_OWNER, GITHUB_REPO } from '@/constants/common';
 
 // Types imported from server component
 interface GithubUser {

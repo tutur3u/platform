@@ -1,34 +1,34 @@
 'use client';
 
+import {
+    Calendar,
+    Check,
+    Clock,
+    ExternalLink,
+    Mail,
+    MailCheck,
+    Send,
+    User,
+    Users,
+    X,
+} from '@tuturuuu/icons';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { LoadingIndicator } from '@tuturuuu/ui/custom/loading-indicator';
-import {
-  Calendar,
-  Check,
-  Clock,
-  ExternalLink,
-  Mail,
-  MailCheck,
-  Send,
-  User,
-  Users,
-  X,
-} from '@tuturuuu/ui/icons';
 import { ScrollArea } from '@tuturuuu/ui/scroll-area';
 import { Separator } from '@tuturuuu/ui/separator';
 import dayjs from 'dayjs';
-import Link from 'next/link';
 import { useLocale } from 'next-intl';
+import Link from 'next/link';
 import { useEffect } from 'react';
 import PostsRowActions from './row-actions';
 import type { PostEmail } from './types';
 import {
-  isOptimisticallyLoading,
-  isOptimisticallySent,
-  useOptimisticLoadingEmails,
-  useOptimisticSentEmails,
+    isOptimisticallyLoading,
+    isOptimisticallySent,
+    useOptimisticLoadingEmails,
+    useOptimisticSentEmails,
 } from './use-posts';
 
 interface PostDisplayProps {

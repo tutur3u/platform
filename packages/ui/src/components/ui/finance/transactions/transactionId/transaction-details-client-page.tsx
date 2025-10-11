@@ -1,23 +1,17 @@
 'use client';
 
+import { CalendarIcon, DollarSign, Tag, User, Wallet } from '@tuturuuu/icons';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Card } from '@tuturuuu/ui/card';
-import {
-  CalendarIcon,
-  DollarSign,
-  Tag,
-  User,
-  Wallet,
-} from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
 import {
-  ArrowDownCircle,
-  ArrowUpCircle,
-  Edit,
-  FolderOpen,
-  TrendingDown,
-  TrendingUp,
+    ArrowDownCircle,
+    ArrowUpCircle,
+    Edit,
+    FolderOpen,
+    TrendingDown,
+    TrendingUp,
 } from 'lucide-react';
 import moment from 'moment';
 import { useLocale, useTranslations } from 'next-intl';

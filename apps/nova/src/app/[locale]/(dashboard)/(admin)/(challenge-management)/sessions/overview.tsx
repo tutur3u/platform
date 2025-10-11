@@ -1,7 +1,7 @@
 'use client';
 
+import { Clock, Users } from '@tuturuuu/icons';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
-import { Clock, Users } from '@tuturuuu/ui/icons';
 import { useTranslations } from 'next-intl';
 
 interface SessionStatsProps {

@@ -1,4 +1,5 @@
 import { type Model, models, providers } from '@tuturuuu/ai/models';
+import { Check } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import {
   Command,
@@ -8,7 +9,6 @@ import {
   CommandItem,
   CommandList,
 } from '@tuturuuu/ui/command';
-import { Check } from '@tuturuuu/ui/icons';
 import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
 import { Separator } from '@tuturuuu/ui/separator';
 import { cn } from '@tuturuuu/utils/format';

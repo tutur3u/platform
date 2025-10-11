@@ -1,13 +1,13 @@
 'use client';
 
+import { ChevronLeft, ChevronRight, X } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
-import { ChevronLeft, ChevronRight, X } from '@tuturuuu/ui/icons';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
 } from '@tuturuuu/ui/select';
 
 interface GanttControlsProps {

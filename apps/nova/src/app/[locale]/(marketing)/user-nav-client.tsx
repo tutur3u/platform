@@ -1,5 +1,14 @@
 'use client';
 
+import {
+  Globe,
+  Home,
+  Medal,
+  Palette,
+  Settings,
+  Trophy,
+  User,
+} from '@tuturuuu/icons';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Dialog } from '@tuturuuu/ui/dialog';
@@ -16,19 +25,10 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
-import {
-  Globe,
-  Home,
-  Medal,
-  Palette,
-  Settings,
-  Trophy,
-  User,
-} from '@tuturuuu/ui/icons';
 import { cn } from '@tuturuuu/utils/format';
 import { getInitials } from '@tuturuuu/utils/name-helper';
-import Link from 'next/link';
 import { useTranslations } from 'next-intl';
+import Link from 'next/link';
 import { useState } from 'react';
 import { LanguageWrapper } from '../(dashboard)/_components/language-wrapper';
 import { LogoutDropdownItem } from '../(dashboard)/_components/logout-dropdown-item';

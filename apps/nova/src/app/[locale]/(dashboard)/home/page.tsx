@@ -1,3 +1,4 @@
+import { ArrowRight, BookOpen, Code, Trophy, Zap } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import {
   Card,
@@ -6,9 +7,8 @@ import {
   CardHeader,
   CardTitle,
 } from '@tuturuuu/ui/card';
-import { ArrowRight, BookOpen, Code, Trophy, Zap } from '@tuturuuu/ui/icons';
-import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
+import Link from 'next/link';
 
 export default async function HomePage() {
   const t = await getTranslations('nova');

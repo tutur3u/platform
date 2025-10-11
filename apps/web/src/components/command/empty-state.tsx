@@ -1,7 +1,7 @@
 'use client';
 
+import { Search } from '@tuturuuu/icons';
 import { CommandEmpty } from '@tuturuuu/ui/command';
-import { Search } from '@tuturuuu/ui/icons';
 
 export function EmptyState() {
   return (

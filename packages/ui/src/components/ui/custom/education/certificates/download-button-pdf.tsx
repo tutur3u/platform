@@ -1,7 +1,7 @@
 'use client';
 
+import { FileText } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
-import { FileText } from '@tuturuuu/ui/icons';
 import { useLocale, useTranslations } from 'next-intl';
 import { useCallback } from 'react';
 

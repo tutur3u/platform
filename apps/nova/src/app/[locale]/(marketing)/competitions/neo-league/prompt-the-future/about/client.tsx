@@ -1,9 +1,5 @@
 'use client';
 
-import { Badge } from '@tuturuuu/ui/badge';
-import { Button } from '@tuturuuu/ui/button';
-import { Card } from '@tuturuuu/ui/card';
-import { GradientHeadline } from '@tuturuuu/ui/custom/gradient-headline';
 import {
   ArrowRight,
   Building,
@@ -20,13 +16,17 @@ import {
   Target,
   Twitter,
   Users,
-} from '@tuturuuu/ui/icons';
+} from '@tuturuuu/icons';
+import { Badge } from '@tuturuuu/ui/badge';
+import { Button } from '@tuturuuu/ui/button';
+import { Card } from '@tuturuuu/ui/card';
+import { GradientHeadline } from '@tuturuuu/ui/custom/gradient-headline';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { cn } from '@tuturuuu/utils/format';
 import { motion, useScroll, useTransform, type Variants } from 'framer-motion';
+import { useTranslations } from 'next-intl';
 import Image from 'next/image';
 import Link from 'next/link';
-import { useTranslations } from 'next-intl';
 import React, { useEffect, useRef, useState } from 'react';
 import {
   type Contributor,

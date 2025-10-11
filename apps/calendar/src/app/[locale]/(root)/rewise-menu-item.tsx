@@ -1,11 +1,11 @@
-import {
-  DropdownMenuGroup,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-} from '@tuturuuu/ui/dropdown-menu';
-import { Sparkles } from '@tuturuuu/ui/icons';
-import Link from 'next/link';
 import { DEV_MODE } from '@/constants/common';
+import { Sparkles } from '@tuturuuu/icons';
+import {
+    DropdownMenuGroup,
+    DropdownMenuItem,
+    DropdownMenuSeparator,
+} from '@tuturuuu/ui/dropdown-menu';
+import Link from 'next/link';
 
 export default function RewiseMenuItem() {
   return (

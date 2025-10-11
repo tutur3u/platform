@@ -1,34 +1,34 @@
 'use client';
 
+import {
+    AlertCircle,
+    BookOpen,
+    Check,
+    ChevronRight,
+    Clock,
+    Copyright,
+    Database,
+    FileText,
+    Info,
+    Mail,
+    RefreshCcw,
+    Settings,
+    Shield,
+    Users,
+    UserX,
+} from '@tuturuuu/icons';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Card } from '@tuturuuu/ui/card';
-import {
-  AlertCircle,
-  BookOpen,
-  Check,
-  ChevronRight,
-  Clock,
-  Copyright,
-  Database,
-  FileText,
-  Info,
-  Mail,
-  RefreshCcw,
-  Settings,
-  Shield,
-  Users,
-  UserX,
-} from '@tuturuuu/ui/icons';
 import { MemoizedReactMarkdown } from '@tuturuuu/ui/markdown';
 import { ScrollArea } from '@tuturuuu/ui/scroll-area';
 import { Separator } from '@tuturuuu/ui/separator';
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
 } from '@tuturuuu/ui/table';
 import { cn } from '@tuturuuu/utils/format';
 import { motion } from 'framer-motion';

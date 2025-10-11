@@ -1,8 +1,8 @@
 'use client';
 
+import { BookText, Zap } from '@tuturuuu/icons';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Card } from '@tuturuuu/ui/card';
-import { BookText, Zap } from '@tuturuuu/ui/icons';
 import {
   NavigationMenu,
   NavigationMenuContent,
@@ -13,8 +13,8 @@ import {
   navigationMenuTriggerStyle,
 } from '@tuturuuu/ui/navigation-menu';
 import { cn } from '@tuturuuu/utils/format';
-import Link from 'next/link';
 import { useTranslations } from 'next-intl';
+import Link from 'next/link';
 import * as React from 'react';
 import { useNavigation } from './shared/navigation-config';
 

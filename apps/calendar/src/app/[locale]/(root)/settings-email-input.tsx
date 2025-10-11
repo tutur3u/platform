@@ -1,21 +1,21 @@
 'use client';
 
+import { Check, Loader2 } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import { InputField } from '@tuturuuu/ui/custom/input-field';
 import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormMessage,
+    Form,
+    FormControl,
+    FormDescription,
+    FormField,
+    FormItem,
+    FormMessage,
 } from '@tuturuuu/ui/form';
 import { useForm } from '@tuturuuu/ui/hooks/use-form';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
-import { Check, Loader2 } from '@tuturuuu/ui/icons';
 import { zodResolver } from '@tuturuuu/ui/resolvers';
-import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
+import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import * as z from 'zod';
 

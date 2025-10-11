@@ -1,13 +1,13 @@
+import { availableConfigs } from '@/constants/configs/reports';
+import { PlusCircle, User } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import type { WorkspaceUserReport } from '@tuturuuu/types/db';
 import type { UserGroup } from '@tuturuuu/types/primitives/UserGroup';
 import type { WorkspaceConfig } from '@tuturuuu/types/primitives/WorkspaceConfig';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
-import { PlusCircle, User } from '@tuturuuu/ui/icons';
 import type { Metadata } from 'next';
-import { notFound, redirect } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
-import { availableConfigs } from '@/constants/configs/reports';
+import { notFound, redirect } from 'next/navigation';
 import { Filter } from '../../filters';
 import EditableReportPreview from './editable-report-preview';
 

@@ -1,7 +1,7 @@
 'use client';
 
+import { Bell } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
-import { Bell } from '@tuturuuu/ui/icons';
 import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
 import { ScrollArea } from '@tuturuuu/ui/scroll-area';
 import { Separator } from '@tuturuuu/ui/separator';

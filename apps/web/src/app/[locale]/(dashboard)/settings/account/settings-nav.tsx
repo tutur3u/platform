@@ -1,18 +1,18 @@
 'use client';
 
 import {
-  Bell,
-  ChevronRight,
-  CreditCard,
-  Settings,
-  Shield,
-  Smartphone,
-  User,
-} from '@tuturuuu/ui/icons';
+    Bell,
+    ChevronRight,
+    CreditCard,
+    Settings,
+    Shield,
+    Smartphone,
+    User,
+} from '@tuturuuu/icons';
 import { cn } from '@tuturuuu/utils/format';
+import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useTranslations } from 'next-intl';
 
 const settingsNav = [
   {

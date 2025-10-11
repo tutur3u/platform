@@ -1,15 +1,15 @@
 'use client';
 
+import {
+    ArrowRight,
+    CheckCircle,
+    Rocket,
+    Settings,
+    Users,
+    Zap,
+} from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent, CardHeader } from '@tuturuuu/ui/card';
-import {
-  ArrowRight,
-  CheckCircle,
-  Rocket,
-  Settings,
-  Users,
-  Zap,
-} from '@tuturuuu/ui/icons';
 import { motion } from 'framer-motion';
 import { useTranslations } from 'next-intl';
 

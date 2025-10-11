@@ -1,20 +1,20 @@
 'use client';
 
-import { Card } from '@tuturuuu/ui/card';
-import {
-  ArrowRight,
-  Brain,
-  CheckCircle,
-  Github,
-  Globe2,
-  Mail,
-  Rocket,
-  Star,
-  Target,
-  Users,
-} from '@tuturuuu/ui/icons';
-import { motion } from 'framer-motion';
 import { GITHUB_OWNER, GITHUB_REPO } from '@/constants/common';
+import {
+    ArrowRight,
+    Brain,
+    CheckCircle,
+    Github,
+    Globe2,
+    Mail,
+    Rocket,
+    Star,
+    Target,
+    Users,
+} from '@tuturuuu/icons';
+import { Card } from '@tuturuuu/ui/card';
+import { motion } from 'framer-motion';
 
 const benefits = [
   {

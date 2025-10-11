@@ -1,12 +1,12 @@
+import { Calendar, MapPin } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
 import { isAllDayEvent } from '@tuturuuu/ui/hooks/calendar-utils';
-import { Calendar, MapPin } from '@tuturuuu/ui/icons';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
-import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
+import Link from 'next/link';
 import UpcomingEventDetails from './upcoming-event-details';
 
 interface UpcomingCalendarEventsProps {

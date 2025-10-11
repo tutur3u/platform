@@ -1,3 +1,14 @@
+import ScoreBadge from '@/components/common/ScoreBadge';
+import SideBySideDiff from '@/components/common/SideBySideDiff';
+import {
+  CheckCircle2,
+  Clock,
+  Code,
+  Info,
+  Split,
+  ThumbsUp,
+  XCircle,
+} from '@tuturuuu/icons';
 import type { NovaSubmissionData } from '@tuturuuu/types/db';
 import {
   Accordion,
@@ -7,22 +18,11 @@ import {
 } from '@tuturuuu/ui/accordion';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
-import {
-  CheckCircle2,
-  Clock,
-  Code,
-  Info,
-  Split,
-  ThumbsUp,
-  XCircle,
-} from '@tuturuuu/ui/icons';
 import { Skeleton } from '@tuturuuu/ui/skeleton';
 import { Switch } from '@tuturuuu/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { useState } from 'react';
-import ScoreBadge from '@/components/common/ScoreBadge';
-import SideBySideDiff from '@/components/common/SideBySideDiff';
 
 interface TestCaseEvaluationProps {
   submission: Partial<NovaSubmissionData>;

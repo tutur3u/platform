@@ -1,22 +1,22 @@
 'use client';
 
+import {
+    Calendar,
+    Clock,
+    Globe,
+    Link,
+    Mail,
+    MessageSquare,
+    Share2,
+    ShieldCheck,
+    Smartphone,
+    Users,
+    Video,
+    Zap,
+} from '@tuturuuu/icons';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Card } from '@tuturuuu/ui/card';
-import {
-  Calendar,
-  Clock,
-  Globe,
-  Link,
-  Mail,
-  MessageSquare,
-  Share2,
-  ShieldCheck,
-  Smartphone,
-  Users,
-  Video,
-  Zap,
-} from '@tuturuuu/ui/icons';
 import NextLink from 'next/link';
 
 const features = [

@@ -2,29 +2,29 @@
 
 import { templateScenarios } from '@tuturuuu/ai/scheduling/templates';
 import type { TemplateScenario } from '@tuturuuu/ai/scheduling/types';
+import {
+    BookOpenIcon,
+    BriefcaseIcon,
+    CalendarDaysIcon,
+    ClockIcon,
+    FlagIcon,
+    HeartIcon,
+    PlayIcon,
+    RotateCcwIcon,
+    SparklesIcon,
+    TrendingUpIcon,
+    UsersIcon,
+    ZapIcon,
+} from '@tuturuuu/icons';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
+    Card,
+    CardContent,
+    CardDescription,
+    CardHeader,
+    CardTitle,
 } from '@tuturuuu/ui/card';
-import {
-  BookOpenIcon,
-  BriefcaseIcon,
-  CalendarDaysIcon,
-  ClockIcon,
-  FlagIcon,
-  HeartIcon,
-  PlayIcon,
-  RotateCcwIcon,
-  SparklesIcon,
-  TrendingUpIcon,
-  UsersIcon,
-  ZapIcon,
-} from '@tuturuuu/ui/icons';
 
 interface TemplateScenarioProps {
   onLoadTemplate: (template: TemplateScenario) => void;

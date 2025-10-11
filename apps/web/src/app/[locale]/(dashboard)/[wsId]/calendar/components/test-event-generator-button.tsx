@@ -1,8 +1,8 @@
 'use client';
 
 import { useQueryClient } from '@tanstack/react-query';
+import { FlaskConical, Loader2 } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
-import { FlaskConical, Loader2 } from '@tuturuuu/ui/icons';
 import { toast } from '@tuturuuu/ui/sonner';
 import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone';

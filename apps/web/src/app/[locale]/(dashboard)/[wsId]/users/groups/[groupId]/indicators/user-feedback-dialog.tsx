@@ -1,32 +1,32 @@
 'use client';
 
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+    AlertCircle,
+    CheckCircle,
+    ChevronLeft,
+    ChevronRight,
+    ShieldUserIcon,
+} from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@tuturuuu/ui/button';
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
 } from '@tuturuuu/ui/dialog';
 import { Label } from '@tuturuuu/ui/label';
+import { toast } from '@tuturuuu/ui/sonner';
 import { Switch } from '@tuturuuu/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { Textarea } from '@tuturuuu/ui/textarea';
-import { toast } from '@tuturuuu/ui/sonner';
-import { useTranslations } from 'next-intl';
-import { useState, useEffect } from 'react';
 import { format } from 'date-fns';
 import { vi } from 'date-fns/locale';
-import {
-  ChevronLeft,
-  ChevronRight,
-  AlertCircle,
-  CheckCircle,
-  ShieldUserIcon,
-} from '@tuturuuu/ui/icons';
+import { useTranslations } from 'next-intl';
+import { useEffect, useState } from 'react';
 
 interface UserFeedbackDialogProps {
   open: boolean;
@@ -245,7 +245,7 @@ export default function UserFeedbackDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="max-w-4xl max-h-[80vh] overflow-hidden flex flex-col">
+      <DialogContent className='flex max-h-[80vh] max-w-4xl flex-col overflow-hidden'>
         <DialogHeader>
           <DialogTitle>{tFeedback('user_feedback')}</DialogTitle>
           <DialogDescription>
@@ -259,7 +259,7 @@ export default function UserFeedbackDialog({
         <Tabs
           value={activeTab}
           onValueChange={setActiveTab}
-          className="w-full flex-1 flex flex-col overflow-hidden"
+          className='flex w-full flex-1 flex-col overflow-hidden'
         >
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="add">{tFeedback('add_feedback')}</TabsTrigger>
@@ -268,19 +268,19 @@ export default function UserFeedbackDialog({
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="add" className="space-y-4 overflow-y-auto flex-1">
+          <TabsContent value="add" className='flex-1 space-y-4 overflow-y-auto'>
             <form onSubmit={handleSubmit} className="space-y-4">
               {/* Read-only user and group info */}
               <div className="grid grid-cols-1 gap-4">
                 <div className="flex flex-col gap-2">
                   <Label>{t('ws-users.full_name')}</Label>
-                  <div className="px-3 py-2 bg-muted rounded-md text-sm">
+                  <div className='rounded-md bg-muted px-3 py-2 text-sm'>
                     {user.full_name || ''}
                   </div>
                 </div>
                 <div className="flex flex-col gap-2">
                   <Label>{t('ws-user-groups.singular')}</Label>
-                  <div className="px-3 py-2 bg-muted rounded-md text-sm">
+                  <div className='rounded-md bg-muted px-3 py-2 text-sm'>
                     {groupName}
                   </div>
                 </div>
@@ -347,14 +347,14 @@ export default function UserFeedbackDialog({
 
           <TabsContent
             value="view"
-            className="space-y-4 overflow-y-auto flex-1"
+            className='flex-1 space-y-4 overflow-y-auto'
           >
             {isLoadingHistory ? (
-              <div className="text-center py-8 text-muted-foreground">
+              <div className='py-8 text-center text-muted-foreground'>
                 <p>{tFeedback('loading_feedbacks')}</p>
               </div>
             ) : feedbacks.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
+              <div className='py-8 text-center text-muted-foreground'>
                 <p>{tFeedback('no_feedbacks_found')}</p>
                 <p className="text-sm">
                   {tFeedback('no_feedbacks_description')}
@@ -369,7 +369,7 @@ export default function UserFeedbackDialog({
                       {/* Timeline line - only between items, not after the last one */}
                       {index < feedbacks.length - 1 && (
                         <div
-                          className="absolute left-4 w-px bg-muted-foreground/60 z-0"
+                          className='absolute left-4 z-0 w-px bg-muted-foreground/60'
                           style={{
                             left: '15px',
                             top: '32px', // Start after current circle
@@ -381,21 +381,21 @@ export default function UserFeedbackDialog({
                       {/* Feedback item */}
                       <div className="flex gap-4">
                         {/* Timeline number */}
-                        <div className="flex-shrink-0 w-8 h-8 rounded-full bg-muted flex items-center justify-center text-sm font-medium relative z-10">
+                        <div className='relative z-10 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-muted font-medium text-sm'>
                           {feedbacks.length - index}
                         </div>
 
                         {/* Feedback content */}
                         <div className="flex-1 space-y-2">
-                          <div className="bg-card border rounded-lg p-4 max-h-40 overflow-y-auto">
-                            <p className="text-sm leading-relaxed whitespace-pre-wrap break-words">
+                          <div className='max-h-40 overflow-y-auto rounded-lg border bg-card p-4'>
+                            <p className='whitespace-pre-wrap break-words text-sm leading-relaxed'>
                               {feedback.content}
                             </p>
                           </div>
 
                           {/* Feedback metadata */}
-                          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 text-sm text-muted-foreground">
-                            <div className="flex items-center gap-2 flex-wrap">
+                          <div className='flex flex-col gap-2 text-muted-foreground text-sm sm:flex-row sm:items-center sm:justify-between'>
+                            <div className='flex flex-wrap items-center gap-2'>
                               <span>
                                 {formatFeedbackDate(feedback.created_at)}
                               </span>
@@ -403,14 +403,14 @@ export default function UserFeedbackDialog({
                               <div className="flex items-center gap-1">
                                 {feedback.require_attention ? (
                                   <>
-                                    <AlertCircle className="w-4 h-4 text-dynamic-red" />
+                                    <AlertCircle className='h-4 w-4 text-dynamic-red' />
                                     <span className="text-dynamic-red">
                                       {tFeedback('requires_attention')}
                                     </span>
                                   </>
                                 ) : (
                                   <>
-                                    <CheckCircle className="w-4 h-4 text-dynamic-green" />
+                                    <CheckCircle className='h-4 w-4 text-dynamic-green' />
                                     <span className="text-dynamic-green">
                                       {tFeedback('ok')}
                                     </span>
@@ -418,8 +418,8 @@ export default function UserFeedbackDialog({
                                 )}
                               </div>
                             </div>
-                            <div className="text-dynamic-blue truncate max-w-sm flex items-center gap-1">
-                              <ShieldUserIcon className="w-4 h-4" />{' '}
+                            <div className='flex max-w-sm items-center gap-1 truncate text-dynamic-blue'>
+                              <ShieldUserIcon className='h-4 w-4' />{' '}
                               {getCreatorName(feedback)}
                             </div>
                           </div>
@@ -431,8 +431,8 @@ export default function UserFeedbackDialog({
 
                 {/* Pagination Controls */}
                 {totalCount > FEEDBACKS_PER_PAGE && (
-                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pt-4 border-t">
-                    <div className="text-sm text-muted-foreground">
+                  <div className='flex flex-col gap-4 border-t pt-4 sm:flex-row sm:items-center sm:justify-between'>
+                    <div className='text-muted-foreground text-sm'>
                       {tFeedback('showing_feedbacks', {
                         start: (currentPage - 1) * FEEDBACKS_PER_PAGE + 1,
                         end: Math.min(
@@ -449,12 +449,12 @@ export default function UserFeedbackDialog({
                         onClick={handlePreviousPage}
                         disabled={currentPage === 1}
                       >
-                        <ChevronLeft className="w-4 h-4" />
+                        <ChevronLeft className='h-4 w-4' />
                         <span className="hidden sm:inline">
                           {tFeedback('previous')}
                         </span>
                       </Button>
-                      <span className="text-sm text-muted-foreground whitespace-nowrap">
+                      <span className='whitespace-nowrap text-muted-foreground text-sm'>
                         {tFeedback('page_of', {
                           current: currentPage,
                           total: Math.ceil(totalCount / FEEDBACKS_PER_PAGE),
@@ -469,7 +469,7 @@ export default function UserFeedbackDialog({
                         <span className="hidden sm:inline">
                           {tFeedback('next')}
                         </span>
-                        <ChevronRight className="w-4 h-4" />
+                        <ChevronRight className='h-4 w-4' />
                       </Button>
                     </div>
                   </div>

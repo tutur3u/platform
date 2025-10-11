@@ -1,5 +1,6 @@
 'use client';
 
+import { Calendar } from '@tuturuuu/icons';
 import { Badge } from '@tuturuuu/ui/badge';
 import {
   Card,
@@ -8,7 +9,6 @@ import {
   CardHeader,
   CardTitle,
 } from '@tuturuuu/ui/card';
-import { Calendar } from '@tuturuuu/ui/icons';
 import { Progress } from '@tuturuuu/ui/progress';
 import {
   endOfMonth,

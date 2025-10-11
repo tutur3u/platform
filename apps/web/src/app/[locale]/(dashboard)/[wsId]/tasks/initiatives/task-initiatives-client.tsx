@@ -1,6 +1,18 @@
 'use client';
 
 import { useMutation, useQuery } from '@tanstack/react-query';
+import {
+  Archive,
+  Calendar,
+  Edit3,
+  Layers,
+  Link,
+  Loader2,
+  MoreVertical,
+  Plus,
+  Trash2,
+  User,
+} from '@tuturuuu/icons';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -24,18 +36,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
-import {
-  Archive,
-  Calendar,
-  Edit3,
-  Layers,
-  Link,
-  Loader2,
-  MoreVertical,
-  Plus,
-  Trash2,
-  User,
-} from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
 import {
@@ -569,7 +569,7 @@ export function TaskInitiativesClient({
                 </div>
               </CardHeader>
               <CardContent className="pt-0">
-                <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
+                <div className="flex flex-wrap items-center gap-4 text-muted-foreground text-sm">
                   <div className="flex items-center gap-1">
                     <Layers className="h-3 w-3" />
                     <span>
@@ -598,7 +598,7 @@ export function TaskInitiativesClient({
                       ))}
                     </div>
                   ) : (
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-muted-foreground text-sm">
                       No projects linked yet.
                     </p>
                   )}
@@ -819,9 +819,9 @@ export function TaskInitiativesClient({
                         className="flex items-center justify-between rounded-md border border-dynamic-surface/50 bg-dynamic-surface/40 px-3 py-2"
                       >
                         <div>
-                          <p className="text-sm font-medium">{project.name}</p>
+                          <p className="font-medium text-sm">{project.name}</p>
                           {project.status ? (
-                            <p className="text-xs text-muted-foreground capitalize">
+                            <p className="text-muted-foreground text-xs capitalize">
                               {project.status.replace(/_/g, ' ')}
                             </p>
                           ) : null}
@@ -840,7 +840,7 @@ export function TaskInitiativesClient({
                     ))}
                   </div>
                 ) : (
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-muted-foreground text-sm">
                     No projects linked yet.
                   </p>
                 )}
@@ -879,11 +879,11 @@ export function TaskInitiativesClient({
                   </SelectContent>
                 </Select>
                 {projectsError ? (
-                  <p className="text-sm text-dynamic-red">
+                  <p className="text-dynamic-red text-sm">
                     {(projectsError as Error).message}
                   </p>
                 ) : availableProjects.length === 0 && !projectsLoading ? (
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-muted-foreground text-sm">
                     All workspace projects are linked already.
                   </p>
                 ) : null}

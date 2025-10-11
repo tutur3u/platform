@@ -1,31 +1,31 @@
 'use client';
 
+import { GITHUB_OWNER, GITHUB_REPO } from '@/constants/common';
+import {
+    AlertTriangle,
+    Bug,
+    Calendar,
+    Clock,
+    ExternalLink,
+    FileText,
+    GithubIcon,
+    Globe2,
+    Mail,
+    MessageSquare,
+    Shield,
+    ShieldCheck,
+    Sparkles,
+    Star,
+    Trophy,
+    Upload,
+    Users,
+} from '@tuturuuu/icons';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Card } from '@tuturuuu/ui/card';
-import {
-  AlertTriangle,
-  Bug,
-  Calendar,
-  Clock,
-  ExternalLink,
-  FileText,
-  GithubIcon,
-  Globe2,
-  Mail,
-  MessageSquare,
-  Shield,
-  ShieldCheck,
-  Sparkles,
-  Star,
-  Trophy,
-  Upload,
-  Users,
-} from '@tuturuuu/ui/icons';
 import { motion, useAnimation, type Variants } from 'framer-motion';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
-import { GITHUB_OWNER, GITHUB_REPO } from '@/constants/common';
 
 // Dynamically import Confetti to avoid hydration issues
 const Confetti = dynamic(() => import('react-confetti'), { ssr: false });

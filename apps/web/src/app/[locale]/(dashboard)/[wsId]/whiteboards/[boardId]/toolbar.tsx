@@ -1,7 +1,7 @@
+import { ArrowLeftIcon } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import { Button } from '@tuturuuu/ui/button';
 import { useToast } from '@tuturuuu/ui/hooks/use-toast';
-import { ArrowLeftIcon } from '@tuturuuu/ui/icons';
 import Link from 'next/link';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useEditor } from 'tldraw';

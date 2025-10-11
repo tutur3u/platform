@@ -1,18 +1,18 @@
 'use client';
 
+import { FileText, Folder, Plus } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import {
-  StorageFolderForm,
-  StorageObjectForm,
+    StorageFolderForm,
+    StorageObjectForm,
 } from '@tuturuuu/ui/custom/education/modules/resources/file-upload-form';
 import ModifiableDialogTrigger from '@tuturuuu/ui/custom/modifiable-dialog-trigger';
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
-import { FileText, Folder, Plus } from '@tuturuuu/ui/icons';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 

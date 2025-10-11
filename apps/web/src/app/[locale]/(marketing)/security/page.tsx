@@ -1,29 +1,29 @@
 'use client';
 
+import { GITHUB_OWNER, GITHUB_REPO } from '@/constants/common';
+import {
+    AlertTriangle,
+    Bug,
+    Eye,
+    FileText,
+    Fingerprint,
+    Globe2,
+    Key,
+    Lock,
+    type LucideIcon,
+    Mail,
+    Server,
+    Shield,
+    ShieldAlert,
+    ShieldCheck,
+    Trophy,
+    UserCheck,
+    Users,
+} from '@tuturuuu/icons';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Card } from '@tuturuuu/ui/card';
-import {
-  AlertTriangle,
-  Bug,
-  Eye,
-  FileText,
-  Fingerprint,
-  Globe2,
-  Key,
-  Lock,
-  type LucideIcon,
-  Mail,
-  Server,
-  Shield,
-  ShieldAlert,
-  ShieldCheck,
-  Trophy,
-  UserCheck,
-  Users,
-} from '@tuturuuu/ui/icons';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
-import { GITHUB_OWNER, GITHUB_REPO } from '@/constants/common';
 
 interface SecurityFeature {
   icon: LucideIcon;

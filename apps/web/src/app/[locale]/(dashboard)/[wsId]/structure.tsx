@@ -1,20 +1,25 @@
 'use client';
 
+import { ActiveTimerIndicator } from '@/components/active-timer-indicator';
+import type { NavLink } from '@/components/navigation';
+import { PROD_MODE, SIDEBAR_COLLAPSED_COOKIE_NAME } from '@/constants/common';
+import { useSidebar } from '@/context/sidebar-context';
+import { useActiveTimerSession } from '@/hooks/use-active-timer-session';
 import { useQuery } from '@tanstack/react-query';
+import { ArrowLeft } from '@tuturuuu/icons';
 import type { Workspace } from '@tuturuuu/types/db';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { LogoTitle } from '@tuturuuu/ui/custom/logo-title';
 import { Structure as BaseStructure } from '@tuturuuu/ui/custom/structure';
 import { WorkspaceSelect } from '@tuturuuu/ui/custom/workspace-select';
-import { ArrowLeft } from '@tuturuuu/ui/icons';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { isValidTuturuuuEmail } from '@tuturuuu/utils/email/client';
 import { cn } from '@tuturuuu/utils/format';
 import { setCookie } from 'cookies-next';
+import { useTranslations } from 'next-intl';
 import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useTranslations } from 'next-intl';
 import {
   type ReactNode,
   Suspense,
@@ -22,11 +27,6 @@ import {
   useEffect,
   useState,
 } from 'react';
-import { ActiveTimerIndicator } from '@/components/active-timer-indicator';
-import type { NavLink } from '@/components/navigation';
-import { PROD_MODE, SIDEBAR_COLLAPSED_COOKIE_NAME } from '@/constants/common';
-import { useSidebar } from '@/context/sidebar-context';
-import { useActiveTimerSession } from '@/hooks/use-active-timer-session';
 import { Nav } from './nav';
 
 interface MailProps {

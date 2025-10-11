@@ -1,29 +1,29 @@
+import {
+    AlertTriangle,
+    Calendar,
+    CheckCircle2,
+    Eye,
+    KeyRound,
+    Lock,
+    Mail,
+    Shield,
+    Smartphone,
+    UserCheck,
+} from '@tuturuuu/icons';
 import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
+    Card,
+    CardContent,
+    CardDescription,
+    CardHeader,
+    CardTitle,
 } from '@tuturuuu/ui/card';
 import { SettingItemTab } from '@tuturuuu/ui/custom/settings-item-tab';
-import {
-  AlertTriangle,
-  Calendar,
-  CheckCircle2,
-  Eye,
-  KeyRound,
-  Lock,
-  Mail,
-  Shield,
-  Smartphone,
-  UserCheck,
-} from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
-import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
+import Link from 'next/link';
 import MFAMethodList from './mfa-method-list';
 import ResetPasswordDialog from './reset-password-dialog';
 

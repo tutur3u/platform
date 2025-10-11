@@ -1,13 +1,13 @@
+import { Activity, ArrowLeft, Clock } from '@tuturuuu/icons';
 import {
-  createAdminClient,
-  createClient,
+    createAdminClient,
+    createClient,
 } from '@tuturuuu/supabase/next/server';
 import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
-import { Activity, ArrowLeft, Clock } from '@tuturuuu/ui/icons';
 import type { Metadata } from 'next';
-import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
+import Link from 'next/link';
 import { AnalyticsCards } from './analytics-cards';
 import { AnalyticsHeader } from './analytics-header';
 import { AnalyticsSummary } from './analytics-summary';

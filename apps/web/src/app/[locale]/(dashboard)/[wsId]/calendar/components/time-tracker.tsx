@@ -1,65 +1,65 @@
 'use client';
 
 import { useQueryClient } from '@tanstack/react-query';
+import {
+    Calendar,
+    CheckCircle,
+    Clock,
+    Copy,
+    ExternalLink,
+    Filter,
+    History,
+    MapPin,
+    MoreHorizontal,
+    Pause,
+    Play,
+    RefreshCw,
+    RotateCcw,
+    Sparkles,
+    Square,
+    Tag,
+    Timer,
+    Trash2,
+    TrendingUp,
+    Zap,
+} from '@tuturuuu/icons';
 import type { TimeTrackingCategory, WorkspaceTask } from '@tuturuuu/types/db';
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
 } from '@tuturuuu/ui/alert-dialog';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
 } from '@tuturuuu/ui/dialog';
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
-import {
-  Calendar,
-  CheckCircle,
-  Clock,
-  Copy,
-  ExternalLink,
-  Filter,
-  History,
-  MapPin,
-  MoreHorizontal,
-  Pause,
-  Play,
-  RefreshCw,
-  RotateCcw,
-  Sparkles,
-  Square,
-  Tag,
-  Timer,
-  Trash2,
-  TrendingUp,
-  Zap,
-} from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
 } from '@tuturuuu/ui/select';
 import { Separator } from '@tuturuuu/ui/separator';
 import { toast } from '@tuturuuu/ui/sonner';
@@ -68,9 +68,9 @@ import { Textarea } from '@tuturuuu/ui/textarea';
 import { cn } from '@tuturuuu/utils/format';
 import { useCallback, useEffect, useState } from 'react';
 import type {
-  ExtendedWorkspaceTask,
-  SessionWithRelations,
-  TimerStats,
+    ExtendedWorkspaceTask,
+    SessionWithRelations,
+    TimerStats,
 } from '../../time-tracker/types';
 
 interface TimeTrackerProps {

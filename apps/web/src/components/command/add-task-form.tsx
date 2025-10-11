@@ -1,11 +1,6 @@
 'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import type { Task } from '@tuturuuu/types/primitives/Task';
-import { Badge } from '@tuturuuu/ui/badge';
-import { Button } from '@tuturuuu/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
-import { useToast } from '@tuturuuu/ui/hooks/use-toast';
 import {
   AlertTriangle,
   Check,
@@ -14,7 +9,12 @@ import {
   Loader,
   Plus,
   Type,
-} from '@tuturuuu/ui/icons';
+} from '@tuturuuu/icons';
+import type { Task } from '@tuturuuu/types/primitives/Task';
+import { Badge } from '@tuturuuu/ui/badge';
+import { Button } from '@tuturuuu/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
+import { useToast } from '@tuturuuu/ui/hooks/use-toast';
 import { Input } from '@tuturuuu/ui/input';
 import {
   Select,

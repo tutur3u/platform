@@ -1,5 +1,16 @@
 'use client';
 
+import useEmail from '@/hooks/useEmail';
+import {
+    Check,
+    CircleSlash,
+    Mail,
+    MailCheck,
+    MoveRight,
+    Save,
+    Send,
+    X,
+} from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { GroupPostCheck } from '@tuturuuu/types/db';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
@@ -7,23 +18,12 @@ import { Avatar, AvatarFallback } from '@tuturuuu/ui/avatar';
 import { Button } from '@tuturuuu/ui/button';
 import { Card } from '@tuturuuu/ui/card';
 import { LoadingIndicator } from '@tuturuuu/ui/custom/loading-indicator';
-import {
-  Check,
-  CircleSlash,
-  Mail,
-  MailCheck,
-  MoveRight,
-  Save,
-  Send,
-  X,
-} from '@tuturuuu/ui/icons';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { isEmail } from '@tuturuuu/utils/email/client';
 import { cn } from '@tuturuuu/utils/format';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import useEmail from '@/hooks/useEmail';
 
 interface Props {
   user: WorkspaceUser;

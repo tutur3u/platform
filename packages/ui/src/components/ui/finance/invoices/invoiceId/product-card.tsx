@@ -1,6 +1,6 @@
+import { Box, Edit } from '@tuturuuu/icons';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Card, CardContent } from '@tuturuuu/ui/card';
-import { Box, Edit } from '@tuturuuu/ui/icons';
 import Link from 'next/link';
 
 interface ProductCardProps {

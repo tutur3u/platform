@@ -1,24 +1,24 @@
 'use client';
 
+import { GITHUB_OWNER, GITHUB_REPO } from '@/constants/common';
+import {
+    ArrowRight,
+    BookText,
+    Brain,
+    Code2,
+    Globe,
+    Laptop,
+    Lightbulb,
+    Rocket,
+    Sparkles,
+    Timer,
+    Zap,
+} from '@tuturuuu/icons';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Card } from '@tuturuuu/ui/card';
-import {
-  ArrowRight,
-  BookText,
-  Brain,
-  Code2,
-  Globe,
-  Laptop,
-  Lightbulb,
-  Rocket,
-  Sparkles,
-  Timer,
-  Zap,
-} from '@tuturuuu/ui/icons';
 import { motion } from 'framer-motion';
-import Link from 'next/link';
 import { useTranslations } from 'next-intl';
-import { GITHUB_OWNER, GITHUB_REPO } from '@/constants/common';
+import Link from 'next/link';
 
 const categories = [
   { name: 'AI & Technology', icon: <Brain className="h-4 w-4" /> },

@@ -1,29 +1,29 @@
 'use client';
 
+import {
+    Check,
+    CheckCheck,
+    Hash,
+    Loader2,
+    MessageCircle,
+    Plus,
+    Send,
+    Users,
+} from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { Database } from '@tuturuuu/types/supabase';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
-import {
-  Check,
-  CheckCheck,
-  Hash,
-  Loader2,
-  MessageCircle,
-  Plus,
-  Send,
-  Users,
-} from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
 import { ScrollArea } from '@tuturuuu/ui/scroll-area';
 import { Separator } from '@tuturuuu/ui/separator';
 import { toast } from '@tuturuuu/ui/sonner';
 import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
+    Tooltip,
+    TooltipContent,
+    TooltipProvider,
+    TooltipTrigger,
 } from '@tuturuuu/ui/tooltip';
 import { useCallback, useEffect, useRef, useState } from 'react';
 

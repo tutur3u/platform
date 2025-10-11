@@ -1,27 +1,27 @@
+import { CustomDataTable } from '@/components/custom-data-table';
 import {
-  createAdminClient,
-  createClient,
+    BarChart3,
+    Clock,
+    LinkIcon,
+    MousePointerClick,
+    TrendingUp,
+    Users,
+} from '@tuturuuu/icons';
+import {
+    createAdminClient,
+    createClient,
 } from '@tuturuuu/supabase/next/server';
 import type { Tables } from '@tuturuuu/types/supabase';
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
+    Card,
+    CardContent,
+    CardDescription,
+    CardHeader,
+    CardTitle,
 } from '@tuturuuu/ui/card';
-import {
-  BarChart3,
-  Clock,
-  LinkIcon,
-  MousePointerClick,
-  TrendingUp,
-  Users,
-} from '@tuturuuu/ui/icons';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
-import { CustomDataTable } from '@/components/custom-data-table';
 import { linkShortenerColumns } from './columns';
 import LinkShortenerFilters from './filters';
 import { InlineLinkShortenerForm } from './inline-form';

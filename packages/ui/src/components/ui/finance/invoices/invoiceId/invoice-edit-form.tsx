@@ -1,29 +1,29 @@
 'use client';
 
+import { CreditCard, Loader2 } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import { Button } from '@tuturuuu/ui/button';
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
+    Card,
+    CardContent,
+    CardDescription,
+    CardHeader,
+    CardTitle,
 } from '@tuturuuu/ui/card';
 import { Label } from '@tuturuuu/ui/label';
-import { Textarea } from '@tuturuuu/ui/textarea';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
 } from '@tuturuuu/ui/select';
-import { useWallets } from '../hooks';
-import { useTranslations } from 'next-intl';
-import { useState } from 'react';
 import { toast } from '@tuturuuu/ui/sonner';
+import { Textarea } from '@tuturuuu/ui/textarea';
+import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
-import { CreditCard, Loader2 } from '@tuturuuu/ui/icons';
+import { useState } from 'react';
+import { useWallets } from '../hooks';
 
 interface Props {
   wsId: string;

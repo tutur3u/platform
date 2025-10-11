@@ -1,13 +1,13 @@
-import {
-  Banknote,
-  Code,
-  ListCheck,
-  MessageCircle,
-  PencilRuler,
-  Sparkles,
-} from '@tuturuuu/ui/icons';
-import type { ReactNode } from 'react';
 import { GITHUB_OWNER, GITHUB_REPO } from '@/constants/common';
+import {
+    Banknote,
+    Code,
+    ListCheck,
+    MessageCircle,
+    PencilRuler,
+    Sparkles,
+} from '@tuturuuu/icons';
+import type { ReactNode } from 'react';
 
 interface Feature {
   title: string;

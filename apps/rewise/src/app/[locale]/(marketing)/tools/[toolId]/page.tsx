@@ -1,13 +1,13 @@
+import { supportedLocales } from '@/i18n/routing';
+import { ChevronLeft } from '@tuturuuu/icons';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
-import { ChevronLeft } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
+import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { useTranslations } from 'next-intl';
 import { use } from 'react';
-import { supportedLocales } from '@/i18n/routing';
 import { tools } from '../data';
 import { ToolForm } from './tool-form';
 

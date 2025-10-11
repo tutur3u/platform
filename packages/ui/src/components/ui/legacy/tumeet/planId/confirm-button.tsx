@@ -1,5 +1,5 @@
+import { Check, Edit, Loader2 } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
-import { Check, Edit, Loader2 } from '@tuturuuu/ui/icons';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 

@@ -1,9 +1,9 @@
 'use client';
 
-import { useTranslations } from 'next-intl';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
+import { RefreshCw } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
-import { RefreshCw } from '@tuturuuu/ui/icons';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
+import { useTranslations } from 'next-intl';
 
 interface HealthcareVital {
   id: string;
@@ -111,7 +111,7 @@ export default function ScoreDisplay({
   // Loading state
   if (isNew && healthcareVitalsLoading) {
     return (
-      <div className="text-sm text-muted-foreground">
+      <div className='text-muted-foreground text-sm'>
         {t('common.loading')}...
       </div>
     );
@@ -143,7 +143,7 @@ export default function ScoreDisplay({
             className="gap-2"
           >
             <RefreshCw
-              className={`w-4 h-4 ${isFetchingNewScores ? 'animate-spin' : ''}`}
+              className={`h-4 w-4 ${isFetchingNewScores ? 'animate-spin' : ''}`}
             />
             {isFetchingNewScores
               ? t('common.loading')
@@ -158,7 +158,7 @@ export default function ScoreDisplay({
         <div className="flex flex-wrap gap-1">
           <Tooltip>
             <TooltipTrigger asChild>
-              <div className="flex min-w-8 h-8 items-center justify-center rounded bg-foreground px-2 font-semibold text-background cursor-help">
+              <div className='flex h-8 min-w-8 cursor-help items-center justify-center rounded bg-foreground px-2 font-semibold text-background'>
                 {averageScore?.toFixed(1) || '-'}
               </div>
             </TooltipTrigger>
@@ -167,7 +167,7 @@ export default function ScoreDisplay({
                 <div className="font-semibold">
                   {t('ws-reports.average_score')}
                 </div>
-                <div className="text-xs text-muted-foreground">
+                <div className='text-muted-foreground text-xs'>
                   {individualScoresWithMetadata.length} {t('ws-reports.scores')}
                 </div>
                 {isNew && healthcareVitals.length > 0 ? (
@@ -191,7 +191,7 @@ export default function ScoreDisplay({
           {individualScoresWithMetadata.map((scoreData, idx) => (
             <Tooltip key={`report-${reportId}-score-${idx}`}>
               <TooltipTrigger asChild>
-                <div className="flex min-w-8 h-8 items-center justify-center rounded bg-foreground px-2 font-semibold text-background cursor-help">
+                <div className='flex h-8 min-w-8 cursor-help items-center justify-center rounded bg-foreground px-2 font-semibold text-background'>
                   {scoreData.score}
                 </div>
               </TooltipTrigger>
@@ -199,7 +199,7 @@ export default function ScoreDisplay({
                 {scoreData.isFromVital && scoreData.vital ? (
                   <div className="space-y-1">
                     <div className="font-semibold">{scoreData.vital.name}</div>
-                    <div className="text-xs text-muted-foreground">
+                    <div className='text-muted-foreground text-xs'>
                       Unit: {scoreData.vital.unit}
                     </div>
                     <div className="text-xs">

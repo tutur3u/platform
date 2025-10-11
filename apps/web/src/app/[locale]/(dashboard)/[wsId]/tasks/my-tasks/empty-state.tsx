@@ -1,13 +1,13 @@
 'use client';
 
-import { Button } from '@tuturuuu/ui/button';
-import { Card, CardContent } from '@tuturuuu/ui/card';
 import {
   ArrowRight,
   CheckCircle2,
   LayoutDashboard,
   NotebookPen,
-} from '@tuturuuu/ui/icons';
+} from '@tuturuuu/icons';
+import { Button } from '@tuturuuu/ui/button';
+import { Card, CardContent } from '@tuturuuu/ui/card';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 

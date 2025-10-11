@@ -1,22 +1,22 @@
 'use client';
 
+import { Info } from '@tuturuuu/icons';
+import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
+import { Label } from '@tuturuuu/ui/label';
+import { Separator } from '@tuturuuu/ui/separator';
+import { Switch } from '@tuturuuu/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipProvider,
+    TooltipTrigger,
+} from '@tuturuuu/ui/tooltip';
 import { useTranslations } from 'next-intl';
+import { useSearchParams } from 'next/navigation';
+import { useEffect, useState } from 'react';
 import { StandardInvoice } from './standard-invoice';
 import { SubscriptionInvoice } from './subscription-invoice';
-import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
-import { Separator } from '@tuturuuu/ui/separator';
-import { useState, useEffect } from 'react';
-import { Label } from '@tuturuuu/ui/label';
-import { Switch } from '@tuturuuu/ui/switch';
-import {
-  TooltipProvider,
-  Tooltip,
-  TooltipTrigger,
-  TooltipContent,
-} from '@tuturuuu/ui/tooltip';
-import { Info } from '@tuturuuu/ui/icons';
-import { useSearchParams } from 'next/navigation';
 
 interface Props {
   wsId: string;
@@ -68,7 +68,7 @@ export default function NewInvoicePage({ wsId }: Props) {
           </TabsList>
           <div className="flex items-center justify-center gap-4">
             <div className="flex items-center gap-2">
-              <div className="space-y-1 flex items-center gap-2">
+              <div className='flex items-center gap-2 space-y-1'>
                 <Label htmlFor="multiple-invoices">
                   {t('ws-invoices.create_multiple_invoices')}
                 </Label>
@@ -93,7 +93,7 @@ export default function NewInvoicePage({ wsId }: Props) {
               />
             </div>
             <div className="flex items-center gap-2">
-              <div className="space-y-1 flex items-center gap-2">
+              <div className='flex items-center gap-2 space-y-1'>
                 <Label htmlFor="print-after-create">
                   {t('ws-invoices.print_after_create')}
                 </Label>

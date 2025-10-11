@@ -1,7 +1,7 @@
 'use client';
 
+import { Filter } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
-import { Filter } from '@tuturuuu/ui/icons';
 import {
   Select,
   SelectContent,

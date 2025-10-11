@@ -1,5 +1,14 @@
 'use client';
 
+import {
+  ArrowLeft,
+  Calendar,
+  Clock,
+  ExternalLink,
+  FileText,
+  Send,
+  User,
+} from '@tuturuuu/icons';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
@@ -10,15 +19,6 @@ import {
   CardHeader,
   CardTitle,
 } from '@tuturuuu/ui/card';
-import {
-  ArrowLeft,
-  Calendar,
-  Clock,
-  ExternalLink,
-  FileText,
-  Send,
-  User,
-} from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
 import {
   Table,

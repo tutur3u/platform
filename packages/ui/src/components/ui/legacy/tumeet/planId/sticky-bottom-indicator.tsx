@@ -1,6 +1,6 @@
+import { Save } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import { useTimeBlocking } from '@tuturuuu/ui/hooks/time-blocking-provider';
-import { Save } from '@tuturuuu/ui/icons';
 import { StickyBottomBar } from '@tuturuuu/ui/sticky-bottom-bar';
 import { useTranslations } from 'next-intl';
 
@@ -17,7 +17,7 @@ export default function StickyBottomIndicator() {
           size="lg"
           onClick={handleSave}
           disabled={!isDirty || isSaving}
-          className="bg-dynamic-blue/10 border border-dynamic-blue/20 text-dynamic-blue hover:bg-dynamic-blue/20"
+          className='border border-dynamic-blue/20 bg-dynamic-blue/10 text-dynamic-blue hover:bg-dynamic-blue/20'
         >
           <Save size={16} />
           {isSaving ? t('common.saving') : t('common.save')}

@@ -1,6 +1,6 @@
 'use client';
 
-import { Filter } from '@tuturuuu/ui/icons';
+import { Filter } from '@tuturuuu/icons';
 import {
   Select,
   SelectContent,

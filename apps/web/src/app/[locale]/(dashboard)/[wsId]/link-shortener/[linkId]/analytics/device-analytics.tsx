@@ -1,8 +1,8 @@
 'use client';
 
+import { Monitor, Smartphone, Wifi } from '@tuturuuu/icons';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
-import { Monitor, Smartphone, Wifi } from '@tuturuuu/ui/icons';
 import { Progress } from '@tuturuuu/ui/progress';
 import { useTranslations } from 'next-intl';
 

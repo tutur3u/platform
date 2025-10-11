@@ -35,6 +35,7 @@
     "@formatjs/intl-localematcher": "^0.6.2",
     "@mantine/hooks": "^8.3.4",
     "@octokit/auth-app": "^8.1.1",
+    "@tuturuuu/icons": "workspace:*",
     "@octokit/rest": "^22.0.0",
     "@tanstack/react-query": "^5.90.2",
     "@tanstack/react-table": "^8.21.3",

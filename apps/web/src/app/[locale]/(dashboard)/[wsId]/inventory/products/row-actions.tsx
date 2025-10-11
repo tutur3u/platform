@@ -1,20 +1,20 @@
 'use client';
 
 import type { Row } from '@tanstack/react-table';
+import { Ellipsis, Eye } from '@tuturuuu/icons';
 import type { Product } from '@tuturuuu/types/primitives/Product';
 import { Button } from '@tuturuuu/ui/button';
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
-import { Ellipsis, Eye } from '@tuturuuu/ui/icons';
+import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useTranslations } from 'next-intl';
 
 interface ProductRowActionsProps {
   row: Row<Product>;

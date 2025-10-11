@@ -1,5 +1,5 @@
+import { ChevronLeft, ChevronRight } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
-import { ChevronLeft, ChevronRight } from '@tuturuuu/ui/icons';
 import {
   Select,
   SelectContent,

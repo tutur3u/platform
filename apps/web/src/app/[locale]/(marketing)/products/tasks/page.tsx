@@ -1,22 +1,22 @@
 'use client';
 
+import {
+    Bell,
+    Bot,
+    Calendar,
+    CircleCheck,
+    Clock,
+    FolderKanban,
+    LayoutDashboard,
+    LineChart,
+    ListTodo,
+    ShieldCheck,
+    Tag,
+    Users,
+} from '@tuturuuu/icons';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Card } from '@tuturuuu/ui/card';
-import {
-  Bell,
-  Bot,
-  Calendar,
-  CircleCheck,
-  Clock,
-  FolderKanban,
-  LayoutDashboard,
-  LineChart,
-  ListTodo,
-  ShieldCheck,
-  Tag,
-  Users,
-} from '@tuturuuu/ui/icons';
 import Link from 'next/link';
 
 const features = [

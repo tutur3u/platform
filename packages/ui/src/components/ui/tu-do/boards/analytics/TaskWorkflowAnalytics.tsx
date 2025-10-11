@@ -1,8 +1,8 @@
 'use client';
 
+import { Clock } from '@tuturuuu/icons';
 import type { TaskPriority } from '@tuturuuu/types/primitives/Priority';
 import { Card } from '@tuturuuu/ui/card';
-import { Clock } from '@tuturuuu/ui/icons';
 import { cn } from '@tuturuuu/utils/format';
 import { useMemo } from 'react';
 

@@ -1,16 +1,16 @@
 'use client';
 
+import { Building, Minus, Package, Plus } from '@tuturuuu/icons';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
+    Card,
+    CardContent,
+    CardDescription,
+    CardHeader,
+    CardTitle,
 } from '@tuturuuu/ui/card';
 import { Combobox, type ComboboxOptions } from '@tuturuuu/ui/custom/combobox';
-import { Building, Minus, Package, Plus } from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
 import { useTranslations } from 'next-intl';
@@ -210,7 +210,7 @@ export function ProductSelection({
                       onChange={(e) =>
                         updateQuantity(index, parseInt(e.target.value) || 0)
                       }
-                      className="w-20 text-center [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                      className='w-20 text-center [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none'
                       min="1"
                       {...(item.inventory.amount !== null && {
                         max: item.inventory.amount,
@@ -312,7 +312,7 @@ function StockItem({ inventory, onAdd }: StockItemProps) {
           type="number"
           value={quantity}
           onChange={(e) => setQuantity(parseInt(e.target.value) || 1)}
-          className="w-20 text-center [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+          className='w-20 text-center [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none'
           min="1"
           {...(inventory.amount !== null && { max: inventory.amount })}
         />

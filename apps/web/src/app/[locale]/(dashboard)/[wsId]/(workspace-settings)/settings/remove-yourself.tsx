@@ -1,23 +1,23 @@
 'use client';
 
+import { AlertTriangle, UserMinus } from '@tuturuuu/icons';
 import type { Workspace, WorkspaceUserRole } from '@tuturuuu/types/db';
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
 } from '@tuturuuu/ui/alert-dialog';
 import { Button } from '@tuturuuu/ui/button';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
-import { AlertTriangle, UserMinus } from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
-import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
+import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
 interface Props {

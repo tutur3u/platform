@@ -1,12 +1,12 @@
+import { CreditCard } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
+    Card,
+    CardContent,
+    CardDescription,
+    CardHeader,
+    CardTitle,
 } from '@tuturuuu/ui/card';
-import { CreditCard } from '@tuturuuu/ui/icons';
 import { getTranslations } from 'next-intl/server';
 
 export default async function PaymentBillingCard() {

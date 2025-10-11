@@ -1,7 +1,7 @@
+import { Goal, Sparkles } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { Button } from '@tuturuuu/ui/button';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
-import { Goal, Sparkles } from '@tuturuuu/ui/icons';
 import type { JSONContent } from '@tuturuuu/ui/tiptap';
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';

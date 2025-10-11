@@ -1,14 +1,8 @@
 'use client';
 
+import { Activity, AlertTriangle, Calendar, Clock, X } from '@tuturuuu/icons';
 import type { TaskPriority } from '@tuturuuu/types/primitives/Priority';
 import { Badge } from '@tuturuuu/ui/badge';
-import {
-  Activity,
-  AlertTriangle,
-  Calendar,
-  Clock,
-  X,
-} from '@tuturuuu/ui/icons';
 import { cn } from '@tuturuuu/utils/format';
 import { useRef } from 'react';
 

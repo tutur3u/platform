@@ -1,13 +1,13 @@
+import { Crown } from '@tuturuuu/icons';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
+    Card,
+    CardContent,
+    CardDescription,
+    CardHeader,
+    CardTitle,
 } from '@tuturuuu/ui/card';
-import { Crown } from '@tuturuuu/ui/icons';
 import { getTranslations } from 'next-intl/server';
 
 // interface UsageStat {

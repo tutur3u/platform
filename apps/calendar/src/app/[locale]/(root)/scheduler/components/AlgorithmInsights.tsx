@@ -1,25 +1,25 @@
 'use client';
 
 import type { Event, Log, Task } from '@tuturuuu/ai/scheduling/types';
+import {
+    BrainIcon,
+    CheckCircleIcon,
+    InfoIcon,
+    LayersIcon,
+    TargetIcon,
+    TrendingUpIcon,
+    XCircleIcon,
+    ZapIcon,
+} from '@tuturuuu/icons';
 import { Alert, AlertDescription, AlertTitle } from '@tuturuuu/ui/alert';
 import { Badge } from '@tuturuuu/ui/badge';
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
+    Card,
+    CardContent,
+    CardDescription,
+    CardHeader,
+    CardTitle,
 } from '@tuturuuu/ui/card';
-import {
-  BrainIcon,
-  CheckCircleIcon,
-  InfoIcon,
-  LayersIcon,
-  TargetIcon,
-  TrendingUpIcon,
-  XCircleIcon,
-  ZapIcon,
-} from '@tuturuuu/ui/icons';
 import { Progress } from '@tuturuuu/ui/progress';
 import { Separator } from '@tuturuuu/ui/separator';
 import { useMemo } from 'react';

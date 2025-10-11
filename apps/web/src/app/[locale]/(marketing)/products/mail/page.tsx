@@ -1,24 +1,24 @@
 'use client';
 
+import {
+    AlertCircle,
+    Archive,
+    Bot,
+    Calendar,
+    Clock,
+    Filter,
+    Inbox,
+    LayoutDashboard,
+    Mail,
+    MessagesSquare,
+    Search,
+    Send,
+    ShieldCheck,
+    Smartphone,
+} from '@tuturuuu/icons';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Card } from '@tuturuuu/ui/card';
-import {
-  AlertCircle,
-  Archive,
-  Bot,
-  Calendar,
-  Clock,
-  Filter,
-  Inbox,
-  LayoutDashboard,
-  Mail,
-  MessagesSquare,
-  Search,
-  Send,
-  ShieldCheck,
-  Smartphone,
-} from '@tuturuuu/ui/icons';
 import Link from 'next/link';
 
 const features = [

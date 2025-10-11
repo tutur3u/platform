@@ -1,26 +1,26 @@
+import { extractYoutubeId } from '@/utils/url-helper';
 import {
-  createClient,
-  createDynamicClient,
+    BookText,
+    Goal,
+    ListTodo,
+    Paperclip,
+    SwatchBook,
+    Youtube,
+} from '@tuturuuu/icons';
+import {
+    createClient,
+    createDynamicClient,
 } from '@tuturuuu/supabase/next/server';
 import type { WorkspaceCourseModule } from '@tuturuuu/types/db';
 import { Accordion } from '@tuturuuu/ui/accordion';
 import { CourseSection } from '@tuturuuu/ui/custom/education/modules/content-section';
 import { FileDisplay } from '@tuturuuu/ui/custom/education/modules/resources/file-display';
 import { YoutubeEmbed } from '@tuturuuu/ui/custom/education/modules/youtube/embed';
-import {
-  BookText,
-  Goal,
-  ListTodo,
-  Paperclip,
-  SwatchBook,
-  Youtube,
-} from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
 import { RichTextEditor } from '@tuturuuu/ui/text-editor/editor';
 import type { JSONContent } from '@tuturuuu/ui/tiptap';
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
-import { extractYoutubeId } from '@/utils/url-helper';
 import ClientFlashcards from './flashcards/client-flashcards';
 import ClientQuizzes from './quizzes/client-quizzes';
 

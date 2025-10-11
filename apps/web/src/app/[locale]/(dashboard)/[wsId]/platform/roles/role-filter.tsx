@@ -1,21 +1,14 @@
 'use client';
 
+import { Check, Crown, Filter, Settings, Shield, Users } from '@tuturuuu/icons';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
-import {
-  Check,
-  Crown,
-  Filter,
-  Settings,
-  Shield,
-  Users,
-} from '@tuturuuu/ui/icons';
 import { useRouter, useSearchParams } from 'next/navigation';
 
 interface RoleFilterProps {

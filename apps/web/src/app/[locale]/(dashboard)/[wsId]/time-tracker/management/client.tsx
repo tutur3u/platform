@@ -1,13 +1,13 @@
 'use client';
 
+import { AlertCircle, Clock, Loader2 } from '@tuturuuu/icons';
 import type { TimeTrackingSession } from '@tuturuuu/types/db';
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
 } from '@tuturuuu/ui/dialog';
-import { AlertCircle, Clock, Loader2 } from '@tuturuuu/ui/icons';
 import { Progress } from '@tuturuuu/ui/progress';
 import { getInitials } from '@tuturuuu/utils/name-helper';
 import dayjs from 'dayjs';

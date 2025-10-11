@@ -1,14 +1,14 @@
 'use client';
 
 import {
-  useIsFetching,
-  useMutation,
-  useQueryClient,
+    useIsFetching,
+    useMutation,
+    useQueryClient,
 } from '@tanstack/react-query';
 import type { ColumnDef } from '@tanstack/react-table';
+import { Loader2 } from '@tuturuuu/icons';
 import type { WorkspaceSecret } from '@tuturuuu/types/primitives/WorkspaceSecret';
 import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
-import { Loader2 } from '@tuturuuu/ui/icons';
 import { Switch } from '@tuturuuu/ui/switch';
 import moment from 'moment';
 import { useParams, useRouter } from 'next/navigation';

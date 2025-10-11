@@ -2,33 +2,33 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
+import {
+    CheckCircle,
+    CheckSquare,
+    LayoutDashboard,
+    MapPin,
+    Play,
+    PlusCircle,
+    Tag,
+} from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { TimeTrackingCategory } from '@tuturuuu/types/db';
 import type { TaskPriority } from '@tuturuuu/types/primitives/Priority';
 import { Button } from '@tuturuuu/ui/button';
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
+    Card,
+    CardContent,
+    CardDescription,
+    CardHeader,
+    CardTitle,
 } from '@tuturuuu/ui/card';
-import {
-  CheckCircle,
-  CheckSquare,
-  LayoutDashboard,
-  MapPin,
-  Play,
-  PlusCircle,
-  Tag,
-} from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
 } from '@tuturuuu/ui/select';
 import { toast } from '@tuturuuu/ui/sonner';
 import { cn } from '@tuturuuu/utils/format';
@@ -40,15 +40,15 @@ import utc from 'dayjs/plugin/utc';
 import Link from 'next/link';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type {
-  ExtendedWorkspaceTask,
-  SessionWithRelations,
-  TaskSidebarFilters,
-  TimeTrackerData,
+    ExtendedWorkspaceTask,
+    SessionWithRelations,
+    TaskSidebarFilters,
+    TimeTrackerData,
 } from '../types';
 import {
-  generateAssigneeInitials,
-  getFilteredAndSortedSidebarTasks,
-  useTaskCounts,
+    generateAssigneeInitials,
+    getFilteredAndSortedSidebarTasks,
+    useTaskCounts,
 } from '../utils';
 import { TimerControls } from './timer-controls';
 

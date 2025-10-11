@@ -1,55 +1,55 @@
 'use client';
 
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+    Download,
+    FileText,
+    History,
+    ImageIcon,
+    Moon,
+    Palette,
+    PencilIcon,
+    Plus,
+    Printer,
+    Sun,
+    Undo,
+} from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { WorkspaceUserReport } from '@tuturuuu/types/db';
 import type { WorkspaceConfig } from '@tuturuuu/types/primitives/WorkspaceConfig';
+import {
+    Accordion,
+    AccordionContent,
+    AccordionItem,
+    AccordionTrigger,
+} from '@tuturuuu/ui/accordion';
+import { Button } from '@tuturuuu/ui/button';
 import ReportPreview from '@tuturuuu/ui/custom/report-preview';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from '@tuturuuu/ui/dialog';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from '@tuturuuu/ui/dropdown-menu';
 import { useForm } from '@tuturuuu/ui/hooks/use-form';
 import { zodResolver } from '@tuturuuu/ui/resolvers';
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from '@tuturuuu/ui/accordion';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@tuturuuu/ui/dropdown-menu';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { toast } from '@tuturuuu/ui/sonner';
 import { useLocale, useTranslations } from 'next-intl';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import type { ReactNode } from 'react';
 import { useEffect, useState } from 'react';
-import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { toast } from '@tuturuuu/ui/sonner';
 import * as z from 'zod';
-import {
-  FileText,
-  Plus,
-  PencilIcon,
-  History,
-  Undo,
-  Sun,
-  Moon,
-  Printer,
-  Download,
-  Palette,
-  ImageIcon,
-} from '@tuturuuu/ui/icons';
 import UserMonthAttendance from '../../attendance/user-month-attendance';
 import UserReportForm from './form';
 import ScoreDisplay from './score-display';
-import { Button } from '@tuturuuu/ui/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@tuturuuu/ui/dialog';
 
 export const UserReportFormSchema = z.object({
   title: z.string(),
@@ -914,9 +914,9 @@ export default function EditableReportPreview({
           <Accordion type="single" collapsible className="rounded-lg border">
             <AccordionItem value="history" className="border-none">
               <AccordionTrigger className="px-4 py-3 hover:no-underline">
-                <div className="flex items-center justify-between w-full mr-2">
-                  <div className="font-semibold text-lg flex flex-row gap-2 items-center">
-                    <History className="w-4 h-4" />
+                <div className='mr-2 flex w-full items-center justify-between'>
+                  <div className='flex flex-row items-center gap-2 font-semibold text-lg'>
+                    <History className='h-4 w-4' />
                     {t('ws-reports.history')}
                   </div>
                   {logsQuery.data && (
@@ -969,7 +969,7 @@ export default function EditableReportPreview({
                         <div key={log.id} className="relative">
                           {/* Timeline item */}
                           <div
-                            className={`flex gap-4 cursor-pointer ${isSelected ? 'opacity-100' : 'opacity-100'} `}
+                            className={`flex cursor-pointer gap-4 ${isSelected ? 'opacity-100' : 'opacity-100'} `}
                             onClick={() =>
                               setSelectedLog((prev) =>
                                 prev?.id === log.id
@@ -1002,10 +1002,10 @@ export default function EditableReportPreview({
                               )}
                               {/* Timeline icon */}
                               <div
-                                className={`w-8 h-8 rounded-full ${bgColor} flex items-center justify-center relative z-10`}
+                                className={`h-8 w-8 rounded-full ${bgColor} relative z-10 flex items-center justify-center`}
                               >
                                 <IconComponent
-                                  className={`w-4 h-4 ${iconColor}`}
+                                  className={`h-4 w-4 ${iconColor}`}
                                 />
                               </div>
                             </div>
@@ -1013,19 +1013,19 @@ export default function EditableReportPreview({
                             {/* Content */}
                             <div className={`flex-1 space-y-2`}>
                               <div
-                                className={`bg-card border rounded-lg p-3 ${isSelected ? 'ring-2 ring-dynamic-blue' : ''}`}
+                                className={`rounded-lg border bg-card p-3 ${isSelected ? 'ring-2 ring-dynamic-blue' : ''}`}
                               >
                                 <div className="font-semibold text-sm">
                                   {label}
                                 </div>
-                                <div className="text-sm text-muted-foreground">
+                                <div className='text-muted-foreground text-sm'>
                                   {log.creator_name || t('common.unknown')}{' '}
                                   {actionLabel}.
                                 </div>
                               </div>
 
                               {/* Metadata */}
-                              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                              <div className='flex items-center gap-2 text-muted-foreground text-xs'>
                                 <span>{exact}</span>
                                 {relative && (
                                   <>
@@ -1050,7 +1050,7 @@ export default function EditableReportPreview({
           </Accordion>
         )}
         {selectedLog && (
-          <div className="rounded-lg border p-3 text-sm bg-card -mt-2 print:hidden">
+          <div className='-mt-2 rounded-lg border bg-card p-3 text-sm print:hidden'>
             <div className="flex items-center justify-between">
               <div>{t('ws-reports.viewing_history_snapshot')}</div>
               <Button
@@ -1058,18 +1058,18 @@ export default function EditableReportPreview({
                 className="bg-dynamic-blue/10 text-dynamic-blue hover:bg-dynamic-blue/20"
                 onClick={() => setSelectedLog(null)}
               >
-                <Undo className="w-4 h-4" />
+                <Undo className='h-4 w-4' />
                 {t('ws-reports.reset_to_current')}
               </Button>
             </div>
           </div>
         )}
-        <div className="flex items-center justify-end gap-2 -mb-2">
+        <div className='-mb-2 flex items-center justify-end gap-2'>
           <div className="flex items-center gap-2">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button size="sm" variant="outline" className="gap-2">
-                  <Download className="w-4 h-4" />
+                  <Download className='h-4 w-4' />
                   {t('common.export')}
                 </Button>
               </DropdownMenuTrigger>
@@ -1081,7 +1081,7 @@ export default function EditableReportPreview({
                   }}
                   className="gap-2"
                 >
-                  <Printer className="w-4 h-4" />
+                  <Printer className='h-4 w-4' />
                   {t('ws-reports.print')}
                 </DropdownMenuItem>
                 <DropdownMenuItem
@@ -1092,7 +1092,7 @@ export default function EditableReportPreview({
                   }}
                   className="gap-2"
                 >
-                  <ImageIcon className="w-4 h-4" />
+                  <ImageIcon className='h-4 w-4' />
                   {isExporting
                     ? t('ws-reports.exporting_png')
                     : t('ws-reports.png')}
@@ -1102,17 +1102,17 @@ export default function EditableReportPreview({
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button size="sm" variant="outline" className="gap-2">
-                  <Palette className="w-4 h-4" />
+                  <Palette className='h-4 w-4' />
                   {t('common.theme')}
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="start">
                 <DropdownMenuItem onClick={() => setIsDarkPreview(false)}>
-                  <Sun className="w-4 h-4" />
+                  <Sun className='h-4 w-4' />
                   {t('common.light')}
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setIsDarkPreview(true)}>
-                  <Moon className="w-4 h-4" />
+                  <Moon className='h-4 w-4' />
                   {t('common.dark')}
                 </DropdownMenuItem>
               </DropdownMenuContent>

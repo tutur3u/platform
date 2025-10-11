@@ -1,19 +1,19 @@
 'use client';
 
 import type { Row } from '@tanstack/react-table';
+import { Ellipsis } from '@tuturuuu/icons';
 import type { UserGroupTag } from '@tuturuuu/types/primitives/UserGroupTag';
 import { Button } from '@tuturuuu/ui/button';
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
-import { Ellipsis } from '@tuturuuu/ui/icons';
-import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
+import { useRouter } from 'next/navigation';
 
 interface GroupTagRowActionsProps {
   row: Row<UserGroupTag>;

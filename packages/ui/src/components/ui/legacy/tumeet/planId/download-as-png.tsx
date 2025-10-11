@@ -1,5 +1,5 @@
+import { Image } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
-import { Image } from '@tuturuuu/ui/icons';
 
 export default function DownloadAsPNG({ onClick }: { onClick?: () => void }) {
   return (

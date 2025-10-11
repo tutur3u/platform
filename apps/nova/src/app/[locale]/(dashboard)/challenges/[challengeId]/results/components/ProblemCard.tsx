@@ -1,3 +1,5 @@
+import ScoreBadge from '@/components/common/ScoreBadge';
+import { ArrowUpDown, Clock, CodeIcon } from '@tuturuuu/icons';
 import type { NovaProblem } from '@tuturuuu/types/db';
 import { Badge } from '@tuturuuu/ui/badge';
 import {
@@ -7,14 +9,12 @@ import {
   CardHeader,
   CardTitle,
 } from '@tuturuuu/ui/card';
-import { ArrowUpDown, Clock, CodeIcon } from '@tuturuuu/ui/icons';
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from '@tuturuuu/ui/tooltip';
-import ScoreBadge from '@/components/common/ScoreBadge';
 import type { ExtendedNovaSubmission } from '../types';
 import SubmissionAccordion from './SubmissionAccordion';
 

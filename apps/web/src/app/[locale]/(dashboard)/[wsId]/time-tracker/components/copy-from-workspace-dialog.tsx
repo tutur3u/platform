@@ -1,22 +1,22 @@
 'use client';
 
+import { AlertCircle, CheckCircle, Copy, Loader2 } from '@tuturuuu/icons';
 import type { TimeTrackingCategory } from '@tuturuuu/types/db';
 import { Button } from '@tuturuuu/ui/button';
 import { Checkbox } from '@tuturuuu/ui/checkbox';
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
 } from '@tuturuuu/ui/dialog';
-import { AlertCircle, CheckCircle, Copy, Loader2 } from '@tuturuuu/ui/icons';
 import { Label } from '@tuturuuu/ui/label';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
 } from '@tuturuuu/ui/select';
 import { toast } from '@tuturuuu/ui/sonner';
 import { cn } from '@tuturuuu/utils/format';

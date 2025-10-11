@@ -1,20 +1,20 @@
 'use client';
 
+import { TrendingUp } from '@tuturuuu/icons';
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
+    Card,
+    CardContent,
+    CardDescription,
+    CardFooter,
+    CardHeader,
+    CardTitle,
 } from '@tuturuuu/ui/card';
 import {
-  type ChartConfig,
-  ChartContainer,
-  ChartTooltip,
-  ChartTooltipContent,
+    type ChartConfig,
+    ChartContainer,
+    ChartTooltip,
+    ChartTooltipContent,
 } from '@tuturuuu/ui/chart';
-import { TrendingUp } from '@tuturuuu/ui/icons';
 import { Bar, BarChart, CartesianGrid, XAxis } from 'recharts';
 
 const chartData = [

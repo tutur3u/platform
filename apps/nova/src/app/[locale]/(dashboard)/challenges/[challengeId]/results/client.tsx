@@ -1,6 +1,15 @@
 'use client';
 
 import {
+  ArrowLeft,
+  BookOpen,
+  Loader2,
+  RefreshCcw,
+  Target,
+  Trophy,
+  XCircle,
+} from '@tuturuuu/icons';
+import {
   Accordion,
   AccordionContent,
   AccordionItem,
@@ -15,15 +24,6 @@ import {
   CardHeader,
   CardTitle,
 } from '@tuturuuu/ui/card';
-import {
-  ArrowLeft,
-  BookOpen,
-  Loader2,
-  RefreshCcw,
-  Target,
-  Trophy,
-  XCircle,
-} from '@tuturuuu/ui/icons';
 import { Progress } from '@tuturuuu/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import {

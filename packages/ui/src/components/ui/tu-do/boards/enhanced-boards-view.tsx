@@ -1,49 +1,49 @@
 'use client';
 
+import {
+    Activity,
+    AlertTriangle,
+    ArrowRight,
+    BarChart3,
+    Calendar,
+    CheckCircle2,
+    Clock,
+    Copy,
+    Eye,
+    Filter,
+    LayoutGrid,
+    LayoutList,
+    RefreshCw,
+    Settings2,
+    SortAsc,
+    Target,
+    TrendingUp,
+    X,
+} from '@tuturuuu/icons';
 import type { EnhancedTaskBoard } from '@tuturuuu/types/primitives/TaskBoard';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Card } from '@tuturuuu/ui/card';
 import { CustomDataTable } from '@tuturuuu/ui/custom/tables/custom-data-table';
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
 } from '@tuturuuu/ui/dialog';
 // Import analytics hooks
 import {
-  useAvgDuration,
-  useOnTimeRate,
-  useTaskVelocity,
+    useAvgDuration,
+    useOnTimeRate,
+    useTaskVelocity,
 } from '@tuturuuu/ui/hooks/use-task-analytics';
-import {
-  Activity,
-  AlertTriangle,
-  ArrowRight,
-  BarChart3,
-  Calendar,
-  CheckCircle2,
-  Clock,
-  Copy,
-  Eye,
-  Filter,
-  LayoutGrid,
-  LayoutList,
-  RefreshCw,
-  Settings2,
-  SortAsc,
-  Target,
-  TrendingUp,
-  X,
-} from '@tuturuuu/ui/icons';
 import { ScrollArea } from '@tuturuuu/ui/scroll-area';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
 } from '@tuturuuu/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { getFilteredMetrics } from '@tuturuuu/utils/task-helpers';

@@ -1,33 +1,33 @@
 'use client';
 
 import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
+    BarChart3,
+    Bell,
+    Book,
+    BookOpen,
+    Brain,
+    Calendar,
+    Clock,
+    FileText,
+    GraduationCap,
+    LineChart,
+    MessageSquare,
+    Monitor,
+    Settings,
+    Star,
+    Users,
+    Video,
+} from '@tuturuuu/icons';
+import {
+    Accordion,
+    AccordionContent,
+    AccordionItem,
+    AccordionTrigger,
 } from '@tuturuuu/ui/accordion';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Card } from '@tuturuuu/ui/card';
 import { GradientHeadline } from '@tuturuuu/ui/custom/gradient-headline';
-import {
-  BarChart3,
-  Bell,
-  Book,
-  BookOpen,
-  Brain,
-  Calendar,
-  Clock,
-  FileText,
-  GraduationCap,
-  LineChart,
-  MessageSquare,
-  Monitor,
-  Settings,
-  Star,
-  Users,
-  Video,
-} from '@tuturuuu/ui/icons';
 import { motion, type Variants } from 'framer-motion';
 import Link from 'next/link';
 

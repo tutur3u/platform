@@ -1,26 +1,26 @@
 'use client';
 
+import {
+    Beaker,
+    BookOpen,
+    Brain,
+    Calculator,
+    Camera,
+    Clock,
+    Code,
+    Globe,
+    GraduationCap,
+    Layers,
+    Microscope,
+    Music,
+    Palette,
+    PenTool,
+    Star,
+} from '@tuturuuu/icons';
 import type { WorkspaceCourse } from '@tuturuuu/types/db';
 import { Card, CardContent } from '@tuturuuu/ui/card';
-import {
-  Beaker,
-  BookOpen,
-  Brain,
-  Calculator,
-  Camera,
-  Clock,
-  Code,
-  Globe,
-  GraduationCap,
-  Layers,
-  Microscope,
-  Music,
-  Palette,
-  PenTool,
-  Star,
-} from '@tuturuuu/ui/icons';
-import Link from 'next/link';
 import { useTranslations } from 'next-intl';
+import Link from 'next/link';
 
 interface CourseCardViewProps {
   courses: (WorkspaceCourse & {

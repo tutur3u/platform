@@ -1,17 +1,17 @@
 'use client';
 
+import { AlertTriangle, Trash2 } from '@tuturuuu/icons';
 import type { WorkspaceDataset } from '@tuturuuu/types/db';
 import { Button } from '@tuturuuu/ui/button';
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
 } from '@tuturuuu/ui/dialog';
-import { AlertTriangle, Trash2 } from '@tuturuuu/ui/icons';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 

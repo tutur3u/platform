@@ -1,27 +1,27 @@
 'use client';
 
-import {
-  BookText,
-  Building,
-  Factory,
-  FileText,
-  Github,
-  GraduationCap,
-  HardHat,
-  Hotel,
-  Info,
-  Paintbrush,
-  Pill,
-  Shield,
-  Sparkles,
-  Store,
-  Users,
-  UsersRound,
-  Utensils,
-  WandSparkles,
-} from '@tuturuuu/ui/icons';
-import type { ReactNode } from 'react';
 import { DEV_MODE, GITHUB_OWNER, GITHUB_REPO } from '@/constants/common';
+import {
+    BookText,
+    Building,
+    Factory,
+    FileText,
+    Github,
+    GraduationCap,
+    HardHat,
+    Hotel,
+    Info,
+    Paintbrush,
+    Pill,
+    Shield,
+    Sparkles,
+    Store,
+    Users,
+    UsersRound,
+    Utensils,
+    WandSparkles,
+} from '@tuturuuu/icons';
+import type { ReactNode } from 'react';
 
 export interface NavItem {
   href: string;

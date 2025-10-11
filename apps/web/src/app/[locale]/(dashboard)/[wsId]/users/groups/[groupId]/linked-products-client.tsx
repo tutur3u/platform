@@ -1,45 +1,45 @@
 'use client';
 
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+    AlertCircle,
+    Box,
+    Link,
+    MoreHorizontal,
+    Pencil,
+    RulerDimensionLine,
+    Trash2,
+    Warehouse,
+} from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import { Button } from '@tuturuuu/ui/button';
+import { Combobox, type ComboboxOptions } from '@tuturuuu/ui/custom/combobox';
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
 } from '@tuturuuu/ui/dialog';
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@tuturuuu/ui/select';
-import { Combobox, type ComboboxOptions } from '@tuturuuu/ui/custom/combobox';
 import { Label } from '@tuturuuu/ui/label';
-import { toast } from '@tuturuuu/ui/sonner';
 import {
-  Box,
-  MoreHorizontal,
-  Pencil,
-  Trash2,
-  Warehouse,
-  RulerDimensionLine,
-  AlertCircle,
-  Link,
-} from '@tuturuuu/ui/icons';
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@tuturuuu/ui/select';
+import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 interface LinkedProduct {
   id: string;
@@ -509,23 +509,23 @@ export default function LinkedProductsClient({
             return (
               <div
                 key={product.id}
-                className="group flex items-center justify-between rounded-xl border border-border/50 bg-card/50 backdrop-blur-sm p-4 md:p-6 transition-all duration-200 hover:shadow-lg hover:shadow-black/5 hover:border-border hover:bg-card/80"
+                className='group flex items-center justify-between rounded-xl border border-border/50 bg-card/50 p-4 backdrop-blur-sm transition-all duration-200 hover:border-border hover:bg-card/80 hover:shadow-black/5 hover:shadow-lg md:p-6'
               >
                 <div className="flex items-center space-x-4">
                   {/* <div className="flex-shrink-0 rounded-lg bg-primary/10 p-2.5 group-hover:bg-primary/15 transition-colors">
                                         <Box className="h-6 w-6 text-primary" />
                                     </div> */}
                   <div className="min-w-0 flex-1">
-                    <div className="font-semibold text-lg text-foreground mb-1">
+                    <div className='mb-1 font-semibold text-foreground text-lg'>
                       {product.name}
                     </div>
                     {product.description && (
-                      <div className="text-sm text-muted-foreground mb-2 line-clamp-2">
+                      <div className='mb-2 line-clamp-2 text-muted-foreground text-sm'>
                         {product.description}
                       </div>
                     )}
                     {hasMissing && (
-                      <div className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-destructive/10 text-xs font-medium text-destructive">
+                      <div className='inline-flex items-center gap-1 rounded-md bg-destructive/10 px-2 py-1 font-medium text-destructive text-xs'>
                         <AlertCircle className="h-3 w-3" />
                         {missingWarehouse && t('ws-groups.missing_warehouse')}
                         {missingWarehouse && missingUnit ? ' • ' : ''}
@@ -533,7 +533,7 @@ export default function LinkedProductsClient({
                       </div>
                     )}
                     {!hasMissing && (warehouseName || unitName) && (
-                      <div className="flex justify-center gap-2 text-xs text-muted-foreground flex-col">
+                      <div className='flex flex-col justify-center gap-2 text-muted-foreground text-xs'>
                         {warehouseName && (
                           <div className="flex items-center gap-1.5">
                             <Warehouse className="h-3.5 w-3.5" />
@@ -561,7 +561,7 @@ export default function LinkedProductsClient({
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="opacity-60 group-hover:opacity-100 transition-opacity hover:bg-muted/80"
+                      className='opacity-60 transition-opacity hover:bg-muted/80 group-hover:opacity-100'
                     >
                       <MoreHorizontal className="h-4 w-4" />
                     </Button>
@@ -579,7 +579,7 @@ export default function LinkedProductsClient({
                         setDeletingProduct(product);
                         setIsDeleteDialogOpen(true);
                       }}
-                      className="text-dynamic-red cursor-pointer"
+                      className='cursor-pointer text-dynamic-red'
                     >
                       <Trash2 className="mr-2 h-4 w-4 text-dynamic-red" />
                       {t('ws-groups.remove_product')}
@@ -596,7 +596,7 @@ export default function LinkedProductsClient({
           <div className="font-medium text-muted-foreground">
             {t('ws-groups.no_linked_products')}
           </div>
-          <div className="text-sm text-muted-foreground">
+          <div className='text-muted-foreground text-sm'>
             {t('ws-groups.add_products_to_link')}
           </div>
         </div>

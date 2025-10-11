@@ -1,16 +1,16 @@
 'use client';
 
+import { Key } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
-import { Key } from '@tuturuuu/ui/icons';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
 } from '@tuturuuu/ui/select';
-import Link from 'next/link';
 import { useTranslations } from 'next-intl';
+import Link from 'next/link';
 
 interface ApiKey {
   id: string;

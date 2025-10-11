@@ -1,36 +1,36 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
+import {
+    Calendar,
+    Clock,
+    Filter,
+    Play,
+    Plus,
+    Search,
+    Trash2,
+    Users,
+} from '@tuturuuu/icons';
 import type { RecordingStatus } from '@tuturuuu/types/db';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
+    Card,
+    CardContent,
+    CardDescription,
+    CardHeader,
+    CardTitle,
 } from '@tuturuuu/ui/card';
 import {
-  Dialog,
-  DialogClose,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
+    Dialog,
+    DialogClose,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
 } from '@tuturuuu/ui/dialog';
-import {
-  Calendar,
-  Clock,
-  Filter,
-  Play,
-  Plus,
-  Search,
-  Trash2,
-  Users,
-} from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
 import { format } from 'date-fns';

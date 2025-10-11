@@ -15,6 +15,7 @@
     "@tuturuuu/supabase": "workspace:*",
     "@tuturuuu/types": "workspace:*",
     "@tuturuuu/ui": "workspace:*",
+    "@tuturuuu/icons": "workspace:*",
     "@tuturuuu/vercel": "workspace:*",
     "@tuturuuu/utils": "workspace:*",
     "dayjs": "^1.11.18",

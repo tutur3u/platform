@@ -1,22 +1,22 @@
 'use client';
 
+import {
+    BarChart3,
+    Calculator,
+    CreditCard,
+    DollarSign,
+    FileSpreadsheet,
+    LineChart,
+    LockKeyhole,
+    PieChart,
+    Receipt,
+    ShieldCheck,
+    Wallet,
+    Wallet2,
+} from '@tuturuuu/icons';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Card } from '@tuturuuu/ui/card';
-import {
-  BarChart3,
-  Calculator,
-  CreditCard,
-  DollarSign,
-  FileSpreadsheet,
-  LineChart,
-  LockKeyhole,
-  PieChart,
-  Receipt,
-  ShieldCheck,
-  Wallet,
-  Wallet2,
-} from '@tuturuuu/ui/icons';
 import Link from 'next/link';
 
 const features = [
