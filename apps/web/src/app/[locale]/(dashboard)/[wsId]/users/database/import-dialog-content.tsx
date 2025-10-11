@@ -19,11 +19,11 @@ import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
 import { Progress } from '@tuturuuu/ui/progress';
 import { Separator } from '@tuturuuu/ui/separator';
+import { XLSX } from '@tuturuuu/ui/xlsx';
 import { generateUUID } from '@tuturuuu/utils/uuid-helper';
-import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
+import { useRouter } from 'next/navigation';
 import { useState } from 'react';
-import * as XLSX from 'xlsx';
 
 export default function ImportDialogContent({ wsId }: { wsId: string }) {
   const router = useRouter();

@@ -101,7 +101,6 @@
     "tldraw": "^4.0.3",
     "use-debounce": "^10.0.6",
     "uuid": "^13.0.0",
-    "xlsx": "file:vendor/xlsx-0.20.3.tgz",
     "zod": "^4.1.12"
   },
   "devDependencies": {
