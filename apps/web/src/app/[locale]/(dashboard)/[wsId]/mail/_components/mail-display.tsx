@@ -2,25 +2,25 @@
 
 import { useQuery } from '@tanstack/react-query';
 import type {
-    InternalEmail,
-    User,
-    UserPrivateDetails,
+  InternalEmail,
+  User,
+  UserPrivateDetails,
 } from '@tuturuuu/types/db';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import type { JSONContent } from '@tuturuuu/types/tiptap';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Button } from '@tuturuuu/ui/button';
 import {
-    Archive,
-    ChevronDown,
-    ChevronUp,
-    Forward,
-    Loader2,
-    MoreVertical,
-    Reply,
-    ReplyAll,
-    Trash2,
-    UserIcon,
+  Archive,
+  ChevronDown,
+  ChevronUp,
+  Forward,
+  Loader2,
+  MoreVertical,
+  Reply,
+  ReplyAll,
+  Trash2,
+  UserIcon,
 } from '@tuturuuu/ui/icons';
 import { ScrollArea } from '@tuturuuu/ui/scroll-area';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
