@@ -13,12 +13,12 @@ export default async function PromotionsStatistics({ wsId }: { wsId: string }) {
 
   if (withoutPermission('view_inventory')) return null;
   const { count: promotions } = await supabase
-        .from('workspace_promotions')
-        .select('*', {
-          count: 'exact',
-          head: true,
-        })
-        .eq('ws_id', wsId);
+    .from('workspace_promotions')
+    .select('*', {
+      count: 'exact',
+      head: true,
+    })
+    .eq('ws_id', wsId);
 
   return (
     <StatisticCard

@@ -13,12 +13,12 @@ export default async function SuppliersStatistics({ wsId }: { wsId: string }) {
   if (withoutPermission('view_inventory')) return null;
 
   const { count: suppliers } = await supabase
-        .from('inventory_suppliers')
-        .select('*', {
-          count: 'exact',
-          head: true,
-        })
-        .eq('ws_id', wsId);
+    .from('inventory_suppliers')
+    .select('*', {
+      count: 'exact',
+      head: true,
+    })
+    .eq('ws_id', wsId);
 
   return (
     <StatisticCard

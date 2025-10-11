@@ -23,7 +23,6 @@ const PromotionSchema = z
     }
   );
 
-
 interface Params {
   params: Promise<{
     wsId: string;

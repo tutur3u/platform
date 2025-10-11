@@ -129,18 +129,17 @@ export function TransactionForm({
 
     const supabase = await createClient();
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
 
-  if (!user) {
-    setLoading(false);
-    toast.error(t('common.insufficient_permissions'));
-    return;
-  }
+    if (!user) {
+      setLoading(false);
+      toast.error(t('common.insufficient_permissions'));
+      return;
+    }
 
-
-    const {data: wsUser} = await supabase
+    const { data: wsUser } = await supabase
       .from('workspace_user_linked_users')
       .select('virtual_user_id')
       .eq('platform_user_id', user.id)

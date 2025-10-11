@@ -1,4 +1,3 @@
-
 import { createClient } from '@tuturuuu/supabase/next/server';
 import type { UserGroup } from '@tuturuuu/types/primitives/UserGroup';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
@@ -284,8 +283,12 @@ async function getGroupMembersData(
 
   // Build dynamic select query based on permissions
   const baseFields = 'id';
-  const publicFields = permissions.canViewPublicInfo ? ', birthday, gender, display_name, avatar_url, full_name' : '';
-  const personalFields = permissions.canViewPersonalInfo ? ', email, phone' : '';
+  const publicFields = permissions.canViewPublicInfo
+    ? ', birthday, gender, display_name, avatar_url, full_name'
+    : '';
+  const personalFields = permissions.canViewPersonalInfo
+    ? ', email, phone'
+    : '';
 
   // Build the complete select query string
   const selectQuery = `workspace_users(${baseFields}${publicFields}${personalFields}), role`;
