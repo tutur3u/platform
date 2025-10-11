@@ -2,6 +2,32 @@ import { createClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { z } from 'zod';
+
+// Helper function to verify transaction belongs to workspace
+async function verifyTransactionWorkspace(
+  transactionId: string,
+  wsId: string
+) {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from('wallet_transactions')
+    .select(`
+      id,
+      workspace_wallets!wallet_id (
+        ws_id
+      )
+    `)
+    .eq('id', transactionId)
+    .eq('workspace_wallets.ws_id', wsId)
+    .single();
+
+  if (error || !data) {
+    return null;
+  }
+
+  return data;
+}
 interface Params {
   params: Promise<{
     transactionId: string;
@@ -24,6 +50,14 @@ export async function GET(_: Request, { params }: Params) {
   const supabase = await createClient();
   const { transactionId, wsId } = await params;
 
+  // Validate UUID format
+  if (!transactionId || !wsId) {
+    return NextResponse.json(
+      { message: 'Invalid transaction or workspace ID' },
+      { status: 400 }
+    );
+  }
+
   const { withoutPermission } = await getPermissions({
     wsId,
   });
@@ -35,26 +69,38 @@ export async function GET(_: Request, { params }: Params) {
     );
   }
 
+  // Verify transaction belongs to workspace and fetch full data
+  const transaction = await verifyTransactionWorkspace(transactionId, wsId);
+
+  if (!transaction) {
+    return NextResponse.json({ message: 'Transaction not found' }, { status: 404 });
+  }
+
+  // Fetch complete transaction data
   const { data, error } = await supabase
     .from('wallet_transactions')
     .select('*')
     .eq('id', transactionId)
     .single();
 
-  if (error) {
-    console.log(error);
-    return NextResponse.json(
-      { message: 'Error fetching transaction' },
-      { status: 500 }
-    );
+  if (error || !data) {
+    console.error('Error fetching transaction:', { transactionId, error: error?.message });
+    return NextResponse.json({ message: 'Transaction not found' }, { status: 404 });
   }
 
   return NextResponse.json(data);
 }
 
 export async function PUT(req: Request, { params }: Params) {
-
   const { transactionId, wsId } = await params;
+
+  // Validate UUID format
+  if (!transactionId || !wsId) {
+    return NextResponse.json(
+      { message: 'Invalid transaction or workspace ID' },
+      { status: 400 }
+    );
+  }
 
   const parsed = TransactionUpdateSchema.safeParse(await req.json());
  
@@ -83,6 +129,12 @@ export async function PUT(req: Request, { params }: Params) {
 
   const supabase = await createClient();
 
+  // Verify transaction belongs to workspace
+  const transaction = await verifyTransactionWorkspace(transactionId, wsId);
+
+  if (!transaction) {
+    return NextResponse.json({ message: 'Transaction not found' }, { status: 404 });
+  }
 
   const newData = {
     ...data,
@@ -93,7 +145,7 @@ export async function PUT(req: Request, { params }: Params) {
   const tagIds = newData.tag_ids;
   delete newData.tag_ids;
 
-// (Optional) Verify new wallet is within wsId if being changed
+  // Verify new wallet belongs to workspace if being changed
   if (newData.wallet_id) {
     const { data: walletCheck } = await supabase
       .from('workspace_wallets')
@@ -101,6 +153,7 @@ export async function PUT(req: Request, { params }: Params) {
       .eq('id', newData.wallet_id)
       .eq('ws_id', wsId)
       .single();
+
     if (!walletCheck) {
       return NextResponse.json({ message: 'Invalid wallet' }, { status: 400 });
     }
@@ -138,9 +191,12 @@ export async function PUT(req: Request, { params }: Params) {
     .update(updatePayload)
     .eq('id', normalizedId);
 
-
   if (error) {
-    console.log(error);
+    console.error('Error updating transaction:', {
+      transactionId: normalizedId,
+      error: error.message,
+      updatePayload
+    });
     return NextResponse.json(
       { message: 'Error updating transaction' },
       { status: 500 }
@@ -180,6 +236,14 @@ export async function DELETE(_: Request, { params }: Params) {
   const supabase = await createClient();
   const { transactionId, wsId } = await params;
 
+  // Validate UUID format
+  if (!transactionId || !wsId) {
+    return NextResponse.json(
+      { message: 'Invalid transaction or workspace ID' },
+      { status: 400 }
+    );
+  }
+
   const { withoutPermission } = await getPermissions({
     wsId,
   });
@@ -192,24 +256,10 @@ export async function DELETE(_: Request, { params }: Params) {
   }
 
   // Verify transaction belongs to workspace
-  const { data: transaction, error: fetchError } = await supabase
-    .from('wallet_transactions')
-    .select('wallet_id')
-    .eq('id', transactionId)
-    .single();
+  const transaction = await verifyTransactionWorkspace(transactionId, wsId);
 
-  if (fetchError || !transaction) {
+  if (!transaction) {
     return NextResponse.json({ message: 'Transaction not found' }, { status: 404 });
-  }
-
-  const { data: wallet, error: walletError } = await supabase
-    .from('workspace_wallets')
-    .select('ws_id')
-    .eq('id', transaction.wallet_id)
-    .single();
-
-  if (walletError || !wallet || wallet.ws_id !== wsId) {
-    return NextResponse.json({ message: 'Transaction not found in workspace' }, { status: 404 });
   }
 
   const { error } = await supabase
@@ -218,7 +268,10 @@ export async function DELETE(_: Request, { params }: Params) {
     .eq('id', transactionId);
 
   if (error) {
-    console.log(error);
+    console.error('Error deleting transaction:', {
+      transactionId,
+      error: error.message
+    });
     return NextResponse.json(
       { message: 'Error deleting transaction' },
       { status: 500 }

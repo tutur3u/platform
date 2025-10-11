@@ -38,6 +38,7 @@ interface Props {
 
 const FormSchema = z
   .object({
+    id: z.string().optional(),
     name: z.string().min(1).max(255),
     description: z.string().optional(),
     code: z.string().min(1).max(255),
@@ -69,6 +70,7 @@ export function PromotionForm({
   const form = useForm({
     resolver: zodResolver(FormSchema),
     defaultValues: {
+      id: data?.id,
       name: data?.name,
       description: data?.description,
       code: data?.code,
@@ -102,7 +104,13 @@ export function PromotionForm({
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(data),
+        body: JSON.stringify({
+          name: data.name,
+          description: data.description,
+          code: data.code,
+          value: data.value,
+          unit: data.unit,
+        }),
       }
     );
 
