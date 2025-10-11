@@ -86,7 +86,8 @@ export async function getTasks(supabase: SupabaseClient, boardId: string) {
         lists.map((list) => list.id)
       )
       .eq('deleted', false)
-      .order('created_at');
+      .order('sort_key', { ascending: true, nullsFirst: false })
+      .order('created_at', { ascending: true });
 
     if (error) {
       console.error('Error fetching tasks:', error);
@@ -1826,5 +1827,415 @@ export function useBoardConfig(boardId: string | null | undefined) {
     enabled: Boolean(boardId),
     staleTime: 10 * 60 * 1000, // 10 minutes - board config rarely changes
     refetchOnWindowFocus: false,
+  });
+}
+
+// BIGINT Sort Key System
+// Uses integer arithmetic for exact precision without floating-point errors
+// Base unit: 1,000,000 (1 million) - provides ample space for reordering
+// Sequence offset: 1-999 for uniqueness in rapid operations
+
+const SORT_KEY_BASE_UNIT = 1000000; // 1 million - spacing between tasks
+const SORT_KEY_DEFAULT = SORT_KEY_BASE_UNIT * 1000; // Default for new tasks
+const SORT_KEY_MIN_GAP = 1000; // Minimum gap to consider safe
+
+let sortKeySequence = 0;
+
+/**
+ * Calculate a new BIGINT sort_key between two tasks
+ * Handles all scenarios: beginning, end, middle, and cross-list movements
+ *
+ * @param prevSortKey - Sort key of the task before the insertion point (null if at beginning)
+ * @param nextSortKey - Sort key of the task after the insertion point (null if at end)
+ * @returns A new BIGINT sort_key that positions the task correctly
+ */
+export function calculateSortKey(
+  prevSortKey: number | null | undefined,
+  nextSortKey: number | null | undefined
+): number {
+  // Increment sequence counter (1-999) for uniqueness in rapid operations
+  sortKeySequence = (sortKeySequence % 999) + 1;
+
+  // Case 1: No previous task - inserting at the beginning
+  if (prevSortKey === null || prevSortKey === undefined) {
+    if (nextSortKey === null || nextSortKey === undefined) {
+      // Empty list - use default position
+      return SORT_KEY_DEFAULT + sortKeySequence;
+    }
+
+    // Check if nextSortKey is too small to insert before while maintaining uniqueness
+    if (nextSortKey <= sortKeySequence) {
+      // Cannot insert a unique positive value before nextSortKey
+      // Use negative/zero value to avoid duplicates (normalization will fix ordering)
+      const adjusted = nextSortKey - sortKeySequence;
+      console.warn(
+        '⚠️ Next sort key too small to insert before, using adjusted value to avoid duplicate',
+        { nextSortKey, sortKeySequence, adjusted }
+      );
+      return adjusted;
+    }
+
+    // Place before the next task with good spacing
+    const halfNext = Math.floor(nextSortKey / 2);
+
+    if (nextSortKey <= SORT_KEY_MIN_GAP) {
+      // nextSortKey is small but we can still fit before it
+      const result = halfNext;
+      // Ensure result is less than nextSortKey
+      return Math.min(result, nextSortKey - sortKeySequence);
+    } else {
+      // Try to maintain ideal spacing
+      const baseKey = Math.max(
+        halfNext,
+        Math.min(SORT_KEY_BASE_UNIT, nextSortKey - SORT_KEY_MIN_GAP)
+      );
+      // Add sequence but ensure we don't reach or exceed nextSortKey
+      const maxSequence = nextSortKey - baseKey - 1;
+      const safeSequence = Math.min(sortKeySequence, Math.max(0, maxSequence));
+      return baseKey + safeSequence;
+    }
+  }
+
+  // Case 2: No next task - inserting at the end
+  if (nextSortKey === null || nextSortKey === undefined) {
+    // Place after the previous task with good spacing
+    return prevSortKey + SORT_KEY_BASE_UNIT + sortKeySequence;
+  }
+
+  // Case 3: Inserting between two tasks
+  const gap = nextSortKey - prevSortKey;
+
+  // Check if gap is too small to fit a unique value with sequence offset
+  if (gap <= sortKeySequence) {
+    // Cannot fit a unique value between them
+    // Place before prevSortKey to avoid duplicates (normalization will fix ordering)
+    const adjusted = prevSortKey - sortKeySequence;
+    console.warn(
+      '⚠️ Gap too small to insert between, placing before range to avoid duplicate',
+      { prevSortKey, nextSortKey, gap, sortKeySequence, adjusted }
+    );
+    return adjusted;
+  }
+
+  // Check if we have enough space for ideal insertion
+  if (gap <= SORT_KEY_MIN_GAP) {
+    console.warn(
+      '⚠️ Sort key gap small, task ordering may need renormalization',
+      { prevSortKey, nextSortKey, gap, threshold: SORT_KEY_MIN_GAP }
+    );
+
+    // Use midpoint with limited sequence offset to stay in bounds
+    const midpoint = Math.floor((prevSortKey + nextSortKey) / 2);
+    const maxOffset = Math.floor(gap / 2) - 1;
+    const safeOffset = Math.min(sortKeySequence, Math.max(0, maxOffset));
+    return midpoint + safeOffset;
+  }
+
+  // Good gap - calculate midpoint with sequence offset
+  const midpoint = Math.floor((prevSortKey + nextSortKey) / 2);
+
+  // Add sequence offset, ensuring we stay within bounds
+  const halfGap = Math.floor(gap / 2);
+  const offset = Math.min(sortKeySequence, halfGap - 1);
+
+  return midpoint + offset;
+}
+
+/**
+ * Reset the sequence counter
+ * Useful for testing or when starting a fresh session
+ */
+export function resetSortKeySequence() {
+  sortKeySequence = 0;
+}
+
+/**
+ * Get the current sort key configuration constants
+ */
+export function getSortKeyConfig() {
+  return {
+    BASE_UNIT: SORT_KEY_BASE_UNIT,
+    DEFAULT: SORT_KEY_DEFAULT,
+    MIN_GAP: SORT_KEY_MIN_GAP,
+  };
+}
+
+/**
+ * Detect if tasks have duplicate or too-close sort keys (BIGINT version)
+ * Checks for gaps smaller than MIN_GAP (1000)
+ */
+export function hasSortKeyCollisions(tasks: Task[]): boolean {
+  const sortKeys = tasks
+    .map((t) => t.sort_key)
+    .filter((key): key is number => key !== null && key !== undefined);
+
+  if (sortKeys.length === 0) return false;
+
+  // Sort the keys
+  const sorted = [...sortKeys].sort((a, b) => a - b);
+
+  // Check for duplicates or gaps smaller than MIN_GAP
+  for (let i = 1; i < sorted.length; i++) {
+    const prevKey = sorted[i - 1];
+    const currKey = sorted[i];
+    if (prevKey !== undefined && currKey !== undefined) {
+      const gap = currKey - prevKey;
+      if (gap < SORT_KEY_MIN_GAP) {
+        return true; // Collision detected
+      }
+    }
+  }
+
+  return false;
+}
+
+/**
+ * Normalize sort keys for a list of tasks (BIGINT version)
+ * Ensures proper spacing using BASE_UNIT (1,000,000) between tasks
+ */
+export function normalizeSortKeys(tasks: Task[]): Task[] {
+  // Sort by current sort_key (nulls last) and created_at as fallback
+  const sorted = [...tasks].sort((a, b) => {
+    const sortA = a.sort_key ?? Number.MAX_SAFE_INTEGER;
+    const sortB = b.sort_key ?? Number.MAX_SAFE_INTEGER;
+    if (sortA !== sortB) return sortA - sortB;
+    return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+  });
+
+  // Reassign sort keys with proper spacing (BASE_UNIT apart)
+  return sorted.map((task, index) => ({
+    ...task,
+    sort_key: (index + 1) * SORT_KEY_BASE_UNIT,
+  }));
+}
+
+/**
+ * Batch normalize sort keys in the database for a specific list (BIGINT version)
+ * Uses BASE_UNIT (1,000,000) spacing between tasks
+ */
+export async function normalizeListSortKeys(
+  supabase: SupabaseClient,
+  listId: string
+): Promise<void> {
+  console.log('🔧 Normalizing sort keys for list:', listId);
+
+  // Fetch all tasks in the list
+  const { data: tasks, error: fetchError } = await supabase
+    .from('tasks')
+    .select('id, sort_key, created_at')
+    .eq('list_id', listId)
+    .eq('deleted', false)
+    .order('sort_key', { ascending: true, nullsFirst: false })
+    .order('created_at', { ascending: true });
+
+  if (fetchError) {
+    console.error('Failed to fetch tasks for normalization:', fetchError);
+    throw fetchError;
+  }
+
+  if (!tasks || tasks.length === 0) {
+    console.log('No tasks to normalize');
+    return;
+  }
+
+  // Check if normalization is needed
+  const needsNormalization = hasSortKeyCollisions(tasks as unknown as Task[]);
+
+  if (!needsNormalization) {
+    console.log('✅ Sort keys are already properly spaced');
+    return;
+  }
+
+  console.log('⚠️ Collisions detected, normalizing...');
+
+  // Normalize and update in batch
+  // Use BASE_UNIT spacing (1,000,000) between tasks
+  const updates = tasks.map((task, index) => ({
+    id: task.id,
+    sort_key: (index + 1) * SORT_KEY_BASE_UNIT,
+  }));
+
+  // Update all tasks with new sort keys
+  // Use update instead of upsert to avoid requiring full row data
+  const updatePromises = updates.map((update) =>
+    supabase
+      .from('tasks')
+      .update({ sort_key: update.sort_key })
+      .eq('id', update.id)
+  );
+
+  const results = await Promise.all(updatePromises);
+  const updateError = results.find((result) => result.error)?.error;
+
+  if (updateError) {
+    console.error('Failed to update sort keys:', updateError);
+    throw updateError;
+  }
+
+  console.log('✅ Sort keys normalized successfully');
+}
+
+// Reorder task within the same list or move to a different list with specific position
+export async function reorderTask(
+  supabase: SupabaseClient,
+  taskId: string,
+  newListId: string,
+  newSortKey: number
+) {
+  console.log('🗄️ reorderTask function called');
+  console.log('📋 Task ID:', taskId);
+  console.log('🎯 New List ID:', newListId);
+  console.log('🔢 New Sort Key:', newSortKey);
+
+  // Get the target list to check its status
+  const { data: targetList, error: listError } = await supabase
+    .from('task_lists')
+    .select('status, name')
+    .eq('id', newListId)
+    .single();
+
+  if (listError) {
+    console.log('❌ Error fetching target list:', listError);
+    throw listError;
+  }
+
+  console.log('📊 Target list details:', targetList);
+
+  // Determine archived status based on list status
+  const shouldArchive =
+    targetList.status === 'done' || targetList.status === 'closed';
+
+  console.log('📦 Will archive:', shouldArchive);
+  console.log('🔄 Updating task in database...');
+
+  const { data, error } = await supabase
+    .from('tasks')
+    .update({
+      list_id: newListId,
+      sort_key: newSortKey,
+      archived: shouldArchive,
+    })
+    .eq('id', taskId)
+    .select(
+      `
+        *,
+        assignees:task_assignees(
+          user:users(
+            id,
+            display_name,
+            avatar_url
+          )
+        ),
+        labels:task_labels(
+          label:workspace_task_labels(
+            id,
+            name,
+            color,
+            created_at
+          )
+        ),
+        projects:task_project_tasks(
+          project:task_projects(
+            id,
+            name,
+            status
+          )
+        )
+      `
+    )
+    .single();
+
+  if (error) {
+    console.log('❌ Error updating task:', error);
+    throw error;
+  }
+
+  console.log('✅ Task reordered successfully');
+  return transformTaskRecord(data) as Task;
+}
+
+// React Query hook for reordering tasks
+export function useReorderTask(boardId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      taskId,
+      newListId,
+      newSortKey,
+    }: {
+      taskId: string;
+      newListId: string;
+      newSortKey: number;
+    }) => {
+      console.log('🚀 Starting reorderTask mutation');
+      const supabase = createClient();
+      return await reorderTask(supabase, taskId, newListId, newSortKey);
+    },
+    onMutate: async ({ taskId, newListId, newSortKey }) => {
+      console.log('🎭 onMutate triggered - optimistic update for reorder');
+
+      // Cancel any outgoing refetches
+      await queryClient.cancelQueries({ queryKey: ['tasks', boardId] });
+
+      // Snapshot the previous value
+      const previousTasks = queryClient.getQueryData(['tasks', boardId]);
+
+      // Optimistically update the task
+      queryClient.setQueryData(
+        ['tasks', boardId],
+        (old: Task[] | undefined) => {
+          if (!old) return old;
+          return old.map((task) => {
+            if (task.id === taskId) {
+              const targetList = queryClient.getQueryData([
+                'task_lists',
+                boardId,
+              ]) as TaskList[] | undefined;
+              const list = targetList?.find((l) => l.id === newListId);
+              const shouldArchive =
+                list?.status === 'done' || list?.status === 'closed';
+
+              return {
+                ...task,
+                list_id: newListId,
+                sort_key: newSortKey,
+                archived: shouldArchive || false,
+              };
+            }
+            return task;
+          });
+        }
+      );
+
+      return { previousTasks };
+    },
+    onError: (err, _, context) => {
+      console.log('❌ onError triggered - rollback optimistic update');
+      if (context?.previousTasks) {
+        queryClient.setQueryData(['tasks', boardId], context.previousTasks);
+      }
+
+      console.error('Failed to reorder task:', err);
+      toast.error('Failed to reorder task', {
+        description: 'Please try again.',
+      });
+    },
+    onSuccess: (updatedTask) => {
+      console.log(
+        '✅ onSuccess triggered - updating cache with server response'
+      );
+
+      // Update the cache with the server response
+      queryClient.setQueryData(
+        ['tasks', boardId],
+        (old: Task[] | undefined) => {
+          if (!old) return old;
+          return old.map((task) =>
+            task.id === updatedTask.id ? updatedTask : task
+          );
+        }
+      );
+    },
   });
 }

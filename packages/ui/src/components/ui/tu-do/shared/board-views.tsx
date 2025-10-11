@@ -353,6 +353,7 @@ export function BoardViews({
             tasks={effectiveTasks}
             lists={filteredLists}
             isLoading={false}
+            disableSort={!!filters.sortBy}
           />
         );
       case 'list':
