@@ -1,12 +1,5 @@
 // Mocks must come next, before any imports that use them!
-import {
-  beforeAll,
-  beforeEach,
-  describe,
-  expect,
-  it,
-  vi,
-} from 'vitest';
+import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Set required env vars for Supabase at the VERY TOP
 process.env.NEXT_PUBLIC_SUPABASE_URL = 'http://localhost:54321';
@@ -92,14 +85,18 @@ describe('Google Calendar Batched Sync', () => {
         // For other tables (like sync_coordination), return separate mocks
         return {
           upsert: vi.fn(() => Promise.resolve({ error: null as any })),
-          delete: vi.fn(() => ({ or: vi.fn(() => Promise.resolve({ error: null as any })) })),
+          delete: vi.fn(() => ({
+            or: vi.fn(() => Promise.resolve({ error: null as any })),
+          })),
         };
       }),
     };
 
     // Clear and update createAdminClient to return the fresh mockSupabaseClient
     createAdminClientMock.mockClear();
-    createAdminClientMock.mockImplementation(() => Promise.resolve(mockSupabaseClient));
+    createAdminClientMock.mockImplementation(() =>
+      Promise.resolve(mockSupabaseClient)
+    );
   });
 
   describe('syncGoogleCalendarEventsForWorkspaceBatched', () => {
