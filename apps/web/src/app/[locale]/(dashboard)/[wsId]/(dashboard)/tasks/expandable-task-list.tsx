@@ -1,9 +1,5 @@
 'use client';
 
-import { createClient } from '@tuturuuu/supabase/next/client';
-import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
-import { Badge } from '@tuturuuu/ui/badge';
-import { Button } from '@tuturuuu/ui/button';
 import {
   AlertCircle,
   Calendar,
@@ -11,7 +7,11 @@ import {
   ChevronUp,
   Clock,
   UserRound,
-} from '@tuturuuu/ui/icons';
+} from '@tuturuuu/icons';
+import { createClient } from '@tuturuuu/supabase/next/client';
+import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
+import { Badge } from '@tuturuuu/ui/badge';
+import { Button } from '@tuturuuu/ui/button';
 import { TaskEditDialog } from '@tuturuuu/ui/tu-do/shared/task-edit-dialog';
 import { TaskEstimationDisplay } from '@tuturuuu/ui/tu-do/shared/task-estimation-display';
 import { TaskLabelsDisplay } from '@tuturuuu/ui/tu-do/shared/task-labels-display';

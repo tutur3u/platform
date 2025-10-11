@@ -1,5 +1,13 @@
 'use client';
 
+import {
+  CreditCard,
+  DollarSign,
+  FileText,
+  Plus,
+  Target,
+  Wallet,
+} from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import {
   DropdownMenu,
@@ -9,14 +17,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
-import {
-  CreditCard,
-  DollarSign,
-  FileText,
-  Plus,
-  Target,
-  Wallet,
-} from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
 interface QuickActionsProps {

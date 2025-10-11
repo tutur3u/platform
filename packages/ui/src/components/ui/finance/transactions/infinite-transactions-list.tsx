@@ -1,10 +1,10 @@
 'use client';
 
 import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
+import { Calendar, Loader2, TrendingDown, TrendingUp } from '@tuturuuu/icons';
 import type { Transaction } from '@tuturuuu/types/primitives/Transaction';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
-import { Calendar, Loader2, TrendingDown, TrendingUp } from 'lucide-react';
 import moment from 'moment';
 import 'moment/locale/vi';
 import { useLocale, useTranslations } from 'next-intl';

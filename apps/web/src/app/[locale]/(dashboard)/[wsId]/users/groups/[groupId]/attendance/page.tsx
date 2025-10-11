@@ -1,23 +1,24 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
-import type { UserGroup } from '@tuturuuu/types/primitives/UserGroup';
-import { Button } from '@tuturuuu/ui/button';
-import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import {
   CalendarIcon,
   ChartColumn,
   FileUser,
   UserCheck,
-} from '@tuturuuu/ui/icons';
+} from '@tuturuuu/icons';
+import { createClient } from '@tuturuuu/supabase/next/server';
+import type { UserGroup } from '@tuturuuu/types/primitives/UserGroup';
+import { Button } from '@tuturuuu/ui/button';
+import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Separator } from '@tuturuuu/ui/separator';
 import { cn } from '@tuturuuu/utils/format';
 import 'dayjs/locale/vi';
 import type { Metadata } from 'next';
+import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { getTranslations } from 'next-intl/server';
 import type { InitialAttendanceProps } from './client';
 import GroupAttendanceClient from './client';
-import { getPermissions, getWorkspace } from '@tuturuuu/utils/workspace-helper';
+import { getPermissions } from '@tuturuuu/utils/workspace-helper';
+import WorkspaceWrapper from '@/components/workspace-wrapper';
 
 export const metadata: Metadata = {
   title: 'Attendance',
@@ -38,10 +39,11 @@ export default async function UserGroupAttendancePage({
   params,
   searchParams,
 }: Props) {
+
+  return (
+    <WorkspaceWrapper params={params}>
+      {async ({ wsId, groupId }) => {
   const t = await getTranslations();
-  const { wsId: id, groupId } = await params;
-  const workspace = await getWorkspace(id);
-  const wsId = workspace.id;
   const { containsPermission } = await getPermissions({
     wsId,
   });
@@ -162,8 +164,13 @@ export default async function UserGroupAttendancePage({
         initialAttendance={attendanceMap}
       />
     </>
+        );
+      }}
+    </WorkspaceWrapper>
   );
 }
+
+
 
 async function getData(wsId: string, groupId: string) {
   const supabase = await createClient();

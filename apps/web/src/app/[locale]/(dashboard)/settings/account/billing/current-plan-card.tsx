@@ -1,3 +1,4 @@
+import { Crown } from '@tuturuuu/icons';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -7,7 +8,6 @@ import {
   CardHeader,
   CardTitle,
 } from '@tuturuuu/ui/card';
-import { Crown } from '@tuturuuu/ui/icons';
 import { getTranslations } from 'next-intl/server';
 
 // interface UsageStat {

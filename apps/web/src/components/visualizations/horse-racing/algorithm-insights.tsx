@@ -1,6 +1,6 @@
+import { Lightbulb, Network, Target, TrendingUp } from '@tuturuuu/icons';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Card } from '@tuturuuu/ui/card';
-import { Lightbulb, Network, Target, TrendingUp } from '@tuturuuu/ui/icons';
 import { Progress } from '@tuturuuu/ui/progress';
 import { motion } from 'framer-motion';
 import type { Horse, Race } from './types';

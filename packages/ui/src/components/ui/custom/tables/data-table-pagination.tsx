@@ -1,13 +1,13 @@
 'use client';
 
 import type { Table } from '@tanstack/react-table';
-import { cn } from '@tuturuuu/utils/format';
 import {
   ArrowLeftToLine,
   ArrowRightToLine,
   ChevronLeft,
   ChevronRight,
-} from 'lucide-react';
+} from '@tuturuuu/icons';
+import { cn } from '@tuturuuu/utils/format';
 import { Button } from '../../button';
 import {
   Select,

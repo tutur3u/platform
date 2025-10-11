@@ -1,12 +1,12 @@
-import { Badge } from '@tuturuuu/ui/badge';
-import { Card } from '@tuturuuu/ui/card';
 import {
   AlertTriangle,
   CheckCircle,
   LineChart,
   Sparkles,
   Workflow,
-} from '@tuturuuu/ui/icons';
+} from '@tuturuuu/icons';
+import { Badge } from '@tuturuuu/ui/badge';
+import { Card } from '@tuturuuu/ui/card';
 import { Progress } from '@tuturuuu/ui/progress';
 import { motion } from 'framer-motion';
 import {

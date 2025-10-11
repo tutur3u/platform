@@ -1,9 +1,9 @@
 'use client';
 
 import type { UIMessage } from '@tuturuuu/ai/types';
+import { CheckIcon, CopyIcon } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import { useCopyToClipboard } from '@tuturuuu/ui/hooks/use-copy-to-clipboard';
-import { CheckIcon, CopyIcon } from '@tuturuuu/ui/icons';
 import { cn } from '@tuturuuu/utils/format';
 import type React from 'react';
 

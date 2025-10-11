@@ -1,5 +1,6 @@
 'use client';
 
+import { TrendingUp } from '@tuturuuu/icons';
 import {
   Card,
   CardContent,
@@ -14,7 +15,6 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from '@tuturuuu/ui/chart';
-import { TrendingUp } from '@tuturuuu/ui/icons';
 import { Bar, BarChart, CartesianGrid, XAxis } from 'recharts';
 
 const chartData = [

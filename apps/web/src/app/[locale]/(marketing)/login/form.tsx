@@ -1,6 +1,9 @@
 'use client';
 
+import { DEV_MODE, PORT } from '@/constants/common';
+import { trpc } from '@/trpc/client';
 import { generateCrossAppToken, mapUrlToApp } from '@tuturuuu/auth/cross-app';
+import { Eye, EyeOff, Github, Lock, Mail } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
 import { Button } from '@tuturuuu/ui/button';
@@ -17,20 +20,17 @@ import {
 } from '@tuturuuu/ui/form';
 import { type FieldValues, useForm } from '@tuturuuu/ui/hooks/use-form';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
-import { Eye, EyeOff, Github, Lock, Mail } from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
 import { InputOTP, InputOTPGroup, InputOTPSlot } from '@tuturuuu/ui/input-otp';
 import { zodResolver } from '@tuturuuu/ui/resolvers';
 import { Separator } from '@tuturuuu/ui/separator';
 import { Switch } from '@tuturuuu/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
+import { useLocale, useTranslations } from 'next-intl';
 import Image from 'next/image';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useLocale, useTranslations } from 'next-intl';
 import { useCallback, useEffect, useState } from 'react';
 import * as z from 'zod';
-import { DEV_MODE, PORT } from '@/constants/common';
-import { trpc } from '@/trpc/client';
 
 // Constants
 const COOLDOWN_DURATION = 60;
@@ -102,13 +102,12 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
     totp: z.string().length(6, 'TOTP code must be 6 digits'),
   });
 
-  // Form Hooks
   const otpForm = useForm({
     resolver: zodResolver(OTPFormSchema),
     defaultValues: {
       email: DEV_MODE ? 'local@tuturuuu.com' : '',
       otp: '',
-      skipOtp: false,
+      skipOtp: DEV_MODE,
     },
   });
 

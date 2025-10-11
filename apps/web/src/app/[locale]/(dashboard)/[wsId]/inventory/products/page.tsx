@@ -1,3 +1,4 @@
+import { Plus } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import type { Product } from '@tuturuuu/types/primitives/Product';
 import type { ProductCategory } from '@tuturuuu/types/primitives/ProductCategory';
@@ -6,11 +7,10 @@ import type { ProductWarehouse } from '@tuturuuu/types/primitives/ProductWarehou
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { Button } from '@tuturuuu/ui/button';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
-import { Plus } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
 import type { Metadata } from 'next';
-import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
+import Link from 'next/link';
 import { ProductsPageClient } from './products-page-client';
 import WorkspaceWrapper from '@/components/workspace-wrapper';
 

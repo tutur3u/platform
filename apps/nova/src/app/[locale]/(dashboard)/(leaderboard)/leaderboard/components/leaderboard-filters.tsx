@@ -1,6 +1,6 @@
+import { Filter, Search, Sparkles, X } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent } from '@tuturuuu/ui/card';
-import { Filter, Search, Sparkles, X } from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
 import {
   Select,

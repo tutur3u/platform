@@ -1,8 +1,5 @@
 'use client';
 
-import { createClient } from '@tuturuuu/supabase/next/client';
-import { Badge } from '@tuturuuu/ui/badge';
-import { Button } from '@tuturuuu/ui/button';
 import {
   ArrowLeftToLine,
   ArrowRightToLine,
@@ -11,11 +8,14 @@ import {
   ChevronRight,
   Medal,
   Sparkles,
-} from '@tuturuuu/ui/icons';
+} from '@tuturuuu/icons';
+import { createClient } from '@tuturuuu/supabase/next/client';
+import { Badge } from '@tuturuuu/ui/badge';
+import { Button } from '@tuturuuu/ui/button';
 import { motion } from 'framer-motion';
+import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
 import BasicInformationComponent, {
   type BasicInformation,

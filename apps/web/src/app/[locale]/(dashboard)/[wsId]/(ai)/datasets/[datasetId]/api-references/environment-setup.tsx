@@ -1,8 +1,8 @@
 'use client';
 
+import { Info } from '@tuturuuu/icons';
 import { Alert, AlertDescription } from '@tuturuuu/ui/alert';
 import { CodeBlock } from '@tuturuuu/ui/codeblock';
-import { Info } from '@tuturuuu/ui/icons';
 import { useEffect, useState } from 'react';
 import ApiKeySelector from './api-key-selector';
 

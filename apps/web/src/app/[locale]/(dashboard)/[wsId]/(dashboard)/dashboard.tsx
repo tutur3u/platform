@@ -1,8 +1,8 @@
 'use client';
 
+import { ArrowDownIcon, ArrowUpIcon } from '@tuturuuu/icons';
 import type { AuroraForecast } from '@tuturuuu/types/db';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
-import { ArrowDownIcon, ArrowUpIcon } from '@tuturuuu/ui/icons';
 import {
   Select,
   SelectContent,

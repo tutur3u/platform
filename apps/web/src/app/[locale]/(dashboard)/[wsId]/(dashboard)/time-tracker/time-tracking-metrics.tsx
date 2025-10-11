@@ -1,7 +1,3 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
-import { Badge } from '@tuturuuu/ui/badge';
-import { Button } from '@tuturuuu/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
 import {
   Activity,
   BarChart3,
@@ -16,12 +12,16 @@ import {
   TrendingDown,
   TrendingUp,
   Zap,
-} from '@tuturuuu/ui/icons';
+} from '@tuturuuu/icons';
+import { createClient } from '@tuturuuu/supabase/next/server';
+import { Badge } from '@tuturuuu/ui/badge';
+import { Button } from '@tuturuuu/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
 import { Progress } from '@tuturuuu/ui/progress';
 import { Separator } from '@tuturuuu/ui/separator';
 import { cn } from '@tuturuuu/utils/format';
-import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
+import Link from 'next/link';
 
 interface TimeTrackingMetricsProps {
   wsId: string;

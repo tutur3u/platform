@@ -8,7 +8,7 @@ Tuturuuu is a Turborepo monorepo containing multiple Next.js applications and sh
 
 ## Technology Stack
 
-- **Package Manager**: Bun (v1.2.23+)
+- **Package Manager**: Bun (v1.3.0+)
 - **Monorepo Tool**: Turborepo
 - **Runtime**: Node.js v22+
 - **Framework**: Next.js 15 with App Router and Turbopack

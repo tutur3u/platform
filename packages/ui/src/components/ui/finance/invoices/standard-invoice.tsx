@@ -1,8 +1,16 @@
 'use client';
 
-import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
-import type { Transaction } from '@tuturuuu/types/primitives/Transaction';
+import {
+  ArrowDown,
+  ArrowUp,
+  Calculator,
+  CreditCard,
+  FileText,
+  Loader2,
+} from '@tuturuuu/icons';
 import type { Invoice } from '@tuturuuu/types/primitives/Invoice';
+import type { Transaction } from '@tuturuuu/types/primitives/Transaction';
+import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import {
   Accordion,
   AccordionContent,
@@ -17,17 +25,8 @@ import {
   CardHeader,
   CardTitle,
 } from '@tuturuuu/ui/card';
-import {
-  CreditCard,
-  FileText,
-  ArrowUp,
-  ArrowDown,
-  Calculator,
-  Loader2,
-} from '@tuturuuu/ui/icons';
+import { Combobox, type ComboboxOptions } from '@tuturuuu/ui/custom/combobox';
 import { Label } from '@tuturuuu/ui/label';
-import { Textarea } from '@tuturuuu/ui/textarea';
-import { Separator } from '@tuturuuu/ui/separator';
 import {
   Select,
   SelectContent,
@@ -35,25 +34,26 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@tuturuuu/ui/select';
-import { Combobox, type ComboboxOptions } from '@tuturuuu/ui/custom/combobox';
-import { useTranslations } from 'next-intl';
-import { useCallback, useState, useEffect, useMemo } from 'react';
-import { ProductSelection } from './product-selection';
+import { Separator } from '@tuturuuu/ui/separator';
 import { toast } from '@tuturuuu/ui/sonner';
+import { Textarea } from '@tuturuuu/ui/textarea';
+import { useTranslations } from 'next-intl';
 import { useRouter, useSearchParams } from 'next/navigation';
-import type { SelectedProductItem } from './types';
+import { useEffect, useMemo, useCallback, useState } from 'react';
 import type { AvailablePromotion } from './hooks';
 import {
-  useUsers,
-  useProducts,
-  useWallets,
+  useAvailablePromotions,
   useCategories,
-  useUserTransactions,
+  useProducts,
   useUserInvoices,
   useUserLinkedPromotions,
   useUserReferralDiscounts,
-  useAvailablePromotions,
+  useUsers,
+  useUserTransactions,
+  useWallets,
 } from './hooks';
+import { ProductSelection } from './product-selection';
+import type { SelectedProductItem } from './types';
 
 interface Props {
   wsId: string;

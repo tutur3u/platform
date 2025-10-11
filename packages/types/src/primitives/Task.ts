@@ -11,6 +11,7 @@ export interface Task {
   archived: boolean;
   created_at: string;
   estimation_points?: number | null;
+  sort_key?: number | null;
   labels?: {
     id: string;
     name: string;

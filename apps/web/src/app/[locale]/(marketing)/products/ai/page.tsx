@@ -1,8 +1,5 @@
 'use client';
 
-import { Badge } from '@tuturuuu/ui/badge';
-import { Button } from '@tuturuuu/ui/button';
-import { Card } from '@tuturuuu/ui/card';
 import {
   Brain,
   FileSearch,
@@ -12,7 +9,10 @@ import {
   MessageSquareCode,
   Sparkles,
   Zap,
-} from '@tuturuuu/ui/icons';
+} from '@tuturuuu/icons';
+import { Badge } from '@tuturuuu/ui/badge';
+import { Button } from '@tuturuuu/ui/button';
+import { Card } from '@tuturuuu/ui/card';
 import Link from 'next/link';
 
 const features = [

@@ -1,8 +1,8 @@
 'use client';
 
+import { Globe, MapPin, Share2, TrendingUp } from '@tuturuuu/icons';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
-import { Globe, MapPin, Share2, TrendingUp } from '@tuturuuu/ui/icons';
 import { Progress } from '@tuturuuu/ui/progress';
 import { useTranslations } from 'next-intl';
 

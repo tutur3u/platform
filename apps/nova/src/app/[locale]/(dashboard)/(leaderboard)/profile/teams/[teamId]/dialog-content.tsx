@@ -1,3 +1,4 @@
+import { ScrollText, Target } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -9,7 +10,6 @@ import {
   DialogTitle,
 } from '@tuturuuu/ui/dialog';
 import { useToast } from '@tuturuuu/ui/hooks/use-toast';
-import { ScrollText, Target } from '@tuturuuu/ui/icons';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { useParams } from 'next/navigation';
 import { useState } from 'react';

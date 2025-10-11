@@ -1,5 +1,6 @@
 'use client';
 
+import { QrCode } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import {
   Dialog,
@@ -10,7 +11,6 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@tuturuuu/ui/dialog';
-import { QrCode } from '@tuturuuu/ui/icons';
 import { useTranslations } from 'next-intl';
 import { QRCodeCanvas } from 'qrcode.react';
 import CopyLinkButton, { generateTumeetMeUrl } from './copy-link-button';

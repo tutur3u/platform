@@ -1,6 +1,6 @@
 'use client';
 
-import { ArrowLeft, Loader, Sparkles } from '@tuturuuu/ui/icons';
+import { ArrowLeft, Loader, Sparkles } from '@tuturuuu/icons';
 import { Command as CommandPrimitive } from 'cmdk';
 
 interface CommandHeaderProps {

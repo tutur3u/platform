@@ -1,4 +1,4 @@
-import { Check, Timer, X } from '@tuturuuu/ui/icons';
+import { Check, Timer, X } from '@tuturuuu/icons';
 import {
   DropdownMenuItem,
   DropdownMenuSeparator,

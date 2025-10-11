@@ -20,8 +20,8 @@ process.env.GOOGLE_CLIENT_SECRET = 'test-client-secret';
 process.env.GOOGLE_REDIRECT_URI = 'http://localhost:3000/auth/callback';
 
 // Mock the google-calendar-sync module
-vi.mock('../google-calendar-sync', async () => {
-  const actual = await vi.importActual('../google-calendar-sync.js');
+vi.mock('../src/google-calendar-sync', async () => {
+  const actual = await vi.importActual('../src/google-calendar-sync.js');
   return {
     ...actual,
     getGoogleAuthClient: vi.fn(() => ({
@@ -87,7 +87,7 @@ dayjs.extend(utc);
 let performFullSyncForWorkspace: any;
 
 beforeAll(async () => {
-  const mod = await import('../google-calendar-full-sync.js');
+  const mod = await import('../src/google-calendar-full-sync.js');
   performFullSyncForWorkspace = mod.performFullSyncForWorkspace;
 });
 
@@ -243,7 +243,7 @@ describe('performFullSyncForWorkspace', () => {
   describe('Integration with syncWorkspaceBatched', () => {
     it('should call syncWorkspaceBatched when events exist', async () => {
       const { syncWorkspaceBatched } = await import(
-        '../google-calendar-sync.js'
+        '../src/google-calendar-sync.js'
       );
 
       await performFullSyncForWorkspace(
@@ -272,7 +272,7 @@ describe('performFullSyncForWorkspace', () => {
       });
 
       const { syncWorkspaceBatched } = await import(
-        '../google-calendar-sync.js'
+        '../src/google-calendar-sync.js'
       );
 
       await performFullSyncForWorkspace(
@@ -288,7 +288,7 @@ describe('performFullSyncForWorkspace', () => {
 
   describe('Sync Token Handling', () => {
     it('should store sync token when available', async () => {
-      const { storeSyncToken } = await import('../google-calendar-sync.js');
+      const { storeSyncToken } = await import('../src/google-calendar-sync.js');
 
       await performFullSyncForWorkspace(
         'primary',
@@ -323,7 +323,7 @@ describe('performFullSyncForWorkspace', () => {
         } as any,
       });
 
-      const { storeSyncToken } = await import('../google-calendar-sync.js');
+      const { storeSyncToken } = await import('../src/google-calendar-sync.js');
 
       await performFullSyncForWorkspace(
         'primary',

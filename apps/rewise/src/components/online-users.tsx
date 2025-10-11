@@ -1,6 +1,6 @@
+import { User } from '@tuturuuu/icons';
 import type { RealtimePresenceState } from '@tuturuuu/supabase/next/realtime';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
-import { User } from '@tuturuuu/ui/icons';
 import {
   Tooltip,
   TooltipContent,

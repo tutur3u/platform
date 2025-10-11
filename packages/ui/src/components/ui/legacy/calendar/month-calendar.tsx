@@ -1,9 +1,9 @@
 'use client';
 
+import { Clock, Plus } from '@tuturuuu/icons';
 import type { Workspace } from '@tuturuuu/types/db';
 import type { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
 import { Button } from '@tuturuuu/ui/button';
-import { isAllDayEvent } from '@tuturuuu/ui/hooks/calendar-utils';
 import { useCalendar } from '@tuturuuu/ui/hooks/use-calendar';
 import { usePopoverManager } from '@tuturuuu/ui/hooks/use-popover-manager';
 import {
@@ -12,6 +12,7 @@ import {
   HoverCardTrigger,
 } from '@tuturuuu/ui/hover-card';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
+import { isAllDayEvent } from '@tuturuuu/utils/calendar-utils';
 import { cn } from '@tuturuuu/utils/format';
 import {
   eachDayOfInterval,
@@ -25,7 +26,6 @@ import {
 import dayjs from 'dayjs';
 import isSameOrAfter from 'dayjs/plugin/isSameOrAfter';
 import timezone from 'dayjs/plugin/timezone';
-import { Clock, Plus } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { Popover, PopoverContent, PopoverTrigger } from '../../popover';
 import { getColorHighlight } from './color-highlights';

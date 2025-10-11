@@ -1,3 +1,4 @@
+import { ArrowLeft } from '@tuturuuu/icons';
 import {
   createAdminClient,
   createClient,
@@ -9,7 +10,6 @@ import type {
 } from '@tuturuuu/types/db';
 import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent } from '@tuturuuu/ui/card';
-import { ArrowLeft } from '@tuturuuu/ui/icons';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import Link from 'next/link';
 import ProblemComponent from '../../../../shared/problem-component';

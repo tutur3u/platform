@@ -1,3 +1,4 @@
+import { ShieldCheck } from '@tuturuuu/icons';
 import {
   Accordion,
   AccordionContent,
@@ -5,7 +6,6 @@ import {
   AccordionTrigger,
 } from '@tuturuuu/ui/accordion';
 import { FormField, FormItem } from '@tuturuuu/ui/form';
-import { ShieldCheck } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
 import { permissionGroups } from '@tuturuuu/utils/permissions';
 import { useTranslations } from 'next-intl';

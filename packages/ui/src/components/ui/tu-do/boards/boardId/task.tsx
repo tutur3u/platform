@@ -1,6 +1,33 @@
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+  AlertCircle,
+  Box,
+  Calendar,
+  Check,
+  CheckCircle2,
+  CircleSlash,
+  Clock,
+  FileText,
+  Flag,
+  horseHead,
+  Icon,
+  Image as ImageIcon,
+  Link2,
+  Loader2,
+  MoreHorizontal,
+  Move,
+  Play,
+  Rabbit,
+  Timer,
+  Trash2,
+  Turtle,
+  unicornHead,
+  UserMinus,
+  UserStar,
+  X,
+} from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
 import type { Task } from '@tuturuuu/types/primitives/Task';
@@ -32,33 +59,6 @@ import {
 } from '@tuturuuu/ui/dropdown-menu';
 import { useTaskActions } from '@tuturuuu/ui/hooks/use-task-actions';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
-import {
-  AlertCircle,
-  Box,
-  Calendar,
-  Check,
-  CheckCircle2,
-  CircleSlash,
-  Clock,
-  FileText,
-  Flag,
-  horseHead,
-  Icon,
-  Image as ImageIcon,
-  Link2,
-  Loader2,
-  MoreHorizontal,
-  Move,
-  Play,
-  Rabbit,
-  Timer,
-  Trash2,
-  Turtle,
-  unicornHead,
-  UserMinus,
-  UserStar,
-  X,
-} from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
 import { ScrollArea } from '@tuturuuu/ui/scroll-area';
@@ -106,6 +106,7 @@ interface TaskCardProps {
   isMultiSelectMode?: boolean;
   isPersonalWorkspace?: boolean;
   onSelect?: (taskId: string, event: React.MouseEvent) => void;
+  optimisticUpdateInProgress?: Set<string>;
 }
 
 // Memoized full TaskCard
@@ -120,6 +121,7 @@ function TaskCardInner({
   isMultiSelectMode = false,
   isPersonalWorkspace = false,
   onSelect,
+  optimisticUpdateInProgress,
 }: TaskCardProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -254,37 +256,26 @@ function TaskCardInner({
     newLabelDialogOpen ||
     menuOpen;
 
-  const {
-    setNodeRef,
-    attributes,
-    listeners,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({
-    id: task.id,
-    data: {
-      type: 'Task',
-      task: {
-        ...task,
-        list_id: String(task.list_id),
+  const { setNodeRef, attributes, listeners, transform, isDragging } =
+    useSortable({
+      id: task.id,
+      data: {
+        type: 'Task',
+        task: {
+          ...task,
+          list_id: String(task.list_id),
+        },
       },
-    },
-    disabled: dragDisabled,
-    // Reduce expensive layout animations for smoother dragging
-    animateLayoutChanges: (args) => {
-      const { isSorting, wasDragging } = args;
-      // Only animate if not actively dragging to keep drag performance snappy
-      return isSorting && !wasDragging;
-    },
-  });
+      disabled: dragDisabled,
+      transition: null, // Disable @dnd-kit's built-in transitions
+    });
 
   const style: React.CSSProperties = {
-    transform: isDragging ? CSS.Transform.toString(transform) : undefined,
-    // Disable transition while actively dragging for perf
-    transition: isDragging ? undefined : transition,
+    transform: isDragging
+      ? 'translate3d(0, 0, 0)'
+      : CSS.Transform.toString(transform),
+    transition: 'none', // Always disable transitions - rely on optimistic updates
     height: 'var(--task-height)',
-    willChange: isDragging ? 'transform' : undefined,
   };
 
   const now = new Date();
@@ -669,6 +660,7 @@ function TaskCardInner({
   return (
     <Card
       data-id={task.id}
+      data-task-id={task.id}
       ref={setNodeRef}
       style={style}
       onClick={(e) => {
@@ -701,15 +693,14 @@ function TaskCardInner({
       {...attributes}
       {...(!dragDisabled && listeners)}
       className={cn(
-        'group relative overflow-hidden rounded-lg border-l-4 transition-all duration-200',
+        'group relative overflow-hidden rounded-lg border-l-4',
         dragDisabled
           ? 'cursor-default'
           : 'cursor-grab touch-none select-none active:cursor-grabbing',
-        'hover:shadow-md',
         // Task list or priority-based styling
         getCardColorClasses(),
-        // Dragging state
-        isDragging && 'z-50 scale-[1.02] shadow-xl ring-2 ring-primary/40',
+        // When dragging OR undergoing optimistic update, make invisible but keep in layout
+        (isDragging || optimisticUpdateInProgress?.has(task.id)) && 'opacity-0',
         isOverlay &&
           'scale-105 shadow-2xl ring-2 ring-primary/50 backdrop-blur-sm',
         // Archive state (completed tasks)
@@ -718,18 +709,13 @@ function TaskCardInner({
         isOverdue &&
           !task.archived &&
           'border-dynamic-red/70 bg-dynamic-red/10 ring-1 ring-dynamic-red/20',
-        // Hover state
+        // Hover state (no transitions)
         !isDragging && !isSelected && 'hover:ring-1 hover:ring-primary/15',
         // Selection state - enhanced visual feedback
         isSelected &&
           'scale-[1.01] border-l-primary bg-gradient-to-r from-primary/10 via-primary/5 to-transparent shadow-lg ring-2 ring-primary/60',
         // Multi-select mode cursor
-        isMultiSelectMode && 'cursor-pointer',
-        // Visual feedback for invalid drop (dev only)
-        process.env.NODE_ENV === 'development' &&
-          isDragging &&
-          !isOverlay &&
-          'ring-2 ring-dynamic-red'
+        isMultiSelectMode && 'cursor-pointer'
       )}
     >
       {/* Overdue indicator */}
@@ -1415,6 +1401,7 @@ interface MeasuredTaskCardProps {
   isPersonalWorkspace?: boolean;
   onSelect?: (taskId: string, event: React.MouseEvent) => void;
   onHeight: (height: number) => void;
+  optimisticUpdateInProgress?: Set<string>;
 }
 
 export function MeasuredTaskCard({
@@ -1427,23 +1414,29 @@ export function MeasuredTaskCard({
   isPersonalWorkspace,
   onSelect,
   onHeight,
+  optimisticUpdateInProgress,
 }: MeasuredTaskCardProps) {
   const ref = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     if (!ref.current) return;
     const node = ref.current;
-    // Initial measure
-    onHeight(node.getBoundingClientRect().height + 8 /* approximate gap */);
+    // Get the actual card element (first child)
+    const card = node.firstElementChild as HTMLElement;
+    if (!card) return;
+
+    // Initial measure - use the card's actual height without gaps
+    onHeight(card.getBoundingClientRect().height);
+
     // Resize observer for dynamic height changes (e.g., label changes)
     const ro = new ResizeObserver((entries) => {
       for (const entry of entries) {
-        if (entry.target === node) {
-          onHeight(entry.contentRect.height + 8);
+        if (entry.target === card) {
+          onHeight(entry.contentRect.height);
         }
       }
     });
-    ro.observe(node);
+    ro.observe(card);
     return () => ro.disconnect();
   }, [onHeight]);
 
@@ -1458,6 +1451,7 @@ export function MeasuredTaskCard({
         isMultiSelectMode={isMultiSelectMode}
         isPersonalWorkspace={isPersonalWorkspace}
         onSelect={onSelect}
+        optimisticUpdateInProgress={optimisticUpdateInProgress}
       />
     </div>
   );
@@ -1530,32 +1524,32 @@ function LightweightTaskCardInner({
     : null;
 
   return (
-    <Card className="pointer-events-none w-full max-w-[340px] select-none overflow-hidden border border-dynamic-gray/40 bg-background/95 shadow-xl ring-1 ring-dynamic-blue/20 backdrop-blur">
+    <Card className="pointer-events-none w-full max-w-[340px] select-none overflow-hidden border-2 border-primary/40 bg-background/95 shadow-2xl ring-2 ring-primary/30 backdrop-blur-md">
       <div className="flex flex-col gap-3 p-4">
         {destination && (
-          <div className="flex items-center justify-between text-[11px] text-muted-foreground">
+          <div className="slide-in-from-top-2 flex animate-in items-center justify-between gap-2 rounded-lg bg-gradient-to-r from-primary/10 via-primary/5 to-transparent p-2 text-[11px] duration-300">
             <span
               className={cn(
-                'inline-flex items-center gap-1 rounded-md px-2 py-1 font-medium ring-1 ring-inset',
+                'inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 font-semibold shadow-sm ring-1 ring-inset',
                 destinationColorClass
               )}
             >
-              <Move className="h-3 w-3" />
-              {destination.name}
+              <Move className="h-3.5 w-3.5 animate-pulse" />
+              <span className="text-xs">{destination.name}</span>
             </span>
             {destination.status && (
-              <span className="text-[10px] text-muted-foreground/80 uppercase tracking-wide">
+              <span className="rounded-full bg-background/80 px-2 py-1 font-medium text-[10px] text-muted-foreground uppercase tracking-wider shadow-sm">
                 {destination.status.replace(/_/g, ' ')}
               </span>
             )}
           </div>
         )}
-        <div className="space-y-1">
-          <div className="truncate font-semibold text-base leading-snug">
+        <div className="space-y-1.5">
+          <div className="truncate font-bold text-base text-foreground leading-snug">
             {task.name}
           </div>
           {descriptionText && (
-            <div className="line-clamp-2 whitespace-pre-line text-muted-foreground text-xs">
+            <div className="line-clamp-2 whitespace-pre-line text-muted-foreground text-xs leading-relaxed">
               {descriptionText.replace(/\n/g, ' • ')}
             </div>
           )}

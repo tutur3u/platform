@@ -1,4 +1,4 @@
-import { Blocks, Clock, Database, Mail, Users } from '@tuturuuu/ui/icons';
+import { Blocks, Clock, Database, Mail, Users } from '@tuturuuu/icons';
 import Link from 'next/link';
 
 interface NavigationCard {

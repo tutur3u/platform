@@ -1,6 +1,19 @@
 'use client';
 
 import { useLocalStorage } from '@mantine/hooks';
+import {
+  AlertCircle,
+  CheckCircle2,
+  Download,
+  Eye,
+  EyeOff,
+  MoreVertical,
+  Pause,
+  Play,
+  RefreshCcw,
+  StopCircle,
+  Trash2,
+} from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -25,19 +38,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
-import {
-  AlertCircle,
-  CheckCircle2,
-  Download,
-  Eye,
-  EyeOff,
-  MoreVertical,
-  Pause,
-  Play,
-  RefreshCcw,
-  StopCircle,
-  Trash2,
-} from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
 import { Progress } from '@tuturuuu/ui/progress';
@@ -1496,23 +1496,23 @@ export default function MigrationDashboard() {
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b">
-                      <th className="pb-3 pr-4 text-left font-medium">
+                      <th className="pr-4 pb-3 text-left font-medium">
                         Module
                       </th>
-                      <th className="pb-3 px-4 text-left font-medium">
+                      <th className="px-4 pb-3 text-left font-medium">
                         Status
                       </th>
-                      <th className="pb-3 px-4 text-right font-medium">
+                      <th className="px-4 pb-3 text-right font-medium">
                         External
                       </th>
-                      <th className="pb-3 px-4 text-right font-medium">
+                      <th className="px-4 pb-3 text-right font-medium">
                         Synced
                       </th>
-                      <th className="pb-3 px-4 text-right font-medium">New</th>
-                      <th className="pb-3 px-4 text-right font-medium">
+                      <th className="px-4 pb-3 text-right font-medium">New</th>
+                      <th className="px-4 pb-3 text-right font-medium">
                         Updates
                       </th>
-                      <th className="pb-3 px-4 text-right font-medium">
+                      <th className="px-4 pb-3 text-right font-medium">
                         Duplicates
                       </th>
                       <th className="pb-3 pl-4 text-left font-medium">Stage</th>
@@ -1533,7 +1533,7 @@ export default function MigrationDashboard() {
                             <td className="py-3 pr-4 font-medium">
                               {m.name.replace(/-/g, ' ')}
                             </td>
-                            <td className="py-3 px-4">
+                            <td className="px-4 py-3">
                               {isCompleted && (
                                 <span className="inline-flex items-center gap-1 rounded-full bg-green-100 px-2 py-0.5 text-green-700 text-xs">
                                   <CheckCircle2 className="h-3 w-3" />
@@ -1558,20 +1558,20 @@ export default function MigrationDashboard() {
                                 </span>
                               )}
                             </td>
-                            <td className="py-3 px-4 text-right tabular-nums">
+                            <td className="px-4 py-3 text-right tabular-nums">
                               {data?.externalTotal?.toLocaleString() ?? '-'}
                             </td>
-                            <td className="py-3 px-4 text-right tabular-nums">
+                            <td className="px-4 py-3 text-right tabular-nums">
                               {data?.internalData?.length?.toLocaleString() ??
                                 '-'}
                             </td>
-                            <td className="py-3 px-4 text-right tabular-nums text-green-600">
+                            <td className="px-4 py-3 text-right text-green-600 tabular-nums">
                               {data?.newRecords?.toLocaleString() ?? '-'}
                             </td>
-                            <td className="py-3 px-4 text-right tabular-nums text-dynamic-blue">
+                            <td className="px-4 py-3 text-right text-dynamic-blue tabular-nums">
                               {data?.updates?.toLocaleString() ?? '-'}
                             </td>
-                            <td className="py-3 px-4 text-right tabular-nums text-dynamic-yellow">
+                            <td className="px-4 py-3 text-right text-dynamic-yellow tabular-nums">
                               {data?.duplicates?.toLocaleString() ?? '-'}
                             </td>
                             <td className="py-3 pl-4 text-muted-foreground text-xs">

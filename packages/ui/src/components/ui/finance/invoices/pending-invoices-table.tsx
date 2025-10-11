@@ -1,10 +1,10 @@
 'use client';
 
+import { Loader2 } from '@tuturuuu/icons';
 import { CustomDataTable } from '@tuturuuu/ui/custom/tables/custom-data-table';
+import { useSearchParams } from 'next/navigation';
 import { usePendingInvoices } from './hooks';
 import { pendingInvoiceColumns } from './pending-columns';
-import { Loader2 } from '@tuturuuu/ui/icons';
-import { useSearchParams } from 'next/navigation';
 
 interface Props {
   wsId: string;

@@ -1,19 +1,19 @@
 'use client';
 
 import type { ColumnDef } from '@tanstack/react-table';
-import type { Tables } from '@tuturuuu/types/supabase';
-import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
-import { Badge } from '@tuturuuu/ui/badge';
-import { Button } from '@tuturuuu/ui/button';
-import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
-import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import {
   BarChart3,
   Copy,
   ExternalLink,
   MousePointerClick,
   User,
-} from '@tuturuuu/ui/icons';
+} from '@tuturuuu/icons';
+import type { Tables } from '@tuturuuu/types/supabase';
+import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
+import { Badge } from '@tuturuuu/ui/badge';
+import { Button } from '@tuturuuu/ui/button';
+import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
+import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import {
   Tooltip,
   TooltipContent,

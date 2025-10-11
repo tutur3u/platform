@@ -1,12 +1,12 @@
 'use client';
 
+import { InfoIcon, PlusIcon, Trash2 } from '@tuturuuu/icons';
 import type { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
 import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent } from '@tuturuuu/ui/card';
 import { Input } from '@tuturuuu/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { cn } from '@tuturuuu/utils/format';
-import { InfoIcon, PlusIcon, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { type CategoryColor, colorMap } from './color-picker';
 

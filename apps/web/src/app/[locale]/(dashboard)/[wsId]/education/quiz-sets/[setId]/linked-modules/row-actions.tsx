@@ -1,6 +1,7 @@
 'use client';
 
 import type { Row } from '@tanstack/react-table';
+import { Ellipsis } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { WorkspaceCourseModule } from '@tuturuuu/types/db';
 import { Button } from '@tuturuuu/ui/button';
@@ -13,9 +14,8 @@ import {
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
-import { Ellipsis } from '@tuturuuu/ui/icons';
-import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
+import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import WorkspaceCourseModuleForm from './form';
 

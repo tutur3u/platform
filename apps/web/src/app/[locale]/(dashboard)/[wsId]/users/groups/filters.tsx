@@ -1,6 +1,6 @@
+import { MinusCircle, PlusCircle } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import type { UserGroup } from '@tuturuuu/types/primitives/UserGroup';
-import { MinusCircle, PlusCircle } from '@tuturuuu/ui/icons';
 import { getTranslations } from 'next-intl/server';
 import { Filter } from '../filters';
 

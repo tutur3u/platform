@@ -1,10 +1,16 @@
 'use client';
 
-import { createClient } from '@tuturuuu/supabase/next/client';
-import { useTranslations } from 'next-intl';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useMemo, useState } from 'react';
+import {
+  Link,
+  MoreHorizontal,
+  Tag,
+  TicketCheck,
+  Trash2,
+} from '@tuturuuu/icons';
+import { createClient } from '@tuturuuu/supabase/next/client';
 import { Button } from '@tuturuuu/ui/button';
+import { Combobox, type ComboboxOptions } from '@tuturuuu/ui/custom/combobox';
 import {
   Dialog,
   DialogContent,
@@ -20,16 +26,10 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
-import { Combobox, type ComboboxOptions } from '@tuturuuu/ui/custom/combobox';
 import { Label } from '@tuturuuu/ui/label';
 import { toast } from '@tuturuuu/ui/sonner';
-import {
-  Link,
-  MoreHorizontal,
-  Trash2,
-  TicketCheck,
-  Tag,
-} from '@tuturuuu/ui/icons';
+import { useTranslations } from 'next-intl';
+import { useMemo, useState } from 'react';
 
 interface WorkspacePromotion {
   id: string;
@@ -345,11 +345,11 @@ export default function LinkedPromotionsClient({
           {(userLinkedPromotionsQuery.data || []).map((promo) => (
             <div
               key={promo.id}
-              className="group flex justify-between rounded-xl border border-border/50 bg-card/50 backdrop-blur-sm p-4 md:p-6 transition-all duration-200 hover:shadow-lg hover:shadow-black/5 hover:border-border hover:bg-card/80"
+              className="group flex justify-between rounded-xl border border-border/50 bg-card/50 p-4 backdrop-blur-sm transition-all duration-200 hover:border-border hover:bg-card/80 hover:shadow-black/5 hover:shadow-lg md:p-6"
             >
               <div className="flex items-center space-x-4">
                 <div className="min-w-0 flex-1">
-                  <div className="font-semibold text-lg text-foreground mb-1 flex items-center gap-2">
+                  <div className="mb-1 flex items-center gap-2 font-semibold text-foreground text-lg">
                     <TicketCheck className="h-5 w-5" />
                     <span className="sr-only">
                       {t('ws-user-linked-coupons.coupon_label')}
@@ -358,13 +358,13 @@ export default function LinkedPromotionsClient({
                   </div>
                   <div>
                     {promo.description && (
-                      <div className="text-sm text-muted-foreground mb-2 line-clamp-2">
+                      <div className="mb-2 line-clamp-2 text-muted-foreground text-sm">
                         {promo.description}
                       </div>
                     )}
                     {(referralDiscountMap.has(promo.id) ||
                       (promo.value ?? null) !== null) && (
-                      <div className="mt-1 inline-flex items-center gap-1 rounded-md bg-foreground/10 px-2 py-1 text-xs font-medium text-foreground">
+                      <div className="mt-1 inline-flex items-center gap-1 rounded-md bg-foreground/10 px-2 py-1 font-medium text-foreground text-xs">
                         <Tag className="h-3.5 w-3.5" />
                         <span className="sr-only">
                           {t('ws-user-linked-coupons.discount_value_label')}
@@ -387,7 +387,7 @@ export default function LinkedPromotionsClient({
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="opacity-60 group-hover:opacity-100 transition-opacity hover:bg-muted/80"
+                      className="opacity-60 transition-opacity hover:bg-muted/80 group-hover:opacity-100"
                     >
                       <MoreHorizontal className="h-4 w-4" />
                     </Button>
@@ -398,7 +398,7 @@ export default function LinkedPromotionsClient({
                         setDeletingPromotion(promo);
                         setIsDeleteDialogOpen(true);
                       }}
-                      className="text-dynamic-red cursor-pointer"
+                      className="cursor-pointer text-dynamic-red"
                     >
                       <Trash2 className="mr-2 h-4 w-4 text-dynamic-red" />
                       {t('ws-user-linked-coupons.unlink')}
@@ -415,7 +415,7 @@ export default function LinkedPromotionsClient({
           <div className="font-medium text-muted-foreground">
             {t('ws-user-linked-coupons.empty_title')}
           </div>
-          <div className="text-sm text-muted-foreground">
+          <div className="text-muted-foreground text-sm">
             {t('ws-user-linked-coupons.empty_description')}
           </div>
         </div>

@@ -1,12 +1,12 @@
 'use client';
 
+import { MoreHorizontal } from '@tuturuuu/icons';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
-import { MoreHorizontal } from '@tuturuuu/ui/icons';
 
 interface ActionsDropdownProps {
   taskId: string;

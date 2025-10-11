@@ -1,5 +1,6 @@
 'use client';
 
+import { Download, ImageIcon, Palette, Printer } from '@tuturuuu/icons';
 import type {
   Invoice,
   InvoiceProduct,
@@ -7,18 +8,17 @@ import type {
 } from '@tuturuuu/types/db';
 import type { WorkspaceConfig } from '@tuturuuu/types/primitives/WorkspaceConfig';
 import { Button } from '@tuturuuu/ui/button';
-import { ImageIcon, Printer, Download, Palette } from '@tuturuuu/ui/icons';
-import { Separator } from '@tuturuuu/ui/separator';
-import dayjs from 'dayjs';
-import html2canvas from 'html2canvas-pro';
-import { useTranslations } from 'next-intl';
-import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
+import { Separator } from '@tuturuuu/ui/separator';
+import dayjs from 'dayjs';
+import html2canvas from 'html2canvas-pro';
+import { useTranslations } from 'next-intl';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 // Add this utility function at the top of the file
 const formatCurrency = (amount: number, currency: string) => {
@@ -291,14 +291,14 @@ export default function InvoiceCard({
             )}
             {getConfig('BRAND_LOCATION') && (
               <p
-                className={` print:text-black ${isDarkPreview ? 'text-foreground/70' : 'text-black'}`}
+                className={`print:text-black ${isDarkPreview ? 'text-foreground/70' : 'text-black'}`}
               >
                 {getConfig('BRAND_LOCATION')}
               </p>
             )}
             {getConfig('BRAND_PHONE_NUMBER') && (
               <p
-                className={` print:text-black ${isDarkPreview ? 'text-foreground/70' : 'text-black'}`}
+                className={`print:text-black ${isDarkPreview ? 'text-foreground/70' : 'text-black'}`}
               >
                 {getConfig('BRAND_PHONE_NUMBER')}
               </p>

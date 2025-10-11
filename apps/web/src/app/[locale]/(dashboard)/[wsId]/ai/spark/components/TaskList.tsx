@@ -1,5 +1,6 @@
 'use client';
 
+import { CalendarDays } from '@tuturuuu/icons';
 import {
   Accordion,
   AccordionContent,
@@ -14,7 +15,6 @@ import {
   CardHeader,
   CardTitle,
 } from '@tuturuuu/ui/card';
-import { CalendarDays } from '@tuturuuu/ui/icons';
 import { cn } from '@tuturuuu/utils/format';
 
 interface Task {

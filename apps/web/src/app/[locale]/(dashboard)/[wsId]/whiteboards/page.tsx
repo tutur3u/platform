@@ -1,10 +1,10 @@
+import { PlusIcon } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { Button } from '@tuturuuu/ui/button';
-import { PlusIcon } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
 import type { Metadata } from 'next';
-import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
+import { notFound } from 'next/navigation';
 import WhiteboardsList, { type Whiteboard } from './client';
 import CreateWhiteboardDialog from './createWhiteboardDialog';
 

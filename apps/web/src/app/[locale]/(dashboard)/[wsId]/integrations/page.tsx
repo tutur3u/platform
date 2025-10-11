@@ -1,7 +1,7 @@
+import { Bot, ExternalLink, Settings } from '@tuturuuu/icons';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
-import { Bot, ExternalLink, Settings } from '@tuturuuu/ui/icons';
 import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import Link from 'next/link';

@@ -1,6 +1,7 @@
 'use client';
 
 import type { Row } from '@tanstack/react-table';
+import { Ellipsis, Pencil } from '@tuturuuu/icons';
 import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
 import type { WorkspaceRole } from '@tuturuuu/types/db';
 import { Button } from '@tuturuuu/ui/button';
@@ -12,9 +13,8 @@ import {
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
-import { Ellipsis, Pencil } from '@tuturuuu/ui/icons';
-import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
+import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { RoleForm } from './form';
 

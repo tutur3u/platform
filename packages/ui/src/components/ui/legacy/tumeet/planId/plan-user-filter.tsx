@@ -1,8 +1,8 @@
 'use client';
 
+import { ShieldCheck } from '@tuturuuu/icons';
 import type { PlanUser } from '@tuturuuu/types/primitives/MeetTogetherPlan';
 import { useTimeBlocking } from '@tuturuuu/ui/hooks/time-blocking-provider';
-import { ShieldCheck } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
 import { useTranslations } from 'next-intl';
 

@@ -5,7 +5,7 @@
   "main": "./src/index.ts",
   "types": "./src/index.ts",
   "exports": {
-    "./middleware": "./src/middleware/index.ts",
+    "./proxy": "./src/proxy/index.ts",
     "./cross-app": "./src/cross-app/index.ts",
     "./cross-app/server": "./src/cross-app/server.ts",
     "./cross-app/token-verifier": "./src/cross-app/token-verifier.tsx",
@@ -17,7 +17,7 @@
     "@tuturuuu/types": "workspace:*",
     "@tuturuuu/ui": "workspace:*",
     "@tuturuuu/utils": "workspace:*",
-    "next": "^15.5.4",
+    "next": "^16.0.0-canary.1",
     "react": "^19.2.0"
   },
   "devDependencies": {
@@ -27,5 +27,5 @@
     "@types/react-dom": "^19.2.1",
     "typescript": "^5.9.3"
   },
-  "packageManager": "bun@1.2.23"
+  "packageManager": "bun@1.3.0"
 }

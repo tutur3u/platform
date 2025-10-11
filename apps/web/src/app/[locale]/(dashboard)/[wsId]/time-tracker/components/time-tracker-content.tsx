@@ -2,6 +2,15 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
+import {
+  CheckCircle,
+  CheckSquare,
+  LayoutDashboard,
+  MapPin,
+  Play,
+  PlusCircle,
+  Tag,
+} from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { TimeTrackingCategory } from '@tuturuuu/types/db';
 import type { TaskPriority } from '@tuturuuu/types/primitives/Priority';
@@ -13,15 +22,6 @@ import {
   CardHeader,
   CardTitle,
 } from '@tuturuuu/ui/card';
-import {
-  CheckCircle,
-  CheckSquare,
-  LayoutDashboard,
-  MapPin,
-  Play,
-  PlusCircle,
-  Tag,
-} from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
 import {
   Select,

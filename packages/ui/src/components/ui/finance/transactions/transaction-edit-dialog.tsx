@@ -1,6 +1,20 @@
 'use client';
 
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+  Calendar,
+  Check,
+  DollarSign,
+  FileText,
+  FolderOpen,
+  Loader2,
+  Tag,
+  Trash,
+  TrendingDown,
+  TrendingUp,
+  Wallet as WalletIcon,
+  X,
+} from '@tuturuuu/icons';
 import type { Transaction } from '@tuturuuu/types/primitives/Transaction';
 import type { TransactionCategory } from '@tuturuuu/types/primitives/TransactionCategory';
 import type { Wallet } from '@tuturuuu/types/primitives/Wallet';
@@ -31,20 +45,6 @@ import { Switch } from '@tuturuuu/ui/switch';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { fetcher } from '@tuturuuu/utils/fetcher';
 import { cn } from '@tuturuuu/utils/format';
-import {
-  Calendar,
-  Check,
-  DollarSign,
-  FileText,
-  FolderOpen,
-  Loader2,
-  Tag,
-  Trash,
-  TrendingDown,
-  TrendingUp,
-  Wallet as WalletIcon,
-  X,
-} from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';

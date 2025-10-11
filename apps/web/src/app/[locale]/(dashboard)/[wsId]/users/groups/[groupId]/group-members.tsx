@@ -1,18 +1,6 @@
 'use client';
 
-import { createClient } from '@tuturuuu/supabase/next/client';
-import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
-import { Badge } from '@tuturuuu/ui/badge';
-import { Card, CardContent } from '@tuturuuu/ui/card';
-import { Button } from '@tuturuuu/ui/button';
-import { Avatar, AvatarImage } from '@tuturuuu/ui/avatar';
-import {
-  DropdownMenu,
-  DropdownMenuCheckboxItem,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@tuturuuu/ui/dropdown-menu';
+import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
 import {
   Cake,
   ChevronDown,
@@ -23,18 +11,18 @@ import {
   UserCheck,
   VenusAndMars,
   Ellipsis,
-} from '@tuturuuu/ui/icons';
+} from '@tuturuuu/icons';
 import {
   HoverCard,
   HoverCardContent,
   HoverCardTrigger,
 } from '@tuturuuu/ui/hover-card';
-import { useInfiniteQuery } from '@tanstack/react-query';
-import { useQueryClient } from '@tanstack/react-query';
-import { useFormatter, useTranslations } from 'next-intl';
-import { useMemo, useState } from 'react';
-import Link from 'next/link';
-import GroupMemberActions from './group-member-actions';
+import { createClient } from '@tuturuuu/supabase/next/client';
+import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
+import { Avatar, AvatarImage } from '@tuturuuu/ui/avatar';
+import { Badge } from '@tuturuuu/ui/badge';
+import { Button } from '@tuturuuu/ui/button';
+import { Card, CardContent } from '@tuturuuu/ui/card';
 import {
   Dialog,
   DialogContent,
@@ -43,7 +31,19 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@tuturuuu/ui/dialog';
+import {
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@tuturuuu/ui/dropdown-menu';
 import { toast } from '@tuturuuu/ui/sonner';
+import { useTranslations } from 'next-intl';
+import Link from 'next/link';
+import { useMemo, useState } from 'react';
+import GroupMemberActions from './group-member-actions';
+import { useFormatter } from 'next-intl';
 
 interface GroupMember extends WorkspaceUser {
   role?: string | null;
@@ -314,9 +314,9 @@ export default function GroupMembers({
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+      <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
         {filteredList.length === 0 ? (
-          <div className="text-center py-8 text-muted-foreground">
+          <div className="py-8 text-center text-muted-foreground">
             {t('ws-user-group-details.no_members')}
           </div>
         ) : (
@@ -328,9 +328,9 @@ export default function GroupMembers({
               <HoverCard key={person.id}>
                 <HoverCardTrigger asChild>
                   <Link href={`/${wsId}/users/database/${person.id}`}>
-                    <Card className="p-3 transition duration-200 hover:border-foreground hover:bg-foreground/5 h-full items-center flex w-full relative">
+                    <Card className="relative flex h-full w-full items-center p-3 transition duration-200 hover:border-foreground hover:bg-foreground/5">
                       <CardContent className="p-0">
-                        <div className="flex items-center justify-between pr-12 flex-row">
+                        <div className="flex flex-row items-center justify-between pr-12">
                           <div className="flex items-center gap-3">
                             {hasAvatar ? (
                               <Avatar className="h-8 w-8">
@@ -368,7 +368,7 @@ export default function GroupMembers({
                                 {isManager && (
                                   <Badge
                                     variant="default"
-                                    className="bg-dynamic-green/10 text-dynamic-green border-dynamic-green/20"
+                                    className="border-dynamic-green/20 bg-dynamic-green/10 text-dynamic-green"
                                   >
                                     {t('ws-user-group-details.managers')}
                                   </Badge>
@@ -376,7 +376,7 @@ export default function GroupMembers({
                                 {isGuest && (
                                   <Badge
                                     variant="secondary"
-                                    className="bg-dynamic-orange/10 text-dynamic-orange border-dynamic-orange/20"
+                                    className="border-dynamic-orange/20 bg-dynamic-orange/10 text-dynamic-orange"
                                   >
                                     {t('meet-together.guests')}
                                   </Badge>
@@ -388,7 +388,7 @@ export default function GroupMembers({
                         </div>
                       </CardContent>
                       {/* Ellipsis button pinned to the right side of the card */}
-                      <div className="absolute right-2 top-1/2 -translate-y-1/2 z-10">
+                      <div className="-translate-y-1/2 absolute top-1/2 right-2 z-10">
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <Button
@@ -422,7 +422,7 @@ export default function GroupMembers({
                   <div className="space-y-2">
                     {canViewPersonalInfo && (
                       <>
-                        <div className="text-sm flex items-center gap-2">
+                        <div className="flex items-center gap-2 text-sm">
                           <Phone className="h-4 w-4" />
                           <span className="sr-only">
                             {t('settings-account.phone-number')}
@@ -432,7 +432,7 @@ export default function GroupMembers({
                               t('ws-user-group-attendance.phone_fallback')}
                           </span>
                         </div>
-                        <div className="text-sm flex items-center gap-2">
+                        <div className="flex items-center gap-2 text-sm">
                           <Mail className="h-4 w-4" />
                           <span className="sr-only">
                             {t('ws-emails.singular')}
@@ -441,26 +441,20 @@ export default function GroupMembers({
                         </div>
                       </>
                     )}
-                    {canViewPublicInfo && (
-                      <>
-                        <div className="text-sm flex items-center gap-2">
-                          <VenusAndMars className="h-4 w-4" />
-                          <span className="sr-only">{t('common.gender')}</span>
-                          <span>{person.gender || t('common.unknown')}</span>
-                        </div>
-                        <div className="text-sm flex items-center gap-2">
-                          <Cake className="h-4 w-4" />
-                          <span className="sr-only">
-                            {t('common.birthday')}
-                          </span>
-                          <span>
-                            {person.birthday
-                              ? dateTime(new Date(person.birthday))
-                              : t('common.unknown')}
-                          </span>
-                        </div>
-                      </>
-                    )}
+                    <div className="flex items-center gap-2 text-sm">
+                      <VenusAndMars className="h-4 w-4" />
+                      <span className="sr-only">{t('common.gender')}</span>
+                      <span>{person.gender || t('common.unknown')}</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm">
+                      <Cake className="h-4 w-4" />
+                      <span className="sr-only">{t('common.birthday')}</span>
+                      <span>
+                        {person.birthday
+                          ? new Date(person.birthday).toLocaleDateString()
+                          : t('common.unknown')}
+                      </span>
+                    </div>
                   </div>
                 </HoverCardContent>
               </HoverCard>

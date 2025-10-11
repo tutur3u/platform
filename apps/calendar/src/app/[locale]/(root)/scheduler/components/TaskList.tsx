@@ -1,6 +1,15 @@
 'use client';
 
 import type { Event, Task } from '@tuturuuu/ai/scheduling/types';
+import {
+  CalendarIcon,
+  CheckCircleIcon,
+  ClockIcon,
+  PlusIcon,
+  SplitIcon,
+  Trash2Icon,
+  ZapIcon,
+} from '@tuturuuu/icons';
 import type { TaskPriority } from '@tuturuuu/types/primitives/Priority';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
@@ -11,15 +20,6 @@ import {
   CardHeader,
   CardTitle,
 } from '@tuturuuu/ui/card';
-import {
-  CalendarIcon,
-  CheckCircleIcon,
-  ClockIcon,
-  PlusIcon,
-  SplitIcon,
-  Trash2Icon,
-  ZapIcon,
-} from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
 import { Progress } from '@tuturuuu/ui/progress';

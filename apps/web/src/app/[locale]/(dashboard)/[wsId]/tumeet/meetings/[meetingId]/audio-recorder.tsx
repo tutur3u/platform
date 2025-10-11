@@ -1,6 +1,6 @@
 'use client';
 
-import { Loader2 } from '@tuturuuu/ui/icons';
+import { Loader2 } from '@tuturuuu/icons';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useCallback, useEffect, useRef, useState } from 'react';
 

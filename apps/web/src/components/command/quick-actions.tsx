@@ -1,7 +1,5 @@
 'use client';
 
-import { Button } from '@tuturuuu/ui/button';
-import { CommandGroup, CommandItem } from '@tuturuuu/ui/command';
 import {
   Brain,
   Calendar,
@@ -11,7 +9,9 @@ import {
   PlusCircle,
   Timer,
   TrendingUp,
-} from '@tuturuuu/ui/icons';
+} from '@tuturuuu/icons';
+import { Button } from '@tuturuuu/ui/button';
+import { CommandGroup, CommandItem } from '@tuturuuu/ui/command';
 import { useRouter } from 'next/navigation';
 import { useMemo, useState } from 'react';
 

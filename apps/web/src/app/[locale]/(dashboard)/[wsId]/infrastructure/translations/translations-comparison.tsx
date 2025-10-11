@@ -1,15 +1,5 @@
 'use client';
 
-import { Badge } from '@tuturuuu/ui/badge';
-import { Button } from '@tuturuuu/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from '@tuturuuu/ui/dialog';
 import {
   AlertCircle,
   BarChart3,
@@ -32,7 +22,17 @@ import {
   TrendingUp,
   Wand2,
   XCircle,
-} from '@tuturuuu/ui/icons';
+} from '@tuturuuu/icons';
+import { Badge } from '@tuturuuu/ui/badge';
+import { Button } from '@tuturuuu/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@tuturuuu/ui/dialog';
 import { Input } from '@tuturuuu/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
 import {

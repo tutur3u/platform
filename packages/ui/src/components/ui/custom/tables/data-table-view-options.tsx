@@ -2,7 +2,7 @@
 
 import { DropdownMenuTrigger } from '@radix-ui/react-dropdown-menu';
 import type { Table } from '@tanstack/react-table';
-import { Settings2, UserCog } from 'lucide-react';
+import { Settings2, UserCog } from '@tuturuuu/icons';
 import { Fragment } from 'react';
 import { Button } from '../../button';
 import {

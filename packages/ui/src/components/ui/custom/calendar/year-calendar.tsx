@@ -1,7 +1,7 @@
 'use client';
 
+import { ChevronLeft, ChevronRight } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useState } from 'react';
 import { Calendar } from './core';
 import type { WorkspaceUserAttendance } from './utils';

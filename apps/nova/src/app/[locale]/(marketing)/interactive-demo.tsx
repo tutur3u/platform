@@ -1,6 +1,6 @@
+import { Bot, MessageSquare, Send, Sparkles, User } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import { Card } from '@tuturuuu/ui/card';
-import { Bot, MessageSquare, Send, Sparkles, User } from '@tuturuuu/ui/icons';
 import { motion, useAnimation } from 'framer-motion';
 import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';

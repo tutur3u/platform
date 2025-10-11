@@ -1,5 +1,16 @@
 'use client';
 
+import {
+  AlertCircle,
+  Building2,
+  CalendarDays,
+  CheckCircle2,
+  Clock,
+  Filter,
+  Loader2,
+  Search,
+  Zap,
+} from '@tuturuuu/icons';
 import type { Workspace } from '@tuturuuu/types/db';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Badge } from '@tuturuuu/ui/badge';
@@ -28,17 +39,6 @@ import {
   TableHeader,
   TableRow,
 } from '@tuturuuu/ui/table';
-import {
-  AlertCircle,
-  Building2,
-  CalendarDays,
-  CheckCircle2,
-  Clock,
-  Filter,
-  Loader2,
-  Search,
-  Zap,
-} from 'lucide-react';
 import { useState } from 'react';
 import type { SyncLog } from './types';
 

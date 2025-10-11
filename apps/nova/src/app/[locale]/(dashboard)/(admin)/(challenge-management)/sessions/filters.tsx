@@ -1,7 +1,7 @@
 'use client';
 
+import { LayoutGrid, LayoutList } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
-import { LayoutGrid, LayoutList } from '@tuturuuu/ui/icons';
 import {
   Select,
   SelectContent,
@@ -10,8 +10,8 @@ import {
   SelectValue,
 } from '@tuturuuu/ui/select';
 import { cn } from '@tuturuuu/utils/format';
-import { usePathname, useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
+import { usePathname, useRouter } from 'next/navigation';
 
 interface ChallengeOption {
   id: string;

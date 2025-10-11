@@ -1,5 +1,8 @@
 'use client';
 
+import { ImageCropper } from '@/components/image-cropper';
+import { DatePicker } from '@/components/row-actions/users/date-picker';
+import { Info, Loader2, UserIcon } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
@@ -15,20 +18,17 @@ import {
 } from '@tuturuuu/ui/form';
 import { useForm } from '@tuturuuu/ui/hooks/use-form';
 import { toast } from '@tuturuuu/ui/sonner';
-import { Info, Loader2, UserIcon } from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
 import { zodResolver } from '@tuturuuu/ui/resolvers';
+import { Switch } from '@tuturuuu/ui/switch';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { getInitials } from '@tuturuuu/utils/name-helper';
 import { generateRandomUUID } from '@tuturuuu/utils/uuid-helper';
 import dayjs from 'dayjs';
-import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
+import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import * as z from 'zod';
-import { ImageCropper } from '@/components/image-cropper';
-import { DatePicker } from '@/components/row-actions/users/date-picker';
-import { Switch } from '@tuturuuu/ui/switch';
 
 interface Props {
   wsId: string;
@@ -77,7 +77,7 @@ function LabelWithTooltip({
       <span>{label}</span>
       <Tooltip>
         <TooltipTrigger asChild>
-          <Info className="h-3 w-3 text-muted-foreground cursor-help" />
+          <Info className="h-3 w-3 cursor-help text-muted-foreground" />
         </TooltipTrigger>
         <TooltipContent>
           <p>{tooltip}</p>
@@ -390,7 +390,7 @@ export default function UserForm({
 
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-3">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 border-b p-1">
+          <div className="grid grid-cols-1 gap-3 border-b p-1 md:grid-cols-2">
             {/* User ID - Full width when editing */}
             {data?.id && showUserID && (
               <div className="col-span-2">
@@ -724,7 +724,7 @@ export default function UserForm({
                           checked={!!field.value}
                           onCheckedChange={field.onChange}
                         />
-                        <span className="text-sm text-muted-foreground">
+                        <span className="text-muted-foreground text-sm">
                           {t('ws-users.mark_as_guest')}
                         </span>
                       </div>

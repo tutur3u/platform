@@ -1,12 +1,12 @@
 'use client';
 
+import { Check, Copy } from '@tuturuuu/icons';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
-import { Check, Copy } from '@tuturuuu/ui/icons';
 import { toast } from '@tuturuuu/ui/sonner';
 import { motion } from 'framer-motion';
-import { Inter, Noto_Sans } from 'next/font/google';
 import { useTranslations } from 'next-intl';
+import { Inter, Noto_Sans } from 'next/font/google';
 import { useState } from 'react';
 import LogoTab from './logo-tab';
 
@@ -340,7 +340,7 @@ const BrandingPage = () => {
                   >
                     {font.name}
                   </h3>
-                  <p className="text-foreground/60 text-base sm:text-lg">
+                  <p className="text-base text-foreground/60 sm:text-lg">
                     {font.usage}
                   </p>
                 </div>

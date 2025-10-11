@@ -1,3 +1,6 @@
+import { CustomDataTable } from '@/components/custom-data-table';
+import WorkspaceWrapper from '@/components/workspace-wrapper';
+import { Settings } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import type { ProductPromotion } from '@tuturuuu/types/primitives/ProductPromotion';
 import {
@@ -6,13 +9,10 @@ import {
 } from '@tuturuuu/utils/workspace-helper';
 import { Button } from '@tuturuuu/ui/button';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
-import { Settings } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
-import { CustomDataTable } from '@/components/custom-data-table';
-import WorkspaceWrapper from '@/components/workspace-wrapper';
 import { getPromotionColumns } from './columns';
 import { PromotionForm } from './form';
 import WorkspaceSettingsForm from './settings-form';
@@ -125,7 +125,7 @@ export default async function WorkspacePromotionsPage({
                 !settingsRow ? (
                   <Button
                     size="xs"
-                    className="w-full md:w-fit border border-dynamic-red/30 bg-dynamic-red/10 text-dynamic-red hover:bg-dynamic-red/15"
+                    className="w-full border border-dynamic-red/30 bg-dynamic-red/10 text-dynamic-red hover:bg-dynamic-red/15 md:w-fit"
                     title={t('ws-inventory-promotions.create_settings_tooltip')}
                   >
                     <Settings className="h-4 w-4" />

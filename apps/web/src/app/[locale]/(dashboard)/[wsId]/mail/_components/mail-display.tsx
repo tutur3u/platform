@@ -1,14 +1,6 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import type {
-  InternalEmail,
-  User,
-  UserPrivateDetails,
-} from '@tuturuuu/types/db';
-import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
-import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
-import { Button } from '@tuturuuu/ui/button';
 import {
   Archive,
   ChevronDown,
@@ -20,9 +12,17 @@ import {
   ReplyAll,
   Trash2,
   UserIcon,
-} from '@tuturuuu/ui/icons';
+} from '@tuturuuu/icons';
+import type {
+  InternalEmail,
+  User,
+  UserPrivateDetails,
+} from '@tuturuuu/types/db';
+import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
+import type { JSONContent } from '@tuturuuu/types/tiptap';
+import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
+import { Button } from '@tuturuuu/ui/button';
 import { ScrollArea } from '@tuturuuu/ui/scroll-area';
-import type { JSONContent } from '@tuturuuu/ui/tiptap';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { formatEmailAddresses } from '@tuturuuu/utils/email/client';
 import { cn } from '@tuturuuu/utils/format';
@@ -159,9 +159,10 @@ function parseEmailThread(content: string): ThreadMessage[] {
   // Try each pattern
   for (const pattern of patterns) {
     pattern.regex.lastIndex = 0; // Reset regex
-    let match;
+    let match: RegExpExecArray | null;
 
-    while ((match = pattern.regex.exec(cleanContent)) !== null) {
+    while (pattern.regex.exec(cleanContent) !== null) {
+      match = pattern.regex.exec(cleanContent) as RegExpExecArray;
       const [fullMatch, dateOrFrom, senderOrDate, messageContent] = match;
 
       if (pattern.isHtmlQuote) {
@@ -225,7 +226,9 @@ function parseEmailThread(content: string): ThreadMessage[] {
       } else if (messageContent?.trim()) {
         // Handle other patterns
         const isDateFirst = pattern.isDateFirst;
-        let from, date;
+
+        let from: string | undefined;
+        let date: string | undefined;
 
         if (pattern.hasTimeInDate) {
           // Special handling for "On [date] at [time], [sender] wrote:" format

@@ -20,10 +20,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@tuturuuu/ui/select';
+import { XLSX } from '@tuturuuu/ui/xlsx';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { jsonToCSV } from 'react-papaparse';
-import * as XLSX from 'xlsx';
 
 interface SearchParams {
   q?: string;

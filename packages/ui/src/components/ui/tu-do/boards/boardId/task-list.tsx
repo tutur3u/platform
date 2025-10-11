@@ -1,13 +1,17 @@
 import { useDndMonitor, useDroppable } from '@dnd-kit/core';
-import { useSortable } from '@dnd-kit/sortable';
+import {
+  SortableContext,
+  useSortable,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import { GripVertical } from '@tuturuuu/icons';
 import type { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Card } from '@tuturuuu/ui/card';
-import { GripVertical } from '@tuturuuu/ui/icons';
 import { DEV_MODE } from '@tuturuuu/utils/constants';
 import { cn } from '@tuturuuu/utils/format';
 import { useParams } from 'next/navigation';
@@ -48,6 +52,15 @@ interface BoardColumnProps {
   isPersonalWorkspace?: boolean;
   onTaskSelect?: (taskId: string, event: React.MouseEvent) => void;
   onAddTask?: (list: TaskList) => void;
+  dragPreviewPosition?: {
+    listId: string;
+    overTaskId: string | null;
+    position: 'before' | 'after' | 'empty';
+    task: Task;
+    height: number;
+  } | null;
+  taskHeightsRef?: React.MutableRefObject<Map<string, number>>;
+  optimisticUpdateInProgress?: Set<string>;
 }
 
 function BoardColumnInner({
@@ -61,6 +74,9 @@ function BoardColumnInner({
   isMultiSelectMode,
   isPersonalWorkspace,
   onAddTask,
+  dragPreviewPosition,
+  taskHeightsRef,
+  optimisticUpdateInProgress,
 }: BoardColumnProps) {
   const [localCreateOpen, setLocalCreateOpen] = useState(false);
   const params = useParams();
@@ -193,6 +209,9 @@ function BoardColumnInner({
         selectedTasks={selectedTasks}
         isPersonalWorkspace={isPersonalWorkspace}
         onTaskSelect={onTaskSelect}
+        dragPreviewPosition={dragPreviewPosition}
+        taskHeightsRef={taskHeightsRef}
+        optimisticUpdateInProgress={optimisticUpdateInProgress}
       />
 
       <div className="rounded-b-xl border-t p-3 backdrop-blur-sm">
@@ -261,6 +280,15 @@ interface VirtualizedTaskListProps {
   selectedTasks?: Set<string>;
   isPersonalWorkspace?: boolean;
   onTaskSelect?: (taskId: string, event: React.MouseEvent) => void;
+  dragPreviewPosition?: {
+    listId: string;
+    overTaskId: string | null;
+    position: 'before' | 'after' | 'empty';
+    task: Task;
+    height: number;
+  } | null;
+  taskHeightsRef?: React.MutableRefObject<Map<string, number>>;
+  optimisticUpdateInProgress?: Set<string>;
 }
 
 function VirtualizedTaskListInner({
@@ -272,6 +300,9 @@ function VirtualizedTaskListInner({
   selectedTasks,
   isPersonalWorkspace,
   onTaskSelect,
+  dragPreviewPosition,
+  taskHeightsRef: externalTaskHeightsRef,
+  optimisticUpdateInProgress,
 }: VirtualizedTaskListProps) {
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const { setNodeRef: setDroppableRef, isOver: isColumnDragOver } =
@@ -360,6 +391,12 @@ function VirtualizedTaskListInner({
       const prev = sizesRef.current[id];
       if (prev === height) return;
       sizesRef.current[id] = height;
+
+      // Also update external taskHeightsRef if provided
+      if (externalTaskHeightsRef) {
+        externalTaskHeightsRef.current.set(id, height);
+      }
+
       const values = Object.values(sizesRef.current);
       if (values.length > 0) {
         const sum = values.reduce((a, b) => a + b, 0);
@@ -367,7 +404,7 @@ function VirtualizedTaskListInner({
       }
       rebuildPrefixHeights();
     },
-    [rebuildPrefixHeights]
+    [rebuildPrefixHeights, externalTaskHeightsRef]
   );
 
   // Initialize idsRef when task list changes
@@ -426,32 +463,155 @@ function VirtualizedTaskListInner({
     <div
       ref={attachScrollableRef}
       className={cn(
-        'h-full flex-1 space-y-2 overflow-y-auto p-3 transition-colors',
+        'relative h-full flex-1 space-y-2 overflow-y-auto p-3 transition-all duration-200',
         isColumnDragOver &&
-          'rounded-lg bg-dynamic-blue/5 ring-1 ring-dynamic-blue/30'
+          'fade-in-0 animate-in rounded-lg bg-gradient-to-br from-primary/10 via-primary/5 to-transparent shadow-inner ring-2 ring-primary/40 duration-300'
       )}
       // When not virtualizing we still want consistent styling
       data-virtualized={shouldVirtualize ? 'true' : 'false'}
     >
+      {/* Drop indicator when hovering over empty column */}
+      {tasks.length === 0 && isColumnDragOver && (
+        <div className="fade-in-0 zoom-in-95 absolute inset-4 flex animate-in flex-col items-center justify-center gap-3 rounded-lg border-2 border-primary/50 border-dashed bg-primary/5 duration-300">
+          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/20 ring-4 ring-primary/10">
+            <svg
+              className="h-6 w-6 animate-bounce text-primary"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <title>
+                Drop here to add (or drag tasks onto the + Add task button)
+              </title>
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M19 14l-7 7m0 0l-7-7m7 7V3"
+              />
+            </svg>
+          </div>
+          <p className="font-semibold text-primary text-sm">Drop here to add</p>
+        </div>
+      )}
       {tasks.length === 0 ? (
         <div className="flex h-32 items-center justify-center text-muted-foreground">
           <p className="text-center text-sm">No tasks yet</p>
         </div>
       ) : shouldVirtualize ? (
-        <div style={{ height: totalHeight, position: 'relative' }}>
-          <div
-            className="grid gap-2"
-            style={{
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              right: 0,
-              transform: `translateY(${offsetY}px)`,
-            }}
-          >
-            {visibleTasks.map((task) => (
+        <SortableContext
+          items={tasks.map((t) => t.id)}
+          strategy={verticalListSortingStrategy}
+        >
+          <div style={{ height: totalHeight, position: 'relative' }}>
+            <div
+              className="grid gap-2"
+              style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                right: 0,
+                transform: `translateY(${offsetY}px)`,
+              }}
+            >
+              {/* Preview at beginning of list - when dropping on column header */}
+              {dragPreviewPosition?.position === 'before' &&
+                dragPreviewPosition.overTaskId === null && (
+                  <div
+                    className="flex items-center justify-center rounded-lg border-2 border-primary/50 border-dashed bg-primary/5 opacity-60"
+                    style={{ height: `${dragPreviewPosition.height}px` }}
+                  >
+                    <p className="text-muted-foreground text-xs">
+                      {dragPreviewPosition.task.name}
+                    </p>
+                  </div>
+                )}
+
+              {visibleTasks.map((task, idx) => (
+                <React.Fragment key={task.id}>
+                  {/* Preview before this specific task - but NOT for the task being dragged or when dragging within the same list */}
+                  {dragPreviewPosition?.position === 'before' &&
+                    dragPreviewPosition.overTaskId === task.id &&
+                    dragPreviewPosition.task.id !== task.id &&
+                    dragPreviewPosition.task.list_id !== column.id && (
+                      <div
+                        className="flex items-center justify-center rounded-lg border-2 border-primary/50 border-dashed bg-primary/5 opacity-60"
+                        style={{ height: `${dragPreviewPosition.height}px` }}
+                      >
+                        <p className="text-muted-foreground text-xs">
+                          {dragPreviewPosition.task.name}
+                        </p>
+                      </div>
+                    )}
+
+                  <MeasuredTaskCard
+                    task={task}
+                    taskList={column}
+                    boardId={boardId}
+                    onUpdate={onUpdate}
+                    isSelected={Boolean(
+                      isMultiSelectMode && selectedTasks?.has(task.id)
+                    )}
+                    isMultiSelectMode={isMultiSelectMode}
+                    isPersonalWorkspace={isPersonalWorkspace}
+                    onSelect={onTaskSelect}
+                    onHeight={(h) => updateSize(task.id, h)}
+                    optimisticUpdateInProgress={optimisticUpdateInProgress}
+                  />
+
+                  {/* Preview at end of list - when dropping on column surface */}
+                  {dragPreviewPosition?.position === 'empty' &&
+                    idx === visibleTasks.length - 1 && (
+                      <div
+                        className="flex items-center justify-center rounded-lg border-2 border-primary/50 border-dashed bg-primary/5 opacity-60"
+                        style={{ height: `${dragPreviewPosition.height}px` }}
+                      >
+                        <p className="text-muted-foreground text-xs">
+                          {dragPreviewPosition.task.name}
+                        </p>
+                      </div>
+                    )}
+                </React.Fragment>
+              ))}
+            </div>
+          </div>
+        </SortableContext>
+      ) : (
+        <SortableContext
+          items={tasks.map((t) => t.id)}
+          strategy={verticalListSortingStrategy}
+        >
+          {/* Preview at beginning of list - when dropping on column header */}
+          {dragPreviewPosition?.position === 'before' &&
+            dragPreviewPosition.overTaskId === null && (
+              <div
+                className="flex items-center justify-center rounded-lg border-2 border-primary/50 border-dashed bg-primary/5 opacity-60"
+                style={{ height: `${dragPreviewPosition.height}px` }}
+              >
+                <p className="text-muted-foreground text-xs">
+                  {dragPreviewPosition.task.name}
+                </p>
+              </div>
+            )}
+
+          {tasks.map((task, idx) => (
+            <React.Fragment key={task.id}>
+              {/* Preview before this specific task - but NOT for the task being dragged or when dragging within the same list */}
+              {dragPreviewPosition?.position === 'before' &&
+                dragPreviewPosition.overTaskId === task.id &&
+                dragPreviewPosition.task.id !== task.id &&
+                dragPreviewPosition.task.list_id !== column.id && (
+                  <div
+                    className="flex items-center justify-center rounded-lg border-2 border-primary/50 border-dashed bg-primary/5 opacity-60"
+                    style={{ height: `${dragPreviewPosition.height}px` }}
+                  >
+                    <p className="text-muted-foreground text-xs">
+                      {dragPreviewPosition.task.name}
+                    </p>
+                  </div>
+                )}
+
               <MeasuredTaskCard
-                key={task.id}
                 task={task}
                 taskList={column}
                 boardId={boardId}
@@ -463,27 +623,24 @@ function VirtualizedTaskListInner({
                 isPersonalWorkspace={isPersonalWorkspace}
                 onSelect={onTaskSelect}
                 onHeight={(h) => updateSize(task.id, h)}
+                optimisticUpdateInProgress={optimisticUpdateInProgress}
               />
-            ))}
-          </div>
-        </div>
-      ) : (
-        tasks.map((task) => (
-          <MeasuredTaskCard
-            key={task.id}
-            task={task}
-            taskList={column}
-            boardId={boardId}
-            onUpdate={onUpdate}
-            isSelected={Boolean(
-              isMultiSelectMode && selectedTasks?.has(task.id)
-            )}
-            isMultiSelectMode={isMultiSelectMode}
-            isPersonalWorkspace={isPersonalWorkspace}
-            onSelect={onTaskSelect}
-            onHeight={(h) => updateSize(task.id, h)}
-          />
-        ))
+
+              {/* Preview at end of list - when dropping on column surface */}
+              {dragPreviewPosition?.position === 'empty' &&
+                idx === tasks.length - 1 && (
+                  <div
+                    className="flex items-center justify-center rounded-lg border-2 border-primary/50 border-dashed bg-primary/5 opacity-60"
+                    style={{ height: `${dragPreviewPosition.height}px` }}
+                  >
+                    <p className="text-muted-foreground text-xs">
+                      {dragPreviewPosition.task.name}
+                    </p>
+                  </div>
+                )}
+            </React.Fragment>
+          ))}
+        </SortableContext>
       )}
     </div>
   );

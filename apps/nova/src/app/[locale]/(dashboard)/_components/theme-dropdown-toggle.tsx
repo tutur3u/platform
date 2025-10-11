@@ -1,10 +1,10 @@
+import { Moon, Sun } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
-import { Moon, Sun } from '@tuturuuu/ui/icons';
 import { ThemeDropdownItems } from './theme-dropdown-items';
 
 export function ThemeDropdownToggle() {

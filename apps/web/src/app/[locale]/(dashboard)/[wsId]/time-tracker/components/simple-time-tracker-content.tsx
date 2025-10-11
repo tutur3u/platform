@@ -1,9 +1,9 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
+import { Clock, Timer, TrendingUp } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
-import { Clock, Timer, TrendingUp } from '@tuturuuu/ui/icons';
 import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone';
 import utc from 'dayjs/plugin/utc';

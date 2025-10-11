@@ -1,12 +1,7 @@
 'use client';
 
+import { Globe, MousePointerClick, TrendingUp, Users } from '@tuturuuu/icons';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
-import {
-  Globe,
-  MousePointerClick,
-  TrendingUp,
-  Users,
-} from '@tuturuuu/ui/icons';
 import { useTranslations } from 'next-intl';
 
 interface AnalyticsCardsProps {

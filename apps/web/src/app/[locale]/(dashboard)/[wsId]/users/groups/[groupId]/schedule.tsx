@@ -1,10 +1,10 @@
 'use client';
 
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
+import { ChevronLeft, ChevronRight } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import { Button } from '@tuturuuu/ui/button';
 import useSearchParams from '@tuturuuu/ui/hooks/useSearchParams';
-import { ChevronLeft, ChevronRight } from '@tuturuuu/ui/icons';
 import { cn } from '@tuturuuu/utils/format';
 import { format, parse } from 'date-fns';
 import { useLocale } from 'next-intl';

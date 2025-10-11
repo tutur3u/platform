@@ -1,5 +1,6 @@
 'use client';
 
+import { ArrowLeft, ArrowRight, Loader2, User } from '@tuturuuu/icons';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
@@ -12,7 +13,6 @@ import {
   FormMessage,
 } from '@tuturuuu/ui/form';
 import { useForm } from '@tuturuuu/ui/hooks/use-form';
-import { ArrowLeft, ArrowRight, Loader2, User } from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
 import { zodResolver } from '@tuturuuu/ui/resolvers';
 import { Textarea } from '@tuturuuu/ui/textarea';

@@ -1,6 +1,7 @@
 'use client';
 
 import type { Row } from '@tanstack/react-table';
+import { Ellipsis } from '@tuturuuu/icons';
 import type { ProductCategory } from '@tuturuuu/types/primitives/ProductCategory';
 import { Button } from '@tuturuuu/ui/button';
 import ModifiableDialogTrigger from '@tuturuuu/ui/custom/modifiable-dialog-trigger';
@@ -12,7 +13,6 @@ import {
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
 import { toast } from '@tuturuuu/ui/sonner';
-import { Ellipsis } from '@tuturuuu/ui/icons';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';

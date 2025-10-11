@@ -1,15 +1,9 @@
+import { ArrowUpRight, Check, Info, Sparkles, Trophy } from '@tuturuuu/icons';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
-import {
-  ArrowUpRight,
-  Check,
-  Info,
-  Sparkles,
-  Trophy,
-} from '@tuturuuu/ui/icons';
 import { motion } from 'framer-motion';
-import { useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
+import { useRouter, useSearchParams } from 'next/navigation';
 
 const CURRENT_CHALLENGE_ID = '1d81a081-5f5f-4a86-95c5-a72eb4d0e787';
 

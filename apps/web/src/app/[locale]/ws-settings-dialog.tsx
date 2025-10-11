@@ -1,6 +1,20 @@
 'use client';
 
 import {
+  Bell,
+  Check,
+  Globe,
+  Home,
+  Keyboard,
+  Link,
+  Lock,
+  Menu,
+  MessageCircle,
+  Paintbrush,
+  Settings,
+  Video,
+} from '@tuturuuu/icons';
+import {
   Breadcrumb,
   BreadcrumbItem,
   BreadcrumbLink,
@@ -16,20 +30,6 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@tuturuuu/ui/dialog';
-import {
-  Bell,
-  Check,
-  Globe,
-  Home,
-  Keyboard,
-  Link,
-  Lock,
-  Menu,
-  MessageCircle,
-  Paintbrush,
-  Settings,
-  Video,
-} from '@tuturuuu/ui/icons';
 import {
   Sidebar,
   SidebarContent,

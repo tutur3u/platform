@@ -1,5 +1,6 @@
 'use client';
 
+import { Activity, BarChart3, TrendingUp } from '@tuturuuu/icons';
 import {
   Card,
   CardContent,
@@ -15,7 +16,6 @@ import {
   ChartTooltipContent,
 } from '@tuturuuu/ui/chart';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
-import { Activity, BarChart3, TrendingUp } from 'lucide-react';
 import {
   Area,
   AreaChart,

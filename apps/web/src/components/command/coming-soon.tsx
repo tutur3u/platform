@@ -1,8 +1,8 @@
 'use client';
 
+import { ChevronDown, ChevronRight, Search, Zap } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import { CommandGroup, CommandItem } from '@tuturuuu/ui/command';
-import { ChevronDown, ChevronRight, Search, Zap } from '@tuturuuu/ui/icons';
 import { useState } from 'react';
 
 export function ComingSoonSection() {

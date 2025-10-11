@@ -1,4 +1,3 @@
-import { Card } from '@tuturuuu/ui/card';
 import {
   Brain,
   Code2,
@@ -8,7 +7,8 @@ import {
   MessageSquareCode,
   Sparkles,
   Users,
-} from '@tuturuuu/ui/icons';
+} from '@tuturuuu/icons';
+import { Card } from '@tuturuuu/ui/card';
 import { motion, useAnimation } from 'framer-motion';
 import { useTranslations } from 'next-intl';
 import { type ReactNode, useEffect } from 'react';

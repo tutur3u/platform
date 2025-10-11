@@ -1,13 +1,13 @@
 import { match } from '@formatjs/intl-localematcher';
-import { createCentralizedAuthMiddleware } from '@tuturuuu/auth/middleware';
+import { createCentralizedAuthMiddleware } from '@tuturuuu/auth/proxy';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { getUserDefaultWorkspace } from '@tuturuuu/utils/user-helper';
 import { isPersonalWorkspace } from '@tuturuuu/utils/workspace-helper';
 import Negotiator from 'negotiator';
+import createIntlMiddleware from 'next-intl/middleware';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
-import createIntlMiddleware from 'next-intl/middleware';
 import { LOCALE_COOKIE_NAME, PORT, PUBLIC_PATHS } from './constants/common';
 import { defaultLocale, type Locale, supportedLocales } from './i18n/routing';
 

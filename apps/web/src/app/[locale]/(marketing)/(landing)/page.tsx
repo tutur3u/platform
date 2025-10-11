@@ -1,8 +1,5 @@
 'use client';
 
-import { Badge } from '@tuturuuu/ui/badge';
-import { Button } from '@tuturuuu/ui/button';
-import { Card } from '@tuturuuu/ui/card';
 import {
   ArrowRight,
   BarChart3,
@@ -26,12 +23,16 @@ import {
   Rocket,
   Shield,
   Sparkles,
+  Star,
   Target,
   TrendingUp,
   Users,
   Wallet,
   Zap,
-} from '@tuturuuu/ui/icons';
+} from '@tuturuuu/icons';
+import { Badge } from '@tuturuuu/ui/badge';
+import { Button } from '@tuturuuu/ui/button';
+import { Card } from '@tuturuuu/ui/card';
 import { cn } from '@tuturuuu/utils/format';
 import { motion } from 'framer-motion';
 import { useTranslations } from 'next-intl';
@@ -40,7 +41,7 @@ import Link from 'next/link';
 export default function MarketingPage() {
   const t = useTranslations('landing');
   return (
-    <main className="relative mx-auto overflow-x-clip text-balance">
+    <main className="relative mx-auto w-full overflow-x-hidden text-balance">
       {/* Dynamic Floating Orbs */}
       <div className="-z-10 pointer-events-none fixed inset-0">
         <motion.div
@@ -89,7 +90,7 @@ export default function MarketingPage() {
 
       {/* Hero Section */}
       <section className="relative px-4 pt-24 pb-16 sm:px-6 sm:pt-32 sm:pb-20 lg:px-8 lg:pt-40 lg:pb-24">
-        <div className="container mx-auto max-w-7xl">
+        <div className="mx-auto max-w-7xl">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
@@ -206,7 +207,7 @@ export default function MarketingPage() {
 
       {/* Impact Stats Section */}
       <section className="relative px-4 py-24 sm:px-6 lg:px-8">
-        <div className="container mx-auto max-w-7xl">
+        <div className="mx-auto max-w-7xl">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -310,7 +311,7 @@ export default function MarketingPage() {
         id="features"
         className="relative scroll-mt-20 px-4 py-16 sm:px-6 sm:py-20 lg:px-8 lg:py-24"
       >
-        <div className="container mx-auto max-w-7xl">
+        <div className="mx-auto max-w-7xl">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -425,7 +426,7 @@ export default function MarketingPage() {
 
       {/* Interactive Demo Section */}
       <section className="relative px-4 py-24 sm:px-6 lg:px-8">
-        <div className="container mx-auto max-w-7xl">
+        <div className="mx-auto max-w-7xl">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -1078,7 +1079,7 @@ export default function MarketingPage() {
         id="pricing"
         className="relative scroll-mt-20 px-4 py-24 sm:px-6 lg:px-8"
       >
-        <div className="container mx-auto max-w-7xl">
+        <div className="mx-auto max-w-7xl">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -1284,7 +1285,7 @@ export default function MarketingPage() {
 
       {/* AI Core Section */}
       <section className="relative px-4 py-24 sm:px-6 lg:px-8">
-        <div className="container mx-auto max-w-7xl">
+        <div className="mx-auto max-w-7xl">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -1306,7 +1307,7 @@ export default function MarketingPage() {
             <div className="grid gap-8 lg:grid-cols-2">
               {/* Mira Highlight */}
               <div className="lg:col-span-2">
-                <div className="flex items-start gap-6">
+                <div className="flex flex-col items-start gap-6 md:flex-row">
                   <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-dynamic-pink/20 to-dynamic-purple/20">
                     <Bot className="h-10 w-10 text-dynamic-pink" />
                   </div>
@@ -1410,7 +1411,7 @@ export default function MarketingPage() {
 
       {/* CTA Section */}
       <section className="relative px-4 py-24 pb-32 sm:px-6 lg:px-8">
-        <div className="container mx-auto max-w-5xl">
+        <div className="mx-auto max-w-5xl">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -1449,7 +1450,7 @@ export default function MarketingPage() {
                       href="https://github.com/tutur3u/platform"
                       target="_blank"
                     >
-                      <GitBranch className="mr-2 h-5 w-5" />
+                      <Star className="mr-2 h-5 w-5" />
                       {t('cta.starGitHub')}
                     </Link>
                   </Button>

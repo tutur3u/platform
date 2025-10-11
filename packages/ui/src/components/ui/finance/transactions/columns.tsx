@@ -1,14 +1,14 @@
 'use client';
 
 import type { ColumnDef } from '@tanstack/react-table';
+import { Check, X } from '@tuturuuu/icons';
 import type { Transaction } from '@tuturuuu/types/primitives/Transaction';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { TransactionRowActions } from '@tuturuuu/ui/finance/transactions/row-actions';
 import moment from 'moment';
-import { DataTableColumnHeader } from '../../custom/tables/data-table-column-header';
-import { Check, X } from '../../icons';
 import 'moment/locale/vi';
 import { useLocale } from 'next-intl';
+import { DataTableColumnHeader } from '../../custom/tables/data-table-column-header';
 
 function getAvatarPlaceholder(name: string) {
   return `https://ui-avatars.com/api/?name=${name}`;

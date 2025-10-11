@@ -1,5 +1,6 @@
 'use client';
 
+import { Download, FileText, Table } from '@tuturuuu/icons';
 import type { WorkspaceAIExecution } from '@tuturuuu/types/db';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -9,7 +10,6 @@ import {
   CardHeader,
   CardTitle,
 } from '@tuturuuu/ui/card';
-import { Download, FileText, Table } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { calculateCost } from '../utils/cost-calculator';
 

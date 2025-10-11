@@ -1,7 +1,7 @@
+import { User } from '@tuturuuu/icons';
 import type { SupabaseClient } from '@tuturuuu/supabase/next/client';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
-import { User } from '@tuturuuu/ui/icons';
 import { getInitials } from '@tuturuuu/utils/name-helper';
 import type { Metadata } from 'next';
 import Image from 'next/image';

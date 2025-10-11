@@ -1,5 +1,6 @@
 'use client';
 
+import { PlusIcon, Trash2 } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import { Label } from '@tuturuuu/ui/label';
 import {
@@ -10,7 +11,6 @@ import {
   SelectValue,
 } from '@tuturuuu/ui/select';
 import { Switch } from '@tuturuuu/ui/switch';
-import { PlusIcon, Trash2 } from 'lucide-react';
 
 export type ReminderTime =
   | '0' // At time of event

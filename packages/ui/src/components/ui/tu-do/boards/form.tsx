@@ -1,5 +1,6 @@
 'use client';
 
+import { Crown, FileText, TrendingUp, Users } from '@tuturuuu/icons';
 import type { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
 import type { TaskBoard } from '@tuturuuu/types/primitives/TaskBoard';
 import { Badge } from '@tuturuuu/ui/badge';
@@ -22,7 +23,6 @@ import {
 } from '@tuturuuu/ui/form';
 import { useForm } from '@tuturuuu/ui/hooks/use-form';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
-import { Crown, FileText, TrendingUp, Users } from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
 import { RadioGroup, RadioGroupItem } from '@tuturuuu/ui/radio-group';
@@ -36,8 +36,8 @@ import {
   useCreateBoardWithTemplate,
   useStatusTemplates,
 } from '@tuturuuu/utils/task-helper';
-import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
+import { useRouter } from 'next/navigation';
 import React, { useId } from 'react';
 import * as z from 'zod';
 import IconPicker from '../../custom/icon-picker';

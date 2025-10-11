@@ -1,5 +1,19 @@
 'use client';
 
+import {
+  AlertCircle,
+  ArrowRight,
+  Calendar,
+  CalendarCheck,
+  CalendarX,
+  CheckCircle,
+  Clock,
+  Eye,
+  MoreHorizontal,
+  Pencil,
+  TimerOff,
+  Trash2,
+} from '@tuturuuu/icons';
 import type { NovaExtendedChallenge } from '@tuturuuu/types/db';
 import {
   AlertDialog,
@@ -27,28 +41,14 @@ import {
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
 import { useToast } from '@tuturuuu/ui/hooks/use-toast';
-import {
-  AlertCircle,
-  ArrowRight,
-  Calendar,
-  CalendarCheck,
-  CalendarX,
-  CheckCircle,
-  Clock,
-  Eye,
-  MoreHorizontal,
-  Pencil,
-  TimerOff,
-  Trash2,
-} from '@tuturuuu/ui/icons';
 import { Progress } from '@tuturuuu/ui/progress';
 import { formatDuration } from '@tuturuuu/utils/format';
 import { format, formatDistanceToNow } from 'date-fns';
-import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
+import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
-import { Countdown } from './Countdown';
 import { ConfirmDialog } from './confirmDialog';
+import { Countdown } from './Countdown';
 import EditChallengeDialog from './editChallengeDialog';
 import { TimeProgress } from './TimeProgress';
 

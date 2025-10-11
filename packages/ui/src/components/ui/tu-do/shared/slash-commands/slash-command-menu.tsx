@@ -1,4 +1,5 @@
 import { cn } from '@tuturuuu/utils/format';
+// @ts-expect-error - Bun types issue with react-dom subpath
 import { createPortal } from 'react-dom';
 import type { SlashCommandDefinition } from './definitions';
 
