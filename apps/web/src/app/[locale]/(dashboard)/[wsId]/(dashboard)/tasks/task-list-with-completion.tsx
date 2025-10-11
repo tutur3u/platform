@@ -186,7 +186,7 @@ export default function TaskListWithCompletion({
 
     // Type assertion is safe here because we're transforming the nested structure
     // to match the flat structure expected by openTask (Task type from primitives)
-    openTask(transformedTask as PrimitiveTask, boardId);
+    openTask(transformedTask as unknown as PrimitiveTask, boardId);
   };
 
   const getPriorityColor = (priority: string | null) => {
