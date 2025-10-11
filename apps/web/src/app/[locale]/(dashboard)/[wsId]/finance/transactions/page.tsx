@@ -1,5 +1,5 @@
+import WorkspaceWrapper from '@/components/workspace-wrapper';
 import TransactionsPage from '@tuturuuu/ui/finance/transactions/transactions-page';
-import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
@@ -23,11 +23,12 @@ export default async function WorkspaceTransactionsPage({
   params,
   searchParams,
 }: Props) {
-  const { wsId: id } = await params;
-
-  const workspace = await getWorkspace(id);
-  const wsId = workspace.id;
-  const sp = await searchParams;
-
-  return <TransactionsPage wsId={wsId} searchParams={sp} />;
+  return (
+    <WorkspaceWrapper params={params}>
+      {async ({ wsId }) => {
+        const sp = await searchParams;
+        return <TransactionsPage wsId={wsId} searchParams={sp} />;
+      }}
+    </WorkspaceWrapper>
+  );
 }

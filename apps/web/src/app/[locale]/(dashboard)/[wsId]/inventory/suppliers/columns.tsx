@@ -8,7 +8,12 @@ import { ProductSupplierRowActions } from './row-actions';
 
 export const productSupplierColumns = (
   t: any,
-  namespace: string | undefined
+  namespace: string | undefined,
+  extraColumns?: any[],
+  extraData?: {
+    canDeleteInventory?: boolean;
+    canUpdateInventory?: boolean;
+  }
 ): ColumnDef<ProductSupplier>[] => [
   // {
   //   id: 'select',
@@ -72,6 +77,12 @@ export const productSupplierColumns = (
   },
   {
     id: 'actions',
-    cell: ({ row }) => <ProductSupplierRowActions row={row} />,
+    cell: ({ row }) => (
+      <ProductSupplierRowActions
+        row={row}
+        canDeleteInventory={extraData?.canDeleteInventory}
+        canUpdateInventory={extraData?.canUpdateInventory}
+      />
+    ),
   },
 ];

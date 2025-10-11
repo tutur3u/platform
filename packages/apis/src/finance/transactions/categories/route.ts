@@ -1,6 +1,8 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
 
+import { getPermissions } from '@tuturuuu/utils/workspace-helper';
+
 interface Params {
   params: Promise<{
     wsId: string;
@@ -10,6 +12,17 @@ interface Params {
 export async function GET(_: Request, { params }: Params) {
   const supabase = await createClient();
   const { wsId } = await params;
+
+  const { withoutPermission } = await getPermissions({
+    wsId,
+  });
+
+  if (withoutPermission('view_transactions')) {
+    return NextResponse.json(
+      { message: 'Insufficient permissions' },
+      { status: 403 }
+    );
+  }
 
   const { data, error } = await supabase
     .rpc('get_transaction_categories_with_amount_by_workspace', {
@@ -30,8 +43,19 @@ export async function GET(_: Request, { params }: Params) {
 
 export async function POST(req: Request, { params }: Params) {
   const supabase = await createClient();
-  const data = await req.json();
   const { wsId } = await params;
+  const data = await req.json();
+
+  const { withoutPermission } = await getPermissions({
+    wsId,
+  });
+
+  if (withoutPermission('create_transactions')) {
+    return NextResponse.json(
+      { message: 'Insufficient permissions' },
+      { status: 403 }
+    );
+  }
 
   const { error } = await supabase
     .from('transaction_categories')

@@ -16,6 +16,9 @@ interface Props {
   warehouses: ProductWarehouse[];
   units: ProductUnit[];
   wsId: string;
+  canCreateInventory: boolean;
+  canUpdateInventory: boolean;
+  canDeleteInventory: boolean;
 }
 
 export function ProductsPageClient({
@@ -25,6 +28,9 @@ export function ProductsPageClient({
   warehouses,
   units,
   wsId,
+  canCreateInventory,
+  canUpdateInventory,
+  canDeleteInventory,
 }: Props) {
   const [selectedProduct, setSelectedProduct] = useState<Product | undefined>();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -50,6 +56,10 @@ export function ProductsPageClient({
         count={count}
         onRowClick={handleRowClick}
         enableServerSideSorting={true}
+        extraData={{
+          canUpdateInventory,
+          canDeleteInventory,
+        }}
         defaultVisibility={{
           id: false,
           manufacturer: false,
@@ -66,6 +76,8 @@ export function ProductsPageClient({
         categories={categories}
         warehouses={warehouses}
         units={units}
+        canUpdateInventory={canUpdateInventory}
+        canDeleteInventory={canDeleteInventory}
       />
     </>
   );

@@ -17,6 +17,8 @@ interface InfiniteTransactionsListProps {
   wsId: string;
   walletId?: string;
   initialData?: Transaction[];
+  canUpdateTransactions?: boolean;
+  canDeleteTransactions?: boolean;
 }
 
 interface TransactionResponse {
@@ -35,6 +37,8 @@ export function InfiniteTransactionsList({
   wsId,
   walletId,
   // initialData = [],
+  canUpdateTransactions,
+  canDeleteTransactions,
 }: InfiniteTransactionsListProps) {
   const t = useTranslations();
   const locale = useLocale();
@@ -325,6 +329,8 @@ export function InfiniteTransactionsList({
           isOpen={isEditDialogOpen}
           onClose={handleCloseDialog}
           onUpdate={handleTransactionUpdate}
+          canUpdateTransactions={canUpdateTransactions}
+          canDeleteTransactions={canDeleteTransactions}
         />
       )}
     </div>

@@ -110,7 +110,7 @@ export function UserRowActions({ row, href, extraData }: UserRowActionsProps) {
 
   return (
     <div className="flex items-center justify-end gap-2">
-      {href && (
+      {href && (extraData?.hasPublicInfo || extraData?.hasPrivateInfo) && (
         <Link href={href}>
           <Button>
             <Eye className="mr-1 h-5 w-5" />
@@ -141,46 +141,51 @@ export function UserRowActions({ row, href, extraData }: UserRowActionsProps) {
         </DialogContent>
       </Dialog>
 
-      <DropdownMenu modal={false}>
-        <DropdownMenuTrigger asChild>
-          <Button
-            variant="ghost"
-            className="flex h-8 w-8 p-0 data-[state=open]:bg-muted"
-          >
-            <Ellipsis className="h-4 w-4" />
-            <span className="sr-only">Open menu</span>
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-[160px]">
-          <DropdownMenuItem onClick={() => setOpen(true)}>
-            {t('common.edit')}
-          </DropdownMenuItem>
+      {!extraData?.canUpdateUsers && !extraData?.canDeleteUsers ? null : (
+        <DropdownMenu modal={false}>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="ghost"
+              className="flex h-8 w-8 p-0 data-[state=open]:bg-muted"
+            >
+              <Ellipsis className="h-4 w-4" />
+              <span className="sr-only">Open menu</span>
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-[160px]">
+            {extraData?.canUpdateUsers && (
+              <DropdownMenuItem onClick={() => setOpen(true)}>
+                {t('common.edit')}
+              </DropdownMenuItem>
+            )}
 
-          <DropdownMenuSeparator />
-          {pathname.includes('/users/database') && (
-            <DropdownMenuItem
-              onClick={deleteUser}
-              disabled={!user.id || !user.ws_id}
-            >
-              {t('common.delete')}
-            </DropdownMenuItem>
-          )}
-          {extraData?.wsId && extraData?.groupId && (
-            <DropdownMenuItem
-              onClick={() =>
-                removeUserFromGroup({
-                  wsId: extraData.wsId,
-                  groupId: extraData.groupId,
-                  userId: user.id,
-                })
-              }
-              disabled={!user.id || !user.ws_id}
-            >
-              {t('user-data-table.remove-from-group')}
-            </DropdownMenuItem>
-          )}
-        </DropdownMenuContent>
-      </DropdownMenu>
+            <DropdownMenuSeparator />
+            {pathname.includes('/users/database') &&
+              extraData?.canDeleteUsers && (
+                <DropdownMenuItem
+                  onClick={deleteUser}
+                  disabled={!user.id || !user.ws_id}
+                >
+                  {t('common.delete')}
+                </DropdownMenuItem>
+              )}
+            {extraData?.wsId && extraData?.groupId && (
+              <DropdownMenuItem
+                onClick={() =>
+                  removeUserFromGroup({
+                    wsId: extraData.wsId,
+                    groupId: extraData.groupId,
+                    userId: user.id,
+                  })
+                }
+                disabled={!user.id || !user.ws_id}
+              >
+                {t('user-data-table.remove-from-group')}
+              </DropdownMenuItem>
+            )}
+          </DropdownMenuContent>
+        </DropdownMenu>
+      )}
     </div>
   );
 }

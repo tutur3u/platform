@@ -6,6 +6,7 @@ import {
 } from '@tuturuuu/supabase/next/server';
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
+import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { notFound } from 'next/navigation';
 import FollowUpClient from './client';
 
@@ -31,6 +32,12 @@ export default async function GuestLeadFollowUpPage({ params }: Props) {
         const t = await getTranslations();
         const supabase = await createClient();
         const sbAdmin = await createAdminClient();
+        const { containsPermission } = await getPermissions({
+          wsId,
+        });
+        const canCheckUserAttendance = containsPermission(
+          'check_user_attendance'
+        );
 
         // Check if user is eligible for lead generation email
         const { data: eligibility, error: eligibilityError } =
@@ -114,6 +121,7 @@ export default async function GuestLeadFollowUpPage({ params }: Props) {
               minimumAttendance={
                 minimumAttendance?.guest_user_checkup_threshold ?? undefined
               }
+              canCheckUserAttendance={canCheckUserAttendance}
             />
           </div>
         );

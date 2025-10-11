@@ -11,7 +11,7 @@ import {
   FormMessage,
 } from '@tuturuuu/ui/form';
 import { useForm } from '@tuturuuu/ui/hooks/use-form';
-import { toast } from '@tuturuuu/ui/hooks/use-toast';
+import { toast } from '@tuturuuu/ui/sonner';
 import { Input } from '@tuturuuu/ui/input';
 import { zodResolver } from '@tuturuuu/ui/resolvers';
 import {
@@ -30,9 +30,10 @@ import { z } from 'zod';
 
 interface Props {
   wsId: string;
-  wsUserId?: string;
   data?: ProductPromotion;
   onFinish?: (data: z.infer<typeof FormSchema>) => void;
+  canCreateInventory?: boolean;
+  canUpdateInventory?: boolean;
 }
 
 const FormSchema = z
@@ -41,7 +42,7 @@ const FormSchema = z
     name: z.string().min(1).max(255),
     description: z.string().optional(),
     code: z.string().min(1).max(255),
-    value: z.number().min(0),
+    value: z.coerce.number().min(0),
     unit: z.string(),
   })
   .refine(
@@ -54,7 +55,13 @@ const FormSchema = z
     }
   );
 
-export function PromotionForm({ wsId, wsUserId, data, onFinish }: Props) {
+export function PromotionForm({
+  wsId,
+  data,
+  onFinish,
+  canCreateInventory = true,
+  canUpdateInventory = true,
+}: Props) {
   const t = useTranslations();
 
   const [loading, setLoading] = useState(false);
@@ -75,6 +82,19 @@ export function PromotionForm({ wsId, wsUserId, data, onFinish }: Props) {
   async function onSubmit(data: z.infer<typeof FormSchema>) {
     setLoading(true);
 
+    // Check permissions before proceeding
+    if (!data?.id && !canCreateInventory) {
+      toast.error(t('ws-roles.inventory_promotions_access_denied_description'));
+      setLoading(false);
+      return;
+    }
+
+    if (data?.id && !canUpdateInventory) {
+      toast.error(t('ws-roles.inventory_promotions_access_denied_description'));
+      setLoading(false);
+      return;
+    }
+
     const res = await fetch(
       data?.id
         ? `/api/v1/workspaces/${wsId}/promotions/${data.id}`
@@ -85,8 +105,11 @@ export function PromotionForm({ wsId, wsUserId, data, onFinish }: Props) {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          ...data,
-          creator_id: wsUserId,
+          name: data.name,
+          description: data.description,
+          code: data.code,
+          value: data.value,
+          unit: data.unit,
         }),
       }
     );
@@ -96,10 +119,7 @@ export function PromotionForm({ wsId, wsUserId, data, onFinish }: Props) {
       router.refresh();
     } else {
       setLoading(false);
-      toast({
-        title: 'Error creating promotion',
-        description: 'An error occurred while creating the promotion',
-      });
+      toast.error(t('ws-inventory-promotions.failed_create_promotion'));
     }
   }
 
@@ -167,8 +187,12 @@ export function PromotionForm({ wsId, wsUserId, data, onFinish }: Props) {
                 <FormControl>
                   <Input
                     type="number"
-                    {...field}
                     placeholder={t('ws-inventory-promotions.form.value')}
+                    onChange={(e) => field.onChange(e.target.valueAsNumber)}
+                    onBlur={field.onBlur}
+                    value={(field.value as number | undefined) ?? ''}
+                    name={field.name}
+                    ref={field.ref}
                   />
                 </FormControl>
                 <FormMessage />

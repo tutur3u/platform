@@ -7,28 +7,28 @@ export default async function SuppliersStatistics({ wsId }: { wsId: string }) {
   const supabase = await createClient();
   const t = await getTranslations();
 
-  const enabled = true;
-
-  const { count: suppliers } = enabled
-    ? await supabase
-        .from('inventory_suppliers')
-        .select('*', {
-          count: 'exact',
-          head: true,
-        })
-        .eq('ws_id', wsId)
-    : { count: 0 };
-
-  const { permissions } = await getPermissions({
+  const { withoutPermission } = await getPermissions({
     wsId,
   });
+  if (withoutPermission('view_inventory')) return null;
 
-  if (!enabled || !permissions.includes('manage_inventory')) return null;
+  const { count: suppliers, error } = await supabase
+    .from('inventory_suppliers')
+    .select('id', {
+      count: 'exact',
+      head: true,
+    })
+    .eq('ws_id', wsId);
+
+  if (error) {
+    console.error('Error fetching workspace suppliers:', error);
+    return null;
+  }
 
   return (
     <StatisticCard
       title={t('workspace-inventory-tabs.suppliers')}
-      value={suppliers}
+      value={suppliers ?? 0}
       href={`/${wsId}/inventory/suppliers`}
     />
   );

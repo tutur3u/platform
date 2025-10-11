@@ -47,6 +47,7 @@ export default function FollowUpClient({
   emailCredentials,
   userGroups = [],
   minimumAttendance,
+  canCheckUserAttendance,
 }: {
   wsId: string;
   userId: string;
@@ -55,6 +56,7 @@ export default function FollowUpClient({
   emailCredentials?: { source_name: string; source_email: string };
   userGroups?: Array<{ id: string; name: string | null }>;
   minimumAttendance?: number;
+  canCheckUserAttendance?: boolean;
 }) {
   const supabase = createClient();
   const t = useTranslations();
@@ -639,7 +641,7 @@ export default function FollowUpClient({
           </Card>
 
           {/* Attendance Section */}
-          {userName && (
+          {userName && canCheckUserAttendance && (
             <Card>
               <CardHeader>
                 <CardTitle className="text-base">

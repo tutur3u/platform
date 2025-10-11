@@ -35,6 +35,7 @@ interface Props {
   initialUserId?: string;
   initialReportId?: string;
   groupNameFallback: string;
+  canCheckUserAttendance: boolean;
 }
 
 export default function GroupReportsClient({
@@ -43,6 +44,7 @@ export default function GroupReportsClient({
   initialUserId,
   initialReportId,
   groupNameFallback,
+  canCheckUserAttendance,
 }: Props) {
   const t = useTranslations();
   const router = useRouter();
@@ -471,6 +473,7 @@ export default function GroupReportsClient({
           managerOptions={managerOptions}
           selectedManagerName={effectiveCreatorName ?? undefined}
           onChangeManagerAction={(name) => setSelectedManagerName(name)}
+          canCheckUserAttendance={canCheckUserAttendance}
         />
       )}
     </div>

@@ -1,5 +1,25 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
+import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
+import { z } from 'zod';
+
+const PromotionSchema = z
+  .object({
+    name: z.string().min(1).max(255),
+    description: z.string().optional(),
+    code: z.string().min(1).max(255),
+    value: z.coerce.number().min(0),
+    unit: z.enum(['percentage', 'currency']).optional(),
+  })
+  .refine(
+    ({ unit, value }) =>
+      (unit === 'percentage' && value <= 100) || unit !== 'percentage',
+    {
+      // TODO: i18n
+      message: 'Percentage value cannot exceed 100%',
+      path: ['value'],
+    }
+  );
 
 interface Params {
   params: Promise<{
@@ -8,15 +28,62 @@ interface Params {
 }
 
 export async function POST(req: Request, { params }: Params) {
-  const supabase = await createClient();
-  const data = await req.json();
   const { wsId } = await params;
 
+  // Validate request body
+  const parsed = PromotionSchema.safeParse(await req.json());
+
+  if (!parsed.success) {
+    return NextResponse.json(
+      { message: 'Invalid request body', errors: parsed.error.issues },
+      { status: 400 }
+    );
+  }
+
+  // Check permissions
+  const { withoutPermission } = await getPermissions({ wsId });
+  if (withoutPermission('create_inventory')) {
+    return NextResponse.json(
+      { message: 'Insufficient permissions to create promotions' },
+      { status: 403 }
+    );
+  }
+
+  const supabase = await createClient();
+
+  // Get authenticated user
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+  }
+
+  // Get the virtual_user_id for this workspace
+  const { data: wsUser } = await supabase
+    .from('workspace_user_linked_users')
+    .select('virtual_user_id')
+    .eq('platform_user_id', user.id)
+    .eq('ws_id', wsId)
+    .single();
+
+  if (!wsUser?.virtual_user_id) {
+    return NextResponse.json(
+      { message: 'User not found in workspace' },
+      { status: 403 }
+    );
+  }
+
+  const data = parsed.data;
+
   const { error } = await supabase.from('workspace_promotions').insert({
-    ...data,
+    name: data.name,
+    description: data.description,
+    code: data.code,
+    value: data.value,
+    creator_id: wsUser.virtual_user_id,
     ws_id: wsId,
-    // TODO: better handling boolean value, as expand to further units
-    unit: undefined,
     use_ratio: data.unit === 'percentage',
   });
 

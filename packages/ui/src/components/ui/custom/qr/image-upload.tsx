@@ -56,7 +56,8 @@ function QRImageUpload({
 
       // Check file size
       if (file.size > MAX_FILE_SIZE) {
-        return t('qr.image_upload.file_too_large');
+        const maxSizeMB = (MAX_FILE_SIZE / (1024 * 1024)).toFixed(0);
+        return t('qr.image_upload.file_too_large', { size: `${maxSizeMB}MB` });
       }
 
       return null;

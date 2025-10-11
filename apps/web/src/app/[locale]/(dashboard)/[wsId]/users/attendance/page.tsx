@@ -12,6 +12,8 @@ import { Suspense } from 'react';
 import { Filter } from '../filters';
 import UserAttendances from './user-attendances';
 import UserAttendancesSkeleton from './user-attendances-skeleton';
+import { getPermissions } from '@tuturuuu/utils/workspace-helper';
+import { notFound } from 'next/navigation';
 
 export const metadata: Metadata = {
   title: 'Attendance',
@@ -45,6 +47,18 @@ export default async function WorkspaceUserAttendancePage({
       {async ({ wsId }) => {
         const locale = await getLocale();
         const t = await getTranslations();
+
+        const { containsPermission } = await getPermissions({
+          wsId,
+        });
+
+        const canCheckUserAttendance = containsPermission(
+          'check_user_attendance'
+        );
+
+        if (!canCheckUserAttendance) {
+          notFound();
+        }
 
         const { data: userGroups } = await getUserGroups(wsId);
         const { data: excludedUserGroups } = await getExcludedUserGroups(

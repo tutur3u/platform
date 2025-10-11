@@ -27,7 +27,7 @@ export default async function ProductCategoriesStatistics({
     wsId,
   });
 
-  if (!enabled || !permissions.includes('manage_inventory')) return null;
+  if (!enabled || !permissions.includes('view_inventory')) return null;
 
   return (
     <StatisticCard

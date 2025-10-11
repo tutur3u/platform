@@ -1,5 +1,6 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
 import type { ProductWarehouse } from '@tuturuuu/types/primitives/ProductWarehouse';
+import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Separator } from '@tuturuuu/ui/separator';
 import type { Metadata } from 'next';
@@ -7,6 +8,7 @@ import { getTranslations } from 'next-intl/server';
 import { CustomDataTable } from '@/components/custom-data-table';
 import { productWarehouseColumns } from './columns';
 import { ProductWarehouseForm } from './form';
+import WorkspaceWrapper from '@/components/workspace-wrapper';
 
 export const metadata: Metadata = {
   title: 'Warehouses',
@@ -29,32 +31,75 @@ export default async function WorkspaceWarehousesPage({
   params,
   searchParams,
 }: Props) {
-  const t = await getTranslations();
-  const { wsId } = await params;
-  const { data, count } = await getData(wsId, await searchParams);
-
   return (
-    <>
-      <FeatureSummary
-        pluralTitle={t('ws-inventory-warehouses.plural')}
-        singularTitle={t('ws-inventory-warehouses.singular')}
-        description={t('ws-inventory-warehouses.description')}
-        createTitle={t('ws-inventory-warehouses.create')}
-        createDescription={t('ws-inventory-warehouses.create_description')}
-        form={<ProductWarehouseForm wsId={wsId} />}
-      />
-      <Separator className="my-4" />
-      <CustomDataTable
-        data={data}
-        columnGenerator={productWarehouseColumns}
-        namespace="basic-data-table"
-        count={count}
-        defaultVisibility={{
-          id: false,
-          created_at: false,
-        }}
-      />
-    </>
+    <WorkspaceWrapper params={params}>
+      {async ({ wsId }) => {
+        const t = await getTranslations();
+
+        const { withoutPermission, containsPermission } = await getPermissions({
+          wsId,
+        });
+
+        if (withoutPermission('view_inventory')) {
+          return (
+            <div className="flex h-full items-center justify-center">
+              <div className="text-center">
+                <h2 className="text-lg font-semibold">
+                  {t('ws-roles.inventory_access_denied')}
+                </h2>
+                <p className="text-muted-foreground">
+                  {t('ws-roles.inventory_warehouses_access_denied_description')}
+                </p>
+              </div>
+            </div>
+          );
+        }
+
+        const canCreateInventory = containsPermission('create_inventory');
+        const canUpdateInventory = containsPermission('update_inventory');
+        const canDeleteInventory = containsPermission('delete_inventory');
+
+        const { data, count } = await getData(wsId, await searchParams);
+
+        return (
+          <>
+            <FeatureSummary
+              pluralTitle={t('ws-inventory-warehouses.plural')}
+              singularTitle={t('ws-inventory-warehouses.singular')}
+              description={t('ws-inventory-warehouses.description')}
+              createTitle={t('ws-inventory-warehouses.create')}
+              createDescription={t(
+                'ws-inventory-warehouses.create_description'
+              )}
+              form={
+                canCreateInventory ? (
+                  <ProductWarehouseForm
+                    wsId={wsId}
+                    canCreateInventory={canCreateInventory}
+                    canUpdateInventory={canUpdateInventory}
+                  />
+                ) : undefined
+              }
+            />
+            <Separator className="my-4" />
+            <CustomDataTable
+              data={data}
+              columnGenerator={productWarehouseColumns}
+              namespace="basic-data-table"
+              count={count}
+              extraData={{
+                canDeleteInventory,
+                canUpdateInventory,
+              }}
+              defaultVisibility={{
+                id: false,
+                created_at: false,
+              }}
+            />
+          </>
+        );
+      }}
+    </WorkspaceWrapper>
   );
 }
 

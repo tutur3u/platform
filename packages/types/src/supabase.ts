@@ -74,6 +74,15 @@ export type Database = {
       workspace_role_permission:
         | 'ai_chat'
         | 'ai_lab'
+        | 'check_user_attendance'
+        | 'create_inventory'
+        | 'create_invoices'
+        | 'create_transactions'
+        | 'create_users'
+        | 'delete_inventory'
+        | 'delete_invoices'
+        | 'delete_transactions'
+        | 'delete_users'
         | 'export_finance_data'
         | 'export_users_data'
         | 'manage_calendar'
@@ -94,7 +103,17 @@ export type Database = {
         | 'manage_workspace_security'
         | 'manage_workspace_settings'
         | 'send_user_group_post_emails'
-        | 'view_infrastructure';
+        | 'update_inventory'
+        | 'update_invoices'
+        | 'update_transactions'
+        | 'update_users'
+        | 'view_finance_stats'
+        | 'view_infrastructure'
+        | 'view_inventory'
+        | 'view_invoices'
+        | 'view_transactions'
+        | 'view_users_private_info'
+        | 'view_users_public_info';
     };
     Functions: {
       atomic_sync_token_operation: {
@@ -13233,6 +13252,15 @@ export const Constants = {
       workspace_role_permission: [
         'ai_chat',
         'ai_lab',
+        'check_user_attendance',
+        'create_inventory',
+        'create_invoices',
+        'create_transactions',
+        'create_users',
+        'delete_inventory',
+        'delete_invoices',
+        'delete_transactions',
+        'delete_users',
         'export_finance_data',
         'export_users_data',
         'manage_calendar',
@@ -13253,7 +13281,17 @@ export const Constants = {
         'manage_workspace_security',
         'manage_workspace_settings',
         'send_user_group_post_emails',
+        'update_inventory',
+        'update_invoices',
+        'update_transactions',
+        'update_users',
+        'view_finance_stats',
         'view_infrastructure',
+        'view_inventory',
+        'view_invoices',
+        'view_transactions',
+        'view_users_private_info',
+        'view_users_public_info',
       ],
     },
   },

@@ -1,4 +1,5 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
+import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 
 interface Params {
@@ -155,6 +156,13 @@ export async function calculateInvoiceValues(
 export async function POST(req: Request, { params }: Params) {
   const supabase = await createClient();
   const { wsId } = await params;
+
+  const { withoutPermission } = await getPermissions({
+    wsId,
+  });
+  if (withoutPermission('create_invoices')) {
+    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+  }
 
   try {
     const {

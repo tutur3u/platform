@@ -265,7 +265,7 @@ async function InventoryUsageStats({ wsId }: { wsId: string }) {
   const supabase = await createClient();
   const { permissions } = await getPermissions({ wsId });
 
-  if (!permissions.includes('manage_inventory')) {
+  if (!permissions.includes('view_inventory')) {
     return (
       <StatisticCard title="Products" value="***" className="opacity-50" />
     );

@@ -12,7 +12,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
-import { toast } from '@tuturuuu/ui/hooks/use-toast';
+import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
@@ -20,15 +20,26 @@ import { ProductUnitForm } from './form';
 
 interface Props {
   row: Row<ProductUnit>;
+  canDeleteInventory?: boolean;
+  canUpdateInventory?: boolean;
 }
 
-export function ProductUnitRowActions(props: Props) {
+export function ProductUnitRowActions({
+  row,
+  canDeleteInventory = false,
+  canUpdateInventory = false,
+}: Props) {
   const t = useTranslations();
 
   const router = useRouter();
-  const data = props.row.original;
+  const data = row.original;
 
   const deleteData = async () => {
+    if (!canDeleteInventory) {
+      toast.error(t('ws-roles.inventory_units_access_denied_description'));
+      return;
+    }
+
     const res = await fetch(
       `/api/v1/workspaces/${data.ws_id}/product-units/${data.id}`,
       {
@@ -40,10 +51,7 @@ export function ProductUnitRowActions(props: Props) {
       router.refresh();
     } else {
       const data = await res.json();
-      toast({
-        title: 'Failed to delete workspace category',
-        description: data.message,
-      });
+      toast.error(data.message || t('ws-inventory-units.failed_delete_unit'));
     }
   };
 
@@ -64,13 +72,19 @@ export function ProductUnitRowActions(props: Props) {
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-[160px]">
-          <DropdownMenuItem onClick={() => setShowEditDialog(true)}>
-            {t('common.edit')}
-          </DropdownMenuItem>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem onClick={deleteData}>
-            {t('common.delete')}
-          </DropdownMenuItem>
+          {canUpdateInventory && (
+            <DropdownMenuItem onClick={() => setShowEditDialog(true)}>
+              {t('common.edit')}
+            </DropdownMenuItem>
+          )}
+          {canUpdateInventory && canDeleteInventory && (
+            <DropdownMenuSeparator />
+          )}
+          {canDeleteInventory && (
+            <DropdownMenuItem onClick={deleteData}>
+              {t('common.delete')}
+            </DropdownMenuItem>
+          )}
         </DropdownMenuContent>
       </DropdownMenu>
 
@@ -80,7 +94,13 @@ export function ProductUnitRowActions(props: Props) {
         title={t('ws-product-units.edit')}
         editDescription={t('ws-product-units.edit_description')}
         setOpen={setShowEditDialog}
-        form={<ProductUnitForm wsId={data.ws_id} data={data} />}
+        form={
+          <ProductUnitForm
+            wsId={data.ws_id}
+            data={data}
+            canUpdateInventory={canUpdateInventory}
+          />
+        }
       />
     </div>
   );

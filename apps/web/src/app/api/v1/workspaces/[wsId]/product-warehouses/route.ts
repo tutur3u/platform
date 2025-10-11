@@ -1,4 +1,5 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
+import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 
 interface Params {
@@ -8,8 +9,18 @@ interface Params {
 }
 
 export async function GET(_: Request, { params }: Params) {
-  const supabase = await createClient();
   const { wsId: id } = await params;
+
+  // Check permissions
+  const { containsPermission } = await getPermissions({ wsId: id });
+  if (!containsPermission('view_inventory')) {
+    return NextResponse.json(
+      { message: 'Insufficient permissions to view inventory' },
+      { status: 403 }
+    );
+  }
+
+  const supabase = await createClient();
 
   const { data, error } = await supabase
     .from('inventory_warehouses')
@@ -29,8 +40,18 @@ export async function GET(_: Request, { params }: Params) {
 }
 
 export async function POST(req: Request, { params }: Params) {
-  const supabase = await createClient();
   const { wsId: id } = await params;
+
+  // Check permissions
+  const { containsPermission } = await getPermissions({ wsId: id });
+  if (!containsPermission('create_inventory')) {
+    return NextResponse.json(
+      { message: 'Insufficient permissions to create warehouses' },
+      { status: 403 }
+    );
+  }
+
+  const supabase = await createClient();
 
   const data = await req.json();
 

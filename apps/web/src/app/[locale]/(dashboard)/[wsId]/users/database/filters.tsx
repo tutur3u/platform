@@ -6,8 +6,8 @@ import { Filter } from '../filters';
 
 interface SearchParams {
   q?: string;
-  page?: string;
-  pageSize?: string;
+  page?: number;
+  pageSize?: number;
   includedGroups?: string | string[];
   excludedGroups?: string | string[];
 }

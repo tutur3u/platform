@@ -18,6 +18,8 @@ import WalletsStatistics from '@tuturuuu/ui/finance/statistics/wallets';
 import { transactionColumns } from '@tuturuuu/ui/finance/transactions/columns';
 import { Suspense } from 'react';
 import { Separator } from '@tuturuuu/ui/separator';
+import { getPermissions } from '@tuturuuu/utils/workspace-helper';
+import { notFound } from 'next/navigation';
 
 interface Props {
   wsId: string;
@@ -26,6 +28,10 @@ interface Props {
 
 export default async function FinancePage({ wsId, searchParams }: Props) {
   const sp = searchParams;
+
+  const { containsPermission } = await getPermissions({ wsId });
+
+  if (!containsPermission('view_finance_stats')) return notFound();
 
   const { data: dailyData } = await getDailyData(wsId);
   const { data: monthlyData } = await getMonthlyData(wsId);

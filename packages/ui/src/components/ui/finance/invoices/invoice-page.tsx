@@ -6,9 +6,8 @@ import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { CustomDataTable } from '@tuturuuu/ui/custom/tables/custom-data-table';
 import { Separator } from '@tuturuuu/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
-import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
-import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';
+import { getTranslations } from 'next-intl/server';
 import { invoiceColumns } from './columns';
 import { PendingInvoicesTable } from './pending-invoices-table';
 
@@ -19,13 +18,17 @@ interface Props {
     page: string;
     pageSize: string;
   };
+  canCreateInvoices?: boolean;
+  canDeleteInvoices?: boolean;
 }
 
-export default async function InvoicesPage({ wsId: id, searchParams }: Props) {
+export default async function InvoicesPage({
+  wsId,
+  searchParams,
+  canCreateInvoices = false,
+  canDeleteInvoices = false,
+}: Props) {
   const t = await getTranslations();
-
-  const workspace = await getWorkspace(id);
-  const wsId = workspace.id;
 
   const { data: rawData, count } = await getData(wsId, searchParams);
 
@@ -44,12 +47,14 @@ export default async function InvoicesPage({ wsId: id, searchParams }: Props) {
         createTitle={t('ws-invoices.create')}
         createDescription={t('ws-invoices.create_description')}
         action={
-          <Link href={`/${wsId}/finance/invoices/new`}>
-            <Button>
-              <Plus />
-              {t('ws-invoices.create')}
-            </Button>
-          </Link>
+          canCreateInvoices ? (
+            <Link href={`/${wsId}/finance/invoices/new`}>
+              <Button>
+                <Plus />
+                {t('ws-invoices.create')}
+              </Button>
+            </Link>
+          ) : null
         }
       />
       <Separator className="my-4" />
@@ -68,6 +73,9 @@ export default async function InvoicesPage({ wsId: id, searchParams }: Props) {
             columnGenerator={invoiceColumns}
             namespace="invoice-data-table"
             count={count}
+            extraData={{
+              canDeleteInvoices,
+            }}
             defaultVisibility={{
               id: false,
               customer_id: false,

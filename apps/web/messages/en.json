@@ -385,7 +385,8 @@
     "characters": "characters",
     "no_changes_to_save": "No changes to save",
     "confirm_delete": "Delete Report?",
-    "filter": "Filter"
+    "filter": "Filter",
+    "insufficient_permissions": "Insufficient Permissions"
   },
   "date_helper": {
     "time-unit": "Time unit",
@@ -1427,7 +1428,8 @@
     "hide_confidential": "Hide numbers",
     "show_confidential": "Show numbers",
     "financial_overview": "Financial Overview",
-    "financial_overview_description": "Track your income, expenses, and overall financial health"
+    "financial_overview_description": "Track your income, expenses, and overall financial health",
+    "error_creating_transaction": "There was an error creating the transaction"
   },
   "transaction-category-data-table": {
     "id": "ID",
@@ -2122,10 +2124,19 @@
     "description": "Transactions are used to track the financial activities of your workspace.",
     "create": "Create transaction",
     "edit": "Edit transaction",
+    "view": "View transaction",
     "create_description": "Create a new transaction",
     "edit_description": "Edit an existing transaction",
+    "view_description": "View transaction details",
     "category": "Transaction type",
-    "no_description": "No description provided"
+    "no_description": "No description provided",
+    "saving": "Saving...",
+    "save_changes": "Save changes",
+    "create_transaction": "Create transaction",
+    "delete": "Delete",
+    "delete_description": "Are you sure you want to delete this transaction? This action cannot be undone.",
+    "error_saving_transaction": "There was an error saving the transaction",
+    "error_deleting_transaction": "There was an error deleting the transaction"
   },
   "ws-transaction-categories": {
     "singular": "Transaction Category",
@@ -2289,16 +2300,65 @@
     "manage_users_description": "Allows members to view, create, edit, and delete virtual user profiles in the workspace.",
     "manage_inventory": "Manage Inventory",
     "manage_inventory_description": "Allows members to view, create, edit, and delete inventory items in the workspace.",
+    "create_inventory": "Create Inventory",
+    "create_inventory_description": "Allows members to create new inventory items in the workspace.",
+    "update_inventory": "Update Inventory",
+    "update_inventory_description": "Allows members to edit existing inventory items in the workspace.",
+    "delete_inventory": "Delete Inventory",
+    "delete_inventory_description": "Allows members to delete inventory items in the workspace.",
+    "view_inventory": "View Inventory",
+    "view_inventory_description": "Allows members to view inventory items in the workspace.",
+    "inventory_access_denied": "Access Denied",
+    "inventory_access_denied_description": "You don't have permission to view inventory.",
+    "inventory_products_access_denied_description": "You don't have permission to view inventory products.",
+    "inventory_categories_access_denied_description": "You don't have permission to view inventory categories.",
+    "inventory_units_access_denied_description": "You don't have permission to view inventory units.",
+    "inventory_suppliers_access_denied_description": "You don't have permission to view inventory suppliers.",
+    "inventory_warehouses_access_denied_description": "Access Denied",
+    "inventory_batches_access_denied_description": "You don't have permission to view inventory batches.",
+    "inventory_promotions_access_denied_description": "You don't have permission to view inventory promotions.",
     "manage_finance": "Manage Finance",
     "manage_finance_description": "Allows members to view, create, edit, and delete financial transactions in the workspace.",
     "manage_user_report_templates": "Manage user report templates",
     "manage_user_report_templates_description": "Allows members to edit user report templates.",
     "send_user_group_post_emails": "Send post content via emails",
     "send_user_group_post_emails_description": "Allows members to send emails to virtual users created in your workspace about specific user group post content.",
-    "export_users_data": "Allow exporting users data",
+    "export_users_data": "Export User Data",
     "export_users_data_description": "Allows members to export users data in the workspace.",
     "export_finance_data": "Allow exporting finance data",
-    "export_finance_data_description": "Allows members to export finance data in the workspace."
+    "export_finance_data_description": "Allows members to export finance data in the workspace.",
+    "view_finance_stats": "View Finance Stats",
+    "view_users_public_info": "View Users Public Info",
+    "view_users_public_info_description": "Allows members to view public information of users in the workspace.",
+    "view_users_private_info": "View Users Private Info",
+    "view_users_private_info_description": "Allows members to view private information of users in the workspace.",
+    "create_users": "Create Users",
+    "create_users_description": "Allows members to create new virtual user profiles in the workspace.",
+    "update_users": "Update Users",
+    "update_users_description": "Allows members to edit existing virtual user profiles in the workspace.",
+    "delete_users": "Delete Users",
+    "delete_users_description": "Allows members to delete virtual user profiles from the workspace.",
+    "view_finance_stats_description": "Allows members to view financial stats of the workspace",
+    "create_transactions": "Create Transactions",
+    "create_transactions_description": "Allows members to create new financial transactions in the workspace.",
+    "update_transactions": "Update Transactions",
+    "update_transactions_description": "Allows members to edit existing financial transactions in the workspace.",
+    "delete_transactions": "Delete Transactions",
+    "delete_transactions_description": "Allows members to delete financial transactions from the workspace.",
+    "view_transactions": "View Transactions",
+    "view_transactions_description": "Allows members to view financial transaction details in the workspace.",
+    "invoices": "Invoices",
+    "create_invoices": "Create Invoices",
+    "create_invoices_description": "Allows members to create new invoices in the workspace.",
+    "view_invoices": "View Invoices",
+    "view_invoices_description": "Allows members to view invoice details in the workspace.",
+    "update_invoices": "Update Invoices",
+    "update_invoices_description": "Allows members to edit existing invoices in the workspace.",
+    "delete_invoices": "Delete Invoices",
+    "delete_invoices_description": "Allows members to delete invoices from the workspace.",
+    "check_user_attendance": "Check User Attendance",
+    "check_user_attendance_description": "Allows members to check for other users attendance",
+    "transactions": "Transactions"
   },
   "platform-roles": {
     "plural": "Platform Roles",
@@ -3056,7 +3116,8 @@
     "print_after_create": "Print after Creation",
     "print_after_create_tooltip": "Prints invoice after creation",
     "created_invoices": "Created Invoices",
-    "pending_invoices": "Pending Invoices"
+    "pending_invoices": "Pending Invoices",
+    "failed_delete_invoice": "Failed to delete invoice"
   },
   "ws-inventory-products": {
     "plural": "Products",
@@ -3077,7 +3138,75 @@
       "amount": "Amount",
       "min_amount": "Min amount",
       "category": "Category"
-    }
+    },
+    "validation": {
+      "name_required": "Product name is required"
+    },
+    "dialog": {
+      "description": "Product information and management"
+    },
+    "tabs": {
+      "details": "Details",
+      "stock": "Stock",
+      "history": "History",
+      "edit": "Edit"
+    },
+    "sections": {
+      "product_information": "Product Information",
+      "current_stock": "Current Stock",
+      "manage_inventory": "Manage Inventory",
+      "stock_history": "Stock History",
+      "edit_product": "Edit Product",
+      "stock_management": "Stock Management"
+    },
+    "labels": {
+      "unlimited_stock": "Unlimited stock",
+      "created_at": "Created At",
+      "warehouse": "Warehouse",
+      "price_per_unit": "Price per unit",
+      "min_amount": "Min amount",
+      "current_amount": "Current amount",
+      "unit": "Unit",
+      "usage_instructions": "Usage Instructions",
+      "unlimited_stock_label": "Unlimited Stock"
+    },
+    "placeholders": {
+      "select_warehouse": "Select warehouse",
+      "enter_price": "Enter price",
+      "select_unit": "Select unit",
+      "enter_product_name": "Enter product name",
+      "enter_manufacturer": "Enter manufacturer",
+      "select_category": "Select category",
+      "enter_product_description": "Enter product description",
+      "enter_usage_instructions": "Enter usage instructions"
+    },
+    "buttons": {
+      "remove": "Remove",
+      "add_stock_entry": "Add Stock Entry",
+      "save_inventory_changes": "Save Inventory Changes",
+      "view_full_details": "View Full Details",
+      "delete_product": "Delete Product",
+      "cancel": "Cancel",
+      "save_changes": "Save Changes"
+    },
+    "messages": {
+      "recently": "Recently",
+      "unlimited_stock_available": "This product has unlimited stock available.",
+      "manage_tracked_stock": "Manage tracked stock in the Stock tab.",
+      "delete_confirmation": "Are you sure you want to delete \"{name}\"? This action cannot be undone.",
+      "deleting": "Deleting...",
+      "no_changes_to_save": "No changes to save",
+      "failed_update_details": "Failed to update product details",
+      "product_updated_successfully": "Product updated successfully",
+      "failed_update_product": "Failed to update product",
+      "no_delete_permission": "You do not have permission to delete inventory",
+      "product_deleted_successfully": "Product deleted successfully",
+      "failed_delete_product": "Failed to delete product"
+    },
+    "no_changes_detected": "No changes detected",
+    "product_saved_successfully": "Product saved successfully",
+    "failed_save_product": "Failed when saving product",
+    "failed_delete_product": "Failed to delete product"
   },
   "ws-inventory-categories": {
     "plural": "Categories",
@@ -3094,14 +3223,17 @@
     "create": "Create unit",
     "create_description": "Create a new unit",
     "placeholder": "Choose a unit",
-    "unnamed_unit": "Unnamed Unit"
+    "unnamed_unit": "Unnamed Unit",
+    "failed_create_unit": "Failed to create unit",
+    "failed_delete_unit": "Failed to delete unit"
   },
   "ws-inventory-suppliers": {
     "plural": "Suppliers",
     "singular": "Supplier",
     "description": "Suppliers are used to link inventory products with their suppliers.",
     "create": "Create supplier",
-    "create_description": "Create a new supplier"
+    "create_description": "Create a new supplier",
+    "failed_delete_supplier": "Failed to delete supplier"
   },
   "ws-inventory-warehouses": {
     "plural": "Warehouses",
@@ -3110,7 +3242,9 @@
     "create": "Create warehouse",
     "create_description": "Create a new warehouse",
     "placeholder": "Choose a warehouse",
-    "unnamed_warehouse": "Unnamed Warehouse"
+    "unnamed_warehouse": "Unnamed Warehouse",
+    "failed_create_warehouse": "Failed to create warehouse",
+    "failed_delete_warehouse": "Failed to delete warehouse"
   },
   "ws-inventory-batches": {
     "plural": "Batches",
@@ -3130,7 +3264,7 @@
     "create_settings_tooltip": "Workspace settings are missing. Click to create them.",
     "form": {
       "name": "Name",
-      "description": "Decription",
+      "description": "Description",
       "code": "Coupon code",
       "value": "Discount value",
       "unit": {
@@ -3138,7 +3272,9 @@
         "currency": "Currency",
         "percentage": "Percentage"
       }
-    }
+    },
+    "failed_delete_promotion": "Failed to delete promotion",
+    "failed_create_promotion": "Failed to create promotion"
   },
   "ws_post_details": {
     "check_all": "Check all"
@@ -4518,11 +4654,12 @@
       "processing": "Processing",
       "rounded_logo": "Rounded logo",
       "invalid_type": "Invalid file type. Please upload JPG, PNG, WebP, or SVG files.",
-      "file_too_large": "File is too large. Maximum size is 5MB.",
+      "file_too_large": "File is too large. Maximum size is {size}.",
       "dimensions_too_small": "Image dimensions are too small. Minimum size is 32x32px.",
       "dimensions_too_large": "Image dimensions are too large. Maximum size is 512x512px.",
       "invalid_image": "Invalid image file.",
-      "upload_failed": "Upload failed. Please try again."
+      "upload_failed": "Upload failed. Please try again.",
+      "signed_url_failed": "Failed to generate signed URL."
     }
   },
   "personal-workspace": {
