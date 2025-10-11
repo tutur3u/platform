@@ -2,15 +2,6 @@
 
 import { templateScenarios } from '@tuturuuu/ai/scheduling/templates';
 import type { TemplateScenario } from '@tuturuuu/ai/scheduling/types';
-import { Badge } from '@tuturuuu/ui/badge';
-import { Button } from '@tuturuuu/ui/button';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@tuturuuu/ui/card';
 import {
   BookOpenIcon,
   BriefcaseIcon,
@@ -24,7 +15,16 @@ import {
   TrendingUpIcon,
   UsersIcon,
   ZapIcon,
-} from '@tuturuuu/ui/icons';
+} from '@tuturuuu/icons';
+import { Badge } from '@tuturuuu/ui/badge';
+import { Button } from '@tuturuuu/ui/button';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@tuturuuu/ui/card';
 
 interface TemplateScenarioProps {
   onLoadTemplate: (template: TemplateScenario) => void;

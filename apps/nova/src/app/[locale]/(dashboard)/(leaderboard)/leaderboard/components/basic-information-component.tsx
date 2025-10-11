@@ -1,6 +1,6 @@
+import { Rocket, Sparkles, Star, Trophy, Users, Zap } from '@tuturuuu/icons';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Card, CardContent } from '@tuturuuu/ui/card';
-import { Rocket, Sparkles, Star, Trophy, Users, Zap } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
 import { formatScore } from '@tuturuuu/utils/nova/scores/calculate';
 import { motion } from 'framer-motion';

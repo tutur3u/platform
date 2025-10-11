@@ -1,3 +1,4 @@
+import { Calendar, Clock, TrendingUp, Zap } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import {
   Card,
@@ -6,7 +7,6 @@ import {
   CardHeader,
   CardTitle,
 } from '@tuturuuu/ui/card';
-import { Calendar, Clock, TrendingUp, Zap } from '@tuturuuu/ui/icons';
 import { getCurrentSupabaseUser } from '@tuturuuu/utils/user-helper';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';

@@ -1,5 +1,6 @@
 'use client';
 
+import { FileText, MoreHorizontal, Trash2 } from '@tuturuuu/icons';
 import type { WorkspaceDocument } from '@tuturuuu/types/db';
 import { Button } from '@tuturuuu/ui/button';
 import { Card } from '@tuturuuu/ui/card';
@@ -18,7 +19,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
-import { FileText, MoreHorizontal, Trash2 } from '@tuturuuu/ui/icons';
 import { toast } from '@tuturuuu/ui/sonner';
 import { cn } from '@tuturuuu/utils/format';
 import moment from 'moment';

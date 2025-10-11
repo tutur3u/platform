@@ -1,7 +1,7 @@
 'use client';
 
+import { AlertCircle, CheckCircle, Clock } from '@tuturuuu/icons';
 import { Badge } from '@tuturuuu/ui/badge';
-import { AlertCircle, CheckCircle, Clock } from '@tuturuuu/ui/icons';
 import { Progress } from '@tuturuuu/ui/progress';
 import { cn } from '@tuturuuu/utils/format';
 

@@ -1,5 +1,6 @@
 'use client';
 
+import { PlusIcon, Trash2 } from '@tuturuuu/icons';
 import type { TaskPriority } from '@tuturuuu/types/primitives/Priority';
 import { Button } from '@tuturuuu/ui/button';
 import { Input } from '@tuturuuu/ui/input';
@@ -12,7 +13,6 @@ import {
   SelectValue,
 } from '@tuturuuu/ui/select';
 import { Switch } from '@tuturuuu/ui/switch';
-import { PlusIcon, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 
 export type TaskType = {

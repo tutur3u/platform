@@ -2,7 +2,6 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { renderHook, waitFor } from '@testing-library/react';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
-import type { ReactNode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useTaskActions } from './use-task-actions';
 
@@ -15,14 +14,15 @@ vi.mock('@tuturuuu/supabase/next/client', () => ({
   })),
 }));
 
-vi.mock('@tuturuuu/ui/hooks/use-toast', () => ({
-  useToast: () => ({
-    toast: vi.fn(),
-  }),
+vi.mock('@tuturuuu/ui/sonner', () => ({
+  toast: {
+    success: vi.fn(),
+    error: vi.fn(),
+  },
 }));
 
 vi.mock('@tuturuuu/utils/task-helper', () => ({
-  moveTask: vi.fn(),
+  moveTask: vi.fn(() => Promise.resolve({ success: true })),
   useUpdateTask: () => ({
     mutate: vi.fn((_, options) => options?.onSuccess?.()),
     mutateAsync: vi.fn(() => Promise.resolve()),
@@ -40,9 +40,12 @@ const createWrapper = () => {
     },
   });
 
-  return ({ children }: { children: ReactNode }) => (
+  const Wrapper = ({ children }: { children: React.ReactNode }) => (
+    //  @ts-expect-error - Bun types issue with children prop
     <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
   );
+
+  return Wrapper;
 };
 
 describe('useTaskActions', () => {
@@ -74,6 +77,15 @@ describe('useTaskActions', () => {
   const mockSetIsLoading = vi.fn();
   const mockSetMenuOpen = vi.fn();
   const mockOnUpdate = vi.fn();
+  const mockAvailableLists: TaskList[] = [
+    mockCompletionList,
+    mockClosedList,
+    {
+      id: 'list-1',
+      name: 'To Do',
+      status: 'todo',
+    } as unknown as TaskList,
+  ];
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -87,6 +99,7 @@ describe('useTaskActions', () => {
           boardId: 'board-1',
           targetCompletionList: mockCompletionList,
           targetClosedList: mockClosedList,
+          availableLists: mockAvailableLists,
           onUpdate: mockOnUpdate,
           setIsLoading: mockSetIsLoading,
           setMenuOpen: mockSetMenuOpen,
@@ -115,6 +128,7 @@ describe('useTaskActions', () => {
           boardId: 'board-1',
           targetCompletionList: mockCompletionList,
           targetClosedList: mockClosedList,
+          availableLists: mockAvailableLists,
           onUpdate: mockOnUpdate,
           setIsLoading: mockSetIsLoading,
           setMenuOpen: mockSetMenuOpen,
@@ -137,6 +151,7 @@ describe('useTaskActions', () => {
           boardId: 'board-1',
           targetCompletionList: mockCompletionList,
           targetClosedList: mockClosedList,
+          availableLists: mockAvailableLists,
           onUpdate: mockOnUpdate,
           setIsLoading: mockSetIsLoading,
           setMenuOpen: mockSetMenuOpen,
@@ -159,6 +174,7 @@ describe('useTaskActions', () => {
           boardId: 'board-1',
           targetCompletionList: mockCompletionList,
           targetClosedList: mockClosedList,
+          availableLists: mockAvailableLists,
           onUpdate: mockOnUpdate,
           setIsLoading: mockSetIsLoading,
           setMenuOpen: mockSetMenuOpen,
@@ -179,6 +195,7 @@ describe('useTaskActions', () => {
           boardId: 'board-1',
           targetCompletionList: mockCompletionList,
           targetClosedList: mockClosedList,
+          availableLists: mockAvailableLists,
           onUpdate: mockOnUpdate,
           setIsLoading: mockSetIsLoading,
           setMenuOpen: mockSetMenuOpen,
@@ -201,6 +218,7 @@ describe('useTaskActions', () => {
           boardId: 'board-1',
           targetCompletionList: mockCompletionList,
           targetClosedList: mockClosedList,
+          availableLists: mockAvailableLists,
           onUpdate: mockOnUpdate,
           setIsLoading: mockSetIsLoading,
           setMenuOpen: mockSetMenuOpen,
@@ -224,6 +242,7 @@ describe('useTaskActions', () => {
           boardId: 'board-1',
           targetCompletionList: mockCompletionList,
           targetClosedList: mockClosedList,
+          availableLists: mockAvailableLists,
           onUpdate: mockOnUpdate,
           setIsLoading: mockSetIsLoading,
           setMenuOpen: mockSetMenuOpen,
@@ -246,6 +265,7 @@ describe('useTaskActions', () => {
           boardId: 'board-1',
           targetCompletionList: mockCompletionList,
           targetClosedList: mockClosedList,
+          availableLists: mockAvailableLists,
           onUpdate: mockOnUpdate,
           setIsLoading: mockSetIsLoading,
           setMenuOpen: mockSetMenuOpen,
@@ -266,6 +286,7 @@ describe('useTaskActions', () => {
           boardId: 'board-1',
           targetCompletionList: mockCompletionList,
           targetClosedList: mockClosedList,
+          availableLists: mockAvailableLists,
           onUpdate: mockOnUpdate,
           setIsLoading: mockSetIsLoading,
           setMenuOpen: mockSetMenuOpen,
@@ -273,7 +294,7 @@ describe('useTaskActions', () => {
       { wrapper: createWrapper() }
     );
 
-    await result.current.handleMoveToList('new-list', []);
+    await result.current.handleMoveToList('new-list');
 
     await waitFor(() => {
       expect(mockSetIsLoading).toHaveBeenCalled();
@@ -288,6 +309,7 @@ describe('useTaskActions', () => {
           boardId: 'board-1',
           targetCompletionList: mockCompletionList,
           targetClosedList: mockClosedList,
+          availableLists: mockAvailableLists,
           onUpdate: mockOnUpdate,
           setIsLoading: mockSetIsLoading,
           setMenuOpen: mockSetMenuOpen,
@@ -295,7 +317,7 @@ describe('useTaskActions', () => {
       { wrapper: createWrapper() }
     );
 
-    await result.current.handleMoveToList('list-1', []);
+    await result.current.handleMoveToList('list-1');
 
     expect(mockSetMenuOpen).toHaveBeenCalledWith(false);
     expect(mockSetIsLoading).not.toHaveBeenCalled();

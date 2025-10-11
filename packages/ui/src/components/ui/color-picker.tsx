@@ -1,6 +1,6 @@
 'use client';
 
-import { TextIcon } from 'lucide-react';
+import { TextIcon } from '@tuturuuu/icons';
 import { useTheme } from 'next-themes';
 import { forwardRef, useMemo, useState } from 'react';
 import { HexColorPicker } from 'react-colorful';

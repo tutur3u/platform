@@ -1,12 +1,12 @@
 'use client';
 
 import type { ColumnDef } from '@tanstack/react-table';
+import { Mail } from '@tuturuuu/icons';
 import type { GuestUserLead } from '@tuturuuu/types/primitives/GuestUserLead';
-import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
 import { Button } from '@tuturuuu/ui/button';
-import { Mail } from '@tuturuuu/ui/icons';
-import Link from 'next/link';
+import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
 import moment from 'moment';
+import Link from 'next/link';
 
 export const getGuestLeadColumns = (
   t: any,
@@ -67,7 +67,7 @@ export const getGuestLeadColumns = (
     ),
     cell: ({ row }) => (
       <div className="text-center">
-        <span className="inline-flex items-center rounded-full bg-dynamic-green/10 px-2 py-1 text-xs font-medium text-dynamic-green">
+        <span className="inline-flex items-center rounded-full bg-dynamic-green/10 px-2 py-1 font-medium text-dynamic-green text-xs">
           {row.getValue('attendance_count')}
         </span>
       </div>
@@ -98,7 +98,7 @@ export const getGuestLeadColumns = (
       return (
         <div className="text-center">
           <span
-            className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${
+            className={`inline-flex items-center rounded-full px-2 py-1 font-medium text-xs ${
               hasLead
                 ? 'bg-dynamic-blue/10 text-dynamic-blue'
                 : 'bg-dynamic-orange/10 text-dynamic-orange'
@@ -147,7 +147,7 @@ export const getGuestLeadColumns = (
             asChild
           >
             <Link href={`./${user.id}/follow-up`}>
-              <Mail className="h-4 w-4 mr-1" />
+              <Mail className="mr-1 h-4 w-4" />
               {hasLead ? t('common.view_email') : t('common.send_email')}
             </Link>
           </Button>

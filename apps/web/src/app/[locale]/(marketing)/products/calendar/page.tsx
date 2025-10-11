@@ -1,8 +1,5 @@
 'use client';
 
-import { Badge } from '@tuturuuu/ui/badge';
-import { Button } from '@tuturuuu/ui/button';
-import { Card } from '@tuturuuu/ui/card';
 import {
   Calendar,
   Clock,
@@ -16,7 +13,10 @@ import {
   Users,
   Video,
   Zap,
-} from '@tuturuuu/ui/icons';
+} from '@tuturuuu/icons';
+import { Badge } from '@tuturuuu/ui/badge';
+import { Button } from '@tuturuuu/ui/button';
+import { Card } from '@tuturuuu/ui/card';
 import NextLink from 'next/link';
 
 const features = [

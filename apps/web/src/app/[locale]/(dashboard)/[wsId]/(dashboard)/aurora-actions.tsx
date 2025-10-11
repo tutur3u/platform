@@ -1,7 +1,7 @@
 'use client';
 
+import { Loader2 } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
-import { Loader2 } from '@tuturuuu/ui/icons';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useState } from 'react';
 

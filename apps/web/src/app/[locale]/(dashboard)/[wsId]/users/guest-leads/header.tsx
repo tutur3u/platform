@@ -1,8 +1,6 @@
 'use client';
 
-import { useState } from 'react';
-import { Settings } from 'lucide-react';
-import { useTranslations } from 'next-intl';
+import { Settings } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import {
   Dialog,
@@ -12,6 +10,8 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@tuturuuu/ui/dialog';
+import { useTranslations } from 'next-intl';
+import { useState } from 'react';
 import { GuestLeadSettingsForm } from './settings-form';
 
 interface Props {

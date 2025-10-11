@@ -1,9 +1,9 @@
+import { User, UserRoundCheck, UserStar } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
-import { User, UserRoundCheck, UserStar } from '@tuturuuu/ui/icons';
-import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
+import Link from 'next/link';
 import ExpandableTaskList from './expandable-task-list';
 
 interface TasksAssignedToMeProps {

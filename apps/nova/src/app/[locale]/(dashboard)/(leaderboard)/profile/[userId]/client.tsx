@@ -1,18 +1,5 @@
 'use client';
 
-import { createClient } from '@tuturuuu/supabase/next/client';
-import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
-import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
-import { Badge } from '@tuturuuu/ui/badge';
-import { Button } from '@tuturuuu/ui/button';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from '@tuturuuu/ui/card';
 import {
   Award,
   Bolt,
@@ -29,7 +16,20 @@ import {
   Sparkles,
   Target,
   Trophy,
-} from '@tuturuuu/ui/icons';
+} from '@tuturuuu/icons';
+import { createClient } from '@tuturuuu/supabase/next/client';
+import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
+import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
+import { Badge } from '@tuturuuu/ui/badge';
+import { Button } from '@tuturuuu/ui/button';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from '@tuturuuu/ui/card';
 import { Progress } from '@tuturuuu/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import {
@@ -41,9 +41,9 @@ import {
 import { cn } from '@tuturuuu/utils/format';
 import { format, formatDistanceToNow } from 'date-fns';
 import { motion } from 'framer-motion';
+import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
 
 interface RecentActivity {

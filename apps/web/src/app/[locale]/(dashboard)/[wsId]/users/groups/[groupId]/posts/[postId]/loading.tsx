@@ -1,5 +1,5 @@
+import { Check, CircleHelp, Send, X } from '@tuturuuu/icons';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
-import { Check, CircleHelp, Send, X } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
 
 export default function Loading() {

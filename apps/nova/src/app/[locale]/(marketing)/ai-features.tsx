@@ -1,5 +1,3 @@
-import { Badge } from '@tuturuuu/ui/badge';
-import { Card } from '@tuturuuu/ui/card';
 import {
   Bot,
   BrainCircuit,
@@ -9,7 +7,9 @@ import {
   Settings2,
   ShieldCheck,
   Wand2,
-} from '@tuturuuu/ui/icons';
+} from '@tuturuuu/icons';
+import { Badge } from '@tuturuuu/ui/badge';
+import { Card } from '@tuturuuu/ui/card';
 import { motion } from 'framer-motion';
 import { useTranslations } from 'next-intl';
 import InteractiveDemo from './interactive-demo';

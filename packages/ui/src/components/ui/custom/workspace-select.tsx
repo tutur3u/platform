@@ -1,5 +1,6 @@
 'use client';
 
+import { CheckIcon, ChevronDown, Crown, PlusCircle } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { Workspace } from '@tuturuuu/types/db';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
@@ -49,7 +50,6 @@ import {
 } from '@tuturuuu/utils/constants';
 import { cn } from '@tuturuuu/utils/format';
 import { getInitials } from '@tuturuuu/utils/name-helper';
-import { CheckIcon, ChevronDown, Crown, PlusCircle } from 'lucide-react';
 import { useParams, usePathname, useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { z } from 'zod';

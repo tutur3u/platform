@@ -1,8 +1,8 @@
 'use client';
 
+import { ChevronLeft, ChevronRight } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import useSearchParams from '@tuturuuu/ui/hooks/useSearchParams';
-import { ChevronLeft, ChevronRight } from '@tuturuuu/ui/icons';
 import { format, parse } from 'date-fns';
 import { useLocale } from 'next-intl';
 import { Fragment, useMemo } from 'react';

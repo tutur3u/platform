@@ -1,9 +1,9 @@
 'use client';
 
 import type { ColumnDef } from '@tanstack/react-table';
+import { CheckCircle, Clock, PowerOff, XCircle } from '@tuturuuu/icons';
 import type { WorkspaceCronJob } from '@tuturuuu/types/db';
 import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
-import { CheckCircle, Clock, PowerOff, XCircle } from '@tuturuuu/ui/icons';
 import parser from 'cron-parser';
 import cronstrue from 'cronstrue';
 import moment from 'moment';

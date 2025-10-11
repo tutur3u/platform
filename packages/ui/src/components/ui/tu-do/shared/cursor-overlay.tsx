@@ -1,11 +1,11 @@
 'use client';
 
+import { MousePointer2 } from '@tuturuuu/icons';
 import { Badge } from '@tuturuuu/ui/badge';
 import {
   type CursorPosition,
   useCursorTracking,
 } from '@tuturuuu/ui/hooks/useCursorTracking';
-import { MousePointer2 } from '@tuturuuu/ui/icons';
 import { useEffect, useState } from 'react';
 
 interface CursorOverlayProps {

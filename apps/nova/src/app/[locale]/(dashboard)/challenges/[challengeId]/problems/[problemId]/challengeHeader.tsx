@@ -1,3 +1,12 @@
+import ScoreBadge from '@/components/common/ScoreBadge';
+import {
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  Clock,
+  ListChecks,
+  LogOut,
+} from '@tuturuuu/icons';
 import type { NovaChallenge, NovaChallengeCriteria } from '@tuturuuu/types/db';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
@@ -7,18 +16,9 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
-import {
-  ChevronDown,
-  ChevronLeft,
-  ChevronRight,
-  Clock,
-  ListChecks,
-  LogOut,
-} from '@tuturuuu/ui/icons';
 import { Progress } from '@tuturuuu/ui/progress';
 import { cn } from '@tuturuuu/utils/format';
 import { useEffect, useRef, useState } from 'react';
-import ScoreBadge from '@/components/common/ScoreBadge';
 import { ChallengeCriteriaDialog } from './challenge-criteria-dialog';
 
 type ExtendedNovaChallenge = NovaChallenge & {

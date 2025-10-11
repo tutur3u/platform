@@ -1,3 +1,4 @@
+import { CreditCard } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import {
   Card,
@@ -6,7 +7,6 @@ import {
   CardHeader,
   CardTitle,
 } from '@tuturuuu/ui/card';
-import { CreditCard } from '@tuturuuu/ui/icons';
 import { getTranslations } from 'next-intl/server';
 
 export default async function PaymentBillingCard() {

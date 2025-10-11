@@ -1,5 +1,14 @@
 'use client';
 
+import {
+  AlertTriangle,
+  Calendar,
+  ChevronDown,
+  ChevronRight,
+  ExternalLink,
+  LayoutGrid,
+  LayoutList,
+} from '@tuturuuu/icons';
 import type { TaskPriority } from '@tuturuuu/types/primitives/Priority';
 import type { TaskBoardStatus } from '@tuturuuu/types/primitives/TaskBoard';
 import { Badge } from '@tuturuuu/ui/badge';
@@ -10,15 +19,6 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from '@tuturuuu/ui/collapsible';
-import {
-  AlertTriangle,
-  Calendar,
-  ChevronDown,
-  ChevronRight,
-  ExternalLink,
-  LayoutGrid,
-  LayoutList,
-} from '@tuturuuu/ui/icons';
 import { cn } from '@tuturuuu/utils/format';
 import { calculateOverdueDays } from '@tuturuuu/utils/task-helpers';
 import { useState } from 'react';

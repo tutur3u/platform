@@ -2,6 +2,26 @@
 
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type { Editor, JSONContent } from '@tiptap/react';
+import {
+  Box,
+  Calendar,
+  Check,
+  ChevronDown,
+  Copy,
+  ExternalLink,
+  Flag,
+  ListTodo,
+  Loader2,
+  MoreVertical,
+  Plus,
+  Search,
+  Settings,
+  Tag,
+  Timer,
+  Trash,
+  Users,
+  X,
+} from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { TaskPriority } from '@tuturuuu/types/primitives/Priority';
 import type { Task } from '@tuturuuu/types/primitives/Task';
@@ -26,26 +46,6 @@ import {
 } from '@tuturuuu/ui/dropdown-menu';
 import { useToast } from '@tuturuuu/ui/hooks/use-toast';
 import { useYjsCollaboration } from '@tuturuuu/ui/hooks/use-yjs-collaboration';
-import {
-  Box,
-  Calendar,
-  Check,
-  ChevronDown,
-  Copy,
-  ExternalLink,
-  Flag,
-  ListTodo,
-  Loader2,
-  MoreVertical,
-  Plus,
-  Search,
-  Settings,
-  Tag,
-  Timer,
-  Trash,
-  Users,
-  X,
-} from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
 import { Switch } from '@tuturuuu/ui/switch';

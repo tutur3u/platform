@@ -1,16 +1,6 @@
 'use client';
 
 import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from '@tuturuuu/ui/accordion';
-import { Badge } from '@tuturuuu/ui/badge';
-import { Button } from '@tuturuuu/ui/button';
-import { Card } from '@tuturuuu/ui/card';
-import { GradientHeadline } from '@tuturuuu/ui/custom/gradient-headline';
-import {
   BarChart3,
   Building2,
   Calendar,
@@ -27,7 +17,17 @@ import {
   Truck,
   Users,
   Wrench,
-} from '@tuturuuu/ui/icons';
+} from '@tuturuuu/icons';
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from '@tuturuuu/ui/accordion';
+import { Badge } from '@tuturuuu/ui/badge';
+import { Button } from '@tuturuuu/ui/button';
+import { Card } from '@tuturuuu/ui/card';
+import { GradientHeadline } from '@tuturuuu/ui/custom/gradient-headline';
 import { motion, type Variants } from 'framer-motion';
 import Link from 'next/link';
 

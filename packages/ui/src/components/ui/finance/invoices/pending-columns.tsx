@@ -1,10 +1,10 @@
 'use client';
 
 import type { ColumnDef } from '@tanstack/react-table';
+import { FileText } from '@tuturuuu/icons';
 import type { PendingInvoice } from '@tuturuuu/types/primitives/PendingInvoice';
 import { Button } from '@tuturuuu/ui/button';
 import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
-import { FileText } from '@tuturuuu/ui/icons';
 import moment from 'moment';
 import Link from 'next/link';
 

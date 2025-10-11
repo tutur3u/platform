@@ -1,6 +1,6 @@
 'use client';
 
-import { Grid3x3, Rows3 } from 'lucide-react';
+import { Grid3x3, Rows3 } from '@tuturuuu/icons';
 import { useTranslations } from 'next-intl';
 import { Tabs, TabsList, TabsTrigger } from '../../tabs';
 

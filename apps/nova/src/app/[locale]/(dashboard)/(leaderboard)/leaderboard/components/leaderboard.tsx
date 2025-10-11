@@ -1,9 +1,9 @@
 'use client';
 
+import { ArrowDownUp, Crown, Medal, Sparkles } from '@tuturuuu/icons';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
-import { ArrowDownUp, Crown, Medal, Sparkles } from '@tuturuuu/ui/icons';
 import {
   Table,
   TableBody,
@@ -22,8 +22,8 @@ import { cn } from '@tuturuuu/utils/format';
 import { generateFunName } from '@tuturuuu/utils/name-helper';
 import { formatScore } from '@tuturuuu/utils/nova/scores/calculate';
 import { motion, useReducedMotion } from 'framer-motion';
-import Link from 'next/link';
 import { useTranslations } from 'next-intl';
+import Link from 'next/link';
 import React, { useState } from 'react';
 
 export interface UserInterface {

@@ -1,8 +1,5 @@
 'use client';
 
-import { Button } from '@tuturuuu/ui/button';
-import { CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
-import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import {
   Check,
   Copy,
@@ -10,11 +7,14 @@ import {
   Link as LinkIcon,
   Loader2,
   Sparkles,
-} from '@tuturuuu/ui/icons';
+} from '@tuturuuu/icons';
+import { Button } from '@tuturuuu/ui/button';
+import { CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
+import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
-import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
+import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
 interface ShortenedLinkResult {

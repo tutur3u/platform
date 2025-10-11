@@ -1,7 +1,7 @@
 'use client';
 
+import { Brain, Globe, Heart } from '@tuturuuu/icons';
 import { Badge } from '@tuturuuu/ui/badge';
-import { Brain, Globe, Heart } from '@tuturuuu/ui/icons';
 import { motion } from 'framer-motion';
 import type { ReactNode } from 'react';
 

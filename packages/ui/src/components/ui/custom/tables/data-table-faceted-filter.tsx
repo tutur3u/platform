@@ -1,6 +1,6 @@
 import type { Column } from '@tanstack/react-table';
+import { Check, PlusCircle } from '@tuturuuu/icons';
 import { cn } from '@tuturuuu/utils/format';
-import { Check, PlusCircle } from 'lucide-react';
 import type * as React from 'react';
 import { Badge } from '../../badge';
 import { Button } from '../../button';

@@ -1,5 +1,13 @@
 'use client';
 
+import {
+  Pause,
+  Play,
+  SkipBack,
+  SkipForward,
+  Volume2,
+  VolumeX,
+} from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import {
   Dialog,
@@ -8,14 +16,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@tuturuuu/ui/dialog';
-import {
-  Pause,
-  Play,
-  SkipBack,
-  SkipForward,
-  Volume2,
-  VolumeX,
-} from '@tuturuuu/ui/icons';
 import { Slider } from '@tuturuuu/ui/slider';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useCallback, useEffect, useRef, useState } from 'react';

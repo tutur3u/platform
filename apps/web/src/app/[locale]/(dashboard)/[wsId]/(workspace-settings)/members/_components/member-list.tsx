@@ -1,7 +1,7 @@
+import { User as UserIcon } from '@tuturuuu/icons';
 import type { Workspace, WorkspaceUserRole } from '@tuturuuu/types/db';
 import type { User } from '@tuturuuu/types/primitives/User';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
-import { User as UserIcon } from '@tuturuuu/ui/icons';
 import { cn } from '@tuturuuu/utils/format';
 import { getInitials } from '@tuturuuu/utils/name-helper';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';

@@ -1,5 +1,6 @@
 'use client';
 
+import { AlertCircle, CheckCircle, Copy, Loader2 } from '@tuturuuu/icons';
 import type { TimeTrackingCategory } from '@tuturuuu/types/db';
 import { Button } from '@tuturuuu/ui/button';
 import { Checkbox } from '@tuturuuu/ui/checkbox';
@@ -9,7 +10,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@tuturuuu/ui/dialog';
-import { AlertCircle, CheckCircle, Copy, Loader2 } from '@tuturuuu/ui/icons';
 import { Label } from '@tuturuuu/ui/label';
 import {
   Select,

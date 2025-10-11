@@ -1,5 +1,25 @@
 'use client';
 
+import {
+  benchmarks,
+  exportBenchmarksAsCSV,
+  exportBenchmarksAsJSON,
+  type HorseRacingBenchmark,
+  runBenchmark,
+  runStandardBenchmarks,
+} from '@/utils/horseRacingBenchmarks';
+import {
+  AlertCircle,
+  ArrowDown,
+  ArrowUp,
+  BarChart4,
+  Download,
+  HelpCircle,
+  Play,
+  Plus,
+  Save,
+  Trash,
+} from '@tuturuuu/icons';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -17,18 +37,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@tuturuuu/ui/dialog';
-import {
-  AlertCircle,
-  ArrowDown,
-  ArrowUp,
-  BarChart4,
-  Download,
-  HelpCircle,
-  Play,
-  Plus,
-  Save,
-  Trash,
-} from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
 import { Progress } from '@tuturuuu/ui/progress';
@@ -58,14 +66,6 @@ import {
   TooltipTrigger,
 } from '@tuturuuu/ui/tooltip';
 import { useEffect, useState } from 'react';
-import {
-  benchmarks,
-  exportBenchmarksAsCSV,
-  exportBenchmarksAsJSON,
-  type HorseRacingBenchmark,
-  runBenchmark,
-  runStandardBenchmarks,
-} from '@/utils/horseRacingBenchmarks';
 
 interface BenchmarkRunnerProps {
   onBenchmarksUpdated?: (benchmarks: HorseRacingBenchmark[]) => void;

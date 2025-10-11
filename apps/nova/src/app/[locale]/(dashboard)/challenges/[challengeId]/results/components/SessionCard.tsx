@@ -1,3 +1,11 @@
+import {
+  AlertCircle,
+  Award,
+  Calendar,
+  Clock,
+  Target,
+  Zap,
+} from '@tuturuuu/icons';
 import type { NovaProblem, NovaSession } from '@tuturuuu/types/db';
 import { Badge } from '@tuturuuu/ui/badge';
 import {
@@ -7,14 +15,6 @@ import {
   CardHeader,
   CardTitle,
 } from '@tuturuuu/ui/card';
-import {
-  AlertCircle,
-  Award,
-  Calendar,
-  Clock,
-  Target,
-  Zap,
-} from '@tuturuuu/ui/icons';
 import {
   Tooltip,
   TooltipContent,

@@ -1,6 +1,5 @@
-import { Receipt } from '@tuturuuu/ui/icons';
+import { Receipt } from '@tuturuuu/icons';
 import { useTranslations } from 'next-intl';
-import React from 'react';
 
 interface BillingHistoryItem {
   id: string;

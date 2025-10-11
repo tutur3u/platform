@@ -1,3 +1,4 @@
+import { Trash2 } from '@tuturuuu/icons';
 import type { MeetTogetherPlan } from '@tuturuuu/types/primitives/MeetTogetherPlan';
 import type { GetPollsForPlanResult } from '@tuturuuu/types/primitives/Poll';
 import type { User } from '@tuturuuu/types/primitives/User';
@@ -21,9 +22,8 @@ import { Button } from '@tuturuuu/ui/button';
 import { useTimeBlocking } from '@tuturuuu/ui/hooks/time-blocking-provider';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import { Input } from '@tuturuuu/ui/input';
-import { Trash2 } from 'lucide-react';
-import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
+import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import MultipleChoiceVote from '../tumeet/multiple-choice-vote';
 import { DefaultWherePollContent } from './where-tu-meet';

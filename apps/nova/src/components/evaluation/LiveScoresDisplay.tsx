@@ -1,13 +1,13 @@
 'use client';
 
-import { Badge } from '@tuturuuu/ui/badge';
 import {
   Brain,
   CheckCircle,
   FlaskConical,
   Sparkles,
   TrendingUp,
-} from '@tuturuuu/ui/icons';
+} from '@tuturuuu/icons';
+import { Badge } from '@tuturuuu/ui/badge';
 import { Separator } from '@tuturuuu/ui/separator';
 import { cn } from '@tuturuuu/utils/format';
 import { useEffect, useState } from 'react';

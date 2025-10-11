@@ -1,10 +1,10 @@
 'use client';
 
+import { User } from '@tuturuuu/icons';
 import type { RealtimePresenceState } from '@tuturuuu/supabase/next/realtime';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import type { UserPresenceState } from '@tuturuuu/ui/hooks/usePresence';
 import { usePresence } from '@tuturuuu/ui/hooks/usePresence';
-import { User } from '@tuturuuu/ui/icons';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { cn } from '@tuturuuu/utils/format';
 import { getInitials } from '@tuturuuu/utils/name-helper';

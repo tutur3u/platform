@@ -1,4 +1,4 @@
-import { Circle, Square, Triangle } from '@tuturuuu/ui/icons';
+import { Circle, Square, Triangle } from '@tuturuuu/icons';
 import { motion } from 'framer-motion';
 import { useEffect, useState } from 'react';
 

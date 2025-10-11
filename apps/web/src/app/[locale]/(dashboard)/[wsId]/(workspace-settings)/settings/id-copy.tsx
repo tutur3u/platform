@@ -1,7 +1,7 @@
 'use client';
 
+import { CheckCheck, Copy } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
-import { CheckCheck, Copy } from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
 import { useTranslations } from 'next-intl';

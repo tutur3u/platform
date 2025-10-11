@@ -1,6 +1,6 @@
+import { Calculator } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import type { TaskBoard } from '@tuturuuu/types/primitives/TaskBoard';
-import { Calculator } from '@tuturuuu/ui/icons';
 import { getPermissions, getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';

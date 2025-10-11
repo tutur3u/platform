@@ -1,8 +1,8 @@
 'use client';
 
+import { MinusIcon } from '@tuturuuu/icons';
 import { cn } from '@tuturuuu/utils/format';
 import { OTPInput, OTPInputContext, type SlotProps } from 'input-otp';
-import { MinusIcon } from 'lucide-react';
 import * as React from 'react';
 
 function InputOTP({

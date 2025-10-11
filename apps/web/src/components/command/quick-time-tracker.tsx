@@ -1,9 +1,6 @@
 'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import type { TaskPriority } from '@tuturuuu/types/primitives/Priority';
-import { Button } from '@tuturuuu/ui/button';
-import { CommandGroup } from '@tuturuuu/ui/command';
 import {
   CheckCircle,
   CheckSquare,
@@ -17,7 +14,10 @@ import {
   Tag,
   Timer,
   X,
-} from '@tuturuuu/ui/icons';
+} from '@tuturuuu/icons';
+import type { TaskPriority } from '@tuturuuu/types/primitives/Priority';
+import { Button } from '@tuturuuu/ui/button';
+import { CommandGroup } from '@tuturuuu/ui/command';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
 import { toast } from '@tuturuuu/ui/sonner';

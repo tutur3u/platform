@@ -1,9 +1,9 @@
 import WorkspaceWrapper from '@/components/workspace-wrapper';
+import { FilePlus } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { Button } from '@tuturuuu/ui/button';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Dialog, DialogTrigger } from '@tuturuuu/ui/dialog';
-import { FilePlus } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';

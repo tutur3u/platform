@@ -1,6 +1,16 @@
 'use client';
 
 import {
+  Check,
+  Edit2,
+  MoreVertical,
+  Palette,
+  Plus,
+  Search,
+  Tag,
+  Trash2,
+} from '@tuturuuu/icons';
+import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -28,16 +38,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
-import {
-  Check,
-  Edit2,
-  MoreVertical,
-  Palette,
-  Plus,
-  Search,
-  Tag,
-  Trash2,
-} from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
 import { toast } from '@tuturuuu/ui/sonner';
@@ -395,11 +395,11 @@ export default function TaskLabelsClient({ wsId, initialLabels }: Props) {
           {filteredLabels.map((label) => (
             <Card
               key={label.id}
-              className="group relative overflow-hidden transition-all hover:shadow-md hover:scale-[1.02] cursor-pointer"
+              className="group relative cursor-pointer overflow-hidden transition-all hover:scale-[1.02] hover:shadow-md"
               onClick={() => openEditDialog(label)}
             >
               <div className="p-3">
-                <div className="flex items-center justify-between gap-2 mb-3">
+                <div className="mb-3 flex items-center justify-between gap-2">
                   <Badge
                     variant="outline"
                     style={{
@@ -453,7 +453,7 @@ export default function TaskLabelsClient({ wsId, initialLabels }: Props) {
 
                 <div className="flex items-center gap-2 text-muted-foreground text-xs">
                   <Palette className="h-3 w-3 flex-shrink-0" />
-                  <span className="font-mono truncate">
+                  <span className="truncate font-mono">
                     {label.color.toUpperCase()}
                   </span>
                 </div>

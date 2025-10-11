@@ -1,5 +1,15 @@
 'use client';
 
+import {
+  ArrowDown,
+  ArrowUp,
+  Calculator,
+  ChevronLeft,
+  ChevronRight,
+  CreditCard,
+  FileText,
+  Loader2,
+} from '@tuturuuu/icons';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -11,16 +21,6 @@ import {
 } from '@tuturuuu/ui/card';
 import { Combobox, type ComboboxOptions } from '@tuturuuu/ui/custom/combobox';
 import { AttendanceCalendar } from '@tuturuuu/ui/finance/invoices/attendance-calendar';
-import {
-  ArrowDown,
-  ArrowUp,
-  Calculator,
-  ChevronLeft,
-  ChevronRight,
-  CreditCard,
-  FileText,
-  Loader2,
-} from '@tuturuuu/ui/icons';
 import { Label } from '@tuturuuu/ui/label';
 import {
   Select,
@@ -32,8 +32,8 @@ import {
 import { Separator } from '@tuturuuu/ui/separator';
 import { toast } from '@tuturuuu/ui/sonner';
 import { Textarea } from '@tuturuuu/ui/textarea';
-import { useRouter } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
+import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { AvailablePromotion } from './hooks';
 import {

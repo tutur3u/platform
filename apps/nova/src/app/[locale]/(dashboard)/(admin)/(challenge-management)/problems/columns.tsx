@@ -1,6 +1,7 @@
 'use client';
 
 import type { ColumnDef } from '@tanstack/react-table';
+import { Edit, Eye, MoreHorizontal, Trash } from '@tuturuuu/icons';
 import type { ExtendedNovaProblem } from '@tuturuuu/types/db';
 import {
   AlertDialog,
@@ -23,7 +24,6 @@ import {
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
-import { Edit, Eye, MoreHorizontal, Trash } from '@tuturuuu/ui/icons';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';

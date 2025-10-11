@@ -1,7 +1,5 @@
 'use client';
 
-import type { WorkspaceCourse } from '@tuturuuu/types/db';
-import { Card, CardContent } from '@tuturuuu/ui/card';
 import {
   Beaker,
   BookOpen,
@@ -18,9 +16,11 @@ import {
   Palette,
   PenTool,
   Star,
-} from '@tuturuuu/ui/icons';
-import Link from 'next/link';
+} from '@tuturuuu/icons';
+import type { WorkspaceCourse } from '@tuturuuu/types/db';
+import { Card, CardContent } from '@tuturuuu/ui/card';
 import { useTranslations } from 'next-intl';
+import Link from 'next/link';
 
 interface CourseCardViewProps {
   courses: (WorkspaceCourse & {

@@ -1,9 +1,9 @@
 'use client';
 
+import { ChevronLeft, ChevronRight } from '@tuturuuu/icons';
 import type { Timeblock } from '@tuturuuu/types/primitives/Timeblock';
 import { useTimeBlocking } from '@tuturuuu/ui/hooks/time-blocking-provider';
 import { useIsMobile } from '@tuturuuu/ui/hooks/use-mobile';
-import { ChevronLeft, ChevronRight } from '@tuturuuu/ui/icons';
 import { Tabs, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { timetzToHour } from '@tuturuuu/utils/date-helper';
 import { cn } from '@tuturuuu/utils/format';

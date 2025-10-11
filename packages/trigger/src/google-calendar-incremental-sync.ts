@@ -4,10 +4,10 @@ import {
   getGoogleAuthClient,
   getSyncToken,
   getWorkspacesForSync,
-  type SyncOrchestratorResult,
   storeSyncToken,
   syncWorkspaceBatched,
-} from '@tuturuuu/trigger/google-calendar-sync';
+  type SyncOrchestratorResult,
+} from './google-calendar-sync';
 
 async function performIncrementalSyncForWorkspace(
   calendarId = 'primary',

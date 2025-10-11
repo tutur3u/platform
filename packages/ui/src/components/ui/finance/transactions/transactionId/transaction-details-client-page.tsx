@@ -1,24 +1,22 @@
 'use client';
 
-import { Badge } from '@tuturuuu/ui/badge';
-import { Button } from '@tuturuuu/ui/button';
-import { Card } from '@tuturuuu/ui/card';
-import {
-  CalendarIcon,
-  DollarSign,
-  Tag,
-  User,
-  Wallet,
-} from '@tuturuuu/ui/icons';
-import { Separator } from '@tuturuuu/ui/separator';
 import {
   ArrowDownCircle,
   ArrowUpCircle,
+  CalendarIcon,
+  DollarSign,
   Edit,
   FolderOpen,
+  Tag,
   TrendingDown,
   TrendingUp,
-} from 'lucide-react';
+  User,
+  Wallet,
+} from '@tuturuuu/icons';
+import { Badge } from '@tuturuuu/ui/badge';
+import { Button } from '@tuturuuu/ui/button';
+import { Card } from '@tuturuuu/ui/card';
+import { Separator } from '@tuturuuu/ui/separator';
 import moment from 'moment';
 import { useLocale, useTranslations } from 'next-intl';
 import Image from 'next/image';

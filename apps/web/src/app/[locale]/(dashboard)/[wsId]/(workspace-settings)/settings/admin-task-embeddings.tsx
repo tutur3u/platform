@@ -1,5 +1,6 @@
 'use client';
 
+import { Activity, AlertCircle, CheckCircle2, Sparkles } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import {
   Card,
@@ -8,12 +9,6 @@ import {
   CardHeader,
   CardTitle,
 } from '@tuturuuu/ui/card';
-import {
-  Activity,
-  AlertCircle,
-  CheckCircle2,
-  Sparkles,
-} from '@tuturuuu/ui/icons';
 import { Progress } from '@tuturuuu/ui/progress';
 import { Separator } from '@tuturuuu/ui/separator';
 import { toast } from '@tuturuuu/ui/sonner';

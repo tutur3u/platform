@@ -1,5 +1,6 @@
 'use client';
 
+import { ChevronDown } from '@tuturuuu/icons';
 import type { GanttTask } from '@tuturuuu/types/primitives/Task';
 import { Badge } from '@tuturuuu/ui/badge';
 import {
@@ -7,7 +8,6 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from '@tuturuuu/ui/collapsible';
-import { ChevronDown } from '@tuturuuu/ui/icons';
 import { cn } from '@tuturuuu/utils/format';
 
 interface AnalyticsFilters {

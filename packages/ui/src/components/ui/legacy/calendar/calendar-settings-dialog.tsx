@@ -1,5 +1,14 @@
 'use client';
 
+import {
+  CalendarClock,
+  CalendarDays,
+  Clock,
+  ListTodo,
+  Paintbrush,
+  Palette,
+  Sparkles,
+} from '@tuturuuu/icons';
 import type { WorkspaceCalendarGoogleToken } from '@tuturuuu/types/db';
 import {
   Breadcrumb,
@@ -34,15 +43,6 @@ import {
   SidebarProvider,
 } from '@tuturuuu/ui/sidebar';
 import { cn } from '@tuturuuu/utils/format';
-import {
-  CalendarClock,
-  CalendarDays,
-  Clock,
-  ListTodo,
-  Paintbrush,
-  Palette,
-  Sparkles,
-} from 'lucide-react';
 import * as React from 'react';
 import { AppearanceSettings } from './settings/appearance-settings';
 import { CategoryColorsSettings } from './settings/category-color-settings';

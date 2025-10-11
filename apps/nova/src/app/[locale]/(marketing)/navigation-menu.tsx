@@ -1,8 +1,8 @@
 'use client';
 
+import { BookText } from '@tuturuuu/icons';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Card } from '@tuturuuu/ui/card';
-import { BookText } from '@tuturuuu/ui/icons';
 import {
   NavigationMenu,
   NavigationMenuContent,

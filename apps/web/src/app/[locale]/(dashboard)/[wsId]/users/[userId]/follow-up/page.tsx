@@ -1,13 +1,13 @@
+import WorkspaceWrapper from '@/components/workspace-wrapper';
+import { AlertTriangleIcon } from '@tuturuuu/icons';
 import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
 import type { Metadata } from 'next';
-import { notFound } from 'next/navigation';
-import WorkspaceWrapper from '@/components/workspace-wrapper';
-import FollowUpClient from './client';
 import { getTranslations } from 'next-intl/server';
-import { AlertTriangleIcon } from '@tuturuuu/ui/icons';
+import { notFound } from 'next/navigation';
+import FollowUpClient from './client';
 
 export const metadata: Metadata = {
   title: 'Guest Lead Follow-up',
@@ -81,7 +81,7 @@ export default async function GuestLeadFollowUpPage({ params }: Props) {
         return (
           <div className="flex w-full flex-col gap-4">
             {!emailCreds && (
-              <div className="border border-destructive rounded-md p-4 bg-destructive/5">
+              <div className="rounded-md border border-destructive bg-destructive/5 p-4">
                 <div className="flex items-start gap-3">
                   <div className="text-destructive">
                     <AlertTriangleIcon className="h-5 w-5" />

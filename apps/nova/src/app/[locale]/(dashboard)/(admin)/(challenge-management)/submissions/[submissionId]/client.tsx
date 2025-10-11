@@ -1,22 +1,22 @@
 'use client';
 
-import type { NovaSubmissionData } from '@tuturuuu/types/db';
-import { Badge } from '@tuturuuu/ui/badge';
-import { Button } from '@tuturuuu/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
+import { SubmissionCard } from '@/components/common/SubmissionCard';
 import {
   ArrowLeft,
   BookOpen,
   Calendar,
   RefreshCw,
   User,
-} from '@tuturuuu/ui/icons';
+} from '@tuturuuu/icons';
+import type { NovaSubmissionData } from '@tuturuuu/types/db';
+import { Badge } from '@tuturuuu/ui/badge';
+import { Button } from '@tuturuuu/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
 import { Progress } from '@tuturuuu/ui/progress';
 import { toast } from '@tuturuuu/ui/sonner';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
-import { SubmissionCard } from '@/components/common/SubmissionCard';
 
 interface SubmissionClientProps {
   submission: NovaSubmissionData;

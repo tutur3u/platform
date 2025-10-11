@@ -1,5 +1,3 @@
-import type { AIChat } from '@tuturuuu/types/db';
-import { Button } from '@tuturuuu/ui/button';
 import {
   ArrowDownToDot,
   Box,
@@ -12,14 +10,16 @@ import {
   NotebookPen,
   Sigma,
   Sparkle,
-} from '@tuturuuu/ui/icons';
+} from '@tuturuuu/icons';
+import type { AIChat } from '@tuturuuu/types/db';
+import { Button } from '@tuturuuu/ui/button';
 import { Separator } from '@tuturuuu/ui/separator';
 import { capitalize, cn } from '@tuturuuu/utils/format';
 import dayjs from 'dayjs';
 import 'dayjs/locale/vi';
 import relativeTime from 'dayjs/plugin/relativeTime';
-import Link from 'next/link';
 import { useTranslations } from 'next-intl';
+import Link from 'next/link';
 
 export function EmptyScreen({
   wsId,

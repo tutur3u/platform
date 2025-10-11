@@ -1,5 +1,6 @@
 'use client';
 
+import { AlertCircle, Clock, Loader2 } from '@tuturuuu/icons';
 import type { TimeTrackingSession } from '@tuturuuu/types/db';
 import {
   Dialog,
@@ -7,14 +8,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@tuturuuu/ui/dialog';
-import { AlertCircle, Clock, Loader2 } from '@tuturuuu/ui/icons';
 import { Progress } from '@tuturuuu/ui/progress';
+import { XLSX } from '@tuturuuu/ui/xlsx';
 import { getInitials } from '@tuturuuu/utils/name-helper';
 import dayjs from 'dayjs';
 import duration from 'dayjs/plugin/duration';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useCallback, useEffect, useState } from 'react';
-import * as XLSX from 'xlsx';
 import FiltersPanel from './components/filters-panel';
 import ManagementCardSkeleton from './components/management-card-skeleton';
 import SessionsTable from './components/sessions-table';

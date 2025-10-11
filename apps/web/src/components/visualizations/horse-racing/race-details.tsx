@@ -1,5 +1,5 @@
+import { ChevronRight } from '@tuturuuu/icons';
 import { Card, CardContent } from '@tuturuuu/ui/card';
-import { ChevronRight } from '@tuturuuu/ui/icons';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { motion } from 'framer-motion';
 import { useState } from 'react';

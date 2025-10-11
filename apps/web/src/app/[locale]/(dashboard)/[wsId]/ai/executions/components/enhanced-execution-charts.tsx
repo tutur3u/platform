@@ -1,5 +1,16 @@
 'use client';
 
+import {
+  AlertTriangle,
+  ArrowDown,
+  ArrowUp,
+  BarChart3,
+  Clock,
+  DollarSign,
+  Info,
+  TrendingUp,
+  Zap,
+} from '@tuturuuu/icons';
 import type { WorkspaceAIExecution } from '@tuturuuu/types/db';
 import { Alert, AlertDescription } from '@tuturuuu/ui/alert';
 import { Badge } from '@tuturuuu/ui/badge';
@@ -11,17 +22,6 @@ import {
   CardTitle,
 } from '@tuturuuu/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
-import {
-  AlertTriangle,
-  ArrowDown,
-  ArrowUp,
-  BarChart3,
-  Clock,
-  DollarSign,
-  Info,
-  TrendingUp,
-  Zap,
-} from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useTheme } from 'next-themes';
 import {

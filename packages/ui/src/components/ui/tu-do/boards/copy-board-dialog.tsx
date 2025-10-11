@@ -1,5 +1,6 @@
 'use client';
 
+import { Copy, Loader2 } from '@tuturuuu/icons';
 import type { Workspace } from '@tuturuuu/types/db';
 import type { EnhancedTaskBoard } from '@tuturuuu/types/primitives/TaskBoard';
 import { Button } from '@tuturuuu/ui/button';
@@ -12,7 +13,6 @@ import {
   DialogTitle,
 } from '@tuturuuu/ui/dialog';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
-import { Copy, Loader2 } from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
 import {

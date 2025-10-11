@@ -1,6 +1,33 @@
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+  AlertCircle,
+  Box,
+  Calendar,
+  Check,
+  CheckCircle2,
+  CircleSlash,
+  Clock,
+  FileText,
+  Flag,
+  horseHead,
+  Icon,
+  Image as ImageIcon,
+  Link2,
+  Loader2,
+  MoreHorizontal,
+  Move,
+  Play,
+  Rabbit,
+  Timer,
+  Trash2,
+  Turtle,
+  unicornHead,
+  UserMinus,
+  UserStar,
+  X,
+} from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
 import type { Task } from '@tuturuuu/types/primitives/Task';
@@ -32,33 +59,6 @@ import {
 } from '@tuturuuu/ui/dropdown-menu';
 import { useTaskActions } from '@tuturuuu/ui/hooks/use-task-actions';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
-import {
-  AlertCircle,
-  Box,
-  Calendar,
-  Check,
-  CheckCircle2,
-  CircleSlash,
-  Clock,
-  FileText,
-  Flag,
-  horseHead,
-  Icon,
-  Image as ImageIcon,
-  Link2,
-  Loader2,
-  MoreHorizontal,
-  Move,
-  Play,
-  Rabbit,
-  Timer,
-  Trash2,
-  Turtle,
-  unicornHead,
-  UserMinus,
-  UserStar,
-  X,
-} from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
 import { ScrollArea } from '@tuturuuu/ui/scroll-area';

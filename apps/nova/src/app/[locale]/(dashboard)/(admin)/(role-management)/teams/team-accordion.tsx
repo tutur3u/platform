@@ -1,6 +1,7 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
+import { Mail, Users } from '@tuturuuu/icons';
 import {
   Accordion,
   AccordionContent,
@@ -9,11 +10,10 @@ import {
 } from '@tuturuuu/ui/accordion';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Button } from '@tuturuuu/ui/button';
-import { Mail, Users } from '@tuturuuu/ui/icons';
 import { Skeleton } from '@tuturuuu/ui/skeleton';
 import moment from 'moment';
-import Link from 'next/link';
 import { useTranslations } from 'next-intl';
+import Link from 'next/link';
 import { useState } from 'react';
 
 interface Member {

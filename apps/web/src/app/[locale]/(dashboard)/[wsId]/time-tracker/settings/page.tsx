@@ -1,5 +1,6 @@
 'use client';
 
+import { Calendar, Clock, Settings } from '@tuturuuu/icons';
 import {
   Card,
   CardContent,
@@ -7,7 +8,6 @@ import {
   CardHeader,
   CardTitle,
 } from '@tuturuuu/ui/card';
-import { Calendar, Clock, Settings } from '@tuturuuu/ui/icons';
 import { Label } from '@tuturuuu/ui/label';
 import {
   Select,

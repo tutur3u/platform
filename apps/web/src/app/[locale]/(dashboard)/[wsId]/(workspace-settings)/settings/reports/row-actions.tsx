@@ -1,6 +1,7 @@
 'use client';
 
 import type { Row } from '@tanstack/react-table';
+import { Ellipsis } from '@tuturuuu/icons';
 import type { WorkspaceConfig } from '@tuturuuu/types/primitives/WorkspaceConfig';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -10,7 +11,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
-import { Ellipsis } from '@tuturuuu/ui/icons';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import ConfigEditDialog from './edit-dialog';

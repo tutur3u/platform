@@ -1,14 +1,14 @@
 'use client';
 
-import { formatTimezoneOffset } from '@tuturuuu/utils/date-helper';
-import dayjs from 'dayjs';
 import {
   Calendar,
   CalendarDays,
   CalendarRange,
   Clock,
   Users,
-} from 'lucide-react';
+} from '@tuturuuu/icons';
+import { formatTimezoneOffset } from '@tuturuuu/utils/date-helper';
+import dayjs from 'dayjs';
 import Link from 'next/link';
 import EditPlanDialog from './edit-plan-dialog';
 import type { MeetTogetherPlanWithParticipants } from './page';

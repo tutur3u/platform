@@ -1,4 +1,4 @@
-import { Calendar, X } from '@tuturuuu/ui/icons';
+import { Calendar, X } from '@tuturuuu/icons';
 import {
   DropdownMenuItem,
   DropdownMenuSeparator,

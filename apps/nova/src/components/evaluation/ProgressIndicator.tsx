@@ -1,5 +1,23 @@
 'use client';
 
+import {
+  CATEGORY_CONFIG,
+  STEP_CONFIG,
+  calculateOverallProgress,
+  getActiveSteps,
+  getCategoryStatus,
+  getCurrentStepInfo,
+  getStepsByCategory,
+  type ProgressUpdate,
+} from '@/lib/streaming';
+import {
+  AlertCircle,
+  CheckCircle,
+  ChevronDown,
+  ChevronRight,
+  Clock,
+  Cog,
+} from '@tuturuuu/icons';
 import { Badge } from '@tuturuuu/ui/badge';
 import {
   Card,
@@ -14,28 +32,10 @@ import {
   CollapsibleTrigger,
 } from '@tuturuuu/ui/collapsible';
 import { LoadingIndicator } from '@tuturuuu/ui/custom/loading-indicator';
-import {
-  AlertCircle,
-  CheckCircle,
-  ChevronDown,
-  ChevronRight,
-  Clock,
-  Cog,
-} from '@tuturuuu/ui/icons';
 import { Progress } from '@tuturuuu/ui/progress';
 import { Separator } from '@tuturuuu/ui/separator';
 import { cn } from '@tuturuuu/utils/format';
 import { useEffect, useState } from 'react';
-import {
-  CATEGORY_CONFIG,
-  calculateOverallProgress,
-  getActiveSteps,
-  getCategoryStatus,
-  getCurrentStepInfo,
-  getStepsByCategory,
-  type ProgressUpdate,
-  STEP_CONFIG,
-} from '@/lib/streaming';
 
 interface EvaluationPreview {
   criteriaEvaluation?: any[];

@@ -1,10 +1,4 @@
-import { createAdminClient } from '@tuturuuu/supabase/next/server';
-import type {
-  PlatformUser,
-  User,
-  UserPrivateDetails,
-} from '@tuturuuu/types/db';
-import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
+import { CustomDataTable } from '@/components/custom-data-table';
 import {
   Building,
   Crown,
@@ -12,14 +6,20 @@ import {
   Shield,
   UserCheck,
   Users,
-} from '@tuturuuu/ui/icons';
+} from '@tuturuuu/icons';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import type {
+  PlatformUser,
+  User,
+  UserPrivateDetails,
+} from '@tuturuuu/types/db';
+import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Separator } from '@tuturuuu/ui/separator';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
-import { notFound, redirect } from 'next/navigation';
 import { getLocale, getTranslations } from 'next-intl/server';
-import { CustomDataTable } from '@/components/custom-data-table';
+import { notFound, redirect } from 'next/navigation';
 import { getPlatformRoleColumns } from './columns';
 
 export const metadata: Metadata = {

@@ -1,8 +1,8 @@
 'use client';
 
+import { ArrowUpCircle, CheckCircle } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import { Button } from '@tuturuuu/ui/button';
-import { ArrowUpCircle, CheckCircle } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import PurchaseLink from './data-polar-checkout';

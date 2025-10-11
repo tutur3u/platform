@@ -1,5 +1,6 @@
 'use client';
 
+import { Settings2 } from '@tuturuuu/icons';
 import {
   Card,
   CardContent,
@@ -7,7 +8,6 @@ import {
   CardHeader,
   CardTitle,
 } from '@tuturuuu/ui/card';
-import { Settings2 } from '@tuturuuu/ui/icons';
 import {
   Select,
   SelectContent,

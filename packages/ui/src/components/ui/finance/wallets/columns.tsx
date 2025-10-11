@@ -1,10 +1,10 @@
 'use client';
 
 import type { ColumnDef } from '@tanstack/react-table';
+import { Check, X } from '@tuturuuu/icons';
 import type { Wallet } from '@tuturuuu/types/primitives/Wallet';
 import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
 import { WalletRowActions } from '@tuturuuu/ui/finance/wallets/row-actions';
-import { Check, X } from '@tuturuuu/ui/icons';
 import moment from 'moment';
 
 export const walletColumns = (

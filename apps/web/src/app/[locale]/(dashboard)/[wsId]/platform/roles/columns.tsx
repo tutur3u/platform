@@ -2,6 +2,18 @@
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import type { ColumnDef } from '@tanstack/react-table';
+import {
+  AlertTriangle,
+  Building,
+  Clock,
+  Crown,
+  EyeOff,
+  Globe,
+  Loader2,
+  MoreHorizontal,
+  Shield,
+  Users,
+} from '@tuturuuu/icons';
 import type {
   PlatformUser,
   User,
@@ -19,18 +31,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
-import {
-  AlertTriangle,
-  Building,
-  Clock,
-  Crown,
-  EyeOff,
-  Globe,
-  Loader2,
-  MoreHorizontal,
-  Shield,
-  Users,
-} from '@tuturuuu/ui/icons';
 import { Switch } from '@tuturuuu/ui/switch';
 import {
   Tooltip,

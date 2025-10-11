@@ -1,5 +1,5 @@
+import { XLSX } from '@tuturuuu/ui/xlsx';
 import { beforeEach, describe, expect, test, vi } from 'vitest';
-import * as XLSX from 'xlsx';
 import { ExcelCrawler } from '../app/[locale]/(dashboard)/[wsId]/(ai)/datasets/[datasetId]/explore/crawlers/excel-crawler';
 
 describe('ExcelCrawler', () => {

@@ -1,17 +1,17 @@
 'use client';
 
+import { DEV_MODE } from '@/constants/common';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { Sparkles } from '@tuturuuu/icons';
 import type {
   Workspace,
   WorkspaceCalendarGoogleToken,
 } from '@tuturuuu/types/db';
 import { Button } from '@tuturuuu/ui/button';
-import { Sparkles } from '@tuturuuu/ui/icons';
 import { SmartCalendar } from '@tuturuuu/ui/legacy/calendar/smart-calendar';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { useLocale, useTranslations } from 'next-intl';
 import { useState } from 'react';
-import { DEV_MODE } from '@/constants/common';
 import AddEventButton from './components/add-event-button';
 import AddEventDialog from './components/add-event-dialog';
 import AutoScheduleComprehensiveDialog from './components/auto-schedule-comprehensive-dialog';
