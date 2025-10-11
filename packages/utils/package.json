@@ -42,5 +42,5 @@
     "./common/nextjs": "./src/common/nextjs.tsx",
     "./permissions": "./src/permissions.tsx"
   },
-  "packageManager": "bun@1.2.23"
+  "packageManager": "bun@1.3.0"
 }
