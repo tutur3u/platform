@@ -1,18 +1,18 @@
 'use client';
 
 import type {
-  InternalEmail,
-  User,
-  UserPrivateDetails,
+    InternalEmail,
+    User,
+    UserPrivateDetails,
 } from '@tuturuuu/types/db';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
+import type { JSONContent } from '@tuturuuu/types/tiptap';
 import {
-  ResizableHandle,
-  ResizablePanel,
-  ResizablePanelGroup,
+    ResizableHandle,
+    ResizablePanel,
+    ResizablePanelGroup,
 } from '@tuturuuu/ui/resizable';
 import { Switch } from '@tuturuuu/ui/switch';
-import type { JSONContent } from '@tuturuuu/ui/tiptap';
 import { TooltipProvider } from '@tuturuuu/ui/tooltip';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { useTranslations } from 'next-intl';
