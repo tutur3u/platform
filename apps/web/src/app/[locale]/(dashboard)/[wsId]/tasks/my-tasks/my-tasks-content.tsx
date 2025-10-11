@@ -1,18 +1,6 @@
 'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { createClient } from '@tuturuuu/supabase/next/client';
-import type { TaskPriority } from '@tuturuuu/types/primitives/Priority';
-import { Button } from '@tuturuuu/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
-import { Combobox } from '@tuturuuu/ui/custom/combobox';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from '@tuturuuu/ui/dialog';
 import {
   Calendar,
   CheckCircle2,
@@ -24,6 +12,19 @@ import {
   Plus,
   Users,
 } from '@tuturuuu/icons';
+import { createClient } from '@tuturuuu/supabase/next/client';
+import type { TaskWithRelations } from '@tuturuuu/types/db';
+import type { TaskPriority } from '@tuturuuu/types/primitives/Priority';
+import { Button } from '@tuturuuu/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
+import { Combobox } from '@tuturuuu/ui/custom/combobox';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@tuturuuu/ui/dialog';
 import { Label } from '@tuturuuu/ui/label';
 import {
   Select,
@@ -83,51 +84,6 @@ const parseDueDateToState = (value: string | null | undefined) => {
   return adjustDateToEndOfDay(parsed);
 };
 
-interface Task {
-  id: string;
-  name: string;
-  description?: string | null;
-  priority?: string | null;
-  end_date?: string | null;
-  start_date?: string | null;
-  estimation_points?: number | null;
-  archived?: boolean | null;
-  list_id?: string | null;
-  list: {
-    id: string;
-    name: string | null;
-    status?: string | null;
-    board: {
-      id: string;
-      name: string | null;
-      ws_id: string;
-      estimation_type?: string | null;
-      extended_estimation?: boolean;
-      allow_zero_estimates?: boolean;
-      workspaces: {
-        id: string;
-        name: string | null;
-        personal: boolean | null;
-      } | null;
-    } | null;
-  } | null;
-  assignees: Array<{
-    user: {
-      id: string;
-      display_name: string | null;
-      avatar_url?: string | null;
-    } | null;
-  }> | null;
-  labels?: Array<{
-    label: {
-      id: string;
-      name: string;
-      color: string;
-      created_at: string;
-    } | null;
-  }> | null;
-}
-
 interface JournalTaskResponse {
   tasks?: Array<{
     id: string;
@@ -171,9 +127,9 @@ interface WorkspaceLabel {
 interface MyTasksContentProps {
   wsId: string;
   isPersonal: boolean;
-  overdueTasks: Task[] | undefined;
-  todayTasks: Task[] | undefined;
-  upcomingTasks: Task[] | undefined;
+  overdueTasks: TaskWithRelations[] | undefined;
+  todayTasks: TaskWithRelations[] | undefined;
+  upcomingTasks: TaskWithRelations[] | undefined;
   totalActiveTasks: number;
 }
 
@@ -799,7 +755,7 @@ export default function MyTasksContent({
               </CardHeader>
               <CardContent className="p-6">
                 <TaskListWithCompletion
-                  tasks={overdueTasks as any}
+                  tasks={overdueTasks}
                   isPersonal={isPersonal}
                   initialLimit={5}
                   onTaskUpdate={handleUpdate}
@@ -819,7 +775,7 @@ export default function MyTasksContent({
               </CardHeader>
               <CardContent className="p-6">
                 <TaskListWithCompletion
-                  tasks={todayTasks as any}
+                  tasks={todayTasks}
                   isPersonal={isPersonal}
                   initialLimit={5}
                   onTaskUpdate={handleUpdate}
@@ -839,7 +795,7 @@ export default function MyTasksContent({
               </CardHeader>
               <CardContent className="p-6">
                 <TaskListWithCompletion
-                  tasks={upcomingTasks as any}
+                  tasks={upcomingTasks}
                   isPersonal={isPersonal}
                   initialLimit={5}
                   onTaskUpdate={handleUpdate}

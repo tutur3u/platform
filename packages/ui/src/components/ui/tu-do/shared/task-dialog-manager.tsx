@@ -6,7 +6,8 @@ import { useTaskDialogContext } from '../providers/task-dialog-provider';
 // Lazy load the heavy TaskEditDialog component
 const TaskEditDialog = dynamic(
   () =>
-    import('./task-edit-dialog.js').then((mod) => ({
+    // @ts-expect-error
+    import('./task-edit-dialog').then((mod) => ({
       default: mod.TaskEditDialog,
     })),
   {
@@ -29,6 +30,7 @@ export function TaskDialogManager() {
 
   return (
     <TaskEditDialog
+      // @ts-expect-error
       task={state.task}
       boardId={state.boardId || ''}
       isOpen={state.isOpen}

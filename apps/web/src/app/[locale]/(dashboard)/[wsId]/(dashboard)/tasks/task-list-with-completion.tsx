@@ -11,6 +11,8 @@ import {
   UserRound,
 } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/client';
+import type { TaskWithRelations } from '@tuturuuu/types/db';
+import type { Task as PrimitiveTask } from '@tuturuuu/types/primitives/Task';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
@@ -30,53 +32,8 @@ import {
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 
-interface Task {
-  id: string;
-  name: string;
-  description?: string | null;
-  priority?: string | null;
-  end_date?: string | null;
-  start_date?: string | null;
-  estimation_points?: number | null;
-  archived?: boolean | null;
-  list_id?: string | null;
-  list: {
-    id: string;
-    name: string | null;
-    status?: string | null;
-    board: {
-      id: string;
-      name: string | null;
-      ws_id: string;
-      estimation_type?: string | null;
-      extended_estimation?: boolean;
-      allow_zero_estimates?: boolean;
-      workspaces: {
-        id: string;
-        name: string | null;
-        personal: boolean | null;
-      } | null;
-    } | null;
-  } | null;
-  assignees: Array<{
-    user: {
-      id: string;
-      display_name: string | null;
-      avatar_url?: string | null;
-    } | null;
-  }> | null;
-  labels?: Array<{
-    label: {
-      id: string;
-      name: string;
-      color: string;
-      created_at: string;
-    } | null;
-  }> | null;
-}
-
 interface TaskListWithCompletionProps {
-  tasks: Task[];
+  tasks: TaskWithRelations[];
   isPersonal?: boolean;
   initialLimit?: number;
   onTaskUpdate?: () => void;
@@ -90,7 +47,7 @@ export default function TaskListWithCompletion({
 }: TaskListWithCompletionProps) {
   const { openTask } = useTaskDialog();
   const [showAll, setShowAll] = useState(false);
-  const [localTasks, setLocalTasks] = useState<Task[]>(tasks);
+  const [localTasks, setLocalTasks] = useState<TaskWithRelations[]>(tasks);
   const [completingTasks, setCompletingTasks] = useState<Set<string>>(
     new Set()
   );
@@ -106,7 +63,7 @@ export default function TaskListWithCompletion({
   const hasMoreTasks = localTasks.length > initialLimit;
 
   const handleToggleComplete = async (
-    task: Task,
+    task: TaskWithRelations,
     e?: React.MouseEvent | Record<string, never>
   ) => {
     if (e && 'preventDefault' in e) {
@@ -200,9 +157,17 @@ export default function TaskListWithCompletion({
     }
   };
 
-  const handleEditTask = (task: Task, e: React.MouseEvent) => {
+  const handleEditTask = (task: TaskWithRelations, e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
+
+    // Validate that the task has a valid board ID before opening
+    if (!task.list?.board?.id) {
+      toast.error('Task is not associated with a board');
+      return;
+    }
+
+    const boardId = task.list.board.id;
 
     const transformedTask = {
       ...task,
@@ -219,8 +184,9 @@ export default function TaskListWithCompletion({
         })),
     };
 
-    const boardId = task.list?.board?.id || '';
-    openTask(transformedTask as any, boardId);
+    // Type assertion is safe here because we're transforming the nested structure
+    // to match the flat structure expected by openTask (Task type from primitives)
+    openTask(transformedTask as PrimitiveTask, boardId);
   };
 
   const getPriorityColor = (priority: string | null) => {
@@ -320,7 +286,7 @@ export default function TaskListWithCompletion({
                   <Checkbox
                     checked={false}
                     onCheckedChange={() =>
-                      handleToggleComplete(task, {} as any)
+                      handleToggleComplete(task, {} as Record<string, never>)
                     }
                     className="h-5 w-5 transition-all hover:scale-110 hover:border-primary"
                   />

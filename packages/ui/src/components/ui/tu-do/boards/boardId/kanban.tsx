@@ -60,9 +60,6 @@ import { ScrollArea } from '@tuturuuu/ui/scroll-area';
 import { toast } from '@tuturuuu/ui/sonner';
 import { coordinateGetter } from '@tuturuuu/utils/keyboard-preset';
 import {
-  calculateSortKey,
-  normalizeListSortKeys,
-  SortKeyGapExhaustedError,
   useBoardConfig,
   useMoveTaskToBoard,
   useReorderTask,
@@ -76,6 +73,13 @@ import {
   mapEstimationPoints,
 } from '../../shared/estimation-mapping';
 import { BoardSelector } from '../board-selector';
+import { createBulkOperations } from './kanban-bulk-operations';
+import {
+  DRAG_ACTIVATION_DISTANCE,
+  MAX_SAFE_INTEGER_SORT,
+  MOBILE_BREAKPOINT,
+} from './kanban-constants';
+import { calculateSortKeyWithRetry as createCalculateSortKeyWithRetry } from './kanban-sort-helpers';
 import { TaskCard } from './task';
 import { BoardColumn } from './task-list';
 import { TaskListForm } from './task-list-form';
@@ -489,341 +493,52 @@ export function KanbanBoard({
     enabled: isMultiSelectMode && selectedTasks.size > 0,
   });
 
-  // Bulk helpers -----------------------------------------------------------
-  const applyOptimistic = (updater: (t: Task) => Task) => {
-    queryClient.setQueryData(['tasks', boardId], (old: Task[] | undefined) => {
-      if (!old) return old;
-      return old.map((t) => (selectedTasks.has(t.id) ? updater(t) : t));
-    });
-  };
+  // Create bulk operations using the extracted factory
+  const bulkOperations = useMemo(
+    () =>
+      createBulkOperations({
+        queryClient,
+        supabase,
+        boardId,
+        selectedTasks,
+        columns,
+        workspaceLabels,
+        workspaceProjects,
+        setBulkWorking,
+        clearSelection,
+        setBulkDeleteOpen,
+      }),
+    [
+      queryClient,
+      supabase,
+      boardId,
+      selectedTasks,
+      columns,
+      workspaceLabels,
+      workspaceProjects,
+      clearSelection,
+    ]
+  );
 
-  async function bulkUpdatePriority(priority: Task['priority'] | null) {
-    if (selectedTasks.size === 0) return;
-    setBulkWorking(true);
-    const supabase = createClient();
-    const ids = Array.from(selectedTasks);
-    const prev = queryClient.getQueryData(['tasks', boardId]) as
-      | Task[]
-      | undefined;
-    try {
-      applyOptimistic((t) => ({ ...t, priority }));
-      const { error } = await supabase
-        .from('tasks')
-        .update({ priority })
-        .in('id', ids);
-      if (error) throw error;
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ['tasks', boardId] }),
-      ]);
-    } catch (e) {
-      console.error('Bulk priority update failed', e);
-      // revert
-      if (prev) queryClient.setQueryData(['tasks', boardId], prev);
-    } finally {
-      setBulkWorking(false);
-    }
-  }
-
-  async function bulkUpdateEstimation(points: number | null) {
-    if (selectedTasks.size === 0) return;
-    setBulkWorking(true);
-    const supabase = createClient();
-    const ids = Array.from(selectedTasks);
-    const prev = queryClient.getQueryData(['tasks', boardId]) as
-      | Task[]
-      | undefined;
-    try {
-      applyOptimistic((t) => ({ ...t, estimation_points: points }));
-      const { error } = await supabase
-        .from('tasks')
-        .update({ estimation_points: points })
-        .in('id', ids);
-      if (error) throw error;
-      await queryClient.invalidateQueries({ queryKey: ['tasks', boardId] });
-    } catch (e) {
-      console.error('Bulk estimation update failed', e);
-      if (prev) queryClient.setQueryData(['tasks', boardId], prev);
-    } finally {
-      setBulkWorking(false);
-    }
-  }
-
-  async function bulkUpdateDueDate(
-    preset: 'today' | 'tomorrow' | 'week' | 'clear'
-  ) {
-    if (selectedTasks.size === 0) return;
-    setBulkWorking(true);
-    const supabase = createClient();
-    const ids = Array.from(selectedTasks);
-    const prev = queryClient.getQueryData(['tasks', boardId]) as
-      | Task[]
-      | undefined;
-    try {
-      let newDate: string | null = null;
-      if (preset !== 'clear') {
-        const d = new Date();
-        if (preset === 'tomorrow') d.setDate(d.getDate() + 1);
-        if (preset === 'week') d.setDate(d.getDate() + 7);
-        d.setHours(23, 59, 59, 999);
-        newDate = d.toISOString();
-      }
-      const end_date = newDate;
-      applyOptimistic((t) => ({ ...t, end_date }));
-      const { error } = await supabase
-        .from('tasks')
-        .update({ end_date })
-        .in('id', ids);
-      if (error) throw error;
-      await queryClient.invalidateQueries({ queryKey: ['tasks', boardId] });
-    } catch (e) {
-      console.error('Bulk due date update failed', e);
-      if (prev) queryClient.setQueryData(['tasks', boardId], prev);
-    } finally {
-      setBulkWorking(false);
-    }
-  }
-
-  function getListIdByStatus(status: 'done' | 'closed') {
-    const list = columns.find((c) => c.status === status);
-    return list ? String(list.id) : null;
-  }
-
-  async function bulkMoveToStatus(status: 'done' | 'closed') {
-    if (selectedTasks.size === 0) return;
-    const targetListId = getListIdByStatus(status);
-    if (!targetListId) return; // silently no-op if list missing
-    setBulkWorking(true);
-    const supabase = createClient();
-    const ids = Array.from(selectedTasks);
-    const prev = queryClient.getQueryData(['tasks', boardId]) as
-      | Task[]
-      | undefined;
-    try {
-      applyOptimistic((t) => ({ ...t, list_id: targetListId }));
-      const { error } = await supabase
-        .from('tasks')
-        .update({ list_id: targetListId })
-        .in('id', ids);
-      if (error) throw error;
-      await queryClient.invalidateQueries({ queryKey: ['tasks', boardId] });
-    } catch (e) {
-      console.error('Bulk status move failed', e);
-      if (prev) queryClient.setQueryData(['tasks', boardId], prev);
-    } finally {
-      setBulkWorking(false);
-    }
-  }
-
-  async function bulkAddLabel(labelId: string) {
-    if (selectedTasks.size === 0) return;
-    setBulkWorking(true);
-    const supabase = createClient();
-    const ids = Array.from(selectedTasks);
-    const prev = queryClient.getQueryData(['tasks', boardId]) as
-      | Task[]
-      | undefined;
-    try {
-      // Pre-compute tasks missing the label to avoid duplicate inserts / conflicts
-      const current =
-        (queryClient.getQueryData(['tasks', boardId]) as Task[] | undefined) ||
-        [];
-      const labelMeta = workspaceLabels.find((l) => l.id === labelId);
-      const missingTaskIds = ids.filter((id) => {
-        const t = current.find((ct) => ct.id === id);
-        return !t?.labels?.some((l) => l.id === labelId);
-      });
-
-      if (missingTaskIds.length === 0) {
-        setBulkWorking(false);
-        return; // Nothing to add
-      }
-
-      applyOptimistic((t) => {
-        if (!missingTaskIds.includes(t.id)) return t;
-        return {
-          ...t,
-          labels: [
-            ...(t.labels || []),
-            {
-              id: labelId,
-              name: labelMeta?.name || 'Label',
-              color: labelMeta?.color || '#3b82f6',
-              created_at: new Date().toISOString(),
-            },
-          ],
-        } as Task;
-      });
-
-      const rows = missingTaskIds.map((taskId) => ({
-        task_id: taskId,
-        label_id: labelId,
-      }));
-      // Insert ignoring duplicates (Supabase will error on conflict unless policy). We attempt and swallow duplicate errors.
-      const { error } = await supabase
-        .from('task_labels')
-        .insert(rows, { count: 'exact' });
-      if (error && !String(error.message).toLowerCase().includes('duplicate'))
-        throw error;
-      await queryClient.invalidateQueries({ queryKey: ['tasks', boardId] });
-    } catch (e) {
-      console.error('Bulk add label failed', e);
-      if (prev) queryClient.setQueryData(['tasks', boardId], prev);
-    } finally {
-      setBulkWorking(false);
-    }
-  }
-
-  async function bulkRemoveLabel(labelId: string) {
-    if (selectedTasks.size === 0) return;
-    setBulkWorking(true);
-    const supabase = createClient();
-    const ids = Array.from(selectedTasks);
-    const prev = queryClient.getQueryData(['tasks', boardId]) as
-      | Task[]
-      | undefined;
-    try {
-      applyOptimistic((t) => ({
-        ...t,
-        labels: (t.labels || []).filter((l) => l.id !== labelId),
-      }));
-      const { error } = await supabase
-        .from('task_labels')
-        .delete()
-        .in('task_id', ids)
-        .eq('label_id', labelId);
-      if (error) throw error;
-      await queryClient.invalidateQueries({ queryKey: ['tasks', boardId] });
-    } catch (e) {
-      console.error('Bulk remove label failed', e);
-      if (prev) queryClient.setQueryData(['tasks', boardId], prev);
-    } finally {
-      setBulkWorking(false);
-    }
-  }
-
-  async function bulkAddProject(projectId: string) {
-    if (selectedTasks.size === 0) return;
-    setBulkWorking(true);
-    const supabase = createClient();
-    const ids = Array.from(selectedTasks);
-    const prev = queryClient.getQueryData(['tasks', boardId]) as
-      | Task[]
-      | undefined;
-    try {
-      // Pre-compute tasks missing the project to avoid duplicate inserts
-      const current =
-        (queryClient.getQueryData(['tasks', boardId]) as Task[] | undefined) ||
-        [];
-      const projectMeta = workspaceProjects.find((p) => p.id === projectId);
-      const missingTaskIds = ids.filter((id) => {
-        const t = current.find((ct) => ct.id === id);
-        return !t?.projects?.some((p) => p.id === projectId);
-      });
-
-      if (missingTaskIds.length === 0) {
-        setBulkWorking(false);
-        return;
-      }
-
-      applyOptimistic((t) => {
-        if (!missingTaskIds.includes(t.id)) return t;
-        return {
-          ...t,
-          projects: [
-            ...(t.projects || []),
-            {
-              id: projectId,
-              name: projectMeta?.name || 'Project',
-              status: projectMeta?.status || null,
-            },
-          ],
-        } as Task;
-      });
-
-      const rows = missingTaskIds.map((taskId) => ({
-        task_id: taskId,
-        project_id: projectId,
-      }));
-      const { error } = await supabase
-        .from('task_project_tasks')
-        .insert(rows, { count: 'exact' });
-      if (error && !String(error.message).toLowerCase().includes('duplicate'))
-        throw error;
-      await queryClient.invalidateQueries({ queryKey: ['tasks', boardId] });
-    } catch (e) {
-      console.error('Bulk add project failed', e);
-      if (prev) queryClient.setQueryData(['tasks', boardId], prev);
-      toast.error('Failed to add project to selected tasks');
-    } finally {
-      setBulkWorking(false);
-    }
-  }
-
-  async function bulkRemoveProject(projectId: string) {
-    if (selectedTasks.size === 0) return;
-    setBulkWorking(true);
-    const supabase = createClient();
-    const ids = Array.from(selectedTasks);
-    const prev = queryClient.getQueryData(['tasks', boardId]) as
-      | Task[]
-      | undefined;
-    try {
-      applyOptimistic((t) => ({
-        ...t,
-        projects: (t.projects || []).filter((p) => p.id !== projectId),
-      }));
-      const { error } = await supabase
-        .from('task_project_tasks')
-        .delete()
-        .in('task_id', ids)
-        .eq('project_id', projectId);
-      if (error) throw error;
-      await queryClient.invalidateQueries({ queryKey: ['tasks', boardId] });
-    } catch (e) {
-      console.error('Bulk remove project failed', e);
-      if (prev) queryClient.setQueryData(['tasks', boardId], prev);
-      toast.error('Failed to remove project from selected tasks');
-    } finally {
-      setBulkWorking(false);
-    }
-  }
-
-  async function bulkDeleteTasks() {
-    if (selectedTasks.size === 0) return;
-    setBulkWorking(true);
-    const supabase = createClient();
-    const ids = Array.from(selectedTasks);
-    const prev = queryClient.getQueryData(['tasks', boardId]) as
-      | Task[]
-      | undefined;
-    try {
-      if (prev) {
-        queryClient.setQueryData(
-          ['tasks', boardId],
-          prev.filter((t) => !ids.includes(t.id))
-        );
-      }
-      const { error } = await supabase.from('tasks').delete().in('id', ids);
-      if (error) throw error;
-      await queryClient.invalidateQueries({ queryKey: ['tasks', boardId] });
-      clearSelection();
-      setBulkDeleteOpen(false);
-      toast.success('Deleted selected tasks');
-    } catch (e) {
-      console.error('Bulk delete failed', e);
-      if (prev) queryClient.setQueryData(['tasks', boardId], prev);
-      toast.error('Failed to delete selected tasks');
-    } finally {
-      setBulkWorking(false);
-    }
-  }
+  // Destructure bulk operations for easy access
+  const {
+    bulkUpdatePriority,
+    bulkUpdateEstimation,
+    bulkUpdateDueDate,
+    bulkMoveToStatus,
+    bulkAddLabel,
+    bulkRemoveLabel,
+    bulkAddProject,
+    bulkRemoveProject,
+    bulkDeleteTasks,
+  } = bulkOperations;
 
   // Detect mobile to disable drag sensors
   const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
     const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768); // Tailwind md breakpoint
+      setIsMobile(window.innerWidth < MOBILE_BREAKPOINT);
     };
     checkMobile();
     window.addEventListener('resize', checkMobile);
@@ -834,7 +549,7 @@ export function KanbanBoard({
   const sensors = useSensors(
     useSensor(isMobile ? MouseSensor : PointerSensor, {
       activationConstraint: {
-        distance: 8,
+        distance: DRAG_ACTIVATION_DISTANCE,
       },
     }),
     useSensor(KeyboardSensor, {
@@ -967,52 +682,19 @@ export function KanbanBoard({
     [activeColumn, tasks, boardId, workspace.personal, handleUpdate]
   );
 
-  /**
-   * Helper function to calculate sort key with automatic retry on gap exhaustion
-   * If SortKeyGapExhaustedError is thrown, normalizes the list and retries once
-   */
+  // Use the extracted calculateSortKeyWithRetry helper
   const calculateSortKeyWithRetry = useCallback(
-    async (
+    (
       prevSortKey: number | null | undefined,
       nextSortKey: number | null | undefined,
       listId: string
-    ): Promise<number> => {
-      try {
-        return calculateSortKey(prevSortKey, nextSortKey);
-      } catch (error) {
-        if (error instanceof SortKeyGapExhaustedError) {
-          console.warn(
-            '⚠️ Sort key gap exhausted, normalizing list and retrying...',
-            {
-              listId,
-              prevSortKey,
-              nextSortKey,
-              error: error.message,
-            }
-          );
-
-          try {
-            // Normalize the list sort keys
-            await normalizeListSortKeys(supabase, listId);
-            console.log('✅ List sort keys normalized, retrying calculation...');
-
-            // Retry the calculation after normalization
-            return calculateSortKey(prevSortKey, nextSortKey);
-          } catch (retryError) {
-            console.error(
-              '❌ Failed to calculate sort key after normalization:',
-              retryError
-            );
-            toast.error(
-              'Failed to reorder task. Please try again or refresh the page.'
-            );
-            throw retryError;
-          }
-        }
-        // Re-throw non-SortKeyGapExhaustedError errors
-        throw error;
-      }
-    },
+    ) =>
+      createCalculateSortKeyWithRetry(
+        supabase,
+        prevSortKey,
+        nextSortKey,
+        listId
+      ),
     [supabase]
   );
 
@@ -1284,9 +966,10 @@ export function KanbanBoard({
       if (!disableSort) {
         targetListTasks = targetListTasks.sort((a, b) => {
           // Use MAX_SAFE_INTEGER for null sort_key to match rendering behavior
-          const sortA = a.sort_key ?? Number.MAX_SAFE_INTEGER;
-          const sortB = b.sort_key ?? Number.MAX_SAFE_INTEGER;
+          const sortA = a.sort_key ?? MAX_SAFE_INTEGER_SORT;
+          const sortB = b.sort_key ?? MAX_SAFE_INTEGER_SORT;
           if (sortA !== sortB) return sortA - sortB;
+          if (!a.created_at || !b.created_at) return 0;
           return (
             new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
           );
@@ -1371,7 +1054,11 @@ export function KanbanBoard({
         try {
           if (reorderedTasks.length === 1) {
             // Only task in the list - use default from calculateSortKey
-            newSortKey = await calculateSortKeyWithRetry(null, null, targetListId);
+            newSortKey = await calculateSortKeyWithRetry(
+              null,
+              null,
+              targetListId
+            );
           } else if (newIndex === 0) {
             // At beginning - next task is at index 1
             const nextTask = reorderedTasks[1];
@@ -1417,7 +1104,11 @@ export function KanbanBoard({
 
         try {
           if (targetListTasks.length === 0) {
-            newSortKey = await calculateSortKeyWithRetry(null, null, targetListId);
+            newSortKey = await calculateSortKeyWithRetry(
+              null,
+              null,
+              targetListId
+            );
           } else if (overType === 'Column') {
             // Dropping on column header - insert at the BEGINNING
             const firstTask = targetListTasks[0];
@@ -1454,7 +1145,7 @@ export function KanbanBoard({
       // Check if we need to move/reorder
       const needsUpdate =
         targetListId !== originalListId || // Moving to different list
-        (activeTask.sort_key ?? Number.MAX_SAFE_INTEGER) !== newSortKey; // Position changed (strict integer comparison)
+        (activeTask.sort_key ?? MAX_SAFE_INTEGER_SORT) !== newSortKey; // Position changed (strict integer comparison)
 
       if (needsUpdate) {
         console.log('✅ Task needs reordering');
@@ -1478,9 +1169,10 @@ export function KanbanBoard({
 
           // Sort by current sort_key (ascending) to preserve visual order
           const sortedTasksToMove = selectedTaskObjects.sort((a, b) => {
-            const sortA = a.sort_key ?? Number.MAX_SAFE_INTEGER;
-            const sortB = b.sort_key ?? Number.MAX_SAFE_INTEGER;
+            const sortA = a.sort_key ?? MAX_SAFE_INTEGER_SORT;
+            const sortB = b.sort_key ?? MAX_SAFE_INTEGER_SORT;
             if (sortA !== sortB) return sortA - sortB;
+            if (!a.created_at || !b.created_at) return 0;
             return (
               new Date(a.created_at).getTime() -
               new Date(b.created_at).getTime()
@@ -1569,7 +1261,10 @@ export function KanbanBoard({
                   nextTask?.sort_key ?? null,
                   targetListId
                 );
-              } else if (positionInSimulated === simulatedTargetList.length - 1) {
+              } else if (
+                positionInSimulated ===
+                simulatedTargetList.length - 1
+              ) {
                 // At end - calculate based on prev task
                 const prevTask = simulatedTargetList[positionInSimulated - 1];
                 batchSortKey = await calculateSortKeyWithRetry(
@@ -1674,7 +1369,10 @@ export function KanbanBoard({
               });
             }
           } catch (error) {
-            console.error('Failed to calculate sort keys for batch move:', error);
+            console.error(
+              'Failed to calculate sort keys for batch move:',
+              error
+            );
             // Reset drag state on error
             setActiveColumn(null);
             setActiveTask(null);
@@ -2165,9 +1863,10 @@ export function KanbanBoard({
                     if (!disableSort) {
                       listTasks = listTasks.sort((a, b) => {
                         // Sort by sort_key first, then by created_at as fallback
-                        const sortA = a.sort_key ?? Number.MAX_SAFE_INTEGER;
-                        const sortB = b.sort_key ?? Number.MAX_SAFE_INTEGER;
+                        const sortA = a.sort_key ?? MAX_SAFE_INTEGER_SORT;
+                        const sortB = b.sort_key ?? MAX_SAFE_INTEGER_SORT;
                         if (sortA !== sortB) return sortA - sortB;
+                        if (!a.created_at || !b.created_at) return 0;
                         return (
                           new Date(a.created_at).getTime() -
                           new Date(b.created_at).getTime()
