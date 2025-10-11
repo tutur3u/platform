@@ -1,7 +1,7 @@
 import { extractYoutubeId } from '@/utils/url-helper';
 import {
-    createClient,
-    createDynamicClient,
+  createClient,
+  createDynamicClient,
 } from '@tuturuuu/supabase/next/server';
 import type { WorkspaceCourseModule } from '@tuturuuu/types/db';
 import type { JSONContent } from '@tuturuuu/types/tiptap';
@@ -10,12 +10,12 @@ import { CourseSection } from '@tuturuuu/ui/custom/education/modules/content-sec
 import { FileDisplay } from '@tuturuuu/ui/custom/education/modules/resources/file-display';
 import { YoutubeEmbed } from '@tuturuuu/ui/custom/education/modules/youtube/embed';
 import {
-    BookText,
-    Goal,
-    ListTodo,
-    Paperclip,
-    SwatchBook,
-    Youtube,
+  BookText,
+  Goal,
+  ListTodo,
+  Paperclip,
+  SwatchBook,
+  Youtube,
 } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
 import { RichTextEditor } from '@tuturuuu/ui/text-editor/editor';
