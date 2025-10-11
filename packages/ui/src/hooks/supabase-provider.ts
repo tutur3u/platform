@@ -168,7 +168,8 @@ export default class SupabaseProvider extends EventEmitter {
 
     this.onDocumentUpdate = this.onDocumentUpdate.bind(this);
     this.onAwarenessUpdate = this.onAwarenessUpdate.bind(this);
-    this.removeSelfFromAwarenessOnUnload = this.removeSelfFromAwarenessOnUnload.bind(this);
+    this.removeSelfFromAwarenessOnUnload =
+      this.removeSelfFromAwarenessOnUnload.bind(this);
 
     this.awareness =
       this.config.awareness || new awarenessProtocol.Awareness(doc);
@@ -261,7 +262,11 @@ export default class SupabaseProvider extends EventEmitter {
     this.logger('set connected flag to false');
     this.emit('status', [{ status: 'disconnected' }]);
 
-    awarenessProtocol.removeAwarenessStates(this.awareness, [this.doc.clientID], this);
+    awarenessProtocol.removeAwarenessStates(
+      this.awareness,
+      [this.doc.clientID],
+      this
+    );
   }
 
   public onMessage(message: Uint8Array, _origin: any) {
