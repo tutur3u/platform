@@ -15,7 +15,6 @@
     "@tiptap/core": "^3.6.6",
     "@tuturuuu/supabase": "workspace:*",
     "@tuturuuu/google": "workspace:*",
-    "@tuturuuu/trigger": "workspace:*",
     "@tuturuuu/icons": "workspace:*",
     "clsx": "^2.1.1",
     "dayjs": "^1.11.18",

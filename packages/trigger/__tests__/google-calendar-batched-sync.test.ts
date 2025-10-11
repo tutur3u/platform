@@ -32,7 +32,7 @@ vi.mock('@tuturuuu/supabase/next/server', () => ({
 }));
 
 // Mock the calendar sync coordination utility
-vi.mock('@tuturuuu/utils/calendar-sync-coordination', () => ({
+vi.mock('./calendar-sync-coordination', () => ({
   updateLastUpsert: vi.fn(() => Promise.resolve()),
 }));
 

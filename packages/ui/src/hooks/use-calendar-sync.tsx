@@ -1,13 +1,13 @@
 'use client';
 
 import { createClient } from '@tuturuuu/supabase/next/client';
+import { canProceedWithSync } from '@tuturuuu/trigger/calendar-sync-coordination';
 import type {
   Workspace,
   WorkspaceCalendarEvent,
   WorkspaceCalendarGoogleToken,
 } from '@tuturuuu/types/db';
 import type { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
-import { canProceedWithSync } from '@tuturuuu/utils/calendar-sync-coordination';
 import dayjs from 'dayjs';
 import {
   createContext,

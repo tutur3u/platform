@@ -5,6 +5,7 @@
   "main": "./src/index.ts",
   "exports": {
     ".": "./src/index.ts",
+    "./calendar-sync-coordination": "./src/calendar-sync-coordination.ts",
     "./google-calendar-sync": "./src/google-calendar-sync.ts",
     "./google-calendar-full-sync": "./src/google-calendar-full-sync.ts",
     "./google-calendar-incremental-sync": "./src/google-calendar-incremental-sync.ts"
@@ -20,7 +21,6 @@
     "@tuturuuu/supabase": "workspace:*",
     "@tuturuuu/types": "workspace:*",
     "@tuturuuu/google": "workspace:*",
-    "@tuturuuu/utils": "workspace:*",
     "dayjs": "^1.11.18"
   },
   "devDependencies": {
