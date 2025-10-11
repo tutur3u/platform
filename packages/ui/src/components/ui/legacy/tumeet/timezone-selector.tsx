@@ -1,17 +1,17 @@
+import { Check, ChevronsUpDown } from '@tuturuuu/icons';
 import type { Timezone } from '@tuturuuu/types/primitives/Timezone';
 import { Button } from '@tuturuuu/ui/button';
 import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
+    Command,
+    CommandEmpty,
+    CommandGroup,
+    CommandInput,
+    CommandItem,
+    CommandList,
 } from '@tuturuuu/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
 import { cn } from '@tuturuuu/utils/format';
 import timezones from '@tuturuuu/utils/timezones';
-import { Check, ChevronsUpDown } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 

@@ -1,26 +1,26 @@
 'use client';
 
+import {
+    CheckCircleIcon,
+    ClockIcon,
+    ExternalLinkIcon,
+    Loader2,
+    XIcon,
+    ZoomInIcon,
+} from '@tuturuuu/icons';
 import { createDynamicClient } from '@tuturuuu/supabase/next/client';
 import type { Product, SupportType } from '@tuturuuu/types/db';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
 } from '@tuturuuu/ui/dialog';
 import { toast } from '@tuturuuu/ui/sonner';
 import { format } from 'date-fns';
-import {
-  CheckCircleIcon,
-  ClockIcon,
-  ExternalLinkIcon,
-  Loader2,
-  XIcon,
-  ZoomInIcon,
-} from 'lucide-react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState } from 'react';

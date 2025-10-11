@@ -1,15 +1,16 @@
 'use client';
 
+import { Copy, Plus, Trash2 } from '@tuturuuu/icons';
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogTrigger,
 } from '@tuturuuu/ui/alert-dialog';
 import { Button } from '@tuturuuu/ui/button';
 import { Input } from '@tuturuuu/ui/input';
@@ -18,7 +19,6 @@ import { toast } from '@tuturuuu/ui/sonner';
 import { Switch } from '@tuturuuu/ui/switch';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { cn } from '@tuturuuu/utils/format';
-import { Copy, Plus, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 
 export type TimeBlock = {

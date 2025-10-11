@@ -1,7 +1,7 @@
 'use client';
 
+import { Activity, Edit, Plus, Trash2 } from '@tuturuuu/icons';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
-import { Activity, Edit, Plus, Trash2 } from 'lucide-react';
 
 interface SummaryCardsProps {
   totalSyncs: number;

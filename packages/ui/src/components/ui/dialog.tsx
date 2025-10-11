@@ -1,8 +1,8 @@
 'use client';
 
 import * as DialogPrimitive from '@radix-ui/react-dialog';
+import { XIcon } from '@tuturuuu/icons';
 import { cn } from '@tuturuuu/utils/format';
-import { XIcon } from 'lucide-react';
 import type * as React from 'react';
 
 function Dialog({
@@ -129,14 +129,15 @@ function DialogDescription({
 }
 
 export {
-  Dialog,
-  DialogClose,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogOverlay,
-  DialogPortal,
-  DialogTitle,
-  DialogTrigger,
+    Dialog,
+    DialogClose,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogOverlay,
+    DialogPortal,
+    DialogTitle,
+    DialogTrigger
 };
+

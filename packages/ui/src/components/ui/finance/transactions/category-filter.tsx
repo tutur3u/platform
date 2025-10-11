@@ -1,21 +1,21 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
+import { Check, Tag, X } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-  CommandSeparator,
+    Command,
+    CommandEmpty,
+    CommandGroup,
+    CommandInput,
+    CommandItem,
+    CommandList,
+    CommandSeparator,
 } from '@tuturuuu/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
 import { cn } from '@tuturuuu/utils/format';
-import { Check, Tag, X } from 'lucide-react';
 import { useState } from 'react';
 
 interface TransactionCategory {

@@ -1,18 +1,18 @@
 'use client';
 
+import { Check, ChevronDown, ChevronUp } from '@tuturuuu/icons';
 import { cn } from '@tuturuuu/utils/format';
-import { Check, ChevronDown, ChevronUp } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { Button } from '../button';
 import { Calendar } from '../calendar';
 import { Label } from '../label';
 import { Popover, PopoverContent, PopoverTrigger } from '../popover';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
 } from '../select';
 import { Switch } from '../switch';
 import { DateInput } from './date-input';

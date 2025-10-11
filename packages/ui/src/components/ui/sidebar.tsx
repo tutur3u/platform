@@ -1,27 +1,27 @@
 'use client';
 
 import { Slot } from '@radix-ui/react-slot';
+import { PanelLeftIcon } from '@tuturuuu/icons';
 import { cn } from '@tuturuuu/utils/format';
 import { cva, type VariantProps } from 'class-variance-authority';
-import { PanelLeftIcon } from 'lucide-react';
 import * as React from 'react';
 import { useIsMobile } from '../../hooks/use-mobile';
 import { Button } from './button';
 import { Input } from './input';
 import { Separator } from './separator';
 import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
+    Sheet,
+    SheetContent,
+    SheetDescription,
+    SheetHeader,
+    SheetTitle,
 } from './sheet';
 import { Skeleton } from './skeleton';
 import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
+    Tooltip,
+    TooltipContent,
+    TooltipProvider,
+    TooltipTrigger,
 } from './tooltip';
 
 const SIDEBAR_COOKIE_NAME = 'sidebar_state';
@@ -707,28 +707,29 @@ function SidebarMenuSubButton({
 }
 
 export {
-  Sidebar,
-  SidebarContent,
-  SidebarFooter,
-  SidebarGroup,
-  SidebarGroupAction,
-  SidebarGroupContent,
-  SidebarGroupLabel,
-  SidebarHeader,
-  SidebarInput,
-  SidebarInset,
-  SidebarMenu,
-  SidebarMenuAction,
-  SidebarMenuBadge,
-  SidebarMenuButton,
-  SidebarMenuItem,
-  SidebarMenuSkeleton,
-  SidebarMenuSub,
-  SidebarMenuSubButton,
-  SidebarMenuSubItem,
-  SidebarProvider,
-  SidebarRail,
-  SidebarSeparator,
-  SidebarTrigger,
-  useSidebar,
+    Sidebar,
+    SidebarContent,
+    SidebarFooter,
+    SidebarGroup,
+    SidebarGroupAction,
+    SidebarGroupContent,
+    SidebarGroupLabel,
+    SidebarHeader,
+    SidebarInput,
+    SidebarInset,
+    SidebarMenu,
+    SidebarMenuAction,
+    SidebarMenuBadge,
+    SidebarMenuButton,
+    SidebarMenuItem,
+    SidebarMenuSkeleton,
+    SidebarMenuSub,
+    SidebarMenuSubButton,
+    SidebarMenuSubItem,
+    SidebarProvider,
+    SidebarRail,
+    SidebarSeparator,
+    SidebarTrigger,
+    useSidebar
 };
+

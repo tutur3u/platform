@@ -1,4 +1,4 @@
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight } from '@tuturuuu/icons';
 import { useMemo } from 'react';
 import { Button } from '../../button';
 

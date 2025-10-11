@@ -1,6 +1,6 @@
 'use client';
 
-import { Eye, EyeOff } from 'lucide-react';
+import { Eye, EyeOff } from '@tuturuuu/icons';
 import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
 import { Button } from '../../button';

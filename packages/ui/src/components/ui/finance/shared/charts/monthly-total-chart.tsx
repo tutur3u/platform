@@ -1,7 +1,7 @@
 'use client';
 
+import { Eye, EyeOff } from '@tuturuuu/icons';
 import { cn } from '@tuturuuu/utils/format';
-import { Eye, EyeOff } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import { useTheme } from 'next-themes';
 import { useEffect, useState } from 'react';
@@ -9,10 +9,10 @@ import { Bar, BarChart, CartesianGrid, Legend, XAxis, YAxis } from 'recharts';
 import { Button } from '../../../button';
 import { Card, CardContent, CardHeader, CardTitle } from '../../../card';
 import {
-  type ChartConfig,
-  ChartContainer,
-  ChartTooltip,
-  ChartTooltipContent,
+    type ChartConfig,
+    ChartContainer,
+    ChartTooltip,
+    ChartTooltipContent,
 } from '../../../chart';
 
 // Cookie helper functions

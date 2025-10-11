@@ -1,15 +1,15 @@
 'use client';
 
+import {
+    ArrowDownCircle,
+    ArrowUpCircle,
+    Calendar,
+    FileText,
+} from '@tuturuuu/icons';
 import type { Transaction } from '@tuturuuu/types/primitives/Transaction';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Card } from '@tuturuuu/ui/card';
-import {
-  ArrowDownCircle,
-  ArrowUpCircle,
-  Calendar,
-  FileText,
-} from 'lucide-react';
 import moment from 'moment';
 import { useLocale } from 'next-intl';
 

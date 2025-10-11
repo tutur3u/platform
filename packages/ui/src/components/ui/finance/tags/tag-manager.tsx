@@ -2,29 +2,29 @@
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { Plus, Tag, Trash2 } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
 } from '@tuturuuu/ui/dialog';
 import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
+    Form,
+    FormControl,
+    FormField,
+    FormItem,
+    FormLabel,
+    FormMessage,
 } from '@tuturuuu/ui/form';
 import { Input } from '@tuturuuu/ui/input';
 import { toast } from '@tuturuuu/ui/sonner';
 import { Textarea } from '@tuturuuu/ui/textarea';
-import { Plus, Tag, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';

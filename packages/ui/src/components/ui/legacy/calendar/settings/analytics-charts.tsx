@@ -1,41 +1,41 @@
 'use client';
 
+import { Activity, BarChart3, TrendingUp } from '@tuturuuu/icons';
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
+    Card,
+    CardContent,
+    CardDescription,
+    CardHeader,
+    CardTitle,
 } from '@tuturuuu/ui/card';
 import {
-  ChartContainer,
-  ChartLegend,
-  ChartLegendContent,
-  ChartTooltip,
-  ChartTooltipContent,
+    ChartContainer,
+    ChartLegend,
+    ChartLegendContent,
+    ChartTooltip,
+    ChartTooltipContent,
 } from '@tuturuuu/ui/chart';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
-import { Activity, BarChart3, TrendingUp } from 'lucide-react';
 import {
-  Area,
-  AreaChart,
-  Bar,
-  BarChart,
-  CartesianGrid,
-  Cell,
-  Line,
-  LineChart,
-  Pie,
-  PieChart,
-  ResponsiveContainer,
-  XAxis,
-  YAxis,
+    Area,
+    AreaChart,
+    Bar,
+    BarChart,
+    CartesianGrid,
+    Cell,
+    Line,
+    LineChart,
+    Pie,
+    PieChart,
+    ResponsiveContainer,
+    XAxis,
+    YAxis,
 } from 'recharts';
 import type {
-  CalendarSourceData,
-  EventTypeData,
-  TimeSeriesData,
-  WorkspaceActivityData,
+    CalendarSourceData,
+    EventTypeData,
+    TimeSeriesData,
+    WorkspaceActivityData,
 } from './types';
 
 interface AnalyticsChartsProps {

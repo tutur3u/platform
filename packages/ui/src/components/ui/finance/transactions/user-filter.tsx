@@ -1,23 +1,23 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
+import { Check, Users, X } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Button } from '@tuturuuu/ui/button';
 import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-  CommandSeparator,
+    Command,
+    CommandEmpty,
+    CommandGroup,
+    CommandInput,
+    CommandItem,
+    CommandList,
+    CommandSeparator,
 } from '@tuturuuu/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
 import { cn } from '@tuturuuu/utils/format';
 import { getAvatarPlaceholder, getInitials } from '@tuturuuu/utils/name-helper';
-import { Check, Users, X } from 'lucide-react';
 import { useState } from 'react';
 
 interface UserFilterProps {

@@ -1,12 +1,12 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
+import { Calendar, Download, RefreshCw } from '@tuturuuu/icons';
 import type { Workspace } from '@tuturuuu/types/db';
 import { Button } from '@tuturuuu/ui/button';
 import { AnalyticsCharts } from '@tuturuuu/ui/legacy/calendar/settings/analytics-charts';
 import { SummaryCards } from '@tuturuuu/ui/legacy/calendar/settings/summary-cards';
 import { SyncLogsTable } from '@tuturuuu/ui/legacy/calendar/settings/sync-logs-table';
-import { Calendar, Download, RefreshCw } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import type { SyncLog } from './types';
 

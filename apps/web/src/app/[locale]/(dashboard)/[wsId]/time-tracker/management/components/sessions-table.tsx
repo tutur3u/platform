@@ -5,36 +5,36 @@ import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
 } from '@tuturuuu/ui/select';
 // Removed unused table imports as we now use grid layout
+import {
+    ChevronDown,
+    ChevronLeft,
+    ChevronRight,
+    Clock,
+    Download,
+    Eye,
+    FileSpreadsheet,
+    Filter,
+    Loader2,
+    Pause,
+    Play,
+    Search,
+} from '@tuturuuu/icons';
 import { getInitials } from '@tuturuuu/utils/name-helper';
 import dayjs from 'dayjs';
 import duration from 'dayjs/plugin/duration';
-import {
-  ChevronDown,
-  ChevronLeft,
-  ChevronRight,
-  Clock,
-  Download,
-  Eye,
-  FileSpreadsheet,
-  Filter,
-  Loader2,
-  Pause,
-  Play,
-  Search,
-} from 'lucide-react';
 
 // Extend dayjs with duration plugin
 dayjs.extend(duration);

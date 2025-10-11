@@ -10,30 +10,30 @@
  * - Shows both platform users and guests who voted
  * - Anonymous fallback for users without display names
  */
+import { ChevronDown, ChevronRight, Trash2, Users } from '@tuturuuu/icons';
 import type {
-  GuestVoteWithGuestInfo,
-  PollOptionWithVotes,
-  UserVoteWithUserInfo,
+    GuestVoteWithGuestInfo,
+    PollOptionWithVotes,
+    UserVoteWithUserInfo,
 } from '@tuturuuu/types/primitives/Poll';
 import { Button } from '@tuturuuu/ui/button';
 import { Checkbox } from '@tuturuuu/ui/checkbox';
 import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
+    Collapsible,
+    CollapsibleContent,
+    CollapsibleTrigger,
 } from '@tuturuuu/ui/collapsible';
 import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
+    Dialog,
+    DialogContent,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
 } from '@tuturuuu/ui/dialog';
 import { useTimeBlocking } from '@tuturuuu/ui/hooks/time-blocking-provider';
 import { Input } from '@tuturuuu/ui/input';
 import { Progress } from '@tuturuuu/ui/progress';
 import { cn } from '@tuturuuu/utils/format';
-import { ChevronDown, ChevronRight, Trash2, Users } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useEffect, useMemo, useState } from 'react';
 

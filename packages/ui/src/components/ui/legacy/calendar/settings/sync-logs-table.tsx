@@ -1,44 +1,44 @@
 'use client';
 
+import {
+    AlertCircle,
+    Building2,
+    CalendarDays,
+    CheckCircle2,
+    Clock,
+    Filter,
+    Loader2,
+    Search,
+    Zap,
+} from '@tuturuuu/icons';
 import type { Workspace } from '@tuturuuu/types/db';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Badge } from '@tuturuuu/ui/badge';
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
+    Card,
+    CardContent,
+    CardDescription,
+    CardHeader,
+    CardTitle,
 } from '@tuturuuu/ui/card';
 import { DataPagination } from '@tuturuuu/ui/custom/data-pagination';
 import { Input } from '@tuturuuu/ui/input';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
 } from '@tuturuuu/ui/select';
 import { Separator } from '@tuturuuu/ui/separator';
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
 } from '@tuturuuu/ui/table';
-import {
-  AlertCircle,
-  Building2,
-  CalendarDays,
-  CheckCircle2,
-  Clock,
-  Filter,
-  Loader2,
-  Search,
-  Zap,
-} from 'lucide-react';
 import { useState } from 'react';
 import type { SyncLog } from './types';
 

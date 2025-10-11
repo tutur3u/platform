@@ -1,14 +1,14 @@
+import { CalendarIcon, ChevronLeft, ChevronRight } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import { useCalendarSync } from '@tuturuuu/ui/hooks/use-calendar-sync';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
 } from '@tuturuuu/ui/select';
 import dayjs from 'dayjs';
-import { CalendarIcon, ChevronLeft, ChevronRight } from 'lucide-react';
 
 export function CalendarHeader({
   t,

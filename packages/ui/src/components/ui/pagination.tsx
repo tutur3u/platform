@@ -1,9 +1,9 @@
-import { cn } from '@tuturuuu/utils/format';
 import {
-  ChevronLeftIcon,
-  ChevronRightIcon,
-  MoreHorizontalIcon,
-} from 'lucide-react';
+    ChevronLeftIcon,
+    ChevronRightIcon,
+    MoreHorizontalIcon,
+} from '@tuturuuu/icons';
+import { cn } from '@tuturuuu/utils/format';
 import type * as React from 'react';
 import { type Button, buttonVariants } from './button';
 
@@ -116,11 +116,12 @@ function PaginationEllipsis({
 }
 
 export {
-  Pagination,
-  PaginationContent,
-  PaginationEllipsis,
-  PaginationItem,
-  PaginationLink,
-  PaginationNext,
-  PaginationPrevious,
+    Pagination,
+    PaginationContent,
+    PaginationEllipsis,
+    PaginationItem,
+    PaginationLink,
+    PaginationNext,
+    PaginationPrevious
 };
+
