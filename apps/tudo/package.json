@@ -24,6 +24,7 @@
   },
   "dependencies": {
     "@formatjs/intl-localematcher": "^0.6.2",
+    "@hookform/resolvers": "^5.2.2",
     "@tanstack/react-query": "^5.90.2",
     "@tuturuuu/ai": "workspace:*",
     "@tuturuuu/apis": "workspace:*",
@@ -32,6 +33,7 @@
     "@tuturuuu/types": "workspace:*",
     "@tuturuuu/ui": "workspace:*",
     "@tuturuuu/utils": "workspace:*",
+    "cmdk": "^1.1.1",
     "dayjs": "^1.11.18",
     "nanoid": "^5.1.6",
     "negotiator": "^1.0.0",
@@ -40,6 +42,7 @@
     "qrcode.react": "^4.2.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
+    "react-hook-form": "^7.65.0",
     "zod": "^4.1.12"
   },
   "devDependencies": {
