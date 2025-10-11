@@ -13,14 +13,13 @@ export default async function PromotionsStatistics({ wsId }: { wsId: string }) {
 
   if (withoutPermission('view_inventory')) return null;
   const { count: promotions, error } = await supabase
-        .from('workspace_promotions')
-        .select('*', {
-          count: 'exact',
-          head: true,
-        })
-        .eq('ws_id', wsId);
+    .from('workspace_promotions')
+    .select('*', {
+      count: 'exact',
+      head: true,
+    })
+    .eq('ws_id', wsId);
 
-  
   if (error) {
     console.error('Error fetching workspace promotions:', error);
     return null;

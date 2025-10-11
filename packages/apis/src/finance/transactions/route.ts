@@ -9,15 +9,15 @@ interface Params {
   }>;
 }
 
-  const TransactionSchema = z.object({
-    description: z.string().min(1),
-    amount: z.number(),
-    origin_wallet_id: z.string().uuid(),
-    category_id: z.string().uuid().optional(),
-    taken_at: z.string().or(z.date()),
-    report_opt_in: z.boolean().optional(),
-    tag_ids: z.array(z.string().uuid()).optional(),
-  });
+const TransactionSchema = z.object({
+  description: z.string().min(1),
+  amount: z.number(),
+  origin_wallet_id: z.string().uuid(),
+  category_id: z.string().uuid().optional(),
+  taken_at: z.string().or(z.date()),
+  report_opt_in: z.boolean().optional(),
+  tag_ids: z.array(z.string().uuid()).optional(),
+});
 export async function GET(req: Request, { params }: Params) {
   const { wsId } = await params;
 
@@ -84,10 +84,7 @@ export async function POST(req: Request, { params }: Params) {
   } = await supabase.auth.getUser();
 
   if (!user) {
-    return NextResponse.json(
-      { message: 'Unauthorized' },
-      { status: 401 }
-    );
+    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }
 
   // Get the virtual_user_id for this workspace
@@ -139,9 +136,9 @@ export async function POST(req: Request, { params }: Params) {
       taken_at:
         typeof data.taken_at === 'string'
           ? new Date(data.taken_at).toISOString()
-          : (data.taken_at instanceof Date
-              ? data.taken_at.toISOString()
-              : data.taken_at),
+          : data.taken_at instanceof Date
+            ? data.taken_at.toISOString()
+            : data.taken_at,
       report_opt_in: data.report_opt_in || false,
       creator_id: wsUser.virtual_user_id,
     })

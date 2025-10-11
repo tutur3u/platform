@@ -10,7 +10,9 @@ const InventoryItemSchema = z.object({
   min_amount: z.number().nonnegative().optional(),
   price: z.number().nonnegative().optional(),
 });
-const BodySchema = z.object({ inventory: z.array(InventoryItemSchema).default([]) });
+const BodySchema = z.object({
+  inventory: z.array(InventoryItemSchema).default([]),
+});
 
 interface Params {
   params: Promise<{
@@ -34,7 +36,10 @@ export async function POST(req: Request, { params }: Params) {
   const supabase = await createClient();
   const parsed = BodySchema.safeParse(await req.json());
   if (!parsed.success) {
-    return NextResponse.json({ message: 'Invalid payload', errors: parsed.error.issues }, { status: 400 });
+    return NextResponse.json(
+      { message: 'Invalid payload', errors: parsed.error.issues },
+      { status: 400 }
+    );
   }
   const { inventory } = parsed.data;
 
@@ -98,7 +103,10 @@ export async function PATCH(req: Request, { params }: Params) {
   }
   const parsed = BodySchema.safeParse(await req.json());
   if (!parsed.success) {
-    return NextResponse.json({ message: 'Invalid payload', errors: parsed.error.issues }, { status: 400 });
+    return NextResponse.json(
+      { message: 'Invalid payload', errors: parsed.error.issues },
+      { status: 400 }
+    );
   }
   const { inventory } = parsed.data;
 
@@ -370,7 +378,6 @@ export async function DELETE(_: Request, { params }: Params) {
 
   const supabase = await createClient();
 
-
   // Check worksapce product exists
   const { data: product, error: productError } = await supabase
     .from('workspace_products')
@@ -378,7 +385,7 @@ export async function DELETE(_: Request, { params }: Params) {
     .eq('id', productId)
     .eq('ws_id', wsId)
     .single();
-    
+
   if (productError || !product) {
     return NextResponse.json({ message: 'Product not found' }, { status: 404 });
   }

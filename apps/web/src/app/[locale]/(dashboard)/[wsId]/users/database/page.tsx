@@ -32,12 +32,14 @@ const SearchParamsSchema = z.object({
   q: z.string().default(''),
   page: z.coerce.number().int().min(1).default(1),
   pageSize: z.coerce.number().int().min(1).max(100).default(10),
-  includedGroups: z.union([z.string(), z.array(z.string())]).transform((val) =>
-    Array.isArray(val) ? val : val ? [val] : []
-  ).default([]),
-  excludedGroups: z.union([z.string(), z.array(z.string())]).transform((val) =>
-    Array.isArray(val) ? val : val ? [val] : []
-  ).default([]),
+  includedGroups: z
+    .union([z.string(), z.array(z.string())])
+    .transform((val) => (Array.isArray(val) ? val : val ? [val] : []))
+    .default([]),
+  excludedGroups: z
+    .union([z.string(), z.array(z.string())])
+    .transform((val) => (Array.isArray(val) ? val : val ? [val] : []))
+    .default([]),
 });
 
 interface Props {
