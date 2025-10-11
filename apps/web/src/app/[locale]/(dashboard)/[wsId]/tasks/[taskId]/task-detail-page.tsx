@@ -1,9 +1,9 @@
 'use client';
 
 import type { Task } from '@tuturuuu/types/primitives/Task';
-import { TaskEditDialog } from '@tuturuuu/ui/tu-do/shared/task-edit-dialog';
+import { useTaskDialog } from '@tuturuuu/ui/tu-do/hooks/useTaskDialog';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect } from 'react';
 
 interface TaskDetailPageProps {
   task: Task;
@@ -18,35 +18,30 @@ export default function TaskDetailPage({
   boardId,
   wsId,
 }: TaskDetailPageProps) {
+  const { openTask, onUpdate } = useTaskDialog();
   const router = useRouter();
-  const [isOpen, setIsOpen] = useState(true);
 
-  // Navigate back when dialog closes
-  useEffect(() => {
-    if (!isOpen) {
+  // Register update callback to redirect to board view
+  const handleUpdate = useCallback(() => {
+    console.log('🔄 Task updated on detail page, redirecting to board view...');
+    // Redirect to board view with a small delay to ensure DB transaction completes
+    setTimeout(() => {
       router.push(`/${wsId}/tasks/boards/${boardId}`);
-    }
-  }, [isOpen, router, wsId, boardId]);
+    }, 150);
+  }, [router, wsId, boardId]);
 
-  const handleClose = () => {
-    setIsOpen(false);
-  };
+  // Register the update callback
+  useEffect(() => {
+    console.log('✅ Registering task detail page update callback');
+    onUpdate(handleUpdate);
+  }, [onUpdate, handleUpdate]);
 
-  const handleUpdate = () => {
-    // Task was updated, we can stay on this page
-    // The page will show the updated data on next navigation
-  };
+  // Open task dialog on mount
+  useEffect(() => {
+    openTask(task, boardId);
+  }, [task, boardId, openTask]);
 
-  return (
-    <div className="flex h-full w-full items-center justify-center">
-      <TaskEditDialog
-        task={task}
-        boardId={boardId}
-        isOpen={isOpen}
-        onClose={handleClose}
-        onUpdate={handleUpdate}
-        mode="edit"
-      />
-    </div>
-  );
+  // Navigate back to board (user will close dialog manually)
+  // The centralized dialog will handle the display
+  return null;
 }

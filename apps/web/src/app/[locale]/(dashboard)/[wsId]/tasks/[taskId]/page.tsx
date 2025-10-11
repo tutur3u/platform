@@ -8,6 +8,9 @@ export const metadata: Metadata = {
   description: 'View and edit task details in your Tuturuuu workspace.',
 };
 
+// Force dynamic rendering to ensure data is always fresh
+export const dynamic = 'force-dynamic';
+
 interface Props {
   params: Promise<{
     locale: string;
