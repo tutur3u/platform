@@ -23,15 +23,18 @@
     "ui:diff": "bunx shadcn-ui@latest diff"
   },
   "dependencies": {
+    "@formatjs/intl-localematcher": "^0.6.2",
     "@tanstack/react-query": "^5.90.2",
     "@tuturuuu/ai": "workspace:*",
     "@tuturuuu/apis": "workspace:*",
+    "@tuturuuu/auth": "workspace:*",
     "@tuturuuu/supabase": "workspace:*",
     "@tuturuuu/types": "workspace:*",
     "@tuturuuu/ui": "workspace:*",
     "@tuturuuu/utils": "workspace:*",
     "dayjs": "^1.11.18",
     "nanoid": "^5.1.6",
+    "negotiator": "^1.0.0",
     "next": "^15.5.4",
     "next-intl": "^4.3.12",
     "qrcode.react": "^4.2.0",
@@ -41,6 +44,7 @@
   },
   "devDependencies": {
     "@tuturuuu/typescript-config": "workspace:*",
+    "@types/negotiator": "^0.6.4",
     "@types/node": "^24.7.1",
     "@types/react": "^19.2.2",
     "@types/react-dom": "^19.2.1",
