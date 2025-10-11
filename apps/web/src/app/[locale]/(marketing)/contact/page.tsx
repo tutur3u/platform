@@ -1,11 +1,6 @@
 'use client';
 
 import { GITHUB_OWNER } from '@/constants/common';
-import { createClient } from '@tuturuuu/supabase/next/client';
-import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
-import { Badge } from '@tuturuuu/ui/badge';
-import { Button } from '@tuturuuu/ui/button';
-import { Card } from '@tuturuuu/ui/card';
 import {
   Brain,
   Check,
@@ -23,6 +18,7 @@ import {
   Zap,
 } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/client';
+import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Card } from '@tuturuuu/ui/card';
