@@ -3139,6 +3139,70 @@
       "min_amount": "Min amount",
       "category": "Category"
     },
+    "validation": {
+      "name_required": "Product name is required"
+    },
+    "dialog": {
+      "description": "Product information and management"
+    },
+    "tabs": {
+      "details": "Details",
+      "stock": "Stock",
+      "history": "History",
+      "edit": "Edit"
+    },
+    "sections": {
+      "product_information": "Product Information",
+      "current_stock": "Current Stock",
+      "manage_inventory": "Manage Inventory",
+      "stock_history": "Stock History",
+      "edit_product": "Edit Product",
+      "stock_management": "Stock Management"
+    },
+    "labels": {
+      "unlimited_stock": "Unlimited stock",
+      "created_at": "Created At",
+      "warehouse": "Warehouse",
+      "price_per_unit": "Price per unit",
+      "min_amount": "Min amount",
+      "current_amount": "Current amount",
+      "unit": "Unit",
+      "usage_instructions": "Usage Instructions",
+      "unlimited_stock_label": "Unlimited Stock"
+    },
+    "placeholders": {
+      "select_warehouse": "Select warehouse",
+      "enter_price": "Enter price",
+      "select_unit": "Select unit",
+      "enter_product_name": "Enter product name",
+      "enter_manufacturer": "Enter manufacturer",
+      "select_category": "Select category",
+      "enter_product_description": "Enter product description",
+      "enter_usage_instructions": "Enter usage instructions"
+    },
+    "buttons": {
+      "remove": "Remove",
+      "add_stock_entry": "Add Stock Entry",
+      "save_inventory_changes": "Save Inventory Changes",
+      "view_full_details": "View Full Details",
+      "delete_product": "Delete Product",
+      "cancel": "Cancel",
+      "save_changes": "Save Changes"
+    },
+    "messages": {
+      "recently": "Recently",
+      "unlimited_stock_available": "This product has unlimited stock available.",
+      "manage_tracked_stock": "Manage tracked stock in the Stock tab.",
+      "delete_confirmation": "Are you sure you want to delete \"{name}\"? This action cannot be undone.",
+      "deleting": "Deleting...",
+      "no_changes_to_save": "No changes to save",
+      "failed_update_details": "Failed to update product details",
+      "product_updated_successfully": "Product updated successfully",
+      "failed_update_product": "Failed to update product",
+      "no_delete_permission": "You do not have permission to delete inventory",
+      "product_deleted_successfully": "Product deleted successfully",
+      "failed_delete_product": "Failed to delete product"
+    },
     "no_changes_detected": "No changes detected",
     "product_saved_successfully": "Product saved successfully",
     "failed_save_product": "Failed when saving product",
@@ -3200,7 +3264,7 @@
     "create_settings_tooltip": "Workspace settings are missing. Click to create them.",
     "form": {
       "name": "Name",
-      "description": "Decription",
+      "description": "Description",
       "code": "Coupon code",
       "value": "Discount value",
       "unit": {

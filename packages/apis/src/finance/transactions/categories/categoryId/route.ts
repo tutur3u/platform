@@ -1,6 +1,7 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
+import { z } from 'zod';
 
 interface Params {
   params: Promise<{
@@ -8,6 +9,11 @@ interface Params {
     wsId: string;
   }>;
 }
+
+const TransactionCategoryUpdateSchema = z.object({
+  name: z.string().min(1).optional(),
+  is_expense: z.boolean().optional(),
+});
 
 export async function GET(_: Request, { params }: Params) {
   const supabase = await createClient();
@@ -43,9 +49,18 @@ export async function GET(_: Request, { params }: Params) {
 }
 
 export async function PUT(req: Request, { params }: Params) {
-  const supabase = await createClient();
-  const data = await req.json();
   const { categoryId, wsId } = await params;
+
+  const parsed = TransactionCategoryUpdateSchema.safeParse(await req.json());
+
+  if (!parsed.success) {
+    return NextResponse.json(
+      { message: 'Invalid request data', errors: parsed.error.issues },
+      { status: 400 }
+    );
+  }
+
+  const data = parsed.data;
 
   const { withoutPermission } = await getPermissions({
     wsId,
@@ -57,6 +72,8 @@ export async function PUT(req: Request, { params }: Params) {
       { status: 403 }
     );
   }
+
+  const supabase = await createClient();
 
   const { error } = await supabase
     .from('transaction_categories')

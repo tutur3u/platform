@@ -96,20 +96,23 @@ export function PromotionRowActions({
             <span className="sr-only">Open menu</span>
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-[160px]">
-          {canUpdateInventory && (
-            <DropdownMenuItem onClick={() => setOpen(true)}>
-              {t('common.edit')}
-            </DropdownMenuItem>
-          )}
-
-          <DropdownMenuSeparator />
-          {canDeleteInventory && (
-            <DropdownMenuItem onClick={deletePromotion}>
-              {t('common.delete')}
-            </DropdownMenuItem>
-          )}
-        </DropdownMenuContent>
+        {(canUpdateInventory || canDeleteInventory) && (
+          <DropdownMenuContent align="end" className="w-[160px]">
+            {canUpdateInventory && (
+              <DropdownMenuItem onClick={() => setOpen(true)}>
+                {t('common.edit')}
+              </DropdownMenuItem>
+            )}
+            {canUpdateInventory && canDeleteInventory && (
+              <DropdownMenuSeparator />
+            )}
+            {canDeleteInventory && (
+              <DropdownMenuItem onClick={deletePromotion}>
+                {t('common.delete')}
+              </DropdownMenuItem>
+            )}
+          </DropdownMenuContent>
+        )}
       </DropdownMenu>
     </div>
   );

@@ -1,8 +1,24 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
-import type { Product2 } from '@tuturuuu/types/primitives/Product';
-import type { ProductInventory } from '@tuturuuu/types/primitives/ProductInventory';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
+import { z } from 'zod';
+
+const InventoryItemSchema = z.object({
+  unit_id: z.string().uuid(),
+  warehouse_id: z.string().uuid(),
+  amount: z.number().nonnegative(),
+  min_amount: z.number().nonnegative(),
+  price: z.number().nonnegative(),
+});
+
+export const ProductCreateSchema = z.object({
+  name: z.string().min(1).max(255),
+  manufacturer: z.string().optional(),
+  description: z.string().optional(),
+  usage: z.string().optional(),
+  category_id: z.string().uuid(),
+  inventory: z.array(InventoryItemSchema).default([]),
+});
 
 interface Params {
   params: Promise<{
@@ -13,9 +29,18 @@ interface Params {
 export async function POST(req: Request, { params }: Params) {
   const { wsId } = await params;
 
+  // Validate request body
+  const parsed = ProductCreateSchema.safeParse(await req.json());
+  if (!parsed.success) {
+    return NextResponse.json(
+      { message: 'Invalid request body', errors: parsed.error.issues },
+      { status: 400 }
+    );
+  }
+
   // Check permissions
-  const { containsPermission } = await getPermissions({ wsId });
-  if (!containsPermission('create_inventory')) {
+  const { withoutPermission } = await getPermissions({ wsId });
+  if (withoutPermission('create_inventory')) {
     return NextResponse.json(
       { message: 'Insufficient permissions to create products' },
       { status: 403 }
@@ -23,9 +48,7 @@ export async function POST(req: Request, { params }: Params) {
   }
 
   const supabase = await createClient();
-  const { inventory, ...data } = (await req.json()) as Product2 & {
-    inventory?: ProductInventory[];
-  };
+  const { inventory, ...data } = parsed.data;
 
   const product = await supabase
     .from('workspace_products')

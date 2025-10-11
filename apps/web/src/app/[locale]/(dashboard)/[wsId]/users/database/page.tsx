@@ -7,6 +7,7 @@ import { getPermissions, getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 import { notFound } from 'next/navigation';
+import { z } from 'zod';
 import { CustomDataTable } from '@/components/custom-data-table';
 import { getUserColumns } from './columns';
 import ExportDialogContent from './export-dialog-content';
@@ -26,6 +27,18 @@ interface SearchParams {
   includedGroups?: string | string[];
   excludedGroups?: string | string[];
 }
+
+const SearchParamsSchema = z.object({
+  q: z.string().default(''),
+  page: z.string().default('1'),
+  pageSize: z.string().default('10'),
+  includedGroups: z.union([z.string(), z.array(z.string())]).transform((val) => 
+    Array.isArray(val) ? val : val ? [val] : []
+  ).default([]),
+  excludedGroups: z.union([z.string(), z.array(z.string())]).transform((val) => 
+    Array.isArray(val) ? val : val ? [val] : []
+  ).default([]),
+});
 
 interface Props {
   params: Promise<{
@@ -61,7 +74,8 @@ export default async function WorkspaceUsersPage({
     notFound();
   }
 
-  const { data, count } = await getData(wsId, await searchParams, {
+  const sp = SearchParamsSchema.parse(await searchParams);
+  const { data, count } = await getData(wsId, sp, {
     hasPrivateInfo,
     hasPublicInfo,
     canCheckUserAttendance,
@@ -109,7 +123,7 @@ export default async function WorkspaceUsersPage({
           canCheckUserAttendance,
         }}
         count={count}
-        filters={<Filters wsId={wsId} searchParams={await searchParams} />}
+        filters={<Filters wsId={wsId} searchParams={sp} />}
         toolbarImportContent={
           containsPermission('export_users_data') && (
             <ImportDialogContent wsId={wsId} />
@@ -120,7 +134,7 @@ export default async function WorkspaceUsersPage({
             <ExportDialogContent
               wsId={wsId}
               exportType="users"
-              searchParams={await searchParams}
+              searchParams={sp}
             />
           )
         }

@@ -3269,6 +3269,70 @@
       "min_amount": "Số lượng ít nhất",
       "category": "Danh mục"
     },
+    "validation": {
+      "name_required": "Tên sản phẩm là bắt buộc"
+    },
+    "dialog": {
+      "description": "Thông tin sản phẩm và quản lý"
+    },
+    "tabs": {
+      "details": "Chi tiết",
+      "stock": "Kho",
+      "history": "Lịch sử",
+      "edit": "Chỉnh sửa"
+    },
+    "sections": {
+      "product_information": "Thông tin sản phẩm",
+      "current_stock": "Kho hiện tại",
+      "manage_inventory": "Quản lý kho",
+      "stock_history": "Lịch sử kho",
+      "edit_product": "Chỉnh sửa sản phẩm",
+      "stock_management": "Quản lý kho"
+    },
+    "labels": {
+      "unlimited_stock": "Kho không giới hạn",
+      "created_at": "Ngày tạo",
+      "warehouse": "Kho hàng",
+      "price_per_unit": "Giá mỗi đơn vị",
+      "min_amount": "Số lượng tối thiểu",
+      "current_amount": "Số lượng hiện tại",
+      "unit": "Đơn vị",
+      "usage_instructions": "Hướng dẫn sử dụng",
+      "unlimited_stock_label": "Kho không giới hạn"
+    },
+    "placeholders": {
+      "select_warehouse": "Chọn kho hàng",
+      "enter_price": "Nhập giá",
+      "select_unit": "Chọn đơn vị",
+      "enter_product_name": "Nhập tên sản phẩm",
+      "enter_manufacturer": "Nhập nhà sản xuất",
+      "select_category": "Chọn danh mục",
+      "enter_product_description": "Nhập mô tả sản phẩm",
+      "enter_usage_instructions": "Nhập hướng dẫn sử dụng"
+    },
+    "buttons": {
+      "remove": "Xóa",
+      "add_stock_entry": "Thêm mục kho",
+      "save_inventory_changes": "Lưu thay đổi kho",
+      "view_full_details": "Xem chi tiết đầy đủ",
+      "delete_product": "Xóa sản phẩm",
+      "cancel": "Hủy",
+      "save_changes": "Lưu thay đổi"
+    },
+    "messages": {
+      "recently": "Gần đây",
+      "unlimited_stock_available": "Sản phẩm này có kho không giới hạn.",
+      "manage_tracked_stock": "Quản lý kho được theo dõi trong tab Kho.",
+      "delete_confirmation": "Bạn có chắc chắn muốn xóa \"{name}\"? Hành động này không thể hoàn tác.",
+      "deleting": "Đang xóa...",
+      "no_changes_to_save": "Không có thay đổi để lưu",
+      "failed_update_details": "Đã có lỗi xảy ra khi cập nhật chi tiết sản phẩm",
+      "product_updated_successfully": "Sản phẩm được cập nhật thành công",
+      "failed_update_product": "Đã có lỗi xảy ra khi cập nhật sản phẩm",
+      "no_delete_permission": "Bạn không có quyền xóa kho hàng",
+      "product_deleted_successfully": "Sản phẩm được xóa thành công",
+      "failed_delete_product": "Đã có lỗi xảy ra khi xóa sản phẩm"
+    },
     "no_changes_detected": "Không có thay đổi gì",
     "product_saved_successfully": "Sản phẩm được lưu thành công",
     "failed_save_product": "Đã có lỗi xảy ra khi lưu sản phẩm",

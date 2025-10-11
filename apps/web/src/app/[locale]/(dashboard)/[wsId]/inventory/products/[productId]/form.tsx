@@ -297,6 +297,26 @@ export function ProductForm({
       onFinish?.(formData);
       setLoading(false);
       toast.success(t('ws-inventory-products.product_saved_successfully'));
+      
+      // Clear form fields only for new products
+      if (!data?.id) {
+        form.reset({
+          name: '',
+          manufacturer: '',
+          description: '',
+          usage: '',
+          category_id: '',
+          inventory: hasUnlimitedStock ? [] : [{
+            unit_id: '',
+            warehouse_id: '',
+            min_amount: 0,
+            amount: 0,
+            price: 0,
+          }],
+        });
+        // Also reset the unlimited stock toggle for new products
+        setHasUnlimitedStock(true);
+      }
       // router.push('../products');
     } catch (error) {
       setLoading(false);

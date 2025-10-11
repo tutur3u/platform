@@ -1,15 +1,24 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
-import type { Transaction } from '@tuturuuu/types/primitives/Transaction';
 import { NextResponse } from 'next/server';
-
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
-
+import { z } from 'zod';
 interface Params {
   params: Promise<{
     transactionId: string;
     wsId: string;
   }>;
 }
+
+const TransactionUpdateSchema = z.object({
+  description: z.string().min(1).optional(),
+  amount: z.number().optional(),
+  origin_wallet_id: z.uuid().optional(),
+  category_id: z.uuid().optional(),
+  taken_at: z.string().or(z.date()).optional(),
+  report_opt_in: z.boolean().optional(),
+  tag_ids: z.array(z.uuid()).optional(),
+  id: z.uuid().optional(),
+});
 
 export async function GET(_: Request, { params }: Params) {
   const supabase = await createClient();
@@ -44,8 +53,22 @@ export async function GET(_: Request, { params }: Params) {
 }
 
 export async function PUT(req: Request, { params }: Params) {
-  const supabase = await createClient();
+
   const { transactionId, wsId } = await params;
+
+  const parsed = TransactionUpdateSchema.safeParse(await req.json());
+ 
+
+  const normalizedId = transactionId;
+
+  if (!parsed.success) {
+    return NextResponse.json(
+      { message: 'Invalid request data', errors: parsed.error.issues },
+      { status: 400 }
+    );
+  }
+
+  const data = parsed.data;
 
   const { withoutPermission } = await getPermissions({
     wsId,
@@ -58,11 +81,8 @@ export async function PUT(req: Request, { params }: Params) {
     );
   }
 
-  const data: Transaction & {
-    origin_wallet_id?: string;
-    destination_wallet_id?: string;
-    tag_ids?: string[];
-  } = await req.json();
+  const supabase = await createClient();
+
 
   const newData = {
     ...data,
@@ -70,14 +90,38 @@ export async function PUT(req: Request, { params }: Params) {
   };
 
   delete newData.origin_wallet_id;
-  delete newData.destination_wallet_id;
   const tagIds = newData.tag_ids;
   delete newData.tag_ids;
 
+// (Optional) Verify new wallet is within wsId if being changed
+  if (newData.wallet_id) {
+    const { data: walletCheck } = await supabase
+      .from('workspace_wallets')
+      .select('id')
+      .eq('id', newData.wallet_id)
+      .eq('ws_id', wsId)
+      .single();
+    if (!walletCheck) {
+      return NextResponse.json({ message: 'Invalid wallet' }, { status: 400 });
+    }
+  }
   const { error } = await supabase
     .from('wallet_transactions')
-    .update(newData)
-    .eq('id', transactionId);
+    .update({
+      amount: newData.amount,
+      description: newData.description,
+      wallet_id: newData.origin_wallet_id,
+      category_id: newData.category_id || null,
+      taken_at:
+        typeof newData.taken_at === 'string'
+          ? new Date(newData.taken_at).toISOString()
+          : (newData.taken_at instanceof Date
+              ? newData.taken_at.toISOString()
+              : newData.taken_at),
+      report_opt_in: newData.report_opt_in || false
+    })
+    .eq('id', normalizedId);
+
 
   if (error) {
     console.log(error);
@@ -131,6 +175,27 @@ export async function DELETE(_: Request, { params }: Params) {
     );
   }
 
+  // Verify transaction belongs to workspace
+  const { data: transaction, error: fetchError } = await supabase
+    .from('wallet_transactions')
+    .select('wallet_id')
+    .eq('id', transactionId)
+    .single();
+
+  if (fetchError || !transaction) {
+    return NextResponse.json({ message: 'Transaction not found' }, { status: 404 });
+  }
+
+  const { data: wallet, error: walletError } = await supabase
+    .from('workspace_wallets')
+    .select('ws_id')
+    .eq('id', transaction.wallet_id)
+    .single();
+
+  if (walletError || !wallet || wallet.ws_id !== wsId) {
+    return NextResponse.json({ message: 'Transaction not found in workspace' }, { status: 404 });
+  }
+
   const { error } = await supabase
     .from('wallet_transactions')
     .delete()
@@ -139,7 +204,7 @@ export async function DELETE(_: Request, { params }: Params) {
   if (error) {
     console.log(error);
     return NextResponse.json(
-      { message: 'Error creating transaction' },
+      { message: 'Error deleting transaction' },
       { status: 500 }
     );
   }

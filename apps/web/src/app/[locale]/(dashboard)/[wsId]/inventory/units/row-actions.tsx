@@ -26,8 +26,8 @@ interface Props {
 
 export function ProductUnitRowActions({
   row,
-  canDeleteInventory,
-  canUpdateInventory,
+  canDeleteInventory = false,
+  canUpdateInventory = false,
 }: Props) {
   const t = useTranslations();
 

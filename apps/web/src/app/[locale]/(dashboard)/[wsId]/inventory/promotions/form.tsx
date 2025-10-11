@@ -43,7 +43,7 @@ const FormSchema = z
     name: z.string().min(1).max(255),
     description: z.string().optional(),
     code: z.string().min(1).max(255),
-    value: z.number().min(0),
+    value: z.coerce.number().min(0),
     unit: z.string(),
   })
   .refine(

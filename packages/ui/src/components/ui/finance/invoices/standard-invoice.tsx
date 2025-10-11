@@ -84,7 +84,7 @@ export function StandardInvoice({
       }
       router.replace(`?${params.toString()}`, { scroll: false });
     },
-    [router, searchParams]
+    [searchParams]
   );
 
   // Data queries

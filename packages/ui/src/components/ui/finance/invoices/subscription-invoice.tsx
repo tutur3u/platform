@@ -239,7 +239,7 @@ export function SubscriptionInvoice({
       }
       router.replace(`?${params.toString()}`, { scroll: false });
     },
-    [router, searchParams]
+    [searchParams]
   );
 
   // Data queries
@@ -350,6 +350,9 @@ export function SubscriptionInvoice({
   // When switching groups: clear current selections and replace with the group's linked products
   const previousGroupIdRef = useRef<string>('');
   const fallbackToastShownRef = useRef<boolean>(false);
+  const initialPrefillUsedRef = useRef<boolean>(false);
+  const previousUserIdRef = useRef<string>('');
+  const isInitialMountRef = useRef<boolean>(true);
   /**
    * Pick product inventories linked to the group respecting unit_id and warehouse_id.
    * If warehouse_id is not provided or not found, fallback to the first inventory for that unit.
@@ -369,9 +372,11 @@ export function SubscriptionInvoice({
     // Reset one-time fallback toast when switching groups
     fallbackToastShownRef.current = false;
 
-    // Use prefillAmount if provided, otherwise calculate from attendance
-    const attendanceDays =
-      prefillAmount ?? getEffectiveAttendanceDays(userAttendance);
+    // Use prefillAmount if provided AND not yet used, otherwise calculate from attendance
+    const shouldUsePrefill = prefillAmount !== undefined && !initialPrefillUsedRef.current;
+    const attendanceDays = shouldUsePrefill
+      ? prefillAmount
+      : getEffectiveAttendanceDays(userAttendance);
 
     const { autoSelected, fallbackTriggered } =
       buildAutoSelectedProductsForGroup(
@@ -382,6 +387,11 @@ export function SubscriptionInvoice({
 
     setSubscriptionSelectedProducts(autoSelected);
 
+    // Mark that we've used the initial prefill amount
+    if (shouldUsePrefill) {
+      initialPrefillUsedRef.current = true;
+    }
+
     if (fallbackTriggered && !fallbackToastShownRef.current) {
       toast(
         t('ws-invoices.inventory_fallback_used', {
@@ -391,7 +401,7 @@ export function SubscriptionInvoice({
       );
       fallbackToastShownRef.current = true;
     }
-  }, [selectedGroupId]);
+  }, [selectedGroupId, prefillAmount, userAttendance, groupProducts, products, t]);
 
   // Auto-add group products based on attendance when group is selected
   useEffect(() => {
@@ -399,9 +409,17 @@ export function SubscriptionInvoice({
       return;
     }
 
-    // Use prefillAmount if provided, otherwise calculate from attendance
-    const attendanceDays =
-      prefillAmount ?? getEffectiveAttendanceDays(userAttendance);
+    // Skip if we already handled initial prefill
+    if (prefillAmount !== undefined && !initialPrefillUsedRef.current) {
+      return;
+    }
+
+    // Use prefillAmount if provided AND already used (for updates), otherwise calculate from attendance
+    const shouldUsePrefill = prefillAmount !== undefined && initialPrefillUsedRef.current;
+    const attendanceDays = shouldUsePrefill
+      ? prefillAmount
+      : getEffectiveAttendanceDays(userAttendance);
+    
     if (attendanceDays === 0) return;
 
     const { autoSelected, fallbackTriggered } =
@@ -464,7 +482,7 @@ export function SubscriptionInvoice({
       );
       fallbackToastShownRef.current = true;
     }
-  }, [selectedGroupId, userAttendance?.length, prefillAmount]);
+  }, [selectedGroupId, userAttendance?.length, prefillAmount, groupProducts, products, t]);
 
   // Calculate totals for manual product selection
   const subscriptionSubtotal = useMemo(() => {
@@ -626,6 +644,20 @@ export function SubscriptionInvoice({
 
   // Reset subscription state when user changes
   useEffect(() => {
+    const isUserChanged = previousUserIdRef.current !== selectedUserId;
+    previousUserIdRef.current = selectedUserId;
+
+    // Skip on initial mount to allow URL params to work
+    if (isInitialMountRef.current) {
+      isInitialMountRef.current = false;
+      return;
+    }
+
+    // Only clear if user actually changed (not just initial load)
+    if (!isUserChanged) {
+      return;
+    }
+
     // Clear all related state whenever the selected user changes
     setSubscriptionProducts([]);
     setSubscriptionSelectedProducts([]);
@@ -634,6 +666,9 @@ export function SubscriptionInvoice({
     setSelectedWalletId('');
     setSelectedPromotionId('none');
     setSelectedCategoryId('');
+    
+    // Reset prefill tracking when user manually changes
+    initialPrefillUsedRef.current = false;
 
     // Replace entire search params with only user_id, this will clear group_id and month
     // The month will be auto-set when a new group is selected
@@ -1062,6 +1097,12 @@ export function SubscriptionInvoice({
                             : 'hover:bg-muted/50'
                         }`}
                         onClick={() => updateSearchParam('group_id', group.id)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            updateSearchParam('group_id', group.id);
+                          }
+                        }}
                       >
                         <div className="flex items-center justify-between">
                           <div className="flex-1">

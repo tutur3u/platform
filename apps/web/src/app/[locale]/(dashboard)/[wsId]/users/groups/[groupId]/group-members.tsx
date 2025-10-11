@@ -31,7 +31,7 @@ import {
 } from '@tuturuuu/ui/hover-card';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { useQueryClient } from '@tanstack/react-query';
-import { useTranslations } from 'next-intl';
+import { useFormatter, useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import GroupMemberActions from './group-member-actions';
@@ -71,6 +71,7 @@ export default function GroupMembers({
   canViewPublicInfo,
 }: GroupMembersProps) {
   const t = useTranslations();
+  const {dateTime} = useFormatter();
 
   // React Query with server-side data hydration
   // initialData comes from server-side fetch in the page component
@@ -454,7 +455,7 @@ export default function GroupMembers({
                           </span>
                           <span>
                             {person.birthday
-                              ? new Date(person.birthday).toLocaleDateString()
+                              ? dateTime(new Date(person.birthday))
                               : t('common.unknown')}
                           </span>
                         </div>

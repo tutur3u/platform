@@ -7,22 +7,18 @@ export default async function PromotionsStatistics({ wsId }: { wsId: string }) {
   const supabase = await createClient();
   const t = await getTranslations();
 
-  const enabled = true;
-
-  const { permissions } = await getPermissions({
+  const { withoutPermission } = await getPermissions({
     wsId,
   });
 
-  if (!enabled || !permissions.includes('view_inventory')) return null;
-  const { count: promotions } = enabled
-    ? await supabase
+  if (withoutPermission('view_inventory')) return null;
+  const { count: promotions } = await supabase
         .from('workspace_promotions')
         .select('*', {
           count: 'exact',
           head: true,
         })
-        .eq('ws_id', wsId)
-    : { count: 0 };
+        .eq('ws_id', wsId);
 
   return (
     <StatisticCard

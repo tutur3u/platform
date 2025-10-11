@@ -1,5 +1,6 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
 import type { UserGroup } from '@tuturuuu/types/primitives/UserGroup';
+import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { Button } from '@tuturuuu/ui/button';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import {
@@ -43,6 +44,22 @@ interface Props {
   searchParams: Promise<SearchParams>;
 }
 
+interface GroupMember extends WorkspaceUser {
+  role?: string | null;
+  isGuest?: boolean;
+}
+
+interface PermissionFlags {
+  canViewPersonalInfo: boolean;
+  canViewPublicInfo: boolean;
+  canCheckUserAttendance: boolean;
+}
+
+interface GroupUserQueryResult {
+  workspace_users: WorkspaceUser;
+  role: string | null;
+}
+
 export default async function UserGroupDetailsPage({
   params,
   // searchParams,
@@ -54,17 +71,7 @@ export default async function UserGroupDetailsPage({
 
   const group = await getData(wsId, groupId);
 
-  // Fetch group members data for the GroupMembers component
-  const MEMBERS_PAGE_SIZE = 10;
-  const groupMembersData = await getGroupMembersData(
-    groupId,
-    MEMBERS_PAGE_SIZE
-  );
-
-  const { data: posts, count: postsCount } = await getGroupPosts(groupId);
-  const { data: linkedProducts, count: lpCount } =
-    await getLinkedProducts(groupId);
-
+  // Get permissions first to compute access flags
   const { containsPermission } = await getPermissions({ wsId });
 
   const canViewPersonalInfo: boolean = containsPermission(
@@ -76,6 +83,22 @@ export default async function UserGroupDetailsPage({
   const canCheckUserAttendance: boolean = containsPermission(
     'check_user_attendance'
   );
+
+  // Fetch group members data for the GroupMembers component
+  const MEMBERS_PAGE_SIZE = 10;
+  const groupMembersData = await getGroupMembersData(
+    groupId,
+    MEMBERS_PAGE_SIZE,
+    {
+      canViewPersonalInfo,
+      canViewPublicInfo,
+      canCheckUserAttendance,
+    }
+  );
+
+  const { data: posts, count: postsCount } = await getGroupPosts(groupId);
+  const { data: linkedProducts, count: lpCount } =
+    await getLinkedProducts(groupId);
 
   return (
     <>
@@ -248,34 +271,45 @@ async function getLinkedProducts(groupId: string) {
   return { data: data || [], count };
 }
 
-async function getGroupMembersData(groupId: string, PAGE_SIZE: number) {
+async function getGroupMembersData(
+  groupId: string,
+  PAGE_SIZE: number,
+  permissions: PermissionFlags
+): Promise<GroupMember[]> {
   const supabase = await createClient();
+
+  // Build dynamic select query based on permissions
+  const baseFields = 'id';
+  const publicFields = permissions.canViewPublicInfo ? ', birthday, gender, display_name, avatar_url, full_name' : '';
+  const personalFields = permissions.canViewPersonalInfo ? ', email, phone' : '';
+
+  // Build the complete select query string
+  const selectQuery = `workspace_users(${baseFields}${publicFields}${personalFields}), role`;
 
   // Fetch all users in the group with their roles
   const { data: groupUsers, error: groupError } = await supabase
     .from('workspace_user_groups_users')
-    .select(`
-      workspace_users(*),
-      role
-    `)
+    .select(selectQuery)
     .eq('group_id', groupId)
     .range(0, PAGE_SIZE - 1);
 
   if (groupError) throw groupError;
-  if (!groupUsers) return [];
+  if (!groupUsers || !Array.isArray(groupUsers)) return [];
 
   // Check guest status for each user
   const membersWithGuestStatus = await Promise.all(
     groupUsers.map(async (user) => {
+      // Type assertion needed due to Supabase typing limitations
+      const typedUser = user as unknown as GroupUserQueryResult;
       const { data: isGuest } = await supabase.rpc('is_user_guest', {
-        user_uuid: user.workspace_users.id,
+        user_uuid: typedUser.workspace_users.id,
       });
 
       return {
-        ...user.workspace_users,
-        role: user.role,
+        ...typedUser.workspace_users,
+        role: typedUser.role,
         isGuest: isGuest || false,
-      };
+      } as GroupMember;
     })
   );
 

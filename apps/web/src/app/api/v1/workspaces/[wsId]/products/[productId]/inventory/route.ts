@@ -1,17 +1,22 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
-import type { ProductInventory } from '@tuturuuu/types/primitives/ProductInventory';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
+import { z } from 'zod';
+
+const InventoryItemSchema = z.object({
+  warehouse_id: z.uuid(),
+  unit_id: z.uuid(),
+  amount: z.number().nonnegative().optional(),
+  min_amount: z.number().nonnegative().optional(),
+  price: z.number().nonnegative().optional(),
+});
+const BodySchema = z.object({ inventory: z.array(InventoryItemSchema).default([]) });
 
 interface Params {
   params: Promise<{
     wsId: string;
     productId: string;
   }>;
-}
-
-interface RequestBody {
-  inventory: ProductInventory[];
 }
 
 export async function POST(req: Request, { params }: Params) {
@@ -27,13 +32,18 @@ export async function POST(req: Request, { params }: Params) {
   }
 
   const supabase = await createClient();
-  const { inventory } = (await req.json()) as RequestBody;
+  const parsed = BodySchema.safeParse(await req.json());
+  if (!parsed.success) {
+    return NextResponse.json({ message: 'Invalid payload', errors: parsed.error.issues }, { status: 400 });
+  }
+  const { inventory } = parsed.data;
 
   // Validate that product exists
   const { data: product, error: productError } = await supabase
     .from('workspace_products')
     .select('id')
     .eq('id', productId)
+    .eq('ws_id', wsId)
     .single();
 
   if (productError) {
@@ -86,13 +96,18 @@ export async function PATCH(req: Request, { params }: Params) {
   if (!user) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }
-  const { inventory } = (await req.json()) as RequestBody;
+  const parsed = BodySchema.safeParse(await req.json());
+  if (!parsed.success) {
+    return NextResponse.json({ message: 'Invalid payload', errors: parsed.error.issues }, { status: 400 });
+  }
+  const { inventory } = parsed.data;
 
   // Validate that product exists
   const { data: product, error: productError } = await supabase
     .from('workspace_products')
     .select('id')
     .eq('id', productId)
+    .eq('ws_id', wsId)
     .single();
 
   if (productError || !product) {
@@ -354,6 +369,19 @@ export async function DELETE(_: Request, { params }: Params) {
   }
 
   const supabase = await createClient();
+
+
+  // Check worksapce product exists
+  const { data: product, error: productError } = await supabase
+    .from('workspace_products')
+    .select('id')
+    .eq('id', productId)
+    .eq('ws_id', wsId)
+    .single();
+    
+  if (productError || !product) {
+    return NextResponse.json({ message: 'Product not found' }, { status: 404 });
+  }
 
   // Delete all inventory for this product
   const { error } = await supabase

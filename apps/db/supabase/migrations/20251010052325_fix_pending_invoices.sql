@@ -70,15 +70,15 @@ BEGIN
     LEFT JOIN latest_invoices li ON li.customer_id = ug.user_id AND li.user_group_id = ug.group_id
     CROSS JOIN LATERAL generate_series(
       COALESCE(
-        date_trunc('month', li.valid_until),
+        date_trunc('month', li.valid_until) + interval '1 month',
         date_trunc('month', COALESCE(ug.starting_date, CURRENT_DATE))
       ),
       date_trunc('month', LEAST(COALESCE(ug.ending_date, CURRENT_DATE), CURRENT_DATE)),
       '1 month'::interval
     ) as month_date
     WHERE month_date < date_trunc('month', CURRENT_DATE) + interval '1 month'
-      -- Only include months after valid_until
-      AND (li.valid_until IS NULL OR month_date >= date_trunc('month', li.valid_until))
+      -- Only include months strictly after valid_until
+      AND (li.valid_until IS NULL OR month_date > date_trunc('month', li.valid_until))
   ),
   attendance_counts AS (
     -- Count attendance for each user-group-month combination
@@ -253,15 +253,15 @@ BEGIN
     LEFT JOIN latest_invoices li ON li.customer_id = ug.user_id AND li.user_group_id = ug.group_id
     CROSS JOIN LATERAL generate_series(
       COALESCE(
-        date_trunc('month', li.valid_until),
+        date_trunc('month', li.valid_until) + interval '1 month',
         date_trunc('month', COALESCE(ug.starting_date, CURRENT_DATE))
       ),
       date_trunc('month', LEAST(COALESCE(ug.ending_date, CURRENT_DATE), CURRENT_DATE)),
       '1 month'::interval
     ) as month_date
     WHERE month_date < date_trunc('month', CURRENT_DATE) + interval '1 month'
-      -- Only include months after valid_until
-      AND (li.valid_until IS NULL OR month_date >= date_trunc('month', li.valid_until))
+      -- Only include months strictly after valid_until
+      AND (li.valid_until IS NULL OR month_date > date_trunc('month', li.valid_until))
   ),
   attendance_counts AS (
     -- Count attendance for each user-group-month combination

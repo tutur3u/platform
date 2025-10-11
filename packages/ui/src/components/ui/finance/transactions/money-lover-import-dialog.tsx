@@ -350,9 +350,12 @@ export default function MoneyLoverImportDialog({
           );
         }
 
-        queryClient.invalidateQueries({
-          queryKey: [`/api/workspaces/${wsId}/transactions`],
-        });
+        // queryClient.invalidateQueries({
+        //   queryKey: [`/api/workspaces/${wsId}/transactions`],
+        // });
+      queryClient.invalidateQueries({
+        queryKey: [`/api/workspaces/${wsId}/transactions/infinite`],
+      });
         router.refresh();
 
         // Wait a bit before clearing
