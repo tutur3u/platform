@@ -309,7 +309,7 @@ export function DateTimePicker({
           aria-label="Date and time selector"
         >
           {showTimeSelect ? (
-            <Tabs defaultValue="time" className="w-full p-2">
+            <Tabs defaultValue="date" className="w-full p-2">
               <TabsList className="grid w-full grid-cols-2">
                 <TabsTrigger
                   value="date"

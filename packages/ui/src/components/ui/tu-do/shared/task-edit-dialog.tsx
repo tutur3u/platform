@@ -2836,94 +2836,99 @@ function TaskEditDialogComponent({
                     </div>
                   )}
 
-                  {/* Quick Due Date */}
+                  {/* Dates Module - Combined Start Date, Due Date, and Quick Actions */}
                   <div className="space-y-2.5 rounded-lg border border-border/60 bg-gradient-to-br from-muted/30 to-muted/10 p-3.5 shadow-sm transition-shadow hover:shadow-md">
-                    <Label className="flex items-center justify-between gap-2 font-semibold text-foreground text-sm">
-                      <span className="flex items-center gap-2">
-                        <div className="flex h-5 w-5 items-center justify-center rounded-md bg-dynamic-orange/15">
-                          <Calendar className="h-3.5 w-3.5 text-dynamic-orange" />
-                        </div>
-                        Due Date
-                      </span>
-                      <span className="flex items-center gap-3">
-                        {endDate && (
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => handleQuickDueDate(null)}
-                            disabled={isLoading}
-                            className="h-6 w-6 text-muted-foreground hover:text-dynamic-red"
-                            title="Clear due date"
-                          >
-                            <X className="h-3.5 w-3.5" />
-                          </Button>
-                        )}
-                      </span>
+                    <Label className="flex items-center gap-2 font-semibold text-foreground text-sm">
+                      <div className="flex h-5 w-5 items-center justify-center rounded-md bg-dynamic-orange/15">
+                        <Calendar className="h-3.5 w-3.5 text-dynamic-orange" />
+                      </div>
+                      Dates
                     </Label>
-                    {endDate && (
-                      <div className="rounded-md border border-dynamic-orange/30 bg-dynamic-orange/10 px-3 py-2">
-                        <div className="flex items-center justify-between gap-2">
-                          <div className="flex items-center gap-2">
-                            <Calendar className="h-3.5 w-3.5 text-dynamic-orange" />
-                            <span className="font-medium text-foreground text-xs">
-                              {dayjs(endDate).format('MMM D, YYYY')}
-                            </span>
+                    <div className="space-y-3">
+                      {/* Start Date */}
+                      <div className="space-y-1.5">
+                        <Label className="font-normal text-muted-foreground text-xs">
+                          Start Date
+                        </Label>
+                        <DateTimePicker
+                          date={startDate}
+                          setDate={setStartDate}
+                          showTimeSelect={true}
+                          allowClear={true}
+                          showFooterControls={true}
+                        />
+                      </div>
+
+                      {/* Due Date */}
+                      <div className="space-y-1.5">
+                        <Label className="font-normal text-muted-foreground text-xs">
+                          Due Date
+                        </Label>
+
+                        <DateTimePicker
+                          date={endDate}
+                          setDate={handleEndDateChange}
+                          showTimeSelect={true}
+                          allowClear={true}
+                          showFooterControls={true}
+                        />
+
+                        {/* Quick Due Date Actions */}
+                        <div className="space-y-1.5 pt-2">
+                          <Label className="font-normal text-muted-foreground text-xs">
+                            Quick Actions
+                          </Label>
+                          <div className="grid grid-cols-2 gap-1.5 md:gap-2">
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="xs"
+                              onClick={() => handleQuickDueDate(0)}
+                              disabled={isLoading}
+                              className="h-7 text-[11px] transition-all hover:border-dynamic-orange/50 hover:bg-dynamic-orange/5 md:text-xs"
+                              title="Today – Alt+T"
+                            >
+                              Today
+                            </Button>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="xs"
+                              onClick={() => handleQuickDueDate(1)}
+                              disabled={isLoading}
+                              className="h-7 text-[11px] transition-all hover:border-dynamic-orange/50 hover:bg-dynamic-orange/5 md:text-xs"
+                              title="Tomorrow – Alt+M"
+                            >
+                              Tomorrow
+                            </Button>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="xs"
+                              onClick={() => {
+                                const daysUntilEndOfWeek = 6 - dayjs().day();
+                                handleQuickDueDate(daysUntilEndOfWeek);
+                              }}
+                              disabled={isLoading}
+                              className="h-7 text-[11px] transition-all hover:border-dynamic-orange/50 hover:bg-dynamic-orange/5 md:text-xs"
+                              title="End of this week (Saturday)"
+                            >
+                              This week
+                            </Button>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="xs"
+                              onClick={() => handleQuickDueDate(7)}
+                              disabled={isLoading}
+                              className="h-7 text-[11px] transition-all hover:border-dynamic-orange/50 hover:bg-dynamic-orange/5 md:text-xs"
+                              title="Next week – Alt+W"
+                            >
+                              Next week
+                            </Button>
                           </div>
-                          <span className="text-muted-foreground text-xs">
-                            {dayjs(endDate).format('h:mm A')}
-                          </span>
                         </div>
                       </div>
-                    )}
-                    <div className="grid grid-cols-2 gap-1.5 md:gap-2">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="xs"
-                        onClick={() => handleQuickDueDate(0)}
-                        disabled={isLoading}
-                        className="h-7 text-[11px] transition-all hover:border-dynamic-orange/50 hover:bg-dynamic-orange/5 md:text-xs"
-                        title="Today – Alt+T"
-                      >
-                        Today
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="xs"
-                        onClick={() => handleQuickDueDate(1)}
-                        disabled={isLoading}
-                        className="h-7 text-[11px] transition-all hover:border-dynamic-orange/50 hover:bg-dynamic-orange/5 md:text-xs"
-                        title="Tomorrow – Alt+M"
-                      >
-                        Tomorrow
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="xs"
-                        onClick={() => {
-                          const daysUntilEndOfWeek = 6 - dayjs().day();
-                          handleQuickDueDate(daysUntilEndOfWeek);
-                        }}
-                        disabled={isLoading}
-                        className="h-7 text-[11px] transition-all hover:border-dynamic-orange/50 hover:bg-dynamic-orange/5 md:text-xs"
-                        title="End of this week (Saturday)"
-                      >
-                        This week
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="xs"
-                        onClick={() => handleQuickDueDate(7)}
-                        disabled={isLoading}
-                        className="h-7 text-[11px] transition-all hover:border-dynamic-orange/50 hover:bg-dynamic-orange/5 md:text-xs"
-                        title="Next week – Alt+W"
-                      >
-                        Next week
-                      </Button>
                     </div>
                   </div>
 
@@ -2951,44 +2956,6 @@ function TaskEditDialogComponent({
                   {/* Advanced Options - Collapsible */}
                   {showAdvancedOptions && (
                     <div className="slide-in-from-top-2 animate-in space-y-4 duration-200">
-                      {/* Custom Date Pickers */}
-                      <div className="space-y-2.5 rounded-lg border border-border/60 bg-gradient-to-br from-muted/30 to-muted/10 p-3.5 shadow-sm">
-                        <Label className="flex items-center gap-2 font-semibold text-foreground text-sm">
-                          <div className="flex h-5 w-5 items-center justify-center rounded-md bg-dynamic-orange/15">
-                            <Calendar className="h-3.5 w-3.5 text-dynamic-orange" />
-                          </div>
-                          Dates
-                        </Label>
-                        <div className="space-y-3">
-                          <div className="space-y-1">
-                            <Label className="font-normal text-muted-foreground text-xs">
-                              Start Date
-                            </Label>
-                            <DateTimePicker
-                              date={startDate}
-                              setDate={setStartDate}
-                              showTimeSelect={true}
-                              allowClear={true}
-                              showFooterControls={true}
-                            />
-                          </div>
-                          <div className="space-y-1">
-                            <Label className="font-normal text-muted-foreground text-xs">
-                              Due Date
-                            </Label>
-                            <DateTimePicker
-                              date={endDate}
-                              setDate={handleEndDateChange}
-                              showTimeSelect={true}
-                              allowClear={true}
-                              showFooterControls={true}
-                            />
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Estimation Section moved above as dropdown */}
-
                       {/* Labels Section */}
                       <div className="space-y-2.5 rounded-lg border border-border/60 bg-gradient-to-br from-muted/30 to-muted/10 p-3.5 shadow-sm">
                         <Label className="flex items-center justify-between gap-2">
