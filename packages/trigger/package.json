@@ -15,9 +15,9 @@
     "trigger:deploy": "bunx trigger.dev@latest deploy"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.75.0",
     "@trigger.dev/sdk": "^4.0.4",
     "@tuturuuu/supabase": "workspace:*",
+    "@tuturuuu/utils": "workspace:*",
     "@tuturuuu/types": "workspace:*",
     "@tuturuuu/google": "workspace:*",
     "dayjs": "^1.11.18"

@@ -3,7 +3,7 @@ import {
   createClient,
 } from '@tuturuuu/supabase/next/server';
 import { updateLastUpsert } from '@tuturuuu/trigger/calendar-sync-coordination';
-import { performIncrementalActiveSync } from '@tuturuuu/utils/calendar-sync/incremental-active-sync';
+import { performIncrementalActiveSync } from '@/lib/calendar/incremental-active-sync';
 import { DEV_MODE } from '@tuturuuu/utils/constants';
 import { NextResponse } from 'next/server';
 
