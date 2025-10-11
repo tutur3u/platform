@@ -1,5 +1,6 @@
 'use client';
 
+import { ChevronDown, ChevronUp, Sparkles, Wand2 } from '@tuturuuu/icons';
 import type { JSONContent } from '@tuturuuu/types/tiptap';
 import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
