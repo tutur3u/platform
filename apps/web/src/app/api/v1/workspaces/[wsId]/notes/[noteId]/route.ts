@@ -3,11 +3,22 @@ import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
+// TipTap JSONContent schema for rich text
+const jsonContentSchema: z.ZodType<any> = z.lazy(() =>
+  z.object({
+    type: z.string(),
+    attrs: z.record(z.string(), z.any()).optional(),
+    content: z.array(jsonContentSchema).optional(),
+    marks: z.array(z.any()).optional(),
+    text: z.string().optional(),
+  })
+);
+
 const updateNoteSchema = z.object({
-  content: z
-    .string()
-    .min(1, 'Content is required')
-    .max(10000, 'Content too long'),
+  content: jsonContentSchema.refine(
+    (val) => val.type === 'doc',
+    'Content must be a valid TipTap document'
+  ),
 });
 
 export async function PUT(

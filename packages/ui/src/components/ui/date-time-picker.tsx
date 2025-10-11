@@ -23,6 +23,7 @@ interface DateTimePickerProps {
   setDate: (date: Date | undefined) => void;
   showTimeSelect?: boolean;
   minDate?: Date;
+  maxDate?: Date;
   minTime?: string;
   scrollIntoViewOnOpen?: boolean;
   pickerButtonRef?: React.RefObject<HTMLButtonElement | null>;
@@ -53,6 +54,7 @@ export function DateTimePicker({
   setDate,
   showTimeSelect = true,
   minDate,
+  maxDate,
   minTime,
   scrollIntoViewOnOpen = false,
   pickerButtonRef,
@@ -233,6 +235,8 @@ export function DateTimePicker({
   // Filter time options for end time picker
   const filteredTimeOptions = useMemo(() => {
     let options = timeOptions;
+
+    // Filter based on minDate and minTime
     if (minTime && date && minDate) {
       // Only restrict if the selected date is the same as minDate
       if (
@@ -240,12 +244,26 @@ export function DateTimePicker({
         date.getMonth() === minDate.getMonth() &&
         date.getDate() === minDate.getDate()
       ) {
-        options = timeOptions.filter((time) => time.value > minTime);
+        options = options.filter((time) => time.value > minTime);
       } else if (date > minDate) {
         // If end date is after start date, show all times
         options = timeOptions;
       }
     }
+
+    // Filter based on maxDate
+    if (date && maxDate) {
+      // Only restrict if the selected date is the same as maxDate
+      if (
+        date.getFullYear() === maxDate.getFullYear() &&
+        date.getMonth() === maxDate.getMonth() &&
+        date.getDate() === maxDate.getDate()
+      ) {
+        const maxTimeValue = `${format(maxDate, 'HH')}:${format(maxDate, 'mm')}`;
+        options = options.filter((time) => time.value < maxTimeValue);
+      }
+    }
+
     // After filtering, ensure the selected time is always present in the dropdown
     if (date) {
       const customValue = `${format(date, 'HH')}:${format(date, 'mm')}`;
@@ -258,7 +276,7 @@ export function DateTimePicker({
       }
     }
     return options;
-  }, [date, minDate, minTime, timeOptions]);
+  }, [date, minDate, maxDate, minTime, timeOptions]);
 
   // If the filtered list is empty, show an error message
   const noValidTimes = filteredTimeOptions.length === 0;
@@ -309,7 +327,7 @@ export function DateTimePicker({
           aria-label="Date and time selector"
         >
           {showTimeSelect ? (
-            <Tabs defaultValue="time" className="w-full p-2">
+            <Tabs defaultValue="date" className="w-full p-2">
               <TabsList className="grid w-full grid-cols-2">
                 <TabsTrigger
                   value="date"
@@ -342,14 +360,31 @@ export function DateTimePicker({
                   }}
                   initialFocus
                   disabled={
-                    minDate
-                      ? {
-                          before: new Date(
-                            minDate.getFullYear(),
-                            minDate.getMonth(),
-                            minDate.getDate()
-                          ),
-                        }
+                    minDate || maxDate
+                      ? [
+                          ...(minDate
+                            ? [
+                                {
+                                  before: new Date(
+                                    minDate.getFullYear(),
+                                    minDate.getMonth(),
+                                    minDate.getDate()
+                                  ),
+                                },
+                              ]
+                            : []),
+                          ...(maxDate
+                            ? [
+                                {
+                                  after: new Date(
+                                    maxDate.getFullYear(),
+                                    maxDate.getMonth(),
+                                    maxDate.getDate()
+                                  ),
+                                },
+                              ]
+                            : []),
+                        ]
                       : undefined
                   }
                   aria-label="Calendar selector"
@@ -497,14 +532,31 @@ export function DateTimePicker({
               }}
               initialFocus
               disabled={
-                minDate
-                  ? {
-                      before: new Date(
-                        minDate.getFullYear(),
-                        minDate.getMonth(),
-                        minDate.getDate()
-                      ),
-                    }
+                minDate || maxDate
+                  ? [
+                      ...(minDate
+                        ? [
+                            {
+                              before: new Date(
+                                minDate.getFullYear(),
+                                minDate.getMonth(),
+                                minDate.getDate()
+                              ),
+                            },
+                          ]
+                        : []),
+                      ...(maxDate
+                        ? [
+                            {
+                              after: new Date(
+                                maxDate.getFullYear(),
+                                maxDate.getMonth(),
+                                maxDate.getDate()
+                              ),
+                            },
+                          ]
+                        : []),
+                    ]
                   : undefined
               }
               aria-label="Calendar selector"

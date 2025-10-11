@@ -1,9 +1,6 @@
 import WorkspaceWrapper from '@/components/workspace-wrapper';
-import { Calendar, Clock, Flag, UserRound } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/server';
-import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
-import { getTranslations } from 'next-intl/server';
 import { redirect } from 'next/navigation';
 import MyTasksContent from './my-tasks-content';
 
@@ -47,7 +44,6 @@ async function MyTasksDataLoader({
   userId: string;
   isPersonal: boolean;
 }) {
-  const t = await getTranslations();
   const supabase = await createClient();
 
   // Fetch all accessible tasks using the RPC function
@@ -249,62 +245,6 @@ async function MyTasksDataLoader({
 
   return (
     <div className="container mx-auto space-y-6 p-6">
-      {/* Header */}
-      <div className="space-y-2">
-        <h1 className="flex items-center gap-3 font-bold text-3xl">
-          <UserRound className="h-8 w-8 text-primary" />
-          {t('sidebar_tabs.my_tasks')}
-        </h1>
-        <p className="text-muted-foreground">
-          {t('ws-tasks.my_tasks_description')}
-        </p>
-      </div>
-
-      {/* Stats Cards */}
-      <div className="grid gap-4 md:grid-cols-3">
-        <Card className="border-dynamic-red/30 bg-dynamic-red/5">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="font-medium text-sm">
-              {t('ws-tasks.overdue')}
-            </CardTitle>
-            <Clock className="h-4 w-4 text-dynamic-red" />
-          </CardHeader>
-          <CardContent>
-            <div className="font-bold text-2xl text-dynamic-red">
-              {overdueTasks?.length || 0}
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="border-dynamic-orange/30 bg-dynamic-orange/5">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="font-medium text-sm">
-              {t('ws-tasks.due_today')}
-            </CardTitle>
-            <Calendar className="h-4 w-4 text-dynamic-orange" />
-          </CardHeader>
-          <CardContent>
-            <div className="font-bold text-2xl text-dynamic-orange">
-              {todayTasks?.length || 0}
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="border-dynamic-blue/30 bg-dynamic-blue/5">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="font-medium text-sm">
-              {t('ws-tasks.upcoming')}
-            </CardTitle>
-            <Flag className="h-4 w-4 text-dynamic-blue" />
-          </CardHeader>
-          <CardContent>
-            <div className="font-bold text-2xl text-dynamic-blue">
-              {upcomingTasks?.length || 0}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
       {/* Tabs Content */}
       <MyTasksContent
         wsId={wsId}
@@ -313,6 +253,9 @@ async function MyTasksDataLoader({
         todayTasks={todayTasks}
         upcomingTasks={upcomingTasks}
         totalActiveTasks={totalActiveTasks}
+        overdueCount={overdueTasks?.length || 0}
+        todayCount={todayTasks?.length || 0}
+        upcomingCount={upcomingTasks?.length || 0}
       />
     </div>
   );
