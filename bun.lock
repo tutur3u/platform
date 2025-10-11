@@ -41,6 +41,7 @@
         "zod": "^4.1.12",
       },
       "devDependencies": {
+        "@biomejs/biome": "^2.2.5",
         "@tailwindcss/postcss": "^4.1.14",
         "@tuturuuu/typescript-config": "workspace:*",
         "@types/negotiator": "^0.6.4",
@@ -74,6 +75,7 @@
         "react-dom": "^19.2.0",
       },
       "devDependencies": {
+        "@biomejs/biome": "^2.2.5",
         "@tuturuuu/typescript-config": "workspace:*",
         "@types/node": "^24.7.1",
         "@types/react": "^19.2.2",
@@ -106,6 +108,7 @@
         "zod": "^4.1.12",
       },
       "devDependencies": {
+        "@biomejs/biome": "^2.2.5",
         "@tuturuuu/typescript-config": "workspace:*",
         "@types/negotiator": "^0.6.4",
         "@types/node": "^24.7.1",
@@ -125,6 +128,7 @@
         "@emotion/react": "^11.14.0",
         "@emotion/server": "^11.11.0",
         "@formatjs/intl-localematcher": "^0.6.2",
+        "@hookform/resolvers": "^5.2.2",
         "@tanstack/react-query": "^5.90.2",
         "@tanstack/react-table": "^8.21.3",
         "@tuturuuu/ai": "workspace:*",
@@ -149,12 +153,14 @@
         "next-themes": "^0.4.6",
         "react": "^19.2.0",
         "react-dom": "^19.2.0",
+        "react-hook-form": "^7.65.0",
         "sharp": "^0.34.4",
         "use-debounce": "^10.0.6",
         "uuid": "^13.0.0",
         "zod": "^4.1.12",
       },
       "devDependencies": {
+        "@biomejs/biome": "^2.2.5",
         "@next/bundle-analyzer": "^15.5.4",
         "@tailwindcss/postcss": "^4.1.14",
         "@tanstack/react-query-devtools": "^5.90.2",
@@ -191,6 +197,7 @@
         "react-dom": "^19.2.0",
       },
       "devDependencies": {
+        "@biomejs/biome": "^2.2.5",
         "@tailwindcss/postcss": "^4.1.14",
         "@tuturuuu/typescript-config": "workspace:*",
         "@types/node": "^24.7.1",
@@ -241,6 +248,7 @@
         "zod": "^4.1.12",
       },
       "devDependencies": {
+        "@biomejs/biome": "^2.2.5",
         "@next/bundle-analyzer": "^15.5.4",
         "@tailwindcss/postcss": "^4.1.14",
         "@tanstack/react-query-devtools": "^5.90.2",
@@ -278,6 +286,7 @@
         "react-dom": "^19.2.0",
       },
       "devDependencies": {
+        "@biomejs/biome": "^2.2.5",
         "@tailwindcss/postcss": "^4.1.14",
         "@tuturuuu/typescript-config": "workspace:*",
         "@types/node": "^24.7.1",
@@ -314,6 +323,7 @@
         "zod": "^4.1.12",
       },
       "devDependencies": {
+        "@biomejs/biome": "^2.2.5",
         "@tailwindcss/postcss": "^4.1.14",
         "@tuturuuu/typescript-config": "workspace:*",
         "@types/negotiator": "^0.6.4",
@@ -353,6 +363,7 @@
         "zod": "^4.1.12",
       },
       "devDependencies": {
+        "@biomejs/biome": "^2.2.5",
         "@tailwindcss/postcss": "^4.1.14",
         "@tuturuuu/typescript-config": "workspace:*",
         "@types/node": "^24.7.1",
@@ -412,6 +423,7 @@
         "jotai": "^2.15.0",
         "juice": "^11.0.3",
         "lodash": "^4.17.21",
+        "lucide-react": "^0.545.0",
         "mermaid": "^11.12.0",
         "moment": "^2.30.1",
         "nanoid": "^5.1.6",
@@ -426,6 +438,7 @@
         "react-confetti": "^6.4.0",
         "react-dom": "^19.2.0",
         "react-easy-crop": "^5.5.3",
+        "react-hook-form": "^7.65.0",
         "react-intersection-observer": "^9.16.0",
         "react-papaparse": "^4.4.0",
         "react-pdf": "^10.2.0",
@@ -446,6 +459,7 @@
         "zod": "^4.1.12",
       },
       "devDependencies": {
+        "@biomejs/biome": "^2.2.5",
         "@next/bundle-analyzer": "^15.5.4",
         "@tanstack/react-query-devtools": "^5.90.2",
         "@testing-library/react": "^16.3.0",
@@ -512,6 +526,7 @@
         "zod": "^4.1.12",
       },
       "devDependencies": {
+        "@biomejs/biome": "^2.2.5",
         "@tuturuuu/types": "workspace:*",
         "@tuturuuu/typescript-config": "workspace:*",
         "@types/node": "^24.7.1",
@@ -532,6 +547,7 @@
         "zod": "^4.1.12",
       },
       "devDependencies": {
+        "@biomejs/biome": "^2.2.5",
         "@tuturuuu/types": "workspace:*",
         "@tuturuuu/typescript-config": "workspace:*",
         "@types/node": "^24.7.1",
@@ -551,6 +567,7 @@
         "react": "^19.2.0",
       },
       "devDependencies": {
+        "@biomejs/biome": "^2.2.5",
         "@tuturuuu/typescript-config": "workspace:*",
         "@types/node": "^24.7.1",
         "@types/react": "^19.2.2",
@@ -572,6 +589,7 @@
         "zod": "^4.1.12",
       },
       "devDependencies": {
+        "@biomejs/biome": "^2.2.5",
         "@tuturuuu/types": "workspace:*",
         "@tuturuuu/typescript-config": "workspace:*",
         "@types/node": "^24.7.1",
@@ -590,6 +608,7 @@
         "googleapis": "^162.0.0",
       },
       "devDependencies": {
+        "@biomejs/biome": "^2.2.5",
         "@tuturuuu/types": "workspace:*",
         "@tuturuuu/typescript-config": "workspace:*",
         "@types/node": "^24.7.1",
@@ -608,6 +627,7 @@
         "lucide-react": "^0.545.0",
       },
       "devDependencies": {
+        "@biomejs/biome": "^2.2.5",
         "@tuturuuu/typescript-config": "workspace:*",
       },
     },
@@ -622,6 +642,7 @@
         "dodopayments-checkout": "^1.3.1",
       },
       "devDependencies": {
+        "@biomejs/biome": "^2.2.5",
         "@tuturuuu/typescript-config": "workspace:*",
       },
     },
@@ -638,6 +659,7 @@
         "zod": "^4.1.12",
       },
       "devDependencies": {
+        "@biomejs/biome": "^2.2.5",
         "@tuturuuu/typescript-config": "workspace:*",
         "@types/node": "^24.7.1",
         "@types/react": "^19.2.2",
@@ -655,6 +677,7 @@
         "react-email": "^4.3.0",
       },
       "devDependencies": {
+        "@biomejs/biome": "^2.2.5",
         "@tuturuuu/typescript-config": "workspace:*",
         "@types/node": "^24.7.1",
         "@types/react": "^19.2.2",
@@ -674,6 +697,7 @@
         "dayjs": "^1.11.18",
       },
       "devDependencies": {
+        "@biomejs/biome": "^2.2.5",
         "@trigger.dev/build": "^4.0.4",
         "@tuturuuu/typescript-config": "workspace:*",
       },
@@ -688,6 +712,7 @@
         "zod": "^4.1.12",
       },
       "devDependencies": {
+        "@biomejs/biome": "^2.2.5",
         "@tuturuuu/typescript-config": "workspace:*",
         "@types/node": "^24.7.1",
         "@types/react": "^19.2.2",
@@ -697,6 +722,9 @@
     "packages/typescript-config": {
       "name": "@tuturuuu/typescript-config",
       "version": "0.1.0",
+      "devDependencies": {
+        "@biomejs/biome": "^2.2.5",
+      },
     },
     "packages/ui": {
       "name": "@tuturuuu/ui",
@@ -798,6 +826,7 @@
         "zod": "^4.1.12",
       },
       "devDependencies": {
+        "@biomejs/biome": "^2.2.5",
         "@tailwindcss/postcss": "^4.1.14",
         "@tailwindcss/typography": "^0.5.19",
         "@testing-library/jest-dom": "^6.9.1",
@@ -839,6 +868,7 @@
         "zod": "^4.1.12",
       },
       "devDependencies": {
+        "@biomejs/biome": "^2.2.5",
         "@tuturuuu/types": "workspace:*",
         "@tuturuuu/typescript-config": "workspace:*",
         "@types/node": "^24.7.1",
@@ -858,6 +888,7 @@
         "@vercel/speed-insights": "^1.2.0",
       },
       "devDependencies": {
+        "@biomejs/biome": "^2.2.5",
         "@tuturuuu/types": "workspace:*",
         "@tuturuuu/typescript-config": "workspace:*",
         "@types/node": "^24.7.1",

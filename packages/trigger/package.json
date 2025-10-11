@@ -24,6 +24,7 @@
     "dayjs": "^1.11.18"
   },
   "devDependencies": {
+    "@biomejs/biome": "^2.2.5",
     "@trigger.dev/build": "^4.0.4",
     "@tuturuuu/typescript-config": "workspace:*"
   },

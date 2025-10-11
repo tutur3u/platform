@@ -48,6 +48,7 @@
     "zod": "^4.1.12"
   },
   "devDependencies": {
+    "@biomejs/biome": "^2.2.5",
     "@tailwindcss/postcss": "^4.1.14",
     "@tuturuuu/typescript-config": "workspace:*",
     "@types/node": "^24.7.1",
