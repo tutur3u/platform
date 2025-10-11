@@ -5,8 +5,8 @@ import { cn, formatBytes } from '@tuturuuu/utils/format';
 import { File, FileText, Upload, X } from 'lucide-react';
 import { type HTMLAttributes, useCallback, useState } from 'react';
 import Dropzone, {
-    type DropzoneProps,
-    type FileRejection,
+  type DropzoneProps,
+  type FileRejection,
 } from 'react-dropzone';
 import { useControllableState } from '../../../hooks/use-controllable-state';
 import { Button } from '../button';
