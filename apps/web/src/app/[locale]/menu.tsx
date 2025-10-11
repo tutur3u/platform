@@ -41,6 +41,7 @@ const navItems = (t: any, user: WorkspaceUser | null) => {
     { href: '/neo-crush', label: 'Neo Crush' },
     { href: '/neo-chess', label: 'Neo Chess' },
     { href: '/blogs', label: 'Neo Blogs' },
+    { href: '/neo-generator', label: 'Neo Generator' },
   ] as NavItem[];
 
   // Only add Scanner for logged-in users

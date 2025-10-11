@@ -9,6 +9,7 @@ export const APP_PUBLIC_PATHS = [
   '/neo-crush',
   '/neo-chess',
   '/blogs',
+  '/neo-generator',
 ].reduce((acc: string[], path) => {
   // Add the original path
   acc.push(path);
