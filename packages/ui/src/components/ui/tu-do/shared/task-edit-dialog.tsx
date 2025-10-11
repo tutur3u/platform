@@ -275,18 +275,30 @@ function TaskEditDialogComponent({
     setEditorInstance(editor);
   }, []);
 
+  // Store the original URL when dialog opens
+  const originalUrlRef = useRef<string | null>(null);
+
   // Sync URL with task dialog state (edit mode only)
   useEffect(() => {
     if (!isOpen || isCreateMode || !task?.id || !workspaceId || !pathname)
       return;
+
+    // Save the original URL on first open (only if not already on a task detail page)
+    if (!originalUrlRef.current && !pathname.match(/\/tasks\/[^/]+$/)) {
+      originalUrlRef.current = pathname;
+    }
 
     // Update URL to include task ID without navigation
     const newUrl = `/${workspaceId}/tasks/${task.id}`;
     window.history.replaceState(null, '', newUrl);
 
     return () => {
-      // Restore URL when dialog closes (only if workspace and board exist)
-      if (workspaceId && boardId) {
+      // Restore to the original URL when dialog closes
+      if (originalUrlRef.current) {
+        window.history.replaceState(null, '', originalUrlRef.current);
+        originalUrlRef.current = null;
+      } else if (boardId) {
+        // No original URL (opened directly), restore to board view
         window.history.replaceState(
           null,
           '',
@@ -1992,7 +2004,7 @@ function TaskEditDialogComponent({
             onUpdate();
             onClose();
           },
-          onError: (error) => {
+          onError: (error: any) => {
             console.error('Error updating task:', error);
             toast({
               title: 'Error updating task',

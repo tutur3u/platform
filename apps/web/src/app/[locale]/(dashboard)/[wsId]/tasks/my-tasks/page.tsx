@@ -7,6 +7,9 @@ import { getTranslations } from 'next-intl/server';
 import { redirect } from 'next/navigation';
 import MyTasksContent from './my-tasks-content';
 
+// Force dynamic rendering to ensure data is always fresh
+export const dynamic = 'force-dynamic';
+
 interface Props {
   params: Promise<{
     locale: string;

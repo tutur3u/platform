@@ -41,7 +41,7 @@ import timezone from 'dayjs/plugin/timezone';
 import utc from 'dayjs/plugin/utc';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import TaskListWithCompletion from '../../(dashboard)/tasks/task-list-with-completion';
 import { CommandBar } from './command-bar';
 import EmptyState from './empty-state';
@@ -188,7 +188,7 @@ export default function MyTasksContent({
   const t = useTranslations();
   const router = useRouter();
   const queryClient = useQueryClient();
-  const { createTask } = useTaskDialog();
+  const { createTask, onUpdate } = useTaskDialog();
   const [activeTab, setActiveTab] = useState('tasks');
   const [boardSelectorOpen, setBoardSelectorOpen] = useState(false);
   const [selectedWorkspaceId, setSelectedWorkspaceId] = useState<string>(wsId);
@@ -234,6 +234,45 @@ export default function MyTasksContent({
       return 'UTC';
     }
   }, []);
+
+  const handleUpdate = useCallback(() => {
+    console.log('🔄 Refreshing My Tasks page...');
+
+    // Invalidate React Query caches for client-side data
+    queryClient.invalidateQueries({ queryKey: ['user-workspaces'] });
+    queryClient.invalidateQueries({ queryKey: ['workspace', wsId] });
+
+    // Use router.push to navigate back and refresh the page
+    // This ensures we're at the correct URL when the refresh happens
+    setTimeout(() => {
+      const currentPath = window.location.pathname;
+      console.log('🔄 Current path:', currentPath);
+
+      // Check if we're on My Tasks page or elsewhere
+      if (currentPath.endsWith('/my-tasks')) {
+        // Already on my-tasks, just refresh
+        console.log('🔄 Refreshing current page...');
+        router.refresh();
+      } else if (
+        currentPath.includes('/tasks/') &&
+        currentPath.match(/\/tasks\/[^/]+$/)
+      ) {
+        // On a task detail page - navigate back to my-tasks
+        console.log('🔄 Navigating back to My Tasks...');
+        router.push(`/${wsId}/tasks/my-tasks`);
+      } else {
+        // Fallback: just refresh
+        console.log('🔄 Fallback refresh...');
+        router.refresh();
+      }
+    }, 150);
+  }, [router, queryClient, wsId]);
+
+  // Connect the centralized task dialog's onUpdate to page refresh
+  useEffect(() => {
+    console.log('✅ Registering My Tasks update callback');
+    onUpdate(handleUpdate);
+  }, [onUpdate, handleUpdate]);
 
   // Fetch user's workspaces (only if in personal workspace)
   const { data: workspacesData } = useQuery({
@@ -434,11 +473,6 @@ export default function MyTasksContent({
       toast.error(mutationError.message || 'Failed to generate preview');
     },
   });
-
-  const handleUpdate = () => {
-    // Trigger refresh of SSR data using Next.js router
-    router.refresh();
-  };
 
   // Create note mutation (for CommandBar)
   const createNoteMutation = useMutation({

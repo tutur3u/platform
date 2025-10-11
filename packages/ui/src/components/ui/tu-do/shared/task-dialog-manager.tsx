@@ -5,7 +5,7 @@ import { useTaskDialogContext } from '../providers/task-dialog-provider';
 
 // Lazy load the heavy TaskEditDialog component
 const TaskEditDialog = lazy(() =>
-  import('./task-edit-dialog').then((mod) => ({
+  import('./task-edit-dialog.js').then((mod) => ({
     default: mod.TaskEditDialog,
   }))
 );
@@ -16,7 +16,7 @@ const TaskEditDialog = lazy(() =>
  * It lazy-loads the actual dialog component only when first opened
  */
 export function TaskDialogManager() {
-  const { state, closeDialog, onUpdate } = useTaskDialogContext();
+  const { state, closeDialog, triggerUpdate } = useTaskDialogContext();
 
   // Don't render anything if dialog has never been opened
   if (!state.isOpen && !state.task) {
@@ -30,7 +30,7 @@ export function TaskDialogManager() {
         boardId={state.boardId || ''}
         isOpen={state.isOpen}
         onClose={closeDialog}
-        onUpdate={onUpdate}
+        onUpdate={triggerUpdate}
         availableLists={state.availableLists}
         mode={state.mode}
         showUserPresence={state.showUserPresence}

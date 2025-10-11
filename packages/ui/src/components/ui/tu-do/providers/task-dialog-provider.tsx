@@ -8,6 +8,7 @@ import {
   useCallback,
   useContext,
   useMemo,
+  useRef,
   useState,
 } from 'react';
 
@@ -18,6 +19,7 @@ interface TaskDialogState {
   mode?: 'edit' | 'create';
   availableLists?: TaskList[];
   showUserPresence?: boolean;
+  originalPathname?: string;
 }
 
 interface TaskDialogContextValue {
@@ -37,8 +39,11 @@ interface TaskDialogContextValue {
   // Close dialog
   closeDialog: () => void;
 
-  // Callback for when task is updated
-  onUpdate: () => void;
+  // Register callback for when task is updated
+  onUpdate: (callback: () => void) => void;
+
+  // Trigger the registered update callback (internal use)
+  triggerUpdate: () => void;
 }
 
 const TaskDialogContext = createContext<TaskDialogContextValue | null>(null);
@@ -65,6 +70,9 @@ export function TaskDialogProvider({
   const [state, setState] = useState<TaskDialogState>({
     isOpen: false,
   });
+
+  // Store the update callback in a ref for dynamic registration
+  const updateCallbackRef = useRef<(() => void) | null>(null);
 
   const openTask = useCallback(
     (task: Task, boardId: string, availableLists?: TaskList[]) => {
@@ -108,7 +116,19 @@ export function TaskDialogProvider({
     });
   }, []);
 
-  const onUpdate = useCallback(() => {
+  // Register an update callback
+  const onUpdate = useCallback((callback: () => void) => {
+    console.log('📝 TaskDialogProvider: Registering update callback');
+    updateCallbackRef.current = callback;
+  }, []);
+
+  // Call the registered callback (used internally by TaskEditDialog)
+  const triggerUpdate = useCallback(() => {
+    console.log('🔔 TaskDialogProvider: Triggering update callback', {
+      hasCallback: !!updateCallbackRef.current,
+      hasExternalCallback: !!externalOnUpdate,
+    });
+    updateCallbackRef.current?.();
     externalOnUpdate?.();
   }, [externalOnUpdate]);
 
@@ -119,8 +139,9 @@ export function TaskDialogProvider({
       createTask,
       closeDialog,
       onUpdate,
+      triggerUpdate,
     }),
-    [state, openTask, createTask, closeDialog, onUpdate]
+    [state, openTask, createTask, closeDialog, onUpdate, triggerUpdate]
   );
 
   return (
