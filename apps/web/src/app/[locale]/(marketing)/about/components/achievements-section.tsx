@@ -1,6 +1,6 @@
 'use client';
 
-import { Award, Heart, Sparkles, Users } from '@tuturuuu/ui/icons';
+import { Award, Heart, Sparkles, Users } from '@tuturuuu/icons';
 import { motion } from 'framer-motion';
 import type { ReactNode } from 'react';
 

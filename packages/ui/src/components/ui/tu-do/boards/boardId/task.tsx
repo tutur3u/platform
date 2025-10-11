@@ -41,7 +41,7 @@ import {
   UserMinus,
   UserStar,
   X,
-} from '@tuturuuu/ui/icons';
+} from '@tuturuuu/icons';
 import { ScrollArea } from '@tuturuuu/ui/scroll-area';
 import { cn } from '@tuturuuu/utils/format';
 import {

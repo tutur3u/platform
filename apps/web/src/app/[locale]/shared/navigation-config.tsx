@@ -1,5 +1,6 @@
 'use client';
 
+import { DEV_MODE, GITHUB_OWNER, GITHUB_REPO } from '@/constants/common';
 import {
   BookText,
   Building,
@@ -19,9 +20,8 @@ import {
   UsersRound,
   Utensils,
   WandSparkles,
-} from '@tuturuuu/ui/icons';
+} from '@tuturuuu/icons';
 import type { ReactNode } from 'react';
-import { DEV_MODE, GITHUB_OWNER, GITHUB_REPO } from '@/constants/common';
 
 export interface NavItem {
   href: string;

@@ -8,6 +8,17 @@ import {
   linkIdentity,
   unlinkIdentity,
 } from '@tuturuuu/auth/identity-linking';
+import {
+  AlertTriangle,
+  CheckCircle2,
+  ExternalLink,
+  Github,
+  Globe,
+  Link as LinkIcon,
+  Shield,
+  Trash2,
+  Zap,
+} from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import {
   AlertDialog,
@@ -30,20 +41,9 @@ import {
   CardTitle,
 } from '@tuturuuu/ui/card';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
-import {
-  AlertTriangle,
-  CheckCircle2,
-  ExternalLink,
-  Github,
-  Globe,
-  Link as LinkIcon,
-  Shield,
-  Trash2,
-  Zap,
-} from '@tuturuuu/ui/icons';
 import { Skeleton } from '@tuturuuu/ui/skeleton';
-import Image from 'next/image';
 import { useTranslations } from 'next-intl';
+import Image from 'next/image';
 import { useEffect, useState } from 'react';
 
 interface LinkedIdentitiesCardProps {

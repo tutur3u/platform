@@ -1,7 +1,7 @@
 'use client';
 
+import { Eye, EyeOff } from '@tuturuuu/icons';
 import { cn } from '@tuturuuu/utils/format';
-import { Eye, EyeOff } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import { useTheme } from 'next-themes';
 import { useEffect, useState } from 'react';

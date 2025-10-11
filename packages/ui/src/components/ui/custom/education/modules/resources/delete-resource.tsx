@@ -1,8 +1,8 @@
 'use client';
 
+import { Trash } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import { Button } from '@tuturuuu/ui/button';
-import { Trash } from '@tuturuuu/ui/icons';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 

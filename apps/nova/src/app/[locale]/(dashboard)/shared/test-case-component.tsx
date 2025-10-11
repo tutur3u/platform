@@ -1,3 +1,4 @@
+import { Code } from '@tuturuuu/icons';
 import type { NovaProblemTestCase } from '@tuturuuu/types/db';
 import {
   Card,
@@ -6,7 +7,6 @@ import {
   CardHeader,
   CardTitle,
 } from '@tuturuuu/ui/card';
-import { Code } from '@tuturuuu/ui/icons';
 
 export interface TestCaseComponentProps {
   testCases: NovaProblemTestCase[];

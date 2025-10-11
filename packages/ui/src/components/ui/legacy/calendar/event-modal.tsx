@@ -3,6 +3,28 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { calendarEventsSchema } from '@tuturuuu/ai/calendar/events';
 import { useObject } from '@tuturuuu/ai/object/core';
+import {
+  AlertCircle,
+  Brain,
+  Calendar as CalendarIcon,
+  Check,
+  ChevronLeft,
+  ChevronRight,
+  Clock,
+  FileText,
+  Image as ImageIcon,
+  Info,
+  Loader2,
+  Lock,
+  MapPin,
+  Mic,
+  Settings,
+  Sparkles,
+  StopCircle,
+  Trash2,
+  Unlock,
+  X,
+} from '@tuturuuu/icons';
 import type { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
 import type { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
 import {
@@ -29,43 +51,21 @@ import {
   FormLabel,
   FormMessage,
 } from '@tuturuuu/ui/form';
-import {
-  createAllDayEvent,
-  isAllDayEvent,
-} from '@tuturuuu/ui/hooks/calendar-utils';
 import { useCalendar } from '@tuturuuu/ui/hooks/use-calendar';
 import { useForm } from '@tuturuuu/ui/hooks/use-form';
 import { useToast } from '@tuturuuu/ui/hooks/use-toast';
 import { ScrollArea } from '@tuturuuu/ui/scroll-area';
 import { Separator } from '@tuturuuu/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
+import {
+  createAllDayEvent,
+  isAllDayEvent,
+} from '@tuturuuu/utils/calendar-utils';
 import { getEventStyles } from '@tuturuuu/utils/color-helper';
 import { format } from 'date-fns';
 import dayjs from 'dayjs';
 import ts from 'dayjs/plugin/timezone';
 import utc from 'dayjs/plugin/utc';
-import {
-  AlertCircle,
-  Brain,
-  Calendar as CalendarIcon,
-  Check,
-  ChevronLeft,
-  ChevronRight,
-  Clock,
-  FileText,
-  Image as ImageIcon,
-  Info,
-  Loader2,
-  Lock,
-  MapPin,
-  Mic,
-  Settings,
-  Sparkles,
-  StopCircle,
-  Trash2,
-  Unlock,
-  X,
-} from 'lucide-react';
 import Image from 'next/image';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { z } from 'zod';

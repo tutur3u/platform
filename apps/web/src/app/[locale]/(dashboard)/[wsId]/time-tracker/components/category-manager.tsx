@@ -1,5 +1,13 @@
 'use client';
 
+import {
+  Copy,
+  Edit,
+  LayoutGrid,
+  MoreHorizontal,
+  Plus,
+  Trash2,
+} from '@tuturuuu/icons';
 import type { TimeTrackingCategory } from '@tuturuuu/types/db';
 import {
   AlertDialog,
@@ -27,14 +35,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
-import {
-  Copy,
-  Edit,
-  LayoutGrid,
-  MoreHorizontal,
-  Plus,
-  Trash2,
-} from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
 import {

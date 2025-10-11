@@ -1,6 +1,19 @@
 'use client';
 
 import { useQueryClient } from '@tanstack/react-query';
+import {
+  ArrowDown,
+  ArrowDownUp,
+  ArrowUp,
+  CheckCircle2,
+  horseHead,
+  Icon,
+  MoreHorizontal,
+  Rabbit,
+  Turtle,
+  unicornHead,
+  X,
+} from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
@@ -18,19 +31,6 @@ import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Checkbox } from '@tuturuuu/ui/checkbox';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
-import {
-  ArrowDown,
-  ArrowDownUp,
-  ArrowUp,
-  CheckCircle2,
-  horseHead,
-  Icon,
-  MoreHorizontal,
-  Rabbit,
-  Turtle,
-  unicornHead,
-  X,
-} from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
 import { Skeleton } from '@tuturuuu/ui/skeleton';
 import {

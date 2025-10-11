@@ -1,7 +1,7 @@
+import { Calendar, Clock } from '@tuturuuu/icons';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import { Badge } from '@tuturuuu/ui/badge';
-import { Calendar, Clock } from '@tuturuuu/ui/icons';
 import { cn } from '@tuturuuu/utils/format';
 import { format } from 'date-fns';
 import { memo } from 'react';

@@ -1,8 +1,8 @@
+import { Wallet2 } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import type { FinanceDashboardSearchParams } from '@tuturuuu/ui/finance/shared/metrics';
 import StatisticCard from '@tuturuuu/ui/finance/statistics/card';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
-import { Wallet2 } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
 
 const enabled = true;

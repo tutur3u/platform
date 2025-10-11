@@ -1,6 +1,6 @@
 'use client';
 
-import { Brain, Globe, Rocket, Star } from '@tuturuuu/ui/icons';
+import { Brain, Globe, Rocket, Star } from '@tuturuuu/icons';
 import { motion } from 'framer-motion';
 import type { ReactNode } from 'react';
 

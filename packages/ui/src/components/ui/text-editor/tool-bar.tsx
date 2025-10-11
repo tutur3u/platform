@@ -1,6 +1,5 @@
 import type { Editor } from '@tiptap/react';
 import { BubbleMenu } from '@tiptap/react/menus';
-import { Button } from '@tuturuuu/ui/button';
 import {
   AlignCenter,
   AlignLeft,
@@ -27,7 +26,8 @@ import {
   Trash2,
   Workflow,
   YoutubeIcon,
-} from '@tuturuuu/ui/icons';
+} from '@tuturuuu/icons';
+import { Button } from '@tuturuuu/ui/button';
 import { Input } from '@tuturuuu/ui/input';
 import { toast } from '@tuturuuu/ui/sonner';
 import { Toggle } from '@tuturuuu/ui/toggle';

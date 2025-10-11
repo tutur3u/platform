@@ -1,7 +1,7 @@
+import { Play, StopCircle } from '@tuturuuu/icons';
 import { useCalendar } from '@tuturuuu/ui/hooks/use-calendar';
 import { Separator } from '@tuturuuu/ui/separator';
 import { getEventStyles } from '@tuturuuu/utils/color-helper';
-import { Play, StopCircle } from 'lucide-react';
 import moment from 'moment';
 import { useEffect, useState } from 'react';
 

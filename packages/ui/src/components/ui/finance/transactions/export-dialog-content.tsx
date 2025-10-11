@@ -23,7 +23,7 @@ import {
 import { useTranslations } from 'next-intl';
 import { useId, useState } from 'react';
 import { jsonToCSV } from 'react-papaparse';
-import * as XLSX from 'xlsx';
+import { XLSX } from '../../../../xlsx';
 
 export default function ExportDialogContent({
   wsId,

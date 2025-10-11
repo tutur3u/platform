@@ -1,6 +1,17 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
+import {
+  Calendar as CalendarIcon,
+  Check,
+  Filter,
+  Flag,
+  Hash,
+  Tag,
+  User,
+  Users,
+  X,
+} from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { TaskPriority } from '@tuturuuu/types/primitives/Priority';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
@@ -19,17 +30,6 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
-import {
-  Calendar as CalendarIcon,
-  Check,
-  Filter,
-  Flag,
-  Hash,
-  Tag,
-  User,
-  Users,
-  X,
-} from '@tuturuuu/ui/icons';
 import { ScrollArea } from '@tuturuuu/ui/scroll-area';
 import { cn } from '@tuturuuu/utils/format';
 import { getInitials } from '@tuturuuu/utils/name-helper';

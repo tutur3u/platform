@@ -1,5 +1,5 @@
+import { Pause, Play, StopCircle } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
-import { Pause, Play, StopCircle } from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
 
 interface Props {

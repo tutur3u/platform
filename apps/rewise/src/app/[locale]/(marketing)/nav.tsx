@@ -1,9 +1,11 @@
 'use client';
 
+import type { NavLink } from '@/components/navigation';
+import { PROD_MODE } from '@/constants/common';
+import { CirclePlus } from '@tuturuuu/icons';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { Button } from '@tuturuuu/ui/button';
 import { Checkbox } from '@tuturuuu/ui/checkbox';
-import { CirclePlus } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { isValidTuturuuuEmail } from '@tuturuuu/utils/email/client';
@@ -11,8 +13,6 @@ import { cn } from '@tuturuuu/utils/format';
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import type { NavLink } from '@/components/navigation';
-import { PROD_MODE } from '@/constants/common';
 import ChatLink from './chat-link';
 
 interface NavProps {

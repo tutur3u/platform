@@ -1,5 +1,17 @@
 'use client';
 
+import {
+  ChevronDown,
+  ChevronRight,
+  Clock,
+  DollarSign,
+  FileText,
+  Hash,
+  MessageSquare,
+  Settings,
+  TrendingUp,
+  Zap,
+} from '@tuturuuu/icons';
 import type { WorkspaceAIExecution } from '@tuturuuu/types/db';
 import { Badge } from '@tuturuuu/ui/badge';
 import {
@@ -19,18 +31,6 @@ import {
 import { MemoizedReactMarkdown } from '@tuturuuu/ui/markdown';
 import { Separator } from '@tuturuuu/ui/separator';
 import { cn } from '@tuturuuu/utils/format';
-import {
-  ChevronDown,
-  ChevronRight,
-  Clock,
-  DollarSign,
-  FileText,
-  Hash,
-  MessageSquare,
-  Settings,
-  TrendingUp,
-  Zap,
-} from 'lucide-react';
 import moment from 'moment';
 import { useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';

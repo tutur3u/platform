@@ -1,6 +1,7 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
+import { Calendar, Plus, RefreshCw } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
@@ -12,7 +13,6 @@ import {
   DialogTrigger,
 } from '@tuturuuu/ui/dialog';
 import { format } from 'date-fns';
-import { Calendar, Plus, RefreshCw } from 'lucide-react';
 import { useState } from 'react';
 import { RecurringTransactionForm } from './form';
 

@@ -1,3 +1,4 @@
+import { Calendar, SquaresIntersect, Users } from '@tuturuuu/icons';
 import {
   createAdminClient,
   createClient,
@@ -6,11 +7,10 @@ import type { MeetTogetherPlan } from '@tuturuuu/types/primitives/MeetTogetherPl
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
-import { Calendar, SquaresIntersect, Users } from '@tuturuuu/ui/icons';
 import { cn } from '@tuturuuu/utils/format';
 import { format } from 'date-fns';
-import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
+import Link from 'next/link';
 
 export default async function RecentTumeetPlans({
   className,

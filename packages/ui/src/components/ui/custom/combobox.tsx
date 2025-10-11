@@ -1,7 +1,7 @@
 'use client';
 
+import { Check, ChevronsUpDown, Plus } from '@tuturuuu/icons';
 import { cn } from '@tuturuuu/utils/format';
-import { Check, ChevronsUpDown, Plus } from 'lucide-react';
 import * as React from 'react';
 import { Button } from '../button';
 import {

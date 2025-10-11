@@ -1,12 +1,6 @@
+import { horseHead, Icon, Rabbit, Turtle, unicornHead } from '@tuturuuu/icons';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import { Badge } from '@tuturuuu/ui/badge';
-import {
-  horseHead,
-  Icon,
-  Rabbit,
-  Turtle,
-  unicornHead,
-} from '@tuturuuu/ui/icons';
 import { cn } from '@tuturuuu/utils/format';
 import { PRIORITY_BADGE_COLORS, PRIORITY_LABELS } from './taskConstants';
 

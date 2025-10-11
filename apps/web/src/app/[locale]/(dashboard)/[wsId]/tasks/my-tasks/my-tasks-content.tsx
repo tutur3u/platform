@@ -23,7 +23,7 @@ import {
   ListTodo,
   Plus,
   Users,
-} from '@tuturuuu/ui/icons';
+} from '@tuturuuu/icons';
 import { Label } from '@tuturuuu/ui/label';
 import {
   Select,

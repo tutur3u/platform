@@ -1,5 +1,6 @@
 'use client';
 
+import { MenuIcon } from '@tuturuuu/icons';
 import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import {
@@ -9,7 +10,6 @@ import {
   AccordionTrigger,
 } from '@tuturuuu/ui/accordion';
 import { ThemeToggle } from '@tuturuuu/ui/custom/theme-toggle';
-import { MenuIcon } from '@tuturuuu/ui/icons';
 import {
   Sheet,
   SheetContent,
@@ -17,9 +17,9 @@ import {
   SheetTrigger,
 } from '@tuturuuu/ui/sheet';
 import { cn } from '@tuturuuu/utils/format';
+import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { AuthButton } from './auth-button';
 import { type NavItem, useNavigation } from './shared/navigation-config';

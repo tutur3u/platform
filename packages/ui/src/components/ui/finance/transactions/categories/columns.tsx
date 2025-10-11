@@ -1,12 +1,12 @@
 'use client';
 
 import type { ColumnDef } from '@tanstack/react-table';
+import { ArrowDownCircle, ArrowUpCircle } from '@tuturuuu/icons';
 import type { TransactionCategory } from '@tuturuuu/types/primitives/TransactionCategory';
 import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
 import { TransactionCategoryRowActions } from '@tuturuuu/ui/finance/transactions/categories/row-actions';
-import { ArrowDownCircle, ArrowUpCircle } from 'lucide-react';
-import { useLocale } from 'next-intl';
 import moment from 'moment';
+import { useLocale } from 'next-intl';
 
 export const transactionCategoryColumns = (
   t: any,

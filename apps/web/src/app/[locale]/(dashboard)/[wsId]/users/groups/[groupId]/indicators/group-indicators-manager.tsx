@@ -1,8 +1,9 @@
 'use client';
 
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { Plus, RotateCcw, Save, Trash2 } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -24,14 +25,13 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@tuturuuu/ui/dialog';
-import { toast } from '@tuturuuu/ui/sonner';
-import { StickyBottomBar } from '@tuturuuu/ui/sticky-bottom-bar';
-import { Plus, Trash2, Save, RotateCcw } from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
-import { useTranslations } from 'next-intl';
-import { useState, useCallback } from 'react';
+import { toast } from '@tuturuuu/ui/sonner';
+import { StickyBottomBar } from '@tuturuuu/ui/sticky-bottom-bar';
 import { cn } from '@tuturuuu/utils/format';
+import { useTranslations } from 'next-intl';
+import { useCallback, useState } from 'react';
 import UserFeedbackDialog from './user-feedback-dialog';
 
 interface GroupIndicator {
@@ -475,7 +475,7 @@ export default function GroupIndicatorsManager({
               onClick={handleSubmit}
               disabled={isAnyMutationPending}
               className={cn(
-                'bg-dynamic-blue/10 border border-dynamic-blue/20 text-dynamic-blue hover:bg-dynamic-blue/20'
+                'border border-dynamic-blue/20 bg-dynamic-blue/10 text-dynamic-blue hover:bg-dynamic-blue/20'
               )}
             >
               <Save className="h-4 w-4" />
@@ -491,7 +491,7 @@ export default function GroupIndicatorsManager({
           <Dialog open={addDialogOpen} onOpenChange={setAddDialogOpen}>
             <DialogTrigger asChild>
               <Button>
-                <Plus className="h-4 w-4 mr-2" />
+                <Plus className="mr-2 h-4 w-4" />
                 {tIndicators('add_indicator')}
               </Button>
             </DialogTrigger>
@@ -553,7 +553,7 @@ export default function GroupIndicatorsManager({
                       }
                       placeholder={tIndicators('factor_placeholder')}
                     />
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-muted-foreground text-sm">
                       {tIndicators('factor_description')}
                     </p>
                   </div>
@@ -651,7 +651,7 @@ export default function GroupIndicatorsManager({
               >
                 <AlertDialogTrigger asChild>
                   <Button variant="destructive" disabled={isAnyMutationPending}>
-                    <Trash2 className="h-4 w-4 mr-2" />
+                    <Trash2 className="mr-2 h-4 w-4" />
                     {t('common.delete')}
                   </Button>
                 </AlertDialogTrigger>
@@ -713,28 +713,28 @@ export default function GroupIndicatorsManager({
             <table className="w-full border-collapse">
               <thead>
                 <tr className="border-b bg-background">
-                  <th className="sticky left-0 z-20 bg-background border-r px-4 py-2 text-center font-semibold">
+                  <th className="sticky left-0 z-20 border-r bg-background px-4 py-2 text-center font-semibold">
                     #
                   </th>
-                  <th className="sticky left-12 z-20 bg-background border-r px-4 py-2 font-semibold min-w-[200px]">
+                  <th className="sticky left-12 z-20 min-w-[200px] border-r bg-background px-4 py-2 font-semibold">
                     {t('ws-users.full_name')}
                   </th>
                   {groupIndicators.map((indicator) => (
                     <th
                       key={indicator.id}
-                      className="border-r px-4 py-2 font-semibold min-w-[120px]"
+                      className="min-w-[120px] border-r px-4 py-2 font-semibold"
                     >
                       <button
-                        className="w-full hover:bg-dynamic-purple/10 hover:text-dynamic-purple rounded px-2 py-1 text-center"
+                        className="w-full rounded px-2 py-1 text-center hover:bg-dynamic-purple/10 hover:text-dynamic-purple"
                         onClick={() => openEditDialog(indicator)}
                       >
-                        <span className="line-clamp-2 break-all text-balance">
+                        <span className="line-clamp-2 text-balance break-all">
                           {indicator.name}
                         </span>
                       </button>
                     </th>
                   ))}
-                  <th className="sticky right-0 z-20 bg-background border-l px-4 py-2 font-semibold min-w-[100px]">
+                  <th className="sticky right-0 z-20 min-w-[100px] border-l bg-background px-4 py-2 font-semibold">
                     {t('common.average')}
                   </th>
                 </tr>
@@ -742,13 +742,13 @@ export default function GroupIndicatorsManager({
               <tbody>
                 {users.map((user, index) => (
                   <tr key={user.id} className="border-b hover:bg-muted/50">
-                    <td className="sticky left-0 z-10 bg-background border-r px-4 py-2 text-center">
+                    <td className="sticky left-0 z-10 border-r bg-background px-4 py-2 text-center">
                       {index + 1}
                     </td>
-                    <td className="sticky left-12 z-10 bg-background border-r px-4 py-2">
+                    <td className="sticky left-12 z-10 border-r bg-background px-4 py-2">
                       <button
                         onClick={() => openFeedbackDialog(user)}
-                        className="w-full text-left hover:bg-dynamic-blue/10 hover:text-dynamic-blue rounded px-2 py-1 transition-colors"
+                        className="w-full rounded px-2 py-1 text-left transition-colors hover:bg-dynamic-blue/10 hover:text-dynamic-blue"
                       >
                         <span className="line-clamp-1 break-all">
                           {user.full_name}
@@ -772,7 +772,7 @@ export default function GroupIndicatorsManager({
                             )
                           }
                           className={cn(
-                            'w-20 h-8 text-center',
+                            'h-8 w-20 text-center',
                             isValuePending(user.id, indicator.id) &&
                               'border-dynamic-blue/50 bg-dynamic-blue/5'
                           )}
@@ -780,7 +780,7 @@ export default function GroupIndicatorsManager({
                         />
                       </td>
                     ))}
-                    <td className="sticky right-0 z-10 bg-background border-l px-4 py-2 text-center">
+                    <td className="sticky right-0 z-10 border-l bg-background px-4 py-2 text-center">
                       <span className="font-medium">
                         {calculateAverage(user.id)}
                       </span>
@@ -793,7 +793,7 @@ export default function GroupIndicatorsManager({
         </div>
 
         {groupIndicators.length === 0 && (
-          <div className="text-center py-8 text-muted-foreground">
+          <div className="py-8 text-center text-muted-foreground">
             <p>{tIndicators('no_indicators')}</p>
             <p className="text-sm">
               {tIndicators('no_indicators_description')}

@@ -1,5 +1,5 @@
-import { Calendar, Flag, Settings, Trash, Users } from '@tuturuuu/ui/icons';
-import type { LucideIcon } from 'lucide-react';
+import type { LucideIcon } from '@tuturuuu/icons';
+import { Calendar, Flag, Settings, Trash, Users } from '@tuturuuu/icons';
 
 export interface SlashCommandDefinition {
   id:

@@ -16,7 +16,6 @@ import type {
 } from '@tuturuuu/types/primitives/TaskBoard';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import type { User } from '@tuturuuu/types/primitives/User';
-import { toast } from '@tuturuuu/ui/sonner';
 
 export async function getTaskBoard(supabase: SupabaseClient, boardId: string) {
   const { data, error } = await supabase
@@ -784,9 +783,6 @@ export function useUpdateTask(boardId: string) {
       }
 
       console.error('Failed to update task:', err);
-      toast.error('Failed to update task', {
-        description: 'Please try again.',
-      });
     },
     onSuccess: (updatedTask) => {
       // Update the cache with the server response
@@ -869,9 +865,6 @@ export function useCreateTask(boardId: string) {
       }
 
       console.error('Failed to create task:', err);
-      toast.error('Failed to create task', {
-        description: 'Please try again.',
-      });
     },
     onSuccess: (newTask, _, context) => {
       // Replace optimistic task with real task
@@ -926,56 +919,6 @@ export function useDeleteTask(boardId: string) {
       }
 
       console.error('Failed to delete task:', err);
-      toast.error('Failed to delete task', {
-        description: 'Please try again.',
-      });
-    },
-    onSuccess: (_, taskId, context) => {
-      const deletedTask = context?.deletedTask;
-
-      // Task is already removed from cache optimistically
-      // Show toast with undo action
-      toast.success('Task deleted', {
-        description: deletedTask?.name || 'Task has been removed',
-        action: deletedTask
-          ? {
-              label: 'Undo',
-              onClick: async () => {
-                // Restore the task by setting deleted to false
-                const supabase = createClient();
-                try {
-                  const { error } = await supabase
-                    .from('tasks')
-                    .update({ deleted: false })
-                    .eq('id', taskId);
-
-                  if (error) throw error;
-
-                  // Add the task back to the cache
-                  queryClient.setQueryData(
-                    ['tasks', boardId],
-                    (old: Task[] | undefined) => {
-                      if (!old) return [deletedTask];
-                      // Check if task is already in cache (shouldn't be, but safety check)
-                      const exists = old.some((task) => task.id === taskId);
-                      if (exists) return old;
-                      return [...old, deletedTask];
-                    }
-                  );
-
-                  toast.success('Task restored', {
-                    description: `"${deletedTask.name}" has been restored`,
-                  });
-                } catch (error) {
-                  console.error('Failed to restore task:', error);
-                  toast.error('Failed to restore task', {
-                    description: 'Please try again or refresh the page.',
-                  });
-                }
-              },
-            }
-          : undefined,
-      });
     },
   });
 }
@@ -1061,9 +1004,6 @@ export function useMoveTask(boardId: string) {
       }
 
       console.error('Failed to move task:', err);
-      toast.error('Failed to move task', {
-        description: 'Please try again.',
-      });
     },
     onSuccess: (updatedTask) => {
       console.log(
@@ -1254,9 +1194,6 @@ export function useMoveTaskToBoard(currentBoardId: string) {
       }
 
       console.error('Failed to move task to board:', err);
-      toast.error('Failed to move task to board', {
-        description: 'Please try again.',
-      });
     },
     onSuccess: (result) => {
       console.log(
@@ -1316,12 +1253,6 @@ export function useMoveTaskToBoard(currentBoardId: string) {
       }
 
       console.log('✅ Cache updated with server response');
-
-      toast.success(
-        result.movedToDifferentBoard
-          ? 'Task moved to different board'
-          : 'Task moved successfully'
-      );
     },
   });
 }
@@ -1476,11 +1407,9 @@ export function useCreateBoardWithTemplate(wsId: string) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['workspace-boards', wsId] });
-      toast.success('Task board created successfully');
     },
     onError: (error) => {
       console.error('Error creating board:', error);
-      toast.error('Failed to create task board');
     },
   });
 }
@@ -1503,13 +1432,9 @@ export function useUpdateTaskListStatus(boardId: string) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['task-lists', boardId] });
-      toast.success('List status updated successfully');
     },
     onError: (error) => {
       console.error('Error updating list status:', error);
-      toast.error(
-        error instanceof Error ? error.message : 'Failed to update list status'
-      );
     },
   });
 }
@@ -1723,9 +1648,6 @@ export function useMoveAllTasksFromList(currentBoardId: string) {
       }
 
       console.error('❌ Bulk list move failed:', err);
-      toast.error('Failed to move all tasks from list', {
-        description: err instanceof Error ? err.message : 'Unknown error',
-      });
     },
     onSuccess: (data, variables) => {
       console.log('✅ Bulk list move mutation succeeded');
@@ -1754,10 +1676,6 @@ export function useMoveAllTasksFromList(currentBoardId: string) {
           queryKey: ['task_lists', variables.targetBoardId],
         });
       }
-
-      toast.success(
-        `Moved ${data.movedCount} task${data.movedCount !== 1 ? 's' : ''} successfully`
-      );
     },
   });
 }
@@ -2280,9 +2198,6 @@ export function useReorderTask(boardId: string) {
       }
 
       console.error('Failed to reorder task:', err);
-      toast.error('Failed to reorder task', {
-        description: 'Please try again.',
-      });
     },
     onSuccess: (updatedTask) => {
       console.log(

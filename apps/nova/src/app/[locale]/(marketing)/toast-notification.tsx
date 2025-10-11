@@ -1,4 +1,4 @@
-import { Sparkles } from '@tuturuuu/ui/icons';
+import { Sparkles } from '@tuturuuu/icons';
 import { AnimatePresence, motion } from 'framer-motion';
 
 interface ToastNotificationProps {

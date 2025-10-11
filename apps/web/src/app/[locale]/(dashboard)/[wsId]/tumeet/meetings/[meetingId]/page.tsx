@@ -1,3 +1,4 @@
+import { ArrowLeft, Calendar, Clock, Users } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -7,7 +8,6 @@ import {
   CardHeader,
   CardTitle,
 } from '@tuturuuu/ui/card';
-import { ArrowLeft, Calendar, Clock, Users } from '@tuturuuu/ui/icons';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
 import { format } from 'date-fns';
 import type { Metadata } from 'next';

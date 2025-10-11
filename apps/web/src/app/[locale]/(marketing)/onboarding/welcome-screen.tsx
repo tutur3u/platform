@@ -1,7 +1,5 @@
 'use client';
 
-import { Button } from '@tuturuuu/ui/button';
-import { Card, CardContent, CardHeader } from '@tuturuuu/ui/card';
 import {
   ArrowRight,
   CheckCircle,
@@ -9,7 +7,9 @@ import {
   Settings,
   Users,
   Zap,
-} from '@tuturuuu/ui/icons';
+} from '@tuturuuu/icons';
+import { Button } from '@tuturuuu/ui/button';
+import { Card, CardContent, CardHeader } from '@tuturuuu/ui/card';
 import { motion } from 'framer-motion';
 import { useTranslations } from 'next-intl';
 

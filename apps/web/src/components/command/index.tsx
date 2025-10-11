@@ -1,23 +1,17 @@
 'use client';
 
+import { ChatMessage } from '@/components/chat-message';
 import { DefaultChatTransport } from '@tuturuuu/ai/core';
 import { defaultModel } from '@tuturuuu/ai/models';
 import { useChat } from '@tuturuuu/ai/react';
 import type { UIMessage } from '@tuturuuu/ai/types';
+import { AlertTriangle, Bot, RefreshCw, Send, Sparkles } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import { CommandDialog } from '@tuturuuu/ui/command';
-import {
-  AlertTriangle,
-  Bot,
-  RefreshCw,
-  Send,
-  Sparkles,
-} from '@tuturuuu/ui/icons';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { generateRandomUUID } from '@tuturuuu/utils/uuid-helper';
 import { useParams, usePathname } from 'next/navigation';
 import * as React from 'react';
-import { ChatMessage } from '@/components/chat-message';
 import './command-palette.css';
 
 const UUID_REGEX =

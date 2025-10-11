@@ -1,7 +1,7 @@
 'use client';
 
+import { Timer } from '@tuturuuu/icons';
 import { Badge } from '@tuturuuu/ui/badge';
-import { Timer } from '@tuturuuu/ui/icons';
 import { cn } from '@tuturuuu/utils/format';
 import { mapEstimationPoints } from './estimation-mapping';
 

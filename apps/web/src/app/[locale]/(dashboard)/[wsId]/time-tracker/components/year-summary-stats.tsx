@@ -1,7 +1,7 @@
 'use client';
 
+import { Calendar, Clock, Settings, TrendingUp, Zap } from '@tuturuuu/icons';
 import { Card, CardContent } from '@tuturuuu/ui/card';
-import { Calendar, Clock, Settings, TrendingUp, Zap } from '@tuturuuu/ui/icons';
 import { useMemo } from 'react';
 
 interface YearSummaryStatsProps {

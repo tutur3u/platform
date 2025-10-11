@@ -1,8 +1,6 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { Button } from '@tuturuuu/ui/button';
-import { CommandGroup, CommandItem } from '@tuturuuu/ui/command';
 import {
   AlertTriangle,
   ChevronDown,
@@ -15,7 +13,9 @@ import {
   Plus,
   RefreshCw,
   Tag,
-} from '@tuturuuu/ui/icons';
+} from '@tuturuuu/icons';
+import { Button } from '@tuturuuu/ui/button';
+import { CommandGroup, CommandItem } from '@tuturuuu/ui/command';
 import { ScrollArea } from '@tuturuuu/ui/scroll-area';
 import { useRouter } from 'next/navigation';
 import React from 'react';

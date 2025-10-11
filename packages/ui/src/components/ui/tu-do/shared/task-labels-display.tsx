@@ -1,7 +1,7 @@
 'use client';
 
+import { Tag } from '@tuturuuu/icons';
 import { Badge } from '@tuturuuu/ui/badge';
-import { Tag } from '@tuturuuu/ui/icons';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { cn } from '@tuturuuu/utils/format';
 

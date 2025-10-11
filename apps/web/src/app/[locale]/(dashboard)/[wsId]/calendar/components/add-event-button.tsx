@@ -1,5 +1,5 @@
+import { PlusIcon } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
-import { PlusIcon } from '@tuturuuu/ui/icons';
 
 interface AddEventButtonProps {
   onOpenDialog?: () => void;

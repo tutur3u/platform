@@ -1,6 +1,5 @@
 import type { NavLink } from '@/components/navigation';
 import { DEV_MODE } from '@/constants/common';
-import { createClient } from '@tuturuuu/supabase/next/server';
 import {
   Activity,
   Archive,
@@ -81,7 +80,8 @@ import {
   Vote,
   Wallet,
   Warehouse,
-} from '@tuturuuu/ui/icons';
+} from '@tuturuuu/icons';
+import { createClient } from '@tuturuuu/supabase/next/server';
 import {
   resolveWorkspaceId,
   ROOT_WORKSPACE_ID,

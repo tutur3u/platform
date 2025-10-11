@@ -10,7 +10,7 @@ import {
   ChevronUp,
   Clock,
   UserRound,
-} from '@tuturuuu/ui/icons';
+} from '@tuturuuu/icons';
 import { useTaskDialog } from '@tuturuuu/ui/tu-do/hooks/useTaskDialog';
 import { TaskEstimationDisplay } from '@tuturuuu/ui/tu-do/shared/task-estimation-display';
 import { TaskLabelsDisplay } from '@tuturuuu/ui/tu-do/shared/task-labels-display';

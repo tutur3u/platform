@@ -1,9 +1,9 @@
-import { cn } from '@tuturuuu/utils/format';
 import {
   ChevronLeftIcon,
   ChevronRightIcon,
   MoreHorizontalIcon,
-} from 'lucide-react';
+} from '@tuturuuu/icons';
+import { cn } from '@tuturuuu/utils/format';
 import type * as React from 'react';
 import { type Button, buttonVariants } from './button';
 

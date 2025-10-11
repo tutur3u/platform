@@ -1,5 +1,14 @@
 'use client';
 
+import {
+  Clock,
+  GraduationCap,
+  Plus,
+  Settings2,
+  Sparkles,
+  Target,
+  Trash2,
+} from '@tuturuuu/icons';
 import { Alert, AlertDescription } from '@tuturuuu/ui/alert';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -10,15 +19,6 @@ import {
   CardTitle,
 } from '@tuturuuu/ui/card';
 import { Checkbox } from '@tuturuuu/ui/checkbox';
-import {
-  Clock,
-  GraduationCap,
-  Plus,
-  Settings2,
-  Sparkles,
-  Target,
-  Trash2,
-} from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
 import {

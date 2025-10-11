@@ -1,17 +1,17 @@
 'use client';
 
-import { Badge } from '@tuturuuu/ui/badge';
-import { Button } from '@tuturuuu/ui/button';
 import {
   ArrowRight,
   BookOpen,
   Clock,
   GraduationCap,
   Sparkles,
-} from '@tuturuuu/ui/icons';
+} from '@tuturuuu/icons';
+import { Badge } from '@tuturuuu/ui/badge';
+import { Button } from '@tuturuuu/ui/button';
 import { motion, type Variants } from 'framer-motion';
-import Link from 'next/link';
 import { useTranslations } from 'next-intl';
+import Link from 'next/link';
 
 export default function LearnPage() {
   const t = useTranslations('nova');

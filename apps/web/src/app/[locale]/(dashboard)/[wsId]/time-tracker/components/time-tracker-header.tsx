@@ -1,4 +1,4 @@
-import { Timer } from '@tuturuuu/ui/icons';
+import { Timer } from '@tuturuuu/icons';
 
 export default function TimeTrackerHeader() {
   return (

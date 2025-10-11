@@ -1,5 +1,5 @@
+import { DatabaseZap } from '@tuturuuu/icons';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
-import { DatabaseZap } from 'lucide-react';
 
 export const IS_PRODUCTION_DB =
   process.env.NEXT_PUBLIC_SUPABASE_URL?.includes('.supabase.');

@@ -1,3 +1,5 @@
+import { TTR_URL } from '@/constants/common';
+import { Copy, QrCode, User, UserPlus, X } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Button } from '@tuturuuu/ui/button';
@@ -8,14 +10,12 @@ import {
   DialogTitle,
 } from '@tuturuuu/ui/dialog';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
-import { Copy, QrCode, User, UserPlus, X } from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
 import { Switch } from '@tuturuuu/ui/switch';
 import { useTranslations } from 'next-intl';
 import { QRCodeCanvas } from 'qrcode.react';
 import { useEffect, useState } from 'react';
-import { TTR_URL } from '@/constants/common';
 
 interface ChatMember {
   email: string;

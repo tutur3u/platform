@@ -1,10 +1,3 @@
-import type { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
-import type { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
-import { useCalendar } from '@tuturuuu/ui/hooks/use-calendar';
-import { getEventStyles } from '@tuturuuu/utils/color-helper';
-import { cn } from '@tuturuuu/utils/format';
-import dayjs from 'dayjs';
-import timezone from 'dayjs/plugin/timezone';
 import {
   AlertTriangle,
   ArrowLeft,
@@ -17,7 +10,14 @@ import {
   RefreshCw,
   Trash2,
   Unlock,
-} from 'lucide-react';
+} from '@tuturuuu/icons';
+import type { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
+import type { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
+import { useCalendar } from '@tuturuuu/ui/hooks/use-calendar';
+import { getEventStyles } from '@tuturuuu/utils/color-helper';
+import { cn } from '@tuturuuu/utils/format';
+import dayjs from 'dayjs';
+import timezone from 'dayjs/plugin/timezone';
 import { useEffect, useRef, useState } from 'react';
 import {
   ContextMenu,

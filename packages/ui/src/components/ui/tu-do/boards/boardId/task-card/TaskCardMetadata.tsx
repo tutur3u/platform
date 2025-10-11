@@ -1,13 +1,13 @@
-import type { Task } from '@tuturuuu/types/primitives/Task';
-import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
-import { Badge } from '@tuturuuu/ui/badge';
 import {
   Box,
   FileText,
   Image as ImageIcon,
   Link2,
   Play,
-} from '@tuturuuu/ui/icons';
+} from '@tuturuuu/icons';
+import type { Task } from '@tuturuuu/types/primitives/Task';
+import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
+import { Badge } from '@tuturuuu/ui/badge';
 import { cn } from '@tuturuuu/utils/format';
 import { getDescriptionMetadata } from '@tuturuuu/utils/text-helper';
 import { memo } from 'react';

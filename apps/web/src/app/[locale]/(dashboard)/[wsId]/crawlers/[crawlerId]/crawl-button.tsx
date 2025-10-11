@@ -1,8 +1,8 @@
 'use client';
 
+import { BugPlay, ExternalLink, Loader2, RefreshCw } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import { useToast } from '@tuturuuu/ui/hooks/use-toast';
-import { BugPlay, ExternalLink, Loader2, RefreshCw } from '@tuturuuu/ui/icons';
 import { Progress } from '@tuturuuu/ui/progress';
 import { cn } from '@tuturuuu/utils/format';
 import { useState } from 'react';

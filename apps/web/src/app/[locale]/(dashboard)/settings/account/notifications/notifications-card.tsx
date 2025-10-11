@@ -1,3 +1,4 @@
+import { Bell } from '@tuturuuu/icons';
 import {
   Card,
   CardContent,
@@ -5,7 +6,6 @@ import {
   CardHeader,
   CardTitle,
 } from '@tuturuuu/ui/card';
-import { Bell } from '@tuturuuu/ui/icons';
 import { Switch } from '@tuturuuu/ui/switch';
 import { getTranslations } from 'next-intl/server';
 

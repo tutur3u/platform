@@ -1,7 +1,5 @@
 'use client';
 
-import { Badge } from '@tuturuuu/ui/badge';
-import { Card } from '@tuturuuu/ui/card';
 import {
   AlertCircle,
   Baby,
@@ -18,7 +16,9 @@ import {
   Shield,
   UserCog,
   Users,
-} from '@tuturuuu/ui/icons';
+} from '@tuturuuu/icons';
+import { Badge } from '@tuturuuu/ui/badge';
+import { Card } from '@tuturuuu/ui/card';
 import { MemoizedReactMarkdown } from '@tuturuuu/ui/markdown';
 import { ScrollArea } from '@tuturuuu/ui/scroll-area';
 import { Separator } from '@tuturuuu/ui/separator';

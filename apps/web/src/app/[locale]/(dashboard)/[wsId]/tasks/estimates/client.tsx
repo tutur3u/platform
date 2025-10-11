@@ -1,5 +1,14 @@
 'use client';
 
+import {
+  BarChart3,
+  Calculator,
+  Calendar,
+  CheckSquare,
+  Edit2,
+  Target,
+  TrendingUp,
+} from '@tuturuuu/icons';
 import type { TaskBoard } from '@tuturuuu/types/primitives/TaskBoard';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
@@ -10,15 +19,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@tuturuuu/ui/dialog';
-import {
-  BarChart3,
-  Calculator,
-  Calendar,
-  CheckSquare,
-  Edit2,
-  Target,
-  TrendingUp,
-} from '@tuturuuu/ui/icons';
 import { Label } from '@tuturuuu/ui/label';
 import {
   Select,

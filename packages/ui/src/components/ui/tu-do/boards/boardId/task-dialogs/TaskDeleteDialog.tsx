@@ -1,3 +1,4 @@
+import { Loader2 } from '@tuturuuu/icons';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -8,7 +9,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@tuturuuu/ui/dialog';
-import { Loader2 } from '@tuturuuu/ui/icons';
 
 interface TaskDeleteDialogProps {
   task: Task;

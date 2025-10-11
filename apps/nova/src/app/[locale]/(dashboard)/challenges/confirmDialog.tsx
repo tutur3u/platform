@@ -1,5 +1,6 @@
 'use client';
 
+import { Clock, Eye, EyeOff } from '@tuturuuu/icons';
 import type { NovaChallenge } from '@tuturuuu/types/db';
 import {
   AlertDialog,
@@ -22,7 +23,6 @@ import {
 } from '@tuturuuu/ui/form';
 import { useForm } from '@tuturuuu/ui/hooks/use-form';
 import { useToast } from '@tuturuuu/ui/hooks/use-toast';
-import { Clock, Eye, EyeOff } from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
 import { zodResolver } from '@tuturuuu/ui/resolvers';
 import { formatDuration } from '@tuturuuu/utils/format';

@@ -1,8 +1,8 @@
 'use client';
 
+import { Settings, Timer, Zap } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
-import { Settings, Timer, Zap } from '@tuturuuu/ui/icons';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';

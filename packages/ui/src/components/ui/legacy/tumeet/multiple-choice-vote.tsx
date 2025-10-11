@@ -10,6 +10,7 @@
  * - Shows both platform users and guests who voted
  * - Anonymous fallback for users without display names
  */
+import { ChevronDown, ChevronRight, Trash2, Users } from '@tuturuuu/icons';
 import type {
   GuestVoteWithGuestInfo,
   PollOptionWithVotes,
@@ -33,7 +34,6 @@ import { useTimeBlocking } from '@tuturuuu/ui/hooks/time-blocking-provider';
 import { Input } from '@tuturuuu/ui/input';
 import { Progress } from '@tuturuuu/ui/progress';
 import { cn } from '@tuturuuu/utils/format';
-import { ChevronDown, ChevronRight, Trash2, Users } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useEffect, useMemo, useState } from 'react';
 

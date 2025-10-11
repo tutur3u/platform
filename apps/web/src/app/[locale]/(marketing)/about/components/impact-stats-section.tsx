@@ -1,6 +1,6 @@
 'use client';
 
-import { BarChart } from '@tuturuuu/ui/icons';
+import { BarChart } from '@tuturuuu/icons';
 import { motion } from 'framer-motion';
 
 interface StatProps {

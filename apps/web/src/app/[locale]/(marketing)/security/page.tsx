@@ -1,7 +1,6 @@
 'use client';
 
-import { Badge } from '@tuturuuu/ui/badge';
-import { Card } from '@tuturuuu/ui/card';
+import { GITHUB_OWNER, GITHUB_REPO } from '@/constants/common';
 import {
   AlertTriangle,
   Bug,
@@ -20,10 +19,11 @@ import {
   Trophy,
   UserCheck,
   Users,
-} from '@tuturuuu/ui/icons';
+} from '@tuturuuu/icons';
+import { Badge } from '@tuturuuu/ui/badge';
+import { Card } from '@tuturuuu/ui/card';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
-import { GITHUB_OWNER, GITHUB_REPO } from '@/constants/common';
 
 interface SecurityFeature {
   icon: LucideIcon;

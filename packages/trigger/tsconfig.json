@@ -2,9 +2,8 @@
   "extends": "@tuturuuu/typescript-config/react-library.json",
   "compilerOptions": {
     "baseUrl": ".",
-    "outDir": "dist",
-    "rootDir": "src"
+    "outDir": "dist"
   },
-  "include": ["*.ts", "__tests__/**/*.ts"],
+  "include": ["src/**/*.ts", "__tests__/**/*.ts", "trigger.config.ts"],
   "exclude": ["node_modules", "dist", ".turbo"]
 }

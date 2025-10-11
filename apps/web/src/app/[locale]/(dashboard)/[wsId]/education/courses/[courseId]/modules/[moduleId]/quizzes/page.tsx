@@ -1,6 +1,6 @@
+import { ListTodo } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
-import { ListTodo } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';

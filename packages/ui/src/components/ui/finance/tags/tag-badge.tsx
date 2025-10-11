@@ -1,7 +1,7 @@
 'use client';
 
+import { X } from '@tuturuuu/icons';
 import { Badge } from '@tuturuuu/ui/badge';
-import { X } from 'lucide-react';
 
 interface TagBadgeProps {
   name: string;

@@ -1,13 +1,13 @@
 'use client';
 
+import { ExternalLink, Medal, Sparkles, Trophy } from '@tuturuuu/icons';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Badge } from '@tuturuuu/ui/badge';
-import { ExternalLink, Medal, Sparkles, Trophy } from '@tuturuuu/ui/icons';
 import { cn } from '@tuturuuu/utils/format';
 import { formatScore } from '@tuturuuu/utils/nova/scores/calculate';
 import { motion, useReducedMotion, type Variants } from 'framer-motion';
-import Link from 'next/link';
 import { useTranslations } from 'next-intl';
+import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import type { LeaderboardEntry } from './leaderboard';
 

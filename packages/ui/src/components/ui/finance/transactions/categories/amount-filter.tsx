@@ -1,12 +1,12 @@
 'use client';
 
+import { DollarSign, X } from '@tuturuuu/icons';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
 import { cn } from '@tuturuuu/utils/format';
-import { DollarSign, X } from 'lucide-react';
 import { useState } from 'react';
 
 interface AmountRangeFilterProps {

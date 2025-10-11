@@ -1,10 +1,10 @@
 'use client';
 
+import { Check, Monitor, Moon, Sun } from '@tuturuuu/icons';
 import {
   DropdownMenuItem,
   DropdownMenuSeparator,
 } from '@tuturuuu/ui/dropdown-menu';
-import { Check, Monitor, Moon, Sun } from '@tuturuuu/ui/icons';
 import { useTranslations } from 'next-intl';
 import { useTheme } from 'next-themes';
 

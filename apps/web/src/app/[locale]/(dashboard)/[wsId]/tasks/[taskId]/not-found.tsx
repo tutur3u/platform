@@ -1,5 +1,5 @@
+import { AlertCircle } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
-import { AlertCircle } from '@tuturuuu/ui/icons';
 import Link from 'next/link';
 
 export default function TaskNotFound() {

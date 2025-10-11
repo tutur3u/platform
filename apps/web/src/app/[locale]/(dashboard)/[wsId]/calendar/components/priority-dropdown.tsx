@@ -1,12 +1,12 @@
 'use client';
 
+import { Flag } from '@tuturuuu/icons';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
-import { Flag } from '@tuturuuu/ui/icons';
 import type { TASK_PRIORITIES } from './priority-view';
 
 interface PriorityDropdownProps {

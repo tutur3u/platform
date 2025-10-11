@@ -1,3 +1,11 @@
+import { CustomDataTable } from '@/components/custom-data-table';
+import {
+  ArrowLeft,
+  CheckCircle,
+  Clock,
+  PowerOff,
+  XCircle,
+} from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import type {
   WorkspaceCronExecution,
@@ -11,17 +19,9 @@ import {
   CardHeader,
   CardTitle,
 } from '@tuturuuu/ui/card';
-import {
-  ArrowLeft,
-  CheckCircle,
-  Clock,
-  PowerOff,
-  XCircle,
-} from '@tuturuuu/ui/icons';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { CustomDataTable } from '@/components/custom-data-table';
 import { getColumns } from '../../executions/columns';
 
 export const metadata: Metadata = {

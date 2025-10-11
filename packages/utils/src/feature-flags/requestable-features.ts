@@ -1,4 +1,4 @@
-import { BookText, HelpCircle, Sparkles, Trophy } from '@tuturuuu/ui/icons';
+import { BookText, HelpCircle, Sparkles, Trophy } from '@tuturuuu/icons';
 import { FEATURE_FLAGS } from './data';
 import type { FeatureFlag } from './types';
 

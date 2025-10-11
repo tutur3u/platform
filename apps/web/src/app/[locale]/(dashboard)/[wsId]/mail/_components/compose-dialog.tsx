@@ -11,6 +11,7 @@ import Underline from '@tiptap/extension-underline';
 import { generateHTML } from '@tiptap/html';
 import type { JSONContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
+import { ChevronDown, ChevronUp, Send, X } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import {
   Collapsible,
@@ -32,14 +33,13 @@ import {
   FormLabel,
   FormMessage,
 } from '@tuturuuu/ui/form';
-import { ChevronDown, ChevronUp, Send, X } from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
 import { toast } from '@tuturuuu/ui/sonner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { RichTextEditor } from '@tuturuuu/ui/text-editor/editor';
 import DOMPurify from 'dompurify';
-import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
+import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';

@@ -1,7 +1,7 @@
 import WorkspaceWrapper from '@/components/workspace-wrapper';
+import { Calendar, Clock, Flag, UserRound } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
-import { Calendar, Clock, Flag, UserRound } from '@tuturuuu/ui/icons';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
 import { getTranslations } from 'next-intl/server';
 import { redirect } from 'next/navigation';

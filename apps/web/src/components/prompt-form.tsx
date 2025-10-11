@@ -1,8 +1,4 @@
-import type { AIChat } from '@tuturuuu/types/db';
-import { Button } from '@tuturuuu/ui/button';
-import type { StatedFile } from '@tuturuuu/ui/custom/file-uploader';
-import { Dialog } from '@tuturuuu/ui/dialog';
-import { useEnterSubmit } from '@tuturuuu/ui/hooks/use-enter-submit';
+import { DEV_MODE } from '@/constants/common';
 import {
   Bolt,
   File,
@@ -15,7 +11,12 @@ import {
   RefreshCw,
   Send,
   X,
-} from '@tuturuuu/ui/icons';
+} from '@tuturuuu/icons';
+import type { AIChat } from '@tuturuuu/types/db';
+import { Button } from '@tuturuuu/ui/button';
+import type { StatedFile } from '@tuturuuu/ui/custom/file-uploader';
+import { Dialog } from '@tuturuuu/ui/dialog';
+import { useEnterSubmit } from '@tuturuuu/ui/hooks/use-enter-submit';
 import {
   Tooltip,
   TooltipContent,
@@ -23,12 +24,11 @@ import {
   TooltipTrigger,
 } from '@tuturuuu/ui/tooltip';
 import { cn } from '@tuturuuu/utils/format';
-import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
+import { useRouter } from 'next/navigation';
 import type React from 'react';
 import { useEffect, useState } from 'react';
 import Textarea from 'react-textarea-autosize';
-import { DEV_MODE } from '@/constants/common';
 
 export interface PromptProps {
   id?: string;

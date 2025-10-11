@@ -1,6 +1,6 @@
+import { AlertCircleIcon, TrendingUpIcon } from '@tuturuuu/icons';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
-import { AlertCircleIcon, TrendingUpIcon } from '@tuturuuu/ui/icons';
 
 interface Horse {
   id: number;

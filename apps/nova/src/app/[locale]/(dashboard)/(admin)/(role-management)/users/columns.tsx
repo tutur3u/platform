@@ -2,6 +2,12 @@
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import type { ColumnDef } from '@tanstack/react-table';
+import {
+  ChevronDown,
+  Loader2,
+  Shield,
+  User as UserIcon,
+} from '@tuturuuu/icons';
 import type {
   PlatformUser,
   User,
@@ -19,12 +25,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
-import {
-  ChevronDown,
-  Loader2,
-  Shield,
-  User as UserIcon,
-} from '@tuturuuu/ui/icons';
 import { Switch } from '@tuturuuu/ui/switch';
 import {
   Tooltip,

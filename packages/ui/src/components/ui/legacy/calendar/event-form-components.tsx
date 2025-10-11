@@ -1,5 +1,6 @@
 'use client';
 
+import { AlertCircle, Clock, MapPin, MessageSquare } from '@tuturuuu/icons';
 import type { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
 import { Alert, AlertDescription, AlertTitle } from '@tuturuuu/ui/alert';
 import { Button } from '@tuturuuu/ui/button';
@@ -9,7 +10,6 @@ import { Label } from '@tuturuuu/ui/label';
 import { Switch } from '@tuturuuu/ui/switch';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { cn } from '@tuturuuu/utils/format';
-import { AlertCircle, Clock, MapPin, MessageSquare } from 'lucide-react';
 import React, { type ReactNode } from 'react';
 import { ColorPicker, colorMap } from './settings/color-picker';
 

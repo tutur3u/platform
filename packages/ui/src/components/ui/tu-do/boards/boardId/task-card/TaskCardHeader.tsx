@@ -1,3 +1,4 @@
+import { MoreHorizontal } from '@tuturuuu/icons';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -5,7 +6,6 @@ import {
   DropdownMenuContent,
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
-import { MoreHorizontal } from '@tuturuuu/ui/icons';
 import { cn } from '@tuturuuu/utils/format';
 import { memo } from 'react';
 import { AssigneeSelect } from '../../../shared/assignee-select';

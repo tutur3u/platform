@@ -1,17 +1,17 @@
 'use client';
 
 import { useDroppable } from '@dnd-kit/core';
-import type { Task } from '@tuturuuu/types/primitives/Task';
-import type { TaskBoardStatus } from '@tuturuuu/types/primitives/TaskBoard';
-import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
-import { Button } from '@tuturuuu/ui/button';
 import {
   Circle,
   CircleCheck,
   CircleDashed,
   CircleSlash,
   Plus,
-} from '@tuturuuu/ui/icons';
+} from '@tuturuuu/icons';
+import type { Task } from '@tuturuuu/types/primitives/Task';
+import type { TaskBoardStatus } from '@tuturuuu/types/primitives/TaskBoard';
+import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
+import { Button } from '@tuturuuu/ui/button';
 import { cn } from '@tuturuuu/utils/format';
 import { useState } from 'react';
 import { EnhancedTaskList } from './enhanced-task-list';

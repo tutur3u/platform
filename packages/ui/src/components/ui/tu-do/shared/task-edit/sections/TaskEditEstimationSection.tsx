@@ -1,5 +1,5 @@
+import { Timer, X } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
-import { Timer, X } from '@tuturuuu/ui/icons';
 import { Label } from '@tuturuuu/ui/label';
 import { cn } from '@tuturuuu/utils/format';
 import { memo, useMemo } from 'react';

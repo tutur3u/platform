@@ -1,6 +1,6 @@
 import type { Column } from '@tanstack/react-table';
+import { ArrowDown, ArrowUp, ChevronDown, EyeOff } from '@tuturuuu/icons';
 import { cn } from '@tuturuuu/utils/format';
-import { ArrowDown, ArrowUp, ChevronDown, EyeOff } from 'lucide-react';
 import type React from 'react';
 import { Button } from '../../button';
 import {

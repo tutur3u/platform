@@ -1,8 +1,3 @@
-import type { AIChat } from '@tuturuuu/types/db';
-import { Button } from '@tuturuuu/ui/button';
-import type { StatedFile } from '@tuturuuu/ui/custom/file-uploader';
-import { Dialog } from '@tuturuuu/ui/dialog';
-import { useEnterSubmit } from '@tuturuuu/ui/hooks/use-enter-submit';
 import {
   Bolt,
   File,
@@ -16,7 +11,12 @@ import {
   Send,
   Sparkles,
   X,
-} from '@tuturuuu/ui/icons';
+} from '@tuturuuu/icons';
+import type { AIChat } from '@tuturuuu/types/db';
+import { Button } from '@tuturuuu/ui/button';
+import type { StatedFile } from '@tuturuuu/ui/custom/file-uploader';
+import { Dialog } from '@tuturuuu/ui/dialog';
+import { useEnterSubmit } from '@tuturuuu/ui/hooks/use-enter-submit';
 import { Separator } from '@tuturuuu/ui/separator';
 import {
   Tooltip,
@@ -25,8 +25,8 @@ import {
   TooltipTrigger,
 } from '@tuturuuu/ui/tooltip';
 import { cn } from '@tuturuuu/utils/format';
-import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
+import { useRouter } from 'next/navigation';
 import type React from 'react';
 import { useEffect, useState } from 'react';
 import Textarea from 'react-textarea-autosize';

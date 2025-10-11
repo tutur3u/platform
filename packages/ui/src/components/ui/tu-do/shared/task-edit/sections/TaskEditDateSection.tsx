@@ -1,5 +1,5 @@
+import { Calendar } from '@tuturuuu/icons';
 import { DateTimePicker } from '@tuturuuu/ui/date-time-picker';
-import { Calendar } from '@tuturuuu/ui/icons';
 import { Label } from '@tuturuuu/ui/label';
 import { memo } from 'react';
 

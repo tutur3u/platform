@@ -1,7 +1,6 @@
+import type { LucideIcon } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent } from '@tuturuuu/ui/card';
-import type { LucideIcon } from 'lucide-react';
-import type React from 'react';
 
 interface EmptyStateProps {
   icon: LucideIcon;
