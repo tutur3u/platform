@@ -1,10 +1,14 @@
 import { match } from '@formatjs/intl-localematcher';
-import { createCentralizedAuthMiddleware } from '@tuturuuu/auth/middleware';
+import { createCentralizedAuthMiddleware } from '@tuturuuu/auth/proxy';
 import Negotiator from 'negotiator';
+import createIntlMiddleware from 'next-intl/middleware';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
-import createIntlMiddleware from 'next-intl/middleware';
-import { CENTRAL_PORT, LOCALE_COOKIE_NAME } from './constants/common';
+import {
+  CENTRAL_PORT,
+  LOCALE_COOKIE_NAME,
+  PUBLIC_PATHS,
+} from './constants/common';
 import { defaultLocale, type Locale, supportedLocales } from './i18n/routing';
 
 const WEB_APP_URL =
@@ -14,7 +18,7 @@ const WEB_APP_URL =
 
 const authMiddleware = createCentralizedAuthMiddleware({
   webAppUrl: WEB_APP_URL,
-  publicPaths: [''],
+  publicPaths: PUBLIC_PATHS,
   skipApiRoutes: true,
 });
 

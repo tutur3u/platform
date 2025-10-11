@@ -1,4 +1,4 @@
-import { updateSession } from '@tuturuuu/supabase/next/middleware';
+import { updateSession } from '@tuturuuu/supabase/next/proxy';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
 import type { NextRequest } from 'next/server';
@@ -202,7 +202,7 @@ export function createCentralizedAuthMiddleware(
       const isPublic =
         (!excludeRootPath && req.nextUrl.pathname === '/') ||
         publicPaths.some((path) => req.nextUrl.pathname.startsWith(path)) ||
-        (isPublicPath && isPublicPath(req.nextUrl.pathname));
+        isPublicPath?.(req.nextUrl.pathname);
 
       // If the user is not authenticated and the path is not public, redirect to the central login page
       if (!user && !isPublic) {
