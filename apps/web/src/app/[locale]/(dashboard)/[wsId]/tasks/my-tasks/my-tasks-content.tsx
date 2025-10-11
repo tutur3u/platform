@@ -425,6 +425,13 @@ export default function MyTasksContent({
       generateLabels: shouldGenerateLabels,
       clientTimezone: timezone,
       clientTimestamp,
+    }: {
+      entry: string;
+      generateDescriptions: boolean;
+      generatePriority: boolean;
+      generateLabels: boolean;
+      clientTimezone: string;
+      clientTimestamp: string;
     }) => {
       const response = await fetch(`/api/v1/workspaces/${wsId}/tasks/journal`, {
         method: 'POST',
@@ -455,13 +462,23 @@ export default function MyTasksContent({
 
       return payload;
     },
-    onSuccess: (payload, variables) => {
+    onSuccess: (
+      payload: JournalTaskResponse,
+      variables: {
+        entry: string;
+        generateDescriptions: boolean;
+        generatePriority: boolean;
+        generateLabels: boolean;
+        clientTimezone: string;
+        clientTimestamp: string;
+      }
+    ) => {
       setLastResult(payload ?? null);
       setPreviewEntry(variables.entry);
       setSelectedLabelIds([]);
       setPreviewOpen(true);
     },
-    onError: (mutationError) => {
+    onError: (mutationError: Error) => {
       toast.error(mutationError.message || 'Failed to generate preview');
     },
   });
@@ -1550,10 +1567,12 @@ export default function MyTasksContent({
       <Dialog open={newBoardDialogOpen} onOpenChange={setNewBoardDialogOpen}>
         <DialogContent
           className="p-0"
-          style={{
-            maxWidth: '1200px',
-            width: '85vw',
-          }}
+          style={
+            {
+              maxWidth: '1200px',
+              width: '85vw',
+            } as React.CSSProperties
+          }
           onOpenAutoFocus={(e) => e.preventDefault()}
         >
           <TaskBoardForm

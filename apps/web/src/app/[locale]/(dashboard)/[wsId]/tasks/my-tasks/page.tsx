@@ -4,9 +4,6 @@ import { getCurrentUser } from '@tuturuuu/utils/user-helper';
 import { redirect } from 'next/navigation';
 import MyTasksContent from './my-tasks-content';
 
-// Force dynamic rendering to ensure data is always fresh
-export const dynamic = 'force-dynamic';
-
 interface Props {
   params: Promise<{
     locale: string;
