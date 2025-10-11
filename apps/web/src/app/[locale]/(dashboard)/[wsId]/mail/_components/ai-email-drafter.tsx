@@ -1,5 +1,6 @@
 'use client';
 
+import { ChevronDown, ChevronUp, Sparkles, Wand2 } from '@tuturuuu/icons';
 import type { JSONContent } from '@tuturuuu/types/tiptap';
 import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
@@ -9,7 +10,6 @@ import {
   CollapsibleTrigger,
 } from '@tuturuuu/ui/collapsible';
 import { LoadingIndicator } from '@tuturuuu/ui/custom/loading-indicator';
-import { ChevronDown, ChevronUp, Sparkles, Wand2 } from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
 import {

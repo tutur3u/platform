@@ -1,9 +1,9 @@
 'use client';
 
+import { ChevronLeft, ChevronRight, Menu, X } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import { TooltipProvider } from '@tuturuuu/ui/tooltip';
 import { cn } from '@tuturuuu/utils/format';
-import { ChevronLeft, ChevronRight, Menu, X } from 'lucide-react';
 import type { ReactNode } from 'react';
 
 interface StructureProps {

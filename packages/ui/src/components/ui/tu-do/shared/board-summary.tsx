@@ -1,8 +1,6 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { createClient } from '@tuturuuu/supabase/next/client';
-import type { TaskBoard } from '@tuturuuu/types/primitives/TaskBoard';
 import {
   AlertCircle,
   Calendar,
@@ -11,7 +9,9 @@ import {
   ChevronUp,
   Clock,
   Flag,
-} from '@tuturuuu/ui/icons';
+} from '@tuturuuu/icons';
+import { createClient } from '@tuturuuu/supabase/next/client';
+import type { TaskBoard } from '@tuturuuu/types/primitives/TaskBoard';
 import { Progress } from '@tuturuuu/ui/progress';
 import { cn } from '@tuturuuu/utils/format';
 import { getTaskLists, getTasks } from '@tuturuuu/utils/task-helper';

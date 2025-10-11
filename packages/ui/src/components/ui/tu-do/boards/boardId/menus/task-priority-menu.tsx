@@ -1,4 +1,3 @@
-import type { TaskPriority } from '@tuturuuu/types/primitives/Priority';
 import {
   Check,
   Flag,
@@ -8,7 +7,8 @@ import {
   Turtle,
   unicornHead,
   X,
-} from '@tuturuuu/ui/icons';
+} from '@tuturuuu/icons';
+import type { TaskPriority } from '@tuturuuu/types/primitives/Priority';
 import {
   DropdownMenuItem,
   DropdownMenuSeparator,

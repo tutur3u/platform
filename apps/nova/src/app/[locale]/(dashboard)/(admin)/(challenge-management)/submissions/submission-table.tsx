@@ -1,5 +1,12 @@
 'use client';
 
+import ScoreBadge from '@/components/common/ScoreBadge';
+import {
+  ArrowDown,
+  ArrowDownUp,
+  ArrowUp,
+  MoreHorizontal,
+} from '@tuturuuu/icons';
 import type {
   NovaChallenge,
   NovaProblem,
@@ -12,12 +19,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
-import {
-  ArrowDown,
-  ArrowDownUp,
-  ArrowUp,
-  MoreHorizontal,
-} from '@tuturuuu/ui/icons';
 import {
   Pagination,
   PaginationContent,
@@ -36,9 +37,8 @@ import {
   TableRow,
 } from '@tuturuuu/ui/table';
 import { cn } from '@tuturuuu/utils/format';
-import { usePathname, useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import ScoreBadge from '@/components/common/ScoreBadge';
+import { usePathname, useRouter } from 'next/navigation';
 
 type SubmissionWithDetails = NovaSubmission & {
   problem: NovaProblem & {

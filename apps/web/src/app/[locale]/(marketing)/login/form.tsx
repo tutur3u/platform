@@ -3,6 +3,7 @@
 import { DEV_MODE, PORT } from '@/constants/common';
 import { trpc } from '@/trpc/client';
 import { generateCrossAppToken, mapUrlToApp } from '@tuturuuu/auth/cross-app';
+import { Eye, EyeOff, Github, Lock, Mail } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
 import { Button } from '@tuturuuu/ui/button';
@@ -19,7 +20,6 @@ import {
 } from '@tuturuuu/ui/form';
 import { type FieldValues, useForm } from '@tuturuuu/ui/hooks/use-form';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
-import { Eye, EyeOff, Github, Lock, Mail } from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
 import { InputOTP, InputOTPGroup, InputOTPSlot } from '@tuturuuu/ui/input-otp';
 import { zodResolver } from '@tuturuuu/ui/resolvers';

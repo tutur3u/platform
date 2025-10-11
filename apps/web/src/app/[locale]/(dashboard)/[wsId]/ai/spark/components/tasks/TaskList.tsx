@@ -1,5 +1,14 @@
 'use client';
 
+import {
+  AlertCircle,
+  Calendar,
+  CheckCircle2,
+  Clock,
+  ExternalLink,
+  Target,
+  Timer,
+} from '@tuturuuu/icons';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -9,15 +18,6 @@ import {
   CardHeader,
   CardTitle,
 } from '@tuturuuu/ui/card';
-import {
-  AlertCircle,
-  Calendar,
-  CheckCircle2,
-  Clock,
-  ExternalLink,
-  Target,
-  Timer,
-} from '@tuturuuu/ui/icons';
 import { format, parseISO } from 'date-fns';
 import type { Priority, Task, TaskStatus } from '../../types';
 

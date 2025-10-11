@@ -1,5 +1,6 @@
 'use client';
 
+import { ArrowLeft, Copy, Shield, Smartphone, Trash2 } from '@tuturuuu/icons';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -18,13 +19,6 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@tuturuuu/ui/dialog';
-import {
-  ArrowLeft,
-  Copy,
-  Shield,
-  Smartphone,
-  Trash2,
-} from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
 import { InputOTP, InputOTPGroup, InputOTPSlot } from '@tuturuuu/ui/input-otp';
 import { Label } from '@tuturuuu/ui/label';

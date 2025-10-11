@@ -1,17 +1,6 @@
 'use client';
 
 import { useQueryClient } from '@tanstack/react-query';
-import type { TimeTrackingCategory, WorkspaceTask } from '@tuturuuu/types/db';
-import { Badge } from '@tuturuuu/ui/badge';
-import { Button } from '@tuturuuu/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from '@tuturuuu/ui/dialog';
 import {
   CheckCircle,
   Clock,
@@ -31,7 +20,18 @@ import {
   TableOfContents,
   Tag,
   Timer,
-} from '@tuturuuu/ui/icons';
+} from '@tuturuuu/icons';
+import type { TimeTrackingCategory, WorkspaceTask } from '@tuturuuu/types/db';
+import { Badge } from '@tuturuuu/ui/badge';
+import { Button } from '@tuturuuu/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@tuturuuu/ui/dialog';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
 import {

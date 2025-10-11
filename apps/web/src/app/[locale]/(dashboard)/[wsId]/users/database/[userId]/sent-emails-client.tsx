@@ -1,5 +1,7 @@
 'use client';
 
+import { useInfiniteQuery } from '@tanstack/react-query';
+import { Loader2, Mail } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { Database } from '@tuturuuu/types/supabase';
 import { Button } from '@tuturuuu/ui/button';
@@ -10,13 +12,11 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@tuturuuu/ui/dialog';
-import { Mail, Loader2 } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
-import { useInfiniteQuery } from '@tanstack/react-query';
-import { useTranslations } from 'next-intl';
-import { useState, useMemo } from 'react';
 import { format, parseISO } from 'date-fns';
 import DOMPurify from 'dompurify';
+import { useTranslations } from 'next-intl';
+import { useMemo, useState } from 'react';
 
 type SentEmail = Database['public']['Tables']['sent_emails']['Row'];
 
@@ -124,7 +124,7 @@ export default function SentEmailsClient({
             <div className="mb-4 font-medium text-destructive">
               {t('error_loading_emails') || 'Failed to load emails'}
             </div>
-            <div className="mb-4 text-sm text-muted-foreground">
+            <div className="mb-4 text-muted-foreground text-sm">
               {t('error_loading_emails_description') ||
                 'There was an error loading the sent emails. Please try again.'}
             </div>
@@ -145,12 +145,12 @@ export default function SentEmailsClient({
           </div>
         ) : allEmails.length > 0 ? (
           <>
-            <div className="max-h-96 overflow-y-auto space-y-2 pr-2">
+            <div className="max-h-96 space-y-2 overflow-y-auto pr-2">
               {allEmails.map((email) => (
                 <button
                   key={email.id}
                   type="button"
-                  className="group flex w-full cursor-pointer items-start rounded-xl border border-border/50 bg-card/50 backdrop-blur-sm p-4 transition-all duration-200 hover:shadow-lg hover:border-border hover:bg-card/80"
+                  className="group flex w-full cursor-pointer items-start rounded-xl border border-border/50 bg-card/50 p-4 backdrop-blur-sm transition-all duration-200 hover:border-border hover:bg-card/80 hover:shadow-lg"
                   onClick={() => handleViewEmail(email)}
                 >
                   <div className="flex w-full items-start space-x-4">
@@ -163,7 +163,7 @@ export default function SentEmailsClient({
                           {email.subject}
                         </div>
                       </div>
-                      <div className="mb-1 text-sm text-muted-foreground">
+                      <div className="mb-1 text-muted-foreground text-sm">
                         <span className="opacity-60">
                           {t('from') || 'From'}:
                         </span>{' '}
@@ -174,11 +174,11 @@ export default function SentEmailsClient({
                           {'>'}
                         </span>
                       </div>
-                      <div className="text-sm text-muted-foreground">
+                      <div className="text-muted-foreground text-sm">
                         <span className="opacity-60">{t('to') || 'To'}:</span>{' '}
                         {email.email}
                       </div>
-                      <div className="mt-2 text-xs text-muted-foreground opacity-60">
+                      <div className="mt-2 text-muted-foreground text-xs opacity-60">
                         {format(
                           parseISO(email.created_at),
                           'dd/MM/yyyy, HH:mm:ss'
@@ -191,7 +191,7 @@ export default function SentEmailsClient({
             </div>
 
             {sentEmailsQuery.hasNextPage && (
-              <div className="flex justify-center pt-4 border-t">
+              <div className="flex justify-center border-t pt-4">
                 <Button
                   variant="outline"
                   onClick={handleLoadMore}
@@ -215,7 +215,7 @@ export default function SentEmailsClient({
             <div className="font-medium text-muted-foreground">
               {t('no_sent_emails') || 'No sent emails'}
             </div>
-            <div className="text-sm text-muted-foreground">
+            <div className="text-muted-foreground text-sm">
               {t('no_sent_emails_description') ||
                 'This user has not received any emails yet.'}
             </div>
@@ -225,10 +225,10 @@ export default function SentEmailsClient({
 
       {/* View Email Dialog */}
       <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
-        <DialogContent className="!w-[98vw] sm:!max-w-[98vw] lg:!max-w-[1600px] !h-[95vh] !max-h-[95vh] p-0 gap-0 overflow-hidden">
+        <DialogContent className="!w-[98vw] sm:!max-w-[98vw] lg:!max-w-[1600px] !h-[95vh] !max-h-[95vh] gap-0 overflow-hidden p-0">
           <div className="flex h-full flex-col overflow-hidden">
             {/* Header with metadata */}
-            <div className="border-b px-8 py-6 shrink-0">
+            <div className="shrink-0 border-b px-8 py-6">
               <DialogHeader>
                 <DialogTitle className="text-2xl">
                   {selectedEmail?.subject}
@@ -236,7 +236,7 @@ export default function SentEmailsClient({
                 <DialogDescription asChild>
                   <div className="mt-4 grid grid-cols-1 gap-4 text-sm lg:grid-cols-3">
                     <div className="flex items-center gap-2">
-                      <span className="font-medium opacity-60 shrink-0">
+                      <span className="shrink-0 font-medium opacity-60">
                         {t('from') || 'From'}:
                       </span>
                       <span className="truncate">
@@ -249,13 +249,13 @@ export default function SentEmailsClient({
                       </span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className="font-medium opacity-60 shrink-0">
+                      <span className="shrink-0 font-medium opacity-60">
                         {t('to') || 'To'}:
                       </span>
                       <span className="truncate">{selectedEmail?.email}</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className="font-medium opacity-60 shrink-0">
+                      <span className="shrink-0 font-medium opacity-60">
                         {t('sent_at') || 'Sent'}:
                       </span>
                       <span>

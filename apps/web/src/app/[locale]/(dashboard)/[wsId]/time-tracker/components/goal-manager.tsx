@@ -1,5 +1,21 @@
 'use client';
 
+import {
+  Activity,
+  AlertCircle,
+  BookOpen,
+  Calendar,
+  CheckCircle,
+  Clock,
+  Edit,
+  Goal,
+  Info,
+  MoreHorizontal,
+  Plus,
+  Timer,
+  Trash2,
+  TrendingUp,
+} from '@tuturuuu/icons';
 import type { TimeTrackingCategory } from '@tuturuuu/types/db';
 import {
   AlertDialog,
@@ -28,22 +44,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
-import {
-  Activity,
-  AlertCircle,
-  BookOpen,
-  Calendar,
-  CheckCircle,
-  Clock,
-  Edit,
-  Goal,
-  Info,
-  MoreHorizontal,
-  Plus,
-  Timer,
-  Trash2,
-  TrendingUp,
-} from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
 import { Progress } from '@tuturuuu/ui/progress';

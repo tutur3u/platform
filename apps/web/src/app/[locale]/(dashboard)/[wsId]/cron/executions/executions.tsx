@@ -1,6 +1,6 @@
 'use client';
 
-import { CheckCircle, Clock, XCircle } from '@tuturuuu/ui/icons';
+import { CheckCircle, Clock, XCircle } from '@tuturuuu/icons';
 import {
   Table,
   TableBody,

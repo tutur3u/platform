@@ -1,12 +1,6 @@
 'use client';
 
-import {
-  Dialog,
-  DialogContent,
-  DialogTitle,
-  DialogTrigger,
-} from '@tuturuuu/ui/dialog';
-import type { LucideIcon } from '@tuturuuu/ui/icons';
+import type { LucideIcon } from '@tuturuuu/icons';
 import {
   AlarmClock,
   Bell,
@@ -84,7 +78,13 @@ import {
   Wand2,
   Wrench,
   Zap,
-} from '@tuturuuu/ui/icons';
+} from '@tuturuuu/icons';
+import {
+  Dialog,
+  DialogContent,
+  DialogTitle,
+  DialogTrigger,
+} from '@tuturuuu/ui/dialog';
 import { useState } from 'react';
 import { Button } from '../button';
 import {

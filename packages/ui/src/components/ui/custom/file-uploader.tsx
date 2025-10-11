@@ -1,8 +1,8 @@
 'use client';
 
+import { File, FileText, Upload, X } from '@tuturuuu/icons';
 import { toast } from '@tuturuuu/ui/sonner';
 import { cn, formatBytes } from '@tuturuuu/utils/format';
-import { File, FileText, Upload, X } from 'lucide-react';
 import { type HTMLAttributes, useCallback, useState } from 'react';
 import Dropzone, {
   type DropzoneProps,

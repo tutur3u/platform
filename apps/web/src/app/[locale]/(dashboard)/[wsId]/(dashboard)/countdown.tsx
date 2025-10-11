@@ -1,7 +1,7 @@
 'use client';
 
+import { Clock } from '@tuturuuu/icons';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
-import { Clock } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 const Countdown = () => {

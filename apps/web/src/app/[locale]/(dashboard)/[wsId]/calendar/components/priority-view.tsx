@@ -6,7 +6,7 @@ import {
   Loader2,
   Search,
   Timer,
-} from '@tuturuuu/ui/icons';
+} from '@tuturuuu/icons';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';

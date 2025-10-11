@@ -1,5 +1,15 @@
 'use client';
 
+import {
+  Award,
+  ChevronRight,
+  Info,
+  Share2,
+  Star,
+  Target,
+  Trophy,
+  Users,
+} from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
@@ -12,21 +22,11 @@ import {
   CardHeader,
   CardTitle,
 } from '@tuturuuu/ui/card';
-import {
-  Award,
-  ChevronRight,
-  Info,
-  Share2,
-  Star,
-  Target,
-  Trophy,
-  Users,
-} from '@tuturuuu/ui/icons';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { generateFunName, getInitials } from '@tuturuuu/utils/name-helper';
 import { motion } from 'framer-motion';
-import Link from 'next/link';
 import { useLocale, useTranslations } from 'next-intl';
+import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { TeamActionDialog } from './dialog-content';
 

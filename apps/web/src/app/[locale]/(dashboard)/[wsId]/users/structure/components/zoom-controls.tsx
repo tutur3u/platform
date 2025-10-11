@@ -1,5 +1,5 @@
+import { RotateCcw, ZoomIn, ZoomOut } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
-import { RotateCcw, ZoomIn, ZoomOut } from '@tuturuuu/ui/icons';
 import { useTranslations } from 'next-intl';
 import React from 'react';
 

@@ -1,5 +1,12 @@
 'use client';
 
+import {
+  ArrowLeftToLine,
+  ArrowRightToLine,
+  CheckCheck,
+  ChevronLeft,
+  ChevronRight,
+} from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -8,13 +15,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@tuturuuu/ui/dialog';
-import {
-  ArrowLeftToLine,
-  ArrowRightToLine,
-  CheckCheck,
-  ChevronLeft,
-  ChevronRight,
-} from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
 import { Progress } from '@tuturuuu/ui/progress';

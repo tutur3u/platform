@@ -1,11 +1,11 @@
 'use client';
 
+import { Briefcase, Calendar, Clock, User } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
 import { toast } from '@tuturuuu/ui/sonner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
-import { Briefcase, Calendar, Clock, User } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import {
   defaultWeekTimeRanges,

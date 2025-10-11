@@ -1,15 +1,15 @@
+import { Loader2 } from '@tuturuuu/icons';
 import type { InternalEmail } from '@tuturuuu/types/db';
-import { Loader2 } from '@tuturuuu/ui/icons';
 import { formatEmailAddresses } from '@tuturuuu/utils/email/client';
 import { cn } from '@tuturuuu/utils/format';
 import dayjs from 'dayjs';
-import { useMail } from '../use-mail';
 import 'dayjs/locale/en';
 import 'dayjs/locale/vi';
 import localizedFormat from 'dayjs/plugin/localizedFormat';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import { useLocale, useTranslations } from 'next-intl';
 import { useEffect } from 'react';
+import { useMail } from '../use-mail';
 
 // Extend dayjs with plugins
 dayjs.extend(relativeTime);

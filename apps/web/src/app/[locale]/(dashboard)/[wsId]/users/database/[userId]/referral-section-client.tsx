@@ -1,21 +1,20 @@
 'use client';
 
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { ArrowRight, Settings, User, UserPlus } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
+import { Alert, AlertDescription, AlertTitle } from '@tuturuuu/ui/alert';
+import { Avatar, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Button } from '@tuturuuu/ui/button';
+import { Card, CardContent } from '@tuturuuu/ui/card';
 import { Combobox, type ComboboxOptions } from '@tuturuuu/ui/custom/combobox';
-import { UserPlus } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
-import { Alert, AlertDescription, AlertTitle } from '@tuturuuu/ui/alert';
-import { Settings, ArrowRight } from '@tuturuuu/ui/icons';
 import { useEffect, useMemo, useState } from 'react';
-import { toast } from '@tuturuuu/ui/sonner';
-import { Card, CardContent } from '@tuturuuu/ui/card';
-import { Avatar, AvatarImage } from '@tuturuuu/ui/avatar';
-import { User } from '@tuturuuu/ui/icons';
+
 interface ReferralSectionClientProps {
   wsId: string;
   userId: string;
@@ -43,7 +42,7 @@ export default function ReferralSectionClient({
       <div className="h-full rounded-lg border p-4">
         <Alert className="border-dynamic-red/30 bg-dynamic-red/10 text-dynamic-red">
           <div className="flex items-start gap-3">
-            <Settings className="h-5 w-5 mt-0.5" />
+            <Settings className="mt-0.5 h-5 w-5" />
             <div className="flex-1">
               <AlertTitle>{t('referral_settings_title')}</AlertTitle>
               <AlertDescription>{t('referral_settings_desc')}</AlertDescription>
@@ -319,7 +318,7 @@ export default function ReferralSectionClient({
 
   return (
     <div className="h-full rounded-lg border p-4">
-      <div className="grid h-full gap-2 content-start">
+      <div className="grid h-full content-start gap-2">
         <div className="font-semibold text-lg">
           {t('refer_people_with_progress', {
             current: currentReferralCount,
@@ -341,13 +340,13 @@ export default function ReferralSectionClient({
             <div className="space-y-2">
               <div className="font-medium">{t('referred_users_label')}</div>
               {referredUsersQuery.isLoading ? (
-                <div className="opacity-60 text-sm">{t('loading')}</div>
+                <div className="text-sm opacity-60">{t('loading')}</div>
               ) : (referredUsersQuery.data || []).length === 0 ? (
-                <div className="opacity-60 text-sm">
+                <div className="text-sm opacity-60">
                   {t('no_referred_users')}
                 </div>
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
                   {(referredUsersQuery.data || []).map((u) => {
                     const hasAvatar = Boolean(u.avatar_url);
                     return (
@@ -390,7 +389,7 @@ export default function ReferralSectionClient({
           {canReferMore ? (
             <>
               <div className="space-y-2">
-                <label htmlFor="user-select" className="text-sm font-medium">
+                <label htmlFor="user-select" className="font-medium text-sm">
                   {t('select_person_to_refer_with_remaining', {
                     remaining: remainingReferrals,
                   })}
@@ -410,12 +409,12 @@ export default function ReferralSectionClient({
                 disabled={!isSelectedValid || referUserMutation.isPending}
                 className="w-full"
               >
-                <UserPlus className="h-4 w-4 mr-2" />
+                <UserPlus className="mr-2 h-4 w-4" />
                 {t('refer_selected_person')}
               </Button>
             </>
           ) : (
-            <div className="flex w-full flex-1 items-center justify-center text-center opacity-60 py-8">
+            <div className="flex w-full flex-1 items-center justify-center py-8 text-center opacity-60">
               {t('reached_max_referrals', {
                 cap: workspaceSettings.referral_count_cap,
               })}

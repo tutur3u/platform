@@ -1,5 +1,10 @@
 'use client';
 
+import {
+  ClipboardList,
+  MapPin as MapPinIcon,
+  Sparkles as SparklesIcon,
+} from '@tuturuuu/icons';
 import type { User } from '@tuturuuu/types/db';
 import type { Timezone } from '@tuturuuu/types/primitives/Timezone';
 import type { JSONContent } from '@tuturuuu/types/tiptap';
@@ -29,11 +34,6 @@ import { Separator } from '@tuturuuu/ui/separator';
 import { RichTextEditor } from '@tuturuuu/ui/text-editor/editor';
 import { cn } from '@tuturuuu/utils/format';
 import dayjs from 'dayjs';
-import {
-  ClipboardList,
-  MapPin as MapPinIcon,
-  Sparkles as SparklesIcon,
-} from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';

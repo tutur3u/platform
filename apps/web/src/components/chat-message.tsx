@@ -2,9 +2,9 @@
 
 import { ChatMessageActions } from '@/components/chat-message-actions';
 import type { UIMessage } from '@tuturuuu/ai/types';
+import { Bot, Send, Sparkle, UserIcon } from '@tuturuuu/icons';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { CodeBlock } from '@tuturuuu/ui/codeblock';
-import { Bot, Send, Sparkle, UserIcon } from '@tuturuuu/ui/icons';
 import { MemoizedReactMarkdown } from '@tuturuuu/ui/markdown';
 import { Separator } from '@tuturuuu/ui/separator';
 import { capitalize, cn } from '@tuturuuu/utils/format';

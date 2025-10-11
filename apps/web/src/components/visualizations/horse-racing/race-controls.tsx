@@ -1,5 +1,3 @@
-import { Badge } from '@tuturuuu/ui/badge';
-import { Button } from '@tuturuuu/ui/button';
 import {
   ChevronLeft,
   ChevronRight,
@@ -10,7 +8,9 @@ import {
   Pause,
   Play,
   RefreshCw,
-} from '@tuturuuu/ui/icons';
+} from '@tuturuuu/icons';
+import { Badge } from '@tuturuuu/ui/badge';
+import { Button } from '@tuturuuu/ui/button';
 import { Progress } from '@tuturuuu/ui/progress';
 import { motion } from 'framer-motion';
 import { useEffect, useState } from 'react';

@@ -1,7 +1,7 @@
+import { Calendar, Play, Target, TrendingUp } from '@tuturuuu/icons';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
 import dayjs from 'dayjs';
 import duration from 'dayjs/plugin/duration';
-import { Calendar, Play, Target, TrendingUp } from 'lucide-react';
 
 // Extend dayjs with duration plugin
 dayjs.extend(duration);

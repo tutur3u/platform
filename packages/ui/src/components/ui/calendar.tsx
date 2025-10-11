@@ -1,9 +1,9 @@
 'use client';
 
+import { ChevronLeft, ChevronRight } from '@tuturuuu/icons';
 import { cn } from '@tuturuuu/utils/format';
 import { format } from 'date-fns';
 import dayjs from 'dayjs';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
 import * as React from 'react';
 import { DayPicker } from 'react-day-picker';
 import { buttonVariants } from './button';

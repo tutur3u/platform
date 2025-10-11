@@ -1,10 +1,6 @@
 'use client';
 
-import { Badge } from '@tuturuuu/ui/badge';
-import { Button } from '@tuturuuu/ui/button';
-import { Card } from '@tuturuuu/ui/card';
-import { GetStartedButton } from '@tuturuuu/ui/custom/get-started-button';
-import { GradientHeadline } from '@tuturuuu/ui/custom/gradient-headline';
+import { DEV_MODE } from '@/constants/common';
 import {
   ArrowRight,
   CalendarDays,
@@ -20,7 +16,12 @@ import {
   Trophy,
   UserCheck,
   Users,
-} from '@tuturuuu/ui/icons';
+} from '@tuturuuu/icons';
+import { Badge } from '@tuturuuu/ui/badge';
+import { Button } from '@tuturuuu/ui/button';
+import { Card } from '@tuturuuu/ui/card';
+import { GetStartedButton } from '@tuturuuu/ui/custom/get-started-button';
+import { GradientHeadline } from '@tuturuuu/ui/custom/gradient-headline';
 import { Separator } from '@tuturuuu/ui/separator';
 import {
   Tooltip,
@@ -29,10 +30,9 @@ import {
   TooltipTrigger,
 } from '@tuturuuu/ui/tooltip';
 import { motion, type Variants } from 'framer-motion';
+import { useTranslations } from 'next-intl';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
-import { useTranslations } from 'next-intl';
-import { DEV_MODE } from '@/constants/common';
 import AiFeatures from './ai-features';
 import AnimatedTimeline from './animated-timeline';
 import FeatureShowcase from './feature-showcase';

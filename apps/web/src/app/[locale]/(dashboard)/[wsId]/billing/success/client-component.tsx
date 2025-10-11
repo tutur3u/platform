@@ -1,17 +1,17 @@
 'use client';
 
-import { createClient } from '@tuturuuu/supabase/next/client';
-import { Button } from '@tuturuuu/ui/button';
 import {
   ArrowLeft,
   CheckCircle,
   Clock,
   CreditCard,
   Download,
-} from '@tuturuuu/ui/icons';
+} from '@tuturuuu/icons';
+import { createClient } from '@tuturuuu/supabase/next/client';
+import { Button } from '@tuturuuu/ui/button';
 import { addHours, format, isAfter } from 'date-fns';
-import Link from 'next/link';
 import { useTranslations } from 'next-intl';
+import Link from 'next/link';
 import { useEffect, useState } from 'react';
 
 interface PaymentDetails {

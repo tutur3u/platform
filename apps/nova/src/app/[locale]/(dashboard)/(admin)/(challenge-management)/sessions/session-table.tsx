@@ -1,5 +1,11 @@
 'use client';
 
+import {
+  ArrowDown,
+  ArrowDownUp,
+  ArrowUp,
+  MoreHorizontal,
+} from '@tuturuuu/icons';
 import type { NovaChallenge } from '@tuturuuu/types/db';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -8,12 +14,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
-import {
-  ArrowDown,
-  ArrowDownUp,
-  ArrowUp,
-  MoreHorizontal,
-} from '@tuturuuu/ui/icons';
 import {
   Pagination,
   PaginationContent,
@@ -33,8 +33,8 @@ import {
 } from '@tuturuuu/ui/table';
 import { cn } from '@tuturuuu/utils/format';
 import { generateFunName } from '@tuturuuu/utils/name-helper';
-import { useRouter } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
+import { useRouter } from 'next/navigation';
 
 type SessionWithDetails = {
   id: string;

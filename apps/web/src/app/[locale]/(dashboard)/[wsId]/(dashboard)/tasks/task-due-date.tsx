@@ -1,6 +1,6 @@
 'use client';
 
-import { Calendar } from '@tuturuuu/ui/icons';
+import { Calendar } from '@tuturuuu/icons';
 import { cn } from '@tuturuuu/utils/format';
 import { format, isThisWeek, isToday, isTomorrow } from 'date-fns';
 

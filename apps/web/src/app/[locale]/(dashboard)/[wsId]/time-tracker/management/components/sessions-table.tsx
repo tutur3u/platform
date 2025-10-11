@@ -18,9 +18,6 @@ import {
   SelectValue,
 } from '@tuturuuu/ui/select';
 // Removed unused table imports as we now use grid layout
-import { getInitials } from '@tuturuuu/utils/name-helper';
-import dayjs from 'dayjs';
-import duration from 'dayjs/plugin/duration';
 import {
   ChevronDown,
   ChevronLeft,
@@ -34,7 +31,10 @@ import {
   Pause,
   Play,
   Search,
-} from 'lucide-react';
+} from '@tuturuuu/icons';
+import { getInitials } from '@tuturuuu/utils/name-helper';
+import dayjs from 'dayjs';
+import duration from 'dayjs/plugin/duration';
 
 // Extend dayjs with duration plugin
 dayjs.extend(duration);

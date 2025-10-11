@@ -1,5 +1,12 @@
 'use client';
 
+import {
+  Check,
+  ChevronDown,
+  Copy,
+  ExternalLink,
+  LinkIcon,
+} from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import {
   DropdownMenu,
@@ -7,13 +14,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
-import {
-  Check,
-  ChevronDown,
-  Copy,
-  ExternalLink,
-  LinkIcon,
-} from '@tuturuuu/ui/icons';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';

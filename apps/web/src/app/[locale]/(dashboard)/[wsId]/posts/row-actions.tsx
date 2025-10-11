@@ -1,10 +1,10 @@
+import useEmail from '@/hooks/useEmail';
+import { CircleAlert, CircleSlash, MailCheck, Send } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import { LoadingIndicator } from '@tuturuuu/ui/custom/loading-indicator';
-import { CircleAlert, CircleSlash, MailCheck, Send } from '@tuturuuu/ui/icons';
 import dayjs from 'dayjs';
-import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import useEmail from '@/hooks/useEmail';
+import { useRouter } from 'next/navigation';
 import type { PostEmail } from './types';
 import {
   isOptimisticallyLoading,

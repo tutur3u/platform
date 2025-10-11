@@ -1,4 +1,4 @@
-import { Check, Loader2, Plus, Tag } from '@tuturuuu/ui/icons';
+import { Check, Loader2, Plus, Tag } from '@tuturuuu/icons';
 import {
   DropdownMenuItem,
   DropdownMenuSub,

@@ -1,5 +1,5 @@
+import { Award, Clock, Medal, Target, Trophy } from '@tuturuuu/icons';
 import { Card, CardContent } from '@tuturuuu/ui/card';
-import { Award, Clock, Medal, Target, Trophy } from '@tuturuuu/ui/icons';
 import { useTranslations } from 'next-intl';
 
 export default function Rewards() {

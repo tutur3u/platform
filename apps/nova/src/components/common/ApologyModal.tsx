@@ -1,5 +1,12 @@
 'use client';
 
+import {
+  AlertTriangle,
+  Bug,
+  CheckCircle,
+  ExternalLink,
+  Trophy,
+} from '@tuturuuu/icons';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent } from '@tuturuuu/ui/card';
@@ -10,13 +17,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@tuturuuu/ui/dialog';
-import {
-  AlertTriangle,
-  Bug,
-  CheckCircle,
-  ExternalLink,
-  Trophy,
-} from '@tuturuuu/ui/icons';
 import { ScrollArea } from '@tuturuuu/ui/scroll-area';
 import { Separator } from '@tuturuuu/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';

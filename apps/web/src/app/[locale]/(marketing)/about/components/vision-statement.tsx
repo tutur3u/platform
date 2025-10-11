@@ -1,6 +1,6 @@
 'use client';
 
-import { Quote } from '@tuturuuu/ui/icons';
+import { Quote } from '@tuturuuu/icons';
 import { motion } from 'framer-motion';
 
 export function VisionStatement() {

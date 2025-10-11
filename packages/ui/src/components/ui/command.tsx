@@ -1,8 +1,8 @@
 'use client';
 
+import { SearchIcon } from '@tuturuuu/icons';
 import { cn } from '@tuturuuu/utils/format';
 import { Command as CommandPrimitive } from 'cmdk';
-import { SearchIcon } from 'lucide-react';
 import type * as React from 'react';
 import {
   Dialog,

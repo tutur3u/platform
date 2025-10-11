@@ -1,8 +1,8 @@
 'use client';
 
+import { Copy, ExternalLink, Eye, LinkIcon } from '@tuturuuu/icons';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
-import { Copy, ExternalLink, Eye, LinkIcon } from '@tuturuuu/ui/icons';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';

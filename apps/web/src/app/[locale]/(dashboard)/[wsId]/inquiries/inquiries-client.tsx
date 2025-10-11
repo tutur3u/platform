@@ -1,16 +1,5 @@
 'use client';
 
-import type { Product, SupportType } from '@tuturuuu/types/db';
-import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
-import { Badge } from '@tuturuuu/ui/badge';
-import { Button } from '@tuturuuu/ui/button';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@tuturuuu/ui/card';
 import {
   CalendarIcon,
   ChevronLeftIcon,
@@ -23,7 +12,18 @@ import {
   Paperclip,
   UserIcon,
   XIcon,
-} from '@tuturuuu/ui/icons';
+} from '@tuturuuu/icons';
+import type { Product, SupportType } from '@tuturuuu/types/db';
+import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
+import { Badge } from '@tuturuuu/ui/badge';
+import { Button } from '@tuturuuu/ui/button';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@tuturuuu/ui/card';
 import {
   Select,
   SelectContent,

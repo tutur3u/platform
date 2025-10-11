@@ -1,4 +1,3 @@
-import { Badge } from '@tuturuuu/ui/badge';
 import {
   Box,
   BriefcaseBusiness,
@@ -6,7 +5,8 @@ import {
   CircleCheck,
   Loader2,
   User,
-} from '@tuturuuu/ui/icons';
+} from '@tuturuuu/icons';
+import { Badge } from '@tuturuuu/ui/badge';
 import { cn } from '@tuturuuu/utils/format';
 import Image from 'next/image';
 // @ts-expect-error - Bun types issue with react-dom subpath

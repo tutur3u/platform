@@ -1,5 +1,6 @@
 'use client';
 
+import { ArrowUp, ChevronDown, MapPin, Settings, X } from '@tuturuuu/icons';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -8,14 +9,13 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
-import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
 import { Label } from '@tuturuuu/ui/label';
+import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
 import { Switch } from '@tuturuuu/ui/switch';
-import { useTranslations } from 'next-intl';
-import { ArrowUp, ChevronDown, MapPin, Settings, X } from '@tuturuuu/ui/icons';
 import { Textarea } from '@tuturuuu/ui/textarea';
-import { useState, useMemo } from 'react';
+import { useTranslations } from 'next-intl';
 import type { KeyboardEvent } from 'react';
+import { useMemo, useState } from 'react';
 
 export type CommandMode = 'note' | 'task' | 'ai';
 
@@ -138,7 +138,7 @@ export function CommandBar({
         onChange={(e) => setInputText(e.target.value)}
         onKeyDown={handleKeyDown}
         placeholder={currentConfig.placeholder}
-        className="min-h-[120px] resize-none border-0 pb-14 pr-4 text-base focus-visible:ring-0"
+        className="min-h-[120px] resize-none border-0 pr-4 pb-14 text-base focus-visible:ring-0"
         disabled={isLoading}
       />
 
@@ -182,7 +182,7 @@ export function CommandBar({
                         <div className="flex items-center justify-between">
                           <Label
                             htmlFor="ai-descriptions"
-                            className="text-sm font-normal"
+                            className="font-normal text-sm"
                           >
                             {t(
                               'dashboard.quick_journal.toggle_descriptions_label'
@@ -198,7 +198,7 @@ export function CommandBar({
                         <div className="flex items-center justify-between">
                           <Label
                             htmlFor="ai-priority"
-                            className="text-sm font-normal"
+                            className="font-normal text-sm"
                           >
                             {t('dashboard.quick_journal.toggle_priority_label')}
                           </Label>
@@ -212,7 +212,7 @@ export function CommandBar({
                         <div className="flex items-center justify-between">
                           <Label
                             htmlFor="ai-labels"
-                            className="text-sm font-normal"
+                            className="font-normal text-sm"
                           >
                             {t('dashboard.quick_journal.toggle_labels_label')}
                           </Label>
@@ -231,7 +231,7 @@ export function CommandBar({
             )}
 
             {hasDestination && selectedDestination && (
-              <Badge variant="secondary" className="gap-1 pl-2 pr-1 text-xs">
+              <Badge variant="secondary" className="gap-1 pr-1 pl-2 text-xs">
                 <span>
                   {selectedDestination.boardName} /{' '}
                   {selectedDestination.listName}
@@ -252,7 +252,7 @@ export function CommandBar({
       </div>
 
       {/* Right: Mode Selector + Action Button */}
-      <div className="absolute bottom-2 right-3 flex items-center gap-2">
+      <div className="absolute right-3 bottom-2 flex items-center gap-2">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="sm" disabled={isLoading}>

@@ -1,3 +1,11 @@
+import {
+  Archive,
+  ArrowRightLeft,
+  CheckSquare,
+  MoreHorizontal,
+  Pencil,
+  Trash,
+} from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import { Button } from '@tuturuuu/ui/button';
@@ -17,14 +25,6 @@ import {
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
-import {
-  Archive,
-  ArrowRightLeft,
-  CheckSquare,
-  MoreHorizontal,
-  Pencil,
-  Trash,
-} from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
 import {
   deleteTaskList,

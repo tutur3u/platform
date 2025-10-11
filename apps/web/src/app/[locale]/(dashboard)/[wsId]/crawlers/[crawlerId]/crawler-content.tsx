@@ -1,5 +1,6 @@
 'use client';
 
+import { CheckIcon, CopyIcon } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import {
   Card,
@@ -8,7 +9,6 @@ import {
   CardHeader,
   CardTitle,
 } from '@tuturuuu/ui/card';
-import { CheckIcon, CopyIcon } from '@tuturuuu/ui/icons';
 import { MemoizedReactMarkdown } from '@tuturuuu/ui/markdown';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { cn } from '@tuturuuu/utils/format';

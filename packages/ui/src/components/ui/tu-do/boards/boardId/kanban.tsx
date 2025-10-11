@@ -20,6 +20,16 @@ import {
   SortableContext,
 } from '@dnd-kit/sortable';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+  ArrowRightLeft,
+  Box,
+  Check,
+  Flag,
+  MinusCircle,
+  Plus,
+  Tags,
+  Timer,
+} from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { Workspace } from '@tuturuuu/types/db';
 import type { Task } from '@tuturuuu/types/primitives/Task';
@@ -56,16 +66,6 @@ import {
   useReorderTask,
 } from '@tuturuuu/utils/task-helper';
 import { hasDraggableData } from '@tuturuuu/utils/task-helpers';
-import {
-  ArrowRightLeft,
-  Box,
-  Check,
-  Flag,
-  MinusCircle,
-  Plus,
-  Tags,
-  Timer,
-} from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { CursorOverlayWrapper } from '../../shared/cursor-overlay';
 import {

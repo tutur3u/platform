@@ -1,9 +1,9 @@
 'use client';
 
+// Icons
+import { ChevronUp, Lightbulb } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent } from '@tuturuuu/ui/card';
-// Icons
-import { ChevronUp, Lightbulb } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { useMemo, useRef, useState } from 'react';

@@ -1,5 +1,13 @@
 'use client';
 
+import {
+  Activity,
+  BarChart3,
+  Clock,
+  DollarSign,
+  TrendingUp,
+  Zap,
+} from '@tuturuuu/icons';
 import type { WorkspaceAIExecution } from '@tuturuuu/types/db';
 import {
   Card,
@@ -9,14 +17,6 @@ import {
   CardTitle,
 } from '@tuturuuu/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
-import {
-  Activity,
-  BarChart3,
-  Clock,
-  DollarSign,
-  TrendingUp,
-  Zap,
-} from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useTheme } from 'next-themes';
 import {

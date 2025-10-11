@@ -12,8 +12,8 @@ import {
   type ProgressUpdate,
   STEP_CONFIG,
 } from '@/lib/streaming';
-import { getFullSubmission } from './actions';
 import '@/styles/evaluation-animations.css';
+import { Clock, PlayCircle, TrendingUp } from '@tuturuuu/icons';
 import type {
   NovaProblem,
   NovaProblemTestCase,
@@ -23,11 +23,11 @@ import type {
 } from '@tuturuuu/types/db';
 import { Badge } from '@tuturuuu/ui/badge';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
-import { Clock, PlayCircle, TrendingUp } from '@tuturuuu/ui/icons';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { cn } from '@tuturuuu/utils/format';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { getFullSubmission } from './actions';
 
 interface Props {
   problem: NovaProblem & {

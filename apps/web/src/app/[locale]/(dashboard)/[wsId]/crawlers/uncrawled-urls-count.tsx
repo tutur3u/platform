@@ -1,8 +1,8 @@
 'use client';
 
+import { AlertCircle, ArrowUpRight, Globe } from '@tuturuuu/icons';
 import { Alert, AlertDescription } from '@tuturuuu/ui/alert';
 import { Card, CardContent } from '@tuturuuu/ui/card';
-import { AlertCircle, ArrowUpRight, Globe } from '@tuturuuu/ui/icons';
 import { Skeleton } from '@tuturuuu/ui/skeleton';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';

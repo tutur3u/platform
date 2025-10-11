@@ -1,6 +1,6 @@
 'use client';
 
-import { Laptop, Shield, Target, Zap } from '@tuturuuu/ui/icons';
+import { Laptop, Shield, Target, Zap } from '@tuturuuu/icons';
 import { motion } from 'framer-motion';
 import type { ReactNode } from 'react';
 

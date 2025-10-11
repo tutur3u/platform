@@ -1,14 +1,14 @@
 'use client';
 
-import type { AIChat } from '@tuturuuu/types/db';
-import { Button } from '@tuturuuu/ui/button';
-import { Dialog } from '@tuturuuu/ui/dialog';
 import {
   Bot,
   LayoutDashboard,
   PanelLeftClose,
   PanelRightClose,
-} from '@tuturuuu/ui/icons';
+} from '@tuturuuu/icons';
+import type { AIChat } from '@tuturuuu/types/db';
+import { Button } from '@tuturuuu/ui/button';
+import { Dialog } from '@tuturuuu/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { useState } from 'react';
 import Chat from '../../ai-chat/chat';

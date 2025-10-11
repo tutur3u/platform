@@ -1,5 +1,17 @@
 'use client';
 
+import {
+  Edit,
+  Eye,
+  History,
+  Loader2,
+  Package,
+  Plus,
+  Save,
+  ShoppingBag,
+  Store,
+  Trash,
+} from '@tuturuuu/icons';
 import type { Product } from '@tuturuuu/types/primitives/Product';
 import type { ProductCategory } from '@tuturuuu/types/primitives/ProductCategory';
 import type { ProductUnit } from '@tuturuuu/types/primitives/ProductUnit';
@@ -33,18 +45,6 @@ import {
 } from '@tuturuuu/ui/form';
 import { useFieldArray, useForm } from '@tuturuuu/ui/hooks/use-form';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
-import {
-  Edit,
-  Eye,
-  History,
-  Loader2,
-  Package,
-  Plus,
-  Save,
-  ShoppingBag,
-  Store,
-  Trash,
-} from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
 import { zodResolver } from '@tuturuuu/ui/resolvers';
@@ -58,9 +58,9 @@ import {
 import { Switch } from '@tuturuuu/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { Textarea } from '@tuturuuu/ui/textarea';
+import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
 import * as z from 'zod';
 

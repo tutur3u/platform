@@ -1,14 +1,14 @@
 'use client';
 
+import { FileText, LayoutGrid, LayoutList } from '@tuturuuu/icons';
 import type { StorageObject } from '@tuturuuu/types/primitives/StorageObject';
 import { Button } from '@tuturuuu/ui/button';
 import { TransactionObjectRowActions } from '@tuturuuu/ui/finance/transactions/transactionId/row-actions';
-import { FileText, LayoutGrid, LayoutList } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
 import { joinPath } from '@tuturuuu/utils/path-helper';
+import { useTranslations } from 'next-intl';
 import Image from 'next/image';
 import Link from 'next/link';
-import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 
 export function DetailObjects({

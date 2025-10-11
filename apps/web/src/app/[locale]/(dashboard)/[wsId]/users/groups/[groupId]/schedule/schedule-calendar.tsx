@@ -1,9 +1,9 @@
 'use client';
 
+import { RotateCcw, Save } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import { Button } from '@tuturuuu/ui/button';
 import { YearCalendar } from '@tuturuuu/ui/custom/calendar/year-calendar';
-import { RotateCcw, Save } from '@tuturuuu/ui/icons';
 import { toast } from '@tuturuuu/ui/sonner';
 import { StickyBottomBar } from '@tuturuuu/ui/sticky-bottom-bar';
 import { cn } from '@tuturuuu/utils/format';
@@ -95,7 +95,7 @@ export default function ScheduleCalendar({
       const lastDay = new Date(year, month + 1, 0);
 
       // Find the first occurrence of this day in the month
-      let currentDate = new Date(firstDay);
+      const currentDate = new Date(firstDay);
       const targetDayOfWeek = dayIndex === 6 ? 0 : dayIndex + 1; // Convert to JS day index (Sunday = 0)
 
       while (currentDate.getDay() !== targetDayOfWeek) {
@@ -232,7 +232,7 @@ export default function ScheduleCalendar({
               onClick={handleSubmit}
               disabled={isSubmitting}
               className={cn(
-                'bg-dynamic-blue/10 border border-dynamic-blue/20 text-dynamic-blue hover:bg-dynamic-blue/20'
+                'border border-dynamic-blue/20 bg-dynamic-blue/10 text-dynamic-blue hover:bg-dynamic-blue/20'
               )}
             >
               <Save className="h-4 w-4" />

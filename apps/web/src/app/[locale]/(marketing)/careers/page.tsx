@@ -1,7 +1,6 @@
 'use client';
 
-import { Badge } from '@tuturuuu/ui/badge';
-import { Card } from '@tuturuuu/ui/card';
+import { GITHUB_OWNER, GITHUB_REPO } from '@/constants/common';
 import {
   Building2,
   Clock,
@@ -23,10 +22,11 @@ import {
   Sun,
   Timer,
   Users2,
-} from '@tuturuuu/ui/icons';
+} from '@tuturuuu/icons';
+import { Badge } from '@tuturuuu/ui/badge';
+import { Card } from '@tuturuuu/ui/card';
 import { motion, useScroll, useTransform } from 'framer-motion';
 import { type ReactNode, useRef } from 'react';
-import { GITHUB_OWNER, GITHUB_REPO } from '@/constants/common';
 
 interface ValueProps {
   icon: ReactNode;

@@ -1,7 +1,3 @@
-import { Badge } from '@tuturuuu/ui/badge';
-import { Button } from '@tuturuuu/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
-import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import {
   BarChart3,
   Calendar,
@@ -13,7 +9,11 @@ import {
   TrendingUp,
   Users,
   Vote,
-} from '@tuturuuu/ui/icons';
+} from '@tuturuuu/icons';
+import { Badge } from '@tuturuuu/ui/badge';
+import { Button } from '@tuturuuu/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
+import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Progress } from '@tuturuuu/ui/progress';
 import { Separator } from '@tuturuuu/ui/separator';
 import { cn } from '@tuturuuu/utils/format';

@@ -1,6 +1,6 @@
+import { Settings } from '@tuturuuu/icons';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { Badge } from '@tuturuuu/ui/badge';
-import { Settings } from '@tuturuuu/ui/icons';
 import { getTranslations } from 'next-intl/server';
 
 interface AccountStatusSectionProps {

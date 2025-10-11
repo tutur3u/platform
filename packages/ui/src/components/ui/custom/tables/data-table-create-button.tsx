@@ -1,6 +1,6 @@
 'use client';
 
-import { Plus } from 'lucide-react';
+import { Plus } from '@tuturuuu/icons';
 import type { ReactNode } from 'react';
 import { Button } from '../../button';
 import { DialogContent, DialogTrigger } from '../../dialog';

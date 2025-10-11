@@ -1,7 +1,7 @@
 'use client';
 
+import { Clock } from '@tuturuuu/icons';
 import type { WorkspaceCalendarEvent } from '@tuturuuu/types/db';
-import { Clock } from '@tuturuuu/ui/icons';
 import { format, isThisWeek, isToday, isTomorrow } from 'date-fns';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';

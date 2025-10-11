@@ -1,7 +1,7 @@
 'use client';
 
+import { Calendar, Clock, Users } from '@tuturuuu/icons';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
-import { Calendar, Clock, Users } from '@tuturuuu/ui/icons';
 import { Skeleton } from '@tuturuuu/ui/skeleton';
 
 interface SubmissionStats {

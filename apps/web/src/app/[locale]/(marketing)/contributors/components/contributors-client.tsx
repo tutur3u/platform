@@ -1,8 +1,6 @@
 'use client';
 
-import { Badge } from '@tuturuuu/ui/badge';
-import { Button } from '@tuturuuu/ui/button';
-import { Card } from '@tuturuuu/ui/card';
+import { GITHUB_OWNER, GITHUB_REPO } from '@/constants/common';
 import {
   Calendar,
   Code,
@@ -16,7 +14,10 @@ import {
   MessageSquare,
   Star,
   Users,
-} from '@tuturuuu/ui/icons';
+} from '@tuturuuu/icons';
+import { Badge } from '@tuturuuu/ui/badge';
+import { Button } from '@tuturuuu/ui/button';
+import { Card } from '@tuturuuu/ui/card';
 import { Separator } from '@tuturuuu/ui/separator';
 import { motion, type Variants } from 'framer-motion';
 import dynamic from 'next/dynamic';
@@ -37,7 +38,6 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
-import { GITHUB_OWNER, GITHUB_REPO } from '@/constants/common';
 
 // Types imported from server component
 interface GithubUser {
