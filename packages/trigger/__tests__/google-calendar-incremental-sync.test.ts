@@ -20,8 +20,8 @@ process.env.GOOGLE_CLIENT_SECRET = 'test-client-secret';
 process.env.GOOGLE_REDIRECT_URI = 'http://localhost:3000/auth/callback';
 
 // Mock the google-calendar-sync module
-vi.mock('../google-calendar-sync', async () => {
-  const actual = await vi.importActual('../google-calendar-sync');
+vi.mock('../src/google-calendar-sync', async () => {
+  const actual = await vi.importActual('../src/google-calendar-sync');
   return {
     ...actual,
     getGoogleAuthClient: vi.fn(() => ({
@@ -123,23 +123,11 @@ let googleCalendarIncrementalSync: any;
 let googleCalendarIncrementalSyncOrchestrator: any;
 
 beforeAll(async () => {
-  const mod = await import('../google-calendar-incremental-sync.js');
+  const mod = await import('../src/google-calendar-incremental-sync.js');
   googleCalendarIncrementalSync = mod.googleCalendarIncrementalSync;
   googleCalendarIncrementalSyncOrchestrator =
     mod.googleCalendarIncrementalSyncOrchestrator;
 });
-
-// Test isolation utility to prevent environment contamination
-const isolateTest = (testFn: () => void | Promise<void>) => {
-  return async () => {
-    const originalEnv = { ...process.env };
-    try {
-      await testFn();
-    } finally {
-      process.env = originalEnv;
-    }
-  };
-};
 
 // Mock Google Calendar events for testing
 const createMockGoogleEvent = (
@@ -203,7 +191,7 @@ describe('Google Calendar Incremental Sync', () => {
 
   describe('Sync Token Handling', () => {
     it('should handle existing sync token correctly', async () => {
-      const { getSyncToken } = await import('../google-calendar-sync.js');
+      const { getSyncToken } = await import('../src/google-calendar-sync.js');
 
       const result = await getSyncToken('test-workspace-id');
       expect(result).toBe('existing-sync-token-123');
@@ -211,7 +199,7 @@ describe('Google Calendar Incremental Sync', () => {
     });
 
     it('should store sync token correctly', async () => {
-      const { storeSyncToken } = await import('../google-calendar-sync.js');
+      const { storeSyncToken } = await import('../src/google-calendar-sync.js');
       const testDate = new Date('2024-01-15T10:00:00Z');
 
       await storeSyncToken('test-workspace-id', 'new-sync-token', testDate);
@@ -355,7 +343,7 @@ describe('Google Calendar Incremental Sync', () => {
   describe('Integration with syncWorkspaceBatched', () => {
     it('should call syncWorkspaceBatched when events exist', async () => {
       const { syncWorkspaceBatched } = await import(
-        '../google-calendar-sync.js'
+        '../src/google-calendar-sync.js'
       );
 
       // This would be tested in the actual task run
@@ -372,7 +360,7 @@ describe('Google Calendar Incremental Sync', () => {
       });
 
       const { syncWorkspaceBatched } = await import(
-        '../google-calendar-sync.js'
+        '../src/google-calendar-sync.js'
       );
 
       // This would be tested in the actual task run
@@ -382,7 +370,7 @@ describe('Google Calendar Incremental Sync', () => {
     it('should handle batched sync errors gracefully', async () => {
       // Mock error in syncWorkspaceBatched
       const { syncWorkspaceBatched } = await import(
-        '../google-calendar-sync.js'
+        '../src/google-calendar-sync.js'
       );
       (syncWorkspaceBatched as any).mockRejectedValue(
         new Error('Batched sync error')
@@ -407,7 +395,7 @@ describe('Google Calendar Incremental Sync', () => {
     });
 
     it('should handle sync token parameter correctly', async () => {
-      const { getSyncToken } = await import('../google-calendar-sync.js');
+      const { getSyncToken } = await import('../src/google-calendar-sync.js');
 
       // Test that existing sync token is retrieved
       const syncToken = await getSyncToken('test-workspace-id');
@@ -416,7 +404,7 @@ describe('Google Calendar Incremental Sync', () => {
 
     it('should handle missing sync token parameter', async () => {
       // Mock no existing sync token
-      const { getSyncToken } = await import('../google-calendar-sync.js');
+      const { getSyncToken } = await import('../src/google-calendar-sync.js');
       (getSyncToken as any).mockResolvedValue(null);
 
       const syncToken = await getSyncToken('test-workspace-id');

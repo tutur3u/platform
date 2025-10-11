@@ -32,9 +32,9 @@ import {
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
 import { Input } from '@tuturuuu/ui/input';
+import { toast } from '@tuturuuu/ui/sonner';
 import { cn } from '@tuturuuu/utils/format';
 import { useState } from 'react';
-import { toast } from 'sonner';
 // import { TaskForm } from './task-form';
 import { TaskEditDialog } from '../../shared/task-edit-dialog';
 import { TaskCard } from './task';

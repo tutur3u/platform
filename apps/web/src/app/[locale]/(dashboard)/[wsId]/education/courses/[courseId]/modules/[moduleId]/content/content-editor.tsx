@@ -1,9 +1,9 @@
 'use client';
 
 import { createClient } from '@tuturuuu/supabase/next/client';
+import type { JSONContent } from '@tuturuuu/types/tiptap';
 import { toast } from '@tuturuuu/ui/sonner';
 import { RichTextEditor } from '@tuturuuu/ui/text-editor/editor';
-import type { JSONContent } from '@tuturuuu/ui/tiptap';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 

@@ -12,13 +12,13 @@ import {
   createDynamicClient,
 } from '@tuturuuu/supabase/next/server';
 import type { WorkspaceCourseModule } from '@tuturuuu/types/db';
+import type { JSONContent } from '@tuturuuu/types/tiptap';
 import { Accordion } from '@tuturuuu/ui/accordion';
 import { CourseSection } from '@tuturuuu/ui/custom/education/modules/content-section';
 import { FileDisplay } from '@tuturuuu/ui/custom/education/modules/resources/file-display';
 import { YoutubeEmbed } from '@tuturuuu/ui/custom/education/modules/youtube/embed';
 import { Separator } from '@tuturuuu/ui/separator';
 import { RichTextEditor } from '@tuturuuu/ui/text-editor/editor';
-import type { JSONContent } from '@tuturuuu/ui/tiptap';
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 import ClientFlashcards from './flashcards/client-flashcards';

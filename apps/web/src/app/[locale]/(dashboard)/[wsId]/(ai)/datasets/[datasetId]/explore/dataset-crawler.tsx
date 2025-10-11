@@ -25,8 +25,8 @@ import {
 import { useForm } from '@tuturuuu/ui/hooks/use-form';
 import { Input } from '@tuturuuu/ui/input';
 import { zodResolver } from '@tuturuuu/ui/resolvers';
+import { XLSX } from '@tuturuuu/ui/xlsx';
 import { useEffect, useState } from 'react';
-import * as XLSX from 'xlsx';
 import { z } from 'zod';
 import { CsvCrawler } from './crawlers/csv-crawler';
 import { ExcelCrawler } from './crawlers/excel-crawler';

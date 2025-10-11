@@ -2,10 +2,10 @@
 
 import { ClipboardList, Pencil, Plus } from '@tuturuuu/icons';
 import type { MeetTogetherPlan } from '@tuturuuu/types/primitives/MeetTogetherPlan';
+import type { JSONContent } from '@tuturuuu/types/tiptap';
 import { Button } from '@tuturuuu/ui/button';
 import { useTimeBlocking } from '@tuturuuu/ui/hooks/time-blocking-provider';
 import { RichTextEditor } from '@tuturuuu/ui/text-editor/editor';
-import type { JSONContent } from '@tuturuuu/ui/tiptap';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useCallback, useState } from 'react';

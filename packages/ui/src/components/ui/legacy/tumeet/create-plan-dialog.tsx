@@ -2,6 +2,7 @@
 
 import type { User } from '@tuturuuu/types/db';
 import type { Timezone } from '@tuturuuu/types/primitives/Timezone';
+import type { JSONContent } from '@tuturuuu/types/tiptap';
 import { Button } from '@tuturuuu/ui/button';
 import {
   Dialog,
@@ -26,7 +27,6 @@ import { Input } from '@tuturuuu/ui/input';
 import { zodResolver } from '@tuturuuu/ui/resolvers';
 import { Separator } from '@tuturuuu/ui/separator';
 import { RichTextEditor } from '@tuturuuu/ui/text-editor/editor';
-import type { JSONContent } from '@tuturuuu/ui/tiptap';
 import { cn } from '@tuturuuu/utils/format';
 import dayjs from 'dayjs';
 import {
@@ -34,8 +34,8 @@ import {
   MapPin as MapPinIcon,
   Sparkles as SparklesIcon,
 } from 'lucide-react';
-import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
+import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import * as z from 'zod';
 

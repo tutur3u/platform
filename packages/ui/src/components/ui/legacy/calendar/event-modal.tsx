@@ -32,7 +32,7 @@ import {
 import {
   createAllDayEvent,
   isAllDayEvent,
-} from '@tuturuuu/ui/hooks/calendar-utils';
+} from '@tuturuuu/utils/calendar-utils';
 import { useCalendar } from '@tuturuuu/ui/hooks/use-calendar';
 import { useForm } from '@tuturuuu/ui/hooks/use-form';
 import { useToast } from '@tuturuuu/ui/hooks/use-toast';

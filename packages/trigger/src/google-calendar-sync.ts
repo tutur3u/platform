@@ -1,7 +1,7 @@
 import { type calendar_v3, OAuth2Client } from '@tuturuuu/google';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
-import { convertGoogleAllDayEvent } from '@tuturuuu/ui/hooks/calendar-utils';
-import { updateLastUpsert } from '@tuturuuu/utils/calendar-sync-coordination';
+import { convertGoogleAllDayEvent } from '@tuturuuu/utils/calendar-utils';
+import { updateLastUpsert } from './calendar-sync-coordination';
 
 // Batch processing configuration
 const BATCH_SIZE = 100; // Process 100 events at a time for upserts
@@ -254,7 +254,7 @@ export const getWorkspaceTokensByWsId = async (ws_id: string) => {
   try {
     const sbAdmin = await createAdminClient({ noCookie: true });
     const { data: tokens, error } = await sbAdmin
-      .from('workspaces')
+      .from('calendar_auth_tokens')
       .select('ws_id, access_token, refresh_token')
       .eq('ws_id', ws_id);
 

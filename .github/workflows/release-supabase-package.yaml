@@ -42,6 +42,8 @@ jobs:
 
       - name: Setup bun
         uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: "1.3.0"
 
       - uses: actions/setup-node@v5
         with:
@@ -67,6 +69,8 @@ jobs:
 
       - name: Setup bun
         uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: "1.3.0"
 
       - uses: actions/setup-node@v5
         with:
@@ -92,6 +96,8 @@ jobs:
 
       - name: Setup bun
         uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: "1.3.0"
 
       - uses: actions/setup-node@v5
         with:
@@ -119,6 +125,8 @@ jobs:
 
       - name: Setup bun
         uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: "1.3.0"
 
       - uses: actions/setup-node@v5
         with:

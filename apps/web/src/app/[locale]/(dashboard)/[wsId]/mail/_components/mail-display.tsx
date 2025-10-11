@@ -1,6 +1,15 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
+import type {
+  InternalEmail,
+  User,
+  UserPrivateDetails,
+} from '@tuturuuu/types/db';
+import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
+import type { JSONContent } from '@tuturuuu/types/tiptap';
+import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
+import { Button } from '@tuturuuu/ui/button';
 import {
   Archive,
   ChevronDown,
@@ -22,7 +31,6 @@ import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Button } from '@tuturuuu/ui/button';
 import { ScrollArea } from '@tuturuuu/ui/scroll-area';
-import type { JSONContent } from '@tuturuuu/ui/tiptap';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { formatEmailAddresses } from '@tuturuuu/utils/email/client';
 import { cn } from '@tuturuuu/utils/format';

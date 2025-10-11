@@ -31,9 +31,9 @@ import {
 } from '@tuturuuu/ui/card';
 import { Progress } from '@tuturuuu/ui/progress';
 import { Separator } from '@tuturuuu/ui/separator';
+import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useState } from 'react';
-import { toast } from 'sonner';
 
 interface Session {
   session_id: string;
