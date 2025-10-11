@@ -37,8 +37,6 @@ type LinkEditorContext = 'bubble' | 'popover' | null;
 
 interface ToolBarProps {
   editor: Editor | null;
-  hasChanges: boolean;
-  onSave: () => void;
   saveButtonLabel?: string;
   savedButtonLabel?: string;
   workspaceId?: string;
@@ -55,7 +53,6 @@ export function ToolBar({ editor, workspaceId, onImageUpload }: ToolBarProps) {
     to: number;
   } | null>(null);
   const [isEditingLink, setIsEditingLink] = useState(false);
-  const [, setEditorVersion] = useState(0);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [isUploadingVideo, setIsUploadingVideo] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -74,7 +71,6 @@ export function ToolBar({ editor, workspaceId, onImageUpload }: ToolBarProps) {
 
   useEffect(() => {
     const rerender = () => {
-      setEditorVersion((version) => version + 1);
       if (editor?.state.selection.empty) {
         closeLinkEditor('bubble');
       }
