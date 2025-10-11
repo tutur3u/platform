@@ -22,6 +22,56 @@ export type WorkspaceTaskList = Tables<'task_lists'> & {
   tasks?: Partial<WorkspaceTask>[];
 };
 export type WorkspaceTask = Tables<'tasks'>;
+
+/**
+ * Task with nested relations as returned from database queries
+ * Used in UI components that display task lists with full context
+ */
+export type TaskWithRelations = {
+  id: string;
+  name: string;
+  description?: string | null;
+  priority?: string | null;
+  end_date?: string | null;
+  start_date?: string | null;
+  estimation_points?: number | null;
+  archived?: boolean | null;
+  list_id?: string | null;
+  list: {
+    id: string;
+    name: string | null;
+    status?: string | null;
+    board: {
+      id: string;
+      name: string | null;
+      ws_id: string;
+      estimation_type?: string | null;
+      extended_estimation?: boolean;
+      allow_zero_estimates?: boolean;
+      workspaces: {
+        id: string;
+        name: string | null;
+        personal: boolean | null;
+      } | null;
+    } | null;
+  } | null;
+  assignees: Array<{
+    user: {
+      id: string;
+      display_name: string | null;
+      avatar_url?: string | null;
+    } | null;
+  }> | null;
+  labels?: Array<{
+    label: {
+      id: string;
+      name: string;
+      color: string;
+      created_at: string;
+    } | null;
+  }> | null;
+};
+
 export type WorkspaceCalendarEvent = Tables<'workspace_calendar_events'>;
 export type User = Tables<'users'>;
 export type UserPrivateDetails = Tables<'user_private_details'>;

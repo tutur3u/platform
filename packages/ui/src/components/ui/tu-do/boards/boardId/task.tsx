@@ -1,33 +1,6 @@
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
-import {
-  AlertCircle,
-  Box,
-  Calendar,
-  Check,
-  CheckCircle2,
-  CircleSlash,
-  Clock,
-  FileText,
-  Flag,
-  horseHead,
-  Icon,
-  Image as ImageIcon,
-  Link2,
-  Loader2,
-  MoreHorizontal,
-  Move,
-  Play,
-  Rabbit,
-  Timer,
-  Trash2,
-  Turtle,
-  unicornHead,
-  UserMinus,
-  UserStar,
-  X,
-} from '@tuturuuu/icons';
+import { useQuery } from '@tanstack/react-query';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
 import type { Task } from '@tuturuuu/types/primitives/Task';
@@ -37,16 +10,6 @@ import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Card } from '@tuturuuu/ui/card';
 import { Checkbox } from '@tuturuuu/ui/checkbox';
-import { ColorPicker } from '@tuturuuu/ui/color-picker';
-import { DateTimePicker } from '@tuturuuu/ui/date-time-picker';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@tuturuuu/ui/dialog';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -58,9 +21,27 @@ import {
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
 import { useTaskActions } from '@tuturuuu/ui/hooks/use-task-actions';
-import { toast } from '@tuturuuu/ui/hooks/use-toast';
-import { Input } from '@tuturuuu/ui/input';
-import { Label } from '@tuturuuu/ui/label';
+import {
+  AlertCircle,
+  Box,
+  Calendar,
+  Check,
+  CheckCircle2,
+  CircleSlash,
+  Clock,
+  FileText,
+  Flag,
+  Image as ImageIcon,
+  Link2,
+  MoreHorizontal,
+  Move,
+  Play,
+  Timer,
+  Trash2,
+  UserMinus,
+  UserStar,
+  X,
+} from '@tuturuuu/icons';
 import { ScrollArea } from '@tuturuuu/ui/scroll-area';
 import { cn } from '@tuturuuu/utils/format';
 import {
@@ -71,18 +52,22 @@ import {
   getDescriptionMetadata,
   getDescriptionText,
 } from '@tuturuuu/utils/text-helper';
-import {
-  format,
-  formatDistanceToNow,
-  isToday,
-  isTomorrow,
-  isYesterday,
-} from 'date-fns';
+import { format, formatDistanceToNow } from 'date-fns';
 import React, { memo, useCallback, useEffect, useRef, useState } from 'react';
+import { useTaskDialog } from '../../hooks/useTaskDialog';
+import { useTaskDialogState } from '../../hooks/useTaskDialogState';
+import { useTaskLabelManagement } from '../../hooks/useTaskLabelManagement';
+import { useTaskProjectManagement } from '../../hooks/useTaskProjectManagement';
 import { AssigneeSelect } from '../../shared/assignee-select';
-import { TaskEditDialog } from '../../shared/task-edit-dialog';
 import { TaskEstimationDisplay } from '../../shared/task-estimation-display';
 import { TaskLabelsDisplay } from '../../shared/task-labels-display';
+import {
+  getAssigneeInitials,
+  getCardColorClasses as getCardColorClassesUtil,
+  getListColorClasses,
+} from '../../utils/taskColorUtils';
+import { formatSmartDate } from '../../utils/taskDateUtils';
+import { getPriorityIndicator } from '../../utils/taskPriorityUtils';
 import {
   TaskDueDateMenu,
   TaskEstimationMenu,
@@ -92,8 +77,9 @@ import {
   TaskProjectsMenu,
 } from './menus';
 import { TaskActions } from './task-actions';
-
-const NEW_LABEL_COLOR = '#3b82f6';
+import { TaskCustomDateDialog } from './task-dialogs/TaskCustomDateDialog';
+import { TaskDeleteDialog } from './task-dialogs/TaskDeleteDialog';
+import { TaskNewLabelDialog } from './task-dialogs/TaskNewLabelDialog';
 
 interface TaskCardProps {
   task: Task;
@@ -126,20 +112,12 @@ function TaskCardInner({
   const [isLoading, setIsLoading] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [menuGuardUntil, setMenuGuardUntil] = useState(0);
-  const [customDateDialogOpen, setCustomDateDialogOpen] = useState(false);
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [editDialogOpen, setEditDialogOpen] = useState(false);
-  const [isClosingDialog, setIsClosingDialog] = useState(false);
 
-  // Memoize the close handler to prevent unnecessary re-renders
-  const handleDialogClose = useCallback(() => {
-    setIsClosingDialog(true);
-    setEditDialogOpen(false);
-    // Reset the closing flag after a short delay to allow the dialog to fully close
-    setTimeout(() => {
-      setIsClosingDialog(false);
-    }, 100);
-  }, []);
+  // Use extracted dialog state management hook
+  const { state: dialogState, actions: dialogActions } = useTaskDialogState();
+
+  // Use centralized task dialog
+  const { openTask } = useTaskDialog();
 
   // Guarded select handler for Radix DropdownMenuItem to avoid immediate action on context open
   const handleMenuItemSelect = useCallback(
@@ -163,14 +141,23 @@ function TaskCardInner({
 
   // Local state for UI interactions
   const [estimationSaving, setEstimationSaving] = useState(false);
-  const [labelsSaving, setLabelsSaving] = useState<string | null>(null);
-  const [projectsSaving, setProjectsSaving] = useState<string | null>(null);
 
-  // New label creation state
-  const [newLabelDialogOpen, setNewLabelDialogOpen] = useState(false);
-  const [newLabelName, setNewLabelName] = useState('');
-  const [newLabelColor, setNewLabelColor] = useState(NEW_LABEL_COLOR);
-  const [creatingLabel, setCreatingLabel] = useState(false);
+  // Use extracted label management hook
+  const {
+    toggleTaskLabel,
+    createNewLabel,
+    labelsSaving,
+    newLabelName,
+    setNewLabelName,
+    newLabelColor,
+    setNewLabelColor,
+    creatingLabel,
+  } = useTaskLabelManagement({
+    task,
+    boardId,
+    workspaceLabels,
+    workspaceId: boardConfig?.ws_id,
+  });
 
   // Fetch workspace projects
   const { data: workspaceProjects = [], isLoading: projectsLoading } = useQuery(
@@ -193,7 +180,12 @@ function TaskCardInner({
     }
   );
 
-  const queryClient = useQueryClient();
+  // Use extracted project management hook
+  const { toggleTaskProject, projectsSaving } = useTaskProjectManagement({
+    task,
+    boardId,
+    workspaceProjects,
+  });
 
   // Fetch available task lists using React Query (same key as other components)
   const { data: queryAvailableLists = [] } = useQuery({
@@ -250,10 +242,10 @@ function TaskCardInner({
 
   const dragDisabled =
     isMobile ||
-    editDialogOpen ||
-    deleteDialogOpen ||
-    customDateDialogOpen ||
-    newLabelDialogOpen ||
+    dialogState.editDialogOpen ||
+    dialogState.deleteDialogOpen ||
+    dialogState.customDateDialogOpen ||
+    dialogState.newLabelDialogOpen ||
     menuOpen;
 
   const { setNodeRef, attributes, listeners, transform, isDragging } =
@@ -282,14 +274,11 @@ function TaskCardInner({
   const isOverdue = task.end_date && new Date(task.end_date) < now;
   const startDate = task.start_date ? new Date(task.start_date) : null;
   const endDate = task.end_date ? new Date(task.end_date) : null;
+  const descriptionMeta = getDescriptionMetadata(task.description);
 
-  // Enhanced date formatting
-  const formatSmartDate = (date: Date) => {
-    if (isToday(date)) return 'Today';
-    if (isTomorrow(date)) return 'Tomorrow';
-    if (isYesterday(date)) return 'Yesterday';
-    return formatDistanceToNow(date, { addSuffix: true });
-  };
+  // Helper function to get card color classes
+  const getCardColorClasses = () =>
+    getCardColorClassesUtil(taskList, task.priority);
 
   // Use the extracted task actions hook
   const {
@@ -313,345 +302,16 @@ function TaskCardInner({
     onUpdate,
     setIsLoading,
     setMenuOpen,
-    setCustomDateDialogOpen,
-    setDeleteDialogOpen,
+    setCustomDateDialogOpen: (open: boolean) =>
+      open
+        ? dialogActions.openCustomDateDialog()
+        : dialogActions.closeCustomDateDialog(),
+    setDeleteDialogOpen: (open: boolean) =>
+      open
+        ? dialogActions.openDeleteDialog()
+        : dialogActions.closeDeleteDialog(),
     setEstimationSaving,
   });
-
-  // Toggle a label for the task (quick labels submenu)
-  async function toggleTaskLabel(labelId: string) {
-    setLabelsSaving(labelId);
-    const supabase = createClient();
-    const active = task.labels?.some((l) => l.id === labelId);
-
-    // Cancel any outgoing refetches
-    await queryClient.cancelQueries({ queryKey: ['tasks', boardId] });
-
-    // Snapshot the previous value
-    const previousTasks = queryClient.getQueryData(['tasks', boardId]);
-
-    // Find the label details from workspace labels
-    const label = workspaceLabels.find((l) => l.id === labelId);
-
-    // Optimistically update the cache
-    queryClient.setQueryData(['tasks', boardId], (old: any[] | undefined) => {
-      if (!old) return old;
-      return old.map((t) => {
-        if (t.id === task.id) {
-          if (active) {
-            // Remove the label
-            return {
-              ...t,
-              labels: t.labels?.filter((l: any) => l.id !== labelId) || [],
-            };
-          } else {
-            // Add the label
-            return {
-              ...t,
-              labels: [
-                ...(t.labels || []),
-                label || { id: labelId, name: 'Unknown', color: '#3b82f6' },
-              ],
-            };
-          }
-        }
-        return t;
-      });
-    });
-
-    try {
-      if (active) {
-        const { error } = await supabase
-          .from('task_labels')
-          .delete()
-          .eq('task_id', task.id)
-          .eq('label_id', labelId);
-        if (error) throw error;
-      } else {
-        const { error } = await supabase
-          .from('task_labels')
-          .insert({ task_id: task.id, label_id: labelId });
-        if (error) throw error;
-      }
-      // Success - mark query as needing refetch but don't force it immediately
-      queryClient.setQueryData(['tasks', boardId], (old: any[] | undefined) => {
-        return old; // Return unchanged to signal success without triggering render
-      });
-    } catch (e: any) {
-      // Rollback on error
-      queryClient.setQueryData(['tasks', boardId], previousTasks);
-      toast({
-        title: 'Label update failed',
-        description: e.message || 'Unable to toggle label',
-        variant: 'destructive',
-      });
-    } finally {
-      setLabelsSaving(null);
-    }
-  }
-
-  // Toggle a project for the task (quick projects submenu)
-  async function toggleTaskProject(projectId: string) {
-    setProjectsSaving(projectId);
-    const supabase = createClient();
-    const active = task.projects?.some((p) => p.id === projectId);
-
-    // Cancel any outgoing refetches
-    await queryClient.cancelQueries({ queryKey: ['tasks', boardId] });
-
-    // Snapshot the previous value
-    const previousTasks = queryClient.getQueryData(['tasks', boardId]);
-
-    // Find the project details from workspace projects
-    const project = workspaceProjects.find((p) => p.id === projectId);
-
-    // Optimistically update the cache
-    queryClient.setQueryData(['tasks', boardId], (old: any[] | undefined) => {
-      if (!old) return old;
-      return old.map((t) => {
-        if (t.id === task.id) {
-          if (active) {
-            // Remove the project
-            return {
-              ...t,
-              projects:
-                t.projects?.filter((p: any) => p.id !== projectId) || [],
-            };
-          } else {
-            // Add the project
-            return {
-              ...t,
-              projects: [
-                ...(t.projects || []),
-                project || { id: projectId, name: 'Unknown', status: null },
-              ],
-            };
-          }
-        }
-        return t;
-      });
-    });
-
-    try {
-      if (active) {
-        const { error } = await supabase
-          .from('task_project_tasks')
-          .delete()
-          .eq('task_id', task.id)
-          .eq('project_id', projectId);
-        if (error) throw error;
-      } else {
-        const { error } = await supabase
-          .from('task_project_tasks')
-          .insert({ task_id: task.id, project_id: projectId });
-
-        // Handle duplicate key error gracefully
-        if (error) {
-          // Error code 23505 is duplicate key violation in PostgreSQL
-          if (error.code === '23505') {
-            // Project is already linked - just update cache to reflect reality
-            toast({
-              title: 'Already linked',
-              description: 'This project is already linked to the task',
-            });
-            // Fetch current state to sync cache
-            await queryClient.invalidateQueries({
-              queryKey: ['tasks', boardId],
-            });
-            return;
-          }
-          throw error;
-        }
-      }
-      // Success - mark query as needing refetch but don't force it immediately
-      queryClient.setQueryData(['tasks', boardId], (old: any[] | undefined) => {
-        return old; // Return unchanged to signal success without triggering render
-      });
-    } catch (e: any) {
-      // Rollback on error
-      queryClient.setQueryData(['tasks', boardId], previousTasks);
-      toast({
-        title: 'Project update failed',
-        description: e.message || 'Unable to toggle project',
-        variant: 'destructive',
-      });
-    } finally {
-      setProjectsSaving(null);
-    }
-  }
-
-  // Create a new label
-  async function createNewLabel() {
-    if (!newLabelName.trim() || !boardConfig?.ws_id) return;
-
-    setCreatingLabel(true);
-    try {
-      const response = await fetch(
-        `/api/v1/workspaces/${boardConfig.ws_id}/labels`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            name: newLabelName.trim(),
-            color: newLabelColor,
-          }),
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error('Failed to create label');
-      }
-
-      const newLabel = await response.json();
-
-      // Auto-apply the newly created label to this task
-      try {
-        const supabase = createClient();
-
-        // Cancel any outgoing refetches
-        await queryClient.cancelQueries({ queryKey: ['tasks', boardId] });
-
-        // Snapshot the previous value
-        const previousTasks = queryClient.getQueryData(['tasks', boardId]);
-
-        // Optimistically update the cache
-        queryClient.setQueryData(
-          ['tasks', boardId],
-          (old: any[] | undefined) => {
-            if (!old) return old;
-            return old.map((t) => {
-              if (t.id === task.id) {
-                return {
-                  ...t,
-                  labels: [...(t.labels || []), newLabel],
-                };
-              }
-              return t;
-            });
-          }
-        );
-
-        const { error: linkErr } = await supabase
-          .from('task_labels')
-          .insert({ task_id: task.id, label_id: newLabel.id });
-        if (linkErr) {
-          // Rollback on error
-          queryClient.setQueryData(['tasks', boardId], previousTasks);
-          toast({
-            title: 'Label created (not applied)',
-            description:
-              'The label was created but could not be attached to the task. Refresh and try manually.',
-            variant: 'destructive',
-          });
-        }
-      } catch (applyErr: any) {
-        console.error('Failed to auto-apply new label', applyErr);
-      }
-
-      // Reset form and close dialog
-      setNewLabelName('');
-      setNewLabelColor('#3b82f6');
-      setNewLabelDialogOpen(false);
-
-      toast({
-        title: 'Label created & applied',
-        description: `"${newLabel.name}" label created and applied to this task`,
-      });
-
-      // Invalidate workspace labels cache so all task cards get the new label
-      queryClient.invalidateQueries({
-        queryKey: ['workspace-labels', boardConfig.ws_id],
-      });
-    } catch (e: any) {
-      toast({
-        title: 'Failed to create label',
-        description: e.message || 'Unable to create new label',
-        variant: 'destructive',
-      });
-    } finally {
-      setCreatingLabel(false);
-    }
-  }
-
-  // Dynamic color mappings based on task list color
-  const getListColorClasses = (color: SupportedColor) => {
-    const colorMap: Record<SupportedColor, string> = {
-      GRAY: 'border-dynamic-gray/70 bg-dynamic-gray/5',
-      RED: 'border-dynamic-red/70 bg-dynamic-red/5',
-      BLUE: 'border-dynamic-blue/70 bg-dynamic-blue/5',
-      GREEN: 'border-dynamic-green/70 bg-dynamic-green/5',
-      YELLOW: 'border-dynamic-yellow/70 bg-dynamic-yellow/5',
-      ORANGE: 'border-dynamic-orange/70 bg-dynamic-orange/5',
-      PURPLE: 'border-dynamic-purple/70 bg-dynamic-purple/5',
-      PINK: 'border-dynamic-pink/70 bg-dynamic-pink/5',
-      INDIGO: 'border-dynamic-indigo/70 bg-dynamic-indigo/5',
-      CYAN: 'border-dynamic-cyan/70 bg-dynamic-cyan/5',
-    };
-    return colorMap[color] || colorMap.GRAY;
-  };
-
-  const getPriorityBorderColor = () => {
-    if (!task.priority) return '';
-    switch (task.priority) {
-      case 'critical':
-        return 'border-dynamic-red shadow-sm shadow-dynamic-red/20';
-      case 'high':
-        return 'border-dynamic-orange/70';
-      case 'normal':
-        return 'border-dynamic-yellow/70';
-      case 'low':
-        return 'border-dynamic-blue/70';
-      default:
-        return 'border-dynamic-gray/70';
-    }
-  };
-
-  const getPriorityIndicator = () => {
-    if (!task.priority) return null;
-    const colors = {
-      critical:
-        'bg-dynamic-red/20 border-dynamic-red/50 text-dynamic-red shadow-sm shadow-dynamic-red/50',
-      high: 'bg-dynamic-orange/10 border-dynamic-orange/30 text-dynamic-orange',
-      normal:
-        'bg-dynamic-yellow/10 border-dynamic-yellow/30 text-dynamic-yellow',
-      low: 'bg-dynamic-blue/10 border-dynamic-blue/30 text-dynamic-blue',
-    };
-
-    const labels = {
-      critical: <Icon iconNode={unicornHead} className="size-3" />,
-      high: <Icon iconNode={horseHead} className="size-3" />,
-      normal: <Rabbit className="size-3" />,
-      low: <Turtle className="size-3" />,
-    };
-
-    return (
-      <Badge
-        variant="secondary"
-        className={cn(
-          'p-[0.1875rem] text-xs',
-          colors[task.priority as keyof typeof colors]
-        )}
-      >
-        {labels[task.priority as keyof typeof labels]}
-      </Badge>
-    );
-  };
-
-  // Get description metadata for indicators
-  const descriptionMeta = getDescriptionMetadata(task.description);
-
-  // Use task list color if available, otherwise use priority or default
-  const getCardColorClasses = () => {
-    if (taskList?.color) {
-      return getListColorClasses(taskList.color);
-    }
-    if (task.priority) {
-      return getPriorityBorderColor();
-    }
-    return 'border-l-dynamic-gray/30';
-  };
 
   // Memoize drag handle for performance
   // Removed explicit drag handle – entire card is now draggable for better UX.
@@ -667,19 +327,18 @@ function TaskCardInner({
         // Handle multi-select functionality
         onSelect?.(task.id, e);
 
-        // Only open edit dialog if not in multi-select mode, not dragging, dialog is not already open, and not in the process of closing
+        // Only open edit dialog if not in multi-select mode, not dragging, and no other dialogs are open
         if (
           !e.shiftKey &&
           !isDragging &&
-          !editDialogOpen &&
-          !isClosingDialog &&
+          !dialogState.editDialogOpen &&
+          !dialogState.isClosingDialog &&
           !menuOpen &&
-          !deleteDialogOpen &&
-          !customDateDialogOpen &&
-          !newLabelDialogOpen
+          !dialogState.deleteDialogOpen &&
+          !dialogState.customDateDialogOpen &&
+          !dialogState.newLabelDialogOpen
         ) {
-          setEditDialogOpen(true);
-          setIsClosingDialog(false);
+          openTask(task, boardId, availableLists);
         }
       }}
       onContextMenu={(e) => {
@@ -849,7 +508,10 @@ function TaskCardInner({
                     onDueDateChange={handleDueDateChange}
                     onCustomDateClick={() => {
                       setMenuOpen(false);
-                      setTimeout(() => setCustomDateDialogOpen(true), 100);
+                      setTimeout(
+                        () => dialogActions.openCustomDateDialog(),
+                        100
+                      );
                     }}
                     onMenuItemSelect={handleMenuItemSelect}
                     onClose={() => setMenuOpen(false)}
@@ -876,7 +538,7 @@ function TaskCardInner({
                     labelsSaving={labelsSaving}
                     onToggleLabel={toggleTaskLabel}
                     onCreateNewLabel={() => {
-                      setNewLabelDialogOpen(true);
+                      dialogActions.openNewLabelDialog();
                       setMenuOpen(false);
                     }}
                     onMenuItemSelect={handleMenuItemSelect}
@@ -963,7 +625,7 @@ function TaskCardInner({
                   <DropdownMenuItem
                     onSelect={(e) =>
                       handleMenuItemSelect(e as unknown as Event, () => {
-                        setDeleteDialogOpen(true);
+                        dialogActions.openDeleteDialog();
                         setMenuOpen(false);
                       })
                     }
@@ -1036,7 +698,7 @@ function TaskCardInner({
               {/* Priority */}
               {!task.archived && task.priority && (
                 <div className="flex-none overflow-hidden">
-                  {getPriorityIndicator()}
+                  {getPriorityIndicator(task.priority)}
                 </div>
               )}
               {/* Project indicator */}
@@ -1155,173 +817,47 @@ function TaskCardInner({
           </div>
         )}
       </div>
-      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle>Delete Task</DialogTitle>
-            <DialogDescription>
-              Are you sure you want to delete &quot;{task.name}&quot;? This
-              action cannot be undone.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setDeleteDialogOpen(false)}
-              disabled={isLoading}
-            >
-              Cancel
-            </Button>
-            <Button
-              type="button"
-              variant="destructive"
-              onClick={handleDelete}
-              disabled={isLoading}
-            >
-              {isLoading ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  Deleting...
-                </>
-              ) : (
-                'Delete task'
-              )}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-      <TaskEditDialog
-        key={task.id} // Force re-mount when task ID changes
+      <TaskDeleteDialog
         task={task}
-        boardId={boardId}
-        isOpen={editDialogOpen}
-        onClose={handleDialogClose}
-        onUpdate={onUpdate}
-        availableLists={availableLists}
-        showUserPresence={!isPersonalWorkspace}
+        open={dialogState.deleteDialogOpen}
+        isLoading={isLoading}
+        onOpenChange={(open) =>
+          open
+            ? dialogActions.openDeleteDialog()
+            : dialogActions.closeDeleteDialog()
+        }
+        onConfirm={handleDelete}
       />
-      <Dialog open={newLabelDialogOpen} onOpenChange={setNewLabelDialogOpen}>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle>Create New Label</DialogTitle>
-            <DialogDescription>
-              Add a new label to organize your tasks. Give it a descriptive name
-              and choose a color.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid gap-2">
-              <Label>Label Name</Label>
-              <Input
-                value={newLabelName}
-                onChange={(e) => setNewLabelName(e.target.value)}
-                placeholder="e.g., Bug, Feature, Priority"
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' && newLabelName.trim()) {
-                    createNewLabel();
-                  }
-                }}
-              />
-            </div>
-            <div className="grid gap-2">
-              <Label>Color</Label>
-              <div className="flex items-center gap-3">
-                <ColorPicker
-                  value={newLabelColor}
-                  onChange={setNewLabelColor}
-                />
-                <Badge
-                  style={{
-                    backgroundColor: `color-mix(in srgb, ${newLabelColor} 15%, transparent)`,
-                    borderColor: `color-mix(in srgb, ${newLabelColor} 30%, transparent)`,
-                    color: newLabelColor,
-                  }}
-                  className="border"
-                >
-                  {newLabelName.trim() || 'Preview'}
-                </Badge>
-              </div>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setNewLabelDialogOpen(false)}
-              disabled={creatingLabel}
-            >
-              Cancel
-            </Button>
-            <Button
-              type="button"
-              onClick={createNewLabel}
-              disabled={!newLabelName.trim() || creatingLabel}
-            >
-              {creatingLabel ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  Creating...
-                </>
-              ) : (
-                'Create Label'
-              )}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <TaskNewLabelDialog
+        open={dialogState.newLabelDialogOpen}
+        newLabelName={newLabelName}
+        newLabelColor={newLabelColor}
+        creatingLabel={creatingLabel}
+        onNameChange={setNewLabelName}
+        onColorChange={setNewLabelColor}
+        onOpenChange={(open) =>
+          open
+            ? dialogActions.openNewLabelDialog()
+            : dialogActions.closeNewLabelDialog()
+        }
+        onConfirm={createNewLabel}
+      />
 
-      {/* Custom Date Dialog */}
-      <Dialog
-        open={customDateDialogOpen}
-        onOpenChange={setCustomDateDialogOpen}
-      >
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle>Set Custom Due Date</DialogTitle>
-            <DialogDescription>
-              Choose a specific date and time for when this task should be
-              completed.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="space-y-3">
-              <Label className="font-medium text-sm">Due Date & Time</Label>
-              <DateTimePicker
-                date={task.end_date ? new Date(task.end_date) : undefined}
-                setDate={handleCustomDateChange}
-                showTimeSelect={true}
-                minDate={new Date()}
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setCustomDateDialogOpen(false)}
-              disabled={isLoading}
-            >
-              Cancel
-            </Button>
-            {task.end_date && (
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => {
-                  handleDueDateChange(null);
-                  setCustomDateDialogOpen(false);
-                }}
-                disabled={isLoading}
-                className="text-muted-foreground hover:text-foreground"
-              >
-                <X className="h-4 w-4" />
-                Remove Due Date
-              </Button>
-            )}
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <TaskCustomDateDialog
+        open={dialogState.customDateDialogOpen}
+        endDate={task.end_date ?? null}
+        isLoading={isLoading}
+        onOpenChange={(open) =>
+          open
+            ? dialogActions.openCustomDateDialog()
+            : dialogActions.closeCustomDateDialog()
+        }
+        onDateChange={handleCustomDateChange}
+        onClear={() => {
+          handleDueDateChange(null);
+          dialogActions.closeCustomDateDialog();
+        }}
+      />
 
       {!isOverlay && (
         <TaskActions taskId={task.id} boardId={boardId} onUpdate={onUpdate} />
@@ -1460,20 +996,6 @@ export function MeasuredTaskCard({
 interface LightweightTaskCardProps {
   task: Task;
   destination?: Pick<TaskList, 'id' | 'name' | 'status' | 'color'> | null;
-}
-
-function getAssigneeInitials(name?: string | null, email?: string | null) {
-  if (name) {
-    const parts = name.trim().split(/\s+/).filter(Boolean);
-    if (parts.length === 1) return parts?.[0]?.slice(0, 2).toUpperCase();
-    if (parts.length > 1) {
-      return (
-        (parts?.[0]?.[0] || '') + (parts?.[parts.length - 1]?.[0] || '')
-      ).toUpperCase();
-    }
-  }
-  if (email) return email.slice(0, 2).toUpperCase();
-  return '??';
 }
 
 const destinationTone: Record<SupportedColor, string> = {

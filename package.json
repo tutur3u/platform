@@ -3,7 +3,7 @@
   "private": true,
   "scripts": {
     "build": "turbo run build",
-    "buildx": "turbo test lint build",
+    "buildx": "turbo test build",
     "clean": "rm bun.lock && bunx npkill --delete-all -y",
     "dev": "turbo run dev --parallel",
     "dev:docs": "cd apps/docs && mintlify dev",

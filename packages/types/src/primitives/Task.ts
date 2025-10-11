@@ -9,6 +9,7 @@ export interface Task {
   start_date?: string;
   end_date?: string | null;
   archived: boolean;
+  deleted?: boolean;
   created_at: string;
   estimation_points?: number | null;
   sort_key?: number | null;

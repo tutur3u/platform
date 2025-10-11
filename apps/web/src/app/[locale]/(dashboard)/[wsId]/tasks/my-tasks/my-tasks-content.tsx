@@ -9,22 +9,19 @@ import {
   Flag,
   LayoutDashboard,
   ListTodo,
-  Loader2,
   Plus,
   Users,
 } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/client';
+import type { TaskWithRelations } from '@tuturuuu/types/db';
 import type { TaskPriority } from '@tuturuuu/types/primitives/Priority';
-import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
 import { Combobox } from '@tuturuuu/ui/custom/combobox';
-import { DateTimePicker } from '@tuturuuu/ui/date-time-picker';
 import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from '@tuturuuu/ui/dialog';
@@ -39,9 +36,7 @@ import {
 import { toast } from '@tuturuuu/ui/sonner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { TaskBoardForm } from '@tuturuuu/ui/tu-do/boards/form';
-import { TaskEditDialog } from '@tuturuuu/ui/tu-do/shared/task-edit-dialog';
-import { cn } from '@tuturuuu/utils/format';
-import { invalidateTaskCaches } from '@tuturuuu/utils/task-helper';
+import { useTaskDialog } from '@tuturuuu/ui/tu-do/hooks/useTaskDialog';
 import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone';
 import utc from 'dayjs/plugin/utc';
@@ -57,27 +52,6 @@ dayjs.extend(utc);
 dayjs.extend(timezone);
 
 const MAX_LABEL_SUGGESTIONS = 6;
-const MAX_VISIBLE_PREVIEW_LABELS = 3;
-const MAX_VISIBLE_WORKSPACE_LABELS = 12;
-
-const PRIORITY_STYLES: Record<string, string> = {
-  critical: 'border-dynamic-red/40 bg-dynamic-red/10 text-dynamic-red',
-  high: 'border-dynamic-orange/40 bg-dynamic-orange/10 text-dynamic-orange',
-  normal: 'border-dynamic-green/40 bg-dynamic-green/10 text-dynamic-green',
-  low: 'border-dynamic-blue/40 bg-dynamic-blue/10 text-dynamic-blue',
-  none: 'border-dynamic-muted/40 bg-dynamic-muted/10 text-dynamic-muted-foreground',
-};
-
-const LABEL_COLOR_CLASSES: Record<string, string> = {
-  red: 'border-dynamic-red/30 bg-dynamic-red/10 text-dynamic-red',
-  orange: 'border-dynamic-orange/30 bg-dynamic-orange/10 text-dynamic-orange',
-  yellow: 'border-dynamic-yellow/30 bg-dynamic-yellow/10 text-dynamic-yellow',
-  green: 'border-dynamic-green/30 bg-dynamic-green/10 text-dynamic-green',
-  blue: 'border-dynamic-blue/30 bg-dynamic-blue/10 text-dynamic-blue',
-  purple: 'border-dynamic-purple/30 bg-dynamic-purple/10 text-dynamic-purple',
-  pink: 'border-dynamic-pink/30 bg-dynamic-pink/10 text-dynamic-pink',
-  gray: 'border-dynamic-muted/30 bg-dynamic-muted/10 text-dynamic-muted-foreground',
-};
 
 const normalizeLabel = (value: string) => value.trim().toLowerCase();
 
@@ -110,54 +84,6 @@ const parseDueDateToState = (value: string | null | undefined) => {
   return adjustDateToEndOfDay(parsed);
 };
 
-const formatDueDateForPayload = (value: Date | undefined) =>
-  value ? adjustDateToEndOfDay(value).toISOString() : null;
-
-interface Task {
-  id: string;
-  name: string;
-  description?: string | null;
-  priority?: string | null;
-  end_date?: string | null;
-  start_date?: string | null;
-  estimation_points?: number | null;
-  archived?: boolean | null;
-  list_id?: string | null;
-  list: {
-    id: string;
-    name: string | null;
-    status?: string | null;
-    board: {
-      id: string;
-      name: string | null;
-      ws_id: string;
-      estimation_type?: string | null;
-      extended_estimation?: boolean;
-      allow_zero_estimates?: boolean;
-      workspaces: {
-        id: string;
-        name: string | null;
-        personal: boolean | null;
-      } | null;
-    } | null;
-  } | null;
-  assignees: Array<{
-    user: {
-      id: string;
-      display_name: string | null;
-      avatar_url?: string | null;
-    } | null;
-  }> | null;
-  labels?: Array<{
-    label: {
-      id: string;
-      name: string;
-      color: string;
-      created_at: string;
-    } | null;
-  }> | null;
-}
-
 interface JournalTaskResponse {
   tasks?: Array<{
     id: string;
@@ -177,15 +103,6 @@ interface JournalTaskResponse {
 interface ProvidedTaskLabelPayload {
   id?: string;
   name: string;
-}
-
-interface ProvidedTaskPayload {
-  title: string;
-  description: string | null;
-  priority: TaskPriority | null;
-  labelSuggestions?: string[];
-  labels?: ProvidedTaskLabelPayload[];
-  dueDate?: string | null;
 }
 
 interface TaskLabelOption {
@@ -210,9 +127,9 @@ interface WorkspaceLabel {
 interface MyTasksContentProps {
   wsId: string;
   isPersonal: boolean;
-  overdueTasks: Task[] | undefined;
-  todayTasks: Task[] | undefined;
-  upcomingTasks: Task[] | undefined;
+  overdueTasks: TaskWithRelations[] | undefined;
+  todayTasks: TaskWithRelations[] | undefined;
+  upcomingTasks: TaskWithRelations[] | undefined;
   totalActiveTasks: number;
 }
 
@@ -227,9 +144,9 @@ export default function MyTasksContent({
   const t = useTranslations();
   const router = useRouter();
   const queryClient = useQueryClient();
+  const { createTask, onUpdate } = useTaskDialog();
   const [activeTab, setActiveTab] = useState('tasks');
   const [boardSelectorOpen, setBoardSelectorOpen] = useState(false);
-  const [taskCreatorOpen, setTaskCreatorOpen] = useState(false);
   const [selectedWorkspaceId, setSelectedWorkspaceId] = useState<string>(wsId);
   const [selectedBoardId, setSelectedBoardId] = useState<string>('');
   const [selectedListId, setSelectedListId] = useState<string>('');
@@ -273,6 +190,45 @@ export default function MyTasksContent({
       return 'UTC';
     }
   }, []);
+
+  const handleUpdate = useCallback(() => {
+    console.log('🔄 Refreshing My Tasks page...');
+
+    // Invalidate React Query caches for client-side data
+    queryClient.invalidateQueries({ queryKey: ['user-workspaces'] });
+    queryClient.invalidateQueries({ queryKey: ['workspace', wsId] });
+
+    // Use router.push to navigate back and refresh the page
+    // This ensures we're at the correct URL when the refresh happens
+    setTimeout(() => {
+      const currentPath = window.location.pathname;
+      console.log('🔄 Current path:', currentPath);
+
+      // Check if we're on My Tasks page or elsewhere
+      if (currentPath.endsWith('/my-tasks')) {
+        // Already on my-tasks, just refresh
+        console.log('🔄 Refreshing current page...');
+        router.refresh();
+      } else if (
+        currentPath.includes('/tasks/') &&
+        currentPath.match(/\/tasks\/[^/]+$/)
+      ) {
+        // On a task detail page - navigate back to my-tasks
+        console.log('🔄 Navigating back to My Tasks...');
+        router.push(`/${wsId}/tasks/my-tasks`);
+      } else {
+        // Fallback: just refresh
+        console.log('🔄 Fallback refresh...');
+        router.refresh();
+      }
+    }, 150);
+  }, [router, queryClient, wsId]);
+
+  // Connect the centralized task dialog's onUpdate to page refresh
+  useEffect(() => {
+    console.log('✅ Registering My Tasks update callback');
+    onUpdate(handleUpdate);
+  }, [onUpdate, handleUpdate]);
 
   // Fetch user's workspaces (only if in personal workspace)
   const { data: workspacesData } = useQuery({
@@ -324,7 +280,7 @@ export default function MyTasksContent({
       if (error) throw error;
       return data || [];
     },
-    enabled: (boardSelectorOpen || taskCreatorOpen) && !!selectedWorkspaceId,
+    enabled: boardSelectorOpen && !!selectedWorkspaceId,
   });
 
   // Ensure boardsData is always an array
@@ -334,7 +290,7 @@ export default function MyTasksContent({
     : ((boardsDataRaw as any)?.boards ?? []);
 
   // Fetch workspace labels
-  const { data: workspaceLabels = [], isLoading: labelsLoading } = useQuery({
+  const { data: workspaceLabels = [] } = useQuery({
     queryKey: ['workspace', wsId, 'labels'],
     queryFn: async () => {
       const response = await fetch(`/api/v1/workspaces/${wsId}/labels`);
@@ -354,14 +310,6 @@ export default function MyTasksContent({
           )
         : [],
     [workspaceLabels, aiGenerateLabels]
-  );
-
-  const displayedWorkspaceLabels = useMemo(
-    () =>
-      workspaceLabelsExpanded
-        ? sortedLabels
-        : sortedLabels.slice(0, MAX_VISIBLE_WORKSPACE_LABELS),
-    [sortedLabels, workspaceLabelsExpanded]
   );
 
   // Get available lists for selected board
@@ -482,211 +430,6 @@ export default function MyTasksContent({
     },
   });
 
-  // Create task mutation
-  const createTaskMutation = useMutation<
-    JournalTaskResponse,
-    Error,
-    {
-      entry: string;
-      listId: string;
-      generatedWithAI: boolean;
-      tasks: ProvidedTaskPayload[];
-      labelIds: string[];
-      generateDescriptions: boolean;
-      generatePriority: boolean;
-      generateLabels: boolean;
-      clientTimezone: string;
-      clientTimestamp: string;
-    }
-  >({
-    mutationFn: async ({
-      entry: createText,
-      listId,
-      generatedWithAI,
-      tasks,
-      labelIds,
-      generateDescriptions: shouldGenerateDescriptions,
-      generatePriority: shouldGeneratePriority,
-      generateLabels: shouldGenerateLabels,
-      clientTimezone: timezone,
-      clientTimestamp,
-    }) => {
-      const response = await fetch(`/api/v1/workspaces/${wsId}/tasks/journal`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          entry: createText,
-          listId,
-          tasks,
-          generatedWithAI,
-          labelIds,
-          generateDescriptions: shouldGenerateDescriptions,
-          generatePriority: shouldGeneratePriority,
-          generateLabels: shouldGenerateLabels,
-          clientTimezone: timezone,
-          clientTimestamp,
-        }),
-      });
-
-      const payload = await response.json().catch(() => null);
-
-      if (!response.ok) {
-        const message =
-          payload && typeof payload === 'object' && 'error' in payload
-            ? (payload as { error?: string }).error
-            : undefined;
-
-        throw new Error(message || 'Failed to create task');
-      }
-
-      return payload;
-    },
-    onSuccess: (payload, variables) => {
-      const targetBoard = boardsData.find((b: any) =>
-        (b.task_lists as any[])?.some((l: any) => l.id === variables.listId)
-      );
-      const targetList = targetBoard?.task_lists
-        ? (targetBoard.task_lists as any[]).find(
-            (l: any) => l.id === variables.listId
-          )
-        : null;
-      const listName = targetList?.name || 'Unknown List';
-      const createdCount =
-        payload?.metadata?.totalTasks ??
-        payload?.tasks?.length ??
-        variables.tasks.length ??
-        1;
-
-      toast.success(
-        payload?.metadata?.generatedWithAI
-          ? `Successfully created ${createdCount} task${createdCount !== 1 ? 's' : ''} in "${listName}" using AI`
-          : `Successfully created ${createdCount} task${createdCount !== 1 ? 's' : ''} in "${listName}"`
-      );
-
-      clearPreviewArtifacts();
-      setPendingTaskTitle('');
-      setTaskCreatorMode(null);
-
-      if (targetBoard?.id) {
-        invalidateTaskCaches(queryClient, targetBoard.id);
-      }
-      router.refresh();
-    },
-    onError: (mutationError) => {
-      toast.error(mutationError.message || 'Failed to create task');
-    },
-  });
-
-  const handleUpdate = () => {
-    // Trigger refresh of SSR data using Next.js router
-    router.refresh();
-  };
-
-  const clearPreviewArtifacts = () => {
-    setPreviewOpen(false);
-    setLastResult(null);
-    setPreviewEntry(null);
-    setSelectedLabelIds([]);
-    setTaskLabelSelections([]);
-    setTaskDueDates([]);
-    lastInitializedLabelsKey.current = null;
-    lastInitializedDueDatesKey.current = null;
-    setExpandedLabelCards({});
-    setWorkspaceLabelsExpanded(false);
-  };
-
-  const handleCancelPreview = () => {
-    if (createTaskMutation.isPending) return;
-    clearPreviewArtifacts();
-  };
-
-  const toggleLabel = (labelId: string) => {
-    if (!aiGenerateLabels || createTaskMutation.isPending) return;
-    setSelectedLabelIds((prev) =>
-      prev.includes(labelId)
-        ? prev.filter((id) => id !== labelId)
-        : [...prev, labelId]
-    );
-  };
-
-  const toggleTaskLabelSuggestion = (
-    taskIndex: number,
-    optionIndex: number
-  ) => {
-    if (!aiGenerateLabels || createTaskMutation.isPending) return;
-
-    setTaskLabelSelections((prev) => {
-      if (!prev[taskIndex]) {
-        return prev;
-      }
-
-      const next = prev.map((selection, index) => {
-        if (index !== taskIndex) {
-          return selection;
-        }
-
-        return {
-          suggestions: selection.suggestions.map((option, currentIndex) => {
-            if (currentIndex !== optionIndex) {
-              return option;
-            }
-
-            return {
-              ...option,
-              selected: !option.selected,
-            };
-          }),
-        };
-      });
-
-      return next;
-    });
-  };
-
-  const handleDueDateChange = (taskIndex: number, value: Date | undefined) => {
-    if (createTaskMutation.isPending) {
-      return;
-    }
-    setTaskDueDates((prev) => {
-      const next = [...prev];
-      next[taskIndex] = value ? adjustDateToEndOfDay(value) : undefined;
-      return next;
-    });
-  };
-
-  const toggleLabelPreviewExpansion = useCallback((taskIndex: number) => {
-    setExpandedLabelCards((prev) => ({
-      ...prev,
-      [taskIndex]: !prev[taskIndex],
-    }));
-  }, []);
-
-  const toggleWorkspaceLabelsExpansion = useCallback(() => {
-    setWorkspaceLabelsExpanded((prev) => !prev);
-  }, []);
-
-  const getPriorityCopy = (priority: TaskPriority | null | undefined) => {
-    if (!priority) return 'None';
-    return priority.charAt(0).toUpperCase() + priority.slice(1);
-  };
-
-  const priorityBadgeClass = (priority: TaskPriority | null | undefined) => {
-    const key = priority ?? 'none';
-    return PRIORITY_STYLES[key] ?? PRIORITY_STYLES.none;
-  };
-
-  const handleCloseTaskCreator = () => {
-    setTaskCreatorOpen(false);
-    setPendingTaskTitle('');
-    setTaskCreatorMode(null);
-    // Reset selections for next time
-    setSelectedWorkspaceId(wsId);
-    setSelectedBoardId('');
-    setSelectedListId('');
-  };
-
   // Create note mutation (for CommandBar)
   const createNoteMutation = useMutation({
     mutationFn: async (content: string) => {
@@ -725,10 +468,9 @@ export default function MyTasksContent({
       return;
     }
 
-    // Store the title and open task creator
+    // Destination is confirmed, create task directly
     setPendingTaskTitle(title);
-    setTaskCreatorMode('simple');
-    setTaskCreatorOpen(true);
+    createTask(selectedBoardId, selectedListId, availableLists);
   };
 
   const handleGenerateAI = (entry: string) => {
@@ -763,63 +505,6 @@ export default function MyTasksContent({
     });
   };
 
-  const handleConfirmTasks = () => {
-    if (!selectedListId) {
-      toast.error(t('ws-tasks.errors.no_list_selected'));
-      return;
-    }
-
-    const previewTasks = lastResult?.tasks ?? [];
-    if (!previewTasks.length) {
-      toast.error(t('ws-tasks.errors.no_tasks_to_create'));
-      return;
-    }
-
-    const createText = (previewEntry ?? pendingTaskTitle).trim();
-    if (!createText) {
-      toast.error(t('ws-tasks.errors.missing_task_description'));
-      return;
-    }
-
-    const tasksPayload = previewTasks.map((task, index) => {
-      const selections = aiGenerateLabels
-        ? (taskLabelSelections[index]?.suggestions.filter(
-            (option) => option.selected
-          ) ?? [])
-        : [];
-
-      return {
-        title: task.name,
-        description: aiGenerateDescriptions ? task.description : null,
-        priority: aiGeneratePriority ? task.priority : null,
-        labels: selections.map((option) => ({
-          id: option.id ?? undefined,
-          name: option.name,
-        })),
-        dueDate: formatDueDateForPayload(taskDueDates[index]),
-      } satisfies ProvidedTaskPayload;
-    });
-
-    let timestampMoment = dayjs().tz(clientTimezone);
-    if (!timestampMoment.isValid()) {
-      timestampMoment = dayjs();
-    }
-    const clientTimestamp = timestampMoment.toISOString();
-
-    createTaskMutation.mutate({
-      entry: createText,
-      listId: selectedListId,
-      generatedWithAI: Boolean(lastResult?.metadata?.generatedWithAI),
-      tasks: tasksPayload,
-      labelIds: selectedLabelIds,
-      generateDescriptions: aiGenerateDescriptions,
-      generatePriority: aiGeneratePriority,
-      generateLabels: aiGenerateLabels,
-      clientTimezone,
-      clientTimestamp,
-    });
-  };
-
   const handleBoardSelectorConfirm = () => {
     setBoardSelectorOpen(false);
 
@@ -827,8 +512,8 @@ export default function MyTasksContent({
       // Generate AI preview
       handleGenerateAI(pendingTaskTitle);
     } else if (pendingTaskTitle && taskCreatorMode === 'simple') {
-      // Open simple task creator
-      setTaskCreatorOpen(true);
+      // Open simple task creator with centralized dialog
+      createTask(selectedBoardId, selectedListId, availableLists);
     }
   };
 
@@ -966,6 +651,8 @@ export default function MyTasksContent({
     previewEntry,
     pendingTaskTitle,
     sortedLabels,
+    expandedLabelCards,
+    taskLabelSelections.length,
   ]);
 
   // Initialize task due dates when preview opens
@@ -988,7 +675,7 @@ export default function MyTasksContent({
       previewTasks.map((task) => parseDueDateToState(task.dueDate ?? null))
     );
     lastInitializedDueDatesKey.current = previewKey;
-  }, [lastResult, previewEntry, pendingTaskTitle]);
+  }, [lastResult, previewEntry, pendingTaskTitle, taskDueDates.length]);
 
   // Reset labels when aiGenerateLabels is disabled
   useEffect(() => {
@@ -1007,13 +694,13 @@ export default function MyTasksContent({
       }
       lastInitializedLabelsKey.current = null;
     }
-  }, [aiGenerateLabels]);
-
-  const previewTasks = lastResult?.tasks ?? [];
-  const generatedWithAI = Boolean(lastResult?.metadata?.generatedWithAI);
-  const isCreating = createTaskMutation.isPending;
-  const disableConfirm =
-    isCreating || !selectedListId || previewTasks.length === 0;
+  }, [
+    aiGenerateLabels,
+    expandedLabelCards,
+    selectedLabelIds.length,
+    taskLabelSelections.length,
+    workspaceLabelsExpanded,
+  ]);
 
   return (
     <div className="space-y-6">
@@ -1068,7 +755,7 @@ export default function MyTasksContent({
               </CardHeader>
               <CardContent className="p-6">
                 <TaskListWithCompletion
-                  tasks={overdueTasks as any}
+                  tasks={overdueTasks}
                   isPersonal={isPersonal}
                   initialLimit={5}
                   onTaskUpdate={handleUpdate}
@@ -1088,7 +775,7 @@ export default function MyTasksContent({
               </CardHeader>
               <CardContent className="p-6">
                 <TaskListWithCompletion
-                  tasks={todayTasks as any}
+                  tasks={todayTasks}
                   isPersonal={isPersonal}
                   initialLimit={5}
                   onTaskUpdate={handleUpdate}
@@ -1108,7 +795,7 @@ export default function MyTasksContent({
               </CardHeader>
               <CardContent className="p-6">
                 <TaskListWithCompletion
-                  tasks={upcomingTasks as any}
+                  tasks={upcomingTasks}
                   isPersonal={isPersonal}
                   initialLimit={5}
                   onTaskUpdate={handleUpdate}
@@ -1296,316 +983,6 @@ export default function MyTasksContent({
               });
             }}
           />
-        </DialogContent>
-      </Dialog>
-
-      {/* Task Creation - Simple Mode */}
-      {selectedBoardId &&
-        selectedListId &&
-        taskCreatorOpen &&
-        taskCreatorMode === 'simple' && (
-          <TaskEditDialog
-            task={
-              {
-                id: 'new',
-                name: pendingTaskTitle || '',
-                description: '',
-                priority: null,
-                start_date: null,
-                end_date: null,
-                estimation_points: null,
-                list_id: selectedListId,
-                labels: [],
-                archived: false,
-                assignees: [],
-                projects: [],
-              } as any
-            }
-            boardId={selectedBoardId}
-            isOpen={taskCreatorOpen}
-            onClose={handleCloseTaskCreator}
-            onUpdate={handleUpdate}
-            mode="create"
-          />
-        )}
-
-      {/* AI Preview Dialog */}
-      <Dialog
-        open={isPreviewOpen}
-        onOpenChange={(open) => {
-          if (!open) {
-            handleCancelPreview();
-          }
-        }}
-      >
-        <DialogContent className="max-h-[85vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>
-              Review Generated {previewTasks.length} Task
-              {previewTasks.length !== 1 ? 's' : ''}
-            </DialogTitle>
-            <DialogDescription>
-              {selectedListId
-                ? (() => {
-                    const board = boardsData.find((b: any) =>
-                      (b.task_lists as any[])?.some(
-                        (l: any) => l.id === selectedListId
-                      )
-                    );
-                    const lists = (board?.task_lists as any[]) || [];
-                    const list = lists.find(
-                      (l: any) => l.id === selectedListId
-                    );
-                    const listName = list?.name || 'Unknown List';
-                    return `Tasks will be created in "${listName}"`;
-                  })()
-                : 'Select a list to continue'}
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="space-y-4 py-2">
-            {/* Workspace Labels */}
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label className="font-medium text-sm">Workspace Labels</Label>
-                <span className="text-muted-foreground text-xs">
-                  Apply to all tasks
-                </span>
-              </div>
-
-              {!aiGenerateLabels ? (
-                <p className="rounded-lg border border-dynamic-muted/30 bg-dynamic-muted/10 p-3 text-muted-foreground text-xs">
-                  Label generation is disabled
-                </p>
-              ) : labelsLoading ? (
-                <div className="flex items-center gap-2 rounded-lg border border-dynamic-blue/30 bg-dynamic-blue/10 px-3 py-2 text-dynamic-blue text-xs">
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  <span>Loading labels...</span>
-                </div>
-              ) : sortedLabels.length ? (
-                <>
-                  <div className="flex flex-wrap gap-2">
-                    {displayedWorkspaceLabels.map((label) => {
-                      const selected = selectedLabelIds.includes(label.id);
-                      const colorClass =
-                        LABEL_COLOR_CLASSES[label.color] ||
-                        LABEL_COLOR_CLASSES.gray;
-
-                      return (
-                        <button
-                          key={label.id}
-                          type="button"
-                          onClick={() => toggleLabel(label.id)}
-                          className={`rounded-full border px-3 py-1 font-medium text-xs transition ${colorClass} ${
-                            selected ? 'ring-2 ring-dynamic-blue' : ''
-                          }`}
-                        >
-                          {label.name}
-                        </button>
-                      );
-                    })}
-                  </div>
-                  {sortedLabels.length > MAX_VISIBLE_WORKSPACE_LABELS ? (
-                    <button
-                      type="button"
-                      onClick={toggleWorkspaceLabelsExpansion}
-                      className="mt-2 font-medium text-dynamic-blue text-xs hover:underline"
-                      disabled={isCreating}
-                    >
-                      {workspaceLabelsExpanded
-                        ? 'Show less'
-                        : `Show ${sortedLabels.length - MAX_VISIBLE_WORKSPACE_LABELS} more`}
-                    </button>
-                  ) : null}
-                </>
-              ) : (
-                <p className="rounded-lg border border-dynamic-muted/30 bg-dynamic-muted/10 p-3 text-muted-foreground text-xs">
-                  No workspace labels available
-                </p>
-              )}
-            </div>
-
-            {/* Preview Tasks */}
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <p className="font-semibold text-foreground text-sm">
-                  {generatedWithAI
-                    ? `AI-Generated Tasks (${previewTasks.length})`
-                    : `Manual Tasks (${previewTasks.length})`}
-                </p>
-                <Badge
-                  variant="outline"
-                  className="border-dynamic-blue/40 bg-transparent text-foreground text-xs"
-                >
-                  {previewTasks.length} task
-                  {previewTasks.length !== 1 ? 's' : ''}
-                </Badge>
-              </div>
-
-              <div className="space-y-3">
-                {previewTasks.map((task, index) => {
-                  const selection = taskLabelSelections[index];
-                  const suggestions = aiGenerateLabels
-                    ? (selection?.suggestions ?? [])
-                    : [];
-                  const hasNewSelections = suggestions.some(
-                    (option) => option.isNew && option.selected
-                  );
-                  const dueDateValue = taskDueDates[index];
-
-                  return (
-                    <div
-                      key={task.id ?? `${task.name}-${index}`}
-                      className="rounded-md border border-dynamic-surface/30 bg-background/80 p-3"
-                    >
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="space-y-1">
-                          <p className="font-medium text-foreground text-sm">
-                            {index + 1}. {task.name}
-                          </p>
-                          <p className="font-medium text-muted-foreground text-xs">
-                            Description
-                          </p>
-                          {aiGenerateDescriptions ? (
-                            <p className="text-foreground text-sm leading-relaxed opacity-90">
-                              {task.description || 'No description'}
-                            </p>
-                          ) : (
-                            <p className="text-muted-foreground text-sm italic">
-                              Description generation disabled
-                            </p>
-                          )}
-                        </div>
-                        {aiGeneratePriority ? (
-                          <Badge
-                            variant="outline"
-                            className={priorityBadgeClass(task.priority)}
-                          >
-                            {getPriorityCopy(task.priority)}
-                          </Badge>
-                        ) : (
-                          <span className="text-muted-foreground text-xs italic">
-                            Priority disabled
-                          </span>
-                        )}
-                      </div>
-
-                      <div className="mt-3 space-y-1">
-                        <p className="text-muted-foreground text-xs uppercase tracking-wide">
-                          Due Date
-                        </p>
-                        <DateTimePicker
-                          date={dueDateValue}
-                          setDate={(date) => handleDueDateChange(index, date)}
-                          showTimeSelect
-                          disabled={isCreating}
-                        />
-                        {!dueDateValue ? (
-                          <p className="text-muted-foreground text-xs">
-                            No due date set
-                          </p>
-                        ) : null}
-                      </div>
-
-                      {aiGenerateLabels ? (
-                        <div className="mt-3 space-y-1">
-                          <p className="text-muted-foreground text-xs uppercase tracking-wide">
-                            Task Labels
-                          </p>
-                          <div className="flex flex-wrap gap-2">
-                            {suggestions.length ? (
-                              suggestions.map((option, optionIndex) => {
-                                if (
-                                  !expandedLabelCards[index] &&
-                                  optionIndex >= MAX_VISIBLE_PREVIEW_LABELS
-                                ) {
-                                  return null;
-                                }
-                                return (
-                                  <button
-                                    key={`${task.id ?? `${task.name}-${option.name}`}-${optionIndex}`}
-                                    type="button"
-                                    onClick={() =>
-                                      toggleTaskLabelSuggestion(
-                                        index,
-                                        optionIndex
-                                      )
-                                    }
-                                    className={cn(
-                                      'rounded-full border px-3 py-1 font-medium text-xs transition',
-                                      option.selected
-                                        ? 'border-dynamic-purple/60 bg-dynamic-purple/15 text-dynamic-purple'
-                                        : 'border-dynamic-muted/40 text-muted-foreground'
-                                    )}
-                                  >
-                                    {option.displayName}
-                                    {option.isNew ? (
-                                      <span className="ml-2 text-[0.625rem] text-dynamic-purple uppercase tracking-wide">
-                                        NEW
-                                      </span>
-                                    ) : null}
-                                  </button>
-                                );
-                              })
-                            ) : (
-                              <span className="text-muted-foreground text-xs italic">
-                                No label suggestions
-                              </span>
-                            )}
-                          </div>
-                          {suggestions.length > MAX_VISIBLE_PREVIEW_LABELS ? (
-                            <button
-                              type="button"
-                              onClick={() => toggleLabelPreviewExpansion(index)}
-                              className="font-medium text-dynamic-blue text-xs hover:underline"
-                              disabled={isCreating}
-                            >
-                              {expandedLabelCards[index]
-                                ? 'Show less'
-                                : `Show ${suggestions.length - MAX_VISIBLE_PREVIEW_LABELS} more`}
-                            </button>
-                          ) : null}
-                          {hasNewSelections ? (
-                            <p className="text-muted-foreground text-xs">
-                              New labels will be created automatically
-                            </p>
-                          ) : null}
-                        </div>
-                      ) : null}
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
-
-          <DialogFooter className="gap-2">
-            <Button
-              type="button"
-              variant="ghost"
-              onClick={handleCancelPreview}
-              disabled={isCreating}
-            >
-              {t('dashboard.quick_journal.cancel_preview')}
-            </Button>
-            <Button
-              type="button"
-              onClick={handleConfirmTasks}
-              disabled={disableConfirm}
-            >
-              {isCreating ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin text-dynamic-blue" />
-                  {t('dashboard.quick_journal.confirm_pending')}
-                </>
-              ) : (
-                <>
-                  <Plus className="mr-2 h-4 w-4" />
-                  {t('dashboard.quick_journal.confirm_button')}
-                </>
-              )}
-            </Button>
-          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
