@@ -1,0 +1,24 @@
+{
+  "name": "@tuturuuu/icons",
+  "version": "0.0.4",
+  "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "ui": "bunx shadcn-ui@latest",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@lucide/lab": "^0.1.2",
+    "lucide-react": "^0.545.0"
+  },
+  "devDependencies": {
+    "@tuturuuu/typescript-config": "workspace:*"
+  },
+  "exports": {
+    ".": "./src/icons.tsx"
+  },
+  "packageManager": "bun@1.3.0"
+}
