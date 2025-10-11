@@ -5,7 +5,10 @@ import type {
 } from '@tuturuuu/types/db';
 import type { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
 import type { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
-import { createAllDayEvent, isAllDayEvent } from '@tuturuuu/utils/calendar-utils';
+import {
+  createAllDayEvent,
+  isAllDayEvent,
+} from '@tuturuuu/utils/calendar-utils';
 import dayjs from 'dayjs';
 import moment from 'moment';
 import { toast } from '../components/ui/sonner';
