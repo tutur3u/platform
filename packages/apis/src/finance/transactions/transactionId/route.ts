@@ -53,11 +53,9 @@ export async function GET(_: Request, { params }: Params) {
 }
 
 export async function PUT(req: Request, { params }: Params) {
-
   const { transactionId, wsId } = await params;
 
   const parsed = TransactionUpdateSchema.safeParse(await req.json());
- 
 
   const normalizedId = transactionId;
 
@@ -83,7 +81,6 @@ export async function PUT(req: Request, { params }: Params) {
 
   const supabase = await createClient();
 
-
   const newData = {
     ...data,
     wallet_id: data.origin_wallet_id,
@@ -93,7 +90,7 @@ export async function PUT(req: Request, { params }: Params) {
   const tagIds = newData.tag_ids;
   delete newData.tag_ids;
 
-// (Optional) Verify new wallet is within wsId if being changed
+  // (Optional) Verify new wallet is within wsId if being changed
   if (newData.wallet_id) {
     const { data: walletCheck } = await supabase
       .from('workspace_wallets')
@@ -115,13 +112,12 @@ export async function PUT(req: Request, { params }: Params) {
       taken_at:
         typeof newData.taken_at === 'string'
           ? new Date(newData.taken_at).toISOString()
-          : (newData.taken_at instanceof Date
-              ? newData.taken_at.toISOString()
-              : newData.taken_at),
-      report_opt_in: newData.report_opt_in || false
+          : newData.taken_at instanceof Date
+            ? newData.taken_at.toISOString()
+            : newData.taken_at,
+      report_opt_in: newData.report_opt_in || false,
     })
     .eq('id', normalizedId);
-
 
   if (error) {
     console.log(error);
@@ -183,7 +179,10 @@ export async function DELETE(_: Request, { params }: Params) {
     .single();
 
   if (fetchError || !transaction) {
-    return NextResponse.json({ message: 'Transaction not found' }, { status: 404 });
+    return NextResponse.json(
+      { message: 'Transaction not found' },
+      { status: 404 }
+    );
   }
 
   const { data: wallet, error: walletError } = await supabase
@@ -193,7 +192,10 @@ export async function DELETE(_: Request, { params }: Params) {
     .single();
 
   if (walletError || !wallet || wallet.ws_id !== wsId) {
-    return NextResponse.json({ message: 'Transaction not found in workspace' }, { status: 404 });
+    return NextResponse.json(
+      { message: 'Transaction not found in workspace' },
+      { status: 404 }
+    );
   }
 
   const { error } = await supabase

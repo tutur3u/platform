@@ -373,7 +373,8 @@ export function SubscriptionInvoice({
     fallbackToastShownRef.current = false;
 
     // Use prefillAmount if provided AND not yet used, otherwise calculate from attendance
-    const shouldUsePrefill = prefillAmount !== undefined && !initialPrefillUsedRef.current;
+    const shouldUsePrefill =
+      prefillAmount !== undefined && !initialPrefillUsedRef.current;
     const attendanceDays = shouldUsePrefill
       ? prefillAmount
       : getEffectiveAttendanceDays(userAttendance);
@@ -401,7 +402,14 @@ export function SubscriptionInvoice({
       );
       fallbackToastShownRef.current = true;
     }
-  }, [selectedGroupId, prefillAmount, userAttendance, groupProducts, products, t]);
+  }, [
+    selectedGroupId,
+    prefillAmount,
+    userAttendance,
+    groupProducts,
+    products,
+    t,
+  ]);
 
   // Auto-add group products based on attendance when group is selected
   useEffect(() => {
@@ -415,11 +423,12 @@ export function SubscriptionInvoice({
     }
 
     // Use prefillAmount if provided AND already used (for updates), otherwise calculate from attendance
-    const shouldUsePrefill = prefillAmount !== undefined && initialPrefillUsedRef.current;
+    const shouldUsePrefill =
+      prefillAmount !== undefined && initialPrefillUsedRef.current;
     const attendanceDays = shouldUsePrefill
       ? prefillAmount
       : getEffectiveAttendanceDays(userAttendance);
-    
+
     if (attendanceDays === 0) return;
 
     const { autoSelected, fallbackTriggered } =
@@ -482,7 +491,14 @@ export function SubscriptionInvoice({
       );
       fallbackToastShownRef.current = true;
     }
-  }, [selectedGroupId, userAttendance?.length, prefillAmount, groupProducts, products, t]);
+  }, [
+    selectedGroupId,
+    userAttendance?.length,
+    prefillAmount,
+    groupProducts,
+    products,
+    t,
+  ]);
 
   // Calculate totals for manual product selection
   const subscriptionSubtotal = useMemo(() => {
@@ -666,7 +682,7 @@ export function SubscriptionInvoice({
     setSelectedWalletId('');
     setSelectedPromotionId('none');
     setSelectedCategoryId('');
-    
+
     // Reset prefill tracking when user manually changes
     initialPrefillUsedRef.current = false;
 
