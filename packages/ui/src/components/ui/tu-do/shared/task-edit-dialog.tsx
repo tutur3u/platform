@@ -3,6 +3,7 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type { Editor, JSONContent } from '@tiptap/react';
 import {
+  AlertTriangle,
   Box,
   Calendar,
   Check,
@@ -2856,6 +2857,7 @@ function TaskEditDialogComponent({
                           showTimeSelect={true}
                           allowClear={true}
                           showFooterControls={true}
+                          maxDate={endDate}
                         />
                       </div>
 
@@ -2871,7 +2873,18 @@ function TaskEditDialogComponent({
                           showTimeSelect={true}
                           allowClear={true}
                           showFooterControls={true}
+                          minDate={startDate}
                         />
+
+                        {/* Date Range Warning */}
+                        {startDate && endDate && startDate > endDate && (
+                          <div className="flex items-center gap-2 rounded-md border border-dynamic-orange/30 bg-dynamic-orange/10 px-3 py-2 text-xs">
+                            <AlertTriangle className="h-3.5 w-3.5 flex-shrink-0 text-dynamic-orange" />
+                            <span className="text-dynamic-orange">
+                              Start date is after due date
+                            </span>
+                          </div>
+                        )}
 
                         {/* Quick Due Date Actions */}
                         <div className="space-y-1.5 pt-2">
