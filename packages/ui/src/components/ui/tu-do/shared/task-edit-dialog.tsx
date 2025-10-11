@@ -25,6 +25,7 @@ import {
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
 import { useToast } from '@tuturuuu/ui/hooks/use-toast';
+import { useYjsCollaboration } from '@tuturuuu/ui/hooks/use-yjs-collaboration';
 import {
   Box,
   Calendar,
@@ -60,7 +61,6 @@ import {
 import dayjs from 'dayjs';
 import { usePathname } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useYjsCollaboration } from '../../text-editor/collaboration/use-yjs-collaboration';
 import { CursorOverlayWrapper } from './cursor-overlay';
 import { CustomDatePickerDialog } from './custom-date-picker/custom-date-picker-dialog';
 import {

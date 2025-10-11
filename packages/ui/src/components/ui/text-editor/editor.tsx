@@ -6,12 +6,12 @@ import {
   type JSONContent,
   useEditor,
 } from '@tiptap/react';
+import type SupabaseProvider from '@tuturuuu/ui/hooks/supabase-provider';
 import { toast } from '@tuturuuu/ui/sonner';
 import { debounce } from 'lodash';
 import { TextSelection } from 'prosemirror-state';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type * as Y from 'yjs';
-import type SupabaseProvider from './collaboration/supabase-provider';
 import { getEditorExtensions } from './extensions';
 import { ToolBar } from './tool-bar';
 
@@ -217,12 +217,6 @@ export function RichTextEditor({
   }, [className]);
 
   const editor = useEditor({
-    onCreate: ({ editor }) => {
-      if (externalEditorRef) {
-        externalEditorRef.current = editor;
-      }
-      onEditorReady?.(editor);
-    },
     extensions: getEditorExtensions({
       titlePlaceholder,
       writePlaceholder,
@@ -458,6 +452,12 @@ export function RichTextEditor({
         }
         return false;
       },
+    },
+    onCreate: ({ editor }) => {
+      if (externalEditorRef) {
+        externalEditorRef.current = editor;
+      }
+      onEditorReady?.(editor);
     },
     onUpdate: ({ editor }) => {
       if (!readOnly) {

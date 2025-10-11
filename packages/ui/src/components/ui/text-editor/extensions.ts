@@ -16,9 +16,9 @@ import TextAlign from '@tiptap/extension-text-align';
 import Youtube from '@tiptap/extension-youtube';
 import type { Extensions } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
+import type SupabaseProvider from '@tuturuuu/ui/hooks/supabase-provider';
 import ImageResize from 'tiptap-extension-resize-image';
 import type * as Y from 'yjs';
-import type SupabaseProvider from './collaboration/supabase-provider';
 import { Mention } from './mention-extension';
 import { Video } from './video-extension';
 

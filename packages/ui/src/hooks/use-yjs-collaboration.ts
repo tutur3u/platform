@@ -1,8 +1,8 @@
 import { createClient } from '@tuturuuu/supabase/next/client';
+import SupabaseProvider from '@tuturuuu/ui/hooks/supabase-provider';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Awareness } from 'y-protocols/awareness';
 import * as Y from 'yjs';
-import SupabaseProvider from './supabase-provider';
 
 export interface CollaborationUser {
   id: string;
