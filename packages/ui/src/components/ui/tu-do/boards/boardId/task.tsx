@@ -953,6 +953,12 @@ export function MeasuredTaskCard({
   optimisticUpdateInProgress,
 }: MeasuredTaskCardProps) {
   const ref = useRef<HTMLDivElement | null>(null);
+  const onHeightRef = useRef(onHeight);
+
+  // Keep the ref updated with the latest callback
+  useEffect(() => {
+    onHeightRef.current = onHeight;
+  }, [onHeight]);
 
   useEffect(() => {
     if (!ref.current) return;
@@ -962,19 +968,19 @@ export function MeasuredTaskCard({
     if (!card) return;
 
     // Initial measure - use the card's actual height without gaps
-    onHeight(card.getBoundingClientRect().height);
+    onHeightRef.current(card.getBoundingClientRect().height);
 
     // Resize observer for dynamic height changes (e.g., label changes)
     const ro = new ResizeObserver((entries) => {
       for (const entry of entries) {
         if (entry.target === card) {
-          onHeight(entry.contentRect.height);
+          onHeightRef.current(entry.contentRect.height);
         }
       }
     });
     ro.observe(card);
     return () => ro.disconnect();
-  }, [onHeight]);
+  }, []); // Empty deps - only run once on mount
 
   return (
     <div ref={ref} data-id={task.id}>

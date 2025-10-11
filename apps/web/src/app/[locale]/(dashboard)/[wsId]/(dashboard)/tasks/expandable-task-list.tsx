@@ -1,8 +1,5 @@
 'use client';
 
-import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
-import { Badge } from '@tuturuuu/ui/badge';
-import { Button } from '@tuturuuu/ui/button';
 import {
   AlertCircle,
   Calendar,
@@ -11,6 +8,9 @@ import {
   Clock,
   UserRound,
 } from '@tuturuuu/icons';
+import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
+import { Badge } from '@tuturuuu/ui/badge';
+import { Button } from '@tuturuuu/ui/button';
 import { useTaskDialog } from '@tuturuuu/ui/tu-do/hooks/useTaskDialog';
 import { TaskEstimationDisplay } from '@tuturuuu/ui/tu-do/shared/task-estimation-display';
 import { TaskLabelsDisplay } from '@tuturuuu/ui/tu-do/shared/task-labels-display';
@@ -339,7 +339,9 @@ export default function ExpandableTaskList({
                   {/* Labels */}
                   {task.labels && task.labels.length > 0 && (
                     <>
-                      <div className="h-5 w-[1px] bg-border" />
+                      {task.assignees && task.assignees.length > 0 && (
+                        <div className="h-5 w-[1px] bg-border" />
+                      )}
                       <TaskLabelsDisplay
                         labels={task.labels
                           .map((tl) => tl.label)
@@ -357,7 +359,9 @@ export default function ExpandableTaskList({
                   {task.estimation_points !== null &&
                     task.estimation_points !== undefined && (
                       <>
-                        <div className="h-5 w-[1px] bg-border" />
+                        {task.labels && task.labels.length > 0 && (
+                          <div className="h-5 w-[1px] bg-border" />
+                        )}
                         <TaskEstimationDisplay
                           points={task.estimation_points}
                           size="sm"

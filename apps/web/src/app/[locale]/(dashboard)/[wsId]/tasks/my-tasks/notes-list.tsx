@@ -1,6 +1,7 @@
 'use client';
 
 import { useMutation, useQuery } from '@tanstack/react-query';
+import type { JSONContent } from '@tiptap/react';
 import {
   Archive,
   CheckCircle,
@@ -37,6 +38,7 @@ import {
   SelectValue,
 } from '@tuturuuu/ui/select';
 import { toast } from '@tuturuuu/ui/sonner';
+import { RichTextEditor } from '@tuturuuu/ui/text-editor/editor';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
@@ -48,7 +50,7 @@ interface NotesListProps {
 
 interface Note {
   id: string;
-  content: string;
+  content: JSONContent;
   created_at: string;
   updated_at: string;
   archived: boolean;
@@ -82,6 +84,19 @@ interface ConversionResponse {
 
 const COMPLETED_STATUSES = new Set(['done', 'closed']);
 
+// Helper function to extract plain text from JSONContent
+const extractTextFromContent = (content: JSONContent): string => {
+  if (!content) return '';
+
+  if (content.text) return content.text;
+
+  if (content.content && Array.isArray(content.content)) {
+    return content.content.map(extractTextFromContent).join(' ');
+  }
+
+  return '';
+};
+
 function NotesListContent({ wsId }: { wsId: string }) {
   const t = useTranslations('dashboard.bucket_dump');
 
@@ -89,7 +104,7 @@ function NotesListContent({ wsId }: { wsId: string }) {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [selectedNote, setSelectedNote] = useState<Note | null>(null);
   const [editingNote, setEditingNote] = useState<Note | null>(null);
-  const [editContent, setEditContent] = useState('');
+  const [editContent, setEditContent] = useState<JSONContent | null>(null);
   const [conversionType, setConversionType] = useState<'task' | 'project'>(
     'task'
   );
@@ -126,7 +141,16 @@ function NotesListContent({ wsId }: { wsId: string }) {
         throw new Error(t('errors.fetch_notes'));
       }
 
-      return (await response.json()) as Note[];
+      const notes = (await response.json()) as Note[];
+
+      // Parse content if it's a string (safeguard for JSONB serialization issues)
+      return notes.map((note) => ({
+        ...note,
+        content:
+          typeof note.content === 'string'
+            ? JSON.parse(note.content)
+            : note.content,
+      }));
     },
     enabled: Boolean(wsId),
     staleTime: 30_000,
@@ -188,7 +212,7 @@ function NotesListContent({ wsId }: { wsId: string }) {
       content,
     }: {
       noteId: string;
-      content: string;
+      content: JSONContent;
     }) => {
       const response = await fetch(
         `/api/v1/workspaces/${wsId}/notes/${noteId}`,
@@ -211,7 +235,7 @@ function NotesListContent({ wsId }: { wsId: string }) {
       toast.success(t('success.note_updated'));
       setIsEditDialogOpen(false);
       setEditingNote(null);
-      setEditContent('');
+      setEditContent(null);
       refetchNotes();
     },
     onError: (error: Error) => {
@@ -299,26 +323,32 @@ function NotesListContent({ wsId }: { wsId: string }) {
 
   const handleEditNote = (note: Note) => {
     setEditingNote(note);
-    setEditContent(note.content);
+    // Parse content if it's a string (safeguard for JSONB serialization issues)
+    const parsedContent =
+      typeof note.content === 'string'
+        ? JSON.parse(note.content)
+        : note.content;
+    setEditContent(parsedContent);
     setIsEditDialogOpen(true);
   };
 
   const handleUpdateNote = () => {
-    if (!editingNote || !editContent.trim()) {
+    if (!editingNote || !editContent) {
       toast.error(t('errors.empty_note'));
       return;
     }
 
     updateNoteMutation.mutate({
       noteId: editingNote.id,
-      content: editContent.trim(),
+      content: editContent,
     });
   };
 
   const handleConvertNote = (note: Note) => {
+    const plainText = extractTextFromContent(note.content);
     setSelectedNote(note);
-    setProjectName(note.content.slice(0, 100)); // Use first 100 chars as default name
-    setProjectDescription(note.content);
+    setProjectName(plainText.slice(0, 100)); // Use first 100 chars as default name
+    setProjectDescription(plainText);
     setIsConversionDialogOpen(true);
   };
 
@@ -451,7 +481,7 @@ function NotesListContent({ wsId }: { wsId: string }) {
                             : 'text-foreground'
                         }`}
                       >
-                        {note.content}
+                        {extractTextFromContent(note.content)}
                       </p>
                       <div className="flex items-center gap-2">
                         <p className="text-muted-foreground text-xs">
@@ -534,11 +564,11 @@ function NotesListContent({ wsId }: { wsId: string }) {
           if (!open) {
             setIsEditDialogOpen(false);
             setEditingNote(null);
-            setEditContent('');
+            setEditContent(null);
           }
         }}
       >
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-h-[80vh] max-w-4xl">
           <DialogHeader>
             <DialogTitle>{t('edit_dialog.title')}</DialogTitle>
             <DialogDescription>
@@ -546,13 +576,14 @@ function NotesListContent({ wsId }: { wsId: string }) {
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-4">
-            <Textarea
-              value={editContent}
-              onChange={(e) => setEditContent(e.target.value)}
-              placeholder={t('edit_dialog.content_placeholder')}
-              className="min-h-[150px]"
-              disabled={isUpdating}
+          <div className="space-y-4 overflow-y-auto">
+            <RichTextEditor
+              content={editContent}
+              onChange={setEditContent}
+              writePlaceholder={t('edit_dialog.content_placeholder')}
+              titlePlaceholder=""
+              className="min-h-[400px]"
+              readOnly={isUpdating}
             />
           </div>
 
@@ -566,7 +597,7 @@ function NotesListContent({ wsId }: { wsId: string }) {
             </Button>
             <Button
               onClick={handleUpdateNote}
-              disabled={isUpdating || !editContent.trim()}
+              disabled={isUpdating || !editContent}
             >
               {isUpdating ? (
                 <>

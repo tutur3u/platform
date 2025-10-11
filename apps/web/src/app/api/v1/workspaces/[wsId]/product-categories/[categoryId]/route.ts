@@ -1,16 +1,26 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
+import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 
 interface Params {
   params: Promise<{
     categoryId: string;
+    wsId: string;
   }>;
 }
 
 export async function PUT(req: Request, { params }: Params) {
   const supabase = await createClient();
   const data = await req.json();
-  const { categoryId: id } = await params;
+  const { categoryId: id, wsId } = await params;
+
+  const { containsPermission } = await getPermissions({ wsId });
+  if (!containsPermission('update_inventory')) {
+    return NextResponse.json(
+      { message: 'Insufficient permissions to update inventory' },
+      { status: 403 }
+    );
+  }
 
   const { error } = await supabase
     .from('product_categories')
@@ -30,7 +40,15 @@ export async function PUT(req: Request, { params }: Params) {
 
 export async function DELETE(_: Request, { params }: Params) {
   const supabase = await createClient();
-  const { categoryId: id } = await params;
+  const { categoryId: id, wsId } = await params;
+
+  const { containsPermission } = await getPermissions({ wsId });
+  if (!containsPermission('delete_inventory')) {
+    return NextResponse.json(
+      { message: 'Insufficient permissions to delete inventory' },
+      { status: 403 }
+    );
+  }
 
   const { error } = await supabase
     .from('product_categories')

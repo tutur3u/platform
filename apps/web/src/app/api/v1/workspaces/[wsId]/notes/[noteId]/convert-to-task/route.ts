@@ -1,4 +1,5 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
+import { getDescriptionText } from '@tuturuuu/utils/text-helper';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
@@ -95,8 +96,11 @@ export async function POST(
     const { data: task, error: taskError } = await supabase
       .from('tasks')
       .insert({
-        name: note.content.slice(0, 255), // Truncate to fit task name field
-        description: note.content.length > 255 ? note.content : null,
+        name: getDescriptionText(note.content).slice(0, 255) || 'Untitled Task',
+        description:
+          (getDescriptionText(note.content).length || 0) > 255
+            ? getDescriptionText(note.content)
+            : null,
         list_id: listId,
         creator_id: user.id,
       })

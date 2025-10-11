@@ -69,6 +69,7 @@ export default function EditableReportPreview({
   managerOptions,
   selectedManagerName,
   onChangeManagerAction,
+  canCheckUserAttendance,
 }: {
   wsId: string;
   report: Partial<WorkspaceUserReport> & {
@@ -91,6 +92,7 @@ export default function EditableReportPreview({
   managerOptions?: Array<{ value: string; label: string }>;
   selectedManagerName?: string;
   onChangeManagerAction?: (name?: string) => void;
+  canCheckUserAttendance?: boolean;
 }) {
   const locale = useLocale();
   const t = useTranslations();
@@ -896,7 +898,7 @@ export default function EditableReportPreview({
           </pre>
         </div> */}
 
-        {report.user_id && (
+        {report.user_id && canCheckUserAttendance && (
           <UserMonthAttendance
             wsId={wsId}
             user={{

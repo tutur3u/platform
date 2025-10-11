@@ -1,20 +1,40 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
+import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
+import { z } from 'zod';
 
 interface Params {
   params: Promise<{
     categoryId: string;
+    wsId: string;
   }>;
 }
 
+const TransactionCategoryUpdateSchema = z.object({
+  name: z.string().min(1).optional(),
+  is_expense: z.boolean().optional(),
+});
+
 export async function GET(_: Request, { params }: Params) {
   const supabase = await createClient();
-  const { categoryId } = await params;
+  const { categoryId, wsId } = await params;
+
+  const { withoutPermission } = await getPermissions({
+    wsId,
+  });
+
+  if (withoutPermission('view_transactions')) {
+    return NextResponse.json(
+      { message: 'Insufficient permissions' },
+      { status: 403 }
+    );
+  }
 
   const { data, error } = await supabase
     .from('transaction_categories')
     .select('*')
     .eq('id', categoryId)
+    .eq('ws_id', wsId)
     .single();
 
   if (error) {
@@ -29,9 +49,31 @@ export async function GET(_: Request, { params }: Params) {
 }
 
 export async function PUT(req: Request, { params }: Params) {
+  const { categoryId, wsId } = await params;
+
+  const parsed = TransactionCategoryUpdateSchema.safeParse(await req.json());
+
+  if (!parsed.success) {
+    return NextResponse.json(
+      { message: 'Invalid request data', errors: parsed.error.issues },
+      { status: 400 }
+    );
+  }
+
+  const data = parsed.data;
+
+  const { withoutPermission } = await getPermissions({
+    wsId,
+  });
+
+  if (withoutPermission('update_transactions')) {
+    return NextResponse.json(
+      { message: 'Insufficient permissions' },
+      { status: 403 }
+    );
+  }
+
   const supabase = await createClient();
-  const data = await req.json();
-  const { categoryId } = await params;
 
   const { error } = await supabase
     .from('transaction_categories')
@@ -51,7 +93,18 @@ export async function PUT(req: Request, { params }: Params) {
 
 export async function DELETE(_: Request, { params }: Params) {
   const supabase = await createClient();
-  const { categoryId } = await params;
+  const { categoryId, wsId } = await params;
+
+  const { withoutPermission } = await getPermissions({
+    wsId,
+  });
+
+  if (withoutPermission('delete_transactions')) {
+    return NextResponse.json(
+      { message: 'Insufficient permissions' },
+      { status: 403 }
+    );
+  }
 
   const { error } = await supabase
     .from('transaction_categories')

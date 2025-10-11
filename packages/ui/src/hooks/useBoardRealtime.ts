@@ -2,6 +2,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
+import { DEV_MODE } from '@tuturuuu/utils/constants';
 import { useEffect } from 'react';
 import { useCallbackRef } from './use-callback-ref';
 import { useStableArray } from './use-stable-array';
@@ -186,10 +187,12 @@ export function useBoardRealtime(
           .eq('label_id', labelId);
 
         if (error) {
-          console.error(
-            'Failed to fetch task_labels for workspace label:',
-            error
-          );
+          if (DEV_MODE) {
+            console.error(
+              'Failed to fetch task_labels for workspace label:',
+              error
+            );
+          }
           return;
         }
 

@@ -1,11 +1,11 @@
 'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import type { JSONContent } from '@tiptap/react';
 import {
   Calendar,
   CheckCircle2,
   Clock,
-  FileText,
   Flag,
   LayoutDashboard,
   ListTodo,
@@ -15,8 +15,9 @@ import {
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { TaskWithRelations } from '@tuturuuu/types/db';
 import type { TaskPriority } from '@tuturuuu/types/primitives/Priority';
+import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
+import { Card, CardContent } from '@tuturuuu/ui/card';
 import { Combobox } from '@tuturuuu/ui/custom/combobox';
 import {
   Dialog,
@@ -34,7 +35,6 @@ import {
   SelectValue,
 } from '@tuturuuu/ui/select';
 import { toast } from '@tuturuuu/ui/sonner';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { TaskBoardForm } from '@tuturuuu/ui/tu-do/boards/form';
 import { useTaskDialog } from '@tuturuuu/ui/tu-do/hooks/useTaskDialog';
 import dayjs from 'dayjs';
@@ -44,8 +44,7 @@ import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import TaskListWithCompletion from '../../(dashboard)/tasks/task-list-with-completion';
-import { CommandBar } from './command-bar';
-import EmptyState from './empty-state';
+import { CommandBar, type CommandMode, type TaskOptions } from './command-bar';
 import NotesList from './notes-list';
 
 dayjs.extend(utc);
@@ -61,6 +60,22 @@ const formatLabel = (value: string) =>
     .filter(Boolean)
     .map((segment) => segment[0]?.toUpperCase() + segment.slice(1))
     .join(' ');
+
+// Helper to convert plain text to TipTap JSONContent
+const textToJSONContent = (text: string): JSONContent => ({
+  type: 'doc',
+  content: [
+    {
+      type: 'paragraph',
+      content: [
+        {
+          type: 'text',
+          text,
+        },
+      ],
+    },
+  ],
+});
 
 const adjustDateToEndOfDay = (value: Date) => {
   const next = new Date(value);
@@ -131,6 +146,9 @@ interface MyTasksContentProps {
   todayTasks: TaskWithRelations[] | undefined;
   upcomingTasks: TaskWithRelations[] | undefined;
   totalActiveTasks: number;
+  overdueCount: number;
+  todayCount: number;
+  upcomingCount: number;
 }
 
 export default function MyTasksContent({
@@ -140,12 +158,15 @@ export default function MyTasksContent({
   todayTasks,
   upcomingTasks,
   totalActiveTasks,
+  overdueCount,
+  todayCount,
+  upcomingCount,
 }: MyTasksContentProps) {
   const t = useTranslations();
   const router = useRouter();
   const queryClient = useQueryClient();
   const { createTask, onUpdate } = useTaskDialog();
-  const [activeTab, setActiveTab] = useState('tasks');
+  const [activeMode, setActiveMode] = useState<CommandMode>('task');
   const [boardSelectorOpen, setBoardSelectorOpen] = useState(false);
   const [selectedWorkspaceId, setSelectedWorkspaceId] = useState<string>(wsId);
   const [selectedBoardId, setSelectedBoardId] = useState<string>('');
@@ -166,7 +187,7 @@ export default function MyTasksContent({
   const [aiGenerateLabels, setAiGenerateLabels] = useState(true);
 
   // Preview state
-  const [isPreviewOpen, setPreviewOpen] = useState(false);
+  const [, setPreviewOpen] = useState(false);
   const [previewEntry, setPreviewEntry] = useState<string | null>(null);
   const [lastResult, setLastResult] = useState<JournalTaskResponse | null>(
     null
@@ -289,7 +310,7 @@ export default function MyTasksContent({
     ? boardsDataRaw
     : ((boardsDataRaw as any)?.boards ?? []);
 
-  // Fetch workspace labels
+  // Fetch workspace labels (always fetch for CommandBar)
   const { data: workspaceLabels = [] } = useQuery({
     queryKey: ['workspace', wsId, 'labels'],
     queryFn: async () => {
@@ -299,7 +320,22 @@ export default function MyTasksContent({
       }
       return (await response.json()) as WorkspaceLabel[];
     },
-    enabled: isPreviewOpen && aiGenerateLabels,
+  });
+
+  // Fetch workspace projects for CommandBar
+  const { data: workspaceProjects = [] } = useQuery({
+    queryKey: ['workspace', wsId, 'projects'],
+    queryFn: async () => {
+      const supabase = createClient();
+      const { data, error } = await supabase
+        .from('task_projects')
+        .select('id, name')
+        .eq('ws_id', wsId)
+        .order('name', { ascending: true });
+
+      if (error) throw error;
+      return data || [];
+    },
   });
 
   const sortedLabels = useMemo(
@@ -389,6 +425,13 @@ export default function MyTasksContent({
       generateLabels: shouldGenerateLabels,
       clientTimezone: timezone,
       clientTimestamp,
+    }: {
+      entry: string;
+      generateDescriptions: boolean;
+      generatePriority: boolean;
+      generateLabels: boolean;
+      clientTimezone: string;
+      clientTimestamp: string;
     }) => {
       const response = await fetch(`/api/v1/workspaces/${wsId}/tasks/journal`, {
         method: 'POST',
@@ -419,13 +462,23 @@ export default function MyTasksContent({
 
       return payload;
     },
-    onSuccess: (payload, variables) => {
+    onSuccess: (
+      payload: JournalTaskResponse,
+      variables: {
+        entry: string;
+        generateDescriptions: boolean;
+        generatePriority: boolean;
+        generateLabels: boolean;
+        clientTimezone: string;
+        clientTimestamp: string;
+      }
+    ) => {
       setLastResult(payload ?? null);
       setPreviewEntry(variables.entry);
       setSelectedLabelIds([]);
       setPreviewOpen(true);
     },
-    onError: (mutationError) => {
+    onError: (mutationError: Error) => {
       toast.error(mutationError.message || 'Failed to generate preview');
     },
   });
@@ -433,10 +486,11 @@ export default function MyTasksContent({
   // Create note mutation (for CommandBar)
   const createNoteMutation = useMutation({
     mutationFn: async (content: string) => {
+      const jsonContent = textToJSONContent(content);
       const response = await fetch(`/api/v1/workspaces/${wsId}/notes`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ content }),
+        body: JSON.stringify({ content: jsonContent }),
       });
       if (!response.ok) throw new Error('Failed to create note');
       return response.json();
@@ -459,7 +513,7 @@ export default function MyTasksContent({
     }
   };
 
-  const handleCreateTask = (title: string) => {
+  const handleCreateTask = async (title: string, options?: TaskOptions) => {
     // If destination is not yet confirmed, open selector first
     if (!selectedBoardId || !selectedListId) {
       setPendingTaskTitle(title);
@@ -468,9 +522,54 @@ export default function MyTasksContent({
       return;
     }
 
-    // Destination is confirmed, create task directly
-    setPendingTaskTitle(title);
-    createTask(selectedBoardId, selectedListId, availableLists);
+    // Create task directly without opening dialog
+    setCommandBarLoading(true);
+    try {
+      const supabase = createClient();
+      const { createTask: createTaskFn } = await import(
+        '@tuturuuu/utils/task-helper'
+      );
+
+      const newTask = await createTaskFn(supabase, selectedListId, {
+        name: title.trim(),
+        description: undefined,
+        priority: options?.priority || undefined,
+        start_date: undefined,
+        end_date: options?.dueDate?.toISOString() || undefined,
+        estimation_points: options?.estimationPoints || undefined,
+      });
+
+      // Link labels if provided
+      if (options?.labelIds && options.labelIds.length > 0 && newTask?.id) {
+        await supabase.from('task_labels').insert(
+          options.labelIds.map((labelId) => ({
+            task_id: newTask.id,
+            label_id: labelId,
+          }))
+        );
+      }
+
+      // Link projects if provided
+      if (options?.projectIds && options.projectIds.length > 0 && newTask?.id) {
+        await supabase.from('task_project_tasks').insert(
+          options.projectIds.map((projectId) => ({
+            task_id: newTask.id,
+            project_id: projectId,
+          }))
+        );
+      }
+
+      toast.success('Task created successfully!');
+      setPendingTaskTitle('');
+
+      // Refresh the page data
+      handleUpdate();
+    } catch (error: any) {
+      console.error('Error creating task:', error);
+      toast.error(error.message || 'Failed to create task');
+    } finally {
+      setCommandBarLoading(false);
+    }
   };
 
   const handleGenerateAI = (entry: string) => {
@@ -536,6 +635,44 @@ export default function MyTasksContent({
     setSelectedListId('');
     setPendingTaskTitle('');
     setTaskCreatorMode(null);
+  };
+
+  // Group tasks by priority for better organization
+  const groupTasksByPriority = (tasks: TaskWithRelations[] | undefined) => {
+    const emptyResult = {
+      critical: [] as TaskWithRelations[],
+      high: [] as TaskWithRelations[],
+      normal: [] as TaskWithRelations[],
+      low: [] as TaskWithRelations[],
+      none: [] as TaskWithRelations[],
+    };
+
+    if (!tasks) return emptyResult;
+
+    return tasks.reduce(
+      (acc, task) => {
+        const priority = task.priority || 'none';
+        if (priority === 'critical' || priority === 'urgent') {
+          acc.critical.push(task);
+        } else if (priority === 'high') {
+          acc.high.push(task);
+        } else if (priority === 'normal' || priority === 'medium') {
+          acc.normal.push(task);
+        } else if (priority === 'low') {
+          acc.low.push(task);
+        } else {
+          acc.none.push(task);
+        }
+        return acc;
+      },
+      {
+        critical: [] as TaskWithRelations[],
+        high: [] as TaskWithRelations[],
+        normal: [] as TaskWithRelations[],
+        low: [] as TaskWithRelations[],
+        none: [] as TaskWithRelations[],
+      }
+    );
   };
 
   // Reset board selection when workspace changes
@@ -703,132 +840,604 @@ export default function MyTasksContent({
   ]);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-12">
+      {/* Header with stats - Fixed height for both modes */}
+      <div className="flex min-h-[72px] items-center justify-between px-1">
+        {activeMode === 'task' ? (
+          <>
+            <div className="fade-in slide-in-from-left-2 animate-in space-y-1 duration-300">
+              <h1 className="font-bold text-4xl tracking-tight">
+                {t('sidebar_tabs.my_tasks')}
+              </h1>
+            </div>
+            <div className="fade-in slide-in-from-right-2 flex animate-in items-center gap-2 duration-300">
+              <Badge
+                variant="destructive"
+                className="gap-1.5 rounded-full px-3 py-1.5 font-semibold shadow-sm"
+              >
+                <Clock className="h-3.5 w-3.5" />
+                <span className="text-sm">{overdueCount}</span>
+              </Badge>
+              <Badge
+                variant="secondary"
+                className="gap-1.5 rounded-full bg-dynamic-orange/10 px-3 py-1.5 font-semibold text-dynamic-orange shadow-sm"
+              >
+                <Calendar className="h-3.5 w-3.5" />
+                <span className="text-sm">{todayCount}</span>
+              </Badge>
+              <Badge
+                variant="secondary"
+                className="gap-1.5 rounded-full bg-dynamic-blue/10 px-3 py-1.5 font-semibold text-dynamic-blue shadow-sm"
+              >
+                <Flag className="h-3.5 w-3.5" />
+                <span className="text-sm">{upcomingCount}</span>
+              </Badge>
+            </div>
+          </>
+        ) : (
+          <div className="fade-in slide-in-from-left-2 animate-in space-y-1 duration-300">
+            <h1 className="font-bold text-4xl tracking-tight">My Notes</h1>
+            <p className="text-lg text-muted-foreground">
+              Quick captures for thoughts and ideas
+            </p>
+          </div>
+        )}
+      </div>
+
+      {/* Spacer for breathing room */}
+      <div className="h-8" />
+
       {/* Command Bar - The single entry point for creation */}
-      <CommandBar
-        onCreateNote={handleCreateNote}
-        onCreateTask={handleCreateTask}
-        onGenerateAI={handleGenerateAI}
-        onOpenBoardSelector={() => setBoardSelectorOpen(true)}
-        selectedDestination={selectedDestination}
-        onClearDestination={handleClearDestination}
-        isLoading={commandBarLoading}
-        aiGenerateDescriptions={aiGenerateDescriptions}
-        aiGeneratePriority={aiGeneratePriority}
-        aiGenerateLabels={aiGenerateLabels}
-        onAiGenerateDescriptionsChange={setAiGenerateDescriptions}
-        onAiGeneratePriorityChange={setAiGeneratePriority}
-        onAiGenerateLabelsChange={setAiGenerateLabels}
-      />
+      <div className="mx-auto max-w-5xl">
+        <CommandBar
+          onCreateNote={handleCreateNote}
+          onCreateTask={handleCreateTask}
+          onGenerateAI={handleGenerateAI}
+          onOpenBoardSelector={() => setBoardSelectorOpen(true)}
+          selectedDestination={selectedDestination}
+          onClearDestination={handleClearDestination}
+          isLoading={commandBarLoading}
+          aiGenerateDescriptions={aiGenerateDescriptions}
+          aiGeneratePriority={aiGeneratePriority}
+          aiGenerateLabels={aiGenerateLabels}
+          onAiGenerateDescriptionsChange={setAiGenerateDescriptions}
+          onAiGeneratePriorityChange={setAiGeneratePriority}
+          onAiGenerateLabelsChange={setAiGenerateLabels}
+          mode={activeMode}
+          onModeChange={setActiveMode}
+          workspaceLabels={workspaceLabels}
+          workspaceProjects={workspaceProjects}
+          wsId={wsId}
+        />
+      </div>
 
-      {/* Content Tabs */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid h-auto w-full grid-cols-2">
-          <TabsTrigger
-            value="tasks"
-            className="flex-col gap-1.5 py-2 sm:flex-row sm:py-1.5"
-          >
-            <CheckCircle2 className="h-4 w-4" />
-            <span className="text-xs sm:text-sm">
-              {t('sidebar_tabs.my_tasks')}
-            </span>
-          </TabsTrigger>
-          <TabsTrigger
-            value="notes"
-            className="flex-col gap-1.5 py-2 sm:flex-row sm:py-1.5"
-          >
-            <FileText className="h-4 w-4" />
-            <span className="text-xs sm:text-sm">Notes</span>
-          </TabsTrigger>
-        </TabsList>
+      {/* Spacer for breathing room */}
+      <div className="h-16" />
 
-        {/* My Tasks Tab */}
-        <TabsContent value="tasks" className="mt-6 space-y-6">
-          {/* Overdue Tasks */}
-          {overdueTasks && overdueTasks.length > 0 && (
-            <Card className="border-dynamic-red/20">
-              <CardHeader className="border-dynamic-red/10 border-b bg-dynamic-red/5">
-                <CardTitle className="flex items-center gap-2 text-dynamic-red">
-                  <Clock className="h-5 w-5" />
-                  {t('ws-tasks.overdue')} ({overdueTasks.length})
-                </CardTitle>
-              </CardHeader>
+      {/* Insights Section - Mode-specific insights */}
+      {activeMode === 'task' && totalActiveTasks > 0 && (
+        <div className="fade-in slide-in-from-bottom-2 mx-auto max-w-5xl animate-in duration-500">
+          <div className="grid grid-cols-3 gap-4">
+            <Card className="overflow-hidden border-dynamic-red/20 bg-gradient-to-br from-dynamic-red/5 to-background">
               <CardContent className="p-6">
-                <TaskListWithCompletion
-                  tasks={overdueTasks}
-                  isPersonal={isPersonal}
-                  initialLimit={5}
-                  onTaskUpdate={handleUpdate}
-                />
+                <div className="flex items-center gap-4">
+                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-dynamic-red/15">
+                    <Clock className="h-6 w-6 text-dynamic-red" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-muted-foreground text-xs uppercase tracking-wider">
+                      Overdue
+                    </p>
+                    <p className="mt-1 font-bold text-2xl">{overdueCount}</p>
+                    <p className="mt-0.5 text-muted-foreground text-xs">
+                      Need attention now
+                    </p>
+                  </div>
+                </div>
               </CardContent>
             </Card>
-          )}
 
-          {/* Due Today */}
-          {todayTasks && todayTasks.length > 0 && (
-            <Card className="border-dynamic-orange/20">
-              <CardHeader className="border-dynamic-orange/10 border-b bg-dynamic-orange/5">
-                <CardTitle className="flex items-center gap-2 text-dynamic-orange">
-                  <Calendar className="h-5 w-5" />
-                  {t('ws-tasks.due_today')} ({todayTasks.length})
-                </CardTitle>
-              </CardHeader>
+            <Card className="overflow-hidden border-dynamic-orange/20 bg-gradient-to-br from-dynamic-orange/5 to-background">
               <CardContent className="p-6">
-                <TaskListWithCompletion
-                  tasks={todayTasks}
-                  isPersonal={isPersonal}
-                  initialLimit={5}
-                  onTaskUpdate={handleUpdate}
-                />
+                <div className="flex items-center gap-4">
+                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-dynamic-orange/15">
+                    <Calendar className="h-6 w-6 text-dynamic-orange" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-muted-foreground text-xs uppercase tracking-wider">
+                      Due Today
+                    </p>
+                    <p className="mt-1 font-bold text-2xl">{todayCount}</p>
+                    <p className="mt-0.5 text-muted-foreground text-xs">
+                      Complete by end of day
+                    </p>
+                  </div>
+                </div>
               </CardContent>
             </Card>
-          )}
 
-          {/* Upcoming Tasks */}
-          {upcomingTasks && upcomingTasks.length > 0 && (
-            <Card className="border-dynamic-blue/20">
-              <CardHeader className="border-dynamic-blue/10 border-b bg-dynamic-blue/5">
-                <CardTitle className="flex items-center gap-2 text-dynamic-blue">
-                  <Flag className="h-5 w-5" />
-                  {t('ws-tasks.upcoming')} ({upcomingTasks.length})
-                </CardTitle>
-              </CardHeader>
+            <Card className="overflow-hidden border-dynamic-blue/20 bg-gradient-to-br from-dynamic-blue/5 to-background">
               <CardContent className="p-6">
-                <TaskListWithCompletion
-                  tasks={upcomingTasks}
-                  isPersonal={isPersonal}
-                  initialLimit={5}
-                  onTaskUpdate={handleUpdate}
-                />
+                <div className="flex items-center gap-4">
+                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-dynamic-blue/15">
+                    <Flag className="h-6 w-6 text-dynamic-blue" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-muted-foreground text-xs uppercase tracking-wider">
+                      Upcoming
+                    </p>
+                    <p className="mt-1 font-bold text-2xl">{upcomingCount}</p>
+                    <p className="mt-0.5 text-muted-foreground text-xs">
+                      Plan ahead
+                    </p>
+                  </div>
+                </div>
               </CardContent>
             </Card>
-          )}
+          </div>
+        </div>
+      )}
 
-          {/* Empty State */}
-          {totalActiveTasks === 0 && (
-            <EmptyState
-              wsId={wsId}
-              onSwitchToJournal={() => {
-                // Focus on the command bar textarea for AI generation
-                const textarea = document.querySelector(
-                  '#my-tasks-command-bar-textarea'
-                ) as HTMLTextAreaElement;
-                if (textarea) {
-                  textarea.focus();
-                  // Scroll to top to show the command bar
-                  window.scrollTo({ top: 0, behavior: 'smooth' });
-                }
-              }}
-              onCreateTask={() => setBoardSelectorOpen(true)}
-            />
-          )}
-        </TabsContent>
+      {/* Content Area - Controlled by Command Bar mode */}
+      <div className="w-full">
+        {/* My Tasks Content */}
+        {activeMode === 'task' && (
+          <div className="fade-in mt-6 animate-in space-y-6 duration-300">
+            {/* Success message when tasks are created */}
+            {commandBarLoading && (
+              <div className="flex items-center gap-3 rounded-xl border border-primary/30 bg-gradient-to-br from-primary/5 to-primary/10 p-4 shadow-sm">
+                <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                <p className="font-medium text-sm">Creating your task...</p>
+              </div>
+            )}
 
-        {/* Notes Tab */}
-        <TabsContent value="notes" className="mt-6">
-          <NotesList wsId={wsId} enabled={activeTab === 'notes'} />
-        </TabsContent>
-      </Tabs>
+            {/* Overdue Tasks */}
+            {overdueTasks && overdueTasks.length > 0 ? (
+              <div className="space-y-4">
+                {/* Section Header */}
+                <div className="flex items-center justify-between rounded-2xl border border-dynamic-red/30 bg-gradient-to-br from-dynamic-red/10 via-dynamic-red/5 to-background p-6 shadow-lg">
+                  <div className="flex items-center gap-4">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-dynamic-red/20 shadow-inner">
+                      <Clock className="h-6 w-6 text-dynamic-red" />
+                    </div>
+                    <div>
+                      <h3 className="font-bold text-2xl text-dynamic-red">
+                        {t('ws-tasks.overdue')}
+                      </h3>
+                      <p className="mt-1 text-muted-foreground text-sm">
+                        Requires immediate attention • {overdueTasks.length}{' '}
+                        task
+                        {overdueTasks.length !== 1 ? 's' : ''}
+                      </p>
+                    </div>
+                  </div>
+                  <Badge
+                    variant="secondary"
+                    className="h-10 rounded-xl bg-dynamic-red/20 px-4 font-bold text-dynamic-red text-lg shadow-md"
+                  >
+                    {overdueTasks.length}
+                  </Badge>
+                </div>
+
+                {/* Task List - Grouped by Priority */}
+                <div className="space-y-6">
+                  {(() => {
+                    const grouped = groupTasksByPriority(overdueTasks);
+                    return (
+                      <>
+                        {/* Critical Priority */}
+                        {grouped.critical.length > 0 && (
+                          <div className="space-y-3">
+                            <div className="flex items-center gap-2 px-2">
+                              <div className="h-2 w-2 rounded-full bg-dynamic-red" />
+                              <span className="font-bold text-dynamic-red text-xs uppercase tracking-wider">
+                                Critical Priority ({grouped.critical.length})
+                              </span>
+                              <div className="h-px flex-1 bg-gradient-to-r from-dynamic-red/30 to-transparent" />
+                            </div>
+                            <TaskListWithCompletion
+                              tasks={grouped.critical}
+                              isPersonal={isPersonal}
+                              initialLimit={10}
+                              onTaskUpdate={handleUpdate}
+                            />
+                          </div>
+                        )}
+
+                        {/* High Priority */}
+                        {grouped.high.length > 0 && (
+                          <div className="space-y-3">
+                            <div className="flex items-center gap-2 px-2">
+                              <div className="h-2 w-2 rounded-full bg-dynamic-orange" />
+                              <span className="font-bold text-dynamic-orange text-xs uppercase tracking-wider">
+                                High Priority ({grouped.high.length})
+                              </span>
+                              <div className="h-px flex-1 bg-gradient-to-r from-dynamic-orange/30 to-transparent" />
+                            </div>
+                            <TaskListWithCompletion
+                              tasks={grouped.high}
+                              isPersonal={isPersonal}
+                              initialLimit={10}
+                              onTaskUpdate={handleUpdate}
+                            />
+                          </div>
+                        )}
+
+                        {/* Normal Priority */}
+                        {grouped.normal.length > 0 && (
+                          <div className="space-y-3">
+                            <div className="flex items-center gap-2 px-2">
+                              <div className="h-2 w-2 rounded-full bg-dynamic-blue" />
+                              <span className="font-bold text-dynamic-blue text-xs uppercase tracking-wider">
+                                Normal Priority ({grouped.normal.length})
+                              </span>
+                              <div className="h-px flex-1 bg-gradient-to-r from-dynamic-blue/30 to-transparent" />
+                            </div>
+                            <TaskListWithCompletion
+                              tasks={grouped.normal}
+                              isPersonal={isPersonal}
+                              initialLimit={10}
+                              onTaskUpdate={handleUpdate}
+                            />
+                          </div>
+                        )}
+
+                        {/* Low Priority + No Priority */}
+                        {(grouped.low.length > 0 ||
+                          grouped.none.length > 0) && (
+                          <div className="space-y-3">
+                            <div className="flex items-center gap-2 px-2">
+                              <div className="h-2 w-2 rounded-full bg-muted-foreground" />
+                              <span className="font-bold text-muted-foreground text-xs uppercase tracking-wider">
+                                Low Priority (
+                                {grouped.low.length + grouped.none.length})
+                              </span>
+                              <div className="h-px flex-1 bg-gradient-to-r from-muted-foreground/30 to-transparent" />
+                            </div>
+                            <TaskListWithCompletion
+                              tasks={[...grouped.low, ...grouped.none]}
+                              isPersonal={isPersonal}
+                              initialLimit={10}
+                              onTaskUpdate={handleUpdate}
+                            />
+                          </div>
+                        )}
+                      </>
+                    );
+                  })()}
+                </div>
+              </div>
+            ) : null}
+
+            {/* Due Today */}
+            {todayTasks && todayTasks.length > 0 ? (
+              <div className="space-y-4">
+                {/* Section Header */}
+                <div className="flex items-center justify-between rounded-2xl border border-dynamic-orange/30 bg-gradient-to-br from-dynamic-orange/10 via-dynamic-orange/5 to-background p-6 shadow-lg">
+                  <div className="flex items-center gap-4">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-dynamic-orange/20 shadow-inner">
+                      <Calendar className="h-6 w-6 text-dynamic-orange" />
+                    </div>
+                    <div>
+                      <h3 className="font-bold text-2xl text-dynamic-orange">
+                        {t('ws-tasks.due_today')}
+                      </h3>
+                      <p className="mt-1 text-muted-foreground text-sm">
+                        Complete by end of day • {todayTasks.length} task
+                        {todayTasks.length !== 1 ? 's' : ''}
+                      </p>
+                    </div>
+                  </div>
+                  <Badge
+                    variant="secondary"
+                    className="h-10 rounded-xl bg-dynamic-orange/20 px-4 font-bold text-dynamic-orange text-lg shadow-md"
+                  >
+                    {todayTasks.length}
+                  </Badge>
+                </div>
+
+                {/* Task List - Grouped by Priority */}
+                <div className="space-y-6">
+                  {(() => {
+                    const grouped = groupTasksByPriority(todayTasks);
+                    return (
+                      <>
+                        {/* Critical Priority */}
+                        {grouped.critical.length > 0 && (
+                          <div className="space-y-3">
+                            <div className="flex items-center gap-2 px-2">
+                              <div className="h-2 w-2 rounded-full bg-dynamic-red" />
+                              <span className="font-bold text-dynamic-red text-xs uppercase tracking-wider">
+                                Critical Priority ({grouped.critical.length})
+                              </span>
+                              <div className="h-px flex-1 bg-gradient-to-r from-dynamic-red/30 to-transparent" />
+                            </div>
+                            <TaskListWithCompletion
+                              tasks={grouped.critical}
+                              isPersonal={isPersonal}
+                              initialLimit={10}
+                              onTaskUpdate={handleUpdate}
+                            />
+                          </div>
+                        )}
+
+                        {/* High Priority */}
+                        {grouped.high.length > 0 && (
+                          <div className="space-y-3">
+                            <div className="flex items-center gap-2 px-2">
+                              <div className="h-2 w-2 rounded-full bg-dynamic-orange" />
+                              <span className="font-bold text-dynamic-orange text-xs uppercase tracking-wider">
+                                High Priority ({grouped.high.length})
+                              </span>
+                              <div className="h-px flex-1 bg-gradient-to-r from-dynamic-orange/30 to-transparent" />
+                            </div>
+                            <TaskListWithCompletion
+                              tasks={grouped.high}
+                              isPersonal={isPersonal}
+                              initialLimit={10}
+                              onTaskUpdate={handleUpdate}
+                            />
+                          </div>
+                        )}
+
+                        {/* Normal Priority */}
+                        {grouped.normal.length > 0 && (
+                          <div className="space-y-3">
+                            <div className="flex items-center gap-2 px-2">
+                              <div className="h-2 w-2 rounded-full bg-dynamic-blue" />
+                              <span className="font-bold text-dynamic-blue text-xs uppercase tracking-wider">
+                                Normal Priority ({grouped.normal.length})
+                              </span>
+                              <div className="h-px flex-1 bg-gradient-to-r from-dynamic-blue/30 to-transparent" />
+                            </div>
+                            <TaskListWithCompletion
+                              tasks={grouped.normal}
+                              isPersonal={isPersonal}
+                              initialLimit={10}
+                              onTaskUpdate={handleUpdate}
+                            />
+                          </div>
+                        )}
+
+                        {/* Low Priority + No Priority */}
+                        {(grouped.low.length > 0 ||
+                          grouped.none.length > 0) && (
+                          <div className="space-y-3">
+                            <div className="flex items-center gap-2 px-2">
+                              <div className="h-2 w-2 rounded-full bg-muted-foreground" />
+                              <span className="font-bold text-muted-foreground text-xs uppercase tracking-wider">
+                                Low Priority (
+                                {grouped.low.length + grouped.none.length})
+                              </span>
+                              <div className="h-px flex-1 bg-gradient-to-r from-muted-foreground/30 to-transparent" />
+                            </div>
+                            <TaskListWithCompletion
+                              tasks={[...grouped.low, ...grouped.none]}
+                              isPersonal={isPersonal}
+                              initialLimit={10}
+                              onTaskUpdate={handleUpdate}
+                            />
+                          </div>
+                        )}
+                      </>
+                    );
+                  })()}
+                </div>
+              </div>
+            ) : null}
+
+            {/* Upcoming Tasks */}
+            {upcomingTasks && upcomingTasks.length > 0 ? (
+              <div className="space-y-4">
+                {/* Section Header */}
+                <div className="flex items-center justify-between rounded-2xl border border-dynamic-blue/30 bg-gradient-to-br from-dynamic-blue/10 via-dynamic-blue/5 to-background p-6 shadow-lg">
+                  <div className="flex items-center gap-4">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-dynamic-blue/20 shadow-inner">
+                      <Flag className="h-6 w-6 text-dynamic-blue" />
+                    </div>
+                    <div>
+                      <h3 className="font-bold text-2xl text-dynamic-blue">
+                        {t('ws-tasks.upcoming')}
+                      </h3>
+                      <p className="mt-1 text-muted-foreground text-sm">
+                        Plan ahead and stay on track • {upcomingTasks.length}{' '}
+                        task
+                        {upcomingTasks.length !== 1 ? 's' : ''}
+                      </p>
+                    </div>
+                  </div>
+                  <Badge
+                    variant="secondary"
+                    className="h-10 rounded-xl bg-dynamic-blue/20 px-4 font-bold text-dynamic-blue text-lg shadow-md"
+                  >
+                    {upcomingTasks.length}
+                  </Badge>
+                </div>
+
+                {/* Task List - Grouped by Priority */}
+                <div className="space-y-6">
+                  {(() => {
+                    const grouped = groupTasksByPriority(upcomingTasks);
+                    return (
+                      <>
+                        {/* Critical Priority */}
+                        {grouped.critical.length > 0 && (
+                          <div className="space-y-3">
+                            <div className="flex items-center gap-2 px-2">
+                              <div className="h-2 w-2 rounded-full bg-dynamic-red" />
+                              <span className="font-bold text-dynamic-red text-xs uppercase tracking-wider">
+                                Critical Priority ({grouped.critical.length})
+                              </span>
+                              <div className="h-px flex-1 bg-gradient-to-r from-dynamic-red/30 to-transparent" />
+                            </div>
+                            <TaskListWithCompletion
+                              tasks={grouped.critical}
+                              isPersonal={isPersonal}
+                              initialLimit={10}
+                              onTaskUpdate={handleUpdate}
+                            />
+                          </div>
+                        )}
+
+                        {/* High Priority */}
+                        {grouped.high.length > 0 && (
+                          <div className="space-y-3">
+                            <div className="flex items-center gap-2 px-2">
+                              <div className="h-2 w-2 rounded-full bg-dynamic-orange" />
+                              <span className="font-bold text-dynamic-orange text-xs uppercase tracking-wider">
+                                High Priority ({grouped.high.length})
+                              </span>
+                              <div className="h-px flex-1 bg-gradient-to-r from-dynamic-orange/30 to-transparent" />
+                            </div>
+                            <TaskListWithCompletion
+                              tasks={grouped.high}
+                              isPersonal={isPersonal}
+                              initialLimit={10}
+                              onTaskUpdate={handleUpdate}
+                            />
+                          </div>
+                        )}
+
+                        {/* Normal Priority */}
+                        {grouped.normal.length > 0 && (
+                          <div className="space-y-3">
+                            <div className="flex items-center gap-2 px-2">
+                              <div className="h-2 w-2 rounded-full bg-dynamic-blue" />
+                              <span className="font-bold text-dynamic-blue text-xs uppercase tracking-wider">
+                                Normal Priority ({grouped.normal.length})
+                              </span>
+                              <div className="h-px flex-1 bg-gradient-to-r from-dynamic-blue/30 to-transparent" />
+                            </div>
+                            <TaskListWithCompletion
+                              tasks={grouped.normal}
+                              isPersonal={isPersonal}
+                              initialLimit={10}
+                              onTaskUpdate={handleUpdate}
+                            />
+                          </div>
+                        )}
+
+                        {/* Low Priority + No Priority */}
+                        {(grouped.low.length > 0 ||
+                          grouped.none.length > 0) && (
+                          <div className="space-y-3">
+                            <div className="flex items-center gap-2 px-2">
+                              <div className="h-2 w-2 rounded-full bg-muted-foreground" />
+                              <span className="font-bold text-muted-foreground text-xs uppercase tracking-wider">
+                                Low Priority (
+                                {grouped.low.length + grouped.none.length})
+                              </span>
+                              <div className="h-px flex-1 bg-gradient-to-r from-muted-foreground/30 to-transparent" />
+                            </div>
+                            <TaskListWithCompletion
+                              tasks={[...grouped.low, ...grouped.none]}
+                              isPersonal={isPersonal}
+                              initialLimit={10}
+                              onTaskUpdate={handleUpdate}
+                            />
+                          </div>
+                        )}
+                      </>
+                    );
+                  })()}
+                </div>
+              </div>
+            ) : null}
+
+            {/* All Caught Up State */}
+            {totalActiveTasks === 0 && !commandBarLoading && (
+              <Card className="overflow-hidden border-dynamic-green/30 bg-gradient-to-br from-dynamic-green/5 to-background shadow-sm">
+                <CardContent className="flex flex-col items-center justify-center gap-6 p-12 text-center">
+                  <div className="flex h-20 w-20 items-center justify-center rounded-full bg-dynamic-green/15">
+                    <CheckCircle2 className="h-10 w-10 text-dynamic-green" />
+                  </div>
+                  <div className="space-y-2">
+                    <h3 className="font-semibold text-2xl">
+                      You're all caught up!
+                    </h3>
+                    <p className="mx-auto max-w-md text-muted-foreground">
+                      No active tasks right now. Create a new task above to get
+                      started, or take a moment to plan your next move.
+                    </p>
+                  </div>
+                  <div className="flex flex-wrap items-center justify-center gap-3">
+                    <Button
+                      variant="default"
+                      onClick={() => {
+                        const textarea = document.querySelector(
+                          '#my-tasks-command-bar-textarea'
+                        ) as HTMLTextAreaElement;
+                        if (textarea) {
+                          textarea.focus();
+                          window.scrollTo({ top: 0, behavior: 'smooth' });
+                        }
+                      }}
+                      className="gap-2"
+                    >
+                      <Plus className="h-4 w-4" />
+                      Create Task
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={() => setBoardSelectorOpen(true)}
+                      className="gap-2"
+                    >
+                      <LayoutDashboard className="h-4 w-4" />
+                      Browse Boards
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Quick tips when there are tasks */}
+            {totalActiveTasks > 0 && (
+              <div className="mt-8 rounded-xl border bg-muted/30 p-6">
+                <div className="flex items-start gap-4">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10">
+                    <Flag className="h-5 w-5 text-primary" />
+                  </div>
+                  <div className="flex-1 space-y-2">
+                    <h4 className="font-semibold text-sm">Pro Tips</h4>
+                    <ul className="space-y-1.5 text-muted-foreground text-sm">
+                      <li className="flex items-start gap-2">
+                        <span className="mt-0.5 h-1.5 w-1.5 shrink-0 rounded-full bg-primary" />
+                        <span>
+                          Click any task to view details and add descriptions
+                        </span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="mt-0.5 h-1.5 w-1.5 shrink-0 rounded-full bg-primary" />
+                        <span>
+                          Use AI generation to break down complex tasks
+                          automatically
+                        </span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="mt-0.5 h-1.5 w-1.5 shrink-0 rounded-full bg-primary" />
+                        <span>
+                          Press{' '}
+                          <kbd className="rounded border bg-background px-1.5 py-0.5 font-mono text-xs">
+                            ⌘K
+                          </kbd>{' '}
+                          to quickly search and create
+                        </span>
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Notes Content */}
+        {activeMode === 'note' && (
+          <div className="fade-in mt-6 animate-in duration-300">
+            <NotesList wsId={wsId} enabled={activeMode === 'note'} />
+          </div>
+        )}
+      </div>
 
       {/* Board & List Selection Dialog */}
       <Dialog open={boardSelectorOpen} onOpenChange={setBoardSelectorOpen}>
@@ -958,10 +1567,12 @@ export default function MyTasksContent({
       <Dialog open={newBoardDialogOpen} onOpenChange={setNewBoardDialogOpen}>
         <DialogContent
           className="p-0"
-          style={{
-            maxWidth: '1200px',
-            width: '85vw',
-          }}
+          style={
+            {
+              maxWidth: '1200px',
+              width: '85vw',
+            } as React.CSSProperties
+          }
           onOpenAutoFocus={(e) => e.preventDefault()}
         >
           <TaskBoardForm

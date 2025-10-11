@@ -1,5 +1,6 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
 import type { ProductCategory } from '@tuturuuu/types/primitives/ProductCategory';
+import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Separator } from '@tuturuuu/ui/separator';
 import type { Metadata } from 'next';
@@ -7,7 +8,7 @@ import { getTranslations } from 'next-intl/server';
 import { CustomDataTable } from '@/components/custom-data-table';
 import { productCategoryColumns } from './columns';
 import { ProductCategoryForm } from './form';
-
+import WorkspaceWrapper from '@/components/workspace-wrapper';
 export const metadata: Metadata = {
   title: 'Categories',
   description:
@@ -29,32 +30,75 @@ export default async function WorkspaceProductCategoriesPage({
   params,
   searchParams,
 }: Props) {
-  const t = await getTranslations();
-  const { wsId } = await params;
-  const { data, count } = await getData(wsId, await searchParams);
-
   return (
-    <>
-      <FeatureSummary
-        pluralTitle={t('ws-inventory-categories.plural')}
-        singularTitle={t('ws-inventory-categories.singular')}
-        description={t('ws-inventory-categories.description')}
-        createTitle={t('ws-inventory-categories.create')}
-        createDescription={t('ws-inventory-categories.create_description')}
-        form={<ProductCategoryForm wsId={wsId} />}
-      />
-      <Separator className="my-4" />
-      <CustomDataTable
-        data={data}
-        columnGenerator={productCategoryColumns}
-        namespace="transaction-category-data-table"
-        count={count}
-        defaultVisibility={{
-          id: false,
-          created_at: false,
-        }}
-      />
-    </>
+    <WorkspaceWrapper params={params}>
+      {async ({ wsId }) => {
+        const t = await getTranslations();
+
+        const { permissions } = await getPermissions({
+          wsId,
+        });
+
+        if (!permissions.includes('view_inventory')) {
+          return (
+            <div className="flex h-full items-center justify-center">
+              <div className="text-center">
+                <h2 className="text-lg font-semibold">
+                  {t('ws-roles.inventory_access_denied')}
+                </h2>
+                <p className="text-muted-foreground">
+                  {t('ws-roles.inventory_categories_access_denied_description')}
+                </p>
+              </div>
+            </div>
+          );
+        }
+
+        const canCreateInventory = permissions.includes('create_inventory');
+        const canUpdateInventory = permissions.includes('update_inventory');
+        const canDeleteInventory = permissions.includes('delete_inventory');
+
+        const { data, count } = await getData(wsId, await searchParams);
+
+        return (
+          <>
+            <FeatureSummary
+              pluralTitle={t('ws-inventory-categories.plural')}
+              singularTitle={t('ws-inventory-categories.singular')}
+              description={t('ws-inventory-categories.description')}
+              createTitle={t('ws-inventory-categories.create')}
+              createDescription={t(
+                'ws-inventory-categories.create_description'
+              )}
+              form={
+                canCreateInventory ? (
+                  <ProductCategoryForm
+                    wsId={wsId}
+                    canCreateInventory={canCreateInventory}
+                    canUpdateInventory={canUpdateInventory}
+                  />
+                ) : undefined
+              }
+            />
+            <Separator className="my-4" />
+            <CustomDataTable
+              data={data}
+              columnGenerator={productCategoryColumns}
+              namespace="transaction-category-data-table"
+              count={count}
+              extraData={{
+                canUpdateInventory,
+                canDeleteInventory,
+              }}
+              defaultVisibility={{
+                id: false,
+                created_at: false,
+              }}
+            />
+          </>
+        );
+      }}
+    </WorkspaceWrapper>
   );
 }
 

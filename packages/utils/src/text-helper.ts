@@ -1,4 +1,5 @@
 import type { JSONContent } from '@tiptap/core';
+import type { Json } from '@tuturuuu/types/supabase';
 
 export const removeAccents = (str: string) =>
   str
@@ -9,11 +10,15 @@ export const removeAccents = (str: string) =>
     .replace(/đ/g, 'd')
     .replace(/Đ/g, 'D');
 
-export const getDescriptionText = (description?: string): string => {
+export const getDescriptionText = (description?: string | Json): string => {
   if (!description) return '';
 
   try {
-    const parsed = JSON.parse(description);
+    // If description is already a Json object, use it directly
+    // Otherwise, parse the string
+    const parsed =
+      typeof description === 'string' ? JSON.parse(description) : description;
+
     // Extract text with proper spacing and line breaks from JSONContent
     const extractText = (content: JSONContent): string => {
       if (content.type === 'text') {
@@ -45,7 +50,7 @@ export const getDescriptionText = (description?: string): string => {
     return result.replace(/\n{3,}/g, '\n\n');
   } catch {
     // If it's not valid JSON, return as plain text
-    return description;
+    return typeof description === 'string' ? description : String(description);
   }
 };
 
@@ -60,7 +65,7 @@ export interface DescriptionMetadata {
 }
 
 export const getDescriptionMetadata = (
-  description?: string
+  description?: string | Json
 ): DescriptionMetadata => {
   const metadata: DescriptionMetadata = {
     hasText: false,
@@ -75,7 +80,10 @@ export const getDescriptionMetadata = (
   if (!description) return metadata;
 
   try {
-    const parsed = JSON.parse(description);
+    // If description is already a Json object, use it directly
+    // Otherwise, parse the string
+    const parsed =
+      typeof description === 'string' ? JSON.parse(description) : description;
 
     const analyzeContent = (content: JSONContent): void => {
       // Check for text content
@@ -116,7 +124,9 @@ export const getDescriptionMetadata = (
     analyzeContent(parsed);
   } catch {
     // If it's not valid JSON, treat as plain text
-    if (description.trim()) {
+    const descText =
+      typeof description === 'string' ? description : String(description);
+    if (descText.trim()) {
       metadata.hasText = true;
     }
   }

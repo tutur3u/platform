@@ -33,8 +33,8 @@ import { Separator } from '@tuturuuu/ui/separator';
 import { toast } from '@tuturuuu/ui/sonner';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { useLocale, useTranslations } from 'next-intl';
-import { useRouter } from 'next/navigation';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useEffect, useMemo, useRef, useCallback, useState } from 'react';
 import type { AvailablePromotion } from './hooks';
 import {
   useAvailablePromotions,
@@ -46,7 +46,7 @@ import {
   useUserLatestSubscriptionInvoice,
   useUserLinkedPromotions,
   useUserReferralDiscounts,
-  useUsers,
+  useUsersWithSelectableGroups,
   useWallets,
 } from './hooks';
 import { ProductSelection } from './product-selection';
@@ -59,12 +59,6 @@ import type {
 
 interface Props {
   wsId: string;
-  selectedUserId: string;
-  onSelectedUserIdChange: (value: string) => void;
-  selectedGroupId?: string;
-  onSelectedGroupIdChange?: (value: string) => void;
-  selectedMonth?: string;
-  onSelectedMonthChange?: (value: string) => void;
   prefillAmount?: number; // Total attendance days to prefill product quantities
   createMultipleInvoices: boolean;
   printAfterCreate?: boolean;
@@ -219,21 +213,38 @@ const getEffectiveAttendanceDays = (
 
 export function SubscriptionInvoice({
   wsId,
-  selectedUserId,
-  onSelectedUserIdChange,
-  selectedGroupId: externalSelectedGroupId,
-  onSelectedGroupIdChange: externalOnSelectedGroupIdChange,
-  selectedMonth: externalSelectedMonth,
-  onSelectedMonthChange: externalOnSelectedMonthChange,
   prefillAmount,
   createMultipleInvoices,
   printAfterCreate = false,
 }: Props) {
   const t = useTranslations();
   const locale = useLocale();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  // Read from URL params
+  const selectedUserId = searchParams.get('user_id') || '';
+  const selectedGroupId = searchParams.get('group_id') || '';
+  const selectedMonth =
+    searchParams.get('month') || new Date().toISOString().slice(0, 7);
+
+  // Helper to update URL params
+  const updateSearchParam = useCallback(
+    (key: string, value: string) => {
+      const params = new URLSearchParams(searchParams);
+      if (value) {
+        params.set(key, value);
+      } else {
+        params.delete(key);
+      }
+      router.replace(`?${params.toString()}`, { scroll: false });
+    },
+    [searchParams]
+  );
 
   // Data queries
-  const { data: users = [], isLoading: usersLoading } = useUsers(wsId);
+  const { data: users = [], isLoading: usersLoading } =
+    useUsersWithSelectableGroups(wsId);
   const { data: products = [], isLoading: productsLoading } = useProducts(wsId);
   const { data: availablePromotions = [], isLoading: promotionsLoading } =
     useAvailablePromotions(wsId, selectedUserId);
@@ -255,42 +266,6 @@ export function SubscriptionInvoice({
   const [invoiceContent, setInvoiceContent] = useState<string>('');
   const [invoiceNotes, setInvoiceNotes] = useState<string>('');
   const [isCreating, setIsCreating] = useState(false);
-  const router = useRouter();
-
-  // Subscription-specific state - use external props if provided, otherwise internal state
-  const [internalSelectedGroupId, setInternalSelectedGroupId] =
-    useState<string>('');
-  const [internalSelectedMonth, setInternalSelectedMonth] = useState<string>(
-    new Date()
-      .toISOString()
-      .slice(0, 7) // Current month in YYYY-MM format
-  );
-
-  const selectedGroupId = externalSelectedGroupId ?? internalSelectedGroupId;
-  const setSelectedGroupId =
-    externalOnSelectedGroupIdChange ?? setInternalSelectedGroupId;
-  const selectedMonth = externalSelectedMonth ?? internalSelectedMonth;
-  const setSelectedMonth =
-    externalOnSelectedMonthChange ?? setInternalSelectedMonth;
-
-  // Initialize from external props
-  useEffect(() => {
-    if (
-      externalSelectedGroupId &&
-      externalSelectedGroupId !== internalSelectedGroupId
-    ) {
-      setInternalSelectedGroupId(externalSelectedGroupId);
-    }
-  }, [externalSelectedGroupId, internalSelectedGroupId]);
-
-  useEffect(() => {
-    if (
-      externalSelectedMonth &&
-      externalSelectedMonth !== internalSelectedMonth
-    ) {
-      setInternalSelectedMonth(externalSelectedMonth);
-    }
-  }, [externalSelectedMonth, internalSelectedMonth]);
 
   const [subscriptionProducts, setSubscriptionProducts] = useState<
     Array<{
@@ -375,6 +350,9 @@ export function SubscriptionInvoice({
   // When switching groups: clear current selections and replace with the group's linked products
   const previousGroupIdRef = useRef<string>('');
   const fallbackToastShownRef = useRef<boolean>(false);
+  const initialPrefillUsedRef = useRef<boolean>(false);
+  const previousUserIdRef = useRef<string>('');
+  const isInitialMountRef = useRef<boolean>(true);
   /**
    * Pick product inventories linked to the group respecting unit_id and warehouse_id.
    * If warehouse_id is not provided or not found, fallback to the first inventory for that unit.
@@ -394,9 +372,12 @@ export function SubscriptionInvoice({
     // Reset one-time fallback toast when switching groups
     fallbackToastShownRef.current = false;
 
-    // Use prefillAmount if provided, otherwise calculate from attendance
-    const attendanceDays =
-      prefillAmount ?? getEffectiveAttendanceDays(userAttendance);
+    // Use prefillAmount if provided AND not yet used, otherwise calculate from attendance
+    const shouldUsePrefill =
+      prefillAmount !== undefined && !initialPrefillUsedRef.current;
+    const attendanceDays = shouldUsePrefill
+      ? prefillAmount
+      : getEffectiveAttendanceDays(userAttendance);
 
     const { autoSelected, fallbackTriggered } =
       buildAutoSelectedProductsForGroup(
@@ -406,6 +387,11 @@ export function SubscriptionInvoice({
       );
 
     setSubscriptionSelectedProducts(autoSelected);
+
+    // Mark that we've used the initial prefill amount
+    if (shouldUsePrefill) {
+      initialPrefillUsedRef.current = true;
+    }
 
     if (fallbackTriggered && !fallbackToastShownRef.current) {
       toast(
@@ -418,11 +404,11 @@ export function SubscriptionInvoice({
     }
   }, [
     selectedGroupId,
+    prefillAmount,
+    userAttendance,
     groupProducts,
     products,
-    prefillAmount,
     t,
-    userAttendance,
   ]);
 
   // Auto-add group products based on attendance when group is selected
@@ -431,9 +417,18 @@ export function SubscriptionInvoice({
       return;
     }
 
-    // Use prefillAmount if provided, otherwise calculate from attendance
-    const attendanceDays =
-      prefillAmount ?? getEffectiveAttendanceDays(userAttendance);
+    // Skip if we already handled initial prefill
+    if (prefillAmount !== undefined && !initialPrefillUsedRef.current) {
+      return;
+    }
+
+    // Use prefillAmount if provided AND already used (for updates), otherwise calculate from attendance
+    const shouldUsePrefill =
+      prefillAmount !== undefined && initialPrefillUsedRef.current;
+    const attendanceDays = shouldUsePrefill
+      ? prefillAmount
+      : getEffectiveAttendanceDays(userAttendance);
+
     if (attendanceDays === 0) return;
 
     const { autoSelected, fallbackTriggered } =
@@ -498,12 +493,11 @@ export function SubscriptionInvoice({
     }
   }, [
     selectedGroupId,
-    groupProducts,
-    products,
     userAttendance?.length,
     prefillAmount,
+    groupProducts,
+    products,
     t,
-    userAttendance,
   ]);
 
   // Calculate totals for manual product selection
@@ -662,16 +656,25 @@ export function SubscriptionInvoice({
     groupProducts?.length,
     userAttendance?.length,
     selectedMonth,
-    userGroups.find,
-    userAttendance,
-    groupProducts.map,
-    groupProducts,
   ]);
 
   // Reset subscription state when user changes
   useEffect(() => {
+    const isUserChanged = previousUserIdRef.current !== selectedUserId;
+    previousUserIdRef.current = selectedUserId;
+
+    // Skip on initial mount to allow URL params to work
+    if (isInitialMountRef.current) {
+      isInitialMountRef.current = false;
+      return;
+    }
+
+    // Only clear if user actually changed (not just initial load)
+    if (!isUserChanged) {
+      return;
+    }
+
     // Clear all related state whenever the selected user changes
-    setSelectedGroupId('');
     setSubscriptionProducts([]);
     setSubscriptionSelectedProducts([]);
     setInvoiceContent('');
@@ -679,8 +682,18 @@ export function SubscriptionInvoice({
     setSelectedWalletId('');
     setSelectedPromotionId('none');
     setSelectedCategoryId('');
-    setSelectedMonth(new Date().toISOString().slice(0, 7));
-  }, [setSelectedGroupId, setSelectedMonth]);
+
+    // Reset prefill tracking when user manually changes
+    initialPrefillUsedRef.current = false;
+
+    // Replace entire search params with only user_id, this will clear group_id and month
+    // The month will be auto-set when a new group is selected
+    if (selectedUserId) {
+      router.replace(`?user_id=${selectedUserId}`, { scroll: false });
+    } else {
+      router.replace('?', { scroll: false });
+    }
+  }, [selectedUserId, router]);
 
   // Auto-select the first group when userGroups are loaded
   useEffect(() => {
@@ -692,16 +705,10 @@ export function SubscriptionInvoice({
     ) {
       const firstGroup = userGroups[0];
       if (firstGroup?.workspace_user_groups?.id) {
-        setSelectedGroupId(firstGroup.workspace_user_groups.id);
+        updateSearchParam('group_id', firstGroup.workspace_user_groups.id);
       }
     }
-  }, [
-    userGroups,
-    selectedGroupId,
-    userGroupsLoading,
-    selectedUserId,
-    setSelectedGroupId,
-  ]);
+  }, [userGroups.length, selectedGroupId, userGroupsLoading, selectedUserId]);
 
   // Validate and reset selectedMonth when group changes
   useEffect(() => {
@@ -739,15 +746,9 @@ export function SubscriptionInvoice({
         defaultMonth = startDate;
       }
 
-      setSelectedMonth(defaultMonth.toISOString().slice(0, 7));
+      updateSearchParam('month', defaultMonth.toISOString().slice(0, 7));
     }
-  }, [
-    selectedGroupId,
-    userGroups.length,
-    selectedMonth,
-    setSelectedMonth,
-    userGroups.find,
-  ]);
+  }, [selectedGroupId, userGroups.length, selectedMonth]);
 
   // Auto-generate subscription invoice content
   useEffect(() => {
@@ -859,7 +860,7 @@ export function SubscriptionInvoice({
 
     // Check if new month is within group date range
     if (newMonth >= startDate && newMonth <= endDate) {
-      setSelectedMonth(newMonth.toISOString().slice(0, 7));
+      updateSearchParam('month', newMonth.toISOString().slice(0, 7));
     }
   };
 
@@ -998,10 +999,10 @@ export function SubscriptionInvoice({
       setInvoiceContent('');
       setInvoiceNotes('');
       setSubscriptionRoundedTotal(0);
-      onSelectedUserIdChange('');
+      updateSearchParam('user_id', '');
       setSelectedWalletId('');
       setSelectedCategoryId('');
-      setSelectedGroupId('');
+      updateSearchParam('group_id', '');
 
       if (!createMultipleInvoices) {
         const query = printAfterCreate ? '?print=true' : '';
@@ -1061,7 +1062,9 @@ export function SubscriptionInvoice({
                   })
                 )}
                 selected={selectedUserId}
-                onChange={(value) => onSelectedUserIdChange(value as string)}
+                onChange={(value) =>
+                  updateSearchParam('user_id', value as string)
+                }
                 placeholder={t('ws-invoices.search_customers')}
               />
             </div>
@@ -1100,15 +1103,22 @@ export function SubscriptionInvoice({
                     if (!group) return null;
 
                     return (
-                      <button
+                      <div
                         key={group.id}
-                        type="button"
+                        role="button"
+                        tabIndex={0}
                         className={`cursor-pointer rounded-lg border p-4 transition-colors ${
                           selectedGroupId === group.id
                             ? 'border-primary bg-primary/5'
                             : 'hover:bg-muted/50'
                         }`}
-                        onClick={() => setSelectedGroupId(group.id)}
+                        onClick={() => updateSearchParam('group_id', group.id)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            updateSearchParam('group_id', group.id);
+                          }
+                        }}
                       >
                         <div className="flex items-center justify-between">
                           <div className="flex-1">
@@ -1144,7 +1154,7 @@ export function SubscriptionInvoice({
                             )}
                           </div>
                         </div>
-                      </button>
+                      </div>
                     );
                   })}
                 </div>
@@ -1205,7 +1215,10 @@ export function SubscriptionInvoice({
                 >
                   <ChevronLeft className="h-4 w-4" />
                 </Button>
-                <Select value={selectedMonth} onValueChange={setSelectedMonth}>
+                <Select
+                  value={selectedMonth}
+                  onValueChange={(value) => updateSearchParam('month', value)}
+                >
                   <SelectTrigger>
                     <SelectValue placeholder={t('ws-invoices.select_month')} />
                   </SelectTrigger>

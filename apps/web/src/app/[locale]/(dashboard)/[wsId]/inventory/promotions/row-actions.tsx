@@ -17,7 +17,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
-import { toast } from '@tuturuuu/ui/hooks/use-toast';
+import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
@@ -25,9 +25,15 @@ import { PromotionForm } from './form';
 
 interface PromotionRowActionsProps {
   row: Row<ProductPromotion>;
+  canDeleteInventory?: boolean;
+  canUpdateInventory?: boolean;
 }
 
-export function PromotionRowActions({ row }: PromotionRowActionsProps) {
+export function PromotionRowActions({
+  row,
+  canDeleteInventory,
+  canUpdateInventory,
+}: PromotionRowActionsProps) {
   const t = useTranslations();
   const router = useRouter();
 
@@ -36,6 +42,11 @@ export function PromotionRowActions({ row }: PromotionRowActionsProps) {
   const promotion = row.original;
 
   const deletePromotion = async () => {
+    if (!canDeleteInventory) {
+      toast.error(t('ws-roles.inventory_promotions_access_denied_description'));
+      return;
+    }
+
     const res = await fetch(
       `/api/v1/workspaces/${promotion.ws_id}/promotions/${promotion.id}`,
       {
@@ -47,17 +58,15 @@ export function PromotionRowActions({ row }: PromotionRowActionsProps) {
       router.refresh();
     } else {
       const data = await res.json();
-      toast({
-        // TODO: i18n
-        title: 'Failed to delete workspace promotion',
-        description: data.message,
-      });
+      toast.error(
+        data.message || t('ws-inventory-promotions.failed_delete_promotion')
+      );
     }
   };
 
   return (
     <div className="flex items-center justify-end gap-2">
-      {promotion.ws_id && (
+      {promotion.ws_id && canUpdateInventory && (
         <Dialog
           open={open}
           onOpenChange={(open) => {
@@ -87,16 +96,23 @@ export function PromotionRowActions({ row }: PromotionRowActionsProps) {
             <span className="sr-only">Open menu</span>
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-[160px]">
-          <DropdownMenuItem onClick={() => setOpen(true)}>
-            {t('common.edit')}
-          </DropdownMenuItem>
-
-          <DropdownMenuSeparator />
-          <DropdownMenuItem onClick={deletePromotion}>
-            {t('common.delete')}
-          </DropdownMenuItem>
-        </DropdownMenuContent>
+        {(canUpdateInventory || canDeleteInventory) && (
+          <DropdownMenuContent align="end" className="w-[160px]">
+            {canUpdateInventory && (
+              <DropdownMenuItem onClick={() => setOpen(true)}>
+                {t('common.edit')}
+              </DropdownMenuItem>
+            )}
+            {canUpdateInventory && canDeleteInventory && (
+              <DropdownMenuSeparator />
+            )}
+            {canDeleteInventory && (
+              <DropdownMenuItem onClick={deletePromotion}>
+                {t('common.delete')}
+              </DropdownMenuItem>
+            )}
+          </DropdownMenuContent>
+        )}
       </DropdownMenu>
     </div>
   );

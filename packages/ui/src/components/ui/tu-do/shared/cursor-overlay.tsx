@@ -75,33 +75,58 @@ export function CursorOverlayWrapper({
     width: number;
     height: number;
   }>({ width: 0, height: 0 });
+  const [hasError, setHasError] = useState(false);
 
-  const { cursors, currentUserId } = useCursorTracking(
+  const { cursors, currentUserId, error } = useCursorTracking(
     channelName,
     containerRef
   );
 
+  // Disable overlay if persistent errors detected
+  useEffect(() => {
+    if (error) {
+      setHasError(true);
+    }
+  }, [error]);
+
   useEffect(() => {
     if (!containerRef.current) return;
 
-    const updateOverlaySize = () => {
-      const rect = containerRef.current?.getBoundingClientRect();
-      if (rect) {
-        setOverlaySize({ width: rect.width, height: rect.height });
-      }
-    };
+    try {
+      const updateOverlaySize = () => {
+        try {
+          const rect = containerRef.current?.getBoundingClientRect();
+          if (rect) {
+            setOverlaySize({ width: rect.width, height: rect.height });
+          }
+        } catch (err) {
+          // Silently fail on resize errors
+          console.warn('Cursor overlay resize error:', err);
+        }
+      };
 
-    // Initial update
-    updateOverlaySize();
+      // Initial update
+      updateOverlaySize();
 
-    // Update on resize
-    const resizeObserver = new ResizeObserver(updateOverlaySize);
-    resizeObserver.observe(containerRef.current);
+      // Update on resize
+      const resizeObserver = new ResizeObserver(updateOverlaySize);
+      resizeObserver.observe(containerRef.current);
 
-    return () => {
-      resizeObserver.disconnect();
-    };
+      return () => {
+        resizeObserver.disconnect();
+      };
+    } catch (err) {
+      // Catch any setup errors
+      console.warn('Cursor overlay setup error:', err);
+      setHasError(true);
+      return;
+    }
   }, [containerRef]);
+
+  // Don't render if errors detected
+  if (hasError) {
+    return null;
+  }
 
   return (
     <CursorOverlay

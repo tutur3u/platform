@@ -1,6 +1,7 @@
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { RealtimePresenceState } from '@tuturuuu/supabase/next/realtime';
 import type { User } from '@tuturuuu/types/primitives/User';
+import { DEV_MODE } from '@tuturuuu/utils/constants';
 import { useEffect, useRef, useState } from 'react';
 
 export interface UserPresenceState {
@@ -41,7 +42,9 @@ export function usePresence(channelName: string) {
           .single();
 
         if (userDataError) {
-          console.error('Error fetching user data:', userDataError);
+          if (DEV_MODE) {
+            console.error('Error fetching user data:', userDataError);
+          }
           return;
         }
 
@@ -71,13 +74,19 @@ export function usePresence(channelName: string) {
             setPresenceState({ ...newState });
           })
           .on('presence', { event: 'join' }, ({ key, newPresences }) => {
-            console.log('👋 User joined:', key, newPresences);
+            if (DEV_MODE) {
+              console.log('👋 User joined:', key, newPresences);
+            }
           })
           .on('presence', { event: 'leave' }, ({ key, leftPresences }) => {
-            console.log('👋 User left:', key, leftPresences);
+            if (DEV_MODE) {
+              console.log('👋 User left:', key, leftPresences);
+            }
           })
           .subscribe(async (status) => {
-            console.log('📡 Channel status:', status);
+            if (DEV_MODE) {
+              console.log('📡 Channel status:', status);
+            }
 
             switch (status) {
               case 'SUBSCRIBED': {
@@ -91,13 +100,17 @@ export function usePresence(channelName: string) {
                   online_at: new Date().toISOString(),
                 });
 
-                console.log('Presence track status:', presenceTrackStatus);
+                if (DEV_MODE) {
+                  console.log('Presence track status:', presenceTrackStatus);
+                }
 
                 if (
                   presenceTrackStatus === 'timed out' &&
                   !isCleanedUpRef.current
                 ) {
-                  console.warn('⚠️ Presence tracking timed out, retrying...');
+                  if (DEV_MODE) {
+                    console.warn('⚠️ Presence tracking timed out, retrying...');
+                  }
                   // Retry once
                   setTimeout(async () => {
                     if (!isCleanedUpRef.current) {
@@ -119,50 +132,66 @@ export function usePresence(channelName: string) {
                 break;
               }
               case 'CHANNEL_ERROR':
-                console.error('❌ Channel error, connection lost');
+                if (DEV_MODE) {
+                  console.error('❌ Channel error, connection lost');
+                }
                 if (
                   retryCountRef.current < MAX_RETRIES &&
                   !isCleanedUpRef.current
                 ) {
                   retryCountRef.current++;
-                  console.log(
-                    `Retrying presence setup (${retryCountRef.current}/${MAX_RETRIES})...`
-                  );
+                  if (DEV_MODE) {
+                    console.log(
+                      `Retrying presence setup (${retryCountRef.current}/${MAX_RETRIES})...`
+                    );
+                  }
                   setTimeout(() => {
                     setupPresence();
                   }, 2000 * retryCountRef.current); // Exponential backoff
                 }
                 break;
               case 'TIMED_OUT':
-                console.warn('⚠️ Channel subscription timed out');
+                if (DEV_MODE) {
+                  console.warn('⚠️ Channel subscription timed out');
+                }
                 if (
                   retryCountRef.current < MAX_RETRIES &&
                   !isCleanedUpRef.current
                 ) {
                   retryCountRef.current++;
-                  console.log(
-                    `Retrying presence setup (${retryCountRef.current}/${MAX_RETRIES})...`
-                  );
+                  if (DEV_MODE) {
+                    console.log(
+                      `Retrying presence setup (${retryCountRef.current}/${MAX_RETRIES})...`
+                    );
+                  }
                   setTimeout(() => {
                     setupPresence();
                   }, 2000 * retryCountRef.current); // Exponential backoff
                 }
                 break;
               case 'CLOSED':
-                console.info('📡 Channel closed');
+                if (DEV_MODE) {
+                  console.info('📡 Channel closed');
+                }
                 break;
               default:
-                console.info('📡 Unknown channel status:', status);
+                if (DEV_MODE) {
+                  console.info('📡 Unknown channel status:', status);
+                }
                 break;
             }
           });
       } catch (error) {
-        console.error('Error setting up board presence:', error);
+        if (DEV_MODE) {
+          console.error('Error setting up board presence:', error);
+        }
         if (retryCountRef.current < MAX_RETRIES && !isCleanedUpRef.current) {
           retryCountRef.current++;
-          console.log(
-            `Retrying presence setup (${retryCountRef.current}/${MAX_RETRIES})...`
-          );
+          if (DEV_MODE) {
+            console.log(
+              `Retrying presence setup (${retryCountRef.current}/${MAX_RETRIES})...`
+            );
+          }
           setTimeout(() => {
             setupPresence();
           }, 2000 * retryCountRef.current);

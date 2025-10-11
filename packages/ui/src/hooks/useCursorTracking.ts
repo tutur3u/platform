@@ -1,6 +1,7 @@
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { RealtimeChannel } from '@tuturuuu/supabase/next/realtime';
 import type { User } from '@tuturuuu/types/primitives/User';
+import { DEV_MODE } from '@tuturuuu/utils/constants';
 import type { RefObject } from 'react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
@@ -19,49 +20,81 @@ export function useCursorTracking(
     new Map()
   );
   const [currentUserId, setCurrentUserId] = useState<string>();
+  const [error, setError] = useState<boolean>(false);
   const channelRef = useRef<RealtimeChannel | null>(null);
   const isCleanedUpRef = useRef(false);
   const throttleTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const lastBroadcastTimeRef = useRef<number>(0);
+  const errorCountRef = useRef<number>(0);
   const THROTTLE_MS = 50; // Broadcast cursor position every 50ms max
   const CURSOR_TIMEOUT = 5000; // Remove cursor if no update for 5 seconds
+  const MAX_ERROR_COUNT = 3; // Disable after 3 consecutive errors
 
   const broadcastCursor = useCallback(
     async (x: number, y: number, user: User) => {
       if (!channelRef.current) return;
+      // Check error count instead of state to avoid dependency
+      if (errorCountRef.current >= MAX_ERROR_COUNT) return;
 
-      const now = Date.now();
-      const timeSinceLastBroadcast = now - lastBroadcastTimeRef.current;
-      if (timeSinceLastBroadcast < THROTTLE_MS) {
-        // Throttle: schedule a broadcast for later if not already scheduled
-        if (!throttleTimeoutRef.current) {
-          throttleTimeoutRef.current = setTimeout(async () => {
-            await channelRef.current?.send({
-              type: 'broadcast',
-              event: 'cursor-move',
-              payload: { x, y, user },
-            });
+      try {
+        const now = Date.now();
+        const timeSinceLastBroadcast = now - lastBroadcastTimeRef.current;
+        if (timeSinceLastBroadcast < THROTTLE_MS) {
+          // Throttle: schedule a broadcast for later if not already scheduled
+          if (!throttleTimeoutRef.current) {
+            throttleTimeoutRef.current = setTimeout(async () => {
+              try {
+                await channelRef.current?.send({
+                  type: 'broadcast',
+                  event: 'cursor-move',
+                  payload: { x, y, user },
+                });
 
-            lastBroadcastTimeRef.current = Date.now();
-            throttleTimeoutRef.current = null;
-          }, THROTTLE_MS - timeSinceLastBroadcast);
+                lastBroadcastTimeRef.current = Date.now();
+                throttleTimeoutRef.current = null;
+                // Reset error count on successful broadcast
+                errorCountRef.current = 0;
+              } catch (err) {
+                errorCountRef.current++;
+                if (errorCountRef.current >= MAX_ERROR_COUNT) {
+                  setError(true);
+                }
+                if (DEV_MODE) {
+                  console.warn('Cursor broadcast error (throttled):', err);
+                }
+              }
+            }, THROTTLE_MS - timeSinceLastBroadcast);
+          }
+        } else {
+          // Broadcast immediately
+          await channelRef.current.send({
+            type: 'broadcast',
+            event: 'cursor-move',
+            payload: { x, y, user },
+          });
+
+          lastBroadcastTimeRef.current = now;
+          // Reset error count on successful broadcast
+          errorCountRef.current = 0;
         }
-      } else {
-        // Broadcast immediately
-        await channelRef.current.send({
-          type: 'broadcast',
-          event: 'cursor-move',
-          payload: { x, y, user },
-        });
-
-        lastBroadcastTimeRef.current = now;
+      } catch (err) {
+        errorCountRef.current++;
+        if (errorCountRef.current >= MAX_ERROR_COUNT) {
+          setError(true);
+        }
+        if (DEV_MODE) {
+          console.warn('Cursor broadcast error:', err);
+        }
       }
     },
-    []
+    [] // No dependencies - uses only refs
   );
 
   // Clean up stale cursors
   useEffect(() => {
+    // Don't run cleanup if in error state
+    if (error) return;
+
     const interval = setInterval(() => {
       const now = Date.now();
       setCursors((prev) => {
@@ -80,7 +113,7 @@ export function useCursorTracking(
     }, 1000);
 
     return () => clearInterval(interval);
-  }, []);
+  }, [error]);
 
   useEffect(() => {
     if (!channelName) return;
@@ -108,7 +141,13 @@ export function useCursorTracking(
           .single();
 
         if (userDataError) {
-          console.error('Error fetching user data:', userDataError);
+          if (DEV_MODE) {
+            console.error('Error fetching user data:', userDataError);
+          }
+          errorCountRef.current++;
+          if (errorCountRef.current >= MAX_ERROR_COUNT) {
+            setError(true);
+          }
           return;
         }
 
@@ -133,28 +172,51 @@ export function useCursorTracking(
         // Listen for cursor movements from other users
         channel
           .on('broadcast', { event: 'cursor-move' }, (payload) => {
-            const { x, y, user: broadcastUser } = payload.payload;
+            try {
+              const { x, y, user: broadcastUser } = payload.payload;
 
-            if (broadcastUser.id !== user.id) {
-              setCursors((prev) => {
-                const updated = new Map(prev);
-                updated.set(broadcastUser.id || '', {
-                  x,
-                  y,
-                  user: broadcastUser,
-                  lastUpdatedAt: Date.now(),
+              if (broadcastUser.id !== user.id) {
+                setCursors((prev) => {
+                  const updated = new Map(prev);
+                  updated.set(broadcastUser.id || '', {
+                    x,
+                    y,
+                    user: broadcastUser,
+                    lastUpdatedAt: Date.now(),
+                  });
+                  return updated;
                 });
-                return updated;
-              });
+              }
+            } catch (err) {
+              errorCountRef.current++;
+              if (errorCountRef.current >= MAX_ERROR_COUNT) {
+                setError(true);
+              }
+              if (DEV_MODE) {
+                console.warn('Cursor receive error:', err);
+              }
             }
           })
           .subscribe((status) => {
-            console.log('📡 Cursor tracking channel status:', status);
+            if (DEV_MODE) {
+              console.log('📡 Cursor tracking channel status:', status);
 
-            if (status === 'SUBSCRIBED') {
-              console.log('✅ Cursor tracking active');
-            } else if (status === 'CHANNEL_ERROR') {
-              console.error('❌ Cursor tracking channel error');
+              if (status === 'SUBSCRIBED') {
+                console.log('✅ Cursor tracking active');
+              } else if (status === 'CHANNEL_ERROR') {
+                console.error('❌ Cursor tracking channel error');
+              }
+            }
+
+            // Handle channel errors
+            if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+              errorCountRef.current++;
+              if (errorCountRef.current >= MAX_ERROR_COUNT) {
+                setError(true);
+              }
+            } else if (status === 'SUBSCRIBED') {
+              // Reset error count on successful subscription
+              errorCountRef.current = 0;
             }
           });
 
@@ -184,8 +246,14 @@ export function useCursorTracking(
           container.addEventListener('mousemove', handleMouseMove);
           container.addEventListener('mouseleave', handleMouseLeave);
         }
-      } catch (error) {
-        console.error('Error setting up cursor tracking:', error);
+      } catch (err) {
+        errorCountRef.current++;
+        if (errorCountRef.current >= MAX_ERROR_COUNT) {
+          setError(true);
+        }
+        if (DEV_MODE) {
+          console.error('Error setting up cursor tracking:', err);
+        }
       }
     };
 
@@ -193,11 +261,38 @@ export function useCursorTracking(
 
     return () => {
       isCleanedUpRef.current = true;
+
+      // Clear any pending throttled broadcasts
       if (throttleTimeoutRef.current) {
         clearTimeout(throttleTimeoutRef.current);
+        throttleTimeoutRef.current = null;
       }
+
+      // Broadcast cursor removal before unsubscribing (best effort)
+      // This helps other users see the cursor disappear immediately
       if (channelRef.current) {
-        supabase.removeChannel(channelRef.current);
+        try {
+          channelRef.current.send({
+            type: 'broadcast',
+            event: 'cursor-move',
+            payload: { x: -1000, y: -1000, user: { id: currentUserId } },
+          });
+        } catch (err) {
+          // Ignore errors during cleanup
+          if (DEV_MODE) {
+            console.warn('Cursor cleanup broadcast error:', err);
+          }
+        }
+      }
+
+      // Remove channel subscription
+      if (channelRef.current) {
+        supabase.removeChannel(channelRef.current).catch((err) => {
+          // Ignore errors during cleanup
+          if (DEV_MODE) {
+            console.warn('Channel removal error:', err);
+          }
+        });
         channelRef.current = null;
       }
 
@@ -206,11 +301,18 @@ export function useCursorTracking(
         container.removeEventListener('mousemove', handleMouseMove);
         container.removeEventListener('mouseleave', handleMouseLeave);
       }
+
+      // Clear state on unmount
+      setCursors(new Map());
+      setCurrentUserId(undefined);
+      setError(false);
+      errorCountRef.current = 0;
     };
-  }, [channelName, containerRef, broadcastCursor]);
+  }, [channelName, containerRef, broadcastCursor, currentUserId]);
 
   return {
     cursors,
     currentUserId,
+    error,
   };
 }

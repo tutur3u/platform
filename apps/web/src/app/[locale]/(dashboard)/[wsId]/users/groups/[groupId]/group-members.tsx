@@ -4,14 +4,19 @@ import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
 import {
   Cake,
   ChevronDown,
-  Ellipsis,
   Filter,
   Mail,
   Phone,
   User,
   UserCheck,
   VenusAndMars,
+  Ellipsis,
 } from '@tuturuuu/icons';
+import {
+  HoverCard,
+  HoverCardContent,
+  HoverCardTrigger,
+} from '@tuturuuu/ui/hover-card';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { Avatar, AvatarImage } from '@tuturuuu/ui/avatar';
@@ -33,16 +38,12 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
-import {
-  HoverCard,
-  HoverCardContent,
-  HoverCardTrigger,
-} from '@tuturuuu/ui/hover-card';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { useMemo, useState } from 'react';
 import GroupMemberActions from './group-member-actions';
+import { useFormatter } from 'next-intl';
 
 interface GroupMember extends WorkspaceUser {
   role?: string | null;
@@ -58,6 +59,7 @@ interface GroupMembersProps {
   initialData?: GroupMember[];
   pageSize: number;
   canViewPersonalInfo: boolean;
+  canViewPublicInfo: boolean;
 }
 
 export default function GroupMembers({
@@ -66,8 +68,10 @@ export default function GroupMembers({
   initialData,
   pageSize,
   canViewPersonalInfo,
+  canViewPublicInfo,
 }: GroupMembersProps) {
   const t = useTranslations();
+  const { dateTime } = useFormatter();
 
   // React Query with server-side data hydration
   // initialData comes from server-side fetch in the page component
@@ -447,7 +451,7 @@ export default function GroupMembers({
                       <span className="sr-only">{t('common.birthday')}</span>
                       <span>
                         {person.birthday
-                          ? new Date(person.birthday).toLocaleDateString()
+                          ? dateTime(new Date(person.birthday))
                           : t('common.unknown')}
                       </span>
                     </div>

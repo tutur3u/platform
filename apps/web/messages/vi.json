@@ -383,7 +383,8 @@
     "characters": "kí tự",
     "no_changes_to_save": "Không có thay đổi để lưu",
     "confirm_delete": "Xóa bản báo cáo?",
-    "filter": "Lọc"
+    "filter": "Lọc",
+    "insufficient_permissions": "Bạn không có đủ quyền để thực hiện hành động này"
   },
   "date_helper": {
     "time-unit": "Đơn vị thời gian",
@@ -1519,7 +1520,8 @@
     "hide_confidential": "Ẩn số liệu",
     "show_confidential": "Hiển thị số liệu",
     "financial_overview": "Tổng quan tài chính",
-    "financial_overview_description": "Theo dõi thu nhập, chi tiêu và tình hình tài chính tổng thể"
+    "financial_overview_description": "Theo dõi thu nhập, chi tiêu và tình hình tài chính tổng thể",
+    "error_creating_transaction": "Đã xảy ra lỗi khi tạo giao dịch"
   },
   "transaction-category-data-table": {
     "id": "Mã số",
@@ -2211,10 +2213,19 @@
     "description": "Giao dịch giúp bạn theo dõi tất cả các giao dịch tài chính trong không gian làm việc của bạn.",
     "create": "Tạo giao dịch",
     "edit": "Sửa giao dịch",
+    "view": "Xem giao dịch",
     "create_description": "Tạo một giao dịch mới",
     "edit_description": "Sửa giao dịch hiện có",
+    "view_description": "Xem chi tiết giao dịch",
     "category": "Loại giao dịch",
-    "no_description": "Không có mô tả"
+    "no_description": "Không có mô tả",
+    "saving": "Đang lưu...",
+    "save_changes": "Lưu thay đổi",
+    "create_transaction": "Tạo giao dịch",
+    "delete": "Xóa",
+    "delete_description": "Bạn có chắc chắn muốn xóa giao dịch này? Hành động này không thể hoàn tác.",
+    "error_saving_transaction": "Đã xảy ra lỗi khi lưu giao dịch",
+    "error_deleting_transaction": "Đã xảy ra lỗi khi xóa giao dịch"
   },
   "ws-transaction-categories": {
     "singular": "Danh mục giao dịch",
@@ -2378,16 +2389,65 @@
     "manage_users_description": "Cho phép thành viên xem, tạo, chỉnh sửa và xóa hồ sơ người dùng ảo trong không gian làm việc.",
     "manage_inventory": "Quản lý kho",
     "manage_inventory_description": "Cho phép thành viên xem, tạo, chỉnh sửa và xóa các mặt hàng trong kho không gian làm việc.",
+    "create_inventory": "Tạo kho",
+    "create_inventory_description": "Cho phép thành viên tạo mặt hàng kho mới trong không gian làm việc.",
+    "update_inventory": "Cập nhật kho",
+    "update_inventory_description": "Cho phép thành viên chỉnh sửa mặt hàng kho hiện có trong không gian làm việc.",
+    "delete_inventory": "Xóa kho",
+    "delete_inventory_description": "Cho phép thành viên xóa mặt hàng kho trong không gian làm việc.",
+    "view_inventory": "Xem kho",
+    "view_inventory_description": "Cho phép thành viên xem mặt hàng kho trong không gian làm việc.",
+    "inventory_access_denied": "Quyền truy cập bị từ chối",
+    "inventory_access_denied_description": "Bạn không có quyền xem kho.",
+    "inventory_products_access_denied_description": "Bạn không có quyền xem sản phẩm kho.",
+    "inventory_categories_access_denied_description": "Bạn không có quyền xem danh mục kho.",
+    "inventory_units_access_denied_description": "Bạn không có quyền xem đơn vị kho.",
+    "inventory_suppliers_access_denied_description": "Bạn không có quyền xem nhà cung cấp kho.",
+    "inventory_warehouses_access_denied_description": "Bạn không có quyền thực hiện hành động này",
+    "inventory_batches_access_denied_description": "Bạn không có quyền xem lô hàng.",
+    "inventory_promotions_access_denied_description": "Bạn không có quyền xem khuyến mãi kho.",
     "manage_finance": "Quản lý tài chính",
     "manage_finance_description": "Cho phép thành viên xem, tạo, chỉnh sửa và xóa giao dịch tài chính trong không gian làm việc.",
     "manage_user_report_templates": "Quản lý mẫu báo cáo người dùng",
     "manage_user_report_templates_description": "Cho phép các thành viên chỉnh sửa mẫu báo cáo người dùng.",
     "send_user_group_post_emails": "Gửi nội dung bài viết qua email",
     "send_user_group_post_emails_description": "Cho phép thành viên gửi email đến người dùng ảo được tạo trong không gian làm việc của bạn về nội dung bài viết của nhóm người dùng cụ thể.",
-    "export_users_data": "Cho phép xuất dữ liệu người dùng",
+    "export_users_data": "Xuất dữ liệu người dùng",
     "export_users_data_description": "Cho phép thành viên xuất dữ liệu người dùng ảo được tạo trong không gian làm việc của bạn.",
     "export_finance_data": "Cho phép xuất dữ liệu tài chính",
-    "export_finance_data_description": "Cho phép thành viên xuất dữ liệu giao dịch tài chính được tạo trong không gian làm việc của bạn."
+    "export_finance_data_description": "Cho phép thành viên xuất dữ liệu giao dịch tài chính được tạo trong không gian làm việc của bạn.",
+    "view_finance_stats": "Xem dữ liệu tài chính",
+    "view_users_public_info": "Xem thông tin công khai của người dùng",
+    "view_users_public_info_description": "Cho phép thành viên xem thông tin công khai của người dùng trong không gian làm việc.",
+    "view_users_private_info": "Xem thông tin riêng tư của người dùng",
+    "view_users_private_info_description": "Cho phép thành viên xem thông tin riêng tư của người dùng trong không gian làm việc.",
+    "create_users": "Tạo người dùng",
+    "create_users_description": "Cho phép thành viên tạo hồ sơ người dùng ảo mới trong không gian làm việc.",
+    "update_users": "Cập nhật người dùng",
+    "update_users_description": "Cho phép thành viên chỉnh sửa hồ sơ người dùng ảo hiện có trong không gian làm việc.",
+    "delete_users": "Xóa người dùng",
+    "delete_users_description": "Cho phép thành viên xóa hồ sơ người dùng ảo khỏi không gian làm việc.",
+    "view_finance_stats_description": "Cho phép thành viên xem số liệu thống kê tài chính của không gian làm việc",
+    "create_transactions": "Tạo giao dịch",
+    "create_transactions_description": "Cho phép thành viên tạo giao dịch tài chính mới trong không gian làm việc.",
+    "update_transactions": "Cập nhật giao dịch",
+    "update_transactions_description": "Cho phép thành viên chỉnh sửa giao dịch tài chính hiện có trong không gian làm việc.",
+    "delete_transactions": "Xóa giao dịch",
+    "delete_transactions_description": "Cho phép thành viên xóa giao dịch tài chính khỏi không gian làm việc.",
+    "view_transactions": "Xem giao dịch",
+    "view_transactions_description": "Cho phép thành viên xem chi tiết giao dịch tài chính trong không gian làm việc.",
+    "invoices": "Hóa đơn",
+    "create_invoices": "Tạo hóa đơn",
+    "create_invoices_description": "Cho phép thành viên tạo hóa đơn mới trong không gian làm việc.",
+    "view_invoices": "Xem hóa đơn",
+    "view_invoices_description": "Cho phép thành viên xem chi tiết hóa đơn trong không gian làm việc.",
+    "update_invoices": "Cập nhật hóa đơn",
+    "update_invoices_description": "Cho phép thành viên chỉnh sửa hóa đơn hiện có trong không gian làm việc.",
+    "delete_invoices": "Xóa hóa đơn",
+    "delete_invoices_description": "Cho phép thành viên xóa hóa đơn khỏi không gian làm việc.",
+    "check_user_attendance": "Kiểm tra điểm danh người dùng",
+    "check_user_attendance_description": "Cho phép thành viên kiểm tra điểm danh của người dùng khác",
+    "transactions": "Giao dịch tài chính"
   },
   "platform-roles": {
     "plural": "Vai trò nền tảng",
@@ -3186,7 +3246,8 @@
     "print_after_create": "In hóa đơn",
     "print_after_create_tooltip": "In hóa đơn sau khi tạo thành công",
     "created_invoices": "Hóa đơn đã tạo",
-    "pending_invoices": "Hóa đơn chưa được thanh toán"
+    "pending_invoices": "Hóa đơn chưa được thanh toán",
+    "failed_delete_invoice": "Không xóa được hóa đơn"
   },
   "ws-inventory-products": {
     "plural": "Sản phẩm",
@@ -3207,7 +3268,75 @@
       "amount": "Số lượng",
       "min_amount": "Số lượng ít nhất",
       "category": "Danh mục"
-    }
+    },
+    "validation": {
+      "name_required": "Tên sản phẩm là bắt buộc"
+    },
+    "dialog": {
+      "description": "Thông tin sản phẩm và quản lý"
+    },
+    "tabs": {
+      "details": "Chi tiết",
+      "stock": "Kho",
+      "history": "Lịch sử",
+      "edit": "Chỉnh sửa"
+    },
+    "sections": {
+      "product_information": "Thông tin sản phẩm",
+      "current_stock": "Kho hiện tại",
+      "manage_inventory": "Quản lý kho",
+      "stock_history": "Lịch sử kho",
+      "edit_product": "Chỉnh sửa sản phẩm",
+      "stock_management": "Quản lý kho"
+    },
+    "labels": {
+      "unlimited_stock": "Kho không giới hạn",
+      "created_at": "Ngày tạo",
+      "warehouse": "Kho hàng",
+      "price_per_unit": "Giá mỗi đơn vị",
+      "min_amount": "Số lượng tối thiểu",
+      "current_amount": "Số lượng hiện tại",
+      "unit": "Đơn vị",
+      "usage_instructions": "Hướng dẫn sử dụng",
+      "unlimited_stock_label": "Kho không giới hạn"
+    },
+    "placeholders": {
+      "select_warehouse": "Chọn kho hàng",
+      "enter_price": "Nhập giá",
+      "select_unit": "Chọn đơn vị",
+      "enter_product_name": "Nhập tên sản phẩm",
+      "enter_manufacturer": "Nhập nhà sản xuất",
+      "select_category": "Chọn danh mục",
+      "enter_product_description": "Nhập mô tả sản phẩm",
+      "enter_usage_instructions": "Nhập hướng dẫn sử dụng"
+    },
+    "buttons": {
+      "remove": "Xóa",
+      "add_stock_entry": "Thêm mục kho",
+      "save_inventory_changes": "Lưu thay đổi kho",
+      "view_full_details": "Xem chi tiết đầy đủ",
+      "delete_product": "Xóa sản phẩm",
+      "cancel": "Hủy",
+      "save_changes": "Lưu thay đổi"
+    },
+    "messages": {
+      "recently": "Gần đây",
+      "unlimited_stock_available": "Sản phẩm này có kho không giới hạn.",
+      "manage_tracked_stock": "Quản lý kho được theo dõi trong tab Kho.",
+      "delete_confirmation": "Bạn có chắc chắn muốn xóa \"{name}\"? Hành động này không thể hoàn tác.",
+      "deleting": "Đang xóa...",
+      "no_changes_to_save": "Không có thay đổi để lưu",
+      "failed_update_details": "Đã có lỗi xảy ra khi cập nhật chi tiết sản phẩm",
+      "product_updated_successfully": "Sản phẩm được cập nhật thành công",
+      "failed_update_product": "Đã có lỗi xảy ra khi cập nhật sản phẩm",
+      "no_delete_permission": "Bạn không có quyền xóa kho hàng",
+      "product_deleted_successfully": "Sản phẩm được xóa thành công",
+      "failed_delete_product": "Đã có lỗi xảy ra khi xóa sản phẩm"
+    },
+    "no_changes_detected": "Không có thay đổi gì",
+    "product_saved_successfully": "Sản phẩm được lưu thành công",
+    "failed_save_product": "Đã có lỗi xảy ra khi lưu sản phẩm",
+    "failed_delete_product": "Đã có lỗi xảy ra khi xóa sản phẩm"
   },
   "ws-inventory-categories": {
     "plural": "Danh mục sản phẩm",
@@ -3224,14 +3353,17 @@
     "create": "Tạo đơn vị tính",
     "create_description": "Tạo một đơn vị tính mới",
     "placeholder": "Chọn đơn vị tính",
-    "unnamed_unit": "Đơn vị tính chưa đặt tên"
+    "unnamed_unit": "Đơn vị tính chưa đặt tên",
+    "failed_create_unit": "Đã có lỗi xảy ra khi tạo đơn vị",
+    "failed_delete_unit": "Đã có lỗi xảy ra khi xóa đơn vị"
   },
   "ws-inventory-suppliers": {
     "plural": "Nhà cung cấp",
     "singular": "Nhà cung cấp",
     "description": "Nhà cung cấp được sử dụng để liên kết các sản phẩm tồn kho với nhà cung cấp.",
     "create": "Tạo nhà cung cấp",
-    "create_description": "Tạo một nhà cung cấp mới"
+    "create_description": "Tạo một nhà cung cấp mới",
+    "failed_delete_supplier": "Đã có lỗi xảy ra khi xóa nhà cung cấp"
   },
   "ws-inventory-warehouses": {
     "plural": "Kho hàng",
@@ -3240,7 +3372,9 @@
     "create": "Tạo kho hàng",
     "create_description": "Tạo một kho hàng mới",
     "placeholder": "Chọn kho hàng",
-    "unnamed_warehouse": "Kho hàng chưa đặt tên"
+    "unnamed_warehouse": "Kho hàng chưa đặt tên",
+    "failed_create_warehouse": "Đã có lỗi xảy ra khi tạo kho hàng",
+    "failed_delete_warehouse": "Đã có lỗi xảy ra khi xóa kho hàng"
   },
   "ws-inventory-batches": {
     "plural": "Lô hàng",
@@ -3268,7 +3402,9 @@
         "currency": "Tiền tệ",
         "percentage": "Phần trăm"
       }
-    }
+    },
+    "failed_delete_promotion": "Đã có lỗi xảy ra khi xóa mã giảm giá",
+    "failed_create_promotion": "Đã có lỗi xảy ra khi tạo mã giảm giá"
   },
   "ws_post_details": {
     "check_all": "Đã kiểm tra tất cả"
@@ -4492,11 +4628,12 @@
       "processing": "Đang xử lý",
       "rounded_logo": "Logo tròn",
       "invalid_type": "Loại tệp không hợp lệ. Vui lòng tải lên tệp JPG, PNG, WebP hoặc SVG.",
-      "file_too_large": "Tệp quá lớn. Kích thước tối đa là 5MB.",
+      "file_too_large": "Tệp quá lớn. Kích thước tối đa là {size}.",
       "dimensions_too_small": "Kích thước hình ảnh quá nhỏ. Kích thước tối thiểu là 32x32px.",
       "dimensions_too_large": "Kích thước hình ảnh quá lớn. Kích thước tối đa là 512x512px.",
       "invalid_image": "Tệp hình ảnh không hợp lệ.",
-      "upload_failed": "Tải lên thất bại. Vui lòng thử lại."
+      "upload_failed": "Tải lên thất bại. Vui lòng thử lại.",
+      "signed_url_failed": "Không thể tạo URL đã ký."
     }
   },
   "personal-workspace": {
