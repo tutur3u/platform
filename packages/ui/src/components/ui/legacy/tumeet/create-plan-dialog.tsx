@@ -1,30 +1,30 @@
 'use client';
 
 import {
-    ClipboardList,
-    MapPin as MapPinIcon,
-    Sparkles as SparklesIcon,
+  ClipboardList,
+  MapPin as MapPinIcon,
+  Sparkles as SparklesIcon,
 } from '@tuturuuu/icons';
 import type { User } from '@tuturuuu/types/db';
 import type { Timezone } from '@tuturuuu/types/primitives/Timezone';
 import type { JSONContent } from '@tuturuuu/types/tiptap';
 import { Button } from '@tuturuuu/ui/button';
 import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
-    DialogTrigger,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
 } from '@tuturuuu/ui/dialog';
 import {
-    Form,
-    FormControl,
-    FormField,
-    FormItem,
-    FormLabel,
-    FormMessage,
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
 } from '@tuturuuu/ui/form';
 import { useForm } from '@tuturuuu/ui/hooks/use-form';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';

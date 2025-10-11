@@ -10,10 +10,10 @@ import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from 'recharts';
 import { Button } from '../../../button';
 import { Card, CardContent, CardHeader, CardTitle } from '../../../card';
 import {
-    type ChartConfig,
-    ChartContainer,
-    ChartTooltip,
-    ChartTooltipContent,
+  type ChartConfig,
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
 } from '../../../chart';
 
 // Cookie helper functions

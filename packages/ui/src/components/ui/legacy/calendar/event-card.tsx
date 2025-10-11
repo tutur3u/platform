@@ -1,15 +1,15 @@
 import {
-    AlertTriangle,
-    ArrowLeft,
-    ArrowRight,
-    Check,
-    Edit,
-    Lock,
-    Palette,
-    Pencil,
-    RefreshCw,
-    Trash2,
-    Unlock,
+  AlertTriangle,
+  ArrowLeft,
+  ArrowRight,
+  Check,
+  Edit,
+  Lock,
+  Palette,
+  Pencil,
+  RefreshCw,
+  Trash2,
+  Unlock,
 } from '@tuturuuu/icons';
 import type { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
 import type { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
@@ -20,14 +20,14 @@ import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone';
 import { useEffect, useRef, useState } from 'react';
 import {
-    ContextMenu,
-    ContextMenuContent,
-    ContextMenuItem,
-    ContextMenuSeparator,
-    ContextMenuSub,
-    ContextMenuSubContent,
-    ContextMenuSubTrigger,
-    ContextMenuTrigger,
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuSeparator,
+  ContextMenuSub,
+  ContextMenuSubContent,
+  ContextMenuSubTrigger,
+  ContextMenuTrigger,
 } from '../../context-menu';
 import { GRID_SNAP, HOUR_HEIGHT, MAX_HOURS, MIN_EVENT_HEIGHT } from './config';
 import { useCalendarSettings } from './settings/settings-context';

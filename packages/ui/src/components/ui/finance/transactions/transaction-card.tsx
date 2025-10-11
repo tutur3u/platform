@@ -1,10 +1,10 @@
 'use client';
 
 import {
-    ArrowDownCircle,
-    ArrowUpCircle,
-    Calendar,
-    FileText,
+  ArrowDownCircle,
+  ArrowUpCircle,
+  Calendar,
+  FileText,
 } from '@tuturuuu/icons';
 import type { Transaction } from '@tuturuuu/types/primitives/Transaction';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
