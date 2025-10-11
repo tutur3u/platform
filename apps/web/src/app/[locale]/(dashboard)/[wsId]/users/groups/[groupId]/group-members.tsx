@@ -71,7 +71,7 @@ export default function GroupMembers({
   canViewPublicInfo,
 }: GroupMembersProps) {
   const t = useTranslations();
-  const {dateTime} = useFormatter();
+  const { dateTime } = useFormatter();
 
   // React Query with server-side data hydration
   // initialData comes from server-side fetch in the page component

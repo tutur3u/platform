@@ -13,12 +13,12 @@ export default async function SuppliersStatistics({ wsId }: { wsId: string }) {
   if (withoutPermission('view_inventory')) return null;
 
   const { count: suppliers, error } = await supabase
-        .from('inventory_suppliers')
-        .select('id', {
-          count: 'exact',
-          head: true,
-        })
-        .eq('ws_id', wsId);
+    .from('inventory_suppliers')
+    .select('id', {
+      count: 'exact',
+      head: true,
+    })
+    .eq('ws_id', wsId);
 
   if (error) {
     console.error('Error fetching workspace suppliers:', error);

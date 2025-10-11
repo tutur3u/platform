@@ -9,15 +9,15 @@ interface Params {
   }>;
 }
 
-  const TransactionSchema = z.object({
-    description: z.string().min(1),
-    amount: z.number(),
-    origin_wallet_id: z.string().uuid(),
-    category_id: z.string().uuid().optional(),
-    taken_at: z.union([z.string(), z.date()]),
-    report_opt_in: z.boolean().optional(),
-    tag_ids: z.array(z.string().uuid()).optional(),
-  });
+const TransactionSchema = z.object({
+  description: z.string().min(1),
+  amount: z.number(),
+  origin_wallet_id: z.string().uuid(),
+  category_id: z.string().uuid().optional(),
+  taken_at: z.union([z.string(), z.date()]),
+  report_opt_in: z.boolean().optional(),
+  tag_ids: z.array(z.string().uuid()).optional(),
+});
 export async function GET(req: Request, { params }: Params) {
   const { wsId } = await params;
 
@@ -84,10 +84,7 @@ export async function POST(req: Request, { params }: Params) {
   } = await supabase.auth.getUser();
 
   if (!user) {
-    return NextResponse.json(
-      { message: 'Unauthorized' },
-      { status: 401 }
-    );
+    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }
 
   // Get the virtual_user_id for this workspace
